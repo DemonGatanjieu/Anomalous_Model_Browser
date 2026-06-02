@@ -12,12 +12,13 @@
 
 ### 🌟 Why Anomalous Model Browser?
 
-In the rapidly evolving landscape of AI art tools, legacy plugins like `comfyui-browser` have become somewhat bloated. They introduced heavy frameworks like Svelte and complex `npm` dependency chains just to render a UI, leading to complicated installations and environment conflicts.
+The old `comfyui-browser` was once a great "Swiss Army Knife" for managing images and workflows. However, as ComfyUI officially introduced built-in local model and workflow managers, the legacy browser's heavy "everything-in-one" approach (requiring Node.js, Svelte, and complex `npm` dependencies) became bloated and prone to environment conflicts.
 
-**Anomalous Model Browser** was born out of an extreme pursuit of minimalism and high performance:
+**Anomalous Model Browser** takes a different path. Instead of reinventing the wheel with a heavy all-in-one file manager, it acts as a **surgical scalpel 100% focused on Model Management and Civitai Integration**.
+
 - **True Zero Dependencies**: We completely abandoned Node.js, Webpack, Vue/React/Svelte, and other heavy frontend tools. The entire extension is written in pure **Native Python + Vanilla JS**!
 - **Unmatched Performance**: With a total codebase of under 30KB, it delivers a much smoother experience than the original. No background polling, no memory leaks—just plug and play with millisecond response times.
-- **Smart Association**: Say goodbye to complex database building. It smartly and seamlessly associates your `.safetensors` files with their corresponding `.info` descriptions and `.preview.png` images purely through file naming.
+- **Dedicated to Models**: We don't touch your images or workflows (let the native UI handle that). Instead, we focus on smart association of your `.safetensors` files with their corresponding `.info` descriptions, Civitai markdown scraping, and 1-click trigger word copying.
 
 ### ✨ Core Features
 
@@ -61,12 +62,13 @@ Say goodbye to `pip install` and `npm install`!
 
 ### 🌟 为什么选择 Anomalous Model Browser？
 
-在 AI 绘画工具极速迭代的今天，旧时代的 `comfyui-browser` 已经显得有些水土不服。它为了实现复杂的界面，引入了庞大的 Svelte 框架和繁琐的 `npm` 依赖链，不仅让安装变得复杂，还容易引发各种环境冲突。
+早期的 `comfyui-browser` 曾经是一款伟大的“全家桶”式管理工具。但随着 ComfyUI 官方逐渐内置了模型和工作流管理器，这款旧时代插件由于囊括了太多功能，并引入了庞大的 Svelte 框架和繁琐的 `npm` 依赖链，变得异常臃肿且极易引发安装报错。
 
-**Anomalous Model Browser** 诞生于对“极简主义”和“高性能”的极致追求：
+**Anomalous Model Browser** 拒绝造多余的轮子。我们不去做官方已经内置的图片和工作流管理，而是做一把**专注处理模型管理与 Civitai 联动的“锋利手术刀”**。
+
 - **真正的零依赖**：我们彻底抛弃了 Node.js、Webpack、Vue/React/Svelte 等前端重型武器。全端采用最纯粹的 **原生 Python + Vanilla JS** 编写！
-- **降维打击的性能**：不到 30KB 的总代码量，却实现了比原版更丝滑的体验。没有后台轮询，没有内存泄漏，做到即插即用，毫秒级响应。
-- **智能关联机制**：不再需要复杂的数据库构建，直接通过文件名级联，智能无缝关联你的 `.safetensors` 与其对应的 `.info` 描述、以及 `.preview.png` 预览图。
+- **降维打击的性能**：不到 30KB 的总代码量，完美避开了重度框架的内存泄漏和环境冲突，做到即插即用，毫秒级响应。
+- **只为模型而生**：我们将 100% 的精力倾注在模型刮削上。直接通过文件名级联，智能无缝关联你的 `.safetensors` 与其对应的 `.info` 描述，并提供官方原生管理器完全不具备的富文本 markdown 渲染与一键触发词复制功能。
 
 ### ✨ 核心特性
 
