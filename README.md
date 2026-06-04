@@ -53,7 +53,7 @@ Say goodbye to `pip install` and `npm install`!
    ```
 2. Clone this repository:
    ```bash
-   git clone <YOUR_GITHUB_REPO_URL> Anomalous_Model_Browser
+   git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git Anomalous_Model_Browser
    ```
 3. **Restart ComfyUI**. You will see the 📦 button in the bottom right corner—installation complete!
 
@@ -103,7 +103,7 @@ Say goodbye to `pip install` and `npm install`!
    ```
 2. 将本仓库克隆（或直接拖入）该目录中：
    ```bash
-   git clone <你的GitHub仓库地址> Anomalous_Model_Browser
+   git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git Anomalous_Model_Browser
    ```
 3. **彻底重启 ComfyUI**，在网页右下角看到 📦 按钮，即代表安装成功！
 
