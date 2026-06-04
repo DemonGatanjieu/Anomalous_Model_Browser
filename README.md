@@ -16,7 +16,7 @@ In the rapidly evolving landscape of AI art tools, legacy plugins have become bl
 
 **Anomalous Model Browser** was born out of an extreme pursuit of minimalism and high performance:
 - **True Zero Dependencies**: We completely abandoned Node.js, Webpack, Vue/React/Svelte, and other heavy frontend tools. The entire extension is written in pure **Native Python + Vanilla JS**!
-- **Unmatched Performance**: With a total codebase of under 35KB, it delivers a much smoother experience. No background polling loops, no memory leaks—just plug and play with millisecond response times.
+- **Unmatched Performance**: With a total codebase of under 100KB, it delivers a much smoother experience. No background polling loops, no memory leaks—just plug and play with millisecond response times.
 - **Smart Association & Synchronization**: Say goodbye to complex database building. It smartly and seamlessly associates your `.safetensors` files with their corresponding `.info` descriptions and `.png`/`.mp4` previews purely through file naming.
 
 ### ✨ Core Features
@@ -67,7 +67,7 @@ Say goodbye to `pip install` and `npm install`!
 
 **Anomalous Model Browser** 诞生于对“极简主义”和“高性能”的极致追求：
 - **真正的零依赖**：我们彻底抛弃了 Node.js、Webpack、Vue/React 等重型武器。全端采用最纯粹的 **原生 Python + Vanilla JS** 编写！
-- **降维打击的性能**：不到 35KB 的总代码量，实现了极度丝滑的体验。没有内存泄漏，即插即用，毫秒级响应。
+- **降维打击的性能**：不到 100KB 的总代码量，实现了极度丝滑的体验。没有内存泄漏，即插即用，毫秒级响应。
 - **智能级联关联机制**：不再需要复杂的数据库，直接通过底层文件名映射，无缝关联 `.safetensors` 与其对应的 `.info` 描述及动态预览媒体。
 
 ### ✨ 核心特性
