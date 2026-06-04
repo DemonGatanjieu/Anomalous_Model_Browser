@@ -41,5 +41,12 @@
     - 其他 -> `.png`
     并在重命名循环中把 `.mp4` 和 `.webm` 加入“连带重命名套餐”，确保媒体文件与底模同生共死。
 
+
+## 6. 接头暗号对不上：API 路由映射失误 (Backend Routing)
+*   **症状**：前端在输入 API Key 后（即使浏览器缓存记录了密码），本地依然没有生成 config.json 配置文件。
+*   **死因**：前端 main.js 试图往后端发送保存请求的路由是 POST /anomalous/save_config，而后端 pi.py 监听这个保存函数的路由却错误地写成了 pp.router.add_post('/anomalous/config', api_save_config)。这导致前端的保存请求永远打到一个 404 死胡同，而刚好前端加了 catch(e) {} 忽略了报错，所以错误被静默吞噬了。
+*   **解决方案**：永远确保前后端通信的 API 路径 (Endpoint) 字符串绝对一致。将后端路由严格修改为 pp.router.add_post('/anomalous/save_config', api_save_config)，保证数据能够成功落盘。
+
 ---
+
 *Created by Antigravity Assistant on 2026-06-05*
