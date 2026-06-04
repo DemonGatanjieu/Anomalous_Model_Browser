@@ -3,6 +3,7 @@ import sys
 import json
 import urllib.parse
 import subprocess
+import threading
 from aiohttp import web
 import folder_paths
 
@@ -159,7 +160,7 @@ async def api_get_models(request):
             
             base_name = os.path.splitext(f)[0]
             preview_file = None
-            for ext in ['.preview.png', '.png', '.jpg', '.jpeg', '.webp']:
+            for ext in ['.preview.png', '.png', '.jpg', '.jpeg', '.webp', '.mp4', '.webm']:
                 if os.path.exists(os.path.join(target_dir, base_name + ext)):
                     preview_file = base_name + ext
                     break
@@ -229,6 +230,30 @@ async def api_serve_image(request):
     return web.FileResponse(file_path, headers={'Content-Type': content_type})
 
 
+
+async def api_scan_status(request):
+    folder_type = request.query.get('type', 'checkpoints')
+    subfolder = request.query.get('subfolder', '/')
+    try:
+        path_idx = int(request.query.get('path_idx', 0))
+    except:
+        path_idx = 0
+    try:
+        paths = folder_paths.get_folder_paths(folder_type)
+    except Exception:
+        return web.json_response({"scanning": False})
+    if not paths or path_idx >= len(paths) or '..' in subfolder:
+        return web.json_response({"scanning": False})
+    
+    base_dir = paths[path_idx]
+    if subfolder == '/':
+        target_dir = base_dir
+    else:
+        target_dir = os.path.join(base_dir, subfolder.strip('/'))
+    
+    marker_file = os.path.join(target_dir, '.scan_in_progress')
+    return web.json_response({"scanning": os.path.exists(marker_file)})
+
 async def api_scan_folder(request):
     """Launches the scraper in the background for a specific directory."""
     folder_type = request.query.get('type', 'checkpoints')
@@ -268,12 +293,23 @@ async def api_scan_folder(request):
     print(f"[Anomalous Browser] Starting background scan for: {target_dir}")
     
     try:
-        subprocess.Popen(
-            [sys.executable, scraper_path, target_dir],
-            cwd=script_dir,
-            stdout=subprocess.DEVNULL, # Optionally pipe to sys.stdout if you want it in Comfy terminal
-            stderr=subprocess.DEVNULL
-        )
+        marker_file = os.path.join(target_dir, '.scan_in_progress')
+        with open(marker_file, 'w') as f: f.write('1')
+        def run_bg():
+            try:
+                subprocess.run(
+                    [sys.executable, scraper_path, target_dir],
+                    cwd=script_dir,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+            finally:
+                if os.path.exists(marker_file):
+                    try: os.remove(marker_file)
+                    except: pass
+        
+        threading.Thread(target=run_bg, daemon=True).start()
+        
         return web.json_response({"status": "ok", "message": "Scan started in background. Check console for details."})
     except Exception as e:
         return web.json_response({"status": "error", "message": str(e)})
@@ -381,6 +417,7 @@ def setup_routes(app):
     app.router.add_get('/anomalous/models', api_get_models)
     app.router.add_get('/anomalous/image', api_serve_image)
     app.router.add_post('/anomalous/scan', api_scan_folder)
+    app.router.add_get('/anomalous/scan_status', api_scan_status)
     app.router.add_get('/anomalous/config', api_get_config)
     app.router.add_post('/anomalous/config', api_save_config)
     app.router.add_post('/anomalous/delete_model', api_delete_model)

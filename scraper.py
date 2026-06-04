@@ -1,5 +1,13 @@
 import os
 import sys
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except:
+    pass
+try:
+    sys.stderr.reconfigure(encoding="utf-8")
+except:
+    pass
 import time
 import json
 import hashlib
@@ -37,7 +45,9 @@ def calculate_sha256(file_path: str) -> str:
 
 def sanitize_filename(name: str) -> str:
     """清理文件名中的非法字符"""
-    return re.sub(r'[\\/*?:"<>|]', "", name).strip()
+    name = re.sub(r'[\r\n\t]+', ' ', name)
+    name = re.sub(r'[\\/*?:"<>|#]', "", name)
+    return name.strip(' .')
 
 def fetch_civitai_info(file_hash: str, max_retries: int = 3) -> Optional[Dict]:
     """向 Civitai API 获取模型信息，支持重试机制"""
@@ -67,8 +77,8 @@ def fetch_civitai_info(file_hash: str, max_retries: int = 3) -> Optional[Dict]:
     print(f"\033[93m[Skip] 模型 Hash {file_hash} 网络重试失败，已跳过该文件。\033[0m")
     return None
 
-def download_image(url: str, save_path: str, max_retries: int = 3):
-    """下载图片"""
+def download_media(url: str, base_path: str, max_retries: int = 3):
+    """下载图片或视频并自动识别扩展名"""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
@@ -79,20 +89,24 @@ def download_image(url: str, save_path: str, max_retries: int = 3):
         try:
             response = requests.get(url, stream=True, headers=headers, timeout=15)
             if response.status_code == 200:
-                with open(save_path, 'wb') as f:
+                content_type = response.headers.get("Content-Type", "").lower()
+                ext = ".png" # default
+                if "video/mp4" in content_type: ext = ".mp4"
+                elif "video/webm" in content_type: ext = ".webm"
+                elif "image/jpeg" in content_type: ext = ".jpg"
+                elif "image/webp" in content_type: ext = ".webp"
+                elif url.endswith(".mp4"): ext = ".mp4"
+                
+                final_path = base_path + ext
+                with open(final_path, 'wb') as f:
                     for chunk in response.iter_content(8192):
                         f.write(chunk)
-                return True
+                return final_path
             else:
-                print(f"[-] 图片下载失败，状态码: {response.status_code} (尝试 {attempt+1}/{max_retries})")
+                print(f"[-] 媒体下载失败，状态码: {response.status_code} (尝试 {attempt+1}/{max_retries})")
         except requests.exceptions.RequestException as e:
-            print(f"[-] 图片下载网络异常: {e} (尝试 {attempt+1}/{max_retries})")
-            
-        if attempt < max_retries - 1:
-            time.sleep(2)
-            
-    print(f"\033[93m[Skip] 图片下载最终失败，跳过图片下载。\033[0m")
-    return False
+            print(f"[-] 媒体下载网络异常: {e} (尝试 {attempt+1}/{max_retries})")
+    return None
 
 def main():
     parser = argparse.ArgumentParser(description="ComfyUI 模型 Civitai 嗅探与重命名工具")
@@ -124,20 +138,20 @@ def main():
             if os.path.exists(new_path):
                 print(f"[*] 恢复主文件: {os.path.basename(new_path)} -> {os.path.basename(old_path)}")
                 if not args.dry_run:
-                    os.rename(new_path, old_path)
+                    os.replace(new_path, old_path)
             else:
                 print(f"[-] 找不到被重命名的文件: {new_path}")
                 
             old_base = os.path.splitext(old_path)[0]
             new_base = os.path.splitext(new_path)[0]
             
-            for ext in [".info", ".civitai.info", ".png", ".preview.png", ".json", ".txt", ".yaml"]:
+            for ext in [".info", ".civitai.info", ".png", ".jpg", ".webp", ".mp4", ".webm", ".json", ".txt", ".yaml"]:
                 new_ext_path = new_base + ext
                 old_ext_path = old_base + ext
                 if os.path.exists(new_ext_path):
                     print(f"[*] 恢复配套文件: {os.path.basename(new_ext_path)} -> {os.path.basename(old_ext_path)}")
                     if not args.dry_run:
-                        os.rename(new_ext_path, old_ext_path)
+                        os.replace(new_ext_path, old_ext_path)
 
         print("[+] 回滚完成！")
         sys.exit(0)
@@ -221,21 +235,20 @@ def main():
                 
             images = civitai_data.get("images", [])
             if images and len(images) > 0:
-                img_url = images[0].get("url")
-                img_path = old_base + ".png"
-                preview_path = old_base + ".preview.png"
+                media_url = None
+                for img_obj in images:
+                    if img_obj.get("url"):
+                        media_url = img_obj.get("url")
+                        break
                 
-                if img_url:
+                if media_url:
                     if not args.dry_run:
-                        print(f"[*] 正在下载预览图...")
-                        if download_image(img_url, img_path):
-                            print(f"[+] 图片下载成功 -> {os.path.basename(img_path)}")
-                            try:
-                                shutil.copy(img_path, preview_path)
-                            except Exception as e:
-                                pass
+                        print(f"[*] 正在下载预览媒体...")
+                        saved_path = download_media(media_url, old_base)
+                        if saved_path:
+                            print(f"[+] 媒体下载成功 -> {os.path.basename(saved_path)}")
                     else:
-                        print(f"[Dry-Run] 拟下载预览图至 -> .png 及 .preview.png")
+                        print(f"[Dry-Run] 拟下载预览媒体...")
                         
             if file_path != new_file_path and new_filename != filename:
                 if os.path.exists(new_file_path):
@@ -245,11 +258,11 @@ def main():
                         os.rename(file_path, new_file_path)
                         rename_log[file_path] = new_file_path
                         
-                        for ext in [".info", ".civitai.info", ".png", ".preview.png", ".json", ".txt", ".yaml"]:
+                        for ext in [".info", ".civitai.info", ".png", ".jpg", ".webp", ".mp4", ".webm", ".json", ".txt", ".yaml"]:
                             old_ext = old_base + ext
                             new_ext = new_base + ext
                             if os.path.exists(old_ext):
-                                os.rename(old_ext, new_ext)
+                                os.replace(old_ext, new_ext) # Safety: replace overwrites existing files on Windows
                                 
                         print(f"[+] 重命名完成: {filename}  ==>  {new_filename}")
                     else:
