@@ -419,5 +419,5 @@ def setup_routes(app):
     app.router.add_post('/anomalous/scan', api_scan_folder)
     app.router.add_get('/anomalous/scan_status', api_scan_status)
     app.router.add_get('/anomalous/config', api_get_config)
-    app.router.add_post('/anomalous/config', api_save_config)
+    app.router.add_post('/anomalous/save_config', api_save_config)
     app.router.add_post('/anomalous/delete_model', api_delete_model)
