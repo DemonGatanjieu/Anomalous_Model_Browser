@@ -40,7 +40,9 @@ In the rapidly evolving landscape of AI art tools, legacy plugins have become bl
 4. **🤖 Smart Media Civitai Scraper (Multi-Threaded Daemon)**
    - Forget messy CMD windows! Paste your Civitai API Key in the UI (safely saved to both local server config and browser cache).
    - Click `Scan Folder` to silently launch a background daemon thread that computes SHA256, fetches metadata, and automatically renames your local `.safetensors` files to a clean format.
+   - **Smart Version Deduplication**: Have you ever accidentally downloaded the same version of a model twice with different names? The scanner will detect identical Civitai versions and cleanly permanently delete the redundant clones, ensuring your disk is free of duplicates!
    - **Smart Content-Type Detection**: The new scraper engine dynamically parses HTTP network headers. If a Civitai preview is a video, it perfectly saves it as an `.mp4` or `.webm` file rather than a corrupted PNG.
+   - **Standalone Cleanup Button**: We extracted the `.civitai.info` cleanup process into a fast, dedicated `🧹 Clean Duplicate Info` button in the UI.
    - **Energy-Saving Previews**: Video previews only play on mouse hover!
 
 ### 📥 Installation
@@ -90,6 +92,8 @@ Say goodbye to `pip install` and `npm install`!
 4. **🤖 全格式动态刮削引擎 (后台多线程守护)**
    - 全局双端持久化保存 Civitai API Key，一键静默扫描本文件夹。
    - 真正的独立后台多线程，计算海量 7GB 模型 SHA256 时前端 UI 完全不卡顿。
+   - **智能版本号去重守护**：你是否曾因为不小心把同一个模型版本下载了两次而浪费了硬盘空间？后台扫描不仅会匹配信息，一旦发现某个模型在同文件夹下存在版本号完全一致的“多余分身”，它会毫不犹豫地将冗余副本永久删除，保证你的模型库只有唯一规范的版本！
+   - **独立重复 Info 清理**：我们将历史遗留的冗余 `.civitai.info` 文件的清理功能独立成了顶部的 `🧹 清理重复 Info` 快捷按钮，一秒钟即可全盘扫描并完成清理。
    - **全媒体探测雷达**：不仅能抓图片，遇到新世代模型的 `.mp4` / `.webm` 视频封面，爬虫会根据 `Content-Type` 报文头精准保存对应的视频格式，彻底告别“损坏的图片”。
    - **节能渲染**：视频只在鼠标悬浮时播放，杜绝显卡资源浪费！
 

@@ -222,16 +222,12 @@ def main():
             info_data = civitai_data
 
             if not args.dry_run:
-                civitai_info_path = old_base + ".civitai.info"
-                with open(civitai_info_path, 'w', encoding='utf-8') as f:
-                    json.dump(info_data, f, ensure_ascii=True, indent=4)
-                
                 info_path = old_base + ".info"
                 with open(info_path, 'w', encoding='utf-8') as f:
                     json.dump(info_data, f, ensure_ascii=True, indent=4)
-                print(f"[+] 写入纯净版 Civitai 描述 -> .civitai.info 与 .info")
+                print(f"[+] 写入纯净版 Civitai 描述 -> .info")
             else:
-                print(f"[Dry-Run] 拟生成标准描述信息 -> .civitai.info / .info")
+                print(f"[Dry-Run] 拟生成标准描述信息 -> .info")
                 
             images = civitai_data.get("images", [])
             if images and len(images) > 0:
@@ -252,7 +248,18 @@ def main():
                         
             if file_path != new_file_path and new_filename != filename:
                 if os.path.exists(new_file_path):
-                    print(f"[-] 目标文件名已存在，跳过重命名: {new_filename}")
+                    print(f"\033[91m[-] 目标版本已存在 (重复模型)，执行永久删除多余副本: {filename}\033[0m")
+                    if not args.dry_run:
+                        try:
+                            os.remove(file_path)
+                            for ext in [".info", ".civitai.info", ".png", ".jpg", ".webp", ".mp4", ".webm", ".json", ".txt", ".yaml"]:
+                                old_ext = old_base + ext
+                                if os.path.exists(old_ext):
+                                    os.remove(old_ext)
+                        except Exception as e:
+                            print(f"[-] 删除多余副本失败 (可能文件被占用): {e}")
+                    else:
+                        print(f"[Dry-Run] 拟永久删除多余副本及其附属文件: {filename}")
                 else:
                     if not args.dry_run:
                         os.rename(file_path, new_file_path)

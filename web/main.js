@@ -106,7 +106,28 @@ class AnomalousBrowser {
             if (d.has_api_key) apiKeyInput.placeholder = '已保存 Civitai API Key (••••)';
         }).catch(()=>{});
 
+        const cleanBtn = document.createElement('button');
+        cleanBtn.id = 'anomalous-clean-btn';
+        cleanBtn.innerHTML = '🧹 清理重复 Info';
+        cleanBtn.onclick = async () => {
+            if (!confirm(`将全局扫描并删除所有无用的 .civitai.info 残留文件。是否继续？`)) return;
+            cleanBtn.innerHTML = '⏳ 清理中...';
+            cleanBtn.disabled = true;
+            try {
+                const res = await fetch('/anomalous/clean_civitai_info', {method: 'POST'});
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert(`✅ 清理完毕！共删除了 ${data.count} 个无用文件。`);
+                } else {
+                    alert('❌ 清理失败: ' + data.message);
+                }
+            } catch (e) { alert('❌ 清理出错: ' + e.message); }
+            cleanBtn.innerHTML = '🧹 清理重复 Info';
+            cleanBtn.disabled = false;
+        };
+
         header.appendChild(apiKeyInput);
+        header.appendChild(cleanBtn);
         header.appendChild(scanBtn);
         header.appendChild(energyBtn);
         header.appendChild(closeBtn);
@@ -382,7 +403,7 @@ class AnomalousBrowser {
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
-                    alert('✅ 删除成功！\n' + data.deleted.join('\n'));
+                    alert('✅ 删除成功！\n' + data.deleted.join('\n') + '\n\n⚠️ 重要提示：由于缓存原因，请务必【重启 ComfyUI 服务端】。如果不重启，继续使用 ComfyUI 可能会出现错误！');
                     this.detailPanel.style.display = 'none';
                     this.detailPanel.innerHTML = '';
                     this.grid.style.display = 'grid';

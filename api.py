@@ -384,9 +384,18 @@ async def api_delete_model(request):
         if not os.path.exists(model_path):
             return web.json_response({"status": "error", "message": "Model file not found"})
             
+        # 1. 优先尝试删除你点击的主模型文件
+        try:
+            os.remove(model_path)
+        except Exception as e:
+            error_msg = str(e)
+            if "being used" in error_msg or "WinError 32" in error_msg or "Permission" in error_msg:
+                error_msg = "文件被占用 (正在被 ComfyUI 使用)。请先重启 ComfyUI 或在工作流中卸载该模型后再删除！"
+            return web.json_response({"status": "error", "message": f"主模型删除失败: {error_msg}"})
+
         base_name = os.path.splitext(filename)[0]
         
-        # extensions that are considered associated with the model
+        # 2. 主模型成功删除后，再清理配套的垃圾文件
         associated_exts = [
             '.safetensors', '.ckpt', '.pt', '.bin',
             '.info', '.civitai.info', 
@@ -394,9 +403,11 @@ async def api_delete_model(request):
             '.json', '.txt', '.yaml'
         ]
         
-        deleted_files = []
+        deleted_files = [filename]
         for ext in associated_exts:
             file_to_del = os.path.join(target_dir, base_name + ext)
+            if file_to_del == model_path:
+                continue
             if os.path.exists(file_to_del) and os.path.isfile(file_to_del):
                 try:
                     os.remove(file_to_del)
@@ -404,13 +415,40 @@ async def api_delete_model(request):
                 except Exception as e:
                     print(f"[Anomalous Browser] Warning: Failed to delete {file_to_del}: {e}")
                     
-        return web.json_response({"status": "ok", "deleted": deleted_files})
+        # 3. 修正：前端期待的成功状态是 "success" 而不是 "ok"
+        return web.json_response({"status": "success", "deleted": deleted_files})
         
     except Exception as e:
         import traceback
         traceback.print_exc()
         return web.json_response({"status": "error", "message": str(e)}, status=500)
 
+async def api_clean_civitai_info(request):
+    try:
+        types = ['checkpoints', 'loras', 'unet', 'diffusion_models']
+        deleted_count = 0
+        for t in types:
+            try:
+                paths = folder_paths.get_folder_paths(t)
+            except Exception:
+                continue
+            if not paths: continue
+            
+            for base_dir in paths:
+                if not os.path.exists(base_dir): continue
+                for root, dirs, files in os.walk(base_dir):
+                    for file in files:
+                        if file.endswith('.civitai.info'):
+                            file_path = os.path.join(root, file)
+                            try:
+                                os.remove(file_path)
+                                deleted_count += 1
+                            except Exception as e:
+                                pass
+                                
+        return web.json_response({"status": "success", "count": deleted_count})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
 
 def setup_routes(app):
     app.router.add_get('/anomalous/folders', api_get_folders)
@@ -421,3 +459,4 @@ def setup_routes(app):
     app.router.add_get('/anomalous/config', api_get_config)
     app.router.add_post('/anomalous/save_config', api_save_config)
     app.router.add_post('/anomalous/delete_model', api_delete_model)
+    app.router.add_post('/anomalous/clean_civitai_info', api_clean_civitai_info)
