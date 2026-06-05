@@ -50,10 +50,12 @@
     border-bottom: 1px solid var(--border-color, #555);
 }
 #anomalous-title {
-    flex: 1;
+    flex: 1 1 auto;
     font-size: 1.2em;
     font-weight: bold;
     color: var(--fg-color, #fff);
+    white-space: nowrap;
+    min-width: 250px;
 }
 #anomalous-header button {
     margin-right: 15px;
@@ -63,12 +65,17 @@
     border: 1px solid var(--border-color, #666);
     border-radius: 6px;
     cursor: pointer;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 #anomalous-header button:hover { background: var(--bg-color, #555); }
 #anomalous-close {
     font-size: 2em;
     cursor: pointer;
     color: var(--error-text, #ff4444);
+    margin-left: auto;
 }
 #anomalous-grid {
     flex: 1;
@@ -116,13 +123,23 @@
 #anomalous-container {
     flex-direction: row;
 }
-#anomalous-sidebar {
+#anomalous-sidebar-wrapper {
     width: 250px;
     background: var(--comfy-menu-bg, #2a2a2a);
     border-right: 1px solid var(--border-color, #444);
+    display: flex;
+    flex-direction: column;
+}
+#anomalous-sidebar {
+    flex: 1;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+}
+#anomalous-settings {
+    padding: 8px 10px;
+    border-top: 1px solid var(--border-color, #444);
+    background: var(--bg-color, #111);
 }
 .anomalous-type-header {
     padding: 10px 15px;
@@ -199,11 +216,32 @@
     background: #333;
     border: 1px solid #555;
     color: #fff;
-    padding: 6px 12px;
+    padding: 8px;
     border-radius: 4px;
+    width: 150px;
     margin-right: 15px;
-    width: 250px;
 }
 #anomalous-api-key::placeholder {
     color: #999;
+}
+
+@media (max-width: 900px) {
+    #anomalous-header button .anomalous-btn-text {
+        display: none;
+    }
+}
+
+/* English Layout Specific Scaling */
+.anomalous-lang-en {
+    font-size: 0.9em;
+}
+.anomalous-lang-en #anomalous-header button {
+    padding: 6px 12px;
+    font-size: 0.9em;
+}
+.anomalous-lang-en .anomalous-card-title {
+    font-size: 0.85em;
+}
+.anomalous-lang-en #anomalous-title {
+    font-size: 1.1em;
 }

@@ -25,6 +25,7 @@ In the rapidly evolving landscape of AI art tools, legacy plugins have become bl
    - Automatically reads ComfyUI's physical hard drive mappings (including `extra_model_paths.yaml`).
    - Perfectly supports deep subfolders for Checkpoints, Loras, UNet, Diffusion_Models, etc.
    - Infinite subfolder collapsing allows you to hide cluttered categories with a single click, keeping your interface incredibly clean.
+   - Features a smart **One-click Expand / Collapse All** button for rapid structural navigation.
 
 2. **🕵️‍♂️ Floating Quick-Access Button with Drag Memory**
    - Provides a minimalist, draggable 📦 floating button globally. Click to open anytime, close when done.
@@ -44,6 +45,10 @@ In the rapidly evolving landscape of AI art tools, legacy plugins have become bl
    - **Smart Content-Type Detection**: The new scraper engine dynamically parses HTTP network headers. If a Civitai preview is a video, it perfectly saves it as an `.mp4` or `.webm` file rather than a corrupted PNG.
    - **Standalone Cleanup Button**: We extracted the `.civitai.info` cleanup process into a fast, dedicated `🧹 Clean Duplicate Info` button in the UI.
    - **Energy-Saving Previews**: Video previews only play on mouse hover!
+
+5. **🌐 Pure Bilingual Engine & Built-in Manual**
+   - **Seamless i18n**: Switch between beautifully formatted pure English or pure Chinese UI with a single click, instantly transforming all buttons, dialogs, and dynamic text.
+   - **Interactive Help Modal**: Never feel lost with the built-in `❓ Help` manual explaining every feature natively within the plugin.
 
 ### 📥 Installation
 
@@ -78,6 +83,7 @@ Say goodbye to `pip install` and `npm install`!
    - 自动读取 ComfyUI 的物理硬盘映射（包含 `extra_model_paths.yaml`）。
    - 完美支持 Checkpoints、Loras、UNet、Diffusion_Models 等深层子文件夹。
    - 子文件夹无限折叠，一键收起冗杂的分类，界面清爽无比。
+   - 侧边栏自带智能 **一键展开 / 收起全部** 按钮，轻松管理海量模型库分类结构。
 
 2. **🕵️‍♂️ 隐形式悬浮交互与“拖拽记忆”**
    - 全局提供一个极简可拖拽的 📦 悬浮按钮，随时点开，用完即关。
@@ -96,6 +102,10 @@ Say goodbye to `pip install` and `npm install`!
    - **独立重复 Info 清理**：我们将历史遗留的冗余 `.civitai.info` 文件的清理功能独立成了顶部的 `🧹 清理重复 Info` 快捷按钮，一秒钟即可全盘扫描并完成清理。
    - **全媒体探测雷达**：不仅能抓图片，遇到新世代模型的 `.mp4` / `.webm` 视频封面，爬虫会根据 `Content-Type` 报文头精准保存对应的视频格式，彻底告别“损坏的图片”。
    - **节能渲染**：视频只在鼠标悬浮时播放，杜绝显卡资源浪费！
+
+5. **🌐 纯净双语引擎与内置说明书**
+   - **无缝 i18n 切换**：一键在纯中文与纯英文界面间自由切换，告别拥挤的双语混排，所有弹窗与提示会瞬间自适应目标语言。并针对英文排版做了动态文字缩放，确保界面永不换行崩塌。
+   - **交互式帮助面板**：内置随叫随到的 `❓ 帮助` 面板，提供中英文纯血的详细说明书，再也不用切回 GitHub 看使用文档了！
 
 ### 📥 极简安装说明
 

@@ -1,5 +1,111 @@
 import { app } from "../../scripts/app.js";
 
+const i18n = {
+    zh: {
+        title: '📦 Anomalous 模型浏览器',
+        scan: '扫描',
+        scanTitle: '扫描目录',
+        scanConfirm: '注意:\n扫描过程将会自动比对 Civitai 并重命名本地模型，同时清理损坏文件。\n确定要开始扫描吗？',
+        scanning: '扫描中...',
+        scanBg: '🚀 扫描后台启动！',
+        scanDone: '完成',
+        scanCompleteMsg: '✅ 扫描完成！\n\n⚠️ 提示：由于部分模型已被重命名或去重，请点击 ComfyUI 的 [Refresh] 按钮以同步最新的模型列表。',
+        eco: '节能',
+        autoPlay: '自动播放',
+        togglePlayTitle: '切换播放模式',
+        clean: '清理',
+        cleanTitle: '清理重复 Info',
+        cleanConfirm: '将扫描并删除所有无用的 .civitai.info 残留文件。是否继续？',
+        cleaning: '清理中',
+        cleanDone: '✅ 清理完毕！删除了',
+        files: '个文件。',
+        cleanFail: '❌ 清理失败: ',
+        cleanErr: '❌ 清理出错: ',
+        folders: '📂 文件夹',
+        collapseAll: '➖ 收起全部',
+        expandAll: '➕ 展开全部',
+        noModels: '此文件夹中没有找到模型。',
+        noPreview: '暂无预览图',
+        clickScan: '点击扫描',
+        back: '⬅️ 返回网格',
+        delModel: '🗑️ 删除模型及配置',
+        delConfirm: '确定彻底删除',
+        delConfirm2: '吗？此操作不可逆！',
+        delSuccess: '✅ 删除成功！\n',
+        delNote: '\n\n⚠️ 提示：请务必【重启 ComfyUI 服务端】。如果不重启，继续使用可能会报错！',
+        delFail: '❌ 删除失败: ',
+        copyAll: '📋 复制全部',
+        copied: '✅ 已复制!',
+        clickToCopy: '点击复制: ',
+        help: '帮助',
+        helpTitle: '📖 使用说明',
+        helpContent: `
+<div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
+    <p><strong>1. 🔑 API Key (Civitai)</strong>: 在顶部输入你的 API Key，可用于扫描时获取限制级 (NSFW) 模型的封面和信息。</p>
+    <p><strong>2. 🔄 扫描 (Scan)</strong>: 自动扫描当前选中的文件夹，从 C 站匹配并下载封面图，同时规范化重命名你的本地模型文件。</p>
+    <p><strong>3. 🧹 清理 (Clean Info)</strong>: 全局深度清理：自动扫描并删除所有因为模型被删而遗留的无效 .civitai.info 文件。</p>
+    <p><strong>4. 🔋 节能 / 🎬 自动播放</strong>: 切换视频封面的播放行为。“节能”模式下，鼠标悬浮在卡片上时才会播放预览视频。</p>
+    <p><strong>5. 🗂️ 详情与删除</strong>: 点击任何模型卡片，可查看介绍并<strong>一键复制触发词</strong>。也可以在此处彻底删除模型及关联配置（删除后须重启 ComfyUI 引擎生效）。</p>
+    <p><strong>6. 📂 目录折叠</strong>: 点击左侧边栏的“收起/展开全部”快速管理网格视图。</p>
+</div>`,
+        closeHelp: '关闭说明',
+
+    },
+    en: {
+        title: '📦 Anomalous Model Browser',
+        scan: 'Scan',
+        scanTitle: 'Scan Folder',
+        scanConfirm: 'Notice:\nThe scan process will automatically compare with Civitai and rename your local files.\nStart scan?',
+        scanning: 'Scanning...',
+        scanBg: '🚀 Scan started in background!',
+        scanDone: 'Done',
+        scanCompleteMsg: '✅ Scan Complete!\n\n⚠️ Note: Please click [Refresh] to sync the model list since files were renamed.',
+        eco: 'Eco',
+        autoPlay: 'AutoPlay',
+        togglePlayTitle: 'Toggle Play Mode',
+        clean: 'Clean Info',
+        cleanTitle: 'Clean Duplicate Info',
+        cleanConfirm: 'This will globally scan and delete all redundant .civitai.info files. Continue?',
+        cleaning: 'Cleaning',
+        cleanDone: '✅ Clean Complete! Deleted',
+        files: 'files.',
+        cleanFail: '❌ Failed: ',
+        cleanErr: '❌ Error: ',
+        folders: '📂 Folders',
+        collapseAll: '➖ Collapse All',
+        expandAll: '➕ Expand All',
+        noModels: 'No models found in this folder.',
+        noPreview: 'No preview available',
+        clickScan: 'Click Scan',
+        back: '⬅️ Back to grid',
+        delModel: '🗑️ Delete Model & Config',
+        delConfirm: 'Are you sure you want to permanently delete',
+        delConfirm2: '?',
+        delSuccess: '✅ Delete Complete!\n',
+        delNote: '\n\n⚠️ Note: Please restart the ComfyUI backend server, otherwise errors may occur!',
+        delFail: '❌ Delete Failed: ',
+        copyAll: '📋 Copy All',
+        copied: '✅ Copied!',
+        clickToCopy: 'Click to copy: ',
+        help: 'Help',
+        helpTitle: '📖 User Manual',
+        helpContent: `
+<div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
+    <p><strong>1. 🔑 API Key (Civitai)</strong>: Enter your key at the top to fetch metadata and previews for NSFW models during scanning.</p>
+    <p><strong>2. 🔄 Scan</strong>: Automatically scans the current folder, fetches Civitai metadata, downloads previews, and standardizes model filenames.</p>
+    <p><strong>3. 🧹 Clean Info</strong>: Globally scans and deletes orphaned .civitai.info files to free up disk space.</p>
+    <p><strong>4. 🔋 Eco / 🎬 AutoPlay</strong>: Toggle video playback modes. Eco mode plays videos only when hovering over a model card.</p>
+    <p><strong>5. 🗂️ Details & Delete</strong>: Click a model card to view details and <strong>1-click copy trained words</strong>. You can also permanently delete the model here (requires ComfyUI restart).</p>
+    <p><strong>6. 📂 Folder Toggle</strong>: Use the Collapse/Expand All button in the sidebar to manage your view.</p>
+</div>`,
+        closeHelp: 'Close Manual',
+
+    }
+};
+
+let currentLang = localStorage.getItem('anomalous_lang') || 'zh';
+const t = (key) => i18n[currentLang][key] || key;
+
 class AnomalousBrowser {
     constructor() {
         this.modal = null;
@@ -22,10 +128,57 @@ class AnomalousBrowser {
 
         const container = document.createElement('div');
         container.id = 'anomalous-container';
+        
+        const updateLangClass = () => {
+            if (currentLang === 'en') container.classList.add('anomalous-lang-en');
+            else container.classList.remove('anomalous-lang-en');
+        };
+        updateLangClass();
 
         // Sidebar
+        this.sidebarWrapper = document.createElement('div');
+        this.sidebarWrapper.id = 'anomalous-sidebar-wrapper';
+
         this.sidebar = document.createElement('div');
         this.sidebar.id = 'anomalous-sidebar';
+        
+        this.settingsArea = document.createElement('div');
+        this.settingsArea.id = 'anomalous-settings';
+        
+        // API key moved to header
+        
+        const langBtn = document.createElement('button');
+        langBtn.style.padding = '6px';
+        langBtn.style.width = '100%';
+        langBtn.style.background = '#444';
+        langBtn.style.color = '#fff';
+        langBtn.style.border = '1px solid #555';
+        langBtn.style.borderRadius = '4px';
+        langBtn.style.cursor = 'pointer';
+        langBtn.innerHTML = currentLang === 'zh' ? '🌐 Language: EN' : '🌐 语言: 中文';
+        langBtn.onclick = () => {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            localStorage.setItem('anomalous_lang', currentLang);
+            langBtn.innerHTML = currentLang === 'zh' ? '🌐 Language: EN' : '🌐 语言: 中文';
+            // re-render UI
+            updateLangClass();
+            title.innerHTML = t('title');
+            scanBtn.title = t('scanTitle');
+            scanBtn.innerHTML = `🔄 <span class="anomalous-btn-text">${t('scan')}</span>`;
+            cleanBtn.title = t('cleanTitle');
+                        cleanBtn.innerHTML = `🧹 <span class="anomalous-btn-text">${t('clean')}</span>`;
+            helpBtn.title = t('helpTitle');
+            helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
+            renderEnergyBtn();
+            this.renderSidebar();
+            this.loadModels();
+            if (this.detailPanel.style.display !== 'none' && this.currentDetailModel) {
+                this.showDetail(this.currentDetailModel);
+            }
+        };
+        this.settingsArea.appendChild(langBtn);
+        this.sidebarWrapper.appendChild(this.sidebar);
+        this.sidebarWrapper.appendChild(this.settingsArea);
 
         // Content Area
         const content = document.createElement('div');
@@ -36,59 +189,19 @@ class AnomalousBrowser {
         
         const title = document.createElement('div');
         title.id = 'anomalous-title';
-        title.innerHTML = '📦 Anomalous Model Browser';
+        title.innerHTML = t('title');
         
-        const scanBtn = document.createElement('button');
-        scanBtn.id = 'anomalous-scan-btn';
-        scanBtn.innerHTML = '🔄 Scan Folder';
-        scanBtn.onclick = async () => {
-            if (!confirm(`Notice:\nThe scan process will automatically compare with Civitai and rename your local model files, and it will clean up damaged files.\nAre you sure you want to start the scan?`)) return;
-            scanBtn.innerHTML = '⏳ Scanning...';
-            scanBtn.disabled = true;
-            try {
-                const params = new URLSearchParams({ type: this.currentType, path_idx: this.currentPathIdx, subfolder: this.currentSubfolder });
-                const res = await fetch('/anomalous/scan?' + params.toString(), {method: 'POST'});
-                const data = await res.json();
-                if (data.status === 'ok') {
-                    alert('🚀 Scan started in background!');
-                    const poll = setInterval(async () => {
-                        try {
-                            const sr = await fetch('/anomalous/scan_status?' + params.toString());
-                            const sd = await sr.json();
-                            if (!sd.scanning) {
-                                clearInterval(poll);
-                                scanBtn.innerHTML = '✅ Complete!';
-                                alert('✅ Scan Complete! Refreshing grid.');
-                                this.loadModels();
-                                setTimeout(() => { scanBtn.innerHTML = '🔄 Scan Folder'; scanBtn.disabled = false; }, 2000);
-                            }
-                        } catch(e) { clearInterval(poll); scanBtn.disabled = false; }
-                    }, 3000);
-                } else {
-                    scanBtn.disabled = false;
-                }
-            } catch (e) { scanBtn.disabled = false; }
-        };
+        
+        const helpBtn = document.createElement('button');
+        helpBtn.id = 'anomalous-help-btn';
+        helpBtn.title = t('helpTitle');
+        helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
+        helpBtn.onclick = () => this.showHelp();
 
-        const energyBtn = document.createElement('button');
-        energyBtn.id = 'anomalous-energy-btn';
-        energyBtn.innerHTML = this.energySaving ? '🔋 节能模式' : '🎬 自动播放';
-        energyBtn.onclick = () => {
-            this.energySaving = !this.energySaving;
-            localStorage.setItem('anomalous_energy_saving', this.energySaving);
-            energyBtn.innerHTML = this.energySaving ? '🔋 节能模式' : '🎬 自动播放';
-            this.loadModels();
-        };
-
-        const closeBtn = document.createElement('div');
-        closeBtn.id = 'anomalous-close';
-        closeBtn.innerHTML = '&times;';
-        closeBtn.onclick = () => this.close();
-
-        header.appendChild(title);
         const apiKeyInput = document.createElement('input');
         apiKeyInput.id = 'anomalous-api-key';
-        apiKeyInput.placeholder = '输入 Civitai API Key (下载.red模型)';
+        apiKeyInput.placeholder = '🔑 API Key';
+        apiKeyInput.title = '输入 Civitai API Key / Enter Civitai API Key';
         apiKeyInput.type = 'password';
         apiKeyInput.value = localStorage.getItem('anomalous_api_key') || '';
         apiKeyInput.onchange = async () => {
@@ -101,31 +214,91 @@ class AnomalousBrowser {
                 });
             } catch(e) {}
         };
-        
         fetch('/anomalous/config').then(r=>r.json()).then(d=>{
-            if (d.has_api_key) apiKeyInput.placeholder = '已保存 Civitai API Key (••••)';
+            if (d.has_api_key) apiKeyInput.placeholder = 'API Key Saved';
         }).catch(()=>{});
+        
+        const scanBtn = document.createElement('button');
+        scanBtn.id = 'anomalous-scan-btn';
+        scanBtn.title = t('scanTitle');
+        scanBtn.innerHTML = `🔄 <span class="anomalous-btn-text">${t('scan')}</span>`;
+        scanBtn.onclick = async () => {
+            if (!confirm(t('scanConfirm'))) return;
+            scanBtn.innerHTML = `⏳ <span class="anomalous-btn-text">${t('scanning')}</span>`;
+            scanBtn.disabled = true;
+            try {
+                const params = new URLSearchParams({ type: this.currentType, path_idx: this.currentPathIdx, subfolder: this.currentSubfolder });
+                const res = await fetch('/anomalous/scan?' + params.toString(), {method: 'POST'});
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    alert(t('scanBg'));
+                    const poll = setInterval(async () => {
+                        try {
+                            const sr = await fetch('/anomalous/scan_status?' + params.toString());
+                            const sd = await sr.json();
+                            if (!sd.scanning) {
+                                clearInterval(poll);
+                                scanBtn.innerHTML = `✅ <span class="anomalous-btn-text">${t('scanDone')}</span>`;
+                                alert(t('scanCompleteMsg'));
+                                this.loadModels();
+                                setTimeout(() => { scanBtn.innerHTML = `🔄 <span class="anomalous-btn-text">${t('scan')}</span>`; scanBtn.disabled = false; }, 2000);
+                            }
+                        } catch(e) { clearInterval(poll); scanBtn.disabled = false; }
+                    }, 3000);
+                } else {
+                    scanBtn.disabled = false;
+                }
+            } catch (e) { scanBtn.disabled = false; }
+        };
+
+        const energyBtn = document.createElement('button');
+        energyBtn.id = 'anomalous-energy-btn';
+        energyBtn.title = t('togglePlayTitle');
+        const renderEnergyBtn = () => {
+            energyBtn.innerHTML = this.energySaving 
+                ? `🔋 <span class="anomalous-btn-text">${t('eco')}</span>` 
+                : `🎬 <span class="anomalous-btn-text">${t('autoPlay')}</span>`;
+        };
+        renderEnergyBtn();
+        energyBtn.onclick = () => {
+            this.energySaving = !this.energySaving;
+            localStorage.setItem('anomalous_energy_saving', this.energySaving);
+            renderEnergyBtn();
+            this.loadModels();
+        };
+
+        const closeBtn = document.createElement('div');
+        closeBtn.id = 'anomalous-close';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.onclick = () => this.close();
 
         const cleanBtn = document.createElement('button');
         cleanBtn.id = 'anomalous-clean-btn';
-        cleanBtn.innerHTML = '🧹 清理重复 Info';
+        cleanBtn.title = t('cleanTitle');
+                    cleanBtn.innerHTML = `🧹 <span class="anomalous-btn-text">${t('clean')}</span>`;
+            helpBtn.title = t('helpTitle');
+            helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
         cleanBtn.onclick = async () => {
-            if (!confirm(`将全局扫描并删除所有无用的 .civitai.info 残留文件。是否继续？`)) return;
-            cleanBtn.innerHTML = '⏳ 清理中...';
+            if (!confirm(t('cleanConfirm'))) return;
+            cleanBtn.innerHTML = `⏳ <span class="anomalous-btn-text">${t('cleaning')}</span>`;
             cleanBtn.disabled = true;
             try {
                 const res = await fetch('/anomalous/clean_civitai_info', {method: 'POST'});
                 const data = await res.json();
                 if (data.status === 'success') {
-                    alert(`✅ 清理完毕！共删除了 ${data.count} 个无用文件。`);
+                    alert(`${t('cleanDone')} ${data.count} ${t('files')}`);
                 } else {
-                    alert('❌ 清理失败: ' + data.message);
+                    alert(t('cleanFail') + data.message);
                 }
-            } catch (e) { alert('❌ 清理出错: ' + e.message); }
-            cleanBtn.innerHTML = '🧹 清理重复 Info';
+            } catch (e) { alert(t('cleanErr') + e.message); }
+                        cleanBtn.innerHTML = `🧹 <span class="anomalous-btn-text">${t('clean')}</span>`;
+            helpBtn.title = t('helpTitle');
+            helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
             cleanBtn.disabled = false;
         };
 
+                header.appendChild(title);
+        header.appendChild(helpBtn);
         header.appendChild(apiKeyInput);
         header.appendChild(cleanBtn);
         header.appendChild(scanBtn);
@@ -143,11 +316,92 @@ class AnomalousBrowser {
         content.appendChild(this.grid);
         content.appendChild(this.detailPanel);
 
-        container.appendChild(this.sidebar);
+        container.appendChild(this.sidebarWrapper);
         container.appendChild(content);
 
         this.modal.appendChild(container);
         document.body.appendChild(this.modal);
+    }
+
+    
+    showHelp() {
+        if (this.helpModal) {
+            this.helpModal.remove();
+        }
+        this.helpModal = document.createElement('div');
+        this.helpModal.style.position = 'absolute';
+        this.helpModal.style.top = '0';
+        this.helpModal.style.left = '0';
+        this.helpModal.style.width = '100%';
+        this.helpModal.style.height = '100%';
+        this.helpModal.style.background = 'rgba(0,0,0,0.85)';
+        this.helpModal.style.zIndex = '9999';
+        this.helpModal.style.display = 'flex';
+        this.helpModal.style.alignItems = 'center';
+        this.helpModal.style.justifyContent = 'center';
+        
+        const box = document.createElement('div');
+        box.style.background = 'var(--bg-color, #222)';
+        box.style.border = '1px solid var(--border-color, #444)';
+        box.style.borderRadius = '8px';
+        box.style.width = '550px';
+        box.style.maxWidth = '90%';
+        box.style.boxShadow = '0 10px 40px rgba(0,0,0,0.8)';
+        box.style.display = 'flex';
+        box.style.flexDirection = 'column';
+        
+        const header = document.createElement('div');
+        header.style.padding = '15px 20px';
+        header.style.borderBottom = '1px solid #444';
+        header.style.background = '#333';
+        header.style.display = 'flex';
+        header.style.alignItems = 'center';
+        header.style.justifyContent = 'space-between';
+        
+        const title = document.createElement('h2');
+        title.innerHTML = t('helpTitle');
+        title.style.margin = '0';
+        title.style.color = '#fff';
+        title.style.fontSize = '1.2em';
+        
+        const closeX = document.createElement('div');
+        closeX.innerHTML = '&times;';
+        closeX.style.fontSize = '1.8em';
+        closeX.style.cursor = 'pointer';
+        closeX.style.color = '#ff4444';
+        closeX.onclick = () => this.helpModal.remove();
+        
+        header.appendChild(title);
+        header.appendChild(closeX);
+        
+        const body = document.createElement('div');
+        body.style.padding = '20px';
+        body.innerHTML = t('helpContent');
+        
+        const footer = document.createElement('div');
+        footer.style.padding = '15px';
+        footer.style.borderTop = '1px solid #444';
+        footer.style.display = 'flex';
+        footer.style.justifyContent = 'flex-end';
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = t('closeHelp');
+        closeBtn.style.padding = '8px 16px';
+        closeBtn.style.background = '#444';
+        closeBtn.style.color = '#fff';
+        closeBtn.style.border = 'none';
+        closeBtn.style.borderRadius = '4px';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.onclick = () => this.helpModal.remove();
+        
+        footer.appendChild(closeBtn);
+        
+        box.appendChild(header);
+        box.appendChild(body);
+        box.appendChild(footer);
+        this.helpModal.appendChild(box);
+        
+        document.getElementById('anomalous-container').appendChild(this.helpModal);
     }
 
     async loadFolders() {
@@ -179,12 +433,13 @@ class AnomalousBrowser {
         topBar.style.padding = '15px';
         
         const title = document.createElement('h3');
-        title.innerHTML = '📂 Folders';
+        title.innerHTML = t('folders');
         title.style.color = '#fff';
         title.style.margin = '0';
         
+        const isAllCollapsed = this.expandedFolders.size === 0;
         const collapseAllBtn = document.createElement('button');
-        collapseAllBtn.innerHTML = '➖ 收起全部';
+        collapseAllBtn.innerHTML = isAllCollapsed ? t('expandAll') : t('collapseAll');
         collapseAllBtn.style.padding = '4px 8px';
         collapseAllBtn.style.background = '#444';
         collapseAllBtn.style.color = '#fff';
@@ -192,7 +447,16 @@ class AnomalousBrowser {
         collapseAllBtn.style.borderRadius = '4px';
         collapseAllBtn.style.cursor = 'pointer';
         collapseAllBtn.onclick = () => {
-            this.expandedFolders.clear();
+            if (isAllCollapsed) {
+                (this.foldersData || []).forEach(typeGroup => {
+                    this.expandedFolders.add(typeGroup.type);
+                    Object.keys(typeGroup.folders).forEach(path => {
+                        this.expandedFolders.add(typeGroup.type + path);
+                    });
+                });
+            } else {
+                this.expandedFolders.clear();
+            }
             this.renderSidebar();
         };
         
@@ -286,7 +550,7 @@ class AnomalousBrowser {
             this.grid.innerHTML = '';
             
             if (!data.models || data.models.length === 0) {
-                this.grid.innerHTML = '<div style="color:white; padding:20px;">No models found in this folder.</div>';
+                this.grid.innerHTML = `<div style="color:white; padding:20px;">${t('noModels')}</div>`;
                 return;
             }
 
@@ -315,7 +579,7 @@ class AnomalousBrowser {
                 } else {
                     const ph = document.createElement('div');
                     ph.className = 'anomalous-card-placeholder';
-                    ph.innerHTML = '<div style="text-align:center;color:#666;margin-top:80px;">No Preview</div><div style="font-size:0.8em;text-align:center;opacity:0.5;margin-top:5px">Click Scan</div>';
+                    ph.innerHTML = `<div style="text-align:center;color:#666;margin-top:80px;">${t('noPreview')}</div><div style="font-size:0.8em;text-align:center;opacity:0.5;margin-top:5px">${t('clickScan')}</div>`;
                     card.appendChild(ph);
                 }
             const title = document.createElement('div');
@@ -340,7 +604,7 @@ class AnomalousBrowser {
                 title.innerText = model.filename;
                 card.appendChild(title);
                 
-                card.onclick = () => this.showDetail(model);
+                card.onclick = () => { this.currentDetailModel = model; this.showDetail(model); };
                 
                 this.grid.appendChild(card);
             });
@@ -354,15 +618,16 @@ class AnomalousBrowser {
         
         const header = document.createElement('div');
         header.style.width = '100%';
-        header.style.padding = '15px';
+        header.style.padding = '8px 15px';
         header.style.background = 'var(--comfy-menu-bg, #333)';
         header.style.borderBottom = '1px solid var(--border-color, #444)';
         header.style.display = 'flex';
         header.style.alignItems = 'center';
+        header.style.boxSizing = 'border-box';
         
         const backBtn = document.createElement('button');
-        backBtn.innerHTML = '⬅️ 返回网格 (Back)';
-        backBtn.style.padding = '8px 16px';
+        backBtn.innerHTML = t('back');
+        backBtn.style.padding = '6px 12px';
         backBtn.style.background = '#444';
         backBtn.style.color = '#fff';
         backBtn.style.border = 'none';
@@ -378,18 +643,20 @@ class AnomalousBrowser {
         title.innerHTML = model.filename;
         title.style.margin = '0 0 0 20px';
         title.style.color = '#fff';
+        title.style.fontSize = '1.2em';
         
         const delBtn = document.createElement('button');
-        delBtn.innerHTML = '🗑️ 删除模型及配置';
-        delBtn.style.padding = '8px 16px';
+        delBtn.innerHTML = t('delModel');
+        delBtn.style.padding = '6px 12px';
         delBtn.style.background = '#ff4444';
         delBtn.style.color = '#fff';
         delBtn.style.border = 'none';
         delBtn.style.borderRadius = '4px';
         delBtn.style.cursor = 'pointer';
         delBtn.style.marginLeft = 'auto'; // push to the right
+        delBtn.style.whiteSpace = 'nowrap';
         delBtn.onclick = async () => {
-            if (!confirm(`确定要彻底删除 ${model.filename} 及相关的缩略图、配置文件吗？此操作不可逆！`)) return;
+            if (!confirm(`${t('delConfirm')} ${model.filename} ${t('delConfirm2')}`)) return;
             try {
                 const res = await fetch('/anomalous/delete_model', {
                     method: 'POST',
@@ -403,22 +670,21 @@ class AnomalousBrowser {
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
-                    alert('✅ 删除成功！\n' + data.deleted.join('\n') + '\n\n⚠️ 重要提示：由于缓存原因，请务必【重启 ComfyUI 服务端】。如果不重启，继续使用 ComfyUI 可能会出现错误！');
+                    alert(t('delSuccess') + data.deleted.join('\n') + t('delNote'));
                     this.detailPanel.style.display = 'none';
                     this.detailPanel.innerHTML = '';
                     this.grid.style.display = 'grid';
                     this.loadModels(); // refresh grid
                 } else {
-                    alert('❌ 删除失败: ' + data.message);
+                    alert(t('delFail') + data.message);
                 }
             } catch (e) {
-                alert('❌ 删除失败: ' + e.message);
+                alert(t('delFail') + e.message);
             }
         };
         
         header.appendChild(backBtn);
         header.appendChild(title);
-        header.appendChild(delBtn);
         header.appendChild(delBtn);
         
         const splitContainer = document.createElement('div');
@@ -448,7 +714,7 @@ class AnomalousBrowser {
                 leftPanel.appendChild(img);
             }
         } else {
-            leftPanel.innerHTML = '<div style="color:#aaa; text-align:center; margin-top:50px;">No preview available</div>';
+            leftPanel.innerHTML = `<div style="color:#aaa; text-align:center; margin-top:50px;">${t('noPreview')}</div>`;
         }
         
         const resizer = document.createElement('div');
@@ -548,7 +814,7 @@ class AnomalousBrowser {
             twHeader.appendChild(twLabel);
             
             const copyAll = document.createElement('button');
-            copyAll.innerText = '📋 复制全部';
+            copyAll.innerText = t('copyAll');
             copyAll.style.marginLeft = '10px';
             copyAll.style.padding = '2px 6px';
             copyAll.style.background = '#444';
@@ -561,7 +827,7 @@ class AnomalousBrowser {
                 const allWords = m.trainedWords.join(', ');
                 navigator.clipboard.writeText(allWords).then(() => {
                     const old = copyAll.innerText;
-                    copyAll.innerText = '✅ 已复制!';
+                    copyAll.innerText = t('copied');
                     setTimeout(() => { copyAll.innerText = old; }, 1500);
                 });
             };
@@ -582,7 +848,7 @@ class AnomalousBrowser {
                 tag.style.fontSize = '0.85em';
                 tag.style.cursor = 'pointer';
                 tag.style.border = '1px solid #555';
-                tag.title = '点击复制: ' + w;
+                tag.title = t('clickToCopy') + w;
                 tag.onclick = () => {
                     navigator.clipboard.writeText(w).then(() => {
                         tag.style.background = '#28a745';
