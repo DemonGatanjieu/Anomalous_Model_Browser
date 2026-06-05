@@ -184,7 +184,7 @@
 .anomalous-split-right {
     width: 60%;
     background: var(--bg-color, #222);
-    overflow: hidden;
+    overflow: auto;
 }
 .anomalous-card {
     cursor: pointer;

@@ -463,7 +463,7 @@ class AnomalousBrowser {
         rightPanel.style.flexDirection = 'column';
         rightPanel.style.height = '100%';
         rightPanel.style.boxSizing = 'border-box';
-        rightPanel.style.overflowY = 'auto';
+        rightPanel.style.overflow = 'auto';
         rightPanel.style.padding = '15px';
         rightPanel.style.color = '#eee';
         
