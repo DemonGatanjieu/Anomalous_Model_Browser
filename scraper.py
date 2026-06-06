@@ -178,7 +178,11 @@ def main():
             file_path = os.path.join(root, filename)
             old_base = os.path.splitext(file_path)[0]
             
-            # 为了确保强制刷新信息，这里不再跳过已存在 .info 的文件
+            # 增量跳过：如果已经存在 .info 文件，说明已经成功扫描过，直接跳过
+            if os.path.exists(old_base + ".info"):
+                print(f"[*] 已跳过 (已扫描过): {filename}")
+                continue
+                
             print(f"\n---> 处理文件: {filename} (位于 {root})")
             
             file_hash = calculate_sha256(file_path)
