@@ -28,15 +28,20 @@ const i18n = {
         noPreview: '暂无预览图',
         clickScan: '点击扫描',
         back: '⬅️ 返回网格',
-        delModel: '🗑️ 删除模型及配置',
+        delModel: '🗑️ 删除',
         delConfirm: '确定彻底删除',
-        delConfirm2: '吗？此操作不可逆！',
+        delConfirm2: '及其所有关联配置、预览图和缓存文件吗？此操作不可逆！',
         delSuccess: '✅ 删除成功！\n',
         delNote: '\n\n⚠️ 提示：请务必【重启 ComfyUI 服务端】。如果不重启，继续使用可能会报错！',
         delFail: '❌ 删除失败: ',
         copyAll: '📋 复制全部',
         copied: '✅ 已复制!',
         clickToCopy: '点击复制: ',
+        compatibleModels: '🔗 兼容模型',
+        loadingCompatible: '加载中...',
+        backToPrev: '🔙 返回上一层',
+        applyToCanvas: '➕ 插入节点',
+        applySuccess: '✅ 已添加至工作流',
         help: '帮助',
         helpTitle: '📖 使用说明',
         helpContent: `
@@ -47,6 +52,8 @@ const i18n = {
     <p><strong>4. 🔋 节能 / 🎬 自动播放</strong>: 切换视频封面的播放行为。“节能”模式下，鼠标悬浮在卡片上时才会播放预览视频。</p>
     <p><strong>5. 🗂️ 详情与删除</strong>: 点击任何模型卡片，可查看介绍并<strong>一键复制触发词</strong>。也可以在此处彻底删除模型及关联配置（删除后须重启 ComfyUI 引擎生效）。</p>
     <p><strong>6. 📂 目录折叠</strong>: 点击左侧边栏的“收起/展开全部”快速管理网格视图。</p>
+    <p><strong>7. 🔗 兼容模型匹配</strong>: 点开大模型或 Lora 详细页，系统将自动基于 Base Model 架构，双向匹配并展示关联模型。</p>
+    <p><strong>8. ➕ 一键投放节点</strong>: 在网格卡片右上角或详细页顶部，点击【➕】按钮，可将当前模型节点直接贴在鼠标上，并无缝插入工作流画布！</p>
 </div>`,
         closeHelp: '关闭说明',
 
@@ -78,15 +85,20 @@ const i18n = {
         noPreview: 'No preview available',
         clickScan: 'Click Scan',
         back: '⬅️ Back to grid',
-        delModel: '🗑️ Delete Model & Config',
+        delModel: '🗑️ Delete',
         delConfirm: 'Are you sure you want to permanently delete',
-        delConfirm2: '?',
+        delConfirm2: ' and all its associated configs, previews, and cache files? This action is irreversible!',
         delSuccess: '✅ Delete Complete!\n',
         delNote: '\n\n⚠️ Note: Please restart the ComfyUI backend server, otherwise errors may occur!',
         delFail: '❌ Delete Failed: ',
         copyAll: '📋 Copy All',
         copied: '✅ Copied!',
         clickToCopy: 'Click to copy: ',
+        compatibleModels: '🔗 Compatible Models',
+        loadingCompatible: 'Loading...',
+        backToPrev: '🔙 Back to prev',
+        applyToCanvas: '➕ Add Node',
+        applySuccess: '✅ Added to workflow',
         help: 'Help',
         helpTitle: '📖 User Manual',
         helpContent: `
@@ -239,7 +251,18 @@ class AnomalousBrowser {
                             if (!sd.scanning) {
                                 clearInterval(poll);
                                 scanBtn.innerHTML = `✅ <span class="anomalous-btn-text">${t('scanDone')}</span>`;
-                                alert(t('scanCompleteMsg'));
+                                
+                                let msg = t('scanCompleteMsg');
+                                if (sd.result) {
+                                    msg = `✅ 扫描结束！\n成功处理：${sd.result.success} 个\n处理失败：${sd.result.fail} 个\n\n⚠️ 提示：请点击 ComfyUI 的 [Refresh] 按钮以同步，若有模型未生效，请【重启 ComfyUI 服务端】。`;
+                                    if (document.documentElement.lang !== 'zh') {
+                                        msg = `✅ Scan Complete!\nSuccess: ${sd.result.success}\nFailed: ${sd.result.fail}\n\n⚠️ Tip: Click [Refresh] in ComfyUI, or RESTART the ComfyUI backend if models don't appear.`;
+                                    }
+                                } else {
+                                    msg = msg.replace('[Refresh] 按钮以同步最新的模型列表。', '[Refresh] 按钮以同步，若有模型未生效，请【重启 ComfyUI 服务端】。');
+                                }
+                                alert(msg);
+                                
                                 this.loadModels();
                                 setTimeout(() => { scanBtn.innerHTML = `🔄 <span class="anomalous-btn-text">${t('scan')}</span>`; scanBtn.disabled = false; }, 2000);
                             }
@@ -604,11 +627,121 @@ class AnomalousBrowser {
                 title.innerText = model.filename;
                 card.appendChild(title);
                 
-                card.onclick = () => { this.currentDetailModel = model; this.showDetail(model); };
+                card.onclick = () => { this.historyStack = []; this.currentDetailModel = model; this.showDetail(model); };
+
+                const applyBtn = document.createElement('button');
+                applyBtn.innerHTML = '➕';
+                applyBtn.title = t('applyToCanvas');
+                applyBtn.style.position = 'absolute';
+                applyBtn.style.top = '6px';
+                applyBtn.style.right = '6px';
+                applyBtn.style.background = 'rgba(0,0,0,0.7)';
+                applyBtn.style.color = '#fff';
+                applyBtn.style.border = '1px solid rgba(255,255,255,0.2)';
+                applyBtn.style.borderRadius = '4px';
+                applyBtn.style.cursor = 'pointer';
+                applyBtn.style.padding = '4px 6px';
+                applyBtn.style.zIndex = '20';
+                applyBtn.style.fontSize = '1em';
+                applyBtn.style.display = 'none';
+                
+                card.addEventListener('mouseenter', () => applyBtn.style.display = 'block');
+                card.addEventListener('mouseleave', () => applyBtn.style.display = 'none');
+                
+                applyBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.applyModelToCanvas(this.currentType, this.currentSubfolder, model);
+                };
+                card.appendChild(applyBtn);
+
                 
                 this.grid.appendChild(card);
             });
         } catch(e) {}
+    }
+
+    
+    applyModelToCanvas(type, subfolder, model) {
+        const nodeTypeMap = {
+            'checkpoints': 'CheckpointLoaderSimple',
+            'loras': 'LoraLoader',
+            'unet': 'UNETLoader',
+            'diffusion_models': 'UNETLoader'
+        };
+        const nodeType = nodeTypeMap[type];
+        if (!nodeType) {
+            alert('Unsupported model type for auto-apply.');
+            return;
+        }
+
+        const node = LiteGraph.createNode(nodeType);
+        if (!node) {
+            alert('Failed to create node: ' + nodeType);
+            return;
+        }
+
+        if (app.canvas && app.canvas.graph_mouse) {
+            node.pos = [
+                app.canvas.graph_mouse[0] || (window.innerWidth / 2),
+                app.canvas.graph_mouse[1] || (window.innerHeight / 2)
+            ];
+        } else {
+            node.pos = [ window.innerWidth / 2, window.innerHeight / 2 ];
+        }
+        
+        app.graph.add(node);
+
+        const sub = subfolder.replace(/^\/+/, '').replace(/\/+$/, '');
+        const relPath = sub ? `${sub}/${model.filename}` : model.filename;
+
+        if (node.widgets) {
+            // First try to find a combo widget (dropdown)
+            const combo = node.widgets.find(w => w.type === 'combo');
+            if (combo) {
+                combo.value = relPath;
+            } else if (node.widgets.length > 0) {
+                // fallback to first widget
+                node.widgets[0].value = relPath;
+            }
+        }
+
+this.close();
+
+        // 粘到鼠标上的逻辑
+        let isSticking = true;
+        const stickHandler = (e) => {
+            if (!isSticking || !app.canvas) return;
+            const canvas = app.canvas;
+            
+            // LiteGraph内置了坐标转换，它会完美处理缩放和偏移带来的坐标偏移问题
+            let canvasX, canvasY;
+            if (canvas.convertEventToCanvasOffset) {
+                const pos = canvas.convertEventToCanvasOffset(e);
+                canvasX = pos[0];
+                canvasY = pos[1];
+            } else {
+                // 如果API不可用，使用标准降级计算
+                const rect = canvas.canvas.getBoundingClientRect();
+                canvasX = (e.clientX - rect.left - canvas.ds.offset[0]) / canvas.ds.scale;
+                canvasY = (e.clientY - rect.top - canvas.ds.offset[1]) / canvas.ds.scale;
+            }
+            
+            node.pos = [canvasX - node.size[0] / 2, canvasY - 20];
+            canvas.setDirty(true, true);
+        };
+        const dropHandler = (e) => {
+            isSticking = false;
+            window.removeEventListener('mousemove', stickHandler, true);
+            window.removeEventListener('pointerdown', dropHandler, true);
+            window.removeEventListener('mousedown', dropHandler, true);
+            window.removeEventListener('click', dropHandler, true);
+        };
+        window.addEventListener('mousemove', stickHandler, true);
+        setTimeout(() => {
+            window.addEventListener('pointerdown', dropHandler, true);
+            window.addEventListener('mousedown', dropHandler, true);
+            window.addEventListener('click', dropHandler, true);
+        }, 100);
     }
 
     showDetail(model) {
@@ -625,8 +758,8 @@ class AnomalousBrowser {
         header.style.alignItems = 'center';
         header.style.boxSizing = 'border-box';
         
-        const backBtn = document.createElement('button');
-        backBtn.innerHTML = t('back');
+const backBtn = document.createElement('button');
+        backBtn.innerHTML = this.historyStack.length > 0 ? t('backToPrev') : t('back');
         backBtn.style.padding = '6px 12px';
         backBtn.style.background = '#444';
         backBtn.style.color = '#fff';
@@ -634,9 +767,19 @@ class AnomalousBrowser {
         backBtn.style.borderRadius = '4px';
         backBtn.style.cursor = 'pointer';
         backBtn.onclick = () => {
-            this.detailPanel.style.display = 'none';
-            this.detailPanel.innerHTML = '';
-            this.grid.style.display = 'grid';
+            if (this.historyStack.length > 0) {
+                const prev = this.historyStack.pop();
+                this.currentType = prev.type;
+                this.currentPathIdx = prev.pathIdx;
+                this.currentSubfolder = prev.subfolder;
+                this.currentDetailModel = prev.model;
+                this.renderSidebar();
+                this.showDetail(prev.model);
+            } else {
+                this.detailPanel.style.display = 'none';
+                this.detailPanel.innerHTML = '';
+                this.grid.style.display = 'grid';
+            }
         };
         
         const title = document.createElement('h2');
@@ -683,9 +826,42 @@ class AnomalousBrowser {
             }
         };
         
+        const jumpBtn = document.createElement('button');
+        jumpBtn.innerHTML = '⬇️';
+        jumpBtn.title = t('jumpToBottom') || 'Jump to bottom';
+        jumpBtn.style.padding = '6px 12px';
+        jumpBtn.style.background = '#444';
+        jumpBtn.style.color = '#fff';
+        jumpBtn.style.border = 'none';
+        jumpBtn.style.borderRadius = '4px';
+        jumpBtn.style.cursor = 'pointer';
+        jumpBtn.style.marginLeft = '10px';
+        jumpBtn.onclick = () => {
+            // Find rightPanel which is created later, so we bind it dynamically
+            const rp = this.detailPanel.querySelector('.anomalous-split-right');
+            if (rp) rp.scrollTo({ top: rp.scrollHeight, behavior: 'smooth' });
+        };
+        
         header.appendChild(backBtn);
         header.appendChild(title);
         header.appendChild(delBtn);
+        header.appendChild(jumpBtn);
+
+        const applyDetailBtn = document.createElement('button');
+        applyDetailBtn.innerHTML = t('applyToCanvas');
+        applyDetailBtn.style.padding = '6px 12px';
+        applyDetailBtn.style.background = '#28a745';
+        applyDetailBtn.style.color = '#fff';
+        applyDetailBtn.style.border = 'none';
+        applyDetailBtn.style.borderRadius = '4px';
+        applyDetailBtn.style.cursor = 'pointer';
+        applyDetailBtn.style.marginLeft = '10px';
+        applyDetailBtn.style.fontWeight = 'bold';
+        applyDetailBtn.onclick = () => {
+            this.applyModelToCanvas(this.currentType, this.currentSubfolder, model);
+        };
+        header.appendChild(applyDetailBtn);
+
         
         const splitContainer = document.createElement('div');
         splitContainer.className = 'anomalous-split-container';
@@ -911,6 +1087,74 @@ class AnomalousBrowser {
             
             rightPanel.appendChild(notesCont);
         }
+        
+        // --- Compatible Models Section ---
+        if (m.baseModel) {
+            const compSec = document.createElement('div');
+            compSec.className = 'anomalous-compatible-section';
+            
+            const compTitle = document.createElement('div');
+            compTitle.className = 'anomalous-compatible-title';
+            compTitle.innerHTML = `${t('compatibleModels') || '🔗 Compatible'} <span style="font-size:0.8em; opacity:0.6;">(${m.baseModel})</span>`;
+            
+            const compList = document.createElement('div');
+            compList.className = 'anomalous-compatible-list';
+            compList.innerHTML = `<span style="color:#888;">${t('loadingCompatible') || 'Loading...'}</span>`;
+            
+            compSec.appendChild(compTitle);
+            compSec.appendChild(compList);
+            rightPanel.appendChild(compSec);
+            
+            const targetType = this.currentType === 'loras' ? 'checkpoints' : 'loras';
+            fetch(`/anomalous/compatible_models?base_model=${encodeURIComponent(m.baseModel)}&target_type=${encodeURIComponent(targetType)}`)
+                .then(r => r.json())
+                .then(d => {
+                    compList.innerHTML = '';
+                    if (!d.models || d.models.length === 0) {
+                        compList.innerHTML = `<span style="color:#888;">No compatible models found.</span>`;
+                        return;
+                    }
+                    d.models.forEach(m_comp => {
+                        const mItem = document.createElement('div');
+                        mItem.className = 'anomalous-compatible-item';
+                        mItem.title = m_comp.filename;
+                        
+                        let thumb = '';
+                        if (m_comp.preview_url) {
+                            const isVid = m_comp.preview_url.toLowerCase().endsWith('.mp4') || m_comp.preview_url.toLowerCase().endsWith('.webm');
+                            if (isVid) thumb = `<video src="${m_comp.preview_url}" muted loop playsinline autoplay></video>`;
+                            else thumb = `<img src="${m_comp.preview_url}" />`;
+                        } else {
+                            thumb = `<div style="width:30px; height:30px; background:#222; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#555;">?</div>`;
+                        }
+                        
+                        mItem.innerHTML = `${thumb}<div class="anomalous-compatible-item-name">${m_comp.filename}</div>`;
+                        
+                        mItem.onclick = () => {
+                            this.historyStack.push({
+                                type: this.currentType,
+                                pathIdx: this.currentPathIdx,
+                                subfolder: this.currentSubfolder,
+                                model: this.currentDetailModel
+                            });
+                            
+                            this.currentType = m_comp.type;
+                            this.currentPathIdx = m_comp.path_idx;
+                            this.currentSubfolder = m_comp.subfolder;
+                            this.currentDetailModel = m_comp;
+                            
+                            this.renderSidebar();
+                            this.showDetail(m_comp);
+                        };
+                        
+                        compList.appendChild(mItem);
+                    });
+                })
+                .catch(e => {
+                    compList.innerHTML = `<span style="color:#ff4444;">Failed to load.</span>`;
+                });
+        }
+        // ---------------------------------
         
         splitContainer.appendChild(leftPanel);
         splitContainer.appendChild(resizer);

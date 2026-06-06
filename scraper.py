@@ -160,6 +160,8 @@ def main():
     # 模式二：正常嗅探与重命名
     # ==========================
     rename_log = {}
+    success_count = 0
+    fail_count = 0
     if os.path.exists(backup_log_path):
         with open(backup_log_path, 'r', encoding='utf-8') as f:
             rename_log = json.load(f)
@@ -190,6 +192,7 @@ def main():
             
             civitai_data = fetch_civitai_info(file_hash)
             if not civitai_data:
+                fail_count += 1
                 continue
                 
             # --- 额外获取模型主页的说明文字 ---
@@ -281,7 +284,18 @@ def main():
                         print(f"[Dry-Run] 拟连带重命名附属文件 (.info / .png 等)")
             else:
                 print("[*] 文件名已符合规范，无需重命名。")
+            success_count += 1
                     
+    
+    # Save scan results
+    if not args.dry_run:
+        result_path = os.path.join(target_folder, ".scan_result.json")
+        try:
+            with open(result_path, 'w', encoding='utf-8') as f:
+                json.dump({"success": success_count, "fail": fail_count}, f)
+        except Exception as e:
+            print(f"[-] 保存统计结果失败: {e}")
+            
     if not args.dry_run and rename_log:
         with open(backup_log_path, 'w', encoding='utf-8') as f:
             json.dump(rename_log, f, ensure_ascii=True, indent=4)

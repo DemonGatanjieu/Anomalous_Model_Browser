@@ -245,3 +245,54 @@
 .anomalous-lang-en #anomalous-title {
     font-size: 1.1em;
 }
+
+/* Compatible Models Section */
+.anomalous-compatible-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color, #444);
+}
+.anomalous-compatible-title {
+    color: var(--fg-color, #fff);
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.anomalous-compatible-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.anomalous-compatible-item {
+    background: var(--comfy-menu-bg, #333);
+    border: 1px solid var(--border-color, #555);
+    border-radius: 6px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    max-width: 200px;
+}
+.anomalous-compatible-item:hover {
+    border-color: #007bff;
+    background: var(--bg-color, #444);
+    transform: translateY(-2px);
+}
+.anomalous-compatible-item img, .anomalous-compatible-item video {
+    width: 30px;
+    height: 30px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+.anomalous-compatible-item-name {
+    color: var(--fg-color, #fff);
+    font-size: 0.85em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}

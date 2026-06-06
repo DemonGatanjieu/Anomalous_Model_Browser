@@ -252,7 +252,19 @@ async def api_scan_status(request):
         target_dir = os.path.join(base_dir, subfolder.strip('/'))
     
     marker_file = os.path.join(target_dir, '.scan_in_progress')
-    return web.json_response({"scanning": os.path.exists(marker_file)})
+    result_file = os.path.join(target_dir, '.scan_result.json')
+    scanning = os.path.exists(marker_file)
+    
+    data = {"scanning": scanning}
+    if not scanning and os.path.exists(result_file):
+        try:
+            with open(result_file, 'r', encoding='utf-8') as f:
+                data["result"] = __import__('json').load(f)
+            os.remove(result_file)
+        except:
+            pass
+            
+    return web.json_response(data)
 
 async def api_scan_folder(request):
     """Launches the scraper in the background for a specific directory."""
@@ -450,6 +462,67 @@ async def api_clean_civitai_info(request):
     except Exception as e:
         return web.json_response({"status": "error", "message": str(e)}, status=500)
 
+async def api_compatible_models(request):
+    base_model = request.query.get('base_model', '')
+    target_type = request.query.get('target_type', 'loras')
+    
+    if not base_model:
+        return web.json_response({"models": []})
+        
+    try:
+        paths = folder_paths.get_folder_paths(target_type)
+    except Exception:
+        return web.json_response({"models": []})
+        
+    if not paths:
+        return web.json_response({"models": []})
+        
+    compatible_models = []
+    
+    for path_idx, base_dir in enumerate(paths):
+        if not os.path.exists(base_dir):
+            continue
+            
+        for root, _, files in os.walk(base_dir):
+            for f in files:
+                if f.endswith('.safetensors') or f.endswith('.ckpt') or f.endswith('.pt'):
+                    file_path = os.path.join(root, f)
+                    meta = get_metadata(file_path)
+                    
+                    if meta.get("baseModel") == base_model:
+                        rel_subfolder = os.path.relpath(root, base_dir)
+                        if rel_subfolder == '.':
+                            rel_subfolder = '/'
+                        else:
+                            rel_subfolder = '/' + rel_subfolder.replace('\\', '/')
+                            
+                        base_name = os.path.splitext(f)[0]
+                        preview_file = None
+                        for ext in ['.preview.png', '.png', '.jpg', '.jpeg', '.webp', '.mp4', '.webm']:
+                            if os.path.exists(os.path.join(root, base_name + ext)):
+                                preview_file = base_name + ext
+                                break
+                        
+                        preview_url = ""
+                        if preview_file:
+                            q_type = urllib.parse.quote(target_type)
+                            q_idx = str(path_idx)
+                            q_sub = urllib.parse.quote(rel_subfolder.strip('/')) if rel_subfolder != '/' else ""
+                            q_file = urllib.parse.quote(preview_file)
+                            preview_url = f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}"
+                        
+                        compatible_models.append({
+                            "type": target_type,
+                            "path_idx": path_idx,
+                            "subfolder": rel_subfolder,
+                            "filename": f,
+                            "preview_url": preview_url,
+                            "metadata": meta
+                        })
+                        
+    return web.json_response({"models": compatible_models})
+
+
 def setup_routes(app):
     app.router.add_get('/anomalous/folders', api_get_folders)
     app.router.add_get('/anomalous/models', api_get_models)
@@ -460,3 +533,5 @@ def setup_routes(app):
     app.router.add_post('/anomalous/save_config', api_save_config)
     app.router.add_post('/anomalous/delete_model', api_delete_model)
     app.router.add_post('/anomalous/clean_civitai_info', api_clean_civitai_info)
+    app.router.add_get('/anomalous/compatible_models', api_compatible_models)
+
