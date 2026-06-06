@@ -469,56 +469,73 @@ async def api_compatible_models(request):
     if not base_model:
         return web.json_response({"models": []})
         
-    try:
-        paths = folder_paths.get_folder_paths(target_type)
-    except Exception:
-        return web.json_response({"models": []})
-        
-    if not paths:
-        return web.json_response({"models": []})
-        
+    target_types = [t.strip() for t in target_type.split(',')]
     compatible_models = []
+    seen_files = set()
     
-    for path_idx, base_dir in enumerate(paths):
-        if not os.path.exists(base_dir):
+    for t in target_types:
+        try:
+            paths = folder_paths.get_folder_paths(t)
+        except Exception:
             continue
             
-        for root, _, files in os.walk(base_dir):
-            for f in files:
-                if f.endswith('.safetensors') or f.endswith('.ckpt') or f.endswith('.pt'):
-                    file_path = os.path.join(root, f)
-                    meta = get_metadata(file_path)
-                    
-                    if meta.get("baseModel") == base_model:
-                        rel_subfolder = os.path.relpath(root, base_dir)
-                        if rel_subfolder == '.':
-                            rel_subfolder = '/'
-                        else:
-                            rel_subfolder = '/' + rel_subfolder.replace('\\', '/')
+        if not paths:
+            continue
+            
+        for path_idx, base_dir in enumerate(paths):
+            if not os.path.exists(base_dir):
+                continue
+                
+            for root, _, files in os.walk(base_dir):
+                for f in files:
+                    if f.endswith('.safetensors') or f.endswith('.ckpt') or f.endswith('.pt'):
+                        file_path = os.path.join(root, f)
+                        real_path = os.path.realpath(file_path)
+                        if real_path in seen_files:
+                            continue
+                        seen_files.add(real_path)
+                        
+                        meta = get_metadata(file_path)
+                        
+                        m_bm = str(meta.get("baseModel", "")).strip().lower()
+                        req_bm = str(base_model).strip().lower()
+                        if m_bm and m_bm == req_bm:
+                            rel_subfolder = os.path.relpath(root, base_dir)
+                            if rel_subfolder == '.':
+                                rel_subfolder = '/'
+                            else:
+                                rel_subfolder = '/' + rel_subfolder.replace('\\', '/')
+                                
+                            base_name = os.path.splitext(f)[0]
+                            preview_file = None
+                            for ext in ['.preview.png', '.png', '.jpg', '.jpeg', '.webp', '.mp4', '.webm']:
+                                if os.path.exists(os.path.join(root, base_name + ext)):
+                                    preview_file = base_name + ext
+                                    break
                             
-                        base_name = os.path.splitext(f)[0]
-                        preview_file = None
-                        for ext in ['.preview.png', '.png', '.jpg', '.jpeg', '.webp', '.mp4', '.webm']:
-                            if os.path.exists(os.path.join(root, base_name + ext)):
-                                preview_file = base_name + ext
-                                break
-                        
-                        preview_url = ""
-                        if preview_file:
-                            q_type = urllib.parse.quote(target_type)
-                            q_idx = str(path_idx)
-                            q_sub = urllib.parse.quote(rel_subfolder.strip('/')) if rel_subfolder != '/' else ""
-                            q_file = urllib.parse.quote(preview_file)
-                            preview_url = f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}"
-                        
-                        compatible_models.append({
-                            "type": target_type,
-                            "path_idx": path_idx,
-                            "subfolder": rel_subfolder,
-                            "filename": f,
-                            "preview_url": preview_url,
-                            "metadata": meta
-                        })
+                            preview_url = ""
+                            preview_url = ""
+                            if preview_file:
+                                q_type = urllib.parse.quote(t)
+                                q_idx = str(path_idx)
+                                q_sub = urllib.parse.quote(rel_subfolder.strip('/')) if rel_subfolder != '/' else ""
+                                q_file = urllib.parse.quote(preview_file)
+                                preview_url = f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}"
+                            
+                            try:
+                                size_mb = round(os.path.getsize(file_path) / (1024 * 1024), 1)
+                            except:
+                                size_mb = 0
+                            
+                            compatible_models.append({
+                                "type": t,
+                                "path_idx": path_idx,
+                                "subfolder": rel_subfolder,
+                                "filename": f,
+                                "size_mb": size_mb,
+                                "preview_url": preview_url,
+                                "metadata": meta
+                            })
                         
     return web.json_response({"models": compatible_models})
 

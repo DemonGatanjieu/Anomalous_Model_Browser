@@ -372,6 +372,7 @@ class AnomalousBrowser {
         box.style.boxShadow = '0 10px 40px rgba(0,0,0,0.8)';
         box.style.display = 'flex';
         box.style.flexDirection = 'column';
+        box.style.maxHeight = '90vh';
         
         const header = document.createElement('div');
         header.style.padding = '15px 20px';
@@ -400,6 +401,8 @@ class AnomalousBrowser {
         const body = document.createElement('div');
         body.style.padding = '20px';
         body.innerHTML = t('helpContent');
+        body.style.overflowY = 'auto';
+        body.style.flex = '1';
         
         const footer = document.createElement('div');
         footer.style.padding = '15px';
@@ -784,9 +787,14 @@ const backBtn = document.createElement('button');
         
         const title = document.createElement('h2');
         title.innerHTML = model.filename;
-        title.style.margin = '0 0 0 20px';
+        title.style.margin = '0 20px 0 20px';
         title.style.color = '#fff';
         title.style.fontSize = '1.2em';
+        // 强制单行并溢出显示省略号
+        title.style.whiteSpace = 'nowrap';
+        title.style.overflow = 'hidden';
+        title.style.textOverflow = 'ellipsis';
+        title.style.flex = '1'; // 撑开剩余空间，把右侧按钮挤到最右边
         
         const delBtn = document.createElement('button');
         delBtn.innerHTML = t('delModel');
@@ -1105,7 +1113,7 @@ const backBtn = document.createElement('button');
             compSec.appendChild(compList);
             rightPanel.appendChild(compSec);
             
-            const targetType = this.currentType === 'loras' ? 'checkpoints' : 'loras';
+            const targetType = this.currentType === 'loras' ? 'checkpoints,unet,diffusion_models' : 'loras';
             fetch(`/anomalous/compatible_models?base_model=${encodeURIComponent(m.baseModel)}&target_type=${encodeURIComponent(targetType)}`)
                 .then(r => r.json())
                 .then(d => {

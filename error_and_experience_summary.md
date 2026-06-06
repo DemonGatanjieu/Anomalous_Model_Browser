@@ -1,52 +1,30 @@
-# Anomalous Model Browser - 开发经验与踩坑总结日志
+# 插件开发纠错与经验沉淀 (Error & Experience Summary)
 
-这份文档记录了在开发和重构 `Anomalous_Model_Browser` 插件过程中遇到的核心 Bug、崩溃原因以及对应的终极解决方案。供后续开发维护时参考，避免重蹈覆辙。
+在开发与完善 `Anomalous_Model_Browser` 插件的过程中，我们遇到了几个典型的技术陷阱与用户体验问题。为了便于后续维护和其他开发者参考，特在此归纳沉淀：
 
-## 1. 前端 UI 注入陷阱：引号转义地狱 (DOM vs innerHTML)
-*   **症状**：按钮凭空消失、点击事件无法触发、页面结构错乱。
-*   **死因**：在 `main.js` 中重构右侧详细面板时，使用了极长且复杂的 ES6 模板字符串拼接 HTML，并通过 `innerHTML` 暴力注入。在这个过程中，大量的单引号、双引号、反引号以及 JS 变量相互嵌套，只要有一个未正确转义，整个浏览器的 HTML 解析器就会崩溃，导致后续 DOM 元素被直接截断。
-*   **解决方案**：**彻底抛弃复杂字符串注入**。必须老老实实使用原生的 `document.createElement()`、`el.appendChild()` 逐层构建 DOM 树，这样不仅彻底杜绝了转义问题，还能干净利落地绑定 `el.onclick` 等事件监听器，稳定性直接拉满。
+## 1. 后台 API 数据传递与作用域异常 (UnboundLocalError)
+**问题描述**：在重构 `api.py` 中的 `api_compatible_models`（跨文件夹兼容模型扫描）逻辑时，遇到了前端抛出 500 错误（`Failed to load`）。
+**根源分析**：在 Python 中，如果一个变量（如 `rel_subfolder`）在 `if` 语句块内部被赋值，但在执行时该 `if` 条件未满足，后续代码又尝试读取该变量，就会引发 `UnboundLocalError`。在我们早期的代码缩进修复中，因为缩进层级错乱，导致赋值语句和读取语句的逻辑层级脱节。
+**解决方案**：严格对齐缩进，并确保所有分支（尤其是 `preview_url` 等变量）在被使用前都有安全的默认回退值（Fallback initialization, 如 `preview_url = ""`）。
 
-## 2. Python 字符串拼接陷阱：正则表达式换行符 (SyntaxError)
-*   **症状**：扫描脚本 `scraper.py` 在启动的瞬间直接闪退报错 `SyntaxError: unterminated string literal`。
-*   **死因**：在用 Python 脚本去 patch (热更新) 另一段 Python 代码时，使用了普通的 `'''` 三引号字符串去包裹一段含有 `\r\n` 的正则表达式：`r'[\r\n\t]+'`。因为没有使用 Raw String (`r'''`)，Python 在执行替换时直接把 `\r\n` 转译成了**真实的物理换行符**，导致最终写进目标文件里的正则字符串被硬生生劈成了两半，引发语法错误。
-*   **解决方案**：在涉及代码注入或正则拼接时，**永远小心对待反斜杠**。优先使用 `replace_file_content`，或者在 Python 热更代码中必须使用 Raw 多行字符串 `r'''...'''`。
+## 2. 文件夹别名导致的重复加载问题 (Duplicate Models)
+**问题描述**：前端模型兼容列表出现了两个完全一模一样的 Flux 模型。
+**根源分析**：前端触发搜索时，同时传入了 `checkpoints,unet,diffusion_models` 三个目录作为扫描目标。而在 ComfyUI 的环境配置中，`unet` 和 `diffusion_models` 经常被映射到硬盘上的**同一个物理文件夹**。后台在遍历时，对同一个文件夹扫描了两次，导致相同文件被重复添加。
+**解决方案**：使用 `seen_files = set()` 记录已处理文件的**绝对物理路径**（`os.path.realpath(file_path)`），即使软链接或不同挂载点指向同一文件，也能被精准去重拦截。
 
-## 3. Windows 控制台的致命伤：Emoji 编码崩溃 (UnicodeEncodeError)
-*   **症状**：当扫描到带有特殊符号（如“Plant Milk 🌿”）的模型时，整个扫描脚本瞬间崩溃，后续所有模型全部罢工。
-*   **死因**：Windows 系统的终端默认使用 `GBK` 编码。当 `scraper.py` 试图用 `print()` 打印含有 `🌿` (`\U0001f33f`) 这种多字节 Unicode 字符的文件名时，GBK 无法对其进行编码，直接抛出 `UnicodeEncodeError` 异常终止程序。
-*   **解决方案**：在任何需要输出日志的 Python 脚本开头，**强制接管系统标准输出的编码**：
-    ```python
-    import sys
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-        sys.stderr.reconfigure(encoding="utf-8")
-    except:
-        pass
-    ```
+## 3. 增量扫描逻辑的盲区 (Scanner Skip Logic)
+**问题描述**：用户手动删除了某个模型的 `.info` 文件或预览图，点击后台扫描引擎却没有补齐，依然直接跳过。
+**根源分析**：早期的增量逻辑比较“偷懒”，只要发现同名的 `.info` 文件存在，就直接 `continue` 跳过，忽略了对预览图的二次检查。
+**解决方案**：重写扫描引擎的短路逻辑。采用“三证合一”严苛检查：只有当 `.info` 文件存在，**且**同名的 `[.png, .jpg, .mp4, .webm]` 预览媒体中至少有一项存在时，才允许跳过；否则强制触发 C 站接口进行重扫补齐。
 
-## 4. 虚假的异步完成：多线程与进度锁 (Architecture Bug)
-*   **症状**：点击“扫描”后，网页立刻弹窗提示“扫描完成”，但此时大模型根本还没有下载任何图片。用户一旦此时刷新，只能看到旧的错乱文件。
-*   **死因**：后端 `api.py` 调用扫描脚本时使用了 `subprocess.Popen`，它是非阻塞的。`api.py` 把脚本丢到后台运行后，自己立刻就返回了 HTTP 200 OK。前端收到 OK 就以为扫描结束了，实际上后台还在吭哧吭哧计算几十 GB 文件的 SHA256。
-*   **解决方案**：引入**文件级进度锁**与**守护线程**。
-    在启动扫描前，生成一个 `.scan_in_progress` 的占位文件，然后开启一个 `threading.Thread` 去运行 `subprocess.run` (阻塞等待)。等到线程里的扫描任务真实结束后，再利用 `finally` 代码块删掉 `.scan_in_progress` 锁文件。前端必须轮询检测这个锁文件是否存在，消失了才算真正的 Complete。
+## 4. UI/UX 自适应排版 (Responsive UI)
+**问题描述**：模型名称过长时，顶部固定栏被强行撑高并发生换行；说明面板太大导致底部关闭按钮超出屏幕外。
+**根源分析**：未对弹性盒子（Flexbox）进行文本溢出控制，且模态框缺乏滚动边界限制。
+**解决方案**：
+- **单行溢出省略**：对可能超长的标题应用 `white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;`。
+- **三明治模态布局**：对弹出面板应用 `max-height: 90vh`，并对其内部的文本内容层（Body）单独应用 `overflow-y: auto`。这样无论内容多长，只会在中间区域滚动，头部的“X”和底部的“关闭”按钮始终固定可见。
 
-## 5. 盲人摸象的媒体下载：图片损坏之谜 (Content-Type)
-*   **症状**：部分最新的模型（如 MiaoMiao RealSkin）下载下来的 `.png` 预览图在系统中显示“文件已损坏”或无法打开。
-*   **死因**：随着 Civitai 的升级，部分模型的首张预览图变成了 `.mp4` 或 `.webm` 格式的视频。而旧版下载函数 `download_image` 是“一刀切”的瞎子，不管三七二十一直接把下载流重命名为 `.png`。把视频文件强行加个 `.png` 后缀，图片浏览器自然无法解析。
-*   **解决方案**：重写下载器为 `download_media`，必须依靠解析 HTTP 报文头的 `Content-Type` 来决定最终命运：
-    - `video/mp4` -> `.mp4`
-    - `video/webm` -> `.webm`
-    - `image/jpeg` -> `.jpg`
-    - 其他 -> `.png`
-    并在重命名循环中把 `.mp4` 和 `.webm` 加入“连带重命名套餐”，确保媒体文件与底模同生共死。
-
-
-## 6. 接头暗号对不上：API 路由映射失误 (Backend Routing)
-*   **症状**：前端在输入 API Key 后（即使浏览器缓存记录了密码），本地依然没有生成 config.json 配置文件。
-*   **死因**：前端 main.js 试图往后端发送保存请求的路由是 POST /anomalous/save_config，而后端 pi.py 监听这个保存函数的路由却错误地写成了 pp.router.add_post('/anomalous/config', api_save_config)。这导致前端的保存请求永远打到一个 404 死胡同，而刚好前端加了 catch(e) {} 忽略了报错，所以错误被静默吞噬了。
-*   **解决方案**：永远确保前后端通信的 API 路径 (Endpoint) 字符串绝对一致。将后端路由严格修改为 pp.router.add_post('/anomalous/save_config', api_save_config)，保证数据能够成功落盘。
-
----
-
-*Created by Antigravity Assistant on 2026-06-05*
+## 5. 安全性审计 (Security Audit)
+对后端的关键路由进行了路径穿越（Path Traversal）核查：
+- `api_delete_model`, `api_serve_image`, `api_get_models` 均内置了 `if '..' in subfolder` 和 `if '..' in filename` 的强拦截逻辑，确保用户无法通过构造相对路径去跨级删除或访问插件/工作流之外的核心系统文件。
+- `api_serve_image` 增加了严格的文件拓展名（extension）白名单字典，强制转换 `Content-Type`，杜绝了把可执行脚本伪装成预览图返回的风险。

@@ -41,14 +41,20 @@ In the rapidly evolving landscape of AI art tools, legacy plugins have become bl
 4. **🤖 Smart Media Civitai Scraper (Multi-Threaded Daemon)**
    - Forget messy CMD windows! Paste your Civitai API Key in the UI (safely saved to both local server config and browser cache).
    - Click `Scan Folder` to silently launch a background daemon thread that computes SHA256, fetches metadata, and automatically renames your local `.safetensors` files to a clean format.
+   - **Detailed Scan Reports**: After scanning, the system alerts you exactly how many models were successfully downloaded, renamed, or skipped, and logs any failures.
+   - **Strict Verification Engine**: The scraper uses a "triple-check" strict requirement (.safetensors + .info + preview) to ensure your model library is flawless; missing parts trigger an automatic redownload.
    - **Smart Version Deduplication**: Have you ever accidentally downloaded the same version of a model twice with different names? The scanner will detect identical Civitai versions and cleanly permanently delete the redundant clones, ensuring your disk is free of duplicates!
    - **Smart Content-Type Detection**: The new scraper engine dynamically parses HTTP network headers. If a Civitai preview is a video, it perfectly saves it as an `.mp4` or `.webm` file rather than a corrupted PNG.
    - **Standalone Cleanup Button**: We extracted the `.civitai.info` cleanup process into a fast, dedicated `🧹 Clean Duplicate Info` button in the UI.
    - **Energy-Saving Previews**: Video previews only play on mouse hover!
 
-5. **🌐 Pure Bilingual Engine & Built-in Manual**
+5. **⚡ Workflow Superchargers**
+   - **Cross-Folder Compatible Models**: Looking at a Base Model (like Flux.1 D)? The detail panel auto-magically scans all your Loras and Checkpoints across your entire disk and lists 100% compatible models based on internal metadata logic. It strictly de-duplicates models even if your extra paths alias the same folders!
+   - **One-Click Auto-Inject**: Don't manually type filenames into nodes anymore! Use the "Apply to Canvas" floating button on any model. It creates the perfect node (CheckpointLoaderSimple, LoraLoader, UNETLoader) and magnetically sticks it to your cursor for precision placement!
+
+6. **🌐 Pure Bilingual Engine & Built-in Manual**
    - **Seamless i18n**: Switch between beautifully formatted pure English or pure Chinese UI with a single click, instantly transforming all buttons, dialogs, and dynamic text.
-   - **Interactive Help Modal**: Never feel lost with the built-in `❓ Help` manual explaining every feature natively within the plugin.
+   - **Interactive Help Modal**: Never feel lost with the built-in `❓ Help` manual explaining every feature natively within the plugin. The sandwich layout ensures the close button is never pushed off-screen regardless of how long the text is.
 
 ### 📥 Installation
 
@@ -98,14 +104,20 @@ Say goodbye to `pip install` and `npm install`!
 4. **🤖 全格式动态刮削引擎 (后台多线程守护)**
    - 全局双端持久化保存 Civitai API Key，一键静默扫描本文件夹。
    - 真正的独立后台多线程，计算海量 7GB 模型 SHA256 时前端 UI 完全不卡顿。
-   - **智能版本号去重守护**：你是否曾因为不小心把同一个模型版本下载了两次而浪费了硬盘空间？后台扫描不仅会匹配信息，一旦发现某个模型在同文件夹下存在版本号完全一致的“多余分身”，它会毫不犹豫地将冗余副本永久删除，保证你的模型库只有唯一规范的版本！
-   - **独立重复 Info 清理**：我们将历史遗留的冗余 `.civitai.info` 文件的清理功能独立成了顶部的 `🧹 清理重复 Info` 快捷按钮，一秒钟即可全盘扫描并完成清理。
+   - **详尽扫描报告**：扫描结束后，系统会弹窗向您详细汇报成功下载的数量、重命名的数量以及失败的信息，进度一目了然。
+   - **严苛三证合一**：采用严厉的补齐逻辑，只要发现模型缺失 `.info` 配置文件或预览图其中任何一项，刮削器便会毫不犹豫地向服务器请求补齐残缺，确保您的模型生态完美无瑕。
+   - **智能版本号去重守护**：后台扫描不仅会匹配信息，一旦发现某个模型在同文件夹下存在版本号完全一致的“多余分身”，它会毫不犹豫地将冗余副本永久删除，保证你的模型库只有唯一规范的版本！
+   - **独立重复 Info 清理**：历史遗留的冗余 `.civitai.info` 文件清理功能被独立为顶部的 `🧹 清理重复 Info` 按钮，一秒即可全盘扫描并完成清理。
    - **全媒体探测雷达**：不仅能抓图片，遇到新世代模型的 `.mp4` / `.webm` 视频封面，爬虫会根据 `Content-Type` 报文头精准保存对应的视频格式，彻底告别“损坏的图片”。
    - **节能渲染**：视频只在鼠标悬浮时播放，杜绝显卡资源浪费！
 
-5. **🌐 纯净双语引擎与内置说明书**
+5. **⚡ 生产力飞跃 (Workflow Superchargers)**
+   - **跨次元兼容模型雷达**：当你在查看 UNet (比如 Flux.1 D) 时，详情页底部会自动跨硬盘、跨文件夹为您检索出全部绝对兼容的 Lora / Checkpoints！并且完美自带系统级别的物理路径去重机制，即便你的 `extra_model_paths.yaml` 怎么套娃映射，都绝不显示重复项。
+   - **一键磁吸加载器**：告别手动搜索文件名！鼠标悬停在模型上点击【投放到画布】，系统会自动为你生成匹配的节点 (如 LoraLoader、UNETLoader)，并将其磁吸在你的鼠标上！你只需要在画布的合适位置点一下左键，节点就会被优雅地放置好，丝滑无比。
+
+6. **🌐 纯净双语引擎与内置说明书**
    - **无缝 i18n 切换**：一键在纯中文与纯英文界面间自由切换，告别拥挤的双语混排，所有弹窗与提示会瞬间自适应目标语言。并针对英文排版做了动态文字缩放，确保界面永不换行崩塌。
-   - **交互式帮助面板**：内置随叫随到的 `❓ 帮助` 面板，提供中英文纯血的详细说明书，再也不用切回 GitHub 看使用文档了！
+   - **交互式帮助面板**：内置随叫随到的 `❓ 帮助` 面板，提供中英文纯血的详细说明书，再也不用切回 GitHub 看使用文档了！三明治结构设计保证关闭按钮永远固定在视野内，不会因为文字过多而点不到。
 
 ### 📥 极简安装说明
 
