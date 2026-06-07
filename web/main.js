@@ -782,16 +782,7 @@ class AnomalousBrowser {
         const sub = subfolder.replace(/^\/+/, '').replace(/\/+$/, '');
         const relPath = sub ? `${sub}/${model.filename}` : model.filename;
 
-        if (node.widgets) {
-            // First try to find a combo widget (dropdown)
-            const combo = node.widgets.find(w => w.type === 'combo');
-            if (combo) {
-                combo.value = relPath;
-            } else if (node.widgets.length > 0) {
-                // fallback to first widget
-                node.widgets[0].value = relPath;
-            }
-        }
+        this.setWidgetValuePath(node, relPath);
 
 this.close();
 
@@ -1906,11 +1897,7 @@ const backBtn = document.createElement('button');
         
         const sub = data.mainModel.subfolder.replace(/^\/+/, '').replace(/\/+$/, '');
         const relPath = sub ? `${sub}/${data.mainModel.filename}` : data.mainModel.filename;
-        if (ckptNode.widgets && ckptNode.widgets.length > 0) {
-            const w = ckptNode.widgets.find(w => w.type === 'combo');
-            if (w) w.value = relPath;
-            else ckptNode.widgets[0].value = relPath;
-        }
+        this.setWidgetValuePath(ckptNode, relPath);
         
         let lastNode = ckptNode;
         let lastModelSlot = isUnet ? 0 : 0; 
@@ -1926,11 +1913,7 @@ const backBtn = document.createElement('button');
             
             const lsub = lora.subfolder.replace(/^\/+/, '').replace(/\/+$/, '');
             const lrelPath = lsub ? `${lsub}/${lora.filename}` : lora.filename;
-            if (loraNode.widgets && loraNode.widgets.length > 0) {
-                const w = loraNode.widgets.find(w => w.type === 'combo');
-                if (w) w.value = lrelPath;
-                else loraNode.widgets[0].value = lrelPath;
-            }
+            this.setWidgetValuePath(loraNode, lrelPath);
             
             lastNode.connect(lastModelSlot, loraNode, 0);
             if (lastClipSlot !== null) lastNode.connect(lastClipSlot, loraNode, 1);
@@ -2009,6 +1992,24 @@ const backBtn = document.createElement('button');
             window.addEventListener('mousedown', dropHandler, true);
             window.addEventListener('click', dropHandler, true);
         }, 100);
+    }
+    setWidgetValuePath(node, relPath) {
+        if (!node.widgets || node.widgets.length === 0) return;
+        const w = node.widgets.find(wg => wg.type === 'combo');
+        const targetWidget = w || node.widgets[0];
+        if (!targetWidget) return;
+        
+        if (targetWidget.options && targetWidget.options.values) {
+            const normalizedTarget = relPath.replace(/\\/g, '/');
+            const match = targetWidget.options.values.find(v => {
+                return String(v).replace(/\\/g, '/') === normalizedTarget;
+            });
+            if (match) {
+                targetWidget.value = match;
+                return;
+            }
+        }
+        targetWidget.value = relPath;
     }
 }
 

@@ -61,3 +61,21 @@ Implemented a "Relative Offset Matrix Layout". The code iteratively calculates s
 Our localization engine was reading `document.documentElement.lang` to decide whether to show English or Chinese error popups. However, because our plugin runs inside ComfyUI, ComfyUI controls the root HTML element and keeps it permanently set to `en-US`. Consequently, Chinese users always received English system popups regardless of the plugin's internal language toggle.
 **The Solution**:
 Never trust the host document properties when building an embedded plugin. Localization logic was strictly re-routed to rely on our internal `currentLang` variable state, ensuring correct i18n rendering.
+
+## 11. Strict Path Separator Validation in ComfyUI Widgets
+**The Problem**:
+When injecting models onto the canvas on Windows, assigning `anime/model.safetensors` to a node's combo widget caused the node to display a red "Missing Model" error. This happened because ComfyUI's internal option list used backslashes (`anime\model.safetensors`). Direct string assignment failed ComfyUI's strict matching protocol.
+**The Solution**:
+Built a robust `setWidgetValuePath` interceptor. Before assigning a path, it scans the node's `w.options.values`, normalizing both the target path and the options list with `.replace(/\\/g, '/')`. It then assigns the *exact string* found within ComfyUI's native array, permanently bypassing OS-level path separator conflicts.
+
+## 12. Backend Starvation During Inference (Architectural Acceptance)
+**The Problem**:
+Users reported that opening the Notebook modal or fetching data while ComfyUI is generating images causes API timeouts and UI stuttering.
+**The Solution**:
+Rather than over-engineering a complex request queue or offline-caching system (which would bloat our sub-200KB codebase), we diagnosed this as an intentional limitation of ComfyUI's single-threaded Python `aiohttp` server and PyTorch GIL-locking. The UI is designed to accept this starvation gracefully. Our philosophy is that database management and intense GPU inference are mutually exclusive workflows for the end user.
+
+## 13. Absolute DOM Obliteration vs Virtual DOM Hoarding
+**The Problem**:
+Maintaining performance and avoiding RAM leaks when a user has thousands of models split across dozens of folders.
+**The Solution**:
+Instead of using popular React-style techniques like `display: none` caching or Virtual DOM diffing (which retains hidden elements in memory), we strictly enforce `this.grid.innerHTML = ''` during folder transitions. This physical obliteration of the DOM forces the browser's Garbage Collector to instantly reclaim memory for all previous thumbnails and videos, resulting in a zero-memory background footprint.
