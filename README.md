@@ -16,7 +16,7 @@ In the rapidly evolving landscape of AI art tools, legacy plugins have become bl
 
 **Anomalous Model Browser** was born out of an extreme pursuit of minimalism and high performance:
 - **True Zero Dependencies**: We completely abandoned Node.js, Webpack, Vue/React/Svelte, and other heavy frontend tools. The entire extension is written in pure **Native Python + Vanilla JS**!
-- **Unmatched Performance**: With a total codebase of under 100KB, it delivers a much smoother experience. No background polling loops, no memory leaks—just plug and play with millisecond response times.
+- **Unmatched Performance**: With a total codebase of under 200KB, it delivers a much smoother experience. No background polling loops, no memory leaks—just plug and play with millisecond response times.
 - **Smart Association & Synchronization**: Say goodbye to complex database building. It smartly and seamlessly associates your `.safetensors` files with their corresponding `.info` descriptions and `.png`/`.mp4` previews purely through file naming.
 
 ### ✨ Core Features
@@ -56,6 +56,11 @@ In the rapidly evolving landscape of AI art tools, legacy plugins have become bl
    - **Seamless i18n**: Switch between beautifully formatted pure English or pure Chinese UI with a single click, instantly transforming all buttons, dialogs, and dynamic text.
    - **Interactive Help Modal**: Never feel lost with the built-in `❓ Help` manual explaining every feature natively within the plugin. The sandwich layout ensures the close button is never pushed off-screen regardless of how long the text is.
 
+7. **📑 Advanced Notebook System**
+   - **Bilingual Prompt Editor**: A dedicated drafting workspace for your prompts featuring a dual-pane side-by-side translator. It auto-splits your prompts by commas into visual interactive tags with 1-click copying!
+   - **Smart Architecture Filtering**: Select a Base Model from your local models, and the Notebook automatically curates a pristine, cross-folder gallery of exactly compatible Main Models and Loras.
+   - **One-Click Deployment**: Compile your entire notebook (Checkpoints, multiple Loras, Prompts) and click 'Send to Canvas' to instantly deploy a fully connected workflow to your ComfyUI workspace.
+
 ### 📥 Installation
 
 Say goodbye to `pip install` and `npm install`!
@@ -80,7 +85,7 @@ Say goodbye to `pip install` and `npm install`!
 
 **Anomalous Model Browser** 诞生于对“极简主义”和“高性能”的极致追求：
 - **真正的零依赖**：我们彻底抛弃了 Node.js、Webpack、Vue/React 等重型武器。全端采用最纯粹的 **原生 Python + Vanilla JS** 编写！
-- **降维打击的性能**：不到 100KB 的总代码量，实现了极度丝滑的体验。没有内存泄漏，即插即用，毫秒级响应。
+- **降维打击的性能**：不到 200KB 的总代码量，实现了极度丝滑的体验。没有内存泄漏，即插即用，毫秒级响应。
 - **智能级联关联机制**：不再需要复杂的数据库，直接通过底层文件名映射，无缝关联 `.safetensors` 与其对应的 `.info` 描述及动态预览媒体。
 
 ### ✨ 核心特性
@@ -118,6 +123,11 @@ Say goodbye to `pip install` and `npm install`!
 6. **🌐 纯净双语引擎与内置说明书**
    - **无缝 i18n 切换**：一键在纯中文与纯英文界面间自由切换，告别拥挤的双语混排，所有弹窗与提示会瞬间自适应目标语言。并针对英文排版做了动态文字缩放，确保界面永不换行崩塌。
    - **交互式帮助面板**：内置随叫随到的 `❓ 帮助` 面板，提供中英文纯血的详细说明书，再也不用切回 GitHub 看使用文档了！三明治结构设计保证关闭按钮永远固定在视野内，不会因为文字过多而点不到。
+
+7. **📑 极客级笔记本 (Notebook) 系统**
+   - **双语交互式提示词工作台**：内置了极具高级感的双向对照编辑器，利用深色模式和磨砂质感，自动将你的中英文提示词按逗号拆分成一个个悬停交互的高级标签快，指哪亮哪，并支持一键精准复制单个单词！
+   - **纯净架构雷达筛选**：当你新建一本笔记本并选定底模架构（纯净抓取你本地拥有的架构，绝不硬编码凑数），下方的图库会自动为你过滤出所有适配的主模型与 Lora，告别漫无目的的翻找。
+   - **一键爆破式部署**：草稿打完后，点击“发送到画布”，所有的 Checkpoint、Lora 节点甚至连线逻辑都会瞬间部署至你的 ComfyUI 画布，真正的一气呵成！
 
 ### 📥 极简安装说明
 

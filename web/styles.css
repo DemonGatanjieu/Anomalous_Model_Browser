@@ -296,3 +296,117 @@
     text-overflow: ellipsis;
     flex: 1;
 }
+
+
+/* Notebook UI */
+.anomalous-nb-modal {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.anomalous-nb-container {
+    width: 85%; height: 85%;
+    background: var(--bg-color, #222);
+    border: 1px solid var(--border-color, #444);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+}
+.anomalous-nb-header {
+    height: 50px;
+    background: var(--comfy-menu-bg, #333);
+    border-bottom: 1px solid #444;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    justify-content: space-between;
+    color: #fff;
+}
+.anomalous-nb-close {
+    font-size: 2em; cursor: pointer; color: #ff4444;
+}
+.anomalous-nb-body {
+    flex: 1; display: flex; overflow: hidden;
+}
+.anomalous-nb-sidebar {
+    width: 250px; background: #111; border-right: 1px solid #444; display: flex; flex-direction: column;
+}
+.anomalous-nb-list {
+    flex: 1; overflow-y: auto; padding: 10px;
+}
+.anomalous-nb-item {
+    padding: 10px; color: #ccc; cursor: pointer; border-radius: 4px; margin-bottom: 5px; background: #222;
+}
+.anomalous-nb-item:hover { background: #333; }
+.anomalous-nb-item.active { background: #007bff; color: #fff; font-weight: bold; }
+.anomalous-nb-editor {
+    flex: 1; background: #222; overflow-y: auto; padding: 20px; color: #eee;
+}
+.anomalous-nb-toolbar {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+}
+.anomalous-btn-primary { background: #007bff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-left: 5px; }
+.anomalous-btn-danger { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-left: 5px; }
+.anomalous-btn-success { background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-left: 5px; }
+.anomalous-nb-section {
+    background: #2a2a2a; border: 1px solid #444; border-radius: 8px; padding: 15px; margin-bottom: 20px;
+}
+.anomalous-nb-row { margin-bottom: 10px; }
+.anomalous-nb-select { background: #111; color: #fff; padding: 6px; border: 1px solid #555; border-radius: 4px; }
+.anomalous-nb-gallery { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0; }
+.anomalous-nb-gallery-wrap { display: flex; gap: 10px; flex-wrap: wrap; padding: 10px 0; }
+.anomalous-nb-minicheck, .anomalous-nb-minilora {
+    display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 8px;
+    background: #2a2a2a; border: 1px solid #444; border-radius: 8px; cursor: pointer;
+    flex: 1 1 220px; max-width: 320px; transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.anomalous-nb-minicheck:hover, .anomalous-nb-minilora:hover { 
+    border-color: #888; background: #383838; transform: translateY(-2px); 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition-delay: 0.02s;
+}
+.anomalous-nb-minicheck.selected, .anomalous-nb-minilora.selected {
+    border-color: #00ffcc; background: rgba(0, 255, 204, 0.15); box-shadow: 0 0 12px rgba(0,255,204,0.2);
+}
+.anomalous-nb-minicheck img, .anomalous-nb-minicheck video, .anomalous-nb-minilora img, .anomalous-nb-minilora video {
+    width: 52px; height: 52px; object-fit: cover; border-radius: 6px; flex-shrink: 0;
+}
+.anomalous-nb-minicheck-name, .anomalous-nb-minilora-name {
+    color: #eee; font-size: 0.95em; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-align: left;
+}
+.anomalous-nb-minicheck.selected .anomalous-nb-minicheck-name, .anomalous-nb-minilora.selected .anomalous-nb-minilora-name {
+    color: #00ffcc; font-weight: bold;
+}
+.anomalous-nb-textarea {
+    width: 100%; height: 60px; background: #111; color: #fff; border: 1px solid #555; border-radius: 4px; padding: 8px; margin-top: 10px; resize: vertical; box-sizing: border-box;
+}
+.anomalous-nb-dual-pane {
+    display: flex; flex-direction: column; width: 100%; background: #1a1a1a; padding: 10px; border-radius: 8px; border: 1px solid #444; box-sizing: border-box;
+}
+.anomalous-nb-tag-row {
+    display: flex; gap: 15px; width: 100%; align-items: stretch; margin-bottom: 6px;
+}
+.anomalous-nb-gallery-box {
+    background: #1e1e1e; border: 1px solid #444; border-radius: 8px; padding: 12px; margin-bottom: 15px;
+}
+.anomalous-nb-visual-tag {
+    background: #2a2a2a; color: #eee; padding: 8px 12px; border-radius: 6px; border: 1px solid #444; cursor: pointer; transition: all 0.2s; min-height: 36px; display: flex; align-items: center; word-break: break-word; font-size: 0.95em; line-height: 1.4;
+}
+.anomalous-nb-visual-tag.hover {
+    background: #3a3a3a; border-color: #00ffcc; color: #fff; box-shadow: inset 0 0 5px rgba(0,255,204,0.2);
+}
+.anomalous-nb-copy-btn {
+    opacity: 0.3; transition: all 0.2s; padding-left: 10px; flex-shrink: 0; user-select: none;
+}
+.anomalous-nb-visual-tag:hover .anomalous-nb-copy-btn {
+    opacity: 1;
+}
+.anomalous-nb-copy-btn:hover {
+    transform: scale(1.3);
+}
+.anomalous-nb-tag-edit { background: #111; color: #fff; border: 1px solid #00ffcc; border-radius: 4px; padding: 6px; width: 100%; font-size: 1em; box-sizing: border-box; }

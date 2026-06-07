@@ -496,10 +496,10 @@ async def api_compatible_models(request):
                         seen_files.add(real_path)
                         
                         meta = get_metadata(file_path)
+                        m_bm = str(meta.get("baseModel", "")).strip().lower().replace(" ", "")
+                        req_bm = str(base_model).strip().lower().replace(" ", "")
                         
-                        m_bm = str(meta.get("baseModel", "")).strip().lower()
-                        req_bm = str(base_model).strip().lower()
-                        if m_bm and m_bm == req_bm:
+                        if req_bm and m_bm and (req_bm in m_bm or m_bm in req_bm):
                             rel_subfolder = os.path.relpath(root, base_dir)
                             if rel_subfolder == '.':
                                 rel_subfolder = '/'
@@ -539,6 +539,145 @@ async def api_compatible_models(request):
                         
     return web.json_response({"models": compatible_models})
 
+async def api_get_notebooks(request):
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    nb_dir = os.path.join(script_dir, "notebooks")
+    if not os.path.exists(nb_dir):
+        os.makedirs(nb_dir)
+    
+    notebooks = []
+    for f in os.listdir(nb_dir):
+        if f.endswith('.json'):
+            try:
+                with open(os.path.join(nb_dir, f), 'r', encoding='utf-8') as file:
+                    data = json.load(file)
+                    notebooks.append({
+                        "filename": f,
+                        "name": data.get("name", f.replace('.json', '')),
+                        "data": data
+                    })
+            except Exception:
+                pass
+    return web.json_response({"notebooks": notebooks})
+
+async def api_save_notebook(request):
+    try:
+        data = await request.json()
+        filename = data.get("filename", "")
+        if not filename or '..' in filename:
+            return web.json_response({"status": "error", "message": "Invalid filename"})
+        if not filename.endswith('.json'):
+            filename += '.json'
+            
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        nb_dir = os.path.join(script_dir, "notebooks")
+        if not os.path.exists(nb_dir):
+            os.makedirs(nb_dir)
+            
+        file_path = os.path.join(nb_dir, filename)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(data.get("data", {}), f, indent=4, ensure_ascii=False)
+            
+        return web.json_response({"status": "success"})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)})
+
+async def api_delete_notebook(request):
+    try:
+        data = await request.json()
+        filename = data.get("filename", "")
+        if not filename or '..' in filename:
+            return web.json_response({"status": "error", "message": "Invalid filename"})
+            
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        nb_dir = os.path.join(script_dir, "notebooks")
+        file_path = os.path.join(nb_dir, filename)
+        
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return web.json_response({"status": "success"})
+        return web.json_response({"status": "error", "message": "File not found"})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)})
+
+async def api_translate(request):
+    try:
+        data = await request.json()
+        text = data.get("text", "")
+        tl = data.get("target_lang", "zh-CN")
+        if not text:
+            return web.json_response({"translated": ""})
+            
+        # Try DeepL if API key exists
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        config_path = os.path.join(script_dir, "config.json")
+        deepl_key = ""
+        if os.path.exists(config_path):
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    cfg = json.load(f)
+                    deepl_key = cfg.get("DEEPL_API_KEY", "").strip()
+            except:
+                pass
+                
+        if deepl_key:
+            deepl_map = { "zh-CN": "ZH", "en": "EN", "ja": "JA", "ko": "KO", "fr": "FR", "de": "DE", "es": "ES", "ru": "RU" }
+            d_tl = deepl_map.get(tl, "EN")
+            url = "https://api-free.deepl.com/v2/translate" if ":fx" in deepl_key else "https://api.deepl.com/v2/translate"
+            payload = urllib.parse.urlencode({
+                "auth_key": deepl_key,
+                "text": text,
+                "target_lang": d_tl
+            }).encode('utf-8')
+            req = urllib.request.Request(url, data=payload)
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                result = json.loads(resp.read().decode('utf-8'))
+                return web.json_response({"translated": result["translations"][0]["text"]})
+        else:
+            # Fallback to Google Translate (free, no key)
+            url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={tl}&dt=t&q={urllib.parse.quote(text)}"
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                result = json.loads(resp.read().decode('utf-8'))
+                # Google Translate returns a list of fragments
+                translated_text = "".join([part[0] for part in result[0]])
+                return web.json_response({"translated": translated_text})
+                
+    except Exception as e:
+        print(f"Translate Error: {e}")
+        return web.json_response({"translated": text, "error": str(e)})
+
+
+async def api_base_models(request):
+    target_types = ['checkpoints', 'unet', 'diffusion_models', 'loras']
+    base_models = set()
+    seen_files = set()
+    
+    for t in target_types:
+        try:
+            paths = folder_paths.get_folder_paths(t)
+        except Exception:
+            continue
+        if not paths: continue
+            
+        for base_dir in paths:
+            if not os.path.exists(base_dir): continue
+            for root, _, files in os.walk(base_dir):
+                for f in files:
+                    if f.endswith('.safetensors') or f.endswith('.ckpt') or f.endswith('.pt'):
+                        file_path = os.path.join(root, f)
+                        real_path = os.path.realpath(file_path)
+                        if real_path in seen_files: continue
+                        seen_files.add(real_path)
+                        
+                        meta = get_metadata(file_path)
+                        m_bm = meta.get("baseModel", "")
+                        if m_bm and str(m_bm).strip():
+                            # Remove typical generic strings that might pollute
+                            clean_bm = str(m_bm).strip()
+                            base_models.add(clean_bm)
+                            
+    return web.json_response({"base_models": sorted(list(base_models))})
 
 def setup_routes(app):
     app.router.add_get('/anomalous/folders', api_get_folders)
@@ -551,4 +690,8 @@ def setup_routes(app):
     app.router.add_post('/anomalous/delete_model', api_delete_model)
     app.router.add_post('/anomalous/clean_civitai_info', api_clean_civitai_info)
     app.router.add_get('/anomalous/compatible_models', api_compatible_models)
-
+    app.router.add_get('/anomalous/notebooks', api_get_notebooks)
+    app.router.add_post('/anomalous/save_notebook', api_save_notebook)
+    app.router.add_post('/anomalous/delete_notebook', api_delete_notebook)
+    app.router.add_post('/anomalous/translate', api_translate)
+    app.router.add_get('/anomalous/base_models', api_base_models)
