@@ -55,6 +55,7 @@ const i18n = {
     <p><strong>7. 🔗 兼容模型匹配</strong>: 点开大模型或 Lora 详细页，系统将自动基于 Base Model 架构，双向匹配并展示关联模型。</p>
     <p><strong>8. ➕ 一键投放节点</strong>: 在网格卡片右上角或详细页顶部，点击【➕】按钮，可将当前模型节点直接贴在鼠标上，并无缝插入工作流画布！</p>
     <p><strong>9. 📑 笔记本 (Notebook)</strong>: 提供强大的工作流草稿本功能。你可以创建不同的笔记本，选择基础架构 (Base Model)，系统会自动为你筛选出对应的纯净主模型和 Lora 画廊供你点选。同时内置了极具高级感的双语提示词对照编辑器，支持标签化悬停高亮与快捷复制，并且支持将整个配置一键发送到画布！</p>
+    <p><strong>10. 🖼️ 图库 (Gallery)</strong>: 同步浏览 ComfyUI output 文件夹的所有生成历史。支持无限懒加载，点击全屏预览，设有极度安全的防误触删除遮罩。更可以直接将任意图片拖拽到画布上瞬间还原内嵌的工作流！</p>
 </div>`,
         notebooks: '笔记本',
         notebookTitle: '笔记本管理',
@@ -133,7 +134,10 @@ const i18n = {
     <p><strong>4. 🔋 Eco / 🎬 AutoPlay</strong>: Toggle video playback modes. Eco mode plays videos only when hovering over a model card.</p>
     <p><strong>5. 🗂️ Details & Delete</strong>: Click a model card to view details and <strong>1-click copy trained words</strong>. You can also permanently delete the model here (requires ComfyUI restart).</p>
     <p><strong>6. 📂 Folder Toggle</strong>: Use the Collapse/Expand All button in the sidebar to manage your view.</p>
-    <p><strong>7. 📑 Notebook System</strong>: A powerful drafting workspace. Create notebooks, select a Base Model, and precisely match compatible Main Models and Loras. Includes a premium dual-pane bilingual prompt editor with hover-sync, tag splitting, and 1-click deployment to canvas.</p>
+    <p><strong>7. 🔗 Compatible Model Matching</strong>: Open a Checkpoint or Lora detail page, and the system will automatically bi-directionally match and display compatible models based on the Base Model architecture.</p>
+    <p><strong>8. ➕ One-Click Add Node</strong>: Click the 【➕】 button on a grid card or detail page to instantly attach the model node to your cursor and drop it seamlessly onto your workflow canvas!</p>
+    <p><strong>9. 📑 Notebook System</strong>: A powerful drafting workspace. Create notebooks, select a Base Model, and precisely match compatible Main Models and Loras. Includes a premium dual-pane bilingual prompt editor with hover-sync, tag splitting, and 1-click deployment to canvas.</p>
+    <p><strong>10. 🖼️ Gallery System</strong>: Natively browse your ComfyUI output history. Features infinite lazy loading, fullscreen immersive previews, and a foolproof overlay for safe deletion. You can even drag and drop any image directly onto your canvas to instantly import its workflow!</p>
 </div>`,
         notebooks: 'Notebooks',
         notebookTitle: 'Notebook Manager',
