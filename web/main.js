@@ -3,17 +3,17 @@ import { app } from "../../scripts/app.js";
 const i18n = {
     zh: {
         title: '📦 Anomalous 模型浏览器',
-        scan: '扫描',
+        scan: '🔄 扫描目录并同步 C 站数据',
         scanTitle: '扫描目录',
         scanConfirm: '注意:\n扫描过程将会自动比对 Civitai 并重命名本地模型，同时清理损坏文件。\n确定要开始扫描吗？',
         scanning: '扫描中...',
         scanBg: '🚀 扫描后台启动！',
         scanDone: '完成',
         scanCompleteMsg: '✅ 扫描完成！\n\n⚠️ 提示：由于部分模型已被重命名或去重，请点击 ComfyUI 的 [Refresh] 按钮以同步最新的模型列表。',
-        eco: '节能',
-        autoPlay: '自动播放',
+        eco: '🔋 视频悬浮播放 (节能模式)',
+        autoPlay: '🎬 自动播放视频封面 (高能耗)',
         togglePlayTitle: '切换播放模式',
-        clean: '清理',
+        clean: '🧹 清理无效的 .info 残留文件',
         cleanTitle: '清理重复 Info',
         cleanConfirm: '将扫描并删除所有无用的 .civitai.info 残留文件。是否继续？',
         cleaning: '清理中',
@@ -56,7 +56,7 @@ const i18n = {
     <p><strong>8. ➕ 一键投放节点</strong>: 在网格卡片右上角或详细页顶部，点击【➕】按钮，可将当前模型节点直接贴在鼠标上，并无缝插入工作流画布！</p>
     <p><strong>9. 📑 笔记本 (Notebook)</strong>: 提供强大的工作流草稿本功能。你可以创建不同的笔记本，选择基础架构 (Base Model)，系统会自动为你筛选出对应的纯净主模型和 Lora 画廊供你点选。同时内置了极具高级感的双语提示词对照编辑器，支持标签化悬停高亮与快捷复制，并且支持将整个配置一键发送到画布！</p>
 </div>`,
-        notebooks: '📑 笔记本',
+        notebooks: '笔记本',
         notebookTitle: '笔记本管理',
         createNotebook: '➕ 新建',
         saveNotebook: '💾 保存',
@@ -70,20 +70,31 @@ const i18n = {
         noBaseModel: '请先选择 Base Model',
         closeHelp: '关闭说明',
         delSure: '⚠️ 确定吗？',
+        dockTitle: '侧边停靠',
+        replaceAll: '全部替换',
+        editRaw: '📝 纯文本/粘贴',
+        findPlaceholder: '查找...',
+        replacePlaceholder: '替换为...',
+        models: '模型',
+        gallery: '图库',
+        apiKeyConfig: '🔑 Civitai API 密钥配置 (用于下载封面)',
+        apiKeyPrompt: '请输入你的 Civitai API Key：',
+        settingsBtn: '设置',
+        closeSettings: '✖ 关闭设置面板',
     },
     en: {
         title: '📦 Anomalous Model Browser',
-        scan: 'Scan',
+        scan: '🔄 Scan folder and sync Civitai data',
         scanTitle: 'Scan Folder',
         scanConfirm: 'Notice:\nThe scan process will automatically compare with Civitai and rename your local files.\nStart scan?',
         scanning: 'Scanning...',
         scanBg: '🚀 Scan started in background!',
         scanDone: 'Done',
         scanCompleteMsg: '✅ Scan Complete!\n\n⚠️ Note: Please click [Refresh] to sync the model list since files were renamed.',
-        eco: 'Eco',
-        autoPlay: 'AutoPlay',
+        eco: '🔋 Eco Mode (Play video on hover)',
+        autoPlay: '🎬 AutoPlay Videos (High perf cost)',
         togglePlayTitle: 'Toggle Play Mode',
-        clean: 'Clean Info',
+        clean: '🧹 Clean orphaned .info files',
         cleanTitle: 'Clean Duplicate Info',
         cleanConfirm: 'This will globally scan and delete all redundant .civitai.info files. Continue?',
         cleaning: 'Cleaning',
@@ -124,7 +135,7 @@ const i18n = {
     <p><strong>6. 📂 Folder Toggle</strong>: Use the Collapse/Expand All button in the sidebar to manage your view.</p>
     <p><strong>7. 📑 Notebook System</strong>: A powerful drafting workspace. Create notebooks, select a Base Model, and precisely match compatible Main Models and Loras. Includes a premium dual-pane bilingual prompt editor with hover-sync, tag splitting, and 1-click deployment to canvas.</p>
 </div>`,
-        notebooks: '📑 Notebooks',
+        notebooks: 'Notebooks',
         notebookTitle: 'Notebook Manager',
         createNotebook: '➕ New',
         saveNotebook: '💾 Save',
@@ -138,6 +149,17 @@ const i18n = {
         noBaseModel: 'Select a Base Model first',
         closeHelp: 'Close Manual',
         delSure: '⚠️ Sure?',
+        dockTitle: 'Dock to Left',
+        replaceAll: 'Replace All',
+        editRaw: '📝 Edit Raw / Paste',
+        findPlaceholder: 'Find...',
+        replacePlaceholder: 'Replace with...',
+        models: 'Models',
+        gallery: 'Gallery',
+        apiKeyConfig: '🔑 Civitai API Key Config (For downloading previews)',
+        apiKeyPrompt: 'Enter your Civitai API Key:',
+        settingsBtn: 'Settings',
+        closeSettings: '✖ Close Settings',
     }
 };
 
@@ -162,7 +184,6 @@ class AnomalousBrowser {
     createDOM() {
         this.modal = document.createElement('div');
         this.modal.id = 'anomalous-modal';
-        this.modal.onclick = (e) => { if (e.target === this.modal) this.close(); };
 
         const container = document.createElement('div');
         container.id = 'anomalous-container';
@@ -180,49 +201,7 @@ class AnomalousBrowser {
         this.sidebar = document.createElement('div');
         this.sidebar.id = 'anomalous-sidebar';
         
-        this.settingsArea = document.createElement('div');
-        this.settingsArea.id = 'anomalous-settings';
-        
-        // API key moved to header
-        
-        const langBtn = document.createElement('button');
-        langBtn.style.padding = '6px';
-        langBtn.style.width = '100%';
-        langBtn.style.background = '#444';
-        langBtn.style.color = '#fff';
-        langBtn.style.border = '1px solid #555';
-        langBtn.style.borderRadius = '4px';
-        langBtn.style.cursor = 'pointer';
-        langBtn.innerHTML = currentLang === 'zh' ? '🌐 Language: EN' : '🌐 语言: 中文';
-        langBtn.onclick = () => {
-            currentLang = currentLang === 'zh' ? 'en' : 'zh';
-            localStorage.setItem('anomalous_lang', currentLang);
-            langBtn.innerHTML = currentLang === 'zh' ? '🌐 Language: EN' : '🌐 语言: 中文';
-            // re-render UI
-            updateLangClass();
-            title.innerHTML = t('title');
-            scanBtn.title = t('scanTitle');
-            scanBtn.innerHTML = `🔄 <span class="anomalous-btn-text">${t('scan')}</span>`;
-            cleanBtn.title = t('cleanTitle');
-            cleanBtn.innerHTML = `🧹 <span class="anomalous-btn-text">${t('clean')}</span>`;
-            helpBtn.title = t('helpTitle');
-            helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
-            nbBtn.title = t('notebookTitle');
-            nbBtn.innerHTML = `<span class="anomalous-btn-text">${t('notebooks')}</span>`;
-            renderEnergyBtn();
-            this.renderSidebar();
-            this.loadModels();
-            if (this.detailPanel.style.display !== 'none' && this.currentDetailModel) {
-                this.showDetail(this.currentDetailModel);
-            }
-            if (this.nbEditor && this.nbEditor.innerHTML !== '') {
-                this.renderNotebookEditor();
-                this.refreshNotebooks();
-            }
-        };
-        this.settingsArea.appendChild(langBtn);
         this.sidebarWrapper.appendChild(this.sidebar);
-        this.sidebarWrapper.appendChild(this.settingsArea);
 
         // Content Area
         const content = document.createElement('div');
@@ -231,10 +210,137 @@ class AnomalousBrowser {
         const header = document.createElement('div');
         header.id = 'anomalous-header';
         
-        const title = document.createElement('div');
-        title.id = 'anomalous-title';
-        title.innerHTML = t('title');
+        let isDragging = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        header.addEventListener('mousedown', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.id === 'anomalous-close') return;
+            isDragging = true;
+            const rect = container.getBoundingClientRect();
+            dragOffsetX = e.clientX - rect.left;
+            dragOffsetY = e.clientY - rect.top;
+            e.preventDefault();
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            let newX = e.clientX - dragOffsetX;
+            let newY = e.clientY - dragOffsetY;
+            
+            if (newX < 0) newX = 0;
+            if (newY < 0) newY = 0;
+            if (newX + container.offsetWidth > window.innerWidth) newX = window.innerWidth - container.offsetWidth;
+            if (newY + container.offsetHeight > window.innerHeight) newY = window.innerHeight - container.offsetHeight;
+            
+            container.style.left = newX + 'px';
+            container.style.top = newY + 'px';
+            container.style.transform = 'none';
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                localStorage.setItem('anomalous_pos_x', container.style.left);
+                localStorage.setItem('anomalous_pos_y', container.style.top);
+            }
+        });
+
+        const savedX = localStorage.getItem('anomalous_pos_x');
+        const savedY = localStorage.getItem('anomalous_pos_y');
+        if (savedX && savedY) {
+            container.style.left = savedX;
+            container.style.top = savedY;
+        }
         
+        const spacer = document.createElement('div');
+        spacer.style.flex = '1 1 auto';
+        
+        const leftGroup = document.createElement('div');
+        leftGroup.className = 'anomalous-header-group';
+
+        const menuBtn = document.createElement('button');
+        menuBtn.innerHTML = '☰';
+        menuBtn.title = 'Toggle Sidebar';
+        menuBtn.onclick = () => {
+            if (this.sidebarWrapper.style.display === 'none') {
+                this.sidebarWrapper.style.display = 'flex';
+                container.classList.remove('anomalous-sidebar-closed');
+            } else {
+                this.sidebarWrapper.style.display = 'none';
+                container.classList.add('anomalous-sidebar-closed');
+                container.style.width = '';
+                container.style.height = '';
+                localStorage.removeItem('anomalous_width');
+                localStorage.removeItem('anomalous_height');
+            }
+        };
+
+        const hideAllPanels = () => {
+            this.grid.style.display = 'none';
+            this.detailPanel.style.display = 'none';
+            if (this.galleryPanel) this.galleryPanel.style.display = 'none';
+            if (this.currentDetailObserver) {
+                this.currentDetailObserver.disconnect();
+                this.currentDetailObserver = null;
+            }
+        };
+
+        const showSidebar = () => {
+            if (window.innerWidth <= 900) {
+                // If it was explicitly closed by the user, don't force it open, but since we are switching tabs we should probably show it
+                this.sidebarWrapper.style.display = 'flex';
+                container.classList.remove('anomalous-sidebar-closed');
+            } else {
+                this.sidebarWrapper.style.display = 'flex';
+                container.classList.remove('anomalous-sidebar-closed');
+            }
+        };
+
+        const modelsBtn = document.createElement('button');
+        modelsBtn.id = 'anomalous-models-btn';
+        modelsBtn.innerHTML = `🏠 <span class="anomalous-btn-text">${t('models')}</span>`;
+        modelsBtn.onclick = () => {
+            hideAllPanels();
+            showSidebar();
+            this.grid.style.display = 'grid';
+            if (this.detailPanel.innerHTML !== '') {
+                this.detailPanel.innerHTML = '';
+                this.currentDetailModel = null;
+                this.historyStack = [];
+            }
+        };
+
+        const galleryBtn = document.createElement('button');
+        galleryBtn.innerHTML = `🖼️ <span class="anomalous-btn-text">${t('gallery') || '图库'}</span>`;
+        galleryBtn.onclick = () => {
+            hideAllPanels();
+            this.sidebarWrapper.style.display = 'none';
+            container.classList.add('anomalous-sidebar-closed');
+            this.galleryPanel.style.display = 'flex';
+            if (!this.galleryLoaded) {
+                this.loadGalleryImages(1, true);
+            }
+        };
+
+        const rightGroup = document.createElement('div');
+        rightGroup.className = 'anomalous-header-group';
+
+        const dockBtn = document.createElement('button');
+        dockBtn.innerHTML = '◧';
+        dockBtn.title = t('dockTitle');
+        dockBtn.onclick = () => {
+            container.classList.toggle('anomalous-docked');
+            if (container.classList.contains('anomalous-docked')) {
+                localStorage.setItem('anomalous_docked', 'true');
+            } else {
+                localStorage.setItem('anomalous_docked', 'false');
+            }
+        };
+
+        if (localStorage.getItem('anomalous_docked') === 'true') {
+            container.classList.add('anomalous-docked');
+        }
         
         const helpBtn = document.createElement('button');
         helpBtn.id = 'anomalous-help-btn';
@@ -245,33 +351,39 @@ class AnomalousBrowser {
         const nbBtn = document.createElement('button');
         nbBtn.id = 'anomalous-notebook-btn';
         nbBtn.title = t('notebookTitle');
-        nbBtn.innerHTML = `<span class="anomalous-btn-text">${t('notebooks')}</span>`;
-        nbBtn.onclick = () => this.showNotebooks();
-
-        const apiKeyInput = document.createElement('input');
-        apiKeyInput.id = 'anomalous-api-key';
-        apiKeyInput.placeholder = '🔑 API Key';
-        apiKeyInput.title = '输入 Civitai API Key / Enter Civitai API Key';
-        apiKeyInput.type = 'password';
-        apiKeyInput.value = localStorage.getItem('anomalous_api_key') || '';
-        apiKeyInput.onchange = async () => {
-            localStorage.setItem('anomalous_api_key', apiKeyInput.value);
-            try {
-                await fetch('/anomalous/save_config', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ api_key: apiKeyInput.value })
-                });
-            } catch(e) {}
+        nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('notebooks')}</span>`;
+        nbBtn.onclick = () => {
+            this.nbPanel.style.display = 'flex';
+            this.showNotebooks();
         };
-        fetch('/anomalous/config').then(r=>r.json()).then(d=>{
-            if (d.has_api_key) apiKeyInput.placeholder = 'API Key Saved';
-        }).catch(()=>{});
+
+        leftGroup.appendChild(menuBtn);
+        leftGroup.appendChild(modelsBtn);
+        leftGroup.appendChild(galleryBtn);
+        leftGroup.appendChild(nbBtn);
+
+        const apiKeyBtn = document.createElement('button');
+        apiKeyBtn.id = 'anomalous-api-btn';
+        apiKeyBtn.innerHTML = `<span class="anomalous-btn-text">${t('apiKeyConfig')}</span>`;
+        apiKeyBtn.onclick = async () => {
+            const current = localStorage.getItem('anomalous_api_key') || '';
+            const val = prompt(t('apiKeyPrompt'), current);
+            if (val !== null) {
+                localStorage.setItem('anomalous_api_key', val.trim());
+                try {
+                    await fetch('/anomalous/save_config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ api_key: val.trim() })
+                    });
+                } catch(e) {}
+            }
+        };
         
         const scanBtn = document.createElement('button');
         scanBtn.id = 'anomalous-scan-btn';
         scanBtn.title = t('scanTitle');
-        scanBtn.innerHTML = `🔄 <span class="anomalous-btn-text">${t('scan')}</span>`;
+        scanBtn.innerHTML = `<span class="anomalous-btn-text">${t('scan')}</span>`;
         scanBtn.onclick = async () => {
             if (!confirm(t('scanConfirm'))) return;
             scanBtn.innerHTML = `⏳ <span class="anomalous-btn-text">${t('scanning')}</span>`;
@@ -307,7 +419,7 @@ class AnomalousBrowser {
                                 alert(msg);
                                 
                                 this.loadModels();
-                                setTimeout(() => { scanBtn.innerHTML = `🔄 <span class="anomalous-btn-text">${t('scan')}</span>`; scanBtn.disabled = false; }, 2000);
+                                setTimeout(() => { scanBtn.innerHTML = `<span class="anomalous-btn-text">${t('scan')}</span>`; scanBtn.disabled = false; }, 2000);
                             }
                         } catch(e) { clearInterval(poll); scanBtn.disabled = false; }
                     }, 3000);
@@ -322,8 +434,8 @@ class AnomalousBrowser {
         energyBtn.title = t('togglePlayTitle');
         const renderEnergyBtn = () => {
             energyBtn.innerHTML = this.energySaving 
-                ? `🔋 <span class="anomalous-btn-text">${t('eco')}</span>` 
-                : `🎬 <span class="anomalous-btn-text">${t('autoPlay')}</span>`;
+                ? `<span class="anomalous-btn-text">${t('eco')}</span>` 
+                : `<span class="anomalous-btn-text">${t('autoPlay')}</span>`;
         };
         renderEnergyBtn();
         energyBtn.onclick = () => {
@@ -341,9 +453,8 @@ class AnomalousBrowser {
         const cleanBtn = document.createElement('button');
         cleanBtn.id = 'anomalous-clean-btn';
         cleanBtn.title = t('cleanTitle');
-                    cleanBtn.innerHTML = `🧹 <span class="anomalous-btn-text">${t('clean')}</span>`;
-            helpBtn.title = t('helpTitle');
-            helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
+        cleanBtn.innerHTML = `<span class="anomalous-btn-text">${t('clean')}</span>`;
+        
         cleanBtn.onclick = async () => {
             if (!confirm(t('cleanConfirm'))) return;
             cleanBtn.innerHTML = `⏳ <span class="anomalous-btn-text">${t('cleaning')}</span>`;
@@ -357,19 +468,94 @@ class AnomalousBrowser {
                     alert(t('cleanFail') + data.message);
                 }
             } catch (e) { alert(t('cleanErr') + e.message); }
-                        cleanBtn.innerHTML = `🧹 <span class="anomalous-btn-text">${t('clean')}</span>`;
-            helpBtn.title = t('helpTitle');
-            helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
+            cleanBtn.innerHTML = `<span class="anomalous-btn-text">${t('clean')}</span>`;
             cleanBtn.disabled = false;
         };
 
-        header.appendChild(nbBtn);
-        header.appendChild(helpBtn);
-        header.appendChild(apiKeyInput);
-        header.appendChild(cleanBtn);
-        header.appendChild(scanBtn);
-        header.appendChild(energyBtn);
-        header.appendChild(closeBtn);
+        const settingsBtn = document.createElement('button');
+        settingsBtn.id = 'anomalous-settings-btn';
+        settingsBtn.innerHTML = `⚙️ <span class="anomalous-btn-text">${t('settingsBtn')}</span>`;
+        settingsBtn.onclick = () => {
+            if (this.settingsPanel.style.display === 'flex') {
+                this.settingsPanel.style.display = 'none';
+            } else {
+                this.settingsPanel.style.display = 'flex';
+            }
+        };
+
+        rightGroup.appendChild(dockBtn);
+        rightGroup.appendChild(settingsBtn);
+        rightGroup.appendChild(closeBtn);
+
+        header.appendChild(leftGroup);
+        header.appendChild(spacer);
+        header.appendChild(rightGroup);
+
+        this.settingsPanel = document.createElement('div');
+        this.settingsPanel.id = 'anomalous-settings-panel';
+        
+        const settingsBox = document.createElement('div');
+        settingsBox.id = 'anomalous-settings-box';
+        
+        const langBtn = document.createElement('button');
+        langBtn.className = 'anomalous-lang-btn';
+        langBtn.innerHTML = currentLang === 'zh' ? '🌐 Language: EN' : '🌐 语言: 中文';
+        langBtn.onclick = () => {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            localStorage.setItem('anomalous_lang', currentLang);
+            langBtn.innerHTML = currentLang === 'zh' ? '🌐 Language: EN' : '🌐 语言: 中文';
+            updateLangClass();
+            modelsBtn.innerHTML = `🏠 <span class="anomalous-btn-text">${t('models')}</span>`;
+            galleryBtn.innerHTML = `🖼️ <span class="anomalous-btn-text">${t('gallery')}</span>`;
+            scanBtn.title = t('scanTitle');
+            scanBtn.innerHTML = `<span class="anomalous-btn-text">${t('scan')}</span>`;
+            cleanBtn.title = t('cleanTitle');
+            cleanBtn.innerHTML = `<span class="anomalous-btn-text">${t('clean')}</span>`;
+            helpBtn.title = t('helpTitle');
+            helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
+            nbBtn.title = t('notebookTitle');
+            nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('notebooks')}</span>`;
+            apiKeyBtn.innerHTML = `<span class="anomalous-btn-text">${t('apiKeyConfig')}</span>`;
+            settingsBtn.innerHTML = `⚙️ <span class="anomalous-btn-text">${t('settingsBtn')}</span>`;
+            renderEnergyBtn();
+            this.renderSidebar();
+            this.loadModels();
+            if (this.detailPanel.style.display !== 'none' && this.currentDetailModel) {
+                this.showDetail(this.currentDetailModel);
+            }
+            if (this.nbEditor && this.nbEditor.innerHTML !== '') {
+                this.renderNotebookEditor();
+                this.refreshNotebooks();
+            }
+        };
+
+        const settingsCloseBtn = document.createElement('button');
+        settingsCloseBtn.style.background = 'linear-gradient(135deg, #cc3333 0%, #aa2222 100%)';
+        settingsCloseBtn.style.color = '#fff';
+        settingsCloseBtn.style.fontWeight = 'bold';
+        settingsCloseBtn.style.marginTop = '15px';
+        settingsCloseBtn.onclick = () => { this.settingsPanel.style.display = 'none'; };
+
+        const updateSettingsCloseText = () => {
+            settingsCloseBtn.innerHTML = t('closeSettings');
+        };
+        updateSettingsCloseText();
+
+        langBtn.addEventListener('click', updateSettingsCloseText);
+
+        settingsBox.appendChild(langBtn);
+        settingsBox.appendChild(apiKeyBtn);
+        settingsBox.appendChild(scanBtn);
+        settingsBox.appendChild(cleanBtn);
+        settingsBox.appendChild(energyBtn);
+        settingsBox.appendChild(helpBtn);
+        settingsBox.appendChild(settingsCloseBtn);
+        
+        this.settingsPanel.appendChild(settingsBox);
+        
+        this.settingsPanel.onclick = (e) => {
+            if (e.target === this.settingsPanel) this.settingsPanel.style.display = 'none';
+        };
 
         this.grid = document.createElement('div');
         this.grid.id = 'anomalous-grid';
@@ -378,14 +564,80 @@ class AnomalousBrowser {
         this.detailPanel.id = 'anomalous-detail';
         this.detailPanel.style.display = 'none';
 
+        this.galleryPanel = document.createElement('div');
+        this.galleryPanel.id = 'anomalous-gallery-panel';
+        
+        this.galleryGrid = document.createElement('div');
+        this.galleryGrid.className = 'anomalous-gallery-grid';
+        this.galleryPanel.appendChild(this.galleryGrid);
+        
+        this.gallerySentinel = document.createElement('div');
+        this.gallerySentinel.className = 'anomalous-gallery-sentinel';
+        this.galleryGrid.appendChild(this.gallerySentinel);
+        
+        this.galleryCurrentPage = 1;
+        this.galleryLoaded = false;
+        this.galleryLoading = false;
+        this.galleryHasMore = true;
+        
+        this.galleryObserver = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !this.galleryLoading && this.galleryHasMore) {
+                this.loadGalleryImages(this.galleryCurrentPage + 1);
+            }
+        }, { root: this.galleryGrid, rootMargin: '100px' });
+        this.galleryObserver.observe(this.gallerySentinel);
+
+        this.nbPanel = document.createElement('div');
+        this.nbPanel.className = 'anomalous-nb-modal';
+        this.nbPanel.style.display = 'none';
+        this.nbPanel.onclick = (e) => {
+            if (e.target === this.nbPanel) this.nbPanel.style.display = 'none';
+        };
+
         content.appendChild(header);
         content.appendChild(this.grid);
         content.appendChild(this.detailPanel);
+        content.appendChild(this.galleryPanel);
 
         container.appendChild(this.sidebarWrapper);
         container.appendChild(content);
+        container.appendChild(this.settingsPanel);
+        container.appendChild(this.nbPanel);
 
         this.modal.appendChild(container);
+        
+        // Resize handle
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'anomalous-resize-handle';
+        let isResizing = false;
+        resizeHandle.onmousedown = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            isResizing = true;
+        };
+        window.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const rect = container.getBoundingClientRect();
+            let newWidth = e.clientX - rect.left;
+            let newHeight = e.clientY - rect.top;
+            if (newWidth < 600) newWidth = 600;
+            if (newHeight < 400) newHeight = 400;
+            container.style.width = newWidth + 'px';
+            container.style.height = newHeight + 'px';
+        });
+        window.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                localStorage.setItem('anomalous_width', container.style.width);
+                localStorage.setItem('anomalous_height', container.style.height);
+            }
+        });
+        const savedW = localStorage.getItem('anomalous_width');
+        const savedH = localStorage.getItem('anomalous_height');
+        if (savedW) container.style.width = savedW;
+        if (savedH) container.style.height = savedH;
+
+        container.appendChild(resizeHandle);
         document.body.appendChild(this.modal);
     }
 
@@ -824,6 +1076,10 @@ this.close();
     }
 
     showDetail(model) {
+        if (this.currentDetailObserver) {
+            this.currentDetailObserver.disconnect();
+            this.currentDetailObserver = null;
+        }
         this.grid.style.display = 'none';
         this.detailPanel.style.display = 'flex';
         this.detailPanel.innerHTML = '';
@@ -846,6 +1102,10 @@ const backBtn = document.createElement('button');
         backBtn.style.borderRadius = '4px';
         backBtn.style.cursor = 'pointer';
         backBtn.onclick = () => {
+            if (this.currentDetailObserver) {
+                this.currentDetailObserver.disconnect();
+                this.currentDetailObserver = null;
+            }
             if (this.historyStack.length > 0) {
                 const prev = this.historyStack.pop();
                 this.currentType = prev.type;
@@ -897,6 +1157,10 @@ const backBtn = document.createElement('button');
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
+                    if (this.currentDetailObserver) {
+                        this.currentDetailObserver.disconnect();
+                        this.currentDetailObserver = null;
+                    }
                     alert(t('delSuccess') + data.deleted.join('\n') + t('delNote'));
                     this.detailPanel.style.display = 'none';
                     this.detailPanel.innerHTML = '';
@@ -953,29 +1217,45 @@ const backBtn = document.createElement('button');
         const leftPanel = document.createElement('div');
         leftPanel.className = 'anomalous-split-left';
         
-        if (model.preview_url) {
-            const isVideo = model.preview_url.toLowerCase().endsWith('.mp4') || model.preview_url.toLowerCase().endsWith('.webm');
-            if (isVideo) {
-                const video = document.createElement('video');
-                video.src = model.preview_url;
-                video.controls = true;
-                video.autoplay = true;
-                video.loop = true;
-                video.style.width = '100%';
-                video.style.height = '100%';
-                video.style.objectFit = 'contain';
-                leftPanel.appendChild(video);
+        let isMediaRendered = null;
+        const renderMedia = (shouldRender) => {
+            if (shouldRender === isMediaRendered) return;
+            isMediaRendered = shouldRender;
+            leftPanel.innerHTML = '';
+            if (!shouldRender) return;
+            
+            if (model.preview_url) {
+                const isVideo = model.preview_url.toLowerCase().endsWith('.mp4') || model.preview_url.toLowerCase().endsWith('.webm');
+                if (isVideo) {
+                    const video = document.createElement('video');
+                    video.src = model.preview_url;
+                    video.controls = true;
+                    video.autoplay = true;
+                    video.loop = true;
+                    video.style.width = '100%';
+                    video.style.height = '100%';
+                    video.style.objectFit = 'contain';
+                    leftPanel.appendChild(video);
+                } else {
+                    const img = document.createElement('img');
+                    img.src = model.preview_url;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'contain';
+                    leftPanel.appendChild(img);
+                }
             } else {
-                const img = document.createElement('img');
-                img.src = model.preview_url;
-                img.style.width = '100%';
-                img.style.height = '100%';
-                img.style.objectFit = 'contain';
-                leftPanel.appendChild(img);
+                leftPanel.innerHTML = `<div style="color:#aaa; text-align:center; margin-top:50px;">${t('noPreview')}</div>`;
             }
-        } else {
-            leftPanel.innerHTML = `<div style="color:#aaa; text-align:center; margin-top:50px;">${t('noPreview')}</div>`;
-        }
+        };
+
+        const containerEl = document.getElementById('anomalous-container');
+        this.currentDetailObserver = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                renderMedia(entry.contentRect.width >= 750);
+            }
+        });
+        this.currentDetailObserver.observe(containerEl);
         
         const resizer = document.createElement('div');
         resizer.className = 'anomalous-resizer';
@@ -1264,30 +1544,25 @@ const backBtn = document.createElement('button');
     close() { this.modal.classList.remove('visible'); }
 
     async showNotebooks() {
-        if (this.nbModal) {
-            this.nbModal.remove();
+        if (this.nbInitialized) {
+            this.refreshNotebooks(true);
+            return;
         }
+        this.nbInitialized = true;
         
-        this.nbModal = document.createElement('div');
-        this.nbModal.className = 'anomalous-nb-modal';
+        this.nbPanel.innerHTML = '';
         
-        const container = document.createElement('div');
-        container.className = 'anomalous-nb-container';
+        const nbContainer = document.createElement('div');
+        nbContainer.className = 'anomalous-nb-container';
         
-        const header = document.createElement('div');
-        header.className = 'anomalous-nb-header';
-        
-        const title = document.createElement('h2');
-        title.innerHTML = t('notebookTitle');
-        title.style.margin = '0';
-        
-        const closeX = document.createElement('div');
-        closeX.innerHTML = '&times;';
-        closeX.className = 'anomalous-nb-close';
-        closeX.onclick = () => this.nbModal.remove();
-        
-        header.appendChild(title);
-        header.appendChild(closeX);
+        const nbHeader = document.createElement('div');
+        nbHeader.className = 'anomalous-nb-header';
+        nbHeader.innerHTML = `<h2>${t('notebookTitle')}</h2>`;
+        const closeNb = document.createElement('span');
+        closeNb.className = 'anomalous-nb-close';
+        closeNb.innerHTML = '&times;';
+        closeNb.onclick = () => { this.nbPanel.style.display = 'none'; };
+        nbHeader.appendChild(closeNb);
         
         const body = document.createElement('div');
         body.className = 'anomalous-nb-body';
@@ -1305,7 +1580,7 @@ const backBtn = document.createElement('button');
         btnRow.style.gap = '5px';
         
         const createBtn = document.createElement('button');
-        createBtn.innerHTML = t('createNotebook');
+        createBtn.innerHTML = `+ <span class="anomalous-nb-create-text">${t('createNotebook')}</span>`;
         createBtn.className = 'anomalous-btn-primary';
         
         const createInput = document.createElement('input');
@@ -1333,14 +1608,14 @@ const backBtn = document.createElement('button');
                     createInput.value = '';
                 }
                 createInput.style.display = 'none';
-                createBtn.innerHTML = t('createNotebook');
+                createBtn.innerHTML = `+ <span class="anomalous-nb-create-text">${t('createNotebook')}</span>`;
             }
         };
         
         btnRow.appendChild(createInput);
         btnRow.appendChild(createBtn);
         sidebar.appendChild(btnRow);
-        sidebar.appendChild(nbList);
+sidebar.appendChild(nbList);
         
         // Editor area
         this.nbEditor = document.createElement('div');
@@ -1349,14 +1624,214 @@ const backBtn = document.createElement('button');
         body.appendChild(sidebar);
         body.appendChild(this.nbEditor);
         
-        container.appendChild(header);
-        container.appendChild(body);
-        this.nbModal.appendChild(container);
+        nbContainer.appendChild(nbHeader);
+        nbContainer.appendChild(body);
         
-        document.getElementById('anomalous-container').appendChild(this.nbModal);
+        this.nbPanel.appendChild(nbContainer);
         
         this.nbListEl = nbList;
         this.refreshNotebooks(true);
+    }
+    
+    async translateText(text) {
+        if (!text || !text.trim()) return "";
+        try {
+            const res = await fetch('/anomalous/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text, target_lang: currentLang === 'zh' ? 'zh-CN' : 'en' })
+            });
+            const data = await res.json();
+            return data.translated || text;
+        } catch(e) { return text; }
+    }
+
+    async loadGalleryImages(page = 1, reset = false) {
+        if (this.galleryLoading) return;
+        this.galleryLoading = true;
+        this.gallerySentinel.innerHTML = '加载中... / Loading...';
+
+        try {
+            const res = await fetch(`/anomalous/gallery_images?page=${page}&limit=50`);
+            const data = await res.json();
+            
+            if (reset) {
+                // Clear existing cards
+                const cards = this.galleryGrid.querySelectorAll('.anomalous-gallery-card');
+                cards.forEach(c => c.remove());
+                this.galleryLoaded = true;
+            }
+
+            if (data.images && data.images.length > 0) {
+                data.images.forEach(imgData => {
+                    const card = document.createElement('div');
+                    card.className = 'anomalous-gallery-card';
+                    
+                    const q_sub = encodeURIComponent(imgData.subfolder);
+                    const q_file = encodeURIComponent(imgData.filename);
+                    const imgUrl = `/view?filename=${q_file}&subfolder=${q_sub}&type=output`;
+
+                    const img = document.createElement('img');
+                    img.src = imgUrl;
+                    img.loading = 'lazy';
+                    img.draggable = true;
+                    
+                    // Drag and drop support for ComfyUI
+                    img.addEventListener('dragstart', (e) => {
+                        const fullUrl = new URL(imgUrl, window.location.href).href;
+                        e.dataTransfer.setData('text/uri-list', fullUrl);
+                        e.dataTransfer.setData('text/plain', fullUrl);
+                    });
+
+                    // Click to view
+                    img.onclick = () => this.showGalleryViewer(imgUrl);
+
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'anomalous-gallery-delete';
+                    delBtn.innerHTML = '🗑️';
+                    delBtn.title = 'Delete';
+                    
+                    delBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        
+                        const overlay = document.createElement('div');
+                        overlay.style.position = 'absolute';
+                        overlay.style.top = '0';
+                        overlay.style.left = '0';
+                        overlay.style.width = '100%';
+                        overlay.style.height = '100%';
+                        overlay.style.background = 'rgba(0,0,0,0.85)';
+                        overlay.style.display = 'flex';
+                        overlay.style.flexDirection = 'column';
+                        overlay.style.alignItems = 'center';
+                        overlay.style.justifyContent = 'center';
+                        overlay.style.gap = '15px';
+                        overlay.style.zIndex = '10';
+                        
+                        const msg = document.createElement('div');
+                        msg.innerHTML = '彻底删除这张图片？<br><span style="font-size:0.8em;color:#aaa">Delete permanently?</span>';
+                        msg.style.color = '#fff';
+                        msg.style.fontWeight = 'bold';
+                        msg.style.textAlign = 'center';
+                        
+                        const btnRow = document.createElement('div');
+                        btnRow.style.display = 'flex';
+                        btnRow.style.gap = '12px';
+                        
+                        const confirmBtn = document.createElement('button');
+                        confirmBtn.innerHTML = '🗑️ 删除 (Delete)';
+                        confirmBtn.style.background = '#dc3545';
+                        confirmBtn.style.color = '#fff';
+                        confirmBtn.style.border = 'none';
+                        confirmBtn.style.padding = '10px 16px';
+                        confirmBtn.style.borderRadius = '6px';
+                        confirmBtn.style.cursor = 'pointer';
+                        confirmBtn.style.fontWeight = 'bold';
+                        confirmBtn.style.transition = 'background 0.2s';
+                        confirmBtn.onmouseover = () => confirmBtn.style.background = '#ff0000';
+                        confirmBtn.onmouseout = () => confirmBtn.style.background = '#dc3545';
+                        
+                        const cancelBtn = document.createElement('button');
+                        cancelBtn.innerHTML = '取消 (Cancel)';
+                        cancelBtn.style.background = '#444';
+                        cancelBtn.style.color = '#fff';
+                        cancelBtn.style.border = 'none';
+                        cancelBtn.style.padding = '10px 16px';
+                        cancelBtn.style.borderRadius = '6px';
+                        cancelBtn.style.cursor = 'pointer';
+                        cancelBtn.style.transition = 'background 0.2s';
+                        cancelBtn.onmouseover = () => cancelBtn.style.background = '#666';
+                        cancelBtn.onmouseout = () => cancelBtn.style.background = '#444';
+                        
+                        cancelBtn.onclick = (ce) => {
+                            ce.stopPropagation();
+                            overlay.remove();
+                        };
+                        
+                        confirmBtn.onclick = async (ce) => {
+                            ce.stopPropagation();
+                            confirmBtn.innerHTML = 'Deleting...';
+                            confirmBtn.disabled = true;
+                            try {
+                                const dr = await fetch('/anomalous/delete_gallery_image', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ filename: imgData.filename, subfolder: imgData.subfolder })
+                                });
+                                const dd = await dr.json();
+                                if (dd.status === 'success') {
+                                    card.remove();
+                                } else {
+                                    alert('删除失败 / Delete failed: ' + dd.message);
+                                    overlay.remove();
+                                }
+                            } catch (err) {
+                                alert('Error: ' + err);
+                                overlay.remove();
+                            }
+                        };
+                        
+                        btnRow.appendChild(cancelBtn);
+                        btnRow.appendChild(confirmBtn);
+                        overlay.appendChild(msg);
+                        overlay.appendChild(btnRow);
+                        
+                        card.appendChild(overlay);
+                    };
+
+                    card.appendChild(img);
+                    card.appendChild(delBtn);
+                    this.galleryGrid.insertBefore(card, this.gallerySentinel);
+                });
+                
+                this.galleryCurrentPage = page;
+                this.galleryHasMore = page < data.pages;
+                
+                if (!this.galleryHasMore) {
+                    this.gallerySentinel.innerHTML = '没有更多图片了 / No more images';
+                } else {
+                    this.gallerySentinel.innerHTML = '向下滚动加载更多 / Scroll for more';
+                }
+            } else {
+                this.galleryHasMore = false;
+                this.gallerySentinel.innerHTML = reset ? '图库为空 / Gallery is empty' : '没有更多图片了 / No more images';
+            }
+        } catch (e) {
+            console.error('Failed to load gallery images', e);
+            this.gallerySentinel.innerHTML = '加载失败 / Load failed';
+        }
+
+        this.galleryLoading = false;
+    }
+
+    showGalleryViewer(src) {
+        let viewer = document.getElementById('anomalous-gallery-viewer');
+        if (!viewer) {
+            viewer = document.createElement('div');
+            viewer.id = 'anomalous-gallery-viewer';
+            viewer.className = 'anomalous-gallery-viewer';
+            
+            const closeBtn = document.createElement('div');
+            closeBtn.className = 'anomalous-gallery-viewer-close';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.onclick = () => { viewer.style.display = 'none'; };
+            
+            const img = document.createElement('img');
+            img.id = 'anomalous-gallery-viewer-img';
+            
+            viewer.appendChild(img);
+            viewer.appendChild(closeBtn);
+            
+            viewer.onclick = (e) => {
+                if (e.target === viewer) viewer.style.display = 'none';
+            };
+            
+            document.body.appendChild(viewer);
+        }
+        
+        const img = document.getElementById('anomalous-gallery-viewer-img');
+        img.src = src;
+        viewer.style.display = 'flex';
     }
     
     async refreshNotebooks(autoOpenFirst = false) {
@@ -1381,7 +1856,7 @@ const backBtn = document.createElement('button');
                     if (this.currentNotebook && this.currentNotebook.filename === nb.filename) {
                         item.classList.add('active');
                     }
-                    item.innerHTML = '📄 ' + nb.name;
+                    item.innerHTML = `<span class="anomalous-nb-item-icon">📄&nbsp;</span><span class="anomalous-nb-item-text">${nb.name}</span>`;
                     item.onclick = () => {
                         this.currentNotebook = nb;
                         this.renderNotebookEditor();
@@ -1612,17 +2087,17 @@ const backBtn = document.createElement('button');
         
         const findInput = document.createElement('input');
         findInput.className = 'anomalous-nb-select';
-        findInput.placeholder = 'Find...';
+        findInput.placeholder = t('findPlaceholder');
         findInput.style.flex = '1';
         
         const replaceInput = document.createElement('input');
         replaceInput.className = 'anomalous-nb-select';
-        replaceInput.placeholder = 'Replace with...';
+        replaceInput.placeholder = t('replacePlaceholder');
         replaceInput.style.flex = '1';
         
         const replaceBtn = document.createElement('button');
         replaceBtn.className = 'anomalous-btn-primary';
-        replaceBtn.innerHTML = 'Replace All';
+        replaceBtn.innerHTML = t('replaceAll');
         
         pToolbar.appendChild(langSelect);
         pToolbar.appendChild(findInput);
@@ -1637,7 +2112,7 @@ const backBtn = document.createElement('button');
         toggleRow.innerHTML = `<strong>Prompt Editor</strong>`;
         const rawBtn = document.createElement('button');
         rawBtn.className = 'anomalous-btn-primary';
-        rawBtn.innerHTML = '📝 Edit Raw / Paste';
+        rawBtn.innerHTML = t('editRaw');
         toggleRow.appendChild(rawBtn);
         
         // Raw Textarea
@@ -1952,7 +2427,6 @@ const backBtn = document.createElement('button');
             }
         }
         
-        this.nbModal.remove();
         this.close();
         
         // Magnetic Sticking Logic
@@ -2060,12 +2534,35 @@ app.registerExtension({
         
         const savedX = localStorage.getItem('anomalous_btn_x');
         const savedY = localStorage.getItem('anomalous_btn_y');
-        if (savedX && savedY) {
-            btn.style.left = savedX;
-            btn.style.top = savedY;
+        
+        const updateBtnBounds = () => {
+            let numX = parseInt(btn.style.left || savedX);
+            let numY = parseInt(btn.style.top || savedY);
+            if (isNaN(numX)) numX = window.innerWidth - 90;
+            if (isNaN(numY)) numY = window.innerHeight - 90;
+            
+            if (numX < 0) numX = 0;
+            if (numY < 0) numY = 0;
+            if (numX > window.innerWidth - 60) numX = window.innerWidth - 60;
+            if (numY > window.innerHeight - 60) numY = window.innerHeight - 60;
+            btn.style.left = numX + 'px';
+            btn.style.top = numY + 'px';
+        };
+
+        if (savedX && savedY && savedX !== 'NaN' && savedY !== 'NaN') {
             btn.style.right = 'auto';
             btn.style.bottom = 'auto';
+            btn.style.left = savedX;
+            btn.style.top = savedY;
         }
+        
+        // Always trigger an update slightly after load to ensure it's in bounds
+        setTimeout(updateBtnBounds, 200);
+        
+        window.addEventListener('resize', () => {
+            if (btn.style.left) updateBtnBounds();
+        });
+        
         document.body.appendChild(btn);
     }
 });

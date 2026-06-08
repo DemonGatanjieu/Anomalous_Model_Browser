@@ -679,6 +679,76 @@ async def api_base_models(request):
                             
     return web.json_response({"base_models": sorted(list(base_models))})
 
+async def api_get_gallery_images(request):
+    try:
+        output_dir = folder_paths.get_output_directory()
+        if not os.path.exists(output_dir):
+            return web.json_response({"images": [], "total": 0, "page": 1, "pages": 0})
+            
+        page = int(request.query.get('page', 1))
+        limit = int(request.query.get('limit', 50))
+        
+        valid_exts = {'.png', '.jpg', '.jpeg', '.webp', '.gif'}
+        images = []
+        
+        for root, dirs, files in os.walk(output_dir):
+            for f in files:
+                ext = os.path.splitext(f)[1].lower()
+                if ext in valid_exts:
+                    rel_path = os.path.relpath(root, output_dir)
+                    subfolder = "" if rel_path == "." else rel_path.replace('\\', '/')
+                    full_path = os.path.join(root, f)
+                    try:
+                        mtime = os.path.getmtime(full_path)
+                    except:
+                        mtime = 0
+                    images.append({
+                        "filename": f,
+                        "subfolder": subfolder,
+                        "type": "output",
+                        "mtime": mtime
+                    })
+                    
+        # Sort by mtime descending (newest first)
+        images.sort(key=lambda x: x['mtime'], reverse=True)
+        
+        total = len(images)
+        start_idx = (page - 1) * limit
+        end_idx = start_idx + limit
+        paginated_images = images[start_idx:end_idx]
+        
+        return web.json_response({
+            "images": paginated_images,
+            "total": total,
+            "page": page,
+            "pages": (total + limit - 1) // limit if limit > 0 else 0
+        })
+    except Exception as e:
+        return web.json_response({"error": str(e)}, status=500)
+
+async def api_delete_gallery_image(request):
+    try:
+        data = await request.json()
+        filename = data.get("filename")
+        subfolder = data.get("subfolder", "")
+        
+        if not filename or '..' in filename or '..' in subfolder:
+            return web.json_response({"status": "error", "message": "Invalid parameters"})
+            
+        output_dir = folder_paths.get_output_directory()
+        if subfolder:
+            file_path = os.path.join(output_dir, subfolder, filename)
+        else:
+            file_path = os.path.join(output_dir, filename)
+        
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return web.json_response({"status": "success"})
+        else:
+            return web.json_response({"status": "error", "message": "File not found"})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
+
 def setup_routes(app):
     app.router.add_get('/anomalous/folders', api_get_folders)
     app.router.add_get('/anomalous/models', api_get_models)
@@ -695,3 +765,5 @@ def setup_routes(app):
     app.router.add_post('/anomalous/delete_notebook', api_delete_notebook)
     app.router.add_post('/anomalous/translate', api_translate)
     app.router.add_get('/anomalous/base_models', api_base_models)
+    app.router.add_get('/anomalous/gallery_images', api_get_gallery_images)
+    app.router.add_post('/anomalous/delete_gallery_image', api_delete_gallery_image)

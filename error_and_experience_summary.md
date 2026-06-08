@@ -18,13 +18,15 @@ Data truth must strictly reflect the local disk state. The backend was rewritten
 **The Problem**:
 Setting standard `transition: all 0.2s` for the hover states on model cards meant that quickly sweeping the mouse across the grid caused all cards to rapidly light up and drop down like a strobe light. It felt cheap and unresponsive.
 **The Solution**:
-UI damping is critical for premium feel. We introduced a customized `cubic-bezier(0.2, 0.8, 0.2, 1)` transition with a microscopically tiny `transition-delay: 0.02s` on the hover pseudo-class. This 20ms delay is imperceptible for intentional interactions but acts as a low-pass filter, completely eliminating strobe flashes from fast, accidental mouse sweeps.
+UI damping is critical for premium feel. We introduce a customized `cubic-bezier(0.2, 0.8, 0.2, 1)` transition with a `transition-delay` on the hover pseudo-class. 
+*Recommendation*: A "golden interval" of **80ms to 100ms (`0.08s` - `0.1s`)** is highly advised for grid cards. Initially, a 20ms (`0.02s`) delay was used, but it proved too short to prevent fast sweep strobing. The ~80ms delay perfectly acts as an "Intent Delay" low-pass filter, completely eliminating strobe flashes from fast, accidental mouse sweeps while still feeling instantaneous for deliberate hovers.
 
 ## 4. "Hostage" Inline Confirmations
 **The Problem**:
 To avoid browser `alert()` dialogs during deletion, an inline confirmation was built: clicking "Delete" changed the button to "Are you sure?" with a 3-second `setTimeout`. However, there was no explicit "Cancel" button. If the user misclicked, they were held "hostage" for 3 seconds waiting for the button to revert.
 **The Solution**:
-Never lock a user out without an exit hatch. The delete button logic was wrapped in an inline flex container that instantly reveals a secondary `[✕]` cancel button upon the first click. Clicking `[✕]` instantly clears the timeout and resets the state, giving control back to the user immediately.
+Never lock a user out without an exit hatch, and always respect Fitts's Law for target sizes. 
+*Recommendation*: For destructive actions in grid items, consider a **Contextual Overlay**. Instead of changing a small 32x32px button and injecting an even smaller `[✕]` cancel button, clicking delete should spawn a semi-transparent overlay across the entire card. This overlay should offer two large, distinct buttons: "Cancel" (Grey) and "Delete" (Red). This provides a 100% margin of error, making accidental destruction almost impossible while maintaining a smooth, non-blocking UI.
 
 ## 5. First-load "Dead Interface" Avoidance
 **The Problem**:
@@ -79,3 +81,15 @@ Rather than over-engineering a complex request queue or offline-caching system (
 Maintaining performance and avoiding RAM leaks when a user has thousands of models split across dozens of folders.
 **The Solution**:
 Instead of using popular React-style techniques like `display: none` caching or Virtual DOM diffing (which retains hidden elements in memory), we strictly enforce `this.grid.innerHTML = ''` during folder transitions. This physical obliteration of the DOM forces the browser's Garbage Collector to instantly reclaim memory for all previous thumbnails and videos, resulting in a zero-memory background footprint.
+
+## 14. The "Missing Plugin Icon" Trap (localStorage Out-of-Bounds)
+**The Problem**:
+Users frequently reported the floating plugin trigger button "disappearing" on screen resize or when switching to smaller monitors. Since the plugin strictly saved its absolute `left` and `top` coordinates to `localStorage` (e.g., `3000px`), loading the UI on a `1920px` screen rendered the button entirely off-screen, making the plugin impossible to open. This was a notorious "old problem."
+**The Solution**:
+Implemented a robust positional bounding clamp. Upon script initialization, the `parseInt` coordinate retrieval is strictly validated against the current `window.innerWidth` and `window.innerHeight`. If the values exceed bounds or contain corrupted `NaN` data, the plugin forces a fallback snap to the bottom-right corner (`window.innerWidth - 90`), completely eradicating the disappearing button bug.
+
+## 15. The `[vite:preloadError]` and Brittle Template Literals
+**The Problem**:
+During an aggressive string replacement to separate emojis from text for responsive design, a single template literal closing backtick (`` ` ``) and comma were accidentally deleted from an `i18n` dictionary object. Because ComfyUI's frontend extension loader utilizes Vite for dynamic ES Module imports, this single `SyntaxError (Unterminated string literal)` caused the entire `main.js` script to immediately crash before execution, completely preventing the plugin button from rendering.
+**The Solution**:
+JavaScript's zero-tolerance for syntax errors within dynamically loaded environments means UI tweaks must be executed with surgical precision. Using tools to validate structural balance (brackets, backticks) is crucial when deploying raw string replacements without a compiler pipeline. The fix was simply restoring the lost `` ` ``.
