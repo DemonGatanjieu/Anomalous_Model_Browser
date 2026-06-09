@@ -57,6 +57,7 @@ In the rapidly evolving landscape of AI art tools, legacy plugins have become bl
    - **Cross-Folder Compatible Models**: Looking at a Base Model (like Flux.1 D)? The detail panel auto-magically scans all your Loras and Checkpoints across your entire disk and lists 100% compatible models based on internal metadata logic. It strictly de-duplicates models even if your extra paths alias the same folders!
    - **One-Click Auto-Inject**: Don't manually type filenames into nodes anymore! Use the "Apply to Canvas" floating button on any model. It creates the perfect node (CheckpointLoaderSimple, LoraLoader, UNETLoader) and magnetically sticks it to your cursor for precision placement!
    - **One-Click Error Annihilation**: Dragging in an old workflow? The auto-fix engine automatically locates missing models across your entire drive (utilizing a robust physical path deduplicator), forces a frontend dropdown update, and violently clears ComfyUI's visual red-box error states. A 100% resolution rate with zero browser refreshes needed!
+   - **Workflow Portability & Self-Healing (Hash Injection)**: Whenever you generate an image or save a workflow, Anomalous automatically intercepts the process and invisibly embeds the precise Civitai Hash and filesize of every model you used directly into the image's metadata! When you share your image with other users running this plugin, it doesn't matter if their local model filenames are completely different—the plugin will read the genetic Hash DNA from your image and perfectly, automatically reconnect all their nodes to their local equivalents!
 
 6. **🌐 Pure Bilingual Engine & Built-in Manual**
    - **Seamless i18n**: Switch between beautifully formatted pure English or pure Chinese UI with a single click, instantly transforming all buttons, dialogs, and dynamic text. The English UI has been specifically polished with generous padding and font scaling to match the visual weight of the Chinese design.
@@ -134,6 +135,7 @@ Say goodbye to `pip install` and `npm install`!
    - **跨次元兼容模型雷达**：当你在查看 UNet (比如 Flux.1 D) 时，详情页底部会自动跨硬盘、跨文件夹为您检索出全部绝对兼容的 Lora / Checkpoints！并且完美自带系统级别的物理路径去重机制，即便你的 `extra_model_paths.yaml` 怎么套娃映射，都绝不显示重复项。
    - **一键磁吸加载器**：告别手动搜索文件名！鼠标悬停在模型上点击【投放到画布】，系统会自动为你生成匹配的节点 (如 LoraLoader、UNETLoader)，并将其磁吸在你的鼠标上！你只需要在画布的合适位置点一下左键，节点就会被优雅地放置好，丝滑无比。
    - **无脑暴力红框清除**：拖入了一张带旧工作流的图片并且模型爆红？一键修复模块会直接击穿 ComfyUI 的前后端缓存，底层自带物理级多重路径重叠去重引擎。它不仅帮你填好正确的名字，还会暴力抹杀节点上所有的视觉报错红框，无需重启即可直接点 Queue 跑图！修复成功率达 100%！
+   - **基因级工作流自愈系统 (Hash Injection)**：只要你安装了该插件，每次你在 ComfyUI 中生成图片或者保存工作流时，插件会在底层悄无声息地拦截该过程，并将你使用的每一个模型的 C站 Hash 基因与精确文件大小注入到图片的元数据中！当你把这张图片分享给其他也安装了此插件的群友时，无论他本地的模型名字被改成了什么乱七八糟的拼音，只要他们把图片拖入 ComfyUI，插件就会自动提取图片里的 Hash DNA，并在他们的硬盘里大海捞针，完美地、全自动地将所有红框节点无缝重连到他们本地对应的模型上！
 
 6. **🌐 纯净双语引擎与内置说明书**
    - **无缝 i18n 切换**：一键在纯中文与纯英文界面间自由切换，告别拥挤的双语混排，所有弹窗与提示会瞬间自适应目标语言。英文排版也经过了专属的大气布局打磨，彻底告别文字局促感。
