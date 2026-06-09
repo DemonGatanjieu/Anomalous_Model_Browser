@@ -1,5 +1,12 @@
 ﻿# 📈 Anomalous Model Browser Changelog
 
+## v1.3.0 (Zero-API Tensor Fingerprinting Update)
+### 🧠 HuggingFace Native Support
+- **Offline Base Model Inference**: Added a zero-API local inference engine! For models downloaded purely from HuggingFace (or private unreleased models) that return a 404 on Civitai, the scanner no longer gives up. It now forcibly parses the .safetensors structure and uses **Tensor Fingerprinting** (e.g., detecting double_blocks.0.img_attn for Flux) to accurately deduce the underlying base architecture with 100% precision.
+- **Universal UI Integration**: Successfully inferred offline models are dynamically assigned a virtual .info payload (ID: -1). This instantly grants them full VIP access to the frontend ecosystem—they seamlessly appear in the Cross-Folder Radar, interact perfectly with the bilingual Notebook, and support one-click Auto-Inject loaders, all completely completely offline!
+
+# 📈 Anomalous Model Browser Changelog
+
 ## v1.2.0 (The O(1) Speed & Tiered Resolution Update)
 ### 🚀 Architectural Breakthroughs
 - **Tiered Fallback Resolution Engine**: The core hashing and scanning engine has been completely rewritten. When scanning new .safetensors files without an .info file, the scraper no longer blindly computes the SHA256 of the entire 7GB+ file. Instead, it extracts the uint64 header size and parses the internal JSON to retrieve the embedded modelspec.hash.sha256. This drops the hash time for new models from minutes down to O(1) milliseconds, achieving true instantaneous lightweight scans.
@@ -79,4 +86,5 @@
 - **Base Model Metadata Pollution**: Fixed an issue where the `baseModel` dropdown forcefully injected unowned models (like `HunyuanVideo` or `OmniGen`) into the UI. The filter now strictly traverses actual local `.safetensors` headers and `.info` configurations to provide a 100% accurate reflection of your physical library.
 - **Nested Scrolling Traps**: Eliminated a severe UX "scroll trap" within the Notebook dual-pane editor by removing inner `max-height` constraints, allowing natural flex expansion utilizing the modal's primary scrollbar.
 - **Model Selection Jumping**: Fixed layout shifting caused by variable-length text tags by implementing a rigid CSS grid/flex architecture (`.anomalous-nb-tag-row`).
+
 

@@ -128,3 +128,18 @@ While the syntax was fixed, the deeper lesson is that background workers dispatc
   2. **第二层 (头文件秒读)**: 遇到无 .info 的纯新文件，使用 struct 解析 .safetensors 的前 8 个字节提取 JSON 长度，仅读取前几十 KB 提取自带 Hash。耗时 0.01s，直接将全量哈希运算降维至 O(1)。
   3. **第三层 (物理兜底)**: 若头文件也不含 Hash（如极早期的旧模型），再回退到传统的全物理数据 SHA256 运算兜底。
 * **意义**: 彻底消灭了新模型入库时的卡顿感，完美兼顾了绝对的精确性（Hash 寻址以适应任何异构的文件组织路径）与极速体验。
+
+---
+
+### 21. 【底层引擎】HuggingFace 与私有模型的脱机基因识别 (Zero-API Tensor Fingerprinting)
+* **背景**: 许多直接从 HuggingFace 下载的纯净底模（或用户自己炼制的私有模型）在 C站 是没有记录的。由于 C站 API 返回 404，原爬虫会直接忽略这些文件，导致它们永远无法生成 .info 文件，前端 UI 也无法将它们纳入“跨文件夹兼容雷达”的体系中。
+* **技术突破**: C站 API 只是表象，真正决定一个模型架构的是它在显存里展开时的物理张量结构（Tensor Keys）。
+* **最终解决方案**: 
+  引入**离线张量指纹识别引擎 (Offline Tensor Fingerprinting)**。当 API 查询失败时，爬虫不再丢弃模型，而是强行解析 .safetensors 的 JSON 头文件。
+  1. 首先尝试读取 __metadata__.modelspec.architecture。
+  2. 若无标准 metadata，则直接粗暴提取前 500 层网络结构的 Tensor Keys，通过**物理基因特征**断定架构：
+     - 含有 double_blocks.0.img_attn -> 绝对是 **Flux.1 D**
+     - 含有 conditioner.embedders.1.model -> 绝对是 **SDXL**
+     - 含有 cond_stage_model.transformer.text_model -> 绝对是 **SD 1.5**
+  推断成功后，系统在本地凭空捏造出一个带有 ID: -1 标识的模拟 Civitai .info 配置文件。
+* **意义**: 彻底摆脱了对外部 API 的强依赖。无论是 HuggingFace 的纯净模型还是还没发布的神秘模型，只要它是标准的 safetensors，都能被 Anomalous 插件精准识破真身，并完美融入前端的生态链（磁吸加载、笔记本联想）。
