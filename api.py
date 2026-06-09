@@ -15,7 +15,8 @@ def get_metadata(file_path):
         "notes": "",
         "trainedWords": [],
         "baseModel": "",
-        "civitai_url": ""
+        "civitai_url": "",
+        "hash": ""
     }
     
     info_files = [f"{base_path}.civitai.info", f"{base_path}.info"]
@@ -52,12 +53,22 @@ def get_metadata(file_path):
                         if version_id:
                             civitai_url += f"?modelVersionId={version_id}"
                     
+                    
+                    hash_val = ""
+                    for file_info in data.get("files", []):
+                        if isinstance(file_info, dict):
+                            hashes = file_info.get("hashes", {})
+                            if isinstance(hashes, dict) and "SHA256" in hashes:
+                                hash_val = hashes["SHA256"]
+                                break
+                    
                     metadata["name"] = name if name else metadata["name"]
                     metadata["description"] = description
                     metadata["notes"] = notes
                     metadata["trainedWords"] = trained_words
                     metadata["baseModel"] = base_model
                     metadata["civitai_url"] = civitai_url
+                    metadata["hash"] = hash_val
                     break
             except Exception:
                 pass
@@ -174,13 +185,16 @@ async def api_get_models(request):
                 preview_url = f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}"
 
             try:
-                size_mb = round(os.path.getsize(file_path) / (1024 * 1024), 1)
+                size_bytes = os.path.getsize(file_path)
+                size_mb = round(size_bytes / (1024 * 1024), 1)
             except Exception:
                 size_mb = 0
+                size_bytes = 0
                 
             models.append({
                 "filename": f,
                 "size_mb": size_mb,
+                "size_bytes": size_bytes,
                 "metadata": meta,
                 "preview_url": preview_url
             })
@@ -316,6 +330,11 @@ async def api_scan_folder(request):
                     stderr=subprocess.DEVNULL
                 )
             finally:
+                if hasattr(folder_paths, "filename_list_cache"):
+                    folder_paths.filename_list_cache.clear()
+                if hasattr(folder_paths, "cache_helper") and hasattr(folder_paths.cache_helper, "clear"):
+                    folder_paths.cache_helper.clear()
+                    
                 if os.path.exists(marker_file):
                     try: os.remove(marker_file)
                     except: pass
@@ -326,6 +345,63 @@ async def api_scan_folder(request):
     except Exception as e:
         return web.json_response({"status": "error", "message": str(e)})
 
+async def api_scan_all(request):
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    scraper_path = os.path.join(script_dir, "scraper.py")
+    marker_file = os.path.join(script_dir, '.global_scan_in_progress')
+    
+    if os.path.exists(marker_file):
+        return web.json_response({"status": "error", "message": "Global scan already in progress"})
+        
+    try:
+        with open(marker_file, 'w') as f: f.write('1')
+        
+        def run_global_bg():
+            try:
+                types = ['checkpoints', 'loras', 'unet', 'diffusion_models']
+                for t in types:
+                    try:
+                        paths = folder_paths.get_folder_paths(t)
+                        if not paths: continue
+                        for base_dir in paths:
+                            if not os.path.exists(base_dir): continue
+                            print(f"[Anomalous Browser] Global scan processing: {base_dir}")
+                            subprocess.run(
+                                [sys.executable, scraper_path, base_dir, "--skip-rename", "--skip-media"],
+                                cwd=script_dir,
+                                stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL
+                            )
+                    except Exception as e:
+                        print(f"[Anomalous Browser] Global scan error on {t}: {e}")
+            finally:
+                if hasattr(folder_paths, "filename_list_cache"):
+                    folder_paths.filename_list_cache.clear()
+                if hasattr(folder_paths, "cache_helper") and hasattr(folder_paths.cache_helper, "clear"):
+                    folder_paths.cache_helper.clear()
+                    
+                if os.path.exists(marker_file):
+                    try: os.remove(marker_file)
+                    except: pass
+                    
+        threading.Thread(target=run_global_bg, daemon=True).start()
+        return web.json_response({"status": "ok", "message": "Global scan started"})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)})
+
+async def api_global_scan_status(request):
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    marker_file = os.path.join(script_dir, '.global_scan_in_progress')
+    return web.json_response({"scanning": os.path.exists(marker_file)})
+async def api_clear_cache(request):
+    try:
+        if hasattr(folder_paths, "filename_list_cache"):
+            folder_paths.filename_list_cache.clear()
+        if hasattr(folder_paths, "cache_helper") and hasattr(folder_paths.cache_helper, "clear"):
+            folder_paths.cache_helper.clear()
+        return web.json_response({"status": "success"})
+    except Exception as e:
+        return web.json_response({"status": "error", "message": str(e)})
 
 async def api_get_config(request):
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -514,7 +590,6 @@ async def api_compatible_models(request):
                                     break
                             
                             preview_url = ""
-                            preview_url = ""
                             if preview_file:
                                 q_type = urllib.parse.quote(t)
                                 q_idx = str(path_idx)
@@ -523,16 +598,19 @@ async def api_compatible_models(request):
                                 preview_url = f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}"
                             
                             try:
-                                size_mb = round(os.path.getsize(file_path) / (1024 * 1024), 1)
-                            except:
+                                size_bytes = os.path.getsize(file_path)
+                                size_mb = round(size_bytes / (1024 * 1024), 1)
+                            except Exception:
                                 size_mb = 0
-                            
+                                size_bytes = 0
+
                             compatible_models.append({
                                 "type": t,
                                 "path_idx": path_idx,
                                 "subfolder": rel_subfolder,
                                 "filename": f,
                                 "size_mb": size_mb,
+                                "size_bytes": size_bytes,
                                 "preview_url": preview_url,
                                 "metadata": meta
                             })
@@ -749,6 +827,143 @@ async def api_delete_gallery_image(request):
     except Exception as e:
         return web.json_response({"status": "error", "message": str(e)}, status=500)
 
+async def api_resolve_hash(request):
+    target_hash = request.query.get("hash", "").strip().upper()
+    size_str = request.query.get("size", "").strip()
+    filename_query = request.query.get("filename", "").strip()
+    target_size = int(size_str) if size_str.isdigit() else None
+    
+    if not target_hash and not target_size and not filename_query:
+        return web.json_response({"found": False})
+
+    types = ['checkpoints', 'loras', 'unet', 'diffusion_models']
+    
+    # First pass: try exact hash match in .info files
+    if target_hash:
+        for t in types:
+            try:
+                paths = folder_paths.get_folder_paths(t)
+            except Exception:
+                continue
+            if not paths:
+                continue
+                
+            for base_dir in paths:
+                if not os.path.exists(base_dir):
+                    continue
+                    
+                for root, dirs, files in os.walk(base_dir):
+                    for file in files:
+                        if file.endswith('.safetensors') or file.endswith('.ckpt') or file.endswith('.pt'):
+                            file_path = os.path.join(root, file)
+                            meta = get_metadata(file_path)
+                            if meta.get("hash", "").upper() == target_hash:
+                                # ComfyUI widget expects relative path from folder_paths base_dir
+                                rel_path = os.path.relpath(file_path, base_dir)
+                                if rel_path.startswith('.\\') or rel_path.startswith('./'):
+                                    rel_path = rel_path[2:]
+                                rel_path = rel_path.replace('\\', '/')
+                                return web.json_response({
+                                    "found": True,
+                                    "type": t,
+                                    "filename": rel_path
+                                })
+                                
+    # Second pass: Fallback size match
+    if target_size is not None:
+        size_matches = []
+        seen_realpaths = set()
+        for t in types:
+            try:
+                paths = folder_paths.get_folder_paths(t)
+            except Exception:
+                continue
+            if not paths:
+                continue
+                
+            for base_dir in paths:
+                if not os.path.exists(base_dir):
+                    continue
+                    
+                for root, dirs, files in os.walk(base_dir):
+                    for file in files:
+                        if file.endswith('.safetensors') or file.endswith('.ckpt') or file.endswith('.pt'):
+                            file_path = os.path.join(root, file)
+                            try:
+                                if os.path.getsize(file_path) == target_size:
+                                    real_p = os.path.realpath(file_path)
+                                    if real_p in seen_realpaths:
+                                        continue
+                                    seen_realpaths.add(real_p)
+                                    
+                                    rel_path = os.path.relpath(file_path, base_dir)
+                                    if rel_path.startswith('.\\') or rel_path.startswith('./'):
+                                        rel_path = rel_path[2:]
+                                    rel_path = rel_path.replace('\\', '/')
+                                    size_matches.append({
+                                        "type": t,
+                                        "filename": rel_path
+                                    })
+                            except Exception:
+                                pass
+                                
+        # If exactly ONE file matches the size, it's a definitive match
+        if len(size_matches) == 1:
+            return web.json_response({
+                "found": True,
+                "type": size_matches[0]["type"],
+                "filename": size_matches[0]["filename"],
+                "matched_by_size": True
+            })
+
+    return web.json_response({"found": False})
+
+async def api_get_all_hashes(request):
+    """
+    Returns a dictionary of all scanned models with their hash and size.
+    Keyed by both relative path and basename for maximum frontend resilience.
+    """
+    import asyncio
+    
+    def fetch_all():
+        hashes = {}
+        types = ['checkpoints', 'loras', 'unet', 'diffusion_models']
+        for t in types:
+            try:
+                paths = folder_paths.get_folder_paths(t)
+                if not paths: continue
+                for base_dir in paths:
+                    if not os.path.exists(base_dir): continue
+                    for root, dirs, files in os.walk(base_dir):
+                        for file in files:
+                            if file.endswith('.safetensors') or file.endswith('.ckpt') or file.endswith('.pt'):
+                                file_path = os.path.join(root, file)
+                                try:
+                                    size_bytes = os.path.getsize(file_path)
+                                except Exception:
+                                    size_bytes = 0
+                                    
+                                meta = get_metadata(file_path)
+                                hash_val = ""
+                                if meta and meta.get("hash"):
+                                    hash_val = meta["hash"]
+                                
+                                rel_path = os.path.relpath(file_path, base_dir)
+                                if rel_path.startswith('.\\') or rel_path.startswith('./'):
+                                    rel_path = rel_path[2:]
+                                rel_path = rel_path.replace('\\', '/')
+                                basename = os.path.basename(file_path)
+                                
+                                val = {"hash": hash_val, "size": size_bytes}
+                                hashes[rel_path] = val
+                                hashes[basename] = val
+            except Exception:
+                pass
+        return hashes
+        
+    hashes = await asyncio.to_thread(fetch_all)
+    return web.json_response(hashes)
+
 def setup_routes(app):
     app.router.add_get('/anomalous/folders', api_get_folders)
     app.router.add_get('/anomalous/models', api_get_models)
@@ -767,3 +982,7 @@ def setup_routes(app):
     app.router.add_get('/anomalous/base_models', api_base_models)
     app.router.add_get('/anomalous/gallery_images', api_get_gallery_images)
     app.router.add_post('/anomalous/delete_gallery_image', api_delete_gallery_image)
+    app.router.add_get('/anomalous/resolve_hash', api_resolve_hash)
+    app.router.add_get('/anomalous/all_hashes', api_get_all_hashes)
+    app.router.add_post('/anomalous/scan_all', api_scan_all)
+    app.router.add_get('/anomalous/global_scan_status', api_global_scan_status)

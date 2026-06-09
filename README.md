@@ -4,6 +4,10 @@
   <p>
     <a href="#english">English</a> | <a href="#chinese">中文</a>
   </p>
+  <p>
+    <a href="./CHANGELOG.md">📜 Changelog / 更新日志</a> | 
+    <a href="./error_and_experience_summary.md">💡 Dev Notes / 踩坑经验总结</a>
+  </p>
 </div>
 
 ---
@@ -41,6 +45,7 @@ In the rapidly evolving landscape of AI art tools, legacy plugins have become bl
 4. **🤖 Smart Media Civitai Scraper (Multi-Threaded Daemon)**
    - Forget messy CMD windows! Use the dedicated `🔑 API Key Config` modal button in the Settings menu to securely enter your Civitai API Key (safely saved to both local server config and browser cache).
    - Click `Scan Folder` to silently launch a background daemon thread that computes SHA256, fetches metadata, and automatically renames your local `.safetensors` files to a clean format.
+   - **Ultra-Fast Lightweight Mode**: The new incremental skip engine smartly bypasses heavy SHA256 computations when just updating text files, parsing hundreds of gigabytes of models in literal seconds.
    - **Detailed Scan Reports**: After scanning, the system alerts you exactly how many models were successfully downloaded, renamed, or skipped, and logs any failures.
    - **Strict Verification Engine**: The scraper uses a "triple-check" strict requirement (.safetensors + .info + preview) to ensure your model library is flawless; missing parts trigger an automatic redownload.
    - **Smart Version Deduplication**: Have you ever accidentally downloaded the same version of a model twice with different names? The scanner will detect identical Civitai versions and cleanly permanently delete the redundant clones, ensuring your disk is free of duplicates!
@@ -51,6 +56,7 @@ In the rapidly evolving landscape of AI art tools, legacy plugins have become bl
 5. **⚡ Workflow Superchargers**
    - **Cross-Folder Compatible Models**: Looking at a Base Model (like Flux.1 D)? The detail panel auto-magically scans all your Loras and Checkpoints across your entire disk and lists 100% compatible models based on internal metadata logic. It strictly de-duplicates models even if your extra paths alias the same folders!
    - **One-Click Auto-Inject**: Don't manually type filenames into nodes anymore! Use the "Apply to Canvas" floating button on any model. It creates the perfect node (CheckpointLoaderSimple, LoraLoader, UNETLoader) and magnetically sticks it to your cursor for precision placement!
+   - **One-Click Error Annihilation**: Dragging in an old workflow? The auto-fix engine automatically locates missing models across your entire drive (utilizing a robust physical path deduplicator), forces a frontend dropdown update, and violently clears ComfyUI's visual red-box error states. A 100% resolution rate with zero browser refreshes needed!
 
 6. **🌐 Pure Bilingual Engine & Built-in Manual**
    - **Seamless i18n**: Switch between beautifully formatted pure English or pure Chinese UI with a single click, instantly transforming all buttons, dialogs, and dynamic text. The English UI has been specifically polished with generous padding and font scaling to match the visual weight of the Chinese design.
@@ -116,6 +122,7 @@ Say goodbye to `pip install` and `npm install`!
 4. **🤖 全格式动态刮削引擎 (后台多线程守护)**
    - 告别繁琐的命令行！在设置面板点击专属的 `🔑 API 密钥配置` 悬浮弹窗输入你的 Civitai API Key（全局双端持久化保存），即可获取限制级模型封面。
    - 真正的独立后台多线程，计算海量 7GB 模型 SHA256 时前端 UI 完全不卡顿。
+   - **极速轻量扫描**：完全跳过无意义的图片下载和全盘哈希计算（`--skip-media`），只需几秒钟即可扫完几百 GB 的模型库并瞬间点亮红框模型！
    - **详尽扫描报告**：扫描结束后，系统会弹窗向您详细汇报成功下载的数量、重命名的数量以及失败的信息，进度一目了然。
    - **严苛三证合一**：采用严厉的补齐逻辑，只要发现模型缺失 `.info` 配置文件或预览图其中任何一项，刮削器便会毫不犹豫地向服务器请求补齐残缺，确保您的模型生态完美无瑕。
    - **智能版本号去重守护**：后台扫描不仅会匹配信息，一旦发现某个模型在同文件夹下存在版本号完全一致的“多余分身”，它会毫不犹豫地将冗余副本永久删除，保证你的模型库只有唯一规范的版本！
@@ -126,6 +133,7 @@ Say goodbye to `pip install` and `npm install`!
 5. **⚡ 生产力飞跃 (Workflow Superchargers)**
    - **跨次元兼容模型雷达**：当你在查看 UNet (比如 Flux.1 D) 时，详情页底部会自动跨硬盘、跨文件夹为您检索出全部绝对兼容的 Lora / Checkpoints！并且完美自带系统级别的物理路径去重机制，即便你的 `extra_model_paths.yaml` 怎么套娃映射，都绝不显示重复项。
    - **一键磁吸加载器**：告别手动搜索文件名！鼠标悬停在模型上点击【投放到画布】，系统会自动为你生成匹配的节点 (如 LoraLoader、UNETLoader)，并将其磁吸在你的鼠标上！你只需要在画布的合适位置点一下左键，节点就会被优雅地放置好，丝滑无比。
+   - **无脑暴力红框清除**：拖入了一张带旧工作流的图片并且模型爆红？一键修复模块会直接击穿 ComfyUI 的前后端缓存，底层自带物理级多重路径重叠去重引擎。它不仅帮你填好正确的名字，还会暴力抹杀节点上所有的视觉报错红框，无需重启即可直接点 Queue 跑图！修复成功率达 100%！
 
 6. **🌐 纯净双语引擎与内置说明书**
    - **无缝 i18n 切换**：一键在纯中文与纯英文界面间自由切换，告别拥挤的双语混排，所有弹窗与提示会瞬间自适应目标语言。英文排版也经过了专属的大气布局打磨，彻底告别文字局促感。

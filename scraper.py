@@ -43,6 +43,42 @@ def calculate_sha256(file_path: str) -> str:
             sha256_hash.update(byte_block)
     return sha256_hash.hexdigest()
 
+import struct
+
+def extract_safetensors_hash(file_path: str) -> Optional[str]:
+    """尝试从 safetensors 头文件中以 O(1) 速度提取内置的 Hash，跳过全量计算"""
+    try:
+        with open(file_path, "rb") as f:
+            header_size_bytes = f.read(8)
+            if len(header_size_bytes) < 8:
+                return None
+            header_size = struct.unpack('<Q', header_size_bytes)[0]
+            if header_size > 100 * 1024 * 1024:  # 异常大小保护 (头文件大于100MB)
+                return None
+            
+            header_json_bytes = f.read(header_size)
+            header_str = header_json_bytes.decode('utf-8')
+            header_json = json.loads(header_str)
+            
+            metadata = header_json.get('__metadata__', {})
+            if not metadata:
+                return None
+                
+            # 优先级1: 标准 modelspec
+            if 'modelspec.hash.sha256' in metadata:
+                return metadata['modelspec.hash.sha256']
+            if 'modelspec.hash.blake3' in metadata:
+                return metadata['modelspec.hash.blake3']
+                
+            # 优先级2: 其他带 hash 的键
+            for k, v in metadata.items():
+                if ('hash' in k.lower() or 'civitai' in k.lower()) and isinstance(v, str):
+                    if len(v) == 64 and all(c in '0123456789abcdefABCDEF' for c in v):
+                        return v
+    except Exception as e:
+        pass
+    return None
+
 def sanitize_filename(name: str) -> str:
     """清理文件名中的非法字符"""
     name = re.sub(r'[\r\n\t]+', ' ', name)
@@ -113,6 +149,8 @@ def main():
     parser.add_argument("folder", help="要扫描的文件夹路径 (例如: models/checkpoints)")
     parser.add_argument("--dry-run", action="store_true", help="空跑模式，仅打印将要执行的操作，不修改任何文件")
     parser.add_argument("--undo", action="store_true", help="根据 backup_rename_log.json 恢复文件名")
+    parser.add_argument("--skip-rename", action="store_true", help="只下载信息文件，不重命名主文件")
+    parser.add_argument("--skip-media", action="store_true", help="不下载预览图或视频")
     args = parser.parse_args()
 
     target_folder = args.folder
@@ -180,22 +218,25 @@ def main():
             file_path = os.path.join(root, filename)
             old_base = os.path.splitext(file_path)[0]
             
-            # 增量跳过：要求模型本体、.info、预览图三个文件全在，才算完整跳过
             info_exists = os.path.exists(old_base + ".info") or os.path.exists(old_base + ".civitai.info")
-            preview_exists = False
-            for ext in [".png", ".preview.png", ".jpg", ".jpeg", ".webp", ".mp4", ".webm"]:
-                if os.path.exists(old_base + ext):
-                    preview_exists = True
-                    break
+            preview_exists = args.skip_media
+            if not preview_exists:
+                for ext in [".png", ".preview.png", ".jpg", ".jpeg", ".webp", ".mp4", ".webm"]:
+                    if os.path.exists(old_base + ext):
+                        preview_exists = True
+                        break
                     
             if info_exists and preview_exists:
-                print(f"[*] 已跳过 (信息与预览图均完整): {filename}")
+                print(f"[*] 已跳过 (信息满足要求): {filename}")
                 continue
                 
             print(f"\n---> 处理文件: {filename} (位于 {root})")
-            
-            file_hash = calculate_sha256(file_path)
-            print(f"[*] SHA256: {file_hash}")
+            file_hash = extract_safetensors_hash(file_path)
+            if file_hash:
+                print(f"[*] 成功从头文件极速提取 Hash: {file_hash}")
+            else:
+                file_hash = calculate_sha256(file_path)
+                print(f"[*] 全量物理 SHA256: {file_hash}")
             
             civitai_data = fetch_civitai_info(file_hash)
             if not civitai_data:
@@ -247,20 +288,24 @@ def main():
             if images and len(images) > 0:
                 media_url = None
                 for img_obj in images:
-                    if img_obj.get("url"):
-                        media_url = img_obj.get("url")
-                        break
-                
-                if media_url:
-                    if not args.dry_run:
-                        print(f"[*] 正在下载预览媒体...")
-                        saved_path = download_media(media_url, old_base)
-                        if saved_path:
-                            print(f"[+] 媒体下载成功 -> {os.path.basename(saved_path)}")
-                    else:
-                        print(f"[Dry-Run] 拟下载预览媒体...")
+                    if not args.skip_media:
+                        if img_obj.get("url"):
+                            media_url = img_obj.get("url")
+                            break
+            
+            if media_url and not args.skip_media:
+                if not args.dry_run:
+                    print(f"[*] 正在下载预览媒体...")
+                    saved_path = download_media(media_url, old_base)
+                    if saved_path:
+                        print(f"[+] 媒体下载成功 -> {os.path.basename(saved_path)}")
+                else:
+                    print(f"[Dry-Run] 拟下载预览媒体...")
                         
-            if file_path != new_file_path and new_filename != filename:
+            if args.skip_rename:
+                print(f"[*] --skip-rename 开启，跳过主文件重命名。仅保存 .info。")
+                success_count += 1
+            elif file_path != new_file_path and new_filename != filename:
                 if os.path.exists(new_file_path):
                     print(f"\033[91m[-] 目标版本已存在 (重复模型)，执行永久删除多余副本: {filename}\033[0m")
                     if not args.dry_run:
@@ -291,7 +336,7 @@ def main():
                         print(f"[Dry-Run] 拟连带重命名附属文件 (.info / .png 等)")
             else:
                 print("[*] 文件名已符合规范，无需重命名。")
-            success_count += 1
+                success_count += 1
                     
     
     # Save scan results

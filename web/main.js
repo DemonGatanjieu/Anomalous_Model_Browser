@@ -56,6 +56,7 @@ const i18n = {
     <p><strong>8. ➕ 一键投放节点</strong>: 在网格卡片右上角或详细页顶部，点击【➕】按钮，可将当前模型节点直接贴在鼠标上，并无缝插入工作流画布！</p>
     <p><strong>9. 📑 笔记本 (Notebook)</strong>: 提供强大的工作流草稿本功能。你可以创建不同的笔记本，选择基础架构 (Base Model)，系统会自动为你筛选出对应的纯净主模型和 Lora 画廊供你点选。同时内置了极具高级感的双语提示词对照编辑器，支持标签化悬停高亮与快捷复制，并且支持将整个配置一键发送到画布！</p>
     <p><strong>10. 🖼️ 图库 (Gallery)</strong>: 同步浏览 ComfyUI output 文件夹的所有生成历史。支持无限懒加载，点击全屏预览，设有极度安全的防误触删除遮罩。更可以直接将任意图片拖拽到画布上瞬间还原内嵌的工作流！</p>
+    <p><strong>11. 🪄 自动修复飘红节点 (Auto-Fix)</strong>: 设置面板中的“一键修复工作流飘红”功能或缺模型弹窗中的一键按钮，可以帮您瞬间自动替换画布上所有的报错模型。<strong>⚠️ 必须知晓：</strong>系统依赖模型哈希(Hash)进行精准匹配，因此只有在使用本插件之后生成/保存的工作流或图片，才能实现 100% 精准全自动修复。对于历史遗留的旧工作流，由于缺失哈希信息，无法自动修复，敬请手动重选。</p>
 </div>`,
         notebooks: '笔记本',
         notebookTitle: '笔记本管理',
@@ -138,6 +139,7 @@ const i18n = {
     <p><strong>8. ➕ One-Click Add Node</strong>: Click the 【➕】 button on a grid card or detail page to instantly attach the model node to your cursor and drop it seamlessly onto your workflow canvas!</p>
     <p><strong>9. 📑 Notebook System</strong>: A powerful drafting workspace. Create notebooks, select a Base Model, and precisely match compatible Main Models and Loras. Includes a premium dual-pane bilingual prompt editor with hover-sync, tag splitting, and 1-click deployment to canvas.</p>
     <p><strong>10. 🖼️ Gallery System</strong>: Natively browse your ComfyUI output history. Features infinite lazy loading, fullscreen immersive previews, and a foolproof overlay for safe deletion. You can even drag and drop any image directly onto your canvas to instantly import its workflow!</p>
+    <p><strong>11. 🪄 Auto-Fix Missing Models</strong>: The "Fix Models" button in Settings or the One-Click button in the missing-models popup will instantly repair all red/missing model nodes on your canvas. <strong>⚠️ Important:</strong> The system relies on model hashes for 100% accurate matching. Therefore, ONLY workflows or images generated/saved AFTER installing this plugin can be fully auto-repaired. For older historical workflows lacking hash data, auto-fix is not possible and you must manually re-select the models.</p>
 </div>`,
         notebooks: 'Notebooks',
         notebookTitle: 'Notebook Manager',
@@ -191,7 +193,7 @@ class AnomalousBrowser {
 
         const container = document.createElement('div');
         container.id = 'anomalous-container';
-        
+
         const updateLangClass = () => {
             if (currentLang === 'en') container.classList.add('anomalous-lang-en');
             else container.classList.remove('anomalous-lang-en');
@@ -204,7 +206,7 @@ class AnomalousBrowser {
 
         this.sidebar = document.createElement('div');
         this.sidebar.id = 'anomalous-sidebar';
-        
+
         this.sidebarWrapper.appendChild(this.sidebar);
 
         // Content Area
@@ -213,7 +215,7 @@ class AnomalousBrowser {
 
         const header = document.createElement('div');
         header.id = 'anomalous-header';
-        
+
         let isDragging = false;
         let dragOffsetX = 0;
         let dragOffsetY = 0;
@@ -231,12 +233,12 @@ class AnomalousBrowser {
             if (!isDragging) return;
             let newX = e.clientX - dragOffsetX;
             let newY = e.clientY - dragOffsetY;
-            
+
             if (newX < 0) newX = 0;
             if (newY < 0) newY = 0;
             if (newX + container.offsetWidth > window.innerWidth) newX = window.innerWidth - container.offsetWidth;
             if (newY + container.offsetHeight > window.innerHeight) newY = window.innerHeight - container.offsetHeight;
-            
+
             container.style.left = newX + 'px';
             container.style.top = newY + 'px';
             container.style.transform = 'none';
@@ -256,10 +258,10 @@ class AnomalousBrowser {
             container.style.left = savedX;
             container.style.top = savedY;
         }
-        
+
         const spacer = document.createElement('div');
         spacer.style.flex = '1 1 auto';
-        
+
         const leftGroup = document.createElement('div');
         leftGroup.className = 'anomalous-header-group';
 
@@ -345,7 +347,7 @@ class AnomalousBrowser {
         if (localStorage.getItem('anomalous_docked') === 'true') {
             container.classList.add('anomalous-docked');
         }
-        
+
         const helpBtn = document.createElement('button');
         helpBtn.id = 'anomalous-help-btn';
         helpBtn.title = t('helpTitle');
@@ -380,10 +382,10 @@ class AnomalousBrowser {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ api_key: val.trim() })
                     });
-                } catch(e) {}
+                } catch (e) { }
             }
         };
-        
+
         const scanBtn = document.createElement('button');
         scanBtn.id = 'anomalous-scan-btn';
         scanBtn.title = t('scanTitle');
@@ -394,7 +396,7 @@ class AnomalousBrowser {
             scanBtn.disabled = true;
             try {
                 const params = new URLSearchParams({ type: this.currentType, path_idx: this.currentPathIdx, subfolder: this.currentSubfolder });
-                const res = await fetch('/anomalous/scan?' + params.toString(), {method: 'POST'});
+                const res = await fetch('/anomalous/scan?' + params.toString(), { method: 'POST' });
                 const data = await res.json();
                 if (data.status === 'ok') {
                     alert(t('scanBg'));
@@ -405,27 +407,30 @@ class AnomalousBrowser {
                             if (!sd.scanning) {
                                 clearInterval(poll);
                                 scanBtn.innerHTML = `✅ <span class="anomalous-btn-text">${t('scanDone')}</span>`;
-                                
+
                                 let msg = '';
                                 if (sd.result) {
                                     if (currentLang === 'zh') {
-                                        msg = `✅ 扫描结束！\n成功处理：${sd.result.success} 个\n处理失败：${sd.result.fail} 个\n\n⚠️ 重要提示：为了让重命名后的模型生效，请务必【重启 ComfyUI 服务端后台】。`;
+                                        msg = `✅ 扫描与刮削已结束！\n成功处理：${sd.result.success} 个\n处理失败：${sd.result.fail} 个\n\n正在为您自动点亮画布上所有因此次更名而飘红的节点...`;
                                     } else {
-                                        msg = `✅ Scan Complete!\nSuccess: ${sd.result.success}\nFailed: ${sd.result.fail}\n\n⚠️ Important: Please fully RESTART the ComfyUI backend to load the renamed models.`;
+                                        msg = `✅ Scan & Scraping Complete!\nSuccess: ${sd.result.success}\nFailed: ${sd.result.fail}\n\nAuto-fixing any red nodes on your canvas caused by renaming...`;
                                     }
                                 } else {
                                     if (currentLang === 'zh') {
-                                        msg = `✅ 扫描完成！\n\n⚠️ 重要提示：为了让重命名后的模型生效，请务必【重启 ComfyUI 服务端后台】。`;
+                                        msg = `✅ 扫描完成！\n\n正在为您自动点亮画布上飘红的节点...`;
                                     } else {
-                                        msg = `✅ Scan Complete!\n\n⚠️ Important: Please fully RESTART the ComfyUI backend to load the renamed models.`;
+                                        msg = `✅ Scan Complete!\n\nAuto-fixing any red nodes on your canvas...`;
                                     }
                                 }
                                 alert(msg);
-                                
+                                if (window.anomalous_resolve_all_missing_nodes) {
+                                    await window.anomalous_resolve_all_missing_nodes(true);
+                                }
+
                                 this.loadModels();
                                 setTimeout(() => { scanBtn.innerHTML = `<span class="anomalous-btn-text">${t('scan')}</span>`; scanBtn.disabled = false; }, 2000);
                             }
-                        } catch(e) { clearInterval(poll); scanBtn.disabled = false; }
+                        } catch (e) { clearInterval(poll); scanBtn.disabled = false; }
                     }, 3000);
                 } else {
                     scanBtn.disabled = false;
@@ -437,8 +442,8 @@ class AnomalousBrowser {
         energyBtn.id = 'anomalous-energy-btn';
         energyBtn.title = t('togglePlayTitle');
         const renderEnergyBtn = () => {
-            energyBtn.innerHTML = this.energySaving 
-                ? `<span class="anomalous-btn-text">${t('eco')}</span>` 
+            energyBtn.innerHTML = this.energySaving
+                ? `<span class="anomalous-btn-text">${t('eco')}</span>`
                 : `<span class="anomalous-btn-text">${t('autoPlay')}</span>`;
         };
         renderEnergyBtn();
@@ -458,13 +463,13 @@ class AnomalousBrowser {
         cleanBtn.id = 'anomalous-clean-btn';
         cleanBtn.title = t('cleanTitle');
         cleanBtn.innerHTML = `<span class="anomalous-btn-text">${t('clean')}</span>`;
-        
+
         cleanBtn.onclick = async () => {
             if (!confirm(t('cleanConfirm'))) return;
             cleanBtn.innerHTML = `⏳ <span class="anomalous-btn-text">${t('cleaning')}</span>`;
             cleanBtn.disabled = true;
             try {
-                const res = await fetch('/anomalous/clean_civitai_info', {method: 'POST'});
+                const res = await fetch('/anomalous/clean_civitai_info', { method: 'POST' });
                 const data = await res.json();
                 if (data.status === 'success') {
                     alert(`${t('cleanDone')} ${data.count} ${t('files')}`);
@@ -487,6 +492,21 @@ class AnomalousBrowser {
             }
         };
 
+        const fixBtn = document.createElement('button');
+        fixBtn.id = 'anomalous-fix-models-btn';
+        fixBtn.title = '一键修复工作流飘红 (Fix Models)';
+        fixBtn.innerHTML = `🪄 <span class="anomalous-btn-text">一键修复当前工作流飘红</span>`;
+        fixBtn.style.color = '#ffc107';
+        fixBtn.style.border = '1px solid #ffc107';
+        fixBtn.onclick = async () => {
+            if (window.anomalous_resolve_all_missing_nodes) {
+                await window.anomalous_resolve_all_missing_nodes(true);
+                this.settingsPanel.style.display = 'none';
+            } else {
+                alert("修复模块尚未加载！");
+            }
+        };
+
         rightGroup.appendChild(dockBtn);
         rightGroup.appendChild(settingsBtn);
         rightGroup.appendChild(closeBtn);
@@ -497,10 +517,10 @@ class AnomalousBrowser {
 
         this.settingsPanel = document.createElement('div');
         this.settingsPanel.id = 'anomalous-settings-panel';
-        
+
         const settingsBox = document.createElement('div');
         settingsBox.id = 'anomalous-settings-box';
-        
+
         const langBtn = document.createElement('button');
         langBtn.className = 'anomalous-lang-btn';
         langBtn.innerHTML = currentLang === 'zh' ? '🌐 Language: EN' : '🌐 语言: 中文';
@@ -549,41 +569,42 @@ class AnomalousBrowser {
 
         settingsBox.appendChild(langBtn);
         settingsBox.appendChild(apiKeyBtn);
+        settingsBox.appendChild(fixBtn);
         settingsBox.appendChild(scanBtn);
         settingsBox.appendChild(cleanBtn);
         settingsBox.appendChild(energyBtn);
         settingsBox.appendChild(helpBtn);
         settingsBox.appendChild(settingsCloseBtn);
-        
+
         this.settingsPanel.appendChild(settingsBox);
-        
+
         this.settingsPanel.onclick = (e) => {
             if (e.target === this.settingsPanel) this.settingsPanel.style.display = 'none';
         };
 
         this.grid = document.createElement('div');
         this.grid.id = 'anomalous-grid';
-        
+
         this.detailPanel = document.createElement('div');
         this.detailPanel.id = 'anomalous-detail';
         this.detailPanel.style.display = 'none';
 
         this.galleryPanel = document.createElement('div');
         this.galleryPanel.id = 'anomalous-gallery-panel';
-        
+
         this.galleryGrid = document.createElement('div');
         this.galleryGrid.className = 'anomalous-gallery-grid';
         this.galleryPanel.appendChild(this.galleryGrid);
-        
+
         this.gallerySentinel = document.createElement('div');
         this.gallerySentinel.className = 'anomalous-gallery-sentinel';
         this.galleryGrid.appendChild(this.gallerySentinel);
-        
+
         this.galleryCurrentPage = 1;
         this.galleryLoaded = false;
         this.galleryLoading = false;
         this.galleryHasMore = true;
-        
+
         this.galleryObserver = new IntersectionObserver((entries) => {
             if (entries[0].isIntersecting && !this.galleryLoading && this.galleryHasMore) {
                 this.loadGalleryImages(this.galleryCurrentPage + 1);
@@ -609,7 +630,7 @@ class AnomalousBrowser {
         container.appendChild(this.nbPanel);
 
         this.modal.appendChild(container);
-        
+
         // Resize handle
         const resizeHandle = document.createElement('div');
         resizeHandle.className = 'anomalous-resize-handle';
@@ -645,7 +666,7 @@ class AnomalousBrowser {
         document.body.appendChild(this.modal);
     }
 
-    
+
     showHelp() {
         if (this.helpModal) {
             this.helpModal.remove();
@@ -661,7 +682,7 @@ class AnomalousBrowser {
         this.helpModal.style.display = 'flex';
         this.helpModal.style.alignItems = 'center';
         this.helpModal.style.justifyContent = 'center';
-        
+
         const box = document.createElement('div');
         box.style.background = 'var(--bg-color, #222)';
         box.style.border = '1px solid var(--border-color, #444)';
@@ -672,7 +693,7 @@ class AnomalousBrowser {
         box.style.display = 'flex';
         box.style.flexDirection = 'column';
         box.style.maxHeight = '90vh';
-        
+
         const header = document.createElement('div');
         header.style.padding = '15px 20px';
         header.style.borderBottom = '1px solid #444';
@@ -680,13 +701,13 @@ class AnomalousBrowser {
         header.style.display = 'flex';
         header.style.alignItems = 'center';
         header.style.justifyContent = 'space-between';
-        
+
         const title = document.createElement('h2');
         title.innerHTML = t('helpTitle');
         title.style.margin = '0';
         title.style.color = '#fff';
         title.style.fontSize = '1.2em';
-        
+
         const closeX = document.createElement('div');
         closeX.innerHTML = '&times;';
         closeX.style.position = 'absolute';
@@ -696,22 +717,22 @@ class AnomalousBrowser {
         closeX.style.cursor = 'pointer';
         closeX.style.color = '#ff4444';
         closeX.onclick = () => this.helpModal.remove();
-        
+
         header.appendChild(title);
         header.appendChild(closeX);
-        
+
         const body = document.createElement('div');
         body.style.padding = '20px';
         body.innerHTML = t('helpContent');
         body.style.overflowY = 'auto';
         body.style.flex = '1';
-        
+
         const footer = document.createElement('div');
         footer.style.padding = '15px';
         footer.style.borderTop = '1px solid #444';
         footer.style.display = 'flex';
         footer.style.justifyContent = 'flex-end';
-        
+
         const closeBtn = document.createElement('button');
         closeBtn.innerHTML = t('closeHelp');
         closeBtn.style.padding = '8px 16px';
@@ -721,14 +742,14 @@ class AnomalousBrowser {
         closeBtn.style.borderRadius = '4px';
         closeBtn.style.cursor = 'pointer';
         closeBtn.onclick = () => this.helpModal.remove();
-        
+
         footer.appendChild(closeBtn);
-        
+
         box.appendChild(header);
         box.appendChild(body);
         box.appendChild(footer);
         this.helpModal.appendChild(box);
-        
+
         document.getElementById('anomalous-container').appendChild(this.helpModal);
     }
 
@@ -737,7 +758,7 @@ class AnomalousBrowser {
             const res = await fetch('/anomalous/folders');
             const data = await res.json();
             this.foldersData = data.folders || [];
-            
+
             if (!this.firstLoadDone && this.foldersData.length > 0) {
                 this.firstLoadDone = true;
                 let found = false;
@@ -755,7 +776,7 @@ class AnomalousBrowser {
                     if (found) break;
                 }
             }
-            
+
             // Auto expand all
             (this.foldersData || []).forEach(typeGroup => {
                 this.expandedFolders.add(typeGroup.type);
@@ -763,20 +784,20 @@ class AnomalousBrowser {
                     this.expandedFolders.add(typeGroup.type + path);
                 });
             });
-            
+
             this.renderSidebar();
             this.loadModels();
-        } catch(e) {}
+        } catch (e) { }
     }
 
     renderSidebar() {
         this.sidebar.innerHTML = '';
-        
+
         const brandBar = document.createElement('div');
         brandBar.style.padding = '12px 15px 0 15px';
         brandBar.style.display = 'flex';
         brandBar.style.alignItems = 'center';
-        
+
         const badge = document.createElement('div');
         badge.style.background = 'linear-gradient(135deg, #444, #222)';
         badge.style.color = '#ccc';
@@ -789,7 +810,7 @@ class AnomalousBrowser {
         badge.style.textTransform = 'uppercase';
         badge.style.fontWeight = 'bold';
         badge.innerHTML = 'Anomalous Browser';
-        
+
         brandBar.appendChild(badge);
 
         const topBar = document.createElement('div');
@@ -797,12 +818,12 @@ class AnomalousBrowser {
         topBar.style.justifyContent = 'space-between';
         topBar.style.alignItems = 'center';
         topBar.style.padding = '10px 15px 15px 15px';
-        
+
         const title = document.createElement('h3');
         title.innerHTML = t('folders');
         title.style.color = '#fff';
         title.style.margin = '0';
-        
+
         const isAllCollapsed = this.expandedFolders.size === 0;
         const collapseAllBtn = document.createElement('button');
         collapseAllBtn.innerHTML = isAllCollapsed ? t('expandAll') : t('collapseAll');
@@ -825,7 +846,7 @@ class AnomalousBrowser {
             }
             this.renderSidebar();
         };
-        
+
         topBar.appendChild(title);
         topBar.appendChild(collapseAllBtn);
         this.sidebar.appendChild(brandBar);
@@ -837,10 +858,10 @@ class AnomalousBrowser {
             header.style.display = 'flex';
             header.style.justifyContent = 'space-between';
             header.style.cursor = 'pointer';
-            
+
             const isTypeExpanded = this.expandedFolders.has(typeGroup.type);
             header.innerHTML = `<span>${typeGroup.label}</span> <span>${isTypeExpanded ? '▼' : '▶'}</span>`;
-            
+
             header.onclick = () => {
                 if (isTypeExpanded) this.expandedFolders.delete(typeGroup.type);
                 else this.expandedFolders.add(typeGroup.type);
@@ -856,36 +877,36 @@ class AnomalousBrowser {
                 const info = typeGroup.folders[path];
                 const parts = path.split('/').filter(p => p);
                 const parentPath = parts.length > 1 ? '/' + parts.slice(0, -1).join('/') : '/';
-                
+
                 if (path !== '/' && parentPath !== '/') {
                     let parentId = typeGroup.type + parentPath;
-                    if (!this.expandedFolders.has(parentId)) return; 
+                    if (!this.expandedFolders.has(parentId)) return;
                 }
 
                 const hasChildren = sortedPaths.some(p => p !== path && p.startsWith(path === '/' ? '/' : path + '/'));
 
                 const item = document.createElement('div');
                 item.className = 'anomalous-folder-item';
-                
+
                 const depth = path === '/' ? 0 : parts.length;
                 item.style.paddingLeft = (15 + depth * 15) + 'px';
-                
+
                 const myId = typeGroup.type + path;
                 const isExpanded = this.expandedFolders.has(myId);
-                
+
                 let toggleIcon = '';
                 if (hasChildren) {
                     toggleIcon = `<span class="anomalous-folder-toggle" style="margin-right: 5px; width: 15px; display: inline-block;">${isExpanded ? '▼' : '▶'}</span>`;
                 } else {
                     toggleIcon = `<span style="margin-right: 5px; width: 15px; display: inline-block;"></span>`;
                 }
-                
+
                 item.innerHTML = `${toggleIcon}📁 ${info.name} <span style="opacity:0.5; font-size:0.9em;">(${info.model_count})</span>`;
-                
+
                 if (this.currentType === typeGroup.type && this.currentPathIdx === typeGroup.path_idx && this.currentSubfolder === path) {
                     item.classList.add('active');
                 }
-                
+
                 item.onclick = (e) => {
                     if (e.target.classList.contains('anomalous-folder-toggle')) {
                         if (isExpanded) this.expandedFolders.delete(myId);
@@ -896,14 +917,14 @@ class AnomalousBrowser {
                     this.currentType = typeGroup.type;
                     this.currentPathIdx = typeGroup.path_idx;
                     this.currentSubfolder = path;
-                    
+
                     this.detailPanel.style.display = 'none';
                     this.grid.style.display = 'grid';
-                    
+
                     this.renderSidebar();
                     this.loadModels();
                 };
-                
+
                 this.sidebar.appendChild(item);
             });
         });
@@ -914,8 +935,13 @@ class AnomalousBrowser {
             const params = new URLSearchParams({ type: this.currentType, path_idx: this.currentPathIdx, subfolder: this.currentSubfolder });
             const res = await fetch('/anomalous/models?' + params.toString());
             const data = await res.json();
+
+            if (window.anomalous_update_hash_cache && data.models) {
+                window.anomalous_update_hash_cache(data.models);
+            }
+
             this.grid.innerHTML = '';
-            
+
             if (!data.models || data.models.length === 0) {
                 this.grid.innerHTML = `<div style="color:white; padding:20px;">${t('noModels')}</div>`;
                 return;
@@ -932,7 +958,7 @@ class AnomalousBrowser {
                         video.muted = true; video.loop = true; video.playsInline = true;
                         if (this.energySaving) {
                             video.pause();
-                            card.addEventListener('mouseenter', () => video.play().catch(e=>{}));
+                            card.addEventListener('mouseenter', () => video.play().catch(e => { }));
                             card.addEventListener('mouseleave', () => { video.pause(); video.currentTime = 0; });
                         } else {
                             video.autoplay = true;
@@ -949,7 +975,7 @@ class AnomalousBrowser {
                     ph.innerHTML = `<div style="text-align:center;color:#666;margin-top:80px;">${t('noPreview')}</div><div style="font-size:0.8em;text-align:center;opacity:0.5;margin-top:5px">${t('clickScan')}</div>`;
                     card.appendChild(ph);
                 }
-            const title = document.createElement('div');
+                const title = document.createElement('div');
                 if (model.metadata && model.metadata.baseModel) {
                     const badge = document.createElement('div');
                     badge.innerText = model.metadata.baseModel;
@@ -970,7 +996,7 @@ class AnomalousBrowser {
                 title.className = 'anomalous-card-title';
                 title.innerText = model.filename;
                 card.appendChild(title);
-                
+
                 card.onclick = () => { this.historyStack = []; this.currentDetailModel = model; this.showDetail(model); };
 
                 const applyBtn = document.createElement('button');
@@ -988,23 +1014,23 @@ class AnomalousBrowser {
                 applyBtn.style.zIndex = '20';
                 applyBtn.style.fontSize = '1em';
                 applyBtn.style.display = 'none';
-                
+
                 card.addEventListener('mouseenter', () => applyBtn.style.display = 'block');
                 card.addEventListener('mouseleave', () => applyBtn.style.display = 'none');
-                
+
                 applyBtn.onclick = (e) => {
                     e.stopPropagation();
                     this.applyModelToCanvas(this.currentType, this.currentSubfolder, model);
                 };
                 card.appendChild(applyBtn);
 
-                
+
                 this.grid.appendChild(card);
             });
-        } catch(e) {}
+        } catch (e) { }
     }
 
-    
+
     applyModelToCanvas(type, subfolder, model) {
         const nodeTypeMap = {
             'checkpoints': 'CheckpointLoaderSimple',
@@ -1030,9 +1056,9 @@ class AnomalousBrowser {
                 app.canvas.graph_mouse[1] || (window.innerHeight / 2)
             ];
         } else {
-            node.pos = [ window.innerWidth / 2, window.innerHeight / 2 ];
+            node.pos = [window.innerWidth / 2, window.innerHeight / 2];
         }
-        
+
         app.graph.add(node);
 
         const sub = subfolder.replace(/^\/+/, '').replace(/\/+$/, '');
@@ -1040,14 +1066,14 @@ class AnomalousBrowser {
 
         this.setWidgetValuePath(node, relPath);
 
-this.close();
+        this.close();
 
         // 粘到鼠标上的逻辑
         let isSticking = true;
         const stickHandler = (e) => {
             if (!isSticking || !app.canvas) return;
             const canvas = app.canvas;
-            
+
             // LiteGraph内置了坐标转换，它会完美处理缩放和偏移带来的坐标偏移问题
             let canvasX, canvasY;
             if (canvas.convertEventToCanvasOffset) {
@@ -1060,7 +1086,7 @@ this.close();
                 canvasX = (e.clientX - rect.left - canvas.ds.offset[0]) / canvas.ds.scale;
                 canvasY = (e.clientY - rect.top - canvas.ds.offset[1]) / canvas.ds.scale;
             }
-            
+
             node.pos = [canvasX - node.size[0] / 2, canvasY - 20];
             canvas.setDirty(true, true);
         };
@@ -1087,7 +1113,7 @@ this.close();
         this.grid.style.display = 'none';
         this.detailPanel.style.display = 'flex';
         this.detailPanel.innerHTML = '';
-        
+
         const header = document.createElement('div');
         header.style.width = '100%';
         header.style.padding = '8px 15px';
@@ -1096,8 +1122,8 @@ this.close();
         header.style.display = 'flex';
         header.style.alignItems = 'center';
         header.style.boxSizing = 'border-box';
-        
-const backBtn = document.createElement('button');
+
+        const backBtn = document.createElement('button');
         backBtn.innerHTML = this.historyStack.length > 0 ? t('backToPrev') : t('back');
         backBtn.style.padding = '6px 12px';
         backBtn.style.background = '#444';
@@ -1124,7 +1150,7 @@ const backBtn = document.createElement('button');
                 this.grid.style.display = 'grid';
             }
         };
-        
+
         const title = document.createElement('h2');
         title.innerHTML = model.filename;
         title.style.margin = '0 20px 0 20px';
@@ -1135,7 +1161,7 @@ const backBtn = document.createElement('button');
         title.style.overflow = 'hidden';
         title.style.textOverflow = 'ellipsis';
         title.style.flex = '1'; // 撑开剩余空间，把右侧按钮挤到最右边
-        
+
         const delBtn = document.createElement('button');
         delBtn.innerHTML = t('delModel');
         delBtn.style.padding = '6px 12px';
@@ -1177,7 +1203,7 @@ const backBtn = document.createElement('button');
                 alert(t('delFail') + e.message);
             }
         };
-        
+
         const jumpBtn = document.createElement('button');
         jumpBtn.innerHTML = '⬇️';
         jumpBtn.title = t('jumpToBottom') || 'Jump to bottom';
@@ -1193,7 +1219,7 @@ const backBtn = document.createElement('button');
             const rp = this.detailPanel.querySelector('.anomalous-split-right');
             if (rp) rp.scrollTo({ top: rp.scrollHeight, behavior: 'smooth' });
         };
-        
+
         header.appendChild(backBtn);
         header.appendChild(title);
         header.appendChild(delBtn);
@@ -1214,20 +1240,20 @@ const backBtn = document.createElement('button');
         };
         header.appendChild(applyDetailBtn);
 
-        
+
         const splitContainer = document.createElement('div');
         splitContainer.className = 'anomalous-split-container';
-        
+
         const leftPanel = document.createElement('div');
         leftPanel.className = 'anomalous-split-left';
-        
+
         let isMediaRendered = null;
         const renderMedia = (shouldRender) => {
             if (shouldRender === isMediaRendered) return;
             isMediaRendered = shouldRender;
             leftPanel.innerHTML = '';
             if (!shouldRender) return;
-            
+
             if (model.preview_url) {
                 const isVideo = model.preview_url.toLowerCase().endsWith('.mp4') || model.preview_url.toLowerCase().endsWith('.webm');
                 if (isVideo) {
@@ -1260,17 +1286,17 @@ const backBtn = document.createElement('button');
             }
         });
         this.currentDetailObserver.observe(containerEl);
-        
+
         const resizer = document.createElement('div');
         resizer.className = 'anomalous-resizer';
-        
+
         let isResizing = false;
         resizer.addEventListener('mousedown', (e) => {
             isResizing = true;
             document.body.style.cursor = 'col-resize';
             e.preventDefault();
         });
-        
+
         window.addEventListener('mousemove', (e) => {
             if (!isResizing) return;
             const containerRect = splitContainer.getBoundingClientRect();
@@ -1280,14 +1306,14 @@ const backBtn = document.createElement('button');
             leftPanel.style.width = newWidth + '%';
             rightPanel.style.width = (100 - newWidth) + '%';
         });
-        
+
         window.addEventListener('mouseup', () => {
             if (isResizing) {
                 isResizing = false;
                 document.body.style.cursor = '';
             }
         });
-        
+
         const rightPanel = document.createElement('div');
         rightPanel.className = 'anomalous-split-right';
         rightPanel.style.display = 'flex';
@@ -1297,9 +1323,9 @@ const backBtn = document.createElement('button');
         rightPanel.style.overflow = 'auto';
         rightPanel.style.padding = '15px';
         rightPanel.style.color = '#eee';
-        
+
         const m = model.metadata || {};
-        
+
         // 1. Top Bar (Title + Size + Model + Button) in a single compact row if possible
         const topRow = document.createElement('div');
         topRow.style.flexShrink = '0';
@@ -1310,20 +1336,20 @@ const backBtn = document.createElement('button');
         topRow.style.paddingBottom = '10px';
         topRow.style.marginBottom = '10px';
         topRow.style.borderBottom = '1px solid #444';
-        
+
         const titleEl = document.createElement('h3');
         titleEl.style.margin = '0';
         titleEl.style.fontSize = '1.3em';
         titleEl.style.marginRight = '10px';
         titleEl.innerText = m.name || model.filename;
         topRow.appendChild(titleEl);
-        
+
         const metaSpan = document.createElement('span');
         metaSpan.style.fontSize = '0.9em';
         metaSpan.style.color = '#aaa';
         metaSpan.innerHTML = `<strong>Size:</strong> ${model.size_mb} MB` + (m.baseModel ? ` <strong style="margin-left:10px;">Base:</strong> ${m.baseModel}` : '');
         topRow.appendChild(metaSpan);
-        
+
         if (m.civitai_url) {
             const cBtn = document.createElement('a');
             cBtn.href = m.civitai_url;
@@ -1339,24 +1365,24 @@ const backBtn = document.createElement('button');
             cBtn.style.fontWeight = 'bold';
             topRow.appendChild(cBtn);
         }
-        
+
         rightPanel.appendChild(topRow);
-        
+
         // 2. Trained Words Section
         if (m.trainedWords && m.trainedWords.length > 0) {
             const twCont = document.createElement('div');
             twCont.style.flexShrink = '0';
             twCont.style.marginBottom = '10px';
-            
+
             const twHeader = document.createElement('div');
             twHeader.style.display = 'flex';
             twHeader.style.alignItems = 'center';
             twHeader.style.marginBottom = '5px';
-            
+
             const twLabel = document.createElement('strong');
             twLabel.innerText = 'Trained Words:';
             twHeader.appendChild(twLabel);
-            
+
             const copyAll = document.createElement('button');
             copyAll.innerText = t('copyAll');
             copyAll.style.marginLeft = '10px';
@@ -1377,12 +1403,12 @@ const backBtn = document.createElement('button');
             };
             twHeader.appendChild(copyAll);
             twCont.appendChild(twHeader);
-            
+
             const tagsCont = document.createElement('div');
             tagsCont.style.display = 'flex';
             tagsCont.style.flexWrap = 'wrap';
             tagsCont.style.gap = '4px';
-            
+
             m.trainedWords.forEach(w => {
                 const tag = document.createElement('span');
                 tag.innerText = w;
@@ -1404,23 +1430,23 @@ const backBtn = document.createElement('button');
             twCont.appendChild(tagsCont);
             rightPanel.appendChild(twCont);
         }
-        
+
         // 3. Description Section (Expands to fill remaining height)
         if (m.description) {
             const descCont = document.createElement('div');
             descCont.style.flex = 'none';
             descCont.style.display = 'flex';
             descCont.style.flexDirection = 'column';
-             // important for flex scroll
-            
+            // important for flex scroll
+
             const descLabel = document.createElement('strong');
             descLabel.innerText = 'Description:';
             descLabel.style.marginBottom = '5px';
             descCont.appendChild(descLabel);
-            
+
             const descText = document.createElement('div');
             descText.style.flex = 'none';
-            
+
             descText.style.background = '#222';
             descText.style.padding = '10px';
             descText.style.borderRadius = '6px';
@@ -1429,20 +1455,20 @@ const backBtn = document.createElement('button');
             descText.style.lineHeight = '1.4';
             descText.innerHTML = m.description;
             descCont.appendChild(descText);
-            
+
             rightPanel.appendChild(descCont);
         }
-        
+
         // 4. Notes Section
         if (m.notes) {
             const notesCont = document.createElement('div');
             notesCont.style.flexShrink = '0';
             notesCont.style.marginTop = '10px';
-            
+
             const notesLabel = document.createElement('strong');
             notesLabel.innerText = 'Notes:';
             notesCont.appendChild(notesLabel);
-            
+
             const notesText = document.createElement('div');
             notesText.style.background = '#332b00';
             notesText.style.padding = '8px';
@@ -1452,32 +1478,35 @@ const backBtn = document.createElement('button');
             notesText.style.fontSize = '0.9em';
             notesText.innerHTML = m.notes;
             notesCont.appendChild(notesText);
-            
+
             rightPanel.appendChild(notesCont);
         }
-        
+
         // --- Compatible Models Section ---
         if (m.baseModel) {
             const compSec = document.createElement('div');
             compSec.className = 'anomalous-compatible-section';
-            
+
             const compTitle = document.createElement('div');
             compTitle.className = 'anomalous-compatible-title';
             compTitle.innerHTML = `${t('compatibleModels') || '🔗 Compatible'} <span style="font-size:0.8em; opacity:0.6;">(${m.baseModel})</span>`;
-            
+
             const compList = document.createElement('div');
             compList.className = 'anomalous-compatible-list';
             compList.innerHTML = `<span style="color:#888;">${t('loadingCompatible') || 'Loading...'}</span>`;
-            
+
             compSec.appendChild(compTitle);
             compSec.appendChild(compList);
             rightPanel.appendChild(compSec);
-            
+
             const targetType = this.currentType === 'loras' ? 'checkpoints,unet,diffusion_models' : 'loras';
             fetch(`/anomalous/compatible_models?base_model=${encodeURIComponent(m.baseModel)}&target_type=${encodeURIComponent(targetType)}`)
                 .then(r => r.json())
                 .then(d => {
                     compList.innerHTML = '';
+                    if (window.anomalous_update_hash_cache && d.models) {
+                        window.anomalous_update_hash_cache(d.models);
+                    }
                     if (!d.models || d.models.length === 0) {
                         compList.innerHTML = `<span style="color:#888;">No compatible models found.</span>`;
                         return;
@@ -1486,7 +1515,7 @@ const backBtn = document.createElement('button');
                         const mItem = document.createElement('div');
                         mItem.className = 'anomalous-compatible-item';
                         mItem.title = m_comp.filename;
-                        
+
                         let thumb = '';
                         if (m_comp.preview_url) {
                             const isVid = m_comp.preview_url.toLowerCase().endsWith('.mp4') || m_comp.preview_url.toLowerCase().endsWith('.webm');
@@ -1495,14 +1524,14 @@ const backBtn = document.createElement('button');
                         } else {
                             thumb = `<div style="width:30px; height:30px; background:#222; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#555;">?</div>`;
                         }
-                        
+
                         mItem.innerHTML = `${thumb}<div class="anomalous-compatible-item-name">${m_comp.filename}</div>`;
-                        
+
                         if (m_comp.preview_url && (m_comp.preview_url.toLowerCase().endsWith('.mp4') || m_comp.preview_url.toLowerCase().endsWith('.webm'))) {
-                            mItem.onmouseenter = () => { const v = mItem.querySelector('video'); if (v) v.play().catch(e=>{}); };
+                            mItem.onmouseenter = () => { const v = mItem.querySelector('video'); if (v) v.play().catch(e => { }); };
                             mItem.onmouseleave = () => { const v = mItem.querySelector('video'); if (v) { v.pause(); v.currentTime = 0; } };
                         }
-                        
+
                         mItem.onclick = () => {
                             this.historyStack.push({
                                 type: this.currentType,
@@ -1510,16 +1539,16 @@ const backBtn = document.createElement('button');
                                 subfolder: this.currentSubfolder,
                                 model: this.currentDetailModel
                             });
-                            
+
                             this.currentType = m_comp.type;
                             this.currentPathIdx = m_comp.path_idx;
                             this.currentSubfolder = m_comp.subfolder;
                             this.currentDetailModel = m_comp;
-                            
+
                             this.renderSidebar();
                             this.showDetail(m_comp);
                         };
-                        
+
                         compList.appendChild(mItem);
                     });
                 })
@@ -1528,11 +1557,11 @@ const backBtn = document.createElement('button');
                 });
         }
         // ---------------------------------
-        
+
         splitContainer.appendChild(leftPanel);
         splitContainer.appendChild(resizer);
         splitContainer.appendChild(rightPanel);
-        
+
         this.detailPanel.appendChild(header);
         this.detailPanel.appendChild(splitContainer);
     }
@@ -1553,12 +1582,12 @@ const backBtn = document.createElement('button');
             return;
         }
         this.nbInitialized = true;
-        
+
         this.nbPanel.innerHTML = '';
-        
+
         const nbContainer = document.createElement('div');
         nbContainer.className = 'anomalous-nb-container';
-        
+
         const nbHeader = document.createElement('div');
         nbHeader.className = 'anomalous-nb-header';
         nbHeader.innerHTML = `<h2>${t('notebookTitle')}</h2>`;
@@ -1567,26 +1596,26 @@ const backBtn = document.createElement('button');
         closeNb.innerHTML = '&times;';
         closeNb.onclick = () => { this.nbPanel.style.display = 'none'; };
         nbHeader.appendChild(closeNb);
-        
+
         const body = document.createElement('div');
         body.className = 'anomalous-nb-body';
-        
+
         // Sidebar for notebooks list
         const sidebar = document.createElement('div');
         sidebar.className = 'anomalous-nb-sidebar';
-        
+
         const nbList = document.createElement('div');
         nbList.className = 'anomalous-nb-list';
-        
+
         const btnRow = document.createElement('div');
         btnRow.style.padding = '10px';
         btnRow.style.display = 'flex';
         btnRow.style.gap = '5px';
-        
+
         const createBtn = document.createElement('button');
         createBtn.innerHTML = `+ <span class="anomalous-nb-create-text">${t('createNotebook')}</span>`;
         createBtn.className = 'anomalous-btn-primary';
-        
+
         const createInput = document.createElement('input');
         createInput.type = 'text';
         createInput.placeholder = t('newNotebookName');
@@ -1597,7 +1626,7 @@ const backBtn = document.createElement('button');
         createInput.style.color = '#fff';
         createInput.style.border = '1px solid #555';
         createInput.style.borderRadius = '4px';
-        
+
         createBtn.onclick = () => {
             if (createInput.style.display === 'none') {
                 createInput.style.display = 'block';
@@ -1615,28 +1644,28 @@ const backBtn = document.createElement('button');
                 createBtn.innerHTML = `+ <span class="anomalous-nb-create-text">${t('createNotebook')}</span>`;
             }
         };
-        
+
         btnRow.appendChild(createInput);
         btnRow.appendChild(createBtn);
         sidebar.appendChild(btnRow);
-sidebar.appendChild(nbList);
-        
+        sidebar.appendChild(nbList);
+
         // Editor area
         this.nbEditor = document.createElement('div');
         this.nbEditor.className = 'anomalous-nb-editor';
-        
+
         body.appendChild(sidebar);
         body.appendChild(this.nbEditor);
-        
+
         nbContainer.appendChild(nbHeader);
         nbContainer.appendChild(body);
-        
+
         this.nbPanel.appendChild(nbContainer);
-        
+
         this.nbListEl = nbList;
         this.refreshNotebooks(true);
     }
-    
+
     async translateText(text) {
         if (!text || !text.trim()) return "";
         try {
@@ -1647,7 +1676,7 @@ sidebar.appendChild(nbList);
             });
             const data = await res.json();
             return data.translated || text;
-        } catch(e) { return text; }
+        } catch (e) { return text; }
     }
 
     async loadGalleryImages(page = 1, reset = false) {
@@ -1658,7 +1687,7 @@ sidebar.appendChild(nbList);
         try {
             const res = await fetch(`/anomalous/gallery_images?page=${page}&limit=50`);
             const data = await res.json();
-            
+
             if (reset) {
                 // Clear existing cards
                 const cards = this.galleryGrid.querySelectorAll('.anomalous-gallery-card');
@@ -1670,7 +1699,7 @@ sidebar.appendChild(nbList);
                 data.images.forEach(imgData => {
                     const card = document.createElement('div');
                     card.className = 'anomalous-gallery-card';
-                    
+
                     const q_sub = encodeURIComponent(imgData.subfolder);
                     const q_file = encodeURIComponent(imgData.filename);
                     const imgUrl = `/view?filename=${q_file}&subfolder=${q_sub}&type=output`;
@@ -1679,7 +1708,7 @@ sidebar.appendChild(nbList);
                     img.src = imgUrl;
                     img.loading = 'lazy';
                     img.draggable = true;
-                    
+
                     // Drag and drop support for ComfyUI
                     img.addEventListener('dragstart', (e) => {
                         const fullUrl = new URL(imgUrl, window.location.href).href;
@@ -1694,10 +1723,10 @@ sidebar.appendChild(nbList);
                     delBtn.className = 'anomalous-gallery-delete';
                     delBtn.innerHTML = '🗑️';
                     delBtn.title = 'Delete';
-                    
+
                     delBtn.onclick = (e) => {
                         e.stopPropagation();
-                        
+
                         const overlay = document.createElement('div');
                         overlay.style.position = 'absolute';
                         overlay.style.top = '0';
@@ -1711,17 +1740,17 @@ sidebar.appendChild(nbList);
                         overlay.style.justifyContent = 'center';
                         overlay.style.gap = '15px';
                         overlay.style.zIndex = '10';
-                        
+
                         const msg = document.createElement('div');
                         msg.innerHTML = '彻底删除这张图片？<br><span style="font-size:0.8em;color:#aaa">Delete permanently?</span>';
                         msg.style.color = '#fff';
                         msg.style.fontWeight = 'bold';
                         msg.style.textAlign = 'center';
-                        
+
                         const btnRow = document.createElement('div');
                         btnRow.style.display = 'flex';
                         btnRow.style.gap = '12px';
-                        
+
                         const confirmBtn = document.createElement('button');
                         confirmBtn.innerHTML = '🗑️ 删除 (Delete)';
                         confirmBtn.style.background = '#dc3545';
@@ -1734,7 +1763,7 @@ sidebar.appendChild(nbList);
                         confirmBtn.style.transition = 'background 0.2s';
                         confirmBtn.onmouseover = () => confirmBtn.style.background = '#ff0000';
                         confirmBtn.onmouseout = () => confirmBtn.style.background = '#dc3545';
-                        
+
                         const cancelBtn = document.createElement('button');
                         cancelBtn.innerHTML = '取消 (Cancel)';
                         cancelBtn.style.background = '#444';
@@ -1746,12 +1775,12 @@ sidebar.appendChild(nbList);
                         cancelBtn.style.transition = 'background 0.2s';
                         cancelBtn.onmouseover = () => cancelBtn.style.background = '#666';
                         cancelBtn.onmouseout = () => cancelBtn.style.background = '#444';
-                        
+
                         cancelBtn.onclick = (ce) => {
                             ce.stopPropagation();
                             overlay.remove();
                         };
-                        
+
                         confirmBtn.onclick = async (ce) => {
                             ce.stopPropagation();
                             confirmBtn.innerHTML = 'Deleting...';
@@ -1774,12 +1803,12 @@ sidebar.appendChild(nbList);
                                 overlay.remove();
                             }
                         };
-                        
+
                         btnRow.appendChild(cancelBtn);
                         btnRow.appendChild(confirmBtn);
                         overlay.appendChild(msg);
                         overlay.appendChild(btnRow);
-                        
+
                         card.appendChild(overlay);
                     };
 
@@ -1787,10 +1816,10 @@ sidebar.appendChild(nbList);
                     card.appendChild(delBtn);
                     this.galleryGrid.insertBefore(card, this.gallerySentinel);
                 });
-                
+
                 this.galleryCurrentPage = page;
                 this.galleryHasMore = page < data.pages;
-                
+
                 if (!this.galleryHasMore) {
                     this.gallerySentinel.innerHTML = '没有更多图片了 / No more images';
                 } else {
@@ -1814,36 +1843,36 @@ sidebar.appendChild(nbList);
             viewer = document.createElement('div');
             viewer.id = 'anomalous-gallery-viewer';
             viewer.className = 'anomalous-gallery-viewer';
-            
+
             const closeBtn = document.createElement('div');
             closeBtn.className = 'anomalous-gallery-viewer-close';
             closeBtn.innerHTML = '&times;';
             closeBtn.onclick = () => { viewer.style.display = 'none'; };
-            
+
             const img = document.createElement('img');
             img.id = 'anomalous-gallery-viewer-img';
-            
+
             viewer.appendChild(img);
             viewer.appendChild(closeBtn);
-            
+
             viewer.onclick = (e) => {
                 if (e.target === viewer) viewer.style.display = 'none';
             };
-            
+
             document.body.appendChild(viewer);
         }
-        
+
         const img = document.getElementById('anomalous-gallery-viewer-img');
         img.src = src;
         viewer.style.display = 'flex';
     }
-    
+
     async refreshNotebooks(autoOpenFirst = false) {
         try {
             const res = await fetch('/anomalous/notebooks');
             const data = await res.json();
             this.nbListEl.innerHTML = '';
-            
+
             if (data.notebooks && data.notebooks.length > 0) {
                 if (autoOpenFirst) {
                     if (!this.currentNotebook) {
@@ -1853,7 +1882,7 @@ sidebar.appendChild(nbList);
                         this.renderNotebookEditor();
                     }
                 }
-                
+
                 data.notebooks.forEach(nb => {
                     const item = document.createElement('div');
                     item.className = 'anomalous-nb-item';
@@ -1869,9 +1898,9 @@ sidebar.appendChild(nbList);
                     this.nbListEl.appendChild(item);
                 });
             }
-        } catch(e) {}
+        } catch (e) { }
     }
-    
+
     async saveCurrentNotebook() {
         if (!this.currentNotebook) return;
         try {
@@ -1881,9 +1910,9 @@ sidebar.appendChild(nbList);
                 body: JSON.stringify(this.currentNotebook)
             });
             this.refreshNotebooks();
-        } catch(e) {}
+        } catch (e) { }
     }
-    
+
     async deleteCurrentNotebook(skipConfirm = false) {
         if (!this.currentNotebook) return;
         if (!skipConfirm && !confirm(t('deleteNotebook') + ' ?')) return;
@@ -1896,26 +1925,26 @@ sidebar.appendChild(nbList);
             this.currentNotebook = null;
             this.nbEditor.innerHTML = '';
             this.refreshNotebooks();
-        } catch(e) {}
+        } catch (e) { }
     }
-    
+
     renderNotebookEditor() {
         this.nbEditor.innerHTML = '';
         if (!this.currentNotebook) return;
-        
+
         const data = this.currentNotebook.data || {};
         if (!data.loras) data.loras = [];
-        
+
         // Toolbar
         const tb = document.createElement('div');
         tb.className = 'anomalous-nb-toolbar';
-        
+
         const titleArea = document.createElement('h3');
         titleArea.innerHTML = this.currentNotebook.name;
         titleArea.style.margin = '0';
-        
+
         const rightBtns = document.createElement('div');
-        
+
         const saveBtn = document.createElement('button');
         saveBtn.innerHTML = t('saveNotebook');
         saveBtn.className = 'anomalous-btn-primary';
@@ -1930,16 +1959,16 @@ sidebar.appendChild(nbList);
                 saveBtn.style.background = '';
             }, 1500);
         };
-        
+
         let delTimer = null;
         const delContainer = document.createElement('span');
         delContainer.style.display = 'inline-flex';
         delContainer.style.alignItems = 'center';
-        
+
         const delBtn = document.createElement('button');
         delBtn.innerHTML = t('deleteNotebook');
         delBtn.className = 'anomalous-btn-danger';
-        
+
         const cancelDelBtn = document.createElement('button');
         cancelDelBtn.innerHTML = '✕';
         cancelDelBtn.className = 'anomalous-btn-danger';
@@ -1947,17 +1976,17 @@ sidebar.appendChild(nbList);
         cancelDelBtn.style.background = '#555';
         cancelDelBtn.style.marginLeft = '2px';
         cancelDelBtn.style.padding = '6px 8px';
-        
+
         delContainer.appendChild(delBtn);
         delContainer.appendChild(cancelDelBtn);
-        
+
         const resetDel = () => {
             clearTimeout(delTimer);
             delBtn.innerHTML = t('deleteNotebook');
             delBtn.style.background = '';
             cancelDelBtn.style.display = 'none';
         };
-        
+
         delBtn.onclick = () => {
             if (delBtn.innerHTML === t('deleteNotebook')) {
                 delBtn.innerHTML = t('delSure');
@@ -1969,25 +1998,25 @@ sidebar.appendChild(nbList);
                 this.deleteCurrentNotebook(true);
             }
         };
-        
+
         cancelDelBtn.onclick = resetDel;
-        
+
         const sendBtn = document.createElement('button');
         sendBtn.innerHTML = t('sendToCanvas');
         sendBtn.className = 'anomalous-btn-success';
         sendBtn.onclick = () => this.sendNotebookToCanvas();
-        
+
         rightBtns.appendChild(saveBtn);
         rightBtns.appendChild(sendBtn);
         rightBtns.appendChild(delContainer);
-        
+
         tb.appendChild(titleArea);
         tb.appendChild(rightBtns);
-        
+
         // Settings / Models
         const modelSection = document.createElement('div');
         modelSection.className = 'anomalous-nb-section';
-        
+
         // Base Model
         const baseRow = document.createElement('div');
         baseRow.className = 'anomalous-nb-row';
@@ -2004,18 +2033,18 @@ sidebar.appendChild(nbList);
             });
             if (!data.baseModel && bases.length > 0) data.baseModel = bases[0];
         };
-        
+
         if (this.baseModelsCache) {
             buildSelect(this.baseModelsCache);
         } else {
             const tempBases = ['SD 1.5', 'SD 2.1', 'SDXL', 'SD 3.0', 'SD 3.5', 'Flux.1', 'Pony', 'HunyuanVideo', 'LTX-Video', 'OmniGen'];
             buildSelect(tempBases);
-            fetch('/anomalous/base_models').then(r=>r.json()).then(d => {
+            fetch('/anomalous/base_models').then(r => r.json()).then(d => {
                 if (d.base_models && d.base_models.length > 0) {
                     this.baseModelsCache = d.base_models;
                     buildSelect(this.baseModelsCache);
                 }
-            }).catch(e => {});
+            }).catch(e => { });
         }
         if (!data.baseModel) data.baseModel = 'SDXL';
         baseSelect.onchange = () => {
@@ -2026,55 +2055,55 @@ sidebar.appendChild(nbList);
             this.renderNotebookEditor();
         };
         baseRow.appendChild(baseSelect);
-        
+
         // Main Model (Card Selection)
         const mainBox = document.createElement('div');
         mainBox.className = 'anomalous-nb-gallery-box';
         const mainRow = document.createElement('div');
         mainRow.className = 'anomalous-nb-row';
         mainRow.innerHTML = `<strong>${t('mainModel')}</strong>`;
-        
+
         const mainGallery = document.createElement('div');
         mainGallery.className = 'anomalous-nb-gallery-wrap';
-        
+
         mainBox.appendChild(mainRow);
         mainBox.appendChild(mainGallery);
-        
+
         // Loras (Card Selection)
         const loraBox = document.createElement('div');
         loraBox.className = 'anomalous-nb-gallery-box';
         const loraRow = document.createElement('div');
         loraRow.className = 'anomalous-nb-row';
         loraRow.innerHTML = `<strong>Loras</strong>`;
-        
+
         const loraGallery = document.createElement('div');
         loraGallery.className = 'anomalous-nb-gallery-wrap';
-        
+
         loraBox.appendChild(loraRow);
         loraBox.appendChild(loraGallery);
-        
+
         modelSection.appendChild(baseRow);
         modelSection.appendChild(mainBox);
         modelSection.appendChild(loraBox);
-        
+
         // Prompt Section
         const promptSec = document.createElement('div');
         promptSec.className = 'anomalous-nb-section';
-        
+
         // Toolbar
         const pToolbar = document.createElement('div');
         pToolbar.style.display = 'flex';
         pToolbar.style.gap = '10px';
         pToolbar.style.marginBottom = '10px';
         pToolbar.style.alignItems = 'center';
-        
+
         const langSelect = document.createElement('select');
         langSelect.className = 'anomalous-nb-select';
         const langs = [
-            {v: 'zh-CN', l: '🇨🇳 中文 (zh-CN)'}, {v: 'en', l: '🇬🇧 English (en)'},
-            {v: 'ja', l: '🇯🇵 日本语 (ja)'}, {v: 'ko', l: '🇰🇷 한국어 (ko)'},
-            {v: 'fr', l: '🇫🇷 Français (fr)'}, {v: 'de', l: '🇩🇪 Deutsch (de)'},
-            {v: 'es', l: '🇪🇸 Español (es)'}, {v: 'ru', l: '🇷🇺 Русский (ru)'}
+            { v: 'zh-CN', l: '🇨🇳 中文 (zh-CN)' }, { v: 'en', l: '🇬🇧 English (en)' },
+            { v: 'ja', l: '🇯🇵 日本语 (ja)' }, { v: 'ko', l: '🇰🇷 한국어 (ko)' },
+            { v: 'fr', l: '🇫🇷 Français (fr)' }, { v: 'de', l: '🇩🇪 Deutsch (de)' },
+            { v: 'es', l: '🇪🇸 Español (es)' }, { v: 'ru', l: '🇷🇺 Русский (ru)' }
         ];
         langs.forEach(lg => {
             const opt = document.createElement('option');
@@ -2082,32 +2111,32 @@ sidebar.appendChild(nbList);
             if ((data.targetLang || 'zh-CN') === lg.v) opt.selected = true;
             langSelect.appendChild(opt);
         });
-        langSelect.onchange = () => { 
-            data.targetLang = langSelect.value; 
+        langSelect.onchange = () => {
+            data.targetLang = langSelect.value;
             data.translations = {}; // Clear translation cache on lang change
-            this.saveCurrentNotebook(); 
-            updateVisualTags(); 
+            this.saveCurrentNotebook();
+            updateVisualTags();
         };
-        
+
         const findInput = document.createElement('input');
         findInput.className = 'anomalous-nb-select';
         findInput.placeholder = t('findPlaceholder');
         findInput.style.flex = '1';
-        
+
         const replaceInput = document.createElement('input');
         replaceInput.className = 'anomalous-nb-select';
         replaceInput.placeholder = t('replacePlaceholder');
         replaceInput.style.flex = '1';
-        
+
         const replaceBtn = document.createElement('button');
         replaceBtn.className = 'anomalous-btn-primary';
         replaceBtn.innerHTML = t('replaceAll');
-        
+
         pToolbar.appendChild(langSelect);
         pToolbar.appendChild(findInput);
         pToolbar.appendChild(replaceInput);
         pToolbar.appendChild(replaceBtn);
-        
+
         // Raw Input Toggle
         const toggleRow = document.createElement('div');
         toggleRow.style.display = 'flex';
@@ -2118,32 +2147,32 @@ sidebar.appendChild(nbList);
         rawBtn.className = 'anomalous-btn-primary';
         rawBtn.innerHTML = t('editRaw');
         toggleRow.appendChild(rawBtn);
-        
+
         // Raw Textarea
         const rawArea = document.createElement('textarea');
         rawArea.className = 'anomalous-nb-textarea';
         rawArea.value = data.promptEn || '';
         rawArea.style.display = 'none';
         rawArea.style.height = '150px';
-        
+
         // Visual Dual Pane
         const dualPane = document.createElement('div');
         dualPane.className = 'anomalous-nb-dual-pane';
-        
+
         if (!data.translations) data.translations = {};
-        
+
         const updateVisualTags = () => {
             dualPane.innerHTML = '';
             const txt = rawArea.value;
             data.promptEn = txt;
             this.saveCurrentNotebook();
             if (!txt.trim()) return;
-            
+
             const tags = txt.split(',').map(s => s.trim()).filter(s => s);
             tags.forEach((tag, idx) => {
                 const tagRow = document.createElement('div');
                 tagRow.className = 'anomalous-nb-tag-row';
-                
+
                 const tagL = document.createElement('div');
                 tagL.className = 'anomalous-nb-visual-tag';
                 tagL.style.flex = '1';
@@ -2155,11 +2184,11 @@ sidebar.appendChild(nbList);
                 copyL.innerHTML = '📋';
                 copyL.onclick = (e) => {
                     e.stopPropagation();
-                    navigator.clipboard.writeText(tag).then(() => { copyL.innerHTML = '✅'; setTimeout(()=>copyL.innerHTML='📋', 1000); });
+                    navigator.clipboard.writeText(tag).then(() => { copyL.innerHTML = '✅'; setTimeout(() => copyL.innerHTML = '📋', 1000); });
                 };
                 tagL.appendChild(txtL);
                 tagL.appendChild(copyL);
-                
+
                 const tagR = document.createElement('div');
                 tagR.className = 'anomalous-nb-visual-tag';
                 tagR.style.flex = '1';
@@ -2172,16 +2201,16 @@ sidebar.appendChild(nbList);
                 copyR.innerHTML = '📋';
                 copyR.onclick = (e) => {
                     e.stopPropagation();
-                    navigator.clipboard.writeText(txtR.innerText).then(() => { copyR.innerHTML = '✅'; setTimeout(()=>copyR.innerHTML='📋', 1000); });
+                    navigator.clipboard.writeText(txtR.innerText).then(() => { copyR.innerHTML = '✅'; setTimeout(() => copyR.innerHTML = '📋', 1000); });
                 };
                 tagR.appendChild(txtR);
                 tagR.appendChild(copyR);
-                
+
                 tagL.onmouseenter = () => { tagL.classList.add('hover'); tagR.classList.add('hover'); };
                 tagL.onmouseleave = () => { tagL.classList.remove('hover'); tagR.classList.remove('hover'); };
                 tagR.onmouseenter = () => { tagL.classList.add('hover'); tagR.classList.add('hover'); };
                 tagR.onmouseleave = () => { tagL.classList.remove('hover'); tagR.classList.remove('hover'); };
-                
+
                 tagL.onclick = () => {
                     const inp = document.createElement('input');
                     inp.value = tag; inp.className = 'anomalous-nb-tag-edit';
@@ -2192,9 +2221,9 @@ sidebar.appendChild(nbList);
                         updateVisualTags();
                     };
                     inp.onblur = finish;
-                    inp.onkeydown = (e) => { if(e.key==='Enter') inp.blur(); };
+                    inp.onkeydown = (e) => { if (e.key === 'Enter') inp.blur(); };
                 };
-                
+
                 tagR.onclick = () => {
                     const inp = document.createElement('input');
                     inp.value = data.translations[tag] || ''; inp.className = 'anomalous-nb-tag-edit';
@@ -2205,28 +2234,28 @@ sidebar.appendChild(nbList);
                         updateVisualTags();
                     };
                     inp.onblur = finish;
-                    inp.onkeydown = (e) => { if(e.key==='Enter') inp.blur(); };
+                    inp.onkeydown = (e) => { if (e.key === 'Enter') inp.blur(); };
                 };
-                
+
                 tagRow.appendChild(tagL);
                 tagRow.appendChild(tagR);
                 dualPane.appendChild(tagRow);
-                
+
                 if (!data.translations[tag]) {
                     fetch('/anomalous/translate', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ text: tag, target_lang: data.targetLang || 'zh-CN' })
-                    }).then(r=>r.json()).then(d => {
+                    }).then(r => r.json()).then(d => {
                         if (d.translated) {
                             data.translations[tag] = d.translated;
                             txtR.innerText = d.translated;
                             this.saveCurrentNotebook();
                         }
-                    }).catch(()=>{});
+                    }).catch(() => { });
                 }
             });
         };
-        
+
         rawBtn.onclick = () => {
             if (rawArea.style.display === 'none') {
                 rawArea.style.display = 'block';
@@ -2241,7 +2270,7 @@ sidebar.appendChild(nbList);
                 updateVisualTags();
             }
         };
-        
+
         replaceBtn.onclick = () => {
             const findStr = findInput.value;
             const repStr = replaceInput.value;
@@ -2250,30 +2279,30 @@ sidebar.appendChild(nbList);
             rawArea.value = newTxt;
             updateVisualTags();
         };
-        
+
         rawArea.oninput = () => {
             clearTimeout(this.pTimeout);
             this.pTimeout = setTimeout(() => { data.promptEn = rawArea.value; this.saveCurrentNotebook(); }, 500);
         };
-        
+
         updateVisualTags();
-        
+
         promptSec.appendChild(pToolbar);
         promptSec.appendChild(toggleRow);
         promptSec.appendChild(rawArea);
         promptSec.appendChild(dualPane);
-        
+
         this.nbEditor.appendChild(tb);
         this.nbEditor.appendChild(modelSection);
         this.nbEditor.appendChild(promptSec);
-        
+
         // Fetch compatible models and fill galleries
         this.fillNotebookGalleries(data.baseModel, mainGallery, loraGallery, data);
     }
-    
+
     fillNotebookGalleries(baseModel, mainGallery, loraGallery, data) {
         if (!baseModel) return;
-        
+
         const buildThumbHtml = (m) => {
             let thumb = '';
             if (m.preview_url) {
@@ -2287,7 +2316,7 @@ sidebar.appendChild(nbList);
         };
 
         fetch(`/anomalous/compatible_models?base_model=${encodeURIComponent(baseModel)}&target_type=checkpoints,unet,diffusion_models`)
-            .then(r=>r.json()).then(d => {
+            .then(r => r.json()).then(d => {
                 const buildMainDOM = (models) => {
                     mainGallery.innerHTML = '';
                     if (!models || !models.length) {
@@ -2298,12 +2327,12 @@ sidebar.appendChild(nbList);
                             const card = document.createElement('div');
                             card.className = 'anomalous-nb-minicheck ' + (isSelected ? 'selected' : '');
                             card.innerHTML = `${buildThumbHtml(m)}<div class="anomalous-nb-minicheck-name" title="${m.filename}">${m.filename}</div>`;
-                            
+
                             if (m.preview_url && (m.preview_url.toLowerCase().endsWith('.mp4') || m.preview_url.toLowerCase().endsWith('.webm'))) {
-                                card.onmouseenter = () => { const v = card.querySelector('video'); if (v) v.play().catch(e=>{}); };
+                                card.onmouseenter = () => { const v = card.querySelector('video'); if (v) v.play().catch(e => { }); };
                                 card.onmouseleave = () => { const v = card.querySelector('video'); if (v) { v.pause(); v.currentTime = 0; } };
                             }
-                            
+
                             card.onclick = () => {
                                 data.mainModel = m;
                                 this.saveCurrentNotebook();
@@ -2315,9 +2344,9 @@ sidebar.appendChild(nbList);
                 };
                 buildMainDOM(d.models || []);
             });
-            
+
         fetch(`/anomalous/compatible_models?base_model=${encodeURIComponent(baseModel)}&target_type=loras`)
-            .then(r=>r.json()).then(d => {
+            .then(r => r.json()).then(d => {
                 const buildLoraDOM = (models) => {
                     loraGallery.innerHTML = '';
                     if (!models || !models.length) {
@@ -2329,19 +2358,19 @@ sidebar.appendChild(nbList);
                             const card = document.createElement('div');
                             card.className = 'anomalous-nb-minilora ' + (isSelected ? 'selected' : '');
                             card.style.position = 'relative'; // for badge positioning
-                            
+
                             let badgeHtml = '';
                             if (isSelected) {
                                 badgeHtml = `<div style="position:absolute; top:-5px; right:-5px; background:#00ffcc; color:#000; border-radius:50%; width:20px; height:20px; font-size:12px; display:flex; align-items:center; justify-content:center; font-weight:bold; z-index:10; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">${loraIndex + 1}</div>`;
                             }
-                            
+
                             card.innerHTML = `${badgeHtml}${buildThumbHtml(m)}<div class="anomalous-nb-minilora-name" title="${m.filename}">${m.filename}</div>`;
-                            
+
                             if (m.preview_url && (m.preview_url.toLowerCase().endsWith('.mp4') || m.preview_url.toLowerCase().endsWith('.webm'))) {
-                                card.onmouseenter = () => { const v = card.querySelector('video'); if (v) v.play().catch(e=>{}); };
+                                card.onmouseenter = () => { const v = card.querySelector('video'); if (v) v.play().catch(e => { }); };
                                 card.onmouseleave = () => { const v = card.querySelector('video'); if (v) { v.pause(); v.currentTime = 0; } };
                             }
-                            
+
                             card.onclick = () => {
                                 if (isSelected) {
                                     data.loras = data.loras.filter(l => l.filename !== m.filename);
@@ -2358,7 +2387,7 @@ sidebar.appendChild(nbList);
                 buildLoraDOM(d.models || []);
             });
     }
-    
+
     sendNotebookToCanvas() {
         if (!this.currentNotebook) return;
         const data = this.currentNotebook.data || {};
@@ -2366,49 +2395,49 @@ sidebar.appendChild(nbList);
             alert("Please select a Main Model first.");
             return;
         }
-        
+
         const groupNodes = [];
         const isUnet = data.mainModel.type === 'unet' || data.mainModel.type === 'diffusion_models';
-        
+
         const ckptNode = LiteGraph.createNode(isUnet ? "UNETLoader" : "CheckpointLoaderSimple");
         app.graph.add(ckptNode);
         groupNodes.push({ node: ckptNode, relX: 0, relY: 0 });
-        
+
         const sub = data.mainModel.subfolder.replace(/^\/+/, '').replace(/\/+$/, '');
         const relPath = sub ? `${sub}/${data.mainModel.filename}` : data.mainModel.filename;
         this.setWidgetValuePath(ckptNode, relPath);
-        
+
         let lastNode = ckptNode;
-        let lastModelSlot = isUnet ? 0 : 0; 
-        let lastClipSlot = isUnet ? null : 1; 
-        
+        let lastModelSlot = isUnet ? 0 : 0;
+        let lastClipSlot = isUnet ? null : 1;
+
         let relX = 350;
         let relY = 0;
-        
+
         data.loras.forEach((lora, idx) => {
             const loraNode = LiteGraph.createNode("LoraLoader");
             app.graph.add(loraNode);
             groupNodes.push({ node: loraNode, relX: relX, relY: relY });
-            
+
             const lsub = lora.subfolder.replace(/^\/+/, '').replace(/\/+$/, '');
             const lrelPath = lsub ? `${lsub}/${lora.filename}` : lora.filename;
             this.setWidgetValuePath(loraNode, lrelPath);
-            
+
             lastNode.connect(lastModelSlot, loraNode, 0);
             if (lastClipSlot !== null) lastNode.connect(lastClipSlot, loraNode, 1);
-            
+
             lastNode = loraNode;
             lastModelSlot = 0;
             lastClipSlot = 1;
             relX += 350;
         });
-        
+
         if (data.promptEn) {
             const posNode = LiteGraph.createNode("CLIPTextEncode");
             posNode.title = "CLIP Text Encode (Positive)";
             app.graph.add(posNode);
             groupNodes.push({ node: posNode, relX: relX, relY: 0 });
-            
+
             if (posNode.widgets && posNode.widgets.length > 0) {
                 const tw = posNode.widgets.find(w => w.name === 'text' || w.type === 'customtext');
                 if (tw) tw.value = data.promptEn;
@@ -2416,12 +2445,12 @@ sidebar.appendChild(nbList);
             if (lastClipSlot !== null) {
                 lastNode.connect(lastClipSlot, posNode, 0);
             }
-            
+
             const negNode = LiteGraph.createNode("CLIPTextEncode");
             negNode.title = "CLIP Text Encode (Negative)";
             app.graph.add(negNode);
             groupNodes.push({ node: negNode, relX: relX, relY: 250 });
-            
+
             if (negNode.widgets && negNode.widgets.length > 0) {
                 const tw = negNode.widgets.find(w => w.name === 'text' || w.type === 'customtext');
                 if (tw) tw.value = "text, watermark, ugly, bad anatomy";
@@ -2430,15 +2459,15 @@ sidebar.appendChild(nbList);
                 lastNode.connect(lastClipSlot, negNode, 0);
             }
         }
-        
+
         this.close();
-        
+
         // Magnetic Sticking Logic
         let isSticking = true;
         const stickHandler = (e) => {
             if (!isSticking || !app.canvas) return;
             const canvas = app.canvas;
-            
+
             let canvasX, canvasY;
             if (canvas.convertEventToCanvasOffset) {
                 const pos = canvas.convertEventToCanvasOffset(e);
@@ -2449,13 +2478,13 @@ sidebar.appendChild(nbList);
                 canvasX = (e.clientX - rect.left - canvas.ds.offset[0]) / canvas.ds.scale;
                 canvasY = (e.clientY - rect.top - canvas.ds.offset[1]) / canvas.ds.scale;
             }
-            
+
             groupNodes.forEach(item => {
                 item.node.pos = [canvasX - (item.node.size[0] / 2) + item.relX, canvasY - 20 + item.relY];
             });
             canvas.setDirty(true, true);
         };
-        
+
         const dropHandler = (e) => {
             isSticking = false;
             window.removeEventListener('mousemove', stickHandler, true);
@@ -2463,7 +2492,7 @@ sidebar.appendChild(nbList);
             window.removeEventListener('mousedown', dropHandler, true);
             window.removeEventListener('click', dropHandler, true);
         };
-        
+
         window.addEventListener('mousemove', stickHandler, true);
         setTimeout(() => {
             window.addEventListener('pointerdown', dropHandler, true);
@@ -2476,7 +2505,7 @@ sidebar.appendChild(nbList);
         const w = node.widgets.find(wg => wg.type === 'combo');
         const targetWidget = w || node.widgets[0];
         if (!targetWidget) return;
-        
+
         if (targetWidget.options && targetWidget.options.values) {
             const normalizedTarget = relPath.replace(/\\/g, '/');
             const match = targetWidget.options.values.find(v => {
@@ -2508,7 +2537,7 @@ app.registerExtension({
         btn.id = 'anomalous-trigger-btn';
         btn.innerHTML = '📦';
         btn.title = 'Open Anomalous Model Browser';
-        
+
         let isDragging = false;
         let startX, startY, initialX, initialY;
 
@@ -2522,8 +2551,14 @@ app.registerExtension({
         window.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
             e.preventDefault();
-            btn.style.left = initialX + (e.clientX - startX) + 'px';
-            btn.style.top = initialY + (e.clientY - startY) + 'px';
+            let newX = initialX + (e.clientX - startX);
+            let newY = initialY + (e.clientY - startY);
+            if (newX < 0) newX = 0;
+            if (newY < 0) newY = 0;
+            if (newX > window.innerWidth - 60) newX = window.innerWidth - 60;
+            if (newY > window.innerHeight - 60) newY = window.innerHeight - 60;
+            btn.style.left = newX + 'px';
+            btn.style.top = newY + 'px';
             btn.style.right = 'auto'; btn.style.bottom = 'auto';
         });
         window.addEventListener('mouseup', (e) => {
@@ -2535,16 +2570,16 @@ app.registerExtension({
                 if (Math.abs(e.clientX - startX) < 5 && Math.abs(e.clientY - startY) < 5) browser.show();
             }
         });
-        
+
         const savedX = localStorage.getItem('anomalous_btn_x');
         const savedY = localStorage.getItem('anomalous_btn_y');
-        
+
         const updateBtnBounds = () => {
             let numX = parseInt(btn.style.left || savedX);
             let numY = parseInt(btn.style.top || savedY);
             if (isNaN(numX)) numX = window.innerWidth - 90;
             if (isNaN(numY)) numY = window.innerHeight - 90;
-            
+
             if (numX < 0) numX = 0;
             if (numY < 0) numY = 0;
             if (numX > window.innerWidth - 60) numX = window.innerWidth - 60;
@@ -2559,14 +2594,14 @@ app.registerExtension({
             btn.style.left = savedX;
             btn.style.top = savedY;
         }
-        
+
         // Always trigger an update slightly after load to ensure it's in bounds
         setTimeout(updateBtnBounds, 200);
-        
+
         window.addEventListener('resize', () => {
             if (btn.style.left) updateBtnBounds();
         });
-        
+
         document.body.appendChild(btn);
     }
 });

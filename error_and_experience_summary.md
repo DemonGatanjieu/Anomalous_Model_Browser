@@ -93,3 +93,38 @@ Implemented a robust positional bounding clamp. Upon script initialization, the 
 During an aggressive string replacement to separate emojis from text for responsive design, a single template literal closing backtick (`` ` ``) and comma were accidentally deleted from an `i18n` dictionary object. Because ComfyUI's frontend extension loader utilizes Vite for dynamic ES Module imports, this single `SyntaxError (Unterminated string literal)` caused the entire `main.js` script to immediately crash before execution, completely preventing the plugin button from rendering.
 **The Solution**:
 JavaScript's zero-tolerance for syntax errors within dynamically loaded environments means UI tweaks must be executed with surgical precision. Using tools to validate structural balance (brackets, backticks) is crucial when deploying raw string replacements without a compiler pipeline. The fix was simply restoring the lost `` ` ``.
+
+## 16. The "Overlapping Directory" Target Size Deduplication Bug
+**The Problem**:
+To resolve missing nodes, the backend falls back to matching by file size if the exact hash isn't recorded. To prevent unsafe assignments, the logic strictly demanded exactly ONE file matching the target size (`len(size_matches) == 1`). However, many users configure ComfyUI's `extra_model_paths.yaml` to map both `checkpoints` and `diffusion_models` to the *same physical folder*. `os.walk` would iterate over both logical paths, finding the exact same file twice. The strict `== 1` check evaluated to `2`, causing the auto-fix to completely abort.
+**The Solution**:
+Implemented a physical path deduplication matrix. Before pushing matches to the array, the backend evaluates `os.path.realpath(file_path)` and cross-checks it against a `seen_realpaths` set. This guarantees that multiple virtual paths pointing to the same hard drive sector are mathematically condensed into a single match.
+
+## 17. The "Lightweight Scan" Total Disk Re-Hash Catastrophe
+**The Problem**:
+The "Lightweight Scan" is designed to rapidly fetch textual `.info` files without downloading heavy preview images (`--skip-media`). However, the script's incremental skip logic demanded *both* an `.info` file AND a preview image to skip a model. Since `--skip-media` actively suppressed previews, the preview condition always failed. This forced the Python script to violently re-compute the heavy SHA256 hashes for *hundreds of gigabytes* of models across the entire disk every single time the lightweight scan was clicked, making it significantly slower than the full scan.
+**The Solution**:
+Contextual conditional bypassing. Modified the skip logic: `preview_exists = args.skip_media`. If the scan is explicitly configured to ignore media, the existence of a valid `.info` file is now sufficient to instantly skip the model, restoring the scan to lightning speeds.
+
+## 18. The Stale Dropdown "Visual Red Box Residue"
+**The Problem**:
+ComfyUI draws a stubborn red box around nodes when a selected model is missing from the frontend dropdown list. Our auto-fix script checked if the required model `val` matched the found `finalValue`. If they were perfectly identical (e.g., the user manually named the file correctly, but the frontend cache was just stale), the script evaluated `finalValue !== val` as `False` and skipped the block. The user was left with a perfectly functional node that was perpetually encased in a red error box until a manual browser refresh.
+**The Solution**:
+State override. The condition was expanded to trigger if the frontend `optionsCacheStale` is true, or if the node possesses `node.has_errors` or `node.color`. We then forcefully execute `node.has_errors = false; delete node.color; delete node.bgcolor;`, violently stripping ComfyUI's native visual error state without requiring a browser refresh.
+
+## 19. The Silent Subprocess Death (DEVNULL Blackhole)
+**The Problem**:
+A single bad Python indentation in the `scraper.py` script caused a fatal `IndentationError`. Because `api.py` invoked this script via `subprocess.run` and piped both `stdout` and `stderr` directly into `subprocess.DEVNULL`, the crash was entirely invisible to both the console and the user. The UI simply waited, acting as if the models were "ignored" by the scan, leading to massive diagnostic confusion.
+**The Solution**:
+While the syntax was fixed, the deeper lesson is that background workers dispatched from server endpoints must *never* pipe `stderr` to DEVNULL during active development/beta phases. Critical exceptions must be logged or surfaced to the caller.
+
+---
+
+### 20. 【架构升级】多级降级寻址策略 (Tiered Fallback Resolution) 打造 O(1) 极速扫描
+* **背景**: 即使轻量扫描跳过了已有 .info 的模型，当遇到完全没有被扫描过的几十 GB 新模型时，Python 依然需要全量计算物理 SHA256，这可能导致数分钟的性能瓶颈。
+* **技术突破**: 许多 .safetensors 文件在打包时，已将 modelspec.hash.sha256 等 Hash 信息直接写入了文件开头的 64KB JSON 头数据中。
+* **最终解决方案**: 
+  1. **第一层 (光速命中)**: 只要有现成的 .info，直接查其 Hash，耗时 0.001s。
+  2. **第二层 (头文件秒读)**: 遇到无 .info 的纯新文件，使用 struct 解析 .safetensors 的前 8 个字节提取 JSON 长度，仅读取前几十 KB 提取自带 Hash。耗时 0.01s，直接将全量哈希运算降维至 O(1)。
+  3. **第三层 (物理兜底)**: 若头文件也不含 Hash（如极早期的旧模型），再回退到传统的全物理数据 SHA256 运算兜底。
+* **意义**: 彻底消灭了新模型入库时的卡顿感，完美兼顾了绝对的精确性（Hash 寻址以适应任何异构的文件组织路径）与极速体验。
