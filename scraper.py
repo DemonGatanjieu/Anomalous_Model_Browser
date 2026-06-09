@@ -79,6 +79,43 @@ def extract_safetensors_hash(file_path: str) -> Optional[str]:
         pass
     return None
 
+def infer_base_model_from_header(file_path: str) -> str:
+    """从 safetensors 头文件的张量键名推断底层 Base Model (用于脱机/HuggingFace 兼容)"""
+    try:
+        with open(file_path, "rb") as f:
+            header_size_bytes = f.read(8)
+            if len(header_size_bytes) < 8: return 'Unknown'
+            header_size = struct.unpack('<Q', header_size_bytes)[0]
+            if header_size > 100 * 1024 * 1024: return 'Unknown'
+            
+            header_json = json.loads(f.read(header_size).decode('utf-8'))
+            
+            # 1. 尝试从 __metadata__ 提取
+            metadata = header_json.get('__metadata__', {})
+            arch = metadata.get('modelspec.architecture', '')
+            if 'stable-diffusion-xl' in arch.lower(): return 'SDXL'
+            if 'stable-diffusion-v1' in arch.lower() or 'runwayml/stable-diffusion-v1-5' in arch.lower(): return 'SD 1.5'
+            if 'flux' in arch.lower(): return 'Flux.1 D'
+            if 'sd3' in arch.lower(): return 'SD3'
+            
+            # 2. 暴力张量键名指纹匹配 (Tensor Fingerprinting)
+            # 把前 500 个键拼接成字符串以提高检索效率，大部分核心键都在前面
+            keys_str = " ".join(list(header_json.keys())[:500])
+            
+            # Flux 指纹
+            if 'double_blocks.0.img_attn' in keys_str or 'img_in.weight' in keys_str: return 'Flux.1 D'
+            # SD3 指纹
+            if 'joint_blocks.0.x_block' in keys_str: return 'SD3'
+            # SDXL 指纹 (包含两套 text encoder)
+            if 'conditioner.embedders.1.model' in keys_str or 'label_emb.0.0.weight' in keys_str: return 'SDXL'
+            # SD 1.5 指纹
+            if 'cond_stage_model.transformer.text_model' in keys_str or 'model.diffusion_model.input_blocks.0.0.weight' in keys_str: return 'SD 1.5'
+            
+            return 'Unknown'
+    except Exception as e:
+        print(f"[-] 离线底模推断失败: {e}")
+        return 'Unknown'
+
 def sanitize_filename(name: str) -> str:
     """清理文件名中的非法字符"""
     name = re.sub(r'[\r\n\t]+', ' ', name)
@@ -240,12 +277,28 @@ def main():
             
             civitai_data = fetch_civitai_info(file_hash)
             if not civitai_data:
-                fail_count += 1
-                continue
+                # 尝试离线推断底模
+                inferred_base = infer_base_model_from_header(file_path)
+                if inferred_base != 'Unknown':
+                    print(f"[*] 离线推断底模成功 ({filename}): {inferred_base}")
+                    civitai_data = {
+                        "id": -1,
+                        "modelId": -1,
+                        "name": os.path.splitext(filename)[0],
+                        "baseModel": inferred_base,
+                        "description": "<p>Automatically inferred by Anomalous Local Engine.</p>",
+                        "model": {
+                            "name": os.path.splitext(filename)[0],
+                            "type": "LORA" if "lora" in root.lower() else "Checkpoint"
+                        }
+                    }
+                else:
+                    fail_count += 1
+                    continue
                 
             # --- 额外获取模型主页的说明文字 ---
             model_id = civitai_data.get("modelId")
-            if model_id:
+            if model_id and model_id != -1:
                 try:
                     headers = {
                         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
