@@ -1087,15 +1087,19 @@ class AnomalousBrowser {
                 canvasY = (e.clientY - rect.top - canvas.ds.offset[1]) / canvas.ds.scale;
             }
 
-            node.pos = [canvasX - node.size[0] / 2, canvasY - 20];
+            const w = (node.size && node.size[0]) ? node.size[0] : 200;
+            node.pos = [canvasX - w / 2, canvasY - 20];
             canvas.setDirty(true, true);
         };
         const dropHandler = (e) => {
+            if (!isSticking) return;
             isSticking = false;
             window.removeEventListener('mousemove', stickHandler, true);
             window.removeEventListener('pointerdown', dropHandler, true);
             window.removeEventListener('mousedown', dropHandler, true);
             window.removeEventListener('click', dropHandler, true);
+            e.preventDefault();
+            e.stopPropagation();
         };
         window.addEventListener('mousemove', stickHandler, true);
         setTimeout(() => {
@@ -2460,6 +2464,7 @@ class AnomalousBrowser {
             }
         }
 
+        this.nbPanel.style.display = 'none';
         this.close();
 
         // Magnetic Sticking Logic
@@ -2480,17 +2485,21 @@ class AnomalousBrowser {
             }
 
             groupNodes.forEach(item => {
-                item.node.pos = [canvasX - (item.node.size[0] / 2) + item.relX, canvasY - 20 + item.relY];
+                const w = (item.node.size && item.node.size[0]) ? item.node.size[0] : 200;
+                item.node.pos = [canvasX - (w / 2) + item.relX, canvasY - 20 + item.relY];
             });
             canvas.setDirty(true, true);
         };
 
         const dropHandler = (e) => {
+            if (!isSticking) return;
             isSticking = false;
             window.removeEventListener('mousemove', stickHandler, true);
             window.removeEventListener('pointerdown', dropHandler, true);
             window.removeEventListener('mousedown', dropHandler, true);
             window.removeEventListener('click', dropHandler, true);
+            e.preventDefault();
+            e.stopPropagation();
         };
 
         window.addEventListener('mousemove', stickHandler, true);
