@@ -6,7 +6,7 @@
 
 <h2 id="english">English</h2>
 
-A lightweight (< 250KB), zero-dependency ComfyUI model browser plugin featuring hash-level workflow repair, a powerful smart notebook, and gallery management.
+A lightweight (< 250KB), zero-dependency ComfyUI model browser plugin featuring hash-level workflow repair, a powerful smart notebook, deep local scanning, and gallery management.
 
 ### Core Feature 1: Hash-Level Workflow Repair (Gene-Level Self-Healing)
 
@@ -23,21 +23,22 @@ When loading a workflow or image that was saved with this plugin, if you encount
 
 Since the local scanner natively identifies the architecture (Base Model) of your files, the Notebook acts as a powerful drafting area:
 * **Architecture Filtering**: Select a Base Model, and the notebook will strictly filter and display only the compatible Main Models and Loras.
-* **Visual Selection**: Displays preview images for your models directly within the notebook interface, natively utilizing scraped Civitai data.
+* **Visual Selection**: Displays preview images for your models directly within the notebook interface.
 * **Prompt Management**: Paste your prompts to instantly receive a bilingual translation for easy side-by-side editing.
-* **One-Click Deploy**: Press "Send to Canvas" and your entire selected stack (Main Model, Loras, Prompts) will drop onto the canvas fully wired up, saving you from placing and connecting nodes one by one.
+* **One-Click Deploy**: Press "Send to Canvas" and your entire selected stack (Main Model, Loras, Prompts) will drop onto the canvas fully wired up.
+
+### Core Feature 3: Deep Scanning & Metadata Management
+
+* **Automated Scraping**: Extracts Hashes from your local models, automatically downloading their `.info` metadata and preview images from Civitai.
+* **Universal Base Model Detection**: Successfully extracts Base Model architecture information even for private models or models downloaded from other websites.
+* **Model Details**: Read usage instructions and 1-click copy trigger words directly from the model page UI.
 
 ### Other Practical Features
 
-* **O(1) Fast Scanning & Zero Dependencies**
-  * No Node.js required, no bloated dependencies. Built natively for ComfyUI.
-  * Exceptional scroll performance: smoothly browse thousands of models.
-  * Eco Mode toggle: play previews on hover to save performance, or enable auto-play.
-* **Native Output Gallery**
-  * Natively browse your ComfyUI output history with infinite lazy loading.
-  * Drag and drop any image from the gallery directly onto the canvas to restore its workflow.
-* **Model Management**
-  * Securely delete models from the UI, which also cleans up associated metadata and preview images.
+* **Sidebar Docking & Node Dropping**: Dock the browser to the sidebar. Click the `+` icon in the top right of any model card to instantly drop its loader node onto your canvas.
+* **O(1) Fast Scanning**: No Node.js required. Exceptional scroll performance with Eco Mode (hover to play) and Auto-play toggles.
+* **Native Output Gallery**: Browse ComfyUI output history with infinite lazy loading, and drag-and-drop images directly to the canvas to restore workflows.
+* **Model Management**: Securely delete models from the UI, automatically cleaning up associated metadata and preview images.
 
 ### Installation Guide
 
@@ -47,23 +48,23 @@ Open your terminal, navigate to the ComfyUI `custom_nodes` folder, and run the f
 cd custom_nodes
 git clone https://github.com/your-username/Anomalous_Model_Browser.git
 ```
-*(Note: Restart ComfyUI after cloning to load the plugin. Please replace the URL with the actual repository URL)*
+*(Note: Restart ComfyUI after cloning to load the plugin)*
 
 ### Quick Start
 
-**Standard Usage:**
-1. **Step 1**: Click the new **Model Browser** button on the main menu or sidebar to open the model panel.
-2. **Step 2**: Browse and locate your desired model. Click the **Add to Canvas** button on the model card, and the node will automatically appear on the canvas and connect.
+**Standard Usage (Browsing & Adding Nodes):**
+1. **Step 1**: Click the **Model Browser** button to open the panel (or dock it to your sidebar).
+2. **Step 2**: Browse your local models. Click the **`+`** icon on any model card to instantly drop its loader node onto the canvas.
 
 **Repairing Broken Workflows:**
 1. **Step 1**: Drag and drop a reference image containing Hash info (generated with this plugin) into the ComfyUI canvas.
-2. **Step 2**: If environment paths differ and nodes turn red, click the prompted **Repair Workflow** button and wait for the plugin to restore node connections.
+2. **Step 2**: If nodes turn red, click the prompted **Repair Workflow** button and wait for the plugin to restore node connections.
 
 ---
 
 <h2 id="中文">中文</h2>
 
-一个不到 250KB、零依赖、集成了哈希级工作流修复、智能笔记本与图库管理的 ComfyUI 模型浏览器插件。
+一个不到 250KB、零依赖、集成了哈希级工作流修复、智能笔记本、深度本地扫描与图库管理的 ComfyUI 模型浏览器插件。
 
 ### 核心特性一：哈希级工作流修复（基因级自愈）
 
@@ -84,17 +85,18 @@ git clone https://github.com/your-username/Anomalous_Model_Browser.git
 * **提示词翻译对照**：粘贴提示词后，支持一键翻译，形成双语对照，方便打草稿和修改。
 * **免连线一键发布**：配置好模型和提示词后，点击“发送到画布”，整套节点配置会被直接打包投放到画布并自动完成连线，彻底告别一个个拉节点和连线的折磨。
 
+### 核心特性三：深度扫描与元数据管理
+
+* **自动刮削同步**：提取本地模型哈希值，自动从 C站 下载对应的 `.info` 使用说明和预览图。
+* **万能架构识别**：即便是不在 C站 上的私模或其它网站模型，也能自动提取识别出其 Base Model (底层架构) 信息。
+* **快捷详情查阅**：在模型页面可以直接查看模型使用说明，并支持**一键复制触发词 (Trigger Words)**。
+
 ### 其他实用功能
 
-* **O(1) 极速扫描与零依赖**
-  * 不安装 Node.js，没有臃肿的依赖项，纯原生实现。
-  * 列表滚动性能极佳，加载几千个模型依然流畅。
-  * 提供节能模式与自动播放开关，鼠标悬浮即可预览视频或图片。
-* **原生生成图库 (Gallery)**
-  * 无缝浏览 ComfyUI output 文件夹内的历史生成记录，支持无限懒加载。
-  * 支持将图库中的图片直接拖拽至画布，瞬间还原内嵌工作流。
-* **内置模型与空间管理**
-  * 支持在界面安全删除模型，并自动清理配套的垃圾信息文件及预览图。
+* **侧边栏停靠与快捷投放**：支持将插件停靠在侧边栏。点击模型卡片右上角的 **`+`** 号图标，即可瞬间将该模型的加载器 (Loader) 节点拍到画布上。
+* **O(1) 极速扫描**：不安装 Node.js，列表滚动性能极佳。提供节能模式（悬浮播放）与自动播放开关。
+* **原生生成图库 (Gallery)**：无缝浏览 output 文件夹的历史记录，无限懒加载，支持将图片直接拖拽至画布瞬间还原工作流。
+* **内置空间管理**：支持在界面安全删除模型，并自动清理配套的垃圾信息文件及预览图。
 
 ### 安装指南
 
@@ -104,13 +106,13 @@ git clone https://github.com/your-username/Anomalous_Model_Browser.git
 cd custom_nodes
 git clone https://github.com/your-username/Anomalous_Model_Browser.git
 ```
-*(提示：克隆完成后，重启 ComfyUI 即可加载插件。请注意将 URL 替换为您实际的仓库地址)*
+*(提示：克隆完成后，重启 ComfyUI 即可加载插件)*
 
 ### 快速上手 (Quick Start)
 
-**常规使用：**
-1. **第一步**：点击界面主菜单或侧边栏新增的 **Model Browser** 按钮，展开模型面板。
-2. **第二步**：在面板中浏览并找到需要的模型，点击卡片上的 **一键投放** 按钮，节点会自动出现在画布上并连好线。
+**常规使用 (浏览与添加模型)：**
+1. **第一步**：点击界面主菜单或侧边栏新增的 **Model Browser** 按钮，展开模型面板（可停靠至侧边栏）。
+2. **第二步**：在面板中浏览模型，点击任意模型卡片右上角的 **`+` (加号)** 图标，即可将该模型的加载节点直接丢到画布上。
 
 **修复报错工作流：**
 1. **第一步**：将带有 Hash 信息的图片（须在使用本插件的环境下生成）拖入 ComfyUI 画布。
