@@ -12,6 +12,8 @@ A lightweight (< 250KB), zero-dependency ComfyUI model browser plugin featuring 
 
 **Workflows and images generated or saved while this plugin is active will have their models' Civitai Hashes automatically embedded.**
 
+> ⚠️ **Crucial Prerequisite**: After installing the plugin, you MUST run a **[Scan]** from the UI to build your local hash database. Once scanned, any workflows or images you generate thereafter will automatically carry the hash metadata required for self-healing.
+
 When loading a workflow or image that was saved with this plugin, if you encounter red "Missing Node" errors due to mismatched model names:
 1. Click the **Repair Workflow** button.
 2. The plugin will scan your local directory using the embedded Hash data.
@@ -29,8 +31,9 @@ Since the local scanner natively identifies the architecture (Base Model) of you
 
 ### Core Feature 3: Deep Scanning & Metadata Management
 
-* **Automated Scraping**: Extracts Hashes from your local models, automatically downloading their `.info` metadata and preview images from Civitai.
-* **Universal Base Model Detection**: Successfully extracts Base Model architecture information even for private models or models downloaded from other websites.
+* **O(1) Instant Hash Extraction**: Instead of computing hashes for gigabytes of data, the plugin reads the header of `.safetensors` files to extract the hash instantly. It then automatically downloads the corresponding `.info` and previews from Civitai.
+* **Offline Tensor Gene Inference**: For private models or models not on Civitai, the plugin analyzes the internal tensor structure (e.g., detecting `double_blocks` for Flux) to accurately deduce the Base Model architecture, ensuring even orphaned models work seamlessly with the Notebook filtering.
+* **Model Deduplication**: Physically identifies and cleans up redundant `.safetensors` files that share the exact same hash under different names.
 * **Model Details**: Read usage instructions and 1-click copy trigger words directly from the model page UI.
 
 ### Other Practical Features
@@ -52,9 +55,12 @@ git clone https://github.com/your-username/Anomalous_Model_Browser.git
 
 ### Quick Start
 
-**Standard Usage (Browsing & Adding Nodes):**
-1. **Step 1**: Click the **Model Browser** button to open the panel (or dock it to your sidebar).
-2. **Step 2**: Browse your local models. Click the **`+`** icon on any model card to instantly drop its loader node onto the canvas.
+**Initial Setup (Required):**
+1. **Step 1**: Click the **Model Browser** button to open the panel.
+2. **Step 2**: Navigate to the Settings tab and run a **Full Scan** (or scan individual folders) to build your local hash database.
+
+**Standard Usage (Adding Nodes):**
+- Browse your local models. Click the **`+`** icon on any model card to instantly drop its loader node onto the canvas.
 
 **Repairing Broken Workflows:**
 1. **Step 1**: Drag and drop a reference image containing Hash info (generated with this plugin) into the ComfyUI canvas.
@@ -69,6 +75,8 @@ git clone https://github.com/your-username/Anomalous_Model_Browser.git
 ### 核心特性一：哈希级工作流修复（基因级自愈）
 
 **在启用本插件的状态下，生成或保存的工作流与图片，都会被自动注入模型对应的 Civitai Hash 和文件信息。** 
+
+> ⚠️ **重要前置条件**：安装插件后，请务必先在界面内运行一次**【扫描】**，建立本地哈希数据库。此后，您导出的所有工作流与图片才会自带模型特征，享有自愈能力。
 
 当你拖入一张由此插件保存的图片或工作流时，如果因为环境不同导致模型找不到、节点全红报错：
 1. 点一下界面上的**修复工作流**按钮。
@@ -87,14 +95,15 @@ git clone https://github.com/your-username/Anomalous_Model_Browser.git
 
 ### 核心特性三：深度扫描与元数据管理
 
-* **自动刮削同步**：提取本地模型哈希值，自动从 C站 下载对应的 `.info` 使用说明和预览图。
-* **万能架构识别**：即便是不在 C站 上的私模或其它网站模型，也能自动提取识别出其 Base Model (底层架构) 信息。
+* **O(1) 极速哈希提取**：无需计算几十 GB 模型的完整哈希。插件直接解析 `.safetensors` 文件头，瞬间截获 Hash 值，并自动去 C站 下载对应的 `.info` 说明与预览图。
+* **脱机张量推断（万能 Base 提取）**：即便是不在 C站 上的私模或其它平台模型，插件会强行解析网络结构（如发现 `double_blocks` 则识别为 Flux），在本地生成虚拟配置。让孤儿模型也能完美参与笔记本的 UI 筛选匹配。
+* **物理版本去重**：自动识别并清理不同名字但 Hash 完全相同的冗余 `.safetensors` 文件。
 * **快捷详情查阅**：在模型页面可以直接查看模型使用说明，并支持**一键复制触发词 (Trigger Words)**。
 
 ### 其他实用功能
 
 * **侧边栏停靠与快捷投放**：支持将插件停靠在侧边栏。点击模型卡片右上角的 **`+`** 号图标，即可瞬间将该模型的加载器 (Loader) 节点拍到画布上。
-* **O(1) 极速扫描**：不安装 Node.js，列表滚动性能极佳。提供节能模式（悬浮播放）与自动播放开关。
+* **前端极致性能**：不安装 Node.js，列表滚动性能极佳。提供节能模式（悬浮播放）与自动播放开关。
 * **原生生成图库 (Gallery)**：无缝浏览 output 文件夹的历史记录，无限懒加载，支持将图片直接拖拽至画布瞬间还原工作流。
 * **内置空间管理**：支持在界面安全删除模型，并自动清理配套的垃圾信息文件及预览图。
 
@@ -110,10 +119,13 @@ git clone https://github.com/your-username/Anomalous_Model_Browser.git
 
 ### 快速上手 (Quick Start)
 
+**初始配置 (必做)：**
+1. **第一步**：点击界面主菜单或侧边栏的 **Model Browser** 按钮打开面板。
+2. **第二步**：务必运行一次**【扫描】**（可全局或分文件夹扫描），建立本地模型哈希数据库。此后保存的工作流才会具备自愈基因。
+
 **常规使用 (浏览与添加模型)：**
-1. **第一步**：点击界面主菜单或侧边栏新增的 **Model Browser** 按钮，展开模型面板（可停靠至侧边栏）。
-2. **第二步**：在面板中浏览模型，点击任意模型卡片右上角的 **`+` (加号)** 图标，即可将该模型的加载节点直接丢到画布上。
+- 浏览模型库，点击任意模型卡片右上角的 **`+` (加号)** 图标，即可将该模型的加载节点直接丢到画布上。
 
 **修复报错工作流：**
-1. **第一步**：将带有 Hash 信息的图片（须在使用本插件的环境下生成）拖入 ComfyUI 画布。
+1. **第一步**：将带有 Hash 信息的图片（须在使用本插件且扫描建库后生成）拖入 ComfyUI 画布。
 2. **第二步**：若发生模型路径不匹配导致的飘红报错，点击提示的 **一键修复工作流** 按钮，等待插件在本地检索 Hash 并自动恢复节点连接。
