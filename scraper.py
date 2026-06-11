@@ -290,7 +290,8 @@ def main():
                         "model": {
                             "name": os.path.splitext(filename)[0],
                             "type": "LORA" if "lora" in root.lower() else "Checkpoint"
-                        }
+                        },
+                        "files": [{"hashes": {"SHA256": file_hash}}]
                     }
                 else:
                     fail_count += 1

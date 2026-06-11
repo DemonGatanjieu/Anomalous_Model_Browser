@@ -16,7 +16,7 @@ window.anomalous_update_hash_cache = function (models) {
     }
 };
 
-window.anomalous_resolve_all_missing_nodes = async function (is_manual = false) {
+window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, force_prompt = false) {
     if (!app.graph || !app.graph._nodes) return;
 
     // Fast path: if there are no missing nodes and it's not a manual check, abort early to save performance
@@ -151,12 +151,17 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false) 
                                     app.graph.setDirtyCanvas(true, true);
                                     fixed_count++;
                                 }
-                            } else if (!is_manual) {
+                            } else if (!is_manual || force_prompt) {
                                 showMissingModelPrompt(val, h);
                             }
                         } catch (err) {
                             console.error("[Anomalous Hash Resolver] Error:", err);
+                            if (!is_manual || force_prompt) {
+                                showMissingModelPrompt(val, h);
+                            }
                         }
+                    } else if (!is_manual || force_prompt) {
+                        showMissingModelPrompt(val, "Unknown (Not Scanned)");
                     }
                 }
             }
@@ -190,17 +195,18 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false) 
             } else {
                 alert(`🪄 Anomalous 成功修复了 ${fixed_count} 个缺失的模型！\n\n💡 提示：如果侧边栏【工作流总览】中依然显示红色报错，顺手点击一下该面板里的【刷新】按钮即可清除。`);
             }
-        } else {
+        } else if (!force_prompt) {
             if (lang === 'en') {
-                alert(`🪄 No models could be auto-fixed.\nIf nodes are still red, please open the Anomalous plugin window, click "Settings", and run a "Full Scan", or download the models from Civitai.`);
+                alert(`🪄 No models could be auto-fixed.\nIf nodes are still red, please open the Anomalous plugin window and click the 🔄 "Scan" button at the bottom to fetch missing hashes, or download the models from Civitai.`);
             } else {
-                alert(`🪄 未发现可以自动修复的模型。\n如果依然有飘红，请点开 Anomalous 插件悬浮窗，进入【设置】并运行一次【一键全盘扫描】，或去 C站 下载缺失模型。`);
+                alert(`🪄 未发现可以自动修复的模型。\n如果依然有飘红，请点开 Anomalous 插件悬浮窗，点击底部的 🔄【扫描】按钮获取最新模型信息，或去 C站 下载缺失模型。`);
             }
         }
     }
 };
 
 function showMissingModelPrompt(filename, hash) {
+    const currentLang = window.anomalous_browser_lang || 'zh';
     const existing = document.getElementById('anomalous-missing-prompt');
     let container;
     if (!existing) {
@@ -220,14 +226,16 @@ function showMissingModelPrompt(filename, hash) {
         container.style.minWidth = '350px';
 
         const title = document.createElement('h3');
-        title.innerText = '⚠️ 缺失模型提醒';
+        title.innerText = currentLang === 'zh' ? '⚠️ 缺失模型提醒' : '⚠️ Missing Models Alert';
         title.style.marginTop = '0';
         title.style.color = '#ff6b6b';
 
         const desc = document.createElement('p');
         desc.style.fontSize = '0.9em';
         desc.style.color = '#ccc';
-        desc.innerHTML = '点击下方的一键扫描会自动获取所有缺失模型的最新哈希信息。<br><br><span style="color:#ffc107">⚠️ 注意：</span>此操作<b>不会</b>重命名您的文件，也<b>不会</b>下载预览图，仅仅为了快速点亮红框节点。<br>如需全盘整理改名，请去左侧边栏的“设置”中执行“全局扫描”。';
+        desc.innerHTML = currentLang === 'zh'
+            ? '点击下方的一键扫描会自动获取所有缺失模型的最新哈希信息。<br><br><span style="color:#ffc107">⚠️ 注意：</span>此操作<b>不会</b>重命名您的文件，也<b>不会</b>下载预览图，仅仅为了快速点亮红框节点。<br>如需获取完整的模型封面和规范化重命名，请打开 Anomalous 插件窗口，点击底部的 🔄 按钮执行标准扫描。'
+            : 'Clicking Scan will automatically fetch the latest hash info for all missing models.<br><br><span style="color:#ffc107">⚠️ Note:</span> This action <b>will not</b> rename your files or download cover images. It is only meant to fix the red nodes quickly.<br>For full cover downloads and standard renaming, open the Anomalous plugin and run a full scan.';
 
         container.appendChild(title);
         container.appendChild(desc);
@@ -245,7 +253,7 @@ function showMissingModelPrompt(filename, hash) {
         btnRow.style.justifyContent = 'flex-end';
 
         const closeBtn = document.createElement('button');
-        closeBtn.innerText = '忽略并手动处理';
+        closeBtn.innerText = currentLang === 'zh' ? '忽略并手动处理' : 'Ignore & Handle Manually';
         closeBtn.style.padding = '6px 12px';
         closeBtn.style.background = '#444';
         closeBtn.style.color = '#fff';
@@ -255,7 +263,7 @@ function showMissingModelPrompt(filename, hash) {
         closeBtn.onclick = () => container.remove();
 
         const scanBtn = document.createElement('button');
-        scanBtn.innerText = '一键扫描 (不改名)';
+        scanBtn.innerText = currentLang === 'zh' ? '一键扫描 (不改名)' : 'Quick Scan (No Rename)';
         scanBtn.style.padding = '6px 12px';
         scanBtn.style.background = '#007bff';
         scanBtn.style.color = '#fff';
@@ -269,7 +277,7 @@ function showMissingModelPrompt(filename, hash) {
                 const res = await fetch('/anomalous/scan_all', { method: 'POST' });
                 const data = await res.json();
                 if (data.status === 'ok') {
-                    scanBtn.innerText = '正在后台极速获取信息中，请稍候...';
+                    scanBtn.innerText = currentLang === 'zh' ? '正在后台极速获取信息中，请稍候...' : 'Fetching in background, please wait...';
 
                     const pollTimer = setInterval(async () => {
                         try {
@@ -280,7 +288,7 @@ function showMissingModelPrompt(filename, hash) {
                                 container.remove();
                                 // Add a tiny delay to ensure disk is flushed
                                 setTimeout(async () => {
-                                    alert('信息获取完成！正在为您自动点亮缺失模型...');
+                                    alert(currentLang === 'zh' ? '信息获取完成！正在为您自动点亮缺失模型...' : 'Scan complete! Resolving missing models...');
                                     await window.anomalous_resolve_all_missing_nodes(true);
                                 }, 500);
                             }
@@ -289,19 +297,19 @@ function showMissingModelPrompt(filename, hash) {
                         }
                     }, 2000);
                 } else {
-                    alert('扫描启动失败: ' + data.message);
+                    alert((currentLang === 'zh' ? '扫描启动失败: ' : 'Scan failed: ') + data.message);
                     scanBtn.disabled = false;
-                    scanBtn.innerText = '一键扫描 (不改名)';
+                    scanBtn.innerText = currentLang === 'zh' ? '一键扫描 (不改名)' : 'Quick Scan (No Rename)';
                 }
             } catch (err) {
-                alert('请求失败');
+                alert(currentLang === 'zh' ? '请求失败' : 'Request failed');
                 scanBtn.disabled = false;
-                scanBtn.innerText = '一键扫描 (不改名)';
+                scanBtn.innerText = currentLang === 'zh' ? '一键扫描 (不改名)' : 'Quick Scan (No Rename)';
             }
         };
 
         const copyBtn = document.createElement('button');
-        copyBtn.innerText = '复制所有 C站 下载链接';
+        copyBtn.innerText = currentLang === 'zh' ? '复制所有 C站 下载链接' : 'Copy Civitai Links';
         copyBtn.style.padding = '6px 12px';
         copyBtn.style.background = '#28a745';
         copyBtn.style.color = '#fff';
@@ -317,9 +325,26 @@ function showMissingModelPrompt(filename, hash) {
             });
         };
 
+        const openAllBtn = document.createElement('button');
+        openAllBtn.innerText = currentLang === 'zh' ? '一键全部跳转' : 'Open All Links';
+        openAllBtn.style.padding = '6px 12px';
+        openAllBtn.style.background = '#17a2b8';
+        openAllBtn.style.color = '#fff';
+        openAllBtn.style.border = 'none';
+        openAllBtn.style.borderRadius = '4px';
+        openAllBtn.style.cursor = 'pointer';
+        openAllBtn.onclick = () => {
+            const links = Array.from(list.querySelectorAll('a')).map(a => a.href);
+            if (links.length === 0) return;
+            links.forEach(link => {
+                window.open(link, '_blank');
+            });
+        };
+
         btnRow.appendChild(closeBtn);
         btnRow.appendChild(scanBtn);
         btnRow.appendChild(copyBtn);
+        btnRow.appendChild(openAllBtn);
         container.appendChild(btnRow);
 
         document.body.appendChild(container);
@@ -333,7 +358,7 @@ function showMissingModelPrompt(filename, hash) {
     item.style.borderBottom = '1px solid #333';
     item.style.paddingBottom = '8px';
     item.innerHTML = `<strong style="word-break: break-all;">${filename}</strong> <br><span style="font-size:0.8em; color:#aaa;">Hash: ${hash}</span>
-        <a href="https://civitai.com/search/models?sortBy=models_v9&query=${hash}" target="_blank" style="color:#4dabf7; font-size:0.8em; margin-left:10px; text-decoration:none;">[去C站下载]</a>`;
+        <a href="https://civitai.com/search/models?sortBy=models_v9&query=${hash}" target="_blank" style="color:#4dabf7; font-size:0.8em; margin-left:10px; text-decoration:none;">${window.anomalous_current_lang === 'en' ? '[Download on Civitai]' : '[去C站下载]'}</a>`;
     list.appendChild(item);
 }
 
@@ -343,10 +368,14 @@ app.registerExtension({
     async setup() {
         // Pre-fetch all hashes on startup so that dragging generated images (without opening UI) still intercepts
         try {
-            const res = await fetch('/anomalous/all_hashes');
-            const data = await res.json();
-            Object.assign(window.anomalous_hash_cache, data);
+            const resp = await fetch('/anomalous/all_hashes');
+            const data = await resp.json();
+            // api_get_all_hashes returns a flat dictionary, not {hashes: {...}}
+            window.anomalous_hash_cache = data.hashes ? data.hashes : data;
+            window.anomalous_is_empty_state = Object.keys(window.anomalous_hash_cache).length === 0;
         } catch (e) {
+            window.anomalous_hash_cache = {};
+            window.anomalous_is_empty_state = true;
             console.warn("[Anomalous] Failed to fetch initial hashes", e);
         }
 
@@ -354,27 +383,47 @@ app.registerExtension({
 
         // Intercept graph serialization to inject hashes
         const origSerialize = LGraph.prototype.serialize;
+        window.anomalous_has_warned_unscanned = false;
+        window.anomalous_unscanned_models = [];
         LGraph.prototype.serialize = function () {
             const data = origSerialize.apply(this, arguments);
 
             // Clone extra to avoid mutating the live graph's extra object
             const extraObj = data.extra ? JSON.parse(JSON.stringify(data.extra)) : {};
             extraObj.anomalous_hashes = {};
+            let unscanned_models = [];
 
             if (data.nodes) {
+                const liveNodes = this._nodes || [];
                 for (const node of data.nodes) {
+                    const liveNode = liveNodes.find(n => n.id === node.id);
+
                     if (node.widgets_values && node.widgets_values.length > 0) {
                         for (const val of node.widgets_values) {
                             if (typeof val === 'string' && (val.endsWith('.safetensors') || val.endsWith('.ckpt') || val.endsWith('.pt'))) {
                                 const parts = val.split(/[/\\]/);
                                 const basename = parts[parts.length - 1];
 
-                                const cache_data = window.anomalous_hash_cache[basename] || window.anomalous_hash_cache[val];
-                                if (cache_data) {
-                                    if (typeof cache_data === 'string') {
-                                        extraObj.anomalous_hashes[`${node.id}_${val}`] = { hash: cache_data, size: "" };
+                                let valIsMissing = false;
+                                if (liveNode && liveNode.widgets) {
+                                    const matchingWidget = liveNode.widgets.find(w => w.value === val && w.type === "combo");
+                                    if (matchingWidget && matchingWidget.options && matchingWidget.options.values && !matchingWidget.options.values.includes(val)) {
+                                        valIsMissing = true;
+                                    }
+                                }
+
+                                if (!valIsMissing) {
+                                    const cache_data = window.anomalous_hash_cache[basename] || window.anomalous_hash_cache[val];
+                                    if (cache_data) {
+                                        if (typeof cache_data === 'string') {
+                                            extraObj.anomalous_hashes[`${node.id}_${val}`] = { hash: cache_data, size: "" };
+                                        } else {
+                                            extraObj.anomalous_hashes[`${node.id}_${val}`] = cache_data;
+                                        }
                                     } else {
-                                        extraObj.anomalous_hashes[`${node.id}_${val}`] = cache_data;
+                                        if (!unscanned_models.includes(basename)) {
+                                            unscanned_models.push(basename);
+                                        }
                                     }
                                 }
                             }
@@ -383,8 +432,13 @@ app.registerExtension({
                 }
             }
             data.extra = extraObj;
+
+            data.extra = extraObj;
+            window.anomalous_unscanned_models = unscanned_models;
             return data;
         };
+
+
 
         // Intercept loadGraphData to resolve missing models
         const origLoadGraphData = app.loadGraphData;

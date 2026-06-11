@@ -1,4 +1,17 @@
-﻿# 📈 Anomalous Model Browser Changelog
+# 📈 Anomalous Model Browser Changelog
+
+## v1.4.0 (The UI & Architecture Overhaul)
+### 💎 Gemini-Style Popovers & UX
+- **Lightweight Side Popovers**: Completely dismantled the heavy, center-screen settings modal with blurred backgrounds. Rebuilt the Settings Hub as a lightweight, non-intrusive side-popover that snaps to the sidebar—heavily inspired by Gemini's web UI.
+- **Global Click-Outside**: Implemented a zero-leak Vanilla JS global `mousedown` listener. Clicking anywhere outside an active popover instantly and smoothly dismisses it, vastly improving workflow immersion.
+- **Full-Width Action Dock**: Replaced the cramped bottom capsule with a 100% width solid Action Dock. This provides a stable visual foundation and properly balances the action buttons (Scan, Fix) against the Settings cog.
+- **Gallery Letterboxing**: Switched the Image Gallery's thumbnail rendering from `object-fit: cover` to `object-fit: contain` with a deep `#000` background. Tall 9:16 vertical character portraits are now 100% visible, perfectly framed by natural letterboxing instead of being decapitated.
+
+### ⚙️ Deep Architecture & Bounds Fixing
+- **Banned CSS `zoom`**: Eradicated the CSS `zoom` property for UI scaling, which was severely distorting the browser's physical bounding boxes and causing the plugin to randomly "fly off-screen" when dragged to the top edge. 
+- **Rem/Calc Sizing Engine**: Adopted a bottom-up relative scaling approach using `font-size: calc(16px * scale)`. The plugin container maintains stable physical dimensions while internals scale smoothly, restoring absolute precision to the drag-and-drop collision physics.
+- **State Mutex Locks**: Implemented strict interaction locks. Entering an exclusive fullscreen view (like the Gallery) now aggressively disables the main hamburger menu to prevent rendering conflicts and DOM state overlapping.
+- **Centralized i18n Mutator Engine**: Solved the "Fake Localization" bug where newly added dynamic buttons remained in Chinese. All persistent DOM elements are now strictly bound to the Top-Down language mutation hook, ensuring flawless 1-click bilingual swapping without Vue or React.
 
 ## v1.3.0 (Zero-API Tensor Fingerprinting Update)
 ### 🧠 HuggingFace Native Support

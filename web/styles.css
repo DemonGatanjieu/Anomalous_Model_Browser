@@ -54,13 +54,14 @@
     left: 5%;
     top: 5%;
     container-type: inline-size;
+    font-size: calc(16px * var(--anomalous-scale, 1));
 }
 
 .anomalous-docked {
     left: 0 !important;
     top: 0 !important;
     height: 100% !important;
-    width: 600px !important;
+    width: 660px !important;
     border-radius: 0 !important;
     transition: all 0.3s ease;
 }
@@ -256,6 +257,26 @@
     border-right: 1px solid var(--border-color, #444);
     display: flex;
     flex-direction: column;
+    transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.anomalous-sidebar-closed #anomalous-sidebar-wrapper {
+    width: 60px;
+}
+
+.anomalous-sidebar-closed #anomalous-sidebar-wrapper>div:first-child div {
+    display: none;
+    /* Hides "Anomalous Browser" text */
+}
+
+.anomalous-sidebar-closed #anomalous-sidebar {
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.anomalous-sidebar-closed #anomalous-sidebar-actions {
+    flex-direction: column !important;
 }
 
 #anomalous-sidebar {
@@ -263,6 +284,7 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    transition: opacity 0.2s;
 }
 
 #anomalous-settings {
@@ -403,6 +425,10 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+
+    .anomalous-nb-create-text {
+        display: none;
+    }
 }
 
 /* English Layout Specific Scaling */
@@ -497,8 +523,8 @@
 }
 
 .anomalous-nb-container {
-    width: 85%;
-    height: 85%;
+    width: 95%;
+    height: 95%;
     background: var(--bg-color, #222);
     border: 1px solid var(--border-color, #444);
     border-radius: 12px;
@@ -604,6 +630,18 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+}
+
+.anomalous-nb-prompt-toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+#anomalous-container.anomalous-docked .anomalous-nb-prompt-toolbar select {
+    flex: 1 1 100%;
 }
 
 .anomalous-btn-primary {
@@ -838,6 +876,16 @@
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 15px;
     align-content: flex-start;
+}
+
+#anomalous-container.anomalous-docked .anomalous-gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 10px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-gallery-card {
+    height: 180px;
 }
 
 .anomalous-gallery-card {

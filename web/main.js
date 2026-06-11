@@ -60,7 +60,7 @@ const i18n = {
 </div>`,
         notebooks: '笔记本',
         notebookTitle: '笔记本管理',
-        createNotebook: '➕ 新建',
+        createNotebook: '新建',
         saveNotebook: '💾 保存',
         deleteNotebook: '🗑️ 删除',
         renameNotebook: '✏️ 重命名',
@@ -143,7 +143,7 @@ const i18n = {
 </div>`,
         notebooks: 'Notebooks',
         notebookTitle: 'Notebook Manager',
-        createNotebook: '➕ New',
+        createNotebook: 'New',
         saveNotebook: '💾 Save',
         deleteNotebook: '🗑️ Delete',
         renameNotebook: '✏️ Rename',
@@ -170,6 +170,7 @@ const i18n = {
 };
 
 let currentLang = localStorage.getItem('anomalous_lang') || 'zh';
+window.anomalous_browser_lang = currentLang;
 const t = (key) => i18n[currentLang][key] || key;
 
 class AnomalousBrowser {
@@ -200,14 +201,76 @@ class AnomalousBrowser {
         };
         updateLangClass();
 
+        const savedScale = localStorage.getItem('anomalous_ui_scale') || 1;
+        container.style.setProperty('--anomalous-scale', savedScale);
+
         // Sidebar
         this.sidebarWrapper = document.createElement('div');
         this.sidebarWrapper.id = 'anomalous-sidebar-wrapper';
+        this.sidebarWrapper.style.position = 'relative';
+
+        const brandBar = document.createElement('div');
+        brandBar.style.padding = '15px 15px 10px 15px';
+        brandBar.style.display = 'flex';
+        brandBar.style.alignItems = 'center';
+        brandBar.style.justifyContent = 'space-between';
+        brandBar.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+
+        const badge = document.createElement('div');
+        badge.style.background = 'linear-gradient(135deg, #444, #222)';
+        badge.style.color = '#ccc';
+        badge.style.fontSize = '0.7em';
+        badge.style.padding = '4px 8px';
+        badge.style.borderRadius = '6px';
+        badge.style.letterSpacing = '1px';
+        badge.style.border = '1px solid #555';
+        badge.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+        badge.style.textTransform = 'uppercase';
+        badge.style.fontWeight = 'bold';
+        badge.innerHTML = 'Anomalous Browser';
+
+        const menuBtn = document.createElement('button');
+        menuBtn.innerHTML = '☰';
+        menuBtn.title = 'Toggle Sidebar';
+        menuBtn.style.background = 'transparent';
+        menuBtn.style.border = 'none';
+        menuBtn.style.color = '#ccc';
+        menuBtn.style.fontSize = '1.2em';
+        menuBtn.style.cursor = 'pointer';
+        menuBtn.onclick = () => {
+            if (container.classList.contains('anomalous-sidebar-closed')) {
+                container.classList.remove('anomalous-sidebar-closed');
+                localStorage.setItem('anomalous_user_sidebar_closed', 'false');
+            } else {
+                container.classList.add('anomalous-sidebar-closed');
+                localStorage.setItem('anomalous_user_sidebar_closed', 'true');
+            }
+        };
+
+        brandBar.appendChild(badge);
+        brandBar.appendChild(menuBtn);
 
         this.sidebar = document.createElement('div');
         this.sidebar.id = 'anomalous-sidebar';
 
+        this.sidebarActions = document.createElement('div');
+        this.sidebarActions.id = 'anomalous-sidebar-actions';
+        this.sidebarActions.style.padding = '10px 15px';
+        this.sidebarActions.style.display = 'flex';
+        this.sidebarActions.style.flexDirection = 'row';
+        this.sidebarActions.style.justifyContent = 'flex-start';
+        this.sidebarActions.style.alignItems = 'center';
+        this.sidebarActions.style.gap = '10px';
+        this.sidebarActions.style.borderTop = '1px solid rgba(255,255,255,0.05)';
+        this.sidebarActions.style.background = 'transparent';
+        this.sidebarActions.style.borderRadius = '0';
+        this.sidebarActions.style.width = '100%';
+        this.sidebarActions.style.boxSizing = 'border-box';
+        this.sidebarActions.style.margin = '0';
+
+        this.sidebarWrapper.appendChild(brandBar);
         this.sidebarWrapper.appendChild(this.sidebar);
+        this.sidebarWrapper.appendChild(this.sidebarActions);
 
         // Content Area
         const content = document.createElement('div');
@@ -220,6 +283,16 @@ class AnomalousBrowser {
         let dragOffsetX = 0;
         let dragOffsetY = 0;
 
+        const enforceBounds = (x, y) => {
+            let newX = x;
+            let newY = y;
+            if (newX + container.offsetWidth > window.innerWidth) newX = window.innerWidth - container.offsetWidth;
+            if (newY + container.offsetHeight > window.innerHeight) newY = window.innerHeight - container.offsetHeight;
+            if (newX < 0) newX = 0;
+            if (newY < 0) newY = 0;
+            return { x: newX, y: newY };
+        };
+
         header.addEventListener('mousedown', (e) => {
             if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.id === 'anomalous-close') return;
             isDragging = true;
@@ -231,16 +304,9 @@ class AnomalousBrowser {
 
         window.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
-            let newX = e.clientX - dragOffsetX;
-            let newY = e.clientY - dragOffsetY;
-
-            if (newX < 0) newX = 0;
-            if (newY < 0) newY = 0;
-            if (newX + container.offsetWidth > window.innerWidth) newX = window.innerWidth - container.offsetWidth;
-            if (newY + container.offsetHeight > window.innerHeight) newY = window.innerHeight - container.offsetHeight;
-
-            container.style.left = newX + 'px';
-            container.style.top = newY + 'px';
+            const pos = enforceBounds(e.clientX - dragOffsetX, e.clientY - dragOffsetY);
+            container.style.left = pos.x + 'px';
+            container.style.top = pos.y + 'px';
             container.style.transform = 'none';
         });
 
@@ -259,28 +325,28 @@ class AnomalousBrowser {
             container.style.top = savedY;
         }
 
+        // Periodically enforce bounds to catch resize/zoom changes
+        setInterval(() => {
+            if (!isDragging && container.style.display !== 'none' && !container.classList.contains('anomalous-docked')) {
+                const rect = container.getBoundingClientRect();
+                const pos = enforceBounds(rect.left, rect.top);
+                if (pos.x !== rect.left || pos.y !== rect.top) {
+                    if (container.style.left.endsWith('px') && container.style.top.endsWith('px')) {
+                        container.style.left = pos.x + 'px';
+                        container.style.top = pos.y + 'px';
+                    }
+                }
+            }
+        }, 1000);
+
         const spacer = document.createElement('div');
         spacer.style.flex = '1 1 auto';
 
         const leftGroup = document.createElement('div');
         leftGroup.className = 'anomalous-header-group';
 
-        const menuBtn = document.createElement('button');
-        menuBtn.innerHTML = '☰';
-        menuBtn.title = 'Toggle Sidebar';
-        menuBtn.onclick = () => {
-            if (this.sidebarWrapper.style.display === 'none') {
-                this.sidebarWrapper.style.display = 'flex';
-                container.classList.remove('anomalous-sidebar-closed');
-            } else {
-                this.sidebarWrapper.style.display = 'none';
-                container.classList.add('anomalous-sidebar-closed');
-                container.style.width = '';
-                container.style.height = '';
-                localStorage.removeItem('anomalous_width');
-                localStorage.removeItem('anomalous_height');
-            }
-        };
+        const rightGroup = document.createElement('div');
+        rightGroup.className = 'anomalous-header-group';
 
         const hideAllPanels = () => {
             this.grid.style.display = 'none';
@@ -293,14 +359,7 @@ class AnomalousBrowser {
         };
 
         const showSidebar = () => {
-            if (window.innerWidth <= 900) {
-                // If it was explicitly closed by the user, don't force it open, but since we are switching tabs we should probably show it
-                this.sidebarWrapper.style.display = 'flex';
-                container.classList.remove('anomalous-sidebar-closed');
-            } else {
-                this.sidebarWrapper.style.display = 'flex';
-                container.classList.remove('anomalous-sidebar-closed');
-            }
+            container.classList.remove('anomalous-sidebar-closed');
         };
 
         const modelsBtn = document.createElement('button');
@@ -308,7 +367,14 @@ class AnomalousBrowser {
         modelsBtn.innerHTML = `🏠 <span class="anomalous-btn-text">${t('models')}</span>`;
         modelsBtn.onclick = () => {
             hideAllPanels();
-            showSidebar();
+            if (localStorage.getItem('anomalous_user_sidebar_closed') === 'true') {
+                container.classList.add('anomalous-sidebar-closed');
+            } else {
+                showSidebar();
+            }
+            menuBtn.disabled = false;
+            menuBtn.style.opacity = '1';
+            menuBtn.style.cursor = 'pointer';
             this.grid.style.display = 'grid';
             if (this.detailPanel.innerHTML !== '') {
                 this.detailPanel.innerHTML = '';
@@ -321,16 +387,15 @@ class AnomalousBrowser {
         galleryBtn.innerHTML = `🖼️ <span class="anomalous-btn-text">${t('gallery') || '图库'}</span>`;
         galleryBtn.onclick = () => {
             hideAllPanels();
-            this.sidebarWrapper.style.display = 'none';
             container.classList.add('anomalous-sidebar-closed');
+            menuBtn.disabled = true;
+            menuBtn.style.opacity = '0.3';
+            menuBtn.style.cursor = 'not-allowed';
             this.galleryPanel.style.display = 'flex';
             if (!this.galleryLoaded) {
                 this.loadGalleryImages(1, true);
             }
         };
-
-        const rightGroup = document.createElement('div');
-        rightGroup.className = 'anomalous-header-group';
 
         const dockBtn = document.createElement('button');
         dockBtn.innerHTML = '◧';
@@ -363,10 +428,9 @@ class AnomalousBrowser {
             this.showNotebooks();
         };
 
-        leftGroup.appendChild(menuBtn);
-        leftGroup.appendChild(modelsBtn);
-        leftGroup.appendChild(galleryBtn);
-        leftGroup.appendChild(nbBtn);
+        rightGroup.appendChild(modelsBtn);
+        rightGroup.appendChild(galleryBtn);
+        rightGroup.appendChild(nbBtn);
 
         const apiKeyBtn = document.createElement('button');
         apiKeyBtn.id = 'anomalous-api-btn';
@@ -389,10 +453,10 @@ class AnomalousBrowser {
         const scanBtn = document.createElement('button');
         scanBtn.id = 'anomalous-scan-btn';
         scanBtn.title = t('scanTitle');
-        scanBtn.innerHTML = `<span class="anomalous-btn-text">${t('scan')}</span>`;
+        scanBtn.innerHTML = `🔄`;
         scanBtn.onclick = async () => {
             if (!confirm(t('scanConfirm'))) return;
-            scanBtn.innerHTML = `⏳ <span class="anomalous-btn-text">${t('scanning')}</span>`;
+            scanBtn.innerHTML = `⏳`;
             scanBtn.disabled = true;
             try {
                 const params = new URLSearchParams({ type: this.currentType, path_idx: this.currentPathIdx, subfolder: this.currentSubfolder });
@@ -406,29 +470,30 @@ class AnomalousBrowser {
                             const sd = await sr.json();
                             if (!sd.scanning) {
                                 clearInterval(poll);
-                                scanBtn.innerHTML = `✅ <span class="anomalous-btn-text">${t('scanDone')}</span>`;
+                                scanBtn.innerHTML = `✅`;
 
                                 let msg = '';
                                 if (sd.result) {
                                     if (currentLang === 'zh') {
-                                        msg = `✅ 扫描与刮削已结束！\n成功处理：${sd.result.success} 个\n处理失败：${sd.result.fail} 个\n\n正在为您自动点亮画布上所有因此次更名而飘红的节点...`;
+                                        msg = `✅ 扫描完成！\n成功：${sd.result.success} | 失败：${sd.result.fail}\n正在点亮画布飘红节点...`;
                                     } else {
-                                        msg = `✅ Scan & Scraping Complete!\nSuccess: ${sd.result.success}\nFailed: ${sd.result.fail}\n\nAuto-fixing any red nodes on your canvas caused by renaming...`;
+                                        msg = `✅ Scan Complete!\nSuccess: ${sd.result.success} | Failed: ${sd.result.fail}\nAuto-fixing red nodes...`;
                                     }
                                 } else {
                                     if (currentLang === 'zh') {
-                                        msg = `✅ 扫描完成！\n\n正在为您自动点亮画布上飘红的节点...`;
+                                        msg = `✅ 扫描完成！正在点亮画布节点...`;
                                     } else {
-                                        msg = `✅ Scan Complete!\n\nAuto-fixing any red nodes on your canvas...`;
+                                        msg = `✅ Scan Complete! Auto-fixing nodes...`;
                                     }
                                 }
                                 alert(msg);
+                                window.anomalous_is_empty_state = false;
                                 if (window.anomalous_resolve_all_missing_nodes) {
                                     await window.anomalous_resolve_all_missing_nodes(true);
                                 }
 
                                 this.loadModels();
-                                setTimeout(() => { scanBtn.innerHTML = `<span class="anomalous-btn-text">${t('scan')}</span>`; scanBtn.disabled = false; }, 2000);
+                                setTimeout(() => { scanBtn.innerHTML = `🔄`; scanBtn.disabled = false; }, 2000);
                             }
                         } catch (e) { clearInterval(poll); scanBtn.disabled = false; }
                     }, 3000);
@@ -437,6 +502,20 @@ class AnomalousBrowser {
                 }
             } catch (e) { scanBtn.disabled = false; }
         };
+
+        scanBtn.innerHTML = `🔄`;
+        scanBtn.style.background = 'transparent';
+        scanBtn.style.color = '#ccc';
+        scanBtn.style.border = 'none';
+        scanBtn.style.borderRadius = '6px';
+        scanBtn.style.padding = '6px';
+        scanBtn.style.fontSize = '1.1em';
+        scanBtn.style.cursor = 'pointer';
+        scanBtn.style.transition = 'all 0.2s ease';
+        scanBtn.onmouseover = () => { if (!scanBtn.disabled) { scanBtn.style.background = 'rgba(255,255,255,0.1)'; scanBtn.style.color = '#fff'; scanBtn.style.transform = 'translateY(-1px)'; } };
+        scanBtn.onmouseout = () => { if (!scanBtn.disabled) { scanBtn.style.background = 'transparent'; scanBtn.style.color = '#ccc'; scanBtn.style.transform = 'none'; } };
+
+        this.sidebarActions.appendChild(scanBtn);
 
         const energyBtn = document.createElement('button');
         energyBtn.id = 'anomalous-energy-btn';
@@ -481,45 +560,51 @@ class AnomalousBrowser {
             cleanBtn.disabled = false;
         };
 
-        const settingsBtn = document.createElement('button');
-        settingsBtn.id = 'anomalous-settings-btn';
-        settingsBtn.innerHTML = `⚙️ <span class="anomalous-btn-text">${t('settingsBtn')}</span>`;
-        settingsBtn.onclick = () => {
-            if (this.settingsPanel.style.display === 'flex') {
-                this.settingsPanel.style.display = 'none';
-            } else {
-                this.settingsPanel.style.display = 'flex';
-            }
-        };
-
         const fixBtn = document.createElement('button');
         fixBtn.id = 'anomalous-fix-models-btn';
         fixBtn.title = '一键修复工作流飘红 (Fix Models)';
-        fixBtn.innerHTML = `🪄 <span class="anomalous-btn-text">一键修复当前工作流飘红</span>`;
-        fixBtn.style.color = '#ffc107';
-        fixBtn.style.border = '1px solid #ffc107';
+        fixBtn.innerHTML = `🪄`;
+        fixBtn.style.background = 'transparent';
+        fixBtn.style.color = '#ccc';
+        fixBtn.style.border = 'none';
+        fixBtn.style.borderRadius = '6px';
+        fixBtn.style.padding = '6px';
+        fixBtn.style.fontSize = '1.1em';
+        fixBtn.style.cursor = 'pointer';
+        fixBtn.style.transition = 'all 0.2s ease';
+        fixBtn.onmouseover = () => { fixBtn.style.background = 'rgba(255,255,255,0.1)'; fixBtn.style.color = '#fff'; fixBtn.style.transform = 'translateY(-1px)'; };
+        fixBtn.onmouseout = () => { fixBtn.style.background = 'transparent'; fixBtn.style.color = '#ccc'; fixBtn.style.transform = 'none'; };
         fixBtn.onclick = async () => {
             if (window.anomalous_resolve_all_missing_nodes) {
                 await window.anomalous_resolve_all_missing_nodes(true);
-                this.settingsPanel.style.display = 'none';
+                settingsHubModal.style.display = 'none';
             } else {
-                alert("修复模块尚未加载！");
+                alert(currentLang === 'zh' ? "修复模块尚未加载！" : "Fix module not loaded yet!");
             }
         };
 
         rightGroup.appendChild(dockBtn);
-        rightGroup.appendChild(settingsBtn);
         rightGroup.appendChild(closeBtn);
 
         header.appendChild(leftGroup);
         header.appendChild(spacer);
         header.appendChild(rightGroup);
 
-        this.settingsPanel = document.createElement('div');
-        this.settingsPanel.id = 'anomalous-settings-panel';
-
-        const settingsBox = document.createElement('div');
-        settingsBox.id = 'anomalous-settings-box';
+        const settingsHubModal = document.createElement('div');
+        settingsHubModal.style.position = 'absolute';
+        settingsHubModal.style.bottom = '15px';
+        settingsHubModal.style.left = '100%';
+        settingsHubModal.style.marginLeft = '10px';
+        settingsHubModal.style.width = '260px';
+        settingsHubModal.style.background = 'var(--comfy-menu-bg, #2a2a2a)';
+        settingsHubModal.style.border = '1px solid rgba(255,255,255,0.1)';
+        settingsHubModal.style.borderRadius = '12px';
+        settingsHubModal.style.padding = '10px';
+        settingsHubModal.style.display = 'none';
+        settingsHubModal.style.flexDirection = 'column';
+        settingsHubModal.style.gap = '4px';
+        settingsHubModal.style.boxShadow = '0 10px 40px rgba(0,0,0,0.5)';
+        settingsHubModal.style.zIndex = '1000';
 
         const langBtn = document.createElement('button');
         langBtn.className = 'anomalous-lang-btn';
@@ -527,20 +612,30 @@ class AnomalousBrowser {
         langBtn.onclick = () => {
             currentLang = currentLang === 'zh' ? 'en' : 'zh';
             localStorage.setItem('anomalous_lang', currentLang);
+            window.anomalous_browser_lang = currentLang;
             langBtn.innerHTML = currentLang === 'zh' ? '🌐 Language: EN' : '🌐 语言: 中文';
             updateLangClass();
             modelsBtn.innerHTML = `🏠 <span class="anomalous-btn-text">${t('models')}</span>`;
             galleryBtn.innerHTML = `🖼️ <span class="anomalous-btn-text">${t('gallery')}</span>`;
             scanBtn.title = t('scanTitle');
-            scanBtn.innerHTML = `<span class="anomalous-btn-text">${t('scan')}</span>`;
+            scanBtn.innerHTML = `🔄`;
             cleanBtn.title = t('cleanTitle');
             cleanBtn.innerHTML = `<span class="anomalous-btn-text">${t('clean')}</span>`;
-            helpBtn.title = t('helpTitle');
             helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
             nbBtn.title = t('notebookTitle');
             nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('notebooks')}</span>`;
             apiKeyBtn.innerHTML = `<span class="anomalous-btn-text">${t('apiKeyConfig')}</span>`;
-            settingsBtn.innerHTML = `⚙️ <span class="anomalous-btn-text">${t('settingsBtn')}</span>`;
+            const globalScanBtnRef = document.getElementById('anomalous-global-scan-btn');
+            if (globalScanBtnRef) globalScanBtnRef.innerHTML = currentLang === 'zh' ? '🌍 一键全盘极速扫描 (不下载封面/不改名)' : '🌍 Global Quick Scan (No rename/No media)';
+            const missingBtnRef = document.getElementById('anomalous-missing-btn');
+            if (missingBtnRef) missingBtnRef.innerHTML = currentLang === 'zh' ? '🚨 查找缺失模型' : '🚨 Find Missing Models';
+            const checkUnscannedBtnRef = document.getElementById('anomalous-check-unscanned-btn');
+            if (checkUnscannedBtnRef) checkUnscannedBtnRef.innerHTML = currentLang === 'zh' ? '🔍 检查并极速录入缺失模型信息' : '🔍 Check & Auto-Scan Missing Info';
+            const resetBtnRef = document.getElementById('anomalous-reset-btn');
+            if (resetBtnRef) resetBtnRef.innerHTML = currentLang === 'zh' ? '🔄 重置界面布局' : '🔄 Reset Layout';
+            const scaleLabelRef = document.getElementById('anomalous-scale-label');
+            if (scaleLabelRef) scaleLabelRef.innerText = currentLang === 'zh' ? 'UI 缩放' : 'UI Scale';
+
             renderEnergyBtn();
             this.renderSidebar();
             this.loadModels();
@@ -553,34 +648,268 @@ class AnomalousBrowser {
             }
         };
 
-        const settingsCloseBtn = document.createElement('button');
-        settingsCloseBtn.style.background = 'linear-gradient(135deg, #cc3333 0%, #aa2222 100%)';
-        settingsCloseBtn.style.color = '#fff';
-        settingsCloseBtn.style.fontWeight = 'bold';
-        settingsCloseBtn.style.marginTop = '15px';
-        settingsCloseBtn.onclick = () => { this.settingsPanel.style.display = 'none'; };
-
-        const updateSettingsCloseText = () => {
-            settingsCloseBtn.innerHTML = t('closeSettings');
+        const styleHubBtn = (btn) => {
+            btn.style.background = 'transparent';
+            btn.style.border = '1px solid rgba(255,255,255,0.05)';
+            btn.style.color = '#ccc';
+            btn.style.textAlign = 'left';
+            btn.style.padding = '8px 10px';
+            btn.style.borderRadius = '8px';
+            btn.style.cursor = 'pointer';
+            btn.style.fontSize = '0.85em';
+            btn.style.transition = 'all 0.2s';
+            btn.onmouseover = () => { btn.style.background = 'rgba(255,255,255,0.08)'; btn.style.color = '#fff'; };
+            btn.onmouseout = () => { btn.style.background = 'transparent'; btn.style.color = '#ccc'; };
         };
-        updateSettingsCloseText();
 
-        langBtn.addEventListener('click', updateSettingsCloseText);
+        styleHubBtn(cleanBtn);
+        styleHubBtn(energyBtn);
+        styleHubBtn(apiKeyBtn);
+        styleHubBtn(langBtn);
+        styleHubBtn(helpBtn);
 
-        settingsBox.appendChild(langBtn);
-        settingsBox.appendChild(apiKeyBtn);
-        settingsBox.appendChild(fixBtn);
-        settingsBox.appendChild(scanBtn);
-        settingsBox.appendChild(cleanBtn);
-        settingsBox.appendChild(energyBtn);
-        settingsBox.appendChild(helpBtn);
-        settingsBox.appendChild(settingsCloseBtn);
+        const globalScanBtn = document.createElement('button');
+        globalScanBtn.id = 'anomalous-global-scan-btn';
+        globalScanBtn.innerHTML = currentLang === 'zh' ? '🌍 一键全盘极速扫描 (不下载封面/不改名)' : '🌍 Global Quick Scan (No rename/No media)';
+        styleHubBtn(globalScanBtn);
 
-        this.settingsPanel.appendChild(settingsBox);
-
-        this.settingsPanel.onclick = (e) => {
-            if (e.target === this.settingsPanel) this.settingsPanel.style.display = 'none';
+        globalScanBtn.onclick = async () => {
+            if (!confirm(currentLang === 'zh' ? '即将执行极速全盘扫描并同步Hash，此操作不改名也不下载封面，是否继续？' : 'Start global quick scan to sync all hashes?')) return;
+            globalScanBtn.innerHTML = currentLang === 'zh' ? '⏳ 扫描中...' : '⏳ Scanning...';
+            globalScanBtn.disabled = true;
+            try {
+                const res = await fetch('/anomalous/scan_all', { method: 'POST' });
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    alert(currentLang === 'zh' ? '🚀 全局扫描已后台启动！' : '🚀 Global Scan started in background!');
+                    const pollTimer = setInterval(async () => {
+                        try {
+                            const statusRes = await fetch('/anomalous/global_scan_status');
+                            const statusData = await statusRes.json();
+                            if (!statusData.scanning) {
+                                clearInterval(pollTimer);
+                                globalScanBtn.innerHTML = currentLang === 'zh' ? '✅ 扫描完成' : '✅ Scan Complete';
+                                setTimeout(() => {
+                                    globalScanBtn.innerHTML = currentLang === 'zh' ? '🌍 一键全盘扫描 (不下载封面/不改名)' : '🌍 Global Quick Scan (No rename/No media)';
+                                    globalScanBtn.disabled = false;
+                                }, 3000);
+                            }
+                        } catch (e) { }
+                    }, 3000);
+                } else {
+                    alert((currentLang === 'zh' ? '错误: ' : 'Error: ') + data.message);
+                    globalScanBtn.disabled = false;
+                }
+            } catch (e) {
+                globalScanBtn.disabled = false;
+            }
         };
+
+        const missingBtn = document.createElement('button');
+        missingBtn.id = 'anomalous-missing-btn';
+        missingBtn.innerHTML = currentLang === 'zh' ? '🚨 查找缺失模型' : '🚨 Find Missing Models';
+        styleHubBtn(missingBtn);
+        missingBtn.onclick = () => {
+            if (window.anomalous_resolve_all_missing_nodes) {
+                window.anomalous_resolve_all_missing_nodes(true, true);
+            }
+        };
+
+        const checkUnscannedBtn = document.createElement('button');
+        checkUnscannedBtn.id = 'anomalous-check-unscanned-btn';
+        checkUnscannedBtn.innerHTML = currentLang === 'zh' ? '🔍 检查并极速录入缺失模型信息' : '🔍 Check & Auto-Scan Missing Info';
+        styleHubBtn(checkUnscannedBtn);
+        checkUnscannedBtn.onclick = async () => {
+            checkUnscannedBtn.innerHTML = currentLang === 'zh' ? '⏳ 检查中...' : '⏳ Checking...';
+            checkUnscannedBtn.disabled = true;
+            try {
+                const res = await fetch('/anomalous/all_hashes');
+                const data = await res.json();
+                const hashesObj = data.hashes ? data.hashes : data;
+                let hasUnscanned = false;
+                for (const key in hashesObj) {
+                    if (hashesObj[key].hash === "") {
+                        hasUnscanned = true;
+                        break;
+                    }
+                }
+                
+                if (hasUnscanned) {
+                    checkUnscannedBtn.innerHTML = currentLang === 'zh' ? '⚠️ 发现缺失，正在自动极速扫描...' : '⚠️ Missing info found, Auto-Scanning...';
+                    const scanRes = await fetch('/anomalous/scan_all', { method: 'POST' });
+                    const scanData = await scanRes.json();
+                    if (scanData.status === 'ok') {
+                        const pollTimer = setInterval(async () => {
+                            try {
+                                const statusRes = await fetch('/anomalous/global_scan_status');
+                                const statusData = await statusRes.json();
+                                if (!statusData.scanning) {
+                                    clearInterval(pollTimer);
+                                    checkUnscannedBtn.innerHTML = currentLang === 'zh' ? '✅ 补全完成' : '✅ Info Complete';
+                                    setTimeout(() => {
+                                        checkUnscannedBtn.innerHTML = currentLang === 'zh' ? '🔍 检查并极速录入缺失模型信息' : '🔍 Check & Auto-Scan Missing Info';
+                                        checkUnscannedBtn.disabled = false;
+                                    }, 3000);
+                                }
+                            } catch (e) { }
+                        }, 3000);
+                    } else {
+                        alert((currentLang === 'zh' ? '错误: ' : 'Error: ') + scanData.message);
+                        checkUnscannedBtn.disabled = false;
+                        checkUnscannedBtn.innerHTML = currentLang === 'zh' ? '🔍 检查并极速录入缺失模型信息' : '🔍 Check & Auto-Scan Missing Info';
+                    }
+                } else {
+                    checkUnscannedBtn.innerHTML = currentLang === 'zh' ? '✨ 所有模型信息已完整' : '✨ All Model Info is Complete';
+                    setTimeout(() => {
+                        checkUnscannedBtn.innerHTML = currentLang === 'zh' ? '🔍 检查并极速录入缺失模型信息' : '🔍 Check & Auto-Scan Missing Info';
+                        checkUnscannedBtn.disabled = false;
+                    }, 3000);
+                }
+            } catch (e) {
+                checkUnscannedBtn.disabled = false;
+                checkUnscannedBtn.innerHTML = currentLang === 'zh' ? '🔍 检查并极速录入缺失模型信息' : '🔍 Check & Auto-Scan Missing Info';
+            }
+        };
+
+        const scaleContainer = document.createElement('div');
+        scaleContainer.style.display = 'flex';
+        scaleContainer.style.alignItems = 'center';
+        scaleContainer.style.justifyContent = 'space-between';
+        scaleContainer.style.background = '#1a1a1a';
+        scaleContainer.style.padding = '8px 12px';
+        scaleContainer.style.borderRadius = '4px';
+        scaleContainer.style.border = '2px solid #555';
+        scaleContainer.style.marginBottom = '4px';
+
+        const scaleLabel = document.createElement('span');
+        scaleLabel.id = 'anomalous-scale-label';
+        scaleLabel.innerText = currentLang === 'zh' ? 'UI 缩放' : 'UI Scale';
+        scaleLabel.style.color = '#ccc';
+        scaleLabel.style.fontSize = '0.9em';
+
+        let currentScale = parseFloat(savedScale);
+
+        const controlsWrapper = document.createElement('div');
+        controlsWrapper.style.display = 'flex';
+        controlsWrapper.style.alignItems = 'center';
+        controlsWrapper.style.gap = '8px';
+
+        const scaleVal = document.createElement('span');
+        scaleVal.innerText = `${Math.round(currentScale * 100)}%`;
+        scaleVal.style.color = '#fff';
+        scaleVal.style.fontSize = '0.9em';
+        scaleVal.style.minWidth = '45px';
+        scaleVal.style.textAlign = 'center';
+
+        const createScaleBtn = (text, delta) => {
+            const btn = document.createElement('button');
+            btn.innerText = text;
+            btn.style.background = '#333';
+            btn.style.color = '#fff';
+            btn.style.border = '1px solid #555';
+            btn.style.borderRadius = '4px';
+            btn.style.width = '24px';
+            btn.style.height = '24px';
+            btn.style.cursor = 'pointer';
+            btn.style.display = 'flex';
+            btn.style.alignItems = 'center';
+            btn.style.justifyContent = 'center';
+            btn.onmouseover = () => btn.style.background = '#444';
+            btn.onmouseout = () => btn.style.background = '#333';
+            btn.onclick = () => {
+                currentScale = Math.max(0.5, Math.min(1.5, currentScale + delta));
+                scaleVal.innerText = `${Math.round(currentScale * 100)}%`;
+                container.style.setProperty('--anomalous-scale', currentScale);
+                localStorage.setItem('anomalous_ui_scale', currentScale);
+            };
+            return btn;
+        };
+
+        const minusBtn = createScaleBtn('-', -0.1);
+        const plusBtn = createScaleBtn('+', 0.1);
+
+        controlsWrapper.appendChild(minusBtn);
+        controlsWrapper.appendChild(scaleVal);
+        controlsWrapper.appendChild(plusBtn);
+
+        scaleContainer.appendChild(scaleLabel);
+        scaleContainer.appendChild(controlsWrapper);
+
+        const resetBtn = document.createElement('button');
+        resetBtn.id = 'anomalous-reset-btn';
+        resetBtn.innerHTML = currentLang === 'zh' ? '🔄 重置界面布局' : '🔄 Reset Layout';
+        styleHubBtn(resetBtn);
+        resetBtn.onclick = () => {
+            if (confirm(currentLang === 'zh' ? '确认重置窗口位置、缩放和停靠状态吗？' : 'Reset window position, scale and dock state?')) {
+                localStorage.removeItem('anomalous_pos_x');
+                localStorage.removeItem('anomalous_pos_y');
+                localStorage.removeItem('anomalous_width');
+                localStorage.removeItem('anomalous_height');
+                localStorage.removeItem('anomalous_docked');
+                localStorage.removeItem('anomalous_ui_scale');
+                container.style.left = '5%';
+                container.style.top = '5%';
+                container.style.width = '90%';
+                container.style.height = '90%';
+                container.style.setProperty('--anomalous-scale', '1');
+                currentScale = 1;
+                scaleVal.innerText = '100%';
+                if (container.classList.contains('anomalous-docked')) {
+                    container.classList.remove('anomalous-docked');
+                }
+            }
+        };
+
+        settingsHubModal.appendChild(missingBtn);
+        settingsHubModal.appendChild(checkUnscannedBtn);
+        settingsHubModal.appendChild(globalScanBtn);
+        settingsHubModal.appendChild(cleanBtn);
+        settingsHubModal.appendChild(energyBtn);
+        settingsHubModal.appendChild(apiKeyBtn);
+        settingsHubModal.appendChild(scaleContainer);
+        settingsHubModal.appendChild(langBtn);
+        settingsHubModal.appendChild(helpBtn);
+        settingsHubModal.appendChild(resetBtn);
+
+        this.sidebarWrapper.appendChild(settingsHubModal);
+
+        const settingsBtn = document.createElement('button');
+        settingsBtn.innerHTML = `⚙️`;
+        settingsBtn.title = 'Settings Hub';
+        settingsBtn.style.background = 'transparent';
+        settingsBtn.style.color = '#ccc';
+        settingsBtn.style.border = 'none';
+        settingsBtn.style.borderRadius = '6px';
+        settingsBtn.style.padding = '6px';
+        settingsBtn.style.fontSize = '1.1em';
+        settingsBtn.style.marginLeft = 'auto';
+        settingsBtn.style.cursor = 'pointer';
+        settingsBtn.style.transition = 'all 0.2s ease';
+        settingsBtn.onmouseover = () => { settingsBtn.style.background = 'rgba(255,255,255,0.1)'; settingsBtn.style.color = '#fff'; };
+        settingsBtn.onmouseout = () => { settingsBtn.style.background = 'transparent'; settingsBtn.style.color = '#ccc'; };
+        const closeSettingsHub = (e) => {
+            if (settingsHubModal.style.display !== 'none' && !settingsHubModal.contains(e.target) && !settingsBtn.contains(e.target)) {
+                settingsHubModal.style.display = 'none';
+                settingsBtn.style.color = '#ccc';
+                document.removeEventListener('mousedown', closeSettingsHub);
+            }
+        };
+
+        settingsBtn.onclick = () => {
+            if (settingsHubModal.style.display === 'none') {
+                settingsHubModal.style.display = 'flex';
+                settingsBtn.style.color = '#fff';
+                // Delay adding the listener slightly to avoid triggering it on the same click
+                setTimeout(() => document.addEventListener('mousedown', closeSettingsHub), 10);
+            } else {
+                settingsHubModal.style.display = 'none';
+                settingsBtn.style.color = '#ccc';
+                document.removeEventListener('mousedown', closeSettingsHub);
+            }
+        };
+
+        this.sidebarActions.appendChild(fixBtn);
+        this.sidebarActions.appendChild(settingsBtn);
 
         this.grid = document.createElement('div');
         this.grid.id = 'anomalous-grid';
@@ -626,7 +955,6 @@ class AnomalousBrowser {
 
         container.appendChild(this.sidebarWrapper);
         container.appendChild(content);
-        container.appendChild(this.settingsPanel);
         container.appendChild(this.nbPanel);
 
         this.modal.appendChild(container);
@@ -793,26 +1121,6 @@ class AnomalousBrowser {
     renderSidebar() {
         this.sidebar.innerHTML = '';
 
-        const brandBar = document.createElement('div');
-        brandBar.style.padding = '12px 15px 0 15px';
-        brandBar.style.display = 'flex';
-        brandBar.style.alignItems = 'center';
-
-        const badge = document.createElement('div');
-        badge.style.background = 'linear-gradient(135deg, #444, #222)';
-        badge.style.color = '#ccc';
-        badge.style.fontSize = '0.7em';
-        badge.style.padding = '4px 8px';
-        badge.style.borderRadius = '6px';
-        badge.style.letterSpacing = '1px';
-        badge.style.border = '1px solid #555';
-        badge.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-        badge.style.textTransform = 'uppercase';
-        badge.style.fontWeight = 'bold';
-        badge.innerHTML = 'Anomalous Browser';
-
-        brandBar.appendChild(badge);
-
         const topBar = document.createElement('div');
         topBar.style.display = 'flex';
         topBar.style.justifyContent = 'space-between';
@@ -849,8 +1157,43 @@ class AnomalousBrowser {
 
         topBar.appendChild(title);
         topBar.appendChild(collapseAllBtn);
-        this.sidebar.appendChild(brandBar);
         this.sidebar.appendChild(topBar);
+
+        const searchBox = document.createElement('div');
+        searchBox.style.padding = '0 15px 15px 15px';
+
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = '🔍 搜索模型 (Search)...';
+        searchInput.style.width = '100%';
+        searchInput.style.padding = '8px 12px';
+        searchInput.style.borderRadius = '8px';
+        searchInput.style.border = '1px solid rgba(255,255,255,0.1)';
+        searchInput.style.background = 'rgba(0,0,0,0.2)';
+        searchInput.style.color = '#fff';
+        searchInput.style.boxSizing = 'border-box';
+        searchInput.style.outline = 'none';
+        searchInput.style.transition = 'border-color 0.2s';
+        searchInput.onfocus = () => searchInput.style.border = '1px solid #007aff';
+        searchInput.onblur = () => searchInput.style.border = '1px solid rgba(255,255,255,0.1)';
+
+        searchInput.oninput = (e) => {
+            const val = e.target.value.toLowerCase();
+            const cards = this.grid.querySelectorAll('.anomalous-card');
+            cards.forEach(card => {
+                const titleEl = card.querySelector('.anomalous-card-title');
+                if (!titleEl) return;
+                const titleText = titleEl.innerText.toLowerCase();
+                if (titleText.includes(val)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        };
+
+        searchBox.appendChild(searchInput);
+        this.sidebar.appendChild(searchBox);
 
         (this.foldersData || []).forEach(typeGroup => {
             const header = document.createElement('div');
@@ -896,12 +1239,12 @@ class AnomalousBrowser {
 
                 let toggleIcon = '';
                 if (hasChildren) {
-                    toggleIcon = `<span class="anomalous-folder-toggle" style="margin-right: 5px; width: 15px; display: inline-block;">${isExpanded ? '▼' : '▶'}</span>`;
+                    toggleIcon = `<span class="anomalous-folder-toggle" style="margin-right: 8px; width: 12px; display: inline-block; font-size: 0.8em; color: #888;">${isExpanded ? '▼' : '▶'}</span>`;
                 } else {
-                    toggleIcon = `<span style="margin-right: 5px; width: 15px; display: inline-block;"></span>`;
+                    toggleIcon = `<span style="margin-right: 8px; width: 12px; display: inline-block;"></span>`;
                 }
 
-                item.innerHTML = `${toggleIcon}📁 ${info.name} <span style="opacity:0.5; font-size:0.9em;">(${info.model_count})</span>`;
+                item.innerHTML = `${toggleIcon}<span class="anomalous-folder-name" style="color: #ddd;">${info.name}</span> <span style="opacity:0.4; font-size:0.8em; margin-left: 5px;">${info.model_count}</span>`;
 
                 if (this.currentType === typeGroup.type && this.currentPathIdx === typeGroup.path_idx && this.currentSubfolder === path) {
                     item.classList.add('active');
@@ -1040,13 +1383,13 @@ class AnomalousBrowser {
         };
         const nodeType = nodeTypeMap[type];
         if (!nodeType) {
-            alert('Unsupported model type for auto-apply.');
+            alert(currentLang === 'zh' ? '不支持该类型模型的自动应用。' : 'Unsupported model type for auto-apply.');
             return;
         }
 
         const node = LiteGraph.createNode(nodeType);
         if (!node) {
-            alert('Failed to create node: ' + nodeType);
+            alert((currentLang === 'zh' ? '创建节点失败: ' : 'Failed to create node: ') + nodeType);
             return;
         }
 
@@ -1578,6 +1921,7 @@ class AnomalousBrowser {
             this.loadModels();
         }
     }
+
     close() { this.modal.classList.remove('visible'); }
 
     async showNotebooks() {
@@ -1617,7 +1961,7 @@ class AnomalousBrowser {
         btnRow.style.gap = '5px';
 
         const createBtn = document.createElement('button');
-        createBtn.innerHTML = `+ <span class="anomalous-nb-create-text">${t('createNotebook')}</span>`;
+        createBtn.innerHTML = `➕ <span class="anomalous-nb-create-text">${t('createNotebook')}</span>`;
         createBtn.className = 'anomalous-btn-primary';
 
         const createInput = document.createElement('input');
@@ -1645,7 +1989,7 @@ class AnomalousBrowser {
                     createInput.value = '';
                 }
                 createInput.style.display = 'none';
-                createBtn.innerHTML = `+ <span class="anomalous-nb-create-text">${t('createNotebook')}</span>`;
+                createBtn.innerHTML = `➕ <span class="anomalous-nb-create-text">${t('createNotebook')}</span>`;
             }
         };
 
@@ -1756,7 +2100,7 @@ class AnomalousBrowser {
                         btnRow.style.gap = '12px';
 
                         const confirmBtn = document.createElement('button');
-                        confirmBtn.innerHTML = '🗑️ 删除 (Delete)';
+                        confirmBtn.innerHTML = currentLang === 'zh' ? '🗑️ 删除' : '🗑️ Delete';
                         confirmBtn.style.background = '#dc3545';
                         confirmBtn.style.color = '#fff';
                         confirmBtn.style.border = 'none';
@@ -1787,7 +2131,7 @@ class AnomalousBrowser {
 
                         confirmBtn.onclick = async (ce) => {
                             ce.stopPropagation();
-                            confirmBtn.innerHTML = 'Deleting...';
+                            confirmBtn.innerHTML = currentLang === 'zh' ? '删除中...' : 'Deleting...';
                             confirmBtn.disabled = true;
                             try {
                                 const dr = await fetch('/anomalous/delete_gallery_image', {
@@ -1799,11 +2143,11 @@ class AnomalousBrowser {
                                 if (dd.status === 'success') {
                                     card.remove();
                                 } else {
-                                    alert('删除失败 / Delete failed: ' + dd.message);
+                                    alert((currentLang === 'zh' ? '删除失败: ' : 'Delete failed: ') + dd.message);
                                     overlay.remove();
                                 }
                             } catch (err) {
-                                alert('Error: ' + err);
+                                alert((currentLang === 'zh' ? '错误: ' : 'Error: ') + err);
                                 overlay.remove();
                             }
                         };
@@ -2096,10 +2440,7 @@ class AnomalousBrowser {
 
         // Toolbar
         const pToolbar = document.createElement('div');
-        pToolbar.style.display = 'flex';
-        pToolbar.style.gap = '10px';
-        pToolbar.style.marginBottom = '10px';
-        pToolbar.style.alignItems = 'center';
+        pToolbar.className = 'anomalous-nb-prompt-toolbar';
 
         const langSelect = document.createElement('select');
         langSelect.className = 'anomalous-nb-select';
@@ -2396,7 +2737,7 @@ class AnomalousBrowser {
         if (!this.currentNotebook) return;
         const data = this.currentNotebook.data || {};
         if (!data.mainModel) {
-            alert("Please select a Main Model first.");
+            alert(currentLang === 'zh' ? "请先选择一个主模型。" : "Please select a Main Model first.");
             return;
         }
 
@@ -2542,6 +2883,7 @@ app.registerExtension({
         }
 
         const browser = new AnomalousBrowser();
+        window.anomalousBrowserInstance = browser;
         const btn = document.createElement('button');
         btn.id = 'anomalous-trigger-btn';
         btn.innerHTML = '📦';
