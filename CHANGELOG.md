@@ -1,5 +1,15 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.4.1 (The Drag & Drop Resilience Update)
+### 🚀 Enhancements
+- **Silent Quick Scan Button**: Added a new dedicated `🔍 Check & Auto-Scan Missing Info` button to the Settings Hub. It silently finds unscanned models and extracts their hashes in the background without popping up the intrusive Civitai black-box prompt, keeping your workflow uninterrupted.
+- **Hires Fix Drag Resilience**: Fixed a critical Chromium memory allocation crash where dragging extremely large (Hires. fix) images from the Gallery would silently fail to initiate. Implemented a lightweight, translucent SVG "Workflow" ghost using `setDragImage`, allowing massive 4K+ images to be dragged seamlessly onto the ComfyUI canvas without memory limits.
+- **Operation Guide**: Added a highly requested `docs/核心按钮操作指南_大白话版.md` (Layman's Core Operation Guide) to clearly distinguish between the different scanning and fixing buttons for new users.
+
+### 🐛 Bug Fixes
+- **Orange Toast Eradication**: Completely ripped out the overly aggressive `app.queuePrompt` interceptor. Users will no longer be bombarded by the orange "Unscanned Models" warning toast every time they click Generate.
+- **CSS Compatibility**: Added the standard `line-clamp` property alongside `-webkit-line-clamp` in the stylesheet for better cross-browser compatibility when truncating model names.
+
 ## v1.4.0 (The UI & Architecture Overhaul)
 ### 💎 Gemini-Style Popovers & UX
 - **Lightweight Side Popovers**: Completely dismantled the heavy, center-screen settings modal with blurred backgrounds. Rebuilt the Settings Hub as a lightweight, non-intrusive side-popover that snaps to the sidebar—heavily inspired by Gemini's web UI.

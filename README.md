@@ -1,5 +1,7 @@
 # Anomalous Model Browser
 
+[![Changelog](https://img.shields.io/badge/📖_Read_the-Changelog-blue?style=for-the-badge)](CHANGELOG.md)
+
 [English](#english) | [中文](#中文)
 
 ---

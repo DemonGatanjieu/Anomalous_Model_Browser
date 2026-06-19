@@ -733,7 +733,7 @@ class AnomalousBrowser {
                         break;
                     }
                 }
-                
+
                 if (hasUnscanned) {
                     checkUnscannedBtn.innerHTML = currentLang === 'zh' ? '⚠️ 发现缺失，正在自动极速扫描...' : '⚠️ Missing info found, Auto-Scanning...';
                     const scanRes = await fetch('/anomalous/scan_all', { method: 'POST' });
@@ -2062,6 +2062,11 @@ class AnomalousBrowser {
                         const fullUrl = new URL(imgUrl, window.location.href).href;
                         e.dataTransfer.setData('text/uri-list', fullUrl);
                         e.dataTransfer.setData('text/plain', fullUrl);
+                        
+                        // Fix for Chromium failing to initiate drag for extremely large (Hires Fix) images
+                        if (window.anomalousDragGhostImg) {
+                            e.dataTransfer.setDragImage(window.anomalousDragGhostImg, 40, 40);
+                        }
                     });
 
                     // Click to view
@@ -2954,5 +2959,9 @@ app.registerExtension({
         });
 
         document.body.appendChild(btn);
+
+        // Pre-create a lightweight, translucent, and aesthetic drag ghost image for huge Hires Fix images
+        window.anomalousDragGhostImg = new Image();
+        window.anomalousDragGhostImg.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='76' height='76' x='2' y='2' fill='%231a1a1a' fill-opacity='0.6' rx='16' stroke='%2300ffcc' stroke-width='2'/><text x='40' y='50' font-family='sans-serif' font-size='32' font-weight='bold' fill='%2300ffcc' text-anchor='middle'>W</text></svg>";
     }
 });
