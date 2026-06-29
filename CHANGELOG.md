@@ -1,5 +1,9 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.4.2 (Language Sync & Gallery Patch)
+### 🐛 Bug Fixes
+- **Native Language Sync**: Fixed a bug where the plugin would not properly synchronize its UI language with ComfyUI's modern native `Comfy.Locale` settings. The language check has been migrated from local storage caching to a dynamic `app.ui.settings` API call during the extension setup phase.
+- **Gallery Zoom Review**: Verified and confirmed that the mouse wheel zoom feature inside the gallery image viewer is functioning natively as intended.
 ## v1.4.1 (The Drag & Drop Resilience Update)
 ### 🚀 Enhancements
 - **Silent Quick Scan Button**: Added a new dedicated `🔍 Check & Auto-Scan Missing Info` button to the Settings Hub. It silently finds unscanned models and extracts their hashes in the background without popping up the intrusive Civitai black-box prompt, keeping your workflow uninterrupted.

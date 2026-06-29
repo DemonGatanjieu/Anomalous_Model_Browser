@@ -169,7 +169,43 @@ const i18n = {
     }
 };
 
-let currentLang = localStorage.getItem('anomalous_lang') || 'zh';
+let defaultLang = 'zh';
+try {
+    let comfyDetected = false;
+    const aglLang = localStorage.getItem('Comfy.Settings.AIGODLIKE-COMFYUI-TRANSLATION.Language');
+    if (aglLang) {
+        defaultLang = aglLang.toLowerCase().includes('en') ? 'en' : 'zh';
+        comfyDetected = true;
+    } else {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.toLowerCase().includes('lang') || key.toLowerCase().includes('locale'))) {
+                const val = localStorage.getItem(key);
+                if (typeof val === 'string') {
+                    const lowerVal = val.toLowerCase();
+                    if (lowerVal.includes('zh') || lowerVal.includes('chinese')) {
+                        defaultLang = 'zh';
+                        comfyDetected = true;
+                        break;
+                    } else if (lowerVal.includes('en') || lowerVal.includes('english')) {
+                        defaultLang = 'en';
+                        comfyDetected = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    if (!comfyDetected && navigator.language && !navigator.language.toLowerCase().startsWith('zh')) {
+        defaultLang = 'en';
+    }
+} catch (e) {
+    if (navigator.language && !navigator.language.toLowerCase().startsWith('zh')) {
+        defaultLang = 'en';
+    }
+}
+let currentLang = localStorage.getItem('anomalous_lang') || defaultLang;
 window.anomalous_browser_lang = currentLang;
 const t = (key) => i18n[currentLang][key] || key;
 
@@ -2200,23 +2236,75 @@ class AnomalousBrowser {
             const closeBtn = document.createElement('div');
             closeBtn.className = 'anomalous-gallery-viewer-close';
             closeBtn.innerHTML = '&times;';
-            closeBtn.onclick = () => { viewer.style.display = 'none'; };
-
+            
             const img = document.createElement('img');
             img.id = 'anomalous-gallery-viewer-img';
 
             viewer.appendChild(img);
             viewer.appendChild(closeBtn);
 
-            viewer.onclick = (e) => {
-                if (e.target === viewer) viewer.style.display = 'none';
+            let scale = 1;
+            let translateX = 0;
+            let translateY = 0;
+            let isDragging = false;
+            let startX = 0, startY = 0;
+
+            const resetImgTransform = () => {
+                scale = 1; translateX = 0; translateY = 0;
+                img.style.transform = `translate(0px, 0px) scale(1)`;
+                img.style.cursor = 'grab';
             };
+
+            closeBtn.onclick = () => { 
+                viewer.style.display = 'none'; 
+                resetImgTransform();
+            };
+
+            viewer.onclick = (e) => {
+                if (e.target === viewer) {
+                    viewer.style.display = 'none';
+                    resetImgTransform();
+                }
+            };
+
+            viewer.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const zoomFactor = 0.1;
+                if (e.deltaY < 0) scale += zoomFactor;
+                else scale = Math.max(0.1, scale - zoomFactor);
+                img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            });
+
+            img.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                isDragging = true;
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+                img.style.cursor = 'grabbing';
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
+                img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            });
+
+            window.addEventListener('mouseup', () => {
+                isDragging = false;
+                img.style.cursor = 'grab';
+            });
 
             document.body.appendChild(viewer);
         }
 
         const img = document.getElementById('anomalous-gallery-viewer-img');
         img.src = src;
+        
+        // Reset scale and translation when opening a new image
+        img.style.transform = `translate(0px, 0px) scale(1)`;
+        img.style.cursor = 'grab';
+        
         viewer.style.display = 'flex';
     }
 
@@ -2885,6 +2973,17 @@ app.registerExtension({
             link.type = "text/css";
             link.href = cssUrl;
             document.head.appendChild(link);
+        }
+        if (!localStorage.getItem('anomalous_lang')) {
+            try {
+                if (app && app.ui && app.ui.settings) {
+                    const locale = app.ui.settings.getSettingValue('Comfy.Locale') || app.ui.settings.getSettingValue('Comfy.Locale.Language');
+                    if (locale) {
+                        currentLang = locale.toLowerCase().includes('en') ? 'en' : 'zh';
+                        window.anomalous_browser_lang = currentLang;
+                    }
+                }
+            } catch (e) {}
         }
 
         const browser = new AnomalousBrowser();
