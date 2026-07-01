@@ -17,6 +17,7 @@ window.anomalous_update_hash_cache = function (models) {
 };
 
 window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, force_prompt = false) {
+    if (!is_manual && localStorage.getItem('anomalous_auto_scan_enabled') !== 'true') return;
     if (!app.graph || !app.graph._nodes) return;
 
     // Fast path: if there are no missing nodes and it's not a manual check, abort early to save performance
@@ -368,10 +369,14 @@ app.registerExtension({
     async setup() {
         // Pre-fetch all hashes on startup so that dragging generated images (without opening UI) still intercepts
         try {
-            const resp = await fetch('/anomalous/all_hashes');
-            const data = await resp.json();
-            // api_get_all_hashes returns a flat dictionary, not {hashes: {...}}
-            window.anomalous_hash_cache = data.hashes ? data.hashes : data;
+            if (localStorage.getItem('anomalous_auto_scan_enabled') === 'true') {
+                const resp = await fetch('/anomalous/all_hashes');
+                const data = await resp.json();
+                // api_get_all_hashes returns a flat dictionary, not {hashes: {...}}
+                window.anomalous_hash_cache = data.hashes ? data.hashes : data;
+            } else {
+                window.anomalous_hash_cache = {};
+            }
             window.anomalous_is_empty_state = Object.keys(window.anomalous_hash_cache).length === 0;
         } catch (e) {
             window.anomalous_hash_cache = {};

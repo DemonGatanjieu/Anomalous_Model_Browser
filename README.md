@@ -1,6 +1,6 @@
 # Anomalous Model Browser
 
-[![Changelog](https://img.shields.io/badge/📖_Read_the-Changelog-blue?style=for-the-badge)](CHANGELOG.md)
+[![Changelog](https://img.shields.io/badge/📖_Read_the-Changelog-blue?style=for-the-badge)](CHANGELOG.md) [![ComfyUI Manager](https://img.shields.io/badge/ComfyUI-Manager-green?style=for-the-badge)](https://github.com/ltdrdata/ComfyUI-Manager)
 
 [English](#english) | [中文](#中文)
 
@@ -22,6 +22,8 @@ When loading a workflow or image that was saved with this plugin, if you encount
 3. Once a match is found, it automatically reconnects and replaces the missing nodes.
 
 *(Note: The plugin relies on these injected hashes for precise matching. Historical workflows or images generated without this plugin will lack the necessary hash data and cannot be automatically repaired.)*
+
+> 💡 **Auto-Detect Missing Models**: By default, the plugin will NOT silently scan your disk or interrupt your workflow loading with popups if you have missing models. You can turn this feature **ON** manually in the Settings Hub if you want active workflow monitoring and auto-healing prompts.
 
 ### Core Feature 2: Smart Notebook (Workflow Drafting)
 
@@ -53,7 +55,7 @@ Open your terminal, navigate to the ComfyUI `custom_nodes` folder, and run the f
 cd custom_nodes
 git clone https://github.com/your-username/Anomalous_Model_Browser.git
 ```
-*(Note: Restart ComfyUI after cloning to load the plugin)*
+*(Note: Restart ComfyUI after cloning to load the plugin. Alternatively, search for `Anomalous Model Browser` in the ComfyUI Manager and click Install!)*
 
 ### Quick Start
 
@@ -87,6 +89,8 @@ git clone https://github.com/your-username/Anomalous_Model_Browser.git
 
 *(注意：系统依赖模型哈希进行精准匹配。如果在没有安装本插件前生成的旧工作流，或他人未使用本插件生成的图片，由于缺失哈希信息，将无法触发全自动修复，仍需手动重选。)*
 
+> 💡 **自动检测缺失模型**：为了避免打断用户加载工作流的连贯性，插件**默认不会**在后台静默扫描本地磁盘，也**不会**在发现缺失模型时自动弹窗。如果您希望开启工作流缺失模型的主动监控与弹窗提示，请前往设置面板中手动将其**开启**。
+
 ### 核心特性二：智能笔记本（工作流草稿本）
 
 得益于本地扫描功能可以精准识别并提取模型的基础架构 (Base Model)，笔记本模块提供了极为强大的草稿与组装功能：
@@ -117,7 +121,7 @@ git clone https://github.com/your-username/Anomalous_Model_Browser.git
 cd custom_nodes
 git clone https://github.com/your-username/Anomalous_Model_Browser.git
 ```
-*(提示：克隆完成后，重启 ComfyUI 即可加载插件)*
+*(提示：克隆完成后，重启 ComfyUI 即可加载插件。你也可以直接在 ComfyUI Manager 中搜索 `Anomalous Model Browser` 并一键安装！)*
 
 ### 快速上手 (Quick Start)
 

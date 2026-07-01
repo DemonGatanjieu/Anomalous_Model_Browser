@@ -663,6 +663,13 @@ class AnomalousBrowser {
             apiKeyBtn.innerHTML = `<span class="anomalous-btn-text">${t('apiKeyConfig')}</span>`;
             const globalScanBtnRef = document.getElementById('anomalous-global-scan-btn');
             if (globalScanBtnRef) globalScanBtnRef.innerHTML = currentLang === 'zh' ? '🌍 一键全盘极速扫描 (不下载封面/不改名)' : '🌍 Global Quick Scan (No rename/No media)';
+            const disableAutoScanBtnRef = document.getElementById('anomalous-disable-auto-scan-btn');
+            if (disableAutoScanBtnRef) {
+                let isAutoEnabled = localStorage.getItem('anomalous_auto_scan_enabled') === 'true';
+                disableAutoScanBtnRef.innerHTML = currentLang === 'zh' 
+                    ? (isAutoEnabled ? '🪄 启动时自动检测缺失模型: [已开启]' : '🔕 启动时自动检测缺失模型: [已关闭]')
+                    : (isAutoEnabled ? '🪄 Auto-Detect Missing on Load: ON' : '🔕 Auto-Detect Missing on Load: OFF');
+            }
             const missingBtnRef = document.getElementById('anomalous-missing-btn');
             if (missingBtnRef) missingBtnRef.innerHTML = currentLang === 'zh' ? '🚨 查找缺失模型' : '🚨 Find Missing Models';
             const checkUnscannedBtnRef = document.getElementById('anomalous-check-unscanned-btn');
@@ -739,6 +746,22 @@ class AnomalousBrowser {
             } catch (e) {
                 globalScanBtn.disabled = false;
             }
+        };
+
+        const autoScanToggleBtn = document.createElement('button');
+        autoScanToggleBtn.id = 'anomalous-disable-auto-scan-btn';
+        const renderAutoScanToggleBtn = () => {
+            let isAutoEnabled = localStorage.getItem('anomalous_auto_scan_enabled') === 'true';
+            autoScanToggleBtn.innerHTML = currentLang === 'zh' 
+                ? (isAutoEnabled ? '🪄 启动时自动检测缺失模型: [已开启]' : '🔕 启动时自动检测缺失模型: [已关闭]')
+                : (isAutoEnabled ? '🪄 Auto-Detect Missing on Load: ON' : '🔕 Auto-Detect Missing on Load: OFF');
+        };
+        renderAutoScanToggleBtn();
+        styleHubBtn(autoScanToggleBtn);
+        autoScanToggleBtn.onclick = () => {
+            let isAutoEnabled = localStorage.getItem('anomalous_auto_scan_enabled') === 'true';
+            localStorage.setItem('anomalous_auto_scan_enabled', isAutoEnabled ? 'false' : 'true');
+            renderAutoScanToggleBtn();
         };
 
         const missingBtn = document.createElement('button');
@@ -896,6 +919,7 @@ class AnomalousBrowser {
             }
         };
 
+        settingsHubModal.appendChild(autoScanToggleBtn);
         settingsHubModal.appendChild(missingBtn);
         settingsHubModal.appendChild(checkUnscannedBtn);
         settingsHubModal.appendChild(globalScanBtn);

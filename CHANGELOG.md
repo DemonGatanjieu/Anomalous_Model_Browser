@@ -1,6 +1,15 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.4.3 (The Silent Load Update)
+### 🚀 Enhancements
+- **Silent Loading by Default**: Reversed the default behavior of the hash resolver. To prevent interrupting workflows for users with massive unindexed local libraries, the aggressive "Missing Models Alert" popups and heavy background hash fetching on startup are now **OFF by default**. You can enable the auto-detect feature manually via the Settings Hub.
+- **Refined Settings UI**: Updated the terminology in the Settings Hub. The toggle has been re-worded from "Auto-Detect Missing: ON/OFF" to "🪄 Auto-Detect Missing on Load: [ON]" and "🔕 Auto-Detect Missing on Load: [OFF]" to eliminate any semantic confusion regarding the plugin's status.
+
+
 ## v1.4.2 (Language Sync & Gallery Patch)
+### 🚀 Enhancements
+- **ComfyUI Manager Ready**: The plugin is officially available in the ComfyUI Manager default node list!
+
 ### 🐛 Bug Fixes
 - **Native Language Sync**: Fixed a bug where the plugin would not properly synchronize its UI language with ComfyUI's modern native `Comfy.Locale` settings. The language check has been migrated from local storage caching to a dynamic `app.ui.settings` API call during the extension setup phase.
 - **Gallery Zoom Review**: Verified and confirmed that the mouse wheel zoom feature inside the gallery image viewer is functioning natively as intended.
