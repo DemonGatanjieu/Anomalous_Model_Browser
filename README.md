@@ -35,6 +35,8 @@ Since the local scanner natively identifies the architecture (Base Model) of you
 
 ### Core Feature 3: Deep Scanning & Metadata Management
 
+> 📌 **Important Note**: The plugin's core metadata retrieval is exclusively integrated with **Civitai**. It fetches `.info` files and preview images directly from Civitai's database. Models downloaded purely from HuggingFace (without a Civitai counterpart) will rely on our Offline Tensor Inference for Base Model detection instead.
+
 * **O(1) Instant Hash Extraction**: Instead of computing hashes for gigabytes of data, the plugin reads the header of `.safetensors` files to extract the hash instantly. It then automatically downloads the corresponding `.info` and previews from Civitai.
 * **Offline Tensor Gene Inference**: For private models or models not on Civitai, the plugin analyzes the internal tensor structure (e.g., detecting `double_blocks` for Flux) to accurately deduce the Base Model architecture, ensuring even orphaned models work seamlessly with the Notebook filtering.
 * **Model Deduplication**: Physically identifies and cleans up redundant `.safetensors` files that share the exact same hash under different names.
@@ -100,6 +102,8 @@ git clone https://github.com/your-username/Anomalous_Model_Browser.git
 * **免连线一键发布**：配置好模型和提示词后，点击“发送到画布”，整套节点配置会被直接打包投放到画布并自动完成连线，彻底告别一个个拉节点和连线的折磨。
 
 ### 核心特性三：深度扫描与元数据管理
+
+> 📌 **重要提示**：本插件的元数据获取核心**专为 Civitai（C站）服务**。插件仅会从 C站 抓取对应的 `.info` 配置文件和预览图。如果您第一时间从 HuggingFace 手动下载了纯净版模型（且未同步至C站），插件将无法获取它的封面与介绍，但仍可通过“脱机张量推断”识别其底层架构。
 
 * **O(1) 极速哈希提取**：无需计算几十 GB 模型的完整哈希。插件直接解析 `.safetensors` 文件头，瞬间截获 Hash 值，并自动去 C站 下载对应的 `.info` 说明与预览图。
 * **脱机张量推断（万能 Base 提取）**：即便是不在 C站 上的私模或其它平台模型，插件会强行解析网络结构（如发现 `double_blocks` 则识别为 Flux），在本地生成虚拟配置。让孤儿模型也能完美参与笔记本的 UI 筛选匹配。
