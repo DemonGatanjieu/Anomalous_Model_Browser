@@ -8,134 +8,106 @@
 
 <h2 id="english">English</h2>
 
-A lightweight (< 250KB), zero-dependency ComfyUI model browser plugin featuring hash-level workflow repair, a powerful smart notebook, deep local scanning, and gallery management.
+A highly professional, multi-functional ComfyUI model browser plugin. It integrates advanced model management, workflow healing, an intelligent drafting notebook, and a native output gallery.
 
-### Core Feature 1: Hash-Level Workflow Repair (Gene-Level Self-Healing)
+### 🌟 Core Capabilities
 
-**Workflows and images generated or saved while this plugin is active will have their models' Civitai Hashes automatically embedded.**
+1. **Comprehensive Model Management**: Automatically extract Base Model architectures, cover images, trigger words, and author info by scanning model hashes. It allows you to customize model names, notes, and covers. You can quickly view detailed info, history gallery, and trigger words. Furthermore, you can replace models visually with cover icons instead of complex file paths, and safely delete unwanted models.
+2. **Workflow Node Repair**: As long as a workflow or image was exported with this plugin active (Identity Hash enabled), the **Model Doctor (🩺)** can auto-detect missing nodes and replace them with the correct local paths. For stubborn models, it provides a "Deep Hash Scan" or links directly to Civitai.
+3. **Smart Notebook (Drafting Area 📑)**: Leveraging scanned local architectures, the Notebook offers rapid matching between Checkpoints, UNet, and compatible LoRA models. It features a built-in translation tool, auto-chunks prompts into bilingual tags, and supports 1-click deployment to the ComfyUI canvas.
+4. **History Gallery**: Natively reads your local `output` folder. Supports 1-click viewing, deleting, and mouse-wheel zooming. You can drag and drop any generated image directly onto the canvas to instantly load its embedded workflow.
+5. **Additional Features**: Click the top-right `➕` of any model card to deploy it to the canvas. The UI supports side-docking to leave space for your canvas operations.
 
-> ⚠️ **Crucial Prerequisite**: After installing the plugin, you MUST run a **[Scan]** from the UI to build your local hash database. Once scanned, any workflows or images you generate thereafter will automatically carry the hash metadata required for self-healing.
+### 📖 Step-by-Step Operating Guide
 
-When loading a workflow or image that was saved with this plugin, if you encounter red "Missing Node" errors due to mismatched model names:
-1. Click the **Repair Workflow** button.
-2. The plugin will scan your local directory using the embedded Hash data.
-3. Once a match is found, it automatically reconnects and replaces the missing nodes.
+#### 1. Initialization (Scan Wizard)
+* **Location**: The Scan icon (**🔄**) at the bottom left of the plugin interface.
+* **Operation**: This is the most important prerequisite. Open the Scan Wizard, select your configuration, and execute the scan. Ensure your network is connected (entering an API-KEY in the settings is recommended for fetching specific Civitai model data).
+* **Result**: This activates all core features of the plugin by building your local model database.
 
-*(Note: The plugin relies on these injected hashes for precise matching. Historical workflows or images generated without this plugin will lack the necessary hash data and cannot be automatically repaired.)*
+#### 2. Workflow Repair (Model Doctor)
+* **Location**: The second Stethoscope icon (**🩺**) from the bottom left.
+* **Operation**: When you import someone else's workflow (or an image exported with this plugin) and the nodes turn red due to missing paths, click the Model Doctor. It will intelligently identify all broken nodes and replace them with your correct local paths.
 
-> 💡 **Auto-Detect Missing Models**: By default, the plugin will NOT silently scan your disk or interrupt your workflow loading with popups if you have missing models. You can turn this feature **ON** manually in the Settings Hub if you want active workflow monitoring and auto-healing prompts.
+#### 3. Visual Swapping (Node Assistant)
+* **Location**: The third Robot icon (**🤖**) from the bottom left.
+* **Operation**: After opening, select any model node on your ComfyUI canvas. The Assistant will recognize the node's info, displaying its history gallery, notes, cover, details, and trigger words. It also allows you to quickly visually replace it with other models based on cover images.
 
-### Core Feature 2: Smart Notebook (Workflow Drafting)
+#### 4. Settings Panel
+* **Location**: The Gear icon (**⚙️**) at the bottom left.
+* **Operation**: Here you can adjust the UI language (Language is adjusted here), main UI font size, and video cover auto-play modes.
 
-Since the local scanner natively identifies the architecture (Base Model) of your files, the Notebook acts as a powerful drafting area:
-* **Architecture Filtering**: Select a Base Model, and the notebook will strictly filter and display only the compatible Main Models and Loras.
-* **Visual Selection**: Displays preview images for your models directly within the notebook interface.
-* **Prompt Management**: Paste your prompts to instantly receive a bilingual translation for easy side-by-side editing.
-* **One-Click Deploy**: Press "Send to Canvas" and your entire selected stack (Main Model, Loras, Prompts) will drop onto the canvas fully wired up.
+#### 5. Top Navigation & Smart Notebook
+* **Location**: The top tabs: **Models (📦)**, **Gallery (🖼️)**, **Notebook (📑)**, and **Dock Side (◧)**.
+* **Notebook Operation**: 
+  1. Click the **Notebook (📑)** tab, then click the **➕ (New)** button and confirm.
+  2. Select a Base Model (e.g., SD1.5). You can then select compatible Main Models and LoRAs.
+  3. Click **📝 Edit Raw / Paste** to paste your prompts. Select the language at the top-left of the input box for bilingual translation.
+  4. After confirming, the plugin will automatically chunk your prompt into tags. You can find/replace or directly edit individual tags.
+  5. Finally, click **🚀 Send to Canvas** to automatically wire and deploy the Checkpoint, LoRA, and CLIP Text Encode directly to your canvas!
 
-### Core Feature 3: Deep Scanning & Metadata Management
+---
 
-> 📌 **Important Note**: The plugin's core metadata retrieval is exclusively integrated with **Civitai**. It fetches `.info` files and preview images directly from Civitai's database. Models downloaded purely from HuggingFace (without a Civitai counterpart) will rely on our Offline Tensor Inference for Base Model detection instead.
+### 📦 Installation
 
-* **O(1) Instant Hash Extraction**: Instead of computing hashes for gigabytes of data, the plugin reads the header of `.safetensors` files to extract the hash instantly. It then automatically downloads the corresponding `.info` and previews from Civitai.
-* **Offline Tensor Gene Inference**: For private models or models not on Civitai, the plugin analyzes the internal tensor structure (e.g., detecting `double_blocks` for Flux) to accurately deduce the Base Model architecture, ensuring even orphaned models work seamlessly with the Notebook filtering.
-* **Model Deduplication**: Physically identifies and cleans up redundant `.safetensors` files that share the exact same hash under different names.
-* **Model Details**: Read usage instructions and 1-click copy trigger words directly from the model page UI.
-
-### Other Practical Features
-
-* **Sidebar Docking & Node Dropping**: Dock the browser to the sidebar. Click the `+` icon in the top right of any model card to instantly drop its loader node onto your canvas.
-* **O(1) Fast Scanning**: No Node.js required. Exceptional scroll performance with Eco Mode (hover to play) and Auto-play toggles.
-* **Native Output Gallery**: Browse ComfyUI output history with infinite lazy loading, and drag-and-drop images directly to the canvas to restore workflows.
-* **Model Management**: Securely delete models from the UI, automatically cleaning up associated metadata and preview images.
-
-### Installation Guide
-
-Open your terminal, navigate to the ComfyUI `custom_nodes` folder, and run the following commands:
-
+Open your terminal, go to your ComfyUI `custom_nodes` folder, and run:
 ```bash
 cd custom_nodes
-git clone https://github.com/your-username/Anomalous_Model_Browser.git
+git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
 ```
-*(Note: Restart ComfyUI after cloning to load the plugin. Alternatively, search for `Anomalous Model Browser` in the ComfyUI Manager and click Install!)*
-
-### Quick Start
-
-**Initial Setup (Required):**
-1. **Step 1**: Click the **Model Browser** button to open the panel.
-2. **Step 2**: Navigate to the Settings tab and run a **Full Scan** (or scan individual folders) to build your local hash database.
-
-**Standard Usage (Adding Nodes):**
-- Browse your local models. Click the **`+`** icon on any model card to instantly drop its loader node onto the canvas.
-
-**Repairing Broken Workflows:**
-1. **Step 1**: Drag and drop a reference image containing Hash info (generated with this plugin) into the ComfyUI canvas.
-2. **Step 2**: If nodes turn red, click the prompted **Repair Workflow** button and wait for the plugin to restore node connections.
+*(Restart ComfyUI after cloning. Alternatively, search for `Anomalous Model Browser` inside the ComfyUI Manager and click Install!)*
 
 ---
 
 <h2 id="中文">中文</h2>
 
-一个不到 250KB、零依赖、集成了哈希级工作流修复、智能笔记本、深度本地扫描与图库管理的 ComfyUI 模型浏览器插件。
+一个高度专业、多功能的 ComfyUI 模型浏览器插件。集成了模型管理、工作流自愈修复、智能草稿本与原生图库管理。
 
-### 核心特性一：哈希级工作流修复（基因级自愈）
+### 🌟 核心功能特性
 
-**在启用本插件的状态下，生成或保存的工作流与图片，都会被自动注入模型对应的 Civitai Hash 和文件信息。** 
+1. **全方位模型管理**：通过扫描哈希值，自动获取模型的 Base Model (基础架构)、封面、提示词、作者简介等信息，方便您快速比对并调节操作流程。支持自定义模型名称、备注和封面。提供快捷查看详细信息与历史生成图片的功能。此外，点开模型即刻呈现封面图标，方便您快捷替换模型，彻底告别复杂的模型路径带来的头疼；遇到不想用的模型，还提供了极其便捷的快捷删除功能。
+2. **节点智能修复功能**：凡是由本插件导出的工作流和图片（只要开启了哈希身份证），在载入他人或旧工作流时出现节点爆红，只需点开**模型医生 (🩺)**，即可自动根据工作流内嵌的身份信息识别出本地正确的模型路径并一键替换。遇到简单扫描未能识别的顽固模型，可选择“深度扫描”进一步识别，若本地确实缺失，还提供了相关的 Civitai C站下载链接。
+3. **智能笔记本 (📑) 功能**：基于扫描获取的本地模型基础架构，笔记本提供了快速的架构匹配功能，让您极速选择兼容的 Checkpoint、UNet 模型与对应的 LoRA 模型。内置强大的翻译功能，能自动将提示词分块打上标签，实现多语言提示词完美对照，并支持一键发布组装到工作流画布中。
+4. **原生图库功能**：支持无缝读取本地的 `output` 输出文件夹。支持鼠标滚轮放大缩小，一键查看和安全删除历史图像。更绝的是，您可以直接将图片拖动到画布上，瞬间加载内嵌的工作流。
+5. **其它便捷功能**：点击模型卡片右上角的 `➕` 号，可以快捷将相关的节点发布粘贴到画布。支持侧边栏停靠功能，将界面吸附在左侧，为您的画布留出充足的操作空间。
 
-> ⚠️ **重要前置条件**：安装插件后，请务必先在界面内运行一次**【扫描】**，建立本地哈希数据库。此后，您导出的所有工作流与图片才会自带模型特征，享有自愈能力。
+### 📖 标准操作说明
 
-当你拖入一张由此插件保存的图片或工作流时，如果因为环境不同导致模型找不到、节点全红报错：
-1. 点一下界面上的**修复工作流**按钮。
-2. 插件会自动根据内置的 Hash 数据，在你的本地目录中精准寻找对应的模型。
-3. 找到后自动重新连线替换，哪怕你把模型改成了任意名字。
+为了让插件发挥最大效能，请按照以下流程进行操作：
 
-*(注意：系统依赖模型哈希进行精准匹配。如果在没有安装本插件前生成的旧工作流，或他人未使用本插件生成的图片，由于缺失哈希信息，将无法触发全自动修复，仍需手动重选。)*
+#### 1. 前置准备 (扫描向导)
+* **具体位置**：界面左侧底部的 **扫描图标 (🔄)**。
+* **操作步骤**：这是最重要的前置说明！请先打开扫描向导，根据需求选择扫描配置并执行扫描。**切记保持网络畅通**。部分 C站（Civitai）限制级模型信息需要在设置中填入 API-KEY。
+* **功能激活**：扫描完成后，插件的各项核心功能即被全面激活，您的本地数据库已建立完毕。
 
-> 💡 **自动检测缺失模型**：为了避免打断用户加载工作流的连贯性，插件**默认不会**在后台静默扫描本地磁盘，也**不会**在发现缺失模型时自动弹窗。如果您希望开启工作流缺失模型的主动监控与弹窗提示，请前往设置面板中手动将其**开启**。
+#### 2. 拯救爆红 (模型医生)
+* **具体位置**：左侧底部第二个 **听诊器按钮 (🩺)**。
+* **操作步骤**：当导入别人使用该插件输出的工作流或者图片时，若发现模型路径爆红报错，点击模型医生，它就能智能识别当前所有的报错节点，并一键实现正确路径的替换。
 
-### 核心特性二：智能笔记本（工作流草稿本）
+#### 3. 选中交互 (节点助手)
+* **具体位置**：左侧底部第三个 **机器人按钮 (🤖)**。
+* **操作步骤**：打开节点助手后，在 ComfyUI 画布上点击选择任意一个模型节点。助手便会瞬间识别到该节点的各项信息，支持查看它的历史图库、备注、封面、模型详细页、触发词等。最强大的是，它能让您通过视觉化的模型封面，直接在侧边栏快捷替换其他模型。
 
-得益于本地扫描功能可以精准识别并提取模型的基础架构 (Base Model)，笔记本模块提供了极为强大的草稿与组装功能：
-* **架构隔离筛选**：在笔记本中选定 Base Model 后，系统会自动为你筛选出与之完全兼容的主模型和 Lora，杜绝搭配错误。
-* **可视化挑选**：直接在笔记本页面中显示模型的关联预览图（利用抓取的 C站 数据）。
-* **提示词翻译对照**：粘贴提示词后，支持一键翻译，形成双语对照，方便打草稿和修改。
-* **免连线一键发布**：配置好模型和提示词后，点击“发送到画布”，整套节点配置会被直接打包投放到画布并自动完成连线，彻底告别一个个拉节点和连线的折磨。
+#### 4. 个性化配置 (设置面板)
+* **具体位置**：左侧底部的 **齿轮按钮 (⚙️)**。
+* **操作步骤**：在此可以调节语言（多语言切换在这里调节）、主页面字体大小、以及视频封面的播放方式（节能或自动播放）等。
 
-### 核心特性三：深度扫描与元数据管理
+#### 5. 顶部导航与笔记本 (Notebook) 实战
+* **具体位置**：右侧顶部的按钮分别为 **模型 (📦)**、**图库 (🖼️)**、**笔记本 (📑)**、**停靠侧边栏 (◧)**。
+* **笔记本操作步骤**：
+  1. 点击**笔记本 (📑)** 按钮，点击新建 **➕** 号，确认后进入草稿本。
+  2. 首先选择基础模型（例如 SD1.5），随后系统会为你过滤出兼容的的主模型 (Checkpoint) 和对应的 LoRA 模型供你选择。
+  3. 点击下方的 **📝 纯文本/粘贴**，把你的提示词复制进去，选择输入框左上角的语言，即可实现双语对照翻译。
+  4. 确认后，插件会自动将提示词分块生成标签 (Tags)，支持查找替换，也支持直接双击修改单个标签。
+  5. 最后，点击下方的 **🚀 发送到画布** 按钮，系统会将你打包好的主模型、LoRA 以及 CLIP 文本编码器，一键自动连线并发布到画布上！
 
-> 📌 **重要提示**：本插件的元数据获取核心**专为 Civitai（C站）服务**。插件仅会从 C站 抓取对应的 `.info` 配置文件和预览图。如果您第一时间从 HuggingFace 手动下载了纯净版模型（且未同步至C站），插件将无法获取它的封面与介绍，但仍可通过“脱机张量推断”识别其底层架构。
+---
 
-* **O(1) 极速哈希提取**：无需计算几十 GB 模型的完整哈希。插件直接解析 `.safetensors` 文件头，瞬间截获 Hash 值，并自动去 C站 下载对应的 `.info` 说明与预览图。
-* **脱机张量推断（万能 Base 提取）**：即便是不在 C站 上的私模或其它平台模型，插件会强行解析网络结构（如发现 `double_blocks` 则识别为 Flux），在本地生成虚拟配置。让孤儿模型也能完美参与笔记本的 UI 筛选匹配。
-* **物理版本去重**：自动识别并清理不同名字但 Hash 完全相同的冗余 `.safetensors` 文件。
-* **快捷详情查阅**：在模型页面可以直接查看模型使用说明，并支持**一键复制触发词 (Trigger Words)**。
+### 📦 安装指南
 
-### 其他实用功能
-
-* **侧边栏停靠与快捷投放**：支持将插件停靠在侧边栏。点击模型卡片右上角的 **`+`** 号图标，即可瞬间将该模型的加载器 (Loader) 节点拍到画布上。
-* **前端极致性能**：不安装 Node.js，列表滚动性能极佳。提供节能模式（悬浮播放）与自动播放开关。
-* **原生生成图库 (Gallery)**：无缝浏览 output 文件夹的历史记录，无限懒加载，支持将图片直接拖拽至画布瞬间还原工作流。
-* **内置空间管理**：支持在界面安全删除模型，并自动清理配套的垃圾信息文件及预览图。
-
-### 安装指南
-
-请打开命令行终端，进入 ComfyUI 的 `custom_nodes` 文件夹，执行以下命令即可完成安装：
-
+打开命令行终端，进入 ComfyUI 的 `custom_nodes` 文件夹，执行以下命令：
 ```bash
 cd custom_nodes
-git clone https://github.com/your-username/Anomalous_Model_Browser.git
+git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
 ```
-*(提示：克隆完成后，重启 ComfyUI 即可加载插件。你也可以直接在 ComfyUI Manager 中搜索 `Anomalous Model Browser` 并一键安装！)*
-
-### 快速上手 (Quick Start)
-
-**初始配置 (必做)：**
-1. **第一步**：点击界面主菜单或侧边栏的 **Model Browser** 按钮打开面板。
-2. **第二步**：务必运行一次**【扫描】**（可全局或分文件夹扫描），建立本地模型哈希数据库。此后保存的工作流才会具备自愈基因。
-
-**常规使用 (浏览与添加模型)：**
-- 浏览模型库，点击任意模型卡片右上角的 **`+` (加号)** 图标，即可将该模型的加载节点直接丢到画布上。
-
-**修复报错工作流：**
-1. **第一步**：将带有 Hash 信息的图片（须在使用本插件且扫描建库后生成）拖入 ComfyUI 画布。
-2. **第二步**：若发生模型路径不匹配导致的飘红报错，点击提示的 **一键修复工作流** 按钮，等待插件在本地检索 Hash 并自动恢复节点连接。
+*(克隆完成后，重启 ComfyUI 即可。您也可以直接在 ComfyUI Manager（管理器）中搜索 `Anomalous Model Browser` 并一键点击安装！)*

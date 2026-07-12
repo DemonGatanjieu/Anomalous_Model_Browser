@@ -12,7 +12,9 @@ import time
 import json
 import hashlib
 import re
-import requests
+import urllib.request
+import urllib.error
+import urllib.parse
 import argparse
 import shutil
 from typing import Dict, Optional
@@ -133,16 +135,18 @@ def fetch_civitai_info(file_hash: str, max_retries: int = 3) -> Optional[Dict]:
     
     for attempt in range(max_retries):
         try:
-            response = requests.get(url, headers=headers, timeout=15)
-            if response.status_code == 200:
-                return response.json()
-            elif response.status_code == 404:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=15) as response:
+                return json.loads(response.read().decode('utf-8'))
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
                 print(f"\033[93m[Skip] 模型 Hash {file_hash} 未在 Civitai 找到 (404)，已跳过。\033[0m")
                 return None
-            else:
-                print(f"[-] 请求异常，状态码: {response.status_code} (尝试 {attempt+1}/{max_retries})")
-        except requests.exceptions.RequestException as e:
-            print(f"[-] 网络请求超时或异常: {e} (尝试 {attempt+1}/{max_retries})")
+            print(f"[-] 请求异常，状态码: {e.code} (尝试 {attempt+1}/{max_retries})")
+        except urllib.error.URLError as e:
+            print(f"[-] 网络请求超时或异常: {e.reason} (尝试 {attempt+1}/{max_retries})")
+        except Exception as e:
+            print(f"[-] 未知异常: {e} (尝试 {attempt+1}/{max_retries})")
             
         if attempt < max_retries - 1:
             time.sleep(2)
@@ -160,8 +164,8 @@ def download_media(url: str, base_path: str, max_retries: int = 3):
         
     for attempt in range(max_retries):
         try:
-            response = requests.get(url, stream=True, headers=headers, timeout=15)
-            if response.status_code == 200:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=15) as response:
                 content_type = response.headers.get("Content-Type", "").lower()
                 ext = ".png" # default
                 if "video/mp4" in content_type: ext = ".mp4"
@@ -172,13 +176,18 @@ def download_media(url: str, base_path: str, max_retries: int = 3):
                 
                 final_path = base_path + ext
                 with open(final_path, 'wb') as f:
-                    for chunk in response.iter_content(8192):
+                    while True:
+                        chunk = response.read(8192)
+                        if not chunk:
+                            break
                         f.write(chunk)
                 return final_path
-            else:
-                print(f"[-] 媒体下载失败，状态码: {response.status_code} (尝试 {attempt+1}/{max_retries})")
-        except requests.exceptions.RequestException as e:
-            print(f"[-] 媒体下载网络异常: {e} (尝试 {attempt+1}/{max_retries})")
+        except urllib.error.HTTPError as e:
+            print(f"[-] 媒体下载失败，状态码: {e.code} (尝试 {attempt+1}/{max_retries})")
+        except urllib.error.URLError as e:
+            print(f"[-] 媒体下载网络异常: {e.reason} (尝试 {attempt+1}/{max_retries})")
+        except Exception as e:
+            pass
     return None
 
 def main():
@@ -187,7 +196,10 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="空跑模式，仅打印将要执行的操作，不修改任何文件")
     parser.add_argument("--undo", action="store_true", help="根据 backup_rename_log.json 恢复文件名")
     parser.add_argument("--skip-rename", action="store_true", help="只下载信息文件，不重命名主文件")
+    parser.add_argument("--virtual-rename", action="store_true", help="虚拟重命名：修改 JSON 注入标准名称，不修改底层物理文件名")
+    parser.add_argument("--physical-rename", action="store_true", help="物理重命名：真实修改底层的 safetensors 及其附属文件名")
     parser.add_argument("--skip-media", action="store_true", help="不下载预览图或视频")
+    parser.add_argument("--offline-only", action="store_true", help="跳过 Civitai 联网获取，强制使用本地脱机张量推断提取 Base Model")
     args = parser.parse_args()
 
     target_folder = args.folder
@@ -220,7 +232,7 @@ def main():
             old_base = os.path.splitext(old_path)[0]
             new_base = os.path.splitext(new_path)[0]
             
-            for ext in [".info", ".civitai.info", ".png", ".jpg", ".webp", ".mp4", ".webm", ".json", ".txt", ".yaml"]:
+            for ext in [".info", ".civitai.info", ".json", ".txt", ".yaml", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".mp4", ".webm", ".mov", ".avi", ".preview.png", ".preview.jpg", ".preview.jpeg", ".preview.webp", ".preview.gif", ".preview.avif", ".preview.mp4", ".preview.webm", ".preview.mov", ".preview.avi", ".civitai_bak.png", ".civitai_bak.jpg", ".civitai_bak.jpeg", ".civitai_bak.webp", ".civitai_bak.gif", ".civitai_bak.avif", ".civitai_bak.mp4", ".civitai_bak.webm", ".civitai_bak.mov", ".civitai_bak.avi"]:
                 new_ext_path = new_base + ext
                 old_ext_path = old_base + ext
                 if os.path.exists(new_ext_path):
@@ -258,44 +270,83 @@ def main():
             info_exists = os.path.exists(old_base + ".info") or os.path.exists(old_base + ".civitai.info")
             preview_exists = args.skip_media
             if not preview_exists:
-                for ext in [".png", ".preview.png", ".jpg", ".jpeg", ".webp", ".mp4", ".webm"]:
+                for ext in [".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".mp4", ".webm", ".mov", ".avi", ".preview.png", ".preview.jpg", ".preview.jpeg", ".preview.webp", ".preview.gif", ".preview.avif", ".preview.mp4", ".preview.webm", ".preview.mov", ".preview.avi"]:
                     if os.path.exists(old_base + ext):
                         preview_exists = True
                         break
                     
-            if info_exists and preview_exists:
+            needs_rename = False
+            if not args.skip_rename and args.physical_rename:
+                needs_rename = True
+            elif args.virtual_rename:
+                needs_rename = True
+                
+            if info_exists and preview_exists and not needs_rename:
                 print(f"[*] 已跳过 (信息满足要求): {filename}")
                 continue
                 
             print(f"\n---> 处理文件: {filename} (位于 {root})")
-            file_hash = extract_safetensors_hash(file_path)
-            if file_hash:
-                print(f"[*] 成功从头文件极速提取 Hash: {file_hash}")
-            else:
-                file_hash = calculate_sha256(file_path)
-                print(f"[*] 全量物理 SHA256: {file_hash}")
             
-            civitai_data = fetch_civitai_info(file_hash)
+            civitai_data = None
+            if info_exists and needs_rename:
+                info_path = old_base + ".info"
+                if not os.path.exists(info_path):
+                    info_path = old_base + ".civitai.info"
+                try:
+                    with open(info_path, 'r', encoding='utf-8') as f:
+                        civitai_data = json.load(f)
+                    print(f"[*] 本地信息存在，直接进入重命名流程")
+                except:
+                    pass
+            
             if not civitai_data:
-                # 尝试离线推断底模
-                inferred_base = infer_base_model_from_header(file_path)
-                if inferred_base != 'Unknown':
-                    print(f"[*] 离线推断底模成功 ({filename}): {inferred_base}")
-                    civitai_data = {
-                        "id": -1,
-                        "modelId": -1,
-                        "name": os.path.splitext(filename)[0],
-                        "baseModel": inferred_base,
-                        "description": "<p>Automatically inferred by Anomalous Local Engine.</p>",
-                        "model": {
-                            "name": os.path.splitext(filename)[0],
-                            "type": "LORA" if "lora" in root.lower() else "Checkpoint"
-                        },
-                        "files": [{"hashes": {"SHA256": file_hash}}]
-                    }
+                file_hash = None
+                
+                if not args.offline_only:
+                    # Fallback 1: Try header hash on Civitai
+                    header_hash = extract_safetensors_hash(file_path)
+                    if header_hash:
+                        print(f"[*] 成功从头文件提取 Hash: {header_hash}，尝试请求 Civitai...")
+                        civitai_data = fetch_civitai_info(header_hash)
+                        if civitai_data:
+                            file_hash = header_hash
+                            
+                    # Fallback 2: If header hash fails (or doesn't exist), compute full SHA256
+                    if not civitai_data:
+                        print(f"[*] 头文件 Hash 未命中或不存在，计算全量物理 SHA256...")
+                        full_hash = calculate_sha256(file_path)
+                        civitai_data = fetch_civitai_info(full_hash)
+                        file_hash = full_hash
                 else:
+                    print(f"[*] Offline-only: 跳过 Civitai 获取，将强制使用脱机张量推断")
+                    file_hash = extract_safetensors_hash(file_path)
+                    if not file_hash:
+                        file_hash = calculate_sha256(file_path)
+            
+            # Fallback 3: Local Offline Inference (if Civitai still fails or offline_only)
+            if not civitai_data:
+                if args.skip_local_metadata:
+                    print(f"[*] Civitai 获取失败，且禁用了本地元数据解析。跳过 {filename}")
                     fail_count += 1
                     continue
+                # 尝试离线推断底模
+                inferred_base = infer_base_model_from_header(file_path)
+                if inferred_base == 'Unknown':
+                    inferred_base = ""
+                
+                print(f"[*] 使用本地哈希重建基础元数据 ({filename})")
+                civitai_data = {
+                    "id": -1,
+                    "modelId": -1,
+                    "name": os.path.splitext(filename)[0],
+                    "baseModel": inferred_base,
+                    "description": "<p>Automatically inferred by Anomalous Local Engine.</p>",
+                    "model": {
+                        "name": os.path.splitext(filename)[0],
+                        "type": "LORA" if "lora" in root.lower() else "Checkpoint"
+                    },
+                    "files": [{"hashes": {"SHA256": file_hash}}]
+                }
                 
             # --- 额外获取模型主页的说明文字 ---
             model_id = civitai_data.get("modelId")
@@ -306,14 +357,14 @@ def main():
                     }
                     if CIVITAI_API_KEY:
                         headers["Authorization"] = f"Bearer {CIVITAI_API_KEY}"
-                    m_resp = requests.get(f"https://civitai.com/api/v1/models/{model_id}", headers=headers, timeout=10)
-                    if m_resp.status_code == 200:
-                        m_data = m_resp.json()
-                        main_desc = m_data.get("description")
-                        if main_desc:
+                    req = urllib.request.Request(f"https://civitai.com/api/v1/models/{model_id}", headers=headers)
+                    with urllib.request.urlopen(req, timeout=10) as m_resp:
+                        m_data = json.loads(m_resp.read().decode('utf-8'))
+                        if "description" in m_data and m_data["description"]:
+                            civitai_data["description"] = m_data["description"]
                             if "model" not in civitai_data or not isinstance(civitai_data["model"], dict):
                                 civitai_data["model"] = {}
-                            civitai_data["model"]["description"] = main_desc
+                            civitai_data["model"]["description"] = m_data["description"]
                 except Exception as e:
                     print(f"[-] 获取模型主页详细说明失败: {e}")
             # ----------------------------------
@@ -330,6 +381,9 @@ def main():
             # ==========================================
             info_data = civitai_data
 
+            if args.virtual_rename:
+                info_data["anomalous_custom_name"] = f"{model_name}_{version_name}"
+            
             if not args.dry_run:
                 info_path = old_base + ".info"
                 with open(info_path, 'w', encoding='utf-8') as f:
@@ -350,14 +404,26 @@ def main():
             if media_url and not args.skip_media:
                 if not args.dry_run:
                     print(f"[*] 正在下载预览媒体...")
-                    saved_path = download_media(media_url, old_base)
+                    saved_path = download_media(media_url, old_base + ".civitai_bak")
                     if saved_path:
                         print(f"[+] 媒体下载成功 -> {os.path.basename(saved_path)}")
+                        # Promote to .preview if no custom cover exists
+                        has_custom = False
+                        for c_ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
+                            p = old_base + c_ext
+                            if os.path.exists(p) and not p.endswith('.civitai_bak' + c_ext):
+                                has_custom = True
+                                break
+                        if not has_custom:
+                            ext = os.path.splitext(saved_path)[1]
+                            import shutil
+                            preview_ext = ext if ext.startswith('.preview.') else f".preview{ext}"
+                            shutil.copy2(saved_path, old_base + preview_ext)
                 else:
                     print(f"[Dry-Run] 拟下载预览媒体...")
                         
-            if args.skip_rename:
-                print(f"[*] --skip-rename 开启，跳过主文件重命名。仅保存 .info。")
+            if args.skip_rename or not args.physical_rename:
+                print(f"[*] 物理重命名已跳过。仅保存 .info 及其可能包含的虚拟重命名。")
                 success_count += 1
             elif file_path != new_file_path and new_filename != filename:
                 if os.path.exists(new_file_path):
@@ -365,7 +431,7 @@ def main():
                     if not args.dry_run:
                         try:
                             os.remove(file_path)
-                            for ext in [".info", ".civitai.info", ".png", ".jpg", ".webp", ".mp4", ".webm", ".json", ".txt", ".yaml"]:
+                            for ext in [".info", ".civitai.info", ".json", ".txt", ".yaml", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".mp4", ".webm", ".mov", ".avi", ".preview.png", ".preview.jpg", ".preview.jpeg", ".preview.webp", ".preview.gif", ".preview.avif", ".preview.mp4", ".preview.webm", ".preview.mov", ".preview.avi", ".civitai_bak.png", ".civitai_bak.jpg", ".civitai_bak.jpeg", ".civitai_bak.webp", ".civitai_bak.gif", ".civitai_bak.avif", ".civitai_bak.mp4", ".civitai_bak.webm", ".civitai_bak.mov", ".civitai_bak.avi"]:
                                 old_ext = old_base + ext
                                 if os.path.exists(old_ext):
                                     os.remove(old_ext)
@@ -378,15 +444,15 @@ def main():
                         os.rename(file_path, new_file_path)
                         rename_log[file_path] = new_file_path
                         
-                        for ext in [".info", ".civitai.info", ".png", ".jpg", ".webp", ".mp4", ".webm", ".json", ".txt", ".yaml"]:
+                        for ext in [".info", ".civitai.info", ".json", ".txt", ".yaml", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".mp4", ".webm", ".mov", ".avi", ".preview.png", ".preview.jpg", ".preview.jpeg", ".preview.webp", ".preview.gif", ".preview.avif", ".preview.mp4", ".preview.webm", ".preview.mov", ".preview.avi", ".civitai_bak.png", ".civitai_bak.jpg", ".civitai_bak.jpeg", ".civitai_bak.webp", ".civitai_bak.gif", ".civitai_bak.avif", ".civitai_bak.mp4", ".civitai_bak.webm", ".civitai_bak.mov", ".civitai_bak.avi"]:
                             old_ext = old_base + ext
                             new_ext = new_base + ext
                             if os.path.exists(old_ext):
-                                os.replace(old_ext, new_ext) # Safety: replace overwrites existing files on Windows
+                                os.replace(old_ext, new_ext)
                                 
-                        print(f"[+] 重命名完成: {filename}  ==>  {new_filename}")
+                        print(f"[+] 物理重命名完成: {filename}  ==>  {new_filename}")
                     else:
-                        print(f"[Dry-Run] 拟重命名文件: {filename}  ==>  {new_filename}")
+                        print(f"[Dry-Run] 拟物理重命名文件: {filename}  ==>  {new_filename}")
                         print(f"[Dry-Run] 拟连带重命名附属文件 (.info / .png 等)")
             else:
                 print("[*] 文件名已符合规范，无需重命名。")

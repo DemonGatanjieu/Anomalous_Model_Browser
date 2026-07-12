@@ -155,16 +155,6 @@
 /* Sidebar toggle logic for top buttons ONLY in narrow mode */
 @container (max-width: 900px) {
 
-    #anomalous-models-btn,
-    #anomalous-settings-btn {
-        display: none !important;
-    }
-
-    .anomalous-sidebar-closed #anomalous-models-btn,
-    .anomalous-sidebar-closed #anomalous-settings-btn {
-        display: flex !important;
-    }
-
     #anomalous-notebook-btn .anomalous-btn-text {
         display: none;
     }
@@ -963,7 +953,7 @@
     width: 100vw;
     height: 100vh;
     background: rgba(0, 0, 0, 0.95);
-    z-index: 10002;
+    z-index: 9999999;
     display: flex;
     align-items: center;
     justify-content: center;

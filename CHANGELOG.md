@@ -1,5 +1,30 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.5.0 (The Workflow & UI Evolution Update)
+### 🚀 Major Features
+- **Node Assistant (节点助手)**: Introduced a dedicated "Assistant" tab within the Model Doctor. Selecting any node in the canvas instantly focuses the Assistant on that specific node, providing deep analysis and contextual controls without obscuring your view.
+- **Visual Model Switcher (可视化模型选择)**: Eliminated blind dropdown menus! When replacing a model, a stunning visual grid pops up inside the Assistant panel, displaying full cover images and model names. You can now select replacements purely visually.
+- **Global Health Dashboard (全图体检报表)**: A top-level dashboard in the Doctor panel provides a bird's-eye view of your entire workflow. It categorizes nodes into "Healthy", "Missing", "Replaced", and "Unrelated", giving you instant situational awareness.
+- **Inline Node Notes (内联节点备注)**: Added the ability to view and edit model notes directly beneath the preview image in the Node Assistant, ensuring zero layout shifting and maintaining a continuous UX flow.
+- **Local Metadata Parsing Toggle (非C站模型本地解析)**: Added a new explicit toggle in the Settings Hub. This allows users to enable deep local/offline metadata scanning (e.g. for HuggingFace models) without strictly enforcing a Civitai lookup.
+
+### 🐛 Bug Fixes & UX Polish
+- **Regex Replacement Bug**: Fixed a critical bug where regex backslashes were swallowed during update patching, causing a syntax error in `main.js` that made the plugin icon disappear.
+- **Dynamic Regex Splitting**: Ensured file paths are split properly using both forward slashes and backslashes `/[\/]/` for complete cross-platform Windows/Linux compatibility.
+- **Temporary Feature Suspension**: Temporarily commented out the WIP "Preflight Import Workflow" button while its parsing engine is being finalized.
+
+## v1.4.4 (The Cover Decoupling Update)
+### 🚀 Enhancements
+- **Custom Cover Decoupling**: Manually selected covers (from the gallery or local uploads) now exclusively use a `.preview.*` suffix. The backend no longer artificially renames standard non-Civitai `.png` files to `.civitai_bak`, preventing semantic entanglement.
+- **Intuitive Reset Logic**: Clicking 'Reset' now cleanly deletes the custom `.preview.*` file. For non-Civitai models, it organically falls back to your original manual cover. For Civitai models, it accurately restores the `.civitai_bak` file obtained from the initial scan.
+- **UX Workflow Polish**: After changing a cover via the gallery or local upload, the UI no longer stubbornly bounces you back to the Model Edit modal. It gracefully returns you straight to the model grid to admire the new cover, eliminating the confusing implication that you still needed to click 'Save'.
+- **Cache Busting for Covers**: Added a timestamp parameter when loading covers into the grid so that uploading a new custom cover instantly updates the display without requiring a manual browser refresh.
+
+### 🐛 Bug Fixes
+- **Video Cover Regex Fix**: Fixed a bug where `.mp4` and `.webm` video covers failed to play if cache-busting URL parameters were appended. The regex now gracefully handles trailing `&` or `?` parameters.
+- **State Null-Reference Crash**: Fixed an `undefined` error where a missing `this.models` assignment during the model reload phase caused the UI to abort mid-transition, resulting in a blank screen.
+
+
 ## v1.4.3 (The Silent Load Update)
 ### 🚀 Enhancements
 - **Silent Loading by Default**: Reversed the default behavior of the hash resolver. To prevent interrupting workflows for users with massive unindexed local libraries, the aggressive "Missing Models Alert" popups and heavy background hash fetching on startup are now **OFF by default**. You can enable the auto-detect feature manually via the Settings Hub.
@@ -42,6 +67,19 @@
 - **Universal UI Integration**: Successfully inferred offline models are dynamically assigned a virtual .info payload (ID: -1). This instantly grants them full VIP access to the frontend ecosystem—they seamlessly appear in the Cross-Folder Radar, interact perfectly with the bilingual Notebook, and support one-click Auto-Inject loaders, all completely completely offline!
 
 # 📈 Anomalous Model Browser Changelog
+
+## v2.0.0 (The Workflow & UI Evolution Update)
+### 🚀 Major Features
+- **Node Assistant (节点助手)**: Introduced a dedicated "Assistant" tab within the Model Doctor. Selecting any node in the canvas instantly focuses the Assistant on that specific node, providing deep analysis and contextual controls without obscuring your view.
+- **Visual Model Switcher (可视化模型选择)**: Eliminated blind dropdown menus! When replacing a model, a stunning visual grid pops up inside the Assistant panel, displaying full cover images and model names. You can now select replacements purely visually.
+- **Global Health Dashboard (全图体检报表)**: A top-level dashboard in the Doctor panel provides a bird's-eye view of your entire workflow. It categorizes nodes into "Healthy", "Missing", "Replaced", and "Unrelated", giving you instant situational awareness.
+- **Inline Node Notes (内联节点备注)**: Added the ability to view and edit model notes directly beneath the preview image in the Node Assistant, ensuring zero layout shifting and maintaining a continuous UX flow.
+- **Local Metadata Parsing Toggle (非C站模型本地解析)**: Added a new explicit toggle in the Settings Hub. This allows users to enable deep local/offline metadata scanning (e.g. for HuggingFace models) without strictly enforcing a Civitai lookup.
+
+### 🐛 Bug Fixes & UX Polish
+- **Regex Replacement Bug**: Fixed a critical bug where regex backslashes were swallowed during update patching, causing a syntax error in `main.js` that made the plugin icon disappear.
+- **Dynamic Regex Splitting**: Ensured file paths are split properly using both forward slashes and backslashes `/[\/]/` for complete cross-platform Windows/Linux compatibility.
+- **Temporary Feature Suspension**: Temporarily commented out the WIP "Preflight Import Workflow" button while its parsing engine is being finalized.
 
 ## v1.2.0 (The O(1) Speed & Tiered Resolution Update)
 ### 🚀 Architectural Breakthroughs
