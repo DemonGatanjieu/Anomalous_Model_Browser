@@ -1,3 +1,18 @@
 config.json
 *.pyc
 __pycache__/
+
+# Node/JS environment junk
+node_modules/
+package.json
+package-lock.json
+web/main.js.rebuilt
+
+# Local notebooks drafts
+notebooks/
+api/notebooks/
+
+# AI Dev Scripts & Temporary text dumps
+scripts/
+doctor_code.txt
+docs/
