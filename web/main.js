@@ -1325,7 +1325,11 @@ class AnomalousBrowser {
         importBtn.onmouseover = () => { importBtn.style.background = 'rgba(255,255,255,0.1)'; importBtn.style.color = '#fff'; };
         importBtn.onmouseout = () => { importBtn.style.background = 'transparent'; importBtn.style.color = '#ccc'; };
         importBtn.onclick = () => {
-            alert(window.anomalous_browser_lang === 'zh' ? '该功能正在开发中，敬请期待！' : 'This feature is under development, stay tuned!');
+            if (window.AMB_WorkflowShare) {
+                window.AMB_WorkflowShare.showUnifiedModal();
+            } else {
+                alert(window.anomalous_browser_lang === 'zh' ? '模块尚未加载，请稍等或刷新页面！' : 'Module not loaded, please refresh!');
+            }
         };
 
 

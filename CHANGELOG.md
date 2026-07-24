@@ -162,3 +162,8 @@
 - **Model Selection Jumping**: Fixed layout shifting caused by variable-length text tags by implementing a rigid CSS grid/flex architecture (`.anomalous-nb-tag-row`).
 
 
+
+## [Snapshot] 2026-07-25 05:05:17
+在导入按钮的点击处理中，原先仅提示功能开发中；现改为若全局模块 AMB_WorkflowShare 已加载，则调用其 showUnifiedModal 方法打开统一模态框，否则提示模块未加载。这标志着工作流分享功能的正式集成，按需加载以避免未就绪时出错。
+
+The import button's click handler previously only displayed a "feature under development" alert. Now, if the global module `AMB_WorkflowShare` is loaded, it calls `showUnifiedModal()` to open a unified modal; otherwise, it alerts that the module is not loaded. This integrates the workflow sharing feature while gracefully handling missing module.
