@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 
 import { i18n } from './modules/locales.js';
+import './workflow_share.js';
 
 // ============================================================================
 // TABLE OF CONTENTS (TOC)
