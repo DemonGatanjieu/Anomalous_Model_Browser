@@ -5828,6 +5828,10 @@ const AMB_WorkflowShare = {
                 
                 const nodesCount = pendingWorkflow.nodes ? pendingWorkflow.nodes.length : 0;
                 AMB_WorkflowShare.showToast(lang === 'zh' ? `✅ 成功导入 ${nodesCount} 个节点配置` : `✅ Successfully imported ${nodesCount} nodes`, '#5cb85c');
+                
+                // Auto close the main browser panel
+                const mainCloseBtn = document.getElementById('anomalous-close');
+                if (mainCloseBtn) mainCloseBtn.click();
             } catch (err) {
                 AMB_WorkflowShare.showToast(lang === 'zh' ? `❌ 解析失败: ${err.message}` : `❌ Decode Failed: ${err.message}`, '#ff6b6b');
             }
