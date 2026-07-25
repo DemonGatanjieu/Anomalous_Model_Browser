@@ -17,3 +17,6 @@ scripts/
 doctor_code.txt
 docs/
 AI_SYSTEM_TEMPLATE.md
+
+# AI Agents Directory
+.agents/
