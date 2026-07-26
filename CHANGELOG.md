@@ -1,5 +1,13 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.5.1 (The Workflow Exchange & Deep Scan Update)
+### 🚀 Major Features
+- **Lossless Workflow Exchange (无损工作流交互)**: Added dedicated Import/Export buttons to the bottom-left of the plugin UI. This feature allows users to directly extract, share, and import pure workflow data without relying on original PNG images, completely bypassing the metadata-stripping compression used by social platforms (like WeChat or Discord) that causes workflow loss.
+- **Force Overwrite Configs (强制覆盖已有配置)**: Added a new "Force Overwrite" toggle in the Scan Wizard. When enabled, the scanner will deliberately ignore existing local `.info` files and force a fresh SHA256 hash calculation and a complete metadata pull from Civitai. This is a lifesaver for repairing incorrectly matched or corrupted model profiles.
+
+### 🐛 Bug Fixes
+- **Base Model Hash Misattribution**: Fixed a critical bug in the fast scanner where it would aggressively fuzzy-match any 64-character hex string in the metadata. This previously caused LoRAs (trained via Kohya) to inherit their Base Model's hash (`ss_sd_model_hash`), resulting in totally incorrect Civitai mappings. The scanner now strictly adheres to the official `modelspec.hash.sha256/blake3` standard.
+
 ## v1.5.0 (The Workflow & UI Evolution Update)
 ### 🚀 Major Features
 - **Node Assistant (节点助手)**: Introduced a dedicated "Assistant" tab within the Model Doctor. Selecting any node in the canvas instantly focuses the Assistant on that specific node, providing deep analysis and contextual controls without obscuring your view.
