@@ -33,10 +33,6 @@ def _extract_safetensors_hash(file_path):
             if 'modelspec.hash.blake3' in metadata:
                 return metadata['modelspec.hash.blake3']
                 
-            for k, v in metadata.items():
-                if ('hash' in k.lower() or 'civitai' in k.lower()) and isinstance(v, str):
-                    if len(v) == 64 and all(c in '0123456789abcdefABCDEF' for c in v):
-                        return v
     except Exception:
         pass
     return None

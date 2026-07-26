@@ -476,6 +476,7 @@ class AnomalousBrowser {
             let scanMode = 'civitai';
             let enableRename = true;
             let enableAutoCheck = true;
+            let enableForceOverwrite = false;
             let updateSections = () => { };
 
             const formGroup = document.createElement('div');
@@ -735,6 +736,7 @@ class AnomalousBrowser {
             const s3List = document.createElement('div');
             const isInject = localStorage.getItem('anomalous_inject_hash') !== 'false';
             s3List.appendChild(createListRow('📦', '模型溯源绑定', 'Model Provenance Binding', '全局生效。每次生成图片或保存工作流时，将模型的精确哈希值隐式写入到图像元数据与工作流 JSON 中，防止未来模型改名或换环境后报错找不到。', 'Global effect. Implicitly embed exact model hashes into generated images and saved workflows, ensuring missing models can always be auto-fixed.', createMaterialSwitch(isInject, (s) => localStorage.setItem('anomalous_inject_hash', s ? 'true' : 'false'))));
+            s3List.appendChild(createListRow('⚠️', '强制覆盖已有配置', 'Force Overwrite Configs', '扫描时忽略本地已存在的 .info 文件，强制重新计算哈希并覆盖下载。用于修复匹配错乱的模型。', 'Ignore existing .info files and force re-scan/overwrite. Useful for fixing mismatched models.', createMaterialSwitch(enableForceOverwrite, (s) => enableForceOverwrite = s)));
             s3List.appendChild(createListRow('🪄', '智能修复当前工作流', 'Smart Fix Current Workflow', '扫描完成后，自动尝试用最新数据修复当前画布中提示缺失的报错模型节点。', 'After scanning, automatically attempt to fix missing model errors on the current canvas.', createMaterialSwitch(enableAutoCheck, (s) => enableAutoCheck = s)));
             s3List.lastChild.style.borderBottom = 'none';
 
@@ -764,7 +766,8 @@ class AnomalousBrowser {
                         offline_only: scanMode === 'offline',
                         skip_rename: !enableRename,
                         virtual_rename: enableRename ? enableVirtualRename : false,
-                        physical_rename: enableRename ? enablePhysicalRename : false
+                        physical_rename: enableRename ? enablePhysicalRename : false,
+                        force_overwrite: enableForceOverwrite
                     };
 
                     let targetUrl = '';

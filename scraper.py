@@ -72,11 +72,6 @@ def extract_safetensors_hash(file_path: str) -> Optional[str]:
             if 'modelspec.hash.blake3' in metadata:
                 return metadata['modelspec.hash.blake3']
                 
-            # 优先级2: 其他带 hash 的键
-            for k, v in metadata.items():
-                if ('hash' in k.lower() or 'civitai' in k.lower()) and isinstance(v, str):
-                    if len(v) == 64 and all(c in '0123456789abcdefABCDEF' for c in v):
-                        return v
     except Exception as e:
         pass
     return None
@@ -200,6 +195,7 @@ def main():
     parser.add_argument("--physical-rename", action="store_true", help="物理重命名：真实修改底层的 safetensors 及其附属文件名")
     parser.add_argument("--skip-media", action="store_true", help="不下载预览图或视频")
     parser.add_argument("--offline-only", action="store_true", help="跳过 Civitai 联网获取，强制使用本地脱机张量推断提取 Base Model")
+    parser.add_argument("--force-overwrite", action="store_true", help="强制覆盖已存在的信息文件")
     args = parser.parse_args()
 
     target_folder = args.folder
@@ -268,6 +264,9 @@ def main():
             old_base = os.path.splitext(file_path)[0]
             
             info_exists = os.path.exists(old_base + ".info") or os.path.exists(old_base + ".civitai.info")
+            if args.force_overwrite:
+                info_exists = False
+                
             preview_exists = args.skip_media
             if not preview_exists:
                 for ext in [".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".mp4", ".webm", ".mov", ".avi", ".preview.png", ".preview.jpg", ".preview.jpeg", ".preview.webp", ".preview.gif", ".preview.avif", ".preview.mp4", ".preview.webm", ".preview.mov", ".preview.avi"]:

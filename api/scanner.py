@@ -91,6 +91,7 @@ async def api_scan_folder(request):
     skip_rename = data.get("skip_rename", False)
     virtual_rename = data.get("virtual_rename", False)
     physical_rename = data.get("physical_rename", False)
+    force_overwrite = data.get("force_overwrite", False)
     
     try:
         marker_file = os.path.join(target_dir, '.scan_in_progress')
@@ -106,6 +107,8 @@ async def api_scan_folder(request):
                     cmd.append("--virtual-rename")
                 if physical_rename:
                     cmd.append("--physical-rename")
+                if force_overwrite:
+                    cmd.append("--force-overwrite")
                 
                 subprocess.run(
                     cmd,
@@ -147,6 +150,7 @@ async def api_scan_all(request):
     skip_rename = data.get("skip_rename", True)
     virtual_rename = data.get("virtual_rename", False)
     physical_rename = data.get("physical_rename", False)
+    force_overwrite = data.get("force_overwrite", False)
     
     try:
         with open(marker_file, 'w') as f: f.write('1')
@@ -170,6 +174,8 @@ async def api_scan_all(request):
                                 cmd.append("--virtual-rename")
                             if physical_rename:
                                 cmd.append("--physical-rename")
+                            if force_overwrite:
+                                cmd.append("--force-overwrite")
                             if not use_local_metadata:
                                 cmd.append("--skip-local-metadata")
                             subprocess.run(
@@ -254,6 +260,13 @@ async def api_scan_missing_models(request):
     except ImportError:
         return web.json_response({"status": "error", "message": "Failed to load scraper module"})
 
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+        
+    force_overwrite = data.get("force_overwrite", False)
+
     def run_deep_scan():
         GLOBAL_SCAN_STATE["scanning"] = True
         GLOBAL_SCAN_STATE["total"] = 0
@@ -282,6 +295,10 @@ async def api_scan_missing_models(request):
                                     # Check if a valid info file exists
                                     has_valid_info = False
                                     actual_info = info_path if os.path.exists(info_path) else (civitai_info_path if os.path.exists(civitai_info_path) else None)
+                                    
+                                    if force_overwrite:
+                                        actual_info = None
+                                        
                                     if actual_info:
                                         try:
                                             with open(actual_info, 'r', encoding='utf-8') as f:
