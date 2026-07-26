@@ -20,3 +20,6 @@ AI_SYSTEM_TEMPLATE.md
 
 # AI Agents Directory
 .agents/
+
+# Test files
+test_*.js
