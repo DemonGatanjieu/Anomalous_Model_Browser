@@ -887,7 +887,7 @@ class AnomalousBrowser {
             document.body.appendChild(wizard);
         };
 
-        scanBtn.onclick = () => createWizardModal();
+        scanBtn.onclick = () => createWizardModal(true);
         this.sidebarActions.appendChild(scanBtn);
 
         const energyBtn = document.createElement('button');

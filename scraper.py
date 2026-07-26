@@ -408,14 +408,24 @@ def main():
                         print(f"[+] 媒体下载成功 -> {os.path.basename(saved_path)}")
                         # Promote to .preview if no custom cover exists
                         has_custom = False
-                        for c_ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
-                            p = old_base + c_ext
-                            if os.path.exists(p) and not p.endswith('.civitai_bak' + c_ext):
-                                has_custom = True
-                                break
+                        if not args.force_overwrite:
+                            for c_ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
+                                p = old_base + c_ext
+                                if os.path.exists(p) and not p.endswith('.civitai_bak' + c_ext):
+                                    has_custom = True
+                                    break
                         if not has_custom:
                             ext = os.path.splitext(saved_path)[1]
                             import shutil
+                            if args.force_overwrite:
+                                for c_ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
+                                    p = old_base + c_ext
+                                    if os.path.exists(p) and not p.endswith('.civitai_bak' + c_ext):
+                                        try:
+                                            os.remove(p)
+                                            print(f"[*] 强制覆盖: 已删除旧预览文件 {os.path.basename(p)}")
+                                        except:
+                                            pass
                             preview_ext = ext if ext.startswith('.preview.') else f".preview{ext}"
                             shutil.copy2(saved_path, old_base + preview_ext)
                 else:

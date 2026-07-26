@@ -151,6 +151,7 @@ async def api_scan_all(request):
     virtual_rename = data.get("virtual_rename", False)
     physical_rename = data.get("physical_rename", False)
     force_overwrite = data.get("force_overwrite", False)
+    skip_media = data.get("skip_media", False)
     
     try:
         with open(marker_file, 'w') as f: f.write('1')
@@ -165,7 +166,7 @@ async def api_scan_all(request):
                         for base_dir in paths:
                             if not os.path.exists(base_dir): continue
                             print(f"[Anomalous Browser] Global scan processing: {base_dir}")
-                            cmd = [sys.executable, scraper_path, base_dir, "--skip-media"]
+                            cmd = [sys.executable, scraper_path, base_dir]
                             if offline_only:
                                 cmd.append("--offline-only")
                             if skip_rename:
@@ -176,6 +177,8 @@ async def api_scan_all(request):
                                 cmd.append("--physical-rename")
                             if force_overwrite:
                                 cmd.append("--force-overwrite")
+                            if skip_media:
+                                cmd.append("--skip-media")
                             if not use_local_metadata:
                                 cmd.append("--skip-local-metadata")
                             subprocess.run(
