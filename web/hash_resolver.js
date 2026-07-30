@@ -79,6 +79,10 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
                         if (exactMatch && exactMatch !== val) {
                             console.log(`[Anomalous Hash Resolver] Fixed slash mismatch: ${val} -> ${exactMatch}`);
                             w.value = exactMatch;
+                            const wIdx = node.widgets.indexOf(w);
+                            if (wIdx !== -1 && node.widgets_values) {
+                                node.widgets_values[wIdx] = exactMatch;
+                            }
                             if (node.color === "#FF3333" || node.bgcolor === "#FF3333" || node.color === "#f66") {
                                 delete node.color;
                                 delete node.bgcolor;
@@ -135,7 +139,11 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
                                             if (w.options && w.options.values) {
                                                 const newMatch = w.options.values.find(v => typeof v === 'string' && v.replace(/\\/g, '/') === normRes);
                                                 if (newMatch) finalValue = newMatch;
-                                                else w.options.values.push(finalValue); // Absolute fallback
+                                                else {
+                                                    const newVals = [...w.options.values];
+                                                    newVals.push(finalValue);
+                                                    w.options.values = newVals;
+                                                }
                                             }
                                         } catch (e) {
                                             console.warn("Failed to clear cache:", e);
@@ -144,6 +152,10 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
 
                                     console.log(`[Anomalous Hash Resolver] Auto-fixed missing model: ${val} -> ${finalValue}`);
                                     w.value = finalValue;
+                                    const wIdx = node.widgets.indexOf(w);
+                                    if (wIdx !== -1 && node.widgets_values) {
+                                        node.widgets_values[wIdx] = finalValue;
+                                    }
                                     delete node.color;
                                     delete node.bgcolor;
                                     node.has_errors = false;
@@ -158,7 +170,7 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
                             }
                         } catch (err) {
                             console.error("[Anomalous Hash Resolver] Error:", err);
-                            
+
                         }
                     }
                 }
@@ -204,7 +216,7 @@ app.registerExtension({
 
     async setup() {
         // Expose global reload function so scans can trigger it
-        window.anomalous_reload_hashes = async function() {
+        window.anomalous_reload_hashes = async function () {
             try {
                 const resp = await fetch('/anomalous/all_hashes');
                 const data = await resp.json();

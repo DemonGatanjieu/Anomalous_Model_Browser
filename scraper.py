@@ -196,6 +196,8 @@ def main():
     parser.add_argument("--skip-media", action="store_true", help="不下载预览图或视频")
     parser.add_argument("--offline-only", action="store_true", help="跳过 Civitai 联网获取，强制使用本地脱机张量推断提取 Base Model")
     parser.add_argument("--force-overwrite", action="store_true", help="强制覆盖已存在的信息文件")
+    parser.add_argument("--skip-local-metadata", action="store_true", help="忽略本地已有的.info / .json文件")
+    parser.add_argument("--target-files", type=str, default="", help="仅扫描逗号分隔的具体文件(相对路径)")
     args = parser.parse_args()
 
     target_folder = args.folder
@@ -249,6 +251,8 @@ def main():
         with open(backup_log_path, 'r', encoding='utf-8') as f:
             rename_log = json.load(f)
 
+    target_files_basenames = [os.path.basename(f.strip()) for f in args.target_files.split(',')] if args.target_files else []
+
     print(f"[*] 开始扫描文件夹: {target_folder}")
     if args.dry_run:
         print("==================================================")
@@ -258,6 +262,9 @@ def main():
     for root, _, files in os.walk(target_folder):
         for filename in files:
             if not filename.endswith(".safetensors"):
+                continue
+
+            if target_files_basenames and filename not in target_files_basenames:
                 continue
 
             file_path = os.path.join(root, filename)

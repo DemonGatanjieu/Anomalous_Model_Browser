@@ -56,6 +56,8 @@ async def api_scan_folder(request):
     if '..' in subfolder:
         return web.json_response({"status": "error", "message": "Invalid subfolder"})
         
+    target_files = request.query.get('target_files', '')
+
     try:
         paths = folder_paths.get_folder_paths(folder_type)
     except Exception:
@@ -109,6 +111,8 @@ async def api_scan_folder(request):
                     cmd.append("--physical-rename")
                 if force_overwrite:
                     cmd.append("--force-overwrite")
+                if target_files:
+                    cmd.extend(["--target-files", target_files])
                 
                 subprocess.run(
                     cmd,
@@ -118,9 +122,11 @@ async def api_scan_folder(request):
                 )
             finally:
                 if hasattr(folder_paths, "filename_list_cache"):
-                    folder_paths.filename_list_cache.clear()
+                    try: folder_paths.filename_list_cache.clear()
+                    except: pass
                 if hasattr(folder_paths, "cache_helper") and hasattr(folder_paths.cache_helper, "clear"):
-                    folder_paths.cache_helper.clear()
+                    try: folder_paths.cache_helper.clear()
+                    except: pass
                     
                 if os.path.exists(marker_file):
                     try: os.remove(marker_file)
@@ -191,9 +197,11 @@ async def api_scan_all(request):
                         print(f"[Anomalous Browser] Global scan error on {t}: {e}")
             finally:
                 if hasattr(folder_paths, "filename_list_cache"):
-                    folder_paths.filename_list_cache.clear()
+                    try: folder_paths.filename_list_cache.clear()
+                    except: pass
                 if hasattr(folder_paths, "cache_helper") and hasattr(folder_paths.cache_helper, "clear"):
-                    folder_paths.cache_helper.clear()
+                    try: folder_paths.cache_helper.clear()
+                    except: pass
                     
                 if os.path.exists(marker_file):
                     try: os.remove(marker_file)
@@ -243,7 +251,7 @@ GLOBAL_SCAN_STATE = {
     "error": ""
 }
 
-async def api_global_scan_status(request):
+async def api_scan_missing_models_status(request):
     return web.json_response(GLOBAL_SCAN_STATE)
 
 async def api_scan_missing_models(request):

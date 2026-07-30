@@ -63,21 +63,20 @@ async def api_get_folders(request):
 async def api_get_models(request):
     folder_type = request.query.get('type', 'checkpoints')
     subfolder = request.query.get('subfolder', '/')
+    page = int(request.query.get('page', 1))
+    limit = int(request.query.get('limit', 0))
     try:
         path_idx = int(request.query.get('path_idx', 0))
     except:
         path_idx = 0
-    
     try:
         paths = folder_paths.get_folder_paths(folder_type)
     except Exception:
-        return web.json_response({"models": []})
+        return web.json_response({"models": [], "total": 0})
     if not paths or path_idx >= len(paths):
-        return web.json_response({"models": []})
-        
+        return web.json_response({"models": [], "total": 0})
     if '..' in subfolder:
         return web.Response(status=400, text='Invalid subfolder')
-        
     base_dir = paths[path_idx]
     if subfolder == '/':
         target_dir = base_dir
@@ -85,60 +84,55 @@ async def api_get_models(request):
     else:
         rel_subfolder = subfolder.strip('/')
         target_dir = os.path.join(base_dir, rel_subfolder)
-        
     if not os.path.exists(target_dir):
-        return web.json_response({"models": []})
-        
-    models = []
+        return web.json_response({"models": [], "total": 0})
     try:
         entries = os.listdir(target_dir)
     except Exception:
-        return web.json_response({"models": []})
+        return web.json_response({"models": [], "total": 0})
         
-    for f in sorted(entries):
-        if f.endswith('.safetensors') or f.endswith('.ckpt') or f.endswith('.pt'):
-            file_path = os.path.join(target_dir, f)
-            if not os.path.isfile(file_path):
-                continue
-                
-            meta = get_metadata(file_path)
-            
-            base_name = os.path.splitext(f)[0]
-            preview_file = None
-            for ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
-                if os.path.exists(os.path.join(target_dir, base_name + ext)):
-                    preview_file = base_name + ext
-                    break
-            
-            preview_url = ""
-            if preview_file:
-                q_type = urllib.parse.quote(folder_type)
-                q_idx = str(path_idx)
-                q_sub = urllib.parse.quote(rel_subfolder)
-                q_file = urllib.parse.quote(preview_file)
-                try:
-                    mtime = int(os.path.getmtime(os.path.join(target_dir, preview_file)))
-                except:
-                    mtime = 0
-                preview_url = f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}&t={mtime}"
-
-            try:
-                size_bytes = os.path.getsize(file_path)
-                size_mb = round(size_bytes / (1024 * 1024), 1)
-            except Exception:
-                size_mb = 0
-                size_bytes = 0
-                
-            models.append({
-                "filename": f,
-                "size_mb": size_mb,
-                "size_bytes": size_bytes,
-                "metadata": meta,
-                "preview_url": preview_url
-            })
-            
-    return web.json_response({"models": models})
-
+    valid_files = [f for f in entries if f.endswith(('.safetensors', '.ckpt', '.pt')) and os.path.isfile(os.path.join(target_dir, f))]
+    valid_files.sort(key=lambda x: x.lower())
+    total = len(valid_files)
+    
+    if limit > 0:
+        start = (page - 1) * limit
+        end = start + limit
+        sliced = valid_files[start:end]
+    else:
+        sliced = valid_files
+        
+    models = []
+    import urllib.parse
+    for f in sliced:
+        file_path = os.path.join(target_dir, f)
+        meta = get_metadata(file_path)
+        base_name = os.path.splitext(f)[0]
+        preview_file = None
+        for ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
+            if os.path.exists(os.path.join(target_dir, base_name + ext)):
+                preview_file = base_name + ext
+                break
+        preview_url = ""
+        if preview_file:
+            q_type = urllib.parse.quote(folder_type)
+            q_idx = str(path_idx)
+            q_sub = urllib.parse.quote(rel_subfolder.strip('/')) if rel_subfolder and rel_subfolder != '/' else ""
+            q_file = urllib.parse.quote(preview_file)
+            try: mtime = int(os.path.getmtime(os.path.join(target_dir, preview_file)))
+            except: mtime = 0
+            preview_url = f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}&t={mtime}"
+        try:
+            size_bytes = os.path.getsize(file_path)
+            size_mb = round(size_bytes / (1024 * 1024), 2)
+        except:
+            size_mb = 0; size_bytes = 0
+        models.append({
+            "filename": f, "size_mb": size_mb, "size_bytes": size_bytes,
+            "metadata": meta, "preview_url": preview_url, "type": folder_type,
+            "path_idx": path_idx, "subfolder": rel_subfolder
+        })
+    return web.json_response({"models": models, "total": total, "page": page, "limit": limit})
 
 async def api_find_model(request):
     search = request.query.get('search', '').lower()
@@ -497,11 +491,14 @@ async def api_get_all_hashes(request):
     def fetch_all():
         hashes = {}
         types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
+        seen_dirs = set()
         for t in types:
             try:
                 paths = folder_paths.get_folder_paths(t)
                 if not paths: continue
                 for base_dir in paths:
+                    if base_dir in seen_dirs: continue
+                    seen_dirs.add(base_dir)
                     if not os.path.exists(base_dir): continue
                     for root, dirs, files in os.walk(base_dir):
                         for file in files:
@@ -784,3 +781,158 @@ async def api_resolve_paths_to_previews(request):
     return web.json_response({"previews": previews})
 
 
+
+
+async def api_get_all_scan_models(request):
+    import urllib.parse
+    page = int(request.query.get('page', 1))
+    limit = int(request.query.get('limit', 0))
+    target_types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
+    all_tuples = []
+    seen_dirs = set()
+    for t in target_types:
+        try:
+            paths = folder_paths.get_folder_paths(t)
+        except Exception:
+            continue
+        if not paths: continue
+        for path_idx, base_dir in enumerate(paths):
+            if base_dir in seen_dirs: continue
+            seen_dirs.add(base_dir)
+            if not os.path.exists(base_dir): continue
+            for root, dirs, files in os.walk(base_dir):
+                for f in files:
+                    if f.endswith(('.safetensors', '.ckpt', '.pt', '.bin', '.sft')):
+                        all_tuples.append((t, path_idx, root, base_dir, f))
+                        
+    all_tuples.sort(key=lambda x: (x[0], x[4].lower()))
+    total = len(all_tuples)
+    
+    if limit > 0:
+        start = (page - 1) * limit
+        end = start + limit
+        sliced = all_tuples[start:end]
+    else:
+        sliced = all_tuples
+        
+    all_models = []
+    for t, path_idx, root, base_dir, f in sliced:
+        file_path = os.path.join(root, f)
+        rel_subfolder = os.path.relpath(root, base_dir)
+        if rel_subfolder == '.': rel_subfolder = ''
+        else: rel_subfolder = rel_subfolder.replace('\\', '/')
+        try:
+            size_bytes = os.path.getsize(file_path)
+            size_mb = round(size_bytes / (1024 * 1024), 2)
+        except:
+            size_bytes = 0; size_mb = 0
+        meta = get_metadata(file_path)
+        base_name = os.path.splitext(f)[0]
+        preview_file = None
+        for ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
+            if os.path.exists(os.path.join(root, base_name + ext)):
+                preview_file = base_name + ext
+                break
+        preview_url = ""
+        if preview_file:
+            q_type = urllib.parse.quote(t)
+            q_idx = str(path_idx)
+            q_sub = urllib.parse.quote(rel_subfolder.strip('/')) if rel_subfolder and rel_subfolder != '/' else ""
+            q_file = urllib.parse.quote(preview_file)
+            try: mtime = int(os.path.getmtime(os.path.join(root, preview_file)))
+            except: mtime = 0
+            preview_url = f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}&t={mtime}"
+        all_models.append({
+            "type": t, "path_idx": path_idx, "subfolder": rel_subfolder,
+            "filename": f, "size_mb": size_mb, "size_bytes": size_bytes,
+            "preview_url": preview_url, "metadata": meta
+        })
+    return web.json_response({"models": all_models, "total": total, "page": page, "limit": limit})
+
+async def api_batch_select(request):
+    folder_key = request.query.get('folderKey', 'ALL')
+    action = request.query.get('action', 'all')
+    
+    def matches_condition(file_path, root, base_name):
+        if action == 'all':
+            return True
+        elif action == 'no_preview':
+            for ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
+                if os.path.exists(os.path.join(root, base_name + ext)):
+                    return False
+            return True
+        elif action == 'no_desc':
+            info_file = file_path + '.info'
+            civitai_info = os.path.join(root, base_name + '.civitai.info')
+            if os.path.exists(civitai_info):
+                try:
+                    with open(civitai_info, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        if data.get('description', '').strip():
+                            return False
+                except: pass
+            if os.path.exists(info_file):
+                try:
+                    with open(info_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        if data.get('description', '').strip():
+                            return False
+                except: pass
+            return True
+        return False
+
+    results = {}
+    
+    if folder_key == 'ALL':
+        target_types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
+        seen_dirs = set()
+        for t in target_types:
+            try: paths = folder_paths.get_folder_paths(t)
+            except Exception: continue
+            if not paths: continue
+            for path_idx, base_dir in enumerate(paths):
+                if base_dir in seen_dirs: continue
+                seen_dirs.add(base_dir)
+                if not os.path.exists(base_dir): continue
+                for root, dirs, files in os.walk(base_dir):
+                    for f in files:
+                        if f.endswith(('.safetensors', '.ckpt', '.pt', '.bin', '.sft')):
+                            file_path = os.path.join(root, f)
+                            base_name = os.path.splitext(f)[0]
+                            if matches_condition(file_path, root, base_name):
+                                rel_subfolder = os.path.relpath(root, base_dir)
+                                if rel_subfolder == '.': rel_subfolder = ''
+                                else: rel_subfolder = rel_subfolder.replace('\\', '/')
+                                fkey = f"{t}|{path_idx}|{rel_subfolder}"
+                                if fkey not in results: results[fkey] = []
+                                results[fkey].append(f)
+    else:
+        parts = folder_key.split('|')
+        if len(parts) >= 3:
+            t = parts[0]
+            path_idx = int(parts[1])
+            subfolder = parts[2]
+            
+            try: paths = folder_paths.get_folder_paths(t)
+            except Exception: paths = []
+            
+            if paths and path_idx < len(paths):
+                base_dir = paths[path_idx]
+                if subfolder == '/':
+                    target_dir = base_dir
+                else:
+                    target_dir = os.path.join(base_dir, subfolder)
+                    
+                if os.path.exists(target_dir):
+                    try: entries = os.listdir(target_dir)
+                    except: entries = []
+                    for f in entries:
+                        if f.endswith(('.safetensors', '.ckpt', '.pt', '.bin', '.sft')):
+                            file_path = os.path.join(target_dir, f)
+                            if os.path.isfile(file_path):
+                                base_name = os.path.splitext(f)[0]
+                                if matches_condition(file_path, target_dir, base_name):
+                                    if folder_key not in results: results[folder_key] = []
+                                    results[folder_key].append(f)
+                                    
+    return web.json_response({"selected": results})
