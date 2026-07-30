@@ -43,12 +43,12 @@ All endpoints are prefixed with `/anomalous/`.
 4. **Never use hardcoded backslash strings**: When writing path manipulation code, use `os.sep` or `os.path.normpath()` instead of `replace('\\', '/')`. Editing tools may corrupt escaped backslashes silently.
 
 ## 4. Frontend Architecture (Vanilla JS)
-Located in `web/main.js` (approx. 5000+ lines, currently undergoing ES Module Refactoring). Wraps its logic inside `app.registerExtension({ name: "Anomalous.ModelBrowser", ... })`.
+Located in `web/main.js` (approx. 4000+ lines, currently undergoing ES Module Refactoring). Wraps its logic inside `app.registerExtension({ name: "Anomalous.ModelBrowser", ... })`.
 
 ### The Modular Extraction Strategy (模块化拆分架构)
 We are actively transitioning from a monolithic `main.js` to a modular ES architecture. 
 Instead of fragmenting the class scope and losing context, we extract large UI panels into `web/modules/` and bind them back to the `AnomalousBrowser.prototype`.
-1. **Modules**: E.g., `web/modules/ui_doctor.js` contains the Doctor Panel logic.
+1. **Modules**: E.g., `web/modules/ui_doctor.js` contains the Doctor Panel logic. `web/modules/ui_notebooks.js` contains Notebooks. `web/modules/ui_gallery.js` contains Gallery Viewer.
 2. **Shared State**: Everything continues to live on the `AnomalousBrowser` class instance (`this.xxx`). No complex context passing required.
 3. **TOC (Table of Contents)**: The top of `main.js` contains a TOC.
 
@@ -56,8 +56,8 @@ Instead of fragmenting the class scope and losing context, we extract large UI p
 * **Sidebar (`anomalous-sidebar`)**: Renders the nested folder structure.
 * **Grid (`anomalous-grid`)**: The main model display area. Emptied (`innerHTML = ''`) and repopulated on every folder click.
 * **Detail Panel (`anomalous-detail-panel`)**: Slides out when a specific model is clicked.
-* **Gallery Viewer (`anomalous-gallery-viewer`)**: A fullscreen modal for viewing images.
-* **Notebook (`anomalous-notebook-modal`)**: A specialized editor for composing prompts and drag-dropping Lora/Model nodes.
+* **Gallery Viewer (`ui_gallery.js`)**: A fullscreen modal for viewing images.
+* **Notebook (`ui_notebooks.js`)**: A specialized editor for composing prompts and drag-dropping Lora/Model nodes.
 * **Doctor Panel (`ui_doctor.js`)**: Diagnoses model health for individual nodes or the entire workflow. Includes "View Profile" functionality.
 
 ### JavaScript Rules of Engagement:

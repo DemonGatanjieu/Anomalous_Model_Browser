@@ -4,6 +4,13 @@
  */
 
 import { app } from "../../../scripts/app.js";
+import { i18n } from './locales.js';
+
+const t = (key) => {
+    let lang = window.anomalous_browser_lang || 'zh';
+    if (lang.startsWith('en')) lang = 'en';
+    return (i18n[lang] && i18n[lang][key]) ? i18n[lang][key] : (i18n['zh'][key] || key);
+};
 
 
 
