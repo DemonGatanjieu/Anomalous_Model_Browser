@@ -1,3 +1,4 @@
+import { app } from "../../../scripts/app.js";
 /**
  * ui_doctor.js
  * Extracted Doctor Panel & Assistant Panel methods.
@@ -83,14 +84,14 @@ export function initDoctorPanel() {
     }
 export function diagnoseNode(node) {
         // This method serves the Node Assistant panel only
-export function if (!this.assistantPanelInitialized) {
+if (!this.assistantPanelInitialized) {
             this.initAssistantPanel();
         }
         const placeholder = document.getElementById('anomalous-assistant-placeholder');
         const nodeContent = document.getElementById('anomalous-assistant-node-content');
         if (!placeholder || !nodeContent) return;
 
-export function if (!node) {
+if (!node) {
             placeholder.innerHTML = `<div style="font-size:48px;">🤖</div><div style="text-align:center;">${window.anomalous_browser_lang === 'zh' ? '请在画布中<strong style="color:#aaa">点击选中任意节点</strong>' : 'Please <strong style="color:#aaa">select any node</strong> in the canvas'}</div>`;
             placeholder.style.display = 'flex';
             nodeContent.style.display = 'none';
@@ -99,8 +100,8 @@ export function if (!node) {
         }
 
         const modelWidgets = [];
-export function if (node.widgets) {
-export function for (const w of node.widgets) {
+if (node.widgets) {
+for (const w of node.widgets) {
                 if (w.type === 'combo' && typeof w.value === 'string') {
                     if (w.value.match(/\.(safetensors|ckpt|pt|bin|pth)$/i)) modelWidgets.push(w);
                 }
@@ -124,7 +125,7 @@ export function for (const w of node.widgets) {
         titleBar.innerHTML = `<span style="font-size:18px;">🤖</span><span style="font-weight:bold;color:#fff;font-size:14px;">${node.title || node.type || 'Node'}</span><span style="font-size:11px;color:#555;margin-left:auto;">${node.type || ''}</span>`;
         nodeContent.appendChild(titleBar);
 
-export function for (const w of modelWidgets) {
+for (const w of modelWidgets) {
             this.renderAssistantModelCard(node, w, nodeContent);
         }
     }
@@ -141,9 +142,9 @@ export function renderGlobalDashboard() {
         if (this.doctorPanel) this.doctorPanel.currentDiagnosedNode = 'global';
 
         let nodes = [];
-export function if (app.graph && app.graph.computeExecutionOrder) {
+if (app.graph && app.graph.computeExecutionOrder) {
             nodes = app.graph.computeExecutionOrder(false, true);
-export function } else if (app.graph && app.graph._nodes) {
+} else if (app.graph && app.graph._nodes) {
             nodes = app.graph._nodes;
         }
 
@@ -151,17 +152,17 @@ export function } else if (app.graph && app.graph._nodes) {
         let missingNodesData = [];
 
         // Collect data
-export function for (const node of nodes) {
+for (const node of nodes) {
             if (!node.widgets) continue;
-export function for (const w of node.widgets) {
+for (const w of node.widgets) {
                 if (w.type === 'combo' && typeof w.value === 'string' && w.value.match(/\.(safetensors|ckpt|pt|bin|pth)$/i)) {
                     total++;
                     const val = w.value;
                     let isHealthy = false;
                     let exactMatch = null;
-export function if (w.options && w.options.values && w.options.values.includes(val)) {
+if (w.options && w.options.values && w.options.values.includes(val)) {
                         isHealthy = true;
-export function } else if (w.options && w.options.values) {
+} else if (w.options && w.options.values) {
                         const normVal = val.replace(/\\/g, '/');
                         exactMatch = w.options.values.find(v => typeof v === 'string' && v.replace(/\\/g, '/') === normVal);
                         if (exactMatch) isHealthy = true;
@@ -196,7 +197,7 @@ export function } else if (w.options && w.options.values) {
         }
 
         // Render List
-export function for (const data of missingNodesData) {
+for (const data of missingNodesData) {
             const { node, w, val, isHealthy, exactMatch } = data;
             
             const item = document.createElement('div');
@@ -230,7 +231,7 @@ export function for (const data of missingNodesData) {
             
             if (isHealthy && exactMatch && exactMatch !== val) {
                 right.innerHTML = `<div style="text-align:right;"><div style="color:#ffc107;font-size:13px;font-weight:bold;">🟡 ${zh?'自动重定向':'Auto-Redirected'}</div><div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:4px;">${exactMatch.split(/[\/]/).pop()}</div></div>`;
-export function } else if (isHealthy) {
+} else if (isHealthy) {
                 right.innerHTML = `<div style="color:#28a745;font-size:13px;font-weight:bold;padding:6px 12px;background:rgba(40,167,69,0.1);border-radius:20px;">🟢 ${zh?'正常':'Ready'}</div>`;
             } else {
                 right.innerHTML = `<div style="color:#ff6b6b;font-size:13px;font-weight:bold;padding:6px 12px;background:rgba(220,53,69,0.1);border-radius:20px;">🔴 ${zh?'丢失':'Missing'}</div>`;
@@ -254,7 +255,7 @@ export function } else if (isHealthy) {
                 window.open(url, '_blank');
             };
             
-export function if (!isHealthy) {
+if (!isHealthy) {
                 const deepScanBtn = document.createElement('button');
                 deepScanBtn.innerHTML = zh ? '🔍 深度哈希扫描' : '🔍 Deep Hash Scan';
                 deepScanBtn.style.cssText = 'padding:8px 16px; background:#1a73e8; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:12px; transition:background 0.2s;';
@@ -278,7 +279,7 @@ export function if (!isHealthy) {
                                 const statusRes = await fetch('/anomalous/global_scan_status');
                                 const statusData = await statusRes.json();
                                 
-export function if (statusData.scanning) {
+if (statusData.scanning) {
                                     let filename = statusData.filename || '';
                                     if (filename.length > 20) filename = filename.substring(0, 10) + '...' + filename.substring(filename.length - 7);
                                     deepScanBtn.innerText = zh 
@@ -286,17 +287,17 @@ export function if (statusData.scanning) {
                                         : `⏳ Scanning (${statusData.current}/${statusData.total}) ${filename}`;
                                 } else {
                                     clearInterval(checkInterval);
-export function if (statusData.error) {
+if (statusData.error) {
                                         alert(zh ? '❌ 扫描过程中发生错误: ' + statusData.error : '❌ Scan error: ' + statusData.error);
                                     }
                                     
                                     deepScanBtn.innerText = zh ? '⏳ 正在匹配并替换飘红节点...' : '⏳ Matching and resolving red nodes...';
                                     
-export function if (window.anomalous_reload_hashes) {
+if (window.anomalous_reload_hashes) {
                                         await window.anomalous_reload_hashes();
                                     }
                                     
-export function if (window.anomalous_resolve_all_missing_nodes) {
+if (window.anomalous_resolve_all_missing_nodes) {
                                         await window.anomalous_resolve_all_missing_nodes(true, false);
                                     }
                                     
@@ -312,7 +313,7 @@ export function if (window.anomalous_resolve_all_missing_nodes) {
                                         ? `共深度扫描了 ${statusData.total} 个缺失信息的模型。`
                                         : `Deep scanned ${statusData.total} models with missing info.`;
                                         
-export function if (stillMissing) {
+if (stillMissing) {
                                         alert(zh ? `❌ 扫描结束，本地未匹配到模型。\n\n${scanInfo}\n\n这说明模型可能真的不在您的硬盘里，或者您删除了原本记录着哈希的源文件。\n请点击卡片上的【🌐 C站】去云端下载。` : `❌ Scan finished, but no local match found.\n\n${scanInfo}\n\nThis means the model is truly missing from your disk, or the original source file with hash was deleted.\nPlease click [🌐 Civitai] to download it from the cloud.`);
                                     } else {
                                         alert(zh ? `✅ 深度扫描成功！已自动修复该节点！\n\n${scanInfo}` : `✅ Deep Scan successful! Node auto-healed!\n\n${scanInfo}`);
@@ -323,12 +324,12 @@ export function if (stillMissing) {
                                     deepScanBtn.disabled = false;
                                     deepScanBtn.style.opacity = '1';
                                 }
-export function } catch (err) {
+} catch (err) {
                                 // Ignore poll errors
                             }
                         }, 500);
                         
-export function } catch(e) {
+} catch(e) {
                         alert(zh ? '❌ 扫描出错: ' + e.message : '❌ Scan Error: ' + e.message);
                         deepScanBtn.innerHTML = zh ? '🔍 深度哈希扫描' : '🔍 Deep Hash Scan';
                         deepScanBtn.disabled = false;
@@ -367,7 +368,7 @@ export function initAssistantPanel() {
         this.assistantPanel.style.padding = '0';
         this.assistantPanel.style.overflow = 'hidden';
 
-export function if (!this._assistantPanelHooked) {
+if (!this._assistantPanelHooked) {
             this._assistantPanelHooked = true;
             const self = this;
             const originalOnSelected = app.canvas.onNodeSelected;
@@ -466,7 +467,7 @@ export function renderAssistantModelCard(node, w, container) {
                     previewBox.innerHTML = '';
                     const pu = d.model.preview_url;
                     const isVid = /\.mp4(?:&|$)/i.test(pu) || /\.webm(?:&|$)/i.test(pu);
-export function if (isVid) {
+if (isVid) {
                         previewBox.innerHTML = `<video src="${pu}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:contain;"></video>`;
                     } else {
                         previewBox.innerHTML = `<img src="${pu}" style="width:100%;height:100%;object-fit:contain;" />`;
@@ -494,15 +495,15 @@ export function if (isVid) {
                     const meta = d.model.metadata;
 
                     // Type + base model badges
-export function if (d.type || meta.baseModel) {
+if (d.type || meta.baseModel) {
                         const badgeRow = document.createElement('div');
                         badgeRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
-export function if (d.type) {
+if (d.type) {
                             const b = document.createElement('span');
                             b.style.cssText = 'background:rgba(138,180,248,0.15);color:#8AB4F8;padding:3px 8px;border-radius:4px;font-size:11px;';
                             b.innerText = d.type; badgeRow.appendChild(b);
                         }
-export function if (meta.baseModel) {
+if (meta.baseModel) {
                             const b = document.createElement('span');
                             b.style.cssText = 'background:rgba(0,255,204,0.1);color:#00ffcc;padding:3px 8px;border-radius:4px;font-size:11px;';
                             b.innerText = meta.baseModel; badgeRow.appendChild(b);
@@ -512,7 +513,7 @@ export function if (meta.baseModel) {
 
                     // Trigger words
                     const triggers = meta.trainedWords || meta.trigger_words || meta.trained_words;
-export function if (triggers && triggers.length > 0) {
+if (triggers && triggers.length > 0) {
                         const trigSection = document.createElement('div');
                         trigSection.style.cssText = 'background:rgba(255,255,255,0.04);border-radius:6px;padding:10px 12px;';
                         const trigTitle = document.createElement('div');
@@ -545,7 +546,7 @@ export function if (triggers && triggers.length > 0) {
 
                     // Custom notes (parchment)
                     const textNotes = meta.custom_notes || meta.notes;
-export function if (textNotes) {
+if (textNotes) {
                         const notesCard = document.createElement('div');
                         notesCard.style.cssText = 'background:linear-gradient(135deg,#262522 0%,#202124 100%);border:1px solid #3c4043;border-left:4px solid #a38d53;border-radius:4px 8px 8px 4px;padding:12px 14px;';
                         const notesTitle = document.createElement('div');
@@ -590,7 +591,7 @@ export function _loadAssistantHistory(filename, container, model) {
                 sectionHeader.appendChild(sectionTitle);
 
                 // "View all" button if model is available
-export function if (model) {
+if (model) {
                     const viewAllBtn = document.createElement('button');
                     viewAllBtn.innerText = window.anomalous_browser_lang === 'zh' ? '查看全部 →' : 'View All →';
                     viewAllBtn.style.cssText = 'background:transparent;border:1px solid rgba(138,180,248,0.3);color:#8AB4F8;font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;transition:all 0.2s;';
@@ -613,7 +614,7 @@ export function if (model) {
                     imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;';
                     imgEl.loading = 'lazy';
                     card.appendChild(imgEl);
-export function if (img.workflow) {
+if (img.workflow) {
                         card.title = window.anomalous_browser_lang === 'zh' ? '点击恢复此工作流' : 'Click to restore workflow';
                         card.onclick = () => {
                             try {
@@ -621,7 +622,7 @@ export function if (img.workflow) {
                                 if (app && app.loadGraphData) app.loadGraphData(wf);
                             } catch (e) { }
                         };
-export function } else if (model) {
+} else if (model) {
                         card.title = window.anomalous_browser_lang === 'zh' ? '点击查看完整图库' : 'Click to view full gallery';
                         card.onclick = () => this.showGeneratedGallery(model);
                     }
@@ -652,12 +653,12 @@ export function _openGalleryReplacer(node, w) {
         const validPaths = (w.options && w.options.values) ? w.options.values.filter(v => typeof v === 'string') : [];
         if (!validPaths.length) { modal.remove(); return; }
 
-export function fetch('/anomalous/resolve_paths_to_previews', {
+fetch('/anomalous/resolve_paths_to_previews', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ paths: validPaths })
         }).then(r => r.json()).then(data => {
             const previews = data.previews || {};
-export function for (const path of validPaths) {
+for (const path of validPaths) {
                 const card = document.createElement('div');
                 card.style.cssText = 'background:#222;border-radius:8px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;border:1px solid #444;transition:transform 0.2s,box-shadow 0.2s;';
                 card.onmouseover = () => { card.style.transform = 'scale(1.05)'; card.style.boxShadow = '0 6px 20px rgba(0,0,0,0.5)'; };
@@ -678,14 +679,14 @@ export function for (const path of validPaths) {
                     if (wIdx !== -1 && node.widgets_values) {
                         node.widgets_values[wIdx] = path;
                     }
-export function if (w.options && w.options.values && !w.options.values.includes(path)) {
+if (w.options && w.options.values && !w.options.values.includes(path)) {
                         const newVals = [...w.options.values];
                         newVals.push(path);
                         w.options.values = newVals;
                     }
                     delete node.color; delete node.bgcolor; node.has_errors = false;
                     if (w.callback) w.callback(w.value, app.canvas, node, app.canvas.graph_mouse, null);
-export function if (app.graph) {
+if (app.graph) {
                         app.graph.setDirtyCanvas(true, true);
                         if (app.graph.change) app.graph.change();
                     }
@@ -705,15 +706,15 @@ export function runGlobalDoctorScan() {
         let totalNodes = 0;
         let missingNodes = 0;
 
-export function for (const node of app.graph._nodes) {
-export function if (node.widgets) {
-export function for (let w of node.widgets) {
+for (const node of app.graph._nodes) {
+if (node.widgets) {
+for (let w of node.widgets) {
                     const val = w.value;
                     if (typeof val === 'string' && (val.endsWith('.safetensors') || val.endsWith('.ckpt') || val.endsWith('.pt') || val.endsWith('.sft') || val.endsWith('.bin'))) {
                         totalNodes++;
                         let isHealthy = false;
                         if (w.options && w.options.values && w.options.values.includes(val)) isHealthy = true;
-export function if (!isHealthy) {
+if (!isHealthy) {
                             missingNodes++;
                             const nodeTitle = document.createElement('div');
                             nodeTitle.innerText = `${window.anomalous_browser_lang === 'zh' ? '节点' : 'Node'}: ${node.title || node.type}`;

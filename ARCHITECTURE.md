@@ -43,13 +43,14 @@ All endpoints are prefixed with `/anomalous/`.
 4. **Never use hardcoded backslash strings**: When writing path manipulation code, use `os.sep` or `os.path.normpath()` instead of `replace('\\', '/')`. Editing tools may corrupt escaped backslashes silently.
 
 ## 4. Frontend Architecture (Vanilla JS)
-Located in `web/main.js` (approx. 5500 lines). Wraps its logic inside `app.registerExtension({ name: "Anomalous.ModelBrowser", ... })`.
+Located in `web/main.js` (approx. 5000+ lines, currently undergoing ES Module Refactoring). Wraps its logic inside `app.registerExtension({ name: "Anomalous.ModelBrowser", ... })`.
 
-### The 5500-Line Strategy (大文件策略)
-Rather than splitting into fragmented files that cause complex ES Module import/export spaghetti, we maintain a monolithic `main.js` specifically formatted for Advanced AI processing:
-1. **TOC (Table of Contents)**: The top of the file contains a TOC with `Search for` anchors (e.g., `Search for "createDoctorPanel"`). Always grep for these anchors to navigate.
-2. **Shared State**: Everything lives on the `AnomalousBrowser` class instance (`this.xxx`). No context passing required.
-3. **Future Extensibility**: Any *entirely new, massive features* should be placed in `web/modules/` as separate ES modules, but historical panels remain in `main.js`.
+### The Modular Extraction Strategy (模块化拆分架构)
+We are actively transitioning from a monolithic `main.js` to a modular ES architecture. 
+Instead of fragmenting the class scope and losing context, we extract large UI panels into `web/modules/` and bind them back to the `AnomalousBrowser.prototype`.
+1. **Modules**: E.g., `web/modules/ui_doctor.js` contains the Doctor Panel logic.
+2. **Shared State**: Everything continues to live on the `AnomalousBrowser` class instance (`this.xxx`). No complex context passing required.
+3. **TOC (Table of Contents)**: The top of `main.js` contains a TOC.
 
 ### UI Components (Dynamically Created):
 * **Sidebar (`anomalous-sidebar`)**: Renders the nested folder structure.
@@ -57,19 +58,19 @@ Rather than splitting into fragmented files that cause complex ES Module import/
 * **Detail Panel (`anomalous-detail-panel`)**: Slides out when a specific model is clicked.
 * **Gallery Viewer (`anomalous-gallery-viewer`)**: A fullscreen modal for viewing images.
 * **Notebook (`anomalous-notebook-modal`)**: A specialized editor for composing prompts and drag-dropping Lora/Model nodes.
-* **Doctor Panel (`anomalous-doctor-panel`)**: Diagnoses model health for individual nodes or the entire workflow. Includes "View Profile" functionality.
+* **Doctor Panel (`ui_doctor.js`)**: Diagnoses model health for individual nodes or the entire workflow. Includes "View Profile" functionality.
 
 ### JavaScript Rules of Engagement:
-1. **Strict Localization (绝对双语控制)**: 
+1. **Strict Localization (双语)**: 
    - Never use hardcoded UI strings. 
    - Always use the ternary operator bounded to the global state: `window.anomalous_browser_lang === 'zh' ? '中文' : 'English'`.
    - Never use variables like `currentLang === 'zh'` for DOM rendering, because they fail when closure scopes diverge from the global state.
 2. **Avoid Global Scope Pollution**: Scope all IDs and classes with `anomalous-`.
-3. **Z-Index Tiers & Overlap Prevention (防遮挡规范)**: 
+3. **Z-Index Tiers & Overlap Prevention (层叠规范)**: 
    - Base UI: `10000`
    - Overlay Modals: `10001` to `999999`
    - *Critical Rule*: Never arbitrarily assign z-indexes. A child modal MUST have a strictly higher z-index to prevent the parent from consuming clicks.
-4. **DOM ID Conflicts with CSS**: When assigning an `id` to an element dynamically, always `grep_search` `styles.css` first. E.g., setting `id='anomalous-settings-btn'` accidentally triggered a hidden CSS rule meant for mobile width toggling, causing the gear button to disappear entirely. Use explicit safe IDs like `anomalous-global-settings-btn`.
+4. **DOM ID Conflicts with CSS**: When assigning an `id` to an element dynamically, always `grep_search` `styles.css` first.
 
 ## 5. Hash Resolver Subsystem & Scanning Engine (`hash_resolver.js` & `scraper.py`)
 A highly complex subsystem responsible for automatically resolving missing/broken model references in workflows, and aggressively scanning models to build local caches.
