@@ -300,6 +300,11 @@ if (window.anomalous_reload_hashes) {
 if (window.anomalous_resolve_all_missing_nodes) {
                                         await window.anomalous_resolve_all_missing_nodes(true, false);
                                     }
+
+                                    // [BUG FIX] Refresh global ComfyUI cache so subsequent workflow loads don't turn red
+                                    if (app.refreshComboInNodes) {
+                                        setTimeout(() => app.refreshComboInNodes(), 100);
+                                    }
                                     
                                     let stillMissing = false;
                                     for (let i = 0; i < node.widgets.length; i++) {

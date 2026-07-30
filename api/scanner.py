@@ -278,13 +278,14 @@ async def api_scan_missing_models(request):
         
     force_overwrite = data.get("force_overwrite", False)
 
+    # Prevent race condition: set state immediately in main thread
+    GLOBAL_SCAN_STATE["scanning"] = True
+    GLOBAL_SCAN_STATE["total"] = 0
+    GLOBAL_SCAN_STATE["current"] = 0
+    GLOBAL_SCAN_STATE["filename"] = "Initializing..."
+    GLOBAL_SCAN_STATE["error"] = ""
+
     def run_deep_scan():
-        GLOBAL_SCAN_STATE["scanning"] = True
-        GLOBAL_SCAN_STATE["total"] = 0
-        GLOBAL_SCAN_STATE["current"] = 0
-        GLOBAL_SCAN_STATE["filename"] = "Initializing..."
-        GLOBAL_SCAN_STATE["error"] = ""
-        
         try:
             types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
             files_to_scan = []

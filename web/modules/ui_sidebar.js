@@ -22,7 +22,8 @@ export function createDOM() {
         container.id = 'anomalous-container';
 
         const updateLangClass = () => {
-            if (currentLang === 'en') container.classList.add('anomalous-lang-en');
+            let lang = window.anomalous_browser_lang || 'zh';
+            if (lang === 'en') container.classList.add('anomalous-lang-en');
             else container.classList.remove('anomalous-lang-en');
         };
         updateLangClass();
@@ -1064,9 +1065,9 @@ export function createDOM() {
         langBtn.className = 'anomalous-lang-btn';
         langBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '🌐 Language: EN' : '🌐 语言: 中文';
         langBtn.onclick = () => {
-            currentLang = window.anomalous_browser_lang === 'zh' ? 'en' : 'zh';
-            localStorage.setItem('anomalous_lang', currentLang);
-            window.anomalous_browser_lang = currentLang;
+            let newLang = window.anomalous_browser_lang === 'zh' ? 'en' : 'zh';
+            localStorage.setItem('anomalous_lang', newLang);
+            window.anomalous_browser_lang = newLang;
             langBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '🌐 Language: EN' : '🌐 语言: 中文';
             updateLangClass();
             modelsBtn.innerHTML = `🏠 <span class="anomalous-btn-text">${t('models')}</span>`;
