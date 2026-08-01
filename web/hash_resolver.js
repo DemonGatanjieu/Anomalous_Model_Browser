@@ -16,6 +16,19 @@ window.anomalous_update_hash_cache = function (models) {
     }
 };
 
+function inferExpectedModelTypes(node, widget) {
+    const widgetName = String(widget?.name || '').toLowerCase();
+    const nodeType = String(node?.type || '').toLowerCase();
+    const key = `${widgetName} ${nodeType}`;
+
+    if (widgetName.includes('vae') || nodeType === 'vaeloader' || key.includes('vae loader')) return 'vae';
+    if (widgetName.includes('lora') || key.includes('lora')) return 'loras';
+    if (widgetName.includes('control_net') || widgetName.includes('controlnet') || key.includes('controlnet')) return 'controlnet';
+    if (widgetName.includes('ckpt') || widgetName.includes('checkpoint') || key.includes('checkpoint')) return 'checkpoints';
+    if (widgetName.includes('unet') || widgetName.includes('diffusion_model') || key.includes('unet loader')) return 'diffusion_models,unet';
+    return '';
+}
+
 window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, silent = false) {
     if (!is_manual && localStorage.getItem('anomalous_auto_scan_enabled') !== 'true') return;
     if (!app.graph || !app.graph._nodes) return;
@@ -116,7 +129,9 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
                         let h = typeof hashData === 'string' ? hashData : hashData.hash;
                         let s = typeof hashData === 'string' ? "" : (hashData.size || "");
                         try {
-                            const res = await fetch(`/anomalous/resolve_hash?hash=${encodeURIComponent(h)}&size=${encodeURIComponent(s)}`);
+                            const expectedTypes = inferExpectedModelTypes(node, w);
+                            const typeQuery = expectedTypes ? `&type=${encodeURIComponent(expectedTypes)}` : '';
+                            const res = await fetch(`/anomalous/resolve_hash?hash=${encodeURIComponent(h)}&size=${encodeURIComponent(s)}&filename=${encodeURIComponent(val)}${typeQuery}`);
                             const resData = await res.json();
 
                             if (resData.found) {
@@ -137,22 +152,22 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
                                 if (finalValue !== val || normRes !== normVal || optionsCacheStale || node.has_errors || node.color) {
                                     if (optionsCacheStale) {
                                         console.log(`[Anomalous Hash Resolver] Found ${finalValue} on disk, but ComfyUI frontend dropdown is stale. Forcing backend cache clear...`);
+                                        let refreshedMatch = null;
                                         try {
                                             await fetch('/anomalous/clear_cache', { method: 'POST' });
                                             await app.refreshComboInNodes();
                                             // Re-evaluate exact match after refreshing
                                             if (w.options && w.options.values) {
-                                                const newMatch = w.options.values.find(v => typeof v === 'string' && v.replace(/\\/g, '/') === normRes);
-                                                if (newMatch) finalValue = newMatch;
-                                                else {
-                                                    const newVals = [...w.options.values];
-                                                    newVals.push(finalValue);
-                                                    w.options.values = newVals;
-                                                }
+                                                refreshedMatch = w.options.values.find(v => typeof v === 'string' && v.replace(/\\/g, '/') === normRes) || null;
                                             }
                                         } catch (e) {
                                             console.warn("Failed to clear cache:", e);
                                         }
+                                        if (!refreshedMatch) {
+                                            console.warn(`[Anomalous Hash Resolver] Rejected cross-type or invalid model path for ${node.type}.${w.name}: ${finalValue}`);
+                                            continue;
+                                        }
+                                        finalValue = refreshedMatch;
                                     }
 
                                     console.log(`[Anomalous Hash Resolver] Auto-fixed missing model: ${val} -> ${finalValue}`);

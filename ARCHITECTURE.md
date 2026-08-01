@@ -99,21 +99,23 @@ A highly complex subsystem responsible for automatically resolving missing/broke
 ### Model Provenance Binding (模型溯源绑定 - `anomalous_inject_hash`)
 * Controls whether hashes are invisibly injected into the `extra_pnginfo` and workflow JSON when a user saves a workflow or generates an image.
 * **Logic Flow**: `LGraph.prototype.serialize` is hooked. If enabled, it intercepts the serialization, looks up every model widget's filename in `window.anomalous_hash_cache`, and explicitly writes `extraObj.anomalous_hashes[node_id_filename] = {hash, size}`.
-* Resolution order is exact local path, saved hash, then file size only when no trustworthy hash exists. A unique byte size is not proof of model identity and must never override an available hash.
+* Resolution starts with an exact local path when one is available. For provenance recovery, the backend constrains the search to the model category inferred from the node/widget and intersects the saved hash with the saved byte size. If no file in that category owns a legacy/stale hash, the original workflow filename (including the Civitai source filename stored in `.info`) disambiguates equal-sized candidates; only then may a unique byte-size match recover the model as `stale_hash`. A real hash/size conflict is rejected instead of choosing arbitrarily.
+* Civitai `.info` files may describe several physical files (for example a diffusion model, text encoder, and VAE). `get_metadata()` must select the matching `files[]` entry by exact physical byte size, then exact filename, and may use an unmatched entry only when it is the sole hash candidate. It must never take the first SHA256 unconditionally.
 
 ### The Triple-Fallback Scanning Engine (`api/scanner.py` & `scraper.py`)
 When "Deep Hash Scan" is triggered, it runs in a background thread to prevent UI lockup. It uses a triple fallback to identify models:
 1. **Fallback 1 (Header Hash Match)**: Extracts `modelspec.hash.sha256` or Blake3/AutoV2 directly from the `.safetensors` header (O(1) speed). Hits Civitai API to fetch official metadata.
 2. **Fallback 2 (Full File SHA256)**: If the header has no hash, it brutally calculates the full file SHA256 (Slow) and hits Civitai.
 3. **Fallback 3 (Offline Inference)**: If Civitai returns 404, it reads the Tensor Fingerprints (keys like `cond_stage_model`) from the header to guess the Base Model (SDXL, SD 1.5, Flux, SD3) and builds a local `.info` file.
-* **CRITICAL INJECTION**: After a fallback succeeds, the engine **FORCE INJECTS** the matched hash into the resulting JSON dictionary at `["files"][0]["hashes"]["SHA256"]`. This guarantees that `get_metadata` will always find a matching hash for resolution.
+* **Offline hash injection**: After a fallback succeeds, the engine injects the discovered hash into the generated JSON. Consumers must still associate that entry with the current physical file using size/name matching; array position is not an identity guarantee.
 * Physical rename conflicts are non-destructive. When the target filename already exists, both files must be hashed; deletion is permitted only when their complete SHA256 values match. Different files with the same generated display name must both be preserved.
 
 ### Resolution Execution (`window.anomalous_resolve_all_missing_nodes`)
 Scans all nodes in `app.graph._nodes` that are colored red.
 * Extracts the saved hash from the graph's `anomalous_hashes`.
-* Sends it to `/anomalous/resolve_hash`, which does a fast O(1) file size match first, then falls back to reading `.info` hashes.
-* If a match is found, it silently mutates the dropdown `value`, removes the red color, and flags it as `anomalous_auto_resolved`.
+* Sends hash, byte size, and the inferred model category to `/anomalous/resolve_hash`. The endpoint accepts a result only when the identity signals agree, or when a unique in-category size safely recovers a stale legacy hash.
+* If a match is found, the frontend refreshes native ComfyUI combo definitions and requires the returned path to exist in that widget's native choices. Cross-category or otherwise invalid paths are rejected; the resolver must never append a foreign path to `widget.options.values` merely to report success.
+* After native validation succeeds, it mutates the dropdown `value`, removes the red color, and flags it as `anomalous_auto_resolved`.
 
 ## 6. Known Gotchas & Critical Context (新接手必读)
 * **Metadata Override Danger**: If you write to a `.civitai.info` file, ALWAYS read it first and update the dictionary. Never just dump `{custom_name: 'foo'}`.

@@ -436,12 +436,20 @@ async def api_resolve_hash(request):
     target_hash = request.query.get("hash", "").strip().upper()
     size_str = request.query.get("size", "").strip()
     filename_query = request.query.get("filename", "").strip()
+    expected_types_raw = request.query.get("type", "").strip()
     target_size = int(size_str) if size_str.isdigit() else None
     
     if not target_hash and not target_size and not filename_query:
         return web.json_response({"found": False})
 
-    types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
+    all_types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
+    if expected_types_raw:
+        requested_types = [value.strip() for value in expected_types_raw.split(',') if value.strip()]
+        if not requested_types or any(value not in all_types for value in requested_types):
+            return web.json_response({"found": False, "error": "Invalid model type"}, status=400)
+        types = list(dict.fromkeys(requested_types))
+    else:
+        types = all_types
     
     # Layer 1: Exact path/filename check for pre-flight imports.
     if filename_query:
@@ -463,99 +471,124 @@ async def api_resolve_hash(request):
                         if rel_path == normalized_query or ('/' not in normalized_query and file == query_basename):
                             return web.json_response({"found": True, "type": t, "filename": rel_path, "matched_by_filename": True})
 
-    # Layer 2: Size is only a fallback when no trustworthy hash was saved.
-    if target_size is not None and (not target_hash or target_hash == "UNKNOWN"):
-        size_matches = []
-        seen_realpaths = set()
-        for t in types:
-            try:
-                paths = folder_paths.get_folder_paths(t)
-            except Exception:
+    # Layer 2: Gather candidates once, then intersect hash and byte size.  Hash
+    # sidecars can be stale or can describe another file from the same Civitai
+    # model version, so a disagreement must be handled explicitly.
+    candidates = []
+    seen_realpaths = set()
+    for t in types:
+        try:
+            paths = folder_paths.get_folder_paths(t)
+        except Exception:
+            continue
+        for base_dir in paths or []:
+            if not os.path.exists(base_dir):
                 continue
-            if not paths:
-                continue
-                
-            for base_dir in paths:
-                if not os.path.exists(base_dir):
-                    continue
-                    
-                for root, dirs, files in os.walk(base_dir):
-                    for file in files:
-                        if file.endswith('.safetensors') or file.endswith('.ckpt') or file.endswith('.pt'):
-                            file_path = os.path.join(root, file)
-                            try:
-                                if os.path.getsize(file_path) == target_size:
-                                    real_p = os.path.realpath(file_path)
-                                    if real_p in seen_realpaths:
-                                        continue
-                                    seen_realpaths.add(real_p)
-                                    
-                                    rel_path = os.path.relpath(file_path, base_dir)
-                                    if rel_path.startswith('.\\') or rel_path.startswith('./'):
-                                        rel_path = rel_path[2:]
-                                    rel_path = rel_path.replace('\\', '/')
-                                    size_matches.append({
-                                        "type": t,
-                                        "filename": rel_path
-                                    })
-                            except Exception:
-                                pass
-                                
-        # If exactly ONE file matches the size, it's a definitive match
-        if len(size_matches) == 1:
-            return web.json_response({
-                "found": True,
-                "type": size_matches[0]["type"],
-                "filename": size_matches[0]["filename"],
-                "matched_by_size": True
-            })
+            for root, dirs, files in os.walk(base_dir):
+                for file in files:
+                    if not file.lower().endswith(('.safetensors', '.ckpt', '.pt')):
+                        continue
+                    file_path = os.path.join(root, file)
+                    real_path = os.path.realpath(file_path)
+                    if real_path in seen_realpaths:
+                        continue
+                    try:
+                        file_size = os.path.getsize(file_path)
+                    except OSError:
+                        continue
+                    seen_realpaths.add(real_path)
+                    candidates.append({
+                        "type": t,
+                        "filename": os.path.relpath(file_path, base_dir).replace('\\', '/'),
+                        "path": file_path,
+                        "size": file_size,
+                    })
 
-    # Layer 3: Metadata Hash Match (Reads .info, falls back to safetensors header)
-    if target_hash and target_hash != "UNKNOWN":
-        for t in types:
-            try:
-                paths = folder_paths.get_folder_paths(t)
-            except Exception:
-                continue
-            if not paths:
-                continue
-                
-            for base_dir in paths:
-                if not os.path.exists(base_dir):
-                    continue
-                    
-                for root, dirs, files in os.walk(base_dir):
-                    for file in files:
-                        if file.endswith('.safetensors') or file.endswith('.ckpt') or file.endswith('.pt'):
-                            file_path = os.path.join(root, file)
-                            meta = get_metadata(file_path)
-                            
-                            # Check .info or header hash
-                            if meta.get("hash", "").upper() == target_hash:
-                                rel_path = os.path.relpath(file_path, base_dir)
-                                if rel_path.startswith('.\\') or rel_path.startswith('./'):
-                                    rel_path = rel_path[2:]
-                                rel_path = rel_path.replace('\\', '/')
-                                return web.json_response({
-                                    "found": True,
-                                    "type": t,
-                                    "filename": rel_path
-                                })
-                            
-                            # Additional direct check just in case get_metadata missed it
-                            if file.endswith('.safetensors'):
-                                header_hash = _extract_safetensors_hash(file_path)
-                                if header_hash and header_hash.upper() == target_hash:
-                                    rel_path = os.path.relpath(file_path, base_dir)
-                                    if rel_path.startswith('.\\') or rel_path.startswith('./'):
-                                        rel_path = rel_path[2:]
-                                    rel_path = rel_path.replace('\\', '/')
-                                    return web.json_response({
-                                        "found": True,
-                                        "type": t,
-                                        "filename": rel_path,
-                                        "matched_by_header": True
-                                    })
+    has_target_hash = bool(target_hash and target_hash != "UNKNOWN")
+
+    def candidate_metadata(candidate):
+        if "metadata" not in candidate:
+            candidate["metadata"] = get_metadata(candidate["path"])
+        return candidate["metadata"]
+
+    def candidate_hashes(candidate):
+        if "hashes" in candidate:
+            return candidate["hashes"]
+        values = set()
+        meta_hash = candidate_metadata(candidate).get("hash", "")
+        if meta_hash:
+            values.add(str(meta_hash).upper())
+        if candidate["path"].lower().endswith('.safetensors'):
+            header_hash = _extract_safetensors_hash(candidate["path"])
+            if header_hash:
+                values.add(str(header_hash).upper())
+        candidate["hashes"] = values
+        return values
+
+    def candidate_matches_filename_hint(candidate):
+        if not filename_query:
+            return False
+        hint = filename_query.replace('\\', '/').casefold()
+        hint_basename = hint.rsplit('/', 1)[-1]
+        meta = candidate_metadata(candidate)
+        names = {
+            candidate["filename"].replace('\\', '/').casefold(),
+            os.path.basename(candidate["path"]).casefold(),
+            os.path.basename(str(meta.get("source_filename", ""))).casefold(),
+        }
+        names.discard("")
+        return hint in names or hint_basename in names
+
+    def respond(candidate, **details):
+        payload = {
+            "found": True,
+            "type": candidate["type"],
+            "filename": candidate["filename"],
+        }
+        payload.update(details)
+        return web.json_response(payload)
+
+    size_matches = [candidate for candidate in candidates if target_size is not None and candidate["size"] == target_size]
+
+    if has_target_hash and target_size is not None:
+        combined_matches = [candidate for candidate in size_matches if target_hash in candidate_hashes(candidate)]
+        if len(combined_matches) == 1:
+            return respond(combined_matches[0], matched_by_hash=True, matched_by_size=True)
+        if len(combined_matches) > 1:
+            return web.json_response({"found": False, "ambiguous": True})
+
+        # Check whether the supplied hash points at a different local file.  If
+        # so, neither identifier can safely win without a model-type constraint.
+        hash_matches = [candidate for candidate in candidates if target_hash in candidate_hashes(candidate)]
+        if hash_matches:
+            return web.json_response({"found": False, "identity_conflict": True})
+
+        # No file in the expected category owns the saved hash.  This is the
+        # legacy poisoned-sidecar case.  Prefer the original workflow filename
+        # (including the Civitai source filename preserved in .info) before a
+        # unique-size fallback.
+        hinted_size_matches = [candidate for candidate in size_matches if candidate_matches_filename_hint(candidate)]
+        if len(hinted_size_matches) == 1:
+            return respond(hinted_size_matches[0], matched_by_size=True, matched_by_filename_hint=True, stale_hash=True)
+        if len(hinted_size_matches) > 1:
+            return web.json_response({"found": False, "ambiguous": True})
+        if len(size_matches) == 1:
+            return respond(size_matches[0], matched_by_size=True, stale_hash=True)
+        if len(size_matches) > 1:
+            return web.json_response({"found": False, "ambiguous": True})
+
+    if has_target_hash:
+        hash_matches = [candidate for candidate in candidates if target_hash in candidate_hashes(candidate)]
+        if len(hash_matches) == 1:
+            return respond(hash_matches[0], matched_by_hash=True)
+        if len(hash_matches) > 1:
+            return web.json_response({"found": False, "ambiguous": True})
+
+    if target_size is not None:
+        if len(size_matches) == 1:
+            return respond(size_matches[0], matched_by_size=True)
+        if len(size_matches) > 1:
+            return web.json_response({"found": False, "ambiguous": True})
 
     return web.json_response({"found": False})
 

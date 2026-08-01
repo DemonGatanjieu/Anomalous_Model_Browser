@@ -92,6 +92,48 @@ class ImageEndpointSafetyTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status, 415)
 
 
+class MetadataHashSelectionTests(unittest.TestCase):
+    def test_multifile_info_hash_is_selected_by_physical_size(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            model_path = Path(temp_dir, "renamed-model.safetensors")
+            model_path.write_bytes(b"the-local-model")
+            dependency_hash = "A" * 64
+            model_hash = "B" * 64
+            info = {
+                "files": [
+                    {
+                        "name": "dependency-vae.safetensors",
+                        "sizeKB": 5 / 1024,
+                        "hashes": {"SHA256": dependency_hash},
+                    },
+                    {
+                        "name": "original-model-name.safetensors",
+                        "sizeKB": model_path.stat().st_size / 1024,
+                        "hashes": {"SHA256": model_hash},
+                    },
+                ]
+            }
+            model_path.with_suffix(".info").write_text(json.dumps(info), encoding="utf-8")
+
+            result = metadata.get_metadata(str(model_path))
+            self.assertEqual(result["hash"], model_hash)
+            self.assertEqual(result["source_filename"], "original-model-name.safetensors")
+
+    def test_ambiguous_multifile_info_does_not_use_first_hash(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            model_path = Path(temp_dir, "renamed-model.safetensors")
+            model_path.write_bytes(b"size-not-listed")
+            info = {
+                "files": [
+                    {"name": "a.safetensors", "sizeKB": 1, "hashes": {"SHA256": "A" * 64}},
+                    {"name": "b.safetensors", "sizeKB": 2, "hashes": {"SHA256": "B" * 64}},
+                ]
+            }
+            model_path.with_suffix(".info").write_text(json.dumps(info), encoding="utf-8")
+
+            self.assertEqual(metadata.get_metadata(str(model_path))["hash"], "")
+
+
 class HashResolutionTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -110,6 +152,7 @@ class HashResolutionTests(unittest.IsolatedAsyncioTestCase):
             info_path = file_path.with_suffix(".info")
             info_path.write_text(json.dumps({"files": [{"hashes": {"SHA256": file_hash}}]}), encoding="utf-8")
         self.checkpoint_size = checkpoint_file.stat().st_size
+        self.lora_size = lora_file.stat().st_size
         mapping = {"checkpoints": [str(self.checkpoint_root)], "loras": [str(self.lora_root)]}
         folder_paths.get_folder_paths = lambda folder_type: mapping.get(folder_type, [])
 
@@ -123,13 +166,71 @@ class HashResolutionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(hashes["a/shared.safetensors"]["hash"], self.checkpoint_hash)
         self.assertEqual(hashes["b/shared.safetensors"]["hash"], self.lora_hash)
 
-    async def test_saved_hash_takes_priority_over_unique_size(self):
-        request = types.SimpleNamespace(query={"hash": self.lora_hash, "size": str(self.checkpoint_size)})
+    async def test_matching_hash_and_size_resolve_same_file(self):
+        request = types.SimpleNamespace(query={"hash": self.lora_hash, "size": str(self.lora_size)})
         response = await models.api_resolve_hash(request)
         result = json.loads(response.text)
         self.assertTrue(result["found"])
         self.assertEqual(result["type"], "loras")
         self.assertEqual(result["filename"], "b/shared.safetensors")
+        self.assertTrue(result["matched_by_hash"])
+        self.assertTrue(result["matched_by_size"])
+
+    async def test_conflicting_hash_and_size_are_rejected_without_type_context(self):
+        request = types.SimpleNamespace(query={"hash": self.lora_hash, "size": str(self.checkpoint_size)})
+        response = await models.api_resolve_hash(request)
+        result = json.loads(response.text)
+        self.assertFalse(result["found"])
+        self.assertTrue(result["identity_conflict"])
+
+    async def test_stale_hash_recovers_by_unique_size_in_expected_type(self):
+        request = types.SimpleNamespace(query={
+            "hash": self.lora_hash,
+            "size": str(self.checkpoint_size),
+            "type": "checkpoints",
+        })
+        response = await models.api_resolve_hash(request)
+        result = json.loads(response.text)
+        self.assertTrue(result["found"])
+        self.assertEqual(result["type"], "checkpoints")
+        self.assertEqual(result["filename"], "a/shared.safetensors")
+        self.assertTrue(result["stale_hash"])
+
+    async def test_expected_type_prevents_cross_category_hash_match(self):
+        request = types.SimpleNamespace(query={"hash": self.checkpoint_hash, "size": "", "type": "loras"})
+        response = await models.api_resolve_hash(request)
+        result = json.loads(response.text)
+        self.assertFalse(result["found"])
+
+    async def test_source_filename_disambiguates_equal_sizes_with_stale_hash(self):
+        original = self.checkpoint_root / "a" / "shared.safetensors"
+        original_info = original.with_suffix(".info")
+        original_info.write_text(json.dumps({"files": [{
+            "name": "original-checkpoint.safetensors",
+            "sizeKB": self.checkpoint_size / 1024,
+            "hashes": {"SHA256": self.checkpoint_hash},
+        }]}), encoding="utf-8")
+
+        duplicate_size = self.checkpoint_root / "c" / "other.safetensors"
+        duplicate_size.parent.mkdir(parents=True)
+        duplicate_size.write_bytes(original.read_bytes())
+        duplicate_size.with_suffix(".info").write_text(json.dumps({"files": [{
+            "name": "different-checkpoint.safetensors",
+            "sizeKB": self.checkpoint_size / 1024,
+            "hashes": {"SHA256": "3" * 64},
+        }]}), encoding="utf-8")
+
+        request = types.SimpleNamespace(query={
+            "hash": self.lora_hash,
+            "size": str(self.checkpoint_size),
+            "filename": "original-checkpoint.safetensors",
+            "type": "checkpoints",
+        })
+        response = await models.api_resolve_hash(request)
+        result = json.loads(response.text)
+        self.assertTrue(result["found"])
+        self.assertEqual(result["filename"], "a/shared.safetensors")
+        self.assertTrue(result["matched_by_filename_hint"])
 
 
 if __name__ == "__main__":
