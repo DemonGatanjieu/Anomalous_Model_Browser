@@ -23,3 +23,7 @@ AI_SYSTEM_TEMPLATE.md
 
 # Test files
 test_*.js
+
+# Local diagnostic/test artifacts
+grep_doctor.txt
+test_folders.json
