@@ -19,6 +19,21 @@ import argparse
 import shutil
 from typing import Dict, Optional
 
+
+# Fixed tuples avoid rebuilding long extension lists for every scanned model.
+# Exact-path checks are intentionally used instead of directory-wide globbing.
+MEDIA_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".mp4", ".webm", ".mov", ".avi")
+PREVIEW_SUFFIXES = tuple(f".preview{ext}" for ext in MEDIA_EXTENSIONS)
+CIVITAI_BACKUP_SUFFIXES = tuple(f".civitai_bak{ext}" for ext in MEDIA_EXTENSIONS)
+COVER_SUFFIXES = MEDIA_EXTENSIONS + PREVIEW_SUFFIXES
+ACTIVE_COVER_SUFFIXES = PREVIEW_SUFFIXES + MEDIA_EXTENSIONS
+SIDECAR_SUFFIXES = (
+    ".info", ".civitai.info", ".json", ".txt", ".yaml",
+    *MEDIA_EXTENSIONS,
+    *PREVIEW_SUFFIXES,
+    *CIVITAI_BACKUP_SUFFIXES,
+)
+
 # ==============================================================================
 # CIVITAI API 配置读取
 # 请在插件目录 (Anomalous_Model_Browser) 下新建 config.json 文件：
@@ -237,7 +252,7 @@ def main():
             old_base = os.path.splitext(old_path)[0]
             new_base = os.path.splitext(new_path)[0]
             
-            for ext in [".info", ".civitai.info", ".json", ".txt", ".yaml", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".mp4", ".webm", ".mov", ".avi", ".preview.png", ".preview.jpg", ".preview.jpeg", ".preview.webp", ".preview.gif", ".preview.avif", ".preview.mp4", ".preview.webm", ".preview.mov", ".preview.avi", ".civitai_bak.png", ".civitai_bak.jpg", ".civitai_bak.jpeg", ".civitai_bak.webp", ".civitai_bak.gif", ".civitai_bak.avif", ".civitai_bak.mp4", ".civitai_bak.webm", ".civitai_bak.mov", ".civitai_bak.avi"]:
+            for ext in SIDECAR_SUFFIXES:
                 new_ext_path = new_base + ext
                 old_ext_path = old_base + ext
                 if os.path.exists(new_ext_path):
@@ -294,7 +309,7 @@ def main():
                 
             preview_exists = args.skip_media
             if not preview_exists:
-                for ext in [".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".mp4", ".webm", ".mov", ".avi", ".preview.png", ".preview.jpg", ".preview.jpeg", ".preview.webp", ".preview.gif", ".preview.avif", ".preview.mp4", ".preview.webm", ".preview.mov", ".preview.avi"]:
+                for ext in COVER_SUFFIXES:
                     if os.path.exists(old_base + ext):
                         preview_exists = True
                         break
@@ -434,7 +449,7 @@ def main():
                         # Promote to .preview if no custom cover exists
                         has_custom = False
                         if not args.force_overwrite:
-                            for c_ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
+                            for c_ext in ACTIVE_COVER_SUFFIXES:
                                 p = old_base + c_ext
                                 if os.path.exists(p) and not p.endswith('.civitai_bak' + c_ext):
                                     has_custom = True
@@ -443,7 +458,7 @@ def main():
                             ext = os.path.splitext(saved_path)[1]
                             import shutil
                             if args.force_overwrite:
-                                for c_ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
+                                for c_ext in ACTIVE_COVER_SUFFIXES:
                                     p = old_base + c_ext
                                     if os.path.exists(p) and not p.endswith('.civitai_bak' + c_ext):
                                         try:
@@ -476,7 +491,7 @@ def main():
                         try:
                             print(f"[*] Hash 一致，删除已确认的重复副本: {filename}")
                             os.remove(file_path)
-                            for ext in [".info", ".civitai.info", ".json", ".txt", ".yaml", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".mp4", ".webm", ".mov", ".avi", ".preview.png", ".preview.jpg", ".preview.jpeg", ".preview.webp", ".preview.gif", ".preview.avif", ".preview.mp4", ".preview.webm", ".preview.mov", ".preview.avi", ".civitai_bak.png", ".civitai_bak.jpg", ".civitai_bak.jpeg", ".civitai_bak.webp", ".civitai_bak.gif", ".civitai_bak.avif", ".civitai_bak.mp4", ".civitai_bak.webm", ".civitai_bak.mov", ".civitai_bak.avi"]:
+                            for ext in SIDECAR_SUFFIXES:
                                 old_ext = old_base + ext
                                 if os.path.exists(old_ext):
                                     os.remove(old_ext)
@@ -491,7 +506,7 @@ def main():
                         os.rename(file_path, new_file_path)
                         rename_log[file_path] = new_file_path
                         
-                        for ext in [".info", ".civitai.info", ".json", ".txt", ".yaml", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".mp4", ".webm", ".mov", ".avi", ".preview.png", ".preview.jpg", ".preview.jpeg", ".preview.webp", ".preview.gif", ".preview.avif", ".preview.mp4", ".preview.webm", ".preview.mov", ".preview.avi", ".civitai_bak.png", ".civitai_bak.jpg", ".civitai_bak.jpeg", ".civitai_bak.webp", ".civitai_bak.gif", ".civitai_bak.avif", ".civitai_bak.mp4", ".civitai_bak.webm", ".civitai_bak.mov", ".civitai_bak.avi"]:
+                        for ext in SIDECAR_SUFFIXES:
                             old_ext = old_base + ext
                             new_ext = new_base + ext
                             if os.path.exists(old_ext):

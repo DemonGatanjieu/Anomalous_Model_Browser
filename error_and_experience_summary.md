@@ -270,3 +270,10 @@ This document serves as an architectural retrospective and UX diagnostic log for
 (把“深度哈希扫描”按钮从设置面板搬到了模型医生面板里，但说明书和 UI 帮助文本没跟着改，还在让用户去设置面板里找，导致用户完全找不到。)
 **The Solution (方案)**: Restructured the documentation into a strict visual-flow-based SOP (Standard Operating Procedure). Every UI feature mentioned in the docs is now paired with its exact corresponding Emoji icon (e.g., 🩺, 🤖) and location, completely eliminating navigational ambiguity.
 (按视觉动线重构了整份说明书。给文档里提到的每一个按钮都加上了精准的 Emoji 图标（如 🩺、🤖）和精确位置定位，实现了文档与界面的 100% 物理映射。)
+
+## 45. Backup Files Are State, Not Garbage (`.civitai_bak.*` 不是垃圾而是恢复状态)
+**The Problem (问题)**: A broad sidecar-cleanup rule made deletion and rename sound identical and treated every matching suffix as disposable. This hid two risks: `.civitai_bak.*` is the persistent source used by Reset, and model extensions in a cleanup list can delete a legitimate same-stem model. A missing backup could also leave Reset deleting the only active preview.
+(过宽的伴生文件清理规则把“删除”和“重命名”说成了同一件事，还把所有同后缀文件都当成垃圾。这掩盖了两个风险：`.civitai_bak.*` 是重置封面的永久恢复源；把模型扩展名放进清理列表还可能误删同名但不同格式的真实模型。备份缺失时，重置也可能删掉唯一封面。)
+
+**The Solution (方案)**: Treat the operations as separate lifecycle transitions. Custom covers only replace `.preview.*`; Reset restores a Civitai backup atomically, falls back to an untouched bare cover, or preserves the only preview and warns. Rename migrates sidecars, while deletion cleans them only after the main model is gone and only when no same-stem model survives. Use fixed suffix tuples and bounded exact-path checks so cost does not grow with directory size.
+(把这些操作视为不同的生命周期转换：自定义封面只替换 `.preview.*`；重置优先原子恢复 C 站备份，其次回退到未动过的裸封面；若当前预览是唯一图片则保留并提示。重命名是迁移伴生文件，删除则只在主模型成功删除且没有同名模型存活时清理。扩展名使用固定元组和有上限的精确路径检查，性能不随目录文件数量增长。)

@@ -55,6 +55,14 @@ All endpoints are prefixed with `/anomalous/`.
 7. **Canonical Configuration**: Runtime UI settings and newly saved API keys live in `api/config.json`. `scraper.py` reads that file first and falls back to the legacy root `config.json` only for backward compatibility. API keys must never be persisted in browser `localStorage`.
 8. **Atomic Background State**: Set scan state or create the exclusive marker file before launching a worker thread/process. Folder scans use `.scan_in_progress`; global quick scans use `.global_scan_in_progress`; deep missing-model scans use `GLOBAL_SCAN_STATE`, exposed by `/anomalous/scan_missing_models_status`.
 
+### NON-NEGOTIABLE: Model Sidecar & Cover Lifecycle / 模型伴生文件与封面生命周期死规矩
+* `.civitai_bak.*` is a persistent restore source created from a real Civitai download. Setting a custom cover MUST modify only `.preview.*`; it MUST NOT delete, overwrite, or repurpose `.civitai_bak.*`.
+* Reset cover priority is fixed: restore `.civitai_bak.*` to `.preview.*`; otherwise remove `.preview.*` only when a bare original cover (`model.png`, etc.) can take over naturally. If the active `.preview.*` is the only image, preserve it and return a visible warning instead of causing irreversible cover loss. Reset does not silently redownload from the network.
+* Physical rename means **move/rename** every recognized sidecar, including `.civitai_bak.*`, to the new model stem. It never means deleting the Civitai backup. Model deletion may clean sidecars only after the selected main model was successfully deleted.
+* Main model extensions (`.safetensors`, `.ckpt`, `.pt`, `.bin`) are never sidecar suffixes. A cleanup operation MUST NOT delete a same-stem model with another extension. If such a sibling survives, stem-keyed sidecars are ambiguous and must be preserved for it.
+* Performance boundary: sidecar operations use centralized immutable suffix tuples and a constant number of exact-path checks. Do not use `os.walk`, directory-wide globbing, full-directory indexing, hashes, or network calls for rename/delete/reset. This keeps the operation independent of model-folder size.
+* Preserve the product-language distinction in documentation and UI: **delete cleans sidecars; rename migrates sidecars**. Never describe both operations as deleting or "taking away" the files.
+
 ## 4. Frontend Architecture (Vanilla JS)
 Located in `web/main.js` (Under 1000 lines, fully refactored into ES Modules). Wraps its logic inside `app.registerExtension({ name: "Anomalous.ModelBrowser", ... })`.
 

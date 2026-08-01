@@ -962,7 +962,8 @@ export function showEditModal(model) {
                         physical_rename: false
                     })
                 });
-                if (res.ok) {
+                const result = await res.json();
+                if (res.ok && result.status === 'success') {
                     await this.loadModels();
                     const updatedModel = this.models.find(m => m.filename === model.filename);
                     if (this.currentDetailModel && this.currentDetailModel.filename === model.filename) {
@@ -973,6 +974,18 @@ export function showEditModal(model) {
                             this.detailPanel.style.display = 'none';
                         }
                     }
+                    if (result.cover_reset === false) {
+                        const noSource = result.cover_reset_source === 'preserved_current';
+                        alert(window.anomalous_browser_lang === 'zh'
+                            ? (noSource
+                                ? '未找到可恢复的 C 站备份或原始封面。为避免丢失唯一图片，当前封面已保留；自定义名称和备注仍已重置。'
+                                : '封面恢复未能完整完成，请检查文件权限或占用情况；自定义名称和备注仍已重置。')
+                            : (noSource
+                                ? 'No recoverable Civitai backup or original cover was found. The current cover was kept to avoid losing the only image; the custom name and notes were still reset.'
+                                : 'The cover restore could not be completed. Check file permissions or locks; the custom name and notes were still reset.'));
+                    }
+                } else {
+                    alert(result.message || (window.anomalous_browser_lang === 'zh' ? '重置失败。' : 'Reset failed.'));
                 }
             } catch (e) { console.error(e); }
         };

@@ -7,6 +7,10 @@
 
 ### 🐛 Bug Fixes
 - **Base Model Hash Misattribution**: Fixed a critical bug in the fast scanner where it would aggressively fuzzy-match any 64-character hex string in the metadata. This previously caused LoRAs (trained via Kohya) to inherit their Base Model's hash (`ss_sd_model_hash`), resulting in totally incorrect Civitai mappings. The scanner now strictly adheres to the official `modelspec.hash.sha256/blake3` standard.
+- **Lossless Cover Reset**: Reset now restores the persistent `.civitai_bak.*` copy first, falls back to a bare original cover for non-Civitai models, and preserves the active preview with a visible warning when no recoverable source exists.
+- **Safe Sidecar Lifecycle**: Deleting a model cleans recognized sidecars, while renaming migrates them—including the Civitai backup—to the new stem. Same-stem model files with different model extensions are never treated as sidecar garbage.
+- **Bounded Sidecar I/O**: Repeated extension literals in the API and scanner were replaced with fixed tuples and exact-path checks. Rename, delete, and reset remain constant-bounded and never scan an entire model directory.
+- **Reset/Rename Extension Integrity**: Fixed a reused loop variable that could change a model's extension when cover reset and physical rename were requested together.
 
 ## v1.5.0 (The Workflow & UI Evolution Update)
 ### 🚀 Major Features
