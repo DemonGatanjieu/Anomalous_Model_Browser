@@ -106,7 +106,7 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
                     if (!hashData && window.anomalous_hash_cache) {
                         const parts = val.split(/[/\\]/);
                         const basename = parts[parts.length - 1];
-                        const cache_data = window.anomalous_hash_cache[basename] || window.anomalous_hash_cache[val];
+                        const cache_data = window.anomalous_hash_cache[val] || window.anomalous_hash_cache[basename];
                         if (cache_data) {
                             hashData = typeof cache_data === 'string' ? { hash: cache_data, size: "" } : cache_data;
                         }
@@ -191,7 +191,9 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
         } catch (e) { }
 
         // Deep clear ComfyUI native error caches
-        if (app.lastNodeErrors) app.lastNodeErrors = null;
+        if (app.lastNodeErrors) {
+            Object.keys(app.lastNodeErrors).forEach(key => delete app.lastNodeErrors[key]);
+        }
         if (typeof app.clearErrors === 'function') app.clearErrors();
 
         // Note: We removed the aggressive "ghost clicker" that automatically clicked the Refresh button in the Vue side panel.
@@ -273,7 +275,7 @@ app.registerExtension({
                                 }
 
                                 if (!valIsMissing) {
-                                    const cache_data = window.anomalous_hash_cache[basename] || window.anomalous_hash_cache[val];
+                                    const cache_data = window.anomalous_hash_cache[val] || window.anomalous_hash_cache[basename];
                                     if (cache_data) {
                                         if (typeof cache_data === 'string') {
                                             extraObj.anomalous_hashes[`${node.id}_${val}`] = { hash: cache_data, size: "" };

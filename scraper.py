@@ -25,16 +25,23 @@ from typing import Dict, Optional
 # { "CIVITAI_API_KEY": "你的KEY" }
 # ==============================================================================
 CIVITAI_API_KEY = None
-config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
-if os.path.exists(config_path):
+plugin_dir = os.path.dirname(os.path.abspath(__file__))
+config_paths = [os.path.join(plugin_dir, "api", "config.json"), os.path.join(plugin_dir, "config.json")]
+for config_path in config_paths:
+    if not os.path.exists(config_path):
+        continue
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             cfg = json.load(f)
-            CIVITAI_API_KEY = cfg.get("CIVITAI_API_KEY", "").strip()
+        configured_key = cfg.get("CIVITAI_API_KEY", "")
+        if isinstance(configured_key, str) and configured_key.strip():
+            CIVITAI_API_KEY = configured_key.strip()
+            break
     except Exception as e:
         print(f"[-] 读取 config.json 失败: {e}")
-else:
-    print("[!] 未找到 config.json，本次请求将不使用 API Key。部分限制级模型或将无法获取图片。")
+
+if not CIVITAI_API_KEY:
+    print("[!] 未配置 Civitai API Key。部分限制级模型或将无法获取图片。")
 
 def calculate_sha256(file_path: str) -> str:
     """计算文件的 SHA256 哈希值 (用于 Civitai 匹配)"""
@@ -409,9 +416,9 @@ def main():
             else:
                 print(f"[Dry-Run] 拟生成标准描述信息 -> .info")
                 
+            media_url = None
             images = civitai_data.get("images", [])
             if images and len(images) > 0:
-                media_url = None
                 for img_obj in images:
                     if not args.skip_media:
                         if img_obj.get("url"):
@@ -454,18 +461,31 @@ def main():
                 success_count += 1
             elif file_path != new_file_path and new_filename != filename:
                 if os.path.exists(new_file_path):
-                    print(f"\033[91m[-] 目标版本已存在 (重复模型)，执行永久删除多余副本: {filename}\033[0m")
-                    if not args.dry_run:
+                    print(f"[*] 目标文件名已存在，正在验证内容是否完全相同: {filename}")
+                    try:
+                        files_identical = os.path.getsize(file_path) == os.path.getsize(new_file_path)
+                        if files_identical:
+                            files_identical = calculate_sha256(file_path) == calculate_sha256(new_file_path)
+                    except OSError:
+                        files_identical = False
+
+                    if not files_identical:
+                        print(f"\033[91m[-] 目标名称冲突但文件内容不同，已保留两个模型并跳过重命名: {filename}\033[0m")
+                        fail_count += 1
+                    elif not args.dry_run:
                         try:
+                            print(f"[*] Hash 一致，删除已确认的重复副本: {filename}")
                             os.remove(file_path)
                             for ext in [".info", ".civitai.info", ".json", ".txt", ".yaml", ".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif", ".mp4", ".webm", ".mov", ".avi", ".preview.png", ".preview.jpg", ".preview.jpeg", ".preview.webp", ".preview.gif", ".preview.avif", ".preview.mp4", ".preview.webm", ".preview.mov", ".preview.avi", ".civitai_bak.png", ".civitai_bak.jpg", ".civitai_bak.jpeg", ".civitai_bak.webp", ".civitai_bak.gif", ".civitai_bak.avif", ".civitai_bak.mp4", ".civitai_bak.webm", ".civitai_bak.mov", ".civitai_bak.avi"]:
                                 old_ext = old_base + ext
                                 if os.path.exists(old_ext):
                                     os.remove(old_ext)
+                            success_count += 1
                         except Exception as e:
                             print(f"[-] 删除多余副本失败 (可能文件被占用): {e}")
+                            fail_count += 1
                     else:
-                        print(f"[Dry-Run] 拟永久删除多余副本及其附属文件: {filename}")
+                        print(f"[Dry-Run] Hash 一致，拟删除重复副本及其附属文件: {filename}")
                 else:
                     if not args.dry_run:
                         os.rename(file_path, new_file_path)
@@ -478,6 +498,7 @@ def main():
                                 os.replace(old_ext, new_ext)
                                 
                         print(f"[+] 物理重命名完成: {filename}  ==>  {new_filename}")
+                        success_count += 1
                     else:
                         print(f"[Dry-Run] 拟物理重命名文件: {filename}  ==>  {new_filename}")
                         print(f"[Dry-Run] 拟连带重命名附属文件 (.info / .png 等)")

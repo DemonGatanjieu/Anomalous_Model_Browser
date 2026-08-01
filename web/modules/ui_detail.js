@@ -5,6 +5,7 @@
 
 import { app } from "../../../scripts/app.js";
 import { i18n } from './locales.js';
+import { escapeHtml, setSafeRichHtml } from './safe_dom.js';
 
 const t = (key) => {
     let lang = window.anomalous_browser_lang || 'zh';
@@ -46,6 +47,8 @@ export function showDetail(model) {
             this.currentDetailObserver.disconnect();
             this.currentDetailObserver = null;
         }
+        if (this.detailMouseMoveHandler) window.removeEventListener('mousemove', this.detailMouseMoveHandler);
+        if (this.detailMouseUpHandler) window.removeEventListener('mouseup', this.detailMouseUpHandler);
         this.grid.style.display = 'none';
         this.detailPanel.style.display = 'flex';
         this.stopMediaInContainer(this.detailPanel); this.detailPanel.innerHTML = '';
@@ -121,7 +124,7 @@ export function showDetail(model) {
         };
 
         const title = document.createElement('h2');
-        title.innerHTML = model.filename;
+        title.textContent = model.filename;
         title.style.margin = '0 20px 0 20px';
         title.style.color = '#fff';
         title.style.fontSize = '1.2em';
@@ -266,7 +269,7 @@ export function showDetail(model) {
             e.preventDefault();
         });
 
-        window.addEventListener('mousemove', (e) => {
+        this.detailMouseMoveHandler = (e) => {
             if (!isResizing) return;
             const containerRect = splitContainer.getBoundingClientRect();
             let newWidth = ((e.clientX - containerRect.left) / containerRect.width) * 100;
@@ -274,14 +277,16 @@ export function showDetail(model) {
             if (newWidth > 80) newWidth = 80;
             leftPanel.style.width = newWidth + '%';
             rightPanel.style.width = (100 - newWidth) + '%';
-        });
+        };
+        window.addEventListener('mousemove', this.detailMouseMoveHandler);
 
-        window.addEventListener('mouseup', () => {
+        this.detailMouseUpHandler = () => {
             if (isResizing) {
                 isResizing = false;
                 document.body.style.cursor = '';
             }
-        });
+        };
+        window.addEventListener('mouseup', this.detailMouseUpHandler);
 
         const rightPanel = document.createElement('div');
         rightPanel.className = 'anomalous-split-right';
@@ -319,13 +324,14 @@ export function showDetail(model) {
         const metaSpan = document.createElement('span');
         metaSpan.style.fontSize = '0.9em';
         metaSpan.style.color = '#aaa';
-        metaSpan.innerHTML = `<strong>Size:</strong> ${model.size_mb} MB` + (m.baseModel ? ` <strong style="margin-left:10px;">Base:</strong> ${m.baseModel}` : '');
+        metaSpan.innerHTML = `<strong>Size:</strong> ${escapeHtml(model.size_mb)} MB` + (m.baseModel ? ` <strong style="margin-left:10px;">Base:</strong> ${escapeHtml(m.baseModel)}` : '');
         topRow.appendChild(metaSpan);
 
         if (m.civitai_url) {
             const cBtn = document.createElement('a');
             cBtn.href = m.civitai_url;
             cBtn.target = '_blank';
+            cBtn.rel = 'noopener noreferrer';
             cBtn.innerHTML = '🌐 Civitai';
             cBtn.style.marginLeft = 'auto';
             cBtn.style.padding = '4px 8px';
@@ -535,7 +541,7 @@ export function showDetail(model) {
             descText.style.border = '1px solid #333';
             descText.style.fontSize = '0.95em';
             descText.style.lineHeight = '1.4';
-            descText.innerHTML = m.description;
+            setSafeRichHtml(descText, m.description);
             descCont.appendChild(descText);
 
             rightPanel.appendChild(descCont);
@@ -558,7 +564,7 @@ export function showDetail(model) {
             notesText.style.marginTop = '5px';
             notesText.style.border = '1px solid #554400';
             notesText.style.fontSize = '0.9em';
-            notesText.innerHTML = m.notes;
+            setSafeRichHtml(notesText, m.notes);
             notesCont.appendChild(notesText);
 
             rightPanel.appendChild(notesCont);
@@ -571,7 +577,7 @@ export function showDetail(model) {
 
             const compTitle = document.createElement('div');
             compTitle.className = 'anomalous-compatible-title';
-            compTitle.innerHTML = `${t('compatibleModels') || '🔗 Compatible'} <span style="font-size:0.8em; opacity:0.6;">(${m.baseModel})</span>`;
+            compTitle.innerHTML = `${t('compatibleModels') || '🔗 Compatible'} <span style="font-size:0.8em; opacity:0.6;">(${escapeHtml(m.baseModel)})</span>`;
 
             const compList = document.createElement('div');
             compList.className = 'anomalous-compatible-list';
@@ -607,7 +613,7 @@ export function showDetail(model) {
                             thumb = `<div style="width:30px; height:30px; background:#222; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#555;">?</div>`;
                         }
 
-                        mItem.innerHTML = `${thumb}<div class="anomalous-compatible-item-name">${m_comp.filename}</div>`;
+                        mItem.innerHTML = `${thumb}<div class="anomalous-compatible-item-name">${escapeHtml(m_comp.filename)}</div>`;
 
                         if (m_comp.preview_url && (m_comp.preview_url.match(/\.mp4(?:&|$)/i) || m_comp.preview_url.match(/\.webm(?:&|$)/i))) {
                             mItem.onmouseenter = () => { const v = mItem.querySelector('video'); if (v) v.play().catch(e => { }); };
@@ -833,7 +839,7 @@ export function showEditModal(model) {
         title.style.fontWeight = '500';
 
         const filenameLabel = document.createElement('div');
-        filenameLabel.innerHTML = `<span style="color:#9aa0a6;">${window.anomalous_browser_lang === 'zh' ? '文件:' : 'File:'}</span> ${model.filename}`;
+        filenameLabel.innerHTML = `<span style="color:#9aa0a6;">${window.anomalous_browser_lang === 'zh' ? '文件:' : 'File:'}</span> ${escapeHtml(model.filename)}`;
         filenameLabel.style.color = '#e8eaed';
         filenameLabel.style.fontSize = '0.9em';
         filenameLabel.style.wordBreak = 'break-all';
@@ -1736,7 +1742,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                     leftPart.style.display = 'flex';
                     leftPart.style.alignItems = 'center';
                     leftPart.style.gap = '8px';
-                    leftPart.innerHTML = `<span style="color:#9aa0a6">📁</span> <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">${fData.name}</span> <span style="color:#5f6368;font-size:12px">(${fData.model_count})</span>`;
+                    leftPart.innerHTML = `<span style="color:#9aa0a6">📁</span> <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">${escapeHtml(fData.name)}</span> <span style="color:#5f6368;font-size:12px">(${escapeHtml(fData.model_count)})</span>`;
                     
                     const badge = document.createElement('div');
                     badge.className = 'selection-badge';

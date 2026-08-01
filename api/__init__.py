@@ -31,6 +31,8 @@ def setup_routes(app):
     app.router.add_get('/anomalous/all_hashes', api_get_all_hashes)
     app.router.add_post('/anomalous/scan_all', api_scan_all)
     app.router.add_get('/anomalous/global_scan_status', api_global_scan_status)
+    app.router.add_get('/anomalous/scan_missing_models_status', api_scan_missing_models_status)
+    app.router.add_post('/anomalous/clear_cache', api_clear_cache)
     app.router.add_post('/anomalous/update_metadata', api_update_metadata)
     app.router.add_post('/anomalous/set_custom_cover', api_set_custom_cover)
     app.router.add_post('/anomalous/upload_custom_cover', api_upload_custom_cover)

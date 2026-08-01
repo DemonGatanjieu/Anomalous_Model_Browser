@@ -272,7 +272,7 @@ class AnomalousBrowser {
                         const basename = parts[parts.length - 1];
 
                         let isHealthy = false;
-                        let cacheHit = window.anomalous_hash_cache[basename] || window.anomalous_hash_cache[val];
+                        let cacheHit = window.anomalous_hash_cache[val] || window.anomalous_hash_cache[basename];
 
                         const fetchRes = await fetch(`/anomalous/resolve_hash?hash=unknown&size=&filename=${encodeURIComponent(val)}`);
                         const fetchData = await fetchRes.json();

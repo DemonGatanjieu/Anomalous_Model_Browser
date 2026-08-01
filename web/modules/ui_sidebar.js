@@ -5,6 +5,7 @@
 
 import { app } from "../../../scripts/app.js";
 import { i18n } from './locales.js';
+import { escapeHtml } from './safe_dom.js';
 
 const t = (key) => {
     let lang = window.anomalous_browser_lang || 'zh';
@@ -15,6 +16,8 @@ const t = (key) => {
 
 
 export function createDOM() {
+        localStorage.removeItem('anomalous_api_key');
+        localStorage.removeItem('anomalous_civitai_api_key');
         this.modal = document.createElement('div');
         this.modal.id = 'anomalous-modal';
 
@@ -279,10 +282,8 @@ export function createDOM() {
         apiKeyBtn.id = 'anomalous-api-btn';
         apiKeyBtn.innerHTML = `<span class="anomalous-btn-text">${t('apiKeyConfig')}</span>`;
         apiKeyBtn.onclick = async () => {
-            const current = localStorage.getItem('anomalous_api_key') || '';
-            const val = prompt(t('apiKeyPrompt'), current);
+            const val = prompt(t('apiKeyPrompt'), '');
             if (val !== null) {
-                localStorage.setItem('anomalous_api_key', val.trim());
                 try {
                     await fetch('/anomalous/save_config', {
                         method: 'POST',
@@ -411,11 +412,16 @@ export function createDOM() {
             };
 
             const apiKeyBtn = createGhostBtn('🔑', 'API 密钥', 'API Key', () => {
-                const currentKey = localStorage.getItem('anomalous_civitai_api_key') || '';
-                const newKey = prompt(window.anomalous_browser_lang === 'zh' ? '请输入 Civitai API Key (留空取消):' : 'Enter Civitai API Key:', currentKey);
+                const newKey = prompt(window.anomalous_browser_lang === 'zh' ? '请输入 Civitai API Key（留空将清除）:' : 'Enter Civitai API Key (leave blank to clear):', '');
                 if (newKey !== null) {
-                    localStorage.setItem('anomalous_civitai_api_key', newKey.trim());
-                    alert(window.anomalous_browser_lang === 'zh' ? '✅ 密钥保存成功' : '✅ Key Saved');
+                    fetch('/anomalous/save_config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ api_key: newKey.trim() })
+                    }).then(res => res.json()).then(data => {
+                        if (data.status !== 'ok') throw new Error(data.message || 'Save failed');
+                        alert(window.anomalous_browser_lang === 'zh' ? '✅ 密钥保存成功' : '✅ Key Saved');
+                    }).catch(error => alert((window.anomalous_browser_lang === 'zh' ? '❌ 保存失败: ' : '❌ Save failed: ') + error.message));
                 }
             });
 
@@ -1148,7 +1154,9 @@ export function createDOM() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        use_local_metadata: localStorage.getItem('anomalous_local_metadata_scan') !== 'false'
+                        use_local_metadata: localStorage.getItem('anomalous_local_metadata_scan') !== 'false',
+                        skip_rename: true,
+                        skip_media: true
                     })
                 });
                 const data = await res.json();
@@ -1733,7 +1741,7 @@ export function renderSidebar() {
             header.style.cursor = 'pointer';
 
             const isTypeExpanded = this.expandedFolders.has(typeGroup.type);
-            header.innerHTML = `<span>${typeGroup.label}</span> <span>${isTypeExpanded ? '▼' : '▶'}</span>`;
+            header.innerHTML = `<span>${escapeHtml(typeGroup.label)}</span> <span>${isTypeExpanded ? '▼' : '▶'}</span>`;
 
             header.onclick = () => {
                 if (isTypeExpanded) this.expandedFolders.delete(typeGroup.type);
@@ -1774,7 +1782,7 @@ export function renderSidebar() {
                     toggleIcon = `<span style="margin-right: 8px; width: 12px; display: inline-block;"></span>`;
                 }
 
-                item.innerHTML = `${toggleIcon}<span class="anomalous-folder-name" style="color: #ddd;">${info.name}</span> <span style="opacity:0.4; font-size:0.8em; margin-left: 5px;">${info.model_count}</span>`;
+                item.innerHTML = `${toggleIcon}<span class="anomalous-folder-name" style="color: #ddd;">${escapeHtml(info.name)}</span> <span style="opacity:0.4; font-size:0.8em; margin-left: 5px;">${escapeHtml(info.model_count)}</span>`;
 
                 if (this.currentType === typeGroup.type && this.currentPathIdx === typeGroup.path_idx && this.currentSubfolder === path) {
                     item.classList.add('active');

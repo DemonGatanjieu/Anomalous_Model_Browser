@@ -9,7 +9,7 @@ import asyncio
 from aiohttp import web
 import folder_paths
 import struct
-from .utils import get_active_folder_types, get_folder_view_mode, get_active_physical_basenames
+from .utils import get_active_folder_types, get_folder_view_mode, get_active_physical_basenames, require_filename, resolve_folder_subdir, resolve_within
 
 async def api_get_folders(request):
     mode = get_folder_view_mode()
@@ -144,17 +144,11 @@ async def api_get_models(request):
         paths = folder_paths.get_folder_paths(folder_type)
     except Exception:
         return web.json_response({"models": [], "total": 0})
-    if not paths or path_idx >= len(paths):
-        return web.json_response({"models": [], "total": 0})
-    if '..' in subfolder:
+    try:
+        base_dir, target_dir = resolve_folder_subdir(folder_type, path_idx, subfolder)
+    except (ValueError, KeyError):
         return web.Response(status=400, text='Invalid subfolder')
-    base_dir = paths[path_idx]
-    if subfolder == '/':
-        target_dir = base_dir
-        rel_subfolder = ""
-    else:
-        rel_subfolder = subfolder.strip('/')
-        target_dir = os.path.join(base_dir, rel_subfolder)
+    rel_subfolder = "" if subfolder == '/' else subfolder.strip('/\\')
     if not os.path.exists(target_dir):
         return web.json_response({"models": [], "total": 0})
     try:
@@ -274,24 +268,12 @@ async def api_delete_model(request):
         except:
             path_idx = 0
             
-        if not filename or '..' in filename or '..' in subfolder:
-            return web.json_response({"status": "error", "message": f"Invalid request parameters. filename={repr(filename)}, subfolder={repr(subfolder)}"})
-            
         try:
-            paths = folder_paths.get_folder_paths(folder_type)
-        except Exception:
-            return web.json_response({"status": "error", "message": "Invalid folder type"})
-            
-        if not paths or path_idx >= len(paths):
-            return web.json_response({"status": "error", "message": "Invalid path index"})
-            
-        base_dir = paths[path_idx]
-        if subfolder == '/':
-            target_dir = base_dir
-        else:
-            target_dir = os.path.join(base_dir, subfolder.strip('/'))
-            
-        model_path = os.path.join(target_dir, filename)
+            filename = require_filename(filename)
+            _, target_dir = resolve_folder_subdir(folder_type, path_idx, subfolder)
+            model_path = resolve_within(target_dir, filename)
+        except (ValueError, KeyError):
+            return web.json_response({"status": "error", "message": "Invalid request parameters"}, status=400)
         if not os.path.exists(model_path):
             return web.json_response({"status": "error", "message": "Model file not found"})
             
@@ -309,8 +291,13 @@ async def api_delete_model(request):
         # 2. 主模型成功删除后，再清理配套的垃圾文件
         associated_exts = [
             '.safetensors', '.ckpt', '.pt', '.bin',
-            '.info', '.civitai.info', 
-            '.png', '.preview.png', '.jpg', '.jpeg', '.webp', '.gif',
+            '.info', '.civitai.info',
+            '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi',
+            '.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif',
+            '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi',
+            '.civitai_bak.png', '.civitai_bak.jpg', '.civitai_bak.jpeg', '.civitai_bak.webp',
+            '.civitai_bak.gif', '.civitai_bak.avif', '.civitai_bak.mp4', '.civitai_bak.webm',
+            '.civitai_bak.mov', '.civitai_bak.avi',
             '.json', '.txt', '.yaml'
         ]
         
@@ -456,8 +443,28 @@ async def api_resolve_hash(request):
 
     types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
     
-    # Layer 1: Fast Size Match (O(1) filesystem check)
-    if target_size is not None:
+    # Layer 1: Exact path/filename check for pre-flight imports.
+    if filename_query:
+        normalized_query = filename_query.replace('\\', '/').lstrip('./')
+        query_basename = normalized_query.rsplit('/', 1)[-1]
+        for t in types:
+            try:
+                paths = folder_paths.get_folder_paths(t)
+            except Exception:
+                continue
+            for base_dir in paths or []:
+                if not os.path.exists(base_dir):
+                    continue
+                for root, dirs, files in os.walk(base_dir):
+                    for file in files:
+                        if not file.endswith(('.safetensors', '.ckpt', '.pt')):
+                            continue
+                        rel_path = os.path.relpath(os.path.join(root, file), base_dir).replace('\\', '/')
+                        if rel_path == normalized_query or ('/' not in normalized_query and file == query_basename):
+                            return web.json_response({"found": True, "type": t, "filename": rel_path, "matched_by_filename": True})
+
+    # Layer 2: Size is only a fallback when no trustworthy hash was saved.
+    if target_size is not None and (not target_hash or target_hash == "UNKNOWN"):
         size_matches = []
         seen_realpaths = set()
         for t in types:
@@ -503,7 +510,7 @@ async def api_resolve_hash(request):
                 "matched_by_size": True
             })
 
-    # Layer 2: Metadata Hash Match (Reads .info, falls back to safetensors header)
+    # Layer 3: Metadata Hash Match (Reads .info, falls back to safetensors header)
     if target_hash and target_hash != "UNKNOWN":
         for t in types:
             try:
@@ -561,6 +568,18 @@ async def api_get_all_hashes(request):
     
     def fetch_all():
         hashes = {}
+        ambiguous_keys = set()
+
+        def add_hash(key, value):
+            if key in ambiguous_keys:
+                return
+            existing = hashes.get(key)
+            if existing is None or existing == value:
+                hashes[key] = value
+            else:
+                hashes.pop(key, None)
+                ambiguous_keys.add(key)
+
         types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
         seen_dirs = set()
         for t in types:
@@ -592,8 +611,8 @@ async def api_get_all_hashes(request):
                                 basename = os.path.basename(file_path)
                                 
                                 val = {"hash": hash_val, "size": size_bytes}
-                                hashes[rel_path] = val
-                                hashes[basename] = val
+                                add_hash(rel_path, val)
+                                add_hash(basename, val)
             except Exception:
                 pass
         return hashes
@@ -613,16 +632,12 @@ async def api_update_metadata(request):
         try: path_idx = int(data.get('path_idx', 0))
         except: path_idx = 0
 
-        if not filename or '..' in filename or '..' in subfolder:
-            return web.json_response({"status": "error", "message": f"Invalid request parameters. filename={repr(filename)}, subfolder={repr(subfolder)}"})
-            
-        paths = folder_paths.get_folder_paths(folder_type)
-        if not paths or path_idx >= len(paths):
-            return web.json_response({"status": "error", "message": "Invalid path index"})
-            
-        base_dir = paths[path_idx]
-        target_dir = base_dir if subfolder == '/' else os.path.join(base_dir, subfolder.strip('/'))
-        file_path = os.path.join(target_dir, filename)
+        try:
+            filename = require_filename(filename)
+            _, target_dir = resolve_folder_subdir(folder_type, path_idx, subfolder)
+            file_path = resolve_within(target_dir, filename)
+        except (ValueError, KeyError):
+            return web.json_response({"status": "error", "message": "Invalid request parameters"}, status=400)
         
         if not os.path.exists(file_path):
             return web.json_response({"status": "error", "message": "Model not found"})
@@ -652,16 +667,16 @@ async def api_update_metadata(request):
         if reset_cover:
             # 1. Delete any custom active cover (.preview.*)
             for ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi']:
-                p = os.path.join(target_dir, f"{base_name}{ext}")
+                p = f"{base_name}{ext}"
                 if os.path.exists(p):
                     try: os.remove(p)
                     except: pass
                     
             # 2. If a Civitai backup exists, copy it back to .preview.* so standard ComfyUI can see it
             for ext in ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
-                civitai_bak = os.path.join(target_dir, f"{base_name}.civitai_bak{ext}")
+                civitai_bak = f"{base_name}.civitai_bak{ext}"
                 if os.path.exists(civitai_bak):
-                    restored_p = os.path.join(target_dir, f"{base_name}.preview{ext}")
+                    restored_p = f"{base_name}.preview{ext}"
                     import shutil
                     try: shutil.copy2(civitai_bak, restored_p)
                     except: pass
@@ -673,22 +688,18 @@ async def api_update_metadata(request):
         
         if physical_rename and custom_name:
             import re
-            safe_name = re.sub(r'[<>:"/\\|?*]', '_', custom_name)
+            safe_name = re.sub(r'[<>:"/\\|?*]', '_', custom_name).strip(' .')
+            if not safe_name:
+                return web.json_response({"status": "error", "message": "The physical filename cannot be empty."}, status=400)
             new_file_path = os.path.join(target_dir, f"{safe_name}{ext}")
             
             if new_file_path != file_path and not os.path.exists(new_file_path):
                 os.rename(file_path, new_file_path)
                 
-                new_info = os.path.join(target_dir, f"{safe_name}.civitai.info")
-                os.rename(info_file, new_info)
-                
-                preview_png = f"{base_name}.preview.png"
-                if os.path.exists(preview_png):
-                    os.rename(preview_png, os.path.join(target_dir, f"{safe_name}.preview.png"))
-                
-                civitai_bak = f"{base_name}.civitai_bak.png"
-                if os.path.exists(civitai_bak):
-                    os.rename(civitai_bak, os.path.join(target_dir, f"{safe_name}.civitai_bak.png"))
+                for suffix in ['.info', '.civitai.info', '.json', '.txt', '.yaml', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi', '.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.civitai_bak.png', '.civitai_bak.jpg', '.civitai_bak.jpeg', '.civitai_bak.webp', '.civitai_bak.gif', '.civitai_bak.avif', '.civitai_bak.mp4', '.civitai_bak.webm', '.civitai_bak.mov', '.civitai_bak.avi']:
+                    old_sidecar = f"{base_name}{suffix}"
+                    if os.path.exists(old_sidecar):
+                        os.rename(old_sidecar, os.path.join(target_dir, f"{safe_name}{suffix}"))
                     
                 new_filename = f"{safe_name}{ext}"
             elif os.path.exists(new_file_path) and new_file_path != file_path:
@@ -728,22 +739,19 @@ async def api_set_custom_cover(request):
         try: path_idx = int(data.get('path_idx', 0))
         except: path_idx = 0
 
-        if not filename or not source_image or '..' in filename or '..' in subfolder:
-            return web.json_response({"status": "error", "message": f"Invalid request parameters. filename={repr(filename)}, subfolder={repr(subfolder)}"})
-            
-        paths = folder_paths.get_folder_paths(folder_type)
-        if not paths or path_idx >= len(paths):
-            return web.json_response({"status": "error", "message": "Invalid path index"})
-            
-        target_dir = paths[path_idx] if subfolder == '/' else os.path.join(paths[path_idx], subfolder.strip('/'))
-        
-        # Resolve source_image
-        output_dir = folder_paths.get_output_directory()
-        src_path = os.path.join(output_dir, source_image)
+        try:
+            filename = require_filename(filename)
+            _, target_dir = resolve_folder_subdir(folder_type, path_idx, subfolder)
+            output_dir = folder_paths.get_output_directory()
+            src_path = resolve_within(output_dir, source_image)
+        except (ValueError, KeyError):
+            return web.json_response({"status": "error", "message": "Invalid request parameters"}, status=400)
         if not os.path.exists(src_path):
             return web.json_response({"status": "error", "message": "Source image not found in output directory"})
             
         source_ext = os.path.splitext(src_path)[1].lower()
+        if source_ext not in {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi'}:
+            return web.json_response({"status": "error", "message": "Unsupported cover format"}, status=415)
             
         async def save_copy(dest_path):
             import shutil
@@ -767,21 +775,22 @@ async def api_upload_custom_cover(request):
         
         image_field = data.get('image')
 
-        if not filename or '..' in filename or '..' in subfolder or image_field is None:
-            return web.json_response({"status": "error", "message": f"Invalid request parameters"})
-            
-        paths = folder_paths.get_folder_paths(folder_type)
-        if not paths or path_idx >= len(paths):
-            return web.json_response({"status": "error", "message": "Invalid path index"})
-            
-        target_dir = paths[path_idx] if subfolder == '/' else os.path.join(paths[path_idx], subfolder.strip('/'))
+        try:
+            filename = require_filename(filename)
+            _, target_dir = resolve_folder_subdir(folder_type, path_idx, subfolder)
+        except (ValueError, KeyError):
+            return web.json_response({"status": "error", "message": "Invalid request parameters"}, status=400)
+        if image_field is None:
+            return web.json_response({"status": "error", "message": "Image is required"}, status=400)
         
         image_data = image_field.file.read()
+        if len(image_data) > 100 * 1024 * 1024:
+            return web.json_response({"status": "error", "message": "Cover file is too large"}, status=413)
         
         upload_filename = image_field.filename
         source_ext = os.path.splitext(upload_filename)[1].lower()
-        if not source_ext:
-            source_ext = '.png'
+        if source_ext not in {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi'}:
+            return web.json_response({"status": "error", "message": "Unsupported cover format"}, status=415)
         
         async def save_upload(dest_path):
             def write_file():
@@ -988,11 +997,10 @@ async def api_batch_select(request):
             except Exception: paths = []
             
             if paths and path_idx < len(paths):
-                base_dir = paths[path_idx]
-                if subfolder == '/':
-                    target_dir = base_dir
-                else:
-                    target_dir = os.path.join(base_dir, subfolder)
+                try:
+                    base_dir, target_dir = resolve_folder_subdir(t, path_idx, subfolder)
+                except ValueError:
+                    return web.json_response({"selected": {}})
                     
                 if os.path.exists(target_dir):
                     try: entries = os.listdir(target_dir)

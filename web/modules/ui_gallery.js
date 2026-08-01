@@ -4,6 +4,7 @@
  */
 
 import { app } from "../../../scripts/app.js";
+import { escapeHtml } from './safe_dom.js';
 
 
 
@@ -438,8 +439,8 @@ export function showGallerySelectMode(model) {
         }
         banner.style.display = 'block';
         banner.innerHTML = window.anomalous_browser_lang === 'zh'
-            ? `正在为模型 <span style="color:#ff0;">${model.filename}</span> 选择封面。请点击下方的图片。<button id="anomalous-cancel-select" style="margin-left:15px;color:#000;background:#fff;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;">取消</button>`
-            : `Selecting cover for <span style="color:#ff0;">${model.filename}</span>. Click an image below.<button id="anomalous-cancel-select" style="margin-left:15px;color:#000;background:#fff;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;">Cancel</button>`;
+            ? `正在为模型 <span style="color:#ff0;">${escapeHtml(model.filename)}</span> 选择封面。请点击下方的图片。<button id="anomalous-cancel-select" style="margin-left:15px;color:#000;background:#fff;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;">取消</button>`
+            : `Selecting cover for <span style="color:#ff0;">${escapeHtml(model.filename)}</span>. Click an image below.<button id="anomalous-cancel-select" style="margin-left:15px;color:#000;background:#fff;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;">Cancel</button>`;
 
         document.getElementById('anomalous-cancel-select').onclick = () => {
             const tempModel = this.gallerySelectModel;

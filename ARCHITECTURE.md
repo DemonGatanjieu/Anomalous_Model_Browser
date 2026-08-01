@@ -20,7 +20,7 @@ Anomalous_Model_Browser/
 │   ├── models.py                # Core model listing and routing (API endpoints)
 │   ├── notebooks.py             # Notebooks management logic
 │   ├── scanner.py               # Scanning engine for hash resolution and caching
-│   └── utils.py                 # Shared backend utilities
+│   └── utils.py                 # Shared backend utilities and safe path boundary helpers
 ├── scraper.py                   # Async HTTP client logic & web scraping (Root Level)
 ├── CHANGELOG.md                 # Version history
 ├── error_and_experience_summary.md # VERY IMPORTANT: Read this first to avoid past mistakes!
@@ -35,7 +35,9 @@ Anomalous_Model_Browser/
 │       ├── ui_notebooks.js      # Notebooks editor
 │       ├── ui_gallery.js        # Fullscreen Gallery Viewer
 │       ├── ui_grid.js           # Main grid and model loading
-│       └── locales.js           # Dedicated multi-language dictionary (i18n)
+│       ├── locales.js           # Dedicated multi-language dictionary (i18n)
+│       └── safe_dom.js          # HTML escaping and allowlisted rich-text sanitization
+├── tests/                       # Backend security and path-boundary regression tests
 ├── docs/                        # Supplemental documentation
 ```
 
@@ -49,6 +51,9 @@ All endpoints are prefixed with `/anomalous/`.
 3. **Always Restart ComfyUI**: Any changes to the `api/` package **REQUIRE** a full ComfyUI server restart to take effect.
 4. **Never use hardcoded backslash strings**: When writing path manipulation code, use `os.sep` or `os.path.normpath()` instead of `replace('\\', '/')`. Editing tools may corrupt escaped backslashes silently.
 5. **Dynamic Folder Resolution (Config-Driven)**: Never hardcode folder types (like `checkpoints`, `loras`). Always use `api.utils.get_active_folder_types()` to enforce whitelist logic. Folders disabled by the user in `config.json` are completely skipped during `os.walk`, ensuring zero I/O overhead for hidden directories.
+6. **Strict Path Containment**: Every request path must go through `resolve_folder_subdir()`, `resolve_within()`, and `require_filename()` as appropriate. Checking only for `..` is forbidden: absolute Windows paths, UNC paths, alternate separators, and symlinks can otherwise escape the configured model/output/notebook directory. File-serving endpoints must also enforce an explicit media-extension allowlist.
+7. **Canonical Configuration**: Runtime UI settings and newly saved API keys live in `api/config.json`. `scraper.py` reads that file first and falls back to the legacy root `config.json` only for backward compatibility. API keys must never be persisted in browser `localStorage`.
+8. **Atomic Background State**: Set scan state or create the exclusive marker file before launching a worker thread/process. Folder scans use `.scan_in_progress`; global quick scans use `.global_scan_in_progress`; deep missing-model scans use `GLOBAL_SCAN_STATE`, exposed by `/anomalous/scan_missing_models_status`.
 
 ## 4. Frontend Architecture (Vanilla JS)
 Located in `web/main.js` (Under 1000 lines, fully refactored into ES Modules). Wraps its logic inside `app.registerExtension({ name: "Anomalous.ModelBrowser", ... })`.
@@ -80,6 +85,7 @@ Instead of fragmenting the class scope and losing context, we extracted all UI p
    - Overlay Modals: `10001` to `999999`
    - *Critical Rule*: Never arbitrarily assign z-indexes. A child modal MUST have a strictly higher z-index to prevent the parent from consuming clicks.
 4. **DOM ID Conflicts with CSS**: When assigning an `id` to an element dynamically, always `grep_search` `styles.css` first.
+5. **Untrusted Text and Rich HTML**: Filenames, folder names, notebook names, workflow values, and metadata are untrusted. Use `textContent` or `escapeHtml()` for normal text. Only Civitai description/notes fields may retain formatting, and they must be inserted with `setSafeRichHtml()` from `safe_dom.js`; direct metadata assignment to `innerHTML` is forbidden.
 
 ## 5. Hash Resolver Subsystem & Scanning Engine (`hash_resolver.js` & `scraper.py`)
 A highly complex subsystem responsible for automatically resolving missing/broken model references in workflows, and aggressively scanning models to build local caches.
@@ -88,10 +94,12 @@ A highly complex subsystem responsible for automatically resolving missing/broke
 * This is the absolute core of the resolution engine. It maps physical filenames to their exact SHA256 hashes.
 * It is **ALWAYS fetched on startup** via `fetch('/anomalous/all_hashes')`. Without this dictionary, hash injection and resolution are mathematically impossible.
 * Whenever a scan finishes (Scan Wizard or Deep Hash Scan), `window.anomalous_reload_hashes()` MUST be called to synchronize the frontend dictionary with the newly generated `.info` files on the disk.
+* The cache exposes relative-path and basename aliases only when they are unambiguous. If two local models share a key but have different hash/size values, that alias is omitted instead of silently choosing one. Frontend lookups must prefer the full widget value before falling back to a basename.
 
 ### Model Provenance Binding (模型溯源绑定 - `anomalous_inject_hash`)
 * Controls whether hashes are invisibly injected into the `extra_pnginfo` and workflow JSON when a user saves a workflow or generates an image.
 * **Logic Flow**: `LGraph.prototype.serialize` is hooked. If enabled, it intercepts the serialization, looks up every model widget's filename in `window.anomalous_hash_cache`, and explicitly writes `extraObj.anomalous_hashes[node_id_filename] = {hash, size}`.
+* Resolution order is exact local path, saved hash, then file size only when no trustworthy hash exists. A unique byte size is not proof of model identity and must never override an available hash.
 
 ### The Triple-Fallback Scanning Engine (`api/scanner.py` & `scraper.py`)
 When "Deep Hash Scan" is triggered, it runs in a background thread to prevent UI lockup. It uses a triple fallback to identify models:
@@ -99,6 +107,7 @@ When "Deep Hash Scan" is triggered, it runs in a background thread to prevent UI
 2. **Fallback 2 (Full File SHA256)**: If the header has no hash, it brutally calculates the full file SHA256 (Slow) and hits Civitai.
 3. **Fallback 3 (Offline Inference)**: If Civitai returns 404, it reads the Tensor Fingerprints (keys like `cond_stage_model`) from the header to guess the Base Model (SDXL, SD 1.5, Flux, SD3) and builds a local `.info` file.
 * **CRITICAL INJECTION**: After a fallback succeeds, the engine **FORCE INJECTS** the matched hash into the resulting JSON dictionary at `["files"][0]["hashes"]["SHA256"]`. This guarantees that `get_metadata` will always find a matching hash for resolution.
+* Physical rename conflicts are non-destructive. When the target filename already exists, both files must be hashed; deletion is permitted only when their complete SHA256 values match. Different files with the same generated display name must both be preserved.
 
 ### Resolution Execution (`window.anomalous_resolve_all_missing_nodes`)
 Scans all nodes in `app.graph._nodes` that are colored red.

@@ -10,6 +10,37 @@ from aiohttp import web
 import folder_paths
 import struct
 
+
+def resolve_within(base_dir, *parts):
+    """Resolve a path and require it to stay inside base_dir, including through symlinks."""
+    base_real = os.path.realpath(base_dir)
+    candidate = os.path.realpath(os.path.join(base_real, *parts))
+    try:
+        if os.path.commonpath([base_real, candidate]) != base_real:
+            raise ValueError("Path escapes the configured directory")
+    except ValueError:
+        raise ValueError("Path escapes the configured directory")
+    return candidate
+
+
+def get_folder_root(folder_type, path_idx=0):
+    paths = folder_paths.get_folder_paths(folder_type)
+    if not paths or not isinstance(path_idx, int) or path_idx < 0 or path_idx >= len(paths):
+        raise ValueError("Invalid folder path")
+    return os.path.realpath(paths[path_idx])
+
+
+def resolve_folder_subdir(folder_type, path_idx=0, subfolder='/'):
+    base_dir = get_folder_root(folder_type, path_idx)
+    relative = "" if subfolder in (None, "", "/") else str(subfolder).strip("/\\")
+    return base_dir, resolve_within(base_dir, relative)
+
+
+def require_filename(filename):
+    if not isinstance(filename, str) or not filename or os.path.basename(filename) != filename:
+        raise ValueError("Invalid filename")
+    return filename
+
 async def api_serve_image(request):
     """Dedicated image serving endpoint for model preview images."""
     folder_type = request.query.get('type', 'checkpoints')
@@ -20,21 +51,12 @@ async def api_serve_image(request):
     subfolder = request.query.get('subfolder', '')
     filename = request.query.get('filename', '')
     
-    if not filename or '..' in filename or '..' in subfolder:
-        return web.Response(status=400, text='Invalid request')
-    
     try:
-        paths = folder_paths.get_folder_paths(folder_type)
-    except Exception:
-        return web.Response(status=404, text='Folder type not found')
-    if not paths or path_idx >= len(paths):
-        return web.Response(status=404, text='Folder type not found')
-    
-    base_dir = paths[path_idx]
-    if subfolder:
-        file_path = os.path.join(base_dir, subfolder, filename)
-    else:
-        file_path = os.path.join(base_dir, filename)
+        filename = require_filename(filename)
+        _, target_dir = resolve_folder_subdir(folder_type, path_idx, subfolder)
+        file_path = resolve_within(target_dir, filename)
+    except (ValueError, KeyError):
+        return web.Response(status=400, text='Invalid request')
     
     if not os.path.exists(file_path) or not os.path.isfile(file_path):
         return web.Response(status=404, text='Image not found')
@@ -46,12 +68,15 @@ async def api_serve_image(request):
         '.jpeg': 'image/jpeg',
         '.webp': 'image/webp',
         '.gif': 'image/gif',
+        '.avif': 'image/avif',
         '.mp4': 'video/mp4',
         '.webm': 'video/webm',
         '.mov': 'video/quicktime',
         '.avi': 'video/x-msvideo'
     }
-    content_type = content_types.get(ext, 'application/octet-stream')
+    content_type = content_types.get(ext)
+    if content_type is None:
+        return web.Response(status=415, text='Unsupported media type')
     
     return web.FileResponse(file_path, headers={'Content-Type': content_type})
 
@@ -122,32 +147,33 @@ async def api_get_gallery_images(request):
         if not os.path.exists(output_dir):
             return web.json_response({"images": [], "total": 0, "page": 1, "pages": 0})
             
-        page = int(request.query.get('page', 1))
-        limit = int(request.query.get('limit', 50))
+        page = max(1, int(request.query.get('page', 1)))
+        limit = min(200, max(1, int(request.query.get('limit', 50))))
         
         valid_exts = {'.png', '.jpg', '.jpeg', '.webp', '.gif'}
-        images = []
-        
-        for root, dirs, files in os.walk(output_dir):
-            for f in files:
-                ext = os.path.splitext(f)[1].lower()
-                if ext in valid_exts:
-                    rel_path = os.path.relpath(root, output_dir)
-                    subfolder = "" if rel_path == "." else rel_path.replace('\\', '/')
-                    full_path = os.path.join(root, f)
-                    try:
-                        mtime = os.path.getmtime(full_path)
-                    except:
-                        mtime = 0
-                    images.append({
-                        "filename": f,
-                        "subfolder": subfolder,
-                        "type": "output",
-                        "mtime": mtime
-                    })
-                    
-        # Sort by mtime descending (newest first)
-        images.sort(key=lambda x: x['mtime'], reverse=True)
+        def collect_images():
+            images = []
+            for root, dirs, files in os.walk(output_dir):
+                for f in files:
+                    ext = os.path.splitext(f)[1].lower()
+                    if ext in valid_exts:
+                        rel_path = os.path.relpath(root, output_dir)
+                        subfolder = "" if rel_path == "." else rel_path.replace('\\', '/')
+                        full_path = os.path.join(root, f)
+                        try:
+                            mtime = os.path.getmtime(full_path)
+                        except OSError:
+                            mtime = 0
+                        images.append({
+                            "filename": f,
+                            "subfolder": subfolder,
+                            "type": "output",
+                            "mtime": mtime
+                        })
+            images.sort(key=lambda x: x['mtime'], reverse=True)
+            return images
+
+        images = await asyncio.to_thread(collect_images)
         
         total = len(images)
         start_idx = (page - 1) * limit
@@ -169,14 +195,13 @@ async def api_delete_gallery_image(request):
         filename = data.get("filename")
         subfolder = data.get("subfolder", "")
         
-        if not filename or '..' in filename or '..' in subfolder:
-            return web.json_response({"status": "error", "message": "Invalid parameters"})
-            
         output_dir = folder_paths.get_output_directory()
-        if subfolder:
-            file_path = os.path.join(output_dir, subfolder, filename)
-        else:
-            file_path = os.path.join(output_dir, filename)
+        try:
+            filename = require_filename(filename)
+            target_dir = resolve_within(output_dir, subfolder)
+            file_path = resolve_within(target_dir, filename)
+        except ValueError:
+            return web.json_response({"status": "error", "message": "Invalid parameters"}, status=400)
         
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -222,53 +247,40 @@ async def api_get_model_images(request):
     if not os.path.exists(output_dir):
         return web.json_response({'images': []})
         
-    matched_images = []
-    
-    # Search all PNGs in output_dir
-    for root, _, files in os.walk(output_dir):
-        for file in files:
-            if file.lower().endswith('.png'):
+    def find_images():
+        matched_images = []
+        for root, _, files in os.walk(output_dir):
+            for file in files:
+                if not file.lower().endswith('.png'):
+                    continue
                 full_path = os.path.join(root, file)
                 prompt_text = read_png_text_fast(full_path)
-                if prompt_text:
-                    try:
-                        prompt_data = json.loads(prompt_text)
-                        matched = False
-                        for node_id, node in prompt_data.items():
-                            if 'class_type' in node:
-                                inputs = node.get('inputs', {})
-                                for k, v in inputs.items():
-                                    if isinstance(v, str):
-                                        try:
-                                            if os.path.basename(v).lower() == base_target:
-                                                matched = True
-                                                break
-                                        except Exception:
-                                            pass
-                            if matched:
-                                break
-                                
-                        if matched:
-                            # Match found
-                            rel_path = os.path.relpath(root, output_dir).replace('\\', '/')
-                            if rel_path == '.': rel_path = ''
-                            
-                            # Standard comfyUI /view format:
-                            # /view?filename=XX.png&type=output&subfolder=YY
-                            url = f'/view?filename={urllib.parse.quote(file)}&type=output'
-                            if rel_path:
-                                url += f'&subfolder={urllib.parse.quote(rel_path)}'
-                                
-                            mtime = os.path.getmtime(full_path)
-                            matched_images.append({
-                                'url': url,
-                                'mtime': mtime
-                            })
-                    except Exception:
-                        pass
-                        
-    # Sort by mtime descending (newest first)
-    matched_images.sort(key=lambda x: x['mtime'], reverse=True)
+                if not prompt_text:
+                    continue
+                try:
+                    prompt_data = json.loads(prompt_text)
+                    matched = any(
+                        os.path.basename(v).lower() == base_target
+                        for node in prompt_data.values()
+                        if isinstance(node, dict) and 'class_type' in node
+                        for v in node.get('inputs', {}).values()
+                        if isinstance(v, str)
+                    )
+                    if not matched:
+                        continue
+                    rel_path = os.path.relpath(root, output_dir).replace('\\', '/')
+                    if rel_path == '.':
+                        rel_path = ''
+                    url = f'/view?filename={urllib.parse.quote(file)}&type=output'
+                    if rel_path:
+                        url += f'&subfolder={urllib.parse.quote(rel_path)}'
+                    matched_images.append({'url': url, 'mtime': os.path.getmtime(full_path)})
+                except (OSError, ValueError, TypeError, json.JSONDecodeError):
+                    pass
+        matched_images.sort(key=lambda x: x['mtime'], reverse=True)
+        return matched_images
+
+    matched_images = await asyncio.to_thread(find_images)
     
     return web.json_response({'images': matched_images})
 

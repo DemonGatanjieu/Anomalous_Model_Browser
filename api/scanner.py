@@ -8,7 +8,7 @@ import asyncio
 from aiohttp import web
 import folder_paths
 import struct
-from .utils import get_active_folder_types, get_active_scan_paths
+from .utils import get_active_folder_types, get_active_scan_paths, resolve_folder_subdir
 
 async def api_scan_status(request):
     folder_type = request.query.get('type', 'checkpoints')
@@ -21,14 +21,12 @@ async def api_scan_status(request):
         paths = folder_paths.get_folder_paths(folder_type)
     except Exception:
         return web.json_response({"scanning": False})
-    if not paths or path_idx >= len(paths) or '..' in subfolder:
+    if not paths or path_idx < 0 or path_idx >= len(paths):
         return web.json_response({"scanning": False})
-    
-    base_dir = paths[path_idx]
-    if subfolder == '/':
-        target_dir = base_dir
-    else:
-        target_dir = os.path.join(base_dir, subfolder.strip('/'))
+    try:
+        base_dir, target_dir = resolve_folder_subdir(folder_type, path_idx, subfolder)
+    except ValueError:
+        return web.json_response({"scanning": False})
     
     marker_file = os.path.join(target_dir, '.scan_in_progress')
     result_file = os.path.join(target_dir, '.scan_result.json')
@@ -54,22 +52,10 @@ async def api_scan_folder(request):
     except:
         path_idx = 0
         
-    if '..' in subfolder:
-        return web.json_response({"status": "error", "message": "Invalid subfolder"})
-
     try:
-        paths = folder_paths.get_folder_paths(folder_type)
-    except Exception:
+        base_dir, target_dir = resolve_folder_subdir(folder_type, path_idx, subfolder)
+    except (ValueError, KeyError):
         return web.json_response({"status": "error", "message": "Invalid folder type"})
-        
-    if not paths or path_idx >= len(paths):
-        return web.json_response({"status": "error", "message": "Invalid path index"})
-        
-    base_dir = paths[path_idx]
-    if subfolder == '/':
-        target_dir = base_dir
-    else:
-        target_dir = os.path.join(base_dir, subfolder.strip('/'))
         
     if not os.path.exists(target_dir):
         return web.json_response({"status": "error", "message": "Directory does not exist"})
@@ -100,13 +86,18 @@ async def api_scan_folder(request):
         target_files_list = [f.strip() for f in target_files_str.split(',')] if target_files_str else []
     
     try:
+        marker_file = os.path.join(target_dir, '.scan_in_progress')
+        try:
+            with open(marker_file, 'x') as f:
+                f.write('1')
+        except FileExistsError:
+            return web.json_response({"status": "error", "message": "Scan already in progress"}, status=409)
+
         if target_files_list:
             targets_file = os.path.join(target_dir, '.scan_targets.json')
             with open(targets_file, 'w', encoding='utf-8') as f:
                 __import__('json').dump(target_files_list, f)
-                
-        marker_file = os.path.join(target_dir, '.scan_in_progress')
-        with open(marker_file, 'w') as f: f.write('1')
+
         def run_bg():
             try:
                 cmd = [sys.executable, scraper_path, target_dir]
@@ -121,12 +112,14 @@ async def api_scan_folder(request):
                 if force_overwrite:
                     cmd.append("--force-overwrite")
                 
-                subprocess.run(
+                result = subprocess.run(
                     cmd,
-                    cwd=plugin_dir,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL
+                    cwd=plugin_dir
                 )
+                if result.returncode != 0:
+                    result_file = os.path.join(target_dir, '.scan_result.json')
+                    with open(result_file, 'w', encoding='utf-8') as f:
+                        json.dump({"success": 0, "fail": 1, "error": f"Scanner exited with code {result.returncode}"}, f)
             finally:
                 if hasattr(folder_paths, "filename_list_cache"):
                     try: folder_paths.filename_list_cache.clear()
@@ -143,15 +136,15 @@ async def api_scan_folder(request):
         
         return web.json_response({"status": "ok", "message": "Scan started in background. Check console for details."})
     except Exception as e:
+        if 'marker_file' in locals() and os.path.exists(marker_file):
+            try: os.remove(marker_file)
+            except OSError: pass
         return web.json_response({"status": "error", "message": str(e)})
 
 async def api_scan_all(request):
     plugin_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     scraper_path = os.path.join(plugin_dir, "scraper.py")
     marker_file = os.path.join(plugin_dir, '.global_scan_in_progress')
-    
-    if os.path.exists(marker_file):
-        return web.json_response({"status": "error", "message": "Global scan already in progress"})
         
     try:
         data = await request.json()
@@ -167,7 +160,11 @@ async def api_scan_all(request):
     skip_media = data.get("skip_media", False)
     
     try:
-        with open(marker_file, 'w') as f: f.write('1')
+        try:
+            with open(marker_file, 'x') as f:
+                f.write('1')
+        except FileExistsError:
+            return web.json_response({"status": "error", "message": "Global scan already in progress"}, status=409)
         
         def run_global_bg():
             try:
@@ -191,12 +188,12 @@ async def api_scan_all(request):
                             cmd.append("--skip-media")
                         if not use_local_metadata:
                             cmd.append("--skip-local-metadata")
-                        subprocess.run(
+                        result = subprocess.run(
                             cmd,
-                            cwd=plugin_dir,
-                            stdout=subprocess.DEVNULL,
-                            stderr=subprocess.DEVNULL
+                            cwd=plugin_dir
                         )
+                        if result.returncode != 0:
+                            print(f"[Anomalous Browser] Scanner exited with code {result.returncode}: {base_dir}")
                     except Exception as e:
                         print(f"[Anomalous Browser] Global scan error on {base_dir}: {e}")
             finally:
@@ -214,6 +211,9 @@ async def api_scan_all(request):
         threading.Thread(target=run_global_bg, daemon=True).start()
         return web.json_response({"status": "ok", "message": "Global scan started"})
     except Exception as e:
+        if os.path.exists(marker_file):
+            try: os.remove(marker_file)
+            except OSError: pass
         return web.json_response({"status": "error", "message": str(e)})
 
 async def api_global_scan_status(request):
@@ -247,14 +247,12 @@ GLOBAL_SCAN_STATE = {
     "filename": "",
     "error": ""
 }
+GLOBAL_SCAN_LOCK = threading.Lock()
 
 async def api_scan_missing_models_status(request):
     return web.json_response(GLOBAL_SCAN_STATE)
 
 async def api_scan_missing_models(request):
-    if GLOBAL_SCAN_STATE["scanning"]:
-        return web.json_response({"status": "error", "message": "Scan already in progress"})
-        
     import sys
     import threading
     import traceback
@@ -268,6 +266,15 @@ async def api_scan_missing_models(request):
     except ImportError:
         return web.json_response({"status": "error", "message": "Failed to load scraper module"})
 
+    with GLOBAL_SCAN_LOCK:
+        if GLOBAL_SCAN_STATE["scanning"]:
+            return web.json_response({"status": "error", "message": "Scan already in progress"}, status=409)
+        GLOBAL_SCAN_STATE["scanning"] = True
+        GLOBAL_SCAN_STATE["total"] = 0
+        GLOBAL_SCAN_STATE["current"] = 0
+        GLOBAL_SCAN_STATE["filename"] = "Initializing..."
+        GLOBAL_SCAN_STATE["error"] = ""
+
     try:
         data = await request.json()
     except Exception:
@@ -275,22 +282,16 @@ async def api_scan_missing_models(request):
         
     force_overwrite = data.get("force_overwrite", False)
 
-    # Prevent race condition: set state immediately in main thread
-    GLOBAL_SCAN_STATE["scanning"] = True
-    GLOBAL_SCAN_STATE["total"] = 0
-    GLOBAL_SCAN_STATE["current"] = 0
-    GLOBAL_SCAN_STATE["filename"] = "Initializing..."
-    GLOBAL_SCAN_STATE["error"] = ""
-
     def run_deep_scan():
         try:
             paths_to_scan = get_active_scan_paths()
             files_to_scan = []
             for base_dir in paths_to_scan:
                 if not os.path.exists(base_dir): continue
-            for root, dirs, files in os.walk(base_dir):
-                for file in files:
-                    if file.endswith('.safetensors'):
+                for root, dirs, files in os.walk(base_dir):
+                    for file in files:
+                        if not file.endswith('.safetensors'):
+                            continue
                         file_path = os.path.join(root, file)
                         base_path = os.path.splitext(file_path)[0]
                         info_path = base_path + ".info"
@@ -379,7 +380,7 @@ async def api_scan_missing_models(request):
                         json.dump(civitai_data, f, ensure_ascii=True, indent=4)
                         
                 except Exception as e:
-                    pass
+                    GLOBAL_SCAN_STATE["error"] = f"{filename}: {e}"
                     
         except Exception as e:
             GLOBAL_SCAN_STATE["error"] = str(e)
@@ -394,5 +395,10 @@ async def api_scan_missing_models(request):
             if hasattr(folder_paths, "cache_helper") and hasattr(folder_paths.cache_helper, "clear"):
                 folder_paths.cache_helper.clear()
                 
-    threading.Thread(target=run_deep_scan, daemon=True).start()
+    try:
+        threading.Thread(target=run_deep_scan, daemon=True).start()
+    except Exception as e:
+        GLOBAL_SCAN_STATE["scanning"] = False
+        GLOBAL_SCAN_STATE["error"] = str(e)
+        return web.json_response({"status": "error", "message": str(e)}, status=500)
     return web.json_response({"status": "success", "message": "Deep scan started in background"})

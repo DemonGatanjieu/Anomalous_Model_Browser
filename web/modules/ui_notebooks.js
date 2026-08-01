@@ -5,6 +5,7 @@
 
 import { app } from "../../../scripts/app.js";
 import { i18n } from './locales.js';
+import { escapeHtml } from './safe_dom.js';
 
 const t = (key) => {
     let lang = window.anomalous_browser_lang || 'zh';
@@ -128,7 +129,7 @@ export async function refreshNotebooks(autoOpenFirst = false) {
                     if (this.currentNotebook && this.currentNotebook.filename === nb.filename) {
                         item.classList.add('active');
                     }
-                    item.innerHTML = `<span class="anomalous-nb-item-icon">📄&nbsp;</span><span class="anomalous-nb-item-text">${nb.name}</span>`;
+                    item.innerHTML = `<span class="anomalous-nb-item-icon">📄&nbsp;</span><span class="anomalous-nb-item-text">${escapeHtml(nb.name)}</span>`;
                     item.onclick = () => {
                         this.currentNotebook = nb;
                         this.renderNotebookEditor();
@@ -185,7 +186,7 @@ export function renderNotebookEditor() {
         tb.className = 'anomalous-nb-toolbar';
 
         const titleArea = document.createElement('h3');
-        titleArea.innerHTML = this.currentNotebook.name;
+        titleArea.textContent = this.currentNotebook.name;
         titleArea.style.margin = '0';
 
         const rightBtns = document.createElement('div');
@@ -570,7 +571,7 @@ export function fillNotebookGalleries(baseModel, mainGallery, loraGallery, data)
                             const isSelected = (data.mainModel && data.mainModel.filename === m.filename);
                             const card = document.createElement('div');
                             card.className = 'anomalous-nb-minicheck ' + (isSelected ? 'selected' : '');
-                            card.innerHTML = `${buildThumbHtml(m)}<div class="anomalous-nb-minicheck-name" title="${m.filename}">${m.filename}</div>`;
+                            card.innerHTML = `${buildThumbHtml(m)}<div class="anomalous-nb-minicheck-name" title="${escapeHtml(m.filename)}">${escapeHtml(m.filename)}</div>`;
 
                             if (m.preview_url && (m.preview_url.match(/\.mp4(?:&|$)/i) || m.preview_url.match(/\.webm(?:&|$)/i))) {
                                 card.onmouseenter = () => { const v = card.querySelector('video'); if (v) v.play().catch(e => { }); };
@@ -608,7 +609,7 @@ export function fillNotebookGalleries(baseModel, mainGallery, loraGallery, data)
                                 badgeHtml = `<div style="position:absolute; top:-5px; right:-5px; background:#00ffcc; color:#000; border-radius:50%; width:20px; height:20px; font-size:12px; display:flex; align-items:center; justify-content:center; font-weight:bold; z-index:10; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">${loraIndex + 1}</div>`;
                             }
 
-                            card.innerHTML = `${badgeHtml}${buildThumbHtml(m)}<div class="anomalous-nb-minilora-name" title="${m.filename}">${m.filename}</div>`;
+                            card.innerHTML = `${badgeHtml}${buildThumbHtml(m)}<div class="anomalous-nb-minilora-name" title="${escapeHtml(m.filename)}">${escapeHtml(m.filename)}</div>`;
 
                             if (m.preview_url && (m.preview_url.match(/\.mp4(?:&|$)/i) || m.preview_url.match(/\.webm(?:&|$)/i))) {
                                 card.onmouseenter = () => { const v = card.querySelector('video'); if (v) v.play().catch(e => { }); };

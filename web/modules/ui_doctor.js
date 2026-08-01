@@ -1,4 +1,5 @@
 import { app } from "../../../scripts/app.js";
+import { escapeHtml } from './safe_dom.js';
 /**
  * ui_doctor.js
  * Extracted Doctor Panel & Assistant Panel methods.
@@ -132,7 +133,7 @@ for (const w of node.widgets) {
         }
 
         if (modelWidgets.length === 0) {
-            placeholder.innerHTML = `<div style="font-size:36px;">⚠️</div><div style="text-align:center;">${window.anomalous_browser_lang === 'zh' ? '该节点没有受支持的模型参数' : 'No supported model parameter on this node'}</div><div style="font-size:12px;color:#555;margin-top:4px;">${node.type || ''}</div>`;
+            placeholder.innerHTML = `<div style="font-size:36px;">⚠️</div><div style="text-align:center;">${window.anomalous_browser_lang === 'zh' ? '该节点没有受支持的模型参数' : 'No supported model parameter on this node'}</div><div style="font-size:12px;color:#555;margin-top:4px;">${escapeHtml(node.type || '')}</div>`;
             placeholder.style.display = 'flex';
             nodeContent.style.display = 'none';
             nodeContent.innerHTML = '';
@@ -281,7 +282,7 @@ for (const data of missingNodesData) {
             right.style.cssText = 'display:flex; align-items:center; gap:12px;';
             
             if (isHealthy && exactMatch && exactMatch !== val) {
-                right.innerHTML = `<div style="text-align:right;"><div style="color:#ffc107;font-size:13px;font-weight:bold;">🟡 ${zh?'自动重定向':'Auto-Redirected'}</div><div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:4px;">${exactMatch.split(/[\/]/).pop()}</div></div>`;
+                right.innerHTML = `<div style="text-align:right;"><div style="color:#ffc107;font-size:13px;font-weight:bold;">🟡 ${zh?'自动重定向':'Auto-Redirected'}</div><div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:4px;">${escapeHtml(exactMatch.split(/[\/]/).pop())}</div></div>`;
 } else if (isHealthy) {
                 right.innerHTML = `<div style="color:#28a745;font-size:13px;font-weight:bold;padding:6px 12px;background:rgba(40,167,69,0.1);border-radius:20px;">🟢 ${zh?'正常':'Ready'}</div>`;
             } else {
@@ -340,7 +341,7 @@ if (!isHealthy) {
                         const pollStatus = async () => {
                             if (!pollActive) return;
                             try {
-                                const statusRes = await fetch('/anomalous/global_scan_status');
+                                const statusRes = await fetch('/anomalous/scan_missing_models_status');
                                 if (!statusRes.ok) throw new Error(`HTTP ${statusRes.status}`);
                                 const statusData = await statusRes.json();
                                 
