@@ -8,7 +8,7 @@ import asyncio
 from aiohttp import web
 import folder_paths
 import struct
-from .utils import get_active_folder_types
+from .utils import get_active_folder_types, get_active_scan_paths
 
 async def api_scan_status(request):
     folder_type = request.query.get('type', 'checkpoints')
@@ -171,37 +171,34 @@ async def api_scan_all(request):
         
         def run_global_bg():
             try:
-                types = get_active_folder_types()
-                for t in types:
+                paths_to_scan = get_active_scan_paths()
+                for base_dir in paths_to_scan:
+                    if not os.path.exists(base_dir): continue
                     try:
-                        paths = folder_paths.get_folder_paths(t)
-                        if not paths: continue
-                        for base_dir in paths:
-                            if not os.path.exists(base_dir): continue
-                            print(f"[Anomalous Browser] Global scan processing: {base_dir}")
-                            cmd = [sys.executable, scraper_path, base_dir]
-                            if offline_only:
-                                cmd.append("--offline-only")
-                            if skip_rename:
-                                cmd.append("--skip-rename")
-                            if virtual_rename:
-                                cmd.append("--virtual-rename")
-                            if physical_rename:
-                                cmd.append("--physical-rename")
-                            if force_overwrite:
-                                cmd.append("--force-overwrite")
-                            if skip_media:
-                                cmd.append("--skip-media")
-                            if not use_local_metadata:
-                                cmd.append("--skip-local-metadata")
-                            subprocess.run(
-                                cmd,
-                                cwd=plugin_dir,
-                                stdout=subprocess.DEVNULL,
-                                stderr=subprocess.DEVNULL
-                            )
+                        print(f"[Anomalous Browser] Global scan processing: {base_dir}")
+                        cmd = [sys.executable, scraper_path, base_dir]
+                        if offline_only:
+                            cmd.append("--offline-only")
+                        if skip_rename:
+                            cmd.append("--skip-rename")
+                        if virtual_rename:
+                            cmd.append("--virtual-rename")
+                        if physical_rename:
+                            cmd.append("--physical-rename")
+                        if force_overwrite:
+                            cmd.append("--force-overwrite")
+                        if skip_media:
+                            cmd.append("--skip-media")
+                        if not use_local_metadata:
+                            cmd.append("--skip-local-metadata")
+                        subprocess.run(
+                            cmd,
+                            cwd=plugin_dir,
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL
+                        )
                     except Exception as e:
-                        print(f"[Anomalous Browser] Global scan error on {t}: {e}")
+                        print(f"[Anomalous Browser] Global scan error on {base_dir}: {e}")
             finally:
                 if hasattr(folder_paths, "filename_list_cache"):
                     try: folder_paths.filename_list_cache.clear()
@@ -225,26 +222,19 @@ async def api_global_scan_status(request):
     return web.json_response({"scanning": os.path.exists(marker_file)})
 async def api_clean_civitai_info(request):
     try:
-        types = get_active_folder_types()
+        paths_to_clean = get_active_scan_paths()
         deleted_count = 0
-        for t in types:
-            try:
-                paths = folder_paths.get_folder_paths(t)
-            except Exception:
-                continue
-            if not paths: continue
-            
-            for base_dir in paths:
-                if not os.path.exists(base_dir): continue
-                for root, dirs, files in os.walk(base_dir):
-                    for file in files:
-                        if file.endswith('.civitai.info'):
-                            file_path = os.path.join(root, file)
-                            try:
-                                os.remove(file_path)
-                                deleted_count += 1
-                            except Exception as e:
-                                pass
+        for base_dir in paths_to_clean:
+            if not os.path.exists(base_dir): continue
+            for root, dirs, files in os.walk(base_dir):
+                for file in files:
+                    if file.endswith('.civitai.info'):
+                        file_path = os.path.join(root, file)
+                        try:
+                            os.remove(file_path)
+                            deleted_count += 1
+                        except Exception as e:
+                            pass
                                 
         return web.json_response({"status": "success", "count": deleted_count})
     except Exception as e:
@@ -294,46 +284,39 @@ async def api_scan_missing_models(request):
 
     def run_deep_scan():
         try:
-            types = get_active_folder_types()
+            paths_to_scan = get_active_scan_paths()
             files_to_scan = []
-            
-            for t in types:
-                try:
-                    paths = folder_paths.get_folder_paths(t)
-                    if not paths: continue
-                    for base_dir in paths:
-                        if not os.path.exists(base_dir): continue
-                        for root, dirs, files in os.walk(base_dir):
-                            for file in files:
-                                if file.endswith('.safetensors'):
-                                    file_path = os.path.join(root, file)
-                                    base_path = os.path.splitext(file_path)[0]
-                                    info_path = base_path + ".info"
-                                    civitai_info_path = base_path + ".civitai.info"
-                                    
-                                    # Check if a valid info file exists
-                                    has_valid_info = False
-                                    actual_info = info_path if os.path.exists(info_path) else (civitai_info_path if os.path.exists(civitai_info_path) else None)
-                                    
-                                    if force_overwrite:
-                                        actual_info = None
-                                        
-                                    if actual_info:
-                                        try:
-                                            with open(actual_info, 'r', encoding='utf-8') as f:
-                                                data = json.load(f)
-                                                for fi in data.get("files", []):
-                                                    if isinstance(fi, dict) and "hashes" in fi and "SHA256" in fi["hashes"]:
-                                                        if fi["hashes"]["SHA256"]:
-                                                            has_valid_info = True
-                                                            break
-                                        except Exception:
-                                            pass
-                                            
-                                    if not has_valid_info:
-                                        files_to_scan.append(file_path)
-                except Exception:
-                    pass
+            for base_dir in paths_to_scan:
+                if not os.path.exists(base_dir): continue
+            for root, dirs, files in os.walk(base_dir):
+                for file in files:
+                    if file.endswith('.safetensors'):
+                        file_path = os.path.join(root, file)
+                        base_path = os.path.splitext(file_path)[0]
+                        info_path = base_path + ".info"
+                        civitai_info_path = base_path + ".civitai.info"
+                        
+                        # Check if a valid info file exists
+                        has_valid_info = False
+                        actual_info = info_path if os.path.exists(info_path) else (civitai_info_path if os.path.exists(civitai_info_path) else None)
+                        
+                        if force_overwrite:
+                            actual_info = None
+                            
+                        if actual_info:
+                            try:
+                                with open(actual_info, 'r', encoding='utf-8') as f:
+                                    data = json.load(f)
+                                    for fi in data.get("files", []):
+                                        if isinstance(fi, dict) and "hashes" in fi and "SHA256" in fi["hashes"]:
+                                            if fi["hashes"]["SHA256"]:
+                                                has_valid_info = True
+                                                break
+                            except Exception:
+                                pass
+                                
+                        if not has_valid_info:
+                            files_to_scan.append(file_path)
             
             GLOBAL_SCAN_STATE["total"] = len(files_to_scan)
             

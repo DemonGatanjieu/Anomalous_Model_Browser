@@ -47,6 +47,12 @@ async def api_save_config(request):
         if folder_types_config is not None:
             cfg["folder_types_config"] = folder_types_config
             
+        if "physical_folders_config" in data:
+            cfg["physical_folders_config"] = data.get("physical_folders_config")
+            
+        if "folder_view_mode" in data:
+            cfg["folder_view_mode"] = data.get("folder_view_mode")
+            
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(cfg, f, indent=4)
             

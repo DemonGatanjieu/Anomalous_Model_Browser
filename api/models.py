@@ -9,54 +9,124 @@ import asyncio
 from aiohttp import web
 import folder_paths
 import struct
-from .utils import get_active_folder_types
+from .utils import get_active_folder_types, get_folder_view_mode, get_active_physical_basenames
 
 async def api_get_folders(request):
-    types = get_active_folder_types()
+    mode = get_folder_view_mode()
     result = []
     seen_dirs = set()
     
-    for t in types:
-        try:
-            paths = folder_paths.get_folder_paths(t)
-        except Exception:
-            continue
-        if not paths:
-            continue
-            
-        for path_idx, base_dir in enumerate(paths):
-            if not os.path.exists(base_dir):
-                continue
-            real_path = os.path.realpath(base_dir)
-            if real_path in seen_dirs:
-                continue
-            seen_dirs.add(real_path)
-            
-            tree = {}
-            for root, dirs, files in os.walk(base_dir):
-                has_models = any(f.endswith(('.safetensors', '.ckpt', '.pt')) for f in files)
-                rel = os.path.relpath(root, base_dir)
-                if rel == '.':
-                    rel = '/'
-                else:
-                    rel = '/' + rel.replace('\\', '/')
-                tree[rel] = {
-                    "path": rel,
-                    "name": os.path.basename(root) if rel != '/' else '[Root]',
-                    "has_models": has_models,
-                    "model_count": sum(1 for f in files if f.endswith(('.safetensors', '.ckpt', '.pt')))
-                }
+    if mode == "physical":
+        active_bns = get_active_physical_basenames()
+        all_paths_info = []
+        
+        for t in folder_paths.folder_names_and_paths.keys():
+            try:
+                paths = folder_paths.get_folder_paths(t)
+                if not paths: continue
+                for path_idx, base_dir in enumerate(paths):
+                    if not os.path.exists(base_dir): continue
+                    real_path = os.path.realpath(base_dir)
+                    if real_path in seen_dirs: continue
+                    seen_dirs.add(real_path)
+                    
+                    bn = os.path.basename(os.path.normpath(base_dir))
+                    all_paths_info.append({
+                        "t": t,
+                        "path_idx": path_idx,
+                        "base_dir": base_dir,
+                        "bn": bn
+                    })
+            except:
+                pass
                 
-            label = t.capitalize()
-            if path_idx > 0:
-                label += f" ({os.path.basename(base_dir)})"
+        for target_bn in active_bns:
+            matched = [p for p in all_paths_info if p["bn"] == target_bn]
+            if not matched: continue
+            
+            for item in matched:
+                base_dir = item["base_dir"]
+                tree = {}
+                for root, dirs, files in os.walk(base_dir):
+                    has_models = any(f.endswith(('.safetensors', '.ckpt', '.pt')) for f in files)
+                    rel = os.path.relpath(root, base_dir)
+                    if rel == '.':
+                        rel = '/'
+                    else:
+                        rel = '/' + rel.replace('\\', '/')
+                    tree[rel] = {
+                        "path": rel,
+                        "name": os.path.basename(root) if rel != '/' else '[Root]',
+                        "has_models": has_models,
+                        "model_count": sum(1 for f in files if f.endswith(('.safetensors', '.ckpt', '.pt')))
+                    }
                 
-            result.append({
-                "type": t,
-                "path_idx": path_idx,
-                "label": label,
-                "folders": tree
-            })
+                label = item["bn"]
+                if len(matched) > 1:
+                    label += f" ({item['path_idx'] + 1})"
+                    
+                result.append({
+                    "type": item["t"],
+                    "path_idx": item["path_idx"],
+                    "label": label,
+                    "folders": tree
+                })
+    else:
+        types = get_active_folder_types()
+        for t in types:
+            try:
+                paths = folder_paths.get_folder_paths(t)
+            except Exception:
+                continue
+            if not paths:
+                continue
+                
+            for path_idx, base_dir in enumerate(paths):
+                if not os.path.exists(base_dir):
+                    continue
+                real_path = os.path.realpath(base_dir)
+                if real_path in seen_dirs:
+                    continue
+                seen_dirs.add(real_path)
+                
+                tree = {}
+                for root, dirs, files in os.walk(base_dir):
+                    has_models = any(f.endswith(('.safetensors', '.ckpt', '.pt')) for f in files)
+                    rel = os.path.relpath(root, base_dir)
+                    if rel == '.':
+                        rel = '/'
+                    else:
+                        rel = '/' + rel.replace('\\', '/')
+                    tree[rel] = {
+                        "path": rel,
+                        "name": os.path.basename(root) if rel != '/' else '[Root]',
+                        "has_models": has_models,
+                        "model_count": sum(1 for f in files if f.endswith(('.safetensors', '.ckpt', '.pt')))
+                    }
+                    
+                try:
+                    folder_basename = os.path.basename(os.path.normpath(base_dir))
+                    if not folder_basename:
+                        folder_basename = t
+                except:
+                    folder_basename = t
+                    
+                label = folder_basename
+                    
+                basenames = []
+                try:
+                    basenames = [os.path.basename(os.path.normpath(p)) for p in paths]
+                except:
+                    pass
+                if basenames.count(folder_basename) > 1:
+                    label += f" ({path_idx + 1})"
+                    
+                result.append({
+                    "type": t,
+                    "path_idx": path_idx,
+                    "label": label,
+                    "folders": tree
+                })
         
     return web.json_response({"folders": result})
 

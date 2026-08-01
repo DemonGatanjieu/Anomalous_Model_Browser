@@ -811,13 +811,13 @@ fetch('/anomalous/resolve_paths_to_previews', {
                         card.appendChild(imgBox);
                         card.appendChild(nameDiv);
                         grid.appendChild(card);
-                        card.onclick = () => {
+                        card.onclick = async () => {
                             w.value = path;
                             const wIdx = node.widgets.indexOf(w);
                             if (wIdx !== -1 && node.widgets_values) {
                                 node.widgets_values[wIdx] = path;
                             }
-if (w.options && w.options.values && !w.options.values.includes(path)) {
+                            if (w.options && w.options.values && !w.options.values.includes(path)) {
                                 const newVals = [...w.options.values];
                                 newVals.push(path);
                                 w.options.values = newVals;
@@ -835,6 +835,27 @@ if (w.options && w.options.values && !w.options.values.includes(path)) {
                                 if (app.graph.change) app.graph.change();
                                 try { window.dispatchEvent(new CustomEvent("graphChanged")); } catch(e){}
                             }
+                            
+                            // Exactly simulate the native "Refresh" button behavior to update the global registry
+                            try {
+                                await fetch('/anomalous/clear_cache', { method: 'POST' });
+                                if (typeof app.refreshComboInNodes === 'function') {
+                                    await app.refreshComboInNodes();
+                                }
+                            } catch(e) {
+                                console.warn("Failed to natively refresh combos:", e);
+                            }
+                            
+                            if (!window.anomalous_has_warned_vue_refresh) {
+                                window.anomalous_has_warned_vue_refresh = true;
+                                const lang = (window.anomalous_browser_lang === 'en') ? 'en' : 'zh';
+                                if (lang === 'en') {
+                                    alert("💡 Tip: ComfyUI V1 caches errors heavily. Please manually click the [Refresh] button in the 'Workflow Overview' side panel, or refresh your browser (F5) to prevent them from turning red again on workflow switch.");
+                                } else {
+                                    alert("💡 提示：ComfyUI V1 对报错的缓存极深。请务必手动点击侧边栏【工作流总览】中的【刷新】按钮，或者直接按 F5 刷新浏览器，否则切换工作流时节点可能会再次变红。");
+                                }
+                            }
+                            
                             this.diagnoseNode(node);
                             modal.remove();
                         };

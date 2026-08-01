@@ -1992,6 +1992,59 @@ export async function openFolderManager() {
     desc.style.lineHeight = '1.5';
     content.appendChild(desc);
 
+    const toggleContainer = document.createElement('div');
+    toggleContainer.style.display = 'flex';
+    toggleContainer.style.alignItems = 'center';
+    toggleContainer.style.justifyContent = 'center';
+    toggleContainer.style.marginBottom = '15px';
+    toggleContainer.style.gap = '20px';
+    toggleContainer.style.background = '#222';
+    toggleContainer.style.padding = '10px';
+    toggleContainer.style.borderRadius = '8px';
+    toggleContainer.style.border = '1px solid #444';
+
+    const abstractRadio = document.createElement('input');
+    abstractRadio.type = 'radio';
+    abstractRadio.name = 'viewMode';
+    abstractRadio.value = 'abstract';
+    abstractRadio.id = 'anomalous_mode_abstract';
+    
+    const abstractLabel = document.createElement('label');
+    abstractLabel.htmlFor = 'anomalous_mode_abstract';
+    abstractLabel.innerText = window.anomalous_browser_lang === 'zh' ? '分类模式 (ComfyUI)' : 'Category Mode (ComfyUI)';
+    abstractLabel.style.cursor = 'pointer';
+    abstractLabel.style.color = '#ccc';
+
+    const physicalRadio = document.createElement('input');
+    physicalRadio.type = 'radio';
+    physicalRadio.name = 'viewMode';
+    physicalRadio.value = 'physical';
+    physicalRadio.id = 'anomalous_mode_physical';
+
+    const physicalLabel = document.createElement('label');
+    physicalLabel.htmlFor = 'anomalous_mode_physical';
+    physicalLabel.innerText = window.anomalous_browser_lang === 'zh' ? '物理模式 (本地文件夹)' : 'Physical Mode (Local)';
+    physicalLabel.style.cursor = 'pointer';
+    physicalLabel.style.color = '#ccc';
+    
+    const div1 = document.createElement('div');
+    div1.style.display = 'flex';
+    div1.style.alignItems = 'center';
+    div1.style.gap = '6px';
+    div1.appendChild(abstractRadio);
+    div1.appendChild(abstractLabel);
+
+    const div2 = document.createElement('div');
+    div2.style.display = 'flex';
+    div2.style.alignItems = 'center';
+    div2.style.gap = '6px';
+    div2.appendChild(physicalRadio);
+    div2.appendChild(physicalLabel);
+
+    toggleContainer.appendChild(div1);
+    toggleContainer.appendChild(div2);
+    content.appendChild(toggleContainer);
+
     const listContainer = document.createElement('div');
     listContainer.style.flex = '1';
     listContainer.style.overflowY = 'auto';
@@ -2003,14 +2056,53 @@ export async function openFolderManager() {
     content.appendChild(listContainer);
 
     let typesData = [];
-    try {
-        const res = await fetch('/anomalous/all_folder_types');
-        const data = await res.json();
-        typesData = data.folder_types || [];
-    } catch(e) {
-        alert("Failed to load folder types.");
-        return;
-    }
+    let currentMode = 'abstract';
+    
+    const fetchData = async () => {
+        try {
+            const res = await fetch('/anomalous/all_folder_types');
+            const data = await res.json();
+            typesData = data.folder_types || [];
+            currentMode = data.folder_view_mode || 'abstract';
+            
+            if (currentMode === 'physical') {
+                physicalRadio.checked = true;
+            } else {
+                abstractRadio.checked = true;
+            }
+            
+            typesData.sort((a, b) => {
+                if (a.visible && !b.visible) return -1;
+                if (!a.visible && b.visible) return 1;
+                return 0;
+            });
+            renderList();
+        } catch(e) {
+            alert("Failed to load folder types.");
+        }
+    };
+    
+    const onModeSwitch = async (e) => {
+        const newMode = e.target.value;
+        if (newMode === currentMode) return;
+        
+        try {
+            await fetch('/anomalous/save_config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ folder_view_mode: newMode })
+            });
+            await fetchData();
+            this.firstLoadDone = false;
+            this.expandedFolders.clear();
+            await this.loadFolders();
+        } catch(err) {
+            alert("Error switching mode");
+        }
+    };
+    
+    abstractRadio.addEventListener('change', onModeSwitch);
+    physicalRadio.addEventListener('change', onModeSwitch);
 
     let dragSrcEl = null;
 
@@ -2112,7 +2204,9 @@ export async function openFolderManager() {
             listContainer.appendChild(row);
         });
     };
-    renderList();
+    fetchData(); // initial load
+    
+    // --- End Drag & Drop Logic ---
 
     const footer = document.createElement('div');
     footer.style.display = 'flex';
@@ -2143,10 +2237,16 @@ export async function openFolderManager() {
         saveBtn.innerText = '⏳...';
         saveBtn.disabled = true;
         try {
+            const payload = {};
+            if (currentMode === 'physical') {
+                payload.physical_folders_config = typesData;
+            } else {
+                payload.folder_types_config = typesData;
+            }
             await fetch('/anomalous/save_config', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ folder_types_config: typesData })
+                body: JSON.stringify(payload)
             });
             modal.remove();
             
