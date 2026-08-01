@@ -22,6 +22,7 @@ MAX_TAGS = 20
 MAX_TAG_LENGTH = 60
 MAX_NOTES_LENGTH = 3000
 MAX_THUMBNAIL_LENGTH = 1_500_000
+MAX_SOURCE_SUBFOLDER_LENGTH = 500
 MAX_RECIPE_BYTES = 12 * 1024 * 1024
 SAFE_THUMBNAIL_PREFIXES = (
     "data:image/jpeg;base64,",
@@ -68,6 +69,24 @@ def _list_recipes(recipes_dir):
         return []
     recipes.sort(key=lambda item: item["data"].get("timestamp", 0), reverse=True)
     return recipes
+
+
+def _normalise_source_image(value):
+    if value is None:
+        return None
+    if not isinstance(value, dict) or value.get("type") != "output":
+        raise ValueError("Invalid source image")
+    filename = require_filename(value.get("filename", ""))
+    subfolder = value.get("subfolder", "")
+    if not isinstance(subfolder, str) or len(subfolder) > MAX_SOURCE_SUBFOLDER_LENGTH:
+        raise ValueError("Invalid source image")
+    output_dir = folder_paths.get_output_directory()
+    resolve_within(output_dir, subfolder)
+    return {
+        "filename": filename,
+        "subfolder": subfolder,
+        "type": "output",
+    }
 
 
 def _normalise_recipe(payload):
@@ -119,6 +138,7 @@ def _normalise_recipe(payload):
         "params": params,
         "workflow": workflow,
         "thumbnail": thumbnail,
+        "source_image": _normalise_source_image(payload.get("source_image")),
         "timestamp": int(time.time() * 1000),
     }
     encoded = json.dumps(recipe, ensure_ascii=False, separators=(",", ":")).encode("utf-8")

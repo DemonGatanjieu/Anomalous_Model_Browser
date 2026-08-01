@@ -116,6 +116,14 @@ export const i18n = {
         recipeSomeParamsInWorkflow: '其余复杂或敏感参数仍保存在完整工作流中。',
         recipeMoreNodesInWorkflow: '其余节点仍保存在完整工作流中。',
         recipeMissingNodes: '当前缺少以下节点类型，恢复后可能无法运行',
+        recipeBindImage: '绑定封面图片',
+        recipeNoImage: '不绑定图片',
+        recipeCanvasPreview: '当前画布',
+        recipeLoadingRecentImages: '正在读取最近生成结果…',
+        recipeRecentImages: '最近生成结果',
+        recipeRecentImagesUnavailable: '暂时无法读取最近生成结果。',
+        recipeChoosePinnedParams: '选择关键参数',
+        recipePinnedParams: '关键参数',
 
     },
     en: {
@@ -235,5 +243,13 @@ export const i18n = {
         recipeSomeParamsInWorkflow: 'Other complex or sensitive parameters remain in the full workflow.',
         recipeMoreNodesInWorkflow: 'Other nodes remain in the full workflow.',
         recipeMissingNodes: 'These node types are currently missing; the restored workflow may not run',
+        recipeBindImage: 'Bind cover image',
+        recipeNoImage: 'No image',
+        recipeCanvasPreview: 'Current canvas',
+        recipeLoadingRecentImages: 'Loading recent outputs…',
+        recipeRecentImages: 'Recent outputs',
+        recipeRecentImagesUnavailable: 'Recent outputs are currently unavailable.',
+        recipeChoosePinnedParams: 'Choose key parameters',
+        recipePinnedParams: 'Key parameters',
     }
 };

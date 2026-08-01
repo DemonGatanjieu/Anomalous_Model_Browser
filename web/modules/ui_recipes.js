@@ -2,7 +2,11 @@
 
 import { app } from '../../../scripts/app.js';
 import { i18n } from './locales.js';
-import { captureCanvasThumbnail, extractRecipeMetadata } from './recipe_parser.js';
+import {
+    captureCanvasThumbnail,
+    extractRecipeMetadata,
+    extractRecipeParameterChoices,
+} from './recipe_parser.js';
 
 const t = (key) => {
     let lang = window.anomalous_browser_lang || 'zh';
@@ -24,6 +28,34 @@ function safeThumbnail(value) {
         : null;
 }
 
+function outputImageUrl(image) {
+    if (!image || image.type !== 'output' || typeof image.filename !== 'string') return null;
+    const query = new URLSearchParams({ filename: image.filename, type: 'output' });
+    if (image.subfolder) query.set('subfolder', image.subfolder);
+    return `/view?${query.toString()}`;
+}
+
+async function captureOutputThumbnail(image) {
+    const url = outputImageUrl(image);
+    if (!url) return null;
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const bitmap = await createImageBitmap(await response.blob());
+    try {
+        const maxEdge = 720;
+        const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+        canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+        const context = canvas.getContext('2d');
+        if (!context) return null;
+        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL('image/jpeg', 0.72);
+    } finally {
+        bitmap.close?.();
+    }
+}
+
 function compactText(value, limit = 110) {
     const text = String(value || '').trim().replace(/\s+/g, ' ');
     return text.length > limit ? `${text.slice(0, limit - 1)}…` : text;
@@ -41,7 +73,38 @@ function createBadge(text, kind = '') {
 }
 
 function displayWidgetValue(value) {
-    return Array.isArray(value) ? value.join(', ') : String(value);
+    if (typeof value === 'object' && value !== null) {
+        try { return JSON.stringify(value); } catch (error) { return String(value); }
+    }
+    return String(value);
+}
+
+function appendPinnedParams(parent, params) {
+    const pinned = Array.isArray(params.pinned) ? params.pinned : [];
+    if (!pinned.length) return;
+    const section = document.createElement('section');
+    section.className = 'anomalous-recipe-pinned';
+    appendText(section, 'strong', t('recipePinnedParams'));
+    for (const parameter of pinned) {
+        const row = document.createElement('div');
+        row.className = 'anomalous-recipe-widget-row';
+        appendText(
+            row,
+            'span',
+            `${parameter.nodeTitle || parameter.nodeType || t('recipeUnknownNode')} · ${parameter.widgetName}`,
+            'anomalous-recipe-widget-name',
+        );
+        const value = displayWidgetValue(parameter.value);
+        appendText(row, 'code', value, 'anomalous-recipe-widget-value');
+        const copy = appendText(row, 'button', '⧉', 'anomalous-recipe-copy-param');
+        copy.type = 'button';
+        copy.title = t('recipeCopyParameter');
+        copy.onclick = async () => {
+            try { await navigator.clipboard.writeText(value); } catch (error) { console.warn('Could not copy pinned parameter:', error); }
+        };
+        section.appendChild(row);
+    }
+    parent.appendChild(section);
 }
 
 function appendNodeDetails(parent, params) {
@@ -128,12 +191,18 @@ function renderParams(parent, params = {}) {
 
     const positive = Array.isArray(params.promptPositive) ? params.promptPositive[0] : params.promptPositive;
     if (positive) appendText(summary, 'p', `${t('recipePrompt')}: ${compactText(positive)}`, 'anomalous-recipe-prompt');
+    appendPinnedParams(summary, params);
     appendNodeDetails(summary, params);
     parent.appendChild(summary);
 }
 
-function showRecipeSaveDialog(owner, thumbnail) {
+function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices) {
     return new Promise((resolve) => {
+        const selection = {
+            thumbnail: safeThumbnail(canvasThumbnail),
+            sourceImage: null,
+            pinnedKeys: new Set(),
+        };
         const overlay = document.createElement('div');
         overlay.className = 'anomalous-recipe-dialog-overlay';
         overlay.setAttribute('role', 'dialog');
@@ -166,13 +235,121 @@ function showRecipeSaveDialog(owner, thumbnail) {
         notesInput.placeholder = t('recipeNotesHint');
         notesLabel.appendChild(notesInput);
 
-        const preview = safeThumbnail(thumbnail);
-        if (preview) {
-            const image = document.createElement('img');
-            image.className = 'anomalous-recipe-dialog-preview';
-            image.src = preview;
-            image.alt = t('recipeThumbnail');
-            dialog.appendChild(image);
+        const coverSection = document.createElement('section');
+        coverSection.className = 'anomalous-recipe-save-section';
+        appendText(coverSection, 'strong', t('recipeBindImage'));
+        const coverChoices = document.createElement('div');
+        coverChoices.className = 'anomalous-recipe-cover-choices';
+        const coverPreview = document.createElement('img');
+        coverPreview.className = 'anomalous-recipe-dialog-preview';
+        coverPreview.alt = t('recipeThumbnail');
+        if (selection.thumbnail) coverPreview.src = selection.thumbnail;
+        else coverPreview.style.display = 'none';
+
+        const choiceButtons = [];
+        const selectCover = (button, sourceImage, previewUrl, thumbnailValue) => {
+            for (const choice of choiceButtons) choice.classList.toggle('selected', choice === button);
+            selection.sourceImage = sourceImage;
+            selection.thumbnail = thumbnailValue;
+            if (previewUrl) {
+                coverPreview.src = previewUrl;
+                coverPreview.style.display = 'block';
+            } else {
+                coverPreview.removeAttribute('src');
+                coverPreview.style.display = 'none';
+            }
+        };
+
+        const noneChoice = appendText(coverChoices, 'button', t('recipeNoImage'), 'anomalous-recipe-cover-choice');
+        noneChoice.type = 'button';
+        choiceButtons.push(noneChoice);
+        noneChoice.onclick = () => selectCover(noneChoice, null, null, null);
+        if (selection.thumbnail) {
+            const canvasChoice = document.createElement('button');
+            canvasChoice.type = 'button';
+            canvasChoice.className = 'anomalous-recipe-cover-choice selected';
+            const canvasImage = document.createElement('img');
+            canvasImage.src = selection.thumbnail;
+            canvasImage.alt = t('recipeCanvasPreview');
+            appendText(canvasChoice, 'span', t('recipeCanvasPreview'));
+            canvasChoice.prepend(canvasImage);
+            choiceButtons.push(canvasChoice);
+            canvasChoice.onclick = () => selectCover(canvasChoice, null, canvasThumbnail, safeThumbnail(canvasThumbnail));
+        } else {
+            noneChoice.classList.add('selected');
+        }
+
+        const recentStatus = appendText(coverSection, 'small', t('recipeLoadingRecentImages'), 'anomalous-recipe-node-hint');
+        coverSection.append(coverChoices, coverPreview);
+        dialog.appendChild(coverSection);
+
+        fetch('/anomalous/gallery_images?page=1&limit=12')
+            .then((response) => response.ok ? response.json() : Promise.reject(new Error('image list failed')))
+            .then((payload) => {
+                recentStatus.textContent = t('recipeRecentImages');
+                for (const imageData of payload.images || []) {
+                    const url = outputImageUrl(imageData);
+                    if (!url) continue;
+                    const choice = document.createElement('button');
+                    choice.type = 'button';
+                    choice.className = 'anomalous-recipe-cover-choice anomalous-recipe-output-choice';
+                    const image = document.createElement('img');
+                    image.src = url;
+                    image.loading = 'lazy';
+                    image.alt = imageData.filename;
+                    choice.appendChild(image);
+                    choice.title = imageData.filename;
+                    choiceButtons.push(choice);
+                    choice.onclick = () => selectCover(choice, {
+                        filename: imageData.filename,
+                        subfolder: imageData.subfolder || '',
+                        type: 'output',
+                    }, url, null);
+                    coverChoices.appendChild(choice);
+                }
+            })
+            .catch((error) => {
+                console.warn('Could not load recent recipe images:', error);
+                recentStatus.textContent = t('recipeRecentImagesUnavailable');
+            });
+
+        if (parameterChoices.length) {
+            const parameterDetails = document.createElement('details');
+            parameterDetails.className = 'anomalous-recipe-pin-picker';
+            const parameterSummary = document.createElement('summary');
+            parameterSummary.textContent = `${t('recipeChoosePinnedParams')} (0)`;
+            parameterDetails.appendChild(parameterSummary);
+            let parametersRendered = false;
+            parameterDetails.ontoggle = () => {
+                if (!parameterDetails.open || parametersRendered) return;
+                parametersRendered = true;
+                const parameterList = document.createElement('div');
+                parameterList.className = 'anomalous-recipe-pin-list';
+                let previousNode = null;
+                for (const choice of parameterChoices) {
+                    const nodeLabel = choice.nodeTitle || choice.nodeType || t('recipeUnknownNode');
+                    const nodeKey = `${choice.nodeId}:${choice.nodeType}:${nodeLabel}`;
+                    if (nodeKey !== previousNode) {
+                        appendText(parameterList, 'strong', nodeLabel, 'anomalous-recipe-pin-node');
+                        previousNode = nodeKey;
+                    }
+                    const label = document.createElement('label');
+                    label.className = 'anomalous-recipe-pin-choice';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.onchange = () => {
+                        if (checkbox.checked) selection.pinnedKeys.add(choice.key);
+                        else selection.pinnedKeys.delete(choice.key);
+                        parameterSummary.textContent = `${t('recipeChoosePinnedParams')} (${selection.pinnedKeys.size})`;
+                    };
+                    const value = compactText(displayWidgetValue(choice.value), 100);
+                    appendText(label, 'span', `${choice.widgetName}: ${value}`);
+                    label.prepend(checkbox);
+                    parameterList.appendChild(label);
+                }
+                parameterDetails.appendChild(parameterList);
+            };
+            dialog.appendChild(parameterDetails);
         }
 
         const error = appendText(dialog, 'div', '', 'anomalous-recipe-dialog-error');
@@ -199,7 +376,14 @@ function showRecipeSaveDialog(owner, thumbnail) {
                 return;
             }
             const tags = [...new Set(tagsInput.value.split(',').map((tag) => tag.trim()).filter(Boolean))].slice(0, 20);
-            close({ name, tags, notes: notesInput.value.trim() });
+            close({
+                name,
+                tags,
+                notes: notesInput.value.trim(),
+                thumbnail: selection.thumbnail,
+                sourceImage: selection.sourceImage,
+                pinned: parameterChoices.filter((choice) => selection.pinnedKeys.has(choice.key)),
+            });
         };
         dialog.appendChild(actions);
         overlay.appendChild(dialog);
@@ -267,7 +451,7 @@ export function renderRecipeList(recipes) {
         card.className = 'anomalous-recipe-card';
         appendText(card, 'h3', data.name || t('recipeUntitled'));
 
-        const thumbnail = safeThumbnail(data.thumbnail);
+        const thumbnail = safeThumbnail(data.thumbnail) || outputImageUrl(data.source_image);
         if (thumbnail) {
             const image = document.createElement('img');
             image.className = 'anomalous-recipe-thumbnail';
@@ -338,8 +522,9 @@ export async function handleSaveRecipe() {
         return;
     }
     const metadata = extractRecipeMetadata(app.graph);
-    const thumbnail = captureCanvasThumbnail(app.canvas?.canvas);
-    const details = await showRecipeSaveDialog(this, thumbnail);
+    const canvasThumbnail = captureCanvasThumbnail(app.canvas?.canvas);
+    const parameterChoices = extractRecipeParameterChoices(app.graph);
+    const details = await showRecipeSaveDialog(this, canvasThumbnail, parameterChoices);
     if (!details) return;
 
     const saveButton = this.recipeView?.querySelector('.anomalous-recipe-actionbar button');
@@ -348,14 +533,26 @@ export async function handleSaveRecipe() {
         saveButton.textContent = t('recipeSaving');
     }
     try {
+        metadata.pinned = details.pinned;
+        let thumbnail = details.thumbnail;
+        if (details.sourceImage) {
+            try {
+                thumbnail = await captureOutputThumbnail(details.sourceImage);
+            } catch (error) {
+                console.warn('Could not persist bound recipe image thumbnail:', error);
+            }
+        }
         const response = await fetch('/anomalous/save_recipe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                ...details,
+                name: details.name,
+                tags: details.tags,
+                notes: details.notes,
                 params: metadata,
                 workflow: app.graph.serialize(),
                 thumbnail,
+                source_image: details.sourceImage,
             }),
         });
         const payload = await response.json();

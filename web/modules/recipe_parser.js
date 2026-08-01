@@ -8,6 +8,8 @@ const MAX_UPSTREAM_NODES = 96;
 const MAX_SUMMARY_NODES = 120;
 const MAX_WIDGETS_PER_NODE = 16;
 const MAX_WIDGET_TEXT = 320;
+const MAX_PINNED_VALUE_JSON = 2400;
+const MAX_PARAMETER_CHOICES = 5000;
 const SENSITIVE_WIDGET_NAME = /(?:api.?key|access.?token|auth|password|passwd|secret|credential)/i;
 
 function nodeType(node) {
@@ -55,6 +57,20 @@ function summariseWidgetValue(value) {
     return null;
 }
 
+function clonePinnableValue(value) {
+    if (value === null || ['string', 'number', 'boolean'].includes(typeof value)) {
+        if (typeof value === 'string' && value.length > MAX_PINNED_VALUE_JSON) return null;
+        return value;
+    }
+    try {
+        const encoded = JSON.stringify(value);
+        if (!encoded || encoded.length > MAX_PINNED_VALUE_JSON) return null;
+        return JSON.parse(encoded);
+    } catch (error) {
+        return null;
+    }
+}
+
 function extractGenericNodeSummary(node) {
     const widgets = [];
     for (const [index, widget] of (node?.widgets || []).entries()) {
@@ -76,6 +92,30 @@ function extractGenericNodeSummary(node) {
         widgets,
         widgetCount: Array.isArray(node?.widgets) ? node.widgets.length : 0,
     };
+}
+
+/** Return safe, user-selectable widget values for manual key-parameter pins. */
+export function extractRecipeParameterChoices(graph) {
+    const choices = [];
+    if (!graph || !Array.isArray(graph._nodes)) return choices;
+    for (const node of graph._nodes) {
+        for (const [widgetIndex, widget] of (node?.widgets || []).entries()) {
+            const widgetName = textValue(widget?.name) || `widget_${widgetIndex + 1}`;
+            if (SENSITIVE_WIDGET_NAME.test(widgetName) || normaliseName(widget?.type) === 'button') continue;
+            const value = clonePinnableValue(widget?.value);
+            if (value === null || value === '') continue;
+            choices.push({
+                key: `${node?.id ?? 'unknown'}:${widgetIndex}:${widgetName}`,
+                nodeId: node?.id ?? null,
+                nodeType: nodeType(node) || 'Unknown',
+                nodeTitle: textValue(node?.title) || null,
+                widgetName,
+                value,
+            });
+            if (choices.length >= MAX_PARAMETER_CHOICES) return choices;
+        }
+    }
+    return choices;
 }
 
 function buildNodeIndex(graph) {

@@ -1247,7 +1247,7 @@
 
 .anomalous-recipe-dialog {
     display: flex;
-    width: min(460px, 100%);
+    width: min(620px, 100%);
     max-height: 100%;
     flex-direction: column;
     gap: 12px;
@@ -1270,6 +1270,102 @@
 
 .anomalous-recipe-dialog-preview {
     max-height: 180px;
+}
+
+.anomalous-recipe-save-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.anomalous-recipe-cover-choices {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+    gap: 7px;
+    max-height: 190px;
+    overflow-y: auto;
+}
+
+.anomalous-recipe-cover-choice {
+    display: flex;
+    min-height: 66px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    overflow: hidden;
+    padding: 4px;
+    border: 1px solid #4a4a4a;
+    border-radius: 7px;
+    background: #191919;
+    color: #bbb;
+    cursor: pointer;
+}
+
+.anomalous-recipe-cover-choice img {
+    width: 100%;
+    height: 58px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.anomalous-recipe-cover-choice.selected {
+    border-color: #00ffcc;
+    color: #00ffcc;
+    box-shadow: inset 0 0 0 1px rgba(0, 255, 204, 0.35);
+}
+
+.anomalous-recipe-pin-picker {
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 9px;
+}
+
+.anomalous-recipe-pin-picker > summary {
+    color: #a9cdff;
+    cursor: pointer;
+}
+
+.anomalous-recipe-pin-list {
+    display: flex;
+    max-height: 280px;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+    padding-top: 8px;
+}
+
+.anomalous-recipe-pin-node {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 5px 2px;
+    background: #272727;
+    color: #ddd;
+}
+
+.anomalous-recipe-pin-choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    padding: 4px 6px;
+    border-radius: 5px;
+    color: #bbb;
+    cursor: pointer;
+}
+
+.anomalous-recipe-pin-choice:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.anomalous-recipe-pinned {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px;
+    border: 1px solid rgba(0, 255, 204, 0.3);
+    border-radius: 7px;
+    background: rgba(0, 255, 204, 0.05);
 }
 
 .anomalous-recipe-dialog-error {

@@ -148,6 +148,7 @@ class RecipeEndpointSafetyTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         folder_paths.get_user_directory = lambda: self.temp_dir.name
+        folder_paths.get_output_directory = lambda: self.temp_dir.name
 
     async def asyncTearDown(self):
         self.temp_dir.cleanup()
@@ -160,6 +161,7 @@ class RecipeEndpointSafetyTests(unittest.IsolatedAsyncioTestCase):
             "params": {"baseModel": "portrait.safetensors", "steps": 28},
             "workflow": {"nodes": [{"id": 1, "type": "KSampler"}]},
             "thumbnail": "https://example.invalid/should-not-be-stored.jpg",
+            "source_image": {"filename": "portrait.png", "subfolder": "portraits", "type": "output"},
         }))
         self.assertEqual(response.status, 200)
         saved = json.loads(response.body.decode("utf-8"))
@@ -171,6 +173,7 @@ class RecipeEndpointSafetyTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(listed_recipe["filename"], saved["filename"])
         self.assertNotIn("workflow", listed_recipe["data"])
         self.assertIsNone(listed_recipe["data"]["thumbnail"])
+        self.assertEqual(listed_recipe["data"]["source_image"]["filename"], "portrait.png")
 
         full = await recipes.api_get_recipe_full(RecipeRequest(query={"filename": saved["filename"]}))
         full_data = json.loads(full.body.decode("utf-8"))
@@ -178,6 +181,14 @@ class RecipeEndpointSafetyTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_recipe_endpoints_reject_path_traversal(self):
         response = await recipes.api_get_recipe_full(RecipeRequest(query={"filename": "../outside.json"}))
+        self.assertEqual(response.status, 400)
+
+        response = await recipes.api_save_recipe(RecipeRequest({
+            "name": "Unsafe image",
+            "params": {},
+            "workflow": {"nodes": []},
+            "source_image": {"filename": "outside.png", "subfolder": "../outside", "type": "output"},
+        }))
         self.assertEqual(response.status, 400)
 
 

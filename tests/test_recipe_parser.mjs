@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { extractRecipeMetadata } from '../web/modules/recipe_parser.js';
+import { extractRecipeMetadata, extractRecipeParameterChoices } from '../web/modules/recipe_parser.js';
 
 const checkpoint = {
     id: 1,
@@ -100,6 +100,12 @@ assert.equal(customSummary.module, 'custom_nodes.detail_pack');
 assert.deepEqual(customSummary.widgets, [
     { name: 'detail_strength', value: 0.72 },
     { name: 'mode', value: 'balanced' },
+]);
+
+const parameterChoices = extractRecipeParameterChoices({ _nodes: [customNode] });
+assert.deepEqual(parameterChoices.map((choice) => [choice.widgetName, choice.value]), [
+    ['detail_strength', 0.72],
+    ['mode', 'balanced'],
 ]);
 
 console.log('recipe_parser tests passed');
