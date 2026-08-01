@@ -28,6 +28,7 @@ def setup_routes(app):
     app.router.add_get('/anomalous/gallery_images', api_get_gallery_images)
     app.router.add_post('/anomalous/delete_gallery_image', api_delete_gallery_image)
     app.router.add_get('/anomalous/resolve_hash', api_resolve_hash)
+    app.router.add_post('/anomalous/resolve_hash_batch', api_resolve_hash_batch)
     app.router.add_get('/anomalous/all_hashes', api_get_all_hashes)
     app.router.add_post('/anomalous/scan_all', api_scan_all)
     app.router.add_get('/anomalous/global_scan_status', api_global_scan_status)

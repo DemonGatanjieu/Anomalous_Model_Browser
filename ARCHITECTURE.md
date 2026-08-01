@@ -63,6 +63,15 @@ All endpoints are prefixed with `/anomalous/`.
 * Performance boundary: sidecar operations use centralized immutable suffix tuples and a constant number of exact-path checks. Do not use `os.walk`, directory-wide globbing, full-directory indexing, hashes, or network calls for rename/delete/reset. This keeps the operation independent of model-folder size.
 * Preserve the product-language distinction in documentation and UI: **delete cleans sidecars; rename migrates sidecars**. Never describe both operations as deleting or "taking away" the files.
 
+### NON-NEGOTIABLE: Lossless Performance Boundaries / 无损性能优化死规矩
+* Metadata and embedded safetensors-header hashes may be cached only with a bounded cache whose key includes the real path and physical file signatures (`size`, `mtime_ns`, and `ctime_ns`) for the model and both metadata sidecars. Callers receive independent copies; cached mutable dictionaries/lists must never be exposed directly.
+* Preview URLs use the preview file's stable nanosecond modification time as their cache version. Never append `Date.now()` or another per-request random token during ordinary listing: doing so disables the browser cache and redownloads unchanged media. A changed cover must still produce a changed URL.
+* Folder listing must inventory a directory once with `os.scandir()` and preserve the established preview priority (`.preview.*` before bare media). Do not perform one `exists()` sequence per model when the directory inventory already contains the answer.
+* Recursive directory walks, metadata parsing, and other potentially large disk operations must run through `asyncio.to_thread()` rather than blocking ComfyUI's aiohttp event loop. This improves responsiveness without skipping files.
+* Large grids keep the complete ordered result set but create cards in bounded animation-frame chunks. Images use native lazy loading/async decoding; videos delay their source until near the viewport and retain the configured autoplay/hover behavior once activated. A new folder request must cancel the previous request and stale render generation.
+* Model Doctor batch resolution is an I/O optimization only. Provenance-rich workflows skip the redundant full filename-to-hash cache refresh; legacy workflows missing injected provenance still refresh it for compatibility. Requests are grouped by the exact required model-type tuple so each group is scanned once, while every item still uses the same cryptographic hash, exact byte-size, category constraint, conflict rejection, and ambiguity rules as `/anomalous/resolve_hash`. Batch failure must fall back to the single-item endpoint; batching must never introduce filename/path evidence.
+* Preview resolution should try contained exact relative paths first and walk the library only for unresolved basename fallbacks. Exact-path lookup here locates a preview for a model value already supplied by ComfyUI; it is not Model Doctor identity discovery.
+
 ## 4. Frontend Architecture (Vanilla JS)
 Located in `web/main.js` (Under 1000 lines, fully refactored into ES Modules). Wraps its logic inside `app.registerExtension({ name: "Anomalous.ModelBrowser", ... })`.
 

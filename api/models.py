@@ -82,7 +82,82 @@ def _reset_model_cover(base_path):
 
     return True, 'no_cover', None
 
-async def api_get_folders(request):
+
+def _cache_token(file_path):
+    try:
+        return os.stat(file_path).st_mtime_ns
+    except OSError:
+        return 0
+
+
+def _collect_folder_models(target_dir, folder_type, path_idx, rel_subfolder, page, limit):
+    """Collect one folder in a worker thread with a single directory listing."""
+    try:
+        with os.scandir(target_dir) as iterator:
+            file_entries = {}
+            for entry in iterator:
+                try:
+                    if entry.is_file():
+                        file_entries[entry.name] = entry
+                except OSError:
+                    continue
+    except OSError:
+        return {"models": [], "total": 0, "page": page, "limit": limit}
+
+    valid_files = sorted(
+        (name for name in file_entries if name.endswith(('.safetensors', '.ckpt', '.pt'))),
+        key=str.lower,
+    )
+    total = len(valid_files)
+    if limit > 0:
+        start = max(0, (page - 1) * limit)
+        sliced = valid_files[start:start + limit]
+    else:
+        sliced = valid_files
+
+    q_type = urllib.parse.quote(folder_type)
+    q_idx = str(path_idx)
+    q_sub = urllib.parse.quote(rel_subfolder.strip('/')) if rel_subfolder and rel_subfolder != '/' else ""
+    models = []
+    for filename in sliced:
+        file_path = os.path.join(target_dir, filename)
+        metadata = get_metadata(file_path)
+        base_name = os.path.splitext(filename)[0]
+        preview_file = next(
+            (base_name + suffix for suffix in PREVIEW_SUFFIXES + MEDIA_EXTENSIONS if base_name + suffix in file_entries),
+            None,
+        )
+        preview_url = ""
+        if preview_file:
+            q_file = urllib.parse.quote(preview_file)
+            try:
+                preview_version = file_entries[preview_file].stat().st_mtime_ns
+            except OSError:
+                preview_version = 0
+            preview_url = (
+                f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}"
+                f"&filename={q_file}&t={preview_version}"
+            )
+        try:
+            model_stat = file_entries[filename].stat()
+            size_bytes = model_stat.st_size
+            size_mb = round(size_bytes / (1024 * 1024), 2)
+        except OSError:
+            size_mb = 0
+            size_bytes = 0
+        models.append({
+            "filename": filename,
+            "size_mb": size_mb,
+            "size_bytes": size_bytes,
+            "metadata": metadata,
+            "preview_url": preview_url,
+            "type": folder_type,
+            "path_idx": path_idx,
+            "subfolder": rel_subfolder,
+        })
+    return {"models": models, "total": total, "page": page, "limit": limit}
+
+def _collect_folders():
     mode = get_folder_view_mode()
     result = []
     seen_dirs = set()
@@ -199,7 +274,11 @@ async def api_get_folders(request):
                     "folders": tree
                 })
         
-    return web.json_response({"folders": result})
+    return {"folders": result}
+
+
+async def api_get_folders(request):
+    return web.json_response(await asyncio.to_thread(_collect_folders))
 
 
 async def api_get_models(request):
@@ -222,53 +301,16 @@ async def api_get_models(request):
     rel_subfolder = "" if subfolder == '/' else subfolder.strip('/\\')
     if not os.path.exists(target_dir):
         return web.json_response({"models": [], "total": 0})
-    try:
-        entries = os.listdir(target_dir)
-    except Exception:
-        return web.json_response({"models": [], "total": 0})
-        
-    valid_files = [f for f in entries if f.endswith(('.safetensors', '.ckpt', '.pt')) and os.path.isfile(os.path.join(target_dir, f))]
-    valid_files.sort(key=lambda x: x.lower())
-    total = len(valid_files)
-    
-    if limit > 0:
-        start = (page - 1) * limit
-        end = start + limit
-        sliced = valid_files[start:end]
-    else:
-        sliced = valid_files
-        
-    models = []
-    import urllib.parse
-    for f in sliced:
-        file_path = os.path.join(target_dir, f)
-        meta = get_metadata(file_path)
-        base_name = os.path.splitext(f)[0]
-        preview_file = None
-        for ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
-            if os.path.exists(os.path.join(target_dir, base_name + ext)):
-                preview_file = base_name + ext
-                break
-        preview_url = ""
-        if preview_file:
-            q_type = urllib.parse.quote(folder_type)
-            q_idx = str(path_idx)
-            q_sub = urllib.parse.quote(rel_subfolder.strip('/')) if rel_subfolder and rel_subfolder != '/' else ""
-            q_file = urllib.parse.quote(preview_file)
-            try: mtime = int(os.path.getmtime(os.path.join(target_dir, preview_file)))
-            except: mtime = 0
-            preview_url = f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}&t={mtime}"
-        try:
-            size_bytes = os.path.getsize(file_path)
-            size_mb = round(size_bytes / (1024 * 1024), 2)
-        except:
-            size_mb = 0; size_bytes = 0
-        models.append({
-            "filename": f, "size_mb": size_mb, "size_bytes": size_bytes,
-            "metadata": meta, "preview_url": preview_url, "type": folder_type,
-            "path_idx": path_idx, "subfolder": rel_subfolder
-        })
-    return web.json_response({"models": models, "total": total, "page": page, "limit": limit})
+    payload = await asyncio.to_thread(
+        _collect_folder_models,
+        target_dir,
+        folder_type,
+        path_idx,
+        rel_subfolder,
+        page,
+        limit,
+    )
+    return web.json_response(payload)
 
 async def api_find_model(request):
     search = request.query.get('search', '').lower()
@@ -294,7 +336,7 @@ async def api_find_model(request):
                             
                             base_name = os.path.splitext(f)[0]
                             preview_file = None
-                            for ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
+                            for ext in PREVIEW_SUFFIXES + MEDIA_EXTENSIONS:
                                 if os.path.exists(os.path.join(root, base_name + ext)):
                                     preview_file = base_name + ext
                                     break
@@ -305,8 +347,7 @@ async def api_find_model(request):
                                 q_idx = str(path_idx)
                                 q_sub = urllib.parse.quote(rel_subfolder)
                                 q_file = urllib.parse.quote(preview_file)
-                                try: mtime = int(os.path.getmtime(os.path.join(root, preview_file)))
-                                except: mtime = 0
+                                mtime = _cache_token(os.path.join(root, preview_file))
                                 preview_url = f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}&t={mtime}"
 
                             try: size_mb = round(os.path.getsize(file_path) / (1024 * 1024), 1)
@@ -436,7 +477,7 @@ async def api_compatible_models(request):
                                 
                             base_name = os.path.splitext(f)[0]
                             preview_file = None
-                            for ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
+                            for ext in PREVIEW_SUFFIXES + MEDIA_EXTENSIONS:
                                 if os.path.exists(os.path.join(root, base_name + ext)):
                                     preview_file = base_name + ext
                                     break
@@ -500,64 +541,36 @@ async def api_base_models(request):
                             
     return web.json_response({"base_models": sorted(list(base_models))})
 
-async def api_resolve_hash(request):
-    from .metadata import _extract_safetensors_hash
-    target_hash = request.query.get("hash", "").strip().upper()
-    size_str = request.query.get("size", "").strip()
-    filename_query = request.query.get("filename", "").strip()
-    expected_types_raw = request.query.get("type", "").strip()
-    target_size = int(size_str) if size_str.isdigit() else None
-    
-    if not target_hash and not target_size and not filename_query:
-        return web.json_response({"found": False})
+RESOLVABLE_MODEL_TYPES = ('checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae')
 
-    all_types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
-    if expected_types_raw:
-        requested_types = [value.strip() for value in expected_types_raw.split(',') if value.strip()]
-        if not requested_types or any(value not in all_types for value in requested_types):
-            return web.json_response({"found": False, "error": "Invalid model type"}, status=400)
-        types = list(dict.fromkeys(requested_types))
-    else:
-        types = all_types
-    
-    # Layer 1: Exact path/filename check for pre-flight imports.
-    if filename_query:
-        normalized_query = filename_query.replace('\\', '/').lstrip('./')
-        query_basename = normalized_query.rsplit('/', 1)[-1]
-        for t in types:
-            try:
-                paths = folder_paths.get_folder_paths(t)
-            except Exception:
-                continue
-            for base_dir in paths or []:
-                if not os.path.exists(base_dir):
-                    continue
-                for root, dirs, files in os.walk(base_dir):
-                    for file in files:
-                        if not file.endswith(('.safetensors', '.ckpt', '.pt')):
-                            continue
-                        rel_path = os.path.relpath(os.path.join(root, file), base_dir).replace('\\', '/')
-                        if rel_path == normalized_query or ('/' not in normalized_query and file == query_basename):
-                            return web.json_response({"found": True, "type": t, "filename": rel_path, "matched_by_filename": True})
 
-    # Layer 2: Gather candidates once, then intersect hash and byte size.  Hash
-    # sidecars can be stale or can describe another file from the same Civitai
-    # model version, so a disagreement must be handled explicitly.
+def _parse_resolution_types(expected_types_raw):
+    if not expected_types_raw:
+        return RESOLVABLE_MODEL_TYPES
+    requested = tuple(dict.fromkeys(
+        value.strip() for value in str(expected_types_raw).split(',') if value.strip()
+    ))
+    if not requested or any(value not in RESOLVABLE_MODEL_TYPES for value in requested):
+        raise ValueError("Invalid model type")
+    return requested
+
+
+def _collect_resolution_candidates(types):
     candidates = []
     seen_realpaths = set()
-    for t in types:
+    for folder_type in types:
         try:
-            paths = folder_paths.get_folder_paths(t)
+            paths = folder_paths.get_folder_paths(folder_type)
         except Exception:
             continue
         for base_dir in paths or []:
             if not os.path.exists(base_dir):
                 continue
-            for root, dirs, files in os.walk(base_dir):
-                for file in files:
-                    if not file.lower().endswith(('.safetensors', '.ckpt', '.pt')):
+            for root, _, files in os.walk(base_dir):
+                for filename in files:
+                    if not filename.lower().endswith(('.safetensors', '.ckpt', '.pt')):
                         continue
-                    file_path = os.path.join(root, file)
+                    file_path = os.path.join(root, filename)
                     real_path = os.path.realpath(file_path)
                     if real_path in seen_realpaths:
                         continue
@@ -567,79 +580,152 @@ async def api_resolve_hash(request):
                         continue
                     seen_realpaths.add(real_path)
                     candidates.append({
-                        "type": t,
+                        "type": folder_type,
                         "filename": os.path.relpath(file_path, base_dir).replace('\\', '/'),
                         "path": file_path,
                         "size": file_size,
                     })
+    return candidates
+
+
+def _candidate_hashes(candidate):
+    from .metadata import _extract_safetensors_hash
+
+    if "hashes" in candidate:
+        return candidate["hashes"]
+    values = set()
+    metadata = candidate.get("metadata")
+    if metadata is None:
+        metadata = get_metadata(candidate["path"])
+        candidate["metadata"] = metadata
+    meta_hash = metadata.get("hash", "")
+    if meta_hash:
+        values.add(str(meta_hash).upper())
+    if candidate["path"].lower().endswith('.safetensors'):
+        header_hash = _extract_safetensors_hash(candidate["path"])
+        if header_hash:
+            values.add(str(header_hash).upper())
+    candidate["hashes"] = values
+    return values
+
+
+def _resolved_payload(candidate, **details):
+    payload = {
+        "found": True,
+        "type": candidate["type"],
+        "filename": candidate["filename"],
+    }
+    payload.update(details)
+    return payload
+
+
+def _resolve_from_candidates(candidates, target_hash="", target_size=None, filename_query=""):
+    target_hash = str(target_hash or "").strip().upper()
+    if filename_query:
+        normalized_query = str(filename_query).replace('\\', '/').lstrip('./')
+        query_basename = normalized_query.rsplit('/', 1)[-1]
+        for candidate in candidates:
+            if candidate["filename"] == normalized_query or (
+                '/' not in normalized_query and os.path.basename(candidate["filename"]) == query_basename
+            ):
+                return _resolved_payload(candidate, matched_by_filename=True)
 
     has_target_hash = bool(target_hash and target_hash != "UNKNOWN")
-
-    def candidate_metadata(candidate):
-        if "metadata" not in candidate:
-            candidate["metadata"] = get_metadata(candidate["path"])
-        return candidate["metadata"]
-
-    def candidate_hashes(candidate):
-        if "hashes" in candidate:
-            return candidate["hashes"]
-        values = set()
-        meta_hash = candidate_metadata(candidate).get("hash", "")
-        if meta_hash:
-            values.add(str(meta_hash).upper())
-        if candidate["path"].lower().endswith('.safetensors'):
-            header_hash = _extract_safetensors_hash(candidate["path"])
-            if header_hash:
-                values.add(str(header_hash).upper())
-        candidate["hashes"] = values
-        return values
-
-    def respond(candidate, **details):
-        payload = {
-            "found": True,
-            "type": candidate["type"],
-            "filename": candidate["filename"],
-        }
-        payload.update(details)
-        return web.json_response(payload)
-
-    size_matches = [candidate for candidate in candidates if target_size is not None and candidate["size"] == target_size]
+    size_matches = [
+        candidate for candidate in candidates
+        if target_size is not None and candidate["size"] == target_size
+    ]
 
     if has_target_hash and target_size is not None:
-        combined_matches = [candidate for candidate in size_matches if target_hash in candidate_hashes(candidate)]
+        combined_matches = [candidate for candidate in size_matches if target_hash in _candidate_hashes(candidate)]
         if len(combined_matches) == 1:
-            return respond(combined_matches[0], matched_by_hash=True, matched_by_size=True)
+            return _resolved_payload(combined_matches[0], matched_by_hash=True, matched_by_size=True)
         if len(combined_matches) > 1:
-            return web.json_response({"found": False, "ambiguous": True})
+            return {"found": False, "ambiguous": True}
 
-        # Check whether the supplied hash points at a different local file.  If
-        # so, neither identifier can safely win without a model-type constraint.
-        hash_matches = [candidate for candidate in candidates if target_hash in candidate_hashes(candidate)]
+        hash_matches = [candidate for candidate in candidates if target_hash in _candidate_hashes(candidate)]
         if hash_matches:
-            return web.json_response({"found": False, "identity_conflict": True})
-
-        # No file in the expected category owns the saved hash.  This is the
-        # legacy poisoned-sidecar case.  A unique in-category byte size may
-        # recover it; equal-sized candidates remain unresolved by design.
+            return {"found": False, "identity_conflict": True}
         if len(size_matches) == 1:
-            return respond(size_matches[0], matched_by_size=True, stale_hash=True)
+            return _resolved_payload(size_matches[0], matched_by_size=True, stale_hash=True)
         if len(size_matches) > 1:
-            return web.json_response({"found": False, "ambiguous": True})
+            return {"found": False, "ambiguous": True}
 
     if has_target_hash:
-        hash_matches = [candidate for candidate in candidates if target_hash in candidate_hashes(candidate)]
+        hash_matches = [candidate for candidate in candidates if target_hash in _candidate_hashes(candidate)]
         if len(hash_matches) == 1:
-            return respond(hash_matches[0], matched_by_hash=True)
+            return _resolved_payload(hash_matches[0], matched_by_hash=True)
         if len(hash_matches) > 1:
-            return web.json_response({"found": False, "ambiguous": True})
+            return {"found": False, "ambiguous": True}
 
     if target_size is not None:
         if len(size_matches) == 1:
-            return respond(size_matches[0], matched_by_size=True)
+            return _resolved_payload(size_matches[0], matched_by_size=True)
         if len(size_matches) > 1:
-            return web.json_response({"found": False, "ambiguous": True})
+            return {"found": False, "ambiguous": True}
+    return {"found": False}
 
-    return web.json_response({"found": False})
+
+async def api_resolve_hash(request):
+    target_hash = request.query.get("hash", "").strip().upper()
+    size_str = request.query.get("size", "").strip()
+    filename_query = request.query.get("filename", "").strip()
+    target_size = int(size_str) if size_str.isdigit() else None
+    if not target_hash and target_size is None and not filename_query:
+        return web.json_response({"found": False})
+    try:
+        types = _parse_resolution_types(request.query.get("type", "").strip())
+    except ValueError as exc:
+        return web.json_response({"found": False, "error": str(exc)}, status=400)
+
+    def resolve_one():
+        candidates = _collect_resolution_candidates(types)
+        return _resolve_from_candidates(candidates, target_hash, target_size, filename_query)
+
+    return web.json_response(await asyncio.to_thread(resolve_one))
+
+
+async def api_resolve_hash_batch(request):
+    try:
+        data = await request.json()
+        items = data.get("items", [])
+    except Exception:
+        return web.json_response({"error": "Invalid JSON body"}, status=400)
+    if not isinstance(items, list) or len(items) > 256:
+        return web.json_response({"error": "items must be a list with at most 256 entries"}, status=400)
+
+    parsed_items = []
+    try:
+        for index, item in enumerate(items):
+            if not isinstance(item, dict):
+                raise ValueError("Invalid batch item")
+            size_value = item.get("size")
+            size_string = str(size_value).strip() if size_value is not None else ""
+            parsed_items.append({
+                "key": str(item.get("key", index)),
+                "hash": str(item.get("hash", "")).strip().upper(),
+                "size": int(size_string) if size_string.isdigit() else None,
+                "types": _parse_resolution_types(str(item.get("type", "")).strip()),
+            })
+    except (TypeError, ValueError) as exc:
+        return web.json_response({"error": str(exc)}, status=400)
+
+    def resolve_batch():
+        candidate_groups = {}
+        results = []
+        for item in parsed_items:
+            types = item["types"]
+            if types not in candidate_groups:
+                candidate_groups[types] = _collect_resolution_candidates(types)
+            result = _resolve_from_candidates(
+                candidate_groups[types],
+                item["hash"],
+                item["size"],
+            )
+            results.append({"key": item["key"], "result": result})
+        return results
+
+    return web.json_response({"results": await asyncio.to_thread(resolve_batch)})
 
 async def api_get_all_hashes(request):
     """
@@ -886,6 +972,100 @@ async def api_upload_custom_cover(request):
 
 import struct
 
+
+def _preview_url_for_model(folder_type, path_idx, base_dir, file_path):
+    root = os.path.dirname(file_path)
+    filename = os.path.basename(file_path)
+    base_name = os.path.splitext(filename)[0]
+    preview_file = next(
+        (
+            base_name + suffix
+            for suffix in PREVIEW_SUFFIXES + MEDIA_EXTENSIONS
+            if os.path.isfile(os.path.join(root, base_name + suffix))
+        ),
+        None,
+    )
+    if not preview_file:
+        return ""
+    rel_subfolder = os.path.relpath(root, base_dir)
+    if rel_subfolder == '.':
+        rel_subfolder = '/'
+    q_type = urllib.parse.quote(folder_type)
+    q_idx = str(path_idx)
+    q_sub = urllib.parse.quote(rel_subfolder)
+    q_file = urllib.parse.quote(preview_file)
+    version = _cache_token(os.path.join(root, preview_file))
+    return f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}&t={version}"
+
+
+def _resolve_paths_to_previews_sync(paths):
+    requested = [
+        (path, path.replace('\\', '/').lower(), path.replace('\\', '/'))
+        for path in paths
+        if isinstance(path, str)
+    ]
+    exact_results = {}
+    roots = []
+    for folder_type in folder_paths.folder_names_and_paths.keys():
+        try:
+            folder_dirs = folder_paths.get_folder_paths(folder_type)
+        except Exception:
+            continue
+        for path_idx, base_dir in enumerate(folder_dirs or []):
+            if not os.path.isdir(base_dir):
+                continue
+            real_base_dir = os.path.realpath(base_dir)
+            roots.append((folder_type, path_idx, real_base_dir))
+            for original, _, relative_path in requested:
+                relative = relative_path.replace('/', os.sep)
+                candidate = os.path.realpath(os.path.join(real_base_dir, relative))
+                try:
+                    if os.path.commonpath((real_base_dir, candidate)) != real_base_dir:
+                        continue
+                except ValueError:
+                    continue
+                if os.path.isfile(candidate) and candidate.lower().endswith(('.safetensors', '.ckpt', '.pt', '.bin', '.sft')):
+                    exact_results[original] = _preview_url_for_model(folder_type, path_idx, base_dir, candidate)
+
+    unresolved = [(original, normalized) for original, normalized, _ in requested if original not in exact_results]
+    if not unresolved:
+        return exact_results
+
+    wanted_relpaths = {normalized for _, normalized in unresolved}
+    wanted_basenames = {normalized.rsplit('/', 1)[-1] for _, normalized in unresolved}
+    rel_matches = {}
+    basename_matches = {}
+    for folder_type, path_idx, base_dir in roots:
+        for root, _, files in os.walk(base_dir):
+            for filename in files:
+                if not filename.lower().endswith(('.safetensors', '.ckpt', '.pt', '.bin', '.sft')):
+                    continue
+                rel_path = os.path.relpath(os.path.join(root, filename), base_dir).replace(os.sep, '/').lower()
+                basename = filename.lower()
+                if rel_path not in wanted_relpaths and basename not in wanted_basenames:
+                    continue
+                preview_url = _preview_url_for_model(
+                    folder_type,
+                    path_idx,
+                    base_dir,
+                    os.path.join(root, filename),
+                )
+                if rel_path in wanted_relpaths:
+                    rel_matches[rel_path] = preview_url
+                if basename in wanted_basenames:
+                    basename_matches[basename] = preview_url
+
+    previews = dict(exact_results)
+    for original, normalized in unresolved:
+        if normalized in rel_matches:
+            previews[original] = rel_matches[normalized]
+        else:
+            basename = normalized.rsplit('/', 1)[-1]
+            if basename in basename_matches:
+                previews[original] = basename_matches[basename]
+    return previews
+
+
 async def api_resolve_paths_to_previews(request):
     try:
         data = await request.json()
@@ -893,58 +1073,13 @@ async def api_resolve_paths_to_previews(request):
     except:
         return web.json_response({"previews": {}})
         
-    previews = {}
-    all_models = {}
-    
-    for folder_type in folder_paths.folder_names_and_paths.keys():
-        folder_dirs = folder_paths.get_folder_paths(folder_type)
-        if not folder_dirs: continue
-        for path_idx, base_dir in enumerate(folder_dirs):
-            if not os.path.exists(base_dir): continue
-            for root, dirs, files in os.walk(base_dir):
-                for f in files:
-                    if f.endswith('.safetensors') or f.endswith('.ckpt') or f.endswith('.pt') or f.endswith('.bin') or f.endswith('.sft'):
-                        rel_path = os.path.relpath(os.path.join(root, f), base_dir).replace(os.sep, '/')
-                        base_name = os.path.splitext(f)[0]
-                        preview_file = None
-                        for ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
-                            if os.path.exists(os.path.join(root, base_name + ext)):
-                                preview_file = base_name + ext
-                                break
-                                
-                        preview_url = ""
-                        if preview_file:
-                            rel_subfolder = os.path.relpath(root, base_dir)
-                            if rel_subfolder == '.': rel_subfolder = '/'
-                            q_type = urllib.parse.quote(folder_type)
-                            q_idx = str(path_idx)
-                            q_sub = urllib.parse.quote(rel_subfolder)
-                            q_file = urllib.parse.quote(preview_file)
-                            try: mtime = int(os.path.getmtime(os.path.join(root, preview_file)))
-                            except: mtime = 0
-                            preview_url = f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}&t={mtime}"
-                        
-                        all_models[rel_path.lower()] = preview_url
-                        all_models[f.lower()] = preview_url
-
-    for p in paths:
-        p_norm = p.replace(os.sep, '/').lower()
-        if p_norm in all_models:
-            previews[p] = all_models[p_norm]
-        else:
-            fname = p.split('/')[-1].split('\\')[-1].lower()
-            if fname in all_models:
-                previews[p] = all_models[fname]
-                
+    previews = await asyncio.to_thread(_resolve_paths_to_previews_sync, paths)
     return web.json_response({"previews": previews})
 
 
 
 
-async def api_get_all_scan_models(request):
-    import urllib.parse
-    page = int(request.query.get('page', 1))
-    limit = int(request.query.get('limit', 0))
+def _collect_all_scan_models(page, limit):
     target_types = get_active_folder_types()
     all_tuples = []
     seen_dirs = set()
@@ -987,7 +1122,7 @@ async def api_get_all_scan_models(request):
         meta = get_metadata(file_path)
         base_name = os.path.splitext(f)[0]
         preview_file = None
-        for ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
+        for ext in PREVIEW_SUFFIXES + MEDIA_EXTENSIONS:
             if os.path.exists(os.path.join(root, base_name + ext)):
                 preview_file = base_name + ext
                 break
@@ -997,15 +1132,21 @@ async def api_get_all_scan_models(request):
             q_idx = str(path_idx)
             q_sub = urllib.parse.quote(rel_subfolder.strip('/')) if rel_subfolder and rel_subfolder != '/' else ""
             q_file = urllib.parse.quote(preview_file)
-            try: mtime = int(os.path.getmtime(os.path.join(root, preview_file)))
-            except: mtime = 0
+            mtime = _cache_token(os.path.join(root, preview_file))
             preview_url = f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}&t={mtime}"
         all_models.append({
             "type": t, "path_idx": path_idx, "subfolder": rel_subfolder,
             "filename": f, "size_mb": size_mb, "size_bytes": size_bytes,
             "preview_url": preview_url, "metadata": meta
         })
-    return web.json_response({"models": all_models, "total": total, "page": page, "limit": limit})
+    return {"models": all_models, "total": total, "page": page, "limit": limit}
+
+
+async def api_get_all_scan_models(request):
+    page = int(request.query.get('page', 1))
+    limit = int(request.query.get('limit', 0))
+    payload = await asyncio.to_thread(_collect_all_scan_models, page, limit)
+    return web.json_response(payload)
 
 async def api_batch_select(request):
     folder_key = request.query.get('folderKey', 'ALL')
@@ -1015,7 +1156,7 @@ async def api_batch_select(request):
         if action == 'all':
             return True
         elif action == 'no_preview':
-            for ext in ['.preview.png', '.preview.jpg', '.preview.jpeg', '.preview.webp', '.preview.gif', '.preview.avif', '.preview.mp4', '.preview.webm', '.preview.mov', '.preview.avi', '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.mp4', '.webm', '.mov', '.avi']:
+            for ext in PREVIEW_SUFFIXES + MEDIA_EXTENSIONS:
                 if os.path.exists(os.path.join(root, base_name + ext)):
                     return False
             return True

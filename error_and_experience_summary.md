@@ -277,3 +277,10 @@ This document serves as an architectural retrospective and UX diagnostic log for
 
 **The Solution (方案)**: Treat the operations as separate lifecycle transitions. Custom covers only replace `.preview.*`; Reset restores a Civitai backup atomically, falls back to an untouched bare cover, or preserves the only preview and warns. Rename migrates sidecars, while deletion cleans them only after the main model is gone and only when no same-stem model survives. Use fixed suffix tuples and bounded exact-path checks so cost does not grow with directory size.
 (把这些操作视为不同的生命周期转换：自定义封面只替换 `.preview.*`；重置优先原子恢复 C 站备份，其次回退到未动过的裸封面；若当前预览是唯一图片则保留并提示。重命名是迁移伴生文件，删除则只在主模型成功删除且没有同名模型存活时清理。扩展名使用固定元组和有上限的精确路径检查，性能不随目录文件数量增长。)
+
+## 46. Cache Busting Can Become Cache Destruction (缓存刷新不能变成缓存摧毁)
+**The Problem (问题)**: The backend already versioned preview URLs with the file modification time, but the frontend appended `Date.now()` after every model-list refresh. Every unchanged image/video therefore received a brand-new URL and had to be fetched and decoded again. At the same time, synchronous metadata/header reads and one full model-library walk per missing node multiplied disk work on large installations.
+(后端本来已经用封面修改时间生成版本号，前端却在每次列表刷新时继续追加 `Date.now()`。于是完全没变化的图片和视频也会得到新 URL，被浏览器重新读取和解码。同时，同步元数据/模型头读取以及“每个爆红节点遍历一次全库”又把大型模型库的磁盘开销成倍放大。)
+
+**The Solution (方案)**: Use stable nanosecond file-version tokens, bounded signature-aware metadata/header caches, one `os.scandir()` inventory per current folder, worker threads for large disk operations, chunked/lazy media rendering, and type-grouped batch resolution. Cache invalidation remains tied to physical file signatures, and batch resolution delegates every item to the unchanged identity decision function.
+(使用稳定的纳秒文件版本号、带物理签名的有界元数据/模型头缓存、当前目录单次 `os.scandir()` 清单、磁盘任务工作线程、分帧与懒加载媒体，以及按模型类型分组的批量解析。缓存仍由真实文件签名失效；批量接口中的每一项仍交给完全相同的身份判定函数，因此提速不以削减效果为代价。)

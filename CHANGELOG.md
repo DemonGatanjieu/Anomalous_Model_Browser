@@ -11,6 +11,11 @@
 - **Safe Sidecar Lifecycle**: Deleting a model cleans recognized sidecars, while renaming migrates them—including the Civitai backup—to the new stem. Same-stem model files with different model extensions are never treated as sidecar garbage.
 - **Bounded Sidecar I/O**: Repeated extension literals in the API and scanner were replaced with fixed tuples and exact-path checks. Rename, delete, and reset remain constant-bounded and never scan an entire model directory.
 - **Reset/Rename Extension Integrity**: Fixed a reused loop variable that could change a model's extension when cover reset and physical rename were requested together.
+- **Signature-Aware Metadata Cache**: Unchanged model metadata and embedded safetensors hashes are now served from bounded caches keyed by physical file signatures. Sidecar or model changes invalidate entries automatically, while defensive copies prevent cache pollution.
+- **Stable Cover Caching**: Removed per-refresh random cover URLs and switched to nanosecond file-version tokens, allowing the browser to reuse unchanged images and videos while still updating changed covers immediately.
+- **Responsive Large Libraries**: Folder/model disk work now runs outside the aiohttp event loop, current-folder discovery uses one `os.scandir()` inventory, stale requests are aborted, and cards render in animation-frame chunks with lazy media activation.
+- **Batched Model Doctor Resolution**: Provenance-rich workflows skip a redundant full hash-cache walk, then resolve missing nodes through a type-grouped batch endpoint so each required category is walked once per repair pass. Legacy workflows still refresh the filename cache when needed. The original hash/size/type/ambiguity rules remain unchanged, with automatic fallback to the single-item endpoint.
+- **Direct Preview Fast Path**: Visual replacement resolves contained relative model paths directly and performs a full library walk only for unresolved basename fallbacks.
 
 ## v1.5.0 (The Workflow & UI Evolution Update)
 ### 🚀 Major Features

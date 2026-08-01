@@ -5,6 +5,7 @@ import sys
 import tempfile
 import types
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
@@ -142,13 +143,61 @@ class MetadataHashSelectionTests(unittest.TestCase):
             self.assertEqual(metadata.get_metadata(str(model_path))["hash"], "")
 
 
+class MetadataCacheTests(unittest.TestCase):
+    def setUp(self):
+        metadata.clear_metadata_cache()
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.model_path = Path(self.temp_dir.name, "cached.safetensors")
+        self.info_path = self.model_path.with_suffix(".info")
+        self.model_path.write_bytes(b"model")
+        self.info_path.write_text(json.dumps({"name": "First", "trainedWords": ["one"]}), encoding="utf-8")
+
+    def tearDown(self):
+        metadata.clear_metadata_cache()
+        self.temp_dir.cleanup()
+
+    def test_unchanged_metadata_uses_cache_and_returns_independent_objects(self):
+        first = metadata.get_metadata(str(self.model_path))
+        first["trainedWords"].append("mutated")
+        second = metadata.get_metadata(str(self.model_path))
+        cache_info = metadata.get_metadata_cache_info()
+
+        self.assertEqual(second["name"], "First")
+        self.assertEqual(second["trainedWords"], ["one"])
+        self.assertEqual(cache_info.misses, 1)
+        self.assertEqual(cache_info.hits, 1)
+
+    def test_sidecar_signature_change_invalidates_cached_metadata(self):
+        self.assertEqual(metadata.get_metadata(str(self.model_path))["name"], "First")
+        self.info_path.write_text(json.dumps({"name": "Second and changed"}), encoding="utf-8")
+
+        self.assertEqual(metadata.get_metadata(str(self.model_path))["name"], "Second and changed")
+        self.assertEqual(metadata.get_metadata_cache_info().misses, 2)
+
+    def test_embedded_hash_reader_is_cached_by_model_signature(self):
+        with mock.patch.object(metadata, "_read_safetensors_hash", return_value="A" * 64) as reader:
+            first = metadata._extract_safetensors_hash(str(self.model_path))
+            second = metadata._extract_safetensors_hash(str(self.model_path))
+
+        self.assertEqual(first, second)
+        self.assertEqual(reader.call_count, 1)
+
+
 class ModelSidecarLifecycleTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.root = Path(self.temp_dir.name)
+        self.original_folder_names_and_paths = getattr(folder_paths, "folder_names_and_paths", None)
         folder_paths.get_folder_paths = lambda folder_type: [str(self.root)]
 
     async def asyncTearDown(self):
+        if self.original_folder_names_and_paths is None:
+            try:
+                del folder_paths.folder_names_and_paths
+            except AttributeError:
+                pass
+        else:
+            folder_paths.folder_names_and_paths = self.original_folder_names_and_paths
         self.temp_dir.cleanup()
 
     def request(self, filename, **overrides):
@@ -234,6 +283,60 @@ class ModelSidecarLifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(Path(self.root, "shared.ckpt").exists())
         self.assertEqual(Path(self.root, "shared.safetensors").read_bytes(), b"keep-me")
         self.assertEqual(Path(self.root, "shared.civitai_bak.png").read_bytes(), b"shared-cover")
+
+
+class ModelListingPerformanceTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp_dir.name)
+        self.original_folder_names_and_paths = getattr(folder_paths, "folder_names_and_paths", None)
+        folder_paths.get_folder_paths = lambda folder_type: [str(self.root)]
+
+    async def asyncTearDown(self):
+        if self.original_folder_names_and_paths is None:
+            try:
+                del folder_paths.folder_names_and_paths
+            except AttributeError:
+                pass
+        else:
+            folder_paths.folder_names_and_paths = self.original_folder_names_and_paths
+        self.temp_dir.cleanup()
+
+    async def test_listing_keeps_sort_cover_priority_and_stable_cache_token(self):
+        Path(self.root, "B.ckpt").write_bytes(b"b")
+        Path(self.root, "a.safetensors").write_bytes(b"aaa")
+        Path(self.root, "a.png").write_bytes(b"bare")
+        preview = Path(self.root, "a.preview.webp")
+        preview.write_bytes(b"preview")
+        request = types.SimpleNamespace(query={
+            "type": "checkpoints",
+            "path_idx": "0",
+            "subfolder": "/",
+            "page": "1",
+            "limit": "0",
+        })
+
+        response = await models.api_get_models(request)
+        result = json.loads(response.text)
+
+        self.assertEqual([item["filename"] for item in result["models"]], ["a.safetensors", "B.ckpt"])
+        listed = result["models"][0]
+        self.assertIn("filename=a.preview.webp", listed["preview_url"])
+        self.assertIn(f"t={preview.stat().st_mtime_ns}", listed["preview_url"])
+        self.assertEqual(listed["size_bytes"], 3)
+
+    async def test_exact_preview_paths_bypass_full_library_walk(self):
+        nested = Path(self.root, "nested")
+        nested.mkdir()
+        Path(nested, "model.safetensors").write_bytes(b"model")
+        Path(nested, "model.preview.png").write_bytes(b"cover")
+        folder_paths.folder_names_and_paths = {"checkpoints": object()}
+
+        with mock.patch.object(models.os, "walk", side_effect=AssertionError("full walk should not run")):
+            previews = models._resolve_paths_to_previews_sync(["nested/model.safetensors"])
+
+        self.assertIn("nested/model.safetensors", previews)
+        self.assertIn("filename=model.preview.png", previews["nested/model.safetensors"])
 
 
 class HashResolutionTests(unittest.IsolatedAsyncioTestCase):
@@ -332,6 +435,45 @@ class HashResolutionTests(unittest.IsolatedAsyncioTestCase):
         result = json.loads(response.text)
         self.assertFalse(result["found"])
         self.assertTrue(result["ambiguous"])
+
+    async def test_batch_resolution_scans_each_type_group_once(self):
+        request = JsonRequest({"items": [
+            {
+                "key": "checkpoint",
+                "hash": self.checkpoint_hash,
+                "size": self.checkpoint_size,
+                "type": "checkpoints",
+            },
+            {
+                "key": "stale",
+                "hash": self.lora_hash,
+                "size": self.checkpoint_size,
+                "type": "checkpoints",
+            },
+        ]})
+
+        with mock.patch.object(
+            models,
+            "_collect_resolution_candidates",
+            wraps=models._collect_resolution_candidates,
+        ) as collect:
+            response = await models.api_resolve_hash_batch(request)
+
+        result = json.loads(response.text)
+        by_key = {entry["key"]: entry["result"] for entry in result["results"]}
+        self.assertEqual(collect.call_count, 1)
+        self.assertTrue(by_key["checkpoint"]["matched_by_hash"])
+        self.assertTrue(by_key["checkpoint"]["matched_by_size"])
+        self.assertTrue(by_key["stale"]["stale_hash"])
+        self.assertEqual(by_key["stale"]["filename"], "a/shared.safetensors")
+
+    async def test_batch_resolution_rejects_invalid_model_type(self):
+        response = await models.api_resolve_hash_batch(JsonRequest({"items": [{
+            "key": "bad",
+            "hash": self.checkpoint_hash,
+            "type": "not-a-real-category",
+        }]}))
+        self.assertEqual(response.status, 400)
 
 
 if __name__ == "__main__":

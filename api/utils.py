@@ -84,10 +84,13 @@ async def api_serve_image(request):
 
 async def api_clear_cache(request):
     try:
+        from .metadata import clear_metadata_cache
+
         if hasattr(folder_paths, "filename_list_cache"):
             folder_paths.filename_list_cache.clear()
         if hasattr(folder_paths, "cache_helper") and hasattr(folder_paths.cache_helper, "clear"):
             folder_paths.cache_helper.clear()
+        clear_metadata_cache()
         return web.json_response({"status": "success"})
     except Exception as e:
         return web.json_response({"status": "error", "message": str(e)})

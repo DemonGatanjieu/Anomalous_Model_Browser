@@ -5,11 +5,13 @@ import urllib.parse
 import subprocess
 import threading
 import asyncio
+import copy
+from functools import lru_cache
 from aiohttp import web
 import folder_paths
 import struct
 
-def _extract_safetensors_hash(file_path):
+def _read_safetensors_hash(file_path):
     """Extract hash from safetensors header metadata (O(1) fast read, no full-file SHA256)."""
     try:
         with open(file_path, "rb") as f:
@@ -36,6 +38,16 @@ def _extract_safetensors_hash(file_path):
     except Exception:
         pass
     return None
+
+
+@lru_cache(maxsize=4096)
+def _extract_safetensors_hash_cached(file_path, signature):
+    return _read_safetensors_hash(file_path)
+
+
+def _extract_safetensors_hash(file_path):
+    normalized_path = os.path.realpath(file_path)
+    return _extract_safetensors_hash_cached(normalized_path, _file_signature(normalized_path))
 
 
 def _select_info_file(data, file_path):
@@ -94,7 +106,7 @@ def _select_info_hash(data, file_path):
     hashes = selected.get("hashes", {})
     return str(hashes.get("SHA256", "")) if isinstance(hashes, dict) else ""
 
-def get_metadata(file_path):
+def _read_metadata(file_path):
     base_path = os.path.splitext(file_path)[0]
     metadata = {
         "name": os.path.basename(base_path),
@@ -169,5 +181,47 @@ def get_metadata(file_path):
             metadata["hash"] = header_hash
                 
     return metadata
+
+
+def _file_signature(file_path):
+    try:
+        stat = os.stat(file_path)
+        return (stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
+    except OSError:
+        return None
+
+
+def _metadata_signature(file_path):
+    base_path = os.path.splitext(file_path)[0]
+    return (
+        _file_signature(file_path),
+        _file_signature(f"{base_path}.info"),
+        _file_signature(f"{base_path}.civitai.info"),
+    )
+
+
+@lru_cache(maxsize=4096)
+def _get_metadata_cached(file_path, signature):
+    # ``signature`` is deliberately unused by the parser itself; it is part of
+    # the cache key and changes whenever the model or either metadata sidecar
+    # changes. The cache is bounded so removed/renamed models cannot grow it
+    # without limit.
+    return _read_metadata(file_path)
+
+
+def get_metadata(file_path):
+    normalized_path = os.path.realpath(file_path)
+    signature = _metadata_signature(normalized_path)
+    # Metadata contains mutable lists. Never expose the cached object directly.
+    return copy.deepcopy(_get_metadata_cached(normalized_path, signature))
+
+
+def clear_metadata_cache():
+    _get_metadata_cached.cache_clear()
+    _extract_safetensors_hash_cached.cache_clear()
+
+
+def get_metadata_cache_info():
+    return _get_metadata_cached.cache_info()
 
 

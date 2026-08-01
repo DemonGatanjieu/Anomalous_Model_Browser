@@ -16,22 +16,38 @@ const t = (key) => {
 
 export async function loadModels() {
         try {
+            if (this._modelLoadController) this._modelLoadController.abort();
+            const loadController = new AbortController();
+            this._modelLoadController = loadController;
             const params = new URLSearchParams({ type: this.currentType, path_idx: this.currentPathIdx, subfolder: this.currentSubfolder });
-            const res = await fetch('/anomalous/models?' + params.toString());
+            const res = await fetch('/anomalous/models?' + params.toString(), { signal: loadController.signal });
             const data = await res.json();
+            if (this._modelLoadController !== loadController) return;
 
             if (window.anomalous_update_hash_cache && data.models) {
                 window.anomalous_update_hash_cache(data.models);
             }
 
             this.models = data.models || [];
-            const ts = Date.now();
-            this.models.forEach(m => {
-                if (m.preview_url) {
-                    m.preview_url += (m.preview_url.includes('?') ? '&' : '?') + 't=' + ts;
-                }
-            });
-
+            const renderGeneration = (this._modelRenderGeneration || 0) + 1;
+            this._modelRenderGeneration = renderGeneration;
+            if (this._modelMediaObserver) this._modelMediaObserver.disconnect();
+            this._modelMediaObserver = typeof IntersectionObserver === 'function'
+                ? new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        const media = entry.target;
+                        const shouldAutoplay = media.tagName === 'VIDEO' && media.dataset.anomalousAutoplay === 'true';
+                        if (!entry.isIntersecting) {
+                            if (shouldAutoplay) media.pause();
+                            return;
+                        }
+                        const pendingSrc = media.dataset.anomalousSrc;
+                        if (pendingSrc && !media.getAttribute('src')) media.src = pendingSrc;
+                        if (shouldAutoplay) media.play().catch(() => {});
+                        else observer.unobserve(media);
+                    });
+                }, { rootMargin: '300px' })
+                : null;
             this.grid.innerHTML = '';
 
             if (!data.models || data.models.length === 0) {
@@ -39,25 +55,46 @@ export async function loadModels() {
                 return;
             }
 
-            data.models.forEach(model => {
+            let renderIndex = 0;
+            const renderChunk = () => {
+                if (this._modelRenderGeneration !== renderGeneration) return;
+                const fragment = document.createDocumentFragment();
+                const end = Math.min(renderIndex + 40, data.models.length);
+                for (; renderIndex < end; renderIndex++) {
+                const model = data.models[renderIndex];
                 const card = document.createElement('div');
                 card.className = 'anomalous-card';
                 if (model.preview_url) {
                     const isVideo = model.preview_url.match(/\.mp4(?:&|$)/i) || model.preview_url.match(/\.webm(?:&|$)/i);
                     if (isVideo) {
                         const video = document.createElement('video');
-                        video.src = model.preview_url;
+                        video.dataset.anomalousSrc = model.preview_url;
                         video.muted = true; video.loop = true; video.playsInline = true;
+                        video.preload = 'metadata';
+                        const ensureVideoSource = () => {
+                            if (!video.getAttribute('src')) video.src = video.dataset.anomalousSrc;
+                        };
                         if (this.energySaving) {
                             video.pause();
-                            card.addEventListener('mouseenter', () => video.play().catch(e => { }));
+                            card.addEventListener('mouseenter', () => {
+                                ensureVideoSource();
+                                video.play().catch(() => {});
+                            });
                             card.addEventListener('mouseleave', () => { video.pause(); video.currentTime = 0; });
                         } else {
-                            video.autoplay = true;
+                            video.dataset.anomalousAutoplay = 'true';
+                        }
+                        if (this._modelMediaObserver) {
+                            this._modelMediaObserver.observe(video);
+                        } else {
+                            ensureVideoSource();
+                            if (!this.energySaving) video.autoplay = true;
                         }
                         card.appendChild(video);
                     } else {
                         const img = document.createElement('img');
+                        img.loading = 'lazy';
+                        img.decoding = 'async';
                         img.src = model.preview_url;
                         card.appendChild(img);
                     }
@@ -174,9 +211,15 @@ export async function loadModels() {
                 card.appendChild(applyBtn);
 
 
-                this.grid.appendChild(card);
-            });
-        } catch (e) { }
+                fragment.appendChild(card);
+                }
+                this.grid.appendChild(fragment);
+                if (renderIndex < data.models.length) requestAnimationFrame(renderChunk);
+            };
+            requestAnimationFrame(renderChunk);
+        } catch (e) {
+            if (e && e.name !== 'AbortError') console.error('[Anomalous] Failed to load models', e);
+        }
     }
 
 

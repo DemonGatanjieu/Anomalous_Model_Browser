@@ -65,18 +65,93 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
         }
     }
 
-    // Always fetch latest hashes before trying to resolve (using cache-buster to avoid stale hashes)
-    try {
-        const res = await fetch('/anomalous/all_hashes?t=' + Date.now());
-        const data = await res.json();
-        const hashesObj = data.hashes ? data.hashes : data;
-        Object.assign(window.anomalous_hash_cache, hashesObj);
-    } catch (e) {
-        console.warn("[Anomalous] Failed to fetch hashes for manual resolution", e);
+    const hashes = (app.graph.extra && app.graph.extra.anomalous_hashes) || {};
+    let needsGlobalHashRefresh = false;
+    provenanceCheck:
+    for (const node of app.graph._nodes) {
+        for (const widget of (node.widgets || [])) {
+            const value = widget.value;
+            if (typeof value !== 'string' || !(value.endsWith('.safetensors') || value.endsWith('.ckpt') || value.endsWith('.pt'))) continue;
+            if (!hashes[`${node.id}_${value}`]) {
+                needsGlobalHashRefresh = true;
+                break provenanceCheck;
+            }
+        }
+    }
+
+    // Provenance-rich workflows already carry the identity data needed by the
+    // doctor. Refresh the full local filename->hash cache only for legacy items
+    // that actually need that fallback.
+    if (needsGlobalHashRefresh) {
+        try {
+            const res = await fetch('/anomalous/all_hashes?t=' + Date.now());
+            const data = await res.json();
+            const hashesObj = data.hashes ? data.hashes : data;
+            Object.assign(window.anomalous_hash_cache, hashesObj);
+        } catch (e) {
+            console.warn("[Anomalous] Failed to fetch hashes for manual resolution", e);
+        }
     }
 
     let fixed_count = 0;
-    const hashes = (app.graph.extra && app.graph.extra.anomalous_hashes) || {};
+
+    const findHashData = (node, widget, value) => {
+        let hashData = hashes[`${node.id}_${value}`];
+        if (!hashData && window.anomalous_hash_cache) {
+            const parts = value.split(/[/\\]/);
+            const basename = parts[parts.length - 1];
+            const cacheData = window.anomalous_hash_cache[value] || window.anomalous_hash_cache[basename];
+            if (cacheData) hashData = typeof cacheData === 'string' ? { hash: cacheData, size: "" } : cacheData;
+        }
+        return hashData;
+    };
+
+    // Resolve all model references in one request. The backend groups items by
+    // required model category and scans each category once. Native slash-only
+    // normalization remains in the existing loop below and needs no disk scan.
+    const batchItems = [];
+    for (const node of app.graph._nodes) {
+        if (!node.widgets) continue;
+        for (let i = 0; i < node.widgets.length; i++) {
+            const widget = node.widgets[i];
+            const value = widget.value;
+            if (typeof value !== 'string' || !(value.endsWith('.safetensors') || value.endsWith('.ckpt') || value.endsWith('.pt'))) continue;
+            if (widget.options && widget.options.values && !widget.options.values.includes(value)) {
+                const normalized = value.replace(/\\/g, '/');
+                const nativeMatch = widget.options.values.find(v => typeof v === 'string' && v.replace(/\\/g, '/') === normalized);
+                if (nativeMatch && nativeMatch !== value) continue;
+            }
+            const hashData = findHashData(node, widget, value);
+            if (!hashData) continue;
+            const hash = typeof hashData === 'string' ? hashData : (hashData.hash || "");
+            const size = typeof hashData === 'string' ? "" : (hashData.size || "");
+            if (!hash && !size) continue;
+            batchItems.push({
+                key: `${node.id}:${i}:${value}`,
+                hash,
+                size,
+                type: inferExpectedModelTypes(node, widget)
+            });
+        }
+    }
+
+    const batchResults = new Map();
+    if (batchItems.length) {
+        try {
+            for (let offset = 0; offset < batchItems.length; offset += 256) {
+                const batchResponse = await fetch('/anomalous/resolve_hash_batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items: batchItems.slice(offset, offset + 256) })
+                });
+                if (!batchResponse.ok) throw new Error(`HTTP ${batchResponse.status}`);
+                const batchData = await batchResponse.json();
+                for (const entry of (batchData.results || [])) batchResults.set(entry.key, entry.result);
+            }
+        } catch (error) {
+            console.warn('[Anomalous Hash Resolver] Batch resolution failed; falling back to single-item requests.', error);
+        }
+    }
 
     for (const node of app.graph._nodes) {
         if (node.widgets) {
@@ -113,17 +188,7 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
                         }
                     }
 
-                    let hashData = hashes[`${node.id}_${val}`];
-
-                    // Fallback: If graph wasn't saved with hashes, check if the global cache knows this filename
-                    if (!hashData && window.anomalous_hash_cache) {
-                        const parts = val.split(/[/\\]/);
-                        const basename = parts[parts.length - 1];
-                        const cache_data = window.anomalous_hash_cache[val] || window.anomalous_hash_cache[basename];
-                        if (cache_data) {
-                            hashData = typeof cache_data === 'string' ? { hash: cache_data, size: "" } : cache_data;
-                        }
-                    }
+                    const hashData = findHashData(node, w, val);
 
                     if (hashData) {
                         let h = typeof hashData === 'string' ? hashData : hashData.hash;
@@ -131,8 +196,12 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
                         try {
                             const expectedTypes = inferExpectedModelTypes(node, w);
                             const typeQuery = expectedTypes ? `&type=${encodeURIComponent(expectedTypes)}` : '';
-                            const res = await fetch(`/anomalous/resolve_hash?hash=${encodeURIComponent(h)}&size=${encodeURIComponent(s)}${typeQuery}`);
-                            const resData = await res.json();
+                            const batchKey = `${node.id}:${i}:${val}`;
+                            let resData = batchResults.get(batchKey);
+                            if (!batchResults.has(batchKey)) {
+                                const res = await fetch(`/anomalous/resolve_hash?hash=${encodeURIComponent(h)}&size=${encodeURIComponent(s)}${typeQuery}`);
+                                resData = await res.json();
+                            }
 
                             if (resData.found) {
                                 const normVal = val.replace(/\\/g, '/');
