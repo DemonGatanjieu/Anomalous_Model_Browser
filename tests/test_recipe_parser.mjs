@@ -57,9 +57,21 @@ const advancedSampler = {
         { name: 'start_at_step', value: 7 },
     ],
 };
+const customNode = {
+    id: 8,
+    type: 'ThirdPartyDetailNode',
+    title: 'Custom Detail Control',
+    constructor: { nodeData: { category: 'third_party/image', python_module: 'custom_nodes.detail_pack' } },
+    widgets: [
+        { name: 'detail_strength', value: 0.72 },
+        { name: 'mode', value: 'balanced' },
+        { name: 'api_key', value: 'must-not-enter-the-card-summary' },
+        { name: 'run_now', type: 'button', value: true },
+    ],
+};
 
 const metadata = extractRecipeMetadata({
-    _nodes: [checkpoint, lora, positive, negative, sampler, emptyLatent, advancedSampler],
+    _nodes: [checkpoint, lora, positive, negative, sampler, emptyLatent, advancedSampler, customNode],
     links: {
         101: { origin_id: 3, target_id: 5 },
         102: { origin_id: 4, target_id: 5 },
@@ -82,5 +94,12 @@ assert.equal(metadata.scheduler, 'karras');
 assert.equal(metadata.denoise, 0.9);
 assert.deepEqual(metadata.resolution, { width: 1024, height: 768 });
 assert.equal(metadata.samplers[1].denoise, null);
+assert.equal(metadata.nodeCount, 8);
+const customSummary = metadata.nodes.find((node) => node.id === 8);
+assert.equal(customSummary.module, 'custom_nodes.detail_pack');
+assert.deepEqual(customSummary.widgets, [
+    { name: 'detail_strength', value: 0.72 },
+    { name: 'mode', value: 'balanced' },
+]);
 
 console.log('recipe_parser tests passed');

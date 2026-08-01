@@ -96,7 +96,7 @@ Instead of fragmenting the class scope and losing context, we extracted all UI p
 * **Detail Panel (`anomalous-detail-panel`)**: Slides out when a specific model is clicked.
 * **Gallery Viewer (`ui_gallery.js`)**: A fullscreen modal for viewing images.
 * **Notebook (`ui_notebooks.js`)**: A specialized editor for composing prompts and drag-dropping Lora/Model nodes.
-* **Workflow Recipes (`ui_recipes.js`)**: A Notebook-adjacent local collection of saved, complete graphs with readable model/LoRA/prompt/sampling summaries. `recipe_parser.js` only reads the live LiteGraph graph; an unknown custom node may omit summary data but must never block saving or mutate the canvas. Restoring requires explicit confirmation because it replaces the current graph.
+* **Workflow Recipes (`ui_recipes.js`)**: A second section inside the existing Notebook modal, not a separate top-level navigation surface. Recipes save the complete serialized graph and add two read-only summary layers: adapters for common model/LoRA/prompt/sampling semantics, plus bounded generic widget summaries for every node (including third-party nodes). Sensitive-looking widgets and complex values are excluded from card metadata but remain in the authoritative workflow JSON. `recipe_parser.js` never mutates the canvas; an unfamiliar custom node may have a less detailed card but must never block saving. Restoring requires explicit confirmation because it replaces the current graph.
 * **Doctor Panel (`ui_doctor.js`)**: Diagnoses model health for individual nodes or the entire workflow. Includes "View Profile" functionality.
 
 ### Graph Splicing and Picker Context (`graph_splice.js`, `model_picker.js`)

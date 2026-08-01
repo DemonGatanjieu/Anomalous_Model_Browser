@@ -29,7 +29,23 @@ export async function showNotebooks() {
 
         const nbHeader = document.createElement('div');
         nbHeader.className = 'anomalous-nb-header';
-        nbHeader.innerHTML = `<h2>${t('notebookTitle')}</h2>`;
+        const headerMain = document.createElement('div');
+        headerMain.className = 'anomalous-nb-header-main';
+        const heading = document.createElement('h2');
+        heading.textContent = t('notebookTitle');
+        const sectionTabs = document.createElement('div');
+        sectionTabs.className = 'anomalous-nb-section-tabs';
+        const notesTab = document.createElement('button');
+        notesTab.type = 'button';
+        notesTab.className = 'anomalous-nb-section-tab active';
+        notesTab.textContent = t('notebooks');
+        const recipesTab = document.createElement('button');
+        recipesTab.type = 'button';
+        recipesTab.className = 'anomalous-nb-section-tab';
+        recipesTab.textContent = t('recipeTitle');
+        sectionTabs.append(notesTab, recipesTab);
+        headerMain.append(heading, sectionTabs);
+        nbHeader.appendChild(headerMain);
         const closeNb = document.createElement('span');
         closeNb.className = 'anomalous-nb-close';
         closeNb.innerHTML = '&times;';
@@ -38,6 +54,19 @@ export async function showNotebooks() {
 
         const body = document.createElement('div');
         body.className = 'anomalous-nb-body';
+        this.notebookBody = body;
+        this.notebookContainer = nbContainer;
+        this.notebookNotesTab = notesTab;
+        this.notebookRecipesTab = recipesTab;
+
+        notesTab.onclick = () => {
+            this.notebookBody.style.display = 'flex';
+            if (this.recipeView) this.recipeView.style.display = 'none';
+            notesTab.classList.add('active');
+            recipesTab.classList.remove('active');
+            this.refreshNotebooks(true);
+        };
+        recipesTab.onclick = () => this.showRecipes();
 
         // Sidebar for notebooks list
         const sidebar = document.createElement('div');

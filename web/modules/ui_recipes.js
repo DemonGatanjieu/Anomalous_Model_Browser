@@ -40,6 +40,62 @@ function createBadge(text, kind = '') {
     return badge;
 }
 
+function displayWidgetValue(value) {
+    return Array.isArray(value) ? value.join(', ') : String(value);
+}
+
+function appendNodeDetails(parent, params) {
+    const nodes = Array.isArray(params.nodes) ? params.nodes : [];
+    if (!nodes.length) return;
+    const details = document.createElement('details');
+    details.className = 'anomalous-recipe-node-details';
+    const summary = document.createElement('summary');
+    summary.textContent = `${t('recipeNodeParams')} (${summaryValue(params.nodeCount, nodes.length)})`;
+    details.appendChild(summary);
+
+    let rendered = false;
+    details.ontoggle = () => {
+        if (!details.open || rendered) return;
+        rendered = true;
+        const list = document.createElement('div');
+        list.className = 'anomalous-recipe-node-list';
+        for (const node of nodes) {
+            const nodeBlock = document.createElement('section');
+            nodeBlock.className = 'anomalous-recipe-node';
+            const nodeHeading = document.createElement('div');
+            nodeHeading.className = 'anomalous-recipe-node-heading';
+            appendText(nodeHeading, 'strong', node.title || node.type || t('recipeUnknownNode'));
+            if (node.title && node.type) nodeHeading.appendChild(createBadge(node.type));
+            if (node.module) nodeHeading.appendChild(createBadge(node.module, 'module'));
+            nodeBlock.appendChild(nodeHeading);
+
+            for (const widget of node.widgets || []) {
+                const row = document.createElement('div');
+                row.className = 'anomalous-recipe-widget-row';
+                appendText(row, 'span', widget.name, 'anomalous-recipe-widget-name');
+                const value = displayWidgetValue(widget.value);
+                appendText(row, 'code', value, 'anomalous-recipe-widget-value');
+                const copy = appendText(row, 'button', '⧉', 'anomalous-recipe-copy-param');
+                copy.type = 'button';
+                copy.title = t('recipeCopyParameter');
+                copy.onclick = async () => {
+                    try { await navigator.clipboard.writeText(value); } catch (error) { console.warn('Could not copy recipe parameter:', error); }
+                };
+                nodeBlock.appendChild(row);
+            }
+            if ((node.widgetCount || 0) > (node.widgets?.length || 0)) {
+                appendText(nodeBlock, 'small', t('recipeSomeParamsInWorkflow'), 'anomalous-recipe-node-hint');
+            }
+            list.appendChild(nodeBlock);
+        }
+        if ((params.nodeCount || 0) > nodes.length) {
+            appendText(list, 'small', t('recipeMoreNodesInWorkflow'), 'anomalous-recipe-node-hint');
+        }
+        details.appendChild(list);
+    };
+    parent.appendChild(details);
+}
+
 function renderParams(parent, params = {}) {
     const summary = document.createElement('div');
     summary.className = 'anomalous-recipe-summary';
@@ -72,6 +128,7 @@ function renderParams(parent, params = {}) {
 
     const positive = Array.isArray(params.promptPositive) ? params.promptPositive[0] : params.promptPositive;
     if (positive) appendText(summary, 'p', `${t('recipePrompt')}: ${compactText(positive)}`, 'anomalous-recipe-prompt');
+    appendNodeDetails(summary, params);
     parent.appendChild(summary);
 }
 
@@ -146,54 +203,40 @@ function showRecipeSaveDialog(owner, thumbnail) {
         };
         dialog.appendChild(actions);
         overlay.appendChild(dialog);
-        (owner.recipePanel || document.body).appendChild(overlay);
+        (owner.nbPanel || document.body).appendChild(overlay);
         nameInput.focus();
         nameInput.select();
     });
 }
 
 export async function showRecipes() {
-    if (!this.recipePanel) {
-        this.recipePanel = document.createElement('div');
-        this.recipePanel.className = 'anomalous-nb-modal anomalous-recipe-modal';
-        this.recipePanel.style.display = 'none';
-        this.recipePanel.onclick = (event) => {
-            if (event.target === this.recipePanel) this.recipePanel.style.display = 'none';
-        };
-        (this.nbPanel?.parentElement || this.modal).appendChild(this.recipePanel);
+    if (!this.notebookContainer) {
+        this.nbPanel.style.display = 'flex';
+        await this.showNotebooks();
     }
-    this.recipePanel.style.display = 'flex';
+    this.notebookBody.style.display = 'none';
+    this.notebookNotesTab?.classList.remove('active');
+    this.notebookRecipesTab?.classList.add('active');
+    if (this.recipeView) this.recipeView.style.display = 'flex';
     if (this.recipesInitialized) {
         await this.refreshRecipes();
         return;
     }
     this.recipesInitialized = true;
 
-    const container = document.createElement('div');
-    container.className = 'anomalous-nb-container anomalous-recipe-container';
-    const header = document.createElement('div');
-    header.className = 'anomalous-nb-header';
-    appendText(header, 'h2', t('recipeTitle'));
-    const close = appendText(header, 'button', '×', 'anomalous-nb-close');
-    close.type = 'button';
-    close.title = t('recipeClose');
-    close.onclick = () => { this.recipePanel.style.display = 'none'; };
-    header.appendChild(close);
-
-    const body = document.createElement('div');
-    body.className = 'anomalous-recipe-body';
+    this.recipeView = document.createElement('div');
+    this.recipeView.className = 'anomalous-recipe-body';
     const actionBar = document.createElement('div');
     actionBar.className = 'anomalous-recipe-actionbar';
     const save = appendText(actionBar, 'button', t('recipeSaveCurrent'), 'anomalous-btn-primary');
     save.type = 'button';
     save.onclick = () => this.handleSaveRecipe();
-    body.appendChild(actionBar);
+    this.recipeView.appendChild(actionBar);
 
     this.recipeListContainer = document.createElement('div');
     this.recipeListContainer.className = 'anomalous-recipe-list';
-    body.appendChild(this.recipeListContainer);
-    container.append(header, body);
-    this.recipePanel.appendChild(container);
+    this.recipeView.appendChild(this.recipeListContainer);
+    this.notebookContainer.appendChild(this.recipeView);
     await this.refreshRecipes();
 }
 
@@ -247,11 +290,19 @@ export function renderRecipeList(recipes) {
         const restore = appendText(actions, 'button', t('recipeRestore'), 'anomalous-btn-primary');
         restore.type = 'button';
         restore.onclick = async () => {
-            if (!confirm(t('recipeRestoreConfirm'))) return;
             try {
                 const response = await fetch(`/anomalous/recipe_full?filename=${encodeURIComponent(recipe.filename)}`);
                 const payload = await response.json();
                 if (!response.ok || payload.status !== 'success' || !payload.data?.workflow) throw new Error('recipe missing workflow');
+                const registry = globalThis.LiteGraph?.registered_node_types;
+                const savedNodes = Array.isArray(payload.data.params?.nodes) ? payload.data.params.nodes : [];
+                const missingTypes = registry
+                    ? [...new Set(savedNodes.map((node) => node.type).filter((type) => type && !registry[type]))]
+                    : [];
+                const missingWarning = missingTypes.length
+                    ? `\n\n${t('recipeMissingNodes')}:\n${missingTypes.slice(0, 12).join('\n')}`
+                    : '';
+                if (!confirm(`${t('recipeRestoreConfirm')}${missingWarning}`)) return;
                 app.loadGraphData(payload.data.workflow);
                 app.canvas?.setDirty?.(true, true);
             } catch (error) {
@@ -291,7 +342,7 @@ export async function handleSaveRecipe() {
     const details = await showRecipeSaveDialog(this, thumbnail);
     if (!details) return;
 
-    const saveButton = this.recipePanel?.querySelector('.anomalous-recipe-actionbar button');
+    const saveButton = this.recipeView?.querySelector('.anomalous-recipe-actionbar button');
     if (saveButton) {
         saveButton.disabled = true;
         saveButton.textContent = t('recipeSaving');

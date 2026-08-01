@@ -110,6 +110,12 @@ export const i18n = {
         recipeDeleteConfirm: '确定删除这个工作流配方吗？',
         recipeDeleteError: '删除工作流配方失败。',
         recipeSaveError: '保存工作流配方失败。',
+        recipeNodeParams: '节点参数',
+        recipeUnknownNode: '未知节点',
+        recipeCopyParameter: '复制参数值',
+        recipeSomeParamsInWorkflow: '其余复杂或敏感参数仍保存在完整工作流中。',
+        recipeMoreNodesInWorkflow: '其余节点仍保存在完整工作流中。',
+        recipeMissingNodes: '当前缺少以下节点类型，恢复后可能无法运行',
 
     },
     en: {
@@ -223,5 +229,11 @@ export const i18n = {
         recipeDeleteConfirm: 'Delete this Workflow Recipe?',
         recipeDeleteError: 'Could not delete this Workflow Recipe.',
         recipeSaveError: 'Could not save this Workflow Recipe.',
+        recipeNodeParams: 'Node parameters',
+        recipeUnknownNode: 'Unknown node',
+        recipeCopyParameter: 'Copy parameter value',
+        recipeSomeParamsInWorkflow: 'Other complex or sensitive parameters remain in the full workflow.',
+        recipeMoreNodesInWorkflow: 'Other nodes remain in the full workflow.',
+        recipeMissingNodes: 'These node types are currently missing; the restored workflow may not run',
     }
 };

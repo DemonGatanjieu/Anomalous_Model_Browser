@@ -5,6 +5,10 @@
  */
 
 const MAX_UPSTREAM_NODES = 96;
+const MAX_SUMMARY_NODES = 120;
+const MAX_WIDGETS_PER_NODE = 16;
+const MAX_WIDGET_TEXT = 320;
+const SENSITIVE_WIDGET_NAME = /(?:api.?key|access.?token|auth|password|passwd|secret|credential)/i;
 
 function nodeType(node) {
     return String(node?.type || node?.comfyClass || '');
@@ -37,6 +41,41 @@ function numberValue(value) {
     if (value === null || value === undefined || value === '') return null;
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
+}
+
+function summariseWidgetValue(value) {
+    if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed.length > MAX_WIDGET_TEXT ? `${trimmed.slice(0, MAX_WIDGET_TEXT - 1)}…` : trimmed;
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') return value;
+    if (Array.isArray(value) && value.length <= 12 && value.every((item) => ['string', 'number', 'boolean'].includes(typeof item))) {
+        return value.map((item) => typeof item === 'string' && item.length > 80 ? `${item.slice(0, 79)}…` : item);
+    }
+    return null;
+}
+
+function extractGenericNodeSummary(node) {
+    const widgets = [];
+    for (const [index, widget] of (node?.widgets || []).entries()) {
+        const name = textValue(widget?.name) || `widget_${index + 1}`;
+        if (SENSITIVE_WIDGET_NAME.test(name) || normaliseName(widget?.type) === 'button') continue;
+        const value = summariseWidgetValue(widget?.value);
+        if (value === null || value === '') continue;
+        widgets.push({ name, value });
+        if (widgets.length >= MAX_WIDGETS_PER_NODE) break;
+    }
+
+    const nodeData = node?.constructor?.nodeData || {};
+    return {
+        id: node?.id ?? null,
+        type: nodeType(node) || 'Unknown',
+        title: textValue(node?.title) || null,
+        category: textValue(nodeData.category || node?.category) || null,
+        module: textValue(nodeData.python_module || nodeData.module) || null,
+        widgets,
+        widgetCount: Array.isArray(node?.widgets) ? node.widgets.length : 0,
+    };
 }
 
 function buildNodeIndex(graph) {
@@ -131,6 +170,8 @@ export function extractRecipeMetadata(graph) {
         loras: [],
         promptPositive: [],
         promptNegative: [],
+        nodes: [],
+        nodeCount: graph?._nodes?.length || 0,
         samplers: [],
         seed: null,
         steps: null,
@@ -145,6 +186,7 @@ export function extractRecipeMetadata(graph) {
     const nodeIndex = buildNodeIndex(graph);
     for (const node of graph._nodes) {
         const type = nodeType(node);
+        if (metadata.nodes.length < MAX_SUMMARY_NODES) metadata.nodes.push(extractGenericNodeSummary(node));
 
         if (/^(checkpointloader(simple)?|unetloader)$/i.test(type)) {
             const model = textValue(widgetValue(
