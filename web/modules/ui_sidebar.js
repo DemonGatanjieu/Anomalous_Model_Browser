@@ -824,14 +824,15 @@ export function createDOM() {
                             const type = parts[0], path_idx = parts[1], subfolder = parts.slice(2).join('|');
                             
                             const params = new URLSearchParams({ type, path_idx, subfolder });
-                            params.append('target_files', Array.from(fileSet).join(','));
                             const targetUrl = '/anomalous/scan?' + params.toString();
+                            
+                            const currentReqBody = { ...reqBody, target_files: Array.from(fileSet) };
                             
                             try {
                                 const res = await fetch(targetUrl, {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(reqBody)
+                                    body: JSON.stringify(currentReqBody)
                                 });
                                 const data = await res.json();
                                 if (data.status === 'ok') {
@@ -874,6 +875,7 @@ export function createDOM() {
 
                     // Existing logic for 'all' mode or single file
                     let finalTargetFiles = targetFiles;
+                    let currentReqBody = { ...reqBody };
                     
                     let targetUrl = '';
                     if (isGlobal && targetMode !== 'custom') {
@@ -881,7 +883,7 @@ export function createDOM() {
                     } else {
                         const params = new URLSearchParams({ type: this.currentType, path_idx: this.currentPathIdx, subfolder: this.currentSubfolder });
                         if (finalTargetFiles) {
-                            params.append('target_files', finalTargetFiles);
+                            currentReqBody.target_files = finalTargetFiles.split(',');
                         }
                         targetUrl = '/anomalous/scan?' + params.toString();
                     }
@@ -889,7 +891,7 @@ export function createDOM() {
                     const res = await fetch(targetUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(reqBody)
+                        body: JSON.stringify(currentReqBody)
                     });
                     
                     const data = await res.json();
@@ -1016,27 +1018,7 @@ export function createDOM() {
         closeBtn.innerHTML = '&times;';
         closeBtn.onclick = () => this.close();
 
-        const cleanBtn = document.createElement('button');
-        cleanBtn.id = 'anomalous-clean-btn';
-        cleanBtn.title = t('cleanTitle');
-        cleanBtn.innerHTML = `<span class="anomalous-btn-text">${t('clean')}</span>`;
 
-        cleanBtn.onclick = async () => {
-            if (!confirm(t('cleanConfirm'))) return;
-            cleanBtn.innerHTML = `⏳ <span class="anomalous-btn-text">${t('cleaning')}</span>`;
-            cleanBtn.disabled = true;
-            try {
-                const res = await fetch('/anomalous/clean_civitai_info', { method: 'POST' });
-                const data = await res.json();
-                if (data.status === 'success') {
-                    alert(`${t('cleanDone')} ${data.count} ${t('files')}`);
-                } else {
-                    alert(t('cleanFail') + data.message);
-                }
-            } catch (e) { alert(t('cleanErr') + e.message); }
-            cleanBtn.innerHTML = `<span class="anomalous-btn-text">${t('clean')}</span>`;
-            cleanBtn.disabled = false;
-        };
 
         rightGroup.appendChild(dockBtn);
         rightGroup.appendChild(closeBtn);
@@ -1074,8 +1056,6 @@ export function createDOM() {
             galleryBtn.innerHTML = `🖼️ <span class="anomalous-btn-text">${t('gallery')}</span>`;
             scanBtn.title = t('scanTitle');
             scanBtn.innerHTML = `🔄`;
-            cleanBtn.title = t('cleanTitle');
-            cleanBtn.innerHTML = `<span class="anomalous-btn-text">${t('clean')}</span>`;
             helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
             nbBtn.title = t('notebookTitle');
             nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('notebooks')}</span>`;
@@ -1085,7 +1065,7 @@ export function createDOM() {
             const aBtn = document.getElementById('anomalous-assistant-btn');
             if (aBtn) aBtn.title = window.anomalous_browser_lang === 'zh' ? '节点助手' : 'Node Assistant';
             const iBtn = document.getElementById('anomalous-import-btn');
-            if (iBtn) iBtn.title = window.anomalous_browser_lang === 'zh' ? '📥 预检导入工作流' : '📥 Preflight Import';
+            if (iBtn) iBtn.title = window.anomalous_browser_lang === 'zh' ? '📥 导入 / 导出工作流 (分享码)' : '📥 Import / Export Workflow (Share Code)';
             const sBtn = document.getElementById('anomalous-global-settings-btn');
             if (sBtn) sBtn.title = window.anomalous_browser_lang === 'zh' ? '设置中心' : 'Settings Hub';
 
@@ -1111,6 +1091,17 @@ export function createDOM() {
             if (resetBtnRef) resetBtnRef.innerHTML = window.anomalous_browser_lang === 'zh' ? '🔄 重置界面布局' : '🔄 Reset Layout';
             const scaleLabelRef = document.getElementById('anomalous-scale-label');
             if (scaleLabelRef) scaleLabelRef.innerText = window.anomalous_browser_lang === 'zh' ? 'UI 缩放' : 'UI Scale';
+            const hashBtnRef = document.getElementById('anomalous-hash-toggle-btn');
+            if (hashBtnRef) {
+                const isInject = localStorage.getItem('anomalous_inject_hash') !== 'false';
+                hashBtnRef.innerHTML = window.anomalous_browser_lang === 'zh'
+                    ? (isInject ? '🟢 注入工作流哈希' : '⚪ 不注入工作流哈希')
+                    : (isInject ? '🟢 Inject Workflow Hash' : '⚪ Skip Workflow Hash');
+            }
+            const folderMgrRef = document.getElementById('anomalous-folder-manager-btn');
+            if (folderMgrRef) folderMgrRef.innerHTML = window.anomalous_browser_lang === 'zh' ? '📁 文件夹管理' : '📁 Manage Folders';
+            const feedbackRef = document.getElementById('anomalous-feedback-btn');
+            if (feedbackRef) feedbackRef.innerHTML = window.anomalous_browser_lang === 'zh' ? '💬 提交反馈 / 报告问题' : '💬 Submit Feedback / Report Bug';
 
             renderEnergyBtn();
             this.renderSidebar();
@@ -1138,7 +1129,6 @@ export function createDOM() {
             btn.onmouseout = () => { btn.style.background = 'transparent'; btn.style.color = '#ccc'; };
         };
 
-        styleHubBtn(cleanBtn);
         styleHubBtn(energyBtn);
         styleHubBtn(apiKeyBtn);
         styleHubBtn(langBtn);
@@ -1371,13 +1361,38 @@ export function createDOM() {
             updateHashToggleBtn();
         };
 
-        // Many redundant buttons have been migrated to the Wizard!
+        const folderManagerBtn = document.createElement('button');
+        folderManagerBtn.id = 'anomalous-folder-manager-btn';
+        folderManagerBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '📁 文件夹管理' : '📁 Manage Folders';
+        styleHubBtn(folderManagerBtn);
+        folderManagerBtn.onclick = () => {
+            if (settingsHubModal.style.display !== 'none') {
+                settingsHubModal.style.display = 'none';
+                settingsBtn.style.color = '#ccc';
+            }
+            this.openFolderManager();
+        };
 
-        settingsHubModal.appendChild(cleanBtn);
+        // Many redundant buttons have been migrated to the Wizard!
+        
+        const feedbackBtn = document.createElement('button');
+        feedbackBtn.id = 'anomalous-feedback-btn';
+        feedbackBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '💬 提交反馈 / 报告问题' : '💬 Submit Feedback / Report Bug';
+        styleHubBtn(feedbackBtn);
+        feedbackBtn.onclick = () => {
+            window.open('https://github.com/DemonGatanjieu/Anomalous_Model_Browser/issues', '_blank');
+            if (settingsHubModal.style.display !== 'none') {
+                settingsHubModal.style.display = 'none';
+                settingsBtn.style.color = '#ccc';
+            }
+        };
+        
+        settingsHubModal.appendChild(folderManagerBtn);
         settingsHubModal.appendChild(energyBtn);
         settingsHubModal.appendChild(scaleContainer);
         settingsHubModal.appendChild(langBtn);
         settingsHubModal.appendChild(helpBtn);
+        settingsHubModal.appendChild(feedbackBtn);
         settingsHubModal.appendChild(resetBtn);
 
         this.sidebarWrapper.appendChild(settingsHubModal);
@@ -1930,3 +1945,224 @@ export function hideAllPanels() {
             this.currentDetailObserver = null;
         }
     }
+
+export async function openFolderManager() {
+    let modal = document.getElementById('anomalous-folder-manager-modal');
+    if (modal) modal.remove();
+
+    modal = document.createElement('div');
+    modal.id = 'anomalous-folder-manager-modal';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100vw';
+    modal.style.height = '100vh';
+    modal.style.backgroundColor = 'rgba(0,0,0,0.7)';
+    modal.style.zIndex = '9999999';
+    modal.style.display = 'flex';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    modal.style.fontFamily = 'Roboto, "Segoe UI", sans-serif';
+
+    const content = document.createElement('div');
+    content.style.background = '#1e1e1e';
+    content.style.borderRadius = '12px';
+    content.style.padding = '24px';
+    content.style.width = '500px';
+    content.style.maxWidth = '90%';
+    content.style.maxHeight = '85vh';
+    content.style.display = 'flex';
+    content.style.flexDirection = 'column';
+    content.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+
+    const header = document.createElement('h2');
+    header.innerText = window.anomalous_browser_lang === 'zh' ? '📁 侧边栏文件夹管理' : '📁 Manage Folders';
+    header.style.margin = '0 0 16px 0';
+    header.style.color = '#fff';
+    header.style.fontSize = '1.4em';
+    content.appendChild(header);
+
+    const desc = document.createElement('div');
+    desc.innerText = window.anomalous_browser_lang === 'zh' 
+        ? '上下拖拽调整侧边栏的显示顺序。点击眼睛图标可隐藏不需要显示的底层文件夹。隐藏的文件夹不会被扫描，完全不占用性能。'
+        : 'Drag and drop to reorder folders. Click the eye icon to hide unneeded folders. Hidden folders are skipped during scanning and consume zero performance.';
+    desc.style.color = '#aaa';
+    desc.style.fontSize = '0.9em';
+    desc.style.marginBottom = '20px';
+    desc.style.lineHeight = '1.5';
+    content.appendChild(desc);
+
+    const listContainer = document.createElement('div');
+    listContainer.style.flex = '1';
+    listContainer.style.overflowY = 'auto';
+    listContainer.style.border = '1px solid #444';
+    listContainer.style.borderRadius = '8px';
+    listContainer.style.background = '#2a2a2a';
+    listContainer.style.padding = '8px';
+
+    content.appendChild(listContainer);
+
+    let typesData = [];
+    try {
+        const res = await fetch('/anomalous/all_folder_types');
+        const data = await res.json();
+        typesData = data.folder_types || [];
+    } catch(e) {
+        alert("Failed to load folder types.");
+        return;
+    }
+
+    let dragSrcEl = null;
+
+    const renderList = () => {
+        listContainer.innerHTML = '';
+        typesData.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = 'anomalous-folder-manager-row';
+            row.draggable = true;
+            row.style.display = 'flex';
+            row.style.alignItems = 'center';
+            row.style.justifyContent = 'space-between';
+            row.style.padding = '10px 12px';
+            row.style.margin = '4px 0';
+            row.style.background = '#333';
+            row.style.borderRadius = '6px';
+            row.style.cursor = 'grab';
+            row.style.border = '1px solid transparent';
+            
+            row.dataset.index = index;
+            row.dataset.type = item.type;
+            row.dataset.visible = item.visible;
+
+            row.addEventListener('dragstart', function(e) {
+                this.style.opacity = '0.4';
+                dragSrcEl = this;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/html', this.innerHTML);
+            });
+
+            row.addEventListener('dragover', function(e) {
+                if (e.preventDefault) e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                return false;
+            });
+
+            row.addEventListener('dragenter', function(e) {
+                this.style.border = '1px dashed #8AB4F8';
+            });
+
+            row.addEventListener('dragleave', function(e) {
+                this.style.border = '1px solid transparent';
+            });
+
+            row.addEventListener('drop', function(e) {
+                if (e.stopPropagation) e.stopPropagation();
+                if (dragSrcEl !== this) {
+                    const fromIdx = parseInt(dragSrcEl.dataset.index);
+                    const toIdx = parseInt(this.dataset.index);
+                    const movedItem = typesData.splice(fromIdx, 1)[0];
+                    typesData.splice(toIdx, 0, movedItem);
+                    renderList();
+                }
+                return false;
+            });
+
+            row.addEventListener('dragend', function(e) {
+                this.style.opacity = '1';
+                const rows = listContainer.querySelectorAll('.anomalous-folder-manager-row');
+                rows.forEach(r => r.style.border = '1px solid transparent');
+            });
+
+            const leftGroup = document.createElement('div');
+            leftGroup.style.display = 'flex';
+            leftGroup.style.alignItems = 'center';
+            leftGroup.style.gap = '12px';
+            
+            const handle = document.createElement('div');
+            handle.innerHTML = '☰';
+            handle.style.color = '#888';
+            handle.style.cursor = 'grab';
+
+            const name = document.createElement('div');
+            name.innerText = item.type;
+            name.style.color = item.visible ? '#fff' : '#666';
+            name.style.fontWeight = '500';
+
+            leftGroup.appendChild(handle);
+            leftGroup.appendChild(name);
+
+            const visBtn = document.createElement('button');
+            visBtn.innerHTML = item.visible ? '👁️' : '❌';
+            visBtn.style.background = 'transparent';
+            visBtn.style.border = 'none';
+            visBtn.style.cursor = 'pointer';
+            visBtn.style.fontSize = '1.2em';
+            visBtn.style.opacity = item.visible ? '1' : '0.5';
+            visBtn.title = item.visible ? 'Visible' : 'Hidden';
+            
+            visBtn.onclick = (e) => {
+                e.stopPropagation();
+                typesData[index].visible = !typesData[index].visible;
+                renderList();
+            };
+
+            row.appendChild(leftGroup);
+            row.appendChild(visBtn);
+
+            listContainer.appendChild(row);
+        });
+    };
+    renderList();
+
+    const footer = document.createElement('div');
+    footer.style.display = 'flex';
+    footer.style.justifyContent = 'flex-end';
+    footer.style.gap = '12px';
+    footer.style.marginTop = '20px';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.innerText = window.anomalous_browser_lang === 'zh' ? '取消' : 'Cancel';
+    cancelBtn.style.padding = '8px 16px';
+    cancelBtn.style.background = 'transparent';
+    cancelBtn.style.color = '#ccc';
+    cancelBtn.style.border = '1px solid #555';
+    cancelBtn.style.borderRadius = '6px';
+    cancelBtn.style.cursor = 'pointer';
+    cancelBtn.onclick = () => modal.remove();
+
+    const saveBtn = document.createElement('button');
+    saveBtn.innerText = window.anomalous_browser_lang === 'zh' ? '保存并刷新' : 'Save & Reload';
+    saveBtn.style.padding = '8px 16px';
+    saveBtn.style.background = '#8AB4F8';
+    saveBtn.style.color = '#1e1e1e';
+    saveBtn.style.border = 'none';
+    saveBtn.style.borderRadius = '6px';
+    saveBtn.style.cursor = 'pointer';
+    saveBtn.style.fontWeight = 'bold';
+    saveBtn.onclick = async () => {
+        saveBtn.innerText = '⏳...';
+        saveBtn.disabled = true;
+        try {
+            await fetch('/anomalous/save_config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ folder_types_config: typesData })
+            });
+            modal.remove();
+            
+            this.firstLoadDone = false;
+            this.expandedFolders.clear();
+            await this.loadFolders();
+        } catch(e) {
+            alert("Error saving config: " + e);
+            saveBtn.innerText = window.anomalous_browser_lang === 'zh' ? '保存并刷新' : 'Save & Reload';
+            saveBtn.disabled = false;
+        }
+    };
+
+    footer.appendChild(cancelBtn);
+    footer.appendChild(saveBtn);
+    content.appendChild(footer);
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+}

@@ -40,6 +40,8 @@ export const i18n = {
         backToPrev: '🔙 返回上一层',
         applyToCanvas: '➕ 插入节点',
         applySuccess: '✅ 已添加至工作流',
+        help: '帮助',
+        helpTitle: '📖 使用手册',
         helpContent: `
 <div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
     <h3 style="color:#00ffcc; margin-top:0;">📖 标准操作说明</h3>
@@ -48,6 +50,9 @@ export const i18n = {
     <p><strong>3. 🤖 选中交互 (节点助手)</strong><br>具体位置：左侧第三个 <strong>机器人 (🤖)</strong> 按钮。<br>打开后在画布上选择模型节点，助手便能识别该节点的各项信息。支持查看历史图库、备注、封面、模型详细页、提示词等。还能快捷根据模型封面替换其他模型。</p>
     <p><strong>4. ⚙️ 个性化配置 (设置面板)</strong><br>具体位置：左侧底部的 <strong>齿轮 (⚙️)</strong> 按钮。<br>可以调节语言（语言在这里调节）、主页面字体大小、视频封面播放方式等。</p>
     <p><strong>5. 📑 顶部导航与笔记本功能</strong><br>具体位置：右侧顶部的按钮分别为 <strong>模型 (📦)</strong>、<strong>图库 (🖼️)</strong>、<strong>笔记本 (📑)</strong>、<strong>停靠侧边栏 (◧)</strong>。<br>点击笔记本，点击新建 <strong>➕</strong> 号。确认后选择基础模型（如SD1.5），接着选择主模型和对应的 lora。点击下方的 <strong>📝纯文本/粘贴</strong> 填入提示词，选择左上角的语言即可实现双语对照。确认后自动分块标签，支持查找替换和直接修改单个标签。最后点击 <strong>🚀 发送到画布</strong> 即可一键连线！</p>
+    <p><strong>6. 📁 文件夹管理 (Folder Manager)</strong><br>具体位置：设置 (⚙️) 面板内的 <strong>📁 文件夹管理</strong>。<br>可以用来隐藏不需要的内置文件夹。隐藏后的文件夹不仅从侧边栏消失，后端的静默扫描和本地读取也会完全跳过，实现真正的“零性能损耗”。并且可以在这里拖拽调整文件夹在侧边栏显示的顺序。</p>
+    <p><strong>7. 📥 工作流导出与导入 (分享码)</strong><br>具体位置：设置 (⚙️) 按钮左侧的 <strong>导入/导出 (📥)</strong> 按钮。<br>该功能可以将当前的工作流一键编码导出为一段专属分享码，方便发到社交平台。别人只需复制这串分享码，在此界面粘贴即可直接还原导入完整的工作流，并且在导入前系统会自动校验模型是否在本地存在。</p>
+    <p><strong>8. 💬 提交反馈 / 报告问题</strong><br>具体位置：设置 (⚙️) 面板内的 <strong>💬 提交反馈 / 报告问题</strong>。<br>当你遇到插件报错或有新功能建议时，点击该按钮可一键直达 GitHub Issues 页面提交反馈。</p>
 </div>`,
         notebooks: '笔记本',
         notebookTitle: '笔记本管理',
@@ -75,7 +80,7 @@ export const i18n = {
         settingsBtn: '设置',
         closeSettings: '✖ 关闭设置面板',
         doctorBtn: '节点助手',
-        importBtn: '📥 预检导入工作流',
+        importBtn: '📥 导入 / 导出工作流 (分享码)',
 
     },
     en: {
@@ -119,6 +124,8 @@ export const i18n = {
         backToPrev: '🔙 Back to prev',
         applyToCanvas: '➕ Add Node',
         applySuccess: '✅ Added to workflow',
+        help: 'Help',
+        helpTitle: '📖 User Manual',
         helpContent: `
 <div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
     <h3 style="color:#00ffcc; margin-top:0;">📖 Step-by-Step Guide</h3>
@@ -127,6 +134,9 @@ export const i18n = {
     <p><strong>3. 🤖 Visual Info (Node Assistant)</strong><br>Location: The 3rd icon <strong>(Robot 🤖)</strong> from the bottom left.<br>Open it and select any model node on the canvas. It identifies the node, shows history gallery, notes, covers, details, and prompts. It also allows quick visual model swapping.</p>
     <p><strong>4. ⚙️ Settings Panel</strong><br>Location: The <strong>Gear (⚙️)</strong> icon at the bottom left.<br>Adjust language (Language is adjusted here), UI font size, and video autoplay behavior.</p>
     <p><strong>5. 📑 Top Navigation & Notebook</strong><br>Location: Top right tabs <strong>Models (📦)</strong>, <strong>Gallery (🖼️)</strong>, <strong>Notebook (📑)</strong>, <strong>Dock (◧)</strong>.<br>Click Notebook -> click <strong>➕</strong> -> select Base Model (e.g. SD1.5) -> pick Main Model & LoRA. Click <strong>📝 Edit Raw/Paste</strong> to input prompts, select language on top-left for bilingual translation. Confirm to auto-chunk tags (supports find/replace & direct edit). Finally, click <strong>🚀 Send to Canvas</strong>!</p>
+    <p><strong>6. 📁 Folder Manager</strong><br>Location: Inside the Settings (⚙️) panel, click <strong>📁 Manage Folders</strong>.<br>Use this to hide unneeded built-in folders. Hidden folders will be completely skipped by background scans and I/O reads, achieving true "zero performance cost". You can also drag and drop to reorder how folders appear in the sidebar.</p>
+    <p><strong>7. 📥 Workflow Export & Import (Share Code)</strong><br>Location: The <strong>Import/Export (📥)</strong> icon to the left of the Settings gear.<br>You can encode your current workflow into a single share code for easy sharing on social platforms. Others can simply copy this code and paste it here to instantly import the workflow. The system will also automatically pre-check if the required models exist locally.</p>
+    <p><strong>8. 💬 Submit Feedback / Report Bug</strong><br>Location: Inside the Settings (⚙️) panel, click <strong>💬 Submit Feedback / Report Bug</strong>.<br>If you encounter bugs or have feature requests, click this to go directly to our GitHub Issues page.</p>
 </div>`,
         notebooks: 'Notebooks',
         notebookTitle: 'Notebook Manager',
@@ -154,6 +164,6 @@ export const i18n = {
         settingsBtn: 'Settings',
         closeSettings: '✖ Close Settings',
         doctorBtn: 'Node Assistant',
-        importBtn: '📥 Preflight Import',
+        importBtn: '📥 Import / Export Workflow (Share Code)',
     }
 };

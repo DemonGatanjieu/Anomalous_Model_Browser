@@ -7,6 +7,7 @@ from .utils import *
 
 def setup_routes(app):
     app.router.add_get('/anomalous/folders', api_get_folders)
+    app.router.add_get('/anomalous/all_folder_types', api_get_all_folder_types)
     app.router.add_get('/anomalous/models', api_get_models)
     app.router.add_get('/anomalous/all_scan_models', api_get_all_scan_models)
     app.router.add_get('/anomalous/batch_select', api_batch_select)

@@ -15,19 +15,26 @@ Anomalous_Model_Browser/
 ├── __init__.py                  # ComfyUI Extension Entry Point. Registers nodes and sets WEB_DIRECTORY = "./web"
 ├── api/                         # Backend Python API (Modularized)
 │   ├── __init__.py              # Appends all modular routes to server
-│   ├── api_models.py            # Model listing & Metadata reading
-│   ├── api_search.py            # Global search & find_model
-│   ├── api_images.py            # Gallery and history parsing
-│   ├── api_doctor.py            # Model Doctor hash resolution
-│   ├── api_civitai.py           # Civitai scraping routes
-│   └── scraper.py               # Async HTTP client logic
+│   ├── config.py                # Configuration and paths setup
+│   ├── metadata.py              # Model metadata extraction and parsing
+│   ├── models.py                # Core model listing and routing (API endpoints)
+│   ├── notebooks.py             # Notebooks management logic
+│   ├── scanner.py               # Scanning engine for hash resolution and caching
+│   └── utils.py                 # Shared backend utilities
+├── scraper.py                   # Async HTTP client logic & web scraping (Root Level)
 ├── CHANGELOG.md                 # Version history
 ├── error_and_experience_summary.md # VERY IMPORTANT: Read this first to avoid past mistakes!
 ├── web/
-│   ├── main.js                  # Frontend Vanilla JS Application (The entire UI logic - 5500 lines)
+│   ├── main.js                  # Frontend Vanilla JS Entry (Under 1000 lines, mounts modules to prototype)
 │   ├── hash_resolver.js         # Frontend auto-fix engine: scans workflows for missing models
 │   ├── styles.css               # Vanilla CSS with scoped classes (.anomalous-*)
-│   └── modules/
+│   └── modules/                 # Extracted UI logic modules
+│       ├── ui_sidebar.js        # Sidebar and folder tree logic
+│       ├── ui_detail.js         # Model detail panel
+│       ├── ui_doctor.js         # Model Doctor and Assistant panel
+│       ├── ui_notebooks.js      # Notebooks editor
+│       ├── ui_gallery.js        # Fullscreen Gallery Viewer
+│       ├── ui_grid.js           # Main grid and model loading
 │       └── locales.js           # Dedicated multi-language dictionary (i18n)
 ├── docs/                        # Supplemental documentation
 ```
@@ -41,19 +48,21 @@ All endpoints are prefixed with `/anomalous/`.
 2. **Handle missing dependencies gracefully**: Avoid 3rd-party pip requirements if possible.
 3. **Always Restart ComfyUI**: Any changes to the `api/` package **REQUIRE** a full ComfyUI server restart to take effect.
 4. **Never use hardcoded backslash strings**: When writing path manipulation code, use `os.sep` or `os.path.normpath()` instead of `replace('\\', '/')`. Editing tools may corrupt escaped backslashes silently.
+5. **Dynamic Folder Resolution (Config-Driven)**: Never hardcode folder types (like `checkpoints`, `loras`). Always use `api.utils.get_active_folder_types()` to enforce whitelist logic. Folders disabled by the user in `config.json` are completely skipped during `os.walk`, ensuring zero I/O overhead for hidden directories.
 
 ## 4. Frontend Architecture (Vanilla JS)
-Located in `web/main.js` (approx. 4000+ lines, currently undergoing ES Module Refactoring). Wraps its logic inside `app.registerExtension({ name: "Anomalous.ModelBrowser", ... })`.
+Located in `web/main.js` (Under 1000 lines, fully refactored into ES Modules). Wraps its logic inside `app.registerExtension({ name: "Anomalous.ModelBrowser", ... })`.
 
 ### The Modular Extraction Strategy (模块化拆分架构)
-We are actively transitioning from a monolithic `main.js` to a modular ES architecture. 
-Instead of fragmenting the class scope and losing context, we extract large UI panels into `web/modules/` and bind them back to the `AnomalousBrowser.prototype`.
-1. **Modules**: E.g., `web/modules/ui_doctor.js` contains the Doctor Panel logic. `web/modules/ui_notebooks.js` contains Notebooks. `web/modules/ui_gallery.js` contains Gallery Viewer.
+We have successfully transitioned from a monolithic `main.js` to a modular ES architecture. 
+Instead of fragmenting the class scope and losing context, we extracted all UI panels into `web/modules/` and bound them back to the `AnomalousBrowser.prototype`.
+1. **Modules**: All major UI components (`ui_sidebar.js`, `ui_detail.js`, `ui_doctor.js`, `ui_notebooks.js`, `ui_gallery.js`, `ui_grid.js`) are decoupled ES modules.
 2. **Shared State**: Everything continues to live on the `AnomalousBrowser` class instance (`this.xxx`). No complex context passing required.
-3. **TOC (Table of Contents)**: The top of `main.js` contains a TOC.
+3. **TOC (Table of Contents)**: The top of `main.js` contains a TOC mapping out the extracted module bindings.
 
 ### UI Components (Dynamically Created):
 * **Sidebar (`anomalous-sidebar`)**: Renders the nested folder structure.
+* **Folder Manager (📁 Manage Folders)**: An interactive modal in `ui_sidebar.js` allowing drag-and-drop reordering and visibility toggling of folders. Drives backend I/O optimization.
 * **Grid (`anomalous-grid`)**: The main model display area. Emptied (`innerHTML = ''`) and repopulated on every folder click.
 * **Detail Panel (`anomalous-detail-panel`)**: Slides out when a specific model is clicked.
 * **Gallery Viewer (`ui_gallery.js`)**: A fullscreen modal for viewing images.
@@ -101,6 +110,8 @@ Scans all nodes in `app.graph._nodes` that are colored red.
 * **Metadata Override Danger**: If you write to a `.civitai.info` file, ALWAYS read it first and update the dictionary. Never just dump `{custom_name: 'foo'}`.
 * **Search Context Trap**: If the user searches using the sidebar while a detail panel is open, you MUST explicitly hide the detail panel and show the grid.
 * **Media Leakage**: Destroying a DOM element that contains a playing `<video>` or `<audio>` does **not** stop the audio. You must `.pause()` it before doing `innerHTML = ''`.
+* **Video Cover Compatibility & Interaction**: Any frontend component displaying model preview covers MUST check if the file is `.mp4`/`.webm`. For single main covers, use `<video autoplay loop muted playsinline>`. For grid/gallery views, you MUST implement "Hover-to-Play" to save performance: set `autoplay=false`, `preload='metadata'`, and bind `mouseover` to `play()` and `mouseout` to `pause()`. **CRITICAL GOTCHA**: Do NOT use `new URL(url).pathname` to check extensions! Our backend serves images via query parameters (e.g. `?filename=cover.mp4`), so `pathname` strips the filename. Always test the full URL using regex like `/\.(mp4|webm)(?:$|\?|&|#)/i`.
 * **Variable Naming Collisions**: When moving UI elements, search for ALL references to the old `const` declaration. A single duplicate `const` in the same scope kills the entire module at parse time.
+* **Data Scaling & Payload Limits**: When passing arrays/lists (e.g. hundreds of selected files), NEVER append them to URL query parameters (`GET` requests), or you will trigger `414 URI Too Long`. Use `POST` with a `JSON Body`. Similarly, NEVER pass massive arrays directly to `subprocess.run` via CLI arguments, as it will crash silently due to OS character limits (8191 on Windows). Always dump massive data to an intermediate `.json` file for the subprocess to read.
 
-> For a complete list of past mistakes and detailed post-mortems, refer to `error_and_experience_summary.md` in the root directory.
+> For a complete list of past mistakes and detailed post-mortems, refer to `error_and_experience_summary.md` and `.agents/logs/ai_lessons.md` in the root directory.

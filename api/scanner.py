@@ -8,6 +8,7 @@ import asyncio
 from aiohttp import web
 import folder_paths
 import struct
+from .utils import get_active_folder_types
 
 async def api_scan_status(request):
     folder_type = request.query.get('type', 'checkpoints')
@@ -55,8 +56,6 @@ async def api_scan_folder(request):
         
     if '..' in subfolder:
         return web.json_response({"status": "error", "message": "Invalid subfolder"})
-        
-    target_files = request.query.get('target_files', '')
 
     try:
         paths = folder_paths.get_folder_paths(folder_type)
@@ -95,7 +94,17 @@ async def api_scan_folder(request):
     physical_rename = data.get("physical_rename", False)
     force_overwrite = data.get("force_overwrite", False)
     
+    target_files_list = data.get("target_files", [])
+    if not target_files_list:
+        target_files_str = request.query.get('target_files', '')
+        target_files_list = [f.strip() for f in target_files_str.split(',')] if target_files_str else []
+    
     try:
+        if target_files_list:
+            targets_file = os.path.join(target_dir, '.scan_targets.json')
+            with open(targets_file, 'w', encoding='utf-8') as f:
+                __import__('json').dump(target_files_list, f)
+                
         marker_file = os.path.join(target_dir, '.scan_in_progress')
         with open(marker_file, 'w') as f: f.write('1')
         def run_bg():
@@ -111,8 +120,6 @@ async def api_scan_folder(request):
                     cmd.append("--physical-rename")
                 if force_overwrite:
                     cmd.append("--force-overwrite")
-                if target_files:
-                    cmd.extend(["--target-files", target_files])
                 
                 subprocess.run(
                     cmd,
@@ -164,7 +171,7 @@ async def api_scan_all(request):
         
         def run_global_bg():
             try:
-                types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
+                types = get_active_folder_types()
                 for t in types:
                     try:
                         paths = folder_paths.get_folder_paths(t)
@@ -218,7 +225,7 @@ async def api_global_scan_status(request):
     return web.json_response({"scanning": os.path.exists(marker_file)})
 async def api_clean_civitai_info(request):
     try:
-        types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
+        types = get_active_folder_types()
         deleted_count = 0
         for t in types:
             try:
@@ -287,7 +294,7 @@ async def api_scan_missing_models(request):
 
     def run_deep_scan():
         try:
-            types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
+            types = get_active_folder_types()
             files_to_scan = []
             
             for t in types:

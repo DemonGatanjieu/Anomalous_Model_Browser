@@ -50,6 +50,28 @@ export function initDoctorPanel() {
             renderAutoScanToggle();
         };
 
+        const refreshBtn = document.createElement('button');
+        refreshBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '🔄 刷新缓存' : '🔄 Refresh';
+        refreshBtn.style.cssText = 'background:rgba(138,180,248,0.1);border:1px solid rgba(138,180,248,0.3);color:#8AB4F8;font-size:12px;cursor:pointer;padding:6px 12px;border-radius:6px;transition:all 0.2s; font-weight:600;';
+        refreshBtn.title = window.anomalous_browser_lang === 'zh' ? '重新读取最新模型列表并清除报错' : 'Reload model list and clear errors';
+        refreshBtn.onmouseover = () => { refreshBtn.style.background = 'rgba(138,180,248,0.2)'; };
+        refreshBtn.onmouseout = () => { refreshBtn.style.background = 'rgba(138,180,248,0.1)'; };
+        refreshBtn.onclick = async () => {
+            refreshBtn.disabled = true;
+            refreshBtn.style.opacity = '0.5';
+            if (app.refreshComboInNodes) await app.refreshComboInNodes();
+            if (app.lastNodeErrors) app.lastNodeErrors = null;
+            if (typeof app.clearErrors === 'function') app.clearErrors();
+            if (app.graph) {
+                app.graph.setDirtyCanvas(true, true);
+                if (app.graph.change) app.graph.change();
+            }
+            try { window.dispatchEvent(new CustomEvent("graphChanged")); } catch(e){}
+            this.renderGlobalDashboard();
+            refreshBtn.disabled = false;
+            refreshBtn.style.opacity = '1';
+        };
+
         const closeBtn = document.createElement('button');
         closeBtn.innerHTML = '✖';
         closeBtn.style.cssText = 'background:transparent;border:none;color:rgba(255,255,255,0.4);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:4px;transition:all 0.2s;';
@@ -58,6 +80,7 @@ export function initDoctorPanel() {
         closeBtn.onclick = () => { this.doctorPanel.style.display = 'none'; if (this.grid) this.grid.style.display = 'grid'; };
         
         controlGroup.appendChild(autoScanToggle);
+        controlGroup.appendChild(refreshBtn);
         controlGroup.appendChild(closeBtn);
 
         topRow.appendChild(titleEl);
@@ -89,7 +112,7 @@ if (!this.assistantPanelInitialized) {
         }
         const placeholder = document.getElementById('anomalous-assistant-placeholder');
         const nodeContent = document.getElementById('anomalous-assistant-node-content');
-        if (!placeholder || !nodeContent) return;
+        if (!placeholder || !nodeContent || !app.graph || !app.graph._nodes) return;
 
 if (!node) {
             placeholder.innerHTML = `<div style="font-size:48px;">🤖</div><div style="text-align:center;">${window.anomalous_browser_lang === 'zh' ? '请在画布中<strong style="color:#aaa">点击选中任意节点</strong>' : 'Please <strong style="color:#aaa">select any node</strong> in the canvas'}</div>`;
@@ -103,7 +126,7 @@ if (!node) {
 if (node.widgets) {
 for (const w of node.widgets) {
                 if (w.type === 'combo' && typeof w.value === 'string') {
-                    if (w.value.match(/\.(safetensors|ckpt|pt|bin|pth)$/i)) modelWidgets.push(w);
+                    if (w.value.match(/\.(safetensors|ckpt|pt|bin|pth|sft)$/i)) modelWidgets.push(w);
                 }
             }
         }
@@ -122,7 +145,9 @@ for (const w of node.widgets) {
 
         const titleBar = document.createElement('div');
         titleBar.style.cssText = 'padding:14px 20px 12px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:10px;flex-shrink:0;';
-        titleBar.innerHTML = `<span style="font-size:18px;">🤖</span><span style="font-weight:bold;color:#fff;font-size:14px;">${node.title || node.type || 'Node'}</span><span style="font-size:11px;color:#555;margin-left:auto;">${node.type || ''}</span>`;
+        titleBar.innerHTML = `<span style="font-size:18px;">🤖</span><span class="ast-title" style="font-weight:bold;color:#fff;font-size:14px;"></span><span class="ast-type" style="font-size:11px;color:#555;margin-left:auto;"></span>`;
+        titleBar.querySelector('.ast-title').textContent = node.title || node.type || 'Node';
+        titleBar.querySelector('.ast-type').textContent = node.type || '';
         nodeContent.appendChild(titleBar);
 
 for (const w of modelWidgets) {
@@ -135,43 +160,67 @@ for (const w of modelWidgets) {
 export function renderGlobalDashboard() {
         const content = document.getElementById('anomalous-doctor-node-list');
         const statsRow = document.getElementById('anomalous-doctor-stats-row');
-        if (!content || !statsRow) return;
+        if (!content || !statsRow || !app.graph || !app.graph._nodes) return;
         content.innerHTML = '';
         statsRow.innerHTML = '';
 
         if (this.doctorPanel) this.doctorPanel.currentDiagnosedNode = 'global';
 
         let nodes = [];
-if (app.graph && app.graph.computeExecutionOrder) {
+        if (app.graph && app.graph.computeExecutionOrder) {
             nodes = app.graph.computeExecutionOrder(false, true);
-} else if (app.graph && app.graph._nodes) {
+        } else if (app.graph && app.graph._nodes) {
             nodes = app.graph._nodes;
         }
 
         let total = 0, healthy = 0, missing = 0;
         let missingNodesData = [];
+        let has_native_fixes = false;
 
         // Collect data
-for (const node of nodes) {
+        for (const node of nodes) {
             if (!node.widgets) continue;
-for (const w of node.widgets) {
-                if (w.type === 'combo' && typeof w.value === 'string' && w.value.match(/\.(safetensors|ckpt|pt|bin|pth)$/i)) {
+            for (const w of node.widgets) {
+                if (w.type === 'combo' && typeof w.value === 'string' && w.value.match(/\.(safetensors|ckpt|pt|bin|pth|sft)$/i)) {
                     total++;
                     const val = w.value;
                     let isHealthy = false;
                     let exactMatch = null;
-if (w.options && w.options.values && w.options.values.includes(val)) {
+                    if (w.options && w.options.values && w.options.values.includes(val)) {
                         isHealthy = true;
-} else if (w.options && w.options.values) {
+                    } else if (w.options && w.options.values) {
                         const normVal = val.replace(/\\/g, '/');
                         exactMatch = w.options.values.find(v => typeof v === 'string' && v.replace(/\\/g, '/') === normVal);
-                        if (exactMatch) isHealthy = true;
+                        if (exactMatch) {
+                            isHealthy = true;
+                            has_native_fixes = true;
+                            if (w.value !== exactMatch) {
+                                w.value = exactMatch;
+                                const wIdx = node.widgets.indexOf(w);
+                                if (wIdx !== -1 && node.widgets_values) node.widgets_values[wIdx] = exactMatch;
+                                if (w.callback) w.callback(w.value, app.canvas, node, app.canvas.graph_mouse, null);
+                                app.graph.setDirtyCanvas(true, true);
+                            }
+                            delete node.color;
+                            delete node.bgcolor;
+                            node.has_errors = false;
+                            
+                            if (app.lastNodeErrors && app.lastNodeErrors[node.id]) {
+                                delete app.lastNodeErrors[node.id];
+                            }
+                        }
                     }
                     if (isHealthy) healthy++; else missing++;
                     
                     missingNodesData.push({ node, w, val, isHealthy, exactMatch });
                 }
             }
+        }
+        
+        if (has_native_fixes) {
+            if (app.graph && app.graph.change) app.graph.change();
+            try { window.dispatchEvent(new CustomEvent("graphChanged")); } catch(e){}
+            if (typeof app.clearErrors === 'function') app.clearErrors();
         }
 
         // Render Stats Badges
@@ -217,7 +266,9 @@ for (const data of missingNodesData) {
             left.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
             
             const nodeTitle = document.createElement('div');
-            nodeTitle.innerHTML = `<span style="color:rgba(255,255,255,0.4);font-size:12px;">#${node.id}</span> <span style="color:#aaa;font-size:12px;font-weight:600;">${node.title || node.type}</span>`;
+            nodeTitle.innerHTML = `<span style="color:rgba(255,255,255,0.4);font-size:12px;"></span> <span style="color:#aaa;font-size:12px;font-weight:600;"></span>`;
+            nodeTitle.children[0].textContent = `#${node.id}`;
+            nodeTitle.children[1].textContent = node.title || node.type;
             
             const fileText = document.createElement('div');
             fileText.innerText = val.split(/[\\/]/).pop();
@@ -250,8 +301,18 @@ for (const data of missingNodesData) {
             civitaiBtn.onmouseover = () => civitaiBtn.style.background = 'rgba(255,255,255,0.2)';
             civitaiBtn.onmouseout = () => civitaiBtn.style.background = 'rgba(255,255,255,0.1)';
             civitaiBtn.onclick = () => {
-                const searchName = val.split(/[/\\]/).pop().replace('.safetensors', '').replace('.ckpt', '').replace('.pt', '');
-                const url = `https://civitai.com/search/models?sortBy=models_v9&query=${encodeURIComponent(searchName)}`;
+                let searchHash = null;
+                if (app.graph && app.graph.extra && app.graph.extra.anomalous_hashes) {
+                    const hData = app.graph.extra.anomalous_hashes[`${node.id}_${val}`];
+                    if (hData) searchHash = typeof hData === 'string' ? hData : hData.hash;
+                }
+                if (!searchHash && window.anomalous_hash_cache) {
+                    const basename = val.split(/[/\\]/).pop();
+                    const cData = window.anomalous_hash_cache[basename] || window.anomalous_hash_cache[val];
+                    if (cData) searchHash = typeof cData === 'string' ? cData : cData.hash;
+                }
+                const searchStr = searchHash || val.split(/[/\\]/).pop().replace('.safetensors', '').replace('.ckpt', '').replace('.pt', '').replace('.sft', '');
+                const url = `https://civitai.com/search/models?sortBy=models_v9&query=${encodeURIComponent(searchStr)}`;
                 window.open(url, '_blank');
             };
             
@@ -274,9 +335,13 @@ if (!isHealthy) {
                             throw new Error(rData.message);
                         }
                         
-                        const checkInterval = setInterval(async () => {
+                        let pollActive = true;
+                        
+                        const pollStatus = async () => {
+                            if (!pollActive) return;
                             try {
                                 const statusRes = await fetch('/anomalous/global_scan_status');
+                                if (!statusRes.ok) throw new Error(`HTTP ${statusRes.status}`);
                                 const statusData = await statusRes.json();
                                 
 if (statusData.scanning) {
@@ -285,10 +350,14 @@ if (statusData.scanning) {
                                     deepScanBtn.innerText = zh 
                                         ? `⏳ 扫描中 (${statusData.current}/${statusData.total}) ${filename}`
                                         : `⏳ Scanning (${statusData.current}/${statusData.total}) ${filename}`;
+                                    setTimeout(pollStatus, 500);
                                 } else {
-                                    clearInterval(checkInterval);
 if (statusData.error) {
                                         alert(zh ? '❌ 扫描过程中发生错误: ' + statusData.error : '❌ Scan error: ' + statusData.error);
+                                        deepScanBtn.innerHTML = zh ? '🔍 深度哈希扫描' : '🔍 Deep Hash Scan';
+                                        deepScanBtn.disabled = false;
+                                        deepScanBtn.style.opacity = '1';
+                                        return;
                                     }
                                     
                                     deepScanBtn.innerText = zh ? '⏳ 正在匹配并替换飘红节点...' : '⏳ Matching and resolving red nodes...';
@@ -300,17 +369,14 @@ if (window.anomalous_reload_hashes) {
 if (window.anomalous_resolve_all_missing_nodes) {
                                         await window.anomalous_resolve_all_missing_nodes(true, false);
                                     }
-
-                                    // [BUG FIX] Refresh global ComfyUI cache so subsequent workflow loads don't turn red
-                                    if (app.refreshComboInNodes) {
-                                        setTimeout(() => app.refreshComboInNodes(), 100);
-                                    }
                                     
                                     let stillMissing = false;
+                                    const normVal = w.value.replace(/\\/g, '/');
                                     for (let i = 0; i < node.widgets.length; i++) {
                                         const wi = node.widgets[i];
-                                        if (wi.name === w.name && wi.options && wi.options.values && !wi.options.values.includes(wi.value)) {
-                                            stillMissing = true;
+                                        if (wi.name === w.name && wi.options && wi.options.values) {
+                                            const match = wi.options.values.find(v => typeof v === 'string' && v.replace(/\\/g, '/') === normVal);
+                                            if (!match) stillMissing = true;
                                         }
                                     }
                                     
@@ -330,9 +396,13 @@ if (stillMissing) {
                                     deepScanBtn.style.opacity = '1';
                                 }
 } catch (err) {
-                                // Ignore poll errors
+                                alert(zh ? '❌ 状态轮询出错: ' + err.message : '❌ Poll Error: ' + err.message);
+                                deepScanBtn.innerHTML = zh ? '🔍 深度哈希扫描' : '🔍 Deep Hash Scan';
+                                deepScanBtn.disabled = false;
+                                deepScanBtn.style.opacity = '1';
                             }
-                        }, 500);
+                        };
+                        setTimeout(pollStatus, 500);
                         
 } catch(e) {
                         alert(zh ? '❌ 扫描出错: ' + e.message : '❌ Scan Error: ' + e.message);
@@ -465,17 +535,23 @@ export function renderAssistantModelCard(node, w, container) {
 
         // Async: load preview + metadata
         fetch(`/anomalous/find_model?search=${encodeURIComponent(val.replace(/\\/g, '/'))}`)
-            .then(r => r.json())
+            .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
             .then(d => {
                 // Preview
                 if (d.status === 'success' && d.model && d.model.preview_url) {
                     previewBox.innerHTML = '';
                     const pu = d.model.preview_url;
-                    const isVid = /\.mp4(?:&|$)/i.test(pu) || /\.webm(?:&|$)/i.test(pu);
+                    const isVid = /\.(mp4|webm)(?:$|\?|&|#)/i.test(pu);
 if (isVid) {
-                        previewBox.innerHTML = `<video src="${pu}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:contain;"></video>`;
+                        const vid = document.createElement('video');
+                        vid.src = pu; vid.muted = true; vid.loop = true; vid.autoplay = true; vid.playsInline = true;
+                        vid.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+                        previewBox.appendChild(vid);
                     } else {
-                        previewBox.innerHTML = `<img src="${pu}" style="width:100%;height:100%;object-fit:contain;" />`;
+                        const img = document.createElement('img');
+                        img.src = pu;
+                        img.style.cssText = 'width:100%;height:100%;object-fit:contain;';
+                        previewBox.appendChild(img);
                     }
                 } else {
                     previewBox.innerHTML = `<span style="color:#444;font-size:13px;">${window.anomalous_browser_lang === 'zh' ? '暂无预览图' : 'No preview'}</span>`;
@@ -579,7 +655,7 @@ if (textNotes) {
 
 export function _loadAssistantHistory(filename, container, model) {
         fetch('/anomalous/model_images?model_name=' + encodeURIComponent(filename) + '&t=' + Date.now())
-            .then(r => r.json())
+            .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
             .then(data => {
                 const images = data.images || [];
                 if (images.length === 0) return;
@@ -612,13 +688,28 @@ if (model) {
                 images.slice(0, 16).forEach(img => {
                     const card = document.createElement('div');
                     card.style.cssText = 'border-radius:6px;overflow:hidden;aspect-ratio:1;background:#111;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;';
-                    card.onmouseover = () => { card.style.transform = 'scale(1.05)'; card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)'; };
-                    card.onmouseout = () => { card.style.transform = 'scale(1)'; card.style.boxShadow = 'none'; };
-                    const imgEl = document.createElement('img');
-                    imgEl.src = img.url || img;
-                    imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;';
-                    imgEl.loading = 'lazy';
-                    card.appendChild(imgEl);
+                    card.onmouseover = () => { 
+                        card.style.transform = 'scale(1.05)'; card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)'; 
+                        const v = card.querySelector('video'); if (v) v.play().catch(()=>{}); 
+                    };
+                    card.onmouseout = () => { 
+                        card.style.transform = 'scale(1)'; card.style.boxShadow = 'none'; 
+                        const v = card.querySelector('video'); if (v) v.pause(); 
+                    };
+                    const imgUrl = img.url || img;
+                    const isVid = /\.(mp4|webm)(?:$|\?|&|#)/i.test(imgUrl);
+                    if (isVid) {
+                        const vidEl = document.createElement('video');
+                        vidEl.src = imgUrl; vidEl.muted = true; vidEl.loop = true; vidEl.autoplay = false; vidEl.playsInline = true; vidEl.preload = 'metadata';
+                        vidEl.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+                        card.appendChild(vidEl);
+                    } else {
+                        const imgEl = document.createElement('img');
+                        imgEl.src = imgUrl;
+                        imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+                        imgEl.loading = 'lazy';
+                        card.appendChild(imgEl);
+                    }
 if (img.workflow) {
                         card.title = window.anomalous_browser_lang === 'zh' ? '点击恢复此工作流' : 'Click to restore workflow';
                         card.onclick = () => {
@@ -650,6 +741,17 @@ export function _openGalleryReplacer(node, w) {
         title.style.cssText = 'color:#fff;margin:0 0 20px 0;font-size:20px;';
         title.innerText = window.anomalous_browser_lang === 'zh' ? '🖼️ 选择要替换的模型' : '🖼️ Select Replacement Model';
         modal.appendChild(title);
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = window.anomalous_browser_lang === 'zh' ? '🔍 搜索模型名称...' : '🔍 Search model name...';
+        searchInput.style.cssText = 'width:100%;padding:10px;margin-bottom:20px;border-radius:6px;border:1px solid #444;background:#222;color:#fff;font-size:16px;box-sizing:border-box;';
+        modal.appendChild(searchInput);
+
+        const loadingText = document.createElement('div');
+        loadingText.innerText = window.anomalous_browser_lang === 'zh' ? '⏳ 正在加载并匹配缩略图...' : '⏳ Loading previews...';
+        loadingText.style.cssText = 'color:#888;font-size:14px;margin-bottom:15px;';
+        modal.appendChild(loadingText);
+
         const grid = document.createElement('div');
         grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:15px;';
         modal.appendChild(grid);
@@ -662,44 +764,100 @@ fetch('/anomalous/resolve_paths_to_previews', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ paths: validPaths })
         }).then(r => r.json()).then(data => {
+            loadingText.style.display = 'none';
             const previews = data.previews || {};
-for (const path of validPaths) {
-                const card = document.createElement('div');
-                card.style.cssText = 'background:#222;border-radius:8px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;border:1px solid #444;transition:transform 0.2s,box-shadow 0.2s;';
-                card.onmouseover = () => { card.style.transform = 'scale(1.05)'; card.style.boxShadow = '0 6px 20px rgba(0,0,0,0.5)'; };
-                card.onmouseout = () => { card.style.transform = 'scale(1)'; card.style.boxShadow = 'none'; };
-                const imgBox = document.createElement('div');
-                imgBox.style.cssText = 'height:150px;background:#111;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:30px;';
-                if (previews[path]) { imgBox.style.backgroundImage = `url("${previews[path]}")`; imgBox.innerText = ''; } else { imgBox.innerText = '🖼️'; }
-                const nameDiv = document.createElement('div');
-                nameDiv.style.cssText = 'padding:8px;font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-                nameDiv.innerText = path.split(/[\\/]/).pop();
-                nameDiv.title = path;
-                card.appendChild(imgBox);
-                card.appendChild(nameDiv);
-                grid.appendChild(card);
-                card.onclick = () => {
-                    w.value = path;
-                    const wIdx = node.widgets.indexOf(w);
-                    if (wIdx !== -1 && node.widgets_values) {
-                        node.widgets_values[wIdx] = path;
-                    }
+
+            // Render loop with time slicing
+            let renderId = 0;
+            const renderCards = (pathsToRender) => {
+                grid.innerHTML = '';
+                const currentRenderId = ++renderId;
+                let i = 0;
+                const chunk = 40;
+                const renderChunk = () => {
+                    if (currentRenderId !== renderId) return; // Stale render
+                    const end = Math.min(i + chunk, pathsToRender.length);
+                    for (; i < end; i++) {
+                        const path = pathsToRender[i];
+                        const card = document.createElement('div');
+                        card.style.cssText = 'background:#222;border-radius:8px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;border:1px solid #444;transition:transform 0.2s,box-shadow 0.2s;';
+                        card.onmouseover = () => { 
+                            card.style.transform = 'scale(1.05)'; card.style.boxShadow = '0 6px 20px rgba(0,0,0,0.5)'; 
+                            const v = card.querySelector('video'); if (v) v.play().catch(()=>{}); 
+                        };
+                        card.onmouseout = () => { 
+                            card.style.transform = 'scale(1)'; card.style.boxShadow = 'none'; 
+                            const v = card.querySelector('video'); if (v) v.pause(); 
+                        };
+                        const imgBox = document.createElement('div');
+                        imgBox.style.cssText = 'height:150px;background:#111;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:30px;position:relative;overflow:hidden;';
+                        if (previews[path]) {
+                            const isVid = /\.(mp4|webm)(?:$|\?|&|#)/i.test(previews[path]);
+                            if (isVid) {
+                                const vid = document.createElement('video');
+                                vid.src = previews[path]; vid.muted = true; vid.loop = true; vid.autoplay = false; vid.playsInline = true; vid.preload = 'metadata';
+                                vid.style.cssText = 'position:absolute;width:100%;height:100%;object-fit:cover;top:0;left:0;';
+                                imgBox.appendChild(vid);
+                            } else {
+                                imgBox.style.backgroundImage = `url("${previews[path]}")`;
+                            }
+                        } else {
+                            imgBox.innerText = '🖼️';
+                        }
+                        const nameDiv = document.createElement('div');
+                        nameDiv.style.cssText = 'padding:8px;font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+                        nameDiv.innerText = path.split(/[\\/]/).pop();
+                        nameDiv.title = path;
+                        card.appendChild(imgBox);
+                        card.appendChild(nameDiv);
+                        grid.appendChild(card);
+                        card.onclick = () => {
+                            w.value = path;
+                            const wIdx = node.widgets.indexOf(w);
+                            if (wIdx !== -1 && node.widgets_values) {
+                                node.widgets_values[wIdx] = path;
+                            }
 if (w.options && w.options.values && !w.options.values.includes(path)) {
-                        const newVals = [...w.options.values];
-                        newVals.push(path);
-                        w.options.values = newVals;
+                                const newVals = [...w.options.values];
+                                newVals.push(path);
+                                w.options.values = newVals;
+                            }
+                            delete node.color; delete node.bgcolor; node.has_errors = false;
+                            
+                            if (app.lastNodeErrors && app.lastNodeErrors[node.id]) {
+                                delete app.lastNodeErrors[node.id];
+                            }
+                            
+                            if (typeof app.clearErrors === 'function') app.clearErrors();
+                            if (w.callback) w.callback(w.value, app.canvas, node, app.canvas.graph_mouse, null);
+                            if (app.graph) {
+                                app.graph.setDirtyCanvas(true, true);
+                                if (app.graph.change) app.graph.change();
+                                try { window.dispatchEvent(new CustomEvent("graphChanged")); } catch(e){}
+                            }
+                            this.diagnoseNode(node);
+                            modal.remove();
+                        };
                     }
-                    delete node.color; delete node.bgcolor; node.has_errors = false;
-                    if (w.callback) w.callback(w.value, app.canvas, node, app.canvas.graph_mouse, null);
-if (app.graph) {
-                        app.graph.setDirtyCanvas(true, true);
-                        if (app.graph.change) app.graph.change();
+                    if (i < pathsToRender.length) {
+                        requestAnimationFrame(renderChunk);
                     }
-                    this.diagnoseNode(node);
-                    modal.remove();
                 };
-            }
-        }).catch(e => console.error('Gallery replacer failed', e));
+                requestAnimationFrame(renderChunk);
+            };
+
+            renderCards(validPaths);
+
+            searchInput.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = validPaths.filter(p => p.toLowerCase().includes(term));
+                renderCards(filtered);
+            });
+
+        }).catch(e => {
+            console.error('Gallery replacer failed', e);
+            loadingText.innerText = '❌ Failed to load';
+        });
     }
 
 export function runGlobalDoctorScan() {
@@ -707,6 +865,7 @@ export function runGlobalDoctorScan() {
         const inst = document.getElementById('anomalous-doctor-instructions');
         if (inst) inst.style.display = 'none';
         if (content) content.innerHTML = '';
+        if (!content || !app.graph || !Array.isArray(app.graph._nodes)) return;
 
         let totalNodes = 0;
         let missingNodes = 0;
@@ -715,14 +874,14 @@ for (const node of app.graph._nodes) {
 if (node.widgets) {
 for (let w of node.widgets) {
                     const val = w.value;
-                    if (typeof val === 'string' && (val.endsWith('.safetensors') || val.endsWith('.ckpt') || val.endsWith('.pt') || val.endsWith('.sft') || val.endsWith('.bin'))) {
+                    if (typeof val === 'string' && val.match(/\.(safetensors|ckpt|pt|bin|pth|sft)$/i)) {
                         totalNodes++;
                         let isHealthy = false;
                         if (w.options && w.options.values && w.options.values.includes(val)) isHealthy = true;
 if (!isHealthy) {
                             missingNodes++;
                             const nodeTitle = document.createElement('div');
-                            nodeTitle.innerText = `${window.anomalous_browser_lang === 'zh' ? '节点' : 'Node'}: ${node.title || node.type}`;
+                            nodeTitle.textContent = `${window.anomalous_browser_lang === 'zh' ? '节点' : 'Node'}: ${node.title || node.type}`;
                             nodeTitle.style.color = '#8AB4F8';
                             nodeTitle.style.fontWeight = 'bold';
                             nodeTitle.style.marginTop = '10px';

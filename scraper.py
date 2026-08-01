@@ -251,7 +251,18 @@ def main():
         with open(backup_log_path, 'r', encoding='utf-8') as f:
             rename_log = json.load(f)
 
-    target_files_basenames = [os.path.basename(f.strip()) for f in args.target_files.split(',')] if args.target_files else []
+    target_files_basenames = []
+    target_file_path = os.path.join(target_folder, '.scan_targets.json')
+    if os.path.exists(target_file_path):
+        try:
+            with open(target_file_path, 'r', encoding='utf-8') as f:
+                target_files_basenames = [os.path.basename(t.strip()) for t in __import__('json').load(f)]
+            os.remove(target_file_path)
+        except:
+            pass
+            
+    if args.target_files:
+        target_files_basenames.extend([os.path.basename(t.strip()) for t in args.target_files.split(',')])
 
     print(f"[*] 开始扫描文件夹: {target_folder}")
     if args.dry_run:

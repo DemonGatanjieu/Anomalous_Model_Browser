@@ -271,3 +271,73 @@ async def api_get_model_images(request):
     
     return web.json_response({'images': matched_images})
 
+def get_active_folder_types():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(script_dir, "config.json")
+    
+    all_types = list(folder_paths.folder_names_and_paths.keys())
+    default_types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae', 'embeddings', 'upscale_models']
+    
+    try:
+        if os.path.exists(config_path):
+            with open(config_path, 'r', encoding='utf-8') as f:
+                cfg = json.load(f)
+                ftc = cfg.get("folder_types_config")
+                if ftc and isinstance(ftc, list):
+                    active = []
+                    configured_types = set()
+                    for item in ftc:
+                        t = item.get("type")
+                        if t in all_types:
+                            configured_types.add(t)
+                            if item.get("visible", True):
+                                active.append(t)
+                    # For any newly registered types not in config, do not show them by default 
+                    # unless they are in default_types
+                    for t in all_types:
+                        if t not in configured_types and t in default_types:
+                            active.append(t)
+                    return active
+    except Exception:
+        pass
+    
+    # Fallback if no config exists
+    active = [t for t in default_types if t in all_types]
+    return active
+
+async def api_get_all_folder_types(request):
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(script_dir, "config.json")
+    
+    all_types = list(folder_paths.folder_names_and_paths.keys())
+    default_types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae', 'embeddings', 'upscale_models']
+    
+    result = []
+    configured_types = set()
+    
+    try:
+        if os.path.exists(config_path):
+            with open(config_path, 'r', encoding='utf-8') as f:
+                cfg = json.load(f)
+                ftc = cfg.get("folder_types_config")
+                if ftc and isinstance(ftc, list):
+                    for item in ftc:
+                        t = item.get("type")
+                        if t in all_types:
+                            configured_types.add(t)
+                            result.append({
+                                "type": t,
+                                "visible": item.get("visible", True)
+                            })
+    except Exception:
+        pass
+        
+    # Append unconfigured types
+    for t in all_types:
+        if t not in configured_types:
+            result.append({
+                "type": t,
+                "visible": t in default_types
+            })
+            
+    return web.json_response({"folder_types": result})

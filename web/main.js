@@ -1,6 +1,6 @@
 import { showDetail, showEditModal, _openAdvancedModelSelector, setWidgetValuePath } from './modules/ui_detail.js';
 import { loadModels, applyModelToCanvas, stopMediaInContainer } from './modules/ui_grid.js';
-import { createDOM, renderSidebar, loadFolders, showHelp, hideAllPanels } from './modules/ui_sidebar.js';
+import { createDOM, renderSidebar, loadFolders, showHelp, hideAllPanels, openFolderManager } from './modules/ui_sidebar.js';
 import { loadGalleryImages, showGeneratedGallery, showGallerySelectMode, showGalleryViewer } from './modules/ui_gallery.js';
 import { showNotebooks, refreshNotebooks, saveCurrentNotebook, deleteCurrentNotebook, renderNotebookEditor, fillNotebookGalleries, sendNotebookToCanvas } from './modules/ui_notebooks.js';
 import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, _openGalleryReplacer, runGlobalDoctorScan } from './modules/ui_doctor.js';
@@ -311,7 +311,9 @@ class AnomalousBrowser {
 
                         if (!isHealthy) {
                             const right = document.createElement('a');
-                            right.href = `https://civitai.com/search/models?sortBy=models_v9&query=${encodeURIComponent(basename.replace('.safetensors', '').replace('.ckpt', ''))}`;
+                            const searchHash = cacheHit ? (typeof cacheHit === 'string' ? cacheHit : cacheHit.hash) : null;
+                            const searchStr = searchHash || basename.replace('.safetensors', '').replace('.ckpt', '').replace('.pt', '').replace('.sft', '');
+                            right.href = `https://civitai.com/search/models?sortBy=models_v9&query=${encodeURIComponent(searchStr)}`;
                             right.target = '_blank';
                             right.innerText = window.anomalous_browser_lang === 'zh' ? '去 C站下载' : 'Download';
                             right.style.color = '#1a73e8';
@@ -397,6 +399,7 @@ AnomalousBrowser.prototype.showGallerySelectMode = showGallerySelectMode;
 AnomalousBrowser.prototype.showGalleryViewer = showGalleryViewer;
 
 AnomalousBrowser.prototype.createDOM = createDOM;
+AnomalousBrowser.prototype.openFolderManager = openFolderManager;
 AnomalousBrowser.prototype.renderSidebar = renderSidebar;
 AnomalousBrowser.prototype.loadFolders = loadFolders;
 AnomalousBrowser.prototype.showHelp = showHelp;

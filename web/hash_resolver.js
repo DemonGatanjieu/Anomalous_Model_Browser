@@ -83,14 +83,19 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
                             if (wIdx !== -1 && node.widgets_values) {
                                 node.widgets_values[wIdx] = exactMatch;
                             }
-                            if (node.color === "#FF3333" || node.bgcolor === "#FF3333" || node.color === "#f66") {
-                                delete node.color;
-                                delete node.bgcolor;
+                            delete node.color;
+                            delete node.bgcolor;
+                            node.has_errors = false;
+                            
+                            if (app.lastNodeErrors && app.lastNodeErrors[node.id]) {
+                                delete app.lastNodeErrors[node.id];
                             }
+                            
                             if (w.callback) {
                                 w.callback(w.value, app.canvas, node, app.canvas.graph_mouse, null);
                             }
                             app.graph.setDirtyCanvas(true, true);
+                            fixed_count++; // Mark as fixed so the global graph update is triggered!
                             continue; // Already fixed natively, skip backend lookup
                         }
                     }

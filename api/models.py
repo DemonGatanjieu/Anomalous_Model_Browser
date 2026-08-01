@@ -9,9 +9,10 @@ import asyncio
 from aiohttp import web
 import folder_paths
 import struct
+from .utils import get_active_folder_types
 
 async def api_get_folders(request):
-    types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
+    types = get_active_folder_types()
     result = []
     seen_dirs = set()
     
@@ -343,7 +344,7 @@ async def api_compatible_models(request):
     return web.json_response({"models": compatible_models})
 
 async def api_base_models(request):
-    target_types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
+    target_types = get_active_folder_types()
     base_models = set()
     seen_files = set()
     
@@ -787,7 +788,7 @@ async def api_get_all_scan_models(request):
     import urllib.parse
     page = int(request.query.get('page', 1))
     limit = int(request.query.get('limit', 0))
-    target_types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
+    target_types = get_active_folder_types()
     all_tuples = []
     seen_dirs = set()
     for t in target_types:
@@ -884,7 +885,7 @@ async def api_batch_select(request):
     results = {}
     
     if folder_key == 'ALL':
-        target_types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
+        target_types = get_active_folder_types()
         seen_dirs = set()
         for t in target_types:
             try: paths = folder_paths.get_folder_paths(t)
