@@ -998,7 +998,38 @@ def _preview_url_for_model(folder_type, path_idx, base_dir, file_path):
     return f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}&t={version}"
 
 
-def _resolve_paths_to_previews_sync(paths):
+def _model_info_for_path(folder_type, path_idx, base_dir, file_path):
+    root = os.path.dirname(file_path)
+    rel_subfolder = os.path.relpath(root, base_dir)
+    if rel_subfolder == '.':
+        rel_subfolder = '/'
+    else:
+        rel_subfolder = '/' + rel_subfolder.replace(os.sep, '/')
+    return {
+        "type": folder_type,
+        "path_idx": path_idx,
+        "subfolder": rel_subfolder,
+        "filename": os.path.basename(file_path),
+        "preview_url": _preview_url_for_model(folder_type, path_idx, base_dir, file_path),
+        "metadata": get_metadata(file_path),
+    }
+
+
+def _allowed_folder_types(requested_types=None):
+    available = list(folder_paths.folder_names_and_paths.keys())
+    if requested_types is None:
+        return available
+    if not isinstance(requested_types, list):
+        return []
+    allowed = set(available)
+    return list(dict.fromkeys(
+        folder_type
+        for folder_type in requested_types
+        if isinstance(folder_type, str) and folder_type in allowed
+    ))
+
+
+def _resolve_paths_to_model_info_sync(paths, folder_types=None):
     requested = [
         (path, path.replace('\\', '/').lower(), path.replace('\\', '/'))
         for path in paths
@@ -1006,7 +1037,7 @@ def _resolve_paths_to_previews_sync(paths):
     ]
     exact_results = {}
     roots = []
-    for folder_type in folder_paths.folder_names_and_paths.keys():
+    for folder_type in _allowed_folder_types(folder_types):
         try:
             folder_dirs = folder_paths.get_folder_paths(folder_type)
         except Exception:
@@ -1025,7 +1056,7 @@ def _resolve_paths_to_previews_sync(paths):
                 except ValueError:
                     continue
                 if os.path.isfile(candidate) and candidate.lower().endswith(('.safetensors', '.ckpt', '.pt', '.bin', '.sft')):
-                    exact_results[original] = _preview_url_for_model(folder_type, path_idx, base_dir, candidate)
+                    exact_results[original] = _model_info_for_path(folder_type, path_idx, base_dir, candidate)
 
     unresolved = [(original, normalized) for original, normalized, _ in requested if original not in exact_results]
     if not unresolved:
@@ -1044,37 +1075,65 @@ def _resolve_paths_to_previews_sync(paths):
                 basename = filename.lower()
                 if rel_path not in wanted_relpaths and basename not in wanted_basenames:
                     continue
-                preview_url = _preview_url_for_model(
+                candidate_info = _model_info_for_path(
                     folder_type,
                     path_idx,
                     base_dir,
                     os.path.join(root, filename),
                 )
                 if rel_path in wanted_relpaths:
-                    rel_matches[rel_path] = preview_url
+                    rel_matches[rel_path] = candidate_info
                 if basename in wanted_basenames:
-                    basename_matches[basename] = preview_url
+                    basename_matches[basename] = candidate_info
 
-    previews = dict(exact_results)
+    model_info = dict(exact_results)
     for original, normalized in unresolved:
         if normalized in rel_matches:
-            previews[original] = rel_matches[normalized]
+            model_info[original] = rel_matches[normalized]
         else:
             basename = normalized.rsplit('/', 1)[-1]
             if basename in basename_matches:
-                previews[original] = basename_matches[basename]
-    return previews
+                model_info[original] = basename_matches[basename]
+    return model_info
+
+
+def _resolve_paths_to_previews_sync(paths, folder_types=None):
+    model_info = _resolve_paths_to_model_info_sync(paths, folder_types)
+    return {path: item.get("preview_url", "") for path, item in model_info.items()}
 
 
 async def api_resolve_paths_to_previews(request):
     try:
         data = await request.json()
         paths = data.get('paths', [])
+        folder_types = data.get('folder_types')
+        context_requests = data.get('context_requests', [])
     except:
-        return web.json_response({"previews": {}})
-        
-    previews = await asyncio.to_thread(_resolve_paths_to_previews_sync, paths)
-    return web.json_response({"previews": previews})
+        return web.json_response({"previews": {}, "models": {}, "context_models": {}})
+
+    model_info = await asyncio.to_thread(_resolve_paths_to_model_info_sync, paths, folder_types)
+    context_models = {}
+    if isinstance(context_requests, list):
+        for item in context_requests[:16]:
+            if not isinstance(item, dict):
+                continue
+            context_path = item.get('path')
+            if not isinstance(context_path, str) or not context_path:
+                continue
+            resolved = await asyncio.to_thread(
+                _resolve_paths_to_model_info_sync,
+                [context_path],
+                item.get('folder_types'),
+            )
+            if context_path in resolved:
+                context_models[context_path] = resolved[context_path]
+
+    previews = {path: item.get("preview_url", "") for path, item in model_info.items()}
+    return web.json_response({
+        "previews": previews,
+        "models": model_info,
+        "context_models": context_models,
+    })
 
 
 

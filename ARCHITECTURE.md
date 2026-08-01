@@ -101,6 +101,8 @@ Graph edits are transactional: validate the complete topology before mutation, w
 
 The Node Assistant owns the corresponding picker UI. Replacement actions live in the selected-node toolbar, while insert-before/insert-after actions are enabled only when graph analysis reports a safe topology. The picker derives its complete candidate set from the target widget's native combo values, then provides client-side folder browsing, full-path search, and sorting. It must not broaden the list with models from another category or require metadata scanning merely to select a filename.
 
+Picker presentation metadata is resolved in one batch through `/anomalous/resolve_paths_to_previews`. The request supplies the native folder-type boundary inferred from the target widget, and the response may include preview URLs, model category, and cached sidecar metadata for each requested path. LoRA compatibility filtering uses the connected main model's `baseModel` metadata, falling back to the current LoRA's metadata only when the main model cannot be identified. This is a user-visible browsing filter, not Model Doctor identity evidence; missing metadata must remain accessible through an explicit unfiltered option.
+
 ### JavaScript Rules of Engagement:
 1. **Strict Localization (双语)**: 
    - Never use hardcoded UI strings. 

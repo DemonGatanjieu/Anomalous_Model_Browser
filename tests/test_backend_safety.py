@@ -366,13 +366,25 @@ class ModelListingPerformanceTests(unittest.IsolatedAsyncioTestCase):
         nested.mkdir()
         Path(nested, "model.safetensors").write_bytes(b"model")
         Path(nested, "model.preview.png").write_bytes(b"cover")
+        Path(nested, "model.info").write_text(
+            json.dumps({"baseModel": "SDXL 1.0"}),
+            encoding="utf-8",
+        )
         folder_paths.folder_names_and_paths = {"checkpoints": object()}
 
         with mock.patch.object(models.os, "walk", side_effect=AssertionError("full walk should not run")):
             previews = models._resolve_paths_to_previews_sync(["nested/model.safetensors"])
+            details = models._resolve_paths_to_model_info_sync(
+                ["nested/model.safetensors"],
+                ["checkpoints"],
+            )
 
         self.assertIn("nested/model.safetensors", previews)
         self.assertIn("filename=model.preview.png", previews["nested/model.safetensors"])
+        model_info = details["nested/model.safetensors"]
+        self.assertEqual(model_info["type"], "checkpoints")
+        self.assertEqual(model_info["metadata"]["baseModel"], "SDXL 1.0")
+        self.assertIn("filename=model.preview.png", model_info["preview_url"])
 
 
 class HashResolutionTests(unittest.IsolatedAsyncioTestCase):
