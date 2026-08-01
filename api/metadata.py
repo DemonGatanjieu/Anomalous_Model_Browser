@@ -45,7 +45,8 @@ def _select_info_file(data, file_path):
     ``files`` array.  Taking the first SHA256 silently assigns the dependency's
     hash to every local sidecar copied from that version.  Physical byte size is
     the strongest cheap discriminator available here and remains valid after a
-    local rename.
+    local rename.  Filenames are intentionally excluded: local renames are the
+    reason provenance recovery exists and cannot be identity evidence.
     """
     entries = []
     for file_info in data.get("files", []):
@@ -77,15 +78,7 @@ def _select_info_file(data, file_path):
         if len(size_matches) == 1:
             return size_matches[0][0]
         if len(size_matches) > 1:
-            entries = size_matches
-
-    local_name = os.path.basename(file_path).casefold()
-    name_matches = [
-        entry for entry in entries
-        if os.path.basename(str(entry[0].get("name", ""))).casefold() == local_name
-    ]
-    if len(name_matches) == 1:
-        return name_matches[0][0]
+            return None
 
     # Offline-generated metadata commonly contains one injected hash without
     # Civitai size/name data.  It is safe only when there is a single candidate.
@@ -111,7 +104,6 @@ def get_metadata(file_path):
         "baseModel": "",
         "civitai_url": "",
         "hash": "",
-        "source_filename": "",
         "custom_name": "",
         "custom_notes": ""
     }
@@ -153,12 +145,10 @@ def get_metadata(file_path):
                     
                     selected_file = _select_info_file(data, file_path)
                     hash_val = ""
-                    source_filename = ""
                     if selected_file:
                         hashes = selected_file.get("hashes", {})
                         if isinstance(hashes, dict):
                             hash_val = str(hashes.get("SHA256", ""))
-                        source_filename = str(selected_file.get("name", ""))
                     
                     if name: metadata["name"] = name
                     if description: metadata["description"] = description
@@ -167,7 +157,6 @@ def get_metadata(file_path):
                     if base_model: metadata["baseModel"] = base_model
                     if civitai_url: metadata["civitai_url"] = civitai_url
                     if hash_val: metadata["hash"] = hash_val
-                    if source_filename: metadata["source_filename"] = source_filename
                     if "anomalous_custom_name" in data and data["anomalous_custom_name"]: metadata["custom_name"] = data["anomalous_custom_name"]
                     if "anomalous_custom_notes" in data and data["anomalous_custom_notes"]: metadata["custom_notes"] = data["anomalous_custom_notes"]
             except Exception:

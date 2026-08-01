@@ -90,6 +90,14 @@ Instead of fragmenting the class scope and losing context, we extracted all UI p
 ## 5. Hash Resolver Subsystem & Scanning Engine (`hash_resolver.js` & `scraper.py`)
 A highly complex subsystem responsible for automatically resolving missing/broken model references in workflows, and aggressively scanning models to build local caches.
 
+### NON-NEGOTIABLE: Model Doctor Identity Boundary / 模型医生身份判定死规矩
+* Model Doctor exists to recover the same physical model referenced by provenance data embedded by this plugin in an exported workflow or image. Local path differences and local renames are the problem being solved; therefore a path, filename, display name, custom name, source filename, or fuzzy name similarity MUST NEVER be used as evidence that two models are identical.
+* Automatic identity evidence is limited to plugin-carried cryptographic hashes, exact physical byte size as a controlled fallback/disambiguator, and the model category required by the target widget. Byte size alone is acceptable only when it produces exactly one candidate inside the required category and no contradictory trustworthy hash exists.
+* Paths and filenames may be used only after model identity has already been established: to return the resolved local dropdown value and to verify that value against ComfyUI's native combo choices. They must not participate in candidate selection, ranking, tie-breaking, or ambiguity resolution.
+* Normalizing slash direction for a value that already has an exact equivalent in the widget's native ComfyUI options is representation normalization, not model discovery, and does not weaken this identity boundary.
+* If a legacy/corrupt hash cannot be recovered uniquely from allowed evidence (for example several in-category files have the same byte size), Model Doctor MUST report ambiguity or remain unresolved. It must never guess from the old filename/path. Manual replacement is the explicit fallback.
+* This boundary is part of the plugin's native product contract. Do not weaken, reinterpret, or bypass it without explicit user authorization.
+
 ### The Global Hash Cache (`window.anomalous_hash_cache`)
 * This is the absolute core of the resolution engine. It maps physical filenames to their exact SHA256 hashes.
 * It is **ALWAYS fetched on startup** via `fetch('/anomalous/all_hashes')`. Without this dictionary, hash injection and resolution are mathematically impossible.
@@ -99,8 +107,8 @@ A highly complex subsystem responsible for automatically resolving missing/broke
 ### Model Provenance Binding (模型溯源绑定 - `anomalous_inject_hash`)
 * Controls whether hashes are invisibly injected into the `extra_pnginfo` and workflow JSON when a user saves a workflow or generates an image.
 * **Logic Flow**: `LGraph.prototype.serialize` is hooked. If enabled, it intercepts the serialization, looks up every model widget's filename in `window.anomalous_hash_cache`, and explicitly writes `extraObj.anomalous_hashes[node_id_filename] = {hash, size}`.
-* Resolution starts with an exact local path when one is available. For provenance recovery, the backend constrains the search to the model category inferred from the node/widget and intersects the saved hash with the saved byte size. If no file in that category owns a legacy/stale hash, the original workflow filename (including the Civitai source filename stored in `.info`) disambiguates equal-sized candidates; only then may a unique byte-size match recover the model as `stale_hash`. A real hash/size conflict is rejected instead of choosing arbitrarily.
-* Civitai `.info` files may describe several physical files (for example a diffusion model, text encoder, and VAE). `get_metadata()` must select the matching `files[]` entry by exact physical byte size, then exact filename, and may use an unmatched entry only when it is the sole hash candidate. It must never take the first SHA256 unconditionally.
+* Exact-path checks are limited to pre-flight verification that an already-resolved local reference exists; they are outside Model Doctor provenance recovery and must never be used as its fallback. For provenance recovery, the backend constrains the search to the model category inferred from the node/widget and intersects the saved hash with the saved byte size. If no file in that category owns a legacy/stale hash, only a unique in-category byte-size match may recover the model as `stale_hash`. Equal-sized candidates remain unresolved, and a real hash/size conflict is rejected instead of choosing arbitrarily.
+* Civitai `.info` files may describe several physical files (for example a diffusion model, text encoder, and VAE). `get_metadata()` must select the matching `files[]` entry by exact physical byte size and may use an unmatched entry only when it is the sole hash candidate. It must never take the first SHA256 or use a filename to choose between entries.
 
 ### The Triple-Fallback Scanning Engine (`api/scanner.py` & `scraper.py`)
 When "Deep Hash Scan" is triggered, it runs in a background thread to prevent UI lockup. It uses a triple fallback to identify models:

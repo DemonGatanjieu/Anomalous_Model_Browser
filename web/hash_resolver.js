@@ -131,7 +131,7 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
                         try {
                             const expectedTypes = inferExpectedModelTypes(node, w);
                             const typeQuery = expectedTypes ? `&type=${encodeURIComponent(expectedTypes)}` : '';
-                            const res = await fetch(`/anomalous/resolve_hash?hash=${encodeURIComponent(h)}&size=${encodeURIComponent(s)}&filename=${encodeURIComponent(val)}${typeQuery}`);
+                            const res = await fetch(`/anomalous/resolve_hash?hash=${encodeURIComponent(h)}&size=${encodeURIComponent(s)}${typeQuery}`);
                             const resData = await res.json();
 
                             if (resData.found) {

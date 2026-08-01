@@ -525,20 +525,6 @@ async def api_resolve_hash(request):
         candidate["hashes"] = values
         return values
 
-    def candidate_matches_filename_hint(candidate):
-        if not filename_query:
-            return False
-        hint = filename_query.replace('\\', '/').casefold()
-        hint_basename = hint.rsplit('/', 1)[-1]
-        meta = candidate_metadata(candidate)
-        names = {
-            candidate["filename"].replace('\\', '/').casefold(),
-            os.path.basename(candidate["path"]).casefold(),
-            os.path.basename(str(meta.get("source_filename", ""))).casefold(),
-        }
-        names.discard("")
-        return hint in names or hint_basename in names
-
     def respond(candidate, **details):
         payload = {
             "found": True,
@@ -564,14 +550,8 @@ async def api_resolve_hash(request):
             return web.json_response({"found": False, "identity_conflict": True})
 
         # No file in the expected category owns the saved hash.  This is the
-        # legacy poisoned-sidecar case.  Prefer the original workflow filename
-        # (including the Civitai source filename preserved in .info) before a
-        # unique-size fallback.
-        hinted_size_matches = [candidate for candidate in size_matches if candidate_matches_filename_hint(candidate)]
-        if len(hinted_size_matches) == 1:
-            return respond(hinted_size_matches[0], matched_by_size=True, matched_by_filename_hint=True, stale_hash=True)
-        if len(hinted_size_matches) > 1:
-            return web.json_response({"found": False, "ambiguous": True})
+        # legacy poisoned-sidecar case.  A unique in-category byte size may
+        # recover it; equal-sized candidates remain unresolved by design.
         if len(size_matches) == 1:
             return respond(size_matches[0], matched_by_size=True, stale_hash=True)
         if len(size_matches) > 1:

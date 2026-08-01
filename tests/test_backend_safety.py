@@ -117,16 +117,16 @@ class MetadataHashSelectionTests(unittest.TestCase):
 
             result = metadata.get_metadata(str(model_path))
             self.assertEqual(result["hash"], model_hash)
-            self.assertEqual(result["source_filename"], "original-model-name.safetensors")
 
-    def test_ambiguous_multifile_info_does_not_use_first_hash(self):
+    def test_equal_size_multifile_info_does_not_use_filename_or_first_hash(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             model_path = Path(temp_dir, "renamed-model.safetensors")
             model_path.write_bytes(b"size-not-listed")
+            size_kb = model_path.stat().st_size / 1024
             info = {
                 "files": [
-                    {"name": "a.safetensors", "sizeKB": 1, "hashes": {"SHA256": "A" * 64}},
-                    {"name": "b.safetensors", "sizeKB": 2, "hashes": {"SHA256": "B" * 64}},
+                    {"name": "renamed-model.safetensors", "sizeKB": size_kb, "hashes": {"SHA256": "A" * 64}},
+                    {"name": "b.safetensors", "sizeKB": size_kb, "hashes": {"SHA256": "B" * 64}},
                 ]
             }
             model_path.with_suffix(".info").write_text(json.dumps(info), encoding="utf-8")
@@ -202,7 +202,7 @@ class HashResolutionTests(unittest.IsolatedAsyncioTestCase):
         result = json.loads(response.text)
         self.assertFalse(result["found"])
 
-    async def test_source_filename_disambiguates_equal_sizes_with_stale_hash(self):
+    async def test_filename_does_not_disambiguate_equal_sizes_with_stale_hash(self):
         original = self.checkpoint_root / "a" / "shared.safetensors"
         original_info = original.with_suffix(".info")
         original_info.write_text(json.dumps({"files": [{
@@ -228,9 +228,8 @@ class HashResolutionTests(unittest.IsolatedAsyncioTestCase):
         })
         response = await models.api_resolve_hash(request)
         result = json.loads(response.text)
-        self.assertTrue(result["found"])
-        self.assertEqual(result["filename"], "a/shared.safetensors")
-        self.assertTrue(result["matched_by_filename_hint"])
+        self.assertFalse(result["found"])
+        self.assertTrue(result["ambiguous"])
 
 
 if __name__ == "__main__":
