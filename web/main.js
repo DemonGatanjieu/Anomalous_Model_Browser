@@ -70,7 +70,7 @@ class AnomalousBrowser {
         this.currentPathIdx = 0;
         this.currentSubfolder = '/';
         this.foldersData = null;
-        this.expandedFolders = new Set(['/', 'checkpoints', 'loras']);
+        this.expandedFolders = new Set(['/', 'checkpoints', 'loras', 'unet', 'diffusion_models']);
         this.energySaving = localStorage.getItem('anomalous_energy_saving') === 'true';
         this.createDOM();
     }

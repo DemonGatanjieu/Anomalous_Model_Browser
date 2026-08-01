@@ -419,12 +419,11 @@ async def api_get_all_folder_types(request):
         except:
             pass
             
-        default_physical_types = ['checkpoints', 'loras', 'controlnet', 'vae', 'embeddings', 'upscale_models']
         for bn in all_bns:
             if bn not in configured:
                 result.append({
                     "type": bn,
-                    "visible": bn in default_physical_types
+                    "visible": True
                 })
     else:
         # Abstract mode
