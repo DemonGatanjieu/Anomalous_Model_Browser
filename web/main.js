@@ -3,7 +3,7 @@ import { loadModels, applyModelToCanvas, stopMediaInContainer } from './modules/
 import { createDOM, renderSidebar, loadFolders, showHelp, hideAllPanels, openFolderManager } from './modules/ui_sidebar.js';
 import { loadGalleryImages, showGeneratedGallery, showGallerySelectMode, showGalleryViewer } from './modules/ui_gallery.js';
 import { showNotebooks, refreshNotebooks, saveCurrentNotebook, deleteCurrentNotebook, renderNotebookEditor, fillNotebookGalleries, sendNotebookToCanvas } from './modules/ui_notebooks.js';
-import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, _openGalleryReplacer, runGlobalDoctorScan } from './modules/ui_doctor.js';
+import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, _openGalleryReplacer, openLoraInsertionPicker, runGlobalDoctorScan } from './modules/ui_doctor.js';
 import { app } from "../../scripts/app.js";
 
 import { i18n } from './modules/locales.js';
@@ -403,6 +403,7 @@ AnomalousBrowser.prototype.initAssistantPanel = initAssistantPanel;
 AnomalousBrowser.prototype.renderAssistantModelCard = renderAssistantModelCard;
 AnomalousBrowser.prototype._loadAssistantHistory = _loadAssistantHistory;
 AnomalousBrowser.prototype._openGalleryReplacer = _openGalleryReplacer;
+AnomalousBrowser.prototype.openLoraInsertionPicker = openLoraInsertionPicker;
 AnomalousBrowser.prototype.runGlobalDoctorScan = runGlobalDoctorScan;
 
 AnomalousBrowser.prototype.showNotebooks = showNotebooks;

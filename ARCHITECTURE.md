@@ -99,6 +99,8 @@ Manual LoRA insertion is an explicit canvas mutation and is isolated from Model 
 
 Graph edits are transactional: validate the complete topology before mutation, wrap the operation in `graph.beforeChange()` / `graph.afterChange()`, and restore every original connection if node creation or any link operation fails. A successful insertion must be one undoable graph change and must dirty the canvas. The helper must not move, delete, or rewrite existing nodes or widgets, and model choices supplied by the UI must remain constrained to ComfyUI's native combo values for the inserted node.
 
+The Node Assistant owns the corresponding picker UI. Replacement actions live in the selected-node toolbar, while insert-before/insert-after actions are enabled only when graph analysis reports a safe topology. The picker derives its complete candidate set from the target widget's native combo values, then provides client-side folder browsing, full-path search, and sorting. It must not broaden the list with models from another category or require metadata scanning merely to select a filename.
+
 ### JavaScript Rules of Engagement:
 1. **Strict Localization (双语)**: 
    - Never use hardcoded UI strings. 

@@ -1,5 +1,10 @@
 import { app } from "../../../scripts/app.js";
 import { escapeHtml } from './safe_dom.js';
+import {
+    analyzeModelChainInsertion,
+    getModelChainInsertionCapabilities,
+    spliceModelChainNode,
+} from './graph_splice.js';
 /**
  * ui_doctor.js
  * Extracted Doctor Panel & Assistant Panel methods.
@@ -106,6 +111,83 @@ export function initDoctorPanel() {
         // Initial render
         this.renderGlobalDashboard();
     }
+
+function getInsertionCapabilityMessage(capability) {
+    const zh = window.anomalous_browser_lang === 'zh';
+    const messages = {
+        missing_graph_or_node: zh ? '当前画布或节点不可用。' : 'The current graph or node is unavailable.',
+        missing_chain_inputs: zh ? '节点没有完整的 MODEL/CLIP 输入。' : 'The node does not expose both MODEL and CLIP inputs.',
+        unconnected_chain_inputs: zh ? 'MODEL/CLIP 输入尚未全部连接。' : 'Both MODEL and CLIP inputs must already be connected.',
+        missing_chain_outputs: zh ? '节点没有完整的 MODEL/CLIP 输出。' : 'The node does not expose both MODEL and CLIP outputs.',
+        ambiguous_downstream_branches: zh ? '检测到多个下游分支，请先整理或选择明确链路。' : 'Multiple downstream branches were detected; choose an explicit chain first.',
+        invalid_downstream_link: zh ? '现有下游连线无效，无法安全改写。' : 'An existing downstream link is invalid and cannot be safely changed.',
+    };
+    return messages[capability?.code] || (zh ? '当前节点不支持此插入方式。' : 'This insertion is not available for the selected node.');
+}
+
+function getNativeWidgetValues(node, widget) {
+    const source = widget?.options?.values;
+    let values = source;
+    if (typeof source === 'function') {
+        try {
+            values = source(widget, node);
+        } catch (error) {
+            console.warn('[Anomalous] Failed to resolve native combo values:', error);
+            values = [];
+        }
+    }
+    return Array.isArray(values)
+        ? [...new Set(values.filter(value => typeof value === 'string'))]
+        : [];
+}
+
+function findModelComboWidget(node) {
+    return (node?.widgets || []).find(widget => {
+        if (widget?.type !== 'combo') return false;
+        const values = getNativeWidgetValues(node, widget);
+        return values.some(value => /\.(safetensors|ckpt|pt|bin|pth|sft)$/i.test(value));
+    }) || null;
+}
+
+function setWidgetValue(node, widget, value) {
+    widget.value = value;
+    const widgetIndex = node?.widgets?.indexOf(widget) ?? -1;
+    if (widgetIndex >= 0) {
+        node.widgets_values = Array.isArray(node.widgets_values)
+            ? node.widgets_values
+            : node.widgets.map(item => item?.value);
+        node.widgets_values[widgetIndex] = value;
+    }
+}
+
+export function openLoraInsertionPicker(anchorNode, direction) {
+    const analysis = analyzeModelChainInsertion(app.graph, anchorNode, direction);
+    if (!analysis.supported) {
+        alert(getInsertionCapabilityMessage(analysis));
+        return;
+    }
+
+    const insertedNode = typeof LiteGraph !== 'undefined' ? LiteGraph.createNode('LoraLoader') : null;
+    if (!insertedNode) {
+        alert(window.anomalous_browser_lang === 'zh' ? '无法创建标准 LoRA Loader 节点。' : 'Unable to create a standard LoRA Loader node.');
+        return;
+    }
+
+    const modelWidget = findModelComboWidget(insertedNode);
+    if (!modelWidget || getNativeWidgetValues(insertedNode, modelWidget).length === 0) {
+        alert(window.anomalous_browser_lang === 'zh' ? 'LoRA 列表尚未就绪，请刷新 ComfyUI 模型列表后重试。' : 'The LoRA list is not ready. Refresh ComfyUI model lists and try again.');
+        return;
+    }
+
+    this._openGalleryReplacer(insertedNode, modelWidget, {
+        mode: 'insert',
+        direction,
+        anchorNode,
+        analysis,
+        modelTypeLabel: 'LoRA',
+    });
+}
+
 export function diagnoseNode(node) {
         // This method serves the Node Assistant panel only
 if (!this.assistantPanelInitialized) {
@@ -132,7 +214,10 @@ for (const w of node.widgets) {
             }
         }
 
-        if (modelWidgets.length === 0) {
+        const insertionCapabilities = getModelChainInsertionCapabilities(app.graph, node);
+        const canInsert = insertionCapabilities.before.supported || insertionCapabilities.after.supported;
+
+        if (modelWidgets.length === 0 && !canInsert) {
             placeholder.innerHTML = `<div style="font-size:36px;">⚠️</div><div style="text-align:center;">${window.anomalous_browser_lang === 'zh' ? '该节点没有受支持的模型参数' : 'No supported model parameter on this node'}</div><div style="font-size:12px;color:#555;margin-top:4px;">${escapeHtml(node.type || '')}</div>`;
             placeholder.style.display = 'flex';
             nodeContent.style.display = 'none';
@@ -150,6 +235,47 @@ for (const w of node.widgets) {
         titleBar.querySelector('.ast-title').textContent = node.title || node.type || 'Node';
         titleBar.querySelector('.ast-type').textContent = node.type || '';
         nodeContent.appendChild(titleBar);
+
+        const quickActions = document.createElement('div');
+        quickActions.style.cssText = 'padding:12px 20px;background:rgba(255,255,255,0.025);border-bottom:1px solid rgba(255,255,255,0.07);display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0;';
+
+        const makeActionButton = (label, accent, onClick, capability = null) => {
+            const button = document.createElement('button');
+            const enabled = !capability || capability.supported;
+            button.textContent = label;
+            button.disabled = !enabled;
+            button.style.cssText = enabled
+                ? `flex:1;min-width:145px;padding:10px 12px;background:${accent};color:#fff;border:1px solid rgba(255,255,255,0.12);border-radius:7px;cursor:pointer;font-weight:700;font-size:12px;transition:filter 0.15s;`
+                : 'flex:1;min-width:145px;padding:10px 12px;background:rgba(255,255,255,0.04);color:#666;border:1px solid rgba(255,255,255,0.06);border-radius:7px;cursor:not-allowed;font-weight:600;font-size:12px;';
+            if (enabled) {
+                button.onmouseover = () => { button.style.filter = 'brightness(1.15)'; };
+                button.onmouseout = () => { button.style.filter = 'brightness(1)'; };
+                button.onclick = onClick;
+            } else if (capability) {
+                button.title = getInsertionCapabilityMessage(capability);
+            }
+            quickActions.appendChild(button);
+        };
+
+        for (const widget of modelWidgets) {
+            const widgetLabel = modelWidgets.length > 1 && widget.name
+                ? (window.anomalous_browser_lang === 'zh' ? `🔀 更换 ${widget.name}` : `🔀 Change ${widget.name}`)
+                : (window.anomalous_browser_lang === 'zh' ? '🔀 更换当前模型' : '🔀 Change Current Model');
+            makeActionButton(widgetLabel, 'rgba(255,152,0,0.75)', () => this._openGalleryReplacer(node, widget));
+        }
+        makeActionButton(
+            window.anomalous_browser_lang === 'zh' ? '⬅ 在前方插入 LoRA' : '⬅ Insert LoRA Before',
+            'rgba(33,150,243,0.65)',
+            () => this.openLoraInsertionPicker(node, 'before'),
+            insertionCapabilities.before,
+        );
+        makeActionButton(
+            window.anomalous_browser_lang === 'zh' ? '在后方插入 LoRA ➡' : 'Insert LoRA After ➡',
+            'rgba(76,175,80,0.65)',
+            () => this.openLoraInsertionPicker(node, 'after'),
+            insertionCapabilities.after,
+        );
+        nodeContent.appendChild(quickActions);
 
 for (const w of modelWidgets) {
             this.renderAssistantModelCard(node, w, nodeContent);
@@ -513,23 +639,15 @@ export function renderAssistantModelCard(node, w, container) {
         metaZone.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
         wrapper.appendChild(metaZone);
 
-        // Gallery replacer button
+        // Secondary action; model replacement lives in the prominent node toolbar.
         const actionRow = document.createElement('div');
         actionRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
-        const browseBtn = document.createElement('button');
-        browseBtn.innerText = window.anomalous_browser_lang === 'zh' ? '🔀 更换模型' : '🔀 Change Model';
-        browseBtn.style.cssText = 'flex:1;padding:9px 12px;background:rgba(255,193,7,0.85);color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:bold;font-size:13px;transition:filter 0.2s;';
-        browseBtn.onmouseover = () => browseBtn.style.filter = 'brightness(1.1)';
-        browseBtn.onmouseout = () => browseBtn.style.filter = 'brightness(1)';
-        browseBtn.onclick = () => this._openGalleryReplacer(node, w);
-
         const profileBtn = document.createElement('button');
         profileBtn.innerText = window.anomalous_browser_lang === 'zh' ? '📖 查看档案' : '📖 View Profile';
-        profileBtn.style.cssText = 'padding:9px 12px;background:rgba(138,180,248,0.1);color:#8AB4F8;border:1px solid rgba(138,180,248,0.3);border-radius:6px;cursor:pointer;font-size:13px;transition:filter 0.2s;';
+        profileBtn.style.cssText = 'flex:1;padding:9px 12px;background:rgba(138,180,248,0.1);color:#8AB4F8;border:1px solid rgba(138,180,248,0.3);border-radius:6px;cursor:pointer;font-size:13px;transition:filter 0.2s;';
         profileBtn.onmouseover = () => profileBtn.style.filter = 'brightness(1.2)';
         profileBtn.onmouseout = () => profileBtn.style.filter = 'brightness(1)';
 
-        actionRow.appendChild(browseBtn);
         actionRow.appendChild(profileBtn);
         wrapper.appendChild(actionRow);
         container.appendChild(wrapper);
@@ -730,155 +848,339 @@ if (img.workflow) {
             }).catch(() => { });
     }
 
-export function _openGalleryReplacer(node, w) {
+export function _openGalleryReplacer(node, w, options = {}) {
+        const zh = window.anomalous_browser_lang === 'zh';
+        const mode = options.mode === 'insert' ? 'insert' : 'replace';
+        const validPaths = getNativeWidgetValues(node, w);
+        if (!validPaths.length) {
+            alert(zh ? '没有可供选择的兼容模型。' : 'No compatible models are available.');
+            return;
+        }
+
+        const normalizePath = value => String(value || '').replace(/\\/g, '/');
+        const getName = value => normalizePath(value).split('/').pop() || normalizePath(value);
+        const getFolder = value => {
+            const normalized = normalizePath(value);
+            const splitAt = normalized.lastIndexOf('/');
+            return splitAt >= 0 ? normalized.slice(0, splitAt) : '';
+        };
+        const currentPath = mode === 'replace'
+            ? validPaths.find(path => normalizePath(path) === normalizePath(w.value)) || null
+            : null;
+        let selectedPath = currentPath;
+        let selectedFolder = '';
+        let previews = {};
+        let renderGeneration = 0;
+        let applying = false;
+
         const modal = document.createElement('div');
-        modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.88);z-index:999999;display:flex;flex-direction:column;padding:40px;box-sizing:border-box;overflow-y:auto;';
-        const closeBtn = document.createElement('button');
-        closeBtn.innerHTML = '✖';
-        closeBtn.style.cssText = 'position:absolute;top:20px;right:20px;background:transparent;border:none;color:#fff;font-size:24px;cursor:pointer;';
-        closeBtn.onclick = () => modal.remove();
-        modal.appendChild(closeBtn);
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:999999;display:flex;flex-direction:column;padding:24px;box-sizing:border-box;color:#fff;font-family:Inter,Arial,sans-serif;';
+        const stopMedia = container => container?.querySelectorAll?.('video,audio').forEach(media => {
+            media.pause();
+            media.removeAttribute('src');
+            media.load?.();
+        });
+        const closeModal = () => {
+            renderGeneration += 1;
+            stopMedia(modal);
+            modal.remove();
+        };
+
+        const header = document.createElement('div');
+        header.style.cssText = 'display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-shrink:0;';
         const title = document.createElement('h2');
-        title.style.cssText = 'color:#fff;margin:0 0 20px 0;font-size:20px;';
-        title.innerText = window.anomalous_browser_lang === 'zh' ? '🖼️ 选择要替换的模型' : '🖼️ Select Replacement Model';
-        modal.appendChild(title);
+        title.style.cssText = 'margin:0;font-size:20px;';
+        title.textContent = mode === 'insert'
+            ? (options.direction === 'before'
+                ? (zh ? '⬅ 在节点前方插入 LoRA' : '⬅ Insert LoRA Before Node')
+                : (zh ? '在节点后方插入 LoRA ➡' : 'Insert LoRA After Node ➡'))
+            : (zh ? '🔀 更换当前模型' : '🔀 Change Current Model');
+        const typeBadge = document.createElement('span');
+        typeBadge.textContent = options.modelTypeLabel || node?.type || w?.name || (zh ? '兼容模型' : 'Compatible');
+        typeBadge.style.cssText = 'padding:4px 9px;border-radius:20px;background:rgba(33,150,243,0.16);border:1px solid rgba(33,150,243,0.35);color:#8ab4f8;font-size:11px;';
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '✕';
+        closeBtn.style.cssText = 'margin-left:auto;background:transparent;border:none;color:#aaa;font-size:24px;cursor:pointer;padding:4px 8px;';
+        closeBtn.onclick = closeModal;
+        header.append(title, typeBadge, closeBtn);
+        modal.appendChild(header);
+
+        const body = document.createElement('div');
+        body.style.cssText = 'display:grid;grid-template-columns:minmax(190px,260px) minmax(0,1fr);gap:16px;min-height:0;flex:1;';
+        const folderPanel = document.createElement('aside');
+        folderPanel.style.cssText = 'background:#171719;border:1px solid #333;border-radius:10px;overflow:auto;padding:10px;';
+        const folderTitle = document.createElement('div');
+        folderTitle.textContent = zh ? '📁 文件夹' : '📁 Folders';
+        folderTitle.style.cssText = 'font-size:13px;font-weight:700;color:#ddd;padding:8px 10px 10px;';
+        const folderList = document.createElement('div');
+        folderList.style.cssText = 'display:flex;flex-direction:column;gap:3px;';
+        folderPanel.append(folderTitle, folderList);
+
+        const content = document.createElement('section');
+        content.style.cssText = 'display:flex;flex-direction:column;min-width:0;min-height:0;background:#151517;border:1px solid #333;border-radius:10px;overflow:hidden;';
+        const toolbar = document.createElement('div');
+        toolbar.style.cssText = 'display:flex;gap:10px;padding:12px;border-bottom:1px solid #333;flex-wrap:wrap;align-items:center;';
         const searchInput = document.createElement('input');
-        searchInput.type = 'text';
-        searchInput.placeholder = window.anomalous_browser_lang === 'zh' ? '🔍 搜索模型名称...' : '🔍 Search model name...';
-        searchInput.style.cssText = 'width:100%;padding:10px;margin-bottom:20px;border-radius:6px;border:1px solid #444;background:#222;color:#fff;font-size:16px;box-sizing:border-box;';
-        modal.appendChild(searchInput);
+        searchInput.type = 'search';
+        searchInput.placeholder = zh ? '🔍 搜索名称或完整路径…' : '🔍 Search name or full path…';
+        searchInput.style.cssText = 'flex:1;min-width:220px;padding:10px 12px;border-radius:7px;border:1px solid #444;background:#222;color:#fff;font-size:14px;outline:none;';
+        const sortSelect = document.createElement('select');
+        sortSelect.style.cssText = 'padding:10px 12px;border-radius:7px;border:1px solid #444;background:#222;color:#fff;font-size:13px;';
+        [
+            ['name-asc', zh ? '名称 A–Z' : 'Name A–Z'],
+            ['name-desc', zh ? '名称 Z–A' : 'Name Z–A'],
+            ['folder-asc', zh ? '按文件夹' : 'By Folder'],
+        ].forEach(([value, label]) => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = label;
+            sortSelect.appendChild(option);
+        });
+        const resultCount = document.createElement('span');
+        resultCount.style.cssText = 'color:#888;font-size:12px;white-space:nowrap;';
+        toolbar.append(searchInput, sortSelect, resultCount);
+        content.appendChild(toolbar);
 
         const loadingText = document.createElement('div');
-        loadingText.innerText = window.anomalous_browser_lang === 'zh' ? '⏳ 正在加载并匹配缩略图...' : '⏳ Loading previews...';
-        loadingText.style.cssText = 'color:#888;font-size:14px;margin-bottom:15px;';
-        modal.appendChild(loadingText);
-
+        loadingText.textContent = zh ? '⏳ 正在加载模型封面…' : '⏳ Loading model covers…';
+        loadingText.style.cssText = 'color:#888;font-size:13px;padding:10px 14px 0;';
+        const gridScroll = document.createElement('div');
+        gridScroll.style.cssText = 'overflow:auto;min-height:0;flex:1;padding:14px;';
         const grid = document.createElement('div');
-        grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:15px;';
-        modal.appendChild(grid);
+        grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;align-content:start;';
+        gridScroll.appendChild(grid);
+        content.append(loadingText, gridScroll);
+        body.append(folderPanel, content);
+        modal.appendChild(body);
+
+        const footer = document.createElement('div');
+        footer.style.cssText = 'display:flex;align-items:center;gap:12px;margin-top:14px;flex-shrink:0;';
+        const selectionText = document.createElement('div');
+        selectionText.style.cssText = 'min-width:0;flex:1;color:#aaa;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = zh ? '取消' : 'Cancel';
+        cancelBtn.style.cssText = 'padding:10px 18px;background:#333;color:#ddd;border:1px solid #555;border-radius:7px;cursor:pointer;';
+        cancelBtn.onclick = closeModal;
+        const confirmBtn = document.createElement('button');
+        confirmBtn.textContent = mode === 'insert'
+            ? (zh ? '插入并自动连线' : 'Insert & Auto-Connect')
+            : (zh ? '确认替换' : 'Confirm Replacement');
+        confirmBtn.style.cssText = 'padding:10px 20px;background:#1976d2;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700;';
+        footer.append(selectionText, cancelBtn, confirmBtn);
+        modal.appendChild(footer);
         document.body.appendChild(modal);
 
-        const validPaths = (w.options && w.options.values) ? w.options.values.filter(v => typeof v === 'string') : [];
-        if (!validPaths.length) { modal.remove(); return; }
-
-fetch('/anomalous/resolve_paths_to_previews', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paths: validPaths })
-        }).then(r => r.json()).then(data => {
-            loadingText.style.display = 'none';
-            const previews = data.previews || {};
-
-            // Render loop with time slicing
-            let renderId = 0;
-            const renderCards = (pathsToRender) => {
-                grid.innerHTML = '';
-                const currentRenderId = ++renderId;
-                let i = 0;
-                const chunk = 40;
-                const renderChunk = () => {
-                    if (currentRenderId !== renderId) return; // Stale render
-                    const end = Math.min(i + chunk, pathsToRender.length);
-                    for (; i < end; i++) {
-                        const path = pathsToRender[i];
-                        const card = document.createElement('div');
-                        card.style.cssText = 'background:#222;border-radius:8px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;border:1px solid #444;transition:transform 0.2s,box-shadow 0.2s;';
-                        card.onmouseover = () => { 
-                            card.style.transform = 'scale(1.05)'; card.style.boxShadow = '0 6px 20px rgba(0,0,0,0.5)'; 
-                            const v = card.querySelector('video'); if (v) v.play().catch(()=>{}); 
-                        };
-                        card.onmouseout = () => { 
-                            card.style.transform = 'scale(1)'; card.style.boxShadow = 'none'; 
-                            const v = card.querySelector('video'); if (v) v.pause(); 
-                        };
-                        const imgBox = document.createElement('div');
-                        imgBox.style.cssText = 'height:150px;background:#111;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:30px;position:relative;overflow:hidden;';
-                        if (previews[path]) {
-                            const isVid = /\.(mp4|webm)(?:$|\?|&|#)/i.test(previews[path]);
-                            if (isVid) {
-                                const vid = document.createElement('video');
-                                vid.src = previews[path]; vid.muted = true; vid.loop = true; vid.autoplay = false; vid.playsInline = true; vid.preload = 'metadata';
-                                vid.style.cssText = 'position:absolute;width:100%;height:100%;object-fit:cover;top:0;left:0;';
-                                imgBox.appendChild(vid);
-                            } else {
-                                imgBox.style.backgroundImage = `url("${previews[path]}")`;
-                            }
-                        } else {
-                            imgBox.innerText = '🖼️';
-                        }
-                        const nameDiv = document.createElement('div');
-                        nameDiv.style.cssText = 'padding:8px;font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-                        nameDiv.innerText = path.split(/[\\/]/).pop();
-                        nameDiv.title = path;
-                        card.appendChild(imgBox);
-                        card.appendChild(nameDiv);
-                        grid.appendChild(card);
-                        card.onclick = async () => {
-                            w.value = path;
-                            const wIdx = node.widgets.indexOf(w);
-                            if (wIdx !== -1 && node.widgets_values) {
-                                node.widgets_values[wIdx] = path;
-                            }
-                            if (w.options && w.options.values && !w.options.values.includes(path)) {
-                                const newVals = [...w.options.values];
-                                newVals.push(path);
-                                w.options.values = newVals;
-                            }
-                            delete node.color; delete node.bgcolor; node.has_errors = false;
-                            
-                            if (app.lastNodeErrors && app.lastNodeErrors[node.id]) {
-                                delete app.lastNodeErrors[node.id];
-                            }
-                            
-                            if (typeof app.clearErrors === 'function') app.clearErrors();
-                            if (w.callback) w.callback(w.value, app.canvas, node, app.canvas.graph_mouse, null);
-                            if (app.graph) {
-                                app.graph.setDirtyCanvas(true, true);
-                                if (app.graph.change) app.graph.change();
-                                try { window.dispatchEvent(new CustomEvent("graphChanged")); } catch(e){}
-                            }
-                            
-                            // Exactly simulate the native "Refresh" button behavior to update the global registry
-                            try {
-                                await fetch('/anomalous/clear_cache', { method: 'POST' });
-                                if (typeof app.refreshComboInNodes === 'function') {
-                                    await app.refreshComboInNodes();
-                                }
-                            } catch(e) {
-                                console.warn("Failed to natively refresh combos:", e);
-                            }
-                            
-                            if (!window.anomalous_has_warned_vue_refresh) {
-                                window.anomalous_has_warned_vue_refresh = true;
-                                const lang = (window.anomalous_browser_lang === 'en') ? 'en' : 'zh';
-                                if (lang === 'en') {
-                                    alert("💡 Tip: ComfyUI V1 caches errors heavily. Please manually click the [Refresh] button in the 'Workflow Overview' side panel, or refresh your browser (F5) to prevent them from turning red again on workflow switch.");
-                                } else {
-                                    alert("💡 提示：ComfyUI V1 对报错的缓存极深。请务必手动点击侧边栏【工作流总览】中的【刷新】按钮，或者直接按 F5 刷新浏览器，否则切换工作流时节点可能会再次变红。");
-                                }
-                            }
-                            
-                            this.diagnoseNode(node);
-                            modal.remove();
-                        };
-                    }
-                    if (i < pathsToRender.length) {
-                        requestAnimationFrame(renderChunk);
-                    }
-                };
-                requestAnimationFrame(renderChunk);
-            };
-
-            renderCards(validPaths);
-
-            searchInput.addEventListener('input', (e) => {
-                const term = e.target.value.toLowerCase();
-                const filtered = validPaths.filter(p => p.toLowerCase().includes(term));
-                renderCards(filtered);
+        const folderCounts = new Map([['', validPaths.length]]);
+        validPaths.forEach(path => {
+            const parts = getFolder(path).split('/').filter(Boolean);
+            let accumulated = '';
+            parts.forEach(part => {
+                accumulated = accumulated ? `${accumulated}/${part}` : part;
+                folderCounts.set(accumulated, (folderCounts.get(accumulated) || 0) + 1);
             });
+        });
 
-        }).catch(e => {
-            console.error('Gallery replacer failed', e);
-            loadingText.innerText = '❌ Failed to load';
+        const updateSelection = () => {
+            selectionText.textContent = selectedPath
+                ? `${zh ? '已选择' : 'Selected'}: ${normalizePath(selectedPath)}`
+                : (zh ? '请选择一个模型。节点连接和强度不会被改动。' : 'Choose a model. Existing connections and strengths will be preserved.');
+            confirmBtn.disabled = !selectedPath || applying;
+            confirmBtn.style.opacity = confirmBtn.disabled ? '0.45' : '1';
+            confirmBtn.style.cursor = confirmBtn.disabled ? 'not-allowed' : 'pointer';
+        };
+
+        let renderCards = () => {};
+        const renderFolders = () => {
+            folderList.replaceChildren();
+            const folders = ['', ...[...folderCounts.keys()].filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))];
+            folders.forEach(folderPath => {
+                const button = document.createElement('button');
+                const depth = folderPath ? folderPath.split('/').length - 1 : 0;
+                const label = folderPath ? folderPath.split('/').pop() : (zh ? '全部模型' : 'All Models');
+                button.textContent = `${folderPath ? '📂' : '📦'} ${label} (${folderCounts.get(folderPath) || 0})`;
+                button.title = folderPath || label;
+                button.style.cssText = `text-align:left;padding:7px 8px 7px ${8 + depth * 14}px;border-radius:6px;border:none;cursor:pointer;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${selectedFolder === folderPath ? '#fff' : '#aaa'};background:${selectedFolder === folderPath ? 'rgba(25,118,210,0.45)' : 'transparent'};`;
+                button.onclick = () => {
+                    selectedFolder = folderPath;
+                    renderFolders();
+                    renderCards();
+                };
+                folderList.appendChild(button);
+            });
+        };
+
+        renderCards = () => {
+            const term = searchInput.value.trim().toLowerCase();
+            const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+            const paths = validPaths.filter(path => {
+                const normalized = normalizePath(path);
+                const folderPath = getFolder(normalized);
+                const inFolder = !selectedFolder || folderPath === selectedFolder || folderPath.startsWith(`${selectedFolder}/`);
+                return inFolder && (!term || normalized.toLowerCase().includes(term));
+            });
+            if (sortSelect.value === 'name-desc') paths.sort((a, b) => collator.compare(getName(b), getName(a)));
+            else if (sortSelect.value === 'folder-asc') paths.sort((a, b) => collator.compare(normalizePath(a), normalizePath(b)));
+            else paths.sort((a, b) => collator.compare(getName(a), getName(b)));
+
+            resultCount.textContent = zh ? `${paths.length} 个结果` : `${paths.length} results`;
+            stopMedia(grid);
+            grid.replaceChildren();
+            const generation = ++renderGeneration;
+            let index = 0;
+            const renderChunk = () => {
+                if (generation !== renderGeneration || !modal.isConnected) return;
+                const fragment = document.createDocumentFragment();
+                const end = Math.min(index + 40, paths.length);
+                for (; index < end; index += 1) {
+                    const path = paths[index];
+                    const isSelected = selectedPath === path;
+                    const isCurrent = currentPath === path;
+                    const card = document.createElement('div');
+                    card.tabIndex = 0;
+                    card.setAttribute('role', 'button');
+                    card.style.cssText = `position:relative;background:#222;border-radius:8px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;border:2px solid ${isSelected ? '#42a5f5' : isCurrent ? '#ffc107' : '#3b3b3b'};box-shadow:${isSelected ? '0 0 0 2px rgba(66,165,245,0.2)' : 'none'};transition:transform 0.12s;min-width:0;`;
+                    const previewBox = document.createElement('div');
+                    previewBox.style.cssText = 'height:150px;background:#101012;display:flex;align-items:center;justify-content:center;font-size:30px;position:relative;overflow:hidden;';
+                    const previewUrl = previews[path];
+                    if (/\.(mp4|webm)(?:$|\?|&|#)/i.test(previewUrl || '')) {
+                        const video = document.createElement('video');
+                        video.src = previewUrl;
+                        video.muted = true;
+                        video.loop = true;
+                        video.playsInline = true;
+                        video.preload = 'metadata';
+                        video.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+                        previewBox.appendChild(video);
+                    } else if (previewUrl) {
+                        const image = document.createElement('img');
+                        image.src = previewUrl;
+                        image.alt = '';
+                        image.loading = 'lazy';
+                        image.decoding = 'async';
+                        image.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+                        previewBox.appendChild(image);
+                    } else {
+                        previewBox.textContent = '🖼️';
+                    }
+                    if (isCurrent) {
+                        const badge = document.createElement('span');
+                        badge.textContent = zh ? '当前' : 'Current';
+                        badge.style.cssText = 'position:absolute;top:6px;left:6px;background:rgba(255,193,7,0.92);color:#111;padding:3px 6px;border-radius:4px;font-size:10px;font-weight:800;';
+                        previewBox.appendChild(badge);
+                    }
+                    const name = document.createElement('div');
+                    name.textContent = getName(path);
+                    name.title = normalizePath(path);
+                    name.style.cssText = 'padding:8px 8px 3px;font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;';
+                    const folder = document.createElement('div');
+                    folder.textContent = getFolder(path) || (zh ? '根目录' : 'Root');
+                    folder.title = getFolder(path);
+                    folder.style.cssText = 'padding:0 8px 8px;font-size:10px;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+                    card.append(previewBox, name, folder);
+                    const choose = () => {
+                        selectedPath = path;
+                        updateSelection();
+                        renderCards();
+                    };
+                    card.onclick = choose;
+                    card.onkeydown = event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            choose();
+                        }
+                    };
+                    card.onmouseenter = () => {
+                        card.style.transform = 'translateY(-2px)';
+                        card.querySelector('video')?.play?.().catch(() => {});
+                    };
+                    card.onmouseleave = () => {
+                        card.style.transform = 'none';
+                        card.querySelector('video')?.pause?.();
+                    };
+                    fragment.appendChild(card);
+                }
+                grid.appendChild(fragment);
+                if (index < paths.length) requestAnimationFrame(renderChunk);
+            };
+            if (paths.length) requestAnimationFrame(renderChunk);
+            else {
+                const empty = document.createElement('div');
+                empty.textContent = zh ? '没有符合条件的模型。' : 'No models match the current filters.';
+                empty.style.cssText = 'color:#777;padding:30px;text-align:center;grid-column:1/-1;';
+                grid.appendChild(empty);
+            }
+        };
+
+        confirmBtn.onclick = () => {
+            if (!selectedPath || applying) return;
+            applying = true;
+            updateSelection();
+            const oldValue = w.value;
+            try {
+                if (mode === 'insert') {
+                    setWidgetValue(node, w, selectedPath);
+                    spliceModelChainNode({ graph: app.graph, anchorNode: options.anchorNode, insertedNode: node, direction: options.direction });
+                    try {
+                        if (typeof w.callback === 'function') w.callback(w.value, app.canvas, node, app.canvas?.graph_mouse, null);
+                    } catch (error) {
+                        console.warn('[Anomalous] LoRA widget callback failed:', error);
+                    }
+                } else {
+                    app.graph?.beforeChange?.(node);
+                    try {
+                        setWidgetValue(node, w, selectedPath);
+                        if (typeof w.callback === 'function') w.callback(w.value, app.canvas, node, app.canvas?.graph_mouse, null);
+                        app.graph?.afterChange?.(node);
+                    } catch (error) {
+                        setWidgetValue(node, w, oldValue);
+                        app.graph?.afterChange?.(node);
+                        throw error;
+                    }
+                    app.graph?.change?.();
+                    app.graph?.setDirtyCanvas?.(true, true);
+                }
+                delete node.color;
+                delete node.bgcolor;
+                node.has_errors = false;
+                if (app.lastNodeErrors?.[node.id]) delete app.lastNodeErrors[node.id];
+                if (typeof app.clearErrors === 'function') app.clearErrors();
+                try { window.dispatchEvent(new CustomEvent('graphChanged')); } catch (error) {}
+                closeModal();
+                if (mode === 'insert' && app.canvas?.selectNode) app.canvas.selectNode(node);
+                else this.diagnoseNode(node);
+            } catch (error) {
+                setWidgetValue(node, w, oldValue);
+                applying = false;
+                updateSelection();
+                console.error('[Anomalous] Failed to apply model choice:', error);
+                alert(zh ? `操作失败：${error.message}` : `Operation failed: ${error.message}`);
+            }
+        };
+
+        searchInput.oninput = renderCards;
+        sortSelect.onchange = renderCards;
+        modal.onkeydown = event => { if (event.key === 'Escape') closeModal(); };
+        renderFolders();
+        updateSelection();
+        renderCards();
+        setTimeout(() => searchInput.focus(), 0);
+
+        fetch('/anomalous/resolve_paths_to_previews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paths: validPaths }),
+        }).then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        }).then(data => {
+            if (!modal.isConnected) return;
+            previews = data.previews || {};
+            loadingText.style.display = 'none';
+            renderCards();
+        }).catch(error => {
+            if (!modal.isConnected) return;
+            console.error('[Anomalous] Failed to load model previews:', error);
+            loadingText.textContent = zh ? '⚠️ 封面加载失败，仍可按名称选择模型。' : '⚠️ Covers failed to load; models remain selectable by name.';
         });
     }
 

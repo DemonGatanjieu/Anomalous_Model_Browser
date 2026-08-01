@@ -28,7 +28,7 @@ function unsupported(direction, code, details = {}) {
 }
 
 export function analyzeModelChainInsertion(graph, anchorNode, direction) {
-    if (!graph || !anchorNode || !MODEL_CHAIN_TYPES.includes('MODEL')) {
+    if (!graph || !anchorNode) {
         return unsupported(direction, 'missing_graph_or_node');
     }
     if (direction !== 'before' && direction !== 'after') {
@@ -212,4 +212,3 @@ export function spliceModelChainNode({ graph, anchorNode, insertedNode, directio
         throw error;
     }
 }
-

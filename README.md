@@ -33,7 +33,7 @@
 
 #### 3. Visual Swapping (Node Assistant) 🤖
 * **Location**: The third Robot icon (**🤖**) from the bottom left.
-* **Operation**: After opening, select any model node on your ComfyUI canvas. The Assistant will recognize the node's info (gallery, notes, cover, details, and trigger words). It allows you to quickly visually replace it with other models.
+* **Operation**: After opening, select a model node on your ComfyUI canvas. The prominent action bar can visually replace its current model or insert a LoRA before/after a compatible MODEL + CLIP chain. The picker automatically stays within the node's native model type and supports folder browsing, full-path search, and sorting. Ambiguous multi-branch chains are left unchanged.
 
 #### 4. Settings Panel ⚙️
 * **Location**: The Gear icon (**⚙️**) at the bottom left.
@@ -90,7 +90,7 @@ git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
 
 #### 3. 选中交互 (节点助手) 🤖
 * **具体位置**：左侧底部第三个 **机器人按钮 (🤖)**。
-* **操作步骤**：打开后，在画布上点击选择任意一个模型节点。助手会瞬间识别该节点，支持查看它的历史图库、备注、封面、触发词等。它还能让您通过视觉化的模型封面，直接在侧边栏快捷替换其他模型。
+* **操作步骤**：打开后，在画布上选择模型节点。顶部醒目的操作栏可以替换当前模型，也可在兼容的 MODEL + CLIP 链前方或后方插入 LoRA。选择器会自动限定为节点原生支持的模型类型，并提供文件夹浏览、完整路径搜索和排序；遇到有歧义的多分支链路时不会擅自修改。
 
 #### 4. 个性化配置 (设置面板) ⚙️
 * **具体位置**：左侧底部的 **齿轮按钮 (⚙️)**。
