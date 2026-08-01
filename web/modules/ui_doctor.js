@@ -5,6 +5,12 @@ import {
     getModelChainInsertionCapabilities,
     spliceModelChainNode,
 } from './graph_splice.js';
+import {
+    collectMainModelContextRequests,
+    formatModelTypeLabel,
+    getBaseModelFamily,
+    inferPickerModelType,
+} from './model_picker.js';
 /**
  * ui_doctor.js
  * Extracted Doctor Panel & Assistant Panel methods.
@@ -230,26 +236,43 @@ for (const w of node.widgets) {
         nodeContent.innerHTML = '';
 
         const titleBar = document.createElement('div');
-        titleBar.style.cssText = 'padding:14px 20px 12px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:10px;flex-shrink:0;';
-        titleBar.innerHTML = `<span style="font-size:18px;">🤖</span><span class="ast-title" style="font-weight:bold;color:#fff;font-size:14px;"></span><span class="ast-type" style="font-size:11px;color:#555;margin-left:auto;"></span>`;
+        titleBar.style.cssText = 'margin:14px 16px 0;padding:16px;border:1px solid rgba(138,180,248,0.16);border-radius:14px;background:linear-gradient(135deg,rgba(48,58,86,0.72),rgba(20,22,31,0.92));display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 12px 30px rgba(0,0,0,0.18);';
+        titleBar.innerHTML = `<span style="width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;background:linear-gradient(135deg,#8ab4f8,#7c4dff);box-shadow:0 6px 16px rgba(66,133,244,0.3);">🤖</span><span style="display:flex;flex-direction:column;min-width:0;gap:3px;"><span style="font-size:10px;letter-spacing:0.11em;text-transform:uppercase;color:#8ab4f8;">${window.anomalous_browser_lang === 'zh' ? '当前选中节点' : 'Selected node'}</span><span class="ast-title" style="font-weight:750;color:#fff;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span></span><span class="ast-type" style="font-size:10px;color:#c9d6ff;margin-left:auto;padding:5px 8px;border-radius:999px;border:1px solid rgba(138,180,248,0.24);background:rgba(138,180,248,0.08);max-width:38%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>`;
         titleBar.querySelector('.ast-title').textContent = node.title || node.type || 'Node';
         titleBar.querySelector('.ast-type').textContent = node.type || '';
         nodeContent.appendChild(titleBar);
 
         const quickActions = document.createElement('div');
-        quickActions.style.cssText = 'padding:12px 20px;background:rgba(255,255,255,0.025);border-bottom:1px solid rgba(255,255,255,0.07);display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0;';
+        quickActions.style.cssText = 'padding:14px 16px 4px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;flex-shrink:0;';
+        const actionsLabel = document.createElement('div');
+        actionsLabel.textContent = window.anomalous_browser_lang === 'zh' ? '快捷操作' : 'Quick actions';
+        actionsLabel.style.cssText = 'grid-column:1/-1;color:#8b91a3;font-size:10px;font-weight:750;letter-spacing:0.1em;text-transform:uppercase;padding:0 2px 2px;';
+        quickActions.appendChild(actionsLabel);
 
-        const makeActionButton = (label, accent, onClick, capability = null) => {
+        const makeActionButton = ({ icon, label, hint, accent, onClick, capability = null, primary = false }) => {
             const button = document.createElement('button');
             const enabled = !capability || capability.supported;
-            button.textContent = label;
             button.disabled = !enabled;
-            button.style.cssText = enabled
-                ? `flex:1;min-width:145px;padding:10px 12px;background:${accent};color:#fff;border:1px solid rgba(255,255,255,0.12);border-radius:7px;cursor:pointer;font-weight:700;font-size:12px;transition:filter 0.15s;`
-                : 'flex:1;min-width:145px;padding:10px 12px;background:rgba(255,255,255,0.04);color:#666;border:1px solid rgba(255,255,255,0.06);border-radius:7px;cursor:not-allowed;font-weight:600;font-size:12px;';
+            const gridPlacement = primary ? 'grid-column:1/-1;' : '';
+            button.style.cssText = gridPlacement + (enabled
+                ? `min-width:0;padding:${primary ? '13px 14px' : '11px 10px'};background:${accent};color:#fff;border:1px solid rgba(255,255,255,0.14);border-radius:11px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;transition:transform 0.15s,filter 0.15s,box-shadow 0.15s;box-shadow:0 8px 18px rgba(0,0,0,0.14);`
+                : 'min-width:0;padding:11px 10px;background:rgba(255,255,255,0.035);color:#656b78;border:1px solid rgba(255,255,255,0.055);border-radius:11px;cursor:not-allowed;text-align:left;display:flex;align-items:center;gap:9px;');
+            const iconEl = document.createElement('span');
+            iconEl.textContent = icon;
+            iconEl.style.cssText = `width:${primary ? '34px' : '28px'};height:${primary ? '34px' : '28px'};border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,${enabled ? '0.14' : '0.04'});font-size:${primary ? '17px' : '14px'};flex-shrink:0;`;
+            const copy = document.createElement('span');
+            copy.style.cssText = 'min-width:0;display:flex;flex-direction:column;gap:2px;';
+            const title = document.createElement('span');
+            title.textContent = label;
+            title.style.cssText = `font-weight:750;font-size:${primary ? '13px' : '11px'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
+            const subtitle = document.createElement('span');
+            subtitle.textContent = enabled ? hint : getInsertionCapabilityMessage(capability);
+            subtitle.style.cssText = `font-size:9px;color:${enabled ? 'rgba(255,255,255,0.68)' : '#555b66'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
+            copy.append(title, subtitle);
+            button.append(iconEl, copy);
             if (enabled) {
-                button.onmouseover = () => { button.style.filter = 'brightness(1.15)'; };
-                button.onmouseout = () => { button.style.filter = 'brightness(1)'; };
+                button.onmouseover = () => { button.style.filter = 'brightness(1.12)'; button.style.transform = 'translateY(-1px)'; };
+                button.onmouseout = () => { button.style.filter = 'brightness(1)'; button.style.transform = 'none'; };
                 button.onclick = onClick;
             } else if (capability) {
                 button.title = getInsertionCapabilityMessage(capability);
@@ -259,22 +282,34 @@ for (const w of node.widgets) {
 
         for (const widget of modelWidgets) {
             const widgetLabel = modelWidgets.length > 1 && widget.name
-                ? (window.anomalous_browser_lang === 'zh' ? `🔀 更换 ${widget.name}` : `🔀 Change ${widget.name}`)
-                : (window.anomalous_browser_lang === 'zh' ? '🔀 更换当前模型' : '🔀 Change Current Model');
-            makeActionButton(widgetLabel, 'rgba(255,152,0,0.75)', () => this._openGalleryReplacer(node, widget));
+                ? (window.anomalous_browser_lang === 'zh' ? `更换 ${widget.name}` : `Change ${widget.name}`)
+                : (window.anomalous_browser_lang === 'zh' ? '更换当前模型' : 'Change current model');
+            const pickerType = inferPickerModelType(node, widget);
+            makeActionButton({
+                icon: '⇄',
+                label: widgetLabel,
+                hint: window.anomalous_browser_lang === 'zh' ? `${pickerType.label} · 可视化选择` : `${pickerType.label} · Visual picker`,
+                accent: 'linear-gradient(135deg,rgba(245,124,0,0.96),rgba(255,82,82,0.82))',
+                onClick: () => this._openGalleryReplacer(node, widget),
+                primary: true,
+            });
         }
-        makeActionButton(
-            window.anomalous_browser_lang === 'zh' ? '⬅ 在前方插入 LoRA' : '⬅ Insert LoRA Before',
-            'rgba(33,150,243,0.65)',
-            () => this.openLoraInsertionPicker(node, 'before'),
-            insertionCapabilities.before,
-        );
-        makeActionButton(
-            window.anomalous_browser_lang === 'zh' ? '在后方插入 LoRA ➡' : 'Insert LoRA After ➡',
-            'rgba(76,175,80,0.65)',
-            () => this.openLoraInsertionPicker(node, 'after'),
-            insertionCapabilities.after,
-        );
+        makeActionButton({
+            icon: '←',
+            label: window.anomalous_browser_lang === 'zh' ? '前方插入 LoRA' : 'Insert LoRA before',
+            hint: window.anomalous_browser_lang === 'zh' ? '接入节点输入端' : 'Connect to node inputs',
+            accent: 'linear-gradient(135deg,rgba(25,118,210,0.9),rgba(80,110,230,0.82))',
+            onClick: () => this.openLoraInsertionPicker(node, 'before'),
+            capability: insertionCapabilities.before,
+        });
+        makeActionButton({
+            icon: '→',
+            label: window.anomalous_browser_lang === 'zh' ? '后方插入 LoRA' : 'Insert LoRA after',
+            hint: window.anomalous_browser_lang === 'zh' ? '接入节点输出端' : 'Connect to node outputs',
+            accent: 'linear-gradient(135deg,rgba(0,137,123,0.92),rgba(67,160,71,0.82))',
+            onClick: () => this.openLoraInsertionPicker(node, 'after'),
+            capability: insertionCapabilities.after,
+        });
         nodeContent.appendChild(quickActions);
 
 for (const w of modelWidgets) {
@@ -614,25 +649,36 @@ if (!this._assistantPanelHooked) {
 export function renderAssistantModelCard(node, w, container) {
         const val = w.value;
         const filename = val.split(/[\\/]/).pop();
+        const pickerType = inferPickerModelType(node, w);
 
         const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;flex-direction:column;gap:14px;';
+        wrapper.style.cssText = 'margin:12px 16px 16px;padding:10px;border:1px solid rgba(255,255,255,0.075);border-radius:14px;background:linear-gradient(160deg,rgba(31,33,42,0.96),rgba(20,21,27,0.96));display:flex;flex-direction:column;gap:12px;box-shadow:0 16px 35px rgba(0,0,0,0.2);';
 
         // Preview image
         const previewBox = document.createElement('div');
-        previewBox.style.cssText = 'width:100%;aspect-ratio:1.5;max-height:280px;background:#0c0c0e;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
+        previewBox.style.cssText = 'width:100%;aspect-ratio:1.65;max-height:260px;background:radial-gradient(circle at 50% 20%,#252a3b,#0b0c10 70%);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,0.05);';
         previewBox.innerHTML = `<span style="color:#444;font-size:13px;">${window.anomalous_browser_lang === 'zh' ? '加载预览...' : 'Loading preview...'}</span>`;
         wrapper.appendChild(previewBox);
 
         // Name and path
+        const identityRow = document.createElement('div');
+        identityRow.style.cssText = 'display:flex;align-items:flex-start;gap:10px;padding:0 3px;';
+        const identityCopy = document.createElement('div');
+        identityCopy.style.cssText = 'display:flex;flex-direction:column;gap:4px;min-width:0;flex:1;';
         const nameEl = document.createElement('div');
-        nameEl.style.cssText = 'color:#fff;font-weight:bold;font-size:14px;word-break:break-all;';
+        nameEl.style.cssText = 'color:#fff;font-weight:750;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        nameEl.title = filename;
         nameEl.innerText = filename;
         const pathEl = document.createElement('div');
-        pathEl.style.cssText = 'color:#555;font-size:11px;word-break:break-all;margin-top:-10px;';
+        pathEl.style.cssText = 'color:#646b7a;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        pathEl.title = val;
         pathEl.innerText = val;
-        wrapper.appendChild(nameEl);
-        wrapper.appendChild(pathEl);
+        const modelTypeBadge = document.createElement('span');
+        modelTypeBadge.textContent = pickerType.label;
+        modelTypeBadge.style.cssText = 'padding:5px 8px;border-radius:999px;background:rgba(138,180,248,0.1);border:1px solid rgba(138,180,248,0.22);color:#a9c7ff;font-size:9px;font-weight:750;white-space:nowrap;';
+        identityCopy.append(nameEl, pathEl);
+        identityRow.append(identityCopy, modelTypeBadge);
+        wrapper.appendChild(identityRow);
 
         // Metadata zone (populated async)
         const metaZone = document.createElement('div');
@@ -644,7 +690,7 @@ export function renderAssistantModelCard(node, w, container) {
         actionRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
         const profileBtn = document.createElement('button');
         profileBtn.innerText = window.anomalous_browser_lang === 'zh' ? '📖 查看档案' : '📖 View Profile';
-        profileBtn.style.cssText = 'flex:1;padding:9px 12px;background:rgba(138,180,248,0.1);color:#8AB4F8;border:1px solid rgba(138,180,248,0.3);border-radius:6px;cursor:pointer;font-size:13px;transition:filter 0.2s;';
+        profileBtn.style.cssText = 'flex:1;padding:10px 12px;background:rgba(138,180,248,0.09);color:#a9c7ff;border:1px solid rgba(138,180,248,0.22);border-radius:9px;cursor:pointer;font-size:12px;font-weight:700;transition:filter 0.2s;';
         profileBtn.onmouseover = () => profileBtn.style.filter = 'brightness(1.2)';
         profileBtn.onmouseout = () => profileBtn.style.filter = 'brightness(1)';
 
@@ -695,19 +741,14 @@ if (isVid) {
                     const meta = d.model.metadata;
 
                     // Type + base model badges
-if (d.type || meta.baseModel) {
+                    if (d.type) modelTypeBadge.textContent = formatModelTypeLabel(d.type, pickerType.label);
+                    if (meta.baseModel) {
                         const badgeRow = document.createElement('div');
                         badgeRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
-if (d.type) {
-                            const b = document.createElement('span');
-                            b.style.cssText = 'background:rgba(138,180,248,0.15);color:#8AB4F8;padding:3px 8px;border-radius:4px;font-size:11px;';
-                            b.innerText = d.type; badgeRow.appendChild(b);
-                        }
-if (meta.baseModel) {
-                            const b = document.createElement('span');
-                            b.style.cssText = 'background:rgba(0,255,204,0.1);color:#00ffcc;padding:3px 8px;border-radius:4px;font-size:11px;';
-                            b.innerText = meta.baseModel; badgeRow.appendChild(b);
-                        }
+                        const b = document.createElement('span');
+                        b.style.cssText = 'background:rgba(0,255,204,0.08);border:1px solid rgba(0,255,204,0.15);color:#77e6cf;padding:4px 8px;border-radius:999px;font-size:10px;';
+                        b.innerText = `${window.anomalous_browser_lang === 'zh' ? '基础模型' : 'Base'} · ${meta.baseModel}`;
+                        badgeRow.appendChild(b);
                         metaZone.appendChild(badgeRow);
                     }
 
@@ -851,6 +892,7 @@ if (img.workflow) {
 export function _openGalleryReplacer(node, w, options = {}) {
         const zh = window.anomalous_browser_lang === 'zh';
         const mode = options.mode === 'insert' ? 'insert' : 'replace';
+        const pickerType = inferPickerModelType(node, w, options);
         const validPaths = getNativeWidgetValues(node, w);
         if (!validPaths.length) {
             alert(zh ? '没有可供选择的兼容模型。' : 'No compatible models are available.');
@@ -867,14 +909,20 @@ export function _openGalleryReplacer(node, w, options = {}) {
         const currentPath = mode === 'replace'
             ? validPaths.find(path => normalizePath(path) === normalizePath(w.value)) || null
             : null;
+        const contextRequests = pickerType.isLora
+            ? collectMainModelContextRequests(app.graph, options.anchorNode || node)
+            : [];
         let selectedPath = currentPath;
         let selectedFolder = '';
         let previews = {};
+        let modelInfo = {};
+        let contextModels = {};
+        let selectedBaseFamily = '';
         let renderGeneration = 0;
         let applying = false;
 
         const modal = document.createElement('div');
-        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:999999;display:flex;flex-direction:column;padding:24px;box-sizing:border-box;color:#fff;font-family:Inter,Arial,sans-serif;';
+        modal.style.cssText = 'position:fixed;inset:0;background:radial-gradient(circle at 15% 0%,rgba(53,73,118,0.34),transparent 35%),rgba(7,8,12,0.965);z-index:999999;display:flex;flex-direction:column;padding:22px 24px;box-sizing:border-box;color:#fff;font-family:Inter,Arial,sans-serif;';
         const stopMedia = container => container?.querySelectorAll?.('video,audio').forEach(media => {
             media.pause();
             media.removeAttribute('src');
@@ -887,28 +935,41 @@ export function _openGalleryReplacer(node, w, options = {}) {
         };
 
         const header = document.createElement('div');
-        header.style.cssText = 'display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-shrink:0;';
+        header.style.cssText = 'display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-shrink:0;';
+        const headerIcon = document.createElement('span');
+        headerIcon.textContent = mode === 'insert' ? '＋' : '⇄';
+        headerIcon.style.cssText = 'width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:12px;background:linear-gradient(135deg,#4776e6,#8e54e9);font-size:21px;font-weight:800;box-shadow:0 8px 22px rgba(78,91,220,0.35);';
+        const headerCopy = document.createElement('div');
+        headerCopy.style.cssText = 'display:flex;flex-direction:column;gap:3px;';
+        const eyebrow = document.createElement('div');
+        eyebrow.textContent = zh ? '节点助手 · 模型选择器' : 'Node Assistant · Model Picker';
+        eyebrow.style.cssText = 'font-size:10px;color:#8fa8da;letter-spacing:0.12em;text-transform:uppercase;font-weight:750;';
         const title = document.createElement('h2');
-        title.style.cssText = 'margin:0;font-size:20px;';
+        title.style.cssText = 'margin:0;font-size:19px;line-height:1.15;';
         title.textContent = mode === 'insert'
             ? (options.direction === 'before'
                 ? (zh ? '⬅ 在节点前方插入 LoRA' : '⬅ Insert LoRA Before Node')
                 : (zh ? '在节点后方插入 LoRA ➡' : 'Insert LoRA After Node ➡'))
             : (zh ? '🔀 更换当前模型' : '🔀 Change Current Model');
         const typeBadge = document.createElement('span');
-        typeBadge.textContent = options.modelTypeLabel || node?.type || w?.name || (zh ? '兼容模型' : 'Compatible');
-        typeBadge.style.cssText = 'padding:4px 9px;border-radius:20px;background:rgba(33,150,243,0.16);border:1px solid rgba(33,150,243,0.35);color:#8ab4f8;font-size:11px;';
+        typeBadge.textContent = pickerType.label;
+        typeBadge.style.cssText = 'padding:5px 10px;border-radius:20px;background:rgba(138,180,248,0.1);border:1px solid rgba(138,180,248,0.25);color:#a9c7ff;font-size:10px;font-weight:750;';
         const closeBtn = document.createElement('button');
         closeBtn.textContent = '✕';
-        closeBtn.style.cssText = 'margin-left:auto;background:transparent;border:none;color:#aaa;font-size:24px;cursor:pointer;padding:4px 8px;';
+        closeBtn.style.cssText = 'margin-left:auto;width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);color:#aaa;font-size:20px;cursor:pointer;';
         closeBtn.onclick = closeModal;
-        header.append(title, typeBadge, closeBtn);
+        headerCopy.append(eyebrow, title);
+        header.append(headerIcon, headerCopy, typeBadge, closeBtn);
         modal.appendChild(header);
 
+        const compatibilityHint = document.createElement('div');
+        compatibilityHint.style.cssText = 'display:none;align-items:center;gap:8px;margin:0 0 12px;padding:9px 12px;border-radius:10px;background:rgba(0,200,160,0.075);border:1px solid rgba(0,220,180,0.13);color:#8edfd0;font-size:11px;flex-shrink:0;';
+        modal.appendChild(compatibilityHint);
+
         const body = document.createElement('div');
-        body.style.cssText = 'display:grid;grid-template-columns:minmax(190px,260px) minmax(0,1fr);gap:16px;min-height:0;flex:1;';
+        body.style.cssText = 'display:grid;grid-template-columns:minmax(190px,250px) minmax(0,1fr);gap:14px;min-height:0;flex:1;';
         const folderPanel = document.createElement('aside');
-        folderPanel.style.cssText = 'background:#171719;border:1px solid #333;border-radius:10px;overflow:auto;padding:10px;';
+        folderPanel.style.cssText = 'background:rgba(20,22,29,0.92);border:1px solid rgba(255,255,255,0.075);border-radius:13px;overflow:auto;padding:10px;box-shadow:0 14px 35px rgba(0,0,0,0.18);';
         const folderTitle = document.createElement('div');
         folderTitle.textContent = zh ? '📁 文件夹' : '📁 Folders';
         folderTitle.style.cssText = 'font-size:13px;font-weight:700;color:#ddd;padding:8px 10px 10px;';
@@ -917,15 +978,21 @@ export function _openGalleryReplacer(node, w, options = {}) {
         folderPanel.append(folderTitle, folderList);
 
         const content = document.createElement('section');
-        content.style.cssText = 'display:flex;flex-direction:column;min-width:0;min-height:0;background:#151517;border:1px solid #333;border-radius:10px;overflow:hidden;';
+        content.style.cssText = 'display:flex;flex-direction:column;min-width:0;min-height:0;background:rgba(18,20,27,0.92);border:1px solid rgba(255,255,255,0.075);border-radius:13px;overflow:hidden;box-shadow:0 14px 35px rgba(0,0,0,0.18);';
         const toolbar = document.createElement('div');
         toolbar.style.cssText = 'display:flex;gap:10px;padding:12px;border-bottom:1px solid #333;flex-wrap:wrap;align-items:center;';
         const searchInput = document.createElement('input');
         searchInput.type = 'search';
         searchInput.placeholder = zh ? '🔍 搜索名称或完整路径…' : '🔍 Search name or full path…';
-        searchInput.style.cssText = 'flex:1;min-width:220px;padding:10px 12px;border-radius:7px;border:1px solid #444;background:#222;color:#fff;font-size:14px;outline:none;';
+        searchInput.style.cssText = 'flex:1;min-width:220px;padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:#222631;color:#fff;font-size:13px;outline:none;';
+        const baseFilterSelect = document.createElement('select');
+        baseFilterSelect.style.cssText = `display:${pickerType.isLora ? 'block' : 'none'};padding:10px 12px;border-radius:9px;border:1px solid rgba(0,220,180,0.2);background:#1d292b;color:#9be8d9;font-size:12px;max-width:230px;`;
+        const allBaseOption = document.createElement('option');
+        allBaseOption.value = '';
+        allBaseOption.textContent = zh ? '主模型：全部类型' : 'Main model: All types';
+        baseFilterSelect.appendChild(allBaseOption);
         const sortSelect = document.createElement('select');
-        sortSelect.style.cssText = 'padding:10px 12px;border-radius:7px;border:1px solid #444;background:#222;color:#fff;font-size:13px;';
+        sortSelect.style.cssText = 'padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:#222631;color:#fff;font-size:12px;';
         [
             ['name-asc', zh ? '名称 A–Z' : 'Name A–Z'],
             ['name-desc', zh ? '名称 Z–A' : 'Name Z–A'],
@@ -938,7 +1005,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
         });
         const resultCount = document.createElement('span');
         resultCount.style.cssText = 'color:#888;font-size:12px;white-space:nowrap;';
-        toolbar.append(searchInput, sortSelect, resultCount);
+        toolbar.append(searchInput, baseFilterSelect, sortSelect, resultCount);
         content.appendChild(toolbar);
 
         const loadingText = document.createElement('div');
@@ -970,15 +1037,25 @@ export function _openGalleryReplacer(node, w, options = {}) {
         modal.appendChild(footer);
         document.body.appendChild(modal);
 
-        const folderCounts = new Map([['', validPaths.length]]);
-        validPaths.forEach(path => {
-            const parts = getFolder(path).split('/').filter(Boolean);
-            let accumulated = '';
-            parts.forEach(part => {
-                accumulated = accumulated ? `${accumulated}/${part}` : part;
-                folderCounts.set(accumulated, (folderCounts.get(accumulated) || 0) + 1);
+        let folderCounts = new Map();
+        const pathMatchesBaseFilter = path => {
+            if (!selectedBaseFamily) return true;
+            const baseModel = modelInfo[path]?.metadata?.baseModel;
+            return getBaseModelFamily(baseModel) === selectedBaseFamily;
+        };
+        const rebuildFolderCounts = () => {
+            const visibleByBase = validPaths.filter(pathMatchesBaseFilter);
+            folderCounts = new Map([['', visibleByBase.length]]);
+            visibleByBase.forEach(path => {
+                const parts = getFolder(path).split('/').filter(Boolean);
+                let accumulated = '';
+                parts.forEach(part => {
+                    accumulated = accumulated ? `${accumulated}/${part}` : part;
+                    folderCounts.set(accumulated, (folderCounts.get(accumulated) || 0) + 1);
+                });
             });
-        });
+        };
+        rebuildFolderCounts();
 
         const updateSelection = () => {
             selectionText.textContent = selectedPath
@@ -990,6 +1067,60 @@ export function _openGalleryReplacer(node, w, options = {}) {
         };
 
         let renderCards = () => {};
+        const configureBaseFilter = () => {
+            if (!pickerType.isLora) return;
+            const groups = new Map();
+            validPaths.forEach(path => {
+                const baseModel = modelInfo[path]?.metadata?.baseModel;
+                const family = getBaseModelFamily(baseModel);
+                if (!family) return;
+                const existing = groups.get(family) || { label: baseModel, count: 0 };
+                existing.count += 1;
+                if (String(baseModel).length < String(existing.label).length) existing.label = baseModel;
+                groups.set(family, existing);
+            });
+
+            baseFilterSelect.replaceChildren(allBaseOption);
+            [...groups.entries()]
+                .sort((a, b) => String(a[1].label).localeCompare(String(b[1].label), undefined, { numeric: true }))
+                .forEach(([family, group]) => {
+                    const option = document.createElement('option');
+                    option.value = family;
+                    option.textContent = `${group.label} (${group.count})`;
+                    baseFilterSelect.appendChild(option);
+                });
+
+            const mainBaseModel = Object.values(contextModels)
+                .map(item => item?.metadata?.baseModel)
+                .find(Boolean) || '';
+            const currentBaseModel = currentPath ? modelInfo[currentPath]?.metadata?.baseModel || '' : '';
+            const preferredBaseModel = mainBaseModel || currentBaseModel;
+            const preferredFamily = getBaseModelFamily(preferredBaseModel);
+            selectedBaseFamily = preferredFamily && groups.has(preferredFamily) ? preferredFamily : '';
+            baseFilterSelect.value = selectedBaseFamily;
+            if (selectedBaseFamily && selectedPath && !pathMatchesBaseFilter(selectedPath)) selectedPath = null;
+            rebuildFolderCounts();
+
+            compatibilityHint.style.display = 'flex';
+            if (mainBaseModel && selectedBaseFamily) {
+                compatibilityHint.textContent = zh
+                    ? `✨ 已根据主模型 ${mainBaseModel} 自动筛选兼容 LoRA；可在上方切换为全部类型。`
+                    : `✨ Compatible LoRAs are filtered for the main model ${mainBaseModel}. Use the filter above to show all types.`;
+            } else if (preferredBaseModel && selectedBaseFamily) {
+                compatibilityHint.textContent = zh
+                    ? `✨ 未找到已连接主模型，已根据当前 LoRA 的 ${preferredBaseModel} 标注筛选。`
+                    : `✨ No connected main model was identified, so the current LoRA tag ${preferredBaseModel} is used.`;
+            } else if (mainBaseModel) {
+                compatibilityHint.textContent = zh
+                    ? `ℹ 已识别主模型 ${mainBaseModel}，但没有同类 LoRA 标注，因此暂时显示全部。`
+                    : `ℹ Main model ${mainBaseModel} was identified, but no matching LoRA tags were found, so all models remain visible.`;
+            } else {
+                compatibilityHint.textContent = zh
+                    ? 'ℹ 未识别到主模型类型，暂时显示全部 LoRA；你仍可手动按基础模型筛选。'
+                    : 'ℹ The main model type could not be identified. All LoRAs remain visible and can be filtered manually.';
+            }
+        };
+
         const renderFolders = () => {
             folderList.replaceChildren();
             const folders = ['', ...[...folderCounts.keys()].filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))];
@@ -1016,7 +1147,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
                 const normalized = normalizePath(path);
                 const folderPath = getFolder(normalized);
                 const inFolder = !selectedFolder || folderPath === selectedFolder || folderPath.startsWith(`${selectedFolder}/`);
-                return inFolder && (!term || normalized.toLowerCase().includes(term));
+                return pathMatchesBaseFilter(path) && inFolder && (!term || normalized.toLowerCase().includes(term));
             });
             if (sortSelect.value === 'name-desc') paths.sort((a, b) => collator.compare(getName(b), getName(a)));
             else if (sortSelect.value === 'folder-asc') paths.sort((a, b) => collator.compare(normalizePath(a), normalizePath(b)));
@@ -1035,13 +1166,15 @@ export function _openGalleryReplacer(node, w, options = {}) {
                     const path = paths[index];
                     const isSelected = selectedPath === path;
                     const isCurrent = currentPath === path;
+                    const info = modelInfo[path] || {};
+                    const baseModel = info.metadata?.baseModel || '';
                     const card = document.createElement('div');
                     card.tabIndex = 0;
                     card.setAttribute('role', 'button');
-                    card.style.cssText = `position:relative;background:#222;border-radius:8px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;border:2px solid ${isSelected ? '#42a5f5' : isCurrent ? '#ffc107' : '#3b3b3b'};box-shadow:${isSelected ? '0 0 0 2px rgba(66,165,245,0.2)' : 'none'};transition:transform 0.12s;min-width:0;`;
+                    card.style.cssText = `position:relative;background:linear-gradient(160deg,#252935,#1b1d24);border-radius:11px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;border:1px solid ${isSelected ? '#6ea8ff' : isCurrent ? '#e9b949' : 'rgba(255,255,255,0.09)'};box-shadow:${isSelected ? '0 0 0 2px rgba(88,151,255,0.22),0 14px 28px rgba(0,0,0,0.28)' : '0 8px 20px rgba(0,0,0,0.16)'};transition:transform 0.12s,box-shadow 0.12s;min-width:0;`;
                     const previewBox = document.createElement('div');
-                    previewBox.style.cssText = 'height:150px;background:#101012;display:flex;align-items:center;justify-content:center;font-size:30px;position:relative;overflow:hidden;';
-                    const previewUrl = previews[path];
+                    previewBox.style.cssText = 'height:150px;background:radial-gradient(circle at 50% 15%,#2b3041,#0d0e13 72%);display:flex;align-items:center;justify-content:center;font-size:30px;position:relative;overflow:hidden;';
+                    const previewUrl = info.preview_url || previews[path];
                     if (/\.(mp4|webm)(?:$|\?|&|#)/i.test(previewUrl || '')) {
                         const video = document.createElement('video');
                         video.src = previewUrl;
@@ -1068,14 +1201,28 @@ export function _openGalleryReplacer(node, w, options = {}) {
                         badge.style.cssText = 'position:absolute;top:6px;left:6px;background:rgba(255,193,7,0.92);color:#111;padding:3px 6px;border-radius:4px;font-size:10px;font-weight:800;';
                         previewBox.appendChild(badge);
                     }
+                    const badgeStack = document.createElement('div');
+                    badgeStack.style.cssText = 'position:absolute;top:6px;right:6px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;max-width:76%;';
+                    const categoryBadge = document.createElement('span');
+                    categoryBadge.textContent = formatModelTypeLabel(info.type, pickerType.label);
+                    categoryBadge.style.cssText = 'padding:3px 6px;border-radius:5px;background:rgba(25,34,54,0.9);border:1px solid rgba(138,180,248,0.28);color:#b8d0ff;font-size:9px;font-weight:800;box-shadow:0 3px 8px rgba(0,0,0,0.22);';
+                    badgeStack.appendChild(categoryBadge);
+                    if (baseModel) {
+                        const baseBadge = document.createElement('span');
+                        baseBadge.textContent = baseModel;
+                        baseBadge.title = `${zh ? '基础模型' : 'Base model'}: ${baseModel}`;
+                        baseBadge.style.cssText = 'max-width:100%;padding:3px 6px;border-radius:5px;background:rgba(7,50,43,0.9);border:1px solid rgba(70,220,185,0.25);color:#8ce1cf;font-size:9px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 3px 8px rgba(0,0,0,0.22);';
+                        badgeStack.appendChild(baseBadge);
+                    }
+                    previewBox.appendChild(badgeStack);
                     const name = document.createElement('div');
                     name.textContent = getName(path);
                     name.title = normalizePath(path);
-                    name.style.cssText = 'padding:8px 8px 3px;font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;';
+                    name.style.cssText = 'padding:9px 9px 3px;font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;';
                     const folder = document.createElement('div');
                     folder.textContent = getFolder(path) || (zh ? '根目录' : 'Root');
                     folder.title = getFolder(path);
-                    folder.style.cssText = 'padding:0 8px 8px;font-size:10px;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+                    folder.style.cssText = 'padding:0 9px 9px;font-size:9px;color:#747b8b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
                     card.append(previewBox, name, folder);
                     const choose = () => {
                         selectedPath = path;
@@ -1158,6 +1305,15 @@ export function _openGalleryReplacer(node, w, options = {}) {
         };
 
         searchInput.oninput = renderCards;
+        baseFilterSelect.onchange = () => {
+            selectedBaseFamily = baseFilterSelect.value;
+            selectedFolder = '';
+            if (selectedPath && !pathMatchesBaseFilter(selectedPath)) selectedPath = null;
+            rebuildFolderCounts();
+            renderFolders();
+            updateSelection();
+            renderCards();
+        };
         sortSelect.onchange = renderCards;
         modal.onkeydown = event => { if (event.key === 'Escape') closeModal(); };
         renderFolders();
@@ -1165,22 +1321,34 @@ export function _openGalleryReplacer(node, w, options = {}) {
         renderCards();
         setTimeout(() => searchInput.focus(), 0);
 
+        const requestPayload = {
+            paths: validPaths,
+            context_requests: contextRequests,
+        };
+        if (pickerType.folderTypes.length) requestPayload.folder_types = pickerType.folderTypes;
         fetch('/anomalous/resolve_paths_to_previews', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paths: validPaths }),
+            body: JSON.stringify(requestPayload),
         }).then(response => {
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             return response.json();
         }).then(data => {
             if (!modal.isConnected) return;
             previews = data.previews || {};
+            modelInfo = data.models || {};
+            contextModels = data.context_models || {};
             loadingText.style.display = 'none';
+            configureBaseFilter();
+            renderFolders();
+            updateSelection();
             renderCards();
         }).catch(error => {
             if (!modal.isConnected) return;
             console.error('[Anomalous] Failed to load model previews:', error);
             loadingText.textContent = zh ? '⚠️ 封面加载失败，仍可按名称选择模型。' : '⚠️ Covers failed to load; models remain selectable by name.';
+            configureBaseFilter();
+            renderFolders();
         });
     }
 

@@ -33,7 +33,7 @@
 
 #### 3. Visual Swapping (Node Assistant) 🤖
 * **Location**: The third Robot icon (**🤖**) from the bottom left.
-* **Operation**: After opening, select a model node on your ComfyUI canvas. The prominent action bar can visually replace its current model or insert a LoRA before/after a compatible MODEL + CLIP chain. The picker automatically stays within the node's native model type and supports folder browsing, full-path search, and sorting. Ambiguous multi-branch chains are left unchanged.
+* **Operation**: After opening, select a model node on your ComfyUI canvas. The redesigned action card can visually replace its current model or insert a LoRA before/after a compatible MODEL + CLIP chain. Picker cards show both model category and base-model badges. When choosing a LoRA, the connected main model's type is selected automatically when metadata is available; the filter can always be switched back to all LoRAs. Folder browsing, full-path search, sorting, and safe handling of ambiguous branches remain available.
 
 #### 4. Settings Panel ⚙️
 * **Location**: The Gear icon (**⚙️**) at the bottom left.
@@ -90,7 +90,7 @@ git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
 
 #### 3. 选中交互 (节点助手) 🤖
 * **具体位置**：左侧底部第三个 **机器人按钮 (🤖)**。
-* **操作步骤**：打开后，在画布上选择模型节点。顶部醒目的操作栏可以替换当前模型，也可在兼容的 MODEL + CLIP 链前方或后方插入 LoRA。选择器会自动限定为节点原生支持的模型类型，并提供文件夹浏览、完整路径搜索和排序；遇到有歧义的多分支链路时不会擅自修改。
+* **操作步骤**：打开后，在画布上选择模型节点。重新设计的操作卡可以替换当前模型，也可在兼容的 MODEL + CLIP 链前方或后方插入 LoRA。选择器卡片会标注模型类别和基础模型类型；选择 LoRA 时，如元数据可用，会自动按照已连接主模型的类型筛选，也可以随时切回全部 LoRA。文件夹浏览、完整路径搜索、排序和多分支安全保护仍然保留。
 
 #### 4. 个性化配置 (设置面板) ⚙️
 * **具体位置**：左侧底部的 **齿轮按钮 (⚙️)**。
