@@ -363,7 +363,7 @@ def get_active_folder_types():
     config_path = os.path.join(script_dir, "config.json")
     
     all_types = list(folder_paths.folder_names_and_paths.keys())
-    default_types = ['checkpoints', 'loras', 'controlnet', 'vae', 'embeddings', 'upscale_models']
+    default_types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
     
     try:
         if os.path.exists(config_path):
@@ -419,16 +419,17 @@ async def api_get_all_folder_types(request):
         except:
             pass
             
+        default_physical_types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
         for bn in all_bns:
             if bn not in configured:
                 result.append({
                     "type": bn,
-                    "visible": True
+                    "visible": bn in default_physical_types
                 })
     else:
         # Abstract mode
         all_types = list(folder_paths.folder_names_and_paths.keys())
-        default_types = ['checkpoints', 'loras', 'controlnet', 'vae', 'embeddings', 'upscale_models']
+        default_types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
         configured_types = set()
         try:
             if os.path.exists(config_path):
