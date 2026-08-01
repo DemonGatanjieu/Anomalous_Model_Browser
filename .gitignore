@@ -1,6 +1,43 @@
+# Local configuration and credentials
 config.json
+.env
+.env.*
+!.env.example
+credentials*.json
+secrets*.json
+*.local.json
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Runtime caches, logs, databases, and temporary files
 *.pyc
 __pycache__/
+.cache/
+cache/
+logs/
+tmp/
+temp/
+*.cache
+*.log
+*.pid
+*.tmp
+*.temp
+*.bak
+*.backup
+*.sqlite
+*.sqlite3
+*.db
+
+# OS and editor-local state
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*~
 
 # Node/JS environment junk
 node_modules/
