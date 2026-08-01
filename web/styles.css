@@ -1153,10 +1153,8 @@
 
 .anomalous-recipe-node-list {
     display: flex;
-    max-height: 320px;
     flex-direction: column;
     gap: 8px;
-    overflow-y: auto;
     padding: 8px 2px 2px;
 }
 
@@ -1282,8 +1280,6 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
     gap: 7px;
-    max-height: 190px;
-    overflow-y: auto;
 }
 
 .anomalous-recipe-cover-choice {
@@ -1328,10 +1324,8 @@
 
 .anomalous-recipe-pin-list {
     display: flex;
-    max-height: 280px;
     flex-direction: column;
     gap: 4px;
-    overflow-y: auto;
     padding-top: 8px;
 }
 
