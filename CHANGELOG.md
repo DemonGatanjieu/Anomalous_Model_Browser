@@ -4,6 +4,7 @@
 ### 🚀 Major Features
 - **Lossless Workflow Exchange (无损工作流交互)**: Added dedicated Import/Export buttons to the bottom-left of the plugin UI. This feature allows users to directly extract, share, and import pure workflow data without relying on original PNG images, completely bypassing the metadata-stripping compression used by social platforms (like WeChat or Discord) that causes workflow loss.
 - **Force Overwrite Configs (强制覆盖已有配置)**: Added a new "Force Overwrite" toggle in the Scan Wizard. When enabled, the scanner will deliberately ignore existing local `.info` files and force a fresh SHA256 hash calculation and a complete metadata pull from Civitai. This is a lifesaver for repairing incorrectly matched or corrupted model profiles.
+- **Model Card Settings (模型卡片设置)**: The Settings Hub now opens one focused panel for video-cover playback (`Always play` or recommended `Play on hover`) and card image quality (`Optimized thumbnail` or `Original cover`). Existing autoplay preferences remain compatible, while image-quality choice is intentionally simple and local to the browser.
 
 ### 🐛 Bug Fixes
 - **Base Model Hash Misattribution**: Fixed a critical bug in the fast scanner where it would aggressively fuzzy-match any 64-character hex string in the metadata. This previously caused LoRAs (trained via Kohya) to inherit their Base Model's hash (`ss_sd_model_hash`), resulting in totally incorrect Civitai mappings. The scanner now strictly adheres to the official `modelspec.hash.sha256/blake3` standard.
@@ -16,6 +17,7 @@
 - **Responsive Large Libraries**: Folder/model disk work now runs outside the aiohttp event loop, current-folder discovery uses one `os.scandir()` inventory, stale requests are aborted, and cards render in animation-frame chunks with lazy media activation.
 - **Batched Model Doctor Resolution**: Provenance-rich workflows skip a redundant full hash-cache walk, then resolve missing nodes through a type-grouped batch endpoint so each required category is walked once per repair pass. Legacy workflows still refresh the filename cache when needed. The original hash/size/type/ambiguity rules remain unchanged, with automatic fallback to the single-item endpoint.
 - **Direct Preview Fast Path**: Visual replacement resolves contained relative model paths directly and performs a full library walk only for unresolved basename fallbacks.
+- **Balanced Cover Memory Use**: Static grid covers default to cached 512px WebP derivatives while detail views retain the original. Derived files are stored in ComfyUI's temporary area, capped at 256 MiB, and never alter source covers. Closing the browser releases active media immediately and releases the warm card DOM after 90 seconds of inactivity.
 
 ## v1.5.0 (The Workflow & UI Evolution Update)
 ### 🚀 Major Features

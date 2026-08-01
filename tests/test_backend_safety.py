@@ -78,6 +78,7 @@ class ImageEndpointSafetyTests(unittest.IsolatedAsyncioTestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.root = os.path.realpath(self.temp_dir.name)
         folder_paths.get_folder_paths = lambda folder_type: [self.root]
+        folder_paths.get_temp_directory = lambda: os.path.join(self.root, "temp")
         Path(self.root, "cover.png").write_bytes(b"not-a-real-png")
 
     async def asyncTearDown(self):
@@ -99,6 +100,41 @@ class ImageEndpointSafetyTests(unittest.IsolatedAsyncioTestCase):
         request = types.SimpleNamespace(query={"type": "checkpoints", "path_idx": "0", "filename": "metadata.json"})
         response = await utils.api_serve_image(request)
         self.assertEqual(response.status, 415)
+
+    async def test_card_variant_uses_bounded_cached_thumbnail_without_touching_source(self):
+        from PIL import Image
+
+        source = Path(self.root, "large.png")
+        Image.new("RGB", (1200, 800), (40, 80, 120)).save(source)
+        original_bytes = source.read_bytes()
+        request = types.SimpleNamespace(query={
+            "type": "checkpoints",
+            "path_idx": "0",
+            "filename": source.name,
+            "variant": "card",
+            "t": str(source.stat().st_mtime_ns),
+        })
+
+        response = await utils.api_serve_image(request)
+
+        self.assertEqual(response.status, 200)
+        self.assertNotEqual(os.path.realpath(response._path), os.path.realpath(source))
+        self.assertEqual(response.headers.get("Content-Type"), "image/webp")
+        self.assertIn("immutable", response.headers.get("Cache-Control", ""))
+        with Image.open(response._path) as thumbnail:
+            self.assertLessEqual(max(thumbnail.size), utils.CARD_THUMBNAIL_EDGE)
+        self.assertEqual(source.read_bytes(), original_bytes)
+
+    async def test_original_variant_keeps_original_cover_path(self):
+        request = types.SimpleNamespace(query={
+            "type": "checkpoints",
+            "path_idx": "0",
+            "filename": "cover.png",
+        })
+
+        response = await utils.api_serve_image(request)
+
+        self.assertEqual(os.path.realpath(response._path), os.path.realpath(Path(self.root, "cover.png")))
 
 
 class MetadataHashSelectionTests(unittest.TestCase):

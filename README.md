@@ -37,7 +37,7 @@
 
 #### 4. Settings Panel ⚙️
 * **Location**: The Gear icon (**⚙️**) at the bottom left.
-* **Operation**: Here you can adjust the UI language, main UI font size, and video cover auto-play modes.
+* **Operation**: Here you can adjust the UI language and main UI font size. Open **Model Settings** to choose always-play or hover-play video covers and optimized card thumbnails or original covers. Detail pages continue to use the original cover.
 
 #### 5. Top Navigation & Smart Notebook 📑
 **Location**: The top tabs: **Models (📦)**, **Gallery (🖼️)**, **Notebook (📑)**, and **Dock Side (◧)**.
@@ -94,7 +94,7 @@ git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
 
 #### 4. 个性化配置 (设置面板) ⚙️
 * **具体位置**：左侧底部的 **齿轮按钮 (⚙️)**。
-* **操作步骤**：在此可以调节语言、主页面字体大小、以及视频封面的播放方式等。
+* **操作步骤**：在此可以调节语言和主页面字体大小。进入 **模型设置** 后，可选择视频封面始终播放或悬停播放，也可选择卡片使用流畅缩略图或原始封面；模型详情页始终使用原始封面。
 
 #### 5. 顶部导航与笔记本 (Notebook) 实战 📑
 **具体位置**：右侧顶部的按钮分别为 **模型 (📦)**、**图库 (🖼️)**、**笔记本 (📑)**、**停靠侧边栏 (◧)**。

@@ -12,11 +12,17 @@ const t = (key) => {
     return (i18n[lang] && i18n[lang][key]) ? i18n[lang][key] : (i18n['zh'][key] || key);
 };
 
+export function cardPreviewUrl(previewUrl, thumbnailMode) {
+    if (!previewUrl || thumbnailMode === 'original') return previewUrl;
+    return `${previewUrl}${previewUrl.includes('?') ? '&' : '?'}variant=card`;
+}
+
 
 
 export async function loadModels() {
         try {
             if (this._modelLoadController) this._modelLoadController.abort();
+            this._modelRenderGeneration = (this._modelRenderGeneration || 0) + 1;
             const loadController = new AbortController();
             this._modelLoadController = loadController;
             const params = new URLSearchParams({ type: this.currentType, path_idx: this.currentPathIdx, subfolder: this.currentSubfolder });
@@ -29,8 +35,7 @@ export async function loadModels() {
             }
 
             this.models = data.models || [];
-            const renderGeneration = (this._modelRenderGeneration || 0) + 1;
-            this._modelRenderGeneration = renderGeneration;
+            const renderGeneration = this._modelRenderGeneration;
             if (this._modelMediaObserver) this._modelMediaObserver.disconnect();
             this._modelMediaObserver = typeof IntersectionObserver === 'function'
                 ? new IntersectionObserver((entries, observer) => {
@@ -38,17 +43,24 @@ export async function loadModels() {
                         const media = entry.target;
                         const shouldAutoplay = media.tagName === 'VIDEO' && media.dataset.anomalousAutoplay === 'true';
                         if (!entry.isIntersecting) {
-                            if (shouldAutoplay) media.pause();
+                            if (media.tagName === 'VIDEO') {
+                                media.pause();
+                                if (media.getAttribute('src')) {
+                                    media.removeAttribute('src');
+                                    media.load();
+                                }
+                            }
                             return;
                         }
+                        if (media.tagName === 'VIDEO' && !shouldAutoplay) return;
                         const pendingSrc = media.dataset.anomalousSrc;
                         if (pendingSrc && !media.getAttribute('src')) media.src = pendingSrc;
                         if (shouldAutoplay) media.play().catch(() => {});
-                        else observer.unobserve(media);
                     });
                 }, { rootMargin: '300px' })
                 : null;
-            this.grid.innerHTML = '';
+            stopMediaInContainer(this.grid);
+            this.grid.replaceChildren();
 
             if (!data.models || data.models.length === 0) {
                 this.grid.innerHTML = `<div style="color:white; padding:20px;">${t('noModels')}</div>`;
@@ -95,7 +107,7 @@ export async function loadModels() {
                         const img = document.createElement('img');
                         img.loading = 'lazy';
                         img.decoding = 'async';
-                        img.src = model.preview_url;
+                        img.src = cardPreviewUrl(model.preview_url, this.cardThumbnailMode);
                         card.appendChild(img);
                     }
                 } else {

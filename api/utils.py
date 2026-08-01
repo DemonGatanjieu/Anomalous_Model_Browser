@@ -9,6 +9,18 @@ import asyncio
 from aiohttp import web
 import folder_paths
 import struct
+import hashlib
+import tempfile
+import time
+
+
+CARD_THUMBNAIL_EDGE = 512
+CARD_THUMBNAIL_CACHE_LIMIT = 256 * 1024 * 1024
+CARD_THUMBNAIL_STATIC_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.webp', '.avif'}
+_thumbnail_cleanup_lock = threading.Lock()
+_thumbnail_generation_slots = threading.BoundedSemaphore(2)
+_thumbnail_last_cleanup = 0.0
+_thumbnail_created_since_cleanup = 0
 
 
 def resolve_within(base_dir, *parts):
@@ -40,6 +52,119 @@ def require_filename(filename):
     if not isinstance(filename, str) or not filename or os.path.basename(filename) != filename:
         raise ValueError("Invalid filename")
     return filename
+
+
+def _thumbnail_cache_directory():
+    try:
+        base_dir = folder_paths.get_temp_directory()
+    except Exception:
+        base_dir = None
+    if not isinstance(base_dir, (str, os.PathLike)):
+        base_dir = tempfile.gettempdir()
+    cache_dir = os.path.join(base_dir, "anomalous_model_browser", "card_thumbnails")
+    os.makedirs(cache_dir, exist_ok=True)
+    return cache_dir
+
+
+def _prune_thumbnail_cache(cache_dir, created=False):
+    """Occasionally cap the derived thumbnail cache without touching source covers."""
+    global _thumbnail_last_cleanup, _thumbnail_created_since_cleanup
+    now = time.monotonic()
+    with _thumbnail_cleanup_lock:
+        if created:
+            _thumbnail_created_since_cleanup += 1
+        now = time.monotonic()
+        if (
+            now - _thumbnail_last_cleanup < 3600
+            and _thumbnail_created_since_cleanup < 64
+        ):
+            return
+        _thumbnail_last_cleanup = now
+        _thumbnail_created_since_cleanup = 0
+        entries = []
+        total_size = 0
+        try:
+            with os.scandir(cache_dir) as iterator:
+                for entry in iterator:
+                    if not entry.is_file() or not entry.name.endswith('.webp'):
+                        continue
+                    try:
+                        stat = entry.stat()
+                    except OSError:
+                        continue
+                    total_size += stat.st_size
+                    entries.append((stat.st_mtime_ns, stat.st_size, entry.path))
+        except OSError:
+            return
+        if total_size <= CARD_THUMBNAIL_CACHE_LIMIT:
+            return
+        target_size = int(CARD_THUMBNAIL_CACHE_LIMIT * 0.8)
+        for _, size, path in sorted(entries):
+            try:
+                os.remove(path)
+                total_size -= size
+            except OSError:
+                pass
+            if total_size <= target_size:
+                break
+
+
+def _build_card_thumbnail_impl(source_path):
+    """Return a cached 512px WebP card image, or the original on any safe fallback."""
+    try:
+        from PIL import Image, ImageOps
+
+        source_stat = os.stat(source_path)
+        cache_key = "\0".join((
+            os.path.realpath(source_path),
+            str(source_stat.st_size),
+            str(source_stat.st_mtime_ns),
+            str(getattr(source_stat, 'st_ctime_ns', 0)),
+            str(CARD_THUMBNAIL_EDGE),
+        ))
+        digest = hashlib.sha256(cache_key.encode('utf-8', errors='surrogatepass')).hexdigest()
+        cache_dir = _thumbnail_cache_directory()
+        cached_path = os.path.join(cache_dir, f"{digest}.webp")
+        if os.path.isfile(cached_path):
+            try:
+                os.utime(cached_path, None)
+            except OSError:
+                pass
+            _prune_thumbnail_cache(cache_dir)
+            return cached_path
+
+        with Image.open(source_path) as image:
+            if getattr(image, 'is_animated', False):
+                return source_path
+            image = ImageOps.exif_transpose(image)
+            if max(image.size) <= CARD_THUMBNAIL_EDGE:
+                return source_path
+            resampling = getattr(Image, 'Resampling', Image).LANCZOS
+            image.thumbnail((CARD_THUMBNAIL_EDGE, CARD_THUMBNAIL_EDGE), resampling)
+            if image.mode not in ('RGB', 'RGBA'):
+                image = image.convert('RGBA' if 'transparency' in image.info else 'RGB')
+            temp_path = (
+                f"{cached_path}.{os.getpid()}.{threading.get_ident()}.tmp"
+            )
+            try:
+                image.save(temp_path, format='WEBP', quality=84, method=4)
+                os.replace(temp_path, cached_path)
+            finally:
+                if os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                    except OSError:
+                        pass
+        _prune_thumbnail_cache(cache_dir, created=True)
+        return cached_path
+    except Exception:
+        return source_path
+
+
+def _build_card_thumbnail(source_path):
+    # Bound simultaneous decodes so opening a large folder cannot monopolize CPU/RAM.
+    with _thumbnail_generation_slots:
+        return _build_card_thumbnail_impl(source_path)
 
 async def api_serve_image(request):
     """Dedicated image serving endpoint for model preview images."""
@@ -78,7 +203,19 @@ async def api_serve_image(request):
     if content_type is None:
         return web.Response(status=415, text='Unsupported media type')
     
-    return web.FileResponse(file_path, headers={'Content-Type': content_type})
+    served_path = file_path
+    if (
+        request.query.get('variant') == 'card'
+        and ext in CARD_THUMBNAIL_STATIC_EXTENSIONS
+    ):
+        served_path = await asyncio.to_thread(_build_card_thumbnail, file_path)
+        if served_path != file_path:
+            content_type = 'image/webp'
+
+    headers = {'Content-Type': content_type}
+    if request.query.get('t'):
+        headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+    return web.FileResponse(served_path, headers=headers)
 
 
 

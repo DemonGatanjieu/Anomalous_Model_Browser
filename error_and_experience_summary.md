@@ -284,3 +284,10 @@ This document serves as an architectural retrospective and UX diagnostic log for
 
 **The Solution (方案)**: Use stable nanosecond file-version tokens, bounded signature-aware metadata/header caches, one `os.scandir()` inventory per current folder, worker threads for large disk operations, chunked/lazy media rendering, and type-grouped batch resolution. Cache invalidation remains tied to physical file signatures, and batch resolution delegates every item to the unchanged identity decision function.
 (使用稳定的纳秒文件版本号、带物理签名的有界元数据/模型头缓存、当前目录单次 `os.scandir()` 清单、磁盘任务工作线程、分帧与懒加载媒体，以及按模型类型分组的批量解析。缓存仍由真实文件签名失效；批量接口中的每一项仍交给完全相同的身份判定函数，因此提速不以削减效果为代价。)
+
+## 47. A Small Card Can Decode a Huge Cover (小卡片也可能吃掉整张大图的内存)
+**The Problem (问题)**: CSS makes a 4K cover look like a small card, but Chromium may still fetch and decode the full-resolution source into RAM/GPU textures. Native lazy loading delays that cost; it does not reduce the decoded size. Always-playing video cards can add more decode buffers even when most cards are offscreen.
+(CSS 虽然把 4K 封面显示成一张小卡片，但 Chromium 仍可能把完整原图下载并解码进内存/GPU 纹理。原生懒加载只能延后成本，不能缩小解码尺寸；若视频卡片始终播放，视野外的视频解码缓冲还会继续增加负担。)
+
+**The Solution (方案)**: Give users one understandable Model Settings panel. The balanced image mode serves a cached 512px WebP only to grid cards, while original mode remains available and detail views always retain the source cover. Limit thumbnail generation concurrency, store derivatives only in a bounded temporary cache, activate autoplay only near the viewport, release media immediately on close, and release warm card state after a short idle period. Never resize or rewrite the user's cover in place.
+(把选择集中在一个普通用户能理解的“模型设置”面板：流畅模式只给卡片提供缓存的 512px WebP，仍允许用户选择原始封面，且详情页始终保留原图。缩略图生成限制并发，派生文件只进入有上限的临时缓存；自动播放只在视野附近激活，关闭时立即释放媒体，短暂保留卡片热状态后再自动回收。任何时候都不能原地压缩或改写用户封面。)

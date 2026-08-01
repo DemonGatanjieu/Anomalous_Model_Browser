@@ -1003,21 +1003,7 @@ export function createDOM() {
         this.sidebarActions.appendChild(scanBtn);
 
 
-        const energyBtn = document.createElement('button');
-        energyBtn.id = 'anomalous-energy-btn';
-        energyBtn.title = t('togglePlayTitle');
-        const renderEnergyBtn = () => {
-            energyBtn.innerHTML = this.energySaving
-                ? `<span class="anomalous-btn-text">${(window.anomalous_browser_lang === 'zh' ? '🔋 视频悬浮播放 (节能模式)' : '🔋 Eco Mode (Play video on hover)')}</span>`
-                : `<span class="anomalous-btn-text">${(window.anomalous_browser_lang === 'zh' ? '🎬 自动播放视频封面 (高能耗)' : '🎬 AutoPlay Videos (High perf cost)')}</span>`;
-        };
-        renderEnergyBtn();
-        energyBtn.onclick = () => {
-            this.energySaving = !this.energySaving;
-            localStorage.setItem('anomalous_energy_saving', this.energySaving);
-            renderEnergyBtn();
-            this.loadModels();
-        };
+        let refreshModelSettingsText = () => {};
 
         const closeBtn = document.createElement('div');
         closeBtn.id = 'anomalous-close';
@@ -1109,7 +1095,7 @@ export function createDOM() {
             const feedbackRef = document.getElementById('anomalous-feedback-btn');
             if (feedbackRef) feedbackRef.innerHTML = window.anomalous_browser_lang === 'zh' ? '💬 提交反馈 / 报告问题' : '💬 Submit Feedback / Report Bug';
 
-            renderEnergyBtn();
+            refreshModelSettingsText();
             this.renderSidebar();
             this.loadModels();
             if (this.detailPanel.style.display !== 'none' && this.currentDetailModel) {
@@ -1135,10 +1121,117 @@ export function createDOM() {
             btn.onmouseout = () => { btn.style.background = 'transparent'; btn.style.color = '#ccc'; };
         };
 
-        styleHubBtn(energyBtn);
         styleHubBtn(apiKeyBtn);
         styleHubBtn(langBtn);
         styleHubBtn(helpBtn);
+
+        const modelSettingsBtn = document.createElement('button');
+        modelSettingsBtn.id = 'anomalous-model-settings-btn';
+        styleHubBtn(modelSettingsBtn);
+
+        const modelSettingsOverlay = document.createElement('div');
+        modelSettingsOverlay.className = 'anomalous-model-settings-overlay';
+        modelSettingsOverlay.hidden = true;
+
+        const modelSettingsDialog = document.createElement('div');
+        modelSettingsDialog.className = 'anomalous-model-settings-dialog';
+        modelSettingsDialog.setAttribute('role', 'dialog');
+        modelSettingsDialog.setAttribute('aria-modal', 'true');
+
+        const modelSettingsTitle = document.createElement('h2');
+        const modelSettingsDescription = document.createElement('p');
+        modelSettingsDescription.className = 'anomalous-model-settings-description';
+
+        const createSettingRow = () => {
+            const row = document.createElement('label');
+            row.className = 'anomalous-model-setting-row';
+            const copy = document.createElement('span');
+            copy.className = 'anomalous-model-setting-copy';
+            const name = document.createElement('strong');
+            const help = document.createElement('small');
+            copy.append(name, help);
+            const select = document.createElement('select');
+            select.className = 'anomalous-model-setting-select';
+            row.append(copy, select);
+            return { row, name, help, select };
+        };
+
+        const videoSetting = createSettingRow();
+        const alwaysPlayOption = new Option('', 'always');
+        const hoverPlayOption = new Option('', 'hover');
+        videoSetting.select.append(alwaysPlayOption, hoverPlayOption);
+
+        const thumbnailSetting = createSettingRow();
+        const balancedThumbnailOption = new Option('', 'balanced');
+        const originalThumbnailOption = new Option('', 'original');
+        thumbnailSetting.select.append(balancedThumbnailOption, originalThumbnailOption);
+
+        const modelSettingsNote = document.createElement('div');
+        modelSettingsNote.className = 'anomalous-model-settings-note';
+
+        const modelSettingsClose = document.createElement('button');
+        modelSettingsClose.className = 'anomalous-model-settings-close';
+
+        modelSettingsDialog.append(
+            modelSettingsTitle,
+            modelSettingsDescription,
+            videoSetting.row,
+            thumbnailSetting.row,
+            modelSettingsNote,
+            modelSettingsClose,
+        );
+        modelSettingsOverlay.appendChild(modelSettingsDialog);
+        container.appendChild(modelSettingsOverlay);
+
+        refreshModelSettingsText = () => {
+            const zh = window.anomalous_browser_lang === 'zh';
+            modelSettingsBtn.textContent = zh ? '🖼️ 模型设置' : '🖼️ Model Settings';
+            modelSettingsTitle.textContent = zh ? '模型卡片设置' : 'Model Card Settings';
+            modelSettingsDescription.textContent = zh
+                ? '只调整模型浏览器里的卡片显示，不会修改模型文件或原始封面。'
+                : 'Only changes cards in the model browser. Model files and original covers remain untouched.';
+            videoSetting.name.textContent = zh ? '视频封面播放' : 'Video cover playback';
+            videoSetting.help.textContent = zh
+                ? '始终播放更有动感；悬停播放更省显存与电量。'
+                : 'Always play is more lively; hover play uses less GPU memory and power.';
+            alwaysPlayOption.textContent = zh ? '始终播放' : 'Always play';
+            hoverPlayOption.textContent = zh ? '悬停播放（推荐）' : 'Play on hover (Recommended)';
+            thumbnailSetting.name.textContent = zh ? '卡片图片清晰度' : 'Card image quality';
+            thumbnailSetting.help.textContent = zh
+                ? '流畅缩略图只用于卡片；打开详情仍显示原始封面。'
+                : 'Optimized thumbnails are card-only; details still show the original cover.';
+            balancedThumbnailOption.textContent = zh ? '流畅缩略图（推荐）' : 'Optimized thumbnail (Recommended)';
+            originalThumbnailOption.textContent = zh ? '原始封面（更占资源）' : 'Original cover (More resource use)';
+            modelSettingsNote.textContent = zh
+                ? '缩略图由插件自动缓存和回收；视频离开视野或关闭浏览器后会自动释放。'
+                : 'The plugin automatically caches and evicts thumbnails, and releases videos offscreen or when closed.';
+            modelSettingsClose.textContent = zh ? '完成' : 'Done';
+            videoSetting.select.value = this.energySaving ? 'hover' : 'always';
+            thumbnailSetting.select.value = this.cardThumbnailMode;
+        };
+        refreshModelSettingsText();
+
+        const closeModelSettings = () => { modelSettingsOverlay.hidden = true; };
+        modelSettingsBtn.onclick = () => {
+            refreshModelSettingsText();
+            settingsHubModal.style.display = 'none';
+            modelSettingsOverlay.hidden = false;
+            videoSetting.select.focus();
+        };
+        modelSettingsClose.onclick = closeModelSettings;
+        modelSettingsOverlay.onclick = (event) => {
+            if (event.target === modelSettingsOverlay) closeModelSettings();
+        };
+        videoSetting.select.onchange = () => {
+            this.energySaving = videoSetting.select.value === 'hover';
+            localStorage.setItem('anomalous_energy_saving', String(this.energySaving));
+            this.loadModels();
+        };
+        thumbnailSetting.select.onchange = () => {
+            this.cardThumbnailMode = thumbnailSetting.select.value === 'original' ? 'original' : 'balanced';
+            localStorage.setItem('anomalous_card_thumbnail_mode', this.cardThumbnailMode);
+            this.loadModels();
+        };
 
         const globalScanBtn = document.createElement('button');
         globalScanBtn.id = 'anomalous-global-scan-btn';
@@ -1396,7 +1489,7 @@ export function createDOM() {
         };
         
         settingsHubModal.appendChild(folderManagerBtn);
-        settingsHubModal.appendChild(energyBtn);
+        settingsHubModal.appendChild(modelSettingsBtn);
         settingsHubModal.appendChild(scaleContainer);
         settingsHubModal.appendChild(langBtn);
         settingsHubModal.appendChild(helpBtn);

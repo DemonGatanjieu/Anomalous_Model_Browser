@@ -982,3 +982,111 @@
 .anomalous-gallery-viewer-close:hover {
     color: #fff;
 }
+
+.anomalous-model-settings-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10020;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    background: rgba(8, 9, 12, 0.78);
+    backdrop-filter: blur(8px);
+}
+
+.anomalous-model-settings-overlay[hidden] {
+    display: none;
+}
+
+.anomalous-model-settings-dialog {
+    width: min(560px, 100%);
+    padding: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    box-sizing: border-box;
+    color: #f3f4f6;
+    background: linear-gradient(145deg, rgba(48, 49, 55, 0.98), rgba(27, 28, 33, 0.98));
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+}
+
+.anomalous-model-settings-dialog h2 {
+    margin: 0 0 6px;
+    font-size: 1.3em;
+}
+
+.anomalous-model-settings-description {
+    margin: 0 0 18px;
+    color: #aeb3bd;
+    font-size: 0.9em;
+    line-height: 1.55;
+}
+
+.anomalous-model-setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 16px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.anomalous-model-setting-copy {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.anomalous-model-setting-copy small {
+    color: #9da3ad;
+    line-height: 1.45;
+}
+
+.anomalous-model-setting-select {
+    width: 190px;
+    max-width: 44%;
+    padding: 9px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: #f5f5f5;
+    background: #17181c;
+    cursor: pointer;
+}
+
+.anomalous-model-settings-note {
+    margin-top: 4px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: #a9c8ee;
+    background: rgba(80, 145, 220, 0.1);
+    font-size: 0.82em;
+    line-height: 1.45;
+}
+
+.anomalous-model-settings-close {
+    display: block;
+    min-width: 96px;
+    margin: 20px 0 0 auto;
+    padding: 9px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: #fff;
+    background: #3f73b9;
+    cursor: pointer;
+}
+
+@media (max-width: 620px) {
+    .anomalous-model-setting-row {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .anomalous-model-setting-select {
+        width: 100%;
+        max-width: none;
+    }
+}

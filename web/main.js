@@ -72,6 +72,9 @@ class AnomalousBrowser {
         this.foldersData = null;
         this.expandedFolders = new Set(['/', 'checkpoints', 'loras', 'unet', 'diffusion_models']);
         this.energySaving = localStorage.getItem('anomalous_energy_saving') === 'true';
+        this.cardThumbnailMode = localStorage.getItem('anomalous_card_thumbnail_mode') === 'original'
+            ? 'original'
+            : 'balanced';
         this.createDOM();
     }
     // [EXTRACTED] createDOM
@@ -84,6 +87,10 @@ class AnomalousBrowser {
     // [EXTRACTED] showDetail
 
     show() {
+        if (this._idleReleaseTimer) {
+            clearTimeout(this._idleReleaseTimer);
+            this._idleReleaseTimer = null;
+        }
         this.modal.classList.add('visible');
         if (!this.foldersData) {
             this.loadFolders();
@@ -92,7 +99,20 @@ class AnomalousBrowser {
         }
     }
 
-    close() { this.modal.classList.remove('visible'); }
+    close() {
+        this.modal.classList.remove('visible');
+        if (this._modelLoadController) this._modelLoadController.abort();
+        if (this._modelMediaObserver) this._modelMediaObserver.disconnect();
+        this.modal.querySelectorAll('video, audio').forEach(media => media.pause());
+        this.stopMediaInContainer(this.grid);
+        if (this._idleReleaseTimer) clearTimeout(this._idleReleaseTimer);
+        this._idleReleaseTimer = setTimeout(() => {
+            if (this.modal.classList.contains('visible')) return;
+            this.stopMediaInContainer(this.grid);
+            this.grid.replaceChildren();
+            this.models = [];
+        }, 90000);
+    }
     // [EXTRACTED] showNotebooks
 
     async translateText(text) {
