@@ -30,6 +30,7 @@ def load_api_module(name):
 utils = load_api_module("utils")
 metadata = load_api_module("metadata")
 models = load_api_module("models")
+recipes = load_api_module("recipes")
 
 
 class JsonRequest:
@@ -38,6 +39,12 @@ class JsonRequest:
 
     async def json(self):
         return self.payload
+
+
+class RecipeRequest(JsonRequest):
+    def __init__(self, payload=None, query=None):
+        super().__init__(payload or {})
+        self.query = query or {}
 
 
 class PathSafetyTests(unittest.TestCase):
@@ -135,6 +142,43 @@ class ImageEndpointSafetyTests(unittest.IsolatedAsyncioTestCase):
         response = await utils.api_serve_image(request)
 
         self.assertEqual(os.path.realpath(response._path), os.path.realpath(Path(self.root, "cover.png")))
+
+
+class RecipeEndpointSafetyTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        folder_paths.get_user_directory = lambda: self.temp_dir.name
+
+    async def asyncTearDown(self):
+        self.temp_dir.cleanup()
+
+    async def test_recipe_is_saved_locally_without_workflow_in_list_response(self):
+        response = await recipes.api_save_recipe(RecipeRequest({
+            "name": "Portrait recipe",
+            "tags": ["portrait", "SDXL", "portrait"],
+            "notes": "A local-only workflow.",
+            "params": {"baseModel": "portrait.safetensors", "steps": 28},
+            "workflow": {"nodes": [{"id": 1, "type": "KSampler"}]},
+            "thumbnail": "https://example.invalid/should-not-be-stored.jpg",
+        }))
+        self.assertEqual(response.status, 200)
+        saved = json.loads(response.body.decode("utf-8"))
+
+        listed = await recipes.api_get_recipes(RecipeRequest())
+        listed_data = json.loads(listed.body.decode("utf-8"))
+        self.assertEqual(len(listed_data["recipes"]), 1)
+        listed_recipe = listed_data["recipes"][0]
+        self.assertEqual(listed_recipe["filename"], saved["filename"])
+        self.assertNotIn("workflow", listed_recipe["data"])
+        self.assertIsNone(listed_recipe["data"]["thumbnail"])
+
+        full = await recipes.api_get_recipe_full(RecipeRequest(query={"filename": saved["filename"]}))
+        full_data = json.loads(full.body.decode("utf-8"))
+        self.assertEqual(full_data["data"]["workflow"]["nodes"][0]["type"], "KSampler")
+
+    async def test_recipe_endpoints_reject_path_traversal(self):
+        response = await recipes.api_get_recipe_full(RecipeRequest(query={"filename": "../outside.json"}))
+        self.assertEqual(response.status, 400)
 
 
 class MetadataHashSelectionTests(unittest.TestCase):

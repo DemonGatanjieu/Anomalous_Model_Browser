@@ -1,8 +1,8 @@
-
 from .models import *
 from .scanner import *
 from .config import *
 from .notebooks import *
+from .recipes import *
 from .utils import *
 
 def setup_routes(app):
@@ -23,6 +23,13 @@ def setup_routes(app):
     app.router.add_get('/anomalous/notebooks', api_get_notebooks)
     app.router.add_post('/anomalous/save_notebook', api_save_notebook)
     app.router.add_post('/anomalous/delete_notebook', api_delete_notebook)
+
+    # Recipe Routes
+    app.router.add_get('/anomalous/recipes', api_get_recipes)
+    app.router.add_get('/anomalous/recipe_full', api_get_recipe_full)
+    app.router.add_post('/anomalous/save_recipe', api_save_recipe)
+    app.router.add_post('/anomalous/delete_recipe', api_delete_recipe)
+
     app.router.add_post('/anomalous/translate', api_translate)
     app.router.add_get('/anomalous/base_models', api_base_models)
     app.router.add_get('/anomalous/gallery_images', api_get_gallery_images)
@@ -40,4 +47,3 @@ def setup_routes(app):
     app.router.add_get('/anomalous/model_images', api_get_model_images)
     app.router.add_post('/anomalous/resolve_paths_to_previews', api_resolve_paths_to_previews)
     app.router.add_post('/anomalous/scan_missing_models', api_scan_missing_models)
-

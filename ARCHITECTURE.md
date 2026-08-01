@@ -19,6 +19,7 @@ Anomalous_Model_Browser/
 │   ├── metadata.py              # Model metadata extraction and parsing
 │   ├── models.py                # Core model listing and routing (API endpoints)
 │   ├── notebooks.py             # Notebooks management logic
+│   ├── recipes.py               # Local Workflow Recipe CRUD and validation
 │   ├── scanner.py               # Scanning engine for hash resolution and caching
 │   └── utils.py                 # Shared backend utilities and safe path boundary helpers
 ├── scraper.py                   # Async HTTP client logic & web scraping (Root Level)
@@ -33,6 +34,8 @@ Anomalous_Model_Browser/
 │       ├── ui_detail.js         # Model detail panel
 │       ├── ui_doctor.js         # Model Doctor and Assistant panel
 │       ├── ui_notebooks.js      # Notebooks editor
+│       ├── ui_recipes.js        # Workflow Recipe cards, save dialog, and restore actions
+│       ├── recipe_parser.js     # Read-only LiteGraph recipe metadata extraction
 │       ├── ui_gallery.js        # Fullscreen Gallery Viewer
 │       ├── ui_grid.js           # Main grid and model loading
 │       ├── graph_splice.js      # Transactional MODEL/CLIP chain insertion and rollback
@@ -55,6 +58,7 @@ All endpoints are prefixed with `/anomalous/`.
 6. **Strict Path Containment**: Every request path must go through `resolve_folder_subdir()`, `resolve_within()`, and `require_filename()` as appropriate. Checking only for `..` is forbidden: absolute Windows paths, UNC paths, alternate separators, and symlinks can otherwise escape the configured model/output/notebook directory. File-serving endpoints must also enforce an explicit media-extension allowlist.
 7. **Canonical Configuration**: Runtime UI settings and newly saved API keys live in `api/config.json`. `scraper.py` reads that file first and falls back to the legacy root `config.json` only for backward compatibility. API keys must never be persisted in browser `localStorage`.
 8. **Atomic Background State**: Set scan state or create the exclusive marker file before launching a worker thread/process. Folder scans use `.scan_in_progress`; global quick scans use `.global_scan_in_progress`; deep missing-model scans use `GLOBAL_SCAN_STATE`, exposed by `/anomalous/scan_missing_models_status`.
+9. **Workflow Recipes Are User Data**: Recipes live only in `ComfyUI/user/default/workflows/anomalous_recipes`, never in the extension repository. `GET /anomalous/recipes` returns card metadata only; the graph is fetched separately through `GET /anomalous/recipe_full`. Recipe writes are bounded, validate local-only data-image thumbnails, and use atomic replacement.
 
 ### NON-NEGOTIABLE: Model Sidecar & Cover Lifecycle / 模型伴生文件与封面生命周期死规矩
 * `.civitai_bak.*` is a persistent restore source created from a real Civitai download. Setting a custom cover MUST modify only `.preview.*`; it MUST NOT delete, overwrite, or repurpose `.civitai_bak.*`.
@@ -92,6 +96,7 @@ Instead of fragmenting the class scope and losing context, we extracted all UI p
 * **Detail Panel (`anomalous-detail-panel`)**: Slides out when a specific model is clicked.
 * **Gallery Viewer (`ui_gallery.js`)**: A fullscreen modal for viewing images.
 * **Notebook (`ui_notebooks.js`)**: A specialized editor for composing prompts and drag-dropping Lora/Model nodes.
+* **Workflow Recipes (`ui_recipes.js`)**: A Notebook-adjacent local collection of saved, complete graphs with readable model/LoRA/prompt/sampling summaries. `recipe_parser.js` only reads the live LiteGraph graph; an unknown custom node may omit summary data but must never block saving or mutate the canvas. Restoring requires explicit confirmation because it replaces the current graph.
 * **Doctor Panel (`ui_doctor.js`)**: Diagnoses model health for individual nodes or the entire workflow. Includes "View Profile" functionality.
 
 ### Graph Splicing and Picker Context (`graph_splice.js`, `model_picker.js`)

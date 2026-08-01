@@ -246,6 +246,11 @@ export function createDOM() {
         nbBtn.title = t('notebookTitle');
         nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('notebooks')}</span>`;
 
+        const recipeBtn = document.createElement('button');
+        recipeBtn.id = 'anomalous-recipes-btn';
+        recipeBtn.title = t('recipeTitle');
+        recipeBtn.innerHTML = `🧪 <span class="anomalous-btn-text">${t('recipeTitle')}</span>`;
+
         const dBtn = document.getElementById('anomalous-doctor-btn');
         if (dBtn) dBtn.title = window.anomalous_browser_lang === 'zh' ? '模型医生' : 'Model Doctor';
         const aBtn = document.getElementById('anomalous-assistant-btn');
@@ -273,9 +278,15 @@ export function createDOM() {
             this.showNotebooks();
         };
 
+        recipeBtn.onclick = () => {
+            this.hideAllPanels();
+            this.showRecipes();
+        };
+
         rightGroup.appendChild(modelsBtn);
         rightGroup.appendChild(galleryBtn);
         rightGroup.appendChild(nbBtn);
+        rightGroup.appendChild(recipeBtn);
 
 
         const apiKeyBtn = document.createElement('button');
@@ -1051,6 +1062,8 @@ export function createDOM() {
             helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
             nbBtn.title = t('notebookTitle');
             nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('notebooks')}</span>`;
+            recipeBtn.title = t('recipeTitle');
+            recipeBtn.innerHTML = `🧪 <span class="anomalous-btn-text">${t('recipeTitle')}</span>`;
 
             const dBtn = document.getElementById('anomalous-doctor-btn');
             if (dBtn) dBtn.title = window.anomalous_browser_lang === 'zh' ? '模型医生' : 'Model Doctor';
@@ -2039,6 +2052,7 @@ export function hideAllPanels() {
         this.detailPanel.style.display = 'none';
         if (this.galleryPanel) this.galleryPanel.style.display = 'none';
         if (this.nbPanel) this.nbPanel.style.display = 'none';
+        if (this.recipePanel) this.recipePanel.style.display = 'none';
         if (this.doctorPanel) this.doctorPanel.style.display = 'none';
         if (this.assistantPanel) this.assistantPanel.style.display = 'none';
         if (this.currentDetailObserver) {

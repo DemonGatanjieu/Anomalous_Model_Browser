@@ -3,11 +3,10 @@ import { loadModels, applyModelToCanvas, stopMediaInContainer } from './modules/
 import { createDOM, renderSidebar, loadFolders, showHelp, hideAllPanels, openFolderManager } from './modules/ui_sidebar.js';
 import { loadGalleryImages, showGeneratedGallery, showGallerySelectMode, showGalleryViewer } from './modules/ui_gallery.js';
 import { showNotebooks, refreshNotebooks, saveCurrentNotebook, deleteCurrentNotebook, renderNotebookEditor, fillNotebookGalleries, sendNotebookToCanvas } from './modules/ui_notebooks.js';
+import { showRecipes, refreshRecipes, renderRecipeList, handleSaveRecipe } from './modules/ui_recipes.js';
 import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, _openGalleryReplacer, openLoraInsertionPicker, runGlobalDoctorScan } from './modules/ui_doctor.js';
 import { app } from "../../scripts/app.js";
-
 import { i18n } from './modules/locales.js';
-
 // ============================================================================
 // TABLE OF CONTENTS (TOC)
 // 1. App Registration & Entry     (Search for "app.registerExtension")
@@ -17,7 +16,7 @@ import { i18n } from './modules/locales.js';
 // 5. UI - Detail Panel            (Search for "showDetail")
 // 6. UI - Gallery Viewer          (Search for "createGalleryViewer")
 // 7. UI - Doctor Panel            (Search for "createDoctorPanel")
-// 8. Notebooks                    (Search for "Notebook")
+// 8. Notebooks & Workflow Recipes (Search for "Notebook" or "Recipes")
 // ============================================================================
 
 let defaultLang = 'zh';
@@ -413,6 +412,11 @@ AnomalousBrowser.prototype.deleteCurrentNotebook = deleteCurrentNotebook;
 AnomalousBrowser.prototype.renderNotebookEditor = renderNotebookEditor;
 AnomalousBrowser.prototype.fillNotebookGalleries = fillNotebookGalleries;
 AnomalousBrowser.prototype.sendNotebookToCanvas = sendNotebookToCanvas;
+
+AnomalousBrowser.prototype.showRecipes = showRecipes;
+AnomalousBrowser.prototype.refreshRecipes = refreshRecipes;
+AnomalousBrowser.prototype.renderRecipeList = renderRecipeList;
+AnomalousBrowser.prototype.handleSaveRecipe = handleSaveRecipe;
 
 AnomalousBrowser.prototype.loadGalleryImages = loadGalleryImages;
 AnomalousBrowser.prototype.showGeneratedGallery = showGeneratedGallery;
