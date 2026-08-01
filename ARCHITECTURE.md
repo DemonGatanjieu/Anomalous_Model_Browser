@@ -35,6 +35,7 @@ Anomalous_Model_Browser/
 │       ├── ui_notebooks.js      # Notebooks editor
 │       ├── ui_gallery.js        # Fullscreen Gallery Viewer
 │       ├── ui_grid.js           # Main grid and model loading
+│       ├── graph_splice.js      # Transactional MODEL/CLIP chain insertion and rollback
 │       ├── locales.js           # Dedicated multi-language dictionary (i18n)
 │       └── safe_dom.js          # HTML escaping and allowlisted rich-text sanitization
 ├── tests/                       # Backend security and path-boundary regression tests
@@ -92,6 +93,11 @@ Instead of fragmenting the class scope and losing context, we extracted all UI p
 * **Gallery Viewer (`ui_gallery.js`)**: A fullscreen modal for viewing images.
 * **Notebook (`ui_notebooks.js`)**: A specialized editor for composing prompts and drag-dropping Lora/Model nodes.
 * **Doctor Panel (`ui_doctor.js`)**: Diagnoses model health for individual nodes or the entire workflow. Includes "View Profile" functionality.
+
+### Graph Splicing (`graph_splice.js`)
+Manual LoRA insertion is an explicit canvas mutation and is isolated from Model Doctor identity recovery. The graph helper analyzes ports by their declared `MODEL` and `CLIP` types, never by fixed slot indexes or display names. It supports inserting a compatible loader before a node with connected MODEL/CLIP inputs, or after a node with MODEL/CLIP outputs. Downstream fan-out is rejected as ambiguous until the user can choose a concrete branch.
+
+Graph edits are transactional: validate the complete topology before mutation, wrap the operation in `graph.beforeChange()` / `graph.afterChange()`, and restore every original connection if node creation or any link operation fails. A successful insertion must be one undoable graph change and must dirty the canvas. The helper must not move, delete, or rewrite existing nodes or widgets, and model choices supplied by the UI must remain constrained to ComfyUI's native combo values for the inserted node.
 
 ### JavaScript Rules of Engagement:
 1. **Strict Localization (双语)**: 
