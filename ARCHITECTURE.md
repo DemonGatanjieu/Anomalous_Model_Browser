@@ -12,6 +12,11 @@ This document provides a high-level overview of the Anomalous Model Browser plug
 
 ```text
 Anomalous_Model_Browser/
+├── .agents/                     # Local, ignored AI handoff material
+│   ├── logs/
+│   │   ├── ai_changelog.md      # Engineering snapshots, decisions, checks, and handoff notes
+│   │   └── ai_lessons.md        # Curated experience summary and recurring pitfalls
+│   └── plans/                   # Product/design proposals that are not runtime behavior
 ├── __init__.py                  # ComfyUI Extension Entry Point. Registers nodes and sets WEB_DIRECTORY = "./web"
 ├── api/                         # Backend Python API (Modularized)
 │   ├── __init__.py              # Appends all modular routes to server
@@ -24,7 +29,6 @@ Anomalous_Model_Browser/
 │   └── utils.py                 # Shared backend utilities and safe path boundary helpers
 ├── scraper.py                   # Async HTTP client logic & web scraping (Root Level)
 ├── CHANGELOG.md                 # Version history
-├── error_and_experience_summary.md # VERY IMPORTANT: Read this first to avoid past mistakes!
 ├── web/
 │   ├── main.js                  # Frontend Vanilla JS Entry (Under 1000 lines, mounts modules to prototype)
 │   ├── hash_resolver.js         # Frontend auto-fix engine: scans workflows for missing models
@@ -178,16 +182,16 @@ Scans all nodes in `app.graph._nodes` that are colored red.
 * **Variable Naming Collisions**: When moving UI elements, search for ALL references to the old `const` declaration. A single duplicate `const` in the same scope kills the entire module at parse time.
 * **Data Scaling & Payload Limits**: When passing arrays/lists (e.g. hundreds of selected files), NEVER append them to URL query parameters (`GET` requests), or you will trigger `414 URI Too Long`. Use `POST` with a `JSON Body`. Similarly, NEVER pass massive arrays directly to `subprocess.run` via CLI arguments, as it will crash silently due to OS character limits (8191 on Windows). Always dump massive data to an intermediate `.json` file for the subprocess to read.
 
-> For a complete list of past mistakes and detailed post-mortems, refer to `error_and_experience_summary.md` and `.agents/logs/ai_lessons.md` in the root directory.
+> For a complete list of past mistakes and detailed post-mortems, refer to `.agents/logs/ai_lessons.md`. Engineering snapshots and handoff notes belong in `.agents/logs/ai_changelog.md`.
 
 ## 7. Mandatory Change Snapshot Protocol (强制变更快照流程)
 
 Every product-code change in this plugin must finish as one coherent local Git snapshot:
 
 1. Run checks proportional to the touched behavior before committing.
-2. Update `CHANGELOG.md` in the same change with the visible behavior, fix, or internal safety/performance boundary.
+2. Update `.agents/logs/ai_changelog.md` in the same change with the implementation summary, architectural decision, checks run, and handoff notes.
 3. Update this `ARCHITECTURE.md` in the same change so directory ownership, data flow, API contracts, naming boundaries, and non-negotiable rules remain accurate. If the code does not alter an architectural boundary, record that the existing boundary is intentionally unchanged rather than inventing a new abstraction.
 4. Create a local Git commit after verification. Keep unrelated work out of the snapshot and do not push unless the user explicitly requests it.
 5. Leave a clean worktree for the next agent, or document every intentional uncommitted file in the handoff.
 
-Planning-only documentation may be committed separately, but proposals must be labeled clearly and must not be described as implemented runtime behavior.
+`CHANGELOG.md` is public user-facing release communication. Update it only for intentional user-visible release notes; never use it for internal design decisions, implementation details, test output, or agent handoff. Planning-only documentation may be committed separately, but proposals must be labeled clearly and must not be described as implemented runtime behavior.
