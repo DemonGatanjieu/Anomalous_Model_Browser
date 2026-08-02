@@ -60,6 +60,7 @@ AI_SYSTEM_TEMPLATE.md
 
 # Test files
 test_*.js
+tests/
 
 # Local diagnostic/test artifacts
 grep_doctor.txt
