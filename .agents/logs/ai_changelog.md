@@ -1,5 +1,18 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-03 — Show saved prompts in Parameters
+
+**Implemented**
+
+- Added the saved positive/negative prompt section to the Parameters tab.
+- Reused the existing prompt extraction, full-workflow fallback, copy, and expand/collapse behavior already used by Overview.
+- Kept generic node parameters separate; prompt visibility no longer depends on the bounded node-widget summary.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `git diff --check`
+
 ## [Snapshot] 2026-08-03 — Split model composition in recipe overview
 
 **Implemented**

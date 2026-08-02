@@ -31,6 +31,12 @@ This document serves as an architectural retrospective and UX diagnostic log for
 
 **The Solution (方案)**: Give model composition its own vertical section. Render the base model and each LoRA as an independent full-width block with safe wrapping and copy/expand controls; reserve the compact grid for short scalar values such as steps, CFG, sampler, and resolution.
 
+## 54. Saved Prompt Metadata Needs a Detail-Tab Contract (已保存提示词必须有明确详情页入口)
+
+**The Problem (问题)**: Prompt extraction already persisted `params.promptPositive` and `params.promptNegative`, but only the Overview invoked the prompt renderer. The Parameters tab only walked bounded generic node summaries, so a valid saved positive prompt looked absent.
+
+**The Solution (方案)**: Treat prompt summaries as first-class recipe parameters and render them in both Overview and Parameters. Keep the existing full-workflow lookup, copy control, and expand/collapse behavior so prompt display does not depend on the generic node summary limit.
+
 ## 1. UX Scroll Traps (交互嵌套滚动陷阱)
 **The Problem (问题)**: In the Notebook modal, the translation editor had a `max-height` and `overflow-y`. Since the parent modal was also scrollable, it created a "Scroll Trap". Hitting the bottom of the editor unpredictably transferred the scroll event to the outer body.
 (在笔记本弹窗中，由于翻译编辑器固定了最大高度并允许滚动，导致与父级弹窗的滚动条发生冲突。用户滚动到底部时会突然把外层页面卷走，体验极差。)

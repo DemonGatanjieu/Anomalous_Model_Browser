@@ -837,6 +837,10 @@ function renderModels(content, owner, recipe, references) {
 }
 
 function renderParameters(content, recipe) {
+    // Prompt summaries are persisted in params and are not guaranteed to be
+    // represented by the bounded generic widget list. Keep them visible on
+    // the Parameters tab as first-class saved values as well as in Overview.
+    renderPromptSection(content, recipe);
     const section = document.createElement('section');
     section.className = 'anomalous-recipe-detail-section';
     const heading = document.createElement('div');
