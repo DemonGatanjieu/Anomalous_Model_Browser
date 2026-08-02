@@ -975,8 +975,10 @@ export function renderRecipeList(recipes) {
                     ? `\n\n${t('recipeMissingNodes')}:\n${missingTypes.slice(0, 12).join('\n')}`
                     : '';
                 if (!confirm(`${t('recipeOpenCanvasConfirm')}${missingWarning}`)) return;
-                app.loadGraphData(payload.data.workflow);
+                await app.loadGraphData(payload.data.workflow);
                 app.canvas?.setDirty?.(true, true);
+                this.nbPanel && (this.nbPanel.style.display = 'none');
+                this.close?.();
             } catch (error) {
                 console.error('Could not restore Workflow Recipe:', error);
                 alert(t('recipeRestoreError'));

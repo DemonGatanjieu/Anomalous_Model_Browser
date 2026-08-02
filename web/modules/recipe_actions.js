@@ -234,10 +234,11 @@ export async function buildRecipePrompt(recipe, changes = []) {
     const temporaryGraph = new GraphClass();
     try {
         temporaryGraph.configure(workflow);
-        const promptResult = await app.graphToPrompt(temporaryGraph);
-        const prompt = promptResult?.output || promptResult;
-        if (!prompt || typeof prompt !== 'object' || !Object.keys(prompt).length) throw new Error('recipe_quick_queue_empty_prompt');
-        return prompt;
+        const promptEnvelope = await app.graphToPrompt(temporaryGraph);
+        if (!promptEnvelope || typeof promptEnvelope !== 'object' || !promptEnvelope.output || typeof promptEnvelope.output !== 'object' || !Object.keys(promptEnvelope.output).length) {
+            throw new Error('recipe_quick_queue_empty_prompt');
+        }
+        return promptEnvelope;
     } finally {
         temporaryGraph.clear?.();
     }

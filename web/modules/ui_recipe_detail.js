@@ -41,16 +41,29 @@ function canvasMayContainUserWork() {
     return true;
 }
 
-function openRecipeOnCanvas(recipe) {
-    if (canvasMayContainUserWork() && !confirm(t('recipeOpenCanvasConfirm'))) return false;
-    app.loadGraphData(recipe.workflow);
-    app.canvas?.setDirty?.(true, true);
-    return true;
+function closeRecipeWorkspace(owner) {
+    owner?.nbPanel && (owner.nbPanel.style.display = 'none');
+    owner?.close?.();
 }
 
-function appendRecipeOnCanvas(recipe) {
+async function openRecipeOnCanvas(owner, recipe) {
+    if (canvasMayContainUserWork() && !confirm(t('recipeOpenCanvasConfirm'))) return false;
+    try {
+        await app.loadGraphData(recipe.workflow);
+        app.canvas?.setDirty?.(true, true);
+        closeRecipeWorkspace(owner);
+        return true;
+    } catch (error) {
+        console.error('Could not open Workflow Recipe on canvas:', error);
+        alert(t('recipeRestoreError'));
+        return false;
+    }
+}
+
+function appendRecipeOnCanvas(owner, recipe) {
     try {
         appendRecipeToCanvas(recipe);
+        closeRecipeWorkspace(owner);
         return true;
     } catch (error) {
         console.error('Could not append Workflow Recipe:', error);
@@ -330,9 +343,9 @@ function renderOverview(content, owner, recipe, references, finish) {
     const edit = button(actions, t('recipeEdit'), 'anomalous-btn-success');
     edit.onclick = () => finish('edit');
     const load = button(actions, t('recipeOpenCanvas'), 'anomalous-btn-primary');
-    load.onclick = () => openRecipeOnCanvas(recipe);
+    load.onclick = () => { void openRecipeOnCanvas(owner, recipe); };
     const append = button(actions, t('recipeAppendCanvas'), 'anomalous-btn-primary');
-    append.onclick = () => appendRecipeOnCanvas(recipe);
+    append.onclick = () => appendRecipeOnCanvas(owner, recipe);
     const copyPrompt = button(actions, t('recipeDetailCopyPrompt'), 'anomalous-btn-primary');
     copyPrompt.onclick = () => copyText(positive);
     const copyFingerprint = button(actions, t('recipeDetailCopyFingerprint'), 'anomalous-btn-primary');
@@ -625,9 +638,9 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     const edit = button(headerActions, t('recipeEdit'), 'anomalous-btn-success');
     edit.onclick = () => finish('edit');
     const load = button(headerActions, t('recipeOpenCanvas'), 'anomalous-btn-primary');
-    load.onclick = () => openRecipeOnCanvas(recipe);
+    load.onclick = () => { void openRecipeOnCanvas(owner, recipe); };
     const append = button(headerActions, t('recipeAppendCanvas'), 'anomalous-btn-primary');
-    append.onclick = () => appendRecipeOnCanvas(recipe);
+    append.onclick = () => appendRecipeOnCanvas(owner, recipe);
     header.appendChild(headerActions);
     view.appendChild(header);
 

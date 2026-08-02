@@ -101,7 +101,21 @@
 
 - Audited the action layer against the installed ComfyUI frontend's LiteGraph and prompt-queue contracts.
 - Made append accept tuple and object-shaped serialized links, restore serialized groups with the same placement offset, reject subgraph definitions until ID remapping is implemented, and roll back nodes and groups together.
-- Corrected Quick Queue to unwrap `app.graphToPrompt(...).output` before calling `api.queuePrompt`, while preserving the no-live-canvas-mutation boundary.
+- Corrected Quick Queue to preserve the `{ output, workflow }` envelope returned by `app.graphToPrompt(...)`, which is the shape consumed by `api.queuePrompt`, while preserving the no-live-canvas-mutation boundary.
+
+**Validation**
+
+- `python_embeded/python.exe -m py_compile api/__init__.py api/models.py api/recipes.py api/recipe_packages.py`
+- `node --check` for every JavaScript file under `web/`
+- `git diff --check`
+
+## [Snapshot] 2026-08-02 — Recipe action feedback and queue contract fix
+
+**Implemented**
+
+- Fixed Quick Queue to pass the complete host prompt envelope instead of only its `output` field.
+- Awaited canvas loading before closing the Workspace and added a shared close path for detail-panel open/append actions.
+- Added visible failure handling for asynchronous recipe-to-canvas loading.
 
 **Validation**
 
