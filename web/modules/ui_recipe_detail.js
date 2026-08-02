@@ -802,6 +802,12 @@ function renderModels(content, owner, recipe, references, finish) {
                 owner.recipeModelReturn = () => {
                     owner.modal?.classList.add('visible');
                     if (owner.nbPanel) owner.nbPanel.style.display = 'flex';
+                    if (owner.detailPanel) {
+                        owner.detailPanel.style.display = 'none';
+                        owner.stopMediaInContainer?.(owner.detailPanel);
+                        owner.detailPanel.replaceChildren();
+                    }
+                    if (owner.recipeView) owner.recipeView.style.display = 'flex';
                     if (payload) showRecipeDetail(owner, payload);
                 };
                 if (openLocalModel(owner, reference.localModel)) finish('model');

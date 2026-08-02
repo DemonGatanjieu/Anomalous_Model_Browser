@@ -1,5 +1,14 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-03 — Complete recipe model return cleanup
+
+- When returning from a model detail opened by a recipe, explicitly hide and clean the model panel before restoring the Workspace recipe detail view.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `git diff --check`
+
 ## [Snapshot] 2026-08-03 — Guard recipe card actions
 
 **Implemented**
