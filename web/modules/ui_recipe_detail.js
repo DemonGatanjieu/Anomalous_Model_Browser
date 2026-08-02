@@ -488,7 +488,6 @@ async function matchLocalModel(owner, recipe, reference, status, rerender) {
             type: model.type,
             matched_by_hash: result.matched_by_hash === true,
             matched_by_size: result.matched_by_size === true,
-            matched_by_filename: result.matched_by_filename === true,
         };
         rerender();
     } catch (error) {
@@ -500,8 +499,8 @@ async function matchLocalModel(owner, recipe, reference, status, rerender) {
 function missingNodeTypes(recipe) {
     const registry = globalThis.LiteGraph?.registered_node_types;
     if (!registry) return [];
-    return [...new Set((recipe?.params?.nodes || [])
-        .map((node) => node?.type)
+    return [...new Set((recipe?.workflow?.nodes || [])
+        .map((node) => node?.type || node?.class_type)
         .filter((type) => type && !registry[type]))];
 }
 

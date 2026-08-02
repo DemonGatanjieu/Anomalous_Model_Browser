@@ -621,14 +621,9 @@ def _resolved_payload(candidate, **details):
 
 def _resolve_from_candidates(candidates, target_hash="", target_size=None, filename_query=""):
     target_hash = str(target_hash or "").strip().upper()
-    if filename_query:
-        normalized_query = str(filename_query).replace('\\', '/').lstrip('./')
-        query_basename = normalized_query.rsplit('/', 1)[-1]
-        for candidate in candidates:
-            if candidate["filename"] == normalized_query or (
-                '/' not in normalized_query and os.path.basename(candidate["filename"]) == query_basename
-            ):
-                return _resolved_payload(candidate, matched_by_filename=True)
+    # A saved filename/path is not identity evidence. It is intentionally
+    # ignored here; exact path lookup for previews lives in the bounded
+    # resolve_paths_to_previews endpoint and does not activate a model match.
 
     has_target_hash = bool(target_hash and target_hash != "UNKNOWN")
     size_matches = [
@@ -646,10 +641,7 @@ def _resolve_from_candidates(candidates, target_hash="", target_size=None, filen
         hash_matches = [candidate for candidate in candidates if target_hash in _candidate_hashes(candidate)]
         if hash_matches:
             return {"found": False, "identity_conflict": True}
-        if len(size_matches) == 1:
-            return _resolved_payload(size_matches[0], matched_by_size=True, stale_hash=True)
-        if len(size_matches) > 1:
-            return {"found": False, "ambiguous": True}
+        return {"found": False, "identity_conflict": True}
 
     if has_target_hash:
         hash_matches = [candidate for candidate in candidates if target_hash in _candidate_hashes(candidate)]

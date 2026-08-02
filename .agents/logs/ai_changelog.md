@@ -1,5 +1,22 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-03 — Preserve recipe identity across packages
+
+**Implemented**
+
+- Removed filename/path-first matching from `/anomalous/resolve_hash`; model matches now require allowed hash/size/category evidence, and a contradictory hash no longer degrades to a size-only guess.
+- Preserved imported model identity and frozen preview descriptors by stable `(node_id, widget_index, category, saved_value)` reference keys while keeping current local availability transient.
+- Exported packages now omit machine-local `source_image` paths and include snapshot assets referenced by selected historical versions as well as the current recipe.
+- Restore keeps historical preview asset descriptors instead of recapturing from the current machine.
+- Replacement import now stages all components and restores the previous recipe/assets/history state when a commit step fails.
+- Updated the second missing-node preflight path to use authoritative workflow nodes as well.
+
+**Validation**
+
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` — 9 tests passed
+- `python_embeded/python.exe -m py_compile api/recipes.py api/models.py api/recipe_packages.py`
+- `git diff --check`
+
 ## [Snapshot] 2026-08-03 — Harden Workflow Recipe save integrity
 
 **Implemented**

@@ -256,11 +256,41 @@ def _attach_preview_snapshots(recipe, recipes_dir, filename, references):
         }
 
 
-def _enrich_recipe(recipe, recipes_dir=None, filename=None):
+def _model_reference_key(reference):
+    if not isinstance(reference, dict):
+        return None
+    return (
+        reference.get("node_id"),
+        reference.get("widget_index"),
+        reference.get("category"),
+        reference.get("saved_value"),
+    )
+
+
+def _preserve_model_reference_fields(previous_references, references):
+    """Carry package/history presentation and identity without trusting names."""
+    previous = {
+        _model_reference_key(reference): reference
+        for reference in previous_references or []
+        if _model_reference_key(reference) is not None
+        and isinstance(reference, dict)
+    }
+    for reference in references:
+        prior = previous.get(_model_reference_key(reference))
+        if prior is None:
+            continue
+        for field in ("identity", "preview"):
+            if isinstance(prior.get(field), dict):
+                reference[field] = json.loads(json.dumps(prior[field], ensure_ascii=False))
+
+
+def _enrich_recipe(recipe, recipes_dir=None, filename=None, recapture_previews=True):
     recipe["workflow_fingerprint"] = _workflow_fingerprint(recipe["workflow"])
     params = dict(recipe.get("params") or {})
+    previous_references = params.get("model_references", [])
     references = _build_model_references(recipe)
-    if recipes_dir and filename:
+    _preserve_model_reference_fields(previous_references, references)
+    if recipes_dir and filename and recapture_previews:
         _attach_preview_snapshots(recipe, recipes_dir, filename, references)
     params["model_references"] = references
     recipe["params"] = params
@@ -754,7 +784,7 @@ async def api_restore_recipe_version(request):
         if not isinstance(existing, dict) or not isinstance(historical, dict):
             raise ValueError("Invalid recipe")
         recipe = _updated_recipe(historical, existing)
-        recipe = await asyncio.to_thread(_enrich_recipe, recipe, recipes_dir, filename)
+        recipe = await asyncio.to_thread(_enrich_recipe, recipe, recipes_dir, filename, False)
     except (AttributeError, ValueError, json.JSONDecodeError):
         return web.json_response({"status": "error", "message": "Invalid recipe"}, status=400)
     except FileNotFoundError:

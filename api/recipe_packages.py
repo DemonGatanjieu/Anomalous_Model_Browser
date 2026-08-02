@@ -149,6 +149,9 @@ def _validate_manifest(manifest, archive, names):
 
 def _sanitize_recipe_for_export(recipe, include_snapshots=True, include_identity=True):
     value = json.loads(json.dumps(recipe, ensure_ascii=False))
+    # A source_image points into the exporting machine's output directory and
+    # is not portable package data. The bounded thumbnail remains the cover.
+    value["source_image"] = None
     for reference in value.get("params", {}).get("model_references", []):
         if not include_snapshots:
             reference.pop("preview", None)
@@ -195,6 +198,19 @@ def _build_export(raw_recipe, recipes_dir, filename, options):
     include_history = options.get("include_history") is True
     include_identity = options.get("include_identity", True) is True
     recipe = _sanitize_recipe_for_export(raw_recipe, include_snapshots, include_identity)
+    history_recipes = []
+    if include_history:
+        for history_name in _recipe_history_files(recipes_dir, filename):
+            history_path = resolve_within(recipe_store._history_dir(recipes_dir, filename), history_name)
+            with open(history_path, "rb") as history_file:
+                data = history_file.read(MAX_ENTRY_BYTES + 1)
+            if len(data) > MAX_ENTRY_BYTES:
+                raise ValueError("Historical recipe is too large")
+            history_recipe = _parse_json(data, "historical recipe")
+            history_recipes.append((history_name, _sanitize_recipe_for_export(history_recipe, include_snapshots, include_identity)))
+    asset_ids = _referenced_asset_ids(recipe)
+    for _, history_recipe in history_recipes:
+        asset_ids.update(_referenced_asset_ids(history_recipe))
     entries = []
     output = io.BytesIO()
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
@@ -203,23 +219,18 @@ def _build_export(raw_recipe, recipes_dir, filename, options):
 
         if include_snapshots:
             assets_dir = recipe_store._recipe_assets_dir(recipes_dir, filename)
-            for asset_id in sorted(_referenced_asset_ids(recipe)):
+            for asset_id in sorted(asset_ids):
                 asset_path = resolve_within(assets_dir, asset_id)
                 if not os.path.isfile(asset_path):
                     continue
-                data = open(asset_path, "rb").read(MAX_ENTRY_BYTES + 1)
+                with open(asset_path, "rb") as asset_file:
+                    data = asset_file.read(MAX_ENTRY_BYTES + 1)
                 if len(data) > MAX_ENTRY_BYTES or not data.startswith(b"RIFF") or data[8:12] != b"WEBP":
                     continue
                 _add_zip_entry(archive, entries, f"assets/{asset_id}", data, "image/webp")
 
         if include_history:
-            for history_name in _recipe_history_files(recipes_dir, filename):
-                history_path = resolve_within(recipe_store._history_dir(recipes_dir, filename), history_name)
-                data = open(history_path, "rb").read(MAX_ENTRY_BYTES + 1)
-                if len(data) > MAX_ENTRY_BYTES:
-                    raise ValueError("Historical recipe is too large")
-                history_recipe = _parse_json(data, "historical recipe")
-                history_recipe = _sanitize_recipe_for_export(history_recipe, include_snapshots, include_identity)
+            for history_name, history_recipe in history_recipes:
                 data = json.dumps(history_recipe, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
                 _add_zip_entry(archive, entries, f"history/{history_name}", data, "application/json")
 
@@ -239,8 +250,10 @@ def _build_export(raw_recipe, recipes_dir, filename, options):
     return output.getvalue()
 
 
-def _validate_recipe_assets(archive, recipe, names):
-    referenced = _referenced_asset_ids(recipe)
+def _validate_recipe_assets(archive, recipes, names):
+    referenced = set()
+    for recipe in recipes:
+        referenced.update(_referenced_asset_ids(recipe))
     for asset_id in referenced:
         name = f"assets/{asset_id}"
         if name not in names:
@@ -260,13 +273,15 @@ def _inspect_package(raw):
         _validate_manifest(manifest, archive, names)
         recipe = _parse_json(_read_zip_entry(archive, "recipe.json"), "recipe")
         recipe_store._normalise_recipe(recipe)
-        _validate_recipe_assets(archive, recipe, names)
         history_names = [name for name in names if name.startswith("history/")]
         if len(history_names) > MAX_HISTORY_ENTRIES:
             raise ValueError("Too many history entries")
+        history_recipes = []
         for name in history_names:
             history = _parse_json(_read_zip_entry(archive, name), "historical recipe")
             recipe_store._normalise_recipe(history)
+            history_recipes.append(history)
+        _validate_recipe_assets(archive, [recipe, *history_recipes], names)
         return {
             "manifest": manifest,
             "recipe": recipe,
@@ -363,7 +378,11 @@ def _commit_import(record, payload):
     final_path = resolve_within(recipes_dir, filename)
     final_assets = recipe_store._recipe_assets_dir(recipes_dir, filename)
     final_history = recipe_store._history_dir(recipes_dir, filename)
+    backup_recipe = None
     backup_assets = None
+    backup_history = None
+    installed_assets = False
+    installed_history = False
     try:
         archive, _ = _validate_zip(record["raw"])
         with archive:
@@ -377,24 +396,39 @@ def _commit_import(record, payload):
                     _write_staged_json(os.path.join(history_stage, require_filename(name.split("/", 1)[1])), history)
 
         if collision == "replace":
-            existing = recipe_store._read_recipe(final_path)
-            recipe_store._archive_recipe(recipes_dir, filename, existing)
+            backup_recipe = os.path.join(staging, "old-recipe.json")
+            os.replace(final_path, backup_recipe)
             if os.path.isdir(final_assets):
                 backup_assets = os.path.join(staging, "old-assets")
                 shutil.move(final_assets, backup_assets)
+            if record["history_names"] and os.path.isdir(final_history):
+                backup_history = os.path.join(staging, "old-history")
+                shutil.move(final_history, backup_history)
 
         os.replace(os.path.join(staging, "recipe.json"), final_path)
         staged_assets = os.path.join(staging, "assets")
         if os.path.isdir(staged_assets):
             os.replace(staged_assets, final_assets)
+            installed_assets = True
         if record["history_names"]:
             history_stage = os.path.join(staging, "history")
             if os.path.isdir(final_history):
                 shutil.rmtree(final_history)
             os.replace(history_stage, final_history)
+            installed_history = True
     except Exception:
-        if collision == "replace" and backup_assets and not os.path.isdir(final_assets) and os.path.isdir(backup_assets):
-            shutil.move(backup_assets, final_assets)
+        if collision == "replace" and backup_recipe and os.path.isfile(backup_recipe):
+            if installed_assets and os.path.isdir(final_assets):
+                shutil.rmtree(final_assets, ignore_errors=True)
+            if installed_history and os.path.isdir(final_history):
+                shutil.rmtree(final_history, ignore_errors=True)
+            if os.path.isfile(final_path):
+                os.remove(final_path)
+            os.replace(backup_recipe, final_path)
+            if backup_assets and os.path.isdir(backup_assets):
+                shutil.move(backup_assets, final_assets)
+            if backup_history and os.path.isdir(backup_history):
+                shutil.move(backup_history, final_history)
         raise
     finally:
         shutil.rmtree(staging, ignore_errors=True)

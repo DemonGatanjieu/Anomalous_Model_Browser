@@ -5,6 +5,12 @@ This document serves as an architectural retrospective and UX diagnostic log for
 
 ---
 
+## 58. Identity, Preview, and Filename Are Different Evidence Classes
+
+**The Problem**: A recipe's saved model filename is useful for showing the user a basename and for locating a current-machine preview, but it cannot prove that a same-named local file is the same model. Package enrichment also rebuilt model references and accidentally discarded imported identity and historical preview descriptors.
+
+**The Solution**: Keep identity records and presentation descriptors keyed by node/widget/category/saved value, then rebuild only transient local availability around them. Resolver matching must use hash, exact size, and category rules; filename/path remains a locator only. Export must collect assets from every selected recipe version, remove local output paths, and commit replacement packages with rollback across recipe, assets, and history.
+
 ## 57. A Summary Must Never Become the Save/Edit Source
 
 **The Problem**: Recipe metadata deliberately truncates generic widget values for fast cards and detail browsing. Reusing it for edit controls meant a long prompt could be saved back as its truncated preview. A canvas-based update also started with an empty pin selection, silently dropping valid prior key parameters.
