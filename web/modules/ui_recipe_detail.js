@@ -751,12 +751,18 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
         appendText(container, 'p', t('recipeDetailNoModelReferences'), 'anomalous-recipe-detail-muted');
         return;
     }
-    const list = document.createElement('div');
-    list.className = 'anomalous-recipe-model-reference-list';
+    const baseModels = [];
+    const otherModels = [];
     for (const reference of references) {
+        const isBaseMatch = (params && params.baseModel && reference.saved_value === params.baseModel) || /(unet|checkpoint|ckpt|base)/i.test(reference.node_title || reference.node_type || reference.category || '');
+        if (isBaseMatch) baseModels.push(reference);
+        else otherModels.push(reference);
+    }
+
+    const createCard = (reference, forceBaseClass) => {
         const card = document.createElement('article');
         const isLocal = Boolean(reference.localModel);
-        const isBase = params && params.baseModel && reference.saved_value === params.baseModel;
+        const isBase = forceBaseClass;
         card.className = `anomalous-recipe-model-reference${isLocal ? ' is-local' : ' is-unresolved'}${isBase ? ' is-base-model' : ''}`;
         const body = document.createElement('div');
         body.className = 'anomalous-recipe-model-reference-body';
@@ -840,9 +846,28 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
         details.appendChild(meta);
         body.appendChild(details);
         card.appendChild(body);
-        list.appendChild(card);
+        return card;
+    };
+
+    if (baseModels.length) {
+        const baseList = document.createElement('div');
+        baseList.className = 'anomalous-recipe-model-reference-list';
+        baseModels.forEach(ref => baseList.appendChild(createCard(ref, true)));
+        container.appendChild(baseList);
     }
-    container.appendChild(list);
+    if (baseModels.length && otherModels.length) {
+        const divider = document.createElement('hr');
+        divider.className = 'anomalous-recipe-model-divider';
+        divider.style.borderTop = '1px solid var(--anomalous-border)';
+        divider.style.margin = '16px 0';
+        container.appendChild(divider);
+    }
+    if (otherModels.length) {
+        const otherList = document.createElement('div');
+        otherList.className = 'anomalous-recipe-model-reference-list';
+        otherModels.forEach(ref => otherList.appendChild(createCard(ref, false)));
+        container.appendChild(otherList);
+    }
 }
 
 function parameterNodesWithPromptFallback(recipe) {
