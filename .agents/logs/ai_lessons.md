@@ -5,6 +5,12 @@ This document serves as an architectural retrospective and UX diagnostic log for
 
 ---
 
+## 60. Async UI Actions Need One Ownership Boundary
+
+**The Problem**: Card actions each implemented their own `try/catch`, disabled state, or no state at all. A failed request could leave a control stuck, while a double click could start two recipe mutations.
+
+**The Solution**: Put busy-state ownership, duplicate-click prevention, error reporting, and `finally` restoration in one small action runner. Individual actions should only describe their domain operation and return/throw normally.
+
 ## 59. Cross-Panel Navigation Needs an Explicit Return Token
 
 **The Problem**: A recipe detail panel can launch a model detail panel owned by the main browser. Without a return token, the model Back button correctly returned to the model grid but lost the recipe tab, scroll position, and active view. Separately, Open/Append actions performed their work but left the detail Promise unresolved.

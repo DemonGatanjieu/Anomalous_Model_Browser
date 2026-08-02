@@ -1,5 +1,19 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-03 — Guard recipe card actions
+
+**Implemented**
+
+- Added a single card-action runner for detail, edit, export, open, append, and delete actions.
+- Buttons are disabled while their asynchronous operation is active and always restored in `finally`, including cancellation and failed requests.
+- Removed duplicated card-level error handling where the runner now owns the failure feedback.
+
+**Validation**
+
+- `node --check web/modules/ui_recipes.js`
+- `node --check web/modules/ui_recipe_detail.js`
+- `git diff --check`
+
 ## [Snapshot] 2026-08-03 — Stabilize recipe detail navigation lifecycle
 
 **Implemented**

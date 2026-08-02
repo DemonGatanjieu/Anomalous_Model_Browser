@@ -24,6 +24,21 @@ function formatRecipeText(key, values = {}) {
     return Object.entries(values).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, String(value)), t(key));
 }
 
+async function runRecipeCardAction(actionButton, action, errorKey) {
+    if (!actionButton || actionButton.disabled) return;
+    actionButton.disabled = true;
+    actionButton.classList.add('is-busy');
+    try {
+        await action();
+    } catch (error) {
+        console.error('Workflow Recipe action failed:', error);
+        alert(t(errorKey));
+    } finally {
+        actionButton.disabled = false;
+        actionButton.classList.remove('is-busy');
+    }
+}
+
 function appendText(parent, tagName, text, className = '') {
     const element = document.createElement(tagName);
     if (className) element.className = className;
@@ -1040,8 +1055,7 @@ export function renderRecipeList(recipes) {
         actions.className = 'anomalous-recipe-actions';
         const details = appendText(actions, 'button', t('recipeViewDetails'), 'anomalous-btn-primary');
         details.type = 'button';
-        details.onclick = async () => {
-            try {
+        details.onclick = () => runRecipeCardAction(details, async () => {
                 const bundle = await fetchRecipeBundle(recipe.filename);
                 const result = await showRecipeDetail(this, {
                     recipe: bundle.data,
@@ -1049,63 +1063,41 @@ export function renderRecipeList(recipes) {
                     history: bundle.history,
                 });
                 if (result?.mode === 'edit') await editRecipe(this, bundle.data, recipe.filename, bundle.history);
-            } catch (error) {
-                console.error('Could not open Workflow Recipe details:', error);
-                alert(t('recipeLoadError'));
-            }
-        };
+        }, 'recipeLoadError');
         const edit = appendText(actions, 'button', t('recipeEdit'), 'anomalous-btn-success');
         edit.type = 'button';
-        edit.onclick = () => editRecipe(this, recipe?.data || {}, recipe.filename);
+        edit.onclick = () => runRecipeCardAction(edit, () => editRecipe(this, recipe?.data || {}, recipe.filename), 'recipeUpdateError');
         const exportButton = appendText(actions, 'button', t('recipeExport'), 'anomalous-btn-primary');
         exportButton.type = 'button';
-        exportButton.onclick = async () => {
-            try {
-                await exportRecipePackage(recipe.filename);
-            } catch (error) {
-                console.error('Could not export Workflow Recipe package:', error);
-                alert(t('recipeExportError'));
-            }
-        };
+        exportButton.onclick = () => runRecipeCardAction(
+            exportButton,
+            () => exportRecipePackage(recipe.filename),
+            'recipeExportError',
+        );
         const restore = appendText(actions, 'button', t('recipeOpenCanvas'), 'anomalous-btn-primary');
         restore.type = 'button';
-        restore.onclick = async () => {
-            try {
-                const data = await fetchRecipeData(recipe.filename);
-                await openRecipeOnCanvas(this, data);
-            } catch (error) {
-                console.error('Could not restore Workflow Recipe:', error);
-                alert(t('recipeRestoreError'));
-            }
-        };
+        restore.onclick = () => runRecipeCardAction(restore, async () => {
+            const data = await fetchRecipeData(recipe.filename);
+            await openRecipeOnCanvas(this, data);
+        }, 'recipeRestoreError');
         const append = appendText(actions, 'button', t('recipeAppendCanvas'), 'anomalous-btn-primary');
         append.type = 'button';
-        append.onclick = async () => {
-            try {
-                const data = await fetchRecipeData(recipe.filename);
-                appendRecipeOnCanvas(this, data);
-            } catch (error) {
-                console.error('Could not append Workflow Recipe:', error);
-                alert(t('recipeAppendError'));
-            }
-        };
+        append.onclick = () => runRecipeCardAction(append, async () => {
+            const data = await fetchRecipeData(recipe.filename);
+            if (!appendRecipeOnCanvas(this, data)) throw new Error('recipe append failed');
+        }, 'recipeAppendError');
         const remove = appendText(actions, 'button', t('recipeDelete'), 'anomalous-btn-danger');
         remove.type = 'button';
-        remove.onclick = async () => {
+        remove.onclick = () => runRecipeCardAction(remove, async () => {
             if (!confirm(t('recipeDeleteConfirm'))) return;
-            try {
-                const response = await fetch('/anomalous/delete_recipe', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ filename: recipe.filename }),
-                });
-                if (!response.ok) throw new Error('recipe deletion failed');
-                await this.refreshRecipes();
-            } catch (error) {
-                console.error('Could not delete Workflow Recipe:', error);
-                alert(t('recipeDeleteError'));
-            }
-        };
+            const response = await fetch('/anomalous/delete_recipe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename: recipe.filename }),
+            });
+            if (!response.ok) throw new Error('recipe deletion failed');
+            await this.refreshRecipes();
+        }, 'recipeDeleteError');
         card.appendChild(actions);
         this.recipeListContainer.appendChild(card);
     }
