@@ -1,7 +1,8 @@
 /** Workflow Recipes UI, built on the same modal/card language as Notebooks. */
 
 import { app } from '../../../scripts/app.js';
-import { i18n } from './locales.js';
+import {  i18n  } from './locales.js';
+import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import {
     captureCanvasThumbnail,
     captureRecipeDraft,
@@ -32,7 +33,7 @@ async function runRecipeCardAction(actionButton, action, errorKey) {
         await action();
     } catch (error) {
         console.error('Workflow Recipe action failed:', error);
-        alert(t(errorKey));
+        await anomalousAlert(t(errorKey));
     } finally {
         actionButton.disabled = false;
         actionButton.classList.remove('is-busy');
@@ -108,9 +109,9 @@ function appendRecipeCover(parent, url, alt) {
 }
 
 async function exportRecipePackage(filename) {
-    const includeSnapshots = confirm(t('recipeExportSnapshotsConfirm'));
-    const includeHistory = confirm(t('recipeExportHistoryConfirm'));
-    const includeIdentity = !confirm(t('recipeExportRedactIdentityConfirm'));
+    const includeSnapshots = await anomalousConfirm(t('recipeExportSnapshotsConfirm'));
+    const includeHistory = await anomalousConfirm(t('recipeExportHistoryConfirm'));
+    const includeIdentity = !await anomalousConfirm(t('recipeExportRedactIdentityConfirm'));
     const response = await fetch('/anomalous/export_recipe_package', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -143,7 +144,7 @@ async function importRecipePackage(owner, file) {
     if (!inspectResponse.ok || inspectPayload.status !== 'success') throw new Error('recipe import inspection failed');
     const recipeName = inspectPayload.recipe?.name || t('recipeUntitled');
     const summary = `${t('recipeImportSummary')}\n\n${recipeName}\n${t('recipeImportAssets')}: ${inspectPayload.asset_count || 0}\n${t('recipeImportHistory')}: ${inspectPayload.history_count || 0}`;
-    if (!confirm(summary)) return;
+    if (!await anomalousConfirm(summary)) return;
     let name = recipeName;
     if ((inspectPayload.existing_names || []).includes(name)) {
         name = prompt(t('recipeImportRenamePrompt'), `${name} (Imported)`);
@@ -418,7 +419,7 @@ async function editRecipe(owner, recipe, filename, history = null) {
         const result = await showRecipeEditDialog(owner, editable, filename, bundle.history);
         if (!result || result.mode === 'restored') return;
         if (result.mode === 'canvas') {
-            if (!confirm(t('recipeEditCanvasConfirm'))) return;
+            if (!await anomalousConfirm(t('recipeEditCanvasConfirm'))) return;
             app.loadGraphData(editable.workflow);
             app.canvas?.setDirty?.(true, true);
             owner.recipeEditing = { filename, data: editable };
@@ -443,7 +444,7 @@ async function editRecipe(owner, recipe, filename, history = null) {
         await owner.refreshRecipes();
     } catch (error) {
         console.error('Could not edit Workflow Recipe:', error);
-        alert(t('recipeUpdateError'));
+        await anomalousAlert(t('recipeUpdateError'));
     }
 }
 
@@ -839,7 +840,7 @@ function showRecipeEditDialog(owner, recipeData, filename, history) {
                 const restore = appendText(row, 'button', t('recipeRestoreVersion'), 'anomalous-btn-danger');
                 restore.type = 'button';
                 restore.onclick = async () => {
-                    if (!confirm(t('recipeRestoreVersionConfirm'))) return;
+                    if (!await anomalousConfirm(t('recipeRestoreVersionConfirm'))) return;
                     try {
                         const response = await fetch('/anomalous/restore_recipe_version', {
                             method: 'POST',
@@ -852,7 +853,7 @@ function showRecipeEditDialog(owner, recipeData, filename, history) {
                         resolve({ mode: 'restored' });
                     } catch (error) {
                         console.error('Could not restore Workflow Recipe version:', error);
-                        alert(t('recipeUpdateError'));
+                        await anomalousAlert(t('recipeUpdateError'));
                     }
                 };
                 row.appendChild(restore);
@@ -971,7 +972,7 @@ export async function showRecipes() {
                 await importRecipePackage(this, file);
             } catch (error) {
                 console.error('Could not import Workflow Recipe package:', error);
-                alert(t('recipeImportError'));
+                await anomalousAlert(t('recipeImportError'));
             }
         };
         input.click();
@@ -1084,7 +1085,7 @@ export function renderRecipeList(recipes) {
         remove.onclick = (e) => {
             e.stopPropagation();
             runRecipeCardAction(remove, async () => {
-                if (!confirm(t('recipeDeleteConfirm'))) return;
+                if (!await anomalousConfirm(t('recipeDeleteConfirm'))) return;
                 const response = await fetch('/anomalous/delete_recipe', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1124,12 +1125,12 @@ export function renderRecipeList(recipes) {
 
 export async function handleSaveRecipe() {
     if (!app.graph?.serialize) {
-        alert(t('recipeSaveError'));
+        await anomalousAlert(t('recipeSaveError'));
         return;
     }
     const draft = captureRecipeDraft(app.graph);
     if (!draft.workflow || !Array.isArray(draft.workflow.nodes)) {
-        alert(t('recipeSaveError'));
+        await anomalousAlert(t('recipeSaveError'));
         return;
     }
     const canvasThumbnail = captureCanvasThumbnail(app.canvas?.canvas);
@@ -1187,7 +1188,7 @@ export async function handleSaveRecipe() {
         await this.refreshRecipes();
     } catch (error) {
         console.error('Could not save Workflow Recipe:', error);
-        alert(t('recipeSaveError'));
+        await anomalousAlert(t('recipeSaveError'));
     } finally {
         if (saveButton) {
             saveButton.disabled = false;

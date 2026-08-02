@@ -1,0 +1,138 @@
+export function anomalousAlert(message, title = 'Anomalous') {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.inset = '0';
+        overlay.style.zIndex = '999999';
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.background = 'rgba(0, 0, 0, 0.6)';
+        overlay.style.backdropFilter = 'blur(4px)';
+        overlay.style.padding = '20px';
+        overlay.style.boxSizing = 'border-box';
+        
+        const dialog = document.createElement('div');
+        dialog.style.background = 'linear-gradient(145deg, rgba(48, 49, 55, 0.98), rgba(27, 28, 33, 0.98))';
+        dialog.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+        dialog.style.borderRadius = '16px';
+        dialog.style.padding = '24px';
+        dialog.style.maxWidth = '400px';
+        dialog.style.width = '100%';
+        dialog.style.maxHeight = '90vh';
+        dialog.style.overflowY = 'auto';
+        dialog.style.boxShadow = '0 24px 70px rgba(0, 0, 0, 0.55)';
+        dialog.style.color = '#f3f4f6';
+        dialog.style.display = 'flex';
+        dialog.style.flexDirection = 'column';
+        dialog.style.gap = '16px';
+        
+        const heading = document.createElement('h3');
+        heading.textContent = title;
+        heading.style.margin = '0';
+        heading.style.fontSize = '1.25rem';
+        
+        const text = document.createElement('p');
+        text.textContent = message;
+        text.style.margin = '0';
+        text.style.lineHeight = '1.5';
+        text.style.whiteSpace = 'pre-wrap';
+        text.style.color = '#ccc';
+        
+        const footer = document.createElement('div');
+        footer.style.display = 'flex';
+        footer.style.justifyContent = 'flex-end';
+        footer.style.marginTop = '8px';
+        
+        const okBtn = document.createElement('button');
+        okBtn.textContent = window.anomalous_browser_lang === 'zh' ? '确定' : 'OK';
+        okBtn.className = 'anomalous-btn-primary';
+        okBtn.style.padding = '8px 24px';
+        
+        const cleanup = () => {
+            overlay.remove();
+            resolve();
+        };
+        
+        okBtn.onclick = cleanup;
+        
+        footer.appendChild(okBtn);
+        dialog.append(heading, text, footer);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        okBtn.focus();
+    });
+}
+
+export function anomalousConfirm(message, title = 'Anomalous') {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.inset = '0';
+        overlay.style.zIndex = '999999';
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.style.background = 'rgba(0, 0, 0, 0.6)';
+        overlay.style.backdropFilter = 'blur(4px)';
+        overlay.style.padding = '20px';
+        overlay.style.boxSizing = 'border-box';
+        
+        const dialog = document.createElement('div');
+        dialog.style.background = 'linear-gradient(145deg, rgba(48, 49, 55, 0.98), rgba(27, 28, 33, 0.98))';
+        dialog.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+        dialog.style.borderRadius = '16px';
+        dialog.style.padding = '24px';
+        dialog.style.maxWidth = '400px';
+        dialog.style.width = '100%';
+        dialog.style.maxHeight = '90vh';
+        dialog.style.overflowY = 'auto';
+        dialog.style.boxShadow = '0 24px 70px rgba(0, 0, 0, 0.55)';
+        dialog.style.color = '#f3f4f6';
+        dialog.style.display = 'flex';
+        dialog.style.flexDirection = 'column';
+        dialog.style.gap = '16px';
+        
+        const heading = document.createElement('h3');
+        heading.textContent = title;
+        heading.style.margin = '0';
+        heading.style.fontSize = '1.25rem';
+        
+        const text = document.createElement('p');
+        text.textContent = message;
+        text.style.margin = '0';
+        text.style.lineHeight = '1.5';
+        text.style.whiteSpace = 'pre-wrap';
+        text.style.color = '#ccc';
+        
+        const footer = document.createElement('div');
+        footer.style.display = 'flex';
+        footer.style.justifyContent = 'flex-end';
+        footer.style.gap = '12px';
+        footer.style.marginTop = '8px';
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = window.anomalous_browser_lang === 'zh' ? '取消' : 'Cancel';
+        cancelBtn.className = 'anomalous-btn-ghost';
+        cancelBtn.style.padding = '8px 24px';
+        
+        const okBtn = document.createElement('button');
+        okBtn.textContent = window.anomalous_browser_lang === 'zh' ? '确定' : 'OK';
+        okBtn.className = 'anomalous-btn-danger';
+        okBtn.style.padding = '8px 24px';
+        
+        const finish = (result) => {
+            overlay.remove();
+            resolve(result);
+        };
+        
+        cancelBtn.onclick = () => finish(false);
+        okBtn.onclick = () => finish(true);
+        
+        footer.append(cancelBtn, okBtn);
+        dialog.append(heading, text, footer);
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        cancelBtn.focus();
+    });
+}

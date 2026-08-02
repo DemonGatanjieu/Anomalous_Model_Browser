@@ -1,5 +1,6 @@
 import { app } from '../../../scripts/app.js';
-import { i18n } from './locales.js';
+import {  i18n  } from './locales.js';
+import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import {
     deriveRecipeModelReferences,
     formatIdentitySize,
@@ -66,7 +67,7 @@ export async function openRecipeOnCanvas(owner, recipe) {
     const missingWarning = missingTypes.length
         ? `\n\n${t('recipeMissingNodes')}:\n${missingTypes.slice(0, 12).join('\n')}`
         : '';
-    if ((canvasMayContainUserWork() || missingWarning) && !confirm(`${t('recipeOpenCanvasConfirm')}${missingWarning}`)) return false;
+    if ((canvasMayContainUserWork() || missingWarning) && !await anomalousConfirm(`${t('recipeOpenCanvasConfirm')}${missingWarning}`)) return false;
     try {
         await app.loadGraphData(recipe.workflow);
         app.canvas?.setDirty?.(true, true);
@@ -74,7 +75,7 @@ export async function openRecipeOnCanvas(owner, recipe) {
         return true;
     } catch (error) {
         console.error('Could not open Workflow Recipe on canvas:', error);
-        alert(t('recipeRestoreError'));
+        await anomalousAlert(t('recipeRestoreError'));
         return false;
     }
 }
@@ -86,7 +87,7 @@ export function appendRecipeOnCanvas(owner, recipe) {
         return true;
     } catch (error) {
         console.error('Could not append Workflow Recipe:', error);
-        alert(error.code === 'recipe_append_missing_node'
+        await anomalousAlert(error.code === 'recipe_append_missing_node'
             ? `${t('recipeAppendError')}\n${error.message}`
             : t('recipeAppendError'));
         return false;
@@ -657,39 +658,8 @@ function renderOverview(content, owner, recipe, references, finish) {
     const params = recipe.params || {};
     const modelComposition = document.createElement('div');
     modelComposition.className = 'anomalous-recipe-model-composition';
-    appendText(modelComposition, 'h5', t('recipeDetailModelComposition'));
-    const modelCompositionGrid = document.createElement('div');
-    modelCompositionGrid.className = 'anomalous-recipe-model-composition-grid';
-    const baseModelCard = document.createElement('article');
-    baseModelCard.className = 'anomalous-recipe-model-composition-card is-base-model';
-    appendText(baseModelCard, 'span', t('recipeDetailBaseModel'), 'anomalous-recipe-detail-label');
-    appendValueViewer(
-        baseModelCard,
-        modelDisplayName(params.baseModel) || t('recipeDetailUnavailable'),
-        'anomalous-recipe-model-composition-value',
-    );
-    modelCompositionGrid.appendChild(baseModelCard);
-    const loras = Array.isArray(params.loras) ? params.loras : [];
-    if (loras.length) {
-        loras.forEach((lora, index) => {
-            const loraCard = document.createElement('article');
-            loraCard.className = 'anomalous-recipe-model-composition-card';
-            appendText(loraCard, 'span', `${t('recipeDetailLoraSummary')} ${index + 1}`, 'anomalous-recipe-detail-label');
-            appendValueViewer(
-                loraCard,
-                modelDisplayName(lora?.name) || t('recipeDetailUnavailable'),
-                'anomalous-recipe-model-composition-value',
-            );
-            if (lora?.strength_model !== null && lora?.strength_model !== undefined) {
-                appendText(loraCard, 'small', `× ${lora.strength_model}`, 'anomalous-recipe-detail-muted');
-            }
-            modelCompositionGrid.appendChild(loraCard);
-        });
-    } else {
-        appendText(modelCompositionGrid, 'small', `${t('recipeDetailLoraSummary')}: ${t('recipeDetailUnavailable')}`, 'anomalous-recipe-detail-muted');
-    }
-    modelComposition.appendChild(modelCompositionGrid);
     summary.appendChild(modelComposition);
+    renderModelComposition(modelComposition, owner, recipe, references, finish, params);
     const values = [
         [t('recipeSteps'), params.steps],
         ['CFG', params.cfg],
@@ -733,12 +703,11 @@ function renderOverview(content, owner, recipe, references, finish) {
     content.appendChild(overview);
 }
 
-function renderModels(content, owner, recipe, references, finish) {
-    const section = document.createElement('section');
-    section.className = 'anomalous-recipe-detail-section';
+function renderModelComposition(container, owner, recipe, references, finish, params) {
+    container.replaceChildren();
     const heading = document.createElement('div');
     heading.className = 'anomalous-recipe-detail-section-heading';
-    appendText(heading, 'h4', t('recipeDetailModels'));
+    appendText(heading, 'h5', t('recipeDetailModelComposition'));
     const refresh = button(heading, t('recipeDetailRefreshAvailability'), 'anomalous-btn-primary');
     const status = appendText(
         heading,
@@ -770,18 +739,16 @@ function renderModels(content, owner, recipe, references, finish) {
                 }
             }
             await loadCurrentPreviews(owner, references);
-            content.replaceChildren();
-            renderModels(content, owner, recipe, references, finish);
+            renderModelComposition(container, owner, recipe, references, finish, params);
         } catch (error) {
             console.error('Could not refresh recipe model availability:', error);
             status.textContent = t('recipeDetailRefreshError');
             refresh.disabled = false;
         }
     };
-    section.appendChild(heading);
+    container.appendChild(heading);
     if (!references.length) {
-        appendText(section, 'p', t('recipeDetailNoModelReferences'), 'anomalous-recipe-detail-muted');
-        content.appendChild(section);
+        appendText(container, 'p', t('recipeDetailNoModelReferences'), 'anomalous-recipe-detail-muted');
         return;
     }
     const list = document.createElement('div');
@@ -789,7 +756,8 @@ function renderModels(content, owner, recipe, references, finish) {
     for (const reference of references) {
         const card = document.createElement('article');
         const isLocal = Boolean(reference.localModel);
-        card.className = `anomalous-recipe-model-reference${isLocal ? ' is-local' : ' is-unresolved'}`;
+        const isBase = params && params.baseModel && reference.saved_value === params.baseModel;
+        card.className = `anomalous-recipe-model-reference${isLocal ? ' is-local' : ' is-unresolved'}${isBase ? ' is-base-model' : ''}`;
         const body = document.createElement('div');
         body.className = 'anomalous-recipe-model-reference-body';
         const openModel = isLocal
@@ -864,8 +832,7 @@ function renderModels(content, owner, recipe, references, finish) {
             match.onclick = async () => {
                 match.disabled = true;
                 await matchLocalModel(owner, recipe, reference, matchStatus, () => {
-                    content.replaceChildren();
-                    renderModels(content, owner, recipe, references, finish);
+                    renderModelComposition(container, owner, recipe, references, finish, params);
                 });
                 if (!reference.localModel) match.disabled = false;
             };
@@ -875,8 +842,7 @@ function renderModels(content, owner, recipe, references, finish) {
         card.appendChild(body);
         list.appendChild(card);
     }
-    section.appendChild(list);
-    content.appendChild(section);
+    container.appendChild(list);
 }
 
 function parameterNodesWithPromptFallback(recipe) {
@@ -1096,7 +1062,7 @@ function renderVersions(content, owner, recipe, history, finish) {
         };
         const restore = button(row, t('recipeRestoreVersion'), 'anomalous-btn-danger');
         restore.onclick = async () => {
-            if (!confirm(t('recipeRestoreVersionConfirm'))) return;
+            if (!await anomalousConfirm(t('recipeRestoreVersionConfirm'))) return;
             try {
                 const response = await fetch('/anomalous/restore_recipe_version', {
                     method: 'POST',
@@ -1108,7 +1074,7 @@ function renderVersions(content, owner, recipe, history, finish) {
                 finish('restored');
             } catch (error) {
                 console.error('Could not restore recipe version:', error);
-                alert(t('recipeUpdateError'));
+                await anomalousAlert(t('recipeUpdateError'));
             }
         };
         timeline.appendChild(row);
@@ -1187,7 +1153,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     const tabDefinitions = [
         ['overview', t('recipeDetailOverview'), () => {
             renderOverview(content, owner, recipe, references, finish);
-            renderModels(content, owner, recipe, references, finish);
+
             const paramsWrapper = document.createElement('details');
             paramsWrapper.className = 'anomalous-recipe-detail-section';
             const summary = document.createElement('summary');
