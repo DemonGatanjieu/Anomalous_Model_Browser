@@ -182,9 +182,22 @@ function syncCommonRecipeMetadata(params, change) {
         if (field) params[field] = ['steps', 'cfg', 'denoise'].includes(field) ? numberValue(value) : value;
     }
     if (/cliptextencode/.test(type) && /^(text|prompt)$/.test(widget)) {
-        const prompts = Array.isArray(params.promptPositive) ? params.promptPositive : [];
-        const position = prompts.findIndex((item) => item === change.previousValue);
-        if (position >= 0) prompts[position] = textValue(value);
+        const positive = Array.isArray(params.promptPositive) ? params.promptPositive : (params.promptPositive = []);
+        const negative = Array.isArray(params.promptNegative) ? params.promptNegative : (params.promptNegative = []);
+        const position = positive.findIndex((item) => item === change.previousValue);
+        if (position >= 0) {
+            positive[position] = textValue(value);
+            return;
+        }
+        const negativePosition = negative.findIndex((item) => item === change.previousValue);
+        if (negativePosition >= 0) {
+            negative[negativePosition] = textValue(value);
+            return;
+        }
+        const descriptor = `${change.nodeTitle || ''} ${change.nodeType || ''}`;
+        const target = /(negative|neg|负面|反向)/i.test(descriptor) ? negative : positive;
+        const prompt = textValue(value);
+        if (prompt && !target.includes(prompt)) target.push(prompt);
     }
 }
 
@@ -355,6 +368,19 @@ export function extractRecipeMetadata(graph) {
             const width = numberValue(widgetValue(node, ['width'], 0));
             const height = numberValue(widgetValue(node, ['height'], 1));
             if (width && height) metadata.resolution = { width, height };
+        }
+    }
+    if (!metadata.promptPositive.length || !metadata.promptNegative.length) {
+        for (const node of graph._nodes) {
+            if (!/cliptextencode/i.test(nodeType(node))) continue;
+            const prompt = textValue(widgetValue(node, ['text', 'prompt'], 0));
+            if (!prompt) continue;
+            const descriptor = `${node?.title || ''} ${nodeType(node)}`;
+            if (/(negative|neg|负面|反向)/i.test(descriptor)) {
+                if (!metadata.promptNegative.length) appendUnique(metadata.promptNegative, [prompt]);
+            } else if (!metadata.promptPositive.length) {
+                appendUnique(metadata.promptPositive, [prompt]);
+            }
         }
     }
     return metadata;

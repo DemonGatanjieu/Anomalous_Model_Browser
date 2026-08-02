@@ -5,6 +5,12 @@ This document serves as an architectural retrospective and UX diagnostic log for
 
 ---
 
+## 51. A Bounded Card Summary Is Not a Detail Value (卡片摘要不能冒充详情值)
+
+**The Problem (问题)**: The recipe card intentionally limits generic widget text for fast browsing, but the detail panel reused that same summary. Long prompts and output settings looked saved yet could not be inspected or copied in full, while the negative prompt was hidden behind a positive-only overview layout.
+
+**The Solution (方案)**: Keep the compact summary for cards, then resolve the matching safe value from the already-loaded serialized workflow only in the detail panel. Present positive and negative prompts explicitly. Any long value must offer visible expand/collapse and copy actions; do not replace available data with an unexplained ellipsis.
+
 ## 50. Host Prompt APIs Often Return an Envelope (宿主 Prompt API 可能返回包装对象)
 
 **The Problem (问题)**: ComfyUI's `api.queuePrompt` destructures the `{ output, workflow }` envelope returned by `app.graphToPrompt(graph)`. Passing only the nested `output` object loses the workflow metadata and produces an invalid queue payload.

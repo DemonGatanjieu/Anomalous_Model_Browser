@@ -153,7 +153,7 @@ Workspace
 
 - Recipe cover, name, tags, notes, created/updated time.
 - Primary checkpoint/UNET and LoRA summary.
-- First positive prompt excerpt, primary sampling values, latent resolution, pinned parameters.
+- Separate positive and negative prompt panels, primary sampling values, latent resolution, and pinned parameters. Prompt/parameter text uses a compact collapsed view with explicit expand and copy controls; the detail view never silently truncates an available safe value.
 - Reproducibility summary: verified, unverified, unavailable, and missing-node counts.
 - Actions: edit metadata, open in canvas, append to canvas, copy prompt, copy workflow fingerprint.
 - If Quick Queue is explicitly enabled and validation succeeds, Overview also exposes the pinned-parameter form and queue action. It must not be the default action for every imported or incomplete recipe.
@@ -427,7 +427,7 @@ Exit condition: a large library can be narrowed without full recipe fetches, gra
 
 - Introduce pure semantic normalization and diff records.
 - Compare current vs selected history for pinned values, prompts, model references, graph counts/fingerprint, and presentation changes.
-- Render Added / Removed / Changed / Unchanged sections with long-value truncation and copy affordances.
+- Render Added / Removed / Changed / Unchanged sections with side-by-side, collapsible full-value viewers and copy affordances.
 - Keep restore behavior separate and preserve the current recipe before restoring history.
 
 Exit condition: users can explain the meaningful difference between the current recipe and one historical version without a visual graph diff.

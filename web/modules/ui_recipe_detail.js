@@ -7,7 +7,7 @@ import {
     recipeReferenceKey,
     shortHash,
 } from './recipe_identity.js';
-import { buildRecipeDiff, diffIsEmpty, formatDiffValue } from './recipe_diff.js';
+import { buildRecipeDiff, diffIsEmpty } from './recipe_diff.js';
 import { appendRecipeToCanvas, quickQueueRecipe } from './recipe_actions.js';
 
 const t = (key) => {
@@ -75,8 +75,10 @@ function appendRecipeOnCanvas(owner, recipe) {
 }
 
 function displayValue(value) {
+    if (value === undefined) return '';
+    if (value === null) return 'null';
     if (typeof value === 'string') return value;
-    try { return JSON.stringify(value); } catch (error) { return String(value); }
+    try { return JSON.stringify(value) ?? String(value); } catch (error) { return String(value); }
 }
 
 function compact(value, limit = 180) {
@@ -90,8 +92,85 @@ function dateText(value) {
 }
 
 async function copyText(value) {
-    if (!value) return;
-    try { await navigator.clipboard.writeText(String(value)); } catch (error) { console.warn('Could not copy recipe detail value:', error); }
+    if (value === null || value === undefined || value === '') return false;
+    try {
+        await navigator.clipboard.writeText(String(value));
+        return true;
+    } catch (error) {
+        console.warn('Could not copy recipe detail value:', error);
+        return false;
+    }
+}
+
+function appendCopyButton(parent, value, label = t('recipeCopyParameter')) {
+    const copy = button(parent, '⧉', 'anomalous-recipe-copy-param anomalous-recipe-detail-copy');
+    copy.title = label;
+    copy.setAttribute('aria-label', label);
+    copy.onclick = async () => {
+        const original = copy.textContent;
+        copy.textContent = await copyText(value) ? '✓' : '!';
+        setTimeout(() => { copy.textContent = original; }, 1200);
+    };
+    return copy;
+}
+
+function needsExpansion(value) {
+    const text = String(value || '');
+    return text.length > 260 || text.split(/\r?\n/).length > 3;
+}
+
+function appendValueViewer(parent, value, className = '') {
+    const text = displayValue(value);
+    const viewer = document.createElement('div');
+    viewer.className = `anomalous-recipe-detail-value-viewer${className ? ` ${className}` : ''}`;
+    const code = appendText(viewer, 'code', text, 'anomalous-recipe-detail-full-value');
+    if (needsExpansion(text)) {
+        code.classList.add('is-collapsed');
+        const toggle = button(viewer, t('recipeDetailExpandValue'), 'anomalous-recipe-detail-value-toggle');
+        toggle.onclick = () => {
+            const expanded = code.classList.toggle('is-collapsed') === false;
+            toggle.textContent = expanded ? t('recipeDetailCollapseValue') : t('recipeDetailExpandValue');
+        };
+    }
+    appendCopyButton(viewer, text);
+    parent.appendChild(viewer);
+    return viewer;
+}
+
+function promptValues(recipe) {
+    const params = recipe?.params || {};
+    const positive = [...new Set((Array.isArray(params?.promptPositive) ? params.promptPositive : [params?.promptPositive])
+        .filter((value) => typeof value === 'string' && value.trim()))];
+    const negative = [...new Set((Array.isArray(params?.promptNegative) ? params.promptNegative : [params?.promptNegative])
+        .filter((value) => typeof value === 'string' && value.trim()))];
+    for (const node of params?.nodes || []) {
+        if (!/cliptextencode/i.test(String(node?.type || ''))) continue;
+        const widget = (node.widgets || []).find((candidate) => /^(text|prompt)$/i.test(String(candidate?.name || '')));
+        const text = widget ? fullWidgetValue(recipe, node, widget) : null;
+        if (typeof text !== 'string' || !text.trim()) continue;
+        const descriptor = `${node?.title || ''} ${node?.type || ''}`;
+        if (/(negative|neg|负面|反向)/i.test(descriptor)) {
+            if (!negative.includes(text)) negative.push(text);
+        } else if (!positive.length && !positive.includes(text)) {
+            positive.push(text);
+        }
+    }
+    return { positive, negative };
+}
+
+function fullWidgetValue(recipe, node, widget) {
+    const workflowNode = (recipe?.workflow?.nodes || []).find((candidate) => String(candidate?.id) === String(node?.id));
+    const index = Number.isInteger(widget?.index) ? widget.index : -1;
+    if (index >= 0 && Array.isArray(workflowNode?.widgets_values) && workflowNode.widgets_values[index] !== undefined) {
+        return workflowNode.widgets_values[index];
+    }
+    return widget?.value;
+}
+
+function fullDiffValue(value) {
+    if (value === null || value === undefined || value === '') return t('recipeDetailUnavailable');
+    if (typeof value === 'string') return value.trim();
+    try { return JSON.stringify(value, null, 2); } catch (error) { return String(value); }
 }
 
 function identityBadge(reference) {
@@ -205,6 +284,34 @@ function renderStat(parent, label, value, kind = '') {
     parent.appendChild(stat);
 }
 
+function renderPromptSection(parent, recipe) {
+    const prompts = promptValues(recipe);
+    const section = document.createElement('section');
+    section.className = 'anomalous-recipe-detail-section anomalous-recipe-detail-prompts';
+    appendText(section, 'h4', t('recipeDetailPrompts'));
+    const entries = [
+        ...prompts.positive.map((value, index) => ({ label: `${t('recipeDetailPositivePrompt')}${prompts.positive.length > 1 ? ` ${index + 1}` : ''}`, value, kind: 'positive' })),
+        ...prompts.negative.map((value, index) => ({ label: `${t('recipeDetailNegativePrompt')}${prompts.negative.length > 1 ? ` ${index + 1}` : ''}`, value, kind: 'negative' })),
+    ];
+    if (!entries.length) {
+        appendText(section, 'p', t('recipeDetailNoPrompts'), 'anomalous-recipe-detail-muted');
+        parent.appendChild(section);
+        return prompts;
+    }
+    const list = document.createElement('div');
+    list.className = 'anomalous-recipe-detail-prompt-list';
+    for (const entry of entries) {
+        const row = document.createElement('article');
+        row.className = `anomalous-recipe-detail-prompt anomalous-recipe-detail-prompt-${entry.kind}`;
+        appendText(row, 'strong', entry.label, 'anomalous-recipe-detail-prompt-label');
+        appendValueViewer(row, entry.value);
+        list.appendChild(row);
+    }
+    section.appendChild(list);
+    parent.appendChild(section);
+    return prompts;
+}
+
 function renderQuickQueue(parent, owner, recipe) {
     const section = document.createElement('section');
     section.className = 'anomalous-recipe-detail-section anomalous-recipe-quick-queue';
@@ -293,7 +400,11 @@ function renderOverview(content, owner, recipe, references, finish) {
     const copy = document.createElement('div');
     copy.className = 'anomalous-recipe-detail-hero-copy';
     appendText(copy, 'h3', recipe.name || t('recipeUntitled'));
-    appendText(copy, 'p', recipe.notes || t('recipeDetailNoNotes'), 'anomalous-recipe-detail-muted');
+    const notes = document.createElement('div');
+    notes.className = 'anomalous-recipe-detail-notes';
+    appendText(notes, 'p', recipe.notes || t('recipeDetailNoNotes'), 'anomalous-recipe-detail-muted');
+    if (recipe.notes) appendCopyButton(notes, recipe.notes);
+    copy.appendChild(notes);
     const tags = document.createElement('div');
     tags.className = 'anomalous-recipe-tags';
     for (const tag of recipe.tags || []) appendText(tags, 'span', tag, 'anomalous-recipe-badge anomalous-recipe-badge-tag');
@@ -319,7 +430,6 @@ function renderOverview(content, owner, recipe, references, finish) {
     const summaryGrid = document.createElement('div');
     summaryGrid.className = 'anomalous-recipe-detail-summary-grid';
     const params = recipe.params || {};
-    const positive = Array.isArray(params.promptPositive) ? params.promptPositive[0] : params.promptPositive;
     const values = [
         [t('recipeModel'), params.baseModel],
         [t('recipeDetailLoraSummary'), (params.loras || []).map((item) => item.name).join(', ')],
@@ -327,7 +437,6 @@ function renderOverview(content, owner, recipe, references, finish) {
         ['CFG', params.cfg],
         [t('recipeDetailSampler'), params.sampler_name],
         [t('recipeDetailResolution'), params.resolution ? `${params.resolution.width} x ${params.resolution.height}` : ''],
-        [t('recipePrompt'), compact(positive, 260)],
     ];
     for (const [label, value] of values) {
         const row = document.createElement('div');
@@ -337,6 +446,7 @@ function renderOverview(content, owner, recipe, references, finish) {
     }
     summary.appendChild(summaryGrid);
     overview.appendChild(summary);
+    const prompts = renderPromptSection(overview, recipe);
 
     const actions = document.createElement('div');
     actions.className = 'anomalous-recipe-actions anomalous-recipe-detail-actions';
@@ -347,7 +457,12 @@ function renderOverview(content, owner, recipe, references, finish) {
     const append = button(actions, t('recipeAppendCanvas'), 'anomalous-btn-primary');
     append.onclick = () => appendRecipeOnCanvas(owner, recipe);
     const copyPrompt = button(actions, t('recipeDetailCopyPrompt'), 'anomalous-btn-primary');
-    copyPrompt.onclick = () => copyText(positive);
+    const promptBundle = [
+        prompts.positive.length ? `${t('recipeDetailPositivePrompt')}:\n${prompts.positive.join('\n\n')}` : '',
+        prompts.negative.length ? `${t('recipeDetailNegativePrompt')}:\n${prompts.negative.join('\n\n')}` : '',
+    ].filter(Boolean).join('\n\n');
+    copyPrompt.disabled = !promptBundle;
+    copyPrompt.onclick = () => copyText(promptBundle);
     const copyFingerprint = button(actions, t('recipeDetailCopyFingerprint'), 'anomalous-btn-primary');
     copyFingerprint.disabled = !fingerprintText(recipe);
     copyFingerprint.onclick = () => copyText(fingerprintText(recipe));
@@ -422,14 +537,16 @@ function renderModels(content, owner, recipe, references) {
         appendText(top, 'span', reference.category || t('recipeDetailModel'), 'anomalous-recipe-detail-muted');
         top.appendChild(identityBadge(reference));
         details.appendChild(top);
-        appendText(details, 'code', reference.saved_value || t('recipeDetailUnavailable'), 'anomalous-recipe-model-reference-value');
+        const referenceValue = document.createElement('div');
+        referenceValue.className = 'anomalous-recipe-model-reference-value';
+        appendValueViewer(referenceValue, reference.saved_value || t('recipeDetailUnavailable'));
+        details.appendChild(referenceValue);
         const meta = document.createElement('div');
         meta.className = 'anomalous-recipe-model-reference-meta';
         const identity = normaliseIdentity(reference.identity);
         if (identity.sha256) {
             appendText(meta, 'span', `SHA256 ${shortHash(identity.sha256)}`);
-            const copy = button(meta, t('recipeDetailCopyHash'), 'anomalous-recipe-copy-param');
-            copy.onclick = () => copyText(identity.sha256);
+            appendCopyButton(meta, identity.sha256, t('recipeDetailCopyHash'));
         }
         if (formatIdentitySize(identity.size)) appendText(meta, 'span', formatIdentitySize(identity.size));
         appendText(meta, 'span', reference.currentAvailability === 'available'
@@ -462,8 +579,11 @@ function renderParameters(content, recipe) {
         list.replaceChildren();
         const query = search.value.trim().toLowerCase();
         for (const node of recipe.params?.nodes || []) {
-            const widgets = (node.widgets || []).filter((widget) => {
-                const haystack = `${node.title || ''} ${node.type || ''} ${widget.name || ''} ${displayValue(widget.value)}`.toLowerCase();
+            const widgets = (node.widgets || []).map((widget) => ({
+                widget,
+                value: fullWidgetValue(recipe, node, widget),
+            })).filter(({ widget, value }) => {
+                const haystack = `${node.title || ''} ${node.type || ''} ${widget.name || ''} ${displayValue(value)}`.toLowerCase();
                 return !query || haystack.includes(query);
             });
             if (!widgets.length) continue;
@@ -471,11 +591,11 @@ function renderParameters(content, recipe) {
             block.className = 'anomalous-recipe-detail-parameter-node';
             appendText(block, 'strong', node.title || node.type || t('recipeUnknownNode'));
             appendText(block, 'small', node.type || '', 'anomalous-recipe-detail-muted');
-            for (const widget of widgets) {
+            for (const { widget, value } of widgets) {
                 const row = document.createElement('div');
                 row.className = 'anomalous-recipe-detail-parameter-row';
                 appendText(row, 'span', widget.name || t('recipeDetailWidget'), 'anomalous-recipe-detail-label');
-                appendText(row, 'code', compact(displayValue(widget.value), 320), 'anomalous-recipe-detail-value');
+                appendValueViewer(row, value);
                 block.appendChild(row);
             }
             list.appendChild(block);
@@ -497,6 +617,14 @@ function diffCategoryLabel(category) {
         workflow: 'recipeDiffWorkflow',
         presentation: 'recipeDiffPresentation',
     }[category] || 'recipeDiffOther');
+}
+
+function appendDiffValue(parent, label, value, kind) {
+    const item = document.createElement('div');
+    item.className = `anomalous-recipe-diff-value anomalous-recipe-diff-value-${kind}`;
+    appendText(item, 'small', label, 'anomalous-recipe-detail-muted');
+    appendValueViewer(item, fullDiffValue(value));
+    parent.appendChild(item);
 }
 
 function renderDiffPanel(parent, owner, recipe, version, trigger) {
@@ -529,14 +657,17 @@ function renderDiffPanel(parent, owner, recipe, version, trigger) {
                 group.className = 'anomalous-recipe-diff-group';
                 appendText(group, 'h5', diffCategoryLabel(category));
                 for (const change of categoryChanges) {
-                    const row = document.createElement('div');
+                    const row = document.createElement('article');
                     row.className = `anomalous-recipe-diff-row anomalous-recipe-diff-${change.kind}`;
+                    const values = document.createElement('div');
+                    values.className = 'anomalous-recipe-diff-values';
                     const marker = change.kind === 'added' ? '+' : change.kind === 'removed' ? '−' : '→';
                     appendText(row, 'span', marker, 'anomalous-recipe-diff-marker');
                     appendText(row, 'strong', change.label || change.key, 'anomalous-recipe-diff-label');
-                    if (change.kind !== 'added') appendText(row, 'code', formatDiffValue(change.before), 'anomalous-recipe-diff-before');
+                    if (change.kind !== 'added') appendDiffValue(values, t('recipeDiffBefore'), change.before, 'before');
                     if (change.kind === 'changed') appendText(row, 'span', '→', 'anomalous-recipe-diff-arrow');
-                    if (change.kind !== 'removed') appendText(row, 'code', formatDiffValue(change.after), 'anomalous-recipe-diff-after');
+                    if (change.kind !== 'removed') appendDiffValue(values, t('recipeDiffAfter'), change.after, 'after');
+                    row.appendChild(values);
                     group.appendChild(row);
                 }
                 panel.appendChild(group);
@@ -563,7 +694,9 @@ function renderVersions(content, owner, recipe, history, finish) {
     current.className = 'anomalous-recipe-version-row current';
     appendText(current, 'strong', t('recipeDetailCurrentVersion'));
     appendText(current, 'span', dateText(recipe.updated_timestamp || recipe.timestamp));
-    appendText(current, 'code', shortHash(fingerprintText(recipe)) || t('recipeDetailNotIndexed'));
+    const currentFingerprint = fingerprintText(recipe);
+    appendText(current, 'code', shortHash(currentFingerprint) || t('recipeDetailNotIndexed'));
+    if (currentFingerprint) appendCopyButton(current, currentFingerprint, t('recipeDetailCopyFingerprint'));
     timeline.appendChild(current);
     for (const version of history || []) {
         const row = document.createElement('article');
@@ -572,7 +705,9 @@ function renderVersions(content, owner, recipe, history, finish) {
         appendText(copy, 'strong', version.name || t('recipeUnknownVersion'));
         appendText(copy, 'span', dateText(version.timestamp));
         row.appendChild(copy);
-        appendText(row, 'code', shortHash(version.workflow_fingerprint?.value) || t('recipeDetailNotIndexed'));
+        const versionFingerprint = version.workflow_fingerprint?.value || '';
+        appendText(row, 'code', shortHash(versionFingerprint) || t('recipeDetailNotIndexed'));
+        if (versionFingerprint) appendCopyButton(row, versionFingerprint, t('recipeDetailCopyFingerprint'));
         const compare = button(row, t('recipeCompareVersion'), 'anomalous-btn-primary');
         compare.onclick = () => {
             const existing = row.querySelector('.anomalous-recipe-version-diff');

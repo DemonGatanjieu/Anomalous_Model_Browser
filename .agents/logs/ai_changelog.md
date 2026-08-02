@@ -122,3 +122,19 @@
 - `python_embeded/python.exe -m py_compile api/__init__.py api/models.py api/recipes.py api/recipe_packages.py`
 - `node --check` for every JavaScript file under `web/`
 - `git diff --check`
+
+## [Snapshot] 2026-08-02 — Recipe detail readability pass
+
+**Implemented**
+
+- Added a dedicated Overview prompt section for positive and negative prompts, including per-value expansion and copy controls.
+- Detail Parameters now resolve full safe widget values from the saved serialized workflow instead of reusing the card's bounded 320-character summary.
+- Added visible copy feedback for parameter values, model references, and hashes; long values are explicitly collapsible rather than silently ellipsized.
+- Reworked version-diff text into before/after value blocks so long prompts and JSON remain readable, expandable, and copyable without forcing a wide row.
+- Tightened Recipe detail spacing, card padding, thumbnail height, and summary grid sizing to reduce empty vertical space.
+
+**Validation**
+
+- `recipe_parser.js` positive/negative prompt fallback smoke test passed
+- `node --check` for every JavaScript file under `web/`
+- `git diff --check`
