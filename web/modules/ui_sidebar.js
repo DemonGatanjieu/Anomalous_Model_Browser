@@ -2037,6 +2037,7 @@ export function showHelp() {
 
 
 export function hideAllPanels() {
+        this.recipeModelReturn = null;
         this.grid.style.display = 'none';
         this.detailPanel.style.display = 'none';
         if (this.galleryPanel) this.galleryPanel.style.display = 'none';

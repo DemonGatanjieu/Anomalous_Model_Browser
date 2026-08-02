@@ -96,6 +96,12 @@ export function showDetail(model) {
                 this.currentDetailObserver.disconnect();
                 this.currentDetailObserver = null;
             }
+            if (typeof this.recipeModelReturn === 'function') {
+                const returnToRecipe = this.recipeModelReturn;
+                this.recipeModelReturn = null;
+                returnToRecipe();
+                return;
+            }
             if (this.historyStack.length > 0) {
                 const prev = this.historyStack.pop();
                 if (prev.type === 'doctor') {

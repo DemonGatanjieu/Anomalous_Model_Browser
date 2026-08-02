@@ -41,6 +41,18 @@ function closeRecipeWorkspace(owner) {
     owner?.close?.();
 }
 
+async function runRecipeAction(actionButton, action) {
+    if (!actionButton || actionButton.disabled) return false;
+    actionButton.disabled = true;
+    actionButton.classList.add('is-busy');
+    try {
+        return await action();
+    } finally {
+        actionButton.disabled = false;
+        actionButton.classList.remove('is-busy');
+    }
+}
+
 function missingRecipeNodeTypes(recipe) {
     const registry = globalThis.LiteGraph?.registered_node_types;
     if (!registry) return [];
@@ -698,9 +710,17 @@ function renderOverview(content, owner, recipe, references, finish) {
     const edit = button(actions, t('recipeEdit'), 'anomalous-btn-success');
     edit.onclick = () => finish('edit');
     const load = button(actions, t('recipeOpenCanvas'), 'anomalous-btn-primary');
-    load.onclick = () => { void openRecipeOnCanvas(owner, recipe); };
+    load.onclick = () => {
+        void runRecipeAction(load, async () => {
+            if (await openRecipeOnCanvas(owner, recipe)) finish('canvas');
+        });
+    };
     const append = button(actions, t('recipeAppendCanvas'), 'anomalous-btn-primary');
-    append.onclick = () => appendRecipeOnCanvas(owner, recipe);
+    append.onclick = () => {
+        void runRecipeAction(append, async () => {
+            if (appendRecipeOnCanvas(owner, recipe)) finish('append');
+        });
+    };
     const copyPrompt = button(actions, t('recipeDetailCopyPrompt'), 'anomalous-btn-primary');
     const promptBundle = [
         prompts.positive.length ? `${t('recipeDetailPositivePrompt')}:\n${prompts.positive.join('\n\n')}` : '',
@@ -712,7 +732,7 @@ function renderOverview(content, owner, recipe, references, finish) {
     content.appendChild(overview);
 }
 
-function renderModels(content, owner, recipe, references) {
+function renderModels(content, owner, recipe, references, finish) {
     const section = document.createElement('section');
     section.className = 'anomalous-recipe-detail-section';
     const heading = document.createElement('div');
@@ -750,7 +770,7 @@ function renderModels(content, owner, recipe, references) {
             }
             await loadCurrentPreviews(owner, references);
             content.replaceChildren();
-            renderModels(content, owner, recipe, references);
+            renderModels(content, owner, recipe, references, finish);
         } catch (error) {
             console.error('Could not refresh recipe model availability:', error);
             status.textContent = t('recipeDetailRefreshError');
@@ -771,7 +791,24 @@ function renderModels(content, owner, recipe, references) {
         card.className = `anomalous-recipe-model-reference${isLocal ? ' is-local' : ' is-unresolved'}`;
         const body = document.createElement('div');
         body.className = 'anomalous-recipe-model-reference-body';
-        appendModelPreview(body, owner, reference, isLocal ? () => openLocalModel(owner, reference.localModel) : null);
+        const openModel = isLocal
+            ? () => {
+                const payload = owner.recipeDetailPayload;
+                const view = owner.recipeDetailView;
+                owner.recipeReturnState = {
+                    activeTab: owner.recipeDetailActiveTab || 'overview',
+                    scrollTop: view?.scrollTop || content?.scrollTop || 0,
+                };
+                owner.recipeModelReturn = () => {
+                    owner.modal?.classList.add('visible');
+                    if (owner.nbPanel) owner.nbPanel.style.display = 'flex';
+                    if (payload) showRecipeDetail(owner, payload);
+                };
+                if (openLocalModel(owner, reference.localModel)) finish('model');
+                else owner.recipeModelReturn = null;
+            }
+            : null;
+        appendModelPreview(body, owner, reference, openModel);
         const details = document.createElement('div');
         details.className = 'anomalous-recipe-model-reference-details';
         const top = document.createElement('div');
@@ -784,7 +821,7 @@ function renderModels(content, owner, recipe, references) {
             ? button(top, modelDisplayName(reference.localModel.filename || reference.saved_value), 'anomalous-recipe-model-name is-resolved')
             : appendText(top, 'span', modelDisplayName(reference.saved_value), 'anomalous-recipe-model-name is-unresolved');
         modelName.title = reference.saved_value || t('recipeDetailUnavailable');
-        if (isLocal) modelName.onclick = () => openLocalModel(owner, reference.localModel);
+        if (isLocal) modelName.onclick = openModel;
         const referenceDetails = document.createElement('details');
         referenceDetails.className = 'anomalous-recipe-advanced-info anomalous-recipe-model-path';
         appendText(referenceDetails, 'summary', t('recipeAdvancedInfo'));
@@ -821,7 +858,7 @@ function renderModels(content, owner, recipe, references) {
                 match.disabled = true;
                 await matchLocalModel(owner, recipe, reference, matchStatus, () => {
                     content.replaceChildren();
-                    renderModels(content, owner, recipe, references);
+                    renderModels(content, owner, recipe, references, finish);
                 });
                 if (!reference.localModel) match.disabled = false;
             };
@@ -1075,6 +1112,9 @@ function renderVersions(content, owner, recipe, history, finish) {
 }
 
 export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
+    const returnState = owner.recipeReturnState || null;
+    owner.recipeReturnState = null;
+    owner.recipeDetailPayload = { recipe, filename, history };
     owner.recipeDetailFilename = filename;
     owner.recipeListContainer.style.display = 'none';
     owner.recipeView.querySelector('.anomalous-recipe-actionbar').style.display = 'none';
@@ -1086,14 +1126,23 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     const references = deriveRecipeModelReferences(recipe);
     owner.recipeDetailPreviewState = 'idle';
     let resolveAction;
+    let settled = false;
     const result = new Promise((resolve) => { resolveAction = resolve; });
     const finish = (mode) => {
+        if (settled) return;
+        settled = true;
         view.remove();
         owner.recipeDetailView = null;
-        owner.recipeListContainer.style.display = '';
-        owner.recipeView.querySelector('.anomalous-recipe-actionbar').style.display = '';
+        if (!['canvas', 'append', 'model'].includes(mode)) {
+            owner.recipeListContainer.style.display = '';
+            const actionbar = owner.recipeView?.querySelector('.anomalous-recipe-actionbar');
+            if (actionbar) actionbar.style.display = '';
+        }
+        if (owner.recipeDetailFinish === finish) owner.recipeDetailFinish = null;
+        if (mode !== 'model') delete owner.recipeDetailPayload;
         resolveAction({ mode });
     };
+    owner.recipeDetailFinish = finish;
 
     const header = document.createElement('div');
     header.className = 'anomalous-recipe-detail-header';
@@ -1104,9 +1153,17 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     const edit = button(headerActions, t('recipeEdit'), 'anomalous-btn-success');
     edit.onclick = () => finish('edit');
     const load = button(headerActions, t('recipeOpenCanvas'), 'anomalous-btn-primary');
-    load.onclick = () => { void openRecipeOnCanvas(owner, recipe); };
+    load.onclick = () => {
+        void runRecipeAction(load, async () => {
+            if (await openRecipeOnCanvas(owner, recipe)) finish('canvas');
+        });
+    };
     const append = button(headerActions, t('recipeAppendCanvas'), 'anomalous-btn-primary');
-    append.onclick = () => appendRecipeOnCanvas(owner, recipe);
+    append.onclick = () => {
+        void runRecipeAction(append, async () => {
+            if (appendRecipeOnCanvas(owner, recipe)) finish('append');
+        });
+    };
     header.appendChild(headerActions);
     view.appendChild(header);
 
@@ -1116,7 +1173,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     content.className = 'anomalous-recipe-detail-content';
     const tabDefinitions = [
         ['overview', t('recipeDetailOverview'), () => renderOverview(content, owner, recipe, references, finish)],
-        ['models', t('recipeDetailModels'), () => renderModels(content, owner, recipe, references)],
+        ['models', t('recipeDetailModels'), () => renderModels(content, owner, recipe, references, finish)],
         ['parameters', t('recipeDetailParameters'), () => renderParameters(content, recipe)],
         ['versions', t('recipeDetailVersions'), () => renderVersions(content, owner, recipe, history, finish)],
     ];
@@ -1136,7 +1193,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
                 owner.recipeDetailPreviewState = 'loaded';
                 if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'models') {
                     content.replaceChildren();
-                    renderModels(content, owner, recipe, references);
+                    renderModels(content, owner, recipe, references, finish);
                 }
             });
     };
@@ -1147,6 +1204,12 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     }
     view.append(tabs, content);
     owner.recipeView.appendChild(view);
-    selectTab('overview');
+    selectTab(returnState?.activeTab || 'overview');
+    if (returnState?.scrollTop) {
+        requestAnimationFrame(() => {
+            view.scrollTop = returnState.scrollTop;
+            content.scrollTop = returnState.scrollTop;
+        });
+    }
     return result;
 }

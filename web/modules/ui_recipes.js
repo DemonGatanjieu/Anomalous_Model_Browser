@@ -887,6 +887,7 @@ export async function showRecipes() {
         this.nbPanel.style.display = 'flex';
         await this.showNotebooks();
     }
+    this.recipeDetailFinish?.('closed');
     this.notebookBody.style.display = 'none';
     this.notebookNotesTab?.classList.remove('active');
     this.notebookRecipesTab?.classList.add('active');

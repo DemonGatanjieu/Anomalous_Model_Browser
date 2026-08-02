@@ -1,5 +1,23 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-03 — Stabilize recipe detail navigation lifecycle
+
+**Implemented**
+
+- Detail Open/Append actions now settle the detail controller after success instead of leaving its Promise unresolved.
+- External Workspace navigation disposes the active detail view through one finish callback, preventing hidden stale detail DOM.
+- Model reference navigation stores a lightweight recipe return token and restores the recipe detail tab/scroll position from the model detail Back action.
+- Added busy-state guarding for detail canvas actions and cleared stale recipe return callbacks when the browser returns to ordinary model-grid navigation.
+- Both missing-node checks now read authoritative workflow node types.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `node --check web/modules/ui_detail.js`
+- `node --check web/modules/ui_sidebar.js`
+- `node --check web/modules/ui_grid.js`
+- `git diff --check`
+
 ## [Snapshot] 2026-08-03 — Preserve recipe identity across packages
 
 **Implemented**

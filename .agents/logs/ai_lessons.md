@@ -5,6 +5,12 @@ This document serves as an architectural retrospective and UX diagnostic log for
 
 ---
 
+## 59. Cross-Panel Navigation Needs an Explicit Return Token
+
+**The Problem**: A recipe detail panel can launch a model detail panel owned by the main browser. Without a return token, the model Back button correctly returned to the model grid but lost the recipe tab, scroll position, and active view. Separately, Open/Append actions performed their work but left the detail Promise unresolved.
+
+**The Solution**: Treat recipe detail as a small controller with an idempotent finish/dispose path. Store only a lightweight payload, active tab, and scroll position for model navigation; consume that token from the main detail Back action. Every successful action must settle the controller, while external Workspace changes must dispose it as well.
+
 ## 58. Identity, Preview, and Filename Are Different Evidence Classes
 
 **The Problem**: A recipe's saved model filename is useful for showing the user a basename and for locating a current-machine preview, but it cannot prove that a same-named local file is the same model. Package enrichment also rebuilt model references and accidentally discarded imported identity and historical preview descriptors.

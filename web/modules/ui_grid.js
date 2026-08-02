@@ -139,6 +139,7 @@ export async function loadModels() {
                 card.appendChild(title);
 
                 card.onclick = () => { 
+                    this.recipeModelReturn = null;
                     this.historyStack = []; 
                     this.currentDetailModel = model; 
                     this.showDetail(model); 
