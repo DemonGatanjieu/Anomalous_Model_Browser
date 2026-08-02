@@ -871,7 +871,26 @@ function parameterNodesWithPromptFallback(recipe) {
         nodes.push(fallback);
         byId.set(id, fallback);
     }
-    return nodes;
+    const ordered = [];
+    const added = new Set();
+    for (const workflowNode of recipe?.workflow?.nodes || []) {
+        const id = String(workflowNode?.id ?? '');
+        const node = byId.get(id);
+        if (!node || added.has(node)) continue;
+        added.add(node);
+        ordered.push(node);
+    }
+    for (const node of nodes) {
+        if (added.has(node)) continue;
+        added.add(node);
+        ordered.push(node);
+    }
+    // Keep native prompt nodes together in the Parameters view. Their names
+    // and widget names remain untouched; this only prevents a fallback node
+    // from appearing far away at the end of the list.
+    const promptNodes = ordered.filter((node) => /cliptextencode/i.test(String(node?.type || '')));
+    const otherNodes = ordered.filter((node) => !/cliptextencode/i.test(String(node?.type || '')));
+    return [...promptNodes, ...otherNodes];
 }
 
 function renderParameters(content, recipe) {

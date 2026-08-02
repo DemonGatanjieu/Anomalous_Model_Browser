@@ -43,6 +43,12 @@ This document serves as an architectural retrospective and UX diagnostic log for
 
 **The Solution (方案)**: Keep prompt summaries as an Overview convenience only. Parameters must use native node names and supplement the bounded summary with serialized `CLIPTextEncode` nodes, preserving each node's `text` widget and full-value lookup.
 
+## 56. Fallback Rows Must Have a Presentation Order (补回的参数行必须有展示顺序)
+
+**The Problem (问题)**: Appending a fallback-recovered positive CLIP node to the end of the parameter list left it far away from the existing negative CLIP node.
+
+**The Solution (方案)**: Rebuild the parameter presentation order from serialized workflow order, then group native `CLIPTextEncode` rows together. This changes only display ordering; node names, widget values, and the authoritative workflow remain unchanged.
+
 ## 1. UX Scroll Traps (交互嵌套滚动陷阱)
 **The Problem (问题)**: In the Notebook modal, the translation editor had a `max-height` and `overflow-y`. Since the parent modal was also scrollable, it created a "Scroll Trap". Hitting the bottom of the editor unpredictably transferred the scroll event to the outer body.
 (在笔记本弹窗中，由于翻译编辑器固定了最大高度并允许滚动，导致与父级弹窗的滚动条发生冲突。用户滚动到底部时会突然把外层页面卷走，体验极差。)

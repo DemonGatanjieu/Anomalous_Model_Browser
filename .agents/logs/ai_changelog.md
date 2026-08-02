@@ -1,5 +1,17 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-03 — Keep native CLIP parameters together
+
+**Implemented**
+
+- Ordered parameter nodes against the serialized workflow before rendering, so fallback-recovered native nodes do not jump to the end.
+- Grouped native `CLIPTextEncode` rows at the start of the Parameters view while preserving each node's original title and widget name.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `git diff --check`
+
 ## [Snapshot] 2026-08-03 — Preserve native CLIP prompt parameters
 
 **Implemented**
