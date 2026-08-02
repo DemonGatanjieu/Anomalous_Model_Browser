@@ -1030,8 +1030,6 @@ export function renderRecipeList(recipes) {
             ? sourceImageUrl
             : safeThumbnail(data.thumbnail) || sourceImageUrl;
         appendRecipeCover(card, thumbnail, data.name || t('recipeThumbnail'));
-
-        renderParams(card, data.params || {});
         if (Array.isArray(data.tags) && data.tags.length) {
             const tags = document.createElement('div');
             tags.className = 'anomalous-recipe-tags';
@@ -1050,12 +1048,13 @@ export function renderRecipeList(recipes) {
             card.appendChild(tags);
         }
         if (data.notes) appendText(card, 'p', compactText(data.notes, 180), 'anomalous-recipe-notes');
-
+        
         const actions = document.createElement('div');
         actions.className = 'anomalous-recipe-actions';
-        const details = appendText(actions, 'button', t('recipeViewDetails'), 'anomalous-btn-primary');
-        details.type = 'button';
-        details.onclick = () => runRecipeCardAction(details, async () => {
+        
+        // Make card clickable for details
+        card.style.cursor = 'pointer';
+        card.onclick = () => runRecipeCardAction(card, async () => {
                 const bundle = await fetchRecipeBundle(recipe.filename);
                 const result = await showRecipeDetail(this, {
                     recipe: bundle.data,
@@ -1064,42 +1063,62 @@ export function renderRecipeList(recipes) {
                 });
                 if (result?.mode === 'edit') await editRecipe(this, bundle.data, recipe.filename, bundle.history);
         }, 'recipeLoadError');
-        const edit = appendText(actions, 'button', t('recipeEdit'), 'anomalous-btn-success');
+
+        // Secondary actions (Icon buttons)
+        const secondaryActions = document.createElement('div');
+        secondaryActions.className = 'anomalous-recipe-actions-secondary';
+        
+        const edit = appendText(secondaryActions, 'button', '✏️', 'anomalous-btn-icon anomalous-btn-edit');
         edit.type = 'button';
-        edit.onclick = () => runRecipeCardAction(edit, () => editRecipe(this, recipe?.data || {}, recipe.filename), 'recipeUpdateError');
-        const exportButton = appendText(actions, 'button', t('recipeExport'), 'anomalous-btn-primary');
+        edit.title = t('recipeEdit');
+        edit.onclick = (e) => { e.stopPropagation(); runRecipeCardAction(edit, () => editRecipe(this, recipe?.data || {}, recipe.filename), 'recipeUpdateError'); };
+        
+        const exportButton = appendText(secondaryActions, 'button', '📥', 'anomalous-btn-icon anomalous-btn-export');
         exportButton.type = 'button';
-        exportButton.onclick = () => runRecipeCardAction(
-            exportButton,
-            () => exportRecipePackage(recipe.filename),
-            'recipeExportError',
-        );
-        const restore = appendText(actions, 'button', t('recipeOpenCanvas'), 'anomalous-btn-primary');
+        exportButton.title = t('recipeExport');
+        exportButton.onclick = (e) => { e.stopPropagation(); runRecipeCardAction(exportButton, () => exportRecipePackage(recipe.filename), 'recipeExportError'); };
+        
+        const remove = appendText(secondaryActions, 'button', '🗑️', 'anomalous-btn-icon anomalous-btn-delete');
+        remove.type = 'button';
+        remove.title = t('recipeDelete');
+        remove.onclick = (e) => {
+            e.stopPropagation();
+            runRecipeCardAction(remove, async () => {
+                if (!confirm(t('recipeDeleteConfirm'))) return;
+                const response = await fetch('/anomalous/delete_recipe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: recipe.filename }),
+                });
+                if (!response.ok) throw new Error('recipe deletion failed');
+                await this.refreshRecipes();
+            }, 'recipeDeleteError');
+        };
+
+        // Primary actions (Main buttons)
+        const primaryActions = document.createElement('div');
+        primaryActions.className = 'anomalous-recipe-actions-primary';
+        
+        const restore = appendText(primaryActions, 'button', t('recipeOpenCanvas'), 'anomalous-btn-primary');
         restore.type = 'button';
-        restore.onclick = () => runRecipeCardAction(restore, async () => {
+        restore.onclick = (e) => { e.stopPropagation(); runRecipeCardAction(restore, async () => {
             const data = await fetchRecipeData(recipe.filename);
             await openRecipeOnCanvas(this, data);
-        }, 'recipeRestoreError');
-        const append = appendText(actions, 'button', t('recipeAppendCanvas'), 'anomalous-btn-primary');
+        }, 'recipeRestoreError'); };
+        
+        const append = appendText(primaryActions, 'button', t('recipeAppendCanvas'), 'anomalous-btn-ghost');
         append.type = 'button';
-        append.onclick = () => runRecipeCardAction(append, async () => {
+        append.onclick = (e) => { e.stopPropagation(); runRecipeCardAction(append, async () => {
             const data = await fetchRecipeData(recipe.filename);
             if (!appendRecipeOnCanvas(this, data)) throw new Error('recipe append failed');
-        }, 'recipeAppendError');
-        const remove = appendText(actions, 'button', t('recipeDelete'), 'anomalous-btn-danger');
-        remove.type = 'button';
-        remove.onclick = () => runRecipeCardAction(remove, async () => {
-            if (!confirm(t('recipeDeleteConfirm'))) return;
-            const response = await fetch('/anomalous/delete_recipe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ filename: recipe.filename }),
-            });
-            if (!response.ok) throw new Error('recipe deletion failed');
-            await this.refreshRecipes();
-        }, 'recipeDeleteError');
+        }, 'recipeAppendError'); };
+
+        secondaryActions.append(edit, exportButton, remove);
+        primaryActions.append(append, restore);
+        actions.append(secondaryActions, primaryActions);
+        
         card.appendChild(actions);
-        this.recipeListContainer.appendChild(card);
+        this.recipeListContainer.appendChild(card);ndChild(card);
     }
 }
 

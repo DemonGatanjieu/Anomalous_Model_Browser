@@ -1156,20 +1156,26 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     back.onclick = () => finish('back');
     appendText(header, 'h3', recipe.name || t('recipeUntitled'));
     const headerActions = document.createElement('div');
-    const edit = button(headerActions, t('recipeEdit'), 'anomalous-btn-success');
-    edit.onclick = () => finish('edit');
+    headerActions.className = 'anomalous-recipe-actions-primary';
     const load = button(headerActions, t('recipeOpenCanvas'), 'anomalous-btn-primary');
     load.onclick = () => {
         void runRecipeAction(load, async () => {
             if (await openRecipeOnCanvas(owner, recipe)) finish('canvas');
         });
     };
-    const append = button(headerActions, t('recipeAppendCanvas'), 'anomalous-btn-primary');
+    const append = button(headerActions, t('recipeAppendCanvas'), 'anomalous-btn-ghost');
     append.onclick = () => {
         void runRecipeAction(append, async () => {
             if (appendRecipeOnCanvas(owner, recipe)) finish('append');
         });
     };
+    
+    const secondaryActions = document.createElement('div');
+    secondaryActions.className = 'anomalous-recipe-actions-secondary';
+    const edit = button(secondaryActions, '✏️', 'anomalous-btn-icon anomalous-btn-edit');
+    edit.title = t('recipeEdit');
+    edit.onclick = () => finish('edit');
+    headerActions.appendChild(secondaryActions);
     header.appendChild(headerActions);
     view.appendChild(header);
 
@@ -1178,9 +1184,21 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     const content = document.createElement('div');
     content.className = 'anomalous-recipe-detail-content';
     const tabDefinitions = [
-        ['overview', t('recipeDetailOverview'), () => renderOverview(content, owner, recipe, references, finish)],
-        ['models', t('recipeDetailModels'), () => renderModels(content, owner, recipe, references, finish)],
-        ['parameters', t('recipeDetailParameters'), () => renderParameters(content, recipe)],
+        ['overview', t('recipeDetailOverview'), () => {
+            renderOverview(content, owner, recipe, references, finish);
+            renderModels(content, owner, recipe, references, finish);
+            const paramsWrapper = document.createElement('details');
+            paramsWrapper.className = 'anomalous-recipe-detail-section';
+            const summary = document.createElement('summary');
+            summary.textContent = '⚙️ ' + t('recipeDetailParameters');
+            summary.style.cursor = 'pointer';
+            summary.style.fontWeight = 'bold';
+            paramsWrapper.appendChild(summary);
+            const paramsInner = document.createElement('div');
+            renderParameters(paramsInner, recipe);
+            paramsWrapper.appendChild(paramsInner);
+            content.appendChild(paramsWrapper);
+        }],
         ['versions', t('recipeDetailVersions'), () => renderVersions(content, owner, recipe, history, finish)],
     ];
     const selectTab = (active) => {
@@ -1191,15 +1209,15 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
             tab?.classList.toggle('active', key === active);
         }
         tabDefinitions.find(([key]) => key === active)?.[2]();
-        if (active !== 'models' || owner.recipeDetailPreviewState !== 'idle') return;
+        if (active !== 'overview' || owner.recipeDetailPreviewState !== 'idle') return;
         owner.recipeDetailPreviewState = 'loading';
         void loadCurrentPreviews(owner, references)
             .catch((error) => console.warn('Could not load recipe model previews:', error))
             .finally(() => {
                 owner.recipeDetailPreviewState = 'loaded';
-                if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'models') {
-                    content.replaceChildren();
-                    renderModels(content, owner, recipe, references, finish);
+                if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'overview') {
+                    // re-render the whole overview so models load images
+                    selectTab('overview');
                 }
             });
     };
