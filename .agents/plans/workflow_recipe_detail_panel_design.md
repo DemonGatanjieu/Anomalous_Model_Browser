@@ -159,6 +159,8 @@ Workspace
 - Quick Queue is intentionally removed from the current product surface; recipes are opened or appended to the canvas before execution, so the detail panel must not expose an out-of-canvas queue action.
 - Name, notes, and tags support lightweight inline editing. Successful saves use the full existing recipe update contract so metadata changes preserve the workflow graph and create the normal history entry.
 - Workflow fingerprints and model SHA-256 values belong in a collapsed Advanced information disclosure, not the primary visual hierarchy. Copy actions still remain available there with visible feedback.
+- Model reference rows default to a short basename plus preview card. Full saved paths and hashes remain behind Advanced information. Exact local references can open the browser's model detail; imported/unresolved references stay inactive until explicit local matching succeeds.
+- Local image/video previews are presentation-only. Hover playback is allowed for MP4/WebM, but save/export converts bound output video to a bounded still thumbnail and never packages the source video.
 - Do not place every model preview here; keep Overview calm and use the Models tab for visual inventory.
 
 ### 6.2 Models & reproducibility

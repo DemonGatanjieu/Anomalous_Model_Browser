@@ -169,3 +169,20 @@
 - `node --check` for every JavaScript file under `web/`
 - `python_embeded/python.exe -m py_compile api/__init__.py api/models.py api/recipes.py api/recipe_packages.py`
 - `git diff --check`
+
+## [Snapshot] 2026-08-03 — Add recipe advanced asset features
+
+**Implemented**
+
+- Turned detail model references into short-name preview cards with full path and hash disclosure under Advanced information.
+- Added temporary links from exact local model matches into the main browser detail view; unresolved imported references remain inactive and expose an explicit Match Local Model action.
+- Reused the existing hash/size/category resolver for lazy matching and the exact preview resolver for the activated card.
+- Added MP4/WebM hover playback for bound output and model previews, plus first-frame WebP/JPEG thumbnail extraction for saved output videos.
+- Kept recipe package export media-safe: original videos are not included and only bounded static WebP assets are exportable.
+
+**Validation**
+
+- `node --check` for every JavaScript file under `web/`
+- `python_embeded/python.exe -m py_compile api/__init__.py api/models.py api/recipes.py api/recipe_packages.py`
+- Advanced recipe locale-key smoke check passed
+- `git diff --check`

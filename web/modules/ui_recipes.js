@@ -59,6 +59,36 @@ function outputImageUrl(image) {
     return `/view?${query.toString()}`;
 }
 
+function previewIsVideo(url) {
+    return /\.(?:mp4|webm)(?:$|\?|&|#)/i.test(url || '');
+}
+
+function appendRecipeCover(parent, url, alt) {
+    if (!url) return;
+    if (previewIsVideo(url)) {
+        const video = document.createElement('video');
+        video.className = 'anomalous-recipe-thumbnail';
+        video.src = url;
+        video.muted = true;
+        video.loop = true;
+        video.playsInline = true;
+        video.preload = 'metadata';
+        video.onpointerenter = () => video.play().catch(() => {});
+        video.onpointerleave = () => {
+            video.pause();
+            video.currentTime = 0;
+        };
+        parent.appendChild(video);
+        return;
+    }
+    const image = document.createElement('img');
+    image.className = 'anomalous-recipe-thumbnail';
+    image.src = url;
+    image.alt = alt;
+    image.loading = 'lazy';
+    parent.appendChild(image);
+}
+
 async function exportRecipePackage(filename) {
     const includeSnapshots = confirm(t('recipeExportSnapshotsConfirm'));
     const includeHistory = confirm(t('recipeExportHistoryConfirm'));
@@ -116,7 +146,40 @@ async function captureOutputThumbnail(image) {
     if (!url) return null;
     const response = await fetch(url);
     if (!response.ok) return null;
-    const bitmap = await createImageBitmap(await response.blob());
+    const blob = await response.blob();
+    if (previewIsVideo(url) || /^video\//i.test(blob.type)) {
+        const objectUrl = URL.createObjectURL(blob);
+        const video = document.createElement('video');
+        video.src = objectUrl;
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = 'auto';
+        try {
+            await new Promise((resolve, reject) => {
+                video.onloadeddata = resolve;
+                video.onerror = reject;
+                video.load();
+            });
+            if (video.duration > 0.2) {
+                await new Promise((resolve) => {
+                    video.onseeked = resolve;
+                    video.currentTime = 0.1;
+                });
+            }
+            const maxEdge = 720;
+            const scale = Math.min(1, maxEdge / Math.max(video.videoWidth, video.videoHeight));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+            canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+            const context = canvas.getContext('2d');
+            if (!context) return null;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL('image/webp', 0.72);
+        } finally {
+            URL.revokeObjectURL(objectUrl);
+        }
+    }
+    const bitmap = await createImageBitmap(blob);
     try {
         const maxEdge = 720;
         const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
@@ -213,9 +276,7 @@ function appendPinnedParams(parent, params) {
         const copy = appendText(row, 'button', '⧉', 'anomalous-recipe-copy-param');
         copy.type = 'button';
         copy.title = t('recipeCopyParameter');
-        copy.onclick = async () => {
-            try { await navigator.clipboard.writeText(value); } catch (error) { console.warn('Could not copy pinned parameter:', error); }
-        };
+        copy.onclick = () => { void copyCardValueWithFeedback(copy, value); };
         section.appendChild(row);
     }
     parent.appendChild(section);
@@ -925,14 +986,11 @@ export function renderRecipeList(recipes) {
         card.className = 'anomalous-recipe-card';
         appendText(card, 'h3', data.name || t('recipeUntitled'));
 
-        const thumbnail = safeThumbnail(data.thumbnail) || outputImageUrl(data.source_image);
-        if (thumbnail) {
-            const image = document.createElement('img');
-            image.className = 'anomalous-recipe-thumbnail';
-            image.src = thumbnail;
-            image.alt = data.name || t('recipeThumbnail');
-            card.appendChild(image);
-        }
+        const sourceImageUrl = outputImageUrl(data.source_image);
+        const thumbnail = previewIsVideo(sourceImageUrl)
+            ? sourceImageUrl
+            : safeThumbnail(data.thumbnail) || sourceImageUrl;
+        appendRecipeCover(card, thumbnail, data.name || t('recipeThumbnail'));
 
         renderParams(card, data.params || {});
         if (Array.isArray(data.tags) && data.tags.length) {

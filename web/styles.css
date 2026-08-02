@@ -1074,7 +1074,8 @@
 }
 
 .anomalous-recipe-thumbnail,
-.anomalous-recipe-dialog-preview {
+.anomalous-recipe-dialog-preview,
+.anomalous-recipe-detail-hero video {
     width: 100%;
     border-radius: 7px;
     background: #111;
@@ -1537,6 +1538,15 @@
     background: #111;
 }
 
+.anomalous-recipe-detail-hero video {
+    width: 100%;
+    max-height: 190px;
+    min-height: 120px;
+    border-radius: 9px;
+    object-fit: contain;
+    background: #111;
+}
+
 .anomalous-recipe-detail-hero-copy {
     display: flex;
     min-width: 0;
@@ -1802,6 +1812,17 @@
     text-align: center;
 }
 
+.anomalous-recipe-model-preview.is-clickable {
+    cursor: pointer;
+    border-color: rgba(112, 178, 255, 0.58);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.anomalous-recipe-model-preview.is-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+
 .anomalous-recipe-model-preview img,
 .anomalous-recipe-model-preview video {
     width: 100%;
@@ -1843,6 +1864,48 @@
 
 .anomalous-recipe-model-reference-top { flex-wrap: wrap; }
 .anomalous-recipe-model-reference-top strong { margin-right: auto; }
+
+.anomalous-recipe-model-name {
+    max-width: 100%;
+    overflow: hidden;
+    padding: 3px 7px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-recipe-model-name.is-resolved {
+    border-color: rgba(110, 231, 183, 0.42);
+    color: #b8f5d8;
+    background: rgba(110, 231, 183, 0.08);
+    cursor: pointer;
+}
+
+.anomalous-recipe-model-name.is-unresolved {
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #999;
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.anomalous-recipe-model-reference.is-unresolved {
+    border-color: rgba(255, 212, 147, 0.28);
+}
+
+.anomalous-recipe-model-match-status {
+    flex: 1;
+    min-width: 120px;
+}
+
+.anomalous-recipe-model-match {
+    padding: 4px 8px;
+    border-radius: 7px;
+    font-size: 0.76rem;
+}
+
+.anomalous-recipe-model-path {
+    width: 100%;
+}
 
 .anomalous-recipe-model-reference-value {
     margin: 6px 0;

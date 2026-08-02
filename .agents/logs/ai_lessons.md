@@ -333,3 +333,9 @@ This document serves as an architectural retrospective and UX diagnostic log for
 (更新接口校验的是完整配方，而不是局部元数据补丁。内联编辑如果只发送 `name` 或 `notes`，要么直接失败，要么会诱导后端新增一套历史语义更弱的局部更新契约。)
 **The Solution (方案)**: Keep the inline editor lightweight at the UI layer, but clone and submit the already-loaded complete recipe through the existing update endpoint. Mutate the local view only after a successful response, then refresh the lightweight card list.
 (界面可以轻量内联编辑，但仍复制已加载的完整配方并走现有更新接口。只有收到成功响应后才更新当前视图，并刷新轻量卡片列表。)
+
+## 54. Local Matching Must Activate Presentation, Not Rewrite Provenance (本地匹配只激活展示，不改写来源)
+**The Problem (问题)**: Imported recipes may contain a model path that is absent on the current machine. Treating a basename or preview hit as authoritative would silently change the workflow's model input or incorrectly promote a visual match to a verified identity.
+(导入配方可能引用本机不存在的模型路径。若把文件名或预览命中直接当成权威依据，就会静默改写工作流模型输入，或把视觉命中错误提升为已验证身份。)
+**The Solution (方案)**: Keep the saved workflow path and stored identity immutable during lazy matching. Use the existing explicit hash/size/category resolver only after the user requests a match; attach the current local model descriptor transiently for preview and browser navigation, while leaving identity status and workflow content unchanged.
+(延迟匹配期间保持已保存工作流路径和身份记录不变。只有用户明确请求后才调用现有哈希/大小/类别解析器；本地模型描述只临时用于预览和跳转，不改变身份状态或工作流内容。)

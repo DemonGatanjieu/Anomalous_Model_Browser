@@ -300,8 +300,54 @@ function folderTypesForReference(reference) {
     }[category] || [];
 }
 
+function resolutionTypesForReference(reference) {
+    return folderTypesForReference(reference).filter((type) => [
+        'checkpoints', 'unet', 'diffusion_models', 'loras', 'vae', 'controlnet',
+    ].includes(type));
+}
+
+function modelDisplayName(value) {
+    const path = String(value || '').replace(/\\/g, '/');
+    const filename = path.split('/').pop() || t('recipeDetailUnavailable');
+    return filename.replace(/\.(?:safetensors|ckpt|pt|bin|sft)$/i, '');
+}
+
 function previewIsVideo(url) {
     return /\.(?:mp4|webm)(?:$|\?|&|#)/i.test(url || '');
+}
+
+function outputImageUrl(image) {
+    if (!image || image.type !== 'output' || typeof image.filename !== 'string') return '';
+    const query = new URLSearchParams({ filename: image.filename, type: 'output' });
+    if (image.subfolder) query.set('subfolder', image.subfolder);
+    return `/view?${query.toString()}`;
+}
+
+function appendRecipeCover(parent, recipe) {
+    const sourceUrl = outputImageUrl(recipe?.source_image);
+    const url = previewIsVideo(sourceUrl) ? sourceUrl : recipe?.thumbnail || sourceUrl;
+    if (!url) return false;
+    if (previewIsVideo(url)) {
+        const video = document.createElement('video');
+        video.src = url;
+        video.muted = true;
+        video.loop = true;
+        video.playsInline = true;
+        video.preload = 'metadata';
+        video.onpointerenter = () => video.play().catch(() => {});
+        video.onpointerleave = () => {
+            video.pause();
+            video.currentTime = 0;
+        };
+        parent.appendChild(video);
+    } else {
+        const image = document.createElement('img');
+        image.src = url;
+        image.alt = recipe.name || t('recipeThumbnail');
+        image.loading = 'lazy';
+        parent.appendChild(image);
+    }
+    return true;
 }
 
 function recipeAssetUrl(owner, assetId) {
@@ -309,9 +355,14 @@ function recipeAssetUrl(owner, assetId) {
     return `/anomalous/recipe_asset?filename=${encodeURIComponent(owner.recipeDetailFilename)}&asset=${encodeURIComponent(assetId)}`;
 }
 
-function appendModelPreview(parent, owner, reference) {
+function appendModelPreview(parent, owner, reference, onActivate = null) {
     const preview = document.createElement('div');
     preview.className = 'anomalous-recipe-model-preview';
+    if (onActivate) {
+        preview.classList.add('is-clickable');
+        preview.title = t('recipeOpenLocalModel');
+        preview.onclick = onActivate;
+    }
     const snapshotUrl = recipeAssetUrl(owner, reference?.preview?.snapshot_asset_id);
     const url = snapshotUrl || reference?.currentPreviewUrl;
     if (!url) {
@@ -367,6 +418,80 @@ async function loadCurrentPreviews(owner, references) {
         if (!model) continue;
         reference.currentPreviewUrl = model.preview_url || '';
         reference.currentAvailability = 'available';
+        reference.localModel = model;
+    }
+}
+
+function openLocalModel(owner, model) {
+    if (!model || typeof owner?.showDetail !== 'function') return false;
+    owner.nbPanel && (owner.nbPanel.style.display = 'none');
+    owner.close?.();
+    owner.historyStack = [];
+    owner.currentType = model.type || owner.currentType;
+    owner.currentPathIdx = model.path_idx ?? model.path_index ?? 0;
+    owner.currentSubfolder = model.subfolder || '/';
+    owner.currentDetailModel = model;
+    owner.showDetail(model);
+    return true;
+}
+
+async function resolveMatchedModelPreview(reference, model) {
+    if (!model?.filename || !model?.type) return null;
+    const response = await fetch('/anomalous/resolve_paths_to_previews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            paths: [],
+            exact_only: true,
+            context_requests: [{
+                key: 'match',
+                path: model.filename,
+                folder_types: [model.type],
+                exact_only: true,
+            }],
+        }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error('matched model preview request failed');
+    return payload.context_models?.match || null;
+}
+
+async function matchLocalModel(owner, recipe, reference, status, rerender) {
+    const identity = normaliseIdentity(reference.identity);
+    const query = new URLSearchParams({
+        hash: identity.sha256 || 'unknown',
+        size: identity.size || '',
+        filename: reference.saved_value || '',
+    });
+    const types = resolutionTypesForReference(reference);
+    if (types.length) query.set('type', types.join(','));
+    status.textContent = t('recipeMatchingLocalModel');
+    try {
+        const response = await fetch(`/anomalous/resolve_hash?${query.toString()}`);
+        const result = await response.json();
+        if (!response.ok) throw new Error('local model matching failed');
+        if (!result.found) {
+            status.textContent = result.ambiguous
+                ? t('recipeLocalModelAmbiguous')
+                : t('recipeLocalModelNotFound');
+            return;
+        }
+        const model = await resolveMatchedModelPreview(reference, result);
+        if (!model) throw new Error('matched local model metadata unavailable');
+        reference.localModel = model;
+        reference.currentPreviewUrl = model.preview_url || '';
+        reference.currentAvailability = 'available';
+        reference.localMatch = {
+            filename: model.filename,
+            type: model.type,
+            matched_by_hash: result.matched_by_hash === true,
+            matched_by_size: result.matched_by_size === true,
+            matched_by_filename: result.matched_by_filename === true,
+        };
+        rerender();
+    } catch (error) {
+        console.error('Could not match imported recipe model locally:', error);
+        status.textContent = t('recipeLocalModelMatchError');
     }
 }
 
@@ -470,12 +595,7 @@ function renderOverview(content, owner, recipe, references, finish) {
     overview.className = 'anomalous-recipe-detail-overview';
     const hero = document.createElement('div');
     hero.className = 'anomalous-recipe-detail-hero';
-    if (typeof recipe.thumbnail === 'string') {
-        const image = document.createElement('img');
-        image.src = recipe.thumbnail;
-        image.alt = recipe.name || t('recipeThumbnail');
-        hero.appendChild(image);
-    }
+    appendRecipeCover(hero, recipe);
     const copy = document.createElement('div');
     copy.className = 'anomalous-recipe-detail-hero-copy';
     const title = document.createElement('div');
@@ -594,6 +714,7 @@ function renderModels(content, owner, recipe, references) {
                     reference.identity = result.identity;
                 }
             }
+            await loadCurrentPreviews(owner, references);
             content.replaceChildren();
             renderModels(content, owner, recipe, references);
         } catch (error) {
@@ -612,10 +733,11 @@ function renderModels(content, owner, recipe, references) {
     list.className = 'anomalous-recipe-model-reference-list';
     for (const reference of references) {
         const card = document.createElement('article');
-        card.className = 'anomalous-recipe-model-reference';
+        const isLocal = Boolean(reference.localModel);
+        card.className = `anomalous-recipe-model-reference${isLocal ? ' is-local' : ' is-unresolved'}`;
         const body = document.createElement('div');
         body.className = 'anomalous-recipe-model-reference-body';
-        appendModelPreview(body, owner, reference);
+        appendModelPreview(body, owner, reference, isLocal ? () => openLocalModel(owner, reference.localModel) : null);
         const details = document.createElement('div');
         details.className = 'anomalous-recipe-model-reference-details';
         const top = document.createElement('div');
@@ -624,10 +746,21 @@ function renderModels(content, owner, recipe, references) {
         appendText(top, 'span', reference.category || t('recipeDetailModel'), 'anomalous-recipe-detail-muted');
         top.appendChild(identityBadge(reference));
         details.appendChild(top);
+        const modelName = isLocal
+            ? button(top, modelDisplayName(reference.localModel.filename || reference.saved_value), 'anomalous-recipe-model-name is-resolved')
+            : appendText(top, 'span', modelDisplayName(reference.saved_value), 'anomalous-recipe-model-name is-unresolved');
+        modelName.title = reference.saved_value || t('recipeDetailUnavailable');
+        if (isLocal) modelName.onclick = () => openLocalModel(owner, reference.localModel);
+        const referenceDetails = document.createElement('details');
+        referenceDetails.className = 'anomalous-recipe-advanced-info anomalous-recipe-model-path';
+        appendText(referenceDetails, 'summary', t('recipeAdvancedInfo'));
         const referenceValue = document.createElement('div');
-        referenceValue.className = 'anomalous-recipe-model-reference-value';
-        appendValueViewer(referenceValue, reference.saved_value || t('recipeDetailUnavailable'));
-        details.appendChild(referenceValue);
+        referenceValue.className = 'anomalous-recipe-advanced-row';
+        appendText(referenceValue, 'span', `${t('recipeModelPath')}:`);
+        appendText(referenceValue, 'code', reference.saved_value || t('recipeDetailUnavailable'));
+        appendCopyButton(referenceValue, reference.saved_value || '', t('recipeCopyParameter'));
+        referenceDetails.appendChild(referenceValue);
+        details.appendChild(referenceDetails);
         const meta = document.createElement('div');
         meta.className = 'anomalous-recipe-model-reference-meta';
         const identity = normaliseIdentity(reference.identity);
@@ -647,6 +780,18 @@ function renderModels(content, owner, recipe, references) {
         appendText(meta, 'span', reference.currentAvailability === 'available'
             ? t('recipeDetailAvailable')
             : reference.currentAvailability === 'missing' ? t('recipeDetailMissing') : t('recipeDetailAvailabilityNotChecked'));
+        if (!isLocal) {
+            const matchStatus = appendText(meta, 'small', '', 'anomalous-recipe-model-match-status');
+            const match = button(meta, t('recipeMatchLocalModel'), 'anomalous-btn-primary anomalous-recipe-model-match');
+            match.onclick = async () => {
+                match.disabled = true;
+                await matchLocalModel(owner, recipe, reference, matchStatus, () => {
+                    content.replaceChildren();
+                    renderModels(content, owner, recipe, references);
+                });
+                if (!reference.localModel) match.disabled = false;
+            };
+        }
         details.appendChild(meta);
         body.appendChild(details);
         card.appendChild(body);
