@@ -123,15 +123,25 @@ async function copyText(value) {
 
 async function copyTextWithFeedback(buttonElement, value) {
     const original = buttonElement.textContent;
+    const isIcon = original.length <= 2;
     const copied = await copyText(value);
-    buttonElement.textContent = copied
-        ? `✓ ${t('recipeCopied')}`
-        : `! ${t('recipeCopyFailed')}`;
-    buttonElement.classList.toggle('copied-success', copied);
-    buttonElement.classList.toggle('copied-failure', !copied);
+    
+    if (isIcon) {
+        buttonElement.textContent = copied ? '✓' : '!';
+    } else {
+        buttonElement.textContent = copied
+            ? `✓ ${t('recipeCopied')}`
+            : `! ${t('recipeCopyFailed')}`;
+    }
+    
+    buttonElement.style.color = copied ? '#6ee7b7' : '#fca5a5';
+    buttonElement.style.borderColor = copied ? 'rgba(110, 231, 183, 0.7)' : 'rgba(252, 165, 165, 0.7)';
+    buttonElement.style.transition = 'all 0.2s ease';
+    
     window.setTimeout(() => {
         buttonElement.textContent = original;
-        buttonElement.classList.remove('copied-success', 'copied-failure');
+        buttonElement.style.color = '';
+        buttonElement.style.borderColor = '';
     }, 1200);
     return copied;
 }
@@ -167,65 +177,56 @@ function beginInlineEdit(owner, recipe, container, field, renderValue, options =
     input.value = Array.isArray(recipe[field]) ? recipe[field].join(', ') : String(recipe[field] || '');
     if (!options.multiline) input.type = 'text';
     if (options.maxLength) input.maxLength = options.maxLength;
-    if (options.multiline) input.rows = 3;
-    const controls = document.createElement('div');
-    controls.className = 'anomalous-recipe-inline-controls';
-    const status = appendText(controls, 'small', '', 'anomalous-recipe-detail-muted');
-    const save = button(controls, t('recipeInlineSave'), 'anomalous-btn-primary');
-    const cancel = button(controls, t('recipeInlineCancel'), 'anomalous-btn-secondary');
+    if (options.multiline) input.rows = Math.max(3, Math.min(10, input.value.split('\n').length));
+    
     let finished = false;
-    let ignoreBlur = false;
+    
     const restore = () => {
         if (finished) return;
         finished = true;
         renderValue(container);
     };
+    
     const commit = async () => {
         if (finished) return;
         const raw = input.value.trim();
         const value = options.parse ? options.parse(raw) : raw;
         if (options.required && !value) {
-            status.textContent = t('recipeInlineNameRequired');
             input.focus();
             return;
         }
         finished = true;
-        save.disabled = true;
-        cancel.disabled = true;
-        status.textContent = t('recipeInlineSaving');
+        input.disabled = true;
+        
+        // Simple visual feedback during save
+        input.style.opacity = '0.5';
         try {
             await updateInlineRecipeMetadata(owner, recipe, { [field]: value });
             renderValue(container);
         } catch (error) {
             console.error('Could not update inline recipe metadata:', error);
             finished = false;
-            save.disabled = false;
-            cancel.disabled = false;
-            status.textContent = t('recipeInlineError');
+            input.disabled = false;
+            input.style.opacity = '1';
+            input.focus();
         }
     };
-    input.addEventListener('blur', () => {
-        if (!ignoreBlur) void commit();
-    });
+    
+    input.addEventListener('blur', () => void commit());
     input.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
             event.preventDefault();
-            ignoreBlur = true;
             restore();
         } else if (event.key === 'Enter' && (!options.multiline || event.ctrlKey || event.metaKey)) {
             event.preventDefault();
-            ignoreBlur = true;
             void commit();
         }
     });
-    save.addEventListener('pointerdown', () => { ignoreBlur = true; });
-    save.onclick = () => { void commit(); };
-    cancel.addEventListener('pointerdown', () => { ignoreBlur = true; });
-    cancel.onclick = restore;
-    editor.append(input, controls);
+    
+    editor.appendChild(input);
     container.replaceChildren(editor);
     input.focus();
-    input.select?.();
+    input.setSelectionRange(input.value.length, input.value.length);
 }
 
 function needsExpansion(value) {

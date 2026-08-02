@@ -1118,7 +1118,7 @@ export function renderRecipeList(recipes) {
         actions.append(secondaryActions, primaryActions);
         
         card.appendChild(actions);
-        this.recipeListContainer.appendChild(card);ndChild(card);
+        this.recipeListContainer.appendChild(card);
     }
 }
 
