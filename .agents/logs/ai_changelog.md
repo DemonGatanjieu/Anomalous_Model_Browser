@@ -154,3 +154,18 @@
 - `node --check` for every JavaScript file under `web/`
 - `python_embeded/python.exe -m py_compile api/__init__.py api/models.py api/recipes.py api/recipe_packages.py`
 - `git diff --check`
+
+## [Snapshot] 2026-08-03 — Refine recipe detail UI
+
+**Implemented**
+
+- Added visible success/failure feedback to detail and card parameter-copy actions.
+- Added inline editing for recipe name, notes, and tags; metadata updates send the complete existing recipe payload through `/anomalous/update_recipe` and preserve normal history behavior.
+- Moved workflow fingerprints and model SHA-256 values into collapsed Advanced information disclosures.
+- Added restrained glass card styling, responsive grid spacing, modern font fallbacks, rounded action controls, and hover transitions.
+
+**Validation**
+
+- `node --check` for every JavaScript file under `web/`
+- `python_embeded/python.exe -m py_compile api/__init__.py api/models.py api/recipes.py api/recipe_packages.py`
+- `git diff --check`

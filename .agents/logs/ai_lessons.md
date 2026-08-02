@@ -327,3 +327,9 @@ This document serves as an architectural retrospective and UX diagnostic log for
 (脱离画布的快速排队在正常 ComfyUI 画布之外又建立了一条执行路径。提示词转换、排队契约、校验和 UI 反馈都要单独维护，容易造成不同入口行为漂移，也难以解释失败原因。)
 **The Solution (方案)**: Remove the detached execution surface and make recipe actions load or transactionally append the saved workflow through shared handlers. List cards and detail panels now reuse the same confirmation, missing-node warning, error feedback, and successful Workspace closure behavior.
 (移除脱离画布的执行入口，让配方动作通过共享处理器加载或事务性追加已保存工作流。列表卡片和详情面板统一复用确认、缺失节点提示、错误反馈和成功关闭工作台的行为。)
+
+## 53. Inline Metadata Editing Must Preserve the Full Recipe Contract (内联元数据编辑也必须保留完整配方契约)
+**The Problem (问题)**: The update endpoint validates a complete recipe, not a partial metadata patch. A convenient inline editor that sends only `name` or `notes` would either fail validation or tempt the backend to grow a second partial-update contract with weaker history semantics.
+(更新接口校验的是完整配方，而不是局部元数据补丁。内联编辑如果只发送 `name` 或 `notes`，要么直接失败，要么会诱导后端新增一套历史语义更弱的局部更新契约。)
+**The Solution (方案)**: Keep the inline editor lightweight at the UI layer, but clone and submit the already-loaded complete recipe through the existing update endpoint. Mutate the local view only after a successful response, then refresh the lightweight card list.
+(界面可以轻量内联编辑，但仍复制已加载的完整配方并走现有更新接口。只有收到成功响应后才更新当前视图，并刷新轻量卡片列表。)

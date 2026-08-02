@@ -109,16 +109,111 @@ async function copyText(value) {
     }
 }
 
+async function copyTextWithFeedback(buttonElement, value) {
+    const original = buttonElement.textContent;
+    const copied = await copyText(value);
+    buttonElement.textContent = copied
+        ? `✓ ${t('recipeCopied')}`
+        : `! ${t('recipeCopyFailed')}`;
+    buttonElement.classList.toggle('copied-success', copied);
+    buttonElement.classList.toggle('copied-failure', !copied);
+    window.setTimeout(() => {
+        buttonElement.textContent = original;
+        buttonElement.classList.remove('copied-success', 'copied-failure');
+    }, 1200);
+    return copied;
+}
+
 function appendCopyButton(parent, value, label = t('recipeCopyParameter')) {
     const copy = button(parent, '⧉', 'anomalous-recipe-copy-param anomalous-recipe-detail-copy');
     copy.title = label;
     copy.setAttribute('aria-label', label);
-    copy.onclick = async () => {
-        const original = copy.textContent;
-        copy.textContent = await copyText(value) ? '✓' : '!';
-        setTimeout(() => { copy.textContent = original; }, 1200);
-    };
+    copy.onclick = () => { void copyTextWithFeedback(copy, value); };
     return copy;
+}
+
+async function updateInlineRecipeMetadata(owner, recipe, changes) {
+    const filename = owner?.recipeDetailFilename;
+    if (!filename) throw new Error('recipe metadata filename missing');
+    const next = JSON.parse(JSON.stringify({ ...recipe, ...changes }));
+    const response = await fetch('/anomalous/update_recipe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename, ...next }),
+    });
+    const payload = await response.json();
+    if (!response.ok || payload.status !== 'success') throw new Error('recipe metadata update failed');
+    Object.assign(recipe, changes, { updated_timestamp: Date.now() });
+    await owner.refreshRecipes?.();
+}
+
+function beginInlineEdit(owner, recipe, container, field, renderValue, options = {}) {
+    const editor = document.createElement('div');
+    editor.className = `anomalous-recipe-inline-editor${options.multiline ? ' is-multiline' : ''}`;
+    const input = document.createElement(options.multiline ? 'textarea' : 'input');
+    input.className = 'anomalous-recipe-inline-input';
+    input.value = Array.isArray(recipe[field]) ? recipe[field].join(', ') : String(recipe[field] || '');
+    if (!options.multiline) input.type = 'text';
+    if (options.maxLength) input.maxLength = options.maxLength;
+    if (options.multiline) input.rows = 3;
+    const controls = document.createElement('div');
+    controls.className = 'anomalous-recipe-inline-controls';
+    const status = appendText(controls, 'small', '', 'anomalous-recipe-detail-muted');
+    const save = button(controls, t('recipeInlineSave'), 'anomalous-btn-primary');
+    const cancel = button(controls, t('recipeInlineCancel'), 'anomalous-btn-secondary');
+    let finished = false;
+    let ignoreBlur = false;
+    const restore = () => {
+        if (finished) return;
+        finished = true;
+        renderValue(container);
+    };
+    const commit = async () => {
+        if (finished) return;
+        const raw = input.value.trim();
+        const value = options.parse ? options.parse(raw) : raw;
+        if (options.required && !value) {
+            status.textContent = t('recipeInlineNameRequired');
+            input.focus();
+            return;
+        }
+        finished = true;
+        save.disabled = true;
+        cancel.disabled = true;
+        status.textContent = t('recipeInlineSaving');
+        try {
+            await updateInlineRecipeMetadata(owner, recipe, { [field]: value });
+            renderValue(container);
+        } catch (error) {
+            console.error('Could not update inline recipe metadata:', error);
+            finished = false;
+            save.disabled = false;
+            cancel.disabled = false;
+            status.textContent = t('recipeInlineError');
+        }
+    };
+    input.addEventListener('blur', () => {
+        if (!ignoreBlur) void commit();
+    });
+    input.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            ignoreBlur = true;
+            restore();
+        } else if (event.key === 'Enter' && (!options.multiline || event.ctrlKey || event.metaKey)) {
+            event.preventDefault();
+            ignoreBlur = true;
+            void commit();
+        }
+    });
+    save.addEventListener('pointerdown', () => { ignoreBlur = true; });
+    save.onclick = () => { void commit(); };
+    cancel.addEventListener('pointerdown', () => { ignoreBlur = true; });
+    cancel.onclick = restore;
+    editor.append(input, controls);
+    container.replaceChildren(editor);
+    input.focus();
+    input.select?.();
 }
 
 function needsExpansion(value) {
@@ -319,6 +414,57 @@ function renderPromptSection(parent, recipe) {
     return prompts;
 }
 
+function renderInlineTitle(parent, owner, recipe) {
+    parent.replaceChildren();
+    const title = button(parent, recipe.name || t('recipeUntitled'), 'anomalous-recipe-inline-title');
+    title.title = t('recipeInlineEditName');
+    title.onclick = () => beginInlineEdit(
+        owner,
+        recipe,
+        parent,
+        'name',
+        (target) => renderInlineTitle(target, owner, recipe),
+        { maxLength: 120, required: true },
+    );
+}
+
+function renderInlineNotes(parent, owner, recipe) {
+    parent.replaceChildren();
+    const notes = appendText(
+        parent,
+        'p',
+        recipe.notes || t('recipeDetailNoNotes'),
+        'anomalous-recipe-detail-muted anomalous-recipe-inline-editable',
+    );
+    notes.title = t('recipeInlineEditNotes');
+    notes.onclick = () => beginInlineEdit(
+        owner,
+        recipe,
+        parent,
+        'notes',
+        (target) => renderInlineNotes(target, owner, recipe),
+        { multiline: true, maxLength: 5000 },
+    );
+    if (recipe.notes) appendCopyButton(parent, recipe.notes);
+}
+
+function renderInlineTags(parent, owner, recipe) {
+    parent.replaceChildren();
+    for (const tag of recipe.tags || []) appendText(parent, 'span', tag, 'anomalous-recipe-badge anomalous-recipe-badge-tag');
+    const edit = button(parent, t('recipeInlineEditTags'), 'anomalous-recipe-inline-edit-button');
+    edit.onclick = () => beginInlineEdit(
+        owner,
+        recipe,
+        parent,
+        'tags',
+        (target) => renderInlineTags(target, owner, recipe),
+        {
+            maxLength: 300,
+            parse: (value) => [...new Set(value.split(',').map((tag) => tag.trim()).filter(Boolean))].slice(0, 20),
+        },
+    );
+}
+
 function renderOverview(content, owner, recipe, references, finish) {
     const overview = document.createElement('div');
     overview.className = 'anomalous-recipe-detail-overview';
@@ -332,15 +478,17 @@ function renderOverview(content, owner, recipe, references, finish) {
     }
     const copy = document.createElement('div');
     copy.className = 'anomalous-recipe-detail-hero-copy';
-    appendText(copy, 'h3', recipe.name || t('recipeUntitled'));
+    const title = document.createElement('div');
+    title.className = 'anomalous-recipe-inline-title-row';
+    renderInlineTitle(title, owner, recipe);
+    copy.appendChild(title);
     const notes = document.createElement('div');
     notes.className = 'anomalous-recipe-detail-notes';
-    appendText(notes, 'p', recipe.notes || t('recipeDetailNoNotes'), 'anomalous-recipe-detail-muted');
-    if (recipe.notes) appendCopyButton(notes, recipe.notes);
+    renderInlineNotes(notes, owner, recipe);
     copy.appendChild(notes);
     const tags = document.createElement('div');
-    tags.className = 'anomalous-recipe-tags';
-    for (const tag of recipe.tags || []) appendText(tags, 'span', tag, 'anomalous-recipe-badge anomalous-recipe-badge-tag');
+    tags.className = 'anomalous-recipe-tags anomalous-recipe-detail-tags';
+    renderInlineTags(tags, owner, recipe);
     copy.appendChild(tags);
     appendText(copy, 'small', `${t('recipeDetailUpdated')}: ${dateText(recipe.updated_timestamp || recipe.timestamp)}`, 'anomalous-recipe-detail-muted');
     hero.appendChild(copy);
@@ -354,8 +502,18 @@ function renderOverview(content, owner, recipe, references, finish) {
     renderStat(stats, t('recipeDetailIdentity'), `${verified}/${references.length}`, verified === references.length ? 'good' : 'warn');
     renderStat(stats, t('recipeDetailUnverified'), String(unverified), unverified ? 'warn' : 'good');
     renderStat(stats, t('recipeDetailMissingNodes'), String(missing), missing ? 'warn' : 'good');
-    renderStat(stats, t('recipeDetailFingerprint'), shortHash(fingerprintText(recipe)) || t('recipeDetailNotIndexed'));
     overview.appendChild(stats);
+
+    const advanced = document.createElement('details');
+    advanced.className = 'anomalous-recipe-advanced-info';
+    appendText(advanced, 'summary', t('recipeAdvancedInfo'));
+    const fingerprint = document.createElement('div');
+    fingerprint.className = 'anomalous-recipe-advanced-row';
+    appendText(fingerprint, 'span', `${t('recipeDetailFingerprint')}:`);
+    appendText(fingerprint, 'code', fingerprintText(recipe) || t('recipeDetailNotIndexed'));
+    if (fingerprintText(recipe)) appendCopyButton(fingerprint, fingerprintText(recipe), t('recipeDetailCopyFingerprint'));
+    advanced.appendChild(fingerprint);
+    overview.appendChild(advanced);
 
     const summary = document.createElement('section');
     summary.className = 'anomalous-recipe-detail-section';
@@ -395,10 +553,7 @@ function renderOverview(content, owner, recipe, references, finish) {
         prompts.negative.length ? `${t('recipeDetailNegativePrompt')}:\n${prompts.negative.join('\n\n')}` : '',
     ].filter(Boolean).join('\n\n');
     copyPrompt.disabled = !promptBundle;
-    copyPrompt.onclick = () => copyText(promptBundle);
-    const copyFingerprint = button(actions, t('recipeDetailCopyFingerprint'), 'anomalous-btn-primary');
-    copyFingerprint.disabled = !fingerprintText(recipe);
-    copyFingerprint.onclick = () => copyText(fingerprintText(recipe));
+    copyPrompt.onclick = () => { void copyTextWithFeedback(copyPrompt, promptBundle); };
     overview.appendChild(actions);
     content.appendChild(overview);
 }
@@ -477,8 +632,16 @@ function renderModels(content, owner, recipe, references) {
         meta.className = 'anomalous-recipe-model-reference-meta';
         const identity = normaliseIdentity(reference.identity);
         if (identity.sha256) {
-            appendText(meta, 'span', `SHA256 ${shortHash(identity.sha256)}`);
-            appendCopyButton(meta, identity.sha256, t('recipeDetailCopyHash'));
+            const advanced = document.createElement('details');
+            advanced.className = 'anomalous-recipe-advanced-info anomalous-recipe-model-hash';
+            appendText(advanced, 'summary', t('recipeAdvancedInfo'));
+            const hash = document.createElement('div');
+            hash.className = 'anomalous-recipe-advanced-row';
+            appendText(hash, 'span', 'SHA256:');
+            appendText(hash, 'code', identity.sha256);
+            appendCopyButton(hash, identity.sha256, t('recipeDetailCopyHash'));
+            advanced.appendChild(hash);
+            meta.appendChild(advanced);
         }
         if (formatIdentitySize(identity.size)) appendText(meta, 'span', formatIdentitySize(identity.size));
         appendText(meta, 'span', reference.currentAvailability === 'available'

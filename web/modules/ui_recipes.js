@@ -29,6 +29,23 @@ function appendText(parent, tagName, text, className = '') {
     return element;
 }
 
+async function copyCardValueWithFeedback(buttonElement, value) {
+    const original = buttonElement.textContent;
+    try {
+        await navigator.clipboard.writeText(String(value));
+        buttonElement.textContent = `✓ ${t('recipeCopied')}`;
+        buttonElement.classList.add('copied-success');
+    } catch (error) {
+        console.warn('Could not copy recipe parameter:', error);
+        buttonElement.textContent = `! ${t('recipeCopyFailed')}`;
+        buttonElement.classList.add('copied-failure');
+    }
+    window.setTimeout(() => {
+        buttonElement.textContent = original;
+        buttonElement.classList.remove('copied-success', 'copied-failure');
+    }, 1200);
+}
+
 function safeThumbnail(value) {
     return typeof value === 'string' && /^data:image\/(?:png|jpeg|webp);base64,/i.test(value)
         ? value
@@ -238,9 +255,7 @@ function appendNodeDetails(parent, params) {
                 const copy = appendText(row, 'button', '⧉', 'anomalous-recipe-copy-param');
                 copy.type = 'button';
                 copy.title = t('recipeCopyParameter');
-                copy.onclick = async () => {
-                    try { await navigator.clipboard.writeText(value); } catch (error) { console.warn('Could not copy recipe parameter:', error); }
-                };
+                copy.onclick = () => { void copyCardValueWithFeedback(copy, value); };
                 nodeBlock.appendChild(row);
             }
             if ((node.widgetCount || 0) > (node.widgets?.length || 0)) {

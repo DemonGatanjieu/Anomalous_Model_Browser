@@ -157,6 +157,8 @@ Workspace
 - Reproducibility summary: verified, unverified, unavailable, and missing-node counts.
 - Actions: edit metadata, open in canvas, append to canvas, copy prompt, copy workflow fingerprint.
 - Quick Queue is intentionally removed from the current product surface; recipes are opened or appended to the canvas before execution, so the detail panel must not expose an out-of-canvas queue action.
+- Name, notes, and tags support lightweight inline editing. Successful saves use the full existing recipe update contract so metadata changes preserve the workflow graph and create the normal history entry.
+- Workflow fingerprints and model SHA-256 values belong in a collapsed Advanced information disclosure, not the primary visual hierarchy. Copy actions still remain available there with visible feedback.
 - Do not place every model preview here; keep Overview calm and use the Models tab for visual inventory.
 
 ### 6.2 Models & reproducibility
