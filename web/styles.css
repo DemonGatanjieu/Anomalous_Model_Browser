@@ -2336,3 +2336,77 @@
     .anomalous-recipe-detail-prompt-label,
     .anomalous-recipe-detail-parameter-row .anomalous-recipe-detail-label { padding-top: 0; }
 }
+
+/* Secondary Actions Group */
+.anomalous-recipe-actions-secondary {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+/* Primary Actions Group */
+.anomalous-recipe-actions-primary {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-left: auto;
+}
+
+/* Icon Button (for emoji/icons) */
+.anomalous-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #e0e0e0;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, color 0.2s ease;
+}
+
+.anomalous-btn-icon:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.anomalous-btn-icon.anomalous-btn-edit:hover {
+    color: #6ee7b7;
+    border-color: rgba(110, 231, 183, 0.4);
+    background: rgba(110, 231, 183, 0.1);
+}
+
+.anomalous-btn-icon.anomalous-btn-delete:hover {
+    color: #fca5a5;
+    border-color: rgba(252, 165, 165, 0.4);
+    background: rgba(252, 165, 165, 0.1);
+}
+
+.anomalous-btn-icon.anomalous-btn-export:hover {
+    color: #93c5fd;
+    border-color: rgba(147, 197, 253, 0.4);
+    background: rgba(147, 197, 253, 0.1);
+}
+
+/* Ghost Button (secondary text button) */
+.anomalous-btn-ghost {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e0e0e0;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 5px;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.anomalous-btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
