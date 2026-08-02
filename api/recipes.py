@@ -5,8 +5,10 @@ extension repository, so personal prompts and graphs are never Git content.
 """
 
 import asyncio
+import hashlib
 import json
 import os
+import re
 import shutil
 import tempfile
 import time
@@ -15,6 +17,7 @@ import uuid
 from aiohttp import web
 import folder_paths
 
+from .metadata import get_metadata
 from .utils import require_filename, resolve_within
 
 
@@ -31,6 +34,153 @@ SAFE_THUMBNAIL_PREFIXES = (
     "data:image/png;base64,",
     "data:image/webp;base64,",
 )
+MODEL_FILE_SUFFIXES = (".safetensors", ".ckpt", ".pt", ".bin", ".sft")
+SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$", re.IGNORECASE)
+
+
+def _workflow_fingerprint(workflow):
+    """Hash only the canonical serialized graph, never recipe presentation data."""
+    canonical = json.dumps(
+        workflow,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return {
+        "algorithm": "sha256",
+        "value": hashlib.sha256(canonical).hexdigest(),
+    }
+
+
+def _node_type(node):
+    return str(node.get("type") or node.get("class_type") or "").strip()
+
+
+def _node_title(node):
+    meta = node.get("_meta") if isinstance(node.get("_meta"), dict) else {}
+    return str(meta.get("title") or node.get("title") or _node_type(node) or "Unknown node").strip()
+
+
+def _widget_values(node):
+    values = node.get("widgets_values")
+    return values if isinstance(values, list) else []
+
+
+def _model_reference_specs(node):
+    """Known loader adapters only; arbitrary third-party widgets stay parameters."""
+    node_type = _node_type(node)
+    lowered = node_type.lower()
+    specs = []
+
+    if re.search(r"checkpointloader(simple)?$", lowered):
+        specs.append((0, "checkpoint", "checkpoint"))
+    elif lowered.endswith("unetloader"):
+        specs.append((0, "unet", "unet"))
+    elif re.search(r"loraloader", lowered):
+        specs.append((0, "lora", "lora"))
+    elif lowered.endswith("vaeloader"):
+        specs.append((0, "vae", "vae"))
+    elif lowered.endswith("clipvisionloader"):
+        specs.append((0, "clip_vision", "clip_vision"))
+    elif lowered.endswith("controlnetloader"):
+        specs.append((0, "controlnet", "controlnet"))
+    elif re.search(r"(?:^|[^a-z])(?:dual|triple)?cliploader$", lowered):
+        specs.append((0, "text_encoder", "clip"))
+        if "dualclip" in lowered or "tripleclip" in lowered:
+            specs.append((1, "text_encoder", "clip"))
+        if "tripleclip" in lowered:
+            specs.append((2, "text_encoder", "clip"))
+    return specs
+
+
+def _model_roots():
+    for folder_type in getattr(folder_paths, "folder_names_and_paths", {}):
+        try:
+            paths = folder_paths.get_folder_paths(folder_type)
+        except Exception:
+            continue
+        for path_index, base_dir in enumerate(paths or []):
+            if os.path.isdir(base_dir):
+                yield folder_type, path_index, os.path.realpath(base_dir)
+
+
+def _resolve_exact_model_reference(saved_value):
+    """Resolve one saved model value without recursive scanning or hashing."""
+    if not isinstance(saved_value, str) or not saved_value.strip():
+        return None
+    relative_value = saved_value.replace("/", os.sep)
+    for folder_type, path_index, base_dir in _model_roots():
+        candidate = os.path.realpath(os.path.join(base_dir, relative_value))
+        try:
+            if os.path.commonpath((base_dir, candidate)) != base_dir:
+                continue
+        except ValueError:
+            continue
+        if not os.path.isfile(candidate) or not candidate.lower().endswith(MODEL_FILE_SUFFIXES):
+            continue
+        return {
+            "path": candidate,
+            "folder_type": folder_type,
+            "path_index": path_index,
+        }
+    return None
+
+
+def _identity_for_reference(saved_value):
+    resolved = _resolve_exact_model_reference(saved_value)
+    if not resolved:
+        return {"status": "unavailable"}
+
+    identity = {"status": "unverified", "provenance": "local cached metadata"}
+    try:
+        identity["size"] = os.path.getsize(resolved["path"])
+    except OSError:
+        pass
+    try:
+        metadata = get_metadata(resolved["path"])
+        candidate_hash = str(metadata.get("hash") or "").strip()
+        if SHA256_PATTERN.fullmatch(candidate_hash):
+            identity["status"] = "verified"
+            identity["sha256"] = candidate_hash.lower()
+    except Exception:
+        pass
+    return identity
+
+
+def _build_model_references(recipe):
+    workflow = recipe.get("workflow") if isinstance(recipe, dict) else None
+    params = recipe.get("params") if isinstance(recipe, dict) else None
+    base_model = params.get("baseModel") if isinstance(params, dict) else None
+    references = []
+    for node in workflow.get("nodes", []) if isinstance(workflow, dict) else []:
+        if not isinstance(node, dict):
+            continue
+        values = _widget_values(node)
+        for widget_index, category, widget_name in _model_reference_specs(node):
+            saved_value = values[widget_index] if widget_index < len(values) else None
+            if not isinstance(saved_value, str) or not saved_value.strip():
+                continue
+            references.append({
+                "node_id": node.get("id"),
+                "node_type": _node_type(node) or "Unknown",
+                "node_title": _node_title(node),
+                "widget_index": widget_index,
+                "widget_name": widget_name,
+                "saved_value": saved_value,
+                "category": category,
+                "base_model": base_model,
+                "identity": _identity_for_reference(saved_value),
+            })
+    return references
+
+
+def _enrich_recipe(recipe):
+    recipe["workflow_fingerprint"] = _workflow_fingerprint(recipe["workflow"])
+    params = dict(recipe.get("params") or {})
+    params["model_references"] = _build_model_references(recipe)
+    recipe["params"] = params
+    recipe["schema_version"] = 3
+    return recipe
 
 
 def get_recipes_dir():
@@ -211,6 +361,12 @@ def _list_recipe_history(recipes_dir, filename):
                         "version": version,
                         "timestamp": data.get("timestamp", 0),
                         "name": data.get("name", ""),
+                        "workflow_fingerprint": data.get("workflow_fingerprint"),
+                        "model_reference_count": len(
+                            (data.get("params") or {}).get("model_references", [])
+                            if isinstance(data.get("params"), dict)
+                            else []
+                        ),
                     })
                 except (OSError, ValueError, json.JSONDecodeError):
                     continue
@@ -226,8 +382,7 @@ def _updated_recipe(payload, existing):
     if isinstance(created_timestamp, int):
         recipe["created_timestamp"] = created_timestamp
     recipe["updated_timestamp"] = recipe["timestamp"]
-    recipe["schema_version"] = 2
-    return recipe
+    return _enrich_recipe(recipe)
 
 
 def _delete_recipe_with_history(recipes_dir, filename):
@@ -254,7 +409,7 @@ async def api_save_recipe(request):
 
     recipe["created_timestamp"] = recipe["timestamp"]
     recipe["updated_timestamp"] = recipe["timestamp"]
-    recipe["schema_version"] = 2
+    _enrich_recipe(recipe)
     filename = f"recipe_{int(time.time())}_{uuid.uuid4().hex[:8]}.json"
     try:
         recipes_dir = get_recipes_dir()
@@ -384,3 +539,37 @@ async def api_restore_recipe_version(request):
     except OSError:
         return web.json_response({"status": "error", "message": "Could not restore recipe history"}, status=500)
     return web.json_response({"status": "success", "filename": filename})
+
+
+async def api_refresh_recipe_identity(request):
+    """Check exact saved model references using cached metadata only.
+
+    This deliberately does not walk model folders and never computes a full-file
+    hash. The response is transient current-machine availability, separate from
+    the historical identity stored in the recipe.
+    """
+    try:
+        payload = await request.json()
+        references = payload.get("references", [])
+        if not isinstance(references, list):
+            raise ValueError("Invalid references")
+    except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
+        return web.json_response({"status": "error", "message": "Invalid references"}, status=400)
+
+    results = []
+    for reference in references[:128]:
+        if not isinstance(reference, dict):
+            continue
+        saved_value = reference.get("saved_value")
+        resolved = _resolve_exact_model_reference(saved_value)
+        result = {
+            "node_id": reference.get("node_id"),
+            "widget_index": reference.get("widget_index"),
+            "saved_value": saved_value,
+            "availability": "available" if resolved else "missing",
+        }
+        if resolved:
+            result["local_path"] = resolved["path"]
+            result["identity"] = _identity_for_reference(saved_value)
+        results.append(result)
+    return web.json_response({"status": "success", "results": results})

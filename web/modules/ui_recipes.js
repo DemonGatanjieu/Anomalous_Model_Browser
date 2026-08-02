@@ -9,6 +9,7 @@ import {
     extractRecipeParameterChoices,
     extractRecipeParameterChoicesFromMetadata,
 } from './recipe_parser.js';
+import { showRecipeDetail } from './ui_recipe_detail.js';
 
 const t = (key) => {
     let lang = window.anomalous_browser_lang || 'zh';
@@ -196,6 +197,53 @@ function renderParams(parent, params = {}) {
     appendPinnedParams(summary, params);
     appendNodeDetails(summary, params);
     parent.appendChild(summary);
+}
+
+async function fetchRecipeBundle(filename) {
+    const [fullResponse, historyResponse] = await Promise.all([
+        fetch(`/anomalous/recipe_full?filename=${encodeURIComponent(filename)}`),
+        fetch(`/anomalous/recipe_history?filename=${encodeURIComponent(filename)}`),
+    ]);
+    const payload = await fullResponse.json();
+    const historyPayload = historyResponse.ok ? await historyResponse.json() : { versions: [] };
+    if (!fullResponse.ok || payload.status !== 'success' || !payload.data?.workflow) throw new Error('recipe missing workflow');
+    return { data: JSON.parse(JSON.stringify(payload.data)), history: historyPayload.versions || [] };
+}
+
+async function editRecipe(owner, recipe, filename, history = null) {
+    try {
+        const bundle = history ? { data: JSON.parse(JSON.stringify(recipe)), history } : await fetchRecipeBundle(filename);
+        const editable = bundle.data;
+        const result = await showRecipeEditDialog(owner, editable, filename, bundle.history);
+        if (!result || result.mode === 'restored') return;
+        if (result.mode === 'canvas') {
+            if (!confirm(t('recipeEditCanvasConfirm'))) return;
+            app.loadGraphData(editable.workflow);
+            app.canvas?.setDirty?.(true, true);
+            owner.recipeEditing = { filename, data: editable };
+            const saveButton = owner.recipeView?.querySelector('.anomalous-recipe-actionbar button');
+            if (saveButton) saveButton.textContent = t('recipeUpdateCurrent');
+            return;
+        }
+
+        applyRecipeWidgetChanges(editable.params, editable.workflow, result.changes);
+        const updatedChoices = extractRecipeParameterChoicesFromMetadata(editable.params);
+        editable.name = result.name;
+        editable.tags = result.tags;
+        editable.notes = result.notes;
+        editable.params.pinned = updatedChoices.filter((choice) => result.pinnedKeys.has(choice.key));
+        const response = await fetch('/anomalous/update_recipe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename, ...editable }),
+        });
+        const updatedPayload = await response.json();
+        if (!response.ok || updatedPayload.status !== 'success') throw new Error('recipe update failed');
+        await owner.refreshRecipes();
+    } catch (error) {
+        console.error('Could not edit Workflow Recipe:', error);
+        alert(t('recipeUpdateError'));
+    }
 }
 
 function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices, initial = null) {
@@ -627,6 +675,12 @@ export async function showRecipes() {
     this.notebookBody.style.display = 'none';
     this.notebookNotesTab?.classList.remove('active');
     this.notebookRecipesTab?.classList.add('active');
+    if (this.recipeDetailView) {
+        this.recipeDetailView.remove();
+        this.recipeDetailView = null;
+        this.recipeListContainer.style.display = '';
+        this.recipeView.querySelector('.anomalous-recipe-actionbar').style.display = '';
+    }
     if (this.recipeView) this.recipeView.style.display = 'flex';
     if (this.recipesInitialized) {
         await this.refreshRecipes();
@@ -697,49 +751,25 @@ export function renderRecipeList(recipes) {
 
         const actions = document.createElement('div');
         actions.className = 'anomalous-recipe-actions';
-        const edit = appendText(actions, 'button', t('recipeEdit'), 'anomalous-btn-success');
-        edit.type = 'button';
-        edit.onclick = async () => {
+        const details = appendText(actions, 'button', t('recipeViewDetails'), 'anomalous-btn-primary');
+        details.type = 'button';
+        details.onclick = async () => {
             try {
-                const [fullResponse, historyResponse] = await Promise.all([
-                    fetch(`/anomalous/recipe_full?filename=${encodeURIComponent(recipe.filename)}`),
-                    fetch(`/anomalous/recipe_history?filename=${encodeURIComponent(recipe.filename)}`),
-                ]);
-                const payload = await fullResponse.json();
-                const historyPayload = historyResponse.ok ? await historyResponse.json() : { versions: [] };
-                if (!fullResponse.ok || payload.status !== 'success' || !payload.data?.workflow) throw new Error('recipe missing workflow');
-                const editable = JSON.parse(JSON.stringify(payload.data));
-                const result = await showRecipeEditDialog(this, editable, recipe.filename, historyPayload.versions || []);
-                if (!result || result.mode === 'restored') return;
-                if (result.mode === 'canvas') {
-                    if (!confirm(t('recipeEditCanvasConfirm'))) return;
-                    app.loadGraphData(editable.workflow);
-                    app.canvas?.setDirty?.(true, true);
-                    this.recipeEditing = { filename: recipe.filename, data: editable };
-                    const saveButton = this.recipeView?.querySelector('.anomalous-recipe-actionbar button');
-                    if (saveButton) saveButton.textContent = t('recipeUpdateCurrent');
-                    return;
-                }
-
-                applyRecipeWidgetChanges(editable.params, editable.workflow, result.changes);
-                const updatedChoices = extractRecipeParameterChoicesFromMetadata(editable.params);
-                editable.name = result.name;
-                editable.tags = result.tags;
-                editable.notes = result.notes;
-                editable.params.pinned = updatedChoices.filter((choice) => result.pinnedKeys.has(choice.key));
-                const response = await fetch('/anomalous/update_recipe', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ filename: recipe.filename, ...editable }),
+                const bundle = await fetchRecipeBundle(recipe.filename);
+                const result = await showRecipeDetail(this, {
+                    recipe: bundle.data,
+                    filename: recipe.filename,
+                    history: bundle.history,
                 });
-                const updatedPayload = await response.json();
-                if (!response.ok || updatedPayload.status !== 'success') throw new Error('recipe update failed');
-                await this.refreshRecipes();
+                if (result?.mode === 'edit') await editRecipe(this, bundle.data, recipe.filename, bundle.history);
             } catch (error) {
-                console.error('Could not edit Workflow Recipe:', error);
-                alert(t('recipeUpdateError'));
+                console.error('Could not open Workflow Recipe details:', error);
+                alert(t('recipeLoadError'));
             }
         };
+        const edit = appendText(actions, 'button', t('recipeEdit'), 'anomalous-btn-success');
+        edit.type = 'button';
+        edit.onclick = () => editRecipe(this, recipe?.data || {}, recipe.filename);
         const restore = appendText(actions, 'button', t('recipeRestore'), 'anomalous-btn-primary');
         restore.type = 'button';
         restore.onclick = async () => {

@@ -1,5 +1,17 @@
 # 📈 Anomalous Model Browser Changelog
 
+## Unreleased
+
+### Workflow Recipe details
+- Added the demand-loaded Workflow Recipe detail panel with Overview, Models & reproducibility, Parameters, and Versions tabs while keeping recipe cards compact.
+- Added schema-v3 canonical workflow fingerprints, explicit model-reference identity states, bounded exact-reference local availability refresh, parameter search, and history fingerprint summaries.
+- Preserved the identity boundary: filenames, paths, previews, and fuzzy matches do not become cryptographic model identity evidence; recipe browsing performs no full-model hashing or recursive availability scan.
+
+### Design handoff
+- Chose **Workspace / 创作工作台** as the future user-facing umbrella name, with **Prompt Notes / 提示词笔记** and **Workflow Recipes / 工作流配方** as tabs. Existing notebook API, storage, and internal names remain unchanged in the first rename pass.
+- Defined model-preview behavior for recipes: demand-loaded current previews first, plus a future explicit and bounded frozen-snapshot option stored as recipe-owned assets rather than preview bytes or URLs inside the authoritative workflow graph.
+- Added the mandatory development protocol: every future product-code snapshot updates this changelog and `ARCHITECTURE.md`, runs relevant checks, and ends in a coherent local Git commit.
+
 ## v1.5.1 (The Workflow Exchange & Deep Scan Update)
 ### 🚀 Major Features
 - **Lossless Workflow Exchange (无损工作流交互)**: Added dedicated Import/Export buttons to the bottom-left of the plugin UI. This feature allows users to directly extract, share, and import pure workflow data without relying on original PNG images, completely bypassing the metadata-stripping compression used by social platforms (like WeChat or Discord) that causes workflow loss.

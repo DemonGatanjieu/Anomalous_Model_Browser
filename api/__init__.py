@@ -32,6 +32,7 @@ def setup_routes(app):
     app.router.add_post('/anomalous/delete_recipe', api_delete_recipe)
     app.router.add_get('/anomalous/recipe_history', api_get_recipe_history)
     app.router.add_post('/anomalous/restore_recipe_version', api_restore_recipe_version)
+    app.router.add_post('/anomalous/refresh_recipe_identity', api_refresh_recipe_identity)
 
     app.router.add_post('/anomalous/translate', api_translate)
     app.router.add_get('/anomalous/base_models', api_base_models)
