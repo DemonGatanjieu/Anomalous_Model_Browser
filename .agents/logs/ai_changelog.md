@@ -1,5 +1,19 @@
 # AI Changelog
 
+## [Planning Audit] 2026-08-03 — Workflow Recipe integrity and UX hardening
+
+- Added `.agents/plans/workflow_recipe_audit_and_hardening_plan.md` after a read-only audit of recipe save/update, detail rendering, canvas actions, model identity, history, package transfer, Workspace lifecycle, and CSS interaction structure.
+- Verified one real schema-v4 recipe: the authoritative 13-node/17-link workflow, semantic model/sampler values, and full positive/negative prompts were saved; one 451-character prompt was intentionally truncated only in the 320-character generic summary.
+- Identified P0 risks before further UI polish: truncated-summary editing, canvas-update pin loss, filename-first model matching, imported identity loss, incomplete history asset export, non-transactional replacement import, and unresolved cross-panel navigation state.
+- Confirmed no source tests currently remain under `tests/`; the plan starts with private golden fixtures and round-trip tests.
+- Runtime code and `ARCHITECTURE.md` were intentionally unchanged by this planning-only audit.
+
+**Checks**
+
+- Python compile check for `api/recipes.py` and `api/recipe_packages.py`
+- `node --check` for all recipe frontend modules
+- `git diff --check`
+
 ## [Snapshot] 2026-08-03 — Keep native CLIP parameters together
 
 **Implemented**
