@@ -2072,27 +2072,3 @@
     .anomalous-recipe-detail-prompt-label,
     .anomalous-recipe-detail-parameter-row .anomalous-recipe-detail-label { padding-top: 0; }
 }
-
-.anomalous-recipe-quick-queue-enable {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    color: #ffd493;
-}
-
-.anomalous-recipe-quick-queue-form {
-    display: grid;
-    gap: 8px;
-    margin-top: 10px;
-}
-
-.anomalous-recipe-quick-queue-field {
-    display: grid;
-    grid-template-columns: minmax(140px, 0.6fr) minmax(160px, 1fr);
-    align-items: center;
-    gap: 8px;
-}
-
-.anomalous-recipe-quick-queue-field input {
-    min-width: 0;
-}

@@ -224,14 +224,6 @@ export const i18n = {
         recipeSaveModelPreviewSnapshots: '保存模型预览快照',
         recipeSaveModelPreviewSnapshotsHint: '为当前版本保存小尺寸静态缩略图；不会复制视频，也不会写入工作流图。',
         recipeDetailSavedSnapshot: '已保存快照',
-        recipeQuickQueueTitle: '快速运行',
-        recipeQuickQueueHint: '只修改本次排队的临时参数，不会改变当前画布或已保存配方。',
-        recipeQuickQueueEnable: '我确认要启用此配方的快速运行',
-        recipeQuickQueue: '一键运行',
-        recipeQuickQueueRunning: '正在排队…',
-        recipeQuickQueueInvalid: '请检查参数值。',
-        recipeQuickQueueSuccess: '已加入队列',
-        recipeQuickQueueError: '无法运行此配方；请检查节点、模型和参数。',
 
     },
     en: {
@@ -459,13 +451,5 @@ export const i18n = {
         recipeSaveModelPreviewSnapshots: 'Save model preview snapshots',
         recipeSaveModelPreviewSnapshotsHint: 'Keeps small static thumbnails with this version. Videos and the workflow graph are not copied.',
         recipeDetailSavedSnapshot: 'Saved snapshot',
-        recipeQuickQueueTitle: 'Quick Queue',
-        recipeQuickQueueHint: 'Only temporary queue parameters change; the current canvas and saved recipe stay untouched.',
-        recipeQuickQueueEnable: 'I confirm that I want to enable Quick Queue for this recipe',
-        recipeQuickQueue: 'Quick Queue',
-        recipeQuickQueueRunning: 'Queueing…',
-        recipeQuickQueueInvalid: 'Check the parameter values.',
-        recipeQuickQueueSuccess: 'Queued',
-        recipeQuickQueueError: 'Could not run this recipe; check its nodes, models, and parameters.',
     }
 };

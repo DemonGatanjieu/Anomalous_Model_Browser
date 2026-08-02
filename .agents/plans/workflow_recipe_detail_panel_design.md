@@ -156,7 +156,7 @@ Workspace
 - Separate positive and negative prompt panels, primary sampling values, latent resolution, and pinned parameters. Prompt/parameter text uses a compact collapsed view with explicit expand and copy controls; the detail view never silently truncates an available safe value.
 - Reproducibility summary: verified, unverified, unavailable, and missing-node counts.
 - Actions: edit metadata, open in canvas, append to canvas, copy prompt, copy workflow fingerprint.
-- If Quick Queue is explicitly enabled and validation succeeds, Overview also exposes the pinned-parameter form and queue action. It must not be the default action for every imported or incomplete recipe.
+- Quick Queue is intentionally removed from the current product surface; recipes are opened or appended to the canvas before execution, so the detail panel must not expose an out-of-canvas queue action.
 - Do not place every model preview here; keep Overview calm and use the Models tab for visual inventory.
 
 ### 6.2 Models & reproducibility
@@ -441,14 +441,13 @@ Exit condition: users can explain the meaningful difference between the current 
 
 Exit condition: appending preserves the pre-existing graph, creates no ID/link corruption, and can be undone as one user action where host support exists.
 
-### Phase 4 — recipe applet / Quick Queue (P2, execution risk)
+### Phase 4 — recipe action cleanup (completed)
 
-- Build the pinned-parameter form from existing safe parameter descriptors.
-- Determine and test the supported frontend-workflow → API-prompt conversion path in the installed ComfyUI version.
-- Add explicit Quick Queue enablement, validation reasons, ephemeral overrides, stale-fingerprint protection, queue result feedback, and imported-recipe trust handling.
-- Keep the action in Overview for the first release; do not place a one-click execution button on every card.
+- Remove the out-of-canvas Quick Queue surface and its temporary prompt-conversion path.
+- Keep execution anchored to the normal canvas workflow: Open replaces the graph after confirmation, while Append splices the saved graph into the current canvas transactionally.
+- Reuse the same Open/Append handlers from detail and list cards so confirmation, error feedback, and Workspace closure cannot drift between surfaces.
 
-Exit condition: a validated complete recipe can queue with temporary pinned overrides while the current canvas and stored recipe remain byte-for-byte unchanged.
+Exit condition: no recipe UI silently queues a detached workflow; all canvas actions use the shared handlers and the saved full workflow payload.
 
 ### Phase 5 — import/export recipe packages (P2, data-boundary risk)
 

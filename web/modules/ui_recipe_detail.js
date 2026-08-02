@@ -8,7 +8,7 @@ import {
     shortHash,
 } from './recipe_identity.js';
 import { buildRecipeDiff, diffIsEmpty } from './recipe_diff.js';
-import { appendRecipeToCanvas, quickQueueRecipe } from './recipe_actions.js';
+import { appendRecipeToCanvas } from './recipe_actions.js';
 
 const t = (key) => {
     let lang = window.anomalous_browser_lang || 'zh';
@@ -30,11 +30,6 @@ function button(parent, label, className = '') {
     return element;
 }
 
-function valueEqual(left, right) {
-    if (left === right) return true;
-    try { return JSON.stringify(left) === JSON.stringify(right); } catch (error) { return false; }
-}
-
 function canvasMayContainUserWork() {
     if (!app.graph?._nodes?.length) return false;
     if (app.canvas?.dirty_canvas === false || app.graph?.dirty === false) return false;
@@ -46,8 +41,20 @@ function closeRecipeWorkspace(owner) {
     owner?.close?.();
 }
 
-async function openRecipeOnCanvas(owner, recipe) {
-    if (canvasMayContainUserWork() && !confirm(t('recipeOpenCanvasConfirm'))) return false;
+function missingRecipeNodeTypes(recipe) {
+    const registry = globalThis.LiteGraph?.registered_node_types;
+    if (!registry) return [];
+    return [...new Set((recipe?.params?.nodes || [])
+        .map((node) => node?.type)
+        .filter((type) => type && !registry[type]))];
+}
+
+export async function openRecipeOnCanvas(owner, recipe) {
+    const missingTypes = missingRecipeNodeTypes(recipe);
+    const missingWarning = missingTypes.length
+        ? `\n\n${t('recipeMissingNodes')}:\n${missingTypes.slice(0, 12).join('\n')}`
+        : '';
+    if ((canvasMayContainUserWork() || missingWarning) && !confirm(`${t('recipeOpenCanvasConfirm')}${missingWarning}`)) return false;
     try {
         await app.loadGraphData(recipe.workflow);
         app.canvas?.setDirty?.(true, true);
@@ -60,7 +67,7 @@ async function openRecipeOnCanvas(owner, recipe) {
     }
 }
 
-function appendRecipeOnCanvas(owner, recipe) {
+export function appendRecipeOnCanvas(owner, recipe) {
     try {
         appendRecipeToCanvas(recipe);
         closeRecipeWorkspace(owner);
@@ -312,80 +319,6 @@ function renderPromptSection(parent, recipe) {
     return prompts;
 }
 
-function renderQuickQueue(parent, owner, recipe) {
-    const section = document.createElement('section');
-    section.className = 'anomalous-recipe-detail-section anomalous-recipe-quick-queue';
-    appendText(section, 'h4', t('recipeQuickQueueTitle'));
-    appendText(section, 'p', t('recipeQuickQueueHint'), 'anomalous-recipe-detail-muted');
-    if (!owner.recipeQuickQueueEnabled) owner.recipeQuickQueueEnabled = new Set();
-    const enabled = owner.recipeQuickQueueEnabled.has(owner.recipeDetailFilename);
-    const enableLabel = document.createElement('label');
-    enableLabel.className = 'anomalous-recipe-quick-queue-enable';
-    const enable = document.createElement('input');
-    enable.type = 'checkbox';
-    enable.checked = enabled;
-    appendText(enableLabel, 'span', t('recipeQuickQueueEnable'));
-    enableLabel.prepend(enable);
-    section.appendChild(enableLabel);
-
-    const form = document.createElement('div');
-    form.className = 'anomalous-recipe-quick-queue-form';
-    const controls = [];
-    for (const pin of recipe.params?.pinned || []) {
-        if (!['string', 'number', 'boolean'].includes(typeof pin?.value)) continue;
-        const row = document.createElement('label');
-        row.className = 'anomalous-recipe-quick-queue-field';
-        appendText(row, 'span', `${pin.nodeTitle || pin.nodeType || t('recipeUnknownNode')} · ${pin.widgetName}`);
-        const input = document.createElement('input');
-        input.type = typeof pin.value === 'number' ? 'number' : typeof pin.value === 'boolean' ? 'checkbox' : 'text';
-        if (input.type === 'checkbox') input.checked = pin.value;
-        else input.value = String(pin.value);
-        if (typeof pin.value === 'number') input.step = 'any';
-        controls.push({ pin, input });
-        row.appendChild(input);
-        form.appendChild(row);
-    }
-    const status = appendText(form, 'small', '', 'anomalous-recipe-detail-muted');
-    const queue = button(form, t('recipeQuickQueue'), 'anomalous-btn-primary');
-    queue.disabled = !enabled;
-    queue.onclick = async () => {
-        queue.disabled = true;
-        status.textContent = t('recipeQuickQueueRunning');
-        const changes = [];
-        for (const { pin, input } of controls) {
-            let value;
-            if (input.type === 'checkbox') value = input.checked;
-            else if (input.type === 'number') value = Number(input.value);
-            else value = input.value;
-            if (!Number.isFinite(value) && input.type === 'number') {
-                status.textContent = t('recipeQuickQueueInvalid');
-                queue.disabled = false;
-                return;
-            }
-            if (!valueEqual(value, pin.value)) changes.push({ ...pin, previousValue: pin.value, value });
-        }
-        try {
-            const result = await quickQueueRecipe(recipe, changes);
-            status.textContent = result?.prompt_id
-                ? `${t('recipeQuickQueueSuccess')}: ${result.prompt_id}`
-                : t('recipeQuickQueueSuccess');
-        } catch (error) {
-            console.error('Could not Quick Queue Workflow Recipe:', error);
-            status.textContent = t('recipeQuickQueueError');
-        } finally {
-            queue.disabled = false;
-        }
-    };
-    enable.onchange = () => {
-        if (enable.checked) owner.recipeQuickQueueEnabled.add(owner.recipeDetailFilename);
-        else owner.recipeQuickQueueEnabled.delete(owner.recipeDetailFilename);
-        queue.disabled = !enable.checked;
-        status.textContent = '';
-    };
-    section.appendChild(form);
-    parent.appendChild(section);
-}
-
 function renderOverview(content, owner, recipe, references, finish) {
     const overview = document.createElement('div');
     overview.className = 'anomalous-recipe-detail-overview';
@@ -467,7 +400,6 @@ function renderOverview(content, owner, recipe, references, finish) {
     copyFingerprint.disabled = !fingerprintText(recipe);
     copyFingerprint.onclick = () => copyText(fingerprintText(recipe));
     overview.appendChild(actions);
-    renderQuickQueue(overview, owner, recipe);
     content.appendChild(overview);
 }
 

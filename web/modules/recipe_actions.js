@@ -1,6 +1,4 @@
-import { api } from '../../../scripts/api.js';
 import { app } from '../../../scripts/app.js';
-import { applyRecipeWidgetChanges } from './recipe_parser.js';
 
 function cloneJson(value) {
     return JSON.parse(JSON.stringify(value));
@@ -191,62 +189,4 @@ export function appendRecipeToCanvas(recipe) {
     } finally {
         graph.afterChange?.();
     }
-}
-
-function missingNodeTypes(recipe) {
-    const registry = globalThis.LiteGraph?.registered_node_types;
-    if (!registry) return [];
-    return [...new Set(savedNodeRecords(recipe?.workflow)
-        .map((node) => nodeType(node))
-        .filter((type) => type && !registry[type]))];
-}
-
-function primitive(value) {
-    return value === null || ['string', 'number', 'boolean'].includes(typeof value);
-}
-
-function validateOverrides(recipe, changes) {
-    const pinned = new Map((recipe?.params?.pinned || []).map((item) => [item?.key, item]));
-    for (const change of changes || []) {
-        const allowed = pinned.get(change?.key);
-        if (!allowed || !primitive(change.value) || !primitive(allowed.value)) throw new Error('recipe_quick_queue_invalid_override');
-        if (typeof change.value !== typeof allowed.value && !(typeof change.value === 'number' && typeof allowed.value === 'number')) {
-            throw new Error('recipe_quick_queue_invalid_override');
-        }
-    }
-}
-
-/** Convert a cloned workflow through the host's normal API-prompt path. */
-export async function buildRecipePrompt(recipe, changes = []) {
-    const missing = missingNodeTypes(recipe);
-    if (missing.length) {
-        const error = new Error(`Missing node types: ${missing.slice(0, 12).join(', ')}`);
-        error.code = 'recipe_quick_queue_missing_nodes';
-        throw error;
-    }
-    validateOverrides(recipe, changes);
-    if (typeof app.graphToPrompt !== 'function') throw new Error('recipe_quick_queue_unsupported');
-    const workflow = cloneJson(recipe.workflow);
-    const params = cloneJson(recipe.params || {});
-    applyRecipeWidgetChanges(params, workflow, changes);
-    const GraphClass = globalThis.LiteGraph?.LGraph || app.graph?.constructor;
-    if (typeof GraphClass !== 'function') throw new Error('recipe_quick_queue_unsupported');
-    const temporaryGraph = new GraphClass();
-    try {
-        temporaryGraph.configure(workflow);
-        const promptEnvelope = await app.graphToPrompt(temporaryGraph);
-        if (!promptEnvelope || typeof promptEnvelope !== 'object' || !promptEnvelope.output || typeof promptEnvelope.output !== 'object' || !Object.keys(promptEnvelope.output).length) {
-            throw new Error('recipe_quick_queue_empty_prompt');
-        }
-        return promptEnvelope;
-    } finally {
-        temporaryGraph.clear?.();
-    }
-}
-
-/** Queue an ephemeral recipe prompt without loading or modifying the current canvas. */
-export async function quickQueueRecipe(recipe, changes = []) {
-    const prompt = await buildRecipePrompt(recipe, changes);
-    if (typeof api?.queuePrompt !== 'function') throw new Error('recipe_quick_queue_unsupported');
-    return api.queuePrompt(0, prompt, { trigger_source: 'anomalous_recipe' });
 }

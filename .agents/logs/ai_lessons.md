@@ -321,3 +321,9 @@ This document serves as an architectural retrospective and UX diagnostic log for
 (配方历史保存的是完整序列化图，但直接展示 JSON 或可视化节点/连线差异会制造大量噪声、压垮详情面板，还可能暴露参数页刻意隐藏的敏感控件。)
 **The Solution (方案)**: Compare bounded semantic summaries only: prompts, pinned primitives, known model references, safe sampler/resolution fields, graph counts/fingerprint, and presentation metadata. Keep comparison pure and read-only; history restoration remains a separate destructive action with its own confirmation.
 (只比较有上限的语义摘要：提示词、钉选原始值、已知模型引用、安全的采样/分辨率字段、图数量/指纹和展示信息。比较器必须是纯只读逻辑，历史恢复仍是独立的破坏性动作并单独确认。)
+
+## 52. Execution Actions Need One Canvas-Owned Path (执行动作必须统一回到画布)
+**The Problem (问题)**: A detached queue action created a second workflow-execution path beside the normal ComfyUI canvas. Maintaining prompt conversion, queue contracts, validation, and UI feedback separately from Open/Append made interaction drift likely and made failures hard to explain.
+(脱离画布的快速排队在正常 ComfyUI 画布之外又建立了一条执行路径。提示词转换、排队契约、校验和 UI 反馈都要单独维护，容易造成不同入口行为漂移，也难以解释失败原因。)
+**The Solution (方案)**: Remove the detached execution surface and make recipe actions load or transactionally append the saved workflow through shared handlers. List cards and detail panels now reuse the same confirmation, missing-node warning, error feedback, and successful Workspace closure behavior.
+(移除脱离画布的执行入口，让配方动作通过共享处理器加载或事务性追加已保存工作流。列表卡片和详情面板统一复用确认、缺失节点提示、错误反馈和成功关闭工作台的行为。)

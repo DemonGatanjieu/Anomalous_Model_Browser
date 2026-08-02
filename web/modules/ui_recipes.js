@@ -9,7 +9,11 @@ import {
     extractRecipeParameterChoices,
     extractRecipeParameterChoicesFromMetadata,
 } from './recipe_parser.js';
-import { showRecipeDetail } from './ui_recipe_detail.js';
+import {
+    appendRecipeOnCanvas,
+    openRecipeOnCanvas,
+    showRecipeDetail,
+} from './ui_recipe_detail.js';
 
 const t = (key) => {
     let lang = window.anomalous_browser_lang || 'zh';
@@ -298,6 +302,13 @@ async function fetchRecipeBundle(filename) {
     const historyPayload = historyResponse.ok ? await historyResponse.json() : { versions: [] };
     if (!fullResponse.ok || payload.status !== 'success' || !payload.data?.workflow) throw new Error('recipe missing workflow');
     return { data: JSON.parse(JSON.stringify(payload.data)), history: historyPayload.versions || [] };
+}
+
+async function fetchRecipeData(filename) {
+    const response = await fetch(`/anomalous/recipe_full?filename=${encodeURIComponent(filename)}`);
+    const payload = await response.json();
+    if (!response.ok || payload.status !== 'success' || !payload.data?.workflow) throw new Error('recipe missing workflow');
+    return JSON.parse(JSON.stringify(payload.data));
 }
 
 async function editRecipe(owner, recipe, filename, history = null) {
@@ -963,25 +974,22 @@ export function renderRecipeList(recipes) {
         restore.type = 'button';
         restore.onclick = async () => {
             try {
-                const response = await fetch(`/anomalous/recipe_full?filename=${encodeURIComponent(recipe.filename)}`);
-                const payload = await response.json();
-                if (!response.ok || payload.status !== 'success' || !payload.data?.workflow) throw new Error('recipe missing workflow');
-                const registry = globalThis.LiteGraph?.registered_node_types;
-                const savedNodes = Array.isArray(payload.data.params?.nodes) ? payload.data.params.nodes : [];
-                const missingTypes = registry
-                    ? [...new Set(savedNodes.map((node) => node.type).filter((type) => type && !registry[type]))]
-                    : [];
-                const missingWarning = missingTypes.length
-                    ? `\n\n${t('recipeMissingNodes')}:\n${missingTypes.slice(0, 12).join('\n')}`
-                    : '';
-                if (!confirm(`${t('recipeOpenCanvasConfirm')}${missingWarning}`)) return;
-                await app.loadGraphData(payload.data.workflow);
-                app.canvas?.setDirty?.(true, true);
-                this.nbPanel && (this.nbPanel.style.display = 'none');
-                this.close?.();
+                const data = await fetchRecipeData(recipe.filename);
+                await openRecipeOnCanvas(this, data);
             } catch (error) {
                 console.error('Could not restore Workflow Recipe:', error);
                 alert(t('recipeRestoreError'));
+            }
+        };
+        const append = appendText(actions, 'button', t('recipeAppendCanvas'), 'anomalous-btn-primary');
+        append.type = 'button';
+        append.onclick = async () => {
+            try {
+                const data = await fetchRecipeData(recipe.filename);
+                appendRecipeOnCanvas(this, data);
+            } catch (error) {
+                console.error('Could not append Workflow Recipe:', error);
+                alert(t('recipeAppendError'));
             }
         };
         const remove = appendText(actions, 'button', t('recipeDelete'), 'anomalous-btn-danger');

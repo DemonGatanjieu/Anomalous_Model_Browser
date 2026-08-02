@@ -138,3 +138,19 @@
 - `recipe_parser.js` positive/negative prompt fallback smoke test passed
 - `node --check` for every JavaScript file under `web/`
 - `git diff --check`
+
+## [Snapshot] 2026-08-03 — Remove Quick Queue and unify recipe canvas actions
+
+**Implemented**
+
+- Removed the detached Quick Queue UI, prompt-conversion path, API queue call, localization entries, and unused styles.
+- Exported the detail panel's Open/Append handlers so list cards use the same dirty-canvas confirmation, missing-node warning, error handling, and Workspace-close behavior.
+- Added a list-card Append to Canvas action and a bounded full-recipe fetch helper for both card actions.
+- Updated the architecture and implementation plans to make canvas actions the only recipe execution path.
+
+**Validation**
+
+- `rg` confirmed no active Quick Queue references remain in runtime modules or styles
+- `node --check` for every JavaScript file under `web/`
+- `python_embeded/python.exe -m py_compile api/__init__.py api/models.py api/recipes.py api/recipe_packages.py`
+- `git diff --check`
