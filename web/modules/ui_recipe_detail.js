@@ -148,7 +148,8 @@ async function copyTextWithFeedback(buttonElement, value) {
 }
 
 function appendCopyButton(parent, value, label = t('recipeCopyParameter')) {
-    const copy = button(parent, '⧉', 'anomalous-recipe-copy-param anomalous-recipe-detail-copy');
+    const copy = button(parent, '', 'anomalous-recipe-copy-param anomalous-recipe-detail-copy');
+    copy.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
     copy.title = label;
     copy.setAttribute('aria-label', label);
     copy.onclick = () => { void copyTextWithFeedback(copy, value); };
@@ -812,22 +813,19 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
         appendText(referenceValue, 'code', reference.saved_value || t('recipeDetailUnavailable'));
         appendCopyButton(referenceValue, reference.saved_value || '', t('recipeCopyParameter'));
         referenceDetails.appendChild(referenceValue);
-        details.appendChild(referenceDetails);
+        
         const meta = document.createElement('div');
         meta.className = 'anomalous-recipe-model-reference-meta';
         const identity = normaliseIdentity(reference.identity);
         if (identity.sha256) {
-            const advanced = document.createElement('details');
-            advanced.className = 'anomalous-recipe-advanced-info anomalous-recipe-model-hash';
-            appendText(advanced, 'summary', t('recipeAdvancedInfo'));
             const hash = document.createElement('div');
             hash.className = 'anomalous-recipe-advanced-row';
             appendText(hash, 'span', 'SHA256:');
             appendText(hash, 'code', identity.sha256);
             appendCopyButton(hash, identity.sha256, t('recipeDetailCopyHash'));
-            advanced.appendChild(hash);
-            meta.appendChild(advanced);
+            referenceDetails.appendChild(hash);
         }
+        details.appendChild(referenceDetails);
         if (formatIdentitySize(identity.size)) appendText(meta, 'span', formatIdentitySize(identity.size));
         appendText(meta, 'span', reference.currentAvailability === 'available'
             ? t('recipeDetailAvailable')
