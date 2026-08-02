@@ -200,6 +200,12 @@ function compactText(value, limit = 110) {
     return text.length > limit ? `${text.slice(0, limit - 1)}…` : text;
 }
 
+function modelDisplayName(value) {
+    const path = String(value || '').replace(/\\/g, '/');
+    const filename = path.split('/').pop() || '';
+    return filename.replace(/\.(?:safetensors|ckpt|pt|bin|sft)$/i, '');
+}
+
 function normaliseSearchText(value) {
     const text = String(value || '').trim().toLocaleLowerCase();
     try { return text.normalize('NFKC'); } catch (error) { return text; }
@@ -335,7 +341,7 @@ function appendNodeDetails(parent, params) {
 function renderParams(parent, params = {}) {
     const summary = document.createElement('div');
     summary.className = 'anomalous-recipe-summary';
-    appendText(summary, 'div', `${t('recipeModel')}: ${summaryValue(params.baseModel)}`, 'anomalous-recipe-model');
+    appendText(summary, 'div', `${t('recipeModel')}: ${summaryValue(modelDisplayName(params.baseModel))}`, 'anomalous-recipe-model');
 
     const sampling = document.createElement('div');
     sampling.className = 'anomalous-recipe-sampling';
@@ -356,7 +362,7 @@ function renderParams(parent, params = {}) {
             const weight = lora.strength_model === null || lora.strength_model === undefined
                 ? ''
                 : ` × ${lora.strength_model}`;
-            loraRow.appendChild(createBadge(`${compactText(lora.name, 42)}${weight}`, 'lora'));
+            loraRow.appendChild(createBadge(`${compactText(modelDisplayName(lora.name), 42)}${weight}`, 'lora'));
         }
         if (params.loras.length > 4) loraRow.appendChild(createBadge(`+${params.loras.length - 4}`));
         summary.appendChild(loraRow);

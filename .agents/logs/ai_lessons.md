@@ -17,6 +17,14 @@ This document serves as an architectural retrospective and UX diagnostic log for
 
 **The Solution (方案)**: When bridging a plugin action to a host API, inspect both the producer and consumer contracts and preserve the complete envelope at the boundary. Keep temporary graph conversion separate from the live canvas so this compatibility fix cannot introduce canvas mutation.
 
+## 52. Child Overlay Navigation Must Not Close Its Host (子覆盖层跳转不能关闭宿主)
+
+**The Problem (问题)**: Recipe model cards lived in a child Workspace overlay, but their local-model click handler called the browser-wide `close()` method. That method hides the host modal and releases its grid state, so the target model detail panel appeared to close immediately.
+
+**The Solution (方案)**: Treat the click as an in-place host-panel transition: prepare the model detail state, ensure the host modal remains visible, render the detail panel, and hide only the child recipe overlay. Keep the full close/release lifecycle reserved for explicit browser dismissal.
+
+**Related presentation rule (相关展示规则)**: Repeated model references need independent responsive cards. A shared dense container makes preview, identity, availability, and actions appear mixed together; a card grid preserves one-reference-per-unit without changing the saved workflow data.
+
 ## 1. UX Scroll Traps (交互嵌套滚动陷阱)
 **The Problem (问题)**: In the Notebook modal, the translation editor had a `max-height` and `overflow-y`. Since the parent modal was also scrollable, it created a "Scroll Trap". Hitting the bottom of the editor unpredictably transferred the scroll event to the outer body.
 (在笔记本弹窗中，由于翻译编辑器固定了最大高度并允许滚动，导致与父级弹窗的滚动条发生冲突。用户滚动到底部时会突然把外层页面卷走，体验极差。)

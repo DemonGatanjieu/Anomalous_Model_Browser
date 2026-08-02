@@ -1,5 +1,23 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-03 — Recipe model navigation and presentation cleanup
+
+**Implemented**
+
+- Fixed recipe model links and previews so they switch to the existing model detail panel without closing the main browser modal. Only the Workspace recipe overlay is hidden after the detail panel becomes visible.
+- Changed the Models & reproducibility reference area from a dense vertical shared list to independent responsive cards with larger previews and isolated status/actions.
+- Normalized base-model and LoRA values in the Overview and compact recipe cards to display filenames without filesystem paths or known model extensions. Full saved paths remain available only through the model reference Advanced information disclosure.
+
+**Architecture decision**
+
+- A recipe reference is a presentation/link boundary, not a second browser lifecycle. It may temporarily navigate to a local model detail record, but it must not invoke the browser-wide close/release path.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `node --check web/modules/ui_recipes.js`
+- `git diff --check`
+
 ## [Snapshot] 2026-08-02
 
 **Editable Workflow Recipes**

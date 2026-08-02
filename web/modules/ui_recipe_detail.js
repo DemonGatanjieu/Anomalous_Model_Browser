@@ -424,14 +424,16 @@ async function loadCurrentPreviews(owner, references) {
 
 function openLocalModel(owner, model) {
     if (!model || typeof owner?.showDetail !== 'function') return false;
-    owner.nbPanel && (owner.nbPanel.style.display = 'none');
-    owner.close?.();
     owner.historyStack = [];
     owner.currentType = model.type || owner.currentType;
     owner.currentPathIdx = model.path_idx ?? model.path_index ?? 0;
     owner.currentSubfolder = model.subfolder || '/';
     owner.currentDetailModel = model;
+    // The recipe workspace is a child overlay of the main browser modal. Closing
+    // the browser here also hides the detail panel we are navigating to.
+    owner.modal?.classList.add('visible');
     owner.showDetail(model);
+    owner.nbPanel && (owner.nbPanel.style.display = 'none');
     return true;
 }
 
@@ -642,8 +644,11 @@ function renderOverview(content, owner, recipe, references, finish) {
     summaryGrid.className = 'anomalous-recipe-detail-summary-grid';
     const params = recipe.params || {};
     const values = [
-        [t('recipeModel'), params.baseModel],
-        [t('recipeDetailLoraSummary'), (params.loras || []).map((item) => item.name).join(', ')],
+        [t('recipeModel'), modelDisplayName(params.baseModel)],
+        [t('recipeDetailLoraSummary'), (params.loras || [])
+            .map((item) => modelDisplayName(item?.name))
+            .filter(Boolean)
+            .join(', ')],
         [t('recipeSteps'), params.steps],
         ['CFG', params.cfg],
         [t('recipeDetailSampler'), params.sampler_name],
