@@ -77,3 +77,20 @@
 - `node --check` for every JavaScript file under `web/`
 - `recipe_diff.js` smoke comparison passed
 - `git diff --check`
+
+## [Snapshot] 2026-08-02 — Contained recipe package transfer
+
+**Implemented**
+
+- Added versioned ZIP export with manifest checksums and explicit inclusion controls for preview snapshots, history, and model identity fields.
+- Added bounded upload inspection plus single-use short-lived inspection tokens before import commit.
+- Added archive path, symlink, compression, entry-count, expanded-size, JSON-depth, checksum, and WebP signature validation.
+- Added staged import with generated local recipe identity, name collision rename flow, optional replace-with-history-backup support, and contained asset/history placement.
+- Added Workspace Import package action and per-card Export package action with a privacy summary.
+
+**Validation**
+
+- `python_embeded/python.exe -m py_compile api/__init__.py api/models.py api/recipes.py api/recipe_packages.py`
+- `node --check` for every JavaScript file under `web/`
+- ZIP export → inspect smoke round trip passed with a contained WebP asset
+- `git diff --check`

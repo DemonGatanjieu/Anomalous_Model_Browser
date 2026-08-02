@@ -25,6 +25,7 @@ Anomalous_Model_Browser/
 │   ├── models.py                # Core model listing and routing (API endpoints)
 │   ├── notebooks.py             # Notebooks management logic
 │   ├── recipes.py               # Local Workflow Recipe CRUD and validation
+│   ├── recipe_packages.py       # Bounded ZIP inspection, export, staging, and import commit
 │   ├── scanner.py               # Scanning engine for hash resolution and caching
 │   └── utils.py                 # Shared backend utilities and safe path boundary helpers
 ├── scraper.py                   # Async HTTP client logic & web scraping (Root Level)
@@ -67,7 +68,7 @@ All endpoints are prefixed with `/anomalous/`.
 7. **Canonical Configuration**: Runtime UI settings and newly saved API keys live in `api/config.json`. `scraper.py` reads that file first and falls back to the legacy root `config.json` only for backward compatibility. API keys must never be persisted in browser `localStorage`.
 8. **Atomic Background State**: Set scan state or create the exclusive marker file before launching a worker thread/process. Folder scans use `.scan_in_progress`; global quick scans use `.global_scan_in_progress`; deep missing-model scans use `GLOBAL_SCAN_STATE`, exposed by `/anomalous/scan_missing_models_status`.
 9. **Private Development Tests**: The local `tests/` directory contains backend and frontend regression tests for maintainers only. It is intentionally ignored by `.gitignore` and must not be included in the installable/plugin Git distribution. Keep these files locally for validation; do not import them from runtime code or move them into the shipped extension bundle.
-10. **Workflow Recipes Are User Data**: Recipes live only in `ComfyUI/user/default/workflows/anomalous_recipes`, never in the extension repository. `GET /anomalous/recipes` returns card metadata only; the graph is fetched separately through `GET /anomalous/recipe_full`. Recipe writes are bounded, validate local-only data-image thumbnails and contained output-image references, and use atomic replacement. A bound output stores a compressed cover plus a local source reference; it never copies an arbitrary path supplied by the browser.
+10. **Workflow Recipes Are User Data**: Recipes live only in `ComfyUI/user/default/workflows/anomalous_recipes`, never in the extension repository. `GET /anomalous/recipes` returns card metadata only; the graph is fetched separately through `GET /anomalous/recipe_full`. Recipe writes are bounded, validate local-only data-image thumbnails and contained output-image references, and use atomic replacement. A bound output stores a compressed cover plus a local source reference; it never copies an arbitrary path supplied by the browser. `recipe_packages.py` accepts only bounded ZIP packages with `manifest.json`, `recipe.json`, declared contained WebP assets, and optional bounded history. Import is inspect-then-commit, rejects traversal/symlinks/archive bombs/checksum failures, never installs code or dependencies, and stages before atomic rename.
 
 ### NON-NEGOTIABLE: Model Sidecar & Cover Lifecycle / 模型伴生文件与封面生命周期死规矩
 * `.civitai_bak.*` is a persistent restore source created from a real Civitai download. Setting a custom cover MUST modify only `.preview.*`; it MUST NOT delete, overwrite, or repurpose `.civitai_bak.*`.

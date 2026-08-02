@@ -3,6 +3,7 @@ from .scanner import *
 from .config import *
 from .notebooks import *
 from .recipes import *
+from .recipe_packages import *
 from .utils import *
 
 def setup_routes(app):
@@ -35,6 +36,9 @@ def setup_routes(app):
     app.router.add_get('/anomalous/recipe_version', api_get_recipe_version)
     app.router.add_post('/anomalous/restore_recipe_version', api_restore_recipe_version)
     app.router.add_post('/anomalous/refresh_recipe_identity', api_refresh_recipe_identity)
+    app.router.add_post('/anomalous/export_recipe_package', api_export_recipe_package)
+    app.router.add_post('/anomalous/import_recipe_package_inspect', api_import_recipe_package_inspect)
+    app.router.add_post('/anomalous/import_recipe_package_commit', api_import_recipe_package_commit)
 
     app.router.add_post('/anomalous/translate', api_translate)
     app.router.add_get('/anomalous/base_models', api_base_models)

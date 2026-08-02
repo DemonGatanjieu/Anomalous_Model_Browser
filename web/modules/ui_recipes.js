@@ -38,6 +38,58 @@ function outputImageUrl(image) {
     return `/view?${query.toString()}`;
 }
 
+async function exportRecipePackage(filename) {
+    const includeSnapshots = confirm(t('recipeExportSnapshotsConfirm'));
+    const includeHistory = confirm(t('recipeExportHistoryConfirm'));
+    const includeIdentity = !confirm(t('recipeExportRedactIdentityConfirm'));
+    const response = await fetch('/anomalous/export_recipe_package', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            filename,
+            include_snapshots: includeSnapshots,
+            include_history: includeHistory,
+            include_identity: includeIdentity,
+        }),
+    });
+    if (!response.ok) throw new Error('recipe export failed');
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename.replace(/\.json$/i, '')}.anomalous-recipe.zip`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
+async function importRecipePackage(owner, file) {
+    const inspectResponse = await fetch('/anomalous/import_recipe_package_inspect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/zip' },
+        body: file,
+    });
+    const inspectPayload = await inspectResponse.json();
+    if (!inspectResponse.ok || inspectPayload.status !== 'success') throw new Error('recipe import inspection failed');
+    const recipeName = inspectPayload.recipe?.name || t('recipeUntitled');
+    const summary = `${t('recipeImportSummary')}\n\n${recipeName}\n${t('recipeImportAssets')}: ${inspectPayload.asset_count || 0}\n${t('recipeImportHistory')}: ${inspectPayload.history_count || 0}`;
+    if (!confirm(summary)) return;
+    let name = recipeName;
+    if ((inspectPayload.existing_names || []).includes(name)) {
+        name = prompt(t('recipeImportRenamePrompt'), `${name} (Imported)`);
+        if (!name?.trim()) return;
+    }
+    const commitResponse = await fetch('/anomalous/import_recipe_package_commit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: inspectPayload.token, collision: 'rename', name: name.trim() }),
+    });
+    const commitPayload = await commitResponse.json();
+    if (!commitResponse.ok || commitPayload.status !== 'success') throw new Error('recipe import commit failed');
+    await owner.refreshRecipes();
+}
+
 async function captureOutputThumbnail(image) {
     const url = outputImageUrl(image);
     if (!url) return null;
@@ -780,6 +832,24 @@ export async function showRecipes() {
     save.dataset.recipeSaveCurrent = 'true';
     save.type = 'button';
     save.onclick = () => this.handleSaveRecipe();
+    const importButton = appendText(actionBar, 'button', t('recipeImport'), 'anomalous-btn-primary');
+    importButton.type = 'button';
+    importButton.onclick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.zip,.anomalous-recipe.zip,application/zip';
+        input.onchange = async () => {
+            const file = input.files?.[0];
+            if (!file) return;
+            try {
+                await importRecipePackage(this, file);
+            } catch (error) {
+                console.error('Could not import Workflow Recipe package:', error);
+                alert(t('recipeImportError'));
+            }
+        };
+        input.click();
+    };
     this.recipeView.appendChild(actionBar);
 
     this.recipeListContainer = document.createElement('div');
@@ -879,6 +949,16 @@ export function renderRecipeList(recipes) {
         const edit = appendText(actions, 'button', t('recipeEdit'), 'anomalous-btn-success');
         edit.type = 'button';
         edit.onclick = () => editRecipe(this, recipe?.data || {}, recipe.filename);
+        const exportButton = appendText(actions, 'button', t('recipeExport'), 'anomalous-btn-primary');
+        exportButton.type = 'button';
+        exportButton.onclick = async () => {
+            try {
+                await exportRecipePackage(recipe.filename);
+            } catch (error) {
+                console.error('Could not export Workflow Recipe package:', error);
+                alert(t('recipeExportError'));
+            }
+        };
         const restore = appendText(actions, 'button', t('recipeOpenCanvas'), 'anomalous-btn-primary');
         restore.type = 'button';
         restore.onclick = async () => {
