@@ -847,24 +847,50 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
         return card;
     };
 
-    if (baseModels.length) {
-        const baseList = document.createElement('div');
-        baseList.className = 'anomalous-recipe-model-reference-list';
-        baseModels.forEach(ref => baseList.appendChild(createCard(ref, true)));
-        container.appendChild(baseList);
+    const categories = new Map();
+    for (const reference of otherModels) {
+        let cat = 'Other';
+        const typeStr = (reference.node_title || reference.node_type || reference.category || '').toLowerCase();
+        if (/lora/i.test(typeStr)) cat = 'LoRA';
+        else if (/vae/i.test(typeStr)) cat = 'VAE';
+        else if (/controlnet/i.test(typeStr)) cat = 'ControlNet';
+        else if (/clip/i.test(typeStr)) cat = 'CLIP';
+        else if (/upscale/i.test(typeStr)) cat = 'Upscaler';
+        
+        if (!categories.has(cat)) categories.set(cat, []);
+        categories.get(cat).push(reference);
     }
-    if (baseModels.length && otherModels.length) {
-        const divider = document.createElement('hr');
-        divider.className = 'anomalous-recipe-model-divider';
-        divider.style.borderTop = '1px solid var(--anomalous-border)';
-        divider.style.margin = '16px 0';
-        container.appendChild(divider);
-    }
-    if (otherModels.length) {
-        const otherList = document.createElement('div');
-        otherList.className = 'anomalous-recipe-model-reference-list';
-        otherModels.forEach(ref => otherList.appendChild(createCard(ref, false)));
-        container.appendChild(otherList);
+
+    const appendSection = (title, models, isBase) => {
+        if (!models.length) return;
+        if (container.children.length > 1) { // Skip divider for the very first section
+            const divider = document.createElement('hr');
+            divider.className = 'anomalous-recipe-model-divider';
+            divider.style.borderTop = '1px solid rgba(255, 255, 255, 0.1)';
+            divider.style.margin = '20px 0 16px 0';
+            container.appendChild(divider);
+        }
+        
+        if (title) {
+            const h = document.createElement('h5');
+            h.textContent = title;
+            h.style.margin = '0 0 12px 0';
+            h.style.color = '#9ec8ff';
+            h.style.fontSize = '0.9rem';
+            h.style.textTransform = 'uppercase';
+            h.style.letterSpacing = '0.5px';
+            container.appendChild(h);
+        }
+        
+        const list = document.createElement('div');
+        list.className = 'anomalous-recipe-model-reference-list';
+        models.forEach(ref => list.appendChild(createCard(ref, isBase)));
+        container.appendChild(list);
+    };
+
+    appendSection('Base Models', baseModels, true);
+    for (const [cat, models] of categories.entries()) {
+        appendSection(cat, models, false);
     }
 }
 
