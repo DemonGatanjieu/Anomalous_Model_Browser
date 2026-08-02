@@ -80,7 +80,7 @@ export async function openRecipeOnCanvas(owner, recipe) {
     }
 }
 
-export function appendRecipeOnCanvas(owner, recipe) {
+export async function appendRecipeOnCanvas(owner, recipe) {
     try {
         appendRecipeToCanvas(recipe);
         closeRecipeWorkspace(owner);
@@ -689,7 +689,7 @@ function renderOverview(content, owner, recipe, references, finish) {
     const append = button(actions, t('recipeAppendCanvas'), 'anomalous-btn-primary');
     append.onclick = () => {
         void runRecipeAction(append, async () => {
-            if (appendRecipeOnCanvas(owner, recipe)) finish('append');
+            if (await appendRecipeOnCanvas(owner, recipe)) finish('append');
         });
     };
     const copyPrompt = button(actions, t('recipeDetailCopyPrompt'), 'anomalous-btn-primary');
@@ -1133,7 +1133,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     const append = button(headerActions, t('recipeAppendCanvas'), 'anomalous-btn-ghost');
     append.onclick = () => {
         void runRecipeAction(append, async () => {
-            if (appendRecipeOnCanvas(owner, recipe)) finish('append');
+            if (await appendRecipeOnCanvas(owner, recipe)) finish('append');
         });
     };
     
