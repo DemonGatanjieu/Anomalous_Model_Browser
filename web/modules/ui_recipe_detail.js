@@ -4,6 +4,7 @@ import {
     deriveRecipeModelReferences,
     formatIdentitySize,
     normaliseIdentity,
+    recipeReferenceKey,
     shortHash,
 } from './recipe_identity.js';
 
@@ -57,6 +58,89 @@ function identityBadge(reference) {
 
 function fingerprintText(recipe) {
     return recipe?.workflow_fingerprint?.value || '';
+}
+
+function folderTypesForReference(reference) {
+    const category = String(reference?.category || '').toLowerCase();
+    return {
+        checkpoint: ['checkpoints'],
+        unet: ['unet', 'diffusion_models'],
+        lora: ['loras'],
+        vae: ['vae'],
+        text_encoder: ['text_encoders', 'clip'],
+        clip_vision: ['clip_vision'],
+        controlnet: ['controlnet'],
+    }[category] || [];
+}
+
+function previewIsVideo(url) {
+    return /\.(?:mp4|webm)(?:$|\?|&|#)/i.test(url || '');
+}
+
+function recipeAssetUrl(owner, assetId) {
+    if (!owner?.recipeDetailFilename || !assetId) return '';
+    return `/anomalous/recipe_asset?filename=${encodeURIComponent(owner.recipeDetailFilename)}&asset=${encodeURIComponent(assetId)}`;
+}
+
+function appendModelPreview(parent, owner, reference) {
+    const preview = document.createElement('div');
+    preview.className = 'anomalous-recipe-model-preview';
+    const snapshotUrl = recipeAssetUrl(owner, reference?.preview?.snapshot_asset_id);
+    const url = snapshotUrl || reference?.currentPreviewUrl;
+    if (!url) {
+        preview.classList.add('empty');
+        appendText(preview, 'span', String(reference?.category || t('recipeDetailModel')).slice(0, 3).toUpperCase());
+        appendText(preview, 'small', t('recipeDetailNoPreview'));
+        parent.appendChild(preview);
+        return;
+    }
+
+    if (previewIsVideo(url)) {
+        const video = document.createElement('video');
+        video.src = url;
+        video.muted = true;
+        video.loop = true;
+        video.playsInline = true;
+        video.preload = 'metadata';
+        video.onpointerenter = () => video.play().catch(() => {});
+        video.onpointerleave = () => video.pause();
+        preview.appendChild(video);
+    } else {
+        const image = document.createElement('img');
+        image.src = url;
+        image.alt = reference.saved_value || t(snapshotUrl ? 'recipeDetailSavedSnapshot' : 'recipeDetailCurrentPreview');
+        image.loading = 'lazy';
+        preview.appendChild(image);
+    }
+    appendText(preview, 'small', t(snapshotUrl ? 'recipeDetailSavedSnapshot' : 'recipeDetailCurrentPreview'));
+    parent.appendChild(preview);
+}
+
+async function loadCurrentPreviews(owner, references) {
+    const contextRequests = references
+        .filter((reference) => typeof reference?.saved_value === 'string' && reference.saved_value)
+        .map((reference) => ({
+            key: recipeReferenceKey(reference),
+            path: reference.saved_value,
+            folder_types: folderTypesForReference(reference),
+            exact_only: true,
+        }));
+    if (!contextRequests.length) return;
+
+    const response = await fetch('/anomalous/resolve_paths_to_previews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paths: [], exact_only: true, context_requests: contextRequests }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error('recipe preview request failed');
+    const models = payload.context_models || {};
+    for (const reference of references) {
+        const model = models[recipeReferenceKey(reference)];
+        if (!model) continue;
+        reference.currentPreviewUrl = model.preview_url || '';
+        reference.currentAvailability = 'available';
+    }
 }
 
 function missingNodeTypes(recipe) {
@@ -159,7 +243,12 @@ function renderModels(content, owner, recipe, references) {
     heading.className = 'anomalous-recipe-detail-section-heading';
     appendText(heading, 'h4', t('recipeDetailModels'));
     const refresh = button(heading, t('recipeDetailRefreshAvailability'), 'anomalous-btn-primary');
-    const status = appendText(heading, 'small', '', 'anomalous-recipe-detail-muted');
+    const status = appendText(
+        heading,
+        'small',
+        owner.recipeDetailPreviewState === 'loading' ? t('recipeDetailLoadingPreviews') : '',
+        'anomalous-recipe-detail-muted',
+    );
     refresh.onclick = async () => {
         refresh.disabled = true;
         status.textContent = t('recipeDetailRefreshing');
@@ -202,13 +291,18 @@ function renderModels(content, owner, recipe, references) {
     for (const reference of references) {
         const card = document.createElement('article');
         card.className = 'anomalous-recipe-model-reference';
+        const body = document.createElement('div');
+        body.className = 'anomalous-recipe-model-reference-body';
+        appendModelPreview(body, owner, reference);
+        const details = document.createElement('div');
+        details.className = 'anomalous-recipe-model-reference-details';
         const top = document.createElement('div');
         top.className = 'anomalous-recipe-model-reference-top';
         appendText(top, 'strong', reference.node_title || reference.node_type || t('recipeUnknownNode'));
         appendText(top, 'span', reference.category || t('recipeDetailModel'), 'anomalous-recipe-detail-muted');
         top.appendChild(identityBadge(reference));
-        card.appendChild(top);
-        appendText(card, 'code', reference.saved_value || t('recipeDetailUnavailable'), 'anomalous-recipe-model-reference-value');
+        details.appendChild(top);
+        appendText(details, 'code', reference.saved_value || t('recipeDetailUnavailable'), 'anomalous-recipe-model-reference-value');
         const meta = document.createElement('div');
         meta.className = 'anomalous-recipe-model-reference-meta';
         const identity = normaliseIdentity(reference.identity);
@@ -221,7 +315,9 @@ function renderModels(content, owner, recipe, references) {
         appendText(meta, 'span', reference.currentAvailability === 'available'
             ? t('recipeDetailAvailable')
             : reference.currentAvailability === 'missing' ? t('recipeDetailMissing') : t('recipeDetailAvailabilityNotChecked'));
-        card.appendChild(meta);
+        details.appendChild(meta);
+        body.appendChild(details);
+        card.appendChild(body);
         list.appendChild(card);
     }
     section.appendChild(list);
@@ -326,6 +422,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     view.className = 'anomalous-recipe-detail-view';
     owner.recipeDetailView = view;
     const references = deriveRecipeModelReferences(recipe);
+    owner.recipeDetailPreviewState = 'idle';
     let resolveAction;
     const result = new Promise((resolve) => { resolveAction = resolve; });
     const finish = (mode) => {
@@ -360,12 +457,24 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         ['versions', t('recipeDetailVersions'), () => renderVersions(content, owner, recipe, history, finish)],
     ];
     const selectTab = (active) => {
+        owner.recipeDetailActiveTab = active;
         content.replaceChildren();
         for (const [key, label, render] of tabDefinitions) {
             const tab = tabs.querySelector(`[data-tab="${key}"]`);
             tab?.classList.toggle('active', key === active);
         }
         tabDefinitions.find(([key]) => key === active)?.[2]();
+        if (active !== 'models' || owner.recipeDetailPreviewState !== 'idle') return;
+        owner.recipeDetailPreviewState = 'loading';
+        void loadCurrentPreviews(owner, references)
+            .catch((error) => console.warn('Could not load recipe model previews:', error))
+            .finally(() => {
+                owner.recipeDetailPreviewState = 'loaded';
+                if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'models') {
+                    content.replaceChildren();
+                    renderModels(content, owner, recipe, references);
+                }
+            });
     };
     for (const [key, label] of tabDefinitions) {
         const tab = button(tabs, label, 'anomalous-recipe-detail-tab');

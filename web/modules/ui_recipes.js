@@ -252,6 +252,7 @@ function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices, initial 
             thumbnail: safeThumbnail(initial?.thumbnail) || safeThumbnail(canvasThumbnail),
             sourceImage: initial?.source_image || null,
             pinnedKeys: new Set(),
+            saveModelPreviewSnapshots: initial?.presentation?.save_model_preview_snapshots === true,
         };
         const overlay = document.createElement('div');
         overlay.className = 'anomalous-recipe-dialog-overlay';
@@ -346,6 +347,20 @@ function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices, initial 
         const recentStatus = appendText(coverSection, 'small', t('recipeLoadingRecentImages'), 'anomalous-recipe-node-hint');
         coverSection.append(coverChoices, coverPreview);
         dialog.appendChild(coverSection);
+
+        const previewSnapshots = document.createElement('label');
+        previewSnapshots.className = 'anomalous-recipe-pin-choice';
+        const previewSnapshotsCheckbox = document.createElement('input');
+        previewSnapshotsCheckbox.type = 'checkbox';
+        previewSnapshotsCheckbox.checked = selection.saveModelPreviewSnapshots;
+        previewSnapshotsCheckbox.onchange = () => {
+            selection.saveModelPreviewSnapshots = previewSnapshotsCheckbox.checked;
+        };
+        const previewSnapshotCopy = document.createElement('span');
+        appendText(previewSnapshotCopy, 'strong', t('recipeSaveModelPreviewSnapshots'));
+        appendText(previewSnapshotCopy, 'small', t('recipeSaveModelPreviewSnapshotsHint'), 'anomalous-recipe-node-hint');
+        previewSnapshots.append(previewSnapshotsCheckbox, previewSnapshotCopy);
+        dialog.appendChild(previewSnapshots);
 
         fetch('/anomalous/gallery_images?page=1&limit=12')
             .then((response) => response.ok ? response.json() : Promise.reject(new Error('image list failed')))
@@ -447,6 +462,7 @@ function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices, initial 
                 thumbnail: selection.thumbnail,
                 sourceImage: selection.sourceImage,
                 pinned: parameterChoices.filter((choice) => selection.pinnedKeys.has(choice.key)),
+                saveModelPreviewSnapshots: selection.saveModelPreviewSnapshots,
             });
         };
         dialog.appendChild(actions);
@@ -854,6 +870,7 @@ export async function handleSaveRecipe() {
                 workflow: app.graph.serialize(),
                 thumbnail,
                 source_image: details.sourceImage,
+                presentation: { save_model_preview_snapshots: details.saveModelPreviewSnapshots },
             }),
         });
         const payload = await response.json();

@@ -27,6 +27,7 @@ def setup_routes(app):
     # Recipe Routes
     app.router.add_get('/anomalous/recipes', api_get_recipes)
     app.router.add_get('/anomalous/recipe_full', api_get_recipe_full)
+    app.router.add_get('/anomalous/recipe_asset', api_get_recipe_asset)
     app.router.add_post('/anomalous/save_recipe', api_save_recipe)
     app.router.add_post('/anomalous/update_recipe', api_update_recipe)
     app.router.add_post('/anomalous/delete_recipe', api_delete_recipe)

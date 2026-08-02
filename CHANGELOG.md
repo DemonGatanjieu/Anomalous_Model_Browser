@@ -5,6 +5,8 @@
 ### Workflow Recipe details
 - Added a detailed view for saved Workflow Recipes, including recipe information, model requirements, parameters, and version history.
 - Added clearer reproducibility information and safe version restoration for saved recipes.
+- Renamed the combined Notes and Recipes area to Workspace / 创作工作台, with separate Prompt Notes and Workflow Recipes sections.
+- Recipe model requirements now show current local previews on demand. You can optionally save small model-preview snapshots with a recipe version for future visual reference.
 
 ## v1.5.1 (The Workflow Exchange & Deep Scan Update)
 ### 🚀 Major Features

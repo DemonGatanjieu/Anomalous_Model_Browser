@@ -243,8 +243,8 @@ export function createDOM() {
 
         const nbBtn = document.createElement('button');
         nbBtn.id = 'anomalous-notebook-btn';
-        nbBtn.title = t('notebookTitle');
-        nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('notebooks')}</span>`;
+        nbBtn.title = t('workspaceTitle');
+        nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('workspace')}</span>`;
 
         const dBtn = document.getElementById('anomalous-doctor-btn');
         if (dBtn) dBtn.title = window.anomalous_browser_lang === 'zh' ? '模型医生' : 'Model Doctor';
@@ -1049,8 +1049,8 @@ export function createDOM() {
             scanBtn.title = t('scanTitle');
             scanBtn.innerHTML = `🔄`;
             helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
-            nbBtn.title = t('notebookTitle');
-            nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('notebooks')}</span>`;
+            nbBtn.title = t('workspaceTitle');
+            nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('workspace')}</span>`;
 
             const dBtn = document.getElementById('anomalous-doctor-btn');
             if (dBtn) dBtn.title = window.anomalous_browser_lang === 'zh' ? '模型医生' : 'Model Doctor';
@@ -1068,7 +1068,7 @@ export function createDOM() {
                     b.doctorPanel.innerHTML = '';
                     b.doctorPanelInitialized = false;
                 }
-                if (b.notebookNotesTab) b.notebookNotesTab.textContent = t('notebooks');
+                if (b.notebookNotesTab) b.notebookNotesTab.textContent = t('promptNotes');
                 if (b.notebookRecipesTab) b.notebookRecipesTab.textContent = t('recipeTitle');
             }
             const impOverlay = document.getElementById('anomalous-import-overlay');

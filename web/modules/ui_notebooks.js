@@ -32,13 +32,13 @@ export async function showNotebooks() {
         const headerMain = document.createElement('div');
         headerMain.className = 'anomalous-nb-header-main';
         const heading = document.createElement('h2');
-        heading.textContent = t('notebookTitle');
+        heading.textContent = t('workspaceTitle');
         const sectionTabs = document.createElement('div');
         sectionTabs.className = 'anomalous-nb-section-tabs';
         const notesTab = document.createElement('button');
         notesTab.type = 'button';
         notesTab.className = 'anomalous-nb-section-tab active';
-        notesTab.textContent = t('notebooks');
+        notesTab.textContent = t('promptNotes');
         const recipesTab = document.createElement('button');
         recipesTab.type = 'button';
         recipesTab.className = 'anomalous-nb-section-tab';

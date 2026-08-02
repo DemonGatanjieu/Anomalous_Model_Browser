@@ -5,6 +5,7 @@ extension repository, so personal prompts and graphs are never Git content.
 """
 
 import asyncio
+from io import BytesIO
 import hashlib
 import json
 import os
@@ -16,6 +17,7 @@ import uuid
 
 from aiohttp import web
 import folder_paths
+from PIL import Image
 
 from .metadata import get_metadata
 from .utils import require_filename, resolve_within
@@ -29,12 +31,18 @@ MAX_THUMBNAIL_LENGTH = 1_500_000
 MAX_SOURCE_SUBFOLDER_LENGTH = 500
 MAX_RECIPE_BYTES = 12 * 1024 * 1024
 MAX_HISTORY_VERSIONS = 20
+MAX_PREVIEW_SNAPSHOTS = 12
+MAX_PREVIEW_SNAPSHOT_BYTES = 96 * 1024
+MAX_PREVIEW_SNAPSHOT_TOTAL_BYTES = 1_250_000
+MAX_PREVIEW_SOURCE_BYTES = 20 * 1024 * 1024
 SAFE_THUMBNAIL_PREFIXES = (
     "data:image/jpeg;base64,",
     "data:image/png;base64,",
     "data:image/webp;base64,",
 )
 MODEL_FILE_SUFFIXES = (".safetensors", ".ckpt", ".pt", ".bin", ".sft")
+STATIC_PREVIEW_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif")
+STATIC_PREVIEW_SUFFIXES = tuple(f".preview{extension}" for extension in STATIC_PREVIEW_EXTENSIONS)
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$", re.IGNORECASE)
 
 
@@ -174,12 +182,88 @@ def _build_model_references(recipe):
     return references
 
 
-def _enrich_recipe(recipe):
+def _recipe_assets_dir(recipes_dir, filename, create=False):
+    stem = os.path.splitext(require_filename(filename))[0]
+    assets_dir = resolve_within(recipes_dir, ".assets", stem)
+    if create:
+        os.makedirs(assets_dir, exist_ok=True)
+    return assets_dir
+
+
+def _preview_source_path(saved_value):
+    resolved = _resolve_exact_model_reference(saved_value)
+    if not resolved:
+        return None
+    base_path = os.path.splitext(resolved["path"])[0]
+    for suffix in STATIC_PREVIEW_SUFFIXES + STATIC_PREVIEW_EXTENSIONS:
+        candidate = f"{base_path}{suffix}"
+        if os.path.isfile(candidate):
+            return candidate
+    return None
+
+
+def _thumbnail_webp_bytes(source_path):
+    try:
+        if os.path.getsize(source_path) > MAX_PREVIEW_SOURCE_BYTES:
+            return None
+        with Image.open(source_path) as image:
+            image.thumbnail((320, 320))
+            if image.mode not in ("RGB", "RGBA"):
+                image = image.convert("RGBA" if "A" in image.getbands() else "RGB")
+            width, height = image.size
+            for quality in (76, 62, 48):
+                output = BytesIO()
+                image.save(output, format="WEBP", quality=quality, method=4)
+                data = output.getvalue()
+                if len(data) <= MAX_PREVIEW_SNAPSHOT_BYTES:
+                    return data, width, height
+    except (OSError, ValueError):
+        return None
+    return None
+
+
+def _attach_preview_snapshots(recipe, recipes_dir, filename, references):
+    if not recipe.get("presentation", {}).get("save_model_preview_snapshots"):
+        return
+    assets_dir = _recipe_assets_dir(recipes_dir, filename, create=True)
+    total_bytes = 0
+    for reference in references[:MAX_PREVIEW_SNAPSHOTS]:
+        source_path = _preview_source_path(reference.get("saved_value"))
+        if not source_path:
+            continue
+        thumbnail = _thumbnail_webp_bytes(source_path)
+        if not thumbnail:
+            continue
+        data, width, height = thumbnail
+        if total_bytes + len(data) > MAX_PREVIEW_SNAPSHOT_TOTAL_BYTES:
+            break
+        asset_id = f"{hashlib.sha256(data).hexdigest()}.webp"
+        asset_path = resolve_within(assets_dir, asset_id)
+        if not os.path.exists(asset_path):
+            with open(asset_path, "wb") as asset_file:
+                asset_file.write(data)
+        total_bytes += len(data)
+        reference["preview"] = {
+            "snapshot_asset_id": asset_id,
+            "media_type": "image/webp",
+            "width": width,
+            "height": height,
+            "captured_at": recipe["timestamp"],
+        }
+
+
+def _enrich_recipe(recipe, recipes_dir=None, filename=None):
     recipe["workflow_fingerprint"] = _workflow_fingerprint(recipe["workflow"])
     params = dict(recipe.get("params") or {})
-    params["model_references"] = _build_model_references(recipe)
+    references = _build_model_references(recipe)
+    if recipes_dir and filename:
+        _attach_preview_snapshots(recipe, recipes_dir, filename, references)
+    params["model_references"] = references
     recipe["params"] = params
-    recipe["schema_version"] = 3
+    recipe["schema_version"] = 4
+    encoded = json.dumps(recipe, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    if len(encoded) > MAX_RECIPE_BYTES:
+        raise ValueError("Recipe is too large")
     return recipe
 
 
@@ -282,6 +366,15 @@ def _normalise_recipe(payload):
         ):
             thumbnail = None
 
+    presentation = payload.get("presentation", {})
+    if presentation is None:
+        presentation = {}
+    if not isinstance(presentation, dict):
+        raise ValueError("Invalid recipe presentation")
+    save_model_preview_snapshots = presentation.get("save_model_preview_snapshots", False)
+    if not isinstance(save_model_preview_snapshots, bool):
+        raise ValueError("Invalid recipe presentation")
+
     recipe = {
         "schema_version": 1,
         "name": name,
@@ -291,6 +384,9 @@ def _normalise_recipe(payload):
         "workflow": workflow,
         "thumbnail": thumbnail,
         "source_image": _normalise_source_image(payload.get("source_image")),
+        "presentation": {
+            "save_model_preview_snapshots": save_model_preview_snapshots,
+        },
         "timestamp": int(time.time() * 1000),
     }
     encoded = json.dumps(recipe, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
@@ -382,7 +478,7 @@ def _updated_recipe(payload, existing):
     if isinstance(created_timestamp, int):
         recipe["created_timestamp"] = created_timestamp
     recipe["updated_timestamp"] = recipe["timestamp"]
-    return _enrich_recipe(recipe)
+    return recipe
 
 
 def _delete_recipe_with_history(recipes_dir, filename):
@@ -391,6 +487,9 @@ def _delete_recipe_with_history(recipes_dir, filename):
     history_dir = _history_dir(recipes_dir, filename)
     if os.path.isdir(history_dir):
         shutil.rmtree(history_dir)
+    assets_dir = _recipe_assets_dir(recipes_dir, filename)
+    if os.path.isdir(assets_dir):
+        shutil.rmtree(assets_dir)
 
 
 async def api_get_recipes(request):
@@ -407,14 +506,14 @@ async def api_save_recipe(request):
     except Exception:
         return web.json_response({"status": "error", "message": "Invalid request"}, status=400)
 
-    recipe["created_timestamp"] = recipe["timestamp"]
-    recipe["updated_timestamp"] = recipe["timestamp"]
-    _enrich_recipe(recipe)
     filename = f"recipe_{int(time.time())}_{uuid.uuid4().hex[:8]}.json"
     try:
         recipes_dir = get_recipes_dir()
+        recipe["created_timestamp"] = recipe["timestamp"]
+        recipe["updated_timestamp"] = recipe["timestamp"]
+        recipe = await asyncio.to_thread(_enrich_recipe, recipe, recipes_dir, filename)
         await asyncio.to_thread(_write_recipe, recipes_dir, filename, recipe)
-    except OSError:
+    except (OSError, ValueError):
         return web.json_response({"status": "error", "message": "Could not save recipe"}, status=500)
     return web.json_response({"status": "success", "filename": filename})
 
@@ -460,6 +559,26 @@ async def api_get_recipe_full(request):
     return web.json_response({"status": "success", "data": data})
 
 
+async def api_get_recipe_asset(request):
+    try:
+        filename = require_filename(request.query.get("filename", ""))
+        asset_id = require_filename(request.query.get("asset", ""))
+        if not filename.endswith(".json") or not asset_id.endswith(".webp"):
+            raise ValueError("Invalid recipe asset")
+        recipes_dir = get_recipes_dir()
+        await asyncio.to_thread(_read_recipe, resolve_within(recipes_dir, filename))
+        asset_path = resolve_within(_recipe_assets_dir(recipes_dir, filename), asset_id)
+        if not os.path.isfile(asset_path):
+            raise FileNotFoundError
+    except (ValueError, json.JSONDecodeError):
+        return web.json_response({"status": "error", "message": "Invalid recipe asset"}, status=400)
+    except FileNotFoundError:
+        return web.json_response({"status": "error", "message": "File not found"}, status=404)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not read recipe asset"}, status=500)
+    return web.FileResponse(asset_path)
+
+
 async def api_update_recipe(request):
     """Replace one recipe while preserving its prior state in local history."""
     try:
@@ -473,6 +592,7 @@ async def api_update_recipe(request):
         if not isinstance(existing, dict) or not isinstance(existing.get("workflow"), dict):
             raise ValueError("Invalid recipe")
         recipe = _updated_recipe(payload, existing)
+        recipe = await asyncio.to_thread(_enrich_recipe, recipe, recipes_dir, filename)
     except (AttributeError, ValueError, json.JSONDecodeError):
         return web.json_response({"status": "error", "message": "Invalid recipe"}, status=400)
     except FileNotFoundError:
@@ -524,6 +644,7 @@ async def api_restore_recipe_version(request):
         if not isinstance(existing, dict) or not isinstance(historical, dict):
             raise ValueError("Invalid recipe")
         recipe = _updated_recipe(historical, existing)
+        recipe = await asyncio.to_thread(_enrich_recipe, recipe, recipes_dir, filename)
     except (AttributeError, ValueError, json.JSONDecodeError):
         return web.json_response({"status": "error", "message": "Invalid recipe"}, status=400)
     except FileNotFoundError:

@@ -77,6 +77,15 @@ export function shortHash(value) {
     return value.length > 16 ? `${value.slice(0, 12)}...${value.slice(-4)}` : value;
 }
 
+export function recipeReferenceKey(reference) {
+    return [
+        reference?.node_id ?? '',
+        reference?.widget_index ?? '',
+        reference?.category ?? '',
+        reference?.saved_value ?? '',
+    ].join('\u001f');
+}
+
 export function formatIdentitySize(value) {
     const size = Number(value);
     if (!Number.isFinite(size) || size < 0) return '';
