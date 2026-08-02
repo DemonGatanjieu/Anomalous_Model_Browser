@@ -121,8 +121,9 @@ Instead of fragmenting the class scope and losing context, we extracted all UI p
 ### NON-NEGOTIABLE: Recipe Action Boundaries / 配方动作边界
 * `Open in Canvas` replaces the live graph only after an explicit dirty-canvas confirmation and never queues automatically. `Append to Canvas` clones saved nodes, remaps IDs/links, validates the complete insertion, and rolls back all inserted nodes on failure.
 * Append must not call `loadGraphData` on the live graph. It must not mutate the saved recipe, existing nodes, existing links, or external model files. Unsupported/missing node types produce a visible error instead of a destructive fallback.
-* `Quick Queue` edits an in-memory clone of safe pinned primitive values and converts the serialized workflow with the host `app.graphToPrompt` path on a temporary `LiteGraph.LGraph`. It queues through the normal ComfyUI API and never loads the recipe into the current canvas.
+* `Quick Queue` edits an in-memory clone of safe pinned primitive values, converts the serialized workflow with the host `app.graphToPrompt` path on a temporary `LiteGraph.LGraph`, unwraps the returned `output` prompt, and queues through the normal ComfyUI API. It never loads the recipe into the current canvas.
 * Quick Queue is not proof of validity: missing node types, invalid values, conversion failures, and queue errors remain actionable disabled/error states. Imported recipes must not silently enable execution.
+* Append accepts both LiteGraph tuple links and object-shaped link records, treats groups as first-class inserted items, rejects subgraph definitions until a dedicated ID-remapping path exists, and removes every item created by the action when any insertion step fails.
 * `recipe_diff.js` compares bounded semantic records only. It must not expose newly-unfiltered sensitive widget values, render a full graph diff, instantiate saved nodes for display, or mutate either recipe.
 
 ### Graph Splicing and Picker Context (`graph_splice.js`, `model_picker.js`)

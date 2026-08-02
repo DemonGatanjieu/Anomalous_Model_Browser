@@ -15,9 +15,14 @@ function savedNodeRecords(workflow) {
 }
 
 function linkRecords(workflow) {
-    if (Array.isArray(workflow?.links)) return workflow.links.filter(Array.isArray);
+    if (Array.isArray(workflow?.links)) return workflow.links.filter((link) => Array.isArray(link) || link && typeof link === 'object');
+    if (workflow?.links instanceof Map) return [...workflow.links.values()].filter(Boolean);
     if (workflow?.links && typeof workflow.links === 'object') return Object.values(workflow.links).filter(Boolean);
     return [];
+}
+
+function savedGroupRecords(workflow) {
+    return Array.isArray(workflow?.groups) ? workflow.groups.filter((group) => group && typeof group === 'object') : [];
 }
 
 function graphNode(graph, id) {
@@ -74,12 +79,28 @@ function instantiateNode(nodeData) {
     return node;
 }
 
+function instantiateGroup(groupData) {
+    const GroupClass = globalThis.LiteGraph?.LGraphGroup;
+    if (typeof GroupClass !== 'function') return null;
+    const group = new GroupClass(String(groupData?.title || ''));
+    group.configure?.(cloneJson(groupData));
+    return group;
+}
+
+function linkField(link, arrayIndex, objectKey) {
+    return Array.isArray(link) ? link[arrayIndex] : link?.[objectKey];
+}
+
 function connectLink(link, idMap, graph) {
-    if (!Array.isArray(link) || link.length < 5) return false;
-    const origin = graphNode(graph, idMap.get(String(link[1])));
-    const target = graphNode(graph, idMap.get(String(link[3])));
+    const originId = linkField(link, 1, 'origin_id');
+    const targetId = linkField(link, 3, 'target_id');
+    const originSlot = linkField(link, 2, 'origin_slot');
+    const targetSlot = linkField(link, 4, 'target_slot');
+    if (originId === undefined || targetId === undefined || originSlot === undefined || targetSlot === undefined) return false;
+    const origin = graphNode(graph, idMap.get(String(originId)));
+    const target = graphNode(graph, idMap.get(String(targetId)));
     if (!origin || !target) return false;
-    const result = origin.connect?.(Number(link[2]), target, Number(link[4]));
+    const result = origin.connect?.(Number(originSlot), target, Number(targetSlot));
     return Boolean(result);
 }
 
@@ -88,8 +109,15 @@ export function appendRecipeToCanvas(recipe) {
     const graph = app.graph;
     const savedNodes = savedNodeRecords(recipe?.workflow);
     const savedLinks = linkRecords(recipe?.workflow);
+    const savedGroups = savedGroupRecords(recipe?.workflow);
     if (!graph || !savedNodes.length) throw new Error('recipe_append_empty');
     if (typeof globalThis.LiteGraph?.createNode !== 'function') throw new Error('recipe_append_unsupported');
+    if (recipe?.workflow?.definitions?.subgraphs?.length) {
+        throw new Error('recipe_append_subgraphs_unsupported');
+    }
+    if (savedGroups.length && typeof globalThis.LiteGraph?.LGraphGroup !== 'function') {
+        throw new Error('recipe_append_groups_unsupported');
+    }
 
     const idMap = new Map();
     const inserted = [];
@@ -99,6 +127,7 @@ export function appendRecipeToCanvas(recipe) {
     const targetBounds = liveBounds(graph);
     const offsetX = targetBounds ? targetBounds.maxX + 140 - sourceBounds.minX : 40 - sourceBounds.minX;
     const offsetY = targetBounds ? targetBounds.minY - sourceBounds.minY : 40 - sourceBounds.minY;
+    const insertedGroups = [];
 
     graph.beforeChange?.();
     try {
@@ -129,13 +158,32 @@ export function appendRecipeToCanvas(recipe) {
                 throw error;
             }
         }
+        for (const groupData of savedGroups) {
+            const group = instantiateGroup(groupData);
+            if (!group) {
+                const error = new Error('Could not restore a recipe group.');
+                error.code = 'recipe_append_groups_unsupported';
+                throw error;
+            }
+            if (Array.isArray(group.bounding) && group.bounding.length >= 4) {
+                group.bounding = [
+                    Number(group.bounding[0]) + offsetX,
+                    Number(group.bounding[1]) + offsetY,
+                    group.bounding[2],
+                    group.bounding[3],
+                ];
+            }
+            graph.add(group);
+            insertedGroups.push(group);
+        }
         graph.change?.();
         graph.setDirtyCanvas?.(true, true);
         app.canvas?.setDirty?.(true, true);
         app.canvas?.selectNodes?.(inserted);
         app.canvas?.selectItems?.(inserted);
-        return { nodes: inserted.length, links: savedLinks.length };
+        return { nodes: inserted.length, links: savedLinks.length, groups: insertedGroups.length };
     } catch (error) {
+        for (const group of insertedGroups) graph.remove?.(group);
         for (const node of inserted) graph.remove?.(node);
         graph.change?.();
         graph.setDirtyCanvas?.(true, true);
@@ -186,7 +234,8 @@ export async function buildRecipePrompt(recipe, changes = []) {
     const temporaryGraph = new GraphClass();
     try {
         temporaryGraph.configure(workflow);
-        const prompt = await app.graphToPrompt(temporaryGraph);
+        const promptResult = await app.graphToPrompt(temporaryGraph);
+        const prompt = promptResult?.output || promptResult;
         if (!prompt || typeof prompt !== 'object' || !Object.keys(prompt).length) throw new Error('recipe_quick_queue_empty_prompt');
         return prompt;
     } finally {

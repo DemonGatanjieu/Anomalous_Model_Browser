@@ -94,3 +94,17 @@
 - `node --check` for every JavaScript file under `web/`
 - ZIP export → inspect smoke round trip passed with a contained WebP asset
 - `git diff --check`
+
+## [Snapshot] 2026-08-02 — Runtime-safe append and Quick Queue handoff
+
+**Implemented**
+
+- Audited the action layer against the installed ComfyUI frontend's LiteGraph and prompt-queue contracts.
+- Made append accept tuple and object-shaped serialized links, restore serialized groups with the same placement offset, reject subgraph definitions until ID remapping is implemented, and roll back nodes and groups together.
+- Corrected Quick Queue to unwrap `app.graphToPrompt(...).output` before calling `api.queuePrompt`, while preserving the no-live-canvas-mutation boundary.
+
+**Validation**
+
+- `python_embeded/python.exe -m py_compile api/__init__.py api/models.py api/recipes.py api/recipe_packages.py`
+- `node --check` for every JavaScript file under `web/`
+- `git diff --check`
