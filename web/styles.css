@@ -1711,6 +1711,44 @@
 .anomalous-recipe-detail-stat-good { color: #6ee7b7 !important; }
 .anomalous-recipe-detail-stat-warn { color: #ffd493 !important; }
 
+.anomalous-recipe-model-composition {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.anomalous-recipe-model-composition h5 {
+    margin: 0;
+    color: #ddd;
+    font-size: 0.9rem;
+}
+
+.anomalous-recipe-model-composition-grid {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+}
+
+.anomalous-recipe-model-composition-card {
+    display: grid;
+    min-width: 0;
+    gap: 5px;
+    padding: 9px 10px;
+    border: 1px solid #414141;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.14);
+}
+
+.anomalous-recipe-model-composition-card.is-base-model {
+    border-color: rgba(110, 231, 183, 0.35);
+    background: rgba(110, 231, 183, 0.05);
+}
+
+.anomalous-recipe-model-composition-value .anomalous-recipe-detail-full-value {
+    overflow-wrap: anywhere;
+}
+
 .anomalous-recipe-detail-summary-grid > div {
     flex-direction: row;
     justify-content: space-between;

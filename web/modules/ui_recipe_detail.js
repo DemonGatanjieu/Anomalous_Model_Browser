@@ -643,12 +643,42 @@ function renderOverview(content, owner, recipe, references, finish) {
     const summaryGrid = document.createElement('div');
     summaryGrid.className = 'anomalous-recipe-detail-summary-grid';
     const params = recipe.params || {};
+    const modelComposition = document.createElement('div');
+    modelComposition.className = 'anomalous-recipe-model-composition';
+    appendText(modelComposition, 'h5', t('recipeDetailModelComposition'));
+    const modelCompositionGrid = document.createElement('div');
+    modelCompositionGrid.className = 'anomalous-recipe-model-composition-grid';
+    const baseModelCard = document.createElement('article');
+    baseModelCard.className = 'anomalous-recipe-model-composition-card is-base-model';
+    appendText(baseModelCard, 'span', t('recipeDetailBaseModel'), 'anomalous-recipe-detail-label');
+    appendValueViewer(
+        baseModelCard,
+        modelDisplayName(params.baseModel) || t('recipeDetailUnavailable'),
+        'anomalous-recipe-model-composition-value',
+    );
+    modelCompositionGrid.appendChild(baseModelCard);
+    const loras = Array.isArray(params.loras) ? params.loras : [];
+    if (loras.length) {
+        loras.forEach((lora, index) => {
+            const loraCard = document.createElement('article');
+            loraCard.className = 'anomalous-recipe-model-composition-card';
+            appendText(loraCard, 'span', `${t('recipeDetailLoraSummary')} ${index + 1}`, 'anomalous-recipe-detail-label');
+            appendValueViewer(
+                loraCard,
+                modelDisplayName(lora?.name) || t('recipeDetailUnavailable'),
+                'anomalous-recipe-model-composition-value',
+            );
+            if (lora?.strength_model !== null && lora?.strength_model !== undefined) {
+                appendText(loraCard, 'small', `× ${lora.strength_model}`, 'anomalous-recipe-detail-muted');
+            }
+            modelCompositionGrid.appendChild(loraCard);
+        });
+    } else {
+        appendText(modelCompositionGrid, 'small', `${t('recipeDetailLoraSummary')}: ${t('recipeDetailUnavailable')}`, 'anomalous-recipe-detail-muted');
+    }
+    modelComposition.appendChild(modelCompositionGrid);
+    summary.appendChild(modelComposition);
     const values = [
-        [t('recipeModel'), modelDisplayName(params.baseModel)],
-        [t('recipeDetailLoraSummary'), (params.loras || [])
-            .map((item) => modelDisplayName(item?.name))
-            .filter(Boolean)
-            .join(', ')],
         [t('recipeSteps'), params.steps],
         ['CFG', params.cfg],
         [t('recipeDetailSampler'), params.sampler_name],

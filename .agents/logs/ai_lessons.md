@@ -25,6 +25,12 @@ This document serves as an architectural retrospective and UX diagnostic log for
 
 **Related presentation rule (相关展示规则)**: Repeated model references need independent responsive cards. A shared dense container makes preview, identity, availability, and actions appear mixed together; a card grid preserves one-reference-per-unit without changing the saved workflow data.
 
+## 53. Model Composition Is Not a Generic Parameter Row (模型组成不能当作普通参数行)
+
+**The Problem (问题)**: Putting the base model and a comma-joined LoRA list into the same responsive key-value grid made long names compete with labels and unrelated sampling values. The browser wrapped the text into narrow columns, producing a tall, visually mixed summary.
+
+**The Solution (方案)**: Give model composition its own vertical section. Render the base model and each LoRA as an independent full-width block with safe wrapping and copy/expand controls; reserve the compact grid for short scalar values such as steps, CFG, sampler, and resolution.
+
 ## 1. UX Scroll Traps (交互嵌套滚动陷阱)
 **The Problem (问题)**: In the Notebook modal, the translation editor had a `max-height` and `overflow-y`. Since the parent modal was also scrollable, it created a "Scroll Trap". Hitting the bottom of the editor unpredictably transferred the scroll event to the outer body.
 (在笔记本弹窗中，由于翻译编辑器固定了最大高度并允许滚动，导致与父级弹窗的滚动条发生冲突。用户滚动到底部时会突然把外层页面卷走，体验极差。)

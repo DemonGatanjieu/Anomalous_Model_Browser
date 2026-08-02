@@ -1,5 +1,20 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-03 — Split model composition in recipe overview
+
+**Implemented**
+
+- Replaced the Overview's combined model/LoRA key-value rows with a dedicated Model composition section.
+- Rendered the base model and every LoRA as separate full-width blocks, preserving readable wrapping for long names and adding the existing copy/expand affordances.
+- Kept steps, CFG, sampler, and resolution in the compact summary grid so model text no longer controls the layout of unrelated parameters.
+- Added localized labels for the new composition and base-model blocks.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `node --check web/modules/locales.js`
+- `git diff --check`
+
 ## [Snapshot] 2026-08-03 — Recipe model navigation and presentation cleanup
 
 **Implemented**
