@@ -347,3 +347,8 @@
 - `python_embeded/python.exe -m py_compile api/__init__.py api/models.py api/recipes.py api/recipe_packages.py`
 - Advanced recipe locale-key smoke check passed
 - `git diff --check`
+
+## [2026-08-03] UI 重构与架构精简
+- **Recipe UI 现代化**: 合并了冗杂的 Tabs，将 模型与复现 和 参数 合并进入 概览 面板，并将底层参数收入折叠组件，极大减轻了信息噪音。
+- **配方卡片列表降噪**: 移除了原配方列表卡片上的全量参数展示，仅保留封面图、标题、标签与模型徽章，并重构了操作按钮布局。
+- **交互逻辑修复**: 废弃了极易出 Bug 的 Quick Queue 逻辑，统一了『打开到画布』与『追加到画布』的逻辑封装。

@@ -395,3 +395,9 @@ This document serves as an architectural retrospective and UX diagnostic log for
 (导入配方可能引用本机不存在的模型路径。若把文件名或预览命中直接当成权威依据，就会静默改写工作流模型输入，或把视觉命中错误提升为已验证身份。)
 **The Solution (方案)**: Keep the saved workflow path and stored identity immutable during lazy matching. Use the existing explicit hash/size/category resolver only after the user requests a match; attach the current local model descriptor transiently for preview and browser navigation, while leaving identity status and workflow content unchanged.
 (延迟匹配期间保持已保存工作流路径和身份记录不变。只有用户明确请求后才调用现有哈希/大小/类别解析器；本地模型描述只临时用于预览和跳转，不改变身份状态或工作流内容。)
+
+## 55. Recipe Detail UI Refactoring: Consolidate Information and Guard State Transitions (合并信息噪音与状态切换守卫)
+**The Problem (问题)**: The Recipe Detail UI originally had too many tabs separating 'Overview', 'Models', and 'Parameters', causing unnecessary cognitive load. The Quick Queue feature was also highly prone to state bugs due to bypassing the canvas. During refactoring, removing the separate 'Models' tab and injecting them into the 'Overview' caused the preview loading mechanism (which was tied to checking `activeTab === 'models'`) to break.
+(Recipe 详情页原本分了太多的 Tab（概览、模型、参数），导致信息过于分散、认知负担过重。同时 Quick Queue 功能由于绕过了画布，极易产生状态 Bug。在重构时，把模型和参数全塞进概览页后，原本绑定在“当处于模型 Tab 时才加载预览图”的机制断裂，导致模型封面无法显示。)
+**The Solution (方案)**: Consolidate noisy parameters into a `<details>` fold inside the Overview, simplifying the UI visually. Strip out Quick Queue and standardize on Open/Append logic. Most importantly, when changing Tab semantic structures, carefully audit and update any conditional logic tying background fetching (like preview loading) to active Tab state.
+(将杂乱的参数收纳进详情页的 `<details>` 折叠组件中，极大降低视觉噪音。彻底删除 Quick Queue 逻辑并统一为在画布中操作。最重要的是，在改变 Tab 结构时，必须仔细审计并更新那些依赖 Tab 状态的后台加载逻辑（如模型封面预加载），保证从卡片到详情面板的心流与数据流一致。)
