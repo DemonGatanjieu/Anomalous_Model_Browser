@@ -1176,19 +1176,8 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     const tabDefinitions = [
         ['overview', t('recipeDetailOverview'), () => {
             renderOverview(content, owner, recipe, references, finish);
-
-            const paramsWrapper = document.createElement('details');
-            paramsWrapper.className = 'anomalous-recipe-detail-section';
-            const summary = document.createElement('summary');
-            summary.textContent = '⚙️ ' + t('recipeDetailParameters');
-            summary.style.cursor = 'pointer';
-            summary.style.fontWeight = 'bold';
-            paramsWrapper.appendChild(summary);
-            const paramsInner = document.createElement('div');
-            renderParameters(paramsInner, recipe);
-            paramsWrapper.appendChild(paramsInner);
-            content.appendChild(paramsWrapper);
         }],
+        ['parameters', t('recipeDetailParameters'), () => renderParameters(content, recipe)],
         ['versions', t('recipeDetailVersions'), () => renderVersions(content, owner, recipe, history, finish)],
     ];
     const selectTab = (active) => {
