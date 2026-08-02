@@ -4,8 +4,10 @@ import { app } from '../../../scripts/app.js';
 import { i18n } from './locales.js';
 import {
     captureCanvasThumbnail,
+    applyRecipeWidgetChanges,
     extractRecipeMetadata,
     extractRecipeParameterChoices,
+    extractRecipeParameterChoicesFromMetadata,
 } from './recipe_parser.js';
 
 const t = (key) => {
@@ -196,11 +198,11 @@ function renderParams(parent, params = {}) {
     parent.appendChild(summary);
 }
 
-function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices) {
+function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices, initial = null) {
     return new Promise((resolve) => {
         const selection = {
-            thumbnail: safeThumbnail(canvasThumbnail),
-            sourceImage: null,
+            thumbnail: safeThumbnail(initial?.thumbnail) || safeThumbnail(canvasThumbnail),
+            sourceImage: initial?.source_image || null,
             pinnedKeys: new Set(),
         };
         const overlay = document.createElement('div');
@@ -217,7 +219,7 @@ function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices) {
         nameInput.className = 'anomalous-nb-select';
         nameInput.type = 'text';
         nameInput.maxLength = 120;
-        nameInput.value = t('recipeDefaultName');
+        nameInput.value = initial?.name || t('recipeDefaultName');
         nameLabel.appendChild(nameInput);
 
         const tagsLabel = appendText(dialog, 'label', t('recipeTags'));
@@ -226,6 +228,7 @@ function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices) {
         tagsInput.type = 'text';
         tagsInput.maxLength = 300;
         tagsInput.placeholder = t('recipeTagsHint');
+        tagsInput.value = Array.isArray(initial?.tags) ? initial.tags.join(', ') : '';
         tagsLabel.appendChild(tagsInput);
 
         const notesLabel = appendText(dialog, 'label', t('recipeNotes'));
@@ -233,6 +236,7 @@ function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices) {
         notesInput.className = 'anomalous-nb-textarea';
         notesInput.maxLength = 3000;
         notesInput.placeholder = t('recipeNotesHint');
+        notesInput.value = initial?.notes || '';
         notesLabel.appendChild(notesInput);
 
         const coverSection = document.createElement('section');
@@ -243,7 +247,8 @@ function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices) {
         const coverPreview = document.createElement('img');
         coverPreview.className = 'anomalous-recipe-dialog-preview';
         coverPreview.alt = t('recipeThumbnail');
-        if (selection.thumbnail) coverPreview.src = selection.thumbnail;
+        const initialPreview = selection.thumbnail || outputImageUrl(selection.sourceImage);
+        if (initialPreview) coverPreview.src = initialPreview;
         else coverPreview.style.display = 'none';
 
         const choiceButtons = [];
@@ -264,18 +269,29 @@ function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices) {
         noneChoice.type = 'button';
         choiceButtons.push(noneChoice);
         noneChoice.onclick = () => selectCover(noneChoice, null, null, null);
-        if (selection.thumbnail) {
+        if (safeThumbnail(initial?.thumbnail) || initial?.source_image) {
+            const existingChoice = appendText(coverChoices, 'button', t('recipeKeepImage'), 'anomalous-recipe-cover-choice selected');
+            existingChoice.type = 'button';
+            choiceButtons.push(existingChoice);
+            existingChoice.onclick = () => selectCover(
+                existingChoice,
+                initial?.source_image || null,
+                safeThumbnail(initial?.thumbnail) || outputImageUrl(initial?.source_image),
+                safeThumbnail(initial?.thumbnail),
+            );
+        }
+        if (safeThumbnail(canvasThumbnail)) {
             const canvasChoice = document.createElement('button');
             canvasChoice.type = 'button';
-            canvasChoice.className = 'anomalous-recipe-cover-choice selected';
+            canvasChoice.className = `anomalous-recipe-cover-choice${initial ? '' : ' selected'}`;
             const canvasImage = document.createElement('img');
-            canvasImage.src = selection.thumbnail;
+            canvasImage.src = canvasThumbnail;
             canvasImage.alt = t('recipeCanvasPreview');
             appendText(canvasChoice, 'span', t('recipeCanvasPreview'));
             canvasChoice.prepend(canvasImage);
             choiceButtons.push(canvasChoice);
             canvasChoice.onclick = () => selectCover(canvasChoice, null, canvasThumbnail, safeThumbnail(canvasThumbnail));
-        } else {
+        } else if (!initial) {
             noneChoice.classList.add('selected');
         }
 
@@ -393,6 +409,216 @@ function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices) {
     });
 }
 
+function editableValueControl(choice, changes) {
+    const value = choice.value;
+    const wrapper = document.createElement('label');
+    wrapper.className = 'anomalous-recipe-edit-param';
+    appendText(wrapper, 'span', choice.widgetName, 'anomalous-recipe-widget-name');
+    if (!['string', 'number', 'boolean'].includes(typeof value)) {
+        appendText(wrapper, 'code', displayWidgetValue(value), 'anomalous-recipe-widget-value');
+        appendText(wrapper, 'small', t('recipeComplexParam'), 'anomalous-recipe-node-hint');
+        return wrapper;
+    }
+
+    const input = typeof value === 'string' && value.length > 120
+        ? document.createElement('textarea')
+        : document.createElement('input');
+    input.className = typeof input.value === 'string' && input.tagName === 'TEXTAREA'
+        ? 'anomalous-nb-textarea'
+        : 'anomalous-nb-select';
+    if (typeof value === 'boolean') {
+        input.type = 'checkbox';
+        input.checked = value;
+    } else {
+        input.type = typeof value === 'number' ? 'number' : 'text';
+        input.value = String(value);
+        if (typeof value === 'number') input.step = 'any';
+    }
+    const update = () => {
+        let nextValue;
+        if (typeof value === 'boolean') nextValue = input.checked;
+        else if (typeof value === 'number') {
+            nextValue = Number(input.value);
+            if (!Number.isFinite(nextValue)) return;
+        } else nextValue = input.value;
+        changes.set(choice.key, { ...choice, previousValue: value, value: nextValue });
+    };
+    input.onchange = update;
+    input.oninput = typeof value === 'string' ? update : null;
+    wrapper.appendChild(input);
+    return wrapper;
+}
+
+function showRecipeEditDialog(owner, recipeData, filename, history) {
+    return new Promise((resolve) => {
+        const params = recipeData.params || {};
+        const choices = extractRecipeParameterChoicesFromMetadata(params);
+        const selectedPins = new Set((params.pinned || []).map((pin) => pin.key));
+        const changes = new Map();
+        const overlay = document.createElement('div');
+        overlay.className = 'anomalous-recipe-dialog-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        const dialog = document.createElement('div');
+        dialog.className = 'anomalous-recipe-dialog anomalous-recipe-edit-dialog';
+        appendText(dialog, 'h3', t('recipeEditTitle'));
+
+        const nameLabel = appendText(dialog, 'label', t('recipeName'));
+        const nameInput = document.createElement('input');
+        nameInput.className = 'anomalous-nb-select';
+        nameInput.type = 'text';
+        nameInput.maxLength = 120;
+        nameInput.value = recipeData.name || '';
+        nameLabel.appendChild(nameInput);
+
+        const tagsLabel = appendText(dialog, 'label', t('recipeTags'));
+        const tagsInput = document.createElement('input');
+        tagsInput.className = 'anomalous-nb-select';
+        tagsInput.type = 'text';
+        tagsInput.maxLength = 300;
+        tagsInput.value = Array.isArray(recipeData.tags) ? recipeData.tags.join(', ') : '';
+        tagsInput.placeholder = t('recipeTagsHint');
+        tagsLabel.appendChild(tagsInput);
+
+        const notesLabel = appendText(dialog, 'label', t('recipeNotes'));
+        const notesInput = document.createElement('textarea');
+        notesInput.className = 'anomalous-nb-textarea';
+        notesInput.maxLength = 3000;
+        notesInput.value = recipeData.notes || '';
+        notesInput.placeholder = t('recipeNotesHint');
+        notesLabel.appendChild(notesInput);
+
+        if (choices.length) {
+            const pinDetails = document.createElement('details');
+            pinDetails.className = 'anomalous-recipe-pin-picker';
+            const pinSummary = document.createElement('summary');
+            pinSummary.textContent = `${t('recipeChoosePinnedParams')} (${selectedPins.size})`;
+            pinDetails.appendChild(pinSummary);
+            const pinList = document.createElement('div');
+            pinList.className = 'anomalous-recipe-pin-list';
+            for (const choice of choices) {
+                const label = document.createElement('label');
+                label.className = 'anomalous-recipe-pin-choice';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = selectedPins.has(choice.key);
+                checkbox.onchange = () => {
+                    if (checkbox.checked) selectedPins.add(choice.key);
+                    else selectedPins.delete(choice.key);
+                    pinSummary.textContent = `${t('recipeChoosePinnedParams')} (${selectedPins.size})`;
+                };
+                appendText(label, 'span', `${choice.nodeTitle || choice.nodeType}: ${choice.widgetName}`);
+                label.prepend(checkbox);
+                pinList.appendChild(label);
+            }
+            pinDetails.appendChild(pinList);
+            dialog.appendChild(pinDetails);
+        }
+
+        if (choices.length) {
+            const parameterDetails = document.createElement('details');
+            parameterDetails.className = 'anomalous-recipe-node-details';
+            const parameterSummary = document.createElement('summary');
+            parameterSummary.textContent = t('recipeEditNodeParams');
+            parameterDetails.appendChild(parameterSummary);
+            let rendered = false;
+            parameterDetails.ontoggle = () => {
+                if (!parameterDetails.open || rendered) return;
+                rendered = true;
+                const list = document.createElement('div');
+                list.className = 'anomalous-recipe-node-list';
+                let currentNode = null;
+                for (const choice of choices) {
+                    const nodeKey = `${choice.nodeId}:${choice.nodeType}:${choice.nodeTitle || ''}`;
+                    if (nodeKey !== currentNode) {
+                        appendText(list, 'strong', choice.nodeTitle || choice.nodeType || t('recipeUnknownNode'), 'anomalous-recipe-pin-node');
+                        currentNode = nodeKey;
+                    }
+                    list.appendChild(editableValueControl(choice, changes));
+                }
+                parameterDetails.appendChild(list);
+            };
+            dialog.appendChild(parameterDetails);
+        }
+
+        const historyDetails = document.createElement('details');
+        historyDetails.className = 'anomalous-recipe-node-details';
+        const historySummary = document.createElement('summary');
+        historySummary.textContent = `${t('recipeHistory')} (${history.length})`;
+        historyDetails.appendChild(historySummary);
+        const historyList = document.createElement('div');
+        historyList.className = 'anomalous-recipe-history-list';
+        if (!history.length) {
+            appendText(historyList, 'small', t('recipeHistoryEmpty'), 'anomalous-recipe-node-hint');
+        } else {
+            for (const version of history) {
+                const row = document.createElement('div');
+                row.className = 'anomalous-recipe-history-row';
+                const date = Number.isFinite(Number(version.timestamp))
+                    ? new Date(Number(version.timestamp)).toLocaleString()
+                    : t('recipeUnknownVersion');
+                appendText(row, 'span', `${date} · ${version.name || t('recipeUntitled')}`);
+                const restore = appendText(row, 'button', t('recipeRestoreVersion'), 'anomalous-btn-danger');
+                restore.type = 'button';
+                restore.onclick = async () => {
+                    if (!confirm(t('recipeRestoreVersionConfirm'))) return;
+                    try {
+                        const response = await fetch('/anomalous/restore_recipe_version', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ filename, version: version.version }),
+                        });
+                        if (!response.ok) throw new Error('recipe history restore failed');
+                        overlay.remove();
+                        await owner.refreshRecipes();
+                        resolve({ mode: 'restored' });
+                    } catch (error) {
+                        console.error('Could not restore Workflow Recipe version:', error);
+                        alert(t('recipeUpdateError'));
+                    }
+                };
+                row.appendChild(restore);
+                historyList.appendChild(row);
+            }
+        }
+        historyDetails.appendChild(historyList);
+        dialog.appendChild(historyDetails);
+
+        const error = appendText(dialog, 'div', '', 'anomalous-recipe-dialog-error');
+        const actions = document.createElement('div');
+        actions.className = 'anomalous-recipe-actions';
+        const cancel = appendText(actions, 'button', t('recipeCancel'), 'anomalous-btn-danger');
+        const canvas = appendText(actions, 'button', t('recipeEditCanvas'), 'anomalous-btn-primary');
+        const save = appendText(actions, 'button', t('recipeUpdate'), 'anomalous-btn-success');
+        for (const button of [cancel, canvas, save]) button.type = 'button';
+        const close = (value) => { overlay.remove(); resolve(value); };
+        cancel.onclick = () => close(null);
+        overlay.onclick = (event) => { if (event.target === overlay) close(null); };
+        canvas.onclick = () => close({ mode: 'canvas' });
+        save.onclick = () => {
+            const name = nameInput.value.trim();
+            if (!name) {
+                error.textContent = t('recipeNameRequired');
+                nameInput.focus();
+                return;
+            }
+            close({
+                mode: 'save',
+                name,
+                tags: [...new Set(tagsInput.value.split(',').map((tag) => tag.trim()).filter(Boolean))].slice(0, 20),
+                notes: notesInput.value.trim(),
+                pinnedKeys: selectedPins,
+                changes: [...changes.values()],
+            });
+        };
+        dialog.appendChild(actions);
+        overlay.appendChild(dialog);
+        (owner.nbPanel || document.body).appendChild(overlay);
+        nameInput.focus();
+        nameInput.select();
+    });
+}
+
 export async function showRecipes() {
     if (!this.notebookContainer) {
         this.nbPanel.style.display = 'flex';
@@ -471,6 +697,49 @@ export function renderRecipeList(recipes) {
 
         const actions = document.createElement('div');
         actions.className = 'anomalous-recipe-actions';
+        const edit = appendText(actions, 'button', t('recipeEdit'), 'anomalous-btn-success');
+        edit.type = 'button';
+        edit.onclick = async () => {
+            try {
+                const [fullResponse, historyResponse] = await Promise.all([
+                    fetch(`/anomalous/recipe_full?filename=${encodeURIComponent(recipe.filename)}`),
+                    fetch(`/anomalous/recipe_history?filename=${encodeURIComponent(recipe.filename)}`),
+                ]);
+                const payload = await fullResponse.json();
+                const historyPayload = historyResponse.ok ? await historyResponse.json() : { versions: [] };
+                if (!fullResponse.ok || payload.status !== 'success' || !payload.data?.workflow) throw new Error('recipe missing workflow');
+                const editable = JSON.parse(JSON.stringify(payload.data));
+                const result = await showRecipeEditDialog(this, editable, recipe.filename, historyPayload.versions || []);
+                if (!result || result.mode === 'restored') return;
+                if (result.mode === 'canvas') {
+                    if (!confirm(t('recipeEditCanvasConfirm'))) return;
+                    app.loadGraphData(editable.workflow);
+                    app.canvas?.setDirty?.(true, true);
+                    this.recipeEditing = { filename: recipe.filename, data: editable };
+                    const saveButton = this.recipeView?.querySelector('.anomalous-recipe-actionbar button');
+                    if (saveButton) saveButton.textContent = t('recipeUpdateCurrent');
+                    return;
+                }
+
+                applyRecipeWidgetChanges(editable.params, editable.workflow, result.changes);
+                const updatedChoices = extractRecipeParameterChoicesFromMetadata(editable.params);
+                editable.name = result.name;
+                editable.tags = result.tags;
+                editable.notes = result.notes;
+                editable.params.pinned = updatedChoices.filter((choice) => result.pinnedKeys.has(choice.key));
+                const response = await fetch('/anomalous/update_recipe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: recipe.filename, ...editable }),
+                });
+                const updatedPayload = await response.json();
+                if (!response.ok || updatedPayload.status !== 'success') throw new Error('recipe update failed');
+                await this.refreshRecipes();
+            } catch (error) {
+                console.error('Could not edit Workflow Recipe:', error);
+                alert(t('recipeUpdateError'));
+            }
+        };
         const restore = appendText(actions, 'button', t('recipeRestore'), 'anomalous-btn-primary');
         restore.type = 'button';
         restore.onclick = async () => {
@@ -524,7 +793,8 @@ export async function handleSaveRecipe() {
     const metadata = extractRecipeMetadata(app.graph);
     const canvasThumbnail = captureCanvasThumbnail(app.canvas?.canvas);
     const parameterChoices = extractRecipeParameterChoices(app.graph);
-    const details = await showRecipeSaveDialog(this, canvasThumbnail, parameterChoices);
+    const editing = this.recipeEditing || null;
+    const details = await showRecipeSaveDialog(this, canvasThumbnail, parameterChoices, editing?.data || null);
     if (!details) return;
 
     const saveButton = this.recipeView?.querySelector('.anomalous-recipe-actionbar button');
@@ -542,10 +812,11 @@ export async function handleSaveRecipe() {
                 console.warn('Could not persist bound recipe image thumbnail:', error);
             }
         }
-        const response = await fetch('/anomalous/save_recipe', {
+        const response = await fetch(editing ? '/anomalous/update_recipe' : '/anomalous/save_recipe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                ...(editing ? { filename: editing.filename } : {}),
                 name: details.name,
                 tags: details.tags,
                 notes: details.notes,
@@ -557,6 +828,7 @@ export async function handleSaveRecipe() {
         });
         const payload = await response.json();
         if (!response.ok || payload.status !== 'success') throw new Error('recipe save request failed');
+        this.recipeEditing = null;
         await this.refreshRecipes();
     } catch (error) {
         console.error('Could not save Workflow Recipe:', error);
@@ -564,7 +836,7 @@ export async function handleSaveRecipe() {
     } finally {
         if (saveButton) {
             saveButton.disabled = false;
-            saveButton.textContent = t('recipeSaveCurrent');
+            saveButton.textContent = this.recipeEditing ? t('recipeUpdateCurrent') : t('recipeSaveCurrent');
         }
     }
 }

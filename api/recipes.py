@@ -7,6 +7,7 @@ extension repository, so personal prompts and graphs are never Git content.
 import asyncio
 import json
 import os
+import shutil
 import tempfile
 import time
 import uuid
@@ -24,6 +25,7 @@ MAX_NOTES_LENGTH = 3000
 MAX_THUMBNAIL_LENGTH = 1_500_000
 MAX_SOURCE_SUBFOLDER_LENGTH = 500
 MAX_RECIPE_BYTES = 12 * 1024 * 1024
+MAX_HISTORY_VERSIONS = 20
 SAFE_THUMBNAIL_PREFIXES = (
     "data:image/jpeg;base64,",
     "data:image/png;base64,",
@@ -164,6 +166,78 @@ def _write_recipe(recipes_dir, filename, recipe):
                 pass
 
 
+def _history_dir(recipes_dir, filename, create=False):
+    """Return the contained, user-data-only history directory for one recipe."""
+    stem = os.path.splitext(require_filename(filename))[0]
+    history_dir = resolve_within(recipes_dir, ".history", stem)
+    if create:
+        os.makedirs(history_dir, exist_ok=True)
+    return history_dir
+
+
+def _archive_recipe(recipes_dir, filename, recipe):
+    """Atomically retain a bounded pre-update snapshot before replacing a recipe."""
+    history_dir = _history_dir(recipes_dir, filename, create=True)
+    version_name = f"version_{int(time.time() * 1000)}_{uuid.uuid4().hex[:8]}.json"
+    _write_recipe(history_dir, version_name, recipe)
+
+    entries = []
+    with os.scandir(history_dir) as scan:
+        for entry in scan:
+            if entry.is_file() and entry.name.endswith(".json"):
+                entries.append(entry)
+    entries.sort(key=lambda entry: entry.stat().st_mtime_ns, reverse=True)
+    for entry in entries[MAX_HISTORY_VERSIONS:]:
+        try:
+            os.remove(resolve_within(history_dir, entry.name))
+        except OSError:
+            pass
+
+
+def _list_recipe_history(recipes_dir, filename):
+    history_dir = _history_dir(recipes_dir, filename)
+    versions = []
+    try:
+        with os.scandir(history_dir) as entries:
+            for entry in entries:
+                if not entry.is_file() or not entry.name.endswith(".json"):
+                    continue
+                try:
+                    version = require_filename(entry.name)
+                    data = _read_recipe(resolve_within(history_dir, version))
+                    if not isinstance(data, dict):
+                        continue
+                    versions.append({
+                        "version": version,
+                        "timestamp": data.get("timestamp", 0),
+                        "name": data.get("name", ""),
+                    })
+                except (OSError, ValueError, json.JSONDecodeError):
+                    continue
+    except OSError:
+        return []
+    versions.sort(key=lambda item: item["timestamp"], reverse=True)
+    return versions
+
+
+def _updated_recipe(payload, existing):
+    recipe = _normalise_recipe(payload)
+    created_timestamp = existing.get("created_timestamp", existing.get("timestamp"))
+    if isinstance(created_timestamp, int):
+        recipe["created_timestamp"] = created_timestamp
+    recipe["updated_timestamp"] = recipe["timestamp"]
+    recipe["schema_version"] = 2
+    return recipe
+
+
+def _delete_recipe_with_history(recipes_dir, filename):
+    """Delete an explicitly selected recipe and its contained local history."""
+    os.remove(resolve_within(recipes_dir, filename))
+    history_dir = _history_dir(recipes_dir, filename)
+    if os.path.isdir(history_dir):
+        shutil.rmtree(history_dir)
+
+
 async def api_get_recipes(request):
     recipes_dir = get_recipes_dir()
     recipes = await asyncio.to_thread(_list_recipes, recipes_dir)
@@ -178,6 +252,9 @@ async def api_save_recipe(request):
     except Exception:
         return web.json_response({"status": "error", "message": "Invalid request"}, status=400)
 
+    recipe["created_timestamp"] = recipe["timestamp"]
+    recipe["updated_timestamp"] = recipe["timestamp"]
+    recipe["schema_version"] = 2
     filename = f"recipe_{int(time.time())}_{uuid.uuid4().hex[:8]}.json"
     try:
         recipes_dir = get_recipes_dir()
@@ -201,7 +278,7 @@ async def api_delete_recipe(request):
         return web.json_response({"status": "error", "message": "Invalid request"}, status=400)
 
     try:
-        await asyncio.to_thread(os.remove, path)
+        await asyncio.to_thread(_delete_recipe_with_history, recipes_dir, filename)
     except FileNotFoundError:
         return web.json_response({"status": "error", "message": "File not found"}, status=404)
     except OSError:
@@ -226,3 +303,84 @@ async def api_get_recipe_full(request):
     except OSError:
         return web.json_response({"status": "error", "message": "Could not read recipe"}, status=500)
     return web.json_response({"status": "success", "data": data})
+
+
+async def api_update_recipe(request):
+    """Replace one recipe while preserving its prior state in local history."""
+    try:
+        payload = await request.json()
+        filename = require_filename(payload.get("filename", ""))
+        if not filename.endswith(".json"):
+            raise ValueError("Invalid filename")
+        recipes_dir = get_recipes_dir()
+        path = resolve_within(recipes_dir, filename)
+        existing = await asyncio.to_thread(_read_recipe, path)
+        if not isinstance(existing, dict) or not isinstance(existing.get("workflow"), dict):
+            raise ValueError("Invalid recipe")
+        recipe = _updated_recipe(payload, existing)
+    except (AttributeError, ValueError, json.JSONDecodeError):
+        return web.json_response({"status": "error", "message": "Invalid recipe"}, status=400)
+    except FileNotFoundError:
+        return web.json_response({"status": "error", "message": "File not found"}, status=404)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not read recipe"}, status=500)
+    except Exception:
+        return web.json_response({"status": "error", "message": "Invalid request"}, status=400)
+
+    try:
+        await asyncio.to_thread(_archive_recipe, recipes_dir, filename, existing)
+        await asyncio.to_thread(_write_recipe, recipes_dir, filename, recipe)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not update recipe"}, status=500)
+    return web.json_response({"status": "success", "filename": filename})
+
+
+async def api_get_recipe_history(request):
+    try:
+        filename = require_filename(request.query.get("filename", ""))
+        if not filename.endswith(".json"):
+            raise ValueError("Invalid filename")
+        recipes_dir = get_recipes_dir()
+        # Verify the root recipe exists before exposing its history directory.
+        await asyncio.to_thread(_read_recipe, resolve_within(recipes_dir, filename))
+        versions = await asyncio.to_thread(_list_recipe_history, recipes_dir, filename)
+    except (ValueError, json.JSONDecodeError):
+        return web.json_response({"status": "error", "message": "Invalid recipe"}, status=400)
+    except FileNotFoundError:
+        return web.json_response({"status": "error", "message": "File not found"}, status=404)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not read recipe history"}, status=500)
+    return web.json_response({"status": "success", "versions": versions})
+
+
+async def api_restore_recipe_version(request):
+    try:
+        payload = await request.json()
+        filename = require_filename(payload.get("filename", ""))
+        version = require_filename(payload.get("version", ""))
+        if not filename.endswith(".json") or not version.endswith(".json"):
+            raise ValueError("Invalid filename")
+        recipes_dir = get_recipes_dir()
+        existing = await asyncio.to_thread(_read_recipe, resolve_within(recipes_dir, filename))
+        historical = await asyncio.to_thread(
+            _read_recipe,
+            resolve_within(_history_dir(recipes_dir, filename), version),
+        )
+        if not isinstance(existing, dict) or not isinstance(historical, dict):
+            raise ValueError("Invalid recipe")
+        recipe = _updated_recipe(historical, existing)
+    except (AttributeError, ValueError, json.JSONDecodeError):
+        return web.json_response({"status": "error", "message": "Invalid recipe"}, status=400)
+    except FileNotFoundError:
+        return web.json_response({"status": "error", "message": "File not found"}, status=404)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not restore recipe history"}, status=500)
+    except Exception:
+        return web.json_response({"status": "error", "message": "Invalid request"}, status=400)
+
+    try:
+        await asyncio.to_thread(_archive_recipe, recipes_dir, filename, existing)
+        await asyncio.to_thread(_write_recipe, recipes_dir, filename, recipe)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not restore recipe history"}, status=500)
+    return web.json_response({"status": "success", "filename": filename})

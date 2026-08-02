@@ -1182,6 +1182,28 @@
     padding: 3px 0;
 }
 
+.anomalous-recipe-edit-param {
+    display: grid;
+    grid-template-columns: minmax(110px, 34%) minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.anomalous-recipe-edit-param .anomalous-nb-select,
+.anomalous-recipe-edit-param .anomalous-nb-textarea {
+    width: 100%;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.anomalous-recipe-edit-param input[type="checkbox"] {
+    width: auto;
+    min-height: 22px;
+    justify-self: start;
+}
+
 .anomalous-recipe-widget-name {
     flex: 0 0 34%;
     overflow: hidden;
@@ -1256,6 +1278,10 @@
     background: #272727;
     color: #eee;
     box-shadow: 0 18px 48px rgba(0, 0, 0, 0.6);
+}
+
+.anomalous-recipe-edit-dialog {
+    width: min(760px, 100%);
 }
 
 .anomalous-recipe-dialog h3,
@@ -1360,6 +1386,38 @@
     border: 1px solid rgba(0, 255, 204, 0.3);
     border-radius: 7px;
     background: rgba(0, 255, 204, 0.05);
+}
+
+.anomalous-recipe-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding-top: 8px;
+}
+
+.anomalous-recipe-history-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px;
+    border: 1px solid #3f3f3f;
+    border-radius: 7px;
+    color: #c9c9c9;
+    font-size: 0.82rem;
+}
+
+.anomalous-recipe-history-row > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+    .anomalous-recipe-edit-param {
+        grid-template-columns: 1fr;
+    }
 }
 
 .anomalous-recipe-dialog-error {

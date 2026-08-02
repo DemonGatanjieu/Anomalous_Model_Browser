@@ -78,7 +78,7 @@ function extractGenericNodeSummary(node) {
         if (SENSITIVE_WIDGET_NAME.test(name) || normaliseName(widget?.type) === 'button') continue;
         const value = summariseWidgetValue(widget?.value);
         if (value === null || value === '') continue;
-        widgets.push({ name, value });
+        widgets.push({ name, value, index });
         if (widgets.length >= MAX_WIDGETS_PER_NODE) break;
     }
 
@@ -116,6 +116,99 @@ export function extractRecipeParameterChoices(graph) {
         }
     }
     return choices;
+}
+
+/**
+ * Return editable/pinnable choices from an already saved recipe summary.
+ * New summaries retain their original widget index; older recipes gracefully
+ * fall back to the visible widget order.
+ */
+export function extractRecipeParameterChoicesFromMetadata(params) {
+    const choices = [];
+    for (const node of params?.nodes || []) {
+        for (const [visibleIndex, widget] of (node?.widgets || []).entries()) {
+            const widgetName = textValue(widget?.name) || `widget_${visibleIndex + 1}`;
+            if (SENSITIVE_WIDGET_NAME.test(widgetName)) continue;
+            const value = clonePinnableValue(widget?.value);
+            if (value === null || value === '') continue;
+            const widgetIndex = Number.isInteger(widget?.index) ? widget.index : null;
+            choices.push({
+                key: `${node?.id ?? 'unknown'}:${widgetIndex ?? visibleIndex}:${widgetName}`,
+                nodeId: node?.id ?? null,
+                nodeType: node?.type || 'Unknown',
+                nodeTitle: node?.title || null,
+                widgetName,
+                widgetIndex,
+                value,
+            });
+            if (choices.length >= MAX_PARAMETER_CHOICES) return choices;
+        }
+    }
+    return choices;
+}
+
+function valuesMatch(left, right) {
+    if (left === right) return true;
+    try { return JSON.stringify(left) === JSON.stringify(right); } catch (error) { return false; }
+}
+
+function findSummaryWidget(params, change) {
+    const node = (params?.nodes || []).find((item) => item?.id === change.nodeId);
+    if (!node) return null;
+    const widget = (node.widgets || []).find((item) => Number.isInteger(change.widgetIndex) && item.index === change.widgetIndex)
+        || (node.widgets || []).find((item) => item.name === change.widgetName && valuesMatch(item.value, change.previousValue));
+    return widget ? { node, widget } : null;
+}
+
+function syncCommonRecipeMetadata(params, change) {
+    const type = normaliseName(change.nodeType);
+    const widget = normaliseName(change.widgetName);
+    const value = change.value;
+    if (/^(checkpointloader(simple)?|unetloader)$/.test(type) && /^(ckpt_name|checkpoint|unet_name|unet|model_name)$/.test(widget)) {
+        params.baseModel = textValue(value) || null;
+        if (params.baseModel) params.baseModels = [params.baseModel, ...(params.baseModels || []).filter((item) => item !== params.baseModel)];
+    }
+    if (/lora.*loader|loader.*lora/.test(type)) {
+        const loraIndex = (params.nodes || []).filter((item) => /lora.*loader|loader.*lora/i.test(item?.type || '')).findIndex((item) => item.id === change.nodeId);
+        const lora = params.loras?.[loraIndex];
+        if (lora) {
+            if (/^(lora_name|lora|model_name)$/.test(widget)) lora.name = textValue(value);
+            if (/^(strength_model|model_strength)$/.test(widget)) lora.strength_model = numberValue(value);
+            if (/^(strength_clip|clip_strength)$/.test(widget)) lora.strength_clip = numberValue(value);
+        }
+    }
+    if (/^ksampler(advanced)?$|samplercustom/.test(type)) {
+        const field = { seed: 'seed', noise_seed: 'seed', steps: 'steps', cfg: 'cfg', cfg_scale: 'cfg', sampler_name: 'sampler_name', sampler: 'sampler_name', scheduler: 'scheduler', denoise: 'denoise' }[widget];
+        if (field) params[field] = ['steps', 'cfg', 'denoise'].includes(field) ? numberValue(value) : value;
+    }
+    if (/cliptextencode/.test(type) && /^(text|prompt)$/.test(widget)) {
+        const prompts = Array.isArray(params.promptPositive) ? params.promptPositive : [];
+        const position = prompts.findIndex((item) => item === change.previousValue);
+        if (position >= 0) prompts[position] = textValue(value);
+    }
+}
+
+/**
+ * Apply direct safe-widget edits to a serialized recipe without instantiating
+ * its graph. Unknown nodes stay opaque; only known widget slots are touched.
+ */
+export function applyRecipeWidgetChanges(params, workflow, changes) {
+    for (const change of changes || []) {
+        const found = findSummaryWidget(params, change);
+        if (!found) continue;
+        const { widget } = found;
+        const workflowNode = (workflow?.nodes || []).find((node) => node?.id === change.nodeId);
+        let widgetIndex = Number.isInteger(change.widgetIndex) ? change.widgetIndex : widget.index;
+        if (!Number.isInteger(widgetIndex) && Array.isArray(workflowNode?.widgets_values)) {
+            widgetIndex = workflowNode.widgets_values.findIndex((value) => valuesMatch(value, change.previousValue));
+        }
+        if (!Number.isInteger(widgetIndex) || widgetIndex < 0 || !Array.isArray(workflowNode?.widgets_values)) continue;
+        widget.value = change.value;
+        widget.index = widgetIndex;
+        workflowNode.widgets_values[widgetIndex] = change.value;
+        syncCommonRecipeMetadata(params, change);
+    }
+    return { params, workflow };
 }
 
 function buildNodeIndex(graph) {
