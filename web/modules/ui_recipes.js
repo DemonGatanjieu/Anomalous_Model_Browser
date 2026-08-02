@@ -64,6 +64,44 @@ function compactText(value, limit = 110) {
     return text.length > limit ? `${text.slice(0, limit - 1)}…` : text;
 }
 
+function normaliseSearchText(value) {
+    const text = String(value || '').trim().toLocaleLowerCase();
+    try { return text.normalize('NFKC'); } catch (error) { return text; }
+}
+
+function recipeMatchesFilter(data, query, selectedTags) {
+    const terms = normaliseSearchText(query).split(/\s+/).filter(Boolean);
+    const haystack = normaliseSearchText([
+        data?.name || '',
+        data?.notes || '',
+        ...(Array.isArray(data?.tags) ? data.tags : []),
+    ].join(' '));
+    if (terms.some((term) => !haystack.includes(term))) return false;
+    const tags = new Set((Array.isArray(data?.tags) ? data.tags : []).map(normaliseSearchText));
+    for (const tag of selectedTags || []) if (!tags.has(normaliseSearchText(tag))) return false;
+    return true;
+}
+
+function updateRecipeFilterControls(owner, recipes) {
+    if (!owner.recipeTagBar) return;
+    owner.recipeTagBar.replaceChildren();
+    const tags = [...new Set((recipes || []).flatMap((item) => item?.data?.tags || []))]
+        .filter(Boolean)
+        .sort((left, right) => String(left).localeCompare(String(right)));
+    for (const tag of tags) {
+        const chip = appendText(owner.recipeTagBar, 'button', tag, 'anomalous-recipe-filter-tag');
+        chip.type = 'button';
+        chip.classList.toggle('active', owner.recipeSelectedTags?.has(tag));
+        chip.onclick = () => {
+            if (!owner.recipeSelectedTags) owner.recipeSelectedTags = new Set();
+            if (owner.recipeSelectedTags.has(tag)) owner.recipeSelectedTags.delete(tag);
+            else owner.recipeSelectedTags.add(tag);
+            owner.renderRecipeList(owner.recipeRecords || []);
+        };
+    }
+    if (!tags.length) appendText(owner.recipeTagBar, 'small', t('recipeNoTags'), 'anomalous-recipe-detail-muted');
+}
+
 function summaryValue(value, fallback = '—') {
     return value === null || value === undefined || value === '' ? fallback : String(value);
 }
@@ -221,7 +259,7 @@ async function editRecipe(owner, recipe, filename, history = null) {
             app.loadGraphData(editable.workflow);
             app.canvas?.setDirty?.(true, true);
             owner.recipeEditing = { filename, data: editable };
-            const saveButton = owner.recipeView?.querySelector('.anomalous-recipe-actionbar button');
+            const saveButton = owner.recipeView?.querySelector('[data-recipe-save-current]');
             if (saveButton) saveButton.textContent = t('recipeUpdateCurrent');
             return;
         }
@@ -703,12 +741,43 @@ export async function showRecipes() {
         return;
     }
     this.recipesInitialized = true;
+    this.recipeSelectedTags = this.recipeSelectedTags || new Set();
+    this.recipeSearchQuery = this.recipeSearchQuery || '';
 
     this.recipeView = document.createElement('div');
     this.recipeView.className = 'anomalous-recipe-body';
     const actionBar = document.createElement('div');
     actionBar.className = 'anomalous-recipe-actionbar';
+    const search = document.createElement('input');
+    search.type = 'search';
+    search.className = 'anomalous-recipe-search';
+    search.placeholder = t('recipeSearchPlaceholder');
+    search.value = this.recipeSearchQuery || '';
+    search.oninput = () => {
+        this.recipeSearchQuery = search.value;
+        this.renderRecipeList(this.recipeRecords || []);
+    };
+    this.recipeSearchInput = search;
+    actionBar.appendChild(search);
+
+    const clearFilters = appendText(actionBar, 'button', t('recipeClearFilters'), 'anomalous-btn-danger');
+    clearFilters.type = 'button';
+    clearFilters.onclick = () => {
+        this.recipeSearchQuery = '';
+        this.recipeSelectedTags = new Set();
+        search.value = '';
+        updateRecipeFilterControls(this, this.recipeRecords || []);
+        this.renderRecipeList(this.recipeRecords || []);
+    };
+
+    this.recipeTagBar = document.createElement('div');
+    this.recipeTagBar.className = 'anomalous-recipe-filter-tags';
+    actionBar.appendChild(this.recipeTagBar);
+
+    this.recipeFilterSummary = appendText(actionBar, 'small', '0/0', 'anomalous-recipe-filter-summary');
+
     const save = appendText(actionBar, 'button', t('recipeSaveCurrent'), 'anomalous-btn-primary');
+    save.dataset.recipeSaveCurrent = 'true';
     save.type = 'button';
     save.onclick = () => this.handleSaveRecipe();
     this.recipeView.appendChild(actionBar);
@@ -726,7 +795,9 @@ export async function refreshRecipes() {
         const response = await fetch('/anomalous/recipes');
         if (!response.ok) throw new Error('recipe list request failed');
         const payload = await response.json();
-        this.renderRecipeList(payload.recipes || []);
+         this.recipeRecords = payload.recipes || [];
+         updateRecipeFilterControls(this, this.recipeRecords);
+         this.renderRecipeList(this.recipeRecords);
     } catch (error) {
         console.error('Could not load Workflow Recipes:', error);
         this.recipeListContainer.replaceChildren();
@@ -736,12 +807,23 @@ export async function refreshRecipes() {
 
 export function renderRecipeList(recipes) {
     this.recipeListContainer.replaceChildren();
-    if (!recipes.length) {
+    const records = Array.isArray(recipes) ? recipes : [];
+    const selectedTags = this.recipeSelectedTags || new Set();
+    const filtered = records.filter((recipe) => recipeMatchesFilter(
+        recipe?.data || {},
+        this.recipeSearchQuery || '',
+        selectedTags,
+    ));
+    if (this.recipeFilterSummary) this.recipeFilterSummary.textContent = `${filtered.length}/${records.length}`;
+    if (!records.length) {
         appendText(this.recipeListContainer, 'p', t('recipeEmpty'), 'anomalous-recipe-empty');
         return;
     }
-
-    for (const recipe of recipes) {
+    if (!filtered.length) {
+        appendText(this.recipeListContainer, 'p', t('recipeNoMatches'), 'anomalous-recipe-empty');
+        return;
+    }
+    for (const recipe of filtered) {
         const data = recipe?.data || {};
         const card = document.createElement('article');
         card.className = 'anomalous-recipe-card';
@@ -760,7 +842,18 @@ export function renderRecipeList(recipes) {
         if (Array.isArray(data.tags) && data.tags.length) {
             const tags = document.createElement('div');
             tags.className = 'anomalous-recipe-tags';
-            for (const tag of data.tags.slice(0, 8)) tags.appendChild(createBadge(compactText(tag, 32), 'tag'));
+            for (const tag of data.tags.slice(0, 8)) {
+                const tagButton = appendText(tags, 'button', compactText(tag, 32), 'anomalous-recipe-badge anomalous-recipe-badge-tag');
+                tagButton.type = 'button';
+                tagButton.title = t('recipeFilterByTag');
+                tagButton.onclick = (event) => {
+                    event.stopPropagation();
+                    if (!this.recipeSelectedTags) this.recipeSelectedTags = new Set();
+                    this.recipeSelectedTags.add(tag);
+                    this.renderRecipeList(this.recipeRecords || []);
+                    updateRecipeFilterControls(this, this.recipeRecords || []);
+                };
+            }
             card.appendChild(tags);
         }
         if (data.notes) appendText(card, 'p', compactText(data.notes, 180), 'anomalous-recipe-notes');
@@ -786,7 +879,7 @@ export function renderRecipeList(recipes) {
         const edit = appendText(actions, 'button', t('recipeEdit'), 'anomalous-btn-success');
         edit.type = 'button';
         edit.onclick = () => editRecipe(this, recipe?.data || {}, recipe.filename);
-        const restore = appendText(actions, 'button', t('recipeRestore'), 'anomalous-btn-primary');
+        const restore = appendText(actions, 'button', t('recipeOpenCanvas'), 'anomalous-btn-primary');
         restore.type = 'button';
         restore.onclick = async () => {
             try {
@@ -801,7 +894,7 @@ export function renderRecipeList(recipes) {
                 const missingWarning = missingTypes.length
                     ? `\n\n${t('recipeMissingNodes')}:\n${missingTypes.slice(0, 12).join('\n')}`
                     : '';
-                if (!confirm(`${t('recipeRestoreConfirm')}${missingWarning}`)) return;
+                if (!confirm(`${t('recipeOpenCanvasConfirm')}${missingWarning}`)) return;
                 app.loadGraphData(payload.data.workflow);
                 app.canvas?.setDirty?.(true, true);
             } catch (error) {
@@ -843,7 +936,7 @@ export async function handleSaveRecipe() {
     const details = await showRecipeSaveDialog(this, canvasThumbnail, parameterChoices, editing?.data || null);
     if (!details) return;
 
-    const saveButton = this.recipeView?.querySelector('.anomalous-recipe-actionbar button');
+    const saveButton = this.recipeView?.querySelector('[data-recipe-save-current]');
     if (saveButton) {
         saveButton.disabled = true;
         saveButton.textContent = t('recipeSaving');

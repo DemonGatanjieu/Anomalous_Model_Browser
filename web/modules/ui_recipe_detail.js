@@ -7,6 +7,8 @@ import {
     recipeReferenceKey,
     shortHash,
 } from './recipe_identity.js';
+import { buildRecipeDiff, diffIsEmpty, formatDiffValue } from './recipe_diff.js';
+import { appendRecipeToCanvas, quickQueueRecipe } from './recipe_actions.js';
 
 const t = (key) => {
     let lang = window.anomalous_browser_lang || 'zh';
@@ -26,6 +28,37 @@ function button(parent, label, className = '') {
     const element = appendText(parent, 'button', label, className);
     element.type = 'button';
     return element;
+}
+
+function valueEqual(left, right) {
+    if (left === right) return true;
+    try { return JSON.stringify(left) === JSON.stringify(right); } catch (error) { return false; }
+}
+
+function canvasMayContainUserWork() {
+    if (!app.graph?._nodes?.length) return false;
+    if (app.canvas?.dirty_canvas === false || app.graph?.dirty === false) return false;
+    return true;
+}
+
+function openRecipeOnCanvas(recipe) {
+    if (canvasMayContainUserWork() && !confirm(t('recipeOpenCanvasConfirm'))) return false;
+    app.loadGraphData(recipe.workflow);
+    app.canvas?.setDirty?.(true, true);
+    return true;
+}
+
+function appendRecipeOnCanvas(recipe) {
+    try {
+        appendRecipeToCanvas(recipe);
+        return true;
+    } catch (error) {
+        console.error('Could not append Workflow Recipe:', error);
+        alert(error.code === 'recipe_append_missing_node'
+            ? `${t('recipeAppendError')}\n${error.message}`
+            : t('recipeAppendError'));
+        return false;
+    }
 }
 
 function displayValue(value) {
@@ -159,7 +192,81 @@ function renderStat(parent, label, value, kind = '') {
     parent.appendChild(stat);
 }
 
-function renderOverview(content, recipe, references, finish) {
+function renderQuickQueue(parent, owner, recipe) {
+    const section = document.createElement('section');
+    section.className = 'anomalous-recipe-detail-section anomalous-recipe-quick-queue';
+    appendText(section, 'h4', t('recipeQuickQueueTitle'));
+    appendText(section, 'p', t('recipeQuickQueueHint'), 'anomalous-recipe-detail-muted');
+    if (!owner.recipeQuickQueueEnabled) owner.recipeQuickQueueEnabled = new Set();
+    const enabled = owner.recipeQuickQueueEnabled.has(owner.recipeDetailFilename);
+    const enableLabel = document.createElement('label');
+    enableLabel.className = 'anomalous-recipe-quick-queue-enable';
+    const enable = document.createElement('input');
+    enable.type = 'checkbox';
+    enable.checked = enabled;
+    appendText(enableLabel, 'span', t('recipeQuickQueueEnable'));
+    enableLabel.prepend(enable);
+    section.appendChild(enableLabel);
+
+    const form = document.createElement('div');
+    form.className = 'anomalous-recipe-quick-queue-form';
+    const controls = [];
+    for (const pin of recipe.params?.pinned || []) {
+        if (!['string', 'number', 'boolean'].includes(typeof pin?.value)) continue;
+        const row = document.createElement('label');
+        row.className = 'anomalous-recipe-quick-queue-field';
+        appendText(row, 'span', `${pin.nodeTitle || pin.nodeType || t('recipeUnknownNode')} · ${pin.widgetName}`);
+        const input = document.createElement('input');
+        input.type = typeof pin.value === 'number' ? 'number' : typeof pin.value === 'boolean' ? 'checkbox' : 'text';
+        if (input.type === 'checkbox') input.checked = pin.value;
+        else input.value = String(pin.value);
+        if (typeof pin.value === 'number') input.step = 'any';
+        controls.push({ pin, input });
+        row.appendChild(input);
+        form.appendChild(row);
+    }
+    const status = appendText(form, 'small', '', 'anomalous-recipe-detail-muted');
+    const queue = button(form, t('recipeQuickQueue'), 'anomalous-btn-primary');
+    queue.disabled = !enabled;
+    queue.onclick = async () => {
+        queue.disabled = true;
+        status.textContent = t('recipeQuickQueueRunning');
+        const changes = [];
+        for (const { pin, input } of controls) {
+            let value;
+            if (input.type === 'checkbox') value = input.checked;
+            else if (input.type === 'number') value = Number(input.value);
+            else value = input.value;
+            if (!Number.isFinite(value) && input.type === 'number') {
+                status.textContent = t('recipeQuickQueueInvalid');
+                queue.disabled = false;
+                return;
+            }
+            if (!valueEqual(value, pin.value)) changes.push({ ...pin, previousValue: pin.value, value });
+        }
+        try {
+            const result = await quickQueueRecipe(recipe, changes);
+            status.textContent = result?.prompt_id
+                ? `${t('recipeQuickQueueSuccess')}: ${result.prompt_id}`
+                : t('recipeQuickQueueSuccess');
+        } catch (error) {
+            console.error('Could not Quick Queue Workflow Recipe:', error);
+            status.textContent = t('recipeQuickQueueError');
+        } finally {
+            queue.disabled = false;
+        }
+    };
+    enable.onchange = () => {
+        if (enable.checked) owner.recipeQuickQueueEnabled.add(owner.recipeDetailFilename);
+        else owner.recipeQuickQueueEnabled.delete(owner.recipeDetailFilename);
+        queue.disabled = !enable.checked;
+        status.textContent = '';
+    };
+    section.appendChild(form);
+    parent.appendChild(section);
+}
+
+function renderOverview(content, owner, recipe, references, finish) {
     const overview = document.createElement('div');
     overview.className = 'anomalous-recipe-detail-overview';
     const hero = document.createElement('div');
@@ -222,17 +329,17 @@ function renderOverview(content, recipe, references, finish) {
     actions.className = 'anomalous-recipe-actions anomalous-recipe-detail-actions';
     const edit = button(actions, t('recipeEdit'), 'anomalous-btn-success');
     edit.onclick = () => finish('edit');
-    const load = button(actions, t('recipeRestore'), 'anomalous-btn-primary');
-    load.onclick = () => {
-        app.loadGraphData(recipe.workflow);
-        app.canvas?.setDirty?.(true, true);
-    };
+    const load = button(actions, t('recipeOpenCanvas'), 'anomalous-btn-primary');
+    load.onclick = () => openRecipeOnCanvas(recipe);
+    const append = button(actions, t('recipeAppendCanvas'), 'anomalous-btn-primary');
+    append.onclick = () => appendRecipeOnCanvas(recipe);
     const copyPrompt = button(actions, t('recipeDetailCopyPrompt'), 'anomalous-btn-primary');
     copyPrompt.onclick = () => copyText(positive);
     const copyFingerprint = button(actions, t('recipeDetailCopyFingerprint'), 'anomalous-btn-primary');
     copyFingerprint.disabled = !fingerprintText(recipe);
     copyFingerprint.onclick = () => copyText(fingerprintText(recipe));
     overview.appendChild(actions);
+    renderQuickQueue(overview, owner, recipe);
     content.appendChild(overview);
 }
 
@@ -368,6 +475,71 @@ function renderParameters(content, recipe) {
     content.appendChild(section);
 }
 
+function diffCategoryLabel(category) {
+    return t({
+        pinned: 'recipeDiffPinned',
+        prompts: 'recipeDiffPrompts',
+        models: 'recipeDiffModels',
+        parameters: 'recipeDiffParameters',
+        workflow: 'recipeDiffWorkflow',
+        presentation: 'recipeDiffPresentation',
+    }[category] || 'recipeDiffOther');
+}
+
+function renderDiffPanel(parent, owner, recipe, version, trigger) {
+    const panel = document.createElement('div');
+    panel.className = 'anomalous-recipe-version-diff';
+    appendText(panel, 'strong', t('recipeDiffLoading'));
+    parent.appendChild(panel);
+    trigger.disabled = true;
+    fetch(`/anomalous/recipe_version?filename=${encodeURIComponent(owner.recipeDetailFilename)}&version=${encodeURIComponent(version.version)}`)
+        .then(async (response) => {
+            const payload = await response.json();
+            if (!response.ok || payload.status !== 'success' || !payload.data?.workflow) throw new Error('version diff request failed');
+            return payload.data;
+        })
+        .then((historical) => {
+            panel.replaceChildren();
+            const changes = buildRecipeDiff(historical, recipe);
+            if (diffIsEmpty(changes)) {
+                appendText(panel, 'p', t('recipeDiffNoChanges'), 'anomalous-recipe-detail-muted');
+                return;
+            }
+            appendText(panel, 'strong', `${t('recipeDiffSummary')} (${changes.length})`);
+            const groups = new Map();
+            for (const change of changes) {
+                if (!groups.has(change.category)) groups.set(change.category, []);
+                groups.get(change.category).push(change);
+            }
+            for (const [category, categoryChanges] of groups) {
+                const group = document.createElement('section');
+                group.className = 'anomalous-recipe-diff-group';
+                appendText(group, 'h5', diffCategoryLabel(category));
+                for (const change of categoryChanges) {
+                    const row = document.createElement('div');
+                    row.className = `anomalous-recipe-diff-row anomalous-recipe-diff-${change.kind}`;
+                    const marker = change.kind === 'added' ? '+' : change.kind === 'removed' ? '−' : '→';
+                    appendText(row, 'span', marker, 'anomalous-recipe-diff-marker');
+                    appendText(row, 'strong', change.label || change.key, 'anomalous-recipe-diff-label');
+                    if (change.kind !== 'added') appendText(row, 'code', formatDiffValue(change.before), 'anomalous-recipe-diff-before');
+                    if (change.kind === 'changed') appendText(row, 'span', '→', 'anomalous-recipe-diff-arrow');
+                    if (change.kind !== 'removed') appendText(row, 'code', formatDiffValue(change.after), 'anomalous-recipe-diff-after');
+                    group.appendChild(row);
+                }
+                panel.appendChild(group);
+            }
+        })
+        .catch((error) => {
+            console.error('Could not compare Workflow Recipe version:', error);
+            panel.replaceChildren();
+            appendText(panel, 'p', t('recipeDiffError'), 'anomalous-recipe-dialog-error');
+        })
+        .finally(() => {
+            trigger.disabled = false;
+            trigger.textContent = t('recipeCompareVersion');
+        });
+}
+
 function renderVersions(content, owner, recipe, history, finish) {
     const section = document.createElement('section');
     section.className = 'anomalous-recipe-detail-section';
@@ -388,6 +560,17 @@ function renderVersions(content, owner, recipe, history, finish) {
         appendText(copy, 'span', dateText(version.timestamp));
         row.appendChild(copy);
         appendText(row, 'code', shortHash(version.workflow_fingerprint?.value) || t('recipeDetailNotIndexed'));
+        const compare = button(row, t('recipeCompareVersion'), 'anomalous-btn-primary');
+        compare.onclick = () => {
+            const existing = row.querySelector('.anomalous-recipe-version-diff');
+            if (existing) {
+                existing.remove();
+                compare.textContent = t('recipeCompareVersion');
+                return;
+            }
+            compare.textContent = t('recipeDiffLoading');
+            renderDiffPanel(row, owner, recipe, version, compare);
+        };
         const restore = button(row, t('recipeRestoreVersion'), 'anomalous-btn-danger');
         restore.onclick = async () => {
             if (!confirm(t('recipeRestoreVersionConfirm'))) return;
@@ -441,8 +624,10 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     const headerActions = document.createElement('div');
     const edit = button(headerActions, t('recipeEdit'), 'anomalous-btn-success');
     edit.onclick = () => finish('edit');
-    const load = button(headerActions, t('recipeRestore'), 'anomalous-btn-primary');
-    load.onclick = () => { app.loadGraphData(recipe.workflow); app.canvas?.setDirty?.(true, true); };
+    const load = button(headerActions, t('recipeOpenCanvas'), 'anomalous-btn-primary');
+    load.onclick = () => openRecipeOnCanvas(recipe);
+    const append = button(headerActions, t('recipeAppendCanvas'), 'anomalous-btn-primary');
+    append.onclick = () => appendRecipeOnCanvas(recipe);
     header.appendChild(headerActions);
     view.appendChild(header);
 
@@ -451,7 +636,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     const content = document.createElement('div');
     content.className = 'anomalous-recipe-detail-content';
     const tabDefinitions = [
-        ['overview', t('recipeDetailOverview'), () => renderOverview(content, recipe, references, finish)],
+        ['overview', t('recipeDetailOverview'), () => renderOverview(content, owner, recipe, references, finish)],
         ['models', t('recipeDetailModels'), () => renderModels(content, owner, recipe, references)],
         ['parameters', t('recipeDetailParameters'), () => renderParameters(content, recipe)],
         ['versions', t('recipeDetailVersions'), () => renderVersions(content, owner, recipe, history, finish)],

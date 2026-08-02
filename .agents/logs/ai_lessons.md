@@ -291,3 +291,9 @@ This document serves as an architectural retrospective and UX diagnostic log for
 
 **The Solution (方案)**: Give users one understandable Model Settings panel. The balanced image mode serves a cached 512px WebP only to grid cards, while original mode remains available and detail views always retain the source cover. Limit thumbnail generation concurrency, store derivatives only in a bounded temporary cache, activate autoplay only near the viewport, release media immediately on close, and release warm card state after a short idle period. Never resize or rewrite the user's cover in place.
 (把选择集中在一个普通用户能理解的“模型设置”面板：流畅模式只给卡片提供缓存的 512px WebP，仍允许用户选择原始封面，且详情页始终保留原图。缩略图生成限制并发，派生文件只进入有上限的临时缓存；自动播放只在视野附近激活，关闭时立即释放媒体，短暂保留卡片热状态后再自动回收。任何时候都不能原地压缩或改写用户封面。)
+
+## 48. Semantic Diff Must Not Become a Graph Diff (语义 Diff 不能偷偷膨胀成整图 Diff)
+**The Problem (问题)**: Recipe history contains complete serialized graphs, but showing a raw JSON or visual node/link diff would expose noisy internal details, overwhelm the detail panel, and risk surfacing sensitive widget values that the normal parameter view intentionally keeps opaque.
+(配方历史保存的是完整序列化图，但直接展示 JSON 或可视化节点/连线差异会制造大量噪声、压垮详情面板，还可能暴露参数页刻意隐藏的敏感控件。)
+**The Solution (方案)**: Compare bounded semantic summaries only: prompts, pinned primitives, known model references, safe sampler/resolution fields, graph counts/fingerprint, and presentation metadata. Keep comparison pure and read-only; history restoration remains a separate destructive action with its own confirmation.
+(只比较有上限的语义摘要：提示词、钉选原始值、已知模型引用、安全的采样/分辨率字段、图数量/指纹和展示信息。比较器必须是纯只读逻辑，历史恢复仍是独立的破坏性动作并单独确认。)

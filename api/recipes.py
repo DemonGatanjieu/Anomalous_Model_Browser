@@ -628,6 +628,30 @@ async def api_get_recipe_history(request):
     return web.json_response({"status": "success", "versions": versions})
 
 
+async def api_get_recipe_version(request):
+    """Return one bounded historical recipe for semantic comparison only."""
+    try:
+        filename = require_filename(request.query.get("filename", ""))
+        version = require_filename(request.query.get("version", ""))
+        if not filename.endswith(".json") or not version.endswith(".json"):
+            raise ValueError("Invalid recipe version")
+        recipes_dir = get_recipes_dir()
+        await asyncio.to_thread(_read_recipe, resolve_within(recipes_dir, filename))
+        data = await asyncio.to_thread(
+            _read_recipe,
+            resolve_within(_history_dir(recipes_dir, filename), version),
+        )
+        if not isinstance(data, dict) or not isinstance(data.get("workflow"), dict):
+            raise ValueError("Invalid recipe version")
+    except (ValueError, json.JSONDecodeError):
+        return web.json_response({"status": "error", "message": "Invalid recipe version"}, status=400)
+    except FileNotFoundError:
+        return web.json_response({"status": "error", "message": "Recipe version not found"}, status=404)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not read recipe version"}, status=500)
+    return web.json_response({"status": "success", "data": data})
+
+
 async def api_restore_recipe_version(request):
     try:
         payload = await request.json()

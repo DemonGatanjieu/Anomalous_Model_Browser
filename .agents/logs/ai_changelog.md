@@ -60,3 +60,20 @@
 - `node --check web/modules/ui_notebooks.js`
 - `node --check web/modules/ui_sidebar.js`
 - `node --check web/modules/locales.js`
+
+## [Snapshot] 2026-08-02 — Recipe discovery and semantic comparison
+
+**Implemented**
+
+- Added lightweight recipe search across name, notes, and tags with Unicode-normalized term matching and clickable tag filters.
+- Added localized empty/no-match states, active filter controls, result counts, and keyboard-capable tag buttons.
+- Added `GET /anomalous/recipe_version` with validated recipe/version filenames for one bounded historical read.
+- Added pure `recipe_diff.js` comparison for pinned parameters, prompts, model references, safe parameter summaries, graph counts/fingerprint, and presentation metadata.
+- Added lazy version comparison UI. History restore remains a separate action and still archives the current recipe first.
+
+**Validation**
+
+- `python_embeded/python.exe -m py_compile api/__init__.py api/models.py api/recipes.py`
+- `node --check` for every JavaScript file under `web/`
+- `recipe_diff.js` smoke comparison passed
+- `git diff --check`
