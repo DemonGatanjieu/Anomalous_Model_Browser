@@ -44,8 +44,8 @@ function closeRecipeWorkspace(owner) {
 function missingRecipeNodeTypes(recipe) {
     const registry = globalThis.LiteGraph?.registered_node_types;
     if (!registry) return [];
-    return [...new Set((recipe?.params?.nodes || [])
-        .map((node) => node?.type)
+    return [...new Set((recipe?.workflow?.nodes || [])
+        .map((node) => node?.type || node?.class_type)
         .filter((type) => type && !registry[type]))];
 }
 

@@ -1121,6 +1121,16 @@
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
+.anomalous-recipe-save-status {
+    color: #8bd5ca;
+    flex: 1 1 180px;
+    line-height: 1.35;
+}
+
+.anomalous-recipe-save-status.is-warning {
+    color: #ffcf70;
+}
+
 .anomalous-recipe-actions button:hover,
 .anomalous-recipe-detail-actions button:hover,
 .anomalous-recipe-inline-controls button:hover {

@@ -4,9 +4,8 @@ import { app } from '../../../scripts/app.js';
 import { i18n } from './locales.js';
 import {
     captureCanvasThumbnail,
+    captureRecipeDraft,
     applyRecipeWidgetChanges,
-    extractRecipeMetadata,
-    extractRecipeParameterChoices,
     extractRecipeParameterChoicesFromMetadata,
 } from './recipe_parser.js';
 import {
@@ -20,6 +19,10 @@ const t = (key) => {
     if (lang.startsWith('en')) lang = 'en';
     return i18n[lang]?.[key] || i18n.en?.[key] || key;
 };
+
+function formatRecipeText(key, values = {}) {
+    return Object.entries(values).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, String(value)), t(key));
+}
 
 function appendText(parent, tagName, text, className = '') {
     const element = document.createElement(tagName);
@@ -410,7 +413,7 @@ async function editRecipe(owner, recipe, filename, history = null) {
         }
 
         applyRecipeWidgetChanges(editable.params, editable.workflow, result.changes);
-        const updatedChoices = extractRecipeParameterChoicesFromMetadata(editable.params);
+        const updatedChoices = extractRecipeParameterChoicesFromMetadata(editable.params, editable.workflow);
         editable.name = result.name;
         editable.tags = result.tags;
         editable.notes = result.notes;
@@ -437,6 +440,10 @@ function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices, initial 
             pinnedKeys: new Set(),
             saveModelPreviewSnapshots: initial?.presentation?.save_model_preview_snapshots === true,
         };
+        const availablePinKeys = new Set(parameterChoices.map((choice) => choice.key));
+        const previousPinnedKeys = new Set((initial?.params?.pinned || []).map((pin) => pin?.key).filter(Boolean));
+        selection.pinnedKeys = new Set([...previousPinnedKeys].filter((key) => availablePinKeys.has(key)));
+        const unavailablePinCount = previousPinnedKeys.size - selection.pinnedKeys.size;
         const overlay = document.createElement('div');
         overlay.className = 'anomalous-recipe-dialog-overlay';
         overlay.setAttribute('role', 'dialog');
@@ -579,8 +586,16 @@ function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices, initial 
             const parameterDetails = document.createElement('details');
             parameterDetails.className = 'anomalous-recipe-pin-picker';
             const parameterSummary = document.createElement('summary');
-            parameterSummary.textContent = `${t('recipeChoosePinnedParams')} (0)`;
+            parameterSummary.textContent = `${t('recipeChoosePinnedParams')} (${selection.pinnedKeys.size})`;
             parameterDetails.appendChild(parameterSummary);
+            if (unavailablePinCount) {
+                appendText(
+                    parameterDetails,
+                    'small',
+                    formatRecipeText('recipePinnedParamsUnavailable', { count: unavailablePinCount }),
+                    'anomalous-recipe-node-hint',
+                );
+            }
             let parametersRendered = false;
             parameterDetails.ontoggle = () => {
                 if (!parameterDetails.open || parametersRendered) return;
@@ -599,6 +614,7 @@ function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices, initial 
                     label.className = 'anomalous-recipe-pin-choice';
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
+                    checkbox.checked = selection.pinnedKeys.has(choice.key);
                     checkbox.onchange = () => {
                         if (checkbox.checked) selection.pinnedKeys.add(choice.key);
                         else selection.pinnedKeys.delete(choice.key);
@@ -699,7 +715,7 @@ function editableValueControl(choice, changes) {
 function showRecipeEditDialog(owner, recipeData, filename, history) {
     return new Promise((resolve) => {
         const params = recipeData.params || {};
-        const choices = extractRecipeParameterChoicesFromMetadata(params);
+        const choices = extractRecipeParameterChoicesFromMetadata(params, recipeData.workflow);
         const selectedPins = new Set((params.pinned || []).map((pin) => pin.key));
         const changes = new Map();
         const overlay = document.createElement('div');
@@ -925,6 +941,7 @@ export async function showRecipes() {
     save.dataset.recipeSaveCurrent = 'true';
     save.type = 'button';
     save.onclick = () => this.handleSaveRecipe();
+    this.recipeSaveStatus = appendText(actionBar, 'small', '', 'anomalous-recipe-save-status');
     const importButton = appendText(actionBar, 'button', t('recipeImport'), 'anomalous-btn-primary');
     importButton.type = 'button';
     importButton.onclick = () => {
@@ -1098,11 +1115,14 @@ export async function handleSaveRecipe() {
         alert(t('recipeSaveError'));
         return;
     }
-    const metadata = extractRecipeMetadata(app.graph);
+    const draft = captureRecipeDraft(app.graph);
+    if (!draft.workflow || !Array.isArray(draft.workflow.nodes)) {
+        alert(t('recipeSaveError'));
+        return;
+    }
     const canvasThumbnail = captureCanvasThumbnail(app.canvas?.canvas);
-    const parameterChoices = extractRecipeParameterChoices(app.graph);
     const editing = this.recipeEditing || null;
-    const details = await showRecipeSaveDialog(this, canvasThumbnail, parameterChoices, editing?.data || null);
+    const details = await showRecipeSaveDialog(this, canvasThumbnail, draft.parameterChoices, editing?.data || null);
     if (!details) return;
 
     const saveButton = this.recipeView?.querySelector('[data-recipe-save-current]');
@@ -1111,7 +1131,7 @@ export async function handleSaveRecipe() {
         saveButton.textContent = t('recipeSaving');
     }
     try {
-        metadata.pinned = details.pinned;
+        draft.metadata.pinned = details.pinned;
         let thumbnail = details.thumbnail;
         if (details.sourceImage) {
             try {
@@ -1128,8 +1148,8 @@ export async function handleSaveRecipe() {
                 name: details.name,
                 tags: details.tags,
                 notes: details.notes,
-                params: metadata,
-                workflow: app.graph.serialize(),
+                params: draft.metadata,
+                workflow: draft.workflow,
                 thumbnail,
                 source_image: details.sourceImage,
                 presentation: { save_model_preview_snapshots: details.saveModelPreviewSnapshots },
@@ -1137,6 +1157,20 @@ export async function handleSaveRecipe() {
         });
         const payload = await response.json();
         if (!response.ok || payload.status !== 'success') throw new Error('recipe save request failed');
+        const receipt = payload.receipt || {};
+        const receiptMatchesDraft = receipt.node_count === draft.stats.nodeCount
+            && receipt.link_count === draft.stats.linkCount
+            && receipt.group_count === draft.stats.groupCount;
+        if (this.recipeSaveStatus) {
+            this.recipeSaveStatus.textContent = receiptMatchesDraft
+                ? formatRecipeText('recipeSaveReceipt', {
+                    nodes: receipt.node_count,
+                    links: receipt.link_count,
+                    groups: receipt.group_count,
+                })
+                : t('recipeSaveReceiptMismatch');
+            this.recipeSaveStatus.classList.toggle('is-warning', !receiptMatchesDraft);
+        }
         this.recipeEditing = null;
         await this.refreshRecipes();
     } catch (error) {

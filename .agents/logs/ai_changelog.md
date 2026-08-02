@@ -1,5 +1,23 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-03 — Harden Workflow Recipe save integrity
+
+**Implemented**
+
+- Captured the serialized canvas once before the recipe save dialog; the exact snapshot, rather than a later live-canvas serialization, is now sent to save/update.
+- Kept generic node summaries bounded for browsing, but resolve saved editable/pinnable values from the authoritative workflow by node ID and widget index. Long prompt edits therefore retain their complete value.
+- Preserved only valid existing pinned parameters during a canvas-based recipe update and display a localized count when prior pins no longer match the edited graph.
+- Added backend graph topology validation (node IDs, widget bounds, link endpoint existence, and bounded node/link/group counts) plus save/update/restore integrity receipts containing persisted counts and fingerprint.
+- Switched missing-node preflight to the saved workflow instead of bounded presentation metadata, and added a concise save receipt beside the Workspace action controls.
+
+**Validation**
+
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+- Validated the real schema-v4 fixture: 13 nodes, 17 links, 0 groups
+- `python_embeded/python.exe -m py_compile api/recipes.py`
+- `git diff --check`
+
 ## [Planning Audit] 2026-08-03 — Workflow Recipe integrity and UX hardening
 
 - Added `.agents/plans/workflow_recipe_audit_and_hardening_plan.md` after a read-only audit of recipe save/update, detail rendering, canvas actions, model identity, history, package transfer, Workspace lifecycle, and CSS interaction structure.

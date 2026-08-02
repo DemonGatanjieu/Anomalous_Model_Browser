@@ -123,17 +123,22 @@ export function extractRecipeParameterChoices(graph) {
  * New summaries retain their original widget index; older recipes gracefully
  * fall back to the visible widget order.
  */
-export function extractRecipeParameterChoicesFromMetadata(params) {
+export function extractRecipeParameterChoicesFromMetadata(params, workflow = null) {
     const choices = [];
+    const workflowNodes = new Map((workflow?.nodes || []).filter(Boolean).map((node) => [node.id, node]));
     for (const node of params?.nodes || []) {
         for (const [visibleIndex, widget] of (node?.widgets || []).entries()) {
             const widgetName = textValue(widget?.name) || `widget_${visibleIndex + 1}`;
             if (SENSITIVE_WIDGET_NAME.test(widgetName)) continue;
-            const value = clonePinnableValue(widget?.value);
+            const widgetIndex = Number.isInteger(widget?.index) ? widget.index : visibleIndex;
+            const workflowValues = workflowNodes.get(node?.id)?.widgets_values;
+            const fullValue = Array.isArray(workflowValues) && widgetIndex >= 0 && widgetIndex < workflowValues.length
+                ? workflowValues[widgetIndex]
+                : widget?.value;
+            const value = clonePinnableValue(fullValue);
             if (value === null || value === '') continue;
-            const widgetIndex = Number.isInteger(widget?.index) ? widget.index : null;
             choices.push({
-                key: `${node?.id ?? 'unknown'}:${widgetIndex ?? visibleIndex}:${widgetName}`,
+                key: `${node?.id ?? 'unknown'}:${widgetIndex}:${widgetName}`,
                 nodeId: node?.id ?? null,
                 nodeType: node?.type || 'Unknown',
                 nodeTitle: node?.title || null,
@@ -384,6 +389,28 @@ export function extractRecipeMetadata(graph) {
         }
     }
     return metadata;
+}
+
+/**
+ * Capture the graph once at save time. The serialized workflow is the source
+ * of truth; metadata and pin choices are only bounded presentation layers.
+ */
+export function captureRecipeDraft(graph) {
+    const workflow = graph?.serialize?.();
+    const nodes = Array.isArray(workflow?.nodes) ? workflow.nodes : [];
+    const links = Array.isArray(workflow?.links)
+        ? workflow.links
+        : (workflow?.links && typeof workflow.links === 'object' ? Object.values(workflow.links) : []);
+    return {
+        workflow,
+        metadata: extractRecipeMetadata(graph),
+        parameterChoices: extractRecipeParameterChoices(graph),
+        stats: {
+            nodeCount: nodes.length,
+            linkCount: links.length,
+            groupCount: Array.isArray(workflow?.groups) ? workflow.groups.length : 0,
+        },
+    };
 }
 
 /** Capture a bounded canvas preview; the optional element makes this testable. */

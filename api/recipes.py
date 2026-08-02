@@ -35,6 +35,10 @@ MAX_PREVIEW_SNAPSHOTS = 12
 MAX_PREVIEW_SNAPSHOT_BYTES = 96 * 1024
 MAX_PREVIEW_SNAPSHOT_TOTAL_BYTES = 1_250_000
 MAX_PREVIEW_SOURCE_BYTES = 20 * 1024 * 1024
+MAX_WORKFLOW_NODES = 5_000
+MAX_WORKFLOW_LINKS = 30_000
+MAX_WORKFLOW_GROUPS = 2_000
+MAX_WIDGET_VALUES_PER_NODE = 2_048
 SAFE_THUMBNAIL_PREFIXES = (
     "data:image/jpeg;base64,",
     "data:image/png;base64,",
@@ -284,6 +288,79 @@ def _read_recipe(path):
         return json.load(recipe_file)
 
 
+def _workflow_node_key(value):
+    if isinstance(value, bool) or not isinstance(value, (int, str)):
+        raise ValueError("Invalid workflow node id")
+    value = str(value).strip()
+    if not value:
+        raise ValueError("Invalid workflow node id")
+    return value
+
+
+def _workflow_link_records(workflow):
+    links = workflow.get("links", [])
+    if links is None:
+        return []
+    if isinstance(links, list):
+        return links
+    if isinstance(links, dict):
+        return list(links.values())
+    raise ValueError("Invalid workflow links")
+
+
+def _validate_workflow(workflow):
+    """Reject malformed graph topology before it reaches user recipe storage."""
+    if not isinstance(workflow, dict):
+        raise ValueError("Invalid recipe workflow")
+    nodes = workflow.get("nodes")
+    if not isinstance(nodes, list) or len(nodes) > MAX_WORKFLOW_NODES:
+        raise ValueError("Invalid workflow nodes")
+
+    node_ids = set()
+    for node in nodes:
+        if not isinstance(node, dict):
+            raise ValueError("Invalid workflow node")
+        node_key = _workflow_node_key(node.get("id"))
+        if node_key in node_ids:
+            raise ValueError("Duplicate workflow node id")
+        node_ids.add(node_key)
+        values = node.get("widgets_values")
+        if values is not None and (not isinstance(values, list) or len(values) > MAX_WIDGET_VALUES_PER_NODE):
+            raise ValueError("Invalid workflow widget values")
+
+    groups = workflow.get("groups", [])
+    if groups is not None and (not isinstance(groups, list) or len(groups) > MAX_WORKFLOW_GROUPS):
+        raise ValueError("Invalid workflow groups")
+
+    links = _workflow_link_records(workflow)
+    if len(links) > MAX_WORKFLOW_LINKS:
+        raise ValueError("Too many workflow links")
+    for link in links:
+        if isinstance(link, list) and len(link) >= 5:
+            origin_id, target_id = link[1], link[3]
+        elif isinstance(link, dict):
+            origin_id, target_id = link.get("origin_id"), link.get("target_id")
+        else:
+            raise ValueError("Invalid workflow link")
+        if _workflow_node_key(origin_id) not in node_ids or _workflow_node_key(target_id) not in node_ids:
+            raise ValueError("Dangling workflow link")
+
+
+def _recipe_receipt(recipe, filename):
+    """Return a small, user-visible confirmation for the accepted graph."""
+    workflow = recipe.get("workflow") if isinstance(recipe, dict) else {}
+    params = recipe.get("params") if isinstance(recipe, dict) else {}
+    return {
+        "filename": filename,
+        "node_count": len(workflow.get("nodes", [])) if isinstance(workflow, dict) else 0,
+        "link_count": len(_workflow_link_records(workflow)) if isinstance(workflow, dict) else 0,
+        "group_count": len(workflow.get("groups", [])) if isinstance(workflow.get("groups", []), list) else 0,
+        "parameter_node_count": len(params.get("nodes", [])) if isinstance(params, dict) and isinstance(params.get("nodes", []), list) else 0,
+        "pinned_count": len(params.get("pinned", [])) if isinstance(params, dict) and isinstance(params.get("pinned", []), list) else 0,
+        "workflow_fingerprint": recipe.get("workflow_fingerprint") if isinstance(recipe, dict) else None,
+    }
+
+
 def _list_recipes(recipes_dir):
     recipes = []
     try:
@@ -356,6 +433,7 @@ def _normalise_recipe(payload):
     workflow = payload.get("workflow")
     if not isinstance(params, dict) or not isinstance(workflow, dict):
         raise ValueError("Invalid recipe workflow")
+    _validate_workflow(workflow)
 
     thumbnail = payload.get("thumbnail")
     if thumbnail is not None:
@@ -515,7 +593,11 @@ async def api_save_recipe(request):
         await asyncio.to_thread(_write_recipe, recipes_dir, filename, recipe)
     except (OSError, ValueError):
         return web.json_response({"status": "error", "message": "Could not save recipe"}, status=500)
-    return web.json_response({"status": "success", "filename": filename})
+    return web.json_response({
+        "status": "success",
+        "filename": filename,
+        "receipt": _recipe_receipt(recipe, filename),
+    })
 
 
 async def api_delete_recipe(request):
@@ -607,7 +689,11 @@ async def api_update_recipe(request):
         await asyncio.to_thread(_write_recipe, recipes_dir, filename, recipe)
     except OSError:
         return web.json_response({"status": "error", "message": "Could not update recipe"}, status=500)
-    return web.json_response({"status": "success", "filename": filename})
+    return web.json_response({
+        "status": "success",
+        "filename": filename,
+        "receipt": _recipe_receipt(recipe, filename),
+    })
 
 
 async def api_get_recipe_history(request):
@@ -683,7 +769,11 @@ async def api_restore_recipe_version(request):
         await asyncio.to_thread(_write_recipe, recipes_dir, filename, recipe)
     except OSError:
         return web.json_response({"status": "error", "message": "Could not restore recipe history"}, status=500)
-    return web.json_response({"status": "success", "filename": filename})
+    return web.json_response({
+        "status": "success",
+        "filename": filename,
+        "receipt": _recipe_receipt(recipe, filename),
+    })
 
 
 async def api_refresh_recipe_identity(request):

@@ -5,6 +5,12 @@ This document serves as an architectural retrospective and UX diagnostic log for
 
 ---
 
+## 57. A Summary Must Never Become the Save/Edit Source
+
+**The Problem**: Recipe metadata deliberately truncates generic widget values for fast cards and detail browsing. Reusing it for edit controls meant a long prompt could be saved back as its truncated preview. A canvas-based update also started with an empty pin selection, silently dropping valid prior key parameters.
+
+**The Solution**: Capture one serialized workflow snapshot before the save dialog, use it as the only outbound graph, and resolve editable/pinnable widget values from that snapshot by stable node ID plus widget index. Carry forward only pin keys that still resolve on the current graph and make dropped pins explicit. Server acceptance must validate basic graph topology and return a compact receipt so the UI can show what was accepted.
+
 ## 51. A Bounded Card Summary Is Not a Detail Value (卡片摘要不能冒充详情值)
 
 **The Problem (问题)**: The recipe card intentionally limits generic widget text for fast browsing, but the detail panel reused that same summary. Long prompts and output settings looked saved yet could not be inspected or copied in full, while the negative prompt was hidden behind a positive-only overview layout.
