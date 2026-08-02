@@ -1,5 +1,18 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-03 — Preserve native CLIP prompt parameters
+
+**Implemented**
+
+- Removed the extra abstract prompt block from the Parameters tab; the tab now keeps the native node/title and widget names.
+- Added a bounded fallback that supplements `params.nodes` with every serialized `CLIPTextEncode` node whose prompt lives in `workflow.nodes[].widgets_values`.
+- The existing Overview prompt summary remains unchanged, while Parameters now shows both positive and negative native CLIP text nodes when the older summary omitted one.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `git diff --check`
+
 ## [Snapshot] 2026-08-03 — Show saved prompts in Parameters
 
 **Implemented**

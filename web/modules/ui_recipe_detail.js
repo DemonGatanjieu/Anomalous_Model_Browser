@@ -836,11 +836,45 @@ function renderModels(content, owner, recipe, references) {
     content.appendChild(section);
 }
 
+function parameterNodesWithPromptFallback(recipe) {
+    const nodes = (recipe?.params?.nodes || []).map((node) => ({
+        ...node,
+        widgets: [...(node.widgets || [])],
+    }));
+    const byId = new Map(nodes.map((node) => [String(node.id), node]));
+    for (const workflowNode of recipe?.workflow?.nodes || []) {
+        if (!/cliptextencode/i.test(String(workflowNode?.type || ''))) continue;
+        const id = String(workflowNode?.id ?? '');
+        if (!id) continue;
+        const hasSavedWidget = Array.isArray(workflowNode.widgets_values)
+            && workflowNode.widgets_values.length > 0;
+        if (!hasSavedWidget) continue;
+        const promptWidget = {
+            name: 'text',
+            value: workflowNode.widgets_values[0],
+            index: 0,
+        };
+        const summary = byId.get(id);
+        if (summary) {
+            if (!summary.widgets.some((widget) => /^(text|prompt)$/i.test(String(widget?.name || '')))) {
+                summary.widgets.push(promptWidget);
+            }
+            continue;
+        }
+        const fallback = {
+            id: workflowNode.id ?? null,
+            type: workflowNode.type || 'CLIPTextEncode',
+            title: workflowNode.title || null,
+            widgets: [promptWidget],
+            widgetCount: 1,
+        };
+        nodes.push(fallback);
+        byId.set(id, fallback);
+    }
+    return nodes;
+}
+
 function renderParameters(content, recipe) {
-    // Prompt summaries are persisted in params and are not guaranteed to be
-    // represented by the bounded generic widget list. Keep them visible on
-    // the Parameters tab as first-class saved values as well as in Overview.
-    renderPromptSection(content, recipe);
     const section = document.createElement('section');
     section.className = 'anomalous-recipe-detail-section';
     const heading = document.createElement('div');
@@ -857,7 +891,7 @@ function renderParameters(content, recipe) {
     const render = () => {
         list.replaceChildren();
         const query = search.value.trim().toLowerCase();
-        for (const node of recipe.params?.nodes || []) {
+        for (const node of parameterNodesWithPromptFallback(recipe)) {
             const widgets = (node.widgets || []).map((widget) => ({
                 widget,
                 value: fullWidgetValue(recipe, node, widget),
