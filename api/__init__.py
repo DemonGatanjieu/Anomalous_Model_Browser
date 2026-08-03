@@ -30,6 +30,7 @@ def setup_routes(app):
     app.router.add_get('/anomalous/recipe_full', api_get_recipe_full)
     app.router.add_get('/anomalous/recipe_asset', api_get_recipe_asset)
     app.router.add_get('/anomalous/recipe_gallery', api_get_recipe_gallery)
+    app.router.add_get('/anomalous/recipe_gallery_compare', api_get_recipe_gallery_compare)
     app.router.add_post('/anomalous/save_recipe', api_save_recipe)
     app.router.add_post('/anomalous/update_recipe', api_update_recipe)
     app.router.add_post('/anomalous/set_recipe_gallery_cover', api_set_recipe_gallery_cover)

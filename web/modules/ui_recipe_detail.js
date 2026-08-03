@@ -1613,10 +1613,20 @@ function renderRecipeGallery(content, owner, recipe, gallery, refresh) {
         image.src = url;
         image.alt = t('recipeGalleryOpenImage');
         image.loading = 'lazy';
-        image.onclick = () => owner.showGalleryViewer?.(url);
+        image.onclick = () => { void showGalleryComparison(card, owner, sourceImage); };
         card.appendChild(image);
         const actions = document.createElement('div');
         actions.className = 'anomalous-recipe-gallery-card-actions';
+        const viewImage = button(actions, t('recipeGalleryOpenImage'), 'anomalous-btn-ghost');
+        viewImage.onclick = (event) => {
+            event.stopPropagation();
+            owner.showGalleryViewer?.(url);
+        };
+        const compare = button(actions, t('recipeGalleryCompare'), 'anomalous-btn-ghost');
+        compare.onclick = (event) => {
+            event.stopPropagation();
+            void showGalleryComparison(card, owner, sourceImage);
+        };
         const setCover = button(actions, t('recipeGallerySetCover'), 'anomalous-btn-primary');
         setCover.onclick = (event) => {
             event.stopPropagation();
@@ -1647,6 +1657,53 @@ function renderRecipeGallery(content, owner, recipe, gallery, refresh) {
     }
     section.appendChild(grid);
     content.appendChild(section);
+}
+
+async function showGalleryComparison(card, owner, sourceImage) {
+    const existing = card.querySelector('.anomalous-recipe-gallery-comparison');
+    if (existing) {
+        existing.remove();
+        return;
+    }
+    const panel = document.createElement('div');
+    panel.className = 'anomalous-recipe-gallery-comparison';
+    appendText(panel, 'strong', t('recipeGalleryComparison'));
+    appendText(panel, 'p', t('recipeGalleryComparisonLoading'), 'anomalous-recipe-detail-muted');
+    card.appendChild(panel);
+    try {
+        const query = new URLSearchParams({
+            filename: owner.recipeDetailFilename,
+            image_filename: sourceImage.filename,
+            image_subfolder: sourceImage.subfolder || '',
+        });
+        const response = await fetch(`/anomalous/recipe_gallery_compare?${query.toString()}`, { cache: 'no-store' });
+        if (!response.ok) throw new Error('gallery comparison failed');
+        const payload = await response.json();
+        const comparison = payload.comparison || {};
+        panel.replaceChildren();
+        appendText(panel, 'strong', t('recipeGalleryComparison'));
+        if (!comparison.changes?.length) {
+            appendText(panel, 'p', t('recipeGalleryNoDifferences'), 'anomalous-recipe-detail-muted');
+            return;
+        }
+        appendText(panel, 'small', t('recipeGalleryDifferenceHint'), 'anomalous-recipe-detail-muted');
+        for (const change of comparison.changes) {
+            const row = document.createElement('div');
+            row.className = 'anomalous-recipe-gallery-diff-row';
+            appendText(row, 'strong', `${change.type} #${change.index}`);
+            const values = document.createElement('div');
+            values.className = 'anomalous-recipe-gallery-diff-values';
+            appendText(values, 'span', `${t('recipeGalleryRecipeValue')}: ${displayValue(change.recipe)}`);
+            appendText(values, 'span', `${t('recipeGalleryImageValue')}: ${displayValue(change.image)}`);
+            row.appendChild(values);
+            panel.appendChild(row);
+        }
+    } catch (error) {
+        console.error('Could not compare recipe gallery image:', error);
+        panel.replaceChildren();
+        appendText(panel, 'strong', t('recipeGalleryComparison'));
+        appendText(panel, 'p', t('recipeGalleryComparisonError'), 'anomalous-recipe-detail-muted');
+    }
 }
 
 export function showRecipeDetail(owner, { recipe, filename, history = [] }) {

@@ -642,3 +642,21 @@
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
 - `python_embeded/python.exe -m py_compile api/recipes.py api/metadata.py api/models.py api/recipe_packages.py api/__init__.py`
 - `git diff --check`
+## [Snapshot] 2026-08-04 - Make recipe gallery matching tolerant
+
+**Implemented**
+
+- Recipe gallery discovery now matches the sorted node class composition and count instead of requiring parameter-level workflow equality.
+- Added bounded image parameter inspection and an inline recipe-versus-image difference view; full-image viewing remains available as a separate action.
+- PNG metadata can use either embedded UI `workflow` data or API `prompt` data for node discovery.
+- Removed the main output gallery's standalone refresh toolbar. Opening the gallery now performs the refresh, keeping the gallery surface focused on images.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `node --check web/modules/ui_sidebar.js`
+- `node --check web/modules/ui_gallery.js`
+- `node --check web/modules/locales.js`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+- `python_embeded/python.exe -m py_compile api/recipes.py api/__init__.py api/recipe_packages.py`
+- `git diff --check`

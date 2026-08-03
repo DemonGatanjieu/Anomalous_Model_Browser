@@ -466,3 +466,14 @@ For a gallery whose source is a directory walk, querying only when the panel ope
 **The Problem**: An output image can be cleaned up, moved, or unavailable on an imported recipe, so storing only its `/view` locator makes the chosen recipe cover disappear.
 
 **The Solution**: Treat the output path as an input to a one-time, bounded WebP conversion. Save the derived cover in the recipe-owned asset directory, validate its ID, package it independently of optional model-preview snapshots, and keep the original output locator only as local convenience metadata.
+## 73. Separate gallery discovery identity from parameter comparison
+
+**The Problem**: A parameter-level workflow fingerprint is useful for integrity, but it is too strict for finding related output images. ComfyUI can emit a UI workflow or an API prompt with different serialization details, and users commonly vary prompts, models, seeds, or sampler settings while using the same graph.
+
+**The Solution**: Use a separate node-composition signature for discovery: sorted node class names with multiplicity, independent of parameters and node IDs. Keep the structural fingerprint for recipe/history integrity. Load one matched image's bounded metadata only after the user asks to inspect it, then show parameter differences explicitly.
+
+## 74. Opening a filesystem gallery is a natural refresh boundary
+
+**The Problem**: A permanent refresh strip adds visual weight to an image-first gallery, while continuous polling is unnecessary for a directory the user can reopen.
+
+**The Solution**: Refresh the main output gallery when its panel is opened. Remove the dedicated toolbar button and keep any future manual refresh as an unobtrusive secondary action only if real usage proves it necessary.

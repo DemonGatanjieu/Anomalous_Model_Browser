@@ -1654,31 +1654,6 @@ export function createDOM() {
         this.galleryPanel = document.createElement('div');
         this.galleryPanel.id = 'anomalous-gallery-panel';
 
-        const galleryToolbar = document.createElement('div');
-        galleryToolbar.className = 'anomalous-gallery-toolbar';
-        const galleryTitle = document.createElement('strong');
-        galleryTitle.textContent = window.anomalous_browser_lang === 'zh' ? '主图库' : 'Output Gallery';
-        const galleryRefreshButton = document.createElement('button');
-        galleryRefreshButton.type = 'button';
-        galleryRefreshButton.className = 'anomalous-gallery-refresh-button';
-        galleryRefreshButton.textContent = window.anomalous_browser_lang === 'zh' ? '↻ 刷新' : '↻ Refresh';
-        galleryRefreshButton.onclick = async () => {
-            if (galleryRefreshButton.disabled) return;
-            galleryRefreshButton.disabled = true;
-            galleryRefreshButton.classList.add('is-loading');
-            galleryRefreshButton.textContent = window.anomalous_browser_lang === 'zh' ? '刷新中...' : 'Refreshing...';
-            try {
-                await this.refreshGalleryImages();
-            } finally {
-                galleryRefreshButton.disabled = false;
-                galleryRefreshButton.classList.remove('is-loading');
-                galleryRefreshButton.textContent = window.anomalous_browser_lang === 'zh' ? '↻ 刷新' : '↻ Refresh';
-            }
-        };
-        galleryToolbar.append(galleryTitle, galleryRefreshButton);
-        this.galleryRefreshButton = galleryRefreshButton;
-        this.galleryPanel.appendChild(galleryToolbar);
-
         this.doctorPanel = document.createElement('div');
         this.doctorPanel.id = 'anomalous-doctor-panel';
         this.doctorPanel.style.display = 'none';

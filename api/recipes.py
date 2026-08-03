@@ -116,6 +116,38 @@ def _workflow_fingerprint(workflow):
     }
 
 
+def _workflow_node_types(workflow):
+    """Extract only node class names from either UI workflow or API prompt data."""
+    if not isinstance(workflow, dict):
+        return []
+    nodes = workflow.get("nodes")
+    if isinstance(nodes, list):
+        values = nodes
+    else:
+        values = workflow.values()
+    result = []
+    for node in values:
+        if not isinstance(node, dict):
+            continue
+        node_type = _node_type(node) or str(node.get("class_type") or "").strip()
+        if node_type:
+            result.append(node_type)
+    return sorted(result, key=lambda value: value.casefold())
+
+
+def _workflow_node_signature(workflow):
+    """Stable node-composition signature used for tolerant result discovery."""
+    canonical = json.dumps(
+        _workflow_node_types(workflow),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return {
+        "algorithm": "sha256-node-types-v1",
+        "value": hashlib.sha256(canonical).hexdigest(),
+    }
+
+
 def _node_type(node):
     return str(node.get("type") or node.get("class_type") or "").strip()
 
@@ -348,25 +380,37 @@ def _store_recipe_gallery_cover(recipes_dir, filename, source_image):
     }
 
 
-def _embedded_workflow_fingerprint(image_path):
-    """Read only PNG text metadata and fingerprint an embedded Comfy workflow."""
+def _decode_embedded_json(value):
+    if isinstance(value, bytes):
+        if len(value) > MAX_EMBEDDED_WORKFLOW_BYTES:
+            return None
+        value = value.decode("utf-8")
+    if not isinstance(value, str) or len(value.encode("utf-8")) > MAX_EMBEDDED_WORKFLOW_BYTES:
+        return None
+    parsed = json.loads(value)
+    return parsed if isinstance(parsed, dict) else None
+
+
+def _embedded_workflow_payload(image_path):
+    """Read bounded workflow/prompt metadata from one PNG without loading pixels."""
     try:
         with Image.open(image_path) as image:
-            workflow_text = image.info.get("workflow")
-        if isinstance(workflow_text, bytes):
-            if len(workflow_text) > MAX_EMBEDDED_WORKFLOW_BYTES:
-                return None
-            workflow_text = workflow_text.decode("utf-8")
-        if not isinstance(workflow_text, str):
-            return None
-        if len(workflow_text.encode("utf-8")) > MAX_EMBEDDED_WORKFLOW_BYTES:
-            return None
-        workflow = json.loads(workflow_text)
-        if not isinstance(workflow, dict):
-            return None
-        return _workflow_fingerprint(workflow)["value"]
+            return {
+                "workflow": _decode_embedded_json(image.info.get("workflow")),
+                "prompt": _decode_embedded_json(image.info.get("prompt")),
+            }
     except (OSError, UnicodeDecodeError, ValueError, json.JSONDecodeError):
         return None
+
+
+def _embedded_workflow_node_signature(image_path):
+    payload = _embedded_workflow_payload(image_path)
+    if not payload:
+        return None
+    workflow = payload.get("workflow") or payload.get("prompt")
+    if not workflow:
+        return None
+    return _workflow_node_signature(workflow)["value"]
 
 
 def _recent_output_pngs(output_dir, limit=MAX_RECIPE_GALLERY_SCAN):
@@ -392,7 +436,7 @@ def _recent_output_pngs(output_dir, limit=MAX_RECIPE_GALLERY_SCAN):
     return sorted(newest, reverse=True)
 
 
-def _recipe_gallery_images(fingerprint):
+def _recipe_gallery_images(node_signature):
     output_dir = folder_paths.get_output_directory()
     if not os.path.isdir(output_dir):
         return [], 0
@@ -400,7 +444,7 @@ def _recipe_gallery_images(fingerprint):
     scanned = 0
     for mtime_ns, image_path in _recent_output_pngs(output_dir):
         scanned += 1
-        if _embedded_workflow_fingerprint(image_path) != fingerprint:
+        if _embedded_workflow_node_signature(image_path) != node_signature:
             continue
         relative_dir = os.path.relpath(os.path.dirname(image_path), output_dir)
         subfolder = "" if relative_dir == "." else relative_dir.replace("\\", "/")
@@ -413,6 +457,81 @@ def _recipe_gallery_images(fingerprint):
         if len(matches) >= MAX_RECIPE_GALLERY_RESULTS:
             break
     return matches, scanned
+
+
+def _bounded_gallery_value(value, depth=0):
+    """Keep image-embedded parameter details useful without echoing huge metadata."""
+    if depth > 5:
+        return "…"
+    if isinstance(value, str):
+        return value if len(value) <= 2000 else f"{value[:1997]}..."
+    if isinstance(value, (int, float, bool)) or value is None:
+        return value
+    if isinstance(value, list):
+        return [_bounded_gallery_value(item, depth + 1) for item in value[:64]]
+    if isinstance(value, dict):
+        return {
+            str(key): _bounded_gallery_value(nested, depth + 1)
+            for key, nested in list(value.items())[:96]
+        }
+    return str(value)[:2000]
+
+
+def _gallery_parameter_records(workflow):
+    if not isinstance(workflow, dict):
+        return []
+    nodes = workflow.get("nodes")
+    is_ui_workflow = isinstance(nodes, list)
+    values = nodes if is_ui_workflow else workflow.values()
+    records = []
+    occurrence = {}
+    for node in values:
+        if not isinstance(node, dict):
+            continue
+        node_type = _node_type(node) or str(node.get("class_type") or "").strip()
+        if not node_type:
+            continue
+        occurrence[node_type] = occurrence.get(node_type, 0) + 1
+        if is_ui_workflow:
+            parameters = {"widgets": _bounded_gallery_value(node.get("widgets_values", []))}
+            node_id = node.get("id")
+        else:
+            parameters = {"inputs": _bounded_gallery_value(node.get("inputs", {}))}
+            node_id = None
+        records.append({
+            "type": node_type,
+            "index": occurrence[node_type],
+            "node_id": node_id,
+            "parameters": parameters,
+        })
+    return records
+
+
+def _gallery_parameter_diff(recipe_workflow, image_payload):
+    recipe_records = _gallery_parameter_records(recipe_workflow)
+    embedded_workflow = image_payload.get("workflow") or image_payload.get("prompt") if image_payload else None
+    image_records = _gallery_parameter_records(embedded_workflow)
+    recipe_map = {(item["type"], item["index"]): item for item in recipe_records}
+    image_map = {(item["type"], item["index"]): item for item in image_records}
+    changes = []
+    for key in sorted(set(recipe_map) | set(image_map), key=lambda item: (item[0].casefold(), item[1])):
+        recipe_item = recipe_map.get(key)
+        image_item = image_map.get(key)
+        if recipe_item is None or image_item is None or recipe_item["parameters"] != image_item["parameters"]:
+            changes.append({
+                "type": key[0],
+                "index": key[1],
+                "recipe": recipe_item["parameters"] if recipe_item else None,
+                "image": image_item["parameters"] if image_item else None,
+            })
+    return {
+        "recipe_nodes": recipe_records,
+        "image_nodes": image_records,
+        "changes": changes,
+        "comparable": bool(image_records) and all(
+            isinstance(item.get("workflow"), dict) for item in [image_payload or {}]
+        ),
+    }
 
 
 def _attach_preview_snapshots(recipe, recipes_dir, filename, references):
@@ -897,7 +1016,7 @@ async def api_get_recipe_asset(request):
 
 
 async def api_get_recipe_gallery(request):
-    """Find recent output PNGs whose embedded workflow matches one recipe."""
+    """Find recent output PNGs whose embedded node composition matches one recipe."""
     try:
         filename = request.query.get("filename")
         fingerprint = request.query.get("fingerprint")
@@ -909,7 +1028,7 @@ async def api_get_recipe_gallery(request):
             recipe = await asyncio.to_thread(_read_recipe, resolve_within(recipes_dir, filename))
             if not isinstance(recipe, dict) or not isinstance(recipe.get("workflow"), dict):
                 raise ValueError("Invalid recipe")
-            fingerprint = _workflow_fingerprint(recipe["workflow"])["value"]
+            fingerprint = _workflow_node_signature(recipe["workflow"])["value"]
         elif not isinstance(fingerprint, str) or not SHA256_PATTERN.fullmatch(fingerprint):
             raise ValueError("Invalid fingerprint")
         images, scanned = await asyncio.to_thread(_recipe_gallery_images, fingerprint.lower())
@@ -922,9 +1041,40 @@ async def api_get_recipe_gallery(request):
     return web.json_response({
         "status": "success",
         "fingerprint": fingerprint.lower(),
+        "match_mode": "node-types",
         "images": images,
         "scanned": scanned,
     })
+
+
+async def api_get_recipe_gallery_compare(request):
+    """Return bounded parameters and differences for one matched output image."""
+    try:
+        filename = require_filename(request.query.get("filename", ""))
+        source_image = _normalise_source_image({
+            "type": "output",
+            "filename": request.query.get("image_filename", ""),
+            "subfolder": request.query.get("image_subfolder", ""),
+        })
+        recipes_dir = get_recipes_dir()
+        recipe = await asyncio.to_thread(_read_recipe, resolve_within(recipes_dir, filename))
+        image_path = await asyncio.to_thread(_output_source_path, source_image)
+        payload = await asyncio.to_thread(_embedded_workflow_payload, image_path)
+        if not payload or not (payload.get("workflow") or payload.get("prompt")):
+            raise ValueError("Image has no workflow metadata")
+        comparison = _gallery_parameter_diff(recipe.get("workflow"), payload)
+        return web.json_response({
+            "status": "success",
+            "image": source_image,
+            "match_mode": "node-types",
+            "comparison": comparison,
+        })
+    except (AttributeError, ValueError, json.JSONDecodeError):
+        return web.json_response({"status": "error", "message": "Invalid gallery comparison request"}, status=400)
+    except FileNotFoundError:
+        return web.json_response({"status": "error", "message": "Image or recipe not found"}, status=404)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not read gallery comparison"}, status=500)
 
 
 async def api_set_recipe_gallery_cover(request):
