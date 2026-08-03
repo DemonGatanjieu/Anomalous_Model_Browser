@@ -37,8 +37,54 @@ function canvasMayContainUserWork() {
     return true;
 }
 
+function workflowStoreFromPinia(pinia) {
+    if (!pinia) return null;
+    if (typeof pinia._s?.get === 'function') return pinia._s.get('workflow') || null;
+    return pinia.workflow && Object.prototype.hasOwnProperty.call(pinia.workflow, 'activeWorkflow')
+        ? pinia.workflow
+        : null;
+}
+
+function getActiveComfyWorkflow() {
+    const candidates = [
+        globalThis.$pinia,
+        globalThis.pinia,
+        globalThis.comfyAPI?.pinia,
+        globalThis.comfyAPI?.app?.pinia,
+    ];
+    const vueRoot = document.querySelector('#vue-app')?.__vue_app__;
+    const provides = vueRoot?._context?.provides;
+    if (provides) {
+        for (const key of Reflect.ownKeys(provides)) candidates.push(provides[key]);
+    }
+    for (const candidate of candidates) {
+        const store = workflowStoreFromPinia(candidate);
+        const workflow = store?.activeWorkflow?.value ?? store?.activeWorkflow;
+        if (workflow) return workflow;
+    }
+    return null;
+}
+
+export async function loadRecipeWorkflowIntoCurrentCanvas(workflowData) {
+    const activeWorkflow = getActiveComfyWorkflow();
+    if (activeWorkflow) {
+        // ComfyUI 1.45+ uses the fourth argument to distinguish in-place loads
+        // from opening a new temporary workflow tab.
+        await app.loadGraphData(workflowData, true, true, activeWorkflow);
+        return;
+    }
+
+    // Older ComfyUI builds do not expose the workflow store and use the
+    // three-argument API for the current canvas.
+    await app.loadGraphData(workflowData);
+}
+
 function closeRecipeWorkspace(owner) {
-    owner?.nbPanel && (owner.nbPanel.style.display = 'none');
+    if (!owner) return;
+    owner.nbPanel && (owner.nbPanel.style.display = 'none');
+    owner.notebookBody && (owner.notebookBody.style.display = 'none');
+    owner.recipeView && (owner.recipeView.style.display = 'none');
+    owner.modal?.classList.remove('visible');
     owner?.close?.();
 }
 
@@ -69,7 +115,7 @@ export async function openRecipeOnCanvas(owner, recipe) {
         : '';
     if ((canvasMayContainUserWork() || missingWarning) && !await anomalousConfirm(`${t('recipeOpenCanvasConfirm')}${missingWarning}`)) return false;
     try {
-        await app.loadGraphData(recipe.workflow);
+        await loadRecipeWorkflowIntoCurrentCanvas(recipe.workflow);
         app.canvas?.setDirty?.(true, true);
         closeRecipeWorkspace(owner);
         return true;

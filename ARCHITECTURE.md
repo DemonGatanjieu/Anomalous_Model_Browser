@@ -232,3 +232,9 @@ Every product-code change in this plugin must finish as one coherent local Git s
 5. Leave a clean worktree for the next agent, or document every intentional uncommitted file in the handoff.
 
 `CHANGELOG.md` is public user-facing release communication. Update it only for intentional user-visible release notes; never use it for internal design decisions, implementation details, test output, or agent handoff. Planning-only documentation may be committed separately, but proposals must be labeled clearly and must not be described as implemented runtime behavior.
+
+## 66. Recipe Canvas Loads Must Target the Active Workflow
+
+The current ComfyUI frontend treats `loadGraphData(data)` without a workflow argument as an instruction to create/open a temporary workflow tab. Recipe “Open to canvas” and recipe-edit canvas loads must therefore discover the active workflow from the frontend Pinia store and pass it as the fourth argument. The discovery is deliberately read-only and checks the Vue root's provided Pinia instance, while retaining the legacy three-argument fallback for older ComfyUI builds.
+
+Successful recipe canvas actions also use explicit workspace cleanup: hide the notebook body, recipe view, recipe modal panel, and outer modal before invoking the existing close/media cleanup. This keeps the canvas operation independent from the recipe detail promise and prevents a stale blank workspace shell from remaining visible after a workflow-tab transition.

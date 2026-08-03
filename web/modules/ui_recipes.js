@@ -11,6 +11,7 @@ import {
 } from './recipe_parser.js';
 import {
     appendRecipeOnCanvas,
+    loadRecipeWorkflowIntoCurrentCanvas,
     openRecipeOnCanvas,
     showRecipeDetail,
 } from './ui_recipe_detail.js';
@@ -425,7 +426,7 @@ async function editRecipe(owner, recipe, filename, history = null) {
         if (!result || result.mode === 'restored') return;
         if (result.mode === 'canvas') {
             if (!await anomalousConfirm(t('recipeEditCanvasConfirm'))) return;
-            app.loadGraphData(editable.workflow);
+            await loadRecipeWorkflowIntoCurrentCanvas(editable.workflow);
             app.canvas?.setDirty?.(true, true);
             owner.recipeEditing = { filename, data: editable };
             const saveButton = owner.recipeView?.querySelector('[data-recipe-save-current]');

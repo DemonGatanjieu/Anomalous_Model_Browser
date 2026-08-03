@@ -545,3 +545,17 @@
 - `node --check web/modules/locales.js`
 - `node tests/recipe_parser_roundtrip.mjs`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+## [Snapshot] 2026-08-04 - Keep recipe canvas loads in the active tab
+
+**Implemented**
+
+- Updated recipe Open-to-canvas and recipe-edit canvas loading for the current ComfyUI workflow-tab API. The frontend Pinia workflow store is discovered through the mounted Vue app and the active workflow is passed to `app.loadGraphData()` as its fourth argument, preventing an unintended new temporary tab.
+- Kept the legacy three-argument fallback for older ComfyUI builds that do not expose the workflow store.
+- Made successful recipe canvas actions explicitly hide notebook content, recipe content, the recipe panel, and the outer plugin modal before running the existing close/media cleanup, preventing a blank workspace shell after the canvas transition.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `node --check web/modules/ui_recipes.js`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`
