@@ -238,3 +238,7 @@ Every product-code change in this plugin must finish as one coherent local Git s
 Recipe cards and detail views intentionally expose only “Append to Canvas”. The removed “Open to canvas” action was ambiguous across ComfyUI versions: the legacy API replaced the current graph, while the current workflow-tab API opens a new temporary tab unless an internal active-workflow object is supplied. Keeping only append avoids both meanings and preserves the user's current canvas.
 
 The separate structural-edit action may still load a recipe into a new canvas for editing; it is not a recipe composition action and remains explicitly confirmed. Successful append actions continue to hide the notebook body, recipe view, recipe modal panel, and outer modal before invoking the existing close/media cleanup.
+
+## 67. Recipe Save Does Not Ask for Presentation Pins
+
+The save dialog records recipe identity, notes, tags, cover/source image, and model-preview snapshot preference. It no longer renders the expandable “Choose key parameters” section: the complete serialized workflow already remains the source of truth, and this extra presentation selection added friction without improving restoration. Existing `params.pinned` data is preserved when editing an older recipe so removing the control is not a destructive metadata migration; new saves use an empty pin list.

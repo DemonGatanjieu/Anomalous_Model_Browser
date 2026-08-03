@@ -393,7 +393,7 @@ export function extractRecipeMetadata(graph) {
 
 /**
  * Capture the graph once at save time. The serialized workflow is the source
- * of truth; metadata and pin choices are only bounded presentation layers.
+ * of truth; metadata is only a bounded presentation layer.
  */
 export function captureRecipeDraft(graph) {
     const workflow = graph?.serialize?.();
@@ -404,7 +404,6 @@ export function captureRecipeDraft(graph) {
     return {
         workflow,
         metadata: extractRecipeMetadata(graph),
-        parameterChoices: extractRecipeParameterChoices(graph),
         stats: {
             nodeCount: nodes.length,
             linkCount: links.length,

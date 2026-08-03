@@ -576,3 +576,18 @@
 - `node tests/recipe_parser_roundtrip.mjs`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
 - `python_embeded/python.exe -m py_compile api/recipes.py api/metadata.py api/models.py api/recipe_packages.py`
+## [Snapshot] 2026-08-04 - Remove key-parameter selection from recipe save
+
+**Implemented**
+
+- Removed the expandable “Choose key parameters” section from the save-recipe dialog.
+- Removed the now-unused save-dialog pin-selection state and locale text.
+- Kept the serialized workflow and all existing save fields unchanged; editing an older recipe preserves its existing `params.pinned` metadata, while new saves use an empty pin list.
+- Removed the unused parameter-choice field from the save draft payload.
+
+**Validation**
+
+- `node --check web/modules/ui_recipes.js`
+- `node --check web/modules/recipe_parser.js`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`

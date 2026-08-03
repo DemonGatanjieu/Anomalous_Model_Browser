@@ -446,3 +446,6 @@ In current ComfyUI frontend builds, `app.loadGraphData(data)` without its fourth
 ## 67. Prefer one unambiguous recipe canvas action
 
 When ComfyUI versions give “Open” different meanings—replace the current graph in one version and open a new workflow tab in another—do not preserve a confusing button merely for compatibility. If append is the user's reliable composition primitive, remove Open from cards and detail views. Keep structural editing separate and label it as a confirmed new-canvas edit flow.
+## 68. Remove obsolete save-dialog choices without deleting stored data
+
+If a save-dialog option no longer provides value, remove its controls and transient state rather than preserving a misleading interaction. Keep the serialized workflow unchanged, and preserve legacy metadata when editing existing records unless the user explicitly requests a data migration.

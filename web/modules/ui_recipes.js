@@ -452,18 +452,13 @@ async function editRecipe(owner, recipe, filename, history = null) {
     }
 }
 
-function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices, initial = null) {
+function showRecipeSaveDialog(owner, canvasThumbnail, initial = null) {
     return new Promise((resolve) => {
         const selection = {
             thumbnail: safeThumbnail(initial?.thumbnail) || safeThumbnail(canvasThumbnail),
             sourceImage: initial?.source_image || null,
-            pinnedKeys: new Set(),
             saveModelPreviewSnapshots: initial?.presentation?.save_model_preview_snapshots === true,
         };
-        const availablePinKeys = new Set(parameterChoices.map((choice) => choice.key));
-        const previousPinnedKeys = new Set((initial?.params?.pinned || []).map((pin) => pin?.key).filter(Boolean));
-        selection.pinnedKeys = new Set([...previousPinnedKeys].filter((key) => availablePinKeys.has(key)));
-        const unavailablePinCount = previousPinnedKeys.size - selection.pinnedKeys.size;
         const overlay = document.createElement('div');
         overlay.className = 'anomalous-recipe-dialog-overlay';
         overlay.setAttribute('role', 'dialog');
@@ -602,54 +597,6 @@ function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices, initial 
                 recentStatus.textContent = t('recipeRecentImagesUnavailable');
             });
 
-        if (parameterChoices.length) {
-            const parameterDetails = document.createElement('details');
-            parameterDetails.className = 'anomalous-recipe-pin-picker';
-            const parameterSummary = document.createElement('summary');
-            parameterSummary.textContent = `${t('recipeChoosePinnedParams')} (${selection.pinnedKeys.size})`;
-            parameterDetails.appendChild(parameterSummary);
-            if (unavailablePinCount) {
-                appendText(
-                    parameterDetails,
-                    'small',
-                    formatRecipeText('recipePinnedParamsUnavailable', { count: unavailablePinCount }),
-                    'anomalous-recipe-node-hint',
-                );
-            }
-            let parametersRendered = false;
-            parameterDetails.ontoggle = () => {
-                if (!parameterDetails.open || parametersRendered) return;
-                parametersRendered = true;
-                const parameterList = document.createElement('div');
-                parameterList.className = 'anomalous-recipe-pin-list';
-                let previousNode = null;
-                for (const choice of parameterChoices) {
-                    const nodeLabel = choice.nodeTitle || choice.nodeType || t('recipeUnknownNode');
-                    const nodeKey = `${choice.nodeId}:${choice.nodeType}:${nodeLabel}`;
-                    if (nodeKey !== previousNode) {
-                        appendText(parameterList, 'strong', nodeLabel, 'anomalous-recipe-pin-node');
-                        previousNode = nodeKey;
-                    }
-                    const label = document.createElement('label');
-                    label.className = 'anomalous-recipe-pin-choice';
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.checked = selection.pinnedKeys.has(choice.key);
-                    checkbox.onchange = () => {
-                        if (checkbox.checked) selection.pinnedKeys.add(choice.key);
-                        else selection.pinnedKeys.delete(choice.key);
-                        parameterSummary.textContent = `${t('recipeChoosePinnedParams')} (${selection.pinnedKeys.size})`;
-                    };
-                    const value = compactText(displayWidgetValue(choice.value), 100);
-                    appendText(label, 'span', `${choice.widgetName}: ${value}`);
-                    label.prepend(checkbox);
-                    parameterList.appendChild(label);
-                }
-                parameterDetails.appendChild(parameterList);
-            };
-            dialog.appendChild(parameterDetails);
-        }
-
         const error = appendText(dialog, 'div', '', 'anomalous-recipe-dialog-error');
         const actions = document.createElement('div');
         actions.className = 'anomalous-recipe-actions';
@@ -680,7 +627,9 @@ function showRecipeSaveDialog(owner, canvasThumbnail, parameterChoices, initial 
                 notes: notesInput.value.trim(),
                 thumbnail: selection.thumbnail,
                 sourceImage: selection.sourceImage,
-                pinned: parameterChoices.filter((choice) => selection.pinnedKeys.has(choice.key)),
+                // Keep legacy pinned metadata when editing an existing recipe;
+                // new saves no longer expose a meaningless selection step.
+                pinned: Array.isArray(initial?.params?.pinned) ? initial.params.pinned : [],
                 saveModelPreviewSnapshots: selection.saveModelPreviewSnapshots,
             });
         };
@@ -1132,7 +1081,7 @@ export async function handleSaveRecipe() {
     }
     const canvasThumbnail = captureCanvasThumbnail(app.canvas?.canvas);
     const editing = this.recipeEditing || null;
-    const details = await showRecipeSaveDialog(this, canvasThumbnail, draft.parameterChoices, editing?.data || null);
+    const details = await showRecipeSaveDialog(this, canvasThumbnail, editing?.data || null);
     if (!details) return;
 
     const saveButton = this.recipeView?.querySelector('[data-recipe-save-current]');
