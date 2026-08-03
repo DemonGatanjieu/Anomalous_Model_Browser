@@ -13,6 +13,34 @@ const t = (key) => {
     return (i18n[lang] && i18n[lang][key]) ? i18n[lang][key] : (i18n['zh'][key] || key);
 };
 
+function restoreWorkspaceReturnPanel(owner) {
+    const state = owner.workspaceReturnState;
+    owner.workspaceReturnState = null;
+    const panels = [
+        ['grid', owner.grid],
+        ['detail', owner.detailPanel],
+        ['gallery', owner.galleryPanel],
+        ['doctor', owner.doctorPanel],
+        ['assistant', owner.assistantPanel],
+    ];
+    if (state) {
+        for (const [key, panel] of panels) {
+            if (panel && Object.prototype.hasOwnProperty.call(state, key)) panel.style.display = state[key];
+        }
+    }
+    const hasVisiblePanel = panels.some(([, panel]) => panel && panel.style.display !== 'none');
+    if (!hasVisiblePanel && owner.grid) owner.grid.style.display = 'grid';
+}
+
+export function closeWorkspace() {
+    this.recipeDetailFinish?.('closed');
+    this.recipeModelReturn = null;
+    if (this.recipeView) this.recipeView.style.display = 'none';
+    if (this.notebookBody) this.notebookBody.style.display = 'none';
+    if (this.nbPanel) this.nbPanel.style.display = 'none';
+    restoreWorkspaceReturnPanel(this);
+}
+
 
 
 export async function showNotebooks() {
@@ -49,7 +77,7 @@ export async function showNotebooks() {
         const closeNb = document.createElement('span');
         closeNb.className = 'anomalous-nb-close';
         closeNb.innerHTML = '&times;';
-        closeNb.onclick = () => { this.nbPanel.style.display = 'none'; };
+        closeNb.onclick = () => this.closeWorkspace();
         nbHeader.appendChild(closeNb);
 
         const body = document.createElement('div');

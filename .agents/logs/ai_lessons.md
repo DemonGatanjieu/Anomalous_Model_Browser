@@ -9,6 +9,10 @@ When a visual refactor merges information into a compact overview, do not remove
 ## 57. Detail Return Must Restore the List Viewport
 
 Opening a detail panel should capture the list's semantic location and viewport, not only the selected item. Restore the folder/type and `scrollTop`/`scrollLeft` when the user returns to the grid, while keeping recipe-detail return state separate from browser-grid state. This prevents a visually correct Back action from still feeling like a navigation reset.
+
+## 58. Overlay Close Must Restore Its Covered Panel
+
+An overlay that only toggles its own visibility can reveal a blank host surface if the underlying panel was hidden by an earlier navigation path. Record the covered panel at overlay entry and restore it through one shared close function. Keep a safe visible fallback, such as the main grid, for stale or missing return state.
 这份文档旨在记录 Anomalous 插件开发过程中的架构演进、UX 设计教训以及核心 Bug 排查经验。
 
 ---

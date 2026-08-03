@@ -269,6 +269,13 @@ export function createDOM() {
         }
 
         nbBtn.onclick = () => {
+            this.workspaceReturnState = {
+                grid: this.grid?.style.display || 'none',
+                detail: this.detailPanel?.style.display || 'none',
+                gallery: this.galleryPanel?.style.display || 'none',
+                doctor: this.doctorPanel?.style.display || 'none',
+                assistant: this.assistantPanel?.style.display || 'none',
+            };
             this.nbPanel.style.display = 'flex';
             this.showNotebooks();
         };
@@ -1691,7 +1698,7 @@ export function createDOM() {
         this.nbPanel.className = 'anomalous-nb-modal';
         this.nbPanel.style.display = 'none';
         this.nbPanel.onclick = (e) => {
-            if (e.target === this.nbPanel) this.nbPanel.style.display = 'none';
+            if (e.target === this.nbPanel) this.closeWorkspace();
         };
 
         content.appendChild(header);

@@ -1,5 +1,19 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-03 - Restore the panel under the Workspace
+
+**Implemented**
+
+- Added one shared Workspace close path for the header close button and backdrop click.
+- Recorded the visible main-browser panel before opening the Workspace and restored it on close.
+- Added a model-grid fallback when the previous panel state is unavailable, preventing blank host screens.
+
+**Validation**
+
+- `node --check web/main.js web/modules/ui_notebooks.js web/modules/ui_sidebar.js web/modules/ui_recipe_detail.js`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+- `git diff --check`
 ## [Snapshot] 2026-08-03 - Preserve model grid return position
 
 **Implemented**

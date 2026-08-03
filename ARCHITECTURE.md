@@ -6,6 +6,8 @@ This document provides a high-level overview of the Anomalous Model Browser plug
 
 The recipe detail view keeps Overview, Parameters, and Versions tabs. The Overview contains the model composition blocks; each resolved model name or preview is an explicit entry into the browser model detail view. Model previews are demand-loaded when Overview opens, and returning from model detail restores the recipe detail view. The model browser stores the active grid folder and scroll coordinates before opening detail and restores them when returning to the grid. List-card Append actions await the shared canvas transaction before reporting success or restoring the button state. Export confirmation uses three states (cancel, exclude, include); cancellation must stop the export flow rather than silently becoming an exclusion.
 
+The Workspace close action is a state restoration boundary. Opening the Workspace records which main-browser panel was visible; closing it hides recipe/notebook content and restores that panel, falling back to the model grid when the previous state is unavailable. All Workspace close affordances use the same cleanup function.
+
 ## 1. Project Philosophy (设计理念)
 * **Zero Frameworks**: No React, Vue, or build tools. Everything is Vanilla JS and CSS for maximum compatibility, minimum overhead, and zero compilation steps.
 * **Non-Intrusive Integration**: Operates as a floating Gemini-style popover (`#anomalous-container`) mounted via ComfyUI's standard UI extension system. It avoids altering the native ComfyUI canvas except when explicit interaction is required.
