@@ -510,3 +510,8 @@
 - `node --check web/modules/ui_recipe_detail.js`
 - `node tests/recipe_parser_roundtrip.mjs`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+
+## [2026-08-03] UI Refactor: Manual Origin Editing & Civitai Fetching
+- Added Edit Origin dialog for workflow recipe models.
+- Implemented auto-fetching of official model information from Civitai via hash.
+- Added robust modal overlay and new translation strings.

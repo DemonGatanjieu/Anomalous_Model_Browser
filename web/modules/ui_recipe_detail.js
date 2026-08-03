@@ -717,6 +717,212 @@ function renderOverview(content, owner, recipe, references, finish) {
     content.appendChild(overview);
 }
 
+function openOriginEditDialog(owner, recipe, reference, finish) {
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.inset = '0';
+    overlay.style.zIndex = '999999';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.background = 'rgba(0, 0, 0, 0.6)';
+    overlay.style.backdropFilter = 'blur(4px)';
+    overlay.style.padding = '20px';
+    overlay.style.boxSizing = 'border-box';
+    
+    const dialog = document.createElement('div');
+    dialog.style.background = 'linear-gradient(145deg, rgba(48, 49, 55, 0.98), rgba(27, 28, 33, 0.98))';
+    dialog.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+    dialog.style.borderRadius = '16px';
+    dialog.style.padding = '24px';
+    dialog.style.maxWidth = '400px';
+    dialog.style.width = '100%';
+    dialog.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.4)';
+    dialog.style.color = '#fff';
+    dialog.style.fontFamily = 'Inter, -apple-system, sans-serif';
+    dialog.style.display = 'flex';
+    dialog.style.flexDirection = 'column';
+    dialog.style.gap = '16px';
+    
+    const title = document.createElement('h3');
+    title.textContent = t('recipeOriginDialogTitle');
+    title.style.margin = '0 0 8px 0';
+    title.style.fontSize = '18px';
+    title.style.fontWeight = '600';
+    dialog.appendChild(title);
+
+    const match = recipe.params?.model_references?.find(
+        (r) => r.type === reference.type && r.saved_value === reference.saved_value
+    );
+    if (!match) {
+        document.body.removeChild(overlay);
+        return;
+    }
+
+    const createInputGroup = (labelText, value) => {
+        const group = document.createElement('div');
+        group.style.display = 'flex';
+        group.style.flexDirection = 'column';
+        group.style.gap = '6px';
+        const label = document.createElement('label');
+        label.textContent = labelText;
+        label.style.fontSize = '13px';
+        label.style.color = 'rgba(255, 255, 255, 0.7)';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = value || '';
+        input.style.background = 'rgba(0, 0, 0, 0.2)';
+        input.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+        input.style.padding = '10px 12px';
+        input.style.borderRadius = '8px';
+        input.style.color = '#fff';
+        input.style.fontSize = '14px';
+        input.style.outline = 'none';
+        input.style.transition = 'border-color 0.2s';
+        input.onfocus = () => input.style.borderColor = 'var(--anomalous-accent, #6366f1)';
+        input.onblur = () => input.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+        group.appendChild(label);
+        group.appendChild(input);
+        return { group, input };
+    };
+
+    const nameGroup = createInputGroup(t('recipeOriginOfficialName'), match.origin?.model_name);
+    dialog.appendChild(nameGroup.group);
+    
+    const urlGroup = createInputGroup(t('recipeOriginModelUrl'), match.origin?.model_url);
+    dialog.appendChild(urlGroup.group);
+
+    const hash = reference.identity?.sha256;
+    if (hash) {
+        const fetchBtn = document.createElement('button');
+        fetchBtn.textContent = t('recipeOriginFetchHash');
+        fetchBtn.style.background = 'rgba(255, 255, 255, 0.05)';
+        fetchBtn.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+        fetchBtn.style.color = '#fff';
+        fetchBtn.style.padding = '8px 12px';
+        fetchBtn.style.borderRadius = '8px';
+        fetchBtn.style.cursor = 'pointer';
+        fetchBtn.style.fontSize = '13px';
+        fetchBtn.style.transition = 'all 0.2s';
+        fetchBtn.style.marginTop = '4px';
+        fetchBtn.onmouseover = () => fetchBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+        fetchBtn.onmouseout = () => fetchBtn.style.background = 'rgba(255, 255, 255, 0.05)';
+        
+        fetchBtn.onclick = async () => {
+            fetchBtn.disabled = true;
+            fetchBtn.style.opacity = '0.5';
+            fetchBtn.style.cursor = 'not-allowed';
+            const originalText = fetchBtn.textContent;
+            fetchBtn.textContent = t('recipeOriginFetching');
+            try {
+                const res = await fetch(`https://civitai.com/api/v1/model-versions/by-hash/${hash}`);
+                if (!res.ok) throw new Error('Fetch failed');
+                const data = await res.json();
+                if (data && data.model && data.model.name) {
+                    nameGroup.input.value = data.model.name;
+                    urlGroup.input.value = `https://civitai.com/models/${data.modelId}?modelVersionId=${data.id}`;
+                    fetchBtn.textContent = t('recipeOriginFetchSuccess');
+                    fetchBtn.style.background = 'rgba(46, 204, 113, 0.2)';
+                    fetchBtn.style.borderColor = 'rgba(46, 204, 113, 0.5)';
+                    fetchBtn.style.color = '#2ecc71';
+                } else {
+                    throw new Error('Invalid data');
+                }
+            } catch (err) {
+                console.error('Civitai fetch error:', err);
+                fetchBtn.textContent = t('recipeOriginFetchFailed');
+                fetchBtn.style.background = 'rgba(231, 76, 60, 0.2)';
+                fetchBtn.style.borderColor = 'rgba(231, 76, 60, 0.5)';
+                fetchBtn.style.color = '#e74c3c';
+            }
+            setTimeout(() => {
+                fetchBtn.textContent = originalText;
+                fetchBtn.disabled = false;
+                fetchBtn.style.opacity = '1';
+                fetchBtn.style.cursor = 'pointer';
+                fetchBtn.style.background = 'rgba(255, 255, 255, 0.05)';
+                fetchBtn.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                fetchBtn.style.color = '#fff';
+            }, 2500);
+        };
+        dialog.appendChild(fetchBtn);
+    }
+
+    const actions = document.createElement('div');
+    actions.style.display = 'flex';
+    actions.style.gap = '12px';
+    actions.style.justifyContent = 'flex-end';
+    actions.style.marginTop = '16px';
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = t('recipeDetailCancel');
+    cancelBtn.style.background = 'transparent';
+    cancelBtn.style.border = 'none';
+    cancelBtn.style.color = 'rgba(255, 255, 255, 0.7)';
+    cancelBtn.style.cursor = 'pointer';
+    cancelBtn.style.padding = '8px 16px';
+    cancelBtn.style.fontSize = '14px';
+    cancelBtn.style.borderRadius = '6px';
+    cancelBtn.onmouseover = () => cancelBtn.style.background = 'rgba(255, 255, 255, 0.05)';
+    cancelBtn.onmouseout = () => cancelBtn.style.background = 'transparent';
+    cancelBtn.onclick = () => document.body.removeChild(overlay);
+    
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = t('recipeDetailSave');
+    saveBtn.style.background = 'var(--anomalous-accent, #6366f1)';
+    saveBtn.style.border = 'none';
+    saveBtn.style.color = '#fff';
+    saveBtn.style.cursor = 'pointer';
+    saveBtn.style.padding = '8px 16px';
+    saveBtn.style.fontSize = '14px';
+    saveBtn.style.fontWeight = '500';
+    saveBtn.style.borderRadius = '6px';
+    saveBtn.style.boxShadow = '0 2px 8px rgba(99, 102, 241, 0.3)';
+    saveBtn.onmouseover = () => saveBtn.style.filter = 'brightness(1.1)';
+    saveBtn.onmouseout = () => saveBtn.style.filter = 'none';
+    
+    saveBtn.onclick = async () => {
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+        saveBtn.style.opacity = '0.5';
+        saveBtn.style.cursor = 'wait';
+        
+        const newName = nameGroup.input.value.trim();
+        const newUrl = urlGroup.input.value.trim();
+        if (!match.origin) match.origin = {};
+        match.origin.provider = 'civitai';
+        if (newName) match.origin.model_name = newName; else delete match.origin.model_name;
+        if (newUrl) match.origin.model_url = newUrl; else delete match.origin.model_url;
+        
+        try {
+            await updateInlineRecipeMetadata(owner, recipe, { params: recipe.params });
+            document.body.removeChild(overlay);
+            finish('refresh');
+        } catch (e) {
+            console.error('Update failed', e);
+            saveBtn.disabled = false;
+            cancelBtn.disabled = false;
+            saveBtn.style.opacity = '1';
+            saveBtn.style.cursor = 'pointer';
+            anomalousAlert(t('recipeUpdateError'));
+        }
+    };
+    
+    actions.appendChild(cancelBtn);
+    actions.appendChild(saveBtn);
+    dialog.appendChild(actions);
+    
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    
+    // Close on click outside
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            document.body.removeChild(overlay);
+        }
+    });
+}
+
 function renderModelComposition(container, owner, recipe, references, finish, params) {
     container.replaceChildren();
     const heading = document.createElement('div');
@@ -850,6 +1056,20 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
             civitaiLink.onclick = (e) => e.stopPropagation();
             nameRow.appendChild(civitaiLink);
         }
+        
+        const editOriginBtn = document.createElement('button');
+        editOriginBtn.className = 'anomalous-recipe-civitai-btn';
+        editOriginBtn.innerHTML = t('recipeDetailEditOrigin');
+        editOriginBtn.title = t('recipeOriginDialogTitle');
+        editOriginBtn.style.marginLeft = '8px';
+        editOriginBtn.style.background = 'transparent';
+        editOriginBtn.style.border = '1px solid rgba(255,255,255,0.1)';
+        editOriginBtn.style.color = 'rgba(255,255,255,0.7)';
+        editOriginBtn.onclick = (e) => {
+            e.stopPropagation();
+            openOriginEditDialog(owner, recipe, reference, finish);
+        };
+        nameRow.appendChild(editOriginBtn);
 
         if (officialNameStr) {
             const subName = document.createElement('div');
