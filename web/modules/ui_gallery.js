@@ -6,52 +6,17 @@
 import { app } from "../../../scripts/app.js";
 import { escapeHtml } from './safe_dom.js';
 
-function galleryHeadSignature(data) {
-    return JSON.stringify({
-        total: Number(data?.total) || 0,
-        images: (Array.isArray(data?.images) ? data.images : []).map((image) => [
-            image?.filename || '',
-            image?.subfolder || '',
-            image?.mtime || 0,
-        ]),
-    });
-}
-
 export async function refreshGalleryImages() {
     if (this.galleryLoading || this.galleryRefreshLoading) return;
     this.galleryRefreshLoading = true;
     try {
-        const res = await fetch(`/anomalous/gallery_images?page=1&limit=50&_=${Date.now()}`, {
-            cache: 'no-store',
-        });
-        if (!res.ok) throw new Error(`gallery refresh failed (${res.status})`);
-        const data = await res.json();
-        const signature = galleryHeadSignature(data);
-        if (!this.galleryHeadSignature || signature !== this.galleryHeadSignature) {
-            const scrollTop = this.galleryGrid?.scrollTop || 0;
-            await this.loadGalleryImages(1, true);
-            if (this.galleryGrid) this.galleryGrid.scrollTop = scrollTop;
-        }
+        const scrollTop = this.galleryGrid?.scrollTop || 0;
+        await this.loadGalleryImages(1, true);
+        if (this.galleryGrid) this.galleryGrid.scrollTop = scrollTop;
     } catch (error) {
         console.warn('Could not refresh output gallery:', error);
     } finally {
         this.galleryRefreshLoading = false;
-    }
-}
-
-export function startGalleryLiveRefresh() {
-    this.stopGalleryLiveRefresh?.();
-    this.galleryRefreshTimer = window.setInterval(() => {
-        if (this.modal?.classList.contains('visible') && this.galleryPanel?.style.display === 'flex') {
-            void this.refreshGalleryImages();
-        }
-    }, 3000);
-}
-
-export function stopGalleryLiveRefresh() {
-    if (this.galleryRefreshTimer) {
-        window.clearInterval(this.galleryRefreshTimer);
-        this.galleryRefreshTimer = null;
     }
 }
 
@@ -65,8 +30,6 @@ export async function loadGalleryImages(page = 1, reset = false) {
         try {
             const res = await fetch(`/anomalous/gallery_images?page=${page}&limit=50`);
             const data = await res.json();
-
-            if (page === 1) this.galleryHeadSignature = galleryHeadSignature(data);
 
             if (reset) {
                 // Clear existing cards
@@ -474,7 +437,6 @@ export function showGallerySelectMode(model) {
         this.grid.style.display = 'none';
         this.detailPanel.style.display = 'none';
         this.galleryPanel.style.display = 'flex';
-        this.startGalleryLiveRefresh?.();
         let banner = document.getElementById('anomalous-gallery-select-banner');
         if (!banner) {
             banner = document.createElement('div');

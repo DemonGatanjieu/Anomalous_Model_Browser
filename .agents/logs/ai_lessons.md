@@ -452,3 +452,6 @@ If a save-dialog option no longer provides value, remove its controls and transi
 ## 69. Compact sidebars need explicit flex shrink rules
 
 A responsive sidebar can become unusable even when its parent is correctly sized: text inputs keep a min-content width and push adjacent action buttons out of the hit area. Give the input `min-width: 0` and make the compact action fixed-width. For file-backed galleries, use a no-store head signature poll instead of rebuilding on every timer tick; this keeps live updates without needless DOM churn.
+## 70. Use explicit refresh for filesystem-backed galleries when polling is unnecessary
+
+For a gallery whose source is a directory walk, querying only when the panel opens plus an explicit Refresh action is a better default than background polling when users do not require live monitoring. Keep the button visibly busy during the scan and preserve scroll position after rebuilding the first page.

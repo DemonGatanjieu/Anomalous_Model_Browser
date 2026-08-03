@@ -247,4 +247,4 @@ The save dialog records recipe identity, notes, tags, cover/source image, and mo
 
 The notebook create row contains a text input and a confirmation button. In the 660px docked browser, the notebook sidebar is reduced to 80px, so the input must have `min-width: 0` and the confirmation button must remain a non-shrinking fixed-size item. Otherwise the input's placeholder intrinsic width pushes the check button outside the clickable sidebar.
 
-The output gallery is a live view of ComfyUI's output directory, not a one-time snapshot. Opening the gallery performs a cache-free page-one refresh, and while the gallery is visible a lightweight three-second head poll compares total count, filename, subfolder, and modification time. The grid is rebuilt only when that signature changes, preserving the user's scroll position; polling stops when the panel or plugin closes.
+The output gallery is a user-refreshed view of ComfyUI's output directory. Opening the gallery performs one page-one scan, and the toolbar's Refresh button explicitly repeats that scan on demand. There is no background polling; the grid preserves scroll position when manually refreshed.

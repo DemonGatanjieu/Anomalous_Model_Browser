@@ -608,3 +608,19 @@
 - `node --check web/main.js`
 - `node tests/recipe_parser_roundtrip.mjs`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+## [Snapshot] 2026-08-04 - Make gallery refresh user-triggered
+
+**Implemented**
+
+- Removed the continuous gallery polling timer.
+- The main gallery performs one scan when opened.
+- Added a visible Refresh button to the gallery toolbar; clicking it rescans the output directory, preserves scroll position, and shows a disabled/loading state during the request.
+- Kept cover-selection gallery loading compatible with the same loaded-state behavior.
+
+**Validation**
+
+- `node --check web/modules/ui_gallery.js`
+- `node --check web/modules/ui_sidebar.js`
+- `node --check web/main.js`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`
