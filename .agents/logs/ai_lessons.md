@@ -449,3 +449,6 @@ When ComfyUI versions give “Open” different meanings—replace the current g
 ## 68. Remove obsolete save-dialog choices without deleting stored data
 
 If a save-dialog option no longer provides value, remove its controls and transient state rather than preserving a misleading interaction. Keep the serialized workflow unchanged, and preserve legacy metadata when editing existing records unless the user explicitly requests a data migration.
+## 69. Compact sidebars need explicit flex shrink rules
+
+A responsive sidebar can become unusable even when its parent is correctly sized: text inputs keep a min-content width and push adjacent action buttons out of the hit area. Give the input `min-width: 0` and make the compact action fixed-width. For file-backed galleries, use a no-store head signature poll instead of rebuilding on every timer tick; this keeps live updates without needless DOM churn.

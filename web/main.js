@@ -1,7 +1,7 @@
 import { showDetail, showEditModal, _openAdvancedModelSelector, setWidgetValuePath } from './modules/ui_detail.js';
 import { loadModels, applyModelToCanvas, stopMediaInContainer } from './modules/ui_grid.js';
 import { createDOM, renderSidebar, loadFolders, showHelp, hideAllPanels, openFolderManager } from './modules/ui_sidebar.js';
-import { loadGalleryImages, showGeneratedGallery, showGallerySelectMode, showGalleryViewer } from './modules/ui_gallery.js';
+import { loadGalleryImages, refreshGalleryImages, startGalleryLiveRefresh, stopGalleryLiveRefresh, showGeneratedGallery, showGallerySelectMode, showGalleryViewer } from './modules/ui_gallery.js';
 import { showNotebooks, closeWorkspace, refreshNotebooks, saveCurrentNotebook, deleteCurrentNotebook, renderNotebookEditor, fillNotebookGalleries, sendNotebookToCanvas } from './modules/ui_notebooks.js';
 import { showRecipes, refreshRecipes, renderRecipeList, handleSaveRecipe } from './modules/ui_recipes.js';
 import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, _openGalleryReplacer, openLoraInsertionPicker, runGlobalDoctorScan } from './modules/ui_doctor.js';
@@ -99,6 +99,7 @@ class AnomalousBrowser {
     }
 
     close() {
+        this.stopGalleryLiveRefresh?.();
         this.modal.classList.remove('visible');
         if (this._modelLoadController) this._modelLoadController.abort();
         if (this._modelMediaObserver) this._modelMediaObserver.disconnect();
@@ -420,6 +421,9 @@ AnomalousBrowser.prototype.renderRecipeList = renderRecipeList;
 AnomalousBrowser.prototype.handleSaveRecipe = handleSaveRecipe;
 
 AnomalousBrowser.prototype.loadGalleryImages = loadGalleryImages;
+AnomalousBrowser.prototype.refreshGalleryImages = refreshGalleryImages;
+AnomalousBrowser.prototype.startGalleryLiveRefresh = startGalleryLiveRefresh;
+AnomalousBrowser.prototype.stopGalleryLiveRefresh = stopGalleryLiveRefresh;
 AnomalousBrowser.prototype.showGeneratedGallery = showGeneratedGallery;
 AnomalousBrowser.prototype.showGallerySelectMode = showGallerySelectMode;
 AnomalousBrowser.prototype.showGalleryViewer = showGalleryViewer;

@@ -242,3 +242,9 @@ The separate structural-edit action may still load a recipe into a new canvas fo
 ## 67. Recipe Save Does Not Ask for Presentation Pins
 
 The save dialog records recipe identity, notes, tags, cover/source image, and model-preview snapshot preference. It no longer renders the expandable “Choose key parameters” section: the complete serialized workflow already remains the source of truth, and this extra presentation selection added friction without improving restoration. Existing `params.pinned` data is preserved when editing an older recipe so removing the control is not a destructive metadata migration; new saves use an empty pin list.
+
+## 68. Docked Notebook Controls Must Shrink as a Unit
+
+The notebook create row contains a text input and a confirmation button. In the 660px docked browser, the notebook sidebar is reduced to 80px, so the input must have `min-width: 0` and the confirmation button must remain a non-shrinking fixed-size item. Otherwise the input's placeholder intrinsic width pushes the check button outside the clickable sidebar.
+
+The output gallery is a live view of ComfyUI's output directory, not a one-time snapshot. Opening the gallery performs a cache-free page-one refresh, and while the gallery is visible a lightweight three-second head poll compares total count, filename, subfolder, and modification time. The grid is rebuilt only when that signature changes, preserving the user's scroll position; polling stops when the panel or plugin closes.

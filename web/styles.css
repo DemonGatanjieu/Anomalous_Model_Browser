@@ -558,6 +558,23 @@
     transition: width 0.3s;
 }
 
+.anomalous-nb-create-row {
+    min-width: 0;
+    box-sizing: border-box;
+    align-items: center;
+}
+
+.anomalous-nb-create-input {
+    min-width: 0;
+    width: 0;
+    box-sizing: border-box;
+}
+
+.anomalous-nb-create-row > button {
+    flex: 0 0 auto;
+    min-width: 0;
+}
+
 @container (max-width: 600px) {
     .anomalous-nb-sidebar {
         width: 140px;
@@ -981,6 +998,19 @@
 
 .anomalous-gallery-viewer-close:hover {
     color: #fff;
+}
+
+@container (max-width: 750px) {
+    .anomalous-nb-create-row {
+        padding: 8px 6px !important;
+        gap: 3px !important;
+    }
+
+    .anomalous-nb-create-row > button {
+        width: 34px;
+        min-width: 34px;
+        padding: 8px 4px;
+    }
 }
 
 .anomalous-nb-header-main,

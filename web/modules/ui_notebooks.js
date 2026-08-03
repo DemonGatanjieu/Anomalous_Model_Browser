@@ -109,6 +109,7 @@ export async function showNotebooks() {
         nbList.className = 'anomalous-nb-list';
 
         const btnRow = document.createElement('div');
+        btnRow.className = 'anomalous-nb-create-row';
         btnRow.style.padding = '10px';
         btnRow.style.display = 'flex';
         btnRow.style.gap = '5px';
@@ -118,6 +119,7 @@ export async function showNotebooks() {
         createBtn.className = 'anomalous-btn-primary';
 
         const createInput = document.createElement('input');
+        createInput.className = 'anomalous-nb-create-input';
         createInput.type = 'text';
         createInput.placeholder = t('newNotebookName');
         createInput.style.display = 'none';

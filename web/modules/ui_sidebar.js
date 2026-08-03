@@ -214,9 +214,8 @@ export function createDOM() {
             menuBtn.style.opacity = '0.3';
             menuBtn.style.cursor = 'not-allowed';
             this.galleryPanel.style.display = 'flex';
-            if (!this.galleryLoaded) {
-                this.loadGalleryImages(1, true);
-            }
+            this.startGalleryLiveRefresh();
+            void this.refreshGalleryImages();
         };
 
         const dockBtn = document.createElement('button');
@@ -2044,6 +2043,7 @@ export function showHelp() {
 
 
 export function hideAllPanels() {
+        this.stopGalleryLiveRefresh?.();
         this.recipeModelReturn = null;
         this.grid.style.display = 'none';
         this.detailPanel.style.display = 'none';

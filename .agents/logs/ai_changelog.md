@@ -591,3 +591,20 @@
 - `node --check web/modules/recipe_parser.js`
 - `node tests/recipe_parser_roundtrip.mjs`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+## [Snapshot] 2026-08-04 - Fix docked notebook creation and live output gallery
+
+**Implemented**
+
+- Fixed the docked notebook create row by giving it a bounded layout, allowing the name input to shrink, and keeping the confirmation button visible and clickable in the 80px compact sidebar.
+- Added cache-free gallery head refreshes when the gallery opens and a three-second live poll while it is visible.
+- Rebuild the gallery only when output image count or the newest page signature changes, preserving scroll position and stopping the timer when the panel/plugin closes.
+- Fixed gallery cover-selection initialization to use the existing `galleryLoaded` state instead of reading an uninitialized image array.
+
+**Validation**
+
+- `node --check web/modules/ui_notebooks.js`
+- `node --check web/modules/ui_gallery.js`
+- `node --check web/modules/ui_sidebar.js`
+- `node --check web/main.js`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`
