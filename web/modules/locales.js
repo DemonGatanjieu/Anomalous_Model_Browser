@@ -366,6 +366,7 @@ export const i18n = {
         recipeExportSnapshotsConfirm: 'Include model preview snapshots in the export?\n\nSnapshots are presentation data; video covers are reduced to lightweight stills and original videos are never packed.',
         recipeExportHistoryConfirm: 'Include historical versions in the export?\n\nHistory may contain older prompts and notes.',
         recipeExportRedactIdentityConfirm: 'Remove model SHA-256, size, and provenance information?\n\nChoose OK to remove those identity fields.',
+        recipeDialogNo: 'No',
         recipeImportSummary: 'The recipe package passed inspection. Import these contents?',
         recipeImportAssets: 'Preview assets',
         recipeImportHistory: 'Historical versions',

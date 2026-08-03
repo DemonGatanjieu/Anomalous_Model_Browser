@@ -64,7 +64,7 @@ export function anomalousAlert(message, title = 'Anomalous') {
     });
 }
 
-export function anomalousConfirm(message, title = 'Anomalous') {
+export function anomalousConfirm(message, title = 'Anomalous', options = {}) {
     return new Promise((resolve) => {
         const overlay = document.createElement('div');
         overlay.style.position = 'fixed';
@@ -121,15 +121,25 @@ export function anomalousConfirm(message, title = 'Anomalous') {
         okBtn.className = 'anomalous-btn-danger';
         okBtn.style.padding = '8px 24px';
         
+        const noBtn = options.noLabel ? document.createElement('button') : null;
+        if (noBtn) {
+            noBtn.textContent = options.noLabel;
+            noBtn.className = 'anomalous-btn-ghost';
+            noBtn.style.padding = '8px 24px';
+        }
+
         const finish = (result) => {
             overlay.remove();
             resolve(result);
         };
         
-        cancelBtn.onclick = () => finish(false);
+        cancelBtn.onclick = () => finish(null);
+        noBtn?.addEventListener('click', () => finish(false));
         okBtn.onclick = () => finish(true);
         
-        footer.append(cancelBtn, okBtn);
+        footer.append(cancelBtn);
+        if (noBtn) footer.append(noBtn);
+        footer.append(okBtn);
         dialog.append(heading, text, footer);
         overlay.appendChild(dialog);
         document.body.appendChild(overlay);

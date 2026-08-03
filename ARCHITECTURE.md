@@ -2,6 +2,10 @@
 
 This document provides a high-level overview of the Anomalous Model Browser plugin for ComfyUI. It is designed to quickly onboard new AI agents or developers to the project's structure, design philosophy, and critical subsystems.
 
+## Current recipe interaction correction (2026-08-03)
+
+The recipe detail view keeps separate Overview, Models, Parameters, and Versions tabs. Parameters remain intentionally compact, while model previews are demand-loaded only when the Models tab is selected. List-card Append actions await the shared canvas transaction before reporting success or restoring the button state. Export confirmation uses three states (cancel, exclude, include); cancellation must stop the export flow rather than silently becoming an exclusion.
+
 ## 1. Project Philosophy (设计理念)
 * **Zero Frameworks**: No React, Vue, or build tools. Everything is Vanilla JS and CSS for maximum compatibility, minimum overhead, and zero compilation steps.
 * **Non-Intrusive Integration**: Operates as a floating Gemini-style popover (`#anomalous-container`) mounted via ComfyUI's standard UI extension system. It avoids altering the native ComfyUI canvas except when explicit interaction is required.

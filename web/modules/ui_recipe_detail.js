@@ -1203,6 +1203,9 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         ['overview', t('recipeDetailOverview'), () => {
             renderOverview(content, owner, recipe, references, finish);
         }],
+        ['models', t('recipeDetailModels'), () => {
+            renderModels(content, owner, recipe, references, finish);
+        }],
         ['parameters', t('recipeDetailParameters'), () => renderParameters(content, recipe)],
         ['versions', t('recipeDetailVersions'), () => renderVersions(content, owner, recipe, history, finish)],
     ];
@@ -1214,15 +1217,15 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
             tab?.classList.toggle('active', key === active);
         }
         tabDefinitions.find(([key]) => key === active)?.[2]();
-        if (active !== 'overview' || owner.recipeDetailPreviewState !== 'idle') return;
+        if (active !== 'models' || owner.recipeDetailPreviewState !== 'idle') return;
         owner.recipeDetailPreviewState = 'loading';
         void loadCurrentPreviews(owner, references)
             .catch((error) => console.warn('Could not load recipe model previews:', error))
             .finally(() => {
                 owner.recipeDetailPreviewState = 'loaded';
-                if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'overview') {
-                    // re-render the whole overview so models load images
-                    selectTab('overview');
+                if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'models') {
+                    // Re-render the model tab so newly loaded previews become visible.
+                    selectTab('models');
                 }
             });
     };

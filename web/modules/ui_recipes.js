@@ -109,9 +109,14 @@ function appendRecipeCover(parent, url, alt) {
 }
 
 async function exportRecipePackage(filename) {
-    const includeSnapshots = await anomalousConfirm(t('recipeExportSnapshotsConfirm'));
-    const includeHistory = await anomalousConfirm(t('recipeExportHistoryConfirm'));
-    const includeIdentity = !await anomalousConfirm(t('recipeExportRedactIdentityConfirm'));
+    const choice = { noLabel: t('recipeDialogNo') };
+    const includeSnapshots = await anomalousConfirm(t('recipeExportSnapshotsConfirm'), 'Anomalous', choice);
+    if (includeSnapshots === null) return;
+    const includeHistory = await anomalousConfirm(t('recipeExportHistoryConfirm'), 'Anomalous', choice);
+    if (includeHistory === null) return;
+    const redactIdentity = await anomalousConfirm(t('recipeExportRedactIdentityConfirm'), 'Anomalous', choice);
+    if (redactIdentity === null) return;
+    const includeIdentity = !redactIdentity;
     const response = await fetch('/anomalous/export_recipe_package', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1111,7 +1116,7 @@ export function renderRecipeList(recipes) {
         append.type = 'button';
         append.onclick = (e) => { e.stopPropagation(); runRecipeCardAction(append, async () => {
             const data = await fetchRecipeData(recipe.filename);
-            if (!appendRecipeOnCanvas(this, data)) throw new Error('recipe append failed');
+            if (!await appendRecipeOnCanvas(this, data)) throw new Error('recipe append failed');
         }, 'recipeAppendError'); };
 
         secondaryActions.append(edit, exportButton, remove);

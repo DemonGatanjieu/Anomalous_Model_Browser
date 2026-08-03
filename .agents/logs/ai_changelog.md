@@ -1,5 +1,20 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-03 - Restore recipe interaction contracts
+
+**Implemented**
+
+- Restored the dedicated recipe Models tab and bound preview loading to that tab, so model cards and preview navigation remain reachable after the visual refactor.
+- Awaited the list-card Append to Canvas transaction before treating the action as successful.
+- Extended the custom confirmation dialog with an optional explicit No choice and a distinct Cancel result; export now stops on cancellation and preserves the requested include/exclude values.
+
+**Validation**
+
+- `node --check web/modules/ui_dialog.js web/modules/ui_recipes.js web/modules/ui_recipe_detail.js`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+- `python_embeded/python.exe -m py_compile api/recipes.py api/models.py api/recipe_packages.py`
+- `git diff --check`
 ## [Snapshot] 2026-08-03 — Complete recipe model return cleanup
 
 - When returning from a model detail opened by a recipe, explicitly hide and clean the model panel before restoring the Workspace recipe detail view.
