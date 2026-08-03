@@ -1,5 +1,17 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-03 - Keep model navigation inside Overview
+
+**Implemented**
+
+- Removed the duplicate standalone Models tab from recipe detail.
+- Kept model composition blocks inside Overview and made their resolved model names/previews the model-detail entry points.
+- Moved demand-loaded preview refresh back to Overview and removed an undefined scroll-container reference from model navigation.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `git diff --check`
 ## [Snapshot] 2026-08-03 - Restore recipe interaction contracts
 
 **Implemented**

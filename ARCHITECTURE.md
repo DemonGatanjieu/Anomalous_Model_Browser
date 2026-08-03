@@ -4,7 +4,7 @@ This document provides a high-level overview of the Anomalous Model Browser plug
 
 ## Current recipe interaction correction (2026-08-03)
 
-The recipe detail view keeps separate Overview, Models, Parameters, and Versions tabs. Parameters remain intentionally compact, while model previews are demand-loaded only when the Models tab is selected. List-card Append actions await the shared canvas transaction before reporting success or restoring the button state. Export confirmation uses three states (cancel, exclude, include); cancellation must stop the export flow rather than silently becoming an exclusion.
+The recipe detail view keeps Overview, Parameters, and Versions tabs. The Overview contains the model composition blocks; each resolved model name or preview is an explicit entry into the browser model detail view. Model previews are demand-loaded when Overview opens, and returning from model detail restores the recipe detail view. List-card Append actions await the shared canvas transaction before reporting success or restoring the button state. Export confirmation uses three states (cancel, exclude, include); cancellation must stop the export flow rather than silently becoming an exclusion.
 
 ## 1. Project Philosophy (设计理念)
 * **Zero Frameworks**: No React, Vue, or build tools. Everything is Vanilla JS and CSS for maximum compatibility, minimum overhead, and zero compilation steps.

@@ -773,7 +773,7 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
                 const view = owner.recipeDetailView;
                 owner.recipeReturnState = {
                     activeTab: owner.recipeDetailActiveTab || 'overview',
-                    scrollTop: view?.scrollTop || content?.scrollTop || 0,
+                    scrollTop: view?.scrollTop || 0,
                 };
                 owner.recipeModelReturn = () => {
                     owner.modal?.classList.add('visible');
@@ -1203,9 +1203,6 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         ['overview', t('recipeDetailOverview'), () => {
             renderOverview(content, owner, recipe, references, finish);
         }],
-        ['models', t('recipeDetailModels'), () => {
-            renderModels(content, owner, recipe, references, finish);
-        }],
         ['parameters', t('recipeDetailParameters'), () => renderParameters(content, recipe)],
         ['versions', t('recipeDetailVersions'), () => renderVersions(content, owner, recipe, history, finish)],
     ];
@@ -1217,15 +1214,15 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
             tab?.classList.toggle('active', key === active);
         }
         tabDefinitions.find(([key]) => key === active)?.[2]();
-        if (active !== 'models' || owner.recipeDetailPreviewState !== 'idle') return;
+        if (active !== 'overview' || owner.recipeDetailPreviewState !== 'idle') return;
         owner.recipeDetailPreviewState = 'loading';
         void loadCurrentPreviews(owner, references)
             .catch((error) => console.warn('Could not load recipe model previews:', error))
             .finally(() => {
                 owner.recipeDetailPreviewState = 'loaded';
-                if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'models') {
-                    // Re-render the model tab so newly loaded previews become visible.
-                    selectTab('models');
+                if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'overview') {
+                    // Re-render the overview so newly loaded previews become visible.
+                    selectTab('overview');
                 }
             });
     };
