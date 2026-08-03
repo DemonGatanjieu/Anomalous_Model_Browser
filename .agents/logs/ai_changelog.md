@@ -530,3 +530,18 @@
 - `python_embeded/python.exe -m py_compile api/recipes.py api/metadata.py`
 - `node tests/recipe_parser_roundtrip.mjs`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+## [Snapshot] 2026-08-03 - Match imported recipe models locally
+
+**Implemented**
+
+- Replaced the detail-header origin refresh action with batch local model matching.
+- Matching is constrained by model hash, file size, and model category; author paths and filenames are not identity evidence.
+- Added an explicit Apply match action that updates the workflow only after confirmation and keeps the full-recipe history path.
+- Added visible progress, summary, error feedback, and localized labels for the new flow.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `node --check web/modules/locales.js`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`

@@ -537,6 +537,105 @@ async function matchLocalModel(owner, recipe, reference, status, rerender) {
     }
 }
 
+async function matchRecipeModels(owner, references, status, rerender) {
+    const candidates = references.filter((reference) => !reference.localModel);
+    const items = candidates.map((reference, index) => {
+        const identity = normaliseIdentity(reference.identity);
+        return {
+            key: String(index),
+            hash: identity.sha256 || 'unknown',
+            size: identity.size ?? null,
+            type: resolutionTypesForReference(reference).join(','),
+        };
+    });
+    if (!items.length) {
+        status.textContent = t('recipeAllModelsMatched');
+        return { found: 0, total: 0 };
+    }
+
+    status.textContent = t('recipeMatchingRecipeModels');
+    const response = await fetch('/anomalous/resolve_hash_batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items }),
+    });
+    const payload = await response.json();
+    if (!response.ok || !Array.isArray(payload.results)) throw new Error('recipe model matching failed');
+
+    let found = 0;
+    for (const item of payload.results) {
+        const reference = candidates[Number(item.key)];
+        const result = item.result;
+        if (!reference || !result?.found) continue;
+        let model;
+        try {
+            model = await resolveMatchedModelPreview(reference, result);
+        } catch (error) {
+            console.warn('Could not load preview for matched recipe model:', error);
+            continue;
+        }
+        if (!model) continue;
+        reference.localModel = model;
+        reference.currentPreviewUrl = model.preview_url || '';
+        reference.currentAvailability = 'available';
+        reference.localMatch = {
+            filename: model.filename,
+            type: model.type,
+            matched_by_hash: result.matched_by_hash === true,
+            matched_by_size: result.matched_by_size === true,
+        };
+        found += 1;
+    }
+    rerender();
+    return { found, total: candidates.length };
+}
+
+async function applyLocalModelMatch(owner, recipe, reference, status, rerender) {
+    const filename = reference.localMatch?.filename || '';
+    const node = (recipe?.workflow?.nodes || []).find(
+        (candidate) => String(candidate?.id ?? '') === String(reference?.node_id ?? ''),
+    );
+    const index = Number(reference?.widget_index);
+    if (!filename || !node || !Number.isInteger(index) || !Array.isArray(node.widgets_values) || index < 0 || index >= node.widgets_values.length) {
+        status.textContent = t('recipeApplyLocalMatchError');
+        return false;
+    }
+
+    const workflow = JSON.parse(JSON.stringify(recipe.workflow));
+    const target = workflow.nodes.find((candidate) => String(candidate?.id ?? '') === String(reference.node_id ?? ''));
+    if (!target || !Array.isArray(target.widgets_values)) {
+        status.textContent = t('recipeApplyLocalMatchError');
+        return false;
+    }
+    target.widgets_values[index] = filename;
+
+    const params = JSON.parse(JSON.stringify(recipe.params || {}));
+    if (Array.isArray(params.model_references)) {
+        const stored = params.model_references.find((candidate) => (
+            String(candidate?.node_id ?? '') === String(reference?.node_id ?? '')
+            && Number(candidate?.widget_index) === index
+            && String(candidate?.category || '') === String(reference?.category || '')
+            && candidate?.saved_value === reference?.saved_value
+        ));
+        if (stored) stored.saved_value = filename;
+    }
+
+    status.textContent = t('recipeApplyingLocalMatch');
+    try {
+        await updateInlineRecipeMetadata(owner, recipe, { workflow, params });
+        reference.saved_value = filename;
+        reference.localMatch = null;
+        reference.currentAvailability = 'available';
+        rerender();
+        status.textContent = t('recipeApplyLocalMatchSuccess');
+        return true;
+    } catch (error) {
+        console.error('Could not apply local recipe model match:', error);
+        status.textContent = t('recipeApplyLocalMatchError');
+        return false;
+    }
+}
+
 function missingNodeTypes(recipe) {
     const registry = globalThis.LiteGraph?.registered_node_types;
     if (!registry) return [];
@@ -1131,6 +1230,18 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
                 if (!reference.localModel) match.disabled = false;
             };
         }
+        if (reference.localMatch?.filename && reference.localMatch.filename !== reference.saved_value) {
+            const applyStatus = appendText(meta, 'small', '', 'anomalous-recipe-model-match-status');
+            const apply = button(meta, t('recipeApplyLocalMatch'), 'anomalous-btn-ghost anomalous-recipe-model-match');
+            apply.title = t('recipeApplyLocalMatchDesc');
+            apply.onclick = async () => {
+                apply.disabled = true;
+                await applyLocalModelMatch(owner, recipe, reference, applyStatus, () => {
+                    renderModelComposition(container, owner, recipe, references, finish, params);
+                });
+                if (reference.localMatch?.filename) apply.disabled = false;
+            };
+        }
         details.appendChild(meta);
         body.appendChild(details);
         card.appendChild(body);
@@ -1536,25 +1647,28 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     appendText(header, 'h3', recipe.name || t('recipeUntitled'));
     const headerActions = document.createElement('div');
     headerActions.className = 'anomalous-recipe-actions-primary';
-    const refreshOrigin = button(headerActions, '🌍 ' + t('recipeDetailRefreshOrigin'), 'anomalous-btn-ghost');
-    refreshOrigin.title = t('recipeDetailRefreshOriginDesc');
-    refreshOrigin.onclick = async () => {
-        refreshOrigin.disabled = true;
-        refreshOrigin.textContent = '...';
+    const matchRecipe = button(headerActions, '🔎 ' + t('recipeMatchRecipeModels'), 'anomalous-btn-ghost');
+    matchRecipe.title = t('recipeMatchRecipeModelsDesc');
+    const matchRecipeStatus = appendText(headerActions, 'small', '', 'anomalous-recipe-header-status');
+    matchRecipeStatus.setAttribute('aria-live', 'polite');
+    matchRecipe.onclick = async () => {
+        matchRecipe.disabled = true;
+        matchRecipe.classList.add('is-busy');
+        matchRecipe.textContent = t('recipeMatchingRecipeModels');
         try {
-            const response = await fetch('/anomalous/update_recipe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ filename, refreshIdentities: true }),
+            const result = await matchRecipeModels(owner, references, matchRecipeStatus, () => {
+                if (owner.recipeDetailActiveTab === 'overview') selectTab('overview');
             });
-            if (!response.ok) throw new Error('refresh failed');
-            const data = await response.json();
-            if (data.status === 'success') {
-                if (owner.refreshRecipes) await owner.refreshRecipes();
-                finish('refresh');
-            }
+            matchRecipeStatus.textContent = result.total
+                ? t('recipeRecipeMatchSummary').replace('{found}', String(result.found)).replace('{total}', String(result.total))
+                : t('recipeAllModelsMatched');
         } catch (error) {
-            console.error('Could not refresh identities:', error);
+            console.error('Could not match recipe models locally:', error);
+            matchRecipeStatus.textContent = t('recipeLocalModelMatchError');
+        } finally {
+            matchRecipe.disabled = false;
+            matchRecipe.classList.remove('is-busy');
+            matchRecipe.textContent = '🔎 ' + t('recipeMatchRecipeModels');
         }
     };
     

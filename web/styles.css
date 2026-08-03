@@ -2542,6 +2542,15 @@
     margin-left: auto;
 }
 
+.anomalous-recipe-header-status {
+    max-width: 190px;
+    color: rgba(190, 205, 225, 0.78);
+    font-size: 0.75rem;
+    line-height: 1.25;
+    white-space: normal;
+    text-align: right;
+}
+
 /* Icon Button (for emoji/icons) */
 .anomalous-btn-icon {
     display: inline-flex;
