@@ -515,3 +515,18 @@
 - Added Edit Origin dialog for workflow recipe models.
 - Implemented auto-fetching of official model information from Civitai via hash.
 - Added robust modal overlay and new translation strings.
+
+## [Snapshot] 2026-08-03 - Repair manual origin editing and refresh command
+
+**Implemented**
+
+- Fixed Edit Origin to locate references by node/widget/category/saved value instead of nonexistent `type`.
+- Restored localized Save/Cancel labels for the origin dialog.
+- Allowed the refresh-origin endpoint to enrich an existing recipe when called with the compact refresh-only request.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `python_embeded/python.exe -m py_compile api/recipes.py api/metadata.py`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`

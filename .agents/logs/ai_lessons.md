@@ -433,3 +433,7 @@ Browser `title` hints are delayed, low-contrast, difficult to style, and poor fo
 (Recipe 详情页原本分了太多的 Tab（概览、模型、参数），导致信息过于分散、认知负担过重。同时 Quick Queue 功能由于绕过了画布，极易产生状态 Bug。在重构时，把模型和参数全塞进概览页后，原本绑定在“当处于模型 Tab 时才加载预览图”的机制断裂，导致模型封面无法显示。)
 **The Solution (方案)**: Consolidate noisy parameters into a `<details>` fold inside the Overview, simplifying the UI visually. Strip out Quick Queue and standardize on Open/Append logic. Most importantly, when changing Tab semantic structures, carefully audit and update any conditional logic tying background fetching (like preview loading) to active Tab state.
 (将杂乱的参数收纳进详情页的 `<details>` 折叠组件中，极大降低视觉噪音。彻底删除 Quick Queue 逻辑并统一为在画布中操作。最重要的是，在改变 Tab 结构时，必须仔细审计并更新那些依赖 Tab 状态的后台加载逻辑（如模型封面预加载），保证从卡片到详情面板的心流与数据流一致。)
+
+## 64. Refresh Commands Need an Explicit Compact Contract
+**The Problem**: A UI action that only asks the server to refresh model identities may send `{filename, refreshIdentities}`. Routing that request through a complete-recipe validator makes the button fail even though the stored recipe is valid; a second partial-update path would also risk losing history guarantees.
+**The Solution**: Detect the narrowly defined refresh-only payload, deep-copy the existing recipe, and run the same enrichment and archive/write path as a full update. Keep all other update payloads on complete-recipe validation, and match manual origin edits using stable reference provenance rather than display-only fields.

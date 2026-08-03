@@ -751,12 +751,28 @@ function openOriginEditDialog(owner, recipe, reference, finish) {
     title.style.fontWeight = '600';
     dialog.appendChild(title);
 
-    const match = recipe.params?.model_references?.find(
-        (r) => r.type === reference.type && r.saved_value === reference.saved_value
-    );
+    if (!recipe.params || typeof recipe.params !== 'object') recipe.params = {};
+    if (!Array.isArray(recipe.params.model_references)) recipe.params.model_references = [];
+    const referenceCategory = reference?.category || reference?.type || '';
+    let match = recipe.params.model_references.find((r) => (
+        String(r?.node_id ?? '') === String(reference?.node_id ?? '')
+        && Number(r?.widget_index) === Number(reference?.widget_index)
+        && String(r?.category || r?.type || '') === String(referenceCategory)
+        && r?.saved_value === reference?.saved_value
+    ));
     if (!match) {
-        document.body.removeChild(overlay);
-        return;
+        match = {
+            node_id: reference.node_id,
+            node_type: reference.node_type,
+            node_title: reference.node_title,
+            widget_index: reference.widget_index,
+            widget_name: reference.widget_name,
+            saved_value: reference.saved_value,
+            category: referenceCategory,
+            base_model: reference.base_model,
+            identity: reference.identity,
+        };
+        recipe.params.model_references.push(match);
     }
 
     const createInputGroup = (labelText, value) => {
@@ -855,7 +871,7 @@ function openOriginEditDialog(owner, recipe, reference, finish) {
     actions.style.marginTop = '16px';
     
     const cancelBtn = document.createElement('button');
-    cancelBtn.textContent = t('recipeDetailCancel');
+    cancelBtn.textContent = t('recipeCancel');
     cancelBtn.style.background = 'transparent';
     cancelBtn.style.border = 'none';
     cancelBtn.style.color = 'rgba(255, 255, 255, 0.7)';
@@ -868,7 +884,7 @@ function openOriginEditDialog(owner, recipe, reference, finish) {
     cancelBtn.onclick = () => document.body.removeChild(overlay);
     
     const saveBtn = document.createElement('button');
-    saveBtn.textContent = t('recipeDetailSave');
+    saveBtn.textContent = t('recipeSave');
     saveBtn.style.background = 'var(--anomalous-accent, #6366f1)';
     saveBtn.style.border = 'none';
     saveBtn.style.color = '#fff';

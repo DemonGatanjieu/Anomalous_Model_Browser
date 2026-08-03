@@ -5,6 +5,7 @@ extension repository, so personal prompts and graphs are never Git content.
 """
 
 import asyncio
+import copy
 from io import BytesIO
 import hashlib
 import json
@@ -729,8 +730,9 @@ async def api_update_recipe(request):
         existing = await asyncio.to_thread(_read_recipe, path)
         if not isinstance(existing, dict) or not isinstance(existing.get("workflow"), dict):
             raise ValueError("Invalid recipe")
-        recipe = _updated_recipe(payload, existing)
         refresh_identities = bool(payload.get("refreshIdentities"))
+        refresh_only = refresh_identities and set(payload).issubset({"filename", "refreshIdentities"})
+        recipe = copy.deepcopy(existing) if refresh_only else _updated_recipe(payload, existing)
         recipe = await asyncio.to_thread(_enrich_recipe, recipe, recipes_dir, filename, True, refresh_identities)
     except (AttributeError, ValueError, json.JSONDecodeError):
         return web.json_response({"status": "error", "message": "Invalid recipe"}, status=400)

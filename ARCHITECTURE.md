@@ -12,6 +12,10 @@ Availability refresh actions expose immediate busy feedback, an accessible `aria
 
 Identity help uses a click-to-expand inline explanation attached to the badge. The explanation stays in normal card flow with bounded width and wrapping, so it cannot be duplicated by a native `title` tooltip or cover adjacent flex content.
 
+Recipe origin editing has two supported update paths: complete recipe updates for metadata/workflow edits, and a refresh-only request containing `filename` plus `refreshIdentities`. The latter must clone the stored recipe before enrichment so the refresh action cannot be rejected by complete-recipe validation or accidentally discard the saved workflow.
+
+Origin edit dialogs locate a saved model reference by stable provenance fields (`node_id`, `widget_index`, category, and saved value), not by display-only fields such as `type`. Localized action labels must use keys that exist in the shared locale catalog; a missing key must never make a visible dialog action appear inert.
+
 ## Current recipe interaction correction (2026-08-03)
 
 The recipe detail view keeps Overview, Parameters, and Versions tabs. The Overview contains the model composition blocks; each resolved model name or preview is an explicit entry into the browser model detail view. Model previews are demand-loaded when Overview opens, and returning from model detail restores the recipe detail view. The model browser stores the active grid folder and scroll coordinates before opening detail and restores them when returning to the grid. List-card Append actions await the shared canvas transaction before reporting success or restoring the button state. Export confirmation uses three states (cancel, exclude, include); cancellation must stop the export flow rather than silently becoming an exclusion.
