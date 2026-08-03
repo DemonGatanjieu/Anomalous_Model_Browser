@@ -452,3 +452,18 @@
 - `node --check web/modules/ui_recipe_detail.js web/modules/ui_notebooks.js`
 - `node tests/recipe_parser_roundtrip.mjs`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+
+## [Snapshot] 2026-08-03 - Bound recipe identity labels
+
+**Implemented**
+
+- Shortened identity badge labels and kept their full explanations in the help tooltip.
+- Added shrink and wrapping constraints to identity badges, model names, and model-reference header rows.
+- Prevented localized or imported model status text from expanding recipe cards beyond their container.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+- `git diff --check` (apart from the pre-existing historical log whitespace warning)
