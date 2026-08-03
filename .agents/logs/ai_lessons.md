@@ -25,6 +25,10 @@ Python lists cannot carry ad-hoc control flags. When enrichment needs a refresh 
 ## 61. Long Status Explanations Do Not Belong in Bounded Badges
 
 Keep status badges short and move the explanation to a tooltip or disclosure. Long localized text inside a `white-space: nowrap` flex item can overflow its card even when the parent has a nominal width; use concise labels plus `min-width: 0` and explicit wrapping for resilient layouts.
+
+## 62. Disabled Is Not the Same as Feedback
+
+For network-backed buttons, disabling the control prevents duplicate requests but does not tell the user that anything happened. Pair the disabled state with an immediate loading label, a visible progress cue, and a failure path that restores the original action.
 这份文档旨在记录 Anomalous 插件开发过程中的架构演进、UX 设计教训以及核心 Bug 排查经验。
 
 ---

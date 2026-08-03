@@ -1826,6 +1826,29 @@
     margin-left: auto;
 }
 
+.anomalous-recipe-refresh-button {
+    position: relative;
+    transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+.anomalous-recipe-refresh-button.is-loading {
+    cursor: wait;
+    opacity: 0.78;
+    filter: saturate(0.8);
+}
+
+.anomalous-recipe-refresh-button.is-loading::before {
+    content: '↻';
+    display: inline-block;
+    margin-right: 5px;
+    animation: anomalous-recipe-spin 0.9s linear infinite;
+}
+
+@keyframes anomalous-recipe-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 .anomalous-recipe-detail-actions { margin-top: 2px; }
 
 .anomalous-recipe-identity-badge {

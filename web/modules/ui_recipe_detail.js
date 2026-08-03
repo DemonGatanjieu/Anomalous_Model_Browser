@@ -706,15 +706,20 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
     const heading = document.createElement('div');
     heading.className = 'anomalous-recipe-detail-section-heading';
     appendText(heading, 'h5', t('recipeDetailModelComposition'));
-    const refresh = button(heading, t('recipeDetailRefreshAvailability'), 'anomalous-btn-primary');
+    const refresh = button(heading, t('recipeDetailRefreshAvailability'), 'anomalous-btn-primary anomalous-recipe-refresh-button');
     const status = appendText(
         heading,
         'small',
         owner.recipeDetailPreviewState === 'loading' ? t('recipeDetailLoadingPreviews') : '',
         'anomalous-recipe-detail-muted',
     );
+    status.setAttribute('aria-live', 'polite');
     refresh.onclick = async () => {
+        if (refresh.disabled) return;
         refresh.disabled = true;
+        refresh.classList.add('is-loading');
+        refresh.setAttribute('aria-busy', 'true');
+        refresh.textContent = t('recipeDetailRefreshing');
         status.textContent = t('recipeDetailRefreshing');
         try {
             const response = await fetch('/anomalous/refresh_recipe_identity', {
@@ -741,7 +746,10 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
         } catch (error) {
             console.error('Could not refresh recipe model availability:', error);
             status.textContent = t('recipeDetailRefreshError');
+            refresh.textContent = t('recipeDetailRefreshAvailability');
             refresh.disabled = false;
+            refresh.classList.remove('is-loading');
+            refresh.removeAttribute('aria-busy');
         }
     };
     container.appendChild(heading);

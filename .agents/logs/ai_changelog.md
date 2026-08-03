@@ -467,3 +467,17 @@
 - `node tests/recipe_parser_roundtrip.mjs`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
 - `git diff --check` (apart from the pre-existing historical log whitespace warning)
+
+## [Snapshot] 2026-08-03 - Add availability refresh feedback
+
+**Implemented**
+
+- Added an immediate loading label and rotating indicator to the model availability button.
+- Added `aria-busy` and polite status updates for assistive feedback.
+- Restored the original button state when the request fails, while successful refreshes rebuild the updated control.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`
