@@ -288,7 +288,7 @@ def _model_reference_key(reference):
     )
 
 
-def _preserve_model_reference_fields(previous_references, references):
+def _preserve_model_reference_fields(previous_references, references, preserve_identity=True):
     """Carry package/history presentation and identity without trusting names."""
     previous = {
         _model_reference_key(reference): reference
@@ -301,7 +301,7 @@ def _preserve_model_reference_fields(previous_references, references):
         if prior is None:
             continue
         for field in ("identity", "origin", "preview"):
-            if field == "preview" or (field in ("identity", "origin") and not getattr(references, "_force_refresh_identities", False)):
+            if field == "preview" or (field in ("identity", "origin") and preserve_identity):
                 if isinstance(prior.get(field), dict):
                     reference[field] = json.loads(json.dumps(prior[field], ensure_ascii=False))
 
@@ -311,14 +311,16 @@ def _enrich_recipe(recipe, recipes_dir=None, filename=None, recapture_previews=T
     params = dict(recipe.get("params") or {})
     previous_references = params.get("model_references", [])
     references = _build_model_references(recipe)
-    if refresh_identities:
-        setattr(references, "_force_refresh_identities", True)
-    _preserve_model_reference_fields(previous_references, references)
+    _preserve_model_reference_fields(
+        previous_references,
+        references,
+        preserve_identity=not refresh_identities,
+    )
     if recipes_dir and filename and recapture_previews:
         _attach_preview_snapshots(recipe, recipes_dir, filename, references)
     params["model_references"] = references
     recipe["params"] = params
-    recipe["schema_version"] = 4
+    recipe["schema_version"] = 5
     encoded = json.dumps(recipe, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     if len(encoded) > MAX_RECIPE_BYTES:
         raise ValueError("Recipe is too large")

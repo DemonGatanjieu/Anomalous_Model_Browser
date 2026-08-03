@@ -436,3 +436,19 @@
 - Removed redundant overview parameter summary.
 - Added Kahn topological sort for parameter nodes to match workflow execution order.
 - Integrated LiteGraph native node and widget translations via dynamic dummy node creation.
+
+## [Snapshot] 2026-08-03 - Fix origin refresh enrichment
+
+**Implemented**
+
+- Replaced the invalid list-attribute refresh flag with an explicit enrichment argument.
+- Origin refresh now recomputes identity and Civitai origin metadata without preserving stale values.
+- Normal enrichment continues to preserve imported identity/origin records when appropriate.
+- Recipe writes now emit schema version 5 for the origin metadata extension.
+
+**Validation**
+
+- `python_embeded/python.exe -m py_compile api/recipes.py api/metadata.py`
+- `node --check web/modules/ui_recipe_detail.js web/modules/ui_notebooks.js`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`

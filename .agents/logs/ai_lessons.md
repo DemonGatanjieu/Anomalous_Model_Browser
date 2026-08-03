@@ -17,6 +17,10 @@ An overlay that only toggles its own visibility can reveal a blank host surface 
 ## 59. Reused Overlay DOM Must Be Rehydrated on Reopen
 
 When an overlay is closed by hiding both its shell and its child sections, the already-initialized fast path must restore the active child section before returning. Refreshing data alone does not make a hidden DOM subtree visible and can produce a blank overlay on the second open.
+
+## 60. Refresh Modes Must Be Explicit Data, Not List Attributes
+
+Python lists cannot carry ad-hoc control flags. When enrichment needs a refresh mode, pass it as an explicit function argument so the code remains valid for every list implementation and the preserve-versus-recompute behavior is visible at the call site.
 这份文档旨在记录 Anomalous 插件开发过程中的架构演进、UX 设计教训以及核心 Bug 排查经验。
 
 ---
