@@ -122,6 +122,14 @@ def _asset_id_from_reference(reference):
     return require_filename(asset_id)
 
 
+def _cover_asset_id(recipe):
+    presentation = recipe.get("presentation", {}) if isinstance(recipe, dict) else {}
+    asset_id = presentation.get("cover_asset_id") if isinstance(presentation, dict) else None
+    if not isinstance(asset_id, str) or not asset_id.startswith("cover-") or not asset_id.endswith(".webp"):
+        return None
+    return require_filename(asset_id)
+
+
 def _validate_manifest(manifest, archive, names):
     if not isinstance(manifest, dict) or manifest.get("package_version") != PACKAGE_VERSION:
         raise ValueError("Unsupported recipe package version")
@@ -164,13 +172,17 @@ def _sanitize_recipe_for_export(recipe, include_snapshots=True, include_identity
     return value
 
 
-def _referenced_asset_ids(recipe):
+def _referenced_asset_ids(recipe, include_model_previews=True):
     result = set()
-    references = recipe.get("params", {}).get("model_references", [])
-    for reference in references if isinstance(references, list) else []:
-        asset_id = _asset_id_from_reference(reference)
-        if asset_id:
-            result.add(asset_id)
+    cover_asset = _cover_asset_id(recipe)
+    if cover_asset:
+        result.add(cover_asset)
+    if include_model_previews:
+        references = recipe.get("params", {}).get("model_references", [])
+        for reference in references if isinstance(references, list) else []:
+            asset_id = _asset_id_from_reference(reference)
+            if asset_id:
+                result.add(asset_id)
     return result
 
 
@@ -208,16 +220,16 @@ def _build_export(raw_recipe, recipes_dir, filename, options):
                 raise ValueError("Historical recipe is too large")
             history_recipe = _parse_json(data, "historical recipe")
             history_recipes.append((history_name, _sanitize_recipe_for_export(history_recipe, include_snapshots, include_identity)))
-    asset_ids = _referenced_asset_ids(recipe)
+    asset_ids = _referenced_asset_ids(recipe, include_snapshots)
     for _, history_recipe in history_recipes:
-        asset_ids.update(_referenced_asset_ids(history_recipe))
+        asset_ids.update(_referenced_asset_ids(history_recipe, include_snapshots))
     entries = []
     output = io.BytesIO()
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
         recipe_bytes = json.dumps(recipe, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         _add_zip_entry(archive, entries, "recipe.json", recipe_bytes, "application/json")
 
-        if include_snapshots:
+        if asset_ids:
             assets_dir = recipe_store._recipe_assets_dir(recipes_dir, filename)
             for asset_id in sorted(asset_ids):
                 asset_path = resolve_within(assets_dir, asset_id)

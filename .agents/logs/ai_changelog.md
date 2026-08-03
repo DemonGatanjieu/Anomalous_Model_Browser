@@ -624,3 +624,21 @@
 - `node --check web/main.js`
 - `node tests/recipe_parser_roundtrip.mjs`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+## [Snapshot] 2026-08-04 - Add recipe result gallery and portable covers
+
+**Implemented**
+
+- Added an on-demand Workflow Recipe Gallery tab that scans at most the newest 200 output PNGs for matching embedded ComfyUI workflows.
+- Replaced the recipe fingerprint with `sha256-structural-v1`, which ignores known run-volatile seed and batch fields while retaining graph structure and generation settings.
+- Added explicit gallery refresh, masonry result cards, full-image viewing, and a Set as recipe cover action.
+- Recipe covers are compressed WebP assets stored under the recipe-owned `.assets` directory, take precedence in cards/detail, and are included in package export/import even when optional model snapshots are excluded.
+- Added bounded metadata/source-image limits and regression coverage for structural matching and cover-package behavior.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `node --check web/modules/ui_recipes.js`
+- `node --check web/modules/locales.js`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+- `python_embeded/python.exe -m py_compile api/recipes.py api/metadata.py api/models.py api/recipe_packages.py api/__init__.py`
+- `git diff --check`

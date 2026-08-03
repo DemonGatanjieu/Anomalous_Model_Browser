@@ -335,9 +335,10 @@ function outputImageUrl(image) {
     return `/view?${query.toString()}`;
 }
 
-function appendRecipeCover(parent, recipe) {
+function appendRecipeCover(parent, owner, recipe) {
     const sourceUrl = outputImageUrl(recipe?.source_image);
-    const url = previewIsVideo(sourceUrl) ? sourceUrl : recipe?.thumbnail || sourceUrl;
+    const savedCover = recipeAssetUrl(owner, recipe?.presentation?.cover_asset_id);
+    const url = savedCover || (previewIsVideo(sourceUrl) ? sourceUrl : recipe?.thumbnail || sourceUrl);
     if (!url) return false;
     if (previewIsVideo(url)) {
         const video = document.createElement('video');
@@ -707,7 +708,7 @@ function renderOverview(content, owner, recipe, references, finish) {
     overview.className = 'anomalous-recipe-detail-overview';
     const hero = document.createElement('div');
     hero.className = 'anomalous-recipe-detail-hero';
-    appendRecipeCover(hero, recipe);
+    appendRecipeCover(hero, owner, recipe);
     const copy = document.createElement('div');
     copy.className = 'anomalous-recipe-detail-hero-copy';
     const title = document.createElement('div');
@@ -1572,6 +1573,82 @@ function renderVersions(content, owner, recipe, history, finish) {
     content.appendChild(section);
 }
 
+function renderRecipeGallery(content, owner, recipe, gallery, refresh) {
+    const section = document.createElement('section');
+    section.className = 'anomalous-recipe-detail-section anomalous-recipe-gallery';
+    const heading = document.createElement('div');
+    heading.className = 'anomalous-recipe-detail-section-heading';
+    appendText(heading, 'h4', t('recipeGallery'));
+    const refreshButton = button(heading, t('recipeGalleryRefresh'), 'anomalous-btn-ghost anomalous-recipe-gallery-refresh');
+    refreshButton.onclick = () => { void refresh(true); };
+    section.appendChild(heading);
+
+    if (gallery.status === 'loading') {
+        appendText(section, 'p', t('recipeGalleryLoading'), 'anomalous-recipe-detail-muted');
+        content.appendChild(section);
+        return;
+    }
+    if (gallery.status === 'error') {
+        appendText(section, 'p', t('recipeGalleryLoadError'), 'anomalous-recipe-detail-muted');
+        content.appendChild(section);
+        return;
+    }
+
+    if (gallery.status === 'ready') {
+        appendText(section, 'small', t('recipeGalleryScanHint').replace('{count}', String(gallery.scanned || 0)), 'anomalous-recipe-detail-muted');
+    }
+    if (!gallery.images.length) {
+        appendText(section, 'p', t('recipeGalleryEmpty'), 'anomalous-recipe-detail-muted');
+        content.appendChild(section);
+        return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'anomalous-recipe-gallery-grid';
+    for (const sourceImage of gallery.images) {
+        const card = document.createElement('article');
+        card.className = 'anomalous-recipe-gallery-card';
+        const url = outputImageUrl(sourceImage);
+        const image = document.createElement('img');
+        image.src = url;
+        image.alt = t('recipeGalleryOpenImage');
+        image.loading = 'lazy';
+        image.onclick = () => owner.showGalleryViewer?.(url);
+        card.appendChild(image);
+        const actions = document.createElement('div');
+        actions.className = 'anomalous-recipe-gallery-card-actions';
+        const setCover = button(actions, t('recipeGallerySetCover'), 'anomalous-btn-primary');
+        setCover.onclick = (event) => {
+            event.stopPropagation();
+            void runRecipeAction(setCover, async () => {
+                const response = await fetch('/anomalous/set_recipe_gallery_cover', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: owner.recipeDetailFilename, source_image: sourceImage }),
+                });
+                if (!response.ok) throw new Error('recipe gallery cover update failed');
+                const payload = await response.json();
+                recipe.source_image = payload.source_image || sourceImage;
+                recipe.thumbnail = null;
+                recipe.presentation = {
+                    ...(recipe.presentation || {}),
+                    cover_asset_id: payload.cover?.asset_id,
+                };
+                if (payload.workflow_fingerprint) recipe.workflow_fingerprint = payload.workflow_fingerprint;
+                await owner.refreshRecipes();
+                setCover.textContent = t('recipeGalleryCoverSaved');
+            }).catch(async (error) => {
+                console.error('Could not set recipe gallery cover:', error);
+                await anomalousAlert(t('recipeGalleryCoverError'));
+            });
+        };
+        card.appendChild(actions);
+        grid.appendChild(card);
+    }
+    section.appendChild(grid);
+    content.appendChild(section);
+}
+
 export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     const returnState = owner.recipeReturnState || null;
     owner.recipeReturnState = null;
@@ -1657,12 +1734,40 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     tabs.className = 'anomalous-recipe-detail-tabs';
     const content = document.createElement('div');
     content.className = 'anomalous-recipe-detail-content';
+    const gallery = { status: 'idle', images: [], scanned: 0 };
+    const galleryTabLabel = () => gallery.status === 'ready'
+        ? `${t('recipeGallery')} (${gallery.images.length})`
+        : t('recipeGallery');
+    const updateGalleryTab = () => {
+        const tab = tabs.querySelector('[data-tab="gallery"]');
+        if (tab) tab.textContent = galleryTabLabel();
+    };
+    const refreshGallery = async (force = false) => {
+        if (gallery.status === 'loading' || (!force && gallery.status === 'ready')) return;
+        gallery.status = 'loading';
+        updateGalleryTab();
+        if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'gallery') selectTab('gallery');
+        try {
+            const response = await fetch(`/anomalous/recipe_gallery?filename=${encodeURIComponent(filename)}`, { cache: 'no-store' });
+            if (!response.ok) throw new Error('recipe gallery request failed');
+            const payload = await response.json();
+            gallery.images = Array.isArray(payload.images) ? payload.images : [];
+            gallery.scanned = Number(payload.scanned) || 0;
+            gallery.status = 'ready';
+        } catch (error) {
+            console.error('Could not load recipe gallery:', error);
+            gallery.status = 'error';
+        }
+        updateGalleryTab();
+        if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'gallery') selectTab('gallery');
+    };
     const tabDefinitions = [
         ['overview', t('recipeDetailOverview'), () => {
             renderOverview(content, owner, recipe, references, finish);
         }],
         ['parameters', t('recipeDetailParameters'), () => renderParameters(content, recipe)],
         ['versions', t('recipeDetailVersions'), () => renderVersions(content, owner, recipe, history, finish)],
+        ['gallery', galleryTabLabel(), () => renderRecipeGallery(content, owner, recipe, gallery, refreshGallery)],
     ];
     const selectTab = (active) => {
         owner.recipeDetailActiveTab = active;
@@ -1692,6 +1797,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     view.append(tabs, content);
     owner.recipeView.appendChild(view);
     selectTab(returnState?.activeTab || 'overview');
+    void refreshGallery();
     if (returnState?.scrollTop) {
         requestAnimationFrame(() => {
             view.scrollTop = returnState.scrollTop;

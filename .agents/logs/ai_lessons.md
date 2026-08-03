@@ -455,3 +455,14 @@ A responsive sidebar can become unusable even when its parent is correctly sized
 ## 70. Use explicit refresh for filesystem-backed galleries when polling is unnecessary
 
 For a gallery whose source is a directory walk, querying only when the panel opens plus an explicit Refresh action is a better default than background polling when users do not require live monitoring. Keep the button visibly busy during the scan and preserve scroll position after rebuilding the first page.
+## 71. Recipe galleries must match a structural workflow, not exact run data
+
+**The Problem**: Exact serialized-workflow hashes make a generated image disappear from the recipe that created it as soon as a sampler seed or batch counter changes.
+
+**The Solution**: Canonicalize a narrow, documented set of run-volatile fields before fingerprinting. Retain topology, model values, prompts, sampler choices, and all nonvolatile parameters so the gallery remains a recipe result view rather than a fuzzy similarity search. Keep the scan on demand and bounded; output folders are user data and must never be continuously walked just to decorate a panel.
+
+## 72. A selected output is a cover asset, not a fragile filesystem reference
+
+**The Problem**: An output image can be cleaned up, moved, or unavailable on an imported recipe, so storing only its `/view` locator makes the chosen recipe cover disappear.
+
+**The Solution**: Treat the output path as an input to a one-time, bounded WebP conversion. Save the derived cover in the recipe-owned asset directory, validate its ID, package it independently of optional model-preview snapshots, and keep the original output locator only as local convenience metadata.

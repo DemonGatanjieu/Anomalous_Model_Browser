@@ -24,6 +24,10 @@ The recipe detail view keeps Overview, Parameters, and Versions tabs. The Overvi
 
 The Workspace close action is a state restoration boundary. Opening the Workspace records which main-browser panel was visible; closing it hides recipe/notebook content and restores that panel, falling back to the model grid when the previous state is unavailable. All Workspace close affordances use the same cleanup function.
 
+## Recipe result gallery (2026-08-04)
+
+Recipe detail has an on-demand Gallery tab for reusing the user's own generated results. A recipe uses a `sha256-structural-v1` fingerprint: it preserves graph topology, model references, prompts, and generation settings while excluding known run-volatile values such as sampler seeds and batch counters. Opening a detail view scans at most the newest 200 PNG files below ComfyUI's output directory and reads only bounded embedded `workflow` metadata; there is no background polling or persistent output index. Gallery refresh is explicit. A chosen result becomes a recipe-owned, compressed WebP cover in `.assets/<recipe-stem>/`, so it survives output cleanup and follows the recipe during package export/import. The original output image remains a local convenience link, never package data or identity evidence.
+
 ## 1. Project Philosophy (设计理念)
 * **Zero Frameworks**: No React, Vue, or build tools. Everything is Vanilla JS and CSS for maximum compatibility, minimum overhead, and zero compilation steps.
 * **Non-Intrusive Integration**: Operates as a floating Gemini-style popover (`#anomalous-container`) mounted via ComfyUI's standard UI extension system. It avoids altering the native ComfyUI canvas except when explicit interaction is required.

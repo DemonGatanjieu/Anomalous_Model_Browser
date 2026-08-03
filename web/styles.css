@@ -1607,6 +1607,60 @@
     padding: 14px;
 }
 
+.anomalous-recipe-gallery {
+    min-width: 0;
+}
+
+.anomalous-recipe-gallery-refresh {
+    margin-left: auto;
+}
+
+.anomalous-recipe-gallery-grid {
+    column-width: 210px;
+    column-gap: 12px;
+}
+
+.anomalous-recipe-gallery-card {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    margin: 0 0 12px;
+    overflow: hidden;
+    border: 1px solid #404040;
+    border-radius: 9px;
+    background: #171717;
+    break-inside: avoid;
+}
+
+.anomalous-recipe-gallery-card img {
+    display: block;
+    width: 100%;
+    max-height: 480px;
+    cursor: zoom-in;
+    object-fit: contain;
+    background: #101010;
+}
+
+.anomalous-recipe-gallery-card-actions {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: flex;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.anomalous-recipe-gallery-card:hover .anomalous-recipe-gallery-card-actions,
+.anomalous-recipe-gallery-card:focus-within .anomalous-recipe-gallery-card-actions {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.anomalous-recipe-gallery-card-actions button {
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.45);
+}
+
 .anomalous-recipe-detail-overview,
 .anomalous-recipe-detail-section {
     display: flex;

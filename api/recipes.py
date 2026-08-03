@@ -8,6 +8,7 @@ import asyncio
 import copy
 from io import BytesIO
 import hashlib
+import heapq
 import json
 import os
 import re
@@ -40,6 +41,11 @@ MAX_WORKFLOW_NODES = 5_000
 MAX_WORKFLOW_LINKS = 30_000
 MAX_WORKFLOW_GROUPS = 2_000
 MAX_WIDGET_VALUES_PER_NODE = 2_048
+MAX_RECIPE_GALLERY_SCAN = 200
+MAX_RECIPE_GALLERY_RESULTS = 200
+MAX_EMBEDDED_WORKFLOW_BYTES = 3 * 1024 * 1024
+MAX_RECIPE_COVER_SOURCE_BYTES = 64 * 1024 * 1024
+MAX_RECIPE_COVER_BYTES = 256 * 1024
 SAFE_THUMBNAIL_PREFIXES = (
     "data:image/jpeg;base64,",
     "data:image/png;base64,",
@@ -49,18 +55,63 @@ MODEL_FILE_SUFFIXES = (".safetensors", ".ckpt", ".pt", ".bin", ".sft")
 STATIC_PREVIEW_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif")
 STATIC_PREVIEW_SUFFIXES = tuple(f".preview{extension}" for extension in STATIC_PREVIEW_EXTENSIONS)
 SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$", re.IGNORECASE)
+VOLATILE_WORKFLOW_KEYS = frozenset({
+    "seed",
+    "noise_seed",
+    "random_seed",
+    "variation_seed",
+    "batch_size",
+    "batch_index",
+    "batch_num",
+    "last_seed",
+})
+
+
+def _normalise_workflow_key(value):
+    return re.sub(r"[^a-z0-9]+", "_", str(value).strip().lower()).strip("_")
+
+
+def _volatile_widget_indexes(node):
+    """Known serialized LiteGraph widget positions for native sampler seeds."""
+    node_type = _node_type(node).lower()
+    if node_type == "ksampler":
+        return (0,)
+    if node_type == "ksampleradvanced":
+        return (1,)
+    return ()
+
+
+def _clean_volatile_params(value):
+    """Produce a stable graph view while retaining all generation-defining data."""
+    if isinstance(value, list):
+        return [_clean_volatile_params(item) for item in value]
+    if not isinstance(value, dict):
+        return value
+
+    cleaned = {}
+    for key, nested_value in value.items():
+        if _normalise_workflow_key(key) in VOLATILE_WORKFLOW_KEYS:
+            continue
+        cleaned[str(key)] = _clean_volatile_params(nested_value)
+
+    widgets = cleaned.get("widgets_values")
+    if isinstance(widgets, list):
+        for index in _volatile_widget_indexes(value):
+            if 0 <= index < len(widgets):
+                widgets[index] = "__anomalous_volatile_seed__"
+    return cleaned
 
 
 def _workflow_fingerprint(workflow):
-    """Hash only the canonical serialized graph, never recipe presentation data."""
+    """Hash the workflow structure after removing known run-volatile values."""
     canonical = json.dumps(
-        workflow,
+        _clean_volatile_params(workflow),
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
     return {
-        "algorithm": "sha256",
+        "algorithm": "sha256-structural-v1",
         "value": hashlib.sha256(canonical).hexdigest(),
     }
 
@@ -246,6 +297,122 @@ def _thumbnail_webp_bytes(source_path):
     except (OSError, ValueError):
         return None
     return None
+
+
+def _recipe_cover_webp_bytes(source_path):
+    """Create a portable recipe-cover asset without retaining the full output image."""
+    try:
+        if os.path.getsize(source_path) > MAX_RECIPE_COVER_SOURCE_BYTES:
+            return None
+        with Image.open(source_path) as image:
+            image.thumbnail((640, 640))
+            if image.mode not in ("RGB", "RGBA"):
+                image = image.convert("RGBA" if "A" in image.getbands() else "RGB")
+            width, height = image.size
+            for quality in (84, 72, 60, 48):
+                output = BytesIO()
+                image.save(output, format="WEBP", quality=quality, method=4)
+                data = output.getvalue()
+                if len(data) <= MAX_RECIPE_COVER_BYTES:
+                    return data, width, height
+    except (OSError, ValueError):
+        return None
+    return None
+
+
+def _output_source_path(source_image):
+    output_dir = folder_paths.get_output_directory()
+    target_dir = resolve_within(output_dir, source_image.get("subfolder", ""))
+    source_path = resolve_within(target_dir, source_image["filename"])
+    if not os.path.isfile(source_path):
+        raise FileNotFoundError
+    return source_path
+
+
+def _store_recipe_gallery_cover(recipes_dir, filename, source_image):
+    source_path = _output_source_path(source_image)
+    cover = _recipe_cover_webp_bytes(source_path)
+    if not cover:
+        raise ValueError("Could not create recipe cover")
+    data, width, height = cover
+    asset_id = f"cover-{hashlib.sha256(data).hexdigest()}.webp"
+    asset_path = resolve_within(_recipe_assets_dir(recipes_dir, filename, create=True), asset_id)
+    if not os.path.exists(asset_path):
+        with open(asset_path, "wb") as asset_file:
+            asset_file.write(data)
+    return {
+        "asset_id": asset_id,
+        "media_type": "image/webp",
+        "width": width,
+        "height": height,
+    }
+
+
+def _embedded_workflow_fingerprint(image_path):
+    """Read only PNG text metadata and fingerprint an embedded Comfy workflow."""
+    try:
+        with Image.open(image_path) as image:
+            workflow_text = image.info.get("workflow")
+        if isinstance(workflow_text, bytes):
+            if len(workflow_text) > MAX_EMBEDDED_WORKFLOW_BYTES:
+                return None
+            workflow_text = workflow_text.decode("utf-8")
+        if not isinstance(workflow_text, str):
+            return None
+        if len(workflow_text.encode("utf-8")) > MAX_EMBEDDED_WORKFLOW_BYTES:
+            return None
+        workflow = json.loads(workflow_text)
+        if not isinstance(workflow, dict):
+            return None
+        return _workflow_fingerprint(workflow)["value"]
+    except (OSError, UnicodeDecodeError, ValueError, json.JSONDecodeError):
+        return None
+
+
+def _recent_output_pngs(output_dir, limit=MAX_RECIPE_GALLERY_SCAN):
+    """Return a bounded newest-first PNG list without trusting request paths."""
+    newest = []
+    try:
+        for root, _, files in os.walk(output_dir):
+            for name in files:
+                if not name.lower().endswith(".png"):
+                    continue
+                path = os.path.join(root, name)
+                try:
+                    stat = os.stat(path)
+                except OSError:
+                    continue
+                candidate = (stat.st_mtime_ns, path)
+                if len(newest) < limit:
+                    heapq.heappush(newest, candidate)
+                elif candidate > newest[0]:
+                    heapq.heapreplace(newest, candidate)
+    except OSError:
+        return []
+    return sorted(newest, reverse=True)
+
+
+def _recipe_gallery_images(fingerprint):
+    output_dir = folder_paths.get_output_directory()
+    if not os.path.isdir(output_dir):
+        return [], 0
+    matches = []
+    scanned = 0
+    for mtime_ns, image_path in _recent_output_pngs(output_dir):
+        scanned += 1
+        if _embedded_workflow_fingerprint(image_path) != fingerprint:
+            continue
+        relative_dir = os.path.relpath(os.path.dirname(image_path), output_dir)
+        subfolder = "" if relative_dir == "." else relative_dir.replace("\\", "/")
+        matches.append({
+            "filename": os.path.basename(image_path),
+            "subfolder": subfolder,
+            "type": "output",
+            "mtime": mtime_ns // 1_000_000,
+        })
+        if len(matches) >= MAX_RECIPE_GALLERY_RESULTS:
+            break
+    return matches, scanned
 
 
 def _attach_preview_snapshots(recipe, recipes_dir, filename, references):
@@ -509,6 +676,11 @@ def _normalise_recipe(payload):
     save_model_preview_snapshots = presentation.get("save_model_preview_snapshots", False)
     if not isinstance(save_model_preview_snapshots, bool):
         raise ValueError("Invalid recipe presentation")
+    cover_asset_id = presentation.get("cover_asset_id")
+    if cover_asset_id is not None:
+        cover_asset_id = require_filename(cover_asset_id)
+        if not cover_asset_id.startswith("cover-") or not cover_asset_id.endswith(".webp"):
+            raise ValueError("Invalid recipe presentation")
 
     recipe = {
         "schema_version": 1,
@@ -521,6 +693,7 @@ def _normalise_recipe(payload):
         "source_image": _normalise_source_image(payload.get("source_image")),
         "presentation": {
             "save_model_preview_snapshots": save_model_preview_snapshots,
+            **({"cover_asset_id": cover_asset_id} if cover_asset_id else {}),
         },
         "timestamp": int(time.time() * 1000),
     }
@@ -609,6 +782,11 @@ def _list_recipe_history(recipes_dir, filename):
 
 def _updated_recipe(payload, existing):
     recipe = _normalise_recipe(payload)
+    existing_presentation = existing.get("presentation") if isinstance(existing.get("presentation"), dict) else {}
+    existing_cover = existing_presentation.get("cover_asset_id")
+    source_unchanged = recipe.get("source_image") == existing.get("source_image")
+    if existing_cover and source_unchanged and not recipe["presentation"].get("cover_asset_id"):
+        recipe["presentation"]["cover_asset_id"] = existing_cover
     created_timestamp = existing.get("created_timestamp", existing.get("timestamp"))
     if isinstance(created_timestamp, int):
         recipe["created_timestamp"] = created_timestamp
@@ -716,6 +894,82 @@ async def api_get_recipe_asset(request):
     except OSError:
         return web.json_response({"status": "error", "message": "Could not read recipe asset"}, status=500)
     return web.FileResponse(asset_path)
+
+
+async def api_get_recipe_gallery(request):
+    """Find recent output PNGs whose embedded workflow matches one recipe."""
+    try:
+        filename = request.query.get("filename")
+        fingerprint = request.query.get("fingerprint")
+        if filename:
+            filename = require_filename(filename)
+            if not filename.endswith(".json"):
+                raise ValueError("Invalid recipe")
+            recipes_dir = get_recipes_dir()
+            recipe = await asyncio.to_thread(_read_recipe, resolve_within(recipes_dir, filename))
+            if not isinstance(recipe, dict) or not isinstance(recipe.get("workflow"), dict):
+                raise ValueError("Invalid recipe")
+            fingerprint = _workflow_fingerprint(recipe["workflow"])["value"]
+        elif not isinstance(fingerprint, str) or not SHA256_PATTERN.fullmatch(fingerprint):
+            raise ValueError("Invalid fingerprint")
+        images, scanned = await asyncio.to_thread(_recipe_gallery_images, fingerprint.lower())
+    except (AttributeError, ValueError, json.JSONDecodeError):
+        return web.json_response({"status": "error", "message": "Invalid recipe gallery request"}, status=400)
+    except FileNotFoundError:
+        return web.json_response({"status": "error", "message": "File not found"}, status=404)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not read recipe gallery"}, status=500)
+    return web.json_response({
+        "status": "success",
+        "fingerprint": fingerprint.lower(),
+        "images": images,
+        "scanned": scanned,
+    })
+
+
+async def api_set_recipe_gallery_cover(request):
+    """Promote one verified output image to a portable recipe cover asset."""
+    try:
+        payload = await request.json()
+        filename = require_filename(payload.get("filename", ""))
+        if not filename.endswith(".json"):
+            raise ValueError("Invalid filename")
+        source_image = _normalise_source_image(payload.get("source_image"))
+        recipes_dir = get_recipes_dir()
+        existing = await asyncio.to_thread(_read_recipe, resolve_within(recipes_dir, filename))
+        if not isinstance(existing, dict) or not isinstance(existing.get("workflow"), dict):
+            raise ValueError("Invalid recipe")
+        cover = await asyncio.to_thread(_store_recipe_gallery_cover, recipes_dir, filename, source_image)
+    except (AttributeError, ValueError, json.JSONDecodeError):
+        return web.json_response({"status": "error", "message": "Invalid recipe cover"}, status=400)
+    except FileNotFoundError:
+        return web.json_response({"status": "error", "message": "Output image not found"}, status=404)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not create recipe cover"}, status=500)
+
+    recipe = copy.deepcopy(existing)
+    recipe["source_image"] = source_image
+    recipe["thumbnail"] = None
+    presentation = dict(recipe.get("presentation") or {})
+    presentation["cover_asset_id"] = cover["asset_id"]
+    recipe["presentation"] = presentation
+    recipe["timestamp"] = int(time.time() * 1000)
+    recipe["updated_timestamp"] = recipe["timestamp"]
+    recipe["workflow_fingerprint"] = _workflow_fingerprint(recipe["workflow"])
+    recipe["schema_version"] = max(5, int(recipe.get("schema_version") or 1))
+
+    try:
+        await asyncio.to_thread(_archive_recipe, recipes_dir, filename, existing)
+        await asyncio.to_thread(_write_recipe, recipes_dir, filename, recipe)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not update recipe cover"}, status=500)
+    return web.json_response({
+        "status": "success",
+        "filename": filename,
+        "cover": cover,
+        "source_image": source_image,
+        "workflow_fingerprint": recipe["workflow_fingerprint"],
+    })
 
 
 async def api_update_recipe(request):

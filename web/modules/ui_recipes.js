@@ -77,6 +77,11 @@ function outputImageUrl(image) {
     return `/view?${query.toString()}`;
 }
 
+function recipeAssetUrl(filename, assetId) {
+    if (!filename || !assetId) return null;
+    return `/anomalous/recipe_asset?filename=${encodeURIComponent(filename)}&asset=${encodeURIComponent(assetId)}`;
+}
+
 function previewIsVideo(url) {
     return /\.(?:mp4|webm)(?:$|\?|&|#)/i.test(url || '');
 }
@@ -980,9 +985,10 @@ export function renderRecipeList(recipes) {
         appendText(card, 'h3', data.name || t('recipeUntitled'));
 
         const sourceImageUrl = outputImageUrl(data.source_image);
-        const thumbnail = previewIsVideo(sourceImageUrl)
+        const savedCover = recipeAssetUrl(recipe.filename, data.presentation?.cover_asset_id);
+        const thumbnail = savedCover || (previewIsVideo(sourceImageUrl)
             ? sourceImageUrl
-            : safeThumbnail(data.thumbnail) || sourceImageUrl;
+            : safeThumbnail(data.thumbnail) || sourceImageUrl);
         appendRecipeCover(card, thumbnail, data.name || t('recipeThumbnail'));
         if (Array.isArray(data.tags) && data.tags.length) {
             const tags = document.createElement('div');
