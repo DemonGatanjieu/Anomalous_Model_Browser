@@ -559,3 +559,20 @@
 - `node --check web/modules/ui_recipes.js`
 - `node tests/recipe_parser_roundtrip.mjs`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+## [Snapshot] 2026-08-04 - Remove ambiguous recipe Open action
+
+**Implemented**
+
+- Removed “Open to Canvas” buttons from recipe cards and recipe detail views.
+- Kept “Append to Canvas” as the only recipe composition action, so saved recipes never replace the user's current canvas or depend on ComfyUI workflow-tab semantics.
+- Kept the separate structural-edit action as an explicitly confirmed new-canvas editing flow.
+- Removed obsolete open-action locale strings and the unused active-workflow loader.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `node --check web/modules/ui_recipes.js`
+- `node --check web/modules/locales.js`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+- `python_embeded/python.exe -m py_compile api/recipes.py api/metadata.py api/models.py api/recipe_packages.py`

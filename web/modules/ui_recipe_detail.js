@@ -1,4 +1,3 @@
-import { app } from '../../../scripts/app.js';
 import {  i18n  } from './locales.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import {
@@ -31,54 +30,6 @@ function button(parent, label, className = '') {
     return element;
 }
 
-function canvasMayContainUserWork() {
-    if (!app.graph?._nodes?.length) return false;
-    if (app.canvas?.dirty_canvas === false || app.graph?.dirty === false) return false;
-    return true;
-}
-
-function workflowStoreFromPinia(pinia) {
-    if (!pinia) return null;
-    if (typeof pinia._s?.get === 'function') return pinia._s.get('workflow') || null;
-    return pinia.workflow && Object.prototype.hasOwnProperty.call(pinia.workflow, 'activeWorkflow')
-        ? pinia.workflow
-        : null;
-}
-
-function getActiveComfyWorkflow() {
-    const candidates = [
-        globalThis.$pinia,
-        globalThis.pinia,
-        globalThis.comfyAPI?.pinia,
-        globalThis.comfyAPI?.app?.pinia,
-    ];
-    const vueRoot = document.querySelector('#vue-app')?.__vue_app__;
-    const provides = vueRoot?._context?.provides;
-    if (provides) {
-        for (const key of Reflect.ownKeys(provides)) candidates.push(provides[key]);
-    }
-    for (const candidate of candidates) {
-        const store = workflowStoreFromPinia(candidate);
-        const workflow = store?.activeWorkflow?.value ?? store?.activeWorkflow;
-        if (workflow) return workflow;
-    }
-    return null;
-}
-
-export async function loadRecipeWorkflowIntoCurrentCanvas(workflowData) {
-    const activeWorkflow = getActiveComfyWorkflow();
-    if (activeWorkflow) {
-        // ComfyUI 1.45+ uses the fourth argument to distinguish in-place loads
-        // from opening a new temporary workflow tab.
-        await app.loadGraphData(workflowData, true, true, activeWorkflow);
-        return;
-    }
-
-    // Older ComfyUI builds do not expose the workflow store and use the
-    // three-argument API for the current canvas.
-    await app.loadGraphData(workflowData);
-}
-
 function closeRecipeWorkspace(owner) {
     if (!owner) return;
     owner.nbPanel && (owner.nbPanel.style.display = 'none');
@@ -97,32 +48,6 @@ async function runRecipeAction(actionButton, action) {
     } finally {
         actionButton.disabled = false;
         actionButton.classList.remove('is-busy');
-    }
-}
-
-function missingRecipeNodeTypes(recipe) {
-    const registry = globalThis.LiteGraph?.registered_node_types;
-    if (!registry) return [];
-    return [...new Set((recipe?.workflow?.nodes || [])
-        .map((node) => node?.type || node?.class_type)
-        .filter((type) => type && !registry[type]))];
-}
-
-export async function openRecipeOnCanvas(owner, recipe) {
-    const missingTypes = missingRecipeNodeTypes(recipe);
-    const missingWarning = missingTypes.length
-        ? `\n\n${t('recipeMissingNodes')}:\n${missingTypes.slice(0, 12).join('\n')}`
-        : '';
-    if ((canvasMayContainUserWork() || missingWarning) && !await anomalousConfirm(`${t('recipeOpenCanvasConfirm')}${missingWarning}`)) return false;
-    try {
-        await loadRecipeWorkflowIntoCurrentCanvas(recipe.workflow);
-        app.canvas?.setDirty?.(true, true);
-        closeRecipeWorkspace(owner);
-        return true;
-    } catch (error) {
-        console.error('Could not open Workflow Recipe on canvas:', error);
-        await anomalousAlert(t('recipeRestoreError'));
-        return false;
     }
 }
 
@@ -839,12 +764,6 @@ function renderOverview(content, owner, recipe, references, finish) {
     actions.className = 'anomalous-recipe-actions anomalous-recipe-detail-actions';
     const edit = button(actions, t('recipeEdit'), 'anomalous-btn-success');
     edit.onclick = () => finish('edit');
-    const load = button(actions, t('recipeOpenCanvas'), 'anomalous-btn-primary');
-    load.onclick = () => {
-        void runRecipeAction(load, async () => {
-            if (await openRecipeOnCanvas(owner, recipe)) finish('canvas');
-        });
-    };
     const append = button(actions, t('recipeAppendCanvas'), 'anomalous-btn-primary');
     append.onclick = () => {
         void runRecipeAction(append, async () => {
@@ -1718,12 +1637,6 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         }
     };
     
-    const load = button(headerActions, t('recipeOpenCanvas'), 'anomalous-btn-primary');
-    load.onclick = () => {
-        void runRecipeAction(load, async () => {
-            if (await openRecipeOnCanvas(owner, recipe)) finish('canvas');
-        });
-    };
     const append = button(headerActions, t('recipeAppendCanvas'), 'anomalous-btn-ghost');
     append.onclick = () => {
         void runRecipeAction(append, async () => {

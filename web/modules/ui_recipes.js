@@ -11,8 +11,6 @@ import {
 } from './recipe_parser.js';
 import {
     appendRecipeOnCanvas,
-    loadRecipeWorkflowIntoCurrentCanvas,
-    openRecipeOnCanvas,
     showRecipeDetail,
 } from './ui_recipe_detail.js';
 
@@ -426,7 +424,7 @@ async function editRecipe(owner, recipe, filename, history = null) {
         if (!result || result.mode === 'restored') return;
         if (result.mode === 'canvas') {
             if (!await anomalousConfirm(t('recipeEditCanvasConfirm'))) return;
-            await loadRecipeWorkflowIntoCurrentCanvas(editable.workflow);
+            app.loadGraphData(editable.workflow);
             app.canvas?.setDirty?.(true, true);
             owner.recipeEditing = { filename, data: editable };
             const saveButton = owner.recipeView?.querySelector('[data-recipe-save-current]');
@@ -1106,13 +1104,6 @@ export function renderRecipeList(recipes) {
         const primaryActions = document.createElement('div');
         primaryActions.className = 'anomalous-recipe-actions-primary';
         
-        const restore = appendText(primaryActions, 'button', t('recipeOpenCanvas'), 'anomalous-btn-primary');
-        restore.type = 'button';
-        restore.onclick = (e) => { e.stopPropagation(); runRecipeCardAction(restore, async () => {
-            const data = await fetchRecipeData(recipe.filename);
-            await openRecipeOnCanvas(this, data);
-        }, 'recipeRestoreError'); };
-        
         const append = appendText(primaryActions, 'button', t('recipeAppendCanvas'), 'anomalous-btn-ghost');
         append.type = 'button';
         append.onclick = (e) => { e.stopPropagation(); runRecipeCardAction(append, async () => {
@@ -1121,7 +1112,7 @@ export function renderRecipeList(recipes) {
         }, 'recipeAppendError'); };
 
         secondaryActions.append(edit, exportButton, remove);
-        primaryActions.append(append, restore);
+        primaryActions.append(append);
         actions.append(secondaryActions, primaryActions);
         
         card.appendChild(actions);

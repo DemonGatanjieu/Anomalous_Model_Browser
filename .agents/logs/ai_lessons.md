@@ -443,3 +443,6 @@ Browser `title` hints are delayed, low-contrast, difficult to style, and poor fo
 ## 66. ComfyUI workflow-tab loads need an explicit active workflow
 
 In current ComfyUI frontend builds, `app.loadGraphData(data)` without its fourth argument creates or opens a temporary workflow tab. A plugin that intends to replace the current canvas must pass the active `ComfyWorkflow` object. For legacy-compatible extensions, discover the workflow store from the mounted Vue app's provided Pinia instance when available, then retain the old call as a fallback. Also make plugin-shell cleanup explicit after a successful canvas transition; hiding only the inner panel can leave an empty modal visible when the frontend changes workflow tabs.
+## 67. Prefer one unambiguous recipe canvas action
+
+When ComfyUI versions give “Open” different meanings—replace the current graph in one version and open a new workflow tab in another—do not preserve a confusing button merely for compatibility. If append is the user's reliable composition primitive, remove Open from cards and detail views. Keep structural editing separate and label it as a confirmed new-canvas edit flow.

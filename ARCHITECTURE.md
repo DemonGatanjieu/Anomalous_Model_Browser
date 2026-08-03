@@ -233,8 +233,8 @@ Every product-code change in this plugin must finish as one coherent local Git s
 
 `CHANGELOG.md` is public user-facing release communication. Update it only for intentional user-visible release notes; never use it for internal design decisions, implementation details, test output, or agent handoff. Planning-only documentation may be committed separately, but proposals must be labeled clearly and must not be described as implemented runtime behavior.
 
-## 66. Recipe Canvas Loads Must Target the Active Workflow
+## 66. Recipe Canvas Actions Use Append as the Safe Composition Path
 
-The current ComfyUI frontend treats `loadGraphData(data)` without a workflow argument as an instruction to create/open a temporary workflow tab. Recipe “Open to canvas” and recipe-edit canvas loads must therefore discover the active workflow from the frontend Pinia store and pass it as the fourth argument. The discovery is deliberately read-only and checks the Vue root's provided Pinia instance, while retaining the legacy three-argument fallback for older ComfyUI builds.
+Recipe cards and detail views intentionally expose only “Append to Canvas”. The removed “Open to canvas” action was ambiguous across ComfyUI versions: the legacy API replaced the current graph, while the current workflow-tab API opens a new temporary tab unless an internal active-workflow object is supplied. Keeping only append avoids both meanings and preserves the user's current canvas.
 
-Successful recipe canvas actions also use explicit workspace cleanup: hide the notebook body, recipe view, recipe modal panel, and outer modal before invoking the existing close/media cleanup. This keeps the canvas operation independent from the recipe detail promise and prevents a stale blank workspace shell from remaining visible after a workflow-tab transition.
+The separate structural-edit action may still load a recipe into a new canvas for editing; it is not a recipe composition action and remains explicitly confirmed. Successful append actions continue to hide the notebook body, recipe view, recipe modal panel, and outer modal before invoking the existing close/media cleanup.
