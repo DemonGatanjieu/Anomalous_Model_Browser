@@ -671,19 +671,6 @@ function renderOverview(content, owner, recipe, references, finish) {
     modelComposition.className = 'anomalous-recipe-model-composition';
     summary.appendChild(modelComposition);
     renderModelComposition(modelComposition, owner, recipe, references, finish, params);
-    const values = [
-        [t('recipeSteps'), params.steps],
-        ['CFG', params.cfg],
-        [t('recipeDetailSampler'), params.sampler_name],
-        [t('recipeDetailResolution'), params.resolution ? `${params.resolution.width} x ${params.resolution.height}` : ''],
-    ];
-    for (const [label, value] of values) {
-        const row = document.createElement('div');
-        appendText(row, 'span', label, 'anomalous-recipe-detail-label');
-        appendText(row, 'span', value || t('recipeDetailUnavailable'), 'anomalous-recipe-detail-value');
-        summaryGrid.appendChild(row);
-    }
-    summary.appendChild(summaryGrid);
     overview.appendChild(summary);
     const prompts = renderPromptSection(overview, recipe);
 
@@ -937,6 +924,53 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
     }
 }
 
+function topologicalSortNodes(workflowNodes, workflowLinks) {
+    const inDegree = new Map();
+    const adj = new Map();
+    const allIds = new Set();
+    
+    for (const node of workflowNodes) {
+        const id = String(node.id);
+        allIds.add(id);
+        inDegree.set(id, 0);
+        adj.set(id, []);
+    }
+    
+    const rawLinks = workflowLinks;
+    const linksArray = Array.isArray(rawLinks) ? rawLinks : (rawLinks && typeof rawLinks === 'object' ? Object.values(rawLinks) : []);
+    
+    for (const link of linksArray) {
+        if (!Array.isArray(link) || link.length < 4) continue;
+        const originId = String(link[1]);
+        const targetId = String(link[3]);
+        if (allIds.has(originId) && allIds.has(targetId)) {
+            adj.get(originId).push(targetId);
+            inDegree.set(targetId, inDegree.get(targetId) + 1);
+        }
+    }
+    
+    const queue = [];
+    for (const [id, deg] of inDegree.entries()) {
+        if (deg === 0) queue.push(id);
+    }
+    
+    const sorted = [];
+    while (queue.length > 0) {
+        const u = queue.shift();
+        sorted.push(u);
+        for (const v of adj.get(u)) {
+            inDegree.set(v, inDegree.get(v) - 1);
+            if (inDegree.get(v) === 0) queue.push(v);
+        }
+    }
+    
+    for (const id of allIds) {
+        if (inDegree.get(id) > 0) sorted.push(id);
+    }
+    
+    return sorted;
+}
+
 function parameterNodesWithPromptFallback(recipe) {
     const nodes = (recipe?.params?.nodes || []).map((node) => ({
         ...node,
@@ -974,8 +1008,11 @@ function parameterNodesWithPromptFallback(recipe) {
     }
     const ordered = [];
     const added = new Set();
-    for (const workflowNode of recipe?.workflow?.nodes || []) {
-        const id = String(workflowNode?.id ?? '');
+    const workflowNodes = recipe?.workflow?.nodes || [];
+    const workflowLinks = recipe?.workflow?.links || [];
+    const topoIds = topologicalSortNodes(workflowNodes, workflowLinks);
+    
+    for (const id of topoIds) {
         const node = byId.get(id);
         if (!node || added.has(node)) continue;
         added.add(node);
@@ -986,12 +1023,31 @@ function parameterNodesWithPromptFallback(recipe) {
         added.add(node);
         ordered.push(node);
     }
-    // Keep native prompt nodes together in the Parameters view. Their names
-    // and widget names remain untouched; this only prevents a fallback node
-    // from appearing far away at the end of the list.
-    const promptNodes = ordered.filter((node) => /cliptextencode/i.test(String(node?.type || '')));
-    const otherNodes = ordered.filter((node) => !/cliptextencode/i.test(String(node?.type || '')));
-    return [...promptNodes, ...otherNodes];
+    return ordered;
+}
+
+function getNativeNodeTranslation(nodeType, originalTitle, hasCustomTitle) {
+    if (hasCustomTitle && originalTitle) return originalTitle;
+    if (window.LiteGraph && LiteGraph.registered_node_types && LiteGraph.registered_node_types[nodeType]) {
+        const title = LiteGraph.registered_node_types[nodeType].title;
+        if (title) return title;
+    }
+    return originalTitle || nodeType;
+}
+
+function getNativeWidgetTranslation(nodeType, widgetName) {
+    if (window.LiteGraph && LiteGraph.registered_node_types && LiteGraph.registered_node_types[nodeType]) {
+        try {
+            const dummy = LiteGraph.createNode(nodeType);
+            if (dummy && dummy.widgets) {
+                const w = dummy.widgets.find((w) => w.name === widgetName);
+                if (w && w.label) return w.label;
+            }
+        } catch (e) {
+            // Ignore error if node fails to instantiate without canvas
+        }
+    }
+    return widgetName;
 }
 
 function renderParameters(content, recipe) {
@@ -1020,14 +1076,18 @@ function renderParameters(content, recipe) {
                 return !query || haystack.includes(query);
             });
             if (!widgets.length) continue;
+            const hasCustomTitle = !!node.title;
+            const displayTitle = getNativeNodeTranslation(node.type, node.title, hasCustomTitle);
+            
             const block = document.createElement('article');
             block.className = 'anomalous-recipe-detail-parameter-node';
-            appendText(block, 'strong', node.title || node.type || t('recipeUnknownNode'));
+            appendText(block, 'strong', displayTitle || t('recipeUnknownNode'));
             appendText(block, 'small', node.type || '', 'anomalous-recipe-detail-muted');
             for (const { widget, value } of widgets) {
                 const row = document.createElement('div');
-                row.className = 'anomalous-recipe-detail-parameter-row';
-                appendText(row, 'span', widget.name || t('recipeDetailWidget'), 'anomalous-recipe-detail-label');
+                row.className = 'anomalous-recipe-detail-parameter-widget';
+                const displayWidgetName = getNativeWidgetTranslation(node.type, widget.name) || t('recipeUnknownWidget');
+                appendText(row, 'span', displayWidgetName, 'anomalous-recipe-detail-parameter-name');
                 appendValueViewer(row, value);
                 block.appendChild(row);
             }
