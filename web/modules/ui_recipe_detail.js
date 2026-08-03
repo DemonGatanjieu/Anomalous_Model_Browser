@@ -292,6 +292,8 @@ function fullDiffValue(value) {
 
 function identityBadge(reference) {
     const identity = normaliseIdentity(reference?.identity);
+    const wrapper = document.createElement('span');
+    wrapper.className = 'anomalous-recipe-identity-badge-wrap';
     const badge = document.createElement('span');
     badge.className = `anomalous-recipe-identity-badge anomalous-recipe-identity-${identity.status}`;
     
@@ -299,17 +301,27 @@ function identityBadge(reference) {
     textSpan.textContent = t(`recipeIdentity${identity.status[0].toUpperCase()}${identity.status.slice(1)}`);
     badge.appendChild(textSpan);
     
-    const helpIcon = document.createElement('span');
-    helpIcon.textContent = ' [?]';
+    const helpIcon = document.createElement('button');
+    helpIcon.type = 'button';
+    helpIcon.textContent = '?';
     helpIcon.className = 'anomalous-recipe-identity-help';
     const helpText = t('recipeIdentityHelpDesc') || 'Verification checks physical file consistency, not model quality.';
-    helpIcon.title = helpText;
-    helpIcon.dataset.tooltip = helpText;
-    helpIcon.setAttribute('role', 'img');
+    helpIcon.setAttribute('aria-expanded', 'false');
     helpIcon.setAttribute('aria-label', helpText);
     badge.appendChild(helpIcon);
-    
-    return badge;
+
+    const explanation = document.createElement('span');
+    explanation.className = 'anomalous-recipe-identity-explanation';
+    explanation.textContent = helpText;
+    explanation.setAttribute('role', 'note');
+    helpIcon.onclick = (event) => {
+        event.stopPropagation();
+        const expanded = wrapper.classList.toggle('is-open');
+        helpIcon.setAttribute('aria-expanded', String(expanded));
+    };
+
+    wrapper.append(badge, explanation);
+    return wrapper;
 }
 
 function fingerprintText(recipe) {

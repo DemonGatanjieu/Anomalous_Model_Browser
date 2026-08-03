@@ -10,7 +10,7 @@ Recipe identity badges use short, bounded labels in the card layout; detailed ex
 
 Availability refresh actions expose immediate busy feedback, an accessible `aria-busy` state, and a recoverable error state; a disabled button without visible progress is not considered sufficient interaction feedback.
 
-Identity help uses an in-plugin tooltip with high-contrast styling, bounded width, wrapping, hover visibility, and keyboard focus visibility. Native `title` remains only as a compatibility fallback.
+Identity help uses a click-to-expand inline explanation attached to the badge. The explanation stays in normal card flow with bounded width and wrapping, so it cannot be duplicated by a native `title` tooltip or cover adjacent flex content.
 
 ## Current recipe interaction correction (2026-08-03)
 

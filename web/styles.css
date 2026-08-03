@@ -1869,48 +1869,58 @@
     min-width: 0;
     overflow-wrap: anywhere;
 }
-.anomalous-recipe-identity-help {
-    position: relative;
+.anomalous-recipe-identity-badge-wrap {
     display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
     align-items: center;
-    font-weight: normal;
-    color: inherit;
-    opacity: 0.6;
-    margin-left: 2px;
-    cursor: help;
 }
 
-.anomalous-recipe-identity-help::after {
-    position: absolute;
-    z-index: 20;
-    top: calc(100% + 8px);
-    right: 0;
-    width: max-content;
-    max-width: min(320px, calc(100vw - 40px));
+.anomalous-recipe-identity-help {
+    display: inline-flex;
+    width: 16px;
+    height: 16px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    color: inherit;
+    background: transparent;
+    font-weight: normal;
+    opacity: 0.6;
+    margin-left: 2px;
+    cursor: pointer;
+}
+
+.anomalous-recipe-identity-help:hover,
+.anomalous-recipe-identity-help:focus-visible {
+    opacity: 1;
+    outline: 2px solid rgba(255, 255, 255, 0.3);
+    outline-offset: 1px;
+}
+
+.anomalous-recipe-identity-explanation {
+    display: none;
+    flex: 0 0 100%;
+    max-width: min(340px, calc(100vw - 48px));
     padding: 9px 11px;
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 7px;
     color: #fff;
     background: rgba(20, 22, 28, 0.98);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
-    content: attr(data-tooltip);
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.28);
     font-size: 0.78rem;
     font-weight: 400;
     line-height: 1.45;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(-3px);
-    transition: opacity 0.15s ease, transform 0.15s ease;
-    visibility: hidden;
     white-space: normal;
     overflow-wrap: anywhere;
 }
 
-.anomalous-recipe-identity-help:hover::after,
-.anomalous-recipe-identity-help:focus-visible::after {
-    opacity: 1;
-    transform: translateY(0);
-    visibility: visible;
+.anomalous-recipe-identity-badge-wrap.is-open .anomalous-recipe-identity-explanation {
+    display: block;
 }
 
 .anomalous-recipe-identity-verified {

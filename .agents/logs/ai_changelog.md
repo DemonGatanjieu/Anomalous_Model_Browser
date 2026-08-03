@@ -495,3 +495,18 @@
 - `node --check web/modules/ui_recipe_detail.js`
 - `node tests/recipe_parser_roundtrip.mjs`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+
+## [Snapshot] 2026-08-03 - Redesign identity explanation interaction
+
+**Implemented**
+
+- Replaced the duplicated hover/native tooltip behavior with a clickable question-mark control.
+- Identity explanations now expand inline below the badge in normal document flow.
+- Removed the overlapping absolute tooltip so adjacent text cannot cover or hide the explanation.
+- Added `aria-expanded` and keyboard-focus styling to the help control.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`

@@ -32,7 +32,7 @@ For network-backed buttons, disabling the control prevents duplicate requests bu
 
 ## 63. Native Title Tooltips Are Not Reliable UI Feedback
 
-Browser `title` hints are delayed, low-contrast, difficult to style, and poor for keyboard users. For important explanations, keep the title as fallback but add a bounded custom tooltip triggered by both hover and focus.
+Browser `title` hints are delayed, low-contrast, difficult to style, and poor for keyboard users. For explanations that must not cover neighboring content, an inline click-to-expand note is safer than an absolutely positioned tooltip and avoids duplicate browser/custom hints.
 这份文档旨在记录 Anomalous 插件开发过程中的架构演进、UX 设计教训以及核心 Bug 排查经验。
 
 ---
