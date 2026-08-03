@@ -141,9 +141,10 @@ def _resolve_exact_model_reference(saved_value):
 def _identity_for_reference(saved_value):
     resolved = _resolve_exact_model_reference(saved_value)
     if not resolved:
-        return {"status": "unavailable"}
+        return {"status": "unavailable"}, None
 
     identity = {"status": "unverified", "provenance": "local cached metadata"}
+    origin = None
     try:
         identity["size"] = os.path.getsize(resolved["path"])
     except OSError:
@@ -154,9 +155,19 @@ def _identity_for_reference(saved_value):
         if SHA256_PATTERN.fullmatch(candidate_hash):
             identity["status"] = "verified"
             identity["sha256"] = candidate_hash.lower()
+        
+        civitai_url = metadata.get("civitai_url")
+        if civitai_url:
+            origin = {
+                "provider": "civitai",
+                "model_name": metadata.get("name") or "",
+                "model_url": civitai_url,
+                "model_id": metadata.get("model_id") or "",
+                "version_id": metadata.get("version_id") or ""
+            }
     except Exception:
         pass
-    return identity
+    return identity, origin
 
 
 def _build_model_references(recipe):
@@ -172,7 +183,8 @@ def _build_model_references(recipe):
             saved_value = values[widget_index] if widget_index < len(values) else None
             if not isinstance(saved_value, str) or not saved_value.strip():
                 continue
-            references.append({
+            identity, origin = _identity_for_reference(saved_value)
+            ref_dict = {
                 "node_id": node.get("id"),
                 "node_type": _node_type(node) or "Unknown",
                 "node_title": _node_title(node),
@@ -181,8 +193,11 @@ def _build_model_references(recipe):
                 "saved_value": saved_value,
                 "category": category,
                 "base_model": base_model,
-                "identity": _identity_for_reference(saved_value),
-            })
+                "identity": identity,
+            }
+            if origin:
+                ref_dict["origin"] = origin
+            references.append(ref_dict)
     return references
 
 
@@ -279,16 +294,19 @@ def _preserve_model_reference_fields(previous_references, references):
         prior = previous.get(_model_reference_key(reference))
         if prior is None:
             continue
-        for field in ("identity", "preview"):
-            if isinstance(prior.get(field), dict):
-                reference[field] = json.loads(json.dumps(prior[field], ensure_ascii=False))
+        for field in ("identity", "origin", "preview"):
+            if field == "preview" or (field in ("identity", "origin") and not getattr(references, "_force_refresh_identities", False)):
+                if isinstance(prior.get(field), dict):
+                    reference[field] = json.loads(json.dumps(prior[field], ensure_ascii=False))
 
 
-def _enrich_recipe(recipe, recipes_dir=None, filename=None, recapture_previews=True):
+def _enrich_recipe(recipe, recipes_dir=None, filename=None, recapture_previews=True, refresh_identities=False):
     recipe["workflow_fingerprint"] = _workflow_fingerprint(recipe["workflow"])
     params = dict(recipe.get("params") or {})
     previous_references = params.get("model_references", [])
     references = _build_model_references(recipe)
+    if refresh_identities:
+        setattr(references, "_force_refresh_identities", True)
     _preserve_model_reference_fields(previous_references, references)
     if recipes_dir and filename and recapture_previews:
         _attach_preview_snapshots(recipe, recipes_dir, filename, references)
@@ -704,7 +722,8 @@ async def api_update_recipe(request):
         if not isinstance(existing, dict) or not isinstance(existing.get("workflow"), dict):
             raise ValueError("Invalid recipe")
         recipe = _updated_recipe(payload, existing)
-        recipe = await asyncio.to_thread(_enrich_recipe, recipe, recipes_dir, filename)
+        refresh_identities = bool(payload.get("refreshIdentities"))
+        recipe = await asyncio.to_thread(_enrich_recipe, recipe, recipes_dir, filename, True, refresh_identities)
     except (AttributeError, ValueError, json.JSONDecodeError):
         return web.json_response({"status": "error", "message": "Invalid recipe"}, status=400)
     except FileNotFoundError:

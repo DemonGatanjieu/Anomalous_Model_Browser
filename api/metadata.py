@@ -168,6 +168,8 @@ def _read_metadata(file_path):
                     if trained_words: metadata["trainedWords"] = trained_words
                     if base_model: metadata["baseModel"] = base_model
                     if civitai_url: metadata["civitai_url"] = civitai_url
+                    if model_id: metadata["model_id"] = model_id
+                    if version_id: metadata["version_id"] = version_id
                     if hash_val: metadata["hash"] = hash_val
                     if "anomalous_custom_name" in data and data["anomalous_custom_name"]: metadata["custom_name"] = data["anomalous_custom_name"]
                     if "anomalous_custom_notes" in data and data["anomalous_custom_notes"]: metadata["custom_notes"] = data["anomalous_custom_notes"]

@@ -294,7 +294,17 @@ function identityBadge(reference) {
     const identity = normaliseIdentity(reference?.identity);
     const badge = document.createElement('span');
     badge.className = `anomalous-recipe-identity-badge anomalous-recipe-identity-${identity.status}`;
-    badge.textContent = t(`recipeIdentity${identity.status[0].toUpperCase()}${identity.status.slice(1)}`);
+    
+    const textSpan = document.createElement('span');
+    textSpan.textContent = t(`recipeIdentity${identity.status[0].toUpperCase()}${identity.status.slice(1)}`);
+    badge.appendChild(textSpan);
+    
+    const helpIcon = document.createElement('span');
+    helpIcon.textContent = ' [?]';
+    helpIcon.className = 'anomalous-recipe-identity-help';
+    helpIcon.title = t('recipeIdentityHelpDesc') || 'Verification checks physical file consistency, not model quality.';
+    badge.appendChild(helpIcon);
+    
     return badge;
 }
 
@@ -799,11 +809,44 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
         appendText(top, 'span', reference.category || t('recipeDetailModel'), 'anomalous-recipe-detail-muted');
         top.appendChild(identityBadge(reference));
         details.appendChild(top);
-        const modelName = isLocal
-            ? button(top, modelDisplayName(reference.localModel.filename || reference.saved_value), 'anomalous-recipe-model-name is-resolved')
-            : appendText(top, 'span', modelDisplayName(reference.saved_value), 'anomalous-recipe-model-name is-unresolved');
-        modelName.title = reference.saved_value || t('recipeDetailUnavailable');
-        if (isLocal) modelName.onclick = openModel;
+        const origin = reference.origin;
+        const officialNameStr = origin?.model_name;
+        const localFileNameStr = reference.saved_value || t('recipeDetailUnavailable');
+        
+        const primaryNameStr = officialNameStr ? officialNameStr : localFileNameStr;
+        const nameBlock = document.createElement('div');
+        nameBlock.className = 'anomalous-recipe-model-name-block';
+        details.appendChild(nameBlock);
+        
+        const nameRow = document.createElement('div');
+        nameRow.className = 'anomalous-recipe-model-name-row';
+        nameBlock.appendChild(nameRow);
+
+        const primaryName = isLocal
+            ? button(nameRow, modelDisplayName(primaryNameStr), 'anomalous-recipe-model-name is-resolved')
+            : appendText(nameRow, 'span', modelDisplayName(primaryNameStr), 'anomalous-recipe-model-name is-unresolved');
+        
+        primaryName.title = officialNameStr || localFileNameStr;
+        if (isLocal) primaryName.onclick = openModel;
+
+        if (officialNameStr && origin?.model_url) {
+            const civitaiLink = document.createElement('a');
+            civitaiLink.href = origin.model_url;
+            civitaiLink.target = '_blank';
+            civitaiLink.className = 'anomalous-recipe-civitai-btn';
+            civitaiLink.innerHTML = '🌍 Civitai';
+            civitaiLink.title = 'View on Civitai';
+            civitaiLink.onclick = (e) => e.stopPropagation();
+            nameRow.appendChild(civitaiLink);
+        }
+
+        if (officialNameStr) {
+            const subName = document.createElement('div');
+            subName.className = 'anomalous-recipe-model-subtitle';
+            subName.textContent = localFileNameStr;
+            subName.title = localFileNameStr;
+            nameBlock.appendChild(subName);
+        }
         const referenceDetails = document.createElement('details');
         referenceDetails.className = 'anomalous-recipe-advanced-info anomalous-recipe-model-path';
         appendText(referenceDetails, 'summary', t('recipeAdvancedInfo'));
@@ -1173,6 +1216,28 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     appendText(header, 'h3', recipe.name || t('recipeUntitled'));
     const headerActions = document.createElement('div');
     headerActions.className = 'anomalous-recipe-actions-primary';
+    const refreshOrigin = button(headerActions, '🌍 ' + t('recipeDetailRefreshOrigin'), 'anomalous-btn-ghost');
+    refreshOrigin.title = t('recipeDetailRefreshOriginDesc');
+    refreshOrigin.onclick = async () => {
+        refreshOrigin.disabled = true;
+        refreshOrigin.textContent = '...';
+        try {
+            const response = await fetch('/anomalous/update_recipe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename, refreshIdentities: true }),
+            });
+            if (!response.ok) throw new Error('refresh failed');
+            const data = await response.json();
+            if (data.status === 'success') {
+                if (owner.refreshRecipes) await owner.refreshRecipes();
+                finish('refresh');
+            }
+        } catch (error) {
+            console.error('Could not refresh identities:', error);
+        }
+    };
+    
     const load = button(headerActions, t('recipeOpenCanvas'), 'anomalous-btn-primary');
     load.onclick = () => {
         void runRecipeAction(load, async () => {
