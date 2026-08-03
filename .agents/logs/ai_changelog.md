@@ -1,5 +1,19 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-03 - Preserve model grid return position
+
+**Implemented**
+
+- Renamed the model-detail fallback action from "Back to grid" to the shorter "Back" label.
+- Captured the active model folder plus grid `scrollTop` and `scrollLeft` before opening detail.
+- Restored the saved grid viewport when returning from the root model detail view, while leaving recipe-detail return state isolated.
+
+**Validation**
+
+- `node --check web/modules/ui_detail.js web/modules/ui_grid.js web/modules/ui_recipe_detail.js`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+- `git diff --check`
 ## [Snapshot] 2026-08-03 - Keep model navigation inside Overview
 
 **Implemented**

@@ -49,6 +49,15 @@ export function showDetail(model) {
         }
         if (this.detailMouseMoveHandler) window.removeEventListener('mousemove', this.detailMouseMoveHandler);
         if (this.detailMouseUpHandler) window.removeEventListener('mouseup', this.detailMouseUpHandler);
+        if (!this.recipeModelReturn && this.grid && this.grid.style.display !== 'none') {
+            this.gridReturnState = {
+                type: this.currentType,
+                pathIdx: this.currentPathIdx,
+                subfolder: this.currentSubfolder,
+                scrollTop: this.grid.scrollTop,
+                scrollLeft: this.grid.scrollLeft,
+            };
+        }
         this.grid.style.display = 'none';
         this.detailPanel.style.display = 'flex';
         this.stopMediaInContainer(this.detailPanel); this.detailPanel.innerHTML = '';
@@ -126,6 +135,17 @@ export function showDetail(model) {
                 this.detailPanel.style.display = 'none';
                 this.stopMediaInContainer(this.detailPanel); this.detailPanel.innerHTML = '';
                 this.grid.style.display = 'grid';
+                const gridReturnState = this.gridReturnState;
+                this.gridReturnState = null;
+                if (gridReturnState
+                    && gridReturnState.type === this.currentType
+                    && gridReturnState.pathIdx === this.currentPathIdx
+                    && gridReturnState.subfolder === this.currentSubfolder) {
+                    requestAnimationFrame(() => {
+                        this.grid.scrollTop = gridReturnState.scrollTop || 0;
+                        this.grid.scrollLeft = gridReturnState.scrollLeft || 0;
+                    });
+                }
             }
         };
 

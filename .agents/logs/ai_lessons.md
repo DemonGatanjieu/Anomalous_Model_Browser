@@ -5,6 +5,10 @@ This document serves as an architectural retrospective and UX diagnostic log for
 ## 56. UI Refactors Must Preserve Reachable Semantic Tabs
 
 When a visual refactor merges information into a compact overview, do not remove a semantic tab until every dependent interaction has an intentional replacement. Model preview loading, model navigation, and return-state restoration were still designed around a Models tab, so removing only the tab made those actions unreachable. Keep tab state, asynchronous loading conditions, and return paths aligned with the visible navigation.
+
+## 57. Detail Return Must Restore the List Viewport
+
+Opening a detail panel should capture the list's semantic location and viewport, not only the selected item. Restore the folder/type and `scrollTop`/`scrollLeft` when the user returns to the grid, while keeping recipe-detail return state separate from browser-grid state. This prevents a visually correct Back action from still feeling like a navigation reset.
 这份文档旨在记录 Anomalous 插件开发过程中的架构演进、UX 设计教训以及核心 Bug 排查经验。
 
 ---
