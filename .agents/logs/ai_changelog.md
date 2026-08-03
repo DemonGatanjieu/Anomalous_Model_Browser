@@ -481,3 +481,17 @@
 - `node --check web/modules/ui_recipe_detail.js`
 - `node tests/recipe_parser_roundtrip.mjs`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+
+## [Snapshot] 2026-08-03 - Improve identity help feedback
+
+**Implemented**
+
+- Replaced the weak native-only question-mark hint with a custom high-contrast tooltip.
+- Tooltip text wraps within a bounded width and appears on hover or keyboard focus.
+- Retained the native `title` and added an accessible label as fallbacks.
+
+**Validation**
+
+- `node --check web/modules/ui_recipe_detail.js`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`

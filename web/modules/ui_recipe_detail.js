@@ -302,7 +302,11 @@ function identityBadge(reference) {
     const helpIcon = document.createElement('span');
     helpIcon.textContent = ' [?]';
     helpIcon.className = 'anomalous-recipe-identity-help';
-    helpIcon.title = t('recipeIdentityHelpDesc') || 'Verification checks physical file consistency, not model quality.';
+    const helpText = t('recipeIdentityHelpDesc') || 'Verification checks physical file consistency, not model quality.';
+    helpIcon.title = helpText;
+    helpIcon.dataset.tooltip = helpText;
+    helpIcon.setAttribute('role', 'img');
+    helpIcon.setAttribute('aria-label', helpText);
     badge.appendChild(helpIcon);
     
     return badge;

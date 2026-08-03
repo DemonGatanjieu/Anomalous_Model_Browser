@@ -29,6 +29,10 @@ Keep status badges short and move the explanation to a tooltip or disclosure. Lo
 ## 62. Disabled Is Not the Same as Feedback
 
 For network-backed buttons, disabling the control prevents duplicate requests but does not tell the user that anything happened. Pair the disabled state with an immediate loading label, a visible progress cue, and a failure path that restores the original action.
+
+## 63. Native Title Tooltips Are Not Reliable UI Feedback
+
+Browser `title` hints are delayed, low-contrast, difficult to style, and poor for keyboard users. For important explanations, keep the title as fallback but add a bounded custom tooltip triggered by both hover and focus.
 这份文档旨在记录 Anomalous 插件开发过程中的架构演进、UX 设计教训以及核心 Bug 排查经验。
 
 ---
