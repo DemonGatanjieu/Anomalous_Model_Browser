@@ -13,6 +13,10 @@ Opening a detail panel should capture the list's semantic location and viewport,
 ## 58. Overlay Close Must Restore Its Covered Panel
 
 An overlay that only toggles its own visibility can reveal a blank host surface if the underlying panel was hidden by an earlier navigation path. Record the covered panel at overlay entry and restore it through one shared close function. Keep a safe visible fallback, such as the main grid, for stale or missing return state.
+
+## 59. Reused Overlay DOM Must Be Rehydrated on Reopen
+
+When an overlay is closed by hiding both its shell and its child sections, the already-initialized fast path must restore the active child section before returning. Refreshing data alone does not make a hidden DOM subtree visible and can produce a blank overlay on the second open.
 这份文档旨在记录 Anomalous 插件开发过程中的架构演进、UX 设计教训以及核心 Bug 排查经验。
 
 ---

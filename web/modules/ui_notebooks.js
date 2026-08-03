@@ -45,6 +45,11 @@ export function closeWorkspace() {
 
 export async function showNotebooks() {
         if (this.nbInitialized) {
+            this.nbPanel.style.display = 'flex';
+            if (this.notebookBody) this.notebookBody.style.display = 'flex';
+            if (this.recipeView) this.recipeView.style.display = 'none';
+            this.notebookNotesTab?.classList.add('active');
+            this.notebookRecipesTab?.classList.remove('active');
             this.refreshNotebooks(true);
             return;
         }

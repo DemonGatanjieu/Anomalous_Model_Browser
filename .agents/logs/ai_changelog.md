@@ -407,3 +407,27 @@
 - **Recipe UI 现代化**: 合并了冗杂的 Tabs，将 模型与复现 和 参数 合并进入 概览 面板，并将底层参数收入折叠组件，极大减轻了信息噪音。
 - **配方卡片列表降噪**: 移除了原配方列表卡片上的全量参数展示，仅保留封面图、标题、标签与模型徽章，并重构了操作按钮布局。
 - **交互逻辑修复**: 废弃了极易出 Bug 的 Quick Queue 逻辑，统一了『打开到画布』与『追加到画布』的逻辑封装。
+ 
+ # #   [ S n a p s h o t ]   2 0 2 6 - 0 8 - 0 3   -   R e c i p e   s c h e m a   v 5   o r i g i n   e x t r a c t i o n   a n d   r e n d e r i n g  
+ * * I m p l e m e n t e d * *  
+ -   S e p a r a t e d   m o d e l   p h y s i c a l   f i l e n a m e s   f r o m   o f f i c i a l   C - s i t e   o r i g i n   n a m e s .  
+ -   U p d a t e d   g e t _ m e t a d a t a   t o   e x p o r t   m o d e l _ i d   a n d   v e r s i o n _ i d .  
+ -   R e c i p e s   n o w   s t o r e   o r i g i n   i n f o   w h e n   s a v i n g / u p d a t i n g .  
+ -   U I   p r i o r i t i z e s   o r i g i n . m o d e l _ n a m e   a n d   p r o v i d e s   a   C i v i t a i   l i n k   i f   a v a i l a b l e .  
+ -   A d d e d   r e f r e s h   i d e n t i t i e s   b u t t o n   f o r   o l d e r   r e c i p e s .  
+ -   L o c a l i z e d   i d e n t i t y   p h r a s e s   t o   b e   m o r e   h u m a n - c e n t r i c .  
+ 
+## [Snapshot] 2026-08-03 - Fix Workspace reopen blank state and recipe identity compatibility
+
+**Implemented**
+
+- Rehydrated the notebook body and active section when reopening an already initialized Workspace after close.
+- Kept recipe body hidden while reopening the default notebook section, preventing an empty Workspace overlay.
+- Made recipe model-reference enrichment accept both the new identity-plus-origin helper result and the legacy identity-only contract.
+
+**Validation**
+
+- `node --check web/main.js web/modules/ui_notebooks.js web/modules/ui_sidebar.js web/modules/ui_recipes.js`
+- `python_embeded/python.exe -m py_compile api/recipes.py api/metadata.py`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py`

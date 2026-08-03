@@ -183,7 +183,13 @@ def _build_model_references(recipe):
             saved_value = values[widget_index] if widget_index < len(values) else None
             if not isinstance(saved_value, str) or not saved_value.strip():
                 continue
-            identity, origin = _identity_for_reference(saved_value)
+            identity_result = _identity_for_reference(saved_value)
+            if isinstance(identity_result, tuple):
+                identity, origin = (identity_result + (None,))[:2]
+            else:
+                # Keep compatibility with older callers/tests that provide the
+                # pre-origin helper contract and return identity only.
+                identity, origin = identity_result, None
             ref_dict = {
                 "node_id": node.get("id"),
                 "node_type": _node_type(node) or "Unknown",
