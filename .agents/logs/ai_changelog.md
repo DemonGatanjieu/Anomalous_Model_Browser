@@ -55,7 +55,7 @@
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
 - `python_embeded/python.exe -m py_compile api/recipes.py api/models.py api/recipe_packages.py`
 - `git diff --check`
-## [Snapshot] 2026-08-03 — Complete recipe model return cleanup
+## [Snapshot] 2026-08-03 â€” Complete recipe model return cleanup
 
 - When returning from a model detail opened by a recipe, explicitly hide and clean the model panel before restoring the Workspace recipe detail view.
 
@@ -64,7 +64,7 @@
 - `node --check web/modules/ui_recipe_detail.js`
 - `git diff --check`
 
-## [Snapshot] 2026-08-03 — Guard recipe card actions
+## [Snapshot] 2026-08-03 â€” Guard recipe card actions
 
 **Implemented**
 
@@ -78,7 +78,7 @@
 - `node --check web/modules/ui_recipe_detail.js`
 - `git diff --check`
 
-## [Snapshot] 2026-08-03 — Stabilize recipe detail navigation lifecycle
+## [Snapshot] 2026-08-03 â€” Stabilize recipe detail navigation lifecycle
 
 **Implemented**
 
@@ -96,7 +96,7 @@
 - `node --check web/modules/ui_grid.js`
 - `git diff --check`
 
-## [Snapshot] 2026-08-03 — Preserve recipe identity across packages
+## [Snapshot] 2026-08-03 â€” Preserve recipe identity across packages
 
 **Implemented**
 
@@ -109,11 +109,11 @@
 
 **Validation**
 
-- `python_embeded/python.exe tests/test_recipe_roundtrip.py` — 9 tests passed
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` â€” 9 tests passed
 - `python_embeded/python.exe -m py_compile api/recipes.py api/models.py api/recipe_packages.py`
 - `git diff --check`
 
-## [Snapshot] 2026-08-03 — Harden Workflow Recipe save integrity
+## [Snapshot] 2026-08-03 â€” Harden Workflow Recipe save integrity
 
 **Implemented**
 
@@ -131,7 +131,7 @@
 - `python_embeded/python.exe -m py_compile api/recipes.py`
 - `git diff --check`
 
-## [Planning Audit] 2026-08-03 — Workflow Recipe integrity and UX hardening
+## [Planning Audit] 2026-08-03 â€” Workflow Recipe integrity and UX hardening
 
 - Added `.agents/plans/workflow_recipe_audit_and_hardening_plan.md` after a read-only audit of recipe save/update, detail rendering, canvas actions, model identity, history, package transfer, Workspace lifecycle, and CSS interaction structure.
 - Verified one real schema-v4 recipe: the authoritative 13-node/17-link workflow, semantic model/sampler values, and full positive/negative prompts were saved; one 451-character prompt was intentionally truncated only in the 320-character generic summary.
@@ -145,7 +145,7 @@
 - `node --check` for all recipe frontend modules
 - `git diff --check`
 
-## [Snapshot] 2026-08-03 — Keep native CLIP parameters together
+## [Snapshot] 2026-08-03 â€” Keep native CLIP parameters together
 
 **Implemented**
 
@@ -157,7 +157,7 @@
 - `node --check web/modules/ui_recipe_detail.js`
 - `git diff --check`
 
-## [Snapshot] 2026-08-03 — Preserve native CLIP prompt parameters
+## [Snapshot] 2026-08-03 â€” Preserve native CLIP prompt parameters
 
 **Implemented**
 
@@ -170,7 +170,7 @@
 - `node --check web/modules/ui_recipe_detail.js`
 - `git diff --check`
 
-## [Snapshot] 2026-08-03 — Show saved prompts in Parameters
+## [Snapshot] 2026-08-03 â€” Show saved prompts in Parameters
 
 **Implemented**
 
@@ -183,7 +183,7 @@
 - `node --check web/modules/ui_recipe_detail.js`
 - `git diff --check`
 
-## [Snapshot] 2026-08-03 — Split model composition in recipe overview
+## [Snapshot] 2026-08-03 â€” Split model composition in recipe overview
 
 **Implemented**
 
@@ -198,7 +198,7 @@
 - `node --check web/modules/locales.js`
 - `git diff --check`
 
-## [Snapshot] 2026-08-03 — Recipe model navigation and presentation cleanup
+## [Snapshot] 2026-08-03 â€” Recipe model navigation and presentation cleanup
 
 **Implemented**
 
@@ -225,7 +225,7 @@
 - Added bounded local version history (20 snapshots) before every update, with restore controls and deletion of related history when a recipe is deleted.
 - Kept recipe files and their history exclusively in ComfyUI user data, outside the plugin repository.
 
-## [Snapshot] 2026-08-02 — `a9d767e`
+## [Snapshot] 2026-08-02 â€” `a9d767e`
 
 **Workflow Recipe Detail Foundation**
 
@@ -236,7 +236,7 @@
 
 **Design and architecture decisions**
 
-- The future public umbrella label is **Workspace / 创作工作台**; internal notebook API and storage names stay unchanged in the first presentation-only rename.
+- The future public umbrella label is **Workspace / åˆ›ä½œå·¥ä½œå�°**; internal notebook API and storage names stay unchanged in the first presentation-only rename.
 - Current model previews are demand-loaded from exact references. Frozen model-preview snapshots are a future explicit, bounded recipe-asset feature; they must not be embedded in the authoritative workflow graph or used for identity.
 - `workflow_recipe_detail_panel_design.md` now contains the schema-v4 preview-snapshot proposal, limits, ownership, API boundaries, delivery order, and acceptance criteria.
 
@@ -253,11 +253,11 @@
 - `CHANGELOG.md` is reserved for user-visible release notes only. Internal decisions, implementation detail, checks, and agent handoff stay in this file.
 - Moved the root experience summary to `.agents/logs/ai_lessons.md`; `.agents/logs/` now contains the intended changelog and lessons pair.
 
-## [Snapshot] 2026-08-02 — Workspace and saved preview completion
+## [Snapshot] 2026-08-02 â€” Workspace and saved preview completion
 
 **Implemented**
 
-- Renamed the visible Notebook surface to Workspace / 创作工作台 and its first section to Prompt Notes / 提示词笔记. Existing notebook routes, local storage, and internal property names remain unchanged.
+- Renamed the visible Notebook surface to Workspace / åˆ›ä½œå·¥ä½œå�° and its first section to Prompt Notes / æ��ç¤ºè¯�ç¬”è®°. Existing notebook routes, local storage, and internal property names remain unchanged.
 - Extended `/anomalous/resolve_paths_to_previews` with `exact_only`. Recipe detail preview requests now use keyed, category-bounded exact references, so opening a recipe model tab cannot fall back to a recursive library walk.
 - Added demand-loaded static/video current-preview rendering to Models & reproducibility. Video previews remain muted, metadata-preloaded, and play only while hovered.
 - Added an opt-in save-dialog choice for model preview snapshots. Schema v4 writes small static WebP assets under the recipe user-data `.assets/<recipe-stem>/` directory and references them from model metadata.
@@ -277,7 +277,7 @@
 - `node --check web/modules/ui_sidebar.js`
 - `node --check web/modules/locales.js`
 
-## [Snapshot] 2026-08-02 — Recipe discovery and semantic comparison
+## [Snapshot] 2026-08-02 â€” Recipe discovery and semantic comparison
 
 **Implemented**
 
@@ -294,7 +294,7 @@
 - `recipe_diff.js` smoke comparison passed
 - `git diff --check`
 
-## [Snapshot] 2026-08-02 — Contained recipe package transfer
+## [Snapshot] 2026-08-02 â€” Contained recipe package transfer
 
 **Implemented**
 
@@ -308,10 +308,10 @@
 
 - `python_embeded/python.exe -m py_compile api/__init__.py api/models.py api/recipes.py api/recipe_packages.py`
 - `node --check` for every JavaScript file under `web/`
-- ZIP export → inspect smoke round trip passed with a contained WebP asset
+- ZIP export â†’ inspect smoke round trip passed with a contained WebP asset
 - `git diff --check`
 
-## [Snapshot] 2026-08-02 — Runtime-safe append and Quick Queue handoff
+## [Snapshot] 2026-08-02 â€” Runtime-safe append and Quick Queue handoff
 
 **Implemented**
 
@@ -325,7 +325,7 @@
 - `node --check` for every JavaScript file under `web/`
 - `git diff --check`
 
-## [Snapshot] 2026-08-02 — Recipe action feedback and queue contract fix
+## [Snapshot] 2026-08-02 â€” Recipe action feedback and queue contract fix
 
 **Implemented**
 
@@ -339,7 +339,7 @@
 - `node --check` for every JavaScript file under `web/`
 - `git diff --check`
 
-## [Snapshot] 2026-08-02 — Recipe detail readability pass
+## [Snapshot] 2026-08-02 â€” Recipe detail readability pass
 
 **Implemented**
 
@@ -355,7 +355,7 @@
 - `node --check` for every JavaScript file under `web/`
 - `git diff --check`
 
-## [Snapshot] 2026-08-03 — Remove Quick Queue and unify recipe canvas actions
+## [Snapshot] 2026-08-03 â€” Remove Quick Queue and unify recipe canvas actions
 
 **Implemented**
 
@@ -371,7 +371,7 @@
 - `python_embeded/python.exe -m py_compile api/__init__.py api/models.py api/recipes.py api/recipe_packages.py`
 - `git diff --check`
 
-## [Snapshot] 2026-08-03 — Refine recipe detail UI
+## [Snapshot] 2026-08-03 â€” Refine recipe detail UI
 
 **Implemented**
 
@@ -386,7 +386,7 @@
 - `python_embeded/python.exe -m py_compile api/__init__.py api/models.py api/recipes.py api/recipe_packages.py`
 - `git diff --check`
 
-## [Snapshot] 2026-08-03 — Add recipe advanced asset features
+## [Snapshot] 2026-08-03 â€” Add recipe advanced asset features
 
 **Implemented**
 
@@ -403,10 +403,10 @@
 - Advanced recipe locale-key smoke check passed
 - `git diff --check`
 
-## [2026-08-03] UI �ع���ܹ�����
-- **Recipe UI �ִ���**: �ϲ������ӵ� Tabs���� ģ���븴�� �� ���� �ϲ����� ���� ��壬�����ײ���������۵�����������������Ϣ������
-- **�䷽��Ƭ�б�����**: �Ƴ���ԭ�䷽�б���Ƭ�ϵ�ȫ������չʾ������������ͼ�����⡢��ǩ��ģ�ͻ��£����ع��˲�����ť���֡�
-- **�����߼��޸�**: �����˼��׳� Bug �� Quick Queue �߼���ͳһ�ˡ��򿪵��������롺׷�ӵ����������߼���װ��
+## [2026-08-03] UI ÖØ¹¹Óë¼Ü¹¹¾«¼ò
+- **Recipe UI ÏÖ´ú»¯**: ºÏ²¢ÁËÈßÔÓµÄ Tabs£¬½« Ä£ÐÍÓë¸´ÏÖ ºÍ ²ÎÊý ºÏ²¢½øÈë ¸ÅÀÀ Ãæ°å£¬²¢½«µ×²ã²ÎÊýÊÕÈëÕÛµþ×é¼þ£¬¼«´ó¼õÇáÁËÐÅÏ¢ÔëÒô¡£
+- **Åä·½¿¨Æ¬ÁÐ±í½µÔë**: ÒÆ³ýÁËÔ­Åä·½ÁÐ±í¿¨Æ¬ÉÏµÄÈ«Á¿²ÎÊýÕ¹Ê¾£¬½ö±£Áô·âÃæÍ¼¡¢±êÌâ¡¢±êÇ©ÓëÄ£ÐÍ»ÕÕÂ£¬²¢ÖØ¹¹ÁË²Ù×÷°´Å¥²¼¾Ö¡£
+- **½»»¥Âß¼­ÐÞ¸´**: ·ÏÆúÁË¼«Ò×³ö Bug µÄ Quick Queue Âß¼­£¬Í³Ò»ÁË¡º´ò¿ªµ½»­²¼¡»Óë¡º×·¼Óµ½»­²¼¡»µÄÂß¼­·â×°¡£
  
  # #   [ S n a p s h o t ]   2 0 2 6 - 0 8 - 0 3   -   R e c i p e   s c h e m a   v 5   o r i g i n   e x t r a c t i o n   a n d   r e n d e r i n g  
  * * I m p l e m e n t e d * *  
@@ -563,8 +563,8 @@
 
 **Implemented**
 
-- Removed “Open to Canvas” buttons from recipe cards and recipe detail views.
-- Kept “Append to Canvas” as the only recipe composition action, so saved recipes never replace the user's current canvas or depend on ComfyUI workflow-tab semantics.
+- Removed â€œOpen to Canvasâ€� buttons from recipe cards and recipe detail views.
+- Kept â€œAppend to Canvasâ€� as the only recipe composition action, so saved recipes never replace the user's current canvas or depend on ComfyUI workflow-tab semantics.
 - Kept the separate structural-edit action as an explicitly confirmed new-canvas editing flow.
 - Removed obsolete open-action locale strings and the unused active-workflow loader.
 
@@ -580,7 +580,7 @@
 
 **Implemented**
 
-- Removed the expandable “Choose key parameters” section from the save-recipe dialog.
+- Removed the expandable â€œChoose key parametersâ€� section from the save-recipe dialog.
 - Removed the now-unused save-dialog pin-selection state and locale text.
 - Kept the serialized workflow and all existing save fields unchanged; editing an older recipe preserves its existing `params.pinned` metadata, while new saves use an empty pin list.
 - Removed the unused parameter-choice field from the save draft payload.
@@ -624,6 +624,22 @@
 - `node --check web/main.js`
 - `node tests/recipe_parser_roundtrip.mjs`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+## [Snapshot] 2026-08-04 - Extract parameter management to dedicated Parameter Notebooks and implement Parameter Gallery
+
+**Implemented**
+
+- Decoupled parameter saving and viewing from Workflow Recipes. Saving a recipe automatically saves a read-only Parameter Notebook to `user/default/workflows/anomalous_parameters`.
+- Added a new `sha256-params-v1` hash algorithm that strictly matches structural topology and all non-volatile parameters (ignoring seeds, coordinates).
+- Implemented a dedicated Parameter Notebooks UI in the sidebar, separating it from the legacy Prompt Notes.
+- Integrated a Parameter Gallery that automatically discovers and displays recent output images that precisely match the parameter signature.
+
+**Validation**
+
+- `node --check web/modules/ui_parameters.js`
+- `node --check web/modules/ui_recipes.js`
+- `python_embeded/python.exe -m py_compile api/parameters.py api/recipes.py api/__init__.py`
+- `git diff --check`
+
 ## [Snapshot] 2026-08-04 - Add recipe result gallery and portable covers
 
 **Implemented**
@@ -679,3 +695,16 @@
 - `python_embeded/python.exe -m py_compile api/__init__.py api/parameters.py api/recipes.py api/recipe_packages.py`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed)
 - `node tests/recipe_parser_roundtrip.mjs`
+## [Snapshot] 2026-08-04 - Finalize Gemini parameter-management audit
+
+**Implemented**
+
+- Reviewed the eight-file Parameter Notebook/Parameter Gallery extraction and preserved the intentional removal of experimental recipe records.
+- Confirmed the new backend route wiring, parameter signature flow, recipe auto-provisioning path, and panel lifecycle integration.
+- Recorded the follow-up hardening snapshot as `ce3f4dba`.
+
+**Validation**
+
+- 15 recipe/backend regression tests passed.
+- Related frontend modules passed `node --check`.
+- Parameter and recipe API modules passed Python compilation.
