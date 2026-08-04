@@ -847,6 +847,20 @@
 - `node tests/recipe_parser_roundtrip.mjs`.
 - `git diff --check`.
 
+## [Snapshot] 2026-08-05 - Make current-canvas capture one-click
+
+**Implemented**
+
+- “Read current and create” now saves the captured parameter note immediately after skeleton validation instead of opening an intermediate editor.
+- The editable “New parameter note” flow remains available separately for deliberate parameter changes.
+
+**Validation**
+
+- All 19 JavaScript files passed `node --check`.
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
+- `node tests/recipe_parser_roundtrip.mjs`.
+- `git diff --check`.
+
 ## [Snapshot] 2026-08-04 - Bind parameter snapshots to recipes
 
 **Implemented**

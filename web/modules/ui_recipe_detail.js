@@ -1503,18 +1503,32 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     readCurrent.onclick = async () => {
         readCurrent.disabled = true;
         readCurrent.classList.add('is-busy');
+        const originalLabel = readCurrent.textContent;
+        readCurrent.textContent = t('recipeParameterReadCurrentSaving');
         try {
             if (!app.graph?.serialize) throw new Error('recipe_parameter_canvas_unavailable');
             const current = captureRecipeDraft(app.graph);
             assertRecipeSkeleton(recipe.workflow, current.workflow);
-            parameterState.editor = {
-                draft: { workflow: current.workflow, params: current.metadata },
-                name: `${recipe.name || t('recipeUntitled')} · ${t('recipeParameterReadCurrent')}`,
-            };
+            const response = await fetch('/anomalous/save_parameter', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: `${recipe.name || t('recipeUntitled')} · ${t('recipeParameterReadCurrent')}`,
+                    tags: recipe.tags || [],
+                    notes: recipe.notes || '',
+                    params: current.metadata,
+                    workflow: current.workflow,
+                    recipe_filename: owner.recipeDetailFilename,
+                }),
+            });
+            if (!response.ok) throw new Error('current parameter note save failed');
+            parameterState.editor = null;
+            parameterState.status = 'idle';
             parameterState.selectedFilename = null;
             gallery.status = 'idle';
             gallery.images = [];
             gallery.scanned = 0;
+            await parameterState.refresh?.(true);
             selectParameterTab?.();
         } catch (error) {
             console.error('Could not read current canvas parameters:', error);
@@ -1524,6 +1538,7 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         } finally {
             readCurrent.disabled = false;
             readCurrent.classList.remove('is-busy');
+            readCurrent.textContent = originalLabel;
         }
     };
     const refreshSnapshots = button(sidebarHeading, t('recipeParameterRefresh'), 'anomalous-btn-ghost');
