@@ -646,6 +646,19 @@
 - `node --check web/main.js`
 - `node tests/recipe_parser_roundtrip.mjs`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
+## [Snapshot] 2026-08-04 - Parameter Notebook Redesign Planning & Handoff
+
+**Planned**
+
+- Drafted `parameter_notebook_plan.md` to define the architectural shift of embedding Parameter Notebooks directly into the Workflow Recipe detail view.
+- Handed off backend implementation of `api/parameters.py` to GPT (associating notebooks with recipes and supporting `recipe_filename` filtering).
+- Frontend will subsequently refactor `renderRecipeParameters` in `ui_recipe_detail.js` to serve as the notebook browser for the active recipe.
+- Updated `ARCHITECTURE.md` to reflect the upcoming Parameter Notebooks paradigm.
+
+**Validation**
+
+- Planning phase only; no runtime code changes applied yet.
+
 ## [Snapshot] 2026-08-04 - Extract parameter management to dedicated Parameter Notebooks and implement Parameter Gallery
 
 **Implemented**
