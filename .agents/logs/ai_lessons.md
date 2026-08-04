@@ -496,3 +496,7 @@ For a gallery whose source is a directory walk, querying only when the panel ope
 - `python_embeded/python.exe -m py_compile api/__init__.py api/parameters.py api/recipes.py api/recipe_packages.py`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed)
 - `node tests/recipe_parser_roundtrip.mjs`
+
+## 75. Keep the plugin entry point independent from panel construction
+
+The floating trigger is the recovery path for the entire extension, so it must not be appended only after every panel has initialized. Mount it first, catch constructor failures, and retry on click. Optional browser APIs such as `IntersectionObserver` must be feature-detected before use; otherwise a nonessential gallery enhancement can make the whole plugin appear to have disappeared.

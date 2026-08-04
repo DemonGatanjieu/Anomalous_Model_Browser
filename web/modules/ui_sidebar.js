@@ -1702,12 +1702,19 @@ export function createDOM() {
         this.galleryLoading = false;
         this.galleryHasMore = true;
 
-        this.galleryObserver = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && !this.galleryLoading && this.galleryHasMore) {
-                this.loadGalleryImages(this.galleryCurrentPage + 1);
-            }
-        }, { root: this.galleryGrid, rootMargin: '100px' });
-        this.galleryObserver.observe(this.gallerySentinel);
+        if (typeof IntersectionObserver === 'function') {
+            this.galleryObserver = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting && !this.galleryLoading && this.galleryHasMore) {
+                    this.loadGalleryImages(this.galleryCurrentPage + 1);
+                }
+            }, { root: this.galleryGrid, rootMargin: '100px' });
+            this.galleryObserver.observe(this.gallerySentinel);
+        } else {
+            // Some embedded ComfyUI webviews do not expose IntersectionObserver.
+            // The gallery still opens and loads its first page; do not abort the
+            // whole extension setup when infinite scroll is unavailable.
+            this.galleryObserver = null;
+        }
 
         this.nbPanel = document.createElement('div');
         this.nbPanel.className = 'anomalous-nb-modal';

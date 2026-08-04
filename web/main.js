@@ -469,13 +469,30 @@ app.registerExtension({
             } catch (e) { }
         }
 
-        const browser = new AnomalousBrowser();
-        window.anomalousBrowserInstance = browser;
+        let browser = null;
         const btn = document.createElement('button');
         btn.id = 'anomalous-trigger-btn';
-        btn.innerHTML = '📦';
-        btn.title = window.anomalous_browser_lang === 'zh' ? '打开 Anomalous 模型浏览器' : 'Open Anomalous Model Browser';
+        btn.textContent = '🧩';
+        btn.setAttribute('aria-label', 'Anomalous Model Browser');
 
+        const ensureBrowser = () => {
+            if (browser) return browser;
+            try {
+                browser = new AnomalousBrowser();
+                window.anomalousBrowserInstance = browser;
+                btn.classList.remove('anomalous-trigger-error');
+                return browser;
+            } catch (error) {
+                console.error('[Anomalous Model Browser] UI initialization failed:', error);
+                btn.classList.add('anomalous-trigger-error');
+                btn.title = window.anomalous_browser_lang === 'zh'
+                    ? '插件界面初始化失败，点击可重试'
+                    : 'The plugin UI failed to initialize. Click to retry.';
+                btn.setAttribute('aria-label', btn.title);
+                return null;
+            }
+        };
+        btn.title = window.anomalous_browser_lang === 'zh' ? '打开 Anomalous 模型浏览器' : 'Open Anomalous Model Browser';
         let isDragging = false;
         let startX, startY, initialX, initialY;
 
@@ -505,7 +522,9 @@ app.registerExtension({
                 btn.style.transition = 'transform 0.15s, box-shadow 0.15s';
                 localStorage.setItem('anomalous_btn_x', btn.style.left);
                 localStorage.setItem('anomalous_btn_y', btn.style.top);
-                if (Math.abs(e.clientX - startX) < 5 && Math.abs(e.clientY - startY) < 5) browser.show();
+                if (Math.abs(e.clientX - startX) < 5 && Math.abs(e.clientY - startY) < 5) {
+                    ensureBrowser()?.show();
+                }
             }
         });
 
@@ -541,6 +560,9 @@ app.registerExtension({
         });
 
         document.body.appendChild(btn);
+        // Keep the entry point visible even when a panel regression prevents
+        // the full browser UI from being constructed.
+        ensureBrowser();
 
         // Pre-create a lightweight, translucent, and aesthetic drag ghost image for huge Hires Fix images
         window.anomalousDragGhostImg = new Image();

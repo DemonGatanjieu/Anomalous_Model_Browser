@@ -708,3 +708,23 @@
 - 15 recipe/backend regression tests passed.
 - Related frontend modules passed `node --check`.
 - Parameter and recipe API modules passed Python compilation.
+
+## [Snapshot] 2026-08-04 - Restore plugin trigger visibility
+
+**Implemented**
+
+- Mounted the floating plugin trigger independently before browser panel initialization, with a retry path and an explicit error state when panel construction fails.
+- Replaced the legacy trigger label with a stable puzzle icon and accessible label.
+- Guarded the recipe gallery's optional `IntersectionObserver` so embedded webviews without that API can still initialize the plugin and load the first gallery page.
+- Synchronized `ARCHITECTURE.md` with the trigger lifecycle and initialization-resilience rule.
+
+**Validation**
+
+- `node --check web/main.js`
+- `node --check web/modules/ui_sidebar.js`
+- `node --check web/modules/ui_parameters.js`
+- `node --check web/modules/locales.js`
+- `node tests/recipe_parser_roundtrip.mjs`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed)
+- `python_embeded/python.exe -m py_compile api/__init__.py api/parameters.py api/recipes.py api/recipe_packages.py`
+- `git diff --check`
