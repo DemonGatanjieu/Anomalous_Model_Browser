@@ -291,6 +291,7 @@ export function createDOM() {
                 doctor: this.doctorPanel?.style.display || 'none',
                 assistant: this.assistantPanel?.style.display || 'none',
             };
+            this.hideAllPanels();
             this.showParameters();
         };
 
@@ -2065,6 +2066,7 @@ export function hideAllPanels() {
         if (this.nbPanel) this.nbPanel.style.display = 'none';
         if (this.doctorPanel) this.doctorPanel.style.display = 'none';
         if (this.assistantPanel) this.assistantPanel.style.display = 'none';
+        if (this.paramPanel) this.paramPanel.style.display = 'none';
         if (this.currentDetailObserver) {
             this.currentDetailObserver.disconnect();
             this.currentDetailObserver = null;

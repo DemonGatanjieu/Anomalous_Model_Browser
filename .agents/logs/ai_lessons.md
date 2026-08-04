@@ -477,3 +477,22 @@ For a gallery whose source is a directory walk, querying only when the panel ope
 **The Problem**: A permanent refresh strip adds visual weight to an image-first gallery, while continuous polling is unnecessary for a directory the user can reopen.
 
 **The Solution**: Refresh the main output gallery when its panel is opened. Remove the dedicated toolbar button and keep any future manual refresh as an unobtrusive secondary action only if real usage proves it necessary.
+## [Snapshot] 2026-08-04 - Harden Parameter Notebook backend and workspace lifecycle
+
+**Implemented**
+
+- Added missing asynchronous runtime support for the Parameter Gallery endpoint.
+- Made parameter signatures understand both UI workflow widget values and API prompt inputs, while retaining volatile-field filtering.
+- Added parameter notebook object/workflow validation, bounded payloads, safe atomic writes, strict fingerprint validation, and background directory reads.
+- Ensured the Parameter Notebook overlay participates in panel hiding and Workspace close/restore behavior; stale selections and failed deletes now recover visibly.
+
+**Validation**
+
+- `node --check web/main.js`
+- `node --check web/modules/ui_parameters.js`
+- `node --check web/modules/ui_recipe_detail.js`
+- `node --check web/modules/ui_recipes.js`
+- `node --check web/modules/ui_sidebar.js`
+- `python_embeded/python.exe -m py_compile api/__init__.py api/parameters.py api/recipes.py api/recipe_packages.py`
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed)
+- `node tests/recipe_parser_roundtrip.mjs`

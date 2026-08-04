@@ -79,11 +79,13 @@ export async function refreshParameters(autoOpenFirst = false) {
         this.paramListEl.innerHTML = '';
 
         if (data.notebooks && data.notebooks.length > 0) {
-            if (autoOpenFirst && !this.currentParameter) {
-                this.currentParameter = data.notebooks[0];
-            }
+            const current = this.currentParameter
+                && data.notebooks.find((item) => item.filename === this.currentParameter.filename);
+            this.currentParameter = current || (autoOpenFirst ? data.notebooks[0] : null);
             if (this.currentParameter) {
                 this.renderParameterEditor();
+            } else {
+                this.paramEditor.replaceChildren();
             }
 
             data.notebooks.forEach(nb => {
@@ -100,6 +102,9 @@ export async function refreshParameters(autoOpenFirst = false) {
                 };
                 this.paramListEl.appendChild(item);
             });
+        } else {
+            this.currentParameter = null;
+            this.paramEditor.replaceChildren();
         }
     } catch (e) { console.error('Failed to refresh parameters:', e); }
 }
@@ -108,11 +113,12 @@ export async function deleteCurrentParameter() {
     if (!this.currentParameter) return;
     if (!confirm(t('deleteNotebook') + ' ?')) return;
     try {
-        await fetch('/anomalous/delete_parameter', {
+        const response = await fetch('/anomalous/delete_parameter', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ filename: this.currentParameter.filename })
         });
+        if (!response.ok) throw new Error('parameter deletion failed');
         this.currentParameter = null;
         this.paramEditor.innerHTML = '';
         this.refreshParameters();

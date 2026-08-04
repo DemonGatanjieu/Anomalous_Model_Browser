@@ -117,31 +117,36 @@ def _workflow_fingerprint(workflow):
 
 
 def _parameter_signature(workflow):
-    """Hash node types and parameter values, ignoring UI topology and coordinates."""
+    """Hash node types and parameter values for UI workflows or API prompts."""
     if not isinstance(workflow, dict):
         return {"algorithm": "sha256-params-v1", "value": ""}
     
     nodes = workflow.get("nodes")
-    if not isinstance(nodes, list):
-        nodes = list(workflow.values()) if isinstance(workflow, dict) else []
+    is_ui_workflow = isinstance(nodes, list)
+    if not is_ui_workflow:
+        nodes = list(workflow.values())
 
     cleaned_nodes = []
     for node in nodes:
         if not isinstance(node, dict):
             continue
         
-        widgets = _clean_volatile_params(node.get("widgets_values") or [])
-        if isinstance(widgets, list):
-            for index in _volatile_widget_indexes(node):
-                if 0 <= index < len(widgets):
-                    widgets[index] = "__anomalous_volatile_seed__"
+        if is_ui_workflow:
+            parameters = {"widgets": _clean_volatile_params(node.get("widgets_values") or [])}
+            widgets = parameters["widgets"]
+            if isinstance(widgets, list):
+                for index in _volatile_widget_indexes(node):
+                    if 0 <= index < len(widgets):
+                        widgets[index] = "__anomalous_volatile_seed__"
+        else:
+            parameters = {"inputs": _clean_volatile_params(node.get("inputs") or {})}
                     
         cleaned_nodes.append({
             "type": _node_type(node),
-            "widgets": widgets,
+            **parameters,
         })
         
-    cleaned_nodes.sort(key=lambda x: (x["type"], json.dumps(x["widgets"], sort_keys=True)))
+    cleaned_nodes.sort(key=lambda x: (x["type"], json.dumps(x, sort_keys=True, ensure_ascii=False)))
     
     canonical = json.dumps(
         cleaned_nodes,

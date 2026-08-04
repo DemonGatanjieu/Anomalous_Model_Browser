@@ -35,6 +35,7 @@ function restoreWorkspaceReturnPanel(owner) {
 export function closeWorkspace() {
     this.recipeDetailFinish?.('closed');
     this.recipeModelReturn = null;
+    if (this.paramPanel) this.paramPanel.style.display = 'none';
     if (this.recipeView) this.recipeView.style.display = 'none';
     if (this.notebookBody) this.notebookBody.style.display = 'none';
     if (this.nbPanel) this.nbPanel.style.display = 'none';
