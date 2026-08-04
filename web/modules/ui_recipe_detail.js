@@ -1306,16 +1306,55 @@ function renderParameterField(parent, label, value) {
     return true;
 }
 
-function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery) {
+function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery, parameterState, selectParameterTab) {
+    const selectedNotebook = parameterState?.notebooks?.find((item) => item.filename === parameterState.selectedFilename);
+    const source = selectedNotebook?.data?.workflow ? selectedNotebook.data : recipe;
     const wrapper = document.createElement('div');
     wrapper.className = 'anomalous-recipe-detail-parameters';
+
+    const layout = document.createElement('div');
+    layout.className = 'anomalous-recipe-parameter-notebook-layout';
+    const sidebar = document.createElement('aside');
+    sidebar.className = 'anomalous-recipe-parameter-notebook-sidebar';
+    const sidebarHeading = document.createElement('div');
+    sidebarHeading.className = 'anomalous-recipe-detail-section-heading';
+    appendText(sidebarHeading, 'strong', t('recipeParameterSnapshots'));
+    const refreshSnapshots = button(sidebarHeading, t('recipeParameterRefresh'), 'anomalous-btn-ghost');
+    refreshSnapshots.onclick = () => { void parameterState.refresh?.(true); };
+    sidebar.appendChild(sidebarHeading);
+    appendText(sidebar, 'small', t('recipeParameterSnapshotsHint'), 'anomalous-recipe-detail-muted');
+    const snapshotList = document.createElement('div');
+    snapshotList.className = 'anomalous-recipe-parameter-notebook-list';
+    if (parameterState?.status === 'loading') {
+        appendText(snapshotList, 'p', t('recipeParameterLoading'), 'anomalous-recipe-detail-muted');
+    } else if (parameterState?.status === 'error') {
+        appendText(snapshotList, 'p', t('recipeParameterLoadError'), 'anomalous-recipe-dialog-error');
+    } else if (parameterState?.notebooks?.length) {
+        for (const notebook of parameterState.notebooks) {
+            const item = button(snapshotList, notebook.name || t('recipeParameterUntitled'), 'anomalous-recipe-parameter-notebook-item');
+            item.classList.toggle('is-active', notebook.filename === parameterState.selectedFilename);
+            item.title = `${notebook.name || t('recipeParameterUntitled')} · ${dateText(notebook.timestamp)}`;
+            appendText(item, 'small', dateText(notebook.timestamp), 'anomalous-recipe-detail-muted');
+            item.onclick = () => {
+                if (parameterState.selectedFilename === notebook.filename) return;
+                parameterState.selectedFilename = notebook.filename;
+                gallery.status = 'idle';
+                gallery.images = [];
+                gallery.scanned = 0;
+                selectParameterTab?.();
+            };
+        }
+    } else {
+        appendText(snapshotList, 'p', t('recipeParameterNoSnapshots'), 'anomalous-recipe-detail-muted');
+    }
+    sidebar.appendChild(snapshotList);
 
     const intro = document.createElement('section');
     intro.className = 'anomalous-recipe-detail-section';
     appendText(intro, 'h4', t('recipeDetailParameters'));
     appendText(intro, 'p', t('recipeDetailParametersHint'), 'anomalous-recipe-detail-muted');
 
-    const prompts = promptValues(recipe);
+    const prompts = promptValues(source);
     if (prompts.positive.length || prompts.negative.length) {
         appendText(intro, 'h5', t('recipeDetailPrompts'));
         const promptList = document.createElement('div');
@@ -1339,7 +1378,7 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery)
         appendText(intro, 'p', t('recipeDetailNoPrompts'), 'anomalous-recipe-detail-muted');
     }
 
-    const params = recipe?.params || {};
+    const params = source?.params || {};
     const summary = document.createElement('section');
     summary.className = 'anomalous-recipe-detail-section';
     appendText(summary, 'h5', t('recipeDetailParameterSummary'));
@@ -1366,7 +1405,7 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery)
     const nodeList = document.createElement('div');
     nodeList.className = 'anomalous-recipe-detail-parameter-list';
     let renderedWidgets = 0;
-    for (const { summary: node, workflowNode } of parameterNodeOrder(recipe)) {
+    for (const { summary: node, workflowNode } of parameterNodeOrder(source)) {
         const widgets = Array.isArray(node?.widgets) && node.widgets.length
             ? node.widgets
             : (Array.isArray(workflowNode?.widgets_values)
@@ -1437,7 +1476,8 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery)
         appendText(gallerySection, 'p', t('recipeParameterGalleryEmpty'), 'anomalous-recipe-detail-muted');
     }
     wrapper.appendChild(gallerySection);
-    content.appendChild(wrapper);
+    layout.append(sidebar, wrapper);
+    content.appendChild(layout);
 }
 
 
@@ -1796,6 +1836,12 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     content.className = 'anomalous-recipe-detail-content';
     const gallery = { status: 'idle', images: [], scanned: 0 };
     const parameterGallery = { status: 'idle', images: [], scanned: 0 };
+    const parameterState = {
+        status: 'idle',
+        notebooks: [],
+        selectedFilename: null,
+        refresh: null,
+    };
     const galleryTabLabel = () => gallery.status === 'ready'
         ? `${t('recipeGallery')} (${gallery.images.length})`
         : t('recipeGallery');
@@ -1822,12 +1868,42 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         updateGalleryTab();
         if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'gallery') selectTab('gallery');
     };
+    const refreshParameterNotebooks = async (force = false) => {
+        if (parameterState.status === 'loading' || (!force && parameterState.status === 'ready')) return;
+        parameterState.status = 'loading';
+        if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'parameters') selectTab('parameters');
+        try {
+            const response = await fetch(`/anomalous/parameters?recipe_filename=${encodeURIComponent(filename)}`, { cache: 'no-store' });
+            if (!response.ok) throw new Error('recipe parameter notebook request failed');
+            const payload = await response.json();
+            parameterState.notebooks = Array.isArray(payload.notebooks) ? payload.notebooks : [];
+            if (!parameterState.notebooks.some((item) => item.filename === parameterState.selectedFilename)) {
+                parameterState.selectedFilename = parameterState.notebooks[0]?.filename || null;
+            }
+            parameterState.status = 'ready';
+        } catch (error) {
+            console.error('Could not load recipe parameter notebooks:', error);
+            parameterState.status = 'error';
+        }
+        parameterGallery.status = 'idle';
+        parameterGallery.images = [];
+        parameterGallery.scanned = 0;
+        if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'parameters') {
+            selectTab('parameters');
+            void refreshParameterGallery();
+        }
+    };
+    parameterState.refresh = refreshParameterNotebooks;
     const refreshParameterGallery = async (force = false) => {
         if (parameterGallery.status === 'loading' || (!force && parameterGallery.status === 'ready')) return;
         parameterGallery.status = 'loading';
         if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'parameters') selectTab('parameters');
         try {
-            const response = await fetch(`/anomalous/recipe_parameter_gallery?filename=${encodeURIComponent(filename)}`, { cache: 'no-store' });
+            const selectedFilename = parameterState.selectedFilename;
+            const endpoint = selectedFilename
+                ? `/anomalous/parameter_gallery?filename=${encodeURIComponent(selectedFilename)}`
+                : `/anomalous/recipe_parameter_gallery?filename=${encodeURIComponent(filename)}`;
+            const response = await fetch(endpoint, { cache: 'no-store' });
             if (!response.ok) throw new Error('recipe parameter gallery request failed');
             const payload = await response.json();
             if (payload.status !== 'success') throw new Error('recipe parameter gallery response failed');
@@ -1844,7 +1920,15 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         ['overview', t('recipeDetailOverview'), () => {
             renderOverview(content, owner, recipe, references, finish);
         }],
-        ['parameters', t('recipeDetailParameters'), () => renderRecipeParameters(content, owner, recipe, parameterGallery, refreshParameterGallery)],
+        ['parameters', t('recipeDetailParameters'), () => renderRecipeParameters(
+            content,
+            owner,
+            recipe,
+            parameterGallery,
+            refreshParameterGallery,
+            parameterState,
+            () => selectTab('parameters'),
+        )],
         ['versions', t('recipeDetailVersions'), () => renderVersions(content, owner, recipe, history, finish)],
         ['gallery', galleryTabLabel(), () => renderRecipeGallery(content, owner, recipe, gallery, refreshGallery)],
     ];
@@ -1856,6 +1940,10 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
             tab?.classList.toggle('active', key === active);
         }
         tabDefinitions.find(([key]) => key === active)?.[2]();
+        if (active === 'parameters') {
+            if (parameterState.status === 'idle') void refreshParameterNotebooks();
+            else if (parameterState.status === 'ready' && parameterGallery.status === 'idle') void refreshParameterGallery();
+        }
         if (active !== 'overview' || owner.recipeDetailPreviewState !== 'idle') return;
         owner.recipeDetailPreviewState = 'loading';
         void loadCurrentPreviews(owner, references)
@@ -1877,7 +1965,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     owner.recipeView.appendChild(view);
     selectTab(returnState?.activeTab || 'overview');
     void refreshGallery();
-    void refreshParameterGallery();
+    void refreshParameterNotebooks();
     if (returnState?.scrollTop) {
         requestAnimationFrame(() => {
             view.scrollTop = returnState.scrollTop;

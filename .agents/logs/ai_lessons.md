@@ -522,3 +522,9 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Cause**: The legacy panel used a class selector for a container created with an id (`.anomalous-container` vs `#anomalous-container`). The resulting null dereference happened before the panel could render.
 
 **The Practice**: Keep recipe parameters in the recipe detail as the canonical presentation, resolve full values from the authoritative serialized workflow, and retain old notebook routes only as compatibility. When mounting dynamically created DOM, verify the selector against the actual creation code and guard the host before calling `appendChild`.
+
+## 79. A parameter snapshot needs a stable parent identity
+
+**The Problem**: A recipe can be updated many times, so showing only the latest workflow cannot answer what parameters were saved at an earlier point.
+
+**The Practice**: Create an immutable snapshot after each successful recipe save/update and bind it to the exact recipe filename. Filter snapshots on the server, then let the detail view select one snapshot while keeping the recipe workflow as the fallback for older recipes. Snapshot persistence must be best-effort after the authoritative recipe write; a secondary failure must not cause a duplicate recipe retry.

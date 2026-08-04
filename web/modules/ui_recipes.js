@@ -902,6 +902,29 @@ export async function handleSaveRecipe() {
         const payload = await response.json();
         if (!response.ok || payload.status !== 'success') throw new Error('recipe save request failed');
 
+        const recipeFilename = payload.filename || editing?.filename;
+        if (recipeFilename) {
+            try {
+                const parameterResponse = await fetch('/anomalous/save_parameter', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: details.name,
+                        tags: details.tags,
+                        notes: details.notes,
+                        params: draft.metadata,
+                        workflow: draft.workflow,
+                        recipe_filename: recipeFilename,
+                    }),
+                });
+                if (!parameterResponse.ok) throw new Error('parameter snapshot request failed');
+            } catch (error) {
+                // Recipe persistence is already successful; a snapshot failure
+                // must not make the user retry and create a duplicate recipe.
+                console.warn('Could not save the recipe parameter snapshot:', error);
+            }
+        }
+
         const receipt = payload.receipt || {};
         const receiptMatchesDraft = receipt.node_count === draft.stats.nodeCount
             && receipt.link_count === draft.stats.linkCount

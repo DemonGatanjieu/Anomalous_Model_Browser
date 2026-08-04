@@ -72,7 +72,6 @@ Anomalous_Model_Browser/
 │       ├── ui_detail.js         # Model detail panel
 │       ├── ui_doctor.js         # Model Doctor and Assistant panel
 │       ├── ui_notebooks.js      # Prompt Notes editor
-│       ├── ui_parameters.js     # Legacy Parameter Notebook compatibility viewer
 │       ├── ui_recipes.js        # Workflow Recipe cards, search/filter, save dialog, and actions
 │       ├── recipe_parser.js     # Read-only LiteGraph recipe metadata extraction
 │       ├── recipe_identity.js   # Pure recipe model-reference and identity normalization

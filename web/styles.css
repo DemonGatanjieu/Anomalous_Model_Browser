@@ -2085,6 +2085,74 @@
     gap: 9px;
 }
 
+.anomalous-recipe-parameter-notebook-layout {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: minmax(170px, 0.28fr) minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+}
+
+.anomalous-recipe-parameter-notebook-sidebar {
+    position: sticky;
+    top: 0;
+    display: flex;
+    min-width: 0;
+    max-height: min(560px, 70vh);
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid #3d3d3d;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.16);
+    overflow: hidden;
+}
+
+.anomalous-recipe-parameter-notebook-sidebar .anomalous-recipe-detail-section-heading {
+    align-items: center;
+}
+
+.anomalous-recipe-parameter-notebook-list {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    gap: 6px;
+    overflow-y: auto;
+}
+
+.anomalous-recipe-parameter-notebook-item {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    padding: 8px 9px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 7px;
+    color: #ddd;
+    background: rgba(255, 255, 255, 0.03);
+    text-align: left;
+    cursor: pointer;
+}
+
+.anomalous-recipe-parameter-notebook-item:hover,
+.anomalous-recipe-parameter-notebook-item.is-active {
+    border-color: rgba(110, 231, 183, 0.58);
+    color: #c5f7df;
+    background: rgba(110, 231, 183, 0.1);
+}
+
+.anomalous-recipe-parameter-notebook-item > * {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-recipe-detail-parameters {
+    min-width: 0;
+}
+
 .anomalous-recipe-model-reference,
 .anomalous-recipe-detail-parameter-node,
 .anomalous-recipe-version-row {
@@ -2401,6 +2469,8 @@
     .anomalous-recipe-detail-header { padding: 10px; }
     .anomalous-recipe-detail-header h3 { max-width: 34vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .anomalous-recipe-model-preview { height: 110px; flex-basis: 110px; }
+    .anomalous-recipe-parameter-notebook-layout { grid-template-columns: 1fr; }
+    .anomalous-recipe-parameter-notebook-sidebar { position: static; max-height: none; }
 }
 
 @media (max-width: 560px) {

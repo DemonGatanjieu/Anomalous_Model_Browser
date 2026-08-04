@@ -33,12 +33,20 @@ def get_parameters_dir():
 
 
 async def api_get_parameters(request):
+    try:
+        recipe_filename = request.query.get("recipe_filename")
+        if recipe_filename:
+            recipe_filename = require_filename(recipe_filename)
+            if not recipe_filename.endswith(".json"):
+                raise ValueError("Invalid recipe filename")
+    except (AttributeError, ValueError):
+        return web.json_response({"status": "error", "message": "Invalid recipe filename"}, status=400)
     parameters_dir = get_parameters_dir()
-    notebooks = await asyncio.to_thread(_read_parameter_notebooks, parameters_dir)
+    notebooks = await asyncio.to_thread(_read_parameter_notebooks, parameters_dir, recipe_filename)
     return web.json_response({"notebooks": notebooks})
 
 
-def _read_parameter_notebooks(parameters_dir):
+def _read_parameter_notebooks(parameters_dir, recipe_filename=None):
     notebooks = []
     try:
         filenames = os.listdir(parameters_dir)
@@ -52,6 +60,8 @@ def _read_parameter_notebooks(parameters_dir):
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             if not isinstance(data, dict):
+                continue
+            if recipe_filename and data.get("recipe_filename") != recipe_filename:
                 continue
             notebooks.append({
                 "filename": filename,
@@ -73,7 +83,19 @@ async def api_save_parameter(request):
     if not isinstance(data, dict) or not isinstance(data.get("workflow"), dict):
         return web.json_response({"status": "error", "message": "Invalid parameter workflow"}, status=400)
 
-    filename = f"params_{int(time.time())}_{uuid.uuid4().hex[:8]}.json"
+    recipe_filename = data.get("recipe_filename")
+    if recipe_filename is not None:
+        try:
+            recipe_filename = require_filename(recipe_filename)
+            if not recipe_filename.endswith(".json"):
+                raise ValueError("Invalid recipe filename")
+        except (AttributeError, ValueError):
+            return web.json_response({"status": "error", "message": "Invalid recipe filename"}, status=400)
+        data["recipe_filename"] = recipe_filename
+
+    filename_stem = os.path.splitext(recipe_filename)[0] if recipe_filename else "unbound"
+    filename_stem = re.sub(r"[^A-Za-z0-9_-]+", "_", filename_stem)[:64]
+    filename = f"params_{filename_stem}_{int(time.time())}_{uuid.uuid4().hex[:8]}.json"
     data["parameter_signature"] = _parameter_signature(data["workflow"])
     data["timestamp"] = int(time.time() * 1000)
     encoded = json.dumps(data, ensure_ascii=False, separators=(",", ":")).encode("utf-8")

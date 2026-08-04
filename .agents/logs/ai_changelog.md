@@ -797,3 +797,21 @@
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
 - `node tests/recipe_parser_roundtrip.mjs`.
 - `git diff --check`.
+
+## [Snapshot] 2026-08-04 - Bind parameter snapshots to recipes
+
+**Implemented**
+
+- Added optional `recipe_filename` persistence and exact filtering to the parameter notebook API.
+- Recipe save and update now create one immutable parameter snapshot after the recipe itself succeeds; snapshot failure is reported to the console without duplicating or invalidating the recipe save.
+- Reworked the recipe Parameters tab into a two-pane read-only snapshot history with per-snapshot parameter values and parameter gallery matching.
+- Removed the unused global parameter UI module after removing its Sidebar entry.
+- Deleted completed/superseded plans: `gpt_recipe_advanced_features.md`, `recipe_gallery_plan.md`, and `recipe_improvements_proposal.md`.
+
+**Validation**
+
+- All 19 JavaScript files passed `node --check`.
+- `python_embeded/python.exe -m py_compile api/__init__.py api/parameters.py api/recipes.py api/recipe_packages.py`.
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
+- `node tests/recipe_parser_roundtrip.mjs`.
+- `git diff --check`.
