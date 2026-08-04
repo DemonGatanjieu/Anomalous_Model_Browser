@@ -116,6 +116,46 @@ def _workflow_fingerprint(workflow):
     }
 
 
+def _parameter_signature(workflow):
+    """Hash node types and parameter values, ignoring UI topology and coordinates."""
+    if not isinstance(workflow, dict):
+        return {"algorithm": "sha256-params-v1", "value": ""}
+    
+    nodes = workflow.get("nodes")
+    if not isinstance(nodes, list):
+        nodes = list(workflow.values()) if isinstance(workflow, dict) else []
+
+    cleaned_nodes = []
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        
+        widgets = _clean_volatile_params(node.get("widgets_values") or [])
+        if isinstance(widgets, list):
+            for index in _volatile_widget_indexes(node):
+                if 0 <= index < len(widgets):
+                    widgets[index] = "__anomalous_volatile_seed__"
+                    
+        cleaned_nodes.append({
+            "type": _node_type(node),
+            "widgets": widgets,
+        })
+        
+    cleaned_nodes.sort(key=lambda x: (x["type"], json.dumps(x["widgets"], sort_keys=True)))
+    
+    canonical = json.dumps(
+        cleaned_nodes,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    
+    return {
+        "algorithm": "sha256-params-v1",
+        "value": hashlib.sha256(canonical).hexdigest(),
+    }
+
+
 def _workflow_node_types(workflow):
     """Extract only node class names from either UI workflow or API prompt data."""
     if not isinstance(workflow, dict):
@@ -413,6 +453,16 @@ def _embedded_workflow_node_signature(image_path):
     return _workflow_node_signature(workflow)["value"]
 
 
+def _embedded_parameter_signature(image_path):
+    payload = _embedded_workflow_payload(image_path)
+    if not payload:
+        return None
+    workflow = payload.get("workflow") or payload.get("prompt")
+    if not workflow:
+        return None
+    return _parameter_signature(workflow)["value"]
+
+
 def _recent_output_pngs(output_dir, limit=MAX_RECIPE_GALLERY_SCAN):
     """Return a bounded newest-first PNG list without trusting request paths."""
     newest = []
@@ -445,6 +495,29 @@ def _recipe_gallery_images(node_signature):
     for mtime_ns, image_path in _recent_output_pngs(output_dir):
         scanned += 1
         if _embedded_workflow_node_signature(image_path) != node_signature:
+            continue
+        relative_dir = os.path.relpath(os.path.dirname(image_path), output_dir)
+        subfolder = "" if relative_dir == "." else relative_dir.replace("\\", "/")
+        matches.append({
+            "filename": os.path.basename(image_path),
+            "subfolder": subfolder,
+            "type": "output",
+            "mtime": mtime_ns // 1_000_000,
+        })
+        if len(matches) >= MAX_RECIPE_GALLERY_RESULTS:
+            break
+    return matches, scanned
+
+
+def _parameter_gallery_images(parameter_signature):
+    output_dir = folder_paths.get_output_directory()
+    if not os.path.isdir(output_dir):
+        return [], 0
+    matches = []
+    scanned = 0
+    for mtime_ns, image_path in _recent_output_pngs(output_dir):
+        scanned += 1
+        if _embedded_parameter_signature(image_path) != parameter_signature:
             continue
         relative_dir = os.path.relpath(os.path.dirname(image_path), output_dir)
         subfolder = "" if relative_dir == "." else relative_dir.replace("\\", "/")

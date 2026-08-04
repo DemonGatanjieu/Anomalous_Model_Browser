@@ -624,33 +624,6 @@ function renderStat(parent, label, value, kind = '') {
     parent.appendChild(stat);
 }
 
-function renderPromptSection(parent, recipe) {
-    const prompts = promptValues(recipe);
-    const section = document.createElement('section');
-    section.className = 'anomalous-recipe-detail-section anomalous-recipe-detail-prompts';
-    appendText(section, 'h4', t('recipeDetailPrompts'));
-    const entries = [
-        ...prompts.positive.map((value, index) => ({ label: `${t('recipeDetailPositivePrompt')}${prompts.positive.length > 1 ? ` ${index + 1}` : ''}`, value, kind: 'positive' })),
-        ...prompts.negative.map((value, index) => ({ label: `${t('recipeDetailNegativePrompt')}${prompts.negative.length > 1 ? ` ${index + 1}` : ''}`, value, kind: 'negative' })),
-    ];
-    if (!entries.length) {
-        appendText(section, 'p', t('recipeDetailNoPrompts'), 'anomalous-recipe-detail-muted');
-        parent.appendChild(section);
-        return prompts;
-    }
-    const list = document.createElement('div');
-    list.className = 'anomalous-recipe-detail-prompt-list';
-    for (const entry of entries) {
-        const row = document.createElement('article');
-        row.className = `anomalous-recipe-detail-prompt anomalous-recipe-detail-prompt-${entry.kind}`;
-        appendText(row, 'strong', entry.label, 'anomalous-recipe-detail-prompt-label');
-        appendValueViewer(row, entry.value);
-        list.appendChild(row);
-    }
-    section.appendChild(list);
-    parent.appendChild(section);
-    return prompts;
-}
 
 function renderInlineTitle(parent, owner, recipe) {
     parent.replaceChildren();
@@ -759,7 +732,7 @@ function renderOverview(content, owner, recipe, references, finish) {
     summary.appendChild(modelComposition);
     renderModelComposition(modelComposition, owner, recipe, references, finish, params);
     overview.appendChild(summary);
-    const prompts = renderPromptSection(overview, recipe);
+    overview.appendChild(summary);
 
     const actions = document.createElement('div');
     actions.className = 'anomalous-recipe-actions anomalous-recipe-detail-actions';
@@ -771,13 +744,6 @@ function renderOverview(content, owner, recipe, references, finish) {
             if (await appendRecipeOnCanvas(owner, recipe)) finish('append');
         });
     };
-    const copyPrompt = button(actions, t('recipeDetailCopyPrompt'), 'anomalous-btn-primary');
-    const promptBundle = [
-        prompts.positive.length ? `${t('recipeDetailPositivePrompt')}:\n${prompts.positive.join('\n\n')}` : '',
-        prompts.negative.length ? `${t('recipeDetailNegativePrompt')}:\n${prompts.negative.join('\n\n')}` : '',
-    ].filter(Boolean).join('\n\n');
-    copyPrompt.disabled = !promptBundle;
-    copyPrompt.onclick = () => { void copyTextWithFeedback(copyPrompt, promptBundle); };
     overview.appendChild(actions);
     content.appendChild(overview);
 }
@@ -1308,135 +1274,6 @@ function topologicalSortNodes(workflowNodes, workflowLinks) {
     return sorted;
 }
 
-function parameterNodesWithPromptFallback(recipe) {
-    const nodes = (recipe?.params?.nodes || []).map((node) => ({
-        ...node,
-        widgets: [...(node.widgets || [])],
-    }));
-    const byId = new Map(nodes.map((node) => [String(node.id), node]));
-    for (const workflowNode of recipe?.workflow?.nodes || []) {
-        if (!/cliptextencode/i.test(String(workflowNode?.type || ''))) continue;
-        const id = String(workflowNode?.id ?? '');
-        if (!id) continue;
-        const hasSavedWidget = Array.isArray(workflowNode.widgets_values)
-            && workflowNode.widgets_values.length > 0;
-        if (!hasSavedWidget) continue;
-        const promptWidget = {
-            name: 'text',
-            value: workflowNode.widgets_values[0],
-            index: 0,
-        };
-        const summary = byId.get(id);
-        if (summary) {
-            if (!summary.widgets.some((widget) => /^(text|prompt)$/i.test(String(widget?.name || '')))) {
-                summary.widgets.push(promptWidget);
-            }
-            continue;
-        }
-        const fallback = {
-            id: workflowNode.id ?? null,
-            type: workflowNode.type || 'CLIPTextEncode',
-            title: workflowNode.title || null,
-            widgets: [promptWidget],
-            widgetCount: 1,
-        };
-        nodes.push(fallback);
-        byId.set(id, fallback);
-    }
-    const ordered = [];
-    const added = new Set();
-    const workflowNodes = recipe?.workflow?.nodes || [];
-    const workflowLinks = recipe?.workflow?.links || [];
-    const topoIds = topologicalSortNodes(workflowNodes, workflowLinks);
-    
-    for (const id of topoIds) {
-        const node = byId.get(id);
-        if (!node || added.has(node)) continue;
-        added.add(node);
-        ordered.push(node);
-    }
-    for (const node of nodes) {
-        if (added.has(node)) continue;
-        added.add(node);
-        ordered.push(node);
-    }
-    return ordered;
-}
-
-function getNativeNodeTranslation(nodeType, originalTitle, hasCustomTitle) {
-    if (hasCustomTitle && originalTitle) return originalTitle;
-    if (window.LiteGraph && LiteGraph.registered_node_types && LiteGraph.registered_node_types[nodeType]) {
-        const title = LiteGraph.registered_node_types[nodeType].title;
-        if (title) return title;
-    }
-    return originalTitle || nodeType;
-}
-
-function getNativeWidgetTranslation(nodeType, widgetName) {
-    if (window.LiteGraph && LiteGraph.registered_node_types && LiteGraph.registered_node_types[nodeType]) {
-        try {
-            const dummy = LiteGraph.createNode(nodeType);
-            if (dummy && dummy.widgets) {
-                const w = dummy.widgets.find((w) => w.name === widgetName);
-                if (w && w.label) return w.label;
-            }
-        } catch (e) {
-            // Ignore error if node fails to instantiate without canvas
-        }
-    }
-    return widgetName;
-}
-
-function renderParameters(content, recipe) {
-    const section = document.createElement('section');
-    section.className = 'anomalous-recipe-detail-section';
-    const heading = document.createElement('div');
-    heading.className = 'anomalous-recipe-detail-section-heading';
-    appendText(heading, 'h4', t('recipeDetailParameters'));
-    const search = document.createElement('input');
-    search.type = 'search';
-    search.placeholder = t('recipeDetailSearchParameters');
-    search.className = 'anomalous-recipe-detail-search';
-    heading.appendChild(search);
-    section.appendChild(heading);
-    const list = document.createElement('div');
-    list.className = 'anomalous-recipe-detail-parameter-list';
-    const render = () => {
-        list.replaceChildren();
-        const query = search.value.trim().toLowerCase();
-        for (const node of parameterNodesWithPromptFallback(recipe)) {
-            const widgets = (node.widgets || []).map((widget) => ({
-                widget,
-                value: fullWidgetValue(recipe, node, widget),
-            })).filter(({ widget, value }) => {
-                const haystack = `${node.title || ''} ${node.type || ''} ${widget.name || ''} ${displayValue(value)}`.toLowerCase();
-                return !query || haystack.includes(query);
-            });
-            if (!widgets.length) continue;
-            const hasCustomTitle = !!node.title;
-            const displayTitle = getNativeNodeTranslation(node.type, node.title, hasCustomTitle);
-            
-            const block = document.createElement('article');
-            block.className = 'anomalous-recipe-detail-parameter-node';
-            appendText(block, 'strong', displayTitle || t('recipeUnknownNode'));
-            appendText(block, 'small', node.type || '', 'anomalous-recipe-detail-muted');
-            for (const { widget, value } of widgets) {
-                const row = document.createElement('div');
-                row.className = 'anomalous-recipe-detail-parameter-widget';
-                const displayWidgetName = getNativeWidgetTranslation(node.type, widget.name) || t('recipeUnknownWidget');
-                appendText(row, 'span', displayWidgetName, 'anomalous-recipe-detail-parameter-name');
-                appendValueViewer(row, value);
-                block.appendChild(row);
-            }
-            list.appendChild(block);
-        }
-        if (!list.children.length) appendText(list, 'p', t('recipeDetailNoParameters'), 'anomalous-recipe-detail-muted');
-    };
-    search.oninput = render;
-    render();
-    section.appendChild(list);
-    content.appendChild(section);
-}
 
 function diffCategoryLabel(category) {
     return t({
@@ -1822,7 +1659,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         ['overview', t('recipeDetailOverview'), () => {
             renderOverview(content, owner, recipe, references, finish);
         }],
-        ['parameters', t('recipeDetailParameters'), () => renderParameters(content, recipe)],
+
         ['versions', t('recipeDetailVersions'), () => renderVersions(content, owner, recipe, history, finish)],
         ['gallery', galleryTabLabel(), () => renderRecipeGallery(content, owner, recipe, gallery, refreshGallery)],
     ];

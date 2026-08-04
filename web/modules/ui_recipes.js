@@ -6,8 +6,6 @@ import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import {
     captureCanvasThumbnail,
     captureRecipeDraft,
-    applyRecipeWidgetChanges,
-    extractRecipeParameterChoicesFromMetadata,
 } from './recipe_parser.js';
 import {
     appendRecipeOnCanvas,
@@ -283,124 +281,22 @@ function createBadge(text, kind = '') {
     return badge;
 }
 
+function summaryValue(value, fallback = '—') {
+    return value === null || value === undefined || value === '' ? fallback : String(value);
+}
+
+function createBadge(text, kind = '') {
+    const badge = document.createElement('span');
+    badge.className = `anomalous-recipe-badge${kind ? ` anomalous-recipe-badge-${kind}` : ''}`;
+    badge.textContent = text;
+    return badge;
+}
+
 function displayWidgetValue(value) {
     if (typeof value === 'object' && value !== null) {
         try { return JSON.stringify(value); } catch (error) { return String(value); }
     }
     return String(value);
-}
-
-function appendPinnedParams(parent, params) {
-    const pinned = Array.isArray(params.pinned) ? params.pinned : [];
-    if (!pinned.length) return;
-    const section = document.createElement('section');
-    section.className = 'anomalous-recipe-pinned';
-    appendText(section, 'strong', t('recipePinnedParams'));
-    for (const parameter of pinned) {
-        const row = document.createElement('div');
-        row.className = 'anomalous-recipe-widget-row';
-        appendText(
-            row,
-            'span',
-            `${parameter.nodeTitle || parameter.nodeType || t('recipeUnknownNode')} · ${parameter.widgetName}`,
-            'anomalous-recipe-widget-name',
-        );
-        const value = displayWidgetValue(parameter.value);
-        appendText(row, 'code', value, 'anomalous-recipe-widget-value');
-        const copy = appendText(row, 'button', '⧉', 'anomalous-recipe-copy-param');
-        copy.type = 'button';
-        copy.title = t('recipeCopyParameter');
-        copy.onclick = () => { void copyCardValueWithFeedback(copy, value); };
-        section.appendChild(row);
-    }
-    parent.appendChild(section);
-}
-
-function appendNodeDetails(parent, params) {
-    const nodes = Array.isArray(params.nodes) ? params.nodes : [];
-    if (!nodes.length) return;
-    const details = document.createElement('details');
-    details.className = 'anomalous-recipe-node-details';
-    const summary = document.createElement('summary');
-    summary.textContent = `${t('recipeNodeParams')} (${summaryValue(params.nodeCount, nodes.length)})`;
-    details.appendChild(summary);
-
-    let rendered = false;
-    details.ontoggle = () => {
-        if (!details.open || rendered) return;
-        rendered = true;
-        const list = document.createElement('div');
-        list.className = 'anomalous-recipe-node-list';
-        for (const node of nodes) {
-            const nodeBlock = document.createElement('section');
-            nodeBlock.className = 'anomalous-recipe-node';
-            const nodeHeading = document.createElement('div');
-            nodeHeading.className = 'anomalous-recipe-node-heading';
-            appendText(nodeHeading, 'strong', node.title || node.type || t('recipeUnknownNode'));
-            if (node.title && node.type) nodeHeading.appendChild(createBadge(node.type));
-            if (node.module) nodeHeading.appendChild(createBadge(node.module, 'module'));
-            nodeBlock.appendChild(nodeHeading);
-
-            for (const widget of node.widgets || []) {
-                const row = document.createElement('div');
-                row.className = 'anomalous-recipe-widget-row';
-                appendText(row, 'span', widget.name, 'anomalous-recipe-widget-name');
-                const value = displayWidgetValue(widget.value);
-                appendText(row, 'code', value, 'anomalous-recipe-widget-value');
-                const copy = appendText(row, 'button', '⧉', 'anomalous-recipe-copy-param');
-                copy.type = 'button';
-                copy.title = t('recipeCopyParameter');
-                copy.onclick = () => { void copyCardValueWithFeedback(copy, value); };
-                nodeBlock.appendChild(row);
-            }
-            if ((node.widgetCount || 0) > (node.widgets?.length || 0)) {
-                appendText(nodeBlock, 'small', t('recipeSomeParamsInWorkflow'), 'anomalous-recipe-node-hint');
-            }
-            list.appendChild(nodeBlock);
-        }
-        if ((params.nodeCount || 0) > nodes.length) {
-            appendText(list, 'small', t('recipeMoreNodesInWorkflow'), 'anomalous-recipe-node-hint');
-        }
-        details.appendChild(list);
-    };
-    parent.appendChild(details);
-}
-
-function renderParams(parent, params = {}) {
-    const summary = document.createElement('div');
-    summary.className = 'anomalous-recipe-summary';
-    appendText(summary, 'div', `${t('recipeModel')}: ${summaryValue(modelDisplayName(params.baseModel))}`, 'anomalous-recipe-model');
-
-    const sampling = document.createElement('div');
-    sampling.className = 'anomalous-recipe-sampling';
-    sampling.appendChild(createBadge(`${t('recipeSteps')} ${summaryValue(params.steps)}`));
-    sampling.appendChild(createBadge(`CFG ${summaryValue(params.cfg)}`));
-    if (params.sampler_name) sampling.appendChild(createBadge(params.sampler_name, 'accent'));
-    if (params.scheduler) sampling.appendChild(createBadge(params.scheduler));
-    if (params.resolution?.width && params.resolution?.height) {
-        sampling.appendChild(createBadge(`${params.resolution.width}×${params.resolution.height}`));
-    }
-    summary.appendChild(sampling);
-
-    if (Array.isArray(params.loras) && params.loras.length) {
-        const loraRow = document.createElement('div');
-        loraRow.className = 'anomalous-recipe-loras';
-        appendText(loraRow, 'span', `${t('recipeLoras')}:`, 'anomalous-recipe-label');
-        for (const lora of params.loras.slice(0, 4)) {
-            const weight = lora.strength_model === null || lora.strength_model === undefined
-                ? ''
-                : ` × ${lora.strength_model}`;
-            loraRow.appendChild(createBadge(`${compactText(modelDisplayName(lora.name), 42)}${weight}`, 'lora'));
-        }
-        if (params.loras.length > 4) loraRow.appendChild(createBadge(`+${params.loras.length - 4}`));
-        summary.appendChild(loraRow);
-    }
-
-    const positive = Array.isArray(params.promptPositive) ? params.promptPositive[0] : params.promptPositive;
-    if (positive) appendText(summary, 'p', `${t('recipePrompt')}: ${compactText(positive)}`, 'anomalous-recipe-prompt');
-    appendPinnedParams(summary, params);
-    appendNodeDetails(summary, params);
-    parent.appendChild(summary);
 }
 
 async function fetchRecipeBundle(filename) {
@@ -437,12 +333,9 @@ async function editRecipe(owner, recipe, filename, history = null) {
             return;
         }
 
-        applyRecipeWidgetChanges(editable.params, editable.workflow, result.changes);
-        const updatedChoices = extractRecipeParameterChoicesFromMetadata(editable.params, editable.workflow);
         editable.name = result.name;
         editable.tags = result.tags;
         editable.notes = result.notes;
-        editable.params.pinned = updatedChoices.filter((choice) => result.pinnedKeys.has(choice.key));
         const response = await fetch('/anomalous/update_recipe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -632,9 +525,6 @@ function showRecipeSaveDialog(owner, canvasThumbnail, initial = null) {
                 notes: notesInput.value.trim(),
                 thumbnail: selection.thumbnail,
                 sourceImage: selection.sourceImage,
-                // Keep legacy pinned metadata when editing an existing recipe;
-                // new saves no longer expose a meaningless selection step.
-                pinned: Array.isArray(initial?.params?.pinned) ? initial.params.pinned : [],
                 saveModelPreviewSnapshots: selection.saveModelPreviewSnapshots,
             });
         };
@@ -646,52 +536,8 @@ function showRecipeSaveDialog(owner, canvasThumbnail, initial = null) {
     });
 }
 
-function editableValueControl(choice, changes) {
-    const value = choice.value;
-    const wrapper = document.createElement('label');
-    wrapper.className = 'anomalous-recipe-edit-param';
-    appendText(wrapper, 'span', choice.widgetName, 'anomalous-recipe-widget-name');
-    if (!['string', 'number', 'boolean'].includes(typeof value)) {
-        appendText(wrapper, 'code', displayWidgetValue(value), 'anomalous-recipe-widget-value');
-        appendText(wrapper, 'small', t('recipeComplexParam'), 'anomalous-recipe-node-hint');
-        return wrapper;
-    }
-
-    const input = typeof value === 'string' && value.length > 120
-        ? document.createElement('textarea')
-        : document.createElement('input');
-    input.className = typeof input.value === 'string' && input.tagName === 'TEXTAREA'
-        ? 'anomalous-nb-textarea'
-        : 'anomalous-nb-select';
-    if (typeof value === 'boolean') {
-        input.type = 'checkbox';
-        input.checked = value;
-    } else {
-        input.type = typeof value === 'number' ? 'number' : 'text';
-        input.value = String(value);
-        if (typeof value === 'number') input.step = 'any';
-    }
-    const update = () => {
-        let nextValue;
-        if (typeof value === 'boolean') nextValue = input.checked;
-        else if (typeof value === 'number') {
-            nextValue = Number(input.value);
-            if (!Number.isFinite(nextValue)) return;
-        } else nextValue = input.value;
-        changes.set(choice.key, { ...choice, previousValue: value, value: nextValue });
-    };
-    input.onchange = update;
-    input.oninput = typeof value === 'string' ? update : null;
-    wrapper.appendChild(input);
-    return wrapper;
-}
-
 function showRecipeEditDialog(owner, recipeData, filename, history) {
     return new Promise((resolve) => {
-        const params = recipeData.params || {};
-        const choices = extractRecipeParameterChoicesFromMetadata(params, recipeData.workflow);
-        const selectedPins = new Set((params.pinned || []).map((pin) => pin.key));
-        const changes = new Map();
         const overlay = document.createElement('div');
         overlay.className = 'anomalous-recipe-dialog-overlay';
         overlay.setAttribute('role', 'dialog');
@@ -724,59 +570,6 @@ function showRecipeEditDialog(owner, recipeData, filename, history) {
         notesInput.value = recipeData.notes || '';
         notesInput.placeholder = t('recipeNotesHint');
         notesLabel.appendChild(notesInput);
-
-        if (choices.length) {
-            const pinDetails = document.createElement('details');
-            pinDetails.className = 'anomalous-recipe-pin-picker';
-            const pinSummary = document.createElement('summary');
-            pinSummary.textContent = `${t('recipeChoosePinnedParams')} (${selectedPins.size})`;
-            pinDetails.appendChild(pinSummary);
-            const pinList = document.createElement('div');
-            pinList.className = 'anomalous-recipe-pin-list';
-            for (const choice of choices) {
-                const label = document.createElement('label');
-                label.className = 'anomalous-recipe-pin-choice';
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = selectedPins.has(choice.key);
-                checkbox.onchange = () => {
-                    if (checkbox.checked) selectedPins.add(choice.key);
-                    else selectedPins.delete(choice.key);
-                    pinSummary.textContent = `${t('recipeChoosePinnedParams')} (${selectedPins.size})`;
-                };
-                appendText(label, 'span', `${choice.nodeTitle || choice.nodeType}: ${choice.widgetName}`);
-                label.prepend(checkbox);
-                pinList.appendChild(label);
-            }
-            pinDetails.appendChild(pinList);
-            dialog.appendChild(pinDetails);
-        }
-
-        if (choices.length) {
-            const parameterDetails = document.createElement('details');
-            parameterDetails.className = 'anomalous-recipe-node-details';
-            const parameterSummary = document.createElement('summary');
-            parameterSummary.textContent = t('recipeEditNodeParams');
-            parameterDetails.appendChild(parameterSummary);
-            let rendered = false;
-            parameterDetails.ontoggle = () => {
-                if (!parameterDetails.open || rendered) return;
-                rendered = true;
-                const list = document.createElement('div');
-                list.className = 'anomalous-recipe-node-list';
-                let currentNode = null;
-                for (const choice of choices) {
-                    const nodeKey = `${choice.nodeId}:${choice.nodeType}:${choice.nodeTitle || ''}`;
-                    if (nodeKey !== currentNode) {
-                        appendText(list, 'strong', choice.nodeTitle || choice.nodeType || t('recipeUnknownNode'), 'anomalous-recipe-pin-node');
-                        currentNode = nodeKey;
-                    }
-                    list.appendChild(editableValueControl(choice, changes));
-                }
-                parameterDetails.appendChild(list);
-            };
-            dialog.appendChild(parameterDetails);
-        }
 
         const historyDetails = document.createElement('details');
         historyDetails.className = 'anomalous-recipe-node-details';
@@ -844,8 +637,6 @@ function showRecipeEditDialog(owner, recipeData, filename, history) {
                 name,
                 tags: [...new Set(tagsInput.value.split(',').map((tag) => tag.trim()).filter(Boolean))].slice(0, 20),
                 notes: notesInput.value.trim(),
-                pinnedKeys: selectedPins,
-                changes: [...changes.values()],
             });
         };
         dialog.appendChild(actions);
@@ -1096,7 +887,6 @@ export async function handleSaveRecipe() {
         saveButton.textContent = t('recipeSaving');
     }
     try {
-        draft.metadata.pinned = details.pinned;
         let thumbnail = details.thumbnail;
         if (details.sourceImage) {
             try {
@@ -1122,6 +912,26 @@ export async function handleSaveRecipe() {
         });
         const payload = await response.json();
         if (!response.ok || payload.status !== 'success') throw new Error('recipe save request failed');
+
+        if (!editing) {
+            try {
+                await fetch('/anomalous/save_parameter', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: details.name + ' Parameters',
+                        params: draft.metadata,
+                        workflow: draft.workflow,
+                        tags: details.tags,
+                        notes: details.notes,
+                    }),
+                });
+                if (this.refreshParameters) await this.refreshParameters();
+            } catch (err) {
+                console.warn('Could not automatically save parameter notebook:', err);
+            }
+        }
+
         const receipt = payload.receipt || {};
         const receiptMatchesDraft = receipt.node_count === draft.stats.nodeCount
             && receipt.link_count === draft.stats.linkCount

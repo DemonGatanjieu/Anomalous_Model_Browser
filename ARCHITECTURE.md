@@ -28,6 +28,10 @@ The Workspace close action is a state restoration boundary. Opening the Workspac
 
 Recipe detail has an on-demand Gallery tab for reusing the user's own generated results. Gallery discovery uses a separate `sha256-node-types-v1` signature: it compares the sorted node class composition and count, deliberately ignoring seeds, prompts, model values, and other parameters so ordinary variations still appear. The original `sha256-structural-v1` fingerprint remains the recipe/history integrity fingerprint. Opening a detail view scans at most the newest 200 PNG files below ComfyUI's output directory and reads only bounded embedded `workflow` or API `prompt` metadata; there is no background polling or persistent output index. Clicking a result loads bounded node parameters and shows recipe-versus-image differences; the match itself remains node-only. The main output Gallery refreshes on each open and has no persistent toolbar refresh strip. A chosen result becomes a recipe-owned, compressed WebP cover in `.assets/<recipe-stem>/`, so it survives output cleanup and follows the recipe during package export/import. The original output image remains a local convenience link, never package data or identity evidence.
 
+## Parameter Notebook & Gallery (2026-08-04)
+
+Parameter management has been explicitly extracted from Workflow Recipes into dedicated Parameter Notebooks. A recipe represents a structural template, whereas a parameter notebook represents an immutable snapshot of a recipe's exact generation values. Saving a recipe automatically provisions a corresponding Parameter Notebook in `user/default/workflows/anomalous_parameters`. Parameter notebooks are read-only to guarantee historical integrity. They use a distinct hash algorithm, `sha256-params-v1`, which strictly matches the structural topology and all non-volatile parameters (ignoring seeds, coordinates, dimensions) to discover matching images for the Parameter Gallery. The Parameter Notebook UI is a dedicated modal accessed from the Sidebar, remaining visually separated from the legacy Prompt Notes.
+
 ## 1. Project Philosophy (设计理念)
 * **Zero Frameworks**: No React, Vue, or build tools. Everything is Vanilla JS and CSS for maximum compatibility, minimum overhead, and zero compilation steps.
 * **Non-Intrusive Integration**: Operates as a floating Gemini-style popover (`#anomalous-container`) mounted via ComfyUI's standard UI extension system. It avoids altering the native ComfyUI canvas except when explicit interaction is required.
@@ -49,7 +53,8 @@ Anomalous_Model_Browser/
 │   ├── config.py                # Configuration and paths setup
 │   ├── metadata.py              # Model metadata extraction and parsing
 │   ├── models.py                # Core model listing and routing (API endpoints)
-│   ├── notebooks.py             # Notebooks management logic
+│   ├── notebooks.py             # Notebooks management logic (Prompt Notes)
+│   ├── parameters.py            # Parameter Notebook CRUD and Gallery logic
 │   ├── recipes.py               # Local Workflow Recipe CRUD and validation
 │   ├── recipe_packages.py       # Bounded ZIP inspection, export, staging, and import commit
 │   ├── scanner.py               # Scanning engine for hash resolution and caching
@@ -64,7 +69,8 @@ Anomalous_Model_Browser/
 │       ├── ui_sidebar.js        # Sidebar and folder tree logic
 │       ├── ui_detail.js         # Model detail panel
 │       ├── ui_doctor.js         # Model Doctor and Assistant panel
-│       ├── ui_notebooks.js      # Notebooks editor
+│       ├── ui_notebooks.js      # Prompt Notes editor
+│       ├── ui_parameters.js     # Parameter Notebook gallery and read-only parameter viewer
 │       ├── ui_recipes.js        # Workflow Recipe cards, search/filter, save dialog, and actions
 │       ├── recipe_parser.js     # Read-only LiteGraph recipe metadata extraction
 │       ├── recipe_identity.js   # Pure recipe model-reference and identity normalization

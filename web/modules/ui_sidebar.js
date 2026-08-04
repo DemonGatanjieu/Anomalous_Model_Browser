@@ -278,10 +278,26 @@ export function createDOM() {
             this.showNotebooks();
         };
 
+        const paramBtn = document.createElement('button');
+        paramBtn.id = 'anomalous-parameter-btn';
+        paramBtn.title = t('parameterNotebookTitle') || 'Parameter Notebooks';
+        paramBtn.innerHTML = `⚙️ <span class="anomalous-btn-text">${t('parameterNotebookTitle') || 'Parameters'}</span>`;
+
+        paramBtn.onclick = () => {
+            this.workspaceReturnState = {
+                grid: this.grid?.style.display || 'none',
+                detail: this.detailPanel?.style.display || 'none',
+                gallery: this.galleryPanel?.style.display || 'none',
+                doctor: this.doctorPanel?.style.display || 'none',
+                assistant: this.assistantPanel?.style.display || 'none',
+            };
+            this.showParameters();
+        };
+
         rightGroup.appendChild(modelsBtn);
         rightGroup.appendChild(galleryBtn);
         rightGroup.appendChild(nbBtn);
-
+        rightGroup.appendChild(paramBtn);
 
         const apiKeyBtn = document.createElement('button');
         apiKeyBtn.id = 'anomalous-api-btn';

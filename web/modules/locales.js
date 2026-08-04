@@ -279,8 +279,8 @@ export const i18n = {
         recipeDetailLoadingPreviews: '正在加载本机模型预览…',
         recipeDetailCurrentPreview: '当前本机预览',
         recipeDetailNoPreview: '暂无预览',
-        recipeSaveModelPreviewSnapshots: '保存模型预览快照',
-        recipeSaveModelPreviewSnapshotsHint: '为当前版本保存小尺寸静态缩略图；不会复制视频，也不会写入工作流图。',
+        recipeSaveModelPreviewSnapshots: '打包模型封面图 (内置到配方中)',
+        recipeSaveModelPreviewSnapshotsHint: '将当前模型的小尺寸封面图直接打包进配方文件中。当你将配方分享给他人时，对方即使没有该模型也能看到精美的封面图。（为节省体积，仅保存静态图，不包含视频）',
         recipeDetailSavedSnapshot: '已保存快照',
 
     },
@@ -565,8 +565,8 @@ export const i18n = {
         recipeDetailLoadingPreviews: 'Loading local model previews…',
         recipeDetailCurrentPreview: 'Current local preview',
         recipeDetailNoPreview: 'No preview available',
-        recipeSaveModelPreviewSnapshots: 'Save model preview snapshots',
-        recipeSaveModelPreviewSnapshotsHint: 'Keeps small static thumbnails with this version. Videos and the workflow graph are not copied.',
+        recipeSaveModelPreviewSnapshots: 'Embed Model Thumbnails',
+        recipeSaveModelPreviewSnapshotsHint: 'Embed small static thumbnails of the models directly into the recipe file. When you share this recipe, others will be able to see the model covers even if they don\'t have the models locally. (Videos are excluded to save space)',
         recipeDetailSavedSnapshot: 'Saved snapshot',
     }
 };

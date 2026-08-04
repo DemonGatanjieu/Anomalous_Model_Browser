@@ -2,6 +2,7 @@ from .models import *
 from .scanner import *
 from .config import *
 from .notebooks import *
+from .parameters import *
 from .recipes import *
 from .recipe_packages import *
 from .utils import *
@@ -24,6 +25,12 @@ def setup_routes(app):
     app.router.add_get('/anomalous/notebooks', api_get_notebooks)
     app.router.add_post('/anomalous/save_notebook', api_save_notebook)
     app.router.add_post('/anomalous/delete_notebook', api_delete_notebook)
+
+    # Parameter Routes
+    app.router.add_get('/anomalous/parameters', api_get_parameters)
+    app.router.add_post('/anomalous/save_parameter', api_save_parameter)
+    app.router.add_post('/anomalous/delete_parameter', api_delete_parameter)
+    app.router.add_get('/anomalous/parameter_gallery', api_get_parameter_gallery)
 
     # Recipe Routes
     app.router.add_get('/anomalous/recipes', api_get_recipes)
