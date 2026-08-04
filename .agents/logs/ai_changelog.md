@@ -14,6 +14,12 @@
 - `node tests/recipe_parser_roundtrip.mjs`
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
 - `git diff --check`
+
+## [Snapshot] 2026-08-04 - Restore the original plugin mark
+
+- Restored the original 📦 floating trigger mark after the startup-resilience audit; no functional behavior changed.
+- `node --check web/main.js`
+- `git diff --check`
 ## [Snapshot] 2026-08-03 - Preserve model grid return position
 
 **Implemented**

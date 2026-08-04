@@ -504,3 +504,5 @@ The floating trigger is the recovery path for the entire extension, so it must n
 ## 76. An optional auto-hook must not own extension startup
 
 ComfyUI loads every JavaScript file under a custom node's `WEB_DIRECTORY`. A resolver that assumes the legacy global `LGraph` can fail before the visible browser entry point is initialized. Optional graph hooks must detect the current graph constructor, guard duplicate patching, and return cleanly when the host API is unavailable.
+
+Keep visual identifiers stable during bug fixing. Restore the established 📦 trigger mark unless the user explicitly asks for a new icon; visibility and startup resilience are separate concerns.

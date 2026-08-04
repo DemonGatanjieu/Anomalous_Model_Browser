@@ -472,7 +472,7 @@ app.registerExtension({
         let browser = null;
         const btn = document.createElement('button');
         btn.id = 'anomalous-trigger-btn';
-        btn.textContent = '🧩';
+        btn.textContent = '📦';
         btn.setAttribute('aria-label', 'Anomalous Model Browser');
 
         const ensureBrowser = () => {
