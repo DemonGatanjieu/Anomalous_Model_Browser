@@ -15,6 +15,22 @@
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py`
 - `git diff --check`
 
+## [Snapshot] 2026-08-04 - Restore browser entry after recipe module parse failure
+
+**Implemented**
+
+- Diagnosed the missing plugin icon against a live ComfyUI runtime instead of treating it as a CSS-only issue.
+- Confirmed `/extensions/Anomalous_Model_Browser/*` was served and the hash resolver registered, while the main browser extension was absent from ComfyUI's extension registry.
+- Removed the duplicate `summaryValue` and `createBadge` declarations in `web/modules/ui_recipes.js`. The duplicate top-level declarations caused `SyntaxError: Identifier 'summaryValue' has already been declared`, which stopped `main.js` from loading and prevented the trigger from being mounted.
+- Added the parseability and runtime-entry-point rule to `ARCHITECTURE.md`.
+
+**Validation**
+
+- All plugin JavaScript files passed `node --check`.
+- Live ComfyUI runtime on port 8199 loaded the plugin and created `#anomalous-trigger-btn` with the established `📦` mark, visible at the bottom-right of the viewport.
+- Temporary module probe was removed after diagnosis.
+- `git diff --check`.
+
 ## [Snapshot] 2026-08-04 - Restore the original plugin mark
 
 - Restored the original 📦 floating trigger mark after the startup-resilience audit; no functional behavior changed.

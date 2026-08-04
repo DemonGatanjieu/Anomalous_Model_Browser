@@ -501,6 +501,14 @@ For a gallery whose source is a directory walk, querying only when the panel ope
 
 The floating trigger is the recovery path for the entire extension, so it must not be appended only after every panel has initialized. Mount it first, catch constructor failures, and retry on click. Optional browser APIs such as `IntersectionObserver` must be feature-detected before use; otherwise a nonessential gallery enhancement can make the whole plugin appear to have disappeared.
 
+## 77. A missing icon can be an ES-module parse failure
+
+**The Problem**: The backend served the extension files and the optional hash resolver appeared in ComfyUI's extension settings, but the visible Anomalous Model Browser entry point was absent. CSS and z-index changes could not fix it.
+
+**The Cause**: A recipe UI merge left duplicate top-level `summaryValue` and `createBadge` declarations in `ui_recipes.js`. The browser rejected the module with `SyntaxError: Identifier 'summaryValue' has already been declared`; because `main.js` imports that module, its registration and trigger creation never ran.
+
+**The Practice**: When a plugin entry disappears, inspect the extension registry and isolate-load the main entry before changing presentation styles. Search for duplicate declarations across recently merged modules, run `node --check` over the complete web tree, and verify the actual trigger DOM node in a live ComfyUI session.
+
 ## 76. An optional auto-hook must not own extension startup
 
 ComfyUI loads every JavaScript file under a custom node's `WEB_DIRECTORY`. A resolver that assumes the legacy global `LGraph` can fail before the visible browser entry point is initialized. Optional graph hooks must detect the current graph constructor, guard duplicate patching, and return cleanly when the host API is unavailable.

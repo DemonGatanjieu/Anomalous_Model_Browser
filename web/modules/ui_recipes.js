@@ -281,17 +281,6 @@ function createBadge(text, kind = '') {
     return badge;
 }
 
-function summaryValue(value, fallback = '—') {
-    return value === null || value === undefined || value === '' ? fallback : String(value);
-}
-
-function createBadge(text, kind = '') {
-    const badge = document.createElement('span');
-    badge.className = `anomalous-recipe-badge${kind ? ` anomalous-recipe-badge-${kind}` : ''}`;
-    badge.textContent = text;
-    return badge;
-}
-
 function displayWidgetValue(value) {
     if (typeof value === 'object' && value !== null) {
         try { return JSON.stringify(value); } catch (error) { return String(value); }

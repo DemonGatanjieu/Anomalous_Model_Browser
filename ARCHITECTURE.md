@@ -258,3 +258,9 @@ The save dialog records recipe identity, notes, tags, cover/source image, and mo
 The notebook create row contains a text input and a confirmation button. In the 660px docked browser, the notebook sidebar is reduced to 80px, so the input must have `min-width: 0` and the confirmation button must remain a non-shrinking fixed-size item. Otherwise the input's placeholder intrinsic width pushes the check button outside the clickable sidebar.
 
 The output gallery is a user-refreshed view of ComfyUI's output directory. Opening the gallery performs one page-one scan, and the toolbar's Refresh button explicitly repeats that scan on demand. There is no background polling; the grid preserves scroll position when manually refreshed.
+
+## 69. Keep the main browser entry module parseable
+
+The floating trigger is created by `web/main.js`, but ComfyUI loads every JavaScript file in the custom node's `WEB_DIRECTORY` as an ES module. A syntax or duplicate top-level declaration in any imported module prevents `main.js` from registering and leaves no visible plugin icon, even when the backend routes and the optional hash resolver are healthy.
+
+When a trigger disappears, verify the browser extension registry and load the main entry in isolation before changing CSS or z-index values. In particular, do not duplicate helper declarations while merging recipe UI changes; shared helpers in `ui_recipes.js` must have one definition per module. `node --check` is required for the affected module, and a real ComfyUI runtime check must confirm that `#anomalous-trigger-btn` is created.
