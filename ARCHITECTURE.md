@@ -196,13 +196,13 @@ A highly complex subsystem responsible for automatically resolving missing/broke
 
 ### The Global Hash Cache (`window.anomalous_hash_cache`)
 * This is the absolute core of the resolution engine. It maps physical filenames to their exact SHA256 hashes.
-* It is **ALWAYS fetched on startup** via `fetch('/anomalous/all_hashes')`. Without this dictionary, hash injection and resolution are mathematically impossible.
+* It is fetched on startup by the optional resolver via `fetch('/anomalous/all_hashes')`. If the current ComfyUI frontend does not expose a compatible graph serialization API, the resolver disables itself with a warning; this must never prevent the main browser extension and its visible entry point from loading.
 * Whenever a scan finishes (Scan Wizard or Deep Hash Scan), `window.anomalous_reload_hashes()` MUST be called to synchronize the frontend dictionary with the newly generated `.info` files on the disk.
 * The cache exposes relative-path and basename aliases only when they are unambiguous. If two local models share a key but have different hash/size values, that alias is omitted instead of silently choosing one. Frontend lookups must prefer the full widget value before falling back to a basename.
 
 ### Model Provenance Binding (模型溯源绑定 - `anomalous_inject_hash`)
 * Controls whether hashes are invisibly injected into the `extra_pnginfo` and workflow JSON when a user saves a workflow or generates an image.
-* **Logic Flow**: `LGraph.prototype.serialize` is hooked. If enabled, it intercepts the serialization, looks up every model widget's filename in `window.anomalous_hash_cache`, and explicitly writes `extraObj.anomalous_hashes[node_id_filename] = {hash, size}`.
+* **Logic Flow**: The active graph constructor's `prototype.serialize` is hooked when available (falling back to the legacy global `LGraph` only when present). If enabled, it intercepts the serialization, looks up every model widget's filename in `window.anomalous_hash_cache`, and explicitly writes `extraObj.anomalous_hashes[node_id_filename] = {hash, size}`. A missing graph API disables only this optional hook.
 * Exact-path checks are limited to pre-flight verification that an already-resolved local reference exists; they are outside Model Doctor provenance recovery and must never be used as its fallback. For provenance recovery, the backend constrains the search to the model category inferred from the node/widget and intersects the saved hash with the saved byte size. If no file in that category owns a legacy/stale hash, only a unique in-category byte-size match may recover the model as `stale_hash`. Equal-sized candidates remain unresolved, and a real hash/size conflict is rejected instead of choosing arbitrarily.
 * Civitai `.info` files may describe several physical files (for example a diffusion model, text encoder, and VAE). `get_metadata()` must select the matching `files[]` entry by exact physical byte size and may use an unmatched entry only when it is the sole hash candidate. It must never take the first SHA256 or use a filename to choose between entries.
 

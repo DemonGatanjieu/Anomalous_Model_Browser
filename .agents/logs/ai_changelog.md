@@ -728,3 +728,19 @@
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed)
 - `python_embeded/python.exe -m py_compile api/__init__.py api/parameters.py api/recipes.py api/recipe_packages.py`
 - `git diff --check`
+
+## [Snapshot] 2026-08-04 - Isolate optional hash resolver startup
+
+**Implemented**
+
+- Audited the full ComfyUI extension loading path instead of treating the trigger button as the only entry point.
+- Made `hash_resolver.js` resolve the active graph constructor from `app.graph` and disable itself safely when the legacy global `LGraph` API is unavailable.
+- Prevented duplicate serializer patching and guarded the optional `loadGraphData` hook.
+- Raised the floating entry point above ComfyUI overlays and forced its visibility; synchronized the architecture rules for optional resolver startup.
+
+**Validation**
+
+- ComfyUI custom-node initialization with `--quick-test-for-ci --disable-all-custom-nodes --whitelist-custom-nodes Anomalous_Model_Browser` completed without an Anomalous import error.
+- Full custom-node initialization reported `Anomalous_Model_Browser` loaded and registered its web directory.
+- All JavaScript files passed `node --check`.
+- `git diff --check`

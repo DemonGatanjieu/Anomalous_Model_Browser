@@ -500,3 +500,7 @@ For a gallery whose source is a directory walk, querying only when the panel ope
 ## 75. Keep the plugin entry point independent from panel construction
 
 The floating trigger is the recovery path for the entire extension, so it must not be appended only after every panel has initialized. Mount it first, catch constructor failures, and retry on click. Optional browser APIs such as `IntersectionObserver` must be feature-detected before use; otherwise a nonessential gallery enhancement can make the whole plugin appear to have disappeared.
+
+## 76. An optional auto-hook must not own extension startup
+
+ComfyUI loads every JavaScript file under a custom node's `WEB_DIRECTORY`. A resolver that assumes the legacy global `LGraph` can fail before the visible browser entry point is initialized. Optional graph hooks must detect the current graph constructor, guard duplicate patching, and return cleanly when the host API is unavailable.
