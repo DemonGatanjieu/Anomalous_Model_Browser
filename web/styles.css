@@ -1920,6 +1920,10 @@
     gap: 12px;
 }
 
+.anomalous-recipe-detail-summary-grid > .is-wide {
+    grid-column: 1 / -1;
+}
+
 .anomalous-recipe-detail-summary-grid .anomalous-recipe-detail-label {
     padding-top: 6px;
     white-space: nowrap;
@@ -1930,9 +1934,8 @@
 }
 
 .anomalous-recipe-detail-summary-grid .anomalous-recipe-detail-full-value {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
 }
 
 .anomalous-recipe-detail-section {
@@ -2159,6 +2162,49 @@
 
 .anomalous-recipe-detail-parameters {
     min-width: 0;
+}
+
+.anomalous-recipe-parameter-editor {
+    min-width: 0;
+}
+
+.anomalous-recipe-parameter-editor-name {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+    color: #bbb;
+}
+
+.anomalous-recipe-parameter-editor-name input,
+.anomalous-recipe-parameter-editor-input {
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid #4a4a4a;
+    border-radius: 7px;
+    color: #eee;
+    background: #181818;
+    font: inherit;
+}
+
+.anomalous-recipe-parameter-editor-input {
+    width: 100%;
+    resize: vertical;
+}
+
+.anomalous-recipe-parameter-editor-input:focus,
+.anomalous-recipe-parameter-editor-name input:focus {
+    border-color: rgba(110, 231, 183, 0.7);
+    outline: none;
+}
+
+.anomalous-recipe-parameter-editor-input.is-invalid {
+    border-color: rgba(255, 119, 119, 0.9);
+}
+
+.anomalous-recipe-parameter-editor-row {
+    grid-template-columns: minmax(120px, 0.28fr) minmax(0, 1fr);
 }
 
 .anomalous-recipe-model-reference,
@@ -2479,6 +2525,7 @@
     .anomalous-recipe-model-preview { height: 110px; flex-basis: 110px; }
     .anomalous-recipe-parameter-notebook-layout { grid-template-columns: 1fr; }
     .anomalous-recipe-parameter-notebook-sidebar { position: static; max-height: none; }
+    .anomalous-recipe-parameter-editor-name { grid-template-columns: 1fr; gap: 5px; }
 }
 
 @media (max-width: 560px) {

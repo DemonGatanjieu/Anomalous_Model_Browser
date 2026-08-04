@@ -804,12 +804,29 @@
 
 - Replaced the narrow six-column common-parameter grid with a responsive minimum-width grid.
 - Kept labels in a horizontal column and values in a flexible column so sampler, scheduler, and seed no longer render one character per line.
-- Summary values now use a single-line ellipsis while the existing copy action still copies the complete value; full expansion remains available in the detailed parameter rows.
+- Summary values now wrap in a full-width row instead of being silently truncated; the existing copy action still copies the complete value.
 - Synchronized the layout boundary in `ARCHITECTURE.md`.
 
 **Validation**
 
 - All JavaScript files passed `node --check`.
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
+- `node tests/recipe_parser_roundtrip.mjs`.
+- `git diff --check`.
+
+## [Snapshot] 2026-08-05 - Hide volatile values and add editable notes
+
+**Implemented**
+
+- Kept the Seed label but redacted runtime-changing seed values from parameter summaries, detailed display, copy actions, and the new-note editor; the serialized workflow slot remains untouched for ComfyUI compatibility.
+- Removed summary ellipsis for common values and made long model, LoRA, and resolution values span a full row with wrapping and copy support.
+- Renamed the Parameters tab to “Parameter Notebook / 参数笔记本”.
+- Added “New parameter note”: it clones the selected snapshot or recipe skeleton, lets users edit safe node widget values, hides volatile/sensitive controls, and saves a new immutable snapshot without modifying history.
+- Synchronized the parameter notebook boundaries in `ARCHITECTURE.md`.
+
+**Validation**
+
+- All 19 JavaScript files passed `node --check`.
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
 - `node tests/recipe_parser_roundtrip.mjs`.
 - `git diff --check`.

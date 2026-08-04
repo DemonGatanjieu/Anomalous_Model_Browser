@@ -534,3 +534,9 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: `auto-fit` with a 124px minimum created many narrow summary cards. Flex children then wrapped Chinese labels and numeric values vertically, making ordinary sampler/seed data hard to read.
 
 **The Practice**: Give summary cards a readable minimum width, use an explicit label/value grid inside each card, and reserve ellipsis for compact summaries. Keep the full value and copy action available in the detailed viewer rather than forcing every summary card to expand.
+
+## 81. Volatile values need a display policy separate from workflow storage
+
+**The Problem**: Seeds and similar runtime fields are useful slots to ComfyUI but are not useful identities for a parameter notebook. Showing them as ordinary values also makes users think they define the saved recipe result.
+
+**The Practice**: Keep the raw slot only for host compatibility, but redact volatile values from display, copy, editing, and parameter matching. Keep the field label so users understand why a parameter is omitted. New editable notes must create a new immutable snapshot rather than mutating the selected history item.

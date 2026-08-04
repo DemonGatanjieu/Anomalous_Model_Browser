@@ -9,6 +9,7 @@ import {
 } from './recipe_identity.js';
 import { buildRecipeDiff, diffIsEmpty } from './recipe_diff.js';
 import { appendRecipeToCanvas } from './recipe_actions.js';
+import { applyRecipeWidgetChanges } from './recipe_parser.js';
 
 const t = (key) => {
     let lang = window.anomalous_browser_lang || 'zh';
@@ -207,12 +208,12 @@ function needsExpansion(value) {
     return text.length > 260 || text.split(/\r?\n/).length > 3;
 }
 
-function appendValueViewer(parent, value, className = '') {
+function appendValueViewer(parent, value, className = '', options = {}) {
     const text = displayValue(value);
     const viewer = document.createElement('div');
     viewer.className = `anomalous-recipe-detail-value-viewer${className ? ` ${className}` : ''}`;
     const code = appendText(viewer, 'code', text, 'anomalous-recipe-detail-full-value');
-    if (needsExpansion(text)) {
+    if (options.collapse !== false && needsExpansion(text)) {
         code.classList.add('is-collapsed');
         const toggle = button(viewer, t('recipeDetailExpandValue'), 'anomalous-recipe-detail-value-toggle');
         toggle.onclick = () => {
@@ -220,7 +221,7 @@ function appendValueViewer(parent, value, className = '') {
             toggle.textContent = expanded ? t('recipeDetailCollapseValue') : t('recipeDetailExpandValue');
         };
     }
-    appendCopyButton(viewer, text);
+    if (options.copy !== false) appendCopyButton(viewer, text);
     parent.appendChild(viewer);
     return viewer;
 }
@@ -1296,19 +1297,175 @@ function parameterNodeOrder(recipe) {
     return result;
 }
 
-function renderParameterField(parent, label, value) {
+function isVolatileParameter(node, widget, index) {
+    const widgetName = String(widget?.name || '').toLowerCase();
+    if (/(^|[_\s-])(seed|noise_seed|random_seed|variation_seed|last_seed)([_\s-]|$)/i.test(widgetName)) return true;
+    const nodeType = String(node?.type || '').toLowerCase();
+    if (nodeType === 'ksampler') return index === 0;
+    if (nodeType === 'ksampleradvanced') return index === 1;
+    return false;
+}
+
+function renderParameterField(parent, label, value, options = {}) {
     if (value === undefined || value === null || value === '') return false;
     const row = document.createElement('div');
     row.className = 'anomalous-recipe-detail-parameter-row';
+    const text = displayValue(value);
+    if (options.wide || Array.isArray(value) || typeof value === 'object' || text.length > 90) {
+        row.classList.add('is-wide');
+    }
     appendText(row, 'span', label, 'anomalous-recipe-detail-label');
-    appendValueViewer(row, value);
+    appendValueViewer(
+        row,
+        options.redact ? t('recipeDetailVolatileIgnored') : value,
+        '',
+        { collapse: options.collapse !== false, copy: options.copy !== false && !options.redact },
+    );
     parent.appendChild(row);
     return true;
 }
 
+function cloneJson(value) {
+    try { return JSON.parse(JSON.stringify(value)); } catch (error) { return null; }
+}
+
+function editorValueText(value) {
+    if (typeof value === 'string') return value;
+    if (value === undefined) return '';
+    try { return JSON.stringify(value); } catch (error) { return String(value); }
+}
+
+function parseEditorValue(raw, original) {
+    if (typeof original === 'number') {
+        const value = Number(raw);
+        if (!Number.isFinite(value)) throw new Error('invalid number');
+        return value;
+    }
+    if (typeof original === 'boolean') {
+        if (raw !== 'true' && raw !== 'false') throw new Error('invalid boolean');
+        return raw === 'true';
+    }
+    if (original !== null && typeof original === 'object') return JSON.parse(raw);
+    return raw;
+}
+
+function renderParameterNotebookEditor(wrapper, owner, recipe, parameterState, source, selectParameterTab) {
+    const editorState = parameterState.editor;
+    editorState.draft.params = editorState.draft.params || {};
+    const editor = document.createElement('section');
+    editor.className = 'anomalous-recipe-detail-section anomalous-recipe-parameter-editor';
+    const heading = document.createElement('div');
+    heading.className = 'anomalous-recipe-detail-section-heading';
+    appendText(heading, 'h4', t('recipeParameterNew'));
+    const actions = document.createElement('div');
+    const cancel = button(actions, t('recipeParameterCancel'), 'anomalous-btn-ghost');
+    cancel.onclick = () => {
+        parameterState.editor = null;
+        selectParameterTab?.();
+    };
+    const save = button(actions, t('recipeParameterSave'), 'anomalous-btn-primary');
+    save.onclick = async () => {
+        const name = nameInput.value.trim() || recipe.name || t('recipeParameterUntitled');
+        save.disabled = true;
+        try {
+            const response = await fetch('/anomalous/save_parameter', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    tags: recipe.tags || [],
+                    notes: recipe.notes || '',
+                    params: editorState.draft.params || {},
+                    workflow: editorState.draft.workflow,
+                    recipe_filename: owner.recipeDetailFilename,
+                }),
+            });
+            if (!response.ok) throw new Error('parameter note save failed');
+            parameterState.editor = null;
+            parameterState.status = 'idle';
+            parameterState.selectedFilename = null;
+            await parameterState.refresh?.(true);
+            selectParameterTab?.();
+        } catch (error) {
+            console.error('Could not save the new parameter notebook:', error);
+            await anomalousAlert(t('recipeParameterSaveError'));
+            save.disabled = false;
+        }
+    };
+    actions.append(cancel, save);
+    heading.appendChild(actions);
+    editor.appendChild(heading);
+    appendText(editor, 'p', t('recipeParameterNewHint'), 'anomalous-recipe-detail-muted');
+
+    const nameRow = document.createElement('label');
+    nameRow.className = 'anomalous-recipe-parameter-editor-name';
+    appendText(nameRow, 'span', t('recipeParameterName'));
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.maxLength = 200;
+    nameInput.value = editorState.name || `${recipe.name || t('recipeUntitled')} · ${t('recipeParameterNew')}`;
+    nameRow.appendChild(nameInput);
+    editor.appendChild(nameRow);
+
+    const nodeList = document.createElement('div');
+    nodeList.className = 'anomalous-recipe-detail-parameter-list anomalous-recipe-parameter-editor-list';
+    let rendered = 0;
+    for (const { summary: node, workflowNode } of parameterNodeOrder(editorState.draft)) {
+        if (!workflowNode || !Array.isArray(workflowNode.widgets_values)) continue;
+        const widgets = Array.isArray(node?.widgets) && node.widgets.length
+            ? node.widgets
+            : workflowNode.widgets_values.map((value, index) => ({ name: `${t('recipeDetailWidget')} ${index + 1}`, index, value }));
+        const block = document.createElement('article');
+        block.className = 'anomalous-recipe-detail-parameter-node';
+        appendText(block, 'strong', [node.title, node.type].filter(Boolean).join(' · ') || t('recipeDetailUnknownNode'));
+        for (let visibleIndex = 0; visibleIndex < widgets.length && rendered < 1200; visibleIndex += 1) {
+            const widget = widgets[visibleIndex] || {};
+            const index = Number.isInteger(widget.index) ? widget.index : visibleIndex;
+            if (index < 0 || index >= workflowNode.widgets_values.length) continue;
+            const value = workflowNode.widgets_values[index];
+            const row = document.createElement('label');
+            row.className = 'anomalous-recipe-detail-parameter-row anomalous-recipe-parameter-editor-row';
+            appendText(row, 'span', widget.name || `${t('recipeDetailWidget')} ${index + 1}`, 'anomalous-recipe-detail-label');
+            const volatile = isVolatileParameter(node, widget, index);
+            const sensitive = /(?:api.?key|access.?token|auth|password|passwd|secret|credential)/i.test(String(widget.name || ''));
+            if (volatile || sensitive) {
+                appendValueViewer(row, t(volatile ? 'recipeDetailVolatileIgnored' : 'recipeParameterSensitiveHidden'), '', { copy: false });
+            } else {
+                const input = document.createElement(typeof value === 'string' && (value.length > 100 || /text|prompt/i.test(String(widget.name || ''))) ? 'textarea' : 'input');
+                input.className = 'anomalous-recipe-parameter-editor-input';
+                input.value = editorValueText(value);
+                if (input.tagName === 'TEXTAREA') input.rows = Math.min(8, Math.max(3, input.value.split(/\r?\n/).length));
+                input.onchange = () => {
+                    try {
+                        const next = parseEditorValue(input.value, value);
+                        applyRecipeWidgetChanges(editorState.draft.params || {}, editorState.draft.workflow, [{
+                            nodeId: workflowNode.id,
+                            widgetIndex: index,
+                            value: next,
+                            previousValue: value,
+                        }]);
+                        workflowNode.widgets_values[index] = next;
+                        input.classList.remove('is-invalid');
+                    } catch (error) {
+                        input.classList.add('is-invalid');
+                    }
+                };
+                row.appendChild(input);
+            }
+            block.appendChild(row);
+            rendered += 1;
+        }
+        if (block.querySelector('.anomalous-recipe-parameter-editor-row')) nodeList.appendChild(block);
+    }
+    if (!nodeList.childElementCount) appendText(nodeList, 'p', t('recipeDetailNoSavedParameters'), 'anomalous-recipe-detail-muted');
+    editor.appendChild(nodeList);
+    wrapper.appendChild(editor);
+}
+
 function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery, parameterState, selectParameterTab) {
     const selectedNotebook = parameterState?.notebooks?.find((item) => item.filename === parameterState.selectedFilename);
-    const source = selectedNotebook?.data?.workflow ? selectedNotebook.data : recipe;
+    const baseSource = selectedNotebook?.data?.workflow ? selectedNotebook.data : recipe;
+    const source = parameterState?.editor?.draft || baseSource;
     const wrapper = document.createElement('div');
     wrapper.className = 'anomalous-recipe-detail-parameters';
 
@@ -1319,6 +1476,23 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     const sidebarHeading = document.createElement('div');
     sidebarHeading.className = 'anomalous-recipe-detail-section-heading';
     appendText(sidebarHeading, 'strong', t('recipeParameterSnapshots'));
+    const newSnapshot = button(sidebarHeading, t('recipeParameterNew'), 'anomalous-btn-primary');
+    newSnapshot.onclick = () => {
+        const draft = cloneJson({
+            workflow: baseSource.workflow,
+            params: baseSource.params || {},
+        });
+        if (!draft?.workflow) return;
+        parameterState.editor = {
+            draft,
+            name: `${recipe.name || t('recipeUntitled')} · ${t('recipeParameterNew')}`,
+        };
+        parameterState.selectedFilename = null;
+        gallery.status = 'idle';
+        gallery.images = [];
+        gallery.scanned = 0;
+        selectParameterTab?.();
+    };
     const refreshSnapshots = button(sidebarHeading, t('recipeParameterRefresh'), 'anomalous-btn-ghost');
     refreshSnapshots.onclick = () => { void parameterState.refresh?.(true); };
     sidebar.appendChild(sidebarHeading);
@@ -1337,6 +1511,7 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
             appendText(item, 'small', dateText(notebook.timestamp), 'anomalous-recipe-detail-muted');
             item.onclick = () => {
                 if (parameterState.selectedFilename === notebook.filename) return;
+                parameterState.editor = null;
                 parameterState.selectedFilename = notebook.filename;
                 gallery.status = 'idle';
                 gallery.images = [];
@@ -1348,6 +1523,13 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         appendText(snapshotList, 'p', t('recipeParameterNoSnapshots'), 'anomalous-recipe-detail-muted');
     }
     sidebar.appendChild(snapshotList);
+
+    if (parameterState?.editor) {
+        renderParameterNotebookEditor(wrapper, owner, recipe, parameterState, source, selectParameterTab);
+        layout.append(sidebar, wrapper);
+        content.appendChild(layout);
+        return;
+    }
 
     const intro = document.createElement('section');
     intro.className = 'anomalous-recipe-detail-section';
@@ -1385,17 +1567,17 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     const summaryGrid = document.createElement('div');
     summaryGrid.className = 'anomalous-recipe-detail-summary-grid';
     const scalarFields = [
-        ['recipeDetailSampler', params.sampler_name || params.samplers],
-        ['recipeDetailScheduler', params.scheduler],
-        ['recipeDetailSteps', params.steps],
-        ['recipeDetailCFG', params.cfg],
-        ['recipeDetailDenoise', params.denoise],
-        ['recipeDetailSeed', params.seed],
-        ['recipeDetailResolution', params.resolution],
-        ['recipeDetailBaseModel', params.baseModel || params.baseModels],
-        ['recipeDetailLoraSummary', params.loras],
+        ['recipeDetailSampler', params.sampler_name || params.samplers, {}],
+        ['recipeDetailScheduler', params.scheduler, {}],
+        ['recipeDetailSteps', params.steps, {}],
+        ['recipeDetailCFG', params.cfg, {}],
+        ['recipeDetailDenoise', params.denoise, {}],
+        ['recipeDetailSeed', params.seed ?? 0, { redact: true, copy: false }],
+        ['recipeDetailResolution', params.resolution, { wide: true }],
+        ['recipeDetailBaseModel', params.baseModel || params.baseModels, { wide: true }],
+        ['recipeDetailLoraSummary', params.loras, { wide: true }],
     ];
-    for (const [labelKey, value] of scalarFields) renderParameterField(summaryGrid, t(labelKey), value);
+    for (const [labelKey, value, options] of scalarFields) renderParameterField(summaryGrid, t(labelKey), value, { ...options, collapse: false });
     if (summaryGrid.childElementCount) summary.appendChild(summaryGrid);
     else appendText(summary, 'p', t('recipeDetailNoSavedParameters'), 'anomalous-recipe-detail-muted');
 
@@ -1427,7 +1609,12 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 ? workflowNode.widgets_values[index]
                 : widget.value;
             const label = widget.name || `${t('recipeDetailWidget')} ${index + 1}`;
-            if (renderParameterField(block, label, value)) renderedWidgets += 1;
+            const volatile = isVolatileParameter(node, widget, index);
+            if (renderParameterField(block, label, volatile ? 0 : value, {
+                redact: volatile,
+                copy: false,
+                collapse: false,
+            })) renderedWidgets += 1;
         }
         if (block.querySelector('.anomalous-recipe-detail-parameter-row')) nodeList.appendChild(block);
     }
