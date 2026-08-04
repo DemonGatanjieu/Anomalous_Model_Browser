@@ -1848,15 +1848,16 @@
 .anomalous-recipe-detail-stats,
 .anomalous-recipe-detail-summary-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(124px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
     gap: 8px;
 }
 
 .anomalous-recipe-detail-stat,
 .anomalous-recipe-detail-summary-grid > div {
-    display: flex;
+    display: grid;
     min-width: 0;
-    flex-direction: column;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: start;
     gap: 4px;
     padding: 9px 10px;
     border: 1px solid #3e3e3e;
@@ -1916,15 +1917,22 @@
 }
 
 .anomalous-recipe-detail-summary-grid > div {
-    flex-direction: row;
-    justify-content: space-between;
     gap: 12px;
 }
 
-.anomalous-recipe-detail-summary-grid .anomalous-recipe-detail-value {
+.anomalous-recipe-detail-summary-grid .anomalous-recipe-detail-label {
+    padding-top: 6px;
+    white-space: nowrap;
+}
+
+.anomalous-recipe-detail-summary-grid .anomalous-recipe-detail-value-viewer {
+    width: 100%;
+}
+
+.anomalous-recipe-detail-summary-grid .anomalous-recipe-detail-full-value {
     overflow: hidden;
-    text-align: right;
     text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .anomalous-recipe-detail-section {

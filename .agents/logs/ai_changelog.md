@@ -798,6 +798,22 @@
 - `node tests/recipe_parser_roundtrip.mjs`.
 - `git diff --check`.
 
+## [Snapshot] 2026-08-05 - Widen common parameter summary layout
+
+**Implemented**
+
+- Replaced the narrow six-column common-parameter grid with a responsive minimum-width grid.
+- Kept labels in a horizontal column and values in a flexible column so sampler, scheduler, and seed no longer render one character per line.
+- Summary values now use a single-line ellipsis while the existing copy action still copies the complete value; full expansion remains available in the detailed parameter rows.
+- Synchronized the layout boundary in `ARCHITECTURE.md`.
+
+**Validation**
+
+- All JavaScript files passed `node --check`.
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
+- `node tests/recipe_parser_roundtrip.mjs`.
+- `git diff --check`.
+
 ## [Snapshot] 2026-08-04 - Bind parameter snapshots to recipes
 
 **Implemented**

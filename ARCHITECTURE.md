@@ -8,6 +8,8 @@ Origin refresh is an explicit enrichment mode passed into `_enrich_recipe`; it m
 
 Recipe identity badges use short, bounded labels in the card layout; detailed explanations belong in the help tooltip. Identity badges and model-name rows must remain shrinkable flex children so localized or imported text cannot expand the recipe card beyond its container.
 
+Recipe common-parameter summaries use a readable minimum-width responsive grid and an explicit label/value row; labels stay horizontal, while long summary values use a single-line ellipsis with copy preserving the full value. Full expansion belongs to detailed parameter rows, not to narrow summary cards.
+
 Availability refresh actions expose immediate busy feedback, an accessible `aria-busy` state, and a recoverable error state; a disabled button without visible progress is not considered sufficient interaction feedback.
 
 Identity help uses a click-to-expand inline explanation attached to the badge. The explanation stays in normal card flow with bounded width and wrapping, so it cannot be duplicated by a native `title` tooltip or cover adjacent flex content.

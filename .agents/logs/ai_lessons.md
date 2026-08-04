@@ -528,3 +528,9 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: A recipe can be updated many times, so showing only the latest workflow cannot answer what parameters were saved at an earlier point.
 
 **The Practice**: Create an immutable snapshot after each successful recipe save/update and bind it to the exact recipe filename. Filter snapshots on the server, then let the detail view select one snapshot while keeping the recipe workflow as the fallback for older recipes. Snapshot persistence must be best-effort after the authoritative recipe write; a secondary failure must not cause a duplicate recipe retry.
+
+## 80. A responsive grid can still be unusable when its minimum is too small
+
+**The Problem**: `auto-fit` with a 124px minimum created many narrow summary cards. Flex children then wrapped Chinese labels and numeric values vertically, making ordinary sampler/seed data hard to read.
+
+**The Practice**: Give summary cards a readable minimum width, use an explicit label/value grid inside each card, and reserve ellipsis for compact summaries. Keep the full value and copy action available in the detailed viewer rather than forcing every summary card to expand.
