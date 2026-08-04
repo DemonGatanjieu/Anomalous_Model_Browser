@@ -28,9 +28,11 @@ The Workspace close action is a state restoration boundary. Opening the Workspac
 
 Recipe detail has an on-demand Gallery tab for reusing the user's own generated results. Gallery discovery uses a separate `sha256-node-types-v1` signature: it compares the sorted node class composition and count, deliberately ignoring seeds, prompts, model values, and other parameters so ordinary variations still appear. The original `sha256-structural-v1` fingerprint remains the recipe/history integrity fingerprint. Opening a detail view scans at most the newest 200 PNG files below ComfyUI's output directory and reads only bounded embedded `workflow` or API `prompt` metadata; there is no background polling or persistent output index. Clicking a result loads bounded node parameters and shows recipe-versus-image differences; the match itself remains node-only. The main output Gallery refreshes on each open and has no persistent toolbar refresh strip. A chosen result becomes a recipe-owned, compressed WebP cover in `.assets/<recipe-stem>/`, so it survives output cleanup and follows the recipe during package export/import. The original output image remains a local convenience link, never package data or identity evidence.
 
-## Parameter Notebook & Gallery (2026-08-04)
+## Recipe Parameters & Parameter Gallery (2026-08-04)
 
-Parameter management has been explicitly extracted from Workflow Recipes into dedicated Parameter Notebooks. A recipe represents a structural template, whereas a parameter notebook represents an immutable snapshot of a recipe's generation values. Saving a recipe automatically provisions a corresponding Parameter Notebook in `user/default/workflows/anomalous_parameters`. Parameter notebooks are read-only in the viewer and may be deleted explicitly. They use a distinct `sha256-params-v1` signature over node types and serialized widget/API-input values, ignoring known run-volatile fields and UI coordinates; it intentionally does not claim graph-link identity. The Parameter Notebook UI is a dedicated modal accessed from the Sidebar, remaining visually separated from the legacy Prompt Notes.
+Recipe parameters are presented inside the individual Workflow Recipe detail view rather than as a second top-level notebook surface. The saved recipe already contains the authoritative serialized `workflow` plus bounded `params` summaries, so the Parameters tab resolves each safe widget value from that workflow by node ID and widget index. It renders native node/widget names, keeps positive and negative CLIP text separate, and provides expand/copy actions for long values. The exact-parameter output gallery is loaded on demand through `GET /anomalous/recipe_parameter_gallery`; its server-side `sha256-params-v1` signature compares node types and serialized widget/API-input values while ignoring known run-volatile fields and does not rely on the author's local model path.
+
+The old `anomalous_parameters` files and CRUD routes remain a compatibility layer for existing user data and older callers, but saving a recipe no longer creates a duplicate parameter notebook and the Sidebar no longer exposes a separate Parameter Notebook button. The legacy panel's mount path is guarded because older persisted calls may still invoke it. New parameter behavior must be added to the recipe detail contract, not by creating another source of truth.
 
 ## 1. Project Philosophy (设计理念)
 * **Zero Frameworks**: No React, Vue, or build tools. Everything is Vanilla JS and CSS for maximum compatibility, minimum overhead, and zero compilation steps.
@@ -70,7 +72,7 @@ Anomalous_Model_Browser/
 │       ├── ui_detail.js         # Model detail panel
 │       ├── ui_doctor.js         # Model Doctor and Assistant panel
 │       ├── ui_notebooks.js      # Prompt Notes editor
-│       ├── ui_parameters.js     # Parameter Notebook gallery and read-only parameter viewer
+│       ├── ui_parameters.js     # Legacy Parameter Notebook compatibility viewer
 │       ├── ui_recipes.js        # Workflow Recipe cards, search/filter, save dialog, and actions
 │       ├── recipe_parser.js     # Read-only LiteGraph recipe metadata extraction
 │       ├── recipe_identity.js   # Pure recipe model-reference and identity normalization

@@ -766,3 +766,21 @@
 - Full custom-node initialization reported `Anomalous_Model_Browser` loaded and registered its web directory.
 - All JavaScript files passed `node --check`.
 - `git diff --check`
+
+## [Snapshot] 2026-08-04 - Merge recipe parameters and fix blank panel
+
+**Implemented**
+
+- Fixed the legacy parameter panel mount crash caused by querying `.anomalous-container` while the actual host is `#anomalous-container`.
+- Removed the standalone Sidebar Parameter Notebook button and stopped automatically creating duplicate `anomalous_parameters` files when saving a recipe.
+- Added a Parameters tab to the individual recipe detail view. It reads exact widget values from the saved workflow, preserves native node/widget labels, separates positive and negative CLIP text, and provides expand/copy controls for long values.
+- Added `GET /anomalous/recipe_parameter_gallery`, which computes the server-side `sha256-params-v1` signature from the recipe rather than trusting a browser-supplied path or stale notebook.
+- Synchronized `ARCHITECTURE.md`; legacy parameter notebook files/routes remain compatibility-only.
+
+**Validation**
+
+- All 20 JavaScript files passed `node --check`.
+- `python_embeded/python.exe -m py_compile api/__init__.py api/parameters.py api/recipes.py api/recipe_packages.py`.
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
+- `node tests/recipe_parser_roundtrip.mjs`.
+- `git diff --check`.

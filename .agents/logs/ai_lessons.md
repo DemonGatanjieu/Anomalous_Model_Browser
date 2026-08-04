@@ -514,3 +514,11 @@ The floating trigger is the recovery path for the entire extension, so it must n
 ComfyUI loads every JavaScript file under a custom node's `WEB_DIRECTORY`. A resolver that assumes the legacy global `LGraph` can fail before the visible browser entry point is initialized. Optional graph hooks must detect the current graph constructor, guard duplicate patching, and return cleanly when the host API is unavailable.
 
 Keep visual identifiers stable during bug fixing. Restore the established 📦 trigger mark unless the user explicitly asks for a new icon; visibility and startup resilience are separate concerns.
+
+## 78. A second parameter store creates drift and hides the real bug
+
+**The Problem**: Saving a recipe also created a separate parameter notebook, while the recipe detail already persisted the complete workflow. The two surfaces could disagree, and the standalone panel appeared blank when opened.
+
+**The Cause**: The legacy panel used a class selector for a container created with an id (`.anomalous-container` vs `#anomalous-container`). The resulting null dereference happened before the panel could render.
+
+**The Practice**: Keep recipe parameters in the recipe detail as the canonical presentation, resolve full values from the authoritative serialized workflow, and retain old notebook routes only as compatibility. When mounting dynamically created DOM, verify the selector against the actual creation code and guard the host before calling `appendChild`.

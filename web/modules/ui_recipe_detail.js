@@ -732,7 +732,6 @@ function renderOverview(content, owner, recipe, references, finish) {
     summary.appendChild(modelComposition);
     renderModelComposition(modelComposition, owner, recipe, references, finish, params);
     overview.appendChild(summary);
-    overview.appendChild(summary);
 
     const actions = document.createElement('div');
     actions.className = 'anomalous-recipe-actions anomalous-recipe-detail-actions';
@@ -1274,6 +1273,173 @@ function topologicalSortNodes(workflowNodes, workflowLinks) {
     return sorted;
 }
 
+function parameterNodeOrder(recipe) {
+    const summaries = Array.isArray(recipe?.params?.nodes) ? recipe.params.nodes : [];
+    const workflowNodes = Array.isArray(recipe?.workflow?.nodes) ? recipe.workflow.nodes : [];
+    const byId = new Map(workflowNodes.map((node) => [String(node?.id), node]));
+    const summaryById = new Map(summaries.map((node) => [String(node?.id), node]));
+    const orderedIds = topologicalSortNodes(workflowNodes, recipe?.workflow?.links);
+    const result = [];
+    const seen = new Set();
+    for (const id of orderedIds) {
+        const summary = summaryById.get(id);
+        const workflowNode = byId.get(id);
+        if (summary || workflowNode) {
+            result.push({ summary: summary || { id, type: workflowNode?.type, title: workflowNode?.title, widgets: [] }, workflowNode });
+            seen.add(id);
+        }
+    }
+    for (const summary of summaries) {
+        const id = String(summary?.id);
+        if (!seen.has(id)) result.push({ summary, workflowNode: byId.get(id) });
+    }
+    return result;
+}
+
+function renderParameterField(parent, label, value) {
+    if (value === undefined || value === null || value === '') return false;
+    const row = document.createElement('div');
+    row.className = 'anomalous-recipe-detail-parameter-row';
+    appendText(row, 'span', label, 'anomalous-recipe-detail-label');
+    appendValueViewer(row, value);
+    parent.appendChild(row);
+    return true;
+}
+
+function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'anomalous-recipe-detail-parameters';
+
+    const intro = document.createElement('section');
+    intro.className = 'anomalous-recipe-detail-section';
+    appendText(intro, 'h4', t('recipeDetailParameters'));
+    appendText(intro, 'p', t('recipeDetailParametersHint'), 'anomalous-recipe-detail-muted');
+
+    const prompts = promptValues(recipe);
+    if (prompts.positive.length || prompts.negative.length) {
+        appendText(intro, 'h5', t('recipeDetailPrompts'));
+        const promptList = document.createElement('div');
+        promptList.className = 'anomalous-recipe-detail-prompt-list';
+        if (prompts.positive.length) {
+            const positive = document.createElement('div');
+            positive.className = 'anomalous-recipe-detail-prompt';
+            appendText(positive, 'span', t('recipeDetailPositivePrompt'), 'anomalous-recipe-detail-prompt-label');
+            appendValueViewer(positive, prompts.positive.join('\n\n'));
+            promptList.appendChild(positive);
+        }
+        if (prompts.negative.length) {
+            const negative = document.createElement('div');
+            negative.className = 'anomalous-recipe-detail-prompt anomalous-recipe-detail-prompt-negative';
+            appendText(negative, 'span', t('recipeDetailNegativePrompt'), 'anomalous-recipe-detail-prompt-label');
+            appendValueViewer(negative, prompts.negative.join('\n\n'));
+            promptList.appendChild(negative);
+        }
+        intro.appendChild(promptList);
+    } else {
+        appendText(intro, 'p', t('recipeDetailNoPrompts'), 'anomalous-recipe-detail-muted');
+    }
+
+    const params = recipe?.params || {};
+    const summary = document.createElement('section');
+    summary.className = 'anomalous-recipe-detail-section';
+    appendText(summary, 'h5', t('recipeDetailParameterSummary'));
+    const summaryGrid = document.createElement('div');
+    summaryGrid.className = 'anomalous-recipe-detail-summary-grid';
+    const scalarFields = [
+        ['recipeDetailSampler', params.sampler_name || params.samplers],
+        ['recipeDetailScheduler', params.scheduler],
+        ['recipeDetailSteps', params.steps],
+        ['recipeDetailCFG', params.cfg],
+        ['recipeDetailDenoise', params.denoise],
+        ['recipeDetailSeed', params.seed],
+        ['recipeDetailResolution', params.resolution],
+        ['recipeDetailBaseModel', params.baseModel || params.baseModels],
+        ['recipeDetailLoraSummary', params.loras],
+    ];
+    for (const [labelKey, value] of scalarFields) renderParameterField(summaryGrid, t(labelKey), value);
+    if (summaryGrid.childElementCount) summary.appendChild(summaryGrid);
+    else appendText(summary, 'p', t('recipeDetailNoSavedParameters'), 'anomalous-recipe-detail-muted');
+
+    const nodesSection = document.createElement('section');
+    nodesSection.className = 'anomalous-recipe-detail-section';
+    appendText(nodesSection, 'h5', t('recipeDetailNodeParameters'));
+    const nodeList = document.createElement('div');
+    nodeList.className = 'anomalous-recipe-detail-parameter-list';
+    let renderedWidgets = 0;
+    for (const { summary: node, workflowNode } of parameterNodeOrder(recipe)) {
+        const widgets = Array.isArray(node?.widgets) && node.widgets.length
+            ? node.widgets
+            : (Array.isArray(workflowNode?.widgets_values)
+                ? workflowNode.widgets_values.map((value, index) => ({
+                    name: `${t('recipeDetailWidget')} ${index + 1}`,
+                    index,
+                    value,
+                }))
+                : []);
+        if (!widgets.length) continue;
+        const block = document.createElement('article');
+        block.className = 'anomalous-recipe-detail-parameter-node';
+        const title = [node.title, node.type].filter(Boolean).join(' · ') || t('recipeDetailUnknownNode');
+        appendText(block, 'strong', title);
+        for (let visibleIndex = 0; visibleIndex < widgets.length && renderedWidgets < 1200; visibleIndex += 1) {
+            const widget = widgets[visibleIndex] || {};
+            const index = Number.isInteger(widget.index) ? widget.index : visibleIndex;
+            const value = Array.isArray(workflowNode?.widgets_values) && workflowNode.widgets_values[index] !== undefined
+                ? workflowNode.widgets_values[index]
+                : widget.value;
+            const label = widget.name || `${t('recipeDetailWidget')} ${index + 1}`;
+            if (renderParameterField(block, label, value)) renderedWidgets += 1;
+        }
+        if (block.querySelector('.anomalous-recipe-detail-parameter-row')) nodeList.appendChild(block);
+    }
+    if (nodeList.childElementCount) nodesSection.appendChild(nodeList);
+    else appendText(nodesSection, 'p', t('recipeDetailNoSavedParameters'), 'anomalous-recipe-detail-muted');
+
+    wrapper.append(intro, summary, nodesSection);
+
+    const gallerySection = document.createElement('section');
+    gallerySection.className = 'anomalous-recipe-detail-section anomalous-recipe-gallery';
+    const heading = document.createElement('div');
+    heading.className = 'anomalous-recipe-detail-section-heading';
+    appendText(heading, 'h5', t('recipeParameterGallery'));
+    const refreshButton = button(heading, t('recipeGalleryRefresh'), 'anomalous-btn-ghost anomalous-recipe-gallery-refresh');
+    refreshButton.onclick = () => { void refreshGallery(true); };
+    gallerySection.appendChild(heading);
+    if (gallery.status === 'loading') {
+        appendText(gallerySection, 'p', t('recipeParameterGalleryLoading'), 'anomalous-recipe-detail-muted');
+    } else if (gallery.status === 'error') {
+        appendText(gallerySection, 'p', t('recipeParameterGalleryError'), 'anomalous-recipe-detail-muted');
+    } else if (gallery.status === 'ready' && gallery.images.length) {
+        appendText(gallerySection, 'small', t('recipeGalleryScanHint').replace('{count}', String(gallery.scanned || 0)), 'anomalous-recipe-detail-muted');
+        const grid = document.createElement('div');
+        grid.className = 'anomalous-recipe-gallery-grid';
+        for (const sourceImage of gallery.images) {
+            const card = document.createElement('article');
+            card.className = 'anomalous-recipe-gallery-card';
+            const url = outputImageUrl(sourceImage);
+            const image = document.createElement('img');
+            image.src = url;
+            image.alt = t('recipeGalleryOpenImage');
+            image.loading = 'lazy';
+            image.onclick = () => { void showGalleryComparison(card, owner, sourceImage); };
+            card.appendChild(image);
+            const actions = document.createElement('div');
+            actions.className = 'anomalous-recipe-gallery-card-actions';
+            const viewImage = button(actions, t('recipeGalleryOpenImage'), 'anomalous-btn-ghost');
+            viewImage.onclick = () => owner.showGalleryViewer?.(url);
+            const compare = button(actions, t('recipeGalleryCompare'), 'anomalous-btn-ghost');
+            compare.onclick = () => { void showGalleryComparison(card, owner, sourceImage); };
+            card.appendChild(actions);
+            grid.appendChild(card);
+        }
+        gallerySection.appendChild(grid);
+    } else if (gallery.status === 'ready') {
+        appendText(gallerySection, 'p', t('recipeParameterGalleryEmpty'), 'anomalous-recipe-detail-muted');
+    }
+    wrapper.appendChild(gallerySection);
+    content.appendChild(wrapper);
+}
+
 
 function diffCategoryLabel(category) {
     return t({
@@ -1629,6 +1795,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     const content = document.createElement('div');
     content.className = 'anomalous-recipe-detail-content';
     const gallery = { status: 'idle', images: [], scanned: 0 };
+    const parameterGallery = { status: 'idle', images: [], scanned: 0 };
     const galleryTabLabel = () => gallery.status === 'ready'
         ? `${t('recipeGallery')} (${gallery.images.length})`
         : t('recipeGallery');
@@ -1655,11 +1822,29 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         updateGalleryTab();
         if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'gallery') selectTab('gallery');
     };
+    const refreshParameterGallery = async (force = false) => {
+        if (parameterGallery.status === 'loading' || (!force && parameterGallery.status === 'ready')) return;
+        parameterGallery.status = 'loading';
+        if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'parameters') selectTab('parameters');
+        try {
+            const response = await fetch(`/anomalous/recipe_parameter_gallery?filename=${encodeURIComponent(filename)}`, { cache: 'no-store' });
+            if (!response.ok) throw new Error('recipe parameter gallery request failed');
+            const payload = await response.json();
+            if (payload.status !== 'success') throw new Error('recipe parameter gallery response failed');
+            parameterGallery.images = Array.isArray(payload.images) ? payload.images : [];
+            parameterGallery.scanned = Number(payload.scanned) || 0;
+            parameterGallery.status = 'ready';
+        } catch (error) {
+            console.error('Could not load recipe parameter gallery:', error);
+            parameterGallery.status = 'error';
+        }
+        if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'parameters') selectTab('parameters');
+    };
     const tabDefinitions = [
         ['overview', t('recipeDetailOverview'), () => {
             renderOverview(content, owner, recipe, references, finish);
         }],
-
+        ['parameters', t('recipeDetailParameters'), () => renderRecipeParameters(content, owner, recipe, parameterGallery, refreshParameterGallery)],
         ['versions', t('recipeDetailVersions'), () => renderVersions(content, owner, recipe, history, finish)],
         ['gallery', galleryTabLabel(), () => renderRecipeGallery(content, owner, recipe, gallery, refreshGallery)],
     ];
@@ -1692,6 +1877,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     owner.recipeView.appendChild(view);
     selectTab(returnState?.activeTab || 'overview');
     void refreshGallery();
+    void refreshParameterGallery();
     if (returnState?.scrollTop) {
         requestAnimationFrame(() => {
             view.scrollTop = returnState.scrollTop;

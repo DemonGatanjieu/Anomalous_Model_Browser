@@ -26,7 +26,16 @@ export function showParameters() {
             this.closeWorkspace();
         }
     };
-    this.modal.querySelector('.anomalous-container').appendChild(this.paramPanel);
+    // The container is an id, not a class. Keep this legacy surface safe even
+    // though new parameter data is now shown inside recipe details.
+    const host = this.modal?.querySelector('#anomalous-container') || this.modal;
+    if (!host) {
+        this.paramPanel = null;
+        this.paramInitialized = false;
+        console.error('Could not mount the legacy parameter notebook panel');
+        return;
+    }
+    host.appendChild(this.paramPanel);
 
     const container = document.createElement('div');
     container.className = 'anomalous-nb-container';

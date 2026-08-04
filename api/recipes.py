@@ -673,6 +673,10 @@ def _preserve_model_reference_fields(previous_references, references, preserve_i
 
 def _enrich_recipe(recipe, recipes_dir=None, filename=None, recapture_previews=True, refresh_identities=False):
     recipe["workflow_fingerprint"] = _workflow_fingerprint(recipe["workflow"])
+    # Keep the exact parameter-match identity alongside the structural
+    # fingerprint. The detail panel can use this value for result discovery
+    # without asking the browser to recreate or upload a legacy notebook.
+    recipe["parameter_signature"] = _parameter_signature(recipe["workflow"])
     params = dict(recipe.get("params") or {})
     previous_references = params.get("model_references", [])
     references = _build_model_references(recipe)
@@ -1120,6 +1124,33 @@ async def api_get_recipe_gallery(request):
         "status": "success",
         "fingerprint": fingerprint.lower(),
         "match_mode": "node-types",
+        "images": images,
+        "scanned": scanned,
+    })
+
+
+async def api_get_recipe_parameter_gallery(request):
+    """Find output PNGs with the same saved node parameters as one recipe."""
+    try:
+        filename = require_filename(request.query.get("filename", ""))
+        if not filename.endswith(".json"):
+            raise ValueError("Invalid recipe")
+        recipes_dir = get_recipes_dir()
+        recipe = await asyncio.to_thread(_read_recipe, resolve_within(recipes_dir, filename))
+        if not isinstance(recipe, dict) or not isinstance(recipe.get("workflow"), dict):
+            raise ValueError("Invalid recipe")
+        signature = _parameter_signature(recipe["workflow"])["value"]
+        images, scanned = await asyncio.to_thread(_parameter_gallery_images, signature.lower())
+    except (AttributeError, ValueError, json.JSONDecodeError):
+        return web.json_response({"status": "error", "message": "Invalid recipe parameter gallery request"}, status=400)
+    except FileNotFoundError:
+        return web.json_response({"status": "error", "message": "File not found"}, status=404)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not read recipe parameter gallery"}, status=500)
+    return web.json_response({
+        "status": "success",
+        "fingerprint": signature.lower(),
+        "match_mode": "parameters",
         "images": images,
         "scanned": scanned,
     })

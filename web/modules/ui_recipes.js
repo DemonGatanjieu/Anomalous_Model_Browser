@@ -902,25 +902,6 @@ export async function handleSaveRecipe() {
         const payload = await response.json();
         if (!response.ok || payload.status !== 'success') throw new Error('recipe save request failed');
 
-        if (!editing) {
-            try {
-                await fetch('/anomalous/save_parameter', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: details.name + ' Parameters',
-                        params: draft.metadata,
-                        workflow: draft.workflow,
-                        tags: details.tags,
-                        notes: details.notes,
-                    }),
-                });
-                if (this.refreshParameters) await this.refreshParameters();
-            } catch (err) {
-                console.warn('Could not automatically save parameter notebook:', err);
-            }
-        }
-
         const receipt = payload.receipt || {};
         const receiptMatchesDraft = receipt.node_count === draft.stats.nodeCount
             && receipt.link_count === draft.stats.linkCount
