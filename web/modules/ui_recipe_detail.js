@@ -1,3 +1,4 @@
+import { app } from '../../../scripts/app.js';
 import {  i18n  } from './locales.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import {
@@ -8,8 +9,13 @@ import {
     shortHash,
 } from './recipe_identity.js';
 import { buildRecipeDiff, diffIsEmpty } from './recipe_diff.js';
-import { appendRecipeToCanvas } from './recipe_actions.js';
+import {
+    appendRecipeToCanvas,
+    applyRecipeParametersToCanvas,
+    assertRecipeSkeleton,
+} from './recipe_actions.js';
 import { applyRecipeWidgetChanges } from './recipe_parser.js';
+import { captureRecipeDraft } from './recipe_parser.js';
 
 const t = (key) => {
     let lang = window.anomalous_browser_lang || 'zh';
@@ -1493,6 +1499,33 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         gallery.scanned = 0;
         selectParameterTab?.();
     };
+    const readCurrent = button(sidebarHeading, t('recipeParameterReadCurrent'), 'anomalous-btn-success');
+    readCurrent.onclick = async () => {
+        readCurrent.disabled = true;
+        readCurrent.classList.add('is-busy');
+        try {
+            if (!app.graph?.serialize) throw new Error('recipe_parameter_canvas_unavailable');
+            const current = captureRecipeDraft(app.graph);
+            assertRecipeSkeleton(recipe.workflow, current.workflow);
+            parameterState.editor = {
+                draft: { workflow: current.workflow, params: current.metadata },
+                name: `${recipe.name || t('recipeUntitled')} · ${t('recipeParameterReadCurrent')}`,
+            };
+            parameterState.selectedFilename = null;
+            gallery.status = 'idle';
+            gallery.images = [];
+            gallery.scanned = 0;
+            selectParameterTab?.();
+        } catch (error) {
+            console.error('Could not read current canvas parameters:', error);
+            await anomalousAlert(error.code === 'recipe_parameter_skeleton_mismatch'
+                ? t('recipeParameterSkeletonMismatch')
+                : t('recipeParameterReadCurrentError'));
+        } finally {
+            readCurrent.disabled = false;
+            readCurrent.classList.remove('is-busy');
+        }
+    };
     const refreshSnapshots = button(sidebarHeading, t('recipeParameterRefresh'), 'anomalous-btn-ghost');
     refreshSnapshots.onclick = () => { void parameterState.refresh?.(true); };
     sidebar.appendChild(sidebarHeading);
@@ -1507,10 +1540,12 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         for (const notebook of parameterState.notebooks) {
             const item = button(snapshotList, notebook.name || t('recipeParameterUntitled'), 'anomalous-recipe-parameter-notebook-item');
             item.classList.toggle('is-active', notebook.filename === parameterState.selectedFilename);
+            item.setAttribute('aria-pressed', notebook.filename === parameterState.selectedFilename ? 'true' : 'false');
             item.title = `${notebook.name || t('recipeParameterUntitled')} · ${dateText(notebook.timestamp)}`;
             appendText(item, 'small', dateText(notebook.timestamp), 'anomalous-recipe-detail-muted');
             item.onclick = () => {
                 if (parameterState.selectedFilename === notebook.filename) return;
+                item.classList.add('is-switching');
                 parameterState.editor = null;
                 parameterState.selectedFilename = notebook.filename;
                 gallery.status = 'idle';
@@ -1533,7 +1568,29 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
 
     const intro = document.createElement('section');
     intro.className = 'anomalous-recipe-detail-section';
-    appendText(intro, 'h4', t('recipeDetailParameters'));
+    const introHeading = document.createElement('div');
+    introHeading.className = 'anomalous-recipe-detail-section-heading';
+    appendText(introHeading, 'h4', t('recipeDetailParameters'));
+    const applyButton = button(introHeading, t('recipeParameterApply'), 'anomalous-btn-primary');
+    const applyStatus = appendText(introHeading, 'small', '', 'anomalous-recipe-header-status');
+    applyButton.onclick = async () => {
+        applyButton.disabled = true;
+        applyButton.classList.add('is-busy');
+        applyStatus.textContent = t('recipeParameterApplying');
+        try {
+            const result = applyRecipeParametersToCanvas(source);
+            applyStatus.textContent = t('recipeParameterApplied').replace('{count}', String(result.widgets));
+        } catch (error) {
+            console.error('Could not apply recipe parameter notebook:', error);
+            applyStatus.textContent = error.code === 'recipe_parameter_skeleton_mismatch'
+                ? t('recipeParameterSkeletonMismatch')
+                : t('recipeParameterApplyError');
+        } finally {
+            applyButton.disabled = false;
+            applyButton.classList.remove('is-busy');
+        }
+    };
+    intro.appendChild(introHeading);
     appendText(intro, 'p', t('recipeDetailParametersHint'), 'anomalous-recipe-detail-muted');
 
     const prompts = promptValues(source);

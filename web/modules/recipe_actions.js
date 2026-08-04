@@ -12,6 +12,119 @@ function savedNodeRecords(workflow) {
     return Array.isArray(workflow?.nodes) ? workflow.nodes.filter((node) => node && node.id !== undefined) : [];
 }
 
+function nodeShape(node) {
+    const inputs = Array.isArray(node?.inputs) ? node.inputs.length : -1;
+    const outputs = Array.isArray(node?.outputs) ? node.outputs.length : -1;
+    return `${nodeType(node)}|${inputs}|${outputs}`;
+}
+
+function nodeTitle(node) {
+    return String(node?.title || node?.properties?.['Node name for S&R'] || '').trim().toLowerCase();
+}
+
+function volatileWidget(node, widget, index) {
+    const name = String(widget?.name || '').toLowerCase();
+    if (/(^|[_\s-])(seed|noise_seed|random_seed|variation_seed|last_seed)([_\s-]|$)/i.test(name)) return true;
+    const type = nodeType(node).toLowerCase();
+    if (type === 'ksampler') return index === 0;
+    if (type === 'ksampleradvanced') return index === 1;
+    return false;
+}
+
+function matchSkeleton(sourceWorkflow, candidateWorkflow) {
+    const sourceNodes = savedNodeRecords(sourceWorkflow);
+    const candidateNodes = savedNodeRecords(candidateWorkflow);
+    const available = new Set(candidateNodes);
+    const matches = new Map();
+    const missing = [];
+    for (const source of sourceNodes) {
+        const exact = [...available].find((candidate) => (
+            String(candidate.id) === String(source.id)
+            && nodeType(candidate) === nodeType(source)
+            && nodeShape(candidate) === nodeShape(source)
+        ));
+        const sameTitle = [...available].find((candidate) => (
+            nodeShape(candidate) === nodeShape(source)
+            && nodeTitle(candidate) === nodeTitle(source)
+            && nodeTitle(source)
+        ));
+        const sameShape = [...available].find((candidate) => nodeShape(candidate) === nodeShape(source));
+        const sameType = [...available].find((candidate) => nodeType(candidate) === nodeType(source));
+        const target = exact || sameTitle || sameShape || sameType;
+        if (!target) {
+            missing.push(nodeType(source) || String(source.id));
+            continue;
+        }
+        available.delete(target);
+        matches.set(String(source.id), target);
+    }
+    return { matches, missing, sourceCount: sourceNodes.length, candidateCount: candidateNodes.length };
+}
+
+export function assertRecipeSkeleton(sourceWorkflow, candidateWorkflow) {
+    const result = matchSkeleton(sourceWorkflow, candidateWorkflow);
+    if (result.missing.length) {
+        const error = new Error(`Missing recipe skeleton nodes: ${result.missing.join(', ')}`);
+        error.code = 'recipe_parameter_skeleton_mismatch';
+        error.missing = result.missing;
+        throw error;
+    }
+    return result;
+}
+
+/** Apply only saved widget values to a matching local graph, with rollback. */
+export function applyRecipeParametersToCanvas(source) {
+    const graph = app.graph;
+    const sourceWorkflow = source?.workflow;
+    const candidateWorkflow = graph?.serialize?.();
+    if (!graph || !sourceWorkflow || !candidateWorkflow) throw new Error('recipe_parameter_apply_unavailable');
+    const skeleton = assertRecipeSkeleton(sourceWorkflow, candidateWorkflow);
+    const sourceNodes = savedNodeRecords(sourceWorkflow);
+    const changes = [];
+    for (const sourceNode of sourceNodes) {
+        const target = skeleton.matches.get(String(sourceNode.id));
+        if (!target || !Array.isArray(sourceNode.widgets_values)) continue;
+        const targetWidgets = Array.isArray(target.widgets) ? target.widgets : [];
+        for (let index = 0; index < sourceNode.widgets_values.length; index += 1) {
+            if (volatileWidget(sourceNode, targetWidgets[index], index)) continue;
+            if (!targetWidgets[index]) {
+                const error = new Error(`Missing widget ${index} on ${nodeType(target)}`);
+                error.code = 'recipe_parameter_widget_mismatch';
+                throw error;
+            }
+            changes.push({ sourceNode, target, targetWidget: targetWidgets[index], index, value: cloneJson(sourceNode.widgets_values[index]) });
+        }
+    }
+
+    const previous = changes.map((change) => ({
+        ...change,
+        previousValue: cloneJson(change.targetWidget.value),
+    }));
+    graph.beforeChange?.();
+    try {
+        for (const change of changes) {
+            change.targetWidget.value = cloneJson(change.value);
+            if (Array.isArray(change.target.widgets_values)) change.target.widgets_values[change.index] = cloneJson(change.value);
+            change.targetWidget.callback?.(change.targetWidget.value, app.canvas, change.target);
+            change.target.onWidgetChanged?.(change.index, change.targetWidget.value);
+        }
+        graph.change?.();
+        graph.setDirtyCanvas?.(true, true);
+        app.canvas?.setDirty?.(true, true);
+        return { nodes: sourceNodes.length, widgets: changes.length };
+    } catch (error) {
+        for (const change of previous) {
+            change.targetWidget.value = cloneJson(change.previousValue);
+            if (Array.isArray(change.target.widgets_values)) change.target.widgets_values[change.index] = cloneJson(change.previousValue);
+        }
+        graph.change?.();
+        graph.setDirtyCanvas?.(true, true);
+        throw error;
+    } finally {
+        graph.afterChange?.();
+    }
+}
+
 function linkRecords(workflow) {
     if (Array.isArray(workflow?.links)) return workflow.links.filter((link) => Array.isArray(link) || link && typeof link === 'object');
     if (workflow?.links instanceof Map) return [...workflow.links.values()].filter(Boolean);

@@ -831,6 +831,22 @@
 - `node tests/recipe_parser_roundtrip.mjs`.
 - `git diff --check`.
 
+## [Snapshot] 2026-08-05 - Add current-read and safe parameter apply actions
+
+**Implemented**
+
+- Added “Read current and create” to capture the current canvas as a new parameter-note draft only when every recipe skeleton node is present.
+- Added animated active/pressed feedback and explicit selected state to parameter-note switching.
+- Added “Apply to current workflow”; it preflights node type/shape and widget slots, ignores volatile values, marks the canvas dirty, and rolls back widget values if application callbacks fail.
+- Synchronized the skeleton matching and rollback contract in `ARCHITECTURE.md`.
+
+**Validation**
+
+- All 19 JavaScript files passed `node --check`.
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
+- `node tests/recipe_parser_roundtrip.mjs`.
+- `git diff --check`.
+
 ## [Snapshot] 2026-08-04 - Bind parameter snapshots to recipes
 
 **Implemented**

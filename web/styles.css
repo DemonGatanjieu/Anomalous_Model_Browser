@@ -2144,6 +2144,13 @@
     background: rgba(255, 255, 255, 0.03);
     text-align: left;
     cursor: pointer;
+    transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease, opacity 0.16s ease;
+}
+
+.anomalous-recipe-parameter-notebook-item:active,
+.anomalous-recipe-parameter-notebook-item.is-switching {
+    transform: scale(0.98);
+    opacity: 0.72;
 }
 
 .anomalous-recipe-parameter-notebook-item:hover,

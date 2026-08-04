@@ -540,3 +540,9 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: Seeds and similar runtime fields are useful slots to ComfyUI but are not useful identities for a parameter notebook. Showing them as ordinary values also makes users think they define the saved recipe result.
 
 **The Practice**: Keep the raw slot only for host compatibility, but redact volatile values from display, copy, editing, and parameter matching. Keep the field label so users understand why a parameter is omitted. New editable notes must create a new immutable snapshot rather than mutating the selected history item.
+
+## 82. Parameter application must preflight the whole skeleton
+
+**The Problem**: Applying values one node at a time can leave a partially modified canvas when a recipe node or dynamic widget is missing.
+
+**The Practice**: Match every source node before mutating anything, validate all target widget slots up front, then apply inside the host graph's change boundary. Keep a complete previous-value list so callback failures can roll back the whole parameter action; extra local nodes may remain untouched.
