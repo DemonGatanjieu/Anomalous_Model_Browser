@@ -499,6 +499,9 @@ export const i18n = {
         recipeDetailParametersHint: '这里展示配方保存的完整参数；长文本可展开并复制。参数图库只匹配相同参数，不会因为本地路径不同而失效。',
         recipeParameterSnapshots: '参数快照',
         recipeParameterSnapshotsHint: '每次保存配方都会留下一个只读版本。',
+        recipeParameterShowing: '当前显示的参数笔记',
+        recipeParameterCurrentRecipe: '当前配方参数',
+        recipeParameterActive: '当前',
         recipeParameterRefresh: '刷新快照',
         recipeParameterLoading: '正在读取参数快照…',
         recipeParameterLoadError: '无法读取参数快照。',
@@ -619,8 +622,6 @@ export const i18n = {
         recipeDetailLoadingPreviews: '正在加载本机模型预览…',
         recipeDetailCurrentPreview: '当前本机预览',
         recipeDetailNoPreview: '暂无预览',
-        recipeSaveModelPreviewSnapshots: '打包模型封面图 (内置到配方中)',
-        recipeSaveModelPreviewSnapshotsHint: '将当前模型的小尺寸封面图直接打包进配方文件中。当你将配方分享给他人时，对方即使没有该模型也能看到精美的封面图。（为节省体积，仅保存静态图，不包含视频）',
         recipeDetailSavedSnapshot: '已保存快照',
 
     },
@@ -1120,6 +1121,9 @@ export const i18n = {
         recipeDetailParametersHint: 'This view contains the saved parameters. Long values can be expanded and copied. The parameter gallery matches values, not local paths.',
         recipeParameterSnapshots: 'Parameter snapshots',
         recipeParameterSnapshotsHint: 'Each recipe save creates one read-only snapshot.',
+        recipeParameterShowing: 'Showing parameter note',
+        recipeParameterCurrentRecipe: 'Current recipe parameters',
+        recipeParameterActive: 'Current',
         recipeParameterRefresh: 'Refresh snapshots',
         recipeParameterLoading: 'Loading parameter snapshots…',
         recipeParameterLoadError: 'Could not load parameter snapshots.',
@@ -1240,8 +1244,6 @@ export const i18n = {
         recipeDetailLoadingPreviews: 'Loading local model previews…',
         recipeDetailCurrentPreview: 'Current local preview',
         recipeDetailNoPreview: 'No preview available',
-        recipeSaveModelPreviewSnapshots: 'Embed Model Thumbnails',
-        recipeSaveModelPreviewSnapshotsHint: 'Embed small static thumbnails of the models directly into the recipe file. When you share this recipe, others will be able to see the model covers even if they don\'t have the models locally. (Videos are excluded to save space)',
         recipeDetailSavedSnapshot: 'Saved snapshot',
     }
 };

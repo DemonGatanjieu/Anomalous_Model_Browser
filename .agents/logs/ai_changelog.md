@@ -1067,3 +1067,20 @@
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
 - `node tests/recipe_parser_roundtrip.mjs`.
 - `git diff --check`.
+
+## [Snapshot] 2026-08-06 - Simplify presentation defaults and clarify notebook switching
+
+**Implemented**
+
+- Removed the per-recipe model-preview snapshot checkbox from the save dialog; the bounded sharing-friendly default is now internal, while legacy explicit `false` values remain compatible until a future Workflow Recipe global setting exists.
+- Added a prominent right-side active-notebook banner with the selected note name, timestamp, and current-state badge.
+- Added a short panel transition when switching parameter notebooks so the right pane visibly confirms the change.
+- Added request-token guards so a slow parameter-gallery response from the previous notebook cannot replace the newly selected notebook's gallery.
+- Updated `ARCHITECTURE.md` and `ai_lessons.md` with the simplified default and right-pane state contract.
+
+**Validation**
+
+- All 19 JavaScript files passed `node --check`.
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
+- `node tests/recipe_parser_roundtrip.mjs`.
+- Changed-file `git diff --check` passed; unrelated pre-existing `README.md` and untracked `LICENSE` were left untouched.

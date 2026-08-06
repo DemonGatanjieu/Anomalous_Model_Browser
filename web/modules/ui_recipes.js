@@ -13,6 +13,9 @@ import {
 } from './ui_recipe_detail.js';
 
 const t = (key, params) => translate(key, params);
+const RECIPE_PRESENTATION_DEFAULTS = Object.freeze({
+    saveModelPreviewSnapshots: true,
+});
 
 function formatRecipeText(key, values = {}) {
     return Object.entries(values).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, String(value)), t(key));
@@ -343,7 +346,8 @@ function showRecipeSaveDialog(owner, canvasThumbnail, initial = null) {
             // A saved snapshot is what makes the cover portable in an export.
             // Preserve an explicit opt-out, but enable the sharing-oriented
             // behavior for new and legacy recipes without a stored preference.
-            saveModelPreviewSnapshots: initial?.presentation?.save_model_preview_snapshots !== false,
+            saveModelPreviewSnapshots: initial?.presentation?.save_model_preview_snapshots
+                ?? RECIPE_PRESENTATION_DEFAULTS.saveModelPreviewSnapshots,
         };
         const overlay = document.createElement('div');
         overlay.className = 'anomalous-recipe-dialog-overlay';
@@ -438,20 +442,6 @@ function showRecipeSaveDialog(owner, canvasThumbnail, initial = null) {
         const recentStatus = appendText(coverSection, 'small', t('recipeLoadingRecentImages'), 'anomalous-recipe-node-hint');
         coverSection.append(coverChoices, coverPreview);
         dialog.appendChild(coverSection);
-
-        const previewSnapshots = document.createElement('label');
-        previewSnapshots.className = 'anomalous-recipe-pin-choice';
-        const previewSnapshotsCheckbox = document.createElement('input');
-        previewSnapshotsCheckbox.type = 'checkbox';
-        previewSnapshotsCheckbox.checked = selection.saveModelPreviewSnapshots;
-        previewSnapshotsCheckbox.onchange = () => {
-            selection.saveModelPreviewSnapshots = previewSnapshotsCheckbox.checked;
-        };
-        const previewSnapshotCopy = document.createElement('span');
-        appendText(previewSnapshotCopy, 'strong', t('recipeSaveModelPreviewSnapshots'));
-        appendText(previewSnapshotCopy, 'small', t('recipeSaveModelPreviewSnapshotsHint'), 'anomalous-recipe-node-hint');
-        previewSnapshots.append(previewSnapshotsCheckbox, previewSnapshotCopy);
-        dialog.appendChild(previewSnapshots);
 
         fetch('/anomalous/gallery_images?page=1&limit=12')
             .then((response) => response.ok ? response.json() : Promise.reject(new Error('image list failed')))

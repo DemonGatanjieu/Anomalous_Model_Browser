@@ -1468,8 +1468,26 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     const selectedNotebook = parameterState?.notebooks?.find((item) => item.filename === parameterState.selectedFilename);
     const baseSource = selectedNotebook?.data?.workflow ? selectedNotebook.data : recipe;
     const source = parameterState?.editor?.draft || baseSource;
+    const animateSelection = Boolean(parameterState?.switchToken);
+    if (animateSelection) parameterState.switchToken = 0;
     const wrapper = document.createElement('div');
-    wrapper.className = 'anomalous-recipe-detail-parameters';
+    wrapper.className = `anomalous-recipe-detail-parameters${animateSelection ? ' is-switching' : ''}`;
+
+    const selectionBanner = document.createElement('section');
+    selectionBanner.className = 'anomalous-recipe-parameter-selection-banner';
+    selectionBanner.setAttribute('aria-live', 'polite');
+    const selectionCopy = document.createElement('div');
+    selectionCopy.className = 'anomalous-recipe-parameter-selection-copy';
+    appendText(selectionCopy, 'small', t('recipeParameterShowing'), 'anomalous-recipe-detail-muted');
+    appendText(
+        selectionCopy,
+        'strong',
+        parameterState?.editor?.name || selectedNotebook?.name || t('recipeParameterCurrentRecipe'),
+    );
+    if (selectedNotebook?.timestamp) appendText(selectionCopy, 'small', dateText(selectedNotebook.timestamp), 'anomalous-recipe-detail-muted');
+    appendText(selectionBanner, 'span', t('recipeParameterActive'), 'anomalous-recipe-parameter-selection-badge');
+    selectionBanner.prepend(selectionCopy);
+    wrapper.appendChild(selectionBanner);
 
     const layout = document.createElement('div');
     layout.className = 'anomalous-recipe-parameter-notebook-layout';
@@ -1559,6 +1577,7 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 item.classList.add('is-switching');
                 parameterState.editor = null;
                 parameterState.selectedFilename = notebook.filename;
+                parameterState.switchToken = (parameterState.switchToken || 0) + 1;
                 gallery.status = 'idle';
                 gallery.images = [];
                 gallery.scanned = 0;
@@ -2095,6 +2114,8 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         status: 'idle',
         notebooks: [],
         selectedFilename: null,
+        switchToken: 0,
+        parameterGalleryRequestId: 0,
         refresh: null,
     };
     const galleryTabLabel = () => gallery.status === 'ready'
@@ -2152,6 +2173,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     const refreshParameterGallery = async (force = false) => {
         if (parameterGallery.status === 'loading' || (!force && parameterGallery.status === 'ready')) return;
         parameterGallery.status = 'loading';
+        const requestId = ++parameterState.parameterGalleryRequestId;
         if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'parameters') selectTab('parameters');
         try {
             const selectedFilename = parameterState.selectedFilename;
@@ -2162,10 +2184,12 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
             if (!response.ok) throw new Error('recipe parameter gallery request failed');
             const payload = await response.json();
             if (payload.status !== 'success') throw new Error('recipe parameter gallery response failed');
+            if (requestId !== parameterState.parameterGalleryRequestId || selectedFilename !== parameterState.selectedFilename) return;
             parameterGallery.images = Array.isArray(payload.images) ? payload.images : [];
             parameterGallery.scanned = Number(payload.scanned) || 0;
             parameterGallery.status = 'ready';
         } catch (error) {
+            if (requestId !== parameterState.parameterGalleryRequestId) return;
             console.error('Could not load recipe parameter gallery:', error);
             parameterGallery.status = 'error';
         }

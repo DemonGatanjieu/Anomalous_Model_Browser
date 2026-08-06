@@ -552,3 +552,9 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: A recipe export can include model-preview snapshots only when those snapshots already exist in the saved recipe. Leaving the save-time packaging option unchecked by default makes the later export choice appear to do nothing.
 
 **The Practice**: Enable sharing-oriented presentation assets by default when creating a recipe or editing one with no stored preference. Preserve an explicit `false` as a user opt-out, and keep export-time inclusion as a separate choice so package size remains under the user's control.
+
+## 84. A two-pane history switch needs right-pane confirmation
+
+**The Problem**: A selected-state color change in the left notebook list is easy to miss, especially when two notes contain similar values. A slow gallery request can also make the right pane show data from the previous selection.
+
+**The Practice**: Repeat the active note's name and timestamp in the content pane, animate that pane only for a real selection change, and guard asynchronous gallery results with the selected-note identity plus a request token.
