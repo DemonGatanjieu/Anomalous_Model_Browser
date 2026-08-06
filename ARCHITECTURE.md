@@ -64,6 +64,8 @@ The fifth migration snapshot applies the contract to `web/modules/ui_sidebar.js`
 
 Licensing and community-delivery work are intentionally deferred. The current local MIT `LICENSE` change is owned by the user's separate Gemini workflow and is not part of the i18n snapshots. Russian localization begins only after the contributor submits a PR. Remote pushes and Issue #9 synchronization remain disabled until the user explicitly authorizes them after other feature work is complete.
 
+The sixth migration snapshot completes the Stage 2 UI i18n pass for `ui_recipes.js`, `ui_recipe_detail.js`, the supporting Recipe modules, and `web/hash_resolver.js`. Recipe modules now use the shared `translate` contract rather than importing the dictionary directly; the hash resolver uses the same contract for its manual repair summary with a dynamic repaired-count parameter. Recipe workflow/model data remains runtime data and is not added to locale dictionaries.
+
 ## 2. Directory Structure (核心文件结构)
 
 ```text

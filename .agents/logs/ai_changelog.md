@@ -1,5 +1,27 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-06 - Complete Recipe and hash resolver i18n migration
+
+**Implemented**
+
+- Migrated `web/modules/ui_recipes.js` and `web/modules/ui_recipe_detail.js` from direct dictionary access to the shared `translate` contract.
+- Verified the supporting Recipe modules already use the shared translation keys and included them in coverage checks.
+- Migrated `web/hash_resolver.js` manual repair feedback to `hashResolverFixed` with `{count}` interpolation.
+- Added the missing Chinese `recipeDialogNo` translation key required by Recipe package export confirmation.
+
+**Validation**
+
+- JavaScript syntax checks passed for every file under `web/`.
+- Recipe/hash translator coverage passed for 185 static keys in both `zh` and `en`.
+- Hash repair count interpolation passed.
+- `node tests/recipe_parser_roundtrip.mjs` passed.
+- Python compilation passed for every `api/*.py` module and `scraper.py` using the bundled Python runtime.
+- Targeted `git diff --check` passed; the existing user change in `README.md` was kept outside this snapshot.
+
+**Next**
+
+- Stage 2 i18n migration is complete. MIT licensing, Russian localization, final ComfyUI validation, and remote delivery remain explicitly deferred.
+
 ## [Decision] 2026-08-06 - Defer license, Russian PR, and remote delivery
 
 **Decision**

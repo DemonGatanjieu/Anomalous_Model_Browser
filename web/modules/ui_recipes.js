@@ -1,7 +1,7 @@
 /** Workflow Recipes UI, built on the same modal/card language as Notebooks. */
 
 import { app } from '../../../scripts/app.js';
-import {  i18n  } from './locales.js';
+import { translate } from './locales.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import {
     captureCanvasThumbnail,
@@ -12,11 +12,7 @@ import {
     showRecipeDetail,
 } from './ui_recipe_detail.js';
 
-const t = (key) => {
-    let lang = window.anomalous_browser_lang || 'zh';
-    if (lang.startsWith('en')) lang = 'en';
-    return i18n[lang]?.[key] || i18n.en?.[key] || key;
-};
+const t = (key, params) => translate(key, params);
 
 function formatRecipeText(key, values = {}) {
     return Object.entries(values).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, String(value)), t(key));

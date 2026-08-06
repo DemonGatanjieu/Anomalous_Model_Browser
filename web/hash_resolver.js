@@ -1,4 +1,5 @@
 import { app } from "../../scripts/app.js";
+import { translate } from './modules/locales.js';
 
 // Global cache for hashes: filename -> hash
 window.anomalous_hash_cache = window.anomalous_hash_cache || {};
@@ -286,16 +287,8 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
     }
 
     if (is_manual && !silent) {
-        // Detect current UI language (Default to 'zh' if not set)
-        // 获取当前界面语言（未设置时默认使用中文）
-        const lang = (window.anomalous_browser_lang === 'en') ? 'en' : 'zh';
-
         if (fixed_count > 0) {
-            if (lang === 'en') {
-                alert(`🪄 Anomalous successfully fixed ${fixed_count} missing model(s)!\n\n💡 Tip: ComfyUI V1 caches errors heavily. Please manually click the [Refresh] button in the "Workflow Overview" side panel, or refresh your browser (F5) to prevent them from turning red again on workflow switch.`);
-            } else {
-                alert(`🪄 Anomalous 成功修复了 ${fixed_count} 个缺失的模型！\n\n💡 提示：ComfyUI V1 对报错的缓存极深。请务必手动点击侧边栏【工作流总览】中的【刷新】按钮，或者直接按 F5 刷新浏览器，否则切换工作流时节点可能会再次变红。`);
-            }
+            alert(translate('hashResolverFixed', { count: fixed_count }));
         }
     }
 };

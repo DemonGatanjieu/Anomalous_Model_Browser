@@ -1,5 +1,5 @@
 import { app } from '../../../scripts/app.js';
-import {  i18n  } from './locales.js';
+import { translate } from './locales.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import {
     deriveRecipeModelReferences,
@@ -17,11 +17,7 @@ import {
 import { applyRecipeWidgetChanges } from './recipe_parser.js';
 import { captureRecipeDraft } from './recipe_parser.js';
 
-const t = (key) => {
-    let lang = window.anomalous_browser_lang || 'zh';
-    if (lang.startsWith('en')) lang = 'en';
-    return i18n[lang]?.[key] || i18n.en?.[key] || key;
-};
+const t = (key, params) => translate(key, params);
 
 function appendText(parent, tagName, text, className = '') {
     const element = document.createElement(tagName);
