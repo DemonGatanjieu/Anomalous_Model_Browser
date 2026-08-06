@@ -19,6 +19,7 @@
 - **Sidebar Button Refactor**: Restructured the layout of the "Parameter Snapshots" sidebar. Moved the "New Snapshot" and "Read Current" buttons into a dedicated, vertically-stacked action block below the title. Converted the bulky "Refresh" text button into a sleek `↻` icon button aligned to the right of the section title, drastically improving the visual hierarchy.
 - **Recipe Detail Top Bar Removal**: Addressed UX confusion where action buttons (Match Models, Append to Canvas, Edit) remained visible even when switching to unrelated tabs like Parameter Notebook. Completely removed the persistent top bar (`.anomalous-recipe-detail-header`). Integrated the "Back" button seamlessly into the tab navigation bar as the first element (`← 返回...`), and relocated all recipe-level action buttons directly into the Hero section of the "Overview" tab. This eliminates duplicate title display and ensures context-specific actions only appear where relevant.
 - **Critical UI Crash Fix**: Fixed a silent `SyntaxError` (Identifier has already been declared) introduced during the top bar refactor, which caused the entire frontend module to fail and the main plugin icon to disappear. Renamed conflicting block-scoped variables in `renderOverview`.
+- **Parameter Collapse Overlay Removal**: Removed the aggressive "collapse if > 4 widgets" behavior (`▼` button overlay) from parameter nodes in both read-only and edit modes, as it was visually overlapping with parameter values like `steps` and causing UX annoyance.
 
 **Validation**
 

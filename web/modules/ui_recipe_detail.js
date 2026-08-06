@@ -1510,20 +1510,7 @@ function renderParameterNotebookEditor(wrapper, owner, recipe, parameterState, s
         }
         if (widgetsContainer.childElementCount) {
             block.appendChild(widgetsContainer);
-            if (widgetsContainer.childElementCount > 4) {
-                block.classList.add('is-collapsed');
-                const expandOverlay = document.createElement('div');
-                expandOverlay.className = 'anomalous-recipe-detail-node-expand';
-                const expandBtn = document.createElement('button');
-                expandBtn.className = 'anomalous-btn-ghost';
-                expandBtn.innerHTML = '▼';
-                expandBtn.onclick = () => {
-                    block.classList.remove('is-collapsed');
-                    expandOverlay.remove();
-                };
-                expandOverlay.appendChild(expandBtn);
-                block.appendChild(expandOverlay);
-            }
+
             nodeList.appendChild(block);
         }
     }
@@ -1815,20 +1802,7 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         }
         if (widgetsContainer.childElementCount) {
             block.appendChild(widgetsContainer);
-            if (widgetsContainer.childElementCount > 4) {
-                block.classList.add('is-collapsed');
-                const expandOverlay = document.createElement('div');
-                expandOverlay.className = 'anomalous-recipe-detail-node-expand';
-                const expandBtn = document.createElement('button');
-                expandBtn.className = 'anomalous-btn-ghost';
-                expandBtn.innerHTML = '▼';
-                expandBtn.onclick = () => {
-                    block.classList.remove('is-collapsed');
-                    expandOverlay.remove();
-                };
-                expandOverlay.appendChild(expandBtn);
-                block.appendChild(expandOverlay);
-            }
+
             nodeList.appendChild(block);
         }
     }
