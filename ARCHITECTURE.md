@@ -62,6 +62,8 @@ The fourth migration snapshot applies the contract to `web/main.js` for prefligh
 
 The fifth migration snapshot applies the contract to `web/modules/ui_sidebar.js`. Sidebar navigation, scan wizard cards, metadata/hash scan controls, model settings, language-toggle refreshes, layout controls, and folder management now resolve user-facing copy through `translate`. Wizard descriptions that intentionally contain trusted formatting remain dictionary-owned rich text; dynamic file names, counts, API errors, and folder data remain runtime values. Locale checks used only for the language CSS class and toggle direction remain functional state logic rather than inline UI copy.
 
+Licensing and community-delivery work are intentionally deferred. The current local MIT `LICENSE` change is owned by the user's separate Gemini workflow and is not part of the i18n snapshots. Russian localization begins only after the contributor submits a PR. Remote pushes and Issue #9 synchronization remain disabled until the user explicitly authorizes them after other feature work is complete.
+
 ## 2. Directory Structure (核心文件结构)
 
 ```text

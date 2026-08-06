@@ -1,5 +1,14 @@
 # AI Changelog
 
+## [Decision] 2026-08-06 - Defer license, Russian PR, and remote delivery
+
+**Decision**
+
+- MIT licensing work is deferred to the user's separate Gemini workflow; the existing local `LICENSE` remains untouched and uncommitted by this task.
+- Russian localization is deferred until the contributor submits the promised PR.
+- Remote pushes, Issue #9 synchronization, and community delivery are deferred until the user explicitly authorizes them after feature work is complete.
+- Local work continues only on the remaining Recipe and `hash_resolver.js` i18n migration, using the existing snapshot discipline.
+
 ## [Snapshot] 2026-08-06 - Migrate sidebar, scan wizard, settings, and folder manager i18n
 
 **Implemented**
