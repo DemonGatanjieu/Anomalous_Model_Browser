@@ -1699,9 +1699,11 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 recipe_parameter_widget_mismatch: 'recipeParameterWidgetMismatch',
                 recipe_parameter_node_unavailable: 'recipeParameterNodeUnavailable',
             }[error.code];
+            const errorMessage = error.message || String(error);
             applyStatus.textContent = detailKey
-                ? `${t(detailKey)} ${error.message || ''}`.trim()
-                : t('recipeParameterApplyError');
+                ? `${t(detailKey)} ${errorMessage}`.trim()
+                : `${t('recipeParameterApplyError')} ${errorMessage}`.trim();
+            applyStatus.title = errorMessage;
         } finally {
             applyButton.disabled = false;
             applyButton.classList.remove('is-busy');

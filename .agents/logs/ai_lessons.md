@@ -564,3 +564,9 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: Parameter application matched against `graph.serialize()` correctly, then tried to read `widgets` and invoke callbacks on those serialized records. Serialized nodes generally contain `widgets_values`, not runtime widget objects, so every ordinary parameter could be reported as missing even when the canvas skeleton was complete.
 
 **The Practice**: Use serialized data only for bounded identity and skeleton matching. Resolve each matched ID through the live graph before reading `node.widgets`, assigning values, or invoking widget/node callbacks; report the specific node or widget boundary when the live structure is incompatible.
+
+## 86. Parameter apply must tolerate optional widget values and hooks
+
+**The Problem**: A serialized workflow may contain `undefined` widget slots, and third-party nodes may expose optional callback properties that are absent or non-callable. Unchecked cloning or optional-call syntax can fail before the transaction reports a useful reason.
+
+**The Practice**: Preserve `undefined` safely, verify callback types explicitly, and surface unknown local errors in the apply status while retaining the rollback boundary.

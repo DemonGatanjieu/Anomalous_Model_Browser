@@ -1141,3 +1141,18 @@
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
 - `node tests/recipe_parser_roundtrip.mjs`.
 - Changed-file `git diff --check` passed.
+
+## [Snapshot] 2026-08-06 - Harden parameter apply diagnostics
+
+**Implemented**
+
+- Safe-cloned `undefined` widget slots instead of throwing before the transactional apply phase.
+- Guarded widget and node callbacks by function type so optional or non-callable custom-node properties cannot abort a valid parameter update.
+- Unknown apply exceptions now include their concrete local error message in the status feedback and tooltip.
+
+**Validation**
+
+- All 19 JavaScript files passed `node --check`.
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
+- `node tests/recipe_parser_roundtrip.mjs`.
+- Changed-file `git diff --check` passed.

@@ -1,6 +1,7 @@
 import { app } from '../../../scripts/app.js';
 
 function cloneJson(value) {
+    if (value === undefined) return undefined;
     return JSON.parse(JSON.stringify(value));
 }
 
@@ -121,8 +122,12 @@ export function applyRecipeParametersToCanvas(source) {
         for (const change of changes) {
             change.targetWidget.value = cloneJson(change.value);
             if (Array.isArray(change.target.widgets_values)) change.target.widgets_values[change.index] = cloneJson(change.value);
-            change.targetWidget.callback?.(change.targetWidget.value, app.canvas, change.target);
-            change.target.onWidgetChanged?.(change.index, change.targetWidget.value);
+            if (typeof change.targetWidget.callback === 'function') {
+                change.targetWidget.callback.call(change.targetWidget, change.targetWidget.value, app.canvas, change.target);
+            }
+            if (typeof change.target.onWidgetChanged === 'function') {
+                change.target.onWidgetChanged(change.index, change.targetWidget.value);
+            }
         }
         graph.change?.();
         graph.setDirtyCanvas?.(true, true);
