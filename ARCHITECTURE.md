@@ -60,6 +60,8 @@ The third migration snapshot extends the same contract to `ui_detail.js`, `ui_do
 
 The fourth migration snapshot applies the contract to `web/main.js` for preflight workflow import and workflow share-code export/import. These modal surfaces use shared keys for labels, status messages, and count interpolation; the remaining locale conditional in `translateText` only maps the active locale to the backend service's `zh-CN` or `en` code and is not a UI copy branch. `ui_sidebar.js` remains a separate pending snapshot because its scan wizard, settings hub, language toggle, and folder manager require their own key extraction review.
 
+The fifth migration snapshot applies the contract to `web/modules/ui_sidebar.js`. Sidebar navigation, scan wizard cards, metadata/hash scan controls, model settings, language-toggle refreshes, layout controls, and folder management now resolve user-facing copy through `translate`. Wizard descriptions that intentionally contain trusted formatting remain dictionary-owned rich text; dynamic file names, counts, API errors, and folder data remain runtime values. Locale checks used only for the language CSS class and toggle direction remain functional state logic rather than inline UI copy.
+
 ## 2. Directory Structure (核心文件结构)
 
 ```text

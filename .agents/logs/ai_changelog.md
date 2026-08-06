@@ -1,5 +1,26 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-06 - Migrate sidebar, scan wizard, settings, and folder manager i18n
+
+**Implemented**
+
+- Migrated `web/modules/ui_sidebar.js` to the shared translator.
+- Extracted navigation titles, scan wizard choices/descriptions, metadata/hash controls, model-card settings, language-toggle refresh labels, layout controls, and folder-manager copy into the locale dictionaries.
+- Converted wizard/list helpers to key-based translation calls and preserved trusted rich-text descriptions as dictionary-owned content.
+- Kept dynamic model filenames, selection counts, API error messages, folder data, and scan status values as runtime data with parameter interpolation or text content.
+
+**Validation**
+
+- JavaScript syntax checks passed for every file under `web/`.
+- Sidebar translator coverage passed for 83 static keys in both `zh` and `en`, including count and filename interpolation.
+- `node tests/recipe_parser_roundtrip.mjs` passed.
+- Python compilation passed for every `api/*.py` module and `scraper.py` using the bundled Python runtime.
+- Targeted `git diff --check` passed; the existing user change in `README.md` was kept outside this snapshot.
+
+**Next**
+
+- Migrate the Recipe-related modules and `hash_resolver.js` as the final Stage 2 language batch; Russian locale and MIT licensing remain separate later stages.
+
 ## [Snapshot] 2026-08-06 - Migrate main workflow import and share-code i18n
 
 **Implemented**
