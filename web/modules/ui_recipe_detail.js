@@ -1313,7 +1313,7 @@ function renderParameterField(parent, label, value, options = {}) {
     const row = document.createElement('div');
     row.className = 'anomalous-recipe-detail-parameter-row';
     const text = displayValue(value);
-    if (options.wide || Array.isArray(value) || typeof value === 'object' || text.length > 50) {
+    if (options.wide || Array.isArray(value) || typeof value === 'object' || text.length > 35) {
         row.classList.add('is-wide');
     }
     appendText(row, 'span', label, 'anomalous-recipe-detail-label');
