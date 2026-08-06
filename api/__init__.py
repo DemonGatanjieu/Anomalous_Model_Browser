@@ -28,6 +28,7 @@ def setup_routes(app):
 
     # Parameter Routes
     app.router.add_get('/anomalous/parameters', api_get_parameters)
+    app.router.add_get('/anomalous/parameters/by_node_type', api_get_parameters_by_type)
     app.router.add_post('/anomalous/save_parameter', api_save_parameter)
     app.router.add_post('/anomalous/delete_parameter', api_delete_parameter)
     app.router.add_get('/anomalous/parameter_gallery', api_get_parameter_gallery)

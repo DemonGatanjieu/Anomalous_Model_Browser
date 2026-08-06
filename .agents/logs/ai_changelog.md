@@ -1,5 +1,21 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-07 - Node Assistant and Parameter Notebook Integration
+
+**Implemented**
+
+- **Auto-Filtering by Node Type**: Extended `api/parameters.py` with `/anomalous/parameters/by_node_type` to parse parameter notebooks across all recipes and return node values filtered precisely by the requested node `type`.
+- **In-Memory Caching**: Added a lightweight 2-second in-memory cache to the parameter endpoint to optimize consecutive UI interactions without slamming the disk.
+- **Hierarchical Node Assistant Integration**: Updated `ui_doctor.js` to render contextual parameter presets whenever a specific node is selected. Parameters are neatly grouped by Recipe -> Notebook -> Parameter Summary.
+- **One-Click Local Application**: Implemented `applyLocalNodeParameters` in `ui_doctor.js`, allowing users to safely overlay specific notebook parameters onto a single active node while preserving other canvas components and invoking appropriate ComfyUI widget callbacks.
+- **Logic Guidelines**: Created the `parameter_notebook_integration_guide.md` guideline document outlining the newly merged subsystem architecture and troubleshooting steps.
+
+**Validation**
+
+- Parameter fetching is fast and correctly matches the node type.
+- Tree UI properly defaults to a collapsed state for inactive recipes.
+- Target widgets receive correctly injected values and UI update callbacks without crashing.
+
 ## [Snapshot] 2026-08-06 - Parameter Notebook UI Redesign & Hero Gallery
 
 **Implemented**

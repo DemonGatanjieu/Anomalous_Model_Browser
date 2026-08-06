@@ -46,6 +46,77 @@ async def api_get_parameters(request):
     return web.json_response({"notebooks": notebooks})
 
 
+_parameter_notebooks_cache = None
+_parameter_notebooks_cache_time = 0
+
+def _get_all_notebooks_cached(parameters_dir):
+    global _parameter_notebooks_cache, _parameter_notebooks_cache_time
+    # Cache for 2 seconds to prevent rapid disk I/O on UI interactions
+    if _parameter_notebooks_cache is not None and time.time() - _parameter_notebooks_cache_time < 2.0:
+        return _parameter_notebooks_cache
+    notebooks = _read_parameter_notebooks(parameters_dir)
+    _parameter_notebooks_cache = notebooks
+    _parameter_notebooks_cache_time = time.time()
+    return notebooks
+
+async def api_get_parameters_by_type(request):
+    try:
+        node_type = request.query.get("type")
+        if not node_type:
+            raise ValueError("Missing node type")
+    except ValueError:
+        return web.json_response({"status": "error", "message": "Missing node type"}, status=400)
+    
+    parameters_dir = get_parameters_dir()
+    notebooks = await asyncio.to_thread(_get_all_notebooks_cached, parameters_dir)
+    
+    # Filter and extract node data
+    # Structure: [ { "recipe_filename": ..., "notebooks": [ { "name": ..., "nodes": [...] } ] } ]
+    
+    grouped = {}
+    for nb in notebooks:
+        workflow = nb.get("data", {}).get("workflow")
+        if not isinstance(workflow, dict):
+            continue
+            
+        nodes = workflow.get("nodes", [])
+        if not isinstance(nodes, list):
+            continue
+            
+        matched_nodes = []
+        for n in nodes:
+            if not isinstance(n, dict):
+                continue
+            if n.get("type") == node_type:
+                matched_nodes.append({
+                    "id": n.get("id"),
+                    "title": n.get("title") or n.get("type"),
+                    "widgets_values": n.get("widgets_values", [])
+                })
+        
+        if not matched_nodes:
+            continue
+            
+        recipe_fn = nb.get("data", {}).get("recipe_filename") or "unbound"
+        if recipe_fn not in grouped:
+            grouped[recipe_fn] = []
+            
+        grouped[recipe_fn].append({
+            "filename": nb.get("filename"),
+            "name": nb.get("name"),
+            "timestamp": nb.get("timestamp"),
+            "nodes": matched_nodes
+        })
+        
+    result = []
+    for r_fn, nbs in grouped.items():
+        result.append({
+            "recipe_filename": r_fn,
+            "notebooks": nbs
+        })
+        
+    return web.json_response({"groups": result})
+
 def _read_parameter_notebooks(parameters_dir, recipe_filename=None):
     notebooks = []
     try:

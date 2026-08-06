@@ -310,12 +310,12 @@ for (const w of node.widgets) {
         });
         nodeContent.appendChild(quickActions);
 
-for (const w of modelWidgets) {
+        renderParameterPresets.call(this, node, nodeContent);
+
+        for (const w of modelWidgets) {
             this.renderAssistantModelCard(node, w, nodeContent);
         }
     }
-
-
 
 export function renderGlobalDashboard() {
         const content = document.getElementById('anomalous-doctor-node-list');
@@ -1377,3 +1377,164 @@ if (!isHealthy) {
             content.appendChild(healthyMessage);
         }
     }
+
+export function applyLocalNodeParameters(targetNode, sourceWidgetValues) {
+    if (!targetNode || !targetNode.widgets || !Array.isArray(sourceWidgetValues)) return;
+    const previousValues = [];
+    
+    // Save previous values in case of error
+    for (let i = 0; i < targetNode.widgets.length; i++) {
+        previousValues.push(JSON.parse(JSON.stringify(targetNode.widgets[i].value !== undefined ? targetNode.widgets[i].value : null)));
+    }
+    
+    try {
+        app.graph.beforeChange?.();
+        for (let i = 0; i < sourceWidgetValues.length; i++) {
+            if (!targetNode.widgets[i]) continue;
+            
+            // Skip volatile widgets if we could detect them, but for now we just assign
+            const val = JSON.parse(JSON.stringify(sourceWidgetValues[i] !== undefined ? sourceWidgetValues[i] : null));
+            const prevVal = previousValues[i];
+            
+            targetNode.widgets[i].value = val;
+            if (Array.isArray(targetNode.widgets_values)) {
+                targetNode.widgets_values[i] = val;
+            }
+            
+            if (typeof targetNode.widgets[i].callback === 'function') {
+                targetNode.widgets[i].callback.call(targetNode.widgets[i], val, app.canvas, targetNode);
+            }
+            if (typeof targetNode.onWidgetChanged === 'function') {
+                targetNode.onWidgetChanged(i, val, prevVal, targetNode.widgets[i]);
+            }
+        }
+        app.graph.change?.();
+        app.graph.setDirtyCanvas?.(true, true);
+        app.canvas?.setDirty?.(true, true);
+    } catch (e) {
+        console.error("Error applying local node parameters:", e);
+        // Rollback
+        for (let i = 0; i < previousValues.length; i++) {
+            if (targetNode.widgets[i]) targetNode.widgets[i].value = previousValues[i];
+            if (Array.isArray(targetNode.widgets_values)) targetNode.widgets_values[i] = previousValues[i];
+        }
+    } finally {
+        app.graph.afterChange?.();
+    }
+}
+
+export function renderParameterPresets(node, container) {
+    if (!node || !node.type) return;
+
+    const presetSection = document.createElement('div');
+    presetSection.className = 'anomalous-assistant-parameter-presets';
+    presetSection.style.cssText = 'margin:14px 16px; display:flex; flex-direction:column; gap:8px;';
+    
+    const header = document.createElement('div');
+    header.style.cssText = 'color:#8b91a3;font-size:10px;font-weight:750;letter-spacing:0.1em;text-transform:uppercase;';
+    header.textContent = t('recipeParameterNotebooks') || 'Parameter Notebooks';
+    presetSection.appendChild(header);
+
+    const loader = document.createElement('div');
+    loader.style.cssText = 'font-size:12px; color:#555; text-align:center; padding:10px;';
+    loader.textContent = t('loading') || 'Loading...';
+    presetSection.appendChild(loader);
+
+    container.appendChild(presetSection);
+
+    // Debounce fetching
+    if (this._presetFetchTimer) clearTimeout(this._presetFetchTimer);
+    this._presetFetchTimer = setTimeout(async () => {
+        try {
+            const res = await fetch(`/anomalous/parameters/by_node_type?type=${encodeURIComponent(node.type)}`);
+            if (!res.ok) throw new Error('Network error');
+            const data = await res.json();
+            
+            loader.style.display = 'none';
+            
+            if (!data.groups || data.groups.length === 0) {
+                const empty = document.createElement('div');
+                empty.style.cssText = 'font-size:11px; color:#666; text-align:center; padding:10px; background:rgba(0,0,0,0.2); border-radius:8px; border:1px dashed rgba(255,255,255,0.1);';
+                empty.textContent = t('assistantNoPresets') || 'No presets found for this node type.';
+                presetSection.appendChild(empty);
+                return;
+            }
+
+            for (const group of data.groups) {
+                const recipeBox = document.createElement('div');
+                recipeBox.style.cssText = 'background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; overflow:hidden;';
+                
+                const recipeHeader = document.createElement('div');
+                recipeHeader.style.cssText = 'padding:10px 12px; font-size:12px; font-weight:bold; color:#c9d6ff; cursor:pointer; display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.2);';
+                recipeHeader.innerHTML = `<span>📁</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(group.recipe_filename === 'unbound' ? 'Unbound' : group.recipe_filename)}</span> <span>▼</span>`;
+                
+                const notebookList = document.createElement('div');
+                notebookList.style.cssText = 'display:flex; flex-direction:column; gap:6px; padding:8px;';
+                // By default expand unbound or first group
+                if (group.recipe_filename !== 'unbound' && data.groups.length > 1) {
+                    notebookList.style.display = 'none';
+                    recipeHeader.querySelector('span:last-child').textContent = '▶';
+                }
+
+                recipeHeader.onclick = () => {
+                    if (notebookList.style.display === 'none') {
+                        notebookList.style.display = 'flex';
+                        recipeHeader.querySelector('span:last-child').textContent = '▼';
+                    } else {
+                        notebookList.style.display = 'none';
+                        recipeHeader.querySelector('span:last-child').textContent = '▶';
+                    }
+                };
+                
+                for (const nb of group.notebooks) {
+                    const nbBox = document.createElement('div');
+                    nbBox.style.cssText = 'background:rgba(0,0,0,0.3); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:6px;';
+                    
+                    const nbTitle = document.createElement('div');
+                    nbTitle.style.cssText = 'font-size:11px; color:#aaa; font-weight:bold; display:flex; align-items:center; gap:6px;';
+                    nbTitle.innerHTML = `<span>📄</span> <span style="flex:1;">${escapeHtml(nb.name || 'Untitled')}</span>`;
+                    nbBox.appendChild(nbTitle);
+                    
+                    for (const n of nb.nodes) {
+                        const applyBtn = document.createElement('button');
+                        applyBtn.style.cssText = 'background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; padding:6px 10px; font-size:10px; cursor:pointer; text-align:left; transition:background 0.2s; display:flex; align-items:center; gap:6px;';
+                        
+                        // Show a brief summary of widgets if possible
+                        let summary = n.title;
+                        if (n.widgets_values && n.widgets_values.length > 0) {
+                            const val = String(n.widgets_values[0]);
+                            summary += ` (${val.length > 15 ? val.substring(0,15)+'...' : val})`;
+                        }
+                        
+                        applyBtn.innerHTML = `<span style="font-size:12px;">✨</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(summary)}</span>`;
+                        applyBtn.onmouseover = () => { applyBtn.style.background = 'rgba(25,118,210,0.4)'; };
+                        applyBtn.onmouseout = () => { applyBtn.style.background = 'rgba(255,255,255,0.05)'; };
+                        applyBtn.onclick = () => {
+                            applyBtn.innerHTML = '⏳...';
+                            setTimeout(() => {
+                                applyLocalNodeParameters(node, n.widgets_values);
+                                applyBtn.innerHTML = '✅ Applied';
+                                applyBtn.style.background = 'rgba(46,139,87,0.6)';
+                                setTimeout(() => {
+                                    applyBtn.innerHTML = `<span style="font-size:12px;">✨</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(summary)}</span>`;
+                                    applyBtn.style.background = 'rgba(255,255,255,0.05)';
+                                }, 1500);
+                            }, 50);
+                        };
+                        nbBox.appendChild(applyBtn);
+                    }
+                    
+                    notebookList.appendChild(nbBox);
+                }
+                
+                recipeBox.appendChild(recipeHeader);
+                recipeBox.appendChild(notebookList);
+                presetSection.appendChild(recipeBox);
+            }
+        } catch (e) {
+            console.error("Failed to load parameter presets", e);
+            loader.textContent = 'Error loading presets.';
+            loader.style.color = '#ff5252';
+        }
+    }, 300);
+}

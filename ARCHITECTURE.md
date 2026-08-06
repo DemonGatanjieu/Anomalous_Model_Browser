@@ -42,6 +42,12 @@ The Parameters tab keeps runtime-volatile values such as sampler seeds visible b
 
 Parameter Notebook actions include “Read current and create” and “Apply to current workflow”. Both use the same skeleton preflight: every saved node must have a matching local node by type/shape (with stable-ID/title preference), while extra local nodes are allowed. Read-current refuses to create a draft when the recipe skeleton is incomplete. Apply uses serialized nodes only for matching, then resolves each match back to the live ComfyUI node before reading `widgets` or invoking callbacks; serialized workflow records must never be treated as runtime widget objects. It validates all widget slots before mutation, skips volatile values, writes widget values inside `beforeChange`/`afterChange`, and calls `onWidgetChanged(index, value, previousValue, liveWidget)` so current ComfyUI error-clearing hooks receive the widget object they require. It marks the canvas dirty and restores prior widget values if a callback fails.
 
+## Node Assistant & Parameter Notebook Integration (2026-08-06)
+
+The Parameter Notebook system has been extended to act as a contextual preset library within the Node Assistant (`ui_doctor.js`). When a user selects a specific node (e.g., `KSampler`), the Node Assistant automatically queries the backend for all historical Parameter Notebooks across all recipes, filtering specifically for saved nodes that match the selected `type`. 
+
+The backend (`api/parameters.py`) implements a lightweight in-memory cache for notebook parsing to ensure instantaneous UI updates without heavy disk I/O. The filtered presets are rendered hierarchically (Recipe -> Notebook -> Parameter Summary). Applying a preset invokes `applyLocalNodeParameters`, which performs a targeted, single-node widget replacement while preserving the rest of the canvas and safely triggering all required ComfyUI widget callbacks.
+
 ## 1. Project Philosophy (设计理念)
 * **Zero Frameworks**: No React, Vue, or build tools. Everything is Vanilla JS and CSS for maximum compatibility, minimum overhead, and zero compilation steps.
 * **Non-Intrusive Integration**: Operates as a floating Gemini-style popover (`#anomalous-container`) mounted via ComfyUI's standard UI extension system. It avoids altering the native ComfyUI canvas except when explicit interaction is required. The floating trigger is mounted before browser panels are initialized and retries initialization on click, so a panel regression or missing optional browser API cannot hide the plugin entry point.
