@@ -16,6 +16,7 @@
 - **Gallery Viewer Close Fix**: Fixed a bug where the full-screen viewer would not disappear when closed. Removed a hardcoded `display: flex` override in CSS that forced the native `<dialog>` to remain visible even without the `open` attribute.
 - **Gallery Button Optimization**: Removed the explicit image count from the hero gallery button (e.g., `(2)`) and ensured the button always displays even if there is only 1 image. This aligns with a lazy-loading philosophy, as the modal DOM is only generated when clicked, saving initial render performance.
 - **Node Parameter Layout Fix**: Fixed an issue where moderate-length text values (like 39-character model filenames) were being aggressively squished and word-broken into a tiny box. Increased the base node widget grid column width from `200px` to `280px` (`.anomalous-recipe-detail-node-widgets`), and lowered the `.is-wide` full-width threshold from 50 characters to 35 characters.
+- **Sidebar Button Refactor**: Restructured the layout of the "Parameter Snapshots" sidebar. Moved the "New Snapshot" and "Read Current" buttons into a dedicated, vertically-stacked action block below the title. Converted the bulky "Refresh" text button into a sleek `↻` icon button aligned to the right of the section title, drastically improving the visual hierarchy.
 
 **Validation**
 

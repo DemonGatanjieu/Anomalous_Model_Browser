@@ -1522,10 +1522,30 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     layout.className = 'anomalous-recipe-parameter-notebook-layout';
     const sidebar = document.createElement('aside');
     sidebar.className = 'anomalous-recipe-parameter-notebook-sidebar';
+    
     const sidebarHeading = document.createElement('div');
     sidebarHeading.className = 'anomalous-recipe-detail-section-heading';
+    sidebarHeading.style.marginBottom = '12px';
+    sidebarHeading.style.alignItems = 'center';
+    sidebarHeading.style.display = 'flex';
     appendText(sidebarHeading, 'strong', t('recipeParameterSnapshots'));
-    const newSnapshot = button(sidebarHeading, t('recipeParameterNew'), 'anomalous-btn-primary');
+    
+    const refreshSnapshots = document.createElement('button');
+    refreshSnapshots.className = 'anomalous-btn-ghost';
+    refreshSnapshots.style.padding = '4px 8px';
+    refreshSnapshots.title = t('recipeParameterRefresh');
+    refreshSnapshots.innerHTML = '↻';
+    refreshSnapshots.onclick = () => { void parameterState.refresh?.(true); };
+    sidebarHeading.appendChild(refreshSnapshots);
+    sidebar.appendChild(sidebarHeading);
+    
+    const sidebarActions = document.createElement('div');
+    sidebarActions.className = 'anomalous-recipe-sidebar-actions';
+    sidebarActions.style.display = 'grid';
+    sidebarActions.style.gap = '8px';
+    sidebarActions.style.marginBottom = '12px';
+    
+    const newSnapshot = button(sidebarActions, t('recipeParameterNew'), 'anomalous-btn-primary');
     newSnapshot.onclick = () => {
         const draft = cloneJson({
             workflow: baseSource.workflow,
@@ -1542,8 +1562,7 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         gallery.scanned = 0;
         selectParameterTab?.();
     };
-    const readCurrent = button(sidebarHeading, t('recipeParameterReadCurrent'), 'anomalous-btn-success');
-    readCurrent.onclick = async () => {
+    const readCurrentHandler = async () => {
         readCurrent.disabled = true;
         readCurrent.classList.add('is-busy');
         const originalLabel = readCurrent.textContent;
@@ -1584,9 +1603,11 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
             readCurrent.textContent = originalLabel;
         }
     };
-    const refreshSnapshots = button(sidebarHeading, t('recipeParameterRefresh'), 'anomalous-btn-ghost');
-    refreshSnapshots.onclick = () => { void parameterState.refresh?.(true); };
-    sidebar.appendChild(sidebarHeading);
+    
+    const readCurrent = button(sidebarActions, t('recipeParameterReadCurrent'), 'anomalous-btn-success');
+    readCurrent.onclick = readCurrentHandler;
+    
+    sidebar.appendChild(sidebarActions);
     appendText(sidebar, 'small', t('recipeParameterSnapshotsHint'), 'anomalous-recipe-detail-muted');
     const snapshotList = document.createElement('div');
     snapshotList.className = 'anomalous-recipe-parameter-notebook-list';
