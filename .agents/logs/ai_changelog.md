@@ -1124,3 +1124,19 @@
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
 - `node tests/recipe_parser_roundtrip.mjs`.
 - Changed-file `git diff --check` passed; unrelated pre-existing `README.md` and untracked `LICENSE` were left untouched.
+
+## [Snapshot] 2026-08-06 - Apply parameter notes to live widgets
+
+**Implemented**
+
+- Fixed parameter-note application to resolve matched serialized nodes back to the current live ComfyUI nodes before reading or writing widget values.
+- Kept skeleton matching based on bounded serialized records, but no longer assumes those records contain runtime `widgets` or callback methods.
+- Added precise status feedback for widget mismatches and live-node resolution failures instead of reporting every failure as a generic apply error.
+- Updated `ARCHITECTURE.md` and `ai_lessons.md` with the serialized-vs-runtime node boundary.
+
+**Validation**
+
+- All 19 JavaScript files passed `node --check`.
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
+- `node tests/recipe_parser_roundtrip.mjs`.
+- Changed-file `git diff --check` passed.

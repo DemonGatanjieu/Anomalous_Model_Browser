@@ -558,3 +558,9 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: A selected-state color change in the left notebook list is easy to miss, especially when two notes contain similar values. A slow gallery request can also make the right pane show data from the previous selection.
 
 **The Practice**: Repeat the active note's name and timestamp in the content pane, animate that pane only for a real selection change, and guard asynchronous gallery results with the selected-note identity plus a request token.
+
+## 85. Serialized graph records are not live ComfyUI nodes
+
+**The Problem**: Parameter application matched against `graph.serialize()` correctly, then tried to read `widgets` and invoke callbacks on those serialized records. Serialized nodes generally contain `widgets_values`, not runtime widget objects, so every ordinary parameter could be reported as missing even when the canvas skeleton was complete.
+
+**The Practice**: Use serialized data only for bounded identity and skeleton matching. Resolve each matched ID through the live graph before reading `node.widgets`, assigning values, or invoking widget/node callbacks; report the specific node or widget boundary when the live structure is incompatible.

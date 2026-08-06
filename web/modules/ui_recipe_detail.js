@@ -1707,8 +1707,13 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
             applyStatus.textContent = t('recipeParameterApplied').replace('{count}', String(result.widgets));
         } catch (error) {
             console.error('Could not apply recipe parameter notebook:', error);
-            applyStatus.textContent = error.code === 'recipe_parameter_skeleton_mismatch'
-                ? t('recipeParameterSkeletonMismatch')
+            const detailKey = {
+                recipe_parameter_skeleton_mismatch: 'recipeParameterSkeletonMismatch',
+                recipe_parameter_widget_mismatch: 'recipeParameterWidgetMismatch',
+                recipe_parameter_node_unavailable: 'recipeParameterNodeUnavailable',
+            }[error.code];
+            applyStatus.textContent = detailKey
+                ? `${t(detailKey)} ${error.message || ''}`.trim()
                 : t('recipeParameterApplyError');
         } finally {
             applyButton.disabled = false;

@@ -22,6 +22,13 @@ function nodeTitle(node) {
     return String(node?.title || node?.properties?.['Node name for S&R'] || '').trim().toLowerCase();
 }
 
+function liveNodeById(graph, id) {
+    return graph?.getNodeById?.(id)
+        || graph?.getNodeById?.(Number(id))
+        || graph?._nodes?.find((node) => String(node?.id) === String(id))
+        || null;
+}
+
 function volatileWidget(node, widget, index) {
     const name = String(widget?.name || '').toLowerCase();
     if (/(^|[_\s-])(seed|noise_seed|random_seed|variation_seed|last_seed)([_\s-]|$)/i.test(name)) return true;
@@ -82,8 +89,17 @@ export function applyRecipeParametersToCanvas(source) {
     const sourceNodes = savedNodeRecords(sourceWorkflow);
     const changes = [];
     for (const sourceNode of sourceNodes) {
-        const target = skeleton.matches.get(String(sourceNode.id));
-        if (!target || !Array.isArray(sourceNode.widgets_values)) continue;
+        const targetRecord = skeleton.matches.get(String(sourceNode.id));
+        if (!targetRecord || !Array.isArray(sourceNode.widgets_values)) continue;
+        // `candidateWorkflow` is a serialized graph and intentionally has no
+        // live widget objects. Resolve the matched record back to ComfyUI's
+        // runtime node before reading callbacks or writing widget values.
+        const target = liveNodeById(graph, targetRecord.id);
+        if (!target) {
+            const error = new Error(`Could not resolve live node ${targetRecord.id} on ${nodeType(targetRecord)}`);
+            error.code = 'recipe_parameter_node_unavailable';
+            throw error;
+        }
         const targetWidgets = Array.isArray(target.widgets) ? target.widgets : [];
         for (let index = 0; index < sourceNode.widgets_values.length; index += 1) {
             if (volatileWidget(sourceNode, targetWidgets[index], index)) continue;
