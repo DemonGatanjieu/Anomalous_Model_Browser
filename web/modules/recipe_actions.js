@@ -109,14 +109,18 @@ export function applyRecipeParametersToCanvas(source) {
                 error.code = 'recipe_parameter_widget_mismatch';
                 throw error;
             }
-            changes.push({ sourceNode, target, targetWidget: targetWidgets[index], index, value: cloneJson(sourceNode.widgets_values[index]) });
+            changes.push({
+                sourceNode,
+                target,
+                targetWidget: targetWidgets[index],
+                index,
+                value: cloneJson(sourceNode.widgets_values[index]),
+                previousValue: cloneJson(targetWidgets[index].value),
+            });
         }
     }
 
-    const previous = changes.map((change) => ({
-        ...change,
-        previousValue: cloneJson(change.targetWidget.value),
-    }));
+    const previous = changes.map((change) => ({ ...change, previousValue: cloneJson(change.previousValue) }));
     graph.beforeChange?.();
     try {
         for (const change of changes) {
@@ -126,7 +130,15 @@ export function applyRecipeParametersToCanvas(source) {
                 change.targetWidget.callback.call(change.targetWidget, change.targetWidget.value, app.canvas, change.target);
             }
             if (typeof change.target.onWidgetChanged === 'function') {
-                change.target.onWidgetChanged(change.index, change.targetWidget.value);
+                // Current ComfyUI uses the fourth argument as the live widget
+                // for its error-clearing hooks. Omitting it makes those hooks
+                // evaluate `sourceNodeId in undefined`.
+                change.target.onWidgetChanged(
+                    change.index,
+                    change.targetWidget.value,
+                    change.previousValue,
+                    change.targetWidget,
+                );
             }
         }
         graph.change?.();

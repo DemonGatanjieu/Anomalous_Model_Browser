@@ -570,3 +570,9 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: A serialized workflow may contain `undefined` widget slots, and third-party nodes may expose optional callback properties that are absent or non-callable. Unchecked cloning or optional-call syntax can fail before the transaction reports a useful reason.
 
 **The Practice**: Preserve `undefined` safely, verify callback types explicitly, and surface unknown local errors in the apply status while retaining the rollback boundary.
+
+## 87. Match host callback signatures before invoking node hooks
+
+**The Problem**: ComfyUI's frontend wraps `onWidgetChanged` to clear node errors and expects the live widget object in the fourth argument. Calling it with only an index and value made the host inspect `sourceNodeId` on `undefined` and abort an otherwise valid parameter update.
+
+**The Practice**: Inspect the active host frontend's callback wrapper, pass the complete host-compatible argument shape, and keep the live widget object available for host-side validation and error cleanup.

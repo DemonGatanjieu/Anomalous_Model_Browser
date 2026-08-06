@@ -1156,3 +1156,19 @@
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
 - `node tests/recipe_parser_roundtrip.mjs`.
 - Changed-file `git diff --check` passed.
+
+## [Snapshot] 2026-08-06 - Match ComfyUI widget-change callback signature
+
+**Implemented**
+
+- Fixed the `onWidgetChanged` invocation used during parameter application.
+- The current ComfyUI frontend expects the live widget as the fourth argument; omitting it caused its error-clearing hook to evaluate `sourceNodeId in undefined` and abort the transaction.
+- Parameter changes now pass `(index, value, previousValue, liveWidget)` while retaining the existing rollback behavior.
+- Synchronized the callback contract in `ARCHITECTURE.md` and `ai_lessons.md`.
+
+**Validation**
+
+- All 19 JavaScript files passed `node --check`.
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
+- `node tests/recipe_parser_roundtrip.mjs`.
+- Changed-file `git diff --check` passed.
