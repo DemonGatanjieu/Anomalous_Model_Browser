@@ -1739,7 +1739,6 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
             const volatile = isVolatileParameter(node, widget, index);
             if (renderParameterField(widgetsContainer, label, volatile ? 0 : value, {
                 redact: volatile,
-                copy: false,
                 collapse: false,
             })) renderedWidgets += 1;
         }
