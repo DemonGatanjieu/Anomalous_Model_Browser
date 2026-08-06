@@ -1469,7 +1469,13 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     const baseSource = selectedNotebook?.data?.workflow ? selectedNotebook.data : recipe;
     const source = parameterState?.editor?.draft || baseSource;
     const animateSelection = Boolean(parameterState?.switchToken);
-    if (animateSelection) parameterState.switchToken = 0;
+    if (animateSelection && !parameterState.switchTokenClearing) {
+        parameterState.switchTokenClearing = true;
+        Promise.resolve().then(() => {
+            parameterState.switchToken = 0;
+            parameterState.switchTokenClearing = false;
+        });
+    }
     const wrapper = document.createElement('div');
     wrapper.className = `anomalous-recipe-detail-parameters${animateSelection ? ' is-switching' : ''}`;
 
@@ -1653,6 +1659,15 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     appendText(summary, 'h5', t('recipeDetailParameterSummary'));
     const summaryGrid = document.createElement('div');
     summaryGrid.className = 'anomalous-recipe-detail-summary-grid';
+    let formattedLoras = params.loras;
+    if (Array.isArray(params.loras) && params.loras.length > 0) {
+        formattedLoras = params.loras.map(lora => 
+            typeof lora === 'object' && lora !== null 
+                ? `• ${lora.name || 'Unknown'}\n  (Model: ${lora.strength_model ?? 1}, CLIP: ${lora.strength_clip ?? 1})` 
+                : String(lora)
+        ).join('\n\n');
+    }
+
     const scalarFields = [
         ['recipeDetailSampler', params.sampler_name || params.samplers, {}],
         ['recipeDetailScheduler', params.scheduler, {}],
@@ -1662,7 +1677,7 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         ['recipeDetailSeed', params.seed ?? 0, { redact: true, copy: false }],
         ['recipeDetailResolution', params.resolution, { wide: true }],
         ['recipeDetailBaseModel', params.baseModel || params.baseModels, { wide: true }],
-        ['recipeDetailLoraSummary', params.loras, { wide: true }],
+        ['recipeDetailLoraSummary', formattedLoras, { wide: true }],
     ];
     for (const [labelKey, value, options] of scalarFields) renderParameterField(summaryGrid, t(labelKey), value, { ...options, collapse: false });
     if (summaryGrid.childElementCount) summary.appendChild(summaryGrid);

@@ -116,3 +116,16 @@ cd custom_nodes
 git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
 ```
 > **注意**：克隆完成后，重启 ComfyUI 即可。您也可以直接在 ComfyUI Manager（管理器）中搜索 `Anomalous Model Browser` 并一键点击安装！
+
+---
+
+### 📝 License & Branding (开源与品牌声明)
+
+**Code License (代码授权)**
+The source code of this project is released under the [MIT License](LICENSE). You are free to use, modify, and distribute the code.
+本项目的源代码基于 MIT 许可证开源，您可以自由地使用、修改和分发代码。
+
+**Branding & Trademarks (品牌与商标保护)**
+The name **"Anomalous Model Browser"**, the project logo, and official UI assets are proprietary to the original author. 
+If you choose to fork, modify, and distribute a customized version of this extension, you **MUST** rename your project and change the logo to avoid confusing users with the official release. You may not distribute modified versions under the official name.
+“Anomalous Model Browser” 的名称、项目 Logo 以及官方发布的 UI 资产归原作者所有。如果您修改了本插件并对外分发，您**必须**更改项目名称和 Logo，以免误导用户。您不得以官方名义分发修改后的版本。

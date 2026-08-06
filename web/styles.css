@@ -2929,3 +2929,35 @@
     border-color: rgba(255, 255, 255, 0.25);
     transform: translateY(-1px);
 }
+
+@keyframes anomalous-parameter-switch {
+    0% {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.anomalous-recipe-detail-parameters.is-switching {
+    animation: anomalous-parameter-switch 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}
+
+.anomalous-recipe-detail-parameters.is-switching .anomalous-recipe-detail-section:nth-child(1) {
+    animation: anomalous-parameter-switch 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) 0.03s both;
+}
+.anomalous-recipe-detail-parameters.is-switching .anomalous-recipe-detail-section:nth-child(2) {
+    animation: anomalous-parameter-switch 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) 0.08s both;
+}
+.anomalous-recipe-detail-parameters.is-switching .anomalous-recipe-detail-section:nth-child(3) {
+    animation: anomalous-parameter-switch 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) 0.13s both;
+}
+.anomalous-recipe-detail-parameters.is-switching .anomalous-recipe-detail-section:nth-child(4) {
+    animation: anomalous-parameter-switch 0.4s cubic-bezier(0.1, 0.9, 0.2, 1) 0.18s both;
+}
+
+.anomalous-recipe-parameter-notebook-item.is-switching {
+    animation: anomalous-parameter-switch 0.25s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}

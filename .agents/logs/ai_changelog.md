@@ -1,5 +1,18 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-06 - Parameter Notebook UI Tweaks
+
+**Implemented**
+
+- **Parameter Notebook Animation**: Enhanced the CSS animation for parameter notebook switching (`.anomalous-recipe-detail-parameters.is-switching`) to use a staggered waterfall effect. Fixed a bug in `ui_recipe_detail.js` where synchronous double-rendering swallowed the animation class by deferring the `switchToken` clearance to a microtask.
+- **LoRA Formatting**: Improved the display of the LoRA parameter in the recipe details summary (`ui_recipe_detail.js`). Instead of a raw stringified JSON array, LoRAs are now formatted into clean, multi-line blocks with itemized bullets and explicit model/clip strengths.
+- **Agent Rules**: Added a mandatory handoff and documentation protocol to `AGENTS.md`.
+
+**Validation**
+
+- Verified parameter switching correctly triggers the CSS transition sequence without flashing.
+- LoRA strings render nicely with `white-space: pre-wrap`.
+
 ## [Snapshot] 2026-08-06 - Complete Recipe and hash resolver i18n migration
 
 **Implemented**
