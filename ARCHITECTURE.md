@@ -56,6 +56,8 @@ Every i18n or licensing change is a local, reviewable snapshot. The implementati
 
 The second migration snapshot extends the shared translation contract to `ui_grid.js` and `ui_gallery.js`. Gallery confirmation and cover-selection banners are assembled with DOM nodes and `textContent` rather than translated raw HTML; user-controlled model names remain text content. These modules resolve strings at render time through `translate`, so existing global language changes continue to be reflected without introducing a new locale selector.
 
+The third migration snapshot extends the same contract to `ui_detail.js`, `ui_doctor.js`, and `ui_notebooks.js`. Detail editing, model selection, Doctor diagnostics, the Node Assistant, the model picker, and Notebook validation now resolve user-facing strings through `translate` with parameter interpolation for counts, paths, model names, and scan status. Dynamic model/path/node data remains outside the locale dictionaries; rich UI state is composed with DOM nodes where translated text replaced previously formatted status HTML.
+
 ## 2. Directory Structure (核心文件结构)
 
 ```text

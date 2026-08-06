@@ -1,5 +1,28 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-06 - Migrate detail, doctor, assistant, picker, and notebook i18n
+
+**Implemented**
+
+- Migrated `web/modules/ui_detail.js`, `web/modules/ui_doctor.js`, and `web/modules/ui_notebooks.js` to the shared translator.
+- Added locale entries for model editing, batch selection, Doctor diagnostics, Node Assistant actions, model replacement/insertion, history cards, and Notebook validation.
+- Replaced language-condition branches with parameterized translation calls while keeping model names, paths, node types, scan filenames, and API messages dynamic.
+- Preserved status styling for selected counts, empty/error states, healthy Doctor output, compatible-model messages, and missing-cover messages through DOM composition.
+- Added the missing `galleryCancel` key used by the previous Gallery migration snapshot.
+
+**Validation**
+
+- JavaScript syntax checks passed for every file under `web/`.
+- All 189 static translator calls in the migrated UI modules resolve in both `zh` and `en` dictionaries.
+- Locale interpolation checks passed for Doctor scan status, picker selection, Assistant history counts, and Detail selection counts.
+- `node tests/recipe_parser_roundtrip.mjs` passed.
+- Python compilation passed for every `api/*.py` module and `scraper.py` using the bundled Python runtime.
+- Targeted `git diff --check` passed; the existing user change in `README.md` was kept outside this snapshot.
+
+**Next**
+
+- Continue with the next Stage 2 group only after review; Sidebar, Recipe, and hash-resolver branches remain untouched.
+
 ## [Snapshot] 2026-08-06 - Migrate grid and gallery i18n
 
 **Implemented**

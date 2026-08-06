@@ -4,14 +4,10 @@
  */
 
 import { app } from "../../../scripts/app.js";
-import { i18n } from './locales.js';
+import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
 
-const t = (key) => {
-    let lang = window.anomalous_browser_lang || 'zh';
-    if (lang.startsWith('en')) lang = 'en';
-    return (i18n[lang] && i18n[lang][key]) ? i18n[lang][key] : (i18n['zh'][key] || key);
-};
+const t = (key, params) => translate(key, params);
 
 function restoreWorkspaceReturnPanel(owner) {
     const state = owner.workspaceReturnState;
@@ -704,7 +700,7 @@ export function sendNotebookToCanvas() {
         if (!this.currentNotebook) return;
         const data = this.currentNotebook.data || {};
         if (!data.mainModel) {
-            alert(window.anomalous_browser_lang === 'zh' ? "请先选择一个主模型。" : "Please select a Main Model first.");
+            alert(t('notebookSelectMain'));
             return;
         }
 

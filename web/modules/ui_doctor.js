@@ -1,4 +1,5 @@
 import { app } from "../../../scripts/app.js";
+import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
 import {
     analyzeModelChainInsertion,
@@ -16,6 +17,8 @@ import {
  * Extracted Doctor Panel & Assistant Panel methods.
  */
 
+const t = (key, params) => translate(key, params);
+
 export function initDoctorPanel() {
         this.doctorPanelInitialized = true;
         this.doctorPanel.innerHTML = '';
@@ -32,7 +35,7 @@ export function initDoctorPanel() {
         
         const titleEl = document.createElement('div');
         titleEl.style.cssText = 'display:flex;align-items:center;gap:12px;';
-        titleEl.innerHTML = `<span style="font-size:24px; filter: drop-shadow(0 0 8px rgba(0,255,204,0.3));">🩺</span><span style="font-size:18px;font-weight:600;color:#fff;font-family:Inter, sans-serif; letter-spacing: 0.5px;">${window.anomalous_browser_lang === 'zh' ? '全局体检中心' : 'Global Health Center'}</span>`;
+        titleEl.innerHTML = `<span style="font-size:24px; filter: drop-shadow(0 0 8px rgba(0,255,204,0.3));">🩺</span><span style="font-size:18px;font-weight:600;color:#fff;font-family:Inter, sans-serif; letter-spacing: 0.5px;">${t('doctorTitle')}</span>`;
         
         // Header control group on the right side (contains toggle & close button)
         const controlGroup = document.createElement('div');
@@ -44,13 +47,9 @@ export function initDoctorPanel() {
         
         const renderAutoScanToggle = () => {
             let isAutoEnabled = localStorage.getItem('anomalous_auto_scan_enabled') === 'true';
-            autoScanToggle.innerHTML = window.anomalous_browser_lang === 'zh'
-                ? (isAutoEnabled 
-                    ? '<span style="font-size:16px;">🛎️</span><span style="font-size:12px;color:#00ffcc;font-weight:500;">ComfyUI 启动时自动检测并替换缺失模型 [已开启]</span>' 
-                    : '<span style="font-size:16px;opacity:0.5;">🔕</span><span style="font-size:12px;color:#aaa;">ComfyUI 启动时自动检测并替换缺失模型 [默认关闭]</span>')
-                : (isAutoEnabled 
-                    ? '<span style="font-size:16px;">🛎️</span><span style="font-size:12px;color:#00ffcc;font-weight:500;">Auto-Detect on ComfyUI Startup [ON]</span>' 
-                    : '<span style="font-size:16px;opacity:0.5;">🔕</span><span style="font-size:12px;color:#aaa;">Auto-Detect on ComfyUI Startup [OFF]</span>');
+            autoScanToggle.innerHTML = isAutoEnabled
+                ? `<span style="font-size:16px;">🛎️</span><span style="font-size:12px;color:#00ffcc;font-weight:500;">${t('doctorAutoScanOn')}</span>`
+                : `<span style="font-size:16px;opacity:0.5;">🔕</span><span style="font-size:12px;color:#aaa;">${t('doctorAutoScanOff')}</span>`;
         };
         renderAutoScanToggle();
         
@@ -63,9 +62,9 @@ export function initDoctorPanel() {
         };
 
         const refreshBtn = document.createElement('button');
-        refreshBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '🔄 刷新缓存' : '🔄 Refresh';
+        refreshBtn.textContent = t('doctorRefresh');
         refreshBtn.style.cssText = 'background:rgba(138,180,248,0.1);border:1px solid rgba(138,180,248,0.3);color:#8AB4F8;font-size:12px;cursor:pointer;padding:6px 12px;border-radius:6px;transition:all 0.2s; font-weight:600;';
-        refreshBtn.title = window.anomalous_browser_lang === 'zh' ? '重新读取最新模型列表并清除报错' : 'Reload model list and clear errors';
+        refreshBtn.title = t('doctorRefreshTitle');
         refreshBtn.onmouseover = () => { refreshBtn.style.background = 'rgba(138,180,248,0.2)'; };
         refreshBtn.onmouseout = () => { refreshBtn.style.background = 'rgba(138,180,248,0.1)'; };
         refreshBtn.onclick = async () => {
@@ -119,16 +118,15 @@ export function initDoctorPanel() {
     }
 
 function getInsertionCapabilityMessage(capability) {
-    const zh = window.anomalous_browser_lang === 'zh';
     const messages = {
-        missing_graph_or_node: zh ? '当前画布或节点不可用。' : 'The current graph or node is unavailable.',
-        missing_chain_inputs: zh ? '节点没有完整的 MODEL/CLIP 输入。' : 'The node does not expose both MODEL and CLIP inputs.',
-        unconnected_chain_inputs: zh ? 'MODEL/CLIP 输入尚未全部连接。' : 'Both MODEL and CLIP inputs must already be connected.',
-        missing_chain_outputs: zh ? '节点没有完整的 MODEL/CLIP 输出。' : 'The node does not expose both MODEL and CLIP outputs.',
-        ambiguous_downstream_branches: zh ? '检测到多个下游分支，请先整理或选择明确链路。' : 'Multiple downstream branches were detected; choose an explicit chain first.',
-        invalid_downstream_link: zh ? '现有下游连线无效，无法安全改写。' : 'An existing downstream link is invalid and cannot be safely changed.',
+        missing_graph_or_node: 'doctorGraphUnavailable',
+        missing_chain_inputs: 'doctorMissingChainInputs',
+        unconnected_chain_inputs: 'doctorUnconnectedChainInputs',
+        missing_chain_outputs: 'doctorMissingChainOutputs',
+        ambiguous_downstream_branches: 'doctorAmbiguousBranches',
+        invalid_downstream_link: 'doctorInvalidDownstream',
     };
-    return messages[capability?.code] || (zh ? '当前节点不支持此插入方式。' : 'This insertion is not available for the selected node.');
+    return t(messages[capability?.code] || 'doctorUnsupportedInsertion');
 }
 
 function getNativeWidgetValues(node, widget) {
@@ -175,13 +173,13 @@ export function openLoraInsertionPicker(anchorNode, direction) {
 
     const insertedNode = typeof LiteGraph !== 'undefined' ? LiteGraph.createNode('LoraLoader') : null;
     if (!insertedNode) {
-        alert(window.anomalous_browser_lang === 'zh' ? '无法创建标准 LoRA Loader 节点。' : 'Unable to create a standard LoRA Loader node.');
+        alert(t('doctorCreateLoraFailed'));
         return;
     }
 
     const modelWidget = findModelComboWidget(insertedNode);
     if (!modelWidget || getNativeWidgetValues(insertedNode, modelWidget).length === 0) {
-        alert(window.anomalous_browser_lang === 'zh' ? 'LoRA 列表尚未就绪，请刷新 ComfyUI 模型列表后重试。' : 'The LoRA list is not ready. Refresh ComfyUI model lists and try again.');
+        alert(t('doctorLoraNotReady'));
         return;
     }
 
@@ -204,7 +202,7 @@ if (!this.assistantPanelInitialized) {
         if (!placeholder || !nodeContent || !app.graph || !app.graph._nodes) return;
 
 if (!node) {
-            placeholder.innerHTML = `<div style="font-size:48px;">🤖</div><div style="text-align:center;">${window.anomalous_browser_lang === 'zh' ? '请在画布中<strong style="color:#aaa">点击选中任意节点</strong>' : 'Please <strong style="color:#aaa">select any node</strong> in the canvas'}</div>`;
+            placeholder.innerHTML = `<div style="font-size:48px;">🤖</div><div style="text-align:center;">${t('assistantSelectNode')}</div>`;
             placeholder.style.display = 'flex';
             nodeContent.style.display = 'none';
             nodeContent.innerHTML = '';
@@ -224,7 +222,7 @@ for (const w of node.widgets) {
         const canInsert = insertionCapabilities.before.supported || insertionCapabilities.after.supported;
 
         if (modelWidgets.length === 0 && !canInsert) {
-            placeholder.innerHTML = `<div style="font-size:36px;">⚠️</div><div style="text-align:center;">${window.anomalous_browser_lang === 'zh' ? '该节点没有受支持的模型参数' : 'No supported model parameter on this node'}</div><div style="font-size:12px;color:#555;margin-top:4px;">${escapeHtml(node.type || '')}</div>`;
+            placeholder.innerHTML = `<div style="font-size:36px;">⚠️</div><div style="text-align:center;">${t('assistantNoModelParameter')}</div><div style="font-size:12px;color:#555;margin-top:4px;">${escapeHtml(node.type || '')}</div>`;
             placeholder.style.display = 'flex';
             nodeContent.style.display = 'none';
             nodeContent.innerHTML = '';
@@ -237,7 +235,7 @@ for (const w of node.widgets) {
 
         const titleBar = document.createElement('div');
         titleBar.style.cssText = 'margin:14px 16px 0;padding:16px;border:1px solid rgba(138,180,248,0.16);border-radius:14px;background:linear-gradient(135deg,rgba(48,58,86,0.72),rgba(20,22,31,0.92));display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 12px 30px rgba(0,0,0,0.18);';
-        titleBar.innerHTML = `<span style="width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;background:linear-gradient(135deg,#8ab4f8,#7c4dff);box-shadow:0 6px 16px rgba(66,133,244,0.3);">🤖</span><span style="display:flex;flex-direction:column;min-width:0;gap:3px;"><span style="font-size:10px;letter-spacing:0.11em;text-transform:uppercase;color:#8ab4f8;">${window.anomalous_browser_lang === 'zh' ? '当前选中节点' : 'Selected node'}</span><span class="ast-title" style="font-weight:750;color:#fff;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span></span><span class="ast-type" style="font-size:10px;color:#c9d6ff;margin-left:auto;padding:5px 8px;border-radius:999px;border:1px solid rgba(138,180,248,0.24);background:rgba(138,180,248,0.08);max-width:38%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>`;
+        titleBar.innerHTML = `<span style="width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;background:linear-gradient(135deg,#8ab4f8,#7c4dff);box-shadow:0 6px 16px rgba(66,133,244,0.3);">🤖</span><span style="display:flex;flex-direction:column;min-width:0;gap:3px;"><span style="font-size:10px;letter-spacing:0.11em;text-transform:uppercase;color:#8ab4f8;">${t('assistantSelectedNode')}</span><span class="ast-title" style="font-weight:750;color:#fff;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span></span><span class="ast-type" style="font-size:10px;color:#c9d6ff;margin-left:auto;padding:5px 8px;border-radius:999px;border:1px solid rgba(138,180,248,0.24);background:rgba(138,180,248,0.08);max-width:38%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>`;
         titleBar.querySelector('.ast-title').textContent = node.title || node.type || 'Node';
         titleBar.querySelector('.ast-type').textContent = node.type || '';
         nodeContent.appendChild(titleBar);
@@ -245,7 +243,7 @@ for (const w of node.widgets) {
         const quickActions = document.createElement('div');
         quickActions.style.cssText = 'padding:14px 16px 4px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;flex-shrink:0;';
         const actionsLabel = document.createElement('div');
-        actionsLabel.textContent = window.anomalous_browser_lang === 'zh' ? '快捷操作' : 'Quick actions';
+        actionsLabel.textContent = t('assistantQuickActions');
         actionsLabel.style.cssText = 'grid-column:1/-1;color:#8b91a3;font-size:10px;font-weight:750;letter-spacing:0.1em;text-transform:uppercase;padding:0 2px 2px;';
         quickActions.appendChild(actionsLabel);
 
@@ -282,13 +280,13 @@ for (const w of node.widgets) {
 
         for (const widget of modelWidgets) {
             const widgetLabel = modelWidgets.length > 1 && widget.name
-                ? (window.anomalous_browser_lang === 'zh' ? `更换 ${widget.name}` : `Change ${widget.name}`)
-                : (window.anomalous_browser_lang === 'zh' ? '更换当前模型' : 'Change current model');
+                ? t('assistantChangeWidget', { name: widget.name })
+                : t('assistantChangeCurrent');
             const pickerType = inferPickerModelType(node, widget);
             makeActionButton({
                 icon: '⇄',
                 label: widgetLabel,
-                hint: window.anomalous_browser_lang === 'zh' ? `${pickerType.label} · 可视化选择` : `${pickerType.label} · Visual picker`,
+                hint: t('assistantVisualPicker', { type: pickerType.label }),
                 accent: 'linear-gradient(135deg,rgba(245,124,0,0.96),rgba(255,82,82,0.82))',
                 onClick: () => this._openGalleryReplacer(node, widget),
                 primary: true,
@@ -296,16 +294,16 @@ for (const w of node.widgets) {
         }
         makeActionButton({
             icon: '←',
-            label: window.anomalous_browser_lang === 'zh' ? '前方插入 LoRA' : 'Insert LoRA before',
-            hint: window.anomalous_browser_lang === 'zh' ? '接入节点输入端' : 'Connect to node inputs',
+            label: t('assistantInsertBefore'),
+            hint: t('assistantConnectInputs'),
             accent: 'linear-gradient(135deg,rgba(25,118,210,0.9),rgba(80,110,230,0.82))',
             onClick: () => this.openLoraInsertionPicker(node, 'before'),
             capability: insertionCapabilities.before,
         });
         makeActionButton({
             icon: '→',
-            label: window.anomalous_browser_lang === 'zh' ? '后方插入 LoRA' : 'Insert LoRA after',
-            hint: window.anomalous_browser_lang === 'zh' ? '接入节点输出端' : 'Connect to node outputs',
+            label: t('assistantInsertAfter'),
+            hint: t('assistantConnectOutputs'),
             accent: 'linear-gradient(135deg,rgba(0,137,123,0.92),rgba(67,160,71,0.82))',
             onClick: () => this.openLoraInsertionPicker(node, 'after'),
             capability: insertionCapabilities.after,
@@ -392,17 +390,16 @@ export function renderGlobalDashboard() {
                 <span style="color:#fff;font-size:14px;font-weight:bold;">${count}</span>
             </div>`;
         };
-        const zh = window.anomalous_browser_lang === 'zh';
         statsRow.innerHTML = `
-            ${createBadge(zh?'总模型':'Total', total, '#aaa', 'rgba(255,255,255,0.05)')}
-            ${createBadge(zh?'🟢 健康':'🟢 Healthy', healthy, '#28a745', 'rgba(40, 167, 69, 0.1)')}
-            ${createBadge(zh?'🔴 缺失':'🔴 Missing', missing, '#ff6b6b', 'rgba(220, 53, 69, 0.1)')}
+            ${createBadge(t('doctorTotal'), total, '#aaa', 'rgba(255,255,255,0.05)')}
+            ${createBadge(t('doctorHealthy'), healthy, '#28a745', 'rgba(40, 167, 69, 0.1)')}
+            ${createBadge(t('doctorMissing'), missing, '#ff6b6b', 'rgba(220, 53, 69, 0.1)')}
         `;
 
         if (total === 0) {
             content.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:rgba(255,255,255,0.3);font-size:14px;">
                 <div style="font-size:48px;margin-bottom:16px;">👻</div>
-                ${zh ? '当前工作流没有任何模型节点' : 'No models found in this workflow'}
+                ${t('doctorNoWorkflowModels')}
             </div>`;
             return;
         }
@@ -443,11 +440,11 @@ for (const data of missingNodesData) {
             right.style.cssText = 'display:flex; align-items:center; gap:12px;';
             
             if (isHealthy && exactMatch && exactMatch !== val) {
-                right.innerHTML = `<div style="text-align:right;"><div style="color:#ffc107;font-size:13px;font-weight:bold;">🟡 ${zh?'自动重定向':'Auto-Redirected'}</div><div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:4px;">${escapeHtml(exactMatch.split(/[\/]/).pop())}</div></div>`;
+                right.innerHTML = `<div style="text-align:right;"><div style="color:#ffc107;font-size:13px;font-weight:bold;">🟡 ${t('doctorAutoRedirected')}</div><div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:4px;">${escapeHtml(exactMatch.split(/[\/]/).pop())}</div></div>`;
 } else if (isHealthy) {
-                right.innerHTML = `<div style="color:#28a745;font-size:13px;font-weight:bold;padding:6px 12px;background:rgba(40,167,69,0.1);border-radius:20px;">🟢 ${zh?'正常':'Ready'}</div>`;
+                right.innerHTML = `<div style="color:#28a745;font-size:13px;font-weight:bold;padding:6px 12px;background:rgba(40,167,69,0.1);border-radius:20px;">🟢 ${t('doctorReady')}</div>`;
             } else {
-                right.innerHTML = `<div style="color:#ff6b6b;font-size:13px;font-weight:bold;padding:6px 12px;background:rgba(220,53,69,0.1);border-radius:20px;">🔴 ${zh?'丢失':'Missing'}</div>`;
+                right.innerHTML = `<div style="color:#ff6b6b;font-size:13px;font-weight:bold;padding:6px 12px;background:rgba(220,53,69,0.1);border-radius:20px;">🔴 ${t('doctorMissingStatus')}</div>`;
             }
 
             top.appendChild(left);
@@ -458,7 +455,7 @@ for (const data of missingNodesData) {
             actionRow.style.cssText = 'display:flex; gap:10px; margin-top:16px; margin-left:8px;';
             
             const civitaiBtn = document.createElement('button');
-            civitaiBtn.innerHTML = zh ? '🌐 C站' : '🌐 Civitai';
+            civitaiBtn.textContent = t('doctorCivitai');
             civitaiBtn.style.cssText = 'padding:8px 16px; background:rgba(255,255,255,0.1); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:12px; transition:background 0.2s;';
             civitaiBtn.onmouseover = () => civitaiBtn.style.background = 'rgba(255,255,255,0.2)';
             civitaiBtn.onmouseout = () => civitaiBtn.style.background = 'rgba(255,255,255,0.1)';
@@ -480,12 +477,12 @@ for (const data of missingNodesData) {
             
 if (!isHealthy) {
                 const deepScanBtn = document.createElement('button');
-                deepScanBtn.innerHTML = zh ? '🔍 深度哈希扫描' : '🔍 Deep Hash Scan';
+                deepScanBtn.textContent = t('doctorDeepHashScan');
                 deepScanBtn.style.cssText = 'padding:8px 16px; background:#1a73e8; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:12px; transition:background 0.2s;';
                 deepScanBtn.onmouseover = () => deepScanBtn.style.background = '#1557b0';
                 deepScanBtn.onmouseout = () => deepScanBtn.style.background = '#1a73e8';
                 deepScanBtn.onclick = async () => {
-                    deepScanBtn.innerText = zh ? '⏳ 正在启动扫描引擎...' : '⏳ Starting scan engine...';
+                    deepScanBtn.textContent = t('doctorScanStarting');
                     deepScanBtn.disabled = true;
                     deepScanBtn.style.opacity = '0.7';
                     
@@ -509,20 +506,18 @@ if (!isHealthy) {
 if (statusData.scanning) {
                                     let filename = statusData.filename || '';
                                     if (filename.length > 20) filename = filename.substring(0, 10) + '...' + filename.substring(filename.length - 7);
-                                    deepScanBtn.innerText = zh 
-                                        ? `⏳ 扫描中 (${statusData.current}/${statusData.total}) ${filename}`
-                                        : `⏳ Scanning (${statusData.current}/${statusData.total}) ${filename}`;
+                                    deepScanBtn.textContent = t('doctorScanning', { current: statusData.current, total: statusData.total, filename });
                                     setTimeout(pollStatus, 500);
                                 } else {
 if (statusData.error) {
-                                        alert(zh ? '❌ 扫描过程中发生错误: ' + statusData.error : '❌ Scan error: ' + statusData.error);
-                                        deepScanBtn.innerHTML = zh ? '🔍 深度哈希扫描' : '🔍 Deep Hash Scan';
+                                        alert(t('doctorScanError') + statusData.error);
+                                        deepScanBtn.textContent = t('doctorDeepHashScan');
                                         deepScanBtn.disabled = false;
                                         deepScanBtn.style.opacity = '1';
                                         return;
                                     }
                                     
-                                    deepScanBtn.innerText = zh ? '⏳ 正在匹配并替换飘红节点...' : '⏳ Matching and resolving red nodes...';
+                                    deepScanBtn.textContent = t('doctorMatching');
                                     
 if (window.anomalous_reload_hashes) {
                                         await window.anomalous_reload_hashes();
@@ -542,24 +537,22 @@ if (window.anomalous_resolve_all_missing_nodes) {
                                         }
                                     }
                                     
-                                    const scanInfo = zh 
-                                        ? `共深度扫描了 ${statusData.total} 个缺失信息的模型。`
-                                        : `Deep scanned ${statusData.total} models with missing info.`;
+                                    const scanInfo = t('doctorDeepScanSummary', { total: statusData.total });
                                         
 if (stillMissing) {
-                                        alert(zh ? `❌ 扫描结束，本地未匹配到模型。\n\n${scanInfo}\n\n这说明模型可能真的不在您的硬盘里，或者您删除了原本记录着哈希的源文件。\n请点击卡片上的【🌐 C站】去云端下载。` : `❌ Scan finished, but no local match found.\n\n${scanInfo}\n\nThis means the model is truly missing from your disk, or the original source file with hash was deleted.\nPlease click [🌐 Civitai] to download it from the cloud.`);
+                                        alert(t('doctorNoLocalMatch', { summary: scanInfo }));
                                     } else {
-                                        alert(zh ? `✅ 深度扫描成功！已自动修复该节点！\n\n${scanInfo}` : `✅ Deep Scan successful! Node auto-healed!\n\n${scanInfo}`);
+                                        alert(t('doctorScanSuccess', { summary: scanInfo }));
                                     }
                                     
                                     this.renderGlobalDashboard();
-                                    deepScanBtn.innerHTML = zh ? '🔍 深度哈希扫描' : '🔍 Deep Hash Scan';
+                                    deepScanBtn.textContent = t('doctorDeepHashScan');
                                     deepScanBtn.disabled = false;
                                     deepScanBtn.style.opacity = '1';
                                 }
 } catch (err) {
-                                alert(zh ? '❌ 状态轮询出错: ' + err.message : '❌ Poll Error: ' + err.message);
-                                deepScanBtn.innerHTML = zh ? '🔍 深度哈希扫描' : '🔍 Deep Hash Scan';
+                                alert(t('doctorPollError') + err.message);
+                                deepScanBtn.textContent = t('doctorDeepHashScan');
                                 deepScanBtn.disabled = false;
                                 deepScanBtn.style.opacity = '1';
                             }
@@ -567,15 +560,15 @@ if (stillMissing) {
                         setTimeout(pollStatus, 500);
                         
 } catch(e) {
-                        alert(zh ? '❌ 扫描出错: ' + e.message : '❌ Scan Error: ' + e.message);
-                        deepScanBtn.innerHTML = zh ? '🔍 深度哈希扫描' : '🔍 Deep Hash Scan';
+                        alert(t('doctorScanFailed') + e.message);
+                        deepScanBtn.textContent = t('doctorDeepHashScan');
                         deepScanBtn.disabled = false;
                         deepScanBtn.style.opacity = '1';
                     }
                 };
 
                 const manualBtn = document.createElement('button');
-                manualBtn.innerHTML = zh ? '🔀 手动替换' : '🔀 Manual Replace';
+                manualBtn.textContent = t('doctorManualReplace');
                 manualBtn.style.cssText = 'padding:8px 16px; background:rgba(255,255,255,0.1); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:12px; transition:background 0.2s;';
                 manualBtn.onmouseover = () => manualBtn.style.background = 'rgba(255,255,255,0.2)';
                 manualBtn.onmouseout = () => manualBtn.style.background = 'rgba(255,255,255,0.1)';
@@ -587,7 +580,7 @@ if (stillMissing) {
                 actionRow.appendChild(manualBtn);
                 
                 const pathText = document.createElement('div');
-                pathText.innerText = `${zh?'原路径':'Original'}: ${val}`;
+                pathText.textContent = t('doctorOriginalPath', { path: val });
                 pathText.style.cssText = 'margin-top:12px; margin-left:8px; color:rgba(255,255,255,0.3); font-size:11px; font-family:monospace; word-break:break-all;';
                 item.appendChild(pathText);
             }
@@ -637,7 +630,7 @@ if (!this._assistantPanelHooked) {
         const placeholder = document.createElement('div');
         placeholder.id = 'anomalous-assistant-placeholder';
         placeholder.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:#666;font-size:15px;gap:12px;padding:40px;text-align:center;';
-        placeholder.innerHTML = `<div style="font-size:48px;">🤖</div><div>${window.anomalous_browser_lang === 'zh' ? '请在画布中<strong style="color:#aaa">点击选中任意节点</strong>' : 'Please <strong style="color:#aaa">select any node</strong> in the canvas'}</div>`;
+        placeholder.innerHTML = `<div style="font-size:48px;">🤖</div><div>${t('assistantSelectNode')}</div>`;
         this.assistantPanel.appendChild(placeholder);
 
         const nodeContent = document.createElement('div');
@@ -657,7 +650,7 @@ export function renderAssistantModelCard(node, w, container) {
         // Preview image
         const previewBox = document.createElement('div');
         previewBox.style.cssText = 'width:100%;aspect-ratio:1.65;max-height:260px;background:radial-gradient(circle at 50% 20%,#252a3b,#0b0c10 70%);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,0.05);';
-        previewBox.innerHTML = `<span style="color:#444;font-size:13px;">${window.anomalous_browser_lang === 'zh' ? '加载预览...' : 'Loading preview...'}</span>`;
+        previewBox.innerHTML = `<span style="color:#444;font-size:13px;">${t('doctorLoadingPreview')}</span>`;
         wrapper.appendChild(previewBox);
 
         // Name and path
@@ -689,7 +682,7 @@ export function renderAssistantModelCard(node, w, container) {
         const actionRow = document.createElement('div');
         actionRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
         const profileBtn = document.createElement('button');
-        profileBtn.innerText = window.anomalous_browser_lang === 'zh' ? '📖 查看档案' : '📖 View Profile';
+        profileBtn.textContent = t('doctorProfile');
         profileBtn.style.cssText = 'flex:1;padding:10px 12px;background:rgba(138,180,248,0.09);color:#a9c7ff;border:1px solid rgba(138,180,248,0.22);border-radius:9px;cursor:pointer;font-size:12px;font-weight:700;transition:filter 0.2s;';
         profileBtn.onmouseover = () => profileBtn.style.filter = 'brightness(1.2)';
         profileBtn.onmouseout = () => profileBtn.style.filter = 'brightness(1)';
@@ -719,7 +712,7 @@ if (isVid) {
                         previewBox.appendChild(img);
                     }
                 } else {
-                    previewBox.innerHTML = `<span style="color:#444;font-size:13px;">${window.anomalous_browser_lang === 'zh' ? '暂无预览图' : 'No preview'}</span>`;
+                    previewBox.innerHTML = `<span style="color:#444;font-size:13px;">${t('doctorNoPreview')}</span>`;
                 }
 
                 // Profile button links to detail
@@ -747,7 +740,7 @@ if (isVid) {
                         badgeRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
                         const b = document.createElement('span');
                         b.style.cssText = 'background:rgba(0,255,204,0.08);border:1px solid rgba(0,255,204,0.15);color:#77e6cf;padding:4px 8px;border-radius:999px;font-size:10px;';
-                        b.innerText = `${window.anomalous_browser_lang === 'zh' ? '基础模型' : 'Base'} · ${meta.baseModel}`;
+                        b.textContent = `${t('doctorBase')} · ${meta.baseModel}`;
                         badgeRow.appendChild(b);
                         metaZone.appendChild(badgeRow);
                     }
@@ -759,7 +752,7 @@ if (triggers && triggers.length > 0) {
                         trigSection.style.cssText = 'background:rgba(255,255,255,0.04);border-radius:6px;padding:10px 12px;';
                         const trigTitle = document.createElement('div');
                         trigTitle.style.cssText = 'color:#aaa;font-size:11px;margin-bottom:8px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;';
-                        trigTitle.innerText = window.anomalous_browser_lang === 'zh' ? '触发词' : 'Trigger Words';
+                        trigTitle.textContent = t('doctorTriggerWords');
                         const tagList = document.createElement('div');
                         tagList.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;';
                         const words = Array.isArray(triggers) ? triggers : [triggers];
@@ -767,7 +760,7 @@ if (triggers && triggers.length > 0) {
                             const tag = document.createElement('span');
                             tag.style.cssText = 'background:rgba(255,193,7,0.12);color:#ffc107;padding:3px 8px;border-radius:4px;font-size:12px;cursor:pointer;';
                             tag.innerText = word;
-                            tag.title = window.anomalous_browser_lang === 'zh' ? '点击复制' : 'Click to copy';
+                            tag.title = t('doctorClickCopy');
                             tag.onclick = () => {
                                 navigator.clipboard.writeText(word).then(() => { const o = tag.innerText; tag.innerText = '✅'; setTimeout(() => tag.innerText = o, 1000); });
                             };
@@ -775,9 +768,9 @@ if (triggers && triggers.length > 0) {
                         });
                         const copyAll = document.createElement('button');
                         copyAll.style.cssText = 'background:transparent;border:1px solid #444;color:#888;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;margin-top:4px;';
-                        copyAll.innerText = window.anomalous_browser_lang === 'zh' ? '📋 全部复制' : '📋 Copy All';
+                        copyAll.textContent = t('doctorCopyAll');
                         copyAll.onclick = () => {
-                            navigator.clipboard.writeText(words.join(', ')).then(() => { copyAll.innerText = '✅'; setTimeout(() => copyAll.innerText = window.anomalous_browser_lang === 'zh' ? '📋 全部复制' : '📋 Copy All', 1500); });
+                            navigator.clipboard.writeText(words.join(', ')).then(() => { copyAll.textContent = '✅'; setTimeout(() => copyAll.textContent = t('doctorCopyAll'), 1500); });
                         };
                         trigSection.appendChild(trigTitle);
                         trigSection.appendChild(tagList);
@@ -792,7 +785,7 @@ if (textNotes) {
                         notesCard.style.cssText = 'background:linear-gradient(135deg,#262522 0%,#202124 100%);border:1px solid #3c4043;border-left:4px solid #a38d53;border-radius:4px 8px 8px 4px;padding:12px 14px;';
                         const notesTitle = document.createElement('div');
                         notesTitle.style.cssText = 'color:#a38d53;font-size:11px;font-weight:bold;margin-bottom:6px;';
-                        notesTitle.innerText = window.anomalous_browser_lang === 'zh' ? '📝 我的备注' : '📝 My Notes';
+                        notesTitle.textContent = t('doctorNotes');
                         const notesText = document.createElement('div');
                         notesText.style.cssText = 'color:#d4c4a0;font-size:13px;line-height:1.6;white-space:pre-wrap;';
                         notesText.innerText = textNotes;
@@ -806,7 +799,7 @@ if (textNotes) {
                 const resolvedFilename = (d.status === 'success' && d.model) ? (d.model.filename || filename) : filename;
                 this._loadAssistantHistory(resolvedFilename, metaZone, d.status === 'success' ? d.model : null);
             }).catch(() => {
-                previewBox.innerHTML = `<span style="color:#444;font-size:13px;">${window.anomalous_browser_lang === 'zh' ? '无法加载预览' : 'Failed to load preview'}</span>`;
+                previewBox.innerHTML = `<span style="color:#444;font-size:13px;">${t('assistantPreviewFailed')}</span>`;
 
                 // Still try to load history gallery by filename
                 this._loadAssistantHistory(filename, metaZone, null);
@@ -828,13 +821,13 @@ export function _loadAssistantHistory(filename, container, model) {
                 sectionHeader.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
                 const sectionTitle = document.createElement('div');
                 sectionTitle.style.cssText = 'color:#aaa;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;';
-                sectionTitle.innerText = window.anomalous_browser_lang === 'zh' ? `🖼️ 历史生成图 (${images.length})` : `🖼️ History (${images.length})`;
+                sectionTitle.textContent = t('assistantHistoryTitle', { count: images.length });
                 sectionHeader.appendChild(sectionTitle);
 
                 // "View all" button if model is available
 if (model) {
                     const viewAllBtn = document.createElement('button');
-                    viewAllBtn.innerText = window.anomalous_browser_lang === 'zh' ? '查看全部 →' : 'View All →';
+                    viewAllBtn.textContent = t('assistantViewAll');
                     viewAllBtn.style.cssText = 'background:transparent;border:1px solid rgba(138,180,248,0.3);color:#8AB4F8;font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;transition:all 0.2s;';
                     viewAllBtn.onmouseover = () => { viewAllBtn.style.background = 'rgba(138,180,248,0.1)'; };
                     viewAllBtn.onmouseout = () => { viewAllBtn.style.background = 'transparent'; };
@@ -871,7 +864,7 @@ if (model) {
                         card.appendChild(imgEl);
                     }
 if (img.workflow) {
-                        card.title = window.anomalous_browser_lang === 'zh' ? '点击恢复此工作流' : 'Click to restore workflow';
+                        card.title = t('assistantRestoreWorkflow');
                         card.onclick = () => {
                             try {
                                 const wf = typeof img.workflow === 'string' ? JSON.parse(img.workflow) : img.workflow;
@@ -879,7 +872,7 @@ if (img.workflow) {
                             } catch (e) { }
                         };
 } else if (model) {
-                        card.title = window.anomalous_browser_lang === 'zh' ? '点击查看完整图库' : 'Click to view full gallery';
+                        card.title = t('assistantViewGallery');
                         card.onclick = () => this.showGeneratedGallery(model);
                     }
                     grid.appendChild(card);
@@ -890,12 +883,11 @@ if (img.workflow) {
     }
 
 export function _openGalleryReplacer(node, w, options = {}) {
-        const zh = window.anomalous_browser_lang === 'zh';
         const mode = options.mode === 'insert' ? 'insert' : 'replace';
         const pickerType = inferPickerModelType(node, w, options);
         const validPaths = getNativeWidgetValues(node, w);
         if (!validPaths.length) {
-            alert(zh ? '没有可供选择的兼容模型。' : 'No compatible models are available.');
+            alert(t('pickerNoCompatible'));
             return;
         }
 
@@ -942,15 +934,13 @@ export function _openGalleryReplacer(node, w, options = {}) {
         const headerCopy = document.createElement('div');
         headerCopy.style.cssText = 'display:flex;flex-direction:column;gap:3px;';
         const eyebrow = document.createElement('div');
-        eyebrow.textContent = zh ? '节点助手 · 模型选择器' : 'Node Assistant · Model Picker';
+        eyebrow.textContent = t('pickerEyebrow');
         eyebrow.style.cssText = 'font-size:10px;color:#8fa8da;letter-spacing:0.12em;text-transform:uppercase;font-weight:750;';
         const title = document.createElement('h2');
         title.style.cssText = 'margin:0;font-size:19px;line-height:1.15;';
         title.textContent = mode === 'insert'
-            ? (options.direction === 'before'
-                ? (zh ? '⬅ 在节点前方插入 LoRA' : '⬅ Insert LoRA Before Node')
-                : (zh ? '在节点后方插入 LoRA ➡' : 'Insert LoRA After Node ➡'))
-            : (zh ? '🔀 更换当前模型' : '🔀 Change Current Model');
+            ? (options.direction === 'before' ? t('pickerInsertBeforeTitle') : t('pickerInsertAfterTitle'))
+            : t('pickerChangeTitle');
         const typeBadge = document.createElement('span');
         typeBadge.textContent = pickerType.label;
         typeBadge.style.cssText = 'padding:5px 10px;border-radius:20px;background:rgba(138,180,248,0.1);border:1px solid rgba(138,180,248,0.25);color:#a9c7ff;font-size:10px;font-weight:750;';
@@ -971,7 +961,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
         const folderPanel = document.createElement('aside');
         folderPanel.style.cssText = 'background:rgba(20,22,29,0.92);border:1px solid rgba(255,255,255,0.075);border-radius:13px;overflow:auto;padding:10px;box-shadow:0 14px 35px rgba(0,0,0,0.18);';
         const folderTitle = document.createElement('div');
-        folderTitle.textContent = zh ? '📁 文件夹' : '📁 Folders';
+        folderTitle.textContent = t('pickerFolders');
         folderTitle.style.cssText = 'font-size:13px;font-weight:700;color:#ddd;padding:8px 10px 10px;';
         const folderList = document.createElement('div');
         folderList.style.cssText = 'display:flex;flex-direction:column;gap:3px;';
@@ -983,20 +973,20 @@ export function _openGalleryReplacer(node, w, options = {}) {
         toolbar.style.cssText = 'display:flex;gap:10px;padding:12px;border-bottom:1px solid #333;flex-wrap:wrap;align-items:center;';
         const searchInput = document.createElement('input');
         searchInput.type = 'search';
-        searchInput.placeholder = zh ? '🔍 搜索名称或完整路径…' : '🔍 Search name or full path…';
+        searchInput.placeholder = t('pickerSearch');
         searchInput.style.cssText = 'flex:1;min-width:220px;padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:#222631;color:#fff;font-size:13px;outline:none;';
         const baseFilterSelect = document.createElement('select');
         baseFilterSelect.style.cssText = `display:${pickerType.isLora ? 'block' : 'none'};padding:10px 12px;border-radius:9px;border:1px solid rgba(0,220,180,0.2);background:#1d292b;color:#9be8d9;font-size:12px;max-width:230px;`;
         const allBaseOption = document.createElement('option');
         allBaseOption.value = '';
-        allBaseOption.textContent = zh ? '主模型：全部类型' : 'Main model: All types';
+        allBaseOption.textContent = t('pickerMainAll');
         baseFilterSelect.appendChild(allBaseOption);
         const sortSelect = document.createElement('select');
         sortSelect.style.cssText = 'padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:#222631;color:#fff;font-size:12px;';
         [
-            ['name-asc', zh ? '名称 A–Z' : 'Name A–Z'],
-            ['name-desc', zh ? '名称 Z–A' : 'Name Z–A'],
-            ['folder-asc', zh ? '按文件夹' : 'By Folder'],
+            ['name-asc', t('pickerNameAsc')],
+            ['name-desc', t('pickerNameDesc')],
+            ['folder-asc', t('pickerByFolder')],
         ].forEach(([value, label]) => {
             const option = document.createElement('option');
             option.value = value;
@@ -1009,7 +999,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
         content.appendChild(toolbar);
 
         const loadingText = document.createElement('div');
-        loadingText.textContent = zh ? '⏳ 正在加载模型封面…' : '⏳ Loading model covers…';
+        loadingText.textContent = t('pickerLoadingCovers');
         loadingText.style.cssText = 'color:#888;font-size:13px;padding:10px 14px 0;';
         const gridScroll = document.createElement('div');
         gridScroll.style.cssText = 'overflow:auto;min-height:0;flex:1;padding:14px;';
@@ -1025,13 +1015,13 @@ export function _openGalleryReplacer(node, w, options = {}) {
         const selectionText = document.createElement('div');
         selectionText.style.cssText = 'min-width:0;flex:1;color:#aaa;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
         const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = zh ? '取消' : 'Cancel';
+        cancelBtn.textContent = t('pickerCancel');
         cancelBtn.style.cssText = 'padding:10px 18px;background:#333;color:#ddd;border:1px solid #555;border-radius:7px;cursor:pointer;';
         cancelBtn.onclick = closeModal;
         const confirmBtn = document.createElement('button');
         confirmBtn.textContent = mode === 'insert'
-            ? (zh ? '插入并自动连线' : 'Insert & Auto-Connect')
-            : (zh ? '确认替换' : 'Confirm Replacement');
+            ? t('pickerInsertConfirm')
+            : t('pickerReplaceConfirm');
         confirmBtn.style.cssText = 'padding:10px 20px;background:#1976d2;color:#fff;border:none;border-radius:7px;cursor:pointer;font-weight:700;';
         footer.append(selectionText, cancelBtn, confirmBtn);
         modal.appendChild(footer);
@@ -1059,8 +1049,8 @@ export function _openGalleryReplacer(node, w, options = {}) {
 
         const updateSelection = () => {
             selectionText.textContent = selectedPath
-                ? `${zh ? '已选择' : 'Selected'}: ${normalizePath(selectedPath)}`
-                : (zh ? '请选择一个模型。节点连接和强度不会被改动。' : 'Choose a model. Existing connections and strengths will be preserved.');
+                ? t('pickerSelected', { path: normalizePath(selectedPath) })
+                : t('pickerChooseModel');
             confirmBtn.disabled = !selectedPath || applying;
             confirmBtn.style.opacity = confirmBtn.disabled ? '0.45' : '1';
             confirmBtn.style.cursor = confirmBtn.disabled ? 'not-allowed' : 'pointer';
@@ -1103,21 +1093,13 @@ export function _openGalleryReplacer(node, w, options = {}) {
 
             compatibilityHint.style.display = 'flex';
             if (mainBaseModel && selectedBaseFamily) {
-                compatibilityHint.textContent = zh
-                    ? `✨ 已根据主模型 ${mainBaseModel} 自动筛选兼容 LoRA；可在上方切换为全部类型。`
-                    : `✨ Compatible LoRAs are filtered for the main model ${mainBaseModel}. Use the filter above to show all types.`;
+                compatibilityHint.textContent = t('pickerCompatibleMain', { name: mainBaseModel });
             } else if (preferredBaseModel && selectedBaseFamily) {
-                compatibilityHint.textContent = zh
-                    ? `✨ 未找到已连接主模型，已根据当前 LoRA 的 ${preferredBaseModel} 标注筛选。`
-                    : `✨ No connected main model was identified, so the current LoRA tag ${preferredBaseModel} is used.`;
+                compatibilityHint.textContent = t('pickerCompatibleTag', { name: preferredBaseModel });
             } else if (mainBaseModel) {
-                compatibilityHint.textContent = zh
-                    ? `ℹ 已识别主模型 ${mainBaseModel}，但没有同类 LoRA 标注，因此暂时显示全部。`
-                    : `ℹ Main model ${mainBaseModel} was identified, but no matching LoRA tags were found, so all models remain visible.`;
+                compatibilityHint.textContent = t('pickerCompatibleNoTags', { name: mainBaseModel });
             } else {
-                compatibilityHint.textContent = zh
-                    ? 'ℹ 未识别到主模型类型，暂时显示全部 LoRA；你仍可手动按基础模型筛选。'
-                    : 'ℹ The main model type could not be identified. All LoRAs remain visible and can be filtered manually.';
+                compatibilityHint.textContent = t('pickerCompatibleUnknown');
             }
         };
 
@@ -1127,7 +1109,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
             folders.forEach(folderPath => {
                 const button = document.createElement('button');
                 const depth = folderPath ? folderPath.split('/').length - 1 : 0;
-                const label = folderPath ? folderPath.split('/').pop() : (zh ? '全部模型' : 'All Models');
+            const label = folderPath ? folderPath.split('/').pop() : t('pickerAllModels');
                 button.textContent = `${folderPath ? '📂' : '📦'} ${label} (${folderCounts.get(folderPath) || 0})`;
                 button.title = folderPath || label;
                 button.style.cssText = `text-align:left;padding:7px 8px 7px ${8 + depth * 14}px;border-radius:6px;border:none;cursor:pointer;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${selectedFolder === folderPath ? '#fff' : '#aaa'};background:${selectedFolder === folderPath ? 'rgba(25,118,210,0.45)' : 'transparent'};`;
@@ -1153,7 +1135,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
             else if (sortSelect.value === 'folder-asc') paths.sort((a, b) => collator.compare(normalizePath(a), normalizePath(b)));
             else paths.sort((a, b) => collator.compare(getName(a), getName(b)));
 
-            resultCount.textContent = zh ? `${paths.length} 个结果` : `${paths.length} results`;
+            resultCount.textContent = t('pickerResults', { count: paths.length });
             stopMedia(grid);
             grid.replaceChildren();
             const generation = ++renderGeneration;
@@ -1197,7 +1179,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
                     }
                     if (isCurrent) {
                         const badge = document.createElement('span');
-                        badge.textContent = zh ? '当前' : 'Current';
+                        badge.textContent = t('pickerCurrent');
                         badge.style.cssText = 'position:absolute;top:6px;left:6px;background:rgba(255,193,7,0.92);color:#111;padding:3px 6px;border-radius:4px;font-size:10px;font-weight:800;';
                         previewBox.appendChild(badge);
                     }
@@ -1210,7 +1192,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
                     if (baseModel) {
                         const baseBadge = document.createElement('span');
                         baseBadge.textContent = baseModel;
-                        baseBadge.title = `${zh ? '基础模型' : 'Base model'}: ${baseModel}`;
+                        baseBadge.title = `${t('pickerBaseModel')}: ${baseModel}`;
                         baseBadge.style.cssText = 'max-width:100%;padding:3px 6px;border-radius:5px;background:rgba(7,50,43,0.9);border:1px solid rgba(70,220,185,0.25);color:#8ce1cf;font-size:9px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 3px 8px rgba(0,0,0,0.22);';
                         badgeStack.appendChild(baseBadge);
                     }
@@ -1220,7 +1202,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
                     name.title = normalizePath(path);
                     name.style.cssText = 'padding:9px 9px 3px;font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;';
                     const folder = document.createElement('div');
-                    folder.textContent = getFolder(path) || (zh ? '根目录' : 'Root');
+                    folder.textContent = getFolder(path) || t('pickerRoot');
                     folder.title = getFolder(path);
                     folder.style.cssText = 'padding:0 9px 9px;font-size:9px;color:#747b8b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
                     card.append(previewBox, name, folder);
@@ -1252,7 +1234,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
             if (paths.length) requestAnimationFrame(renderChunk);
             else {
                 const empty = document.createElement('div');
-                empty.textContent = zh ? '没有符合条件的模型。' : 'No models match the current filters.';
+                empty.textContent = t('pickerNoMatches');
                 empty.style.cssText = 'color:#777;padding:30px;text-align:center;grid-column:1/-1;';
                 grid.appendChild(empty);
             }
@@ -1300,7 +1282,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
                 applying = false;
                 updateSelection();
                 console.error('[Anomalous] Failed to apply model choice:', error);
-                alert(zh ? `操作失败：${error.message}` : `Operation failed: ${error.message}`);
+            alert(t('pickerOperationFailed') + error.message);
             }
         };
 
@@ -1346,7 +1328,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
         }).catch(error => {
             if (!modal.isConnected) return;
             console.error('[Anomalous] Failed to load model previews:', error);
-            loadingText.textContent = zh ? '⚠️ 封面加载失败，仍可按名称选择模型。' : '⚠️ Covers failed to load; models remain selectable by name.';
+            loadingText.textContent = t('pickerCoversFailed');
             configureBaseFilter();
             renderFolders();
         });
@@ -1373,7 +1355,7 @@ for (let w of node.widgets) {
 if (!isHealthy) {
                             missingNodes++;
                             const nodeTitle = document.createElement('div');
-                            nodeTitle.textContent = `${window.anomalous_browser_lang === 'zh' ? '节点' : 'Node'}: ${node.title || node.type}`;
+                            nodeTitle.textContent = `${t('doctorNodeLabel')}: ${node.title || node.type}`;
                             nodeTitle.style.color = '#8AB4F8';
                             nodeTitle.style.fontWeight = 'bold';
                             nodeTitle.style.marginTop = '10px';
@@ -1386,6 +1368,12 @@ if (!isHealthy) {
         }
 
         if (missingNodes === 0) {
-            content.innerHTML = `<div style="color:#28a745; text-align:center; padding:20px; font-size:16px;">${window.anomalous_browser_lang === 'zh' ? '🎉 太棒了！当前工作流中所有模型均在本地就绪。' : '🎉 Awesome! All models in this workflow are healthy.'}</div>`;
+            const healthyMessage = document.createElement('div');
+            healthyMessage.style.color = '#28a745';
+            healthyMessage.style.textAlign = 'center';
+            healthyMessage.style.padding = '20px';
+            healthyMessage.style.fontSize = '16px';
+            healthyMessage.textContent = t('doctorAllHealthy');
+            content.appendChild(healthyMessage);
         }
     }
