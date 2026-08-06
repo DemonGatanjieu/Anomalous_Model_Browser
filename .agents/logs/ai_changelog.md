@@ -1,5 +1,25 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-06 - Migrate main workflow import and share-code i18n
+
+**Implemented**
+
+- Migrated `web/main.js` preflight workflow import UI to the shared translator.
+- Migrated workflow share-code export, import, and unified modal labels, status messages, placeholders, and node-count interpolation.
+- Composed preflight result headings and empty states with DOM nodes while keeping workflow/model/node data dynamic.
+- Kept the locale conditional used by the translation API only for the backend `zh-CN`/`en` service code mapping; it is not a user-facing copy branch.
+
+**Validation**
+
+- JavaScript syntax checks passed for every file under `web/`.
+- All 218 static translator calls in the migrated UI modules resolve in both `zh` and `en` dictionaries.
+- `node tests/recipe_parser_roundtrip.mjs` passed.
+- Targeted `git diff --check` passed; the existing user change in `README.md` was kept outside this snapshot.
+
+**Next**
+
+- Migrate `web/modules/ui_sidebar.js` as its own reviewable snapshot; Recipe and hash-resolver branches remain untouched.
+
 ## [Snapshot] 2026-08-06 - Migrate detail, doctor, assistant, picker, and notebook i18n
 
 **Implemented**

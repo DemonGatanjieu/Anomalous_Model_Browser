@@ -173,13 +173,13 @@ class AnomalousBrowser {
             const header = document.createElement('h2');
             header.style.margin = '0';
             header.style.color = '#fff';
-            header.innerText = window.anomalous_browser_lang === 'zh' ? '📥 导入工作流 (预检海关)' : '📥 Pre-flight Import Workflow';
+            header.textContent = t('mainPreflightTitle');
             modal.appendChild(header);
 
             const desc = document.createElement('div');
             desc.style.color = '#aaa';
             desc.style.fontSize = '14px';
-            desc.innerText = window.anomalous_browser_lang === 'zh' ? '请在此处粘贴工作流的 JSON 代码（未来将支持分享码）。我们将为您提取并校验所有模型依赖。' : 'Paste the workflow JSON here. We will extract and validate all model dependencies before loading.';
+            desc.textContent = t('mainPreflightDesc');
             modal.appendChild(desc);
 
             const textarea = document.createElement('textarea');
@@ -215,7 +215,7 @@ class AnomalousBrowser {
             btnRow.style.gap = '10px';
 
             const closeBtn = document.createElement('button');
-            closeBtn.innerText = window.anomalous_browser_lang === 'zh' ? '取消' : 'Cancel';
+            closeBtn.textContent = t('mainCancel');
             closeBtn.style.padding = '8px 16px';
             closeBtn.style.background = 'transparent';
             closeBtn.style.color = '#ccc';
@@ -226,7 +226,7 @@ class AnomalousBrowser {
 
             const analyzeBtn = document.createElement('button');
             analyzeBtn.id = 'anomalous-import-analyze-btn';
-            analyzeBtn.innerText = window.anomalous_browser_lang === 'zh' ? '🔍 解析并预检' : '🔍 Analyze & Pre-flight';
+            analyzeBtn.textContent = t('mainAnalyzePreflight');
             analyzeBtn.style.padding = '8px 16px';
             analyzeBtn.style.background = '#1a73e8';
             analyzeBtn.style.color = '#fff';
@@ -236,7 +236,7 @@ class AnomalousBrowser {
 
             const loadBtn = document.createElement('button');
             loadBtn.id = 'anomalous-import-load-btn';
-            loadBtn.innerText = window.anomalous_browser_lang === 'zh' ? '🚀 强制载入画布' : '🚀 Force Load to Canvas';
+            loadBtn.textContent = t('mainForceLoad');
             loadBtn.style.padding = '8px 16px';
             loadBtn.style.background = '#28a745';
             loadBtn.style.color = '#fff';
@@ -279,11 +279,19 @@ class AnomalousBrowser {
                     loadBtn.style.display = 'block';
 
                     if (models.length === 0) {
-                        resultArea.innerHTML = `<div style="color:#28a745;">${window.anomalous_browser_lang === 'zh' ? '✅ 未检测到任何模型依赖。' : '✅ No model dependencies detected.'}</div>`;
+                        const noDependencies = document.createElement('div');
+                        noDependencies.style.color = '#28a745';
+                        noDependencies.textContent = t('mainNoDependencies');
+                        resultArea.replaceChildren(noDependencies);
                         return;
                     }
 
-                    resultArea.innerHTML = `<div style="color:#fff; font-weight:bold; margin-bottom:10px;">${window.anomalous_browser_lang === 'zh' ? `扫描到 ${models.length} 个模型资源：` : `Detected ${models.length} model resources:`}</div>`;
+                    const detectedHeader = document.createElement('div');
+                    detectedHeader.style.color = '#fff';
+                    detectedHeader.style.fontWeight = 'bold';
+                    detectedHeader.style.marginBottom = '10px';
+                    detectedHeader.textContent = t('mainDetectedModels', { count: models.length });
+                    resultArea.replaceChildren(detectedHeader);
 
                     for (const m of models) {
                         const val = m.value;
@@ -334,14 +342,14 @@ class AnomalousBrowser {
                             const searchStr = searchHash || basename.replace('.safetensors', '').replace('.ckpt', '').replace('.pt', '').replace('.sft', '');
                             right.href = `https://civitai.com/search/models?sortBy=models_v9&query=${encodeURIComponent(searchStr)}`;
                             right.target = '_blank';
-                            right.innerText = window.anomalous_browser_lang === 'zh' ? '去 C站下载' : 'Download';
+                            right.textContent = t('mainDownloadCivitai');
                             right.style.color = '#1a73e8';
                             right.style.fontSize = '12px';
                             right.style.textDecoration = 'none';
                             item.appendChild(right);
                         } else {
                             const right = document.createElement('span');
-                            right.innerText = window.anomalous_browser_lang === 'zh' ? '已就绪' : 'Ready';
+                            right.textContent = t('mainReady');
                             right.style.color = '#28a745';
                             right.style.fontSize = '12px';
                             item.appendChild(right);
@@ -351,7 +359,7 @@ class AnomalousBrowser {
                     }
 
                 } catch (e) {
-                    alert('Invalid JSON! ' + e.message);
+                    alert(t('mainInvalidJson') + ' ' + e.message);
                 }
             };
 
@@ -480,14 +488,12 @@ app.registerExtension({
             } catch (error) {
                 console.error('[Anomalous Model Browser] UI initialization failed:', error);
                 btn.classList.add('anomalous-trigger-error');
-                btn.title = window.anomalous_browser_lang === 'zh'
-                    ? '插件界面初始化失败，点击可重试'
-                    : 'The plugin UI failed to initialize. Click to retry.';
+                btn.title = currentLang === 'zh' ? t('mainRetryInit') : t('mainRetryInitEn');
                 btn.setAttribute('aria-label', btn.title);
                 return null;
             }
         };
-        btn.title = window.anomalous_browser_lang === 'zh' ? '打开 Anomalous 模型浏览器' : 'Open Anomalous Model Browser';
+        btn.title = t('mainOpenTitle');
         let isDragging = false;
         let startX, startY, initialX, initialY;
 
@@ -799,8 +805,6 @@ const AMB_WorkflowShare = {
     },
 
     showExportModal() {
-        const lang = window.anomalous_browser_lang || 'en';
-        
         const overlay = document.createElement('div');
         overlay.id = 'amb-export-modal';
         overlay.style.cssText = `
@@ -819,17 +823,17 @@ const AMB_WorkflowShare = {
         
         const title = document.createElement('h2');
         title.style.margin = '0';
-        title.textContent = lang === 'zh' ? '📦 导出工作流分享码' : '📦 Export Workflow Share Code';
+        title.textContent = t('mainExportTitle');
         
         const typeSelectContainer = document.createElement('div');
         typeSelectContainer.innerHTML = `
             <label style="display: block; margin-bottom: 8px; cursor: pointer;">
                 <input type="radio" name="amb-share-type" value="skeleton" checked />
-                ${lang === 'zh' ? '精简版 (推荐 B站评论区, 体积小, 丢失坐标)' : 'Skeleton (Compact, best for comments, loses coords)'}
+                ${t('mainSkeletonOption')}
             </label>
             <label style="display: block; cursor: pointer;">
                 <input type="radio" name="amb-share-type" value="full" />
-                ${lang === 'zh' ? '完整版 (保留所有坐标与颜色, 较长)' : 'Full (Keeps coords and colors, longer string)'}
+                ${t('mainFullOption')}
             </label>
         `;
         
@@ -845,15 +849,15 @@ const AMB_WorkflowShare = {
         btnGroup.style.cssText = `display: flex; gap: 10px; justify-content: flex-end;`;
         
         const generateBtn = document.createElement('button');
-        generateBtn.textContent = lang === 'zh' ? '生成分享码' : 'Generate';
+        generateBtn.textContent = t('mainGenerate');
         generateBtn.style.cssText = `padding: 8px 16px; background: #4a90e2; color: #fff; border: none; border-radius: 6px; cursor: pointer;`;
         
         const copyBtn = document.createElement('button');
-        copyBtn.textContent = lang === 'zh' ? '复制到剪贴板' : 'Copy';
+        copyBtn.textContent = t('mainCopyClipboard');
         copyBtn.style.cssText = `padding: 8px 16px; background: #5cb85c; color: #fff; border: none; border-radius: 6px; cursor: pointer; display: none;`;
         
         const closeBtn = document.createElement('button');
-        closeBtn.textContent = lang === 'zh' ? '关闭' : 'Close';
+        closeBtn.textContent = t('mainClose');
         closeBtn.style.cssText = `padding: 8px 16px; background: #555; color: #fff; border: none; border-radius: 6px; cursor: pointer;`;
         
         closeBtn.onclick = () => overlay.remove();
@@ -877,7 +881,7 @@ const AMB_WorkflowShare = {
         copyBtn.onclick = () => {
             textArea.select();
             document.execCommand('copy');
-            AMB_WorkflowShare.showToast(lang === 'zh' ? '✅ 复制成功！' : '✅ Copied successfully!', '#5cb85c');
+            AMB_WorkflowShare.showToast(t('mainCopied'), '#5cb85c');
         };
         
         btnGroup.appendChild(generateBtn);
@@ -894,8 +898,6 @@ const AMB_WorkflowShare = {
     },
     
     showImportModal() {
-        const lang = window.anomalous_browser_lang || 'en';
-        
         const overlay = document.createElement('div');
         overlay.id = 'amb-import-modal';
         overlay.style.cssText = `
@@ -914,10 +916,10 @@ const AMB_WorkflowShare = {
         
         const title = document.createElement('h2');
         title.style.margin = '0';
-        title.textContent = lang === 'zh' ? '📥 导入工作流分享码' : '📥 Import Workflow Share Code';
+        title.textContent = t('mainImportTitle');
         
         const inputArea = document.createElement('textarea');
-        inputArea.placeholder = lang === 'zh' ? '粘贴 AMB0- 或 AMB1- 开头的分享码...' : 'Paste AMB0- or AMB1- share code here...';
+        inputArea.placeholder = t('mainSharePlaceholder');
         inputArea.style.cssText = `
             width: 100%; height: 100px; background: #1e1e1f; color: #eee;
             border: 1px solid #444; border-radius: 6px; padding: 10px;
@@ -928,11 +930,11 @@ const AMB_WorkflowShare = {
         btnGroup.style.cssText = `display: flex; gap: 10px; justify-content: flex-end;`;
         
         const loadBtn = document.createElement('button');
-        loadBtn.textContent = lang === 'zh' ? '导入并加载' : 'Import & Load';
+        loadBtn.textContent = t('mainImportLoad');
         loadBtn.style.cssText = `padding: 8px 16px; background: #e07a5f; color: #fff; border: none; border-radius: 6px; cursor: pointer;`;
         
         const closeBtn = document.createElement('button');
-        closeBtn.textContent = lang === 'zh' ? '取消' : 'Cancel';
+        closeBtn.textContent = t('mainCancel');
         closeBtn.style.cssText = `padding: 8px 16px; background: #555; color: #fff; border: none; border-radius: 6px; cursor: pointer;`;
         
         closeBtn.onclick = () => overlay.remove();
@@ -940,7 +942,7 @@ const AMB_WorkflowShare = {
         loadBtn.onclick = async () => {
             const code = inputArea.value.trim();
             if (!code) {
-                AMB_WorkflowShare.showToast(lang === 'zh' ? '❌ 分享码为空' : '❌ Share code is empty', '#ff6b6b');
+                AMB_WorkflowShare.showToast(t('mainShareEmpty'), '#ff6b6b');
                 return;
             }
             try {
@@ -949,13 +951,13 @@ const AMB_WorkflowShare = {
                 overlay.remove();
                 
                 const nodesCount = pendingWorkflow.nodes ? pendingWorkflow.nodes.length : 0;
-                AMB_WorkflowShare.showToast(lang === 'zh' ? `✅ 成功导入 ${nodesCount} 个节点配置` : `✅ Successfully imported ${nodesCount} nodes`, '#5cb85c');
+                AMB_WorkflowShare.showToast(t('mainImportedNodes', { count: nodesCount }), '#5cb85c');
                 
                 // Auto close the main browser panel
                 const mainCloseBtn = document.getElementById('anomalous-close');
                 if (mainCloseBtn) mainCloseBtn.click();
             } catch (err) {
-                AMB_WorkflowShare.showToast(lang === 'zh' ? `❌ 解析失败: ${err.message}` : `❌ Decode Failed: ${err.message}`, '#ff6b6b');
+                AMB_WorkflowShare.showToast(t('mainDecodeFailed') + err.message, '#ff6b6b');
             }
         };
         
@@ -970,7 +972,6 @@ const AMB_WorkflowShare = {
         document.body.appendChild(overlay);
     },
     showUnifiedModal() {
-        const lang = window.anomalous_browser_lang || 'en';
         const overlay = document.createElement('div');
         overlay.style.cssText = `
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -988,20 +989,20 @@ const AMB_WorkflowShare = {
         
         const title = document.createElement('h2');
         title.style.margin = '0';
-        title.textContent = lang === 'zh' ? '🔄 工作流分享与导入' : '🔄 Workflow Share & Import';
+        title.textContent = t('mainUnifiedTitle');
         
         const exportBtn = document.createElement('button');
-        exportBtn.textContent = lang === 'zh' ? '📤 导出当前工作流为分享码' : '📤 Export Workflow to Share Code';
+        exportBtn.textContent = t('mainExportWorkflow');
         exportBtn.style.cssText = `padding: 12px; background: #4a90e2; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;`;
         exportBtn.onclick = () => { overlay.remove(); this.showExportModal(); };
         
         const importBtn = document.createElement('button');
-        importBtn.textContent = lang === 'zh' ? '📥 从分享码导入工作流' : '📥 Import Workflow from Share Code';
+        importBtn.textContent = t('mainImportWorkflow');
         importBtn.style.cssText = `padding: 12px; background: #e07a5f; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;`;
         importBtn.onclick = () => { overlay.remove(); this.showImportModal(); };
         
         const closeBtn = document.createElement('button');
-        closeBtn.textContent = lang === 'zh' ? '关闭' : 'Close';
+        closeBtn.textContent = t('mainClose');
         closeBtn.style.cssText = `padding: 8px; background: #555; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; margin-top: 10px;`;
         closeBtn.onclick = () => overlay.remove();
         

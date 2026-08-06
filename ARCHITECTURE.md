@@ -58,6 +58,8 @@ The second migration snapshot extends the shared translation contract to `ui_gri
 
 The third migration snapshot extends the same contract to `ui_detail.js`, `ui_doctor.js`, and `ui_notebooks.js`. Detail editing, model selection, Doctor diagnostics, the Node Assistant, the model picker, and Notebook validation now resolve user-facing strings through `translate` with parameter interpolation for counts, paths, model names, and scan status. Dynamic model/path/node data remains outside the locale dictionaries; rich UI state is composed with DOM nodes where translated text replaced previously formatted status HTML.
 
+The fourth migration snapshot applies the contract to `web/main.js` for preflight workflow import and workflow share-code export/import. These modal surfaces use shared keys for labels, status messages, and count interpolation; the remaining locale conditional in `translateText` only maps the active locale to the backend service's `zh-CN` or `en` code and is not a UI copy branch. `ui_sidebar.js` remains a separate pending snapshot because its scan wizard, settings hub, language toggle, and folder manager require their own key extraction review.
+
 ## 2. Directory Structure (核心文件结构)
 
 ```text
