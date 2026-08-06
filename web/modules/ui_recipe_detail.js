@@ -1419,7 +1419,12 @@ function renderParameterNotebookEditor(wrapper, owner, recipe, parameterState, s
             : workflowNode.widgets_values.map((value, index) => ({ name: `${t('recipeDetailWidget')} ${index + 1}`, index, value }));
         const block = document.createElement('article');
         block.className = 'anomalous-recipe-detail-parameter-node';
-        appendText(block, 'strong', [node.title, node.type].filter(Boolean).join(' · ') || t('recipeDetailUnknownNode'));
+        const titleText = [node.title, node.type].filter(Boolean).join(' · ') || t('recipeDetailUnknownNode');
+        appendText(block, 'strong', titleText, 'anomalous-recipe-detail-node-title');
+        
+        const widgetsContainer = document.createElement('div');
+        widgetsContainer.className = 'anomalous-recipe-detail-node-widgets';
+        
         for (let visibleIndex = 0; visibleIndex < widgets.length && rendered < 1200; visibleIndex += 1) {
             const widget = widgets[visibleIndex] || {};
             const index = Number.isInteger(widget.index) ? widget.index : visibleIndex;
@@ -1427,7 +1432,7 @@ function renderParameterNotebookEditor(wrapper, owner, recipe, parameterState, s
             const value = workflowNode.widgets_values[index];
             const row = document.createElement('label');
             row.className = 'anomalous-recipe-detail-parameter-row anomalous-recipe-parameter-editor-row';
-            appendText(row, 'span', widget.name || `${t('recipeDetailWidget')} ${index + 1}`, 'anomalous-recipe-detail-label');
+            appendText(row, 'span', widget.name || `${t('recipeDetailWidget')} ${index + 1}`, 'anomalous-recipe-detail-parameter-name');
             const volatile = isVolatileParameter(node, widget, index);
             const sensitive = /(?:api.?key|access.?token|auth|password|passwd|secret|credential)/i.test(String(widget.name || ''));
             if (volatile || sensitive) {
@@ -1450,14 +1455,32 @@ function renderParameterNotebookEditor(wrapper, owner, recipe, parameterState, s
                         input.classList.remove('is-invalid');
                     } catch (error) {
                         input.classList.add('is-invalid');
+                        console.warn('Parameter input invalid:', error);
                     }
                 };
                 row.appendChild(input);
             }
-            block.appendChild(row);
+            widgetsContainer.appendChild(row);
             rendered += 1;
         }
-        if (block.querySelector('.anomalous-recipe-parameter-editor-row')) nodeList.appendChild(block);
+        if (widgetsContainer.childElementCount) {
+            block.appendChild(widgetsContainer);
+            if (widgetsContainer.childElementCount > 4) {
+                block.classList.add('is-collapsed');
+                const expandOverlay = document.createElement('div');
+                expandOverlay.className = 'anomalous-recipe-detail-node-expand';
+                const expandBtn = document.createElement('button');
+                expandBtn.className = 'anomalous-btn-ghost';
+                expandBtn.innerHTML = '▼';
+                expandBtn.onclick = () => {
+                    block.classList.remove('is-collapsed');
+                    expandOverlay.remove();
+                };
+                expandOverlay.appendChild(expandBtn);
+                block.appendChild(expandOverlay);
+            }
+            nodeList.appendChild(block);
+        }
     }
     if (!nodeList.childElementCount) appendText(nodeList, 'p', t('recipeDetailNoSavedParameters'), 'anomalous-recipe-detail-muted');
     editor.appendChild(nodeList);
@@ -1703,7 +1726,9 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         const block = document.createElement('article');
         block.className = 'anomalous-recipe-detail-parameter-node';
         const title = [node.title, node.type].filter(Boolean).join(' · ') || t('recipeDetailUnknownNode');
-        appendText(block, 'strong', title);
+        appendText(block, 'strong', title, 'anomalous-recipe-detail-node-title');
+        const widgetsContainer = document.createElement('div');
+        widgetsContainer.className = 'anomalous-recipe-detail-node-widgets';
         for (let visibleIndex = 0; visibleIndex < widgets.length && renderedWidgets < 1200; visibleIndex += 1) {
             const widget = widgets[visibleIndex] || {};
             const index = Number.isInteger(widget.index) ? widget.index : visibleIndex;
@@ -1712,59 +1737,97 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 : widget.value;
             const label = widget.name || `${t('recipeDetailWidget')} ${index + 1}`;
             const volatile = isVolatileParameter(node, widget, index);
-            if (renderParameterField(block, label, volatile ? 0 : value, {
+            if (renderParameterField(widgetsContainer, label, volatile ? 0 : value, {
                 redact: volatile,
                 copy: false,
                 collapse: false,
             })) renderedWidgets += 1;
         }
-        if (block.querySelector('.anomalous-recipe-detail-parameter-row')) nodeList.appendChild(block);
+        if (widgetsContainer.childElementCount) {
+            block.appendChild(widgetsContainer);
+            if (widgetsContainer.childElementCount > 4) {
+                block.classList.add('is-collapsed');
+                const expandOverlay = document.createElement('div');
+                expandOverlay.className = 'anomalous-recipe-detail-node-expand';
+                const expandBtn = document.createElement('button');
+                expandBtn.className = 'anomalous-btn-ghost';
+                expandBtn.innerHTML = '▼';
+                expandBtn.onclick = () => {
+                    block.classList.remove('is-collapsed');
+                    expandOverlay.remove();
+                };
+                expandOverlay.appendChild(expandBtn);
+                block.appendChild(expandOverlay);
+            }
+            nodeList.appendChild(block);
+        }
     }
     if (nodeList.childElementCount) nodesSection.appendChild(nodeList);
     else appendText(nodesSection, 'p', t('recipeDetailNoSavedParameters'), 'anomalous-recipe-detail-muted');
 
     wrapper.append(intro, summary, nodesSection);
-
-    const gallerySection = document.createElement('section');
-    gallerySection.className = 'anomalous-recipe-detail-section anomalous-recipe-gallery';
-    const heading = document.createElement('div');
-    heading.className = 'anomalous-recipe-detail-section-heading';
-    appendText(heading, 'h5', t('recipeParameterGallery'));
-    const refreshButton = button(heading, t('recipeGalleryRefresh'), 'anomalous-btn-ghost anomalous-recipe-gallery-refresh');
-    refreshButton.onclick = () => { void refreshGallery(true); };
-    gallerySection.appendChild(heading);
-    if (gallery.status === 'loading') {
-        appendText(gallerySection, 'p', t('recipeParameterGalleryLoading'), 'anomalous-recipe-detail-muted');
-    } else if (gallery.status === 'error') {
-        appendText(gallerySection, 'p', t('recipeParameterGalleryError'), 'anomalous-recipe-detail-muted');
-    } else if (gallery.status === 'ready' && gallery.images.length) {
-        appendText(gallerySection, 'small', t('recipeGalleryScanHint').replace('{count}', String(gallery.scanned || 0)), 'anomalous-recipe-detail-muted');
-        const grid = document.createElement('div');
-        grid.className = 'anomalous-recipe-gallery-grid';
-        for (const sourceImage of gallery.images) {
-            const card = document.createElement('article');
-            card.className = 'anomalous-recipe-gallery-card';
-            const url = outputImageUrl(sourceImage);
-            const image = document.createElement('img');
-            image.src = url;
-            image.alt = t('recipeGalleryOpenImage');
-            image.loading = 'lazy';
-            image.onclick = () => { void showGalleryComparison(card, owner, sourceImage); };
-            card.appendChild(image);
-            const actions = document.createElement('div');
-            actions.className = 'anomalous-recipe-gallery-card-actions';
-            const viewImage = button(actions, t('recipeGalleryOpenImage'), 'anomalous-btn-ghost');
-            viewImage.onclick = () => owner.showGalleryViewer?.(url);
-            const compare = button(actions, t('recipeGalleryCompare'), 'anomalous-btn-ghost');
-            compare.onclick = () => { void showGalleryComparison(card, owner, sourceImage); };
-            card.appendChild(actions);
-            grid.appendChild(card);
+    
+    // Replace old bottom gallery with Hero Section at the top
+    if (gallery.status === 'ready' && gallery.images.length) {
+        const heroSection = document.createElement('section');
+        heroSection.className = 'anomalous-recipe-detail-hero';
+        
+        const heroImage = document.createElement('img');
+        heroImage.src = outputImageUrl(gallery.images[0]);
+        heroImage.className = 'anomalous-recipe-detail-hero-image';
+        heroImage.onclick = () => owner.showGalleryViewer?.(heroImage.src);
+        heroSection.appendChild(heroImage);
+        
+        if (gallery.images.length > 1) {
+            const galleryButton = document.createElement('button');
+            galleryButton.className = 'anomalous-recipe-detail-hero-gallery-btn';
+            galleryButton.innerHTML = `🖼️ ${t('recipeParameterGallery')} (${gallery.images.length})`;
+            galleryButton.onclick = () => {
+                const dialog = document.createElement('dialog');
+                dialog.className = 'anomalous-recipe-gallery-dialog';
+                
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'anomalous-dialog-close anomalous-btn-ghost';
+                closeBtn.innerHTML = '✕';
+                closeBtn.onclick = () => dialog.close();
+                dialog.appendChild(closeBtn);
+                
+                const heading = document.createElement('h3');
+                heading.textContent = t('recipeParameterGallery');
+                heading.className = 'anomalous-recipe-gallery-dialog-title';
+                dialog.appendChild(heading);
+                
+                const grid = document.createElement('div');
+                grid.className = 'anomalous-recipe-gallery-grid';
+                for (const sourceImage of gallery.images) {
+                    const card = document.createElement('article');
+                    card.className = 'anomalous-recipe-gallery-card';
+                    const url = outputImageUrl(sourceImage);
+                    const image = document.createElement('img');
+                    image.src = url;
+                    image.loading = 'lazy';
+                    image.onclick = () => { void showGalleryComparison(card, owner, sourceImage); };
+                    card.appendChild(image);
+                    const actions = document.createElement('div');
+                    actions.className = 'anomalous-recipe-gallery-card-actions';
+                    const viewBtn = button(actions, t('recipeGalleryOpenImage'), 'anomalous-btn-ghost');
+                    viewBtn.onclick = () => owner.showGalleryViewer?.(url);
+                    const compareBtn = button(actions, t('recipeGalleryCompare'), 'anomalous-btn-ghost');
+                    compareBtn.onclick = () => { void showGalleryComparison(card, owner, sourceImage); };
+                    card.appendChild(actions);
+                    grid.appendChild(card);
+                }
+                dialog.appendChild(grid);
+                document.body.appendChild(dialog);
+                
+                dialog.addEventListener('close', () => dialog.remove());
+                dialog.showModal();
+            };
+            heroSection.appendChild(galleryButton);
         }
-        gallerySection.appendChild(grid);
-    } else if (gallery.status === 'ready') {
-        appendText(gallerySection, 'p', t('recipeParameterGalleryEmpty'), 'anomalous-recipe-detail-muted');
+        wrapper.insertBefore(heroSection, intro);
     }
-    wrapper.appendChild(gallerySection);
+
     layout.append(sidebar, wrapper);
     content.appendChild(layout);
 }

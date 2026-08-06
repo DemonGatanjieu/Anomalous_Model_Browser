@@ -1,5 +1,20 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-06 - Parameter Notebook UI Redesign & Hero Gallery
+
+**Implemented**
+
+- **Parameter Notebook Layout**: Completely redesigned the parameter notebook to use a modern Dashboard layout. The parameter summary now uses a spacious CSS Grid format (`.anomalous-recipe-detail-summary-grid`).
+- **Node Cards & Smart Expansion**: Each node's parameters are wrapped in a styled card (`.anomalous-recipe-detail-parameter-node`). The inner widgets use a responsive grid layout to eliminate vertical cramming. Overly long nodes automatically collapse to a maximum height (`is-collapsed`) with a smooth gradient mask and a bottom expand button.
+- **Hero Image Gallery (Plan B)**: Replaced the bottom inline gallery section with a prominent Hero Section (`.anomalous-recipe-detail-hero`) at the top. The first generated image acts as a large cover banner.
+- **Modal Gallery Viewer**: If a recipe has multiple generated images, a sleek glassmorphism button overlay appears on the hero image (e.g., `🖼️ 图库 (5)`). Clicking it opens a native HTML `<dialog>` containing the full gallery grid, preventing the parameter view from bloating vertically while keeping the core browsing experience focused.
+
+**Validation**
+
+- Node widget grid correctly scales based on available width.
+- Smart expansion accurately toggles `max-height` via CSS classes without recalculating DOM dimensions.
+- Native `<dialog>` modal manages z-index and backdrop natively, avoiding clashes with the main UI shell.
+
 ## [Snapshot] 2026-08-06 - Parameter Notebook UI Tweaks
 
 **Implemented**
