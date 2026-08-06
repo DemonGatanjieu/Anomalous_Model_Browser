@@ -986,9 +986,13 @@
     height: 100vh;
     background: rgba(0, 0, 0, 0.95);
     z-index: 9999999;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
+}
+
+dialog.anomalous-gallery-viewer[open] {
+    display: flex;
 }
 
 .anomalous-gallery-viewer img {
