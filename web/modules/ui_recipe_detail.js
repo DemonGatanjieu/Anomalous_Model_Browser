@@ -1806,15 +1806,8 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                     const image = document.createElement('img');
                     image.src = url;
                     image.loading = 'lazy';
-                    image.onclick = () => { void showGalleryComparison(card, owner, sourceImage); };
+                    image.onclick = () => owner.showGalleryViewer?.(url);
                     card.appendChild(image);
-                    const actions = document.createElement('div');
-                    actions.className = 'anomalous-recipe-gallery-card-actions';
-                    const viewBtn = button(actions, t('recipeGalleryOpenImage'), 'anomalous-btn-ghost');
-                    viewBtn.onclick = () => owner.showGalleryViewer?.(url);
-                    const compareBtn = button(actions, t('recipeGalleryCompare'), 'anomalous-btn-ghost');
-                    compareBtn.onclick = () => { void showGalleryComparison(card, owner, sourceImage); };
-                    card.appendChild(actions);
                     grid.appendChild(card);
                 }
                 dialog.appendChild(grid);
@@ -2008,46 +2001,8 @@ function renderRecipeGallery(content, owner, recipe, gallery, refresh) {
         image.src = url;
         image.alt = t('recipeGalleryOpenImage');
         image.loading = 'lazy';
-        image.onclick = () => { void showGalleryComparison(card, owner, sourceImage); };
+        image.onclick = () => owner.showGalleryViewer?.(url);
         card.appendChild(image);
-        const actions = document.createElement('div');
-        actions.className = 'anomalous-recipe-gallery-card-actions';
-        const viewImage = button(actions, t('recipeGalleryOpenImage'), 'anomalous-btn-ghost');
-        viewImage.onclick = (event) => {
-            event.stopPropagation();
-            owner.showGalleryViewer?.(url);
-        };
-        const compare = button(actions, t('recipeGalleryCompare'), 'anomalous-btn-ghost');
-        compare.onclick = (event) => {
-            event.stopPropagation();
-            void showGalleryComparison(card, owner, sourceImage);
-        };
-        const setCover = button(actions, t('recipeGallerySetCover'), 'anomalous-btn-primary');
-        setCover.onclick = (event) => {
-            event.stopPropagation();
-            void runRecipeAction(setCover, async () => {
-                const response = await fetch('/anomalous/set_recipe_gallery_cover', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ filename: owner.recipeDetailFilename, source_image: sourceImage }),
-                });
-                if (!response.ok) throw new Error('recipe gallery cover update failed');
-                const payload = await response.json();
-                recipe.source_image = payload.source_image || sourceImage;
-                recipe.thumbnail = null;
-                recipe.presentation = {
-                    ...(recipe.presentation || {}),
-                    cover_asset_id: payload.cover?.asset_id,
-                };
-                if (payload.workflow_fingerprint) recipe.workflow_fingerprint = payload.workflow_fingerprint;
-                await owner.refreshRecipes();
-                setCover.textContent = t('recipeGalleryCoverSaved');
-            }).catch(async (error) => {
-                console.error('Could not set recipe gallery cover:', error);
-                await anomalousAlert(t('recipeGalleryCoverError'));
-            });
-        };
-        card.appendChild(actions);
         grid.appendChild(card);
     }
     section.appendChild(grid);

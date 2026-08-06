@@ -8,6 +8,7 @@
 - **Node Cards & Smart Expansion**: Each node's parameters are wrapped in a styled card (`.anomalous-recipe-detail-parameter-node`). The inner widgets use a responsive grid layout to eliminate vertical cramming. Overly long nodes automatically collapse to a maximum height (`is-collapsed`) with a smooth gradient mask and a bottom expand button.
 - **Hero Image Gallery (Plan B)**: Replaced the bottom inline gallery section with a prominent Hero Section (`.anomalous-recipe-detail-hero`) at the top. The first generated image acts as a large cover banner.
 - **Modal Gallery Viewer**: If a recipe has multiple generated images, a sleek glassmorphism button overlay appears on the hero image (e.g., `🖼️ 图库 (5)`). Clicking it opens a native HTML `<dialog>` containing the full gallery grid, preventing the parameter view from bloating vertically while keeping the core browsing experience focused.
+- **Gallery Grid Refactor**: Removed the cluttered action buttons ("Set Cover", "Compare", "View Image") from all gallery cards across the application. Gallery grids now use a sleek, uniform responsive layout (`aspect-ratio: 1`, `object-fit: cover`) with a subtle hover zoom effect, relying on a direct click to view the original image.
 
 **Validation**
 
