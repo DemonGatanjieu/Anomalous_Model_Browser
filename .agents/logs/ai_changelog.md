@@ -14,6 +14,7 @@
 - **Node Widget Copy**: Enabled the one-click copy button for all non-volatile node parameters inside the parameter notebook view by removing the `copy: false` restriction.
 - **Gallery Viewer Z-Index Fix**: Upgraded the full-screen image viewer (`showGalleryViewer`) from a standard `<div>` to a native `<dialog>` element. By utilizing `.showModal()`, the viewer now reliably renders in the browser's top-layer, preventing it from being occluded by other newly introduced modal dialogs (like the gallery grid).
 - **Gallery Viewer Close Fix**: Fixed a bug where the full-screen viewer would not disappear when closed. Removed a hardcoded `display: flex` override in CSS that forced the native `<dialog>` to remain visible even without the `open` attribute.
+- **Gallery Button Optimization**: Removed the explicit image count from the hero gallery button (e.g., `(2)`) and ensured the button always displays even if there is only 1 image. This aligns with a lazy-loading philosophy, as the modal DOM is only generated when clicked, saving initial render performance.
 
 **Validation**
 

@@ -1777,46 +1777,44 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         heroImage.onclick = () => owner.showGalleryViewer?.(heroImage.src);
         heroSection.appendChild(heroImage);
         
-        if (gallery.images.length > 1) {
-            const galleryButton = document.createElement('button');
-            galleryButton.className = 'anomalous-recipe-detail-hero-gallery-btn';
-            galleryButton.innerHTML = `🖼️ ${t('recipeParameterGallery')} (${gallery.images.length})`;
-            galleryButton.onclick = () => {
-                const dialog = document.createElement('dialog');
-                dialog.className = 'anomalous-recipe-gallery-dialog';
-                
-                const closeBtn = document.createElement('button');
-                closeBtn.className = 'anomalous-dialog-close anomalous-btn-ghost';
-                closeBtn.innerHTML = '✕';
-                closeBtn.onclick = () => dialog.close();
-                dialog.appendChild(closeBtn);
-                
-                const heading = document.createElement('h3');
-                heading.textContent = t('recipeParameterGallery');
-                heading.className = 'anomalous-recipe-gallery-dialog-title';
-                dialog.appendChild(heading);
-                
-                const grid = document.createElement('div');
-                grid.className = 'anomalous-recipe-gallery-grid';
-                for (const sourceImage of gallery.images) {
-                    const card = document.createElement('article');
-                    card.className = 'anomalous-recipe-gallery-card';
-                    const url = outputImageUrl(sourceImage);
-                    const image = document.createElement('img');
-                    image.src = url;
-                    image.loading = 'lazy';
-                    image.onclick = () => owner.showGalleryViewer?.(url);
-                    card.appendChild(image);
-                    grid.appendChild(card);
-                }
-                dialog.appendChild(grid);
-                document.body.appendChild(dialog);
-                
-                dialog.addEventListener('close', () => dialog.remove());
-                dialog.showModal();
-            };
-            heroSection.appendChild(galleryButton);
-        }
+        const galleryButton = document.createElement('button');
+        galleryButton.className = 'anomalous-recipe-detail-hero-gallery-btn';
+        galleryButton.innerHTML = `🖼️ ${t('recipeParameterGallery')}`;
+        galleryButton.onclick = () => {
+            const dialog = document.createElement('dialog');
+            dialog.className = 'anomalous-recipe-gallery-dialog';
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'anomalous-dialog-close anomalous-btn-ghost';
+            closeBtn.innerHTML = '✕';
+            closeBtn.onclick = () => dialog.close();
+            dialog.appendChild(closeBtn);
+            
+            const heading = document.createElement('h3');
+            heading.textContent = t('recipeParameterGallery');
+            heading.className = 'anomalous-recipe-gallery-dialog-title';
+            dialog.appendChild(heading);
+            
+            const grid = document.createElement('div');
+            grid.className = 'anomalous-recipe-gallery-grid';
+            for (const sourceImage of gallery.images) {
+                const card = document.createElement('article');
+                card.className = 'anomalous-recipe-gallery-card';
+                const url = outputImageUrl(sourceImage);
+                const image = document.createElement('img');
+                image.src = url;
+                image.loading = 'lazy';
+                image.onclick = () => owner.showGalleryViewer?.(url);
+                card.appendChild(image);
+                grid.appendChild(card);
+            }
+            dialog.appendChild(grid);
+            document.body.appendChild(dialog);
+            
+            dialog.addEventListener('close', () => dialog.remove());
+            dialog.showModal();
+        };
+        heroSection.appendChild(galleryButton);
         wrapper.insertBefore(heroSection, intro);
     }
 
