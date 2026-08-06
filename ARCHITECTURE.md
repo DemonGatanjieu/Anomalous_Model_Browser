@@ -4,6 +4,8 @@ This document provides a high-level overview of the Anomalous Model Browser plug
 
 Workspace lifecycle note: reopening an already initialized Workspace must restore the visible notebook body and reset the hidden recipe body before refreshing data. Hiding the overlay alone is not enough because the next open reuses the existing DOM tree.
 
+The floating trigger follows the browser modal lifecycle: opening the main browser hides the trigger, while every normal close path restores it. The hidden state uses a scoped class with pointer-events disabled; initialization errors keep the trigger available as the recovery entry point.
+
 Origin refresh is an explicit enrichment mode passed into `_enrich_recipe`; it must not mutate the Python list of references with ad-hoc state. Origin refresh writes schema v5, while normal updates preserve previously imported identity/origin records when the current machine cannot re-resolve them.
 
 Recipe identity badges use short, bounded labels in the card layout; detailed explanations belong in the help tooltip. Identity badges and model-name rows must remain shrinkable flex children so localized or imported text cannot expand the recipe card beyond its container.

@@ -1020,6 +1020,20 @@
 - `node tests/recipe_parser_roundtrip.mjs`.
 - `git diff --check`.
 
+## [Snapshot] 2026-08-06 - Hide the floating trigger while browser is open
+
+**Implemented**
+
+- Opening the Anomalous Model Browser now hides the floating trigger icon.
+- Closing the browser restores the icon, including the existing Workspace/recipe close path that delegates to the browser close lifecycle.
+- Initialization failures leave the trigger visible so it remains a recovery entry point.
+- Synchronized the trigger lifecycle rule in `ARCHITECTURE.md`.
+
+**Validation**
+
+- All 19 JavaScript files passed `node --check`.
+- The unrelated pre-existing `README.md` and untracked `LICENSE` were left untouched.
+
 ## [Snapshot] 2026-08-04 - Bind parameter snapshots to recipes
 
 **Implemented**

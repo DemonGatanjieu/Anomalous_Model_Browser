@@ -90,6 +90,7 @@ class AnomalousBrowser {
             clearTimeout(this._idleReleaseTimer);
             this._idleReleaseTimer = null;
         }
+        this.setTriggerVisible(false);
         this.modal.classList.add('visible');
         if (!this.foldersData) {
             this.loadFolders();
@@ -100,6 +101,7 @@ class AnomalousBrowser {
 
     close() {
         this.modal.classList.remove('visible');
+        this.setTriggerVisible(true);
         if (this._modelLoadController) this._modelLoadController.abort();
         if (this._modelMediaObserver) this._modelMediaObserver.disconnect();
         this.modal.querySelectorAll('video, audio').forEach(media => media.pause());
@@ -111,6 +113,11 @@ class AnomalousBrowser {
             this.grid.replaceChildren();
             this.models = [];
         }, 90000);
+    }
+
+    setTriggerVisible(visible) {
+        const trigger = this.triggerButton || document.getElementById('anomalous-trigger-btn');
+        trigger?.classList.toggle('anomalous-trigger-hidden', !visible);
     }
     // [EXTRACTED] showNotebooks
 
@@ -482,6 +489,7 @@ app.registerExtension({
             if (browser) return browser;
             try {
                 browser = new AnomalousBrowser();
+                browser.triggerButton = btn;
                 window.anomalousBrowserInstance = browser;
                 btn.classList.remove('anomalous-trigger-error');
                 return browser;

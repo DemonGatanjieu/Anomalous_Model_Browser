@@ -27,6 +27,13 @@
     border-color: #888;
 }
 
+#anomalous-trigger-btn.anomalous-trigger-hidden {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: scale(0.7);
+}
+
 #anomalous-trigger-btn.anomalous-trigger-error {
     border-color: #ff9f43;
     box-shadow: 0 4px 15px rgba(255, 159, 67, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.1);
