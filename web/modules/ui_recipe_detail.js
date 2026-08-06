@@ -729,18 +729,18 @@ function renderOverview(content, owner, recipe, references, finish) {
         }
     };
     
-    const append = button(overviewActions, t('recipeAppendCanvas'), 'anomalous-btn-ghost');
-    append.onclick = () => {
-        void runRecipeAction(append, async () => {
+    const heroAppend = button(overviewActions, t('recipeAppendCanvas'), 'anomalous-btn-ghost');
+    heroAppend.onclick = () => {
+        void runRecipeAction(heroAppend, async () => {
             if (await appendRecipeOnCanvas(owner, recipe)) finish('append');
         });
     };
     
     const secondaryActions = document.createElement('div');
     secondaryActions.className = 'anomalous-recipe-actions-secondary';
-    const edit = button(secondaryActions, '✏️', 'anomalous-btn-icon anomalous-btn-edit');
-    edit.title = t('recipeEdit');
-    edit.onclick = () => finish('edit');
+    const heroEdit = button(secondaryActions, '✏️', 'anomalous-btn-icon anomalous-btn-edit');
+    heroEdit.title = t('recipeEdit');
+    heroEdit.onclick = () => finish('edit');
     overviewActions.appendChild(secondaryActions);
     copy.appendChild(overviewActions);
     
