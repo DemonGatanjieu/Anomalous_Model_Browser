@@ -54,6 +54,8 @@ The extension is a UI-only ComfyUI integration: `NODE_CLASS_MAPPINGS` is intenti
 
 Every i18n or licensing change is a local, reviewable snapshot. The implementation must update this document and `.agents/logs/ai_changelog.md` in the same change, run proportional syntax/runtime checks, and create a local Git commit. Remote pushes require explicit user authorization. The MIT license applies to project-owned code and documentation only; external service content and host-project dependencies retain their own terms.
 
+The second migration snapshot extends the shared translation contract to `ui_grid.js` and `ui_gallery.js`. Gallery confirmation and cover-selection banners are assembled with DOM nodes and `textContent` rather than translated raw HTML; user-controlled model names remain text content. These modules resolve strings at render time through `translate`, so existing global language changes continue to be reflected without introducing a new locale selector.
+
 ## 2. Directory Structure (核心文件结构)
 
 ```text

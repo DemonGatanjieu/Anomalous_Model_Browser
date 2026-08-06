@@ -1,5 +1,25 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-06 - Migrate grid and gallery i18n
+
+**Implemented**
+
+- Migrated `web/modules/ui_grid.js` and `web/modules/ui_gallery.js` to the shared translator.
+- Added the grid and gallery locale keys, including parameterized generated-history titles.
+- Rebuilt the gallery delete confirmation and cover-selection banner with DOM composition and `textContent`, keeping user-controlled model names out of translated HTML.
+
+**Validation**
+
+- JavaScript syntax checks passed for every file under `web/`.
+- Shared i18n lookup/interpolation checks passed for the new grid and gallery keys.
+- `node tests/recipe_parser_roundtrip.mjs` passed.
+- Python compilation passed for every `api/*.py` module and `scraper.py` using the bundled Python runtime.
+- Targeted `git diff --check` passed; the existing user change in `README.md` was kept outside this snapshot.
+
+**Next**
+
+- Continue with the next Stage 2 module group only after review; Sidebar, Detail, Doctor, Notebook, Recipe, and hash-resolver branches remain untouched.
+
 ## [Snapshot] 2026-08-06 - Establish shared i18n foundation and migrate dialog pilot
 
 **Implemented**

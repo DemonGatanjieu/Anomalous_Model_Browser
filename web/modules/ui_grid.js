@@ -4,13 +4,9 @@
  */
 
 import { app } from "../../../scripts/app.js";
-import { i18n } from './locales.js';
+import { translate } from './locales.js';
 
-const t = (key) => {
-    let lang = window.anomalous_browser_lang || 'zh';
-    if (lang.startsWith('en')) lang = 'en';
-    return (i18n[lang] && i18n[lang][key]) ? i18n[lang][key] : (i18n['zh'][key] || key);
-};
+const t = (key, params) => translate(key, params);
 
 export function cardPreviewUrl(previewUrl, thumbnailMode) {
     if (!previewUrl || thumbnailMode === 'original') return previewUrl;
@@ -163,7 +159,7 @@ export async function loadModels() {
 
                 const singleScanBtn = document.createElement('button');
                 singleScanBtn.innerHTML = '🎯';
-                singleScanBtn.title = '精准扫描此模型';
+                singleScanBtn.title = t('scanModelPrecisely');
                 singleScanBtn.style.position = 'absolute';
                 singleScanBtn.style.top = '6px';
                 singleScanBtn.style.right = '40px';
@@ -185,7 +181,7 @@ export async function loadModels() {
 
                 const editBtn = document.createElement('button');
                 editBtn.innerHTML = '⚙️';
-                editBtn.title = window.anomalous_browser_lang === 'zh' ? '编辑模型 (Edit)' : 'Edit Model';
+                editBtn.title = t('editModel');
                 editBtn.style.position = 'absolute';
                 editBtn.style.top = '6px';
                 editBtn.style.right = '74px'; // shifted left for new button
@@ -247,13 +243,13 @@ export function applyModelToCanvas(type, subfolder, model) {
         };
         const nodeType = nodeTypeMap[type];
         if (!nodeType) {
-            alert(window.anomalous_browser_lang === 'zh' ? '不支持该类型模型的自动应用。' : 'Unsupported model type for auto-apply.');
+            alert(t('unsupportedAutoApply'));
             return;
         }
 
         const node = LiteGraph.createNode(nodeType);
         if (!node) {
-            alert((window.anomalous_browser_lang === 'zh' ? '创建节点失败: ' : 'Failed to create node: ') + nodeType);
+            alert(t('createNodeFailed') + nodeType);
             return;
         }
 

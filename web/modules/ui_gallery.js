@@ -4,7 +4,9 @@
  */
 
 import { app } from "../../../scripts/app.js";
-import { escapeHtml } from './safe_dom.js';
+import { translate } from './locales.js';
+
+const t = (key, params) => translate(key, params);
 
 export async function refreshGalleryImages() {
     if (this.galleryLoading || this.galleryRefreshLoading) return;
@@ -25,7 +27,7 @@ export async function refreshGalleryImages() {
 export async function loadGalleryImages(page = 1, reset = false) {
         if (this.galleryLoading) return;
         this.galleryLoading = true;
-        this.gallerySentinel.innerHTML = window.anomalous_browser_lang === 'zh' ? '加载中...' : 'Loading...';
+        this.gallerySentinel.textContent = t('galleryLoading');
 
         try {
             const res = await fetch(`/anomalous/gallery_images?page=${page}&limit=50`);
@@ -99,7 +101,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
 
 
                                 } else {
-                                    alert((window.anomalous_browser_lang === 'zh' ? '错误: ' : 'Error: ') + data.message);
+                                    alert(t('galleryErrorPrefix') + data.message);
                                 }
                             });
                             return;
@@ -110,7 +112,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
                     const delBtn = document.createElement('button');
                     delBtn.className = 'anomalous-gallery-delete';
                     delBtn.innerHTML = '🗑️';
-                    delBtn.title = window.anomalous_browser_lang === 'zh' ? '删除' : 'Delete';
+                    delBtn.title = t('galleryDelete');
 
                     delBtn.onclick = (e) => {
                         e.stopPropagation();
@@ -130,7 +132,13 @@ export async function loadGalleryImages(page = 1, reset = false) {
                         overlay.style.zIndex = '10';
 
                         const msg = document.createElement('div');
-                        msg.innerHTML = '彻底删除这张图片？<br><span style="font-size:0.8em;color:#aaa">Delete permanently?</span>';
+                        const msgTitle = document.createElement('div');
+                        msgTitle.textContent = t('galleryDeleteConfirm');
+                        const msgHint = document.createElement('div');
+                        msgHint.textContent = t('galleryDeleteConfirmHint');
+                        msgHint.style.fontSize = '0.8em';
+                        msgHint.style.color = '#aaa';
+                        msg.append(msgTitle, msgHint);
                         msg.style.color = '#fff';
                         msg.style.fontWeight = 'bold';
                         msg.style.textAlign = 'center';
@@ -140,7 +148,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
                         btnRow.style.gap = '12px';
 
                         const confirmBtn = document.createElement('button');
-                        confirmBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '🗑️ 删除' : '🗑️ Delete';
+                        confirmBtn.textContent = `🗑️ ${t('galleryDelete')}`;
                         confirmBtn.style.background = '#dc3545';
                         confirmBtn.style.color = '#fff';
                         confirmBtn.style.border = 'none';
@@ -153,7 +161,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
                         confirmBtn.onmouseout = () => confirmBtn.style.background = '#dc3545';
 
                         const cancelBtn = document.createElement('button');
-                        cancelBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '取消' : 'Cancel';
+                        cancelBtn.textContent = t('galleryCancel');
                         cancelBtn.style.background = '#444';
                         cancelBtn.style.color = '#fff';
                         cancelBtn.style.border = 'none';
@@ -171,7 +179,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
 
                         confirmBtn.onclick = async (ce) => {
                             ce.stopPropagation();
-                            confirmBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '删除中...' : 'Deleting...';
+                            confirmBtn.textContent = t('galleryDeleting');
                             confirmBtn.disabled = true;
                             try {
                                 const dr = await fetch('/anomalous/delete_gallery_image', {
@@ -183,11 +191,11 @@ export async function loadGalleryImages(page = 1, reset = false) {
                                 if (dd.status === 'success') {
                                     card.remove();
                                 } else {
-                                    alert((window.anomalous_browser_lang === 'zh' ? '删除失败: ' : 'Delete failed: ') + dd.message);
+                                    alert(t('galleryDeleteFailed') + dd.message);
                                     overlay.remove();
                                 }
                             } catch (err) {
-                                alert((window.anomalous_browser_lang === 'zh' ? '错误: ' : 'Error: ') + err);
+                                alert(t('galleryErrorPrefix') + err);
                                 overlay.remove();
                             }
                         };
@@ -209,17 +217,17 @@ export async function loadGalleryImages(page = 1, reset = false) {
                 this.galleryHasMore = page < data.pages;
 
                 if (!this.galleryHasMore) {
-                    this.gallerySentinel.innerHTML = window.anomalous_browser_lang === 'zh' ? '没有更多图片了' : 'No more images';
+                    this.gallerySentinel.textContent = t('galleryNoMore');
                 } else {
-                    this.gallerySentinel.innerHTML = window.anomalous_browser_lang === 'zh' ? '向下滚动加载更多' : 'Scroll for more';
+                    this.gallerySentinel.textContent = t('galleryScrollMore');
                 }
             } else {
                 this.galleryHasMore = false;
-                this.gallerySentinel.innerHTML = reset ? '图库为空 / Gallery is empty' : '没有更多图片了 / No more images';
+                this.gallerySentinel.textContent = reset ? t('galleryEmpty') : t('galleryNoMore');
             }
         } catch (e) {
             console.error('Failed to load gallery images', e);
-            this.gallerySentinel.innerHTML = window.anomalous_browser_lang === 'zh' ? '加载失败' : 'Load failed';
+            this.gallerySentinel.textContent = t('galleryLoadFailed');
         }
 
         this.galleryLoading = false;
@@ -269,7 +277,7 @@ export async function showGeneratedGallery(model) {
             title.style.color = '#fff';
 
             const closeBtn = document.createElement('button');
-            closeBtn.innerHTML = '&#10006; ' + (window.anomalous_browser_lang === 'zh' ? '关闭图库' : 'Close Gallery');
+            closeBtn.textContent = `✖ ${t('galleryClose')}`;
             closeBtn.style.padding = '8px 15px';
             closeBtn.style.background = '#dc3545';
             closeBtn.style.color = '#fff';
@@ -304,13 +312,13 @@ export async function showGeneratedGallery(model) {
         }
 
         const title = document.getElementById('anomalous-generated-gallery-title');
-        title.innerText = (window.anomalous_browser_lang === 'zh' ? '历史生成图库: ' : 'Generated History: ') + (model.name || model.filename);
+        title.textContent = t('galleryHistoryTitle', { name: model.name || model.filename });
 
         const contentCont = document.getElementById('anomalous-generated-gallery-content');
         contentCont.innerHTML = '';
 
         const loading = document.createElement('div');
-        loading.innerText = window.anomalous_browser_lang === 'zh' ? '加载中，正在扫描图片元数据...' : 'Loading, scanning metadata...';
+        loading.textContent = t('galleryScanning');
         loading.style.textAlign = 'center';
         loading.style.gridColumn = '1 / -1';
         loading.style.padding = '50px';
@@ -326,7 +334,7 @@ export async function showGeneratedGallery(model) {
 
             if (!data.images || data.images.length === 0) {
                 const emptyMsg = document.createElement('div');
-                emptyMsg.innerText = window.anomalous_browser_lang === 'zh' ? '没有找到使用此模型生成的历史图片。' : 'No images found generated by this model.';
+                emptyMsg.textContent = t('galleryNoModelImages');
                 emptyMsg.style.textAlign = 'center';
                 emptyMsg.style.gridColumn = '1 / -1';
                 emptyMsg.style.padding = '50px';
@@ -373,7 +381,7 @@ export async function showGeneratedGallery(model) {
                 titleDiv.innerText = filenameText;
 
                 const setCoverBtn = document.createElement('button');
-                setCoverBtn.innerText = window.anomalous_browser_lang === 'zh' ? '设为封面' : 'Set Cover';
+                setCoverBtn.textContent = t('gallerySetCover');
                 setCoverBtn.style.position = 'absolute';
                 setCoverBtn.style.bottom = '40px';
                 setCoverBtn.style.right = '5px';
@@ -388,7 +396,7 @@ export async function showGeneratedGallery(model) {
 
                 setCoverBtn.onclick = (e) => {
                     e.stopPropagation();
-                    if (!confirm(window.anomalous_browser_lang === 'zh' ? '确定将此图片设为封面吗？' : 'Set this image as cover?')) return;
+                    if (!confirm(t('gallerySetCoverConfirm'))) return;
 
                     fetch('/anomalous/set_custom_cover', {
                         method: 'POST',
@@ -402,17 +410,17 @@ export async function showGeneratedGallery(model) {
                         })
                     }).then(res => res.json()).then(async result => {
                         if (result.status === 'success') {
-                            alert(window.anomalous_browser_lang === 'zh' ? '设置成功！' : 'Cover set successfully!');
+                            alert(t('galleryCoverSuccess'));
                             await this.loadModels();
                             const updatedModel = this.models.find(m => m.filename === model.filename);
                             if (updatedModel && this.currentDetailModel && this.currentDetailModel.filename === model.filename) {
                                 this.showDetail(updatedModel);
                             }
                         } else {
-                            alert((window.anomalous_browser_lang === 'zh' ? '错误: ' : 'Error: ') + result.message);
+                            alert(t('galleryErrorPrefix') + result.message);
                         }
                     }).catch(err => {
-                        alert('Error: ' + err.message);
+                        alert(t('galleryErrorPrefix') + err.message);
                     });
                 };
 
@@ -426,7 +434,13 @@ export async function showGeneratedGallery(model) {
                 contentCont.appendChild(imgCont);
             });
         } catch (e) {
-            contentCont.innerHTML = '<div style="color:red; text-align:center; grid-column: 1/-1; padding: 50px;">Error loading images</div>';
+            const error = document.createElement('div');
+            error.textContent = t('galleryLoadImagesError');
+            error.style.color = 'red';
+            error.style.textAlign = 'center';
+            error.style.gridColumn = '1 / -1';
+            error.style.padding = '50px';
+            contentCont.replaceChildren(error);
         }
     }
 
@@ -452,11 +466,25 @@ export function showGallerySelectMode(model) {
             this.galleryPanel.insertBefore(banner, this.galleryPanel.firstChild);
         }
         banner.style.display = 'block';
-        banner.innerHTML = window.anomalous_browser_lang === 'zh'
-            ? `正在为模型 <span style="color:#ff0;">${escapeHtml(model.filename)}</span> 选择封面。请点击下方的图片。<button id="anomalous-cancel-select" style="margin-left:15px;color:#000;background:#fff;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;">取消</button>`
-            : `Selecting cover for <span style="color:#ff0;">${escapeHtml(model.filename)}</span>. Click an image below.<button id="anomalous-cancel-select" style="margin-left:15px;color:#000;background:#fff;border:none;padding:2px 8px;border-radius:4px;cursor:pointer;">Cancel</button>`;
+        banner.replaceChildren();
+        const bannerPrefix = document.createTextNode(t('gallerySelectingCoverPrefix'));
+        const bannerModel = document.createElement('span');
+        bannerModel.textContent = model.filename;
+        bannerModel.style.color = '#ff0';
+        const bannerSuffix = document.createTextNode(t('gallerySelectingCoverSuffix'));
+        const cancelSelect = document.createElement('button');
+        cancelSelect.id = 'anomalous-cancel-select';
+        cancelSelect.textContent = t('galleryCancel');
+        cancelSelect.style.marginLeft = '15px';
+        cancelSelect.style.color = '#000';
+        cancelSelect.style.background = '#fff';
+        cancelSelect.style.border = 'none';
+        cancelSelect.style.padding = '2px 8px';
+        cancelSelect.style.borderRadius = '4px';
+        cancelSelect.style.cursor = 'pointer';
+        banner.append(bannerPrefix, bannerModel, bannerSuffix, cancelSelect);
 
-        document.getElementById('anomalous-cancel-select').onclick = () => {
+        cancelSelect.onclick = () => {
             const tempModel = this.gallerySelectModel;
             this.gallerySelectModel = null;
             banner.style.display = 'none';
