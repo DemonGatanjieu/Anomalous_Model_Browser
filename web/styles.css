@@ -3169,3 +3169,16 @@
 .anomalous-recipe-detail-node-widgets .anomalous-recipe-detail-parameter-row.is-wide {
     grid-column: 1 / -1;
 }
+
+/* Reset native dialog styles for the full-screen gallery viewer */
+dialog.anomalous-gallery-viewer {
+    border: none;
+    padding: 0;
+    margin: auto;
+    max-width: none;
+    max-height: none;
+    background: transparent;
+}
+dialog.anomalous-gallery-viewer::backdrop {
+    background: rgba(0, 0, 0, 0.95);
+}

@@ -12,6 +12,7 @@
 - **Node Widget Layout Fix**: Addressed a bug where very long text widgets (like prompts in CLIP nodes) were squished into narrow columns. Lowered the `.is-wide` threshold from 90 to 50 characters and ensured `.is-wide` elements span the full width of the node grid (`grid-column: 1 / -1`).
 - **Label Overflow Fix**: Fixed an issue where long, continuous parameter names (like `control_after_generate`) would overlap their values in the grid by adding `word-break: break-all` and `overflow-wrap: anywhere` to `.anomalous-recipe-detail-label`.
 - **Node Widget Copy**: Enabled the one-click copy button for all non-volatile node parameters inside the parameter notebook view by removing the `copy: false` restriction.
+- **Gallery Viewer Z-Index Fix**: Upgraded the full-screen image viewer (`showGalleryViewer`) from a standard `<div>` to a native `<dialog>` element. By utilizing `.showModal()`, the viewer now reliably renders in the browser's top-layer, preventing it from being occluded by other newly introduced modal dialogs (like the gallery grid).
 
 **Validation**
 

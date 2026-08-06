@@ -509,7 +509,7 @@ export function showGallerySelectMode(model) {
 export function showGalleryViewer(src) {
         let viewer = document.getElementById('anomalous-gallery-viewer');
         if (!viewer) {
-            viewer = document.createElement('div');
+            viewer = document.createElement('dialog');
             viewer.id = 'anomalous-gallery-viewer';
             viewer.className = 'anomalous-gallery-viewer';
 
@@ -536,13 +536,13 @@ export function showGalleryViewer(src) {
             };
 
             closeBtn.onclick = () => {
-                viewer.style.display = 'none';
+                viewer.close();
                 resetImgTransform();
             };
 
             viewer.onclick = (e) => {
                 if (e.target === viewer) {
-                    viewer.style.display = 'none';
+                    viewer.close();
                     resetImgTransform();
                 }
             };
@@ -585,5 +585,5 @@ export function showGalleryViewer(src) {
         img.style.transform = `translate(0px, 0px) scale(1)`;
         img.style.cursor = 'grab';
 
-        viewer.style.display = 'flex';
+        if (!viewer.open) viewer.showModal();
     }
