@@ -3162,3 +3162,8 @@
 .anomalous-recipe-gallery-card-actions {
     display: none !important;
 }
+
+/* Ensure wide widgets (like long prompts) span full width in the node cards */
+.anomalous-recipe-detail-node-widgets .anomalous-recipe-detail-parameter-row.is-wide {
+    grid-column: 1 / -1;
+}

@@ -9,6 +9,7 @@
 - **Hero Image Gallery (Plan B)**: Replaced the bottom inline gallery section with a prominent Hero Section (`.anomalous-recipe-detail-hero`) at the top. The first generated image acts as a large cover banner.
 - **Modal Gallery Viewer**: If a recipe has multiple generated images, a sleek glassmorphism button overlay appears on the hero image (e.g., `🖼️ 图库 (5)`). Clicking it opens a native HTML `<dialog>` containing the full gallery grid, preventing the parameter view from bloating vertically while keeping the core browsing experience focused.
 - **Gallery Grid Refactor**: Removed the cluttered action buttons ("Set Cover", "Compare", "View Image") from all gallery cards across the application. Gallery grids now use a sleek, uniform responsive layout (`aspect-ratio: 1`, `object-fit: cover`) with a subtle hover zoom effect, relying on a direct click to view the original image.
+- **Node Widget Layout Fix**: Addressed a bug where very long text widgets (like prompts in CLIP nodes) were squished into narrow columns. Lowered the `.is-wide` threshold from 90 to 50 characters and ensured `.is-wide` elements span the full width of the node grid (`grid-column: 1 / -1`).
 
 **Validation**
 
