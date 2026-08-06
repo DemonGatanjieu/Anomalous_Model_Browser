@@ -46,6 +46,14 @@ Parameter Notebook actions include “Read current and create” and “Apply to
 * **Strict DOM Obliteration**: Rather than caching complex DOM structures (like `display: none` for large grids), the UI strictly employs `innerHTML = ''` when navigating between folders. This enforces immediate Garbage Collection, crucial for performance when users have thousands of models.
 * **Offline-First Resilience**: Model metadata is parsed from local `.info` and `.civitai.info` files or extracted directly from `.safetensors` headers via Python `struct`. API calls to Civitai are explicit, user-initiated actions.
 
+## 1.5 Internationalization and Licensing Boundaries (2026-08-06)
+
+The extension is a UI-only ComfyUI integration: `NODE_CLASS_MAPPINGS` is intentionally empty, and the project does not provide or install custom nodes. Its runtime is split between Vanilla JS/CSS frontend modules and Python `aiohttp` routes hosted by ComfyUI. The repository currently has no bundled font, image, video, vendor library, dependency manifest, or license file; Civitai, optional DeepL/Google translation endpoints, ComfyUI host APIs, and Pillow/aiohttp are runtime/environment integrations rather than bundled project assets.
+
+`web/modules/locales.js` is the canonical home for user-facing translation data. The current codebase still contains substantial inline `zh`/`en` branches across `main.js`, Sidebar, Detail, Gallery, Doctor, Notebook, Dialog, Grid, and the optional hash resolver. The i18n refactor must introduce one normalized translation contract with safe fallback and parameter interpolation before migrating those modules. It must preserve current Chinese and English behavior, keep model names/paths/node types/user data out of locale dictionaries, and keep translated HTML inside the existing `safe_dom.js` boundary. Missing translations must never prevent a panel or action from rendering.
+
+Every i18n or licensing change is a local, reviewable snapshot. The implementation must update this document and `.agents/logs/ai_changelog.md` in the same change, run proportional syntax/runtime checks, and create a local Git commit. Remote pushes require explicit user authorization. The MIT license applies to project-owned code and documentation only; external service content and host-project dependencies retain their own terms.
+
 ## 2. Directory Structure (核心文件结构)
 
 ```text

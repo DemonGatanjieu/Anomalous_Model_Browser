@@ -1,5 +1,28 @@
 # AI Changelog
 
+## [Plan Snapshot] 2026-08-06 - Full project audit and staged i18n plan
+
+**Audited**
+
+- Completed a read-only inventory of the local extension: Vanilla JS/CSS frontend, Python `aiohttp` backend, empty ComfyUI node mappings, current locale ownership, inline language branches, ignored local tests, runtime service URLs, and bundled-resource/dependency state.
+- Confirmed the repository currently has no LICENSE file or bundled third-party assets, while runtime integrations with ComfyUI, Civitai, and optional translation services remain external boundaries.
+- Confirmed that `locales.js` is already the dictionary center but language detection, fallback, and inline UI strings are not yet governed by one contract.
+
+**Planned**
+
+- Replaced the broad i18n/licensing proposal with a staged, reversible plan: establish a shared translation contract and migrate one small module first; migrate the remaining UI by module; add MIT separately; then invite the Russian localization PR.
+- Added explicit constraints for parameter interpolation, safe HTML, dynamic/user data, locale fallback, contribution licensing, and local snapshot commits.
+
+**Validation**
+
+- Read-only repository status was clean before this documentation snapshot at baseline `f9f52a6f65883e9c9082d72c31131862d9b56865`.
+- Audited runtime files, API route registration, language call sites, ignored tests, dependency manifests, external URLs, and project rules.
+- No runtime code was changed in this snapshot.
+
+**Next**
+
+- Await explicit approval to implement only Stage 1: the shared i18n foundation plus one small pilot module.
+
 ## [Snapshot] 2026-08-03 - Restore the panel under the Workspace
 
 **Implemented**
