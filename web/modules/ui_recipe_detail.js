@@ -700,8 +700,53 @@ function renderOverview(content, owner, recipe, references, finish) {
     renderInlineTags(tags, owner, recipe);
     copy.appendChild(tags);
     appendText(copy, 'small', `${t('recipeDetailUpdated')}: ${dateText(recipe.updated_timestamp || recipe.timestamp)}`, 'anomalous-recipe-detail-muted');
+    
+    const overviewActions = document.createElement('div');
+    overviewActions.className = 'anomalous-recipe-actions-primary';
+    overviewActions.style.marginTop = '12px';
+    const matchRecipe = button(overviewActions, '🔎 ' + t('recipeMatchRecipeModels'), 'anomalous-btn-ghost');
+    matchRecipe.title = t('recipeMatchRecipeModelsDesc');
+    const matchRecipeStatus = appendText(overviewActions, 'small', '', 'anomalous-recipe-header-status');
+    matchRecipeStatus.setAttribute('aria-live', 'polite');
+    matchRecipe.onclick = async () => {
+        matchRecipe.disabled = true;
+        matchRecipe.classList.add('is-busy');
+        matchRecipe.textContent = t('recipeMatchingRecipeModels');
+        try {
+            const result = await matchRecipeModels(owner, references, matchRecipeStatus, () => {
+                if (owner.recipeDetailActiveTab === 'overview') selectTab('overview');
+            });
+            matchRecipeStatus.textContent = result.total
+                ? t('recipeRecipeMatchSummary').replace('{found}', String(result.found)).replace('{total}', String(result.total))
+                : t('recipeAllModelsMatched');
+        } catch (error) {
+            console.error('Could not match recipe models locally:', error);
+            matchRecipeStatus.textContent = t('recipeLocalModelMatchError');
+        } finally {
+            matchRecipe.disabled = false;
+            matchRecipe.classList.remove('is-busy');
+            matchRecipe.textContent = '🔎 ' + t('recipeMatchRecipeModels');
+        }
+    };
+    
+    const append = button(overviewActions, t('recipeAppendCanvas'), 'anomalous-btn-ghost');
+    append.onclick = () => {
+        void runRecipeAction(append, async () => {
+            if (await appendRecipeOnCanvas(owner, recipe)) finish('append');
+        });
+    };
+    
+    const secondaryActions = document.createElement('div');
+    secondaryActions.className = 'anomalous-recipe-actions-secondary';
+    const edit = button(secondaryActions, '✏️', 'anomalous-btn-icon anomalous-btn-edit');
+    edit.title = t('recipeEdit');
+    edit.onclick = () => finish('edit');
+    overviewActions.appendChild(secondaryActions);
+    copy.appendChild(overviewActions);
+    
     hero.appendChild(copy);
     overview.appendChild(hero);
+
 
     const stats = document.createElement('div');
     stats.className = 'anomalous-recipe-detail-stats';
@@ -2107,53 +2152,6 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     };
     owner.recipeDetailFinish = finish;
 
-    const header = document.createElement('div');
-    header.className = 'anomalous-recipe-detail-header';
-    const back = button(header, t('recipeDetailBack'), 'anomalous-btn-primary');
-    back.onclick = () => finish('back');
-    appendText(header, 'h3', recipe.name || t('recipeUntitled'));
-    const headerActions = document.createElement('div');
-    headerActions.className = 'anomalous-recipe-actions-primary';
-    const matchRecipe = button(headerActions, '🔎 ' + t('recipeMatchRecipeModels'), 'anomalous-btn-ghost');
-    matchRecipe.title = t('recipeMatchRecipeModelsDesc');
-    const matchRecipeStatus = appendText(headerActions, 'small', '', 'anomalous-recipe-header-status');
-    matchRecipeStatus.setAttribute('aria-live', 'polite');
-    matchRecipe.onclick = async () => {
-        matchRecipe.disabled = true;
-        matchRecipe.classList.add('is-busy');
-        matchRecipe.textContent = t('recipeMatchingRecipeModels');
-        try {
-            const result = await matchRecipeModels(owner, references, matchRecipeStatus, () => {
-                if (owner.recipeDetailActiveTab === 'overview') selectTab('overview');
-            });
-            matchRecipeStatus.textContent = result.total
-                ? t('recipeRecipeMatchSummary').replace('{found}', String(result.found)).replace('{total}', String(result.total))
-                : t('recipeAllModelsMatched');
-        } catch (error) {
-            console.error('Could not match recipe models locally:', error);
-            matchRecipeStatus.textContent = t('recipeLocalModelMatchError');
-        } finally {
-            matchRecipe.disabled = false;
-            matchRecipe.classList.remove('is-busy');
-            matchRecipe.textContent = '🔎 ' + t('recipeMatchRecipeModels');
-        }
-    };
-    
-    const append = button(headerActions, t('recipeAppendCanvas'), 'anomalous-btn-ghost');
-    append.onclick = () => {
-        void runRecipeAction(append, async () => {
-            if (await appendRecipeOnCanvas(owner, recipe)) finish('append');
-        });
-    };
-    
-    const secondaryActions = document.createElement('div');
-    secondaryActions.className = 'anomalous-recipe-actions-secondary';
-    const edit = button(secondaryActions, '✏️', 'anomalous-btn-icon anomalous-btn-edit');
-    edit.title = t('recipeEdit');
-    edit.onclick = () => finish('edit');
-    headerActions.appendChild(secondaryActions);
-    header.appendChild(headerActions);
-    view.appendChild(header);
 
     const tabs = document.createElement('div');
     tabs.className = 'anomalous-recipe-detail-tabs';
@@ -2286,6 +2284,12 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
                 }
             });
     };
+    const backTab = button(tabs, '← ' + t('recipeDetailBack'), 'anomalous-recipe-detail-tab anomalous-recipe-back-tab');
+    backTab.style.backgroundColor = 'transparent';
+    backTab.style.color = 'var(--descrip-text, #a8a8a8)';
+    backTab.onmouseover = () => { backTab.style.color = '#fff'; };
+    backTab.onmouseout = () => { backTab.style.color = 'var(--descrip-text, #a8a8a8)'; };
+    backTab.onclick = () => finish('back');
     for (const [key, label] of tabDefinitions) {
         const tab = button(tabs, label, 'anomalous-recipe-detail-tab');
         tab.dataset.tab = key;
