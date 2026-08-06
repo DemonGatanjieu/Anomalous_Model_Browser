@@ -6,7 +6,7 @@ import { showNotebooks, closeWorkspace, refreshNotebooks, saveCurrentNotebook, d
 import { showRecipes, refreshRecipes, renderRecipeList, handleSaveRecipe } from './modules/ui_recipes.js';
 import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, _openGalleryReplacer, openLoraInsertionPicker, runGlobalDoctorScan } from './modules/ui_doctor.js';
 import { app } from "../../scripts/app.js";
-import { i18n } from './modules/locales.js';
+import { normalizeLocale, resolveLocale, translate } from './modules/locales.js';
 // ============================================================================
 // TABLE OF CONTENTS (TOC)
 // 1. App Registration & Entry     (Search for "app.registerExtension")
@@ -55,9 +55,9 @@ try {
         defaultLang = 'en';
     }
 }
-let currentLang = localStorage.getItem('anomalous_lang') || defaultLang;
+let currentLang = resolveLocale(localStorage.getItem('anomalous_lang') || defaultLang);
 window.anomalous_browser_lang = currentLang;
-const t = (key) => i18n[currentLang][key] || key;
+const t = (key, params) => translate(key, params, window.anomalous_browser_lang || currentLang);
 
 class AnomalousBrowser {
     constructor() {
@@ -457,7 +457,7 @@ app.registerExtension({
                 if (app && app.ui && app.ui.settings) {
                     const locale = app.ui.settings.getSettingValue('Comfy.Locale') || app.ui.settings.getSettingValue('Comfy.Locale.Language');
                     if (locale) {
-                        currentLang = locale.toLowerCase().includes('en') ? 'en' : 'zh';
+                        currentLang = normalizeLocale(locale) || defaultLang;
                         window.anomalous_browser_lang = currentLang;
                     }
                 }

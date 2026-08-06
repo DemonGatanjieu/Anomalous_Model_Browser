@@ -69,6 +69,8 @@ export const i18n = {
         translate: '翻译',
         newNotebookName: '新笔记本名称',
         noBaseModel: '请先选择 Base Model',
+        dialogOk: '确定',
+        dialogCancel: '取消',
         closeHelp: '关闭说明',
         delSure: '⚠️ 确定吗？',
         dockTitle: '侧边停靠',
@@ -392,6 +394,8 @@ export const i18n = {
         translate: 'Translate',
         newNotebookName: 'New Notebook Name',
         noBaseModel: 'Select a Base Model first',
+        dialogOk: 'OK',
+        dialogCancel: 'Cancel',
         closeHelp: 'Close Manual',
         delSure: '⚠️ Sure?',
         dockTitle: 'Dock to Left',
@@ -646,3 +650,40 @@ export const i18n = {
         recipeDetailSavedSnapshot: 'Saved snapshot',
     }
 };
+
+const DEFAULT_LOCALE = 'zh';
+const FALLBACK_LOCALE = 'en';
+const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
+
+export const supportedLocales = Object.freeze(Object.keys(i18n));
+
+export function normalizeLocale(value) {
+    const raw = String(value ?? '').trim().toLowerCase().replace(/_/g, '-');
+    if (!raw) return '';
+    const base = raw.split('-')[0];
+    return hasOwn(i18n, base) ? base : '';
+}
+
+export function resolveLocale(value = globalThis.anomalous_browser_lang) {
+    return normalizeLocale(value) || DEFAULT_LOCALE;
+}
+
+export function formatTranslation(template, params = {}) {
+    if (typeof template !== 'string') return template;
+    return template.replace(/\{([A-Za-z0-9_.-]+)\}/g, (token, key) => (
+        hasOwn(params, key) ? String(params[key]) : token
+    ));
+}
+
+export function translate(key, params = {}, locale = resolveLocale()) {
+    const activeLocale = resolveLocale(locale);
+    const template = i18n[activeLocale]?.[key]
+        ?? i18n[FALLBACK_LOCALE]?.[key]
+        ?? i18n[DEFAULT_LOCALE]?.[key]
+        ?? key;
+    return formatTranslation(template, params);
+}
+
+export function createTranslator(locale) {
+    return (key, params = {}) => translate(key, params, locale);
+}

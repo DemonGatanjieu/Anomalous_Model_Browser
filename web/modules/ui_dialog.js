@@ -1,3 +1,7 @@
+import { translate } from './locales.js';
+
+const t = (key, params) => translate(key, params);
+
 export function anomalousAlert(message, title = 'Anomalous') {
     return new Promise((resolve) => {
         const overlay = document.createElement('div');
@@ -45,7 +49,7 @@ export function anomalousAlert(message, title = 'Anomalous') {
         footer.style.marginTop = '8px';
         
         const okBtn = document.createElement('button');
-        okBtn.textContent = window.anomalous_browser_lang === 'zh' ? '确定' : 'OK';
+        okBtn.textContent = t('dialogOk');
         okBtn.className = 'anomalous-btn-primary';
         okBtn.style.padding = '8px 24px';
         
@@ -112,12 +116,12 @@ export function anomalousConfirm(message, title = 'Anomalous', options = {}) {
         footer.style.marginTop = '8px';
         
         const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = window.anomalous_browser_lang === 'zh' ? '取消' : 'Cancel';
+        cancelBtn.textContent = t('dialogCancel');
         cancelBtn.className = 'anomalous-btn-ghost';
         cancelBtn.style.padding = '8px 24px';
         
         const okBtn = document.createElement('button');
-        okBtn.textContent = window.anomalous_browser_lang === 'zh' ? '确定' : 'OK';
+        okBtn.textContent = t('dialogOk');
         okBtn.className = 'anomalous-btn-danger';
         okBtn.style.padding = '8px 24px';
         

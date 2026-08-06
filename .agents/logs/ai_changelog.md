@@ -1,5 +1,26 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-06 - Establish shared i18n foundation and migrate dialog pilot
+
+**Implemented**
+
+- Added normalized locale handling and a shared translation contract to `web/modules/locales.js`: supported-locale discovery, locale normalization, safe fallback, parameter interpolation, and reusable translators.
+- Added `dialogOk` and `dialogCancel` keys to the existing Chinese and English dictionaries.
+- Updated `web/main.js` to consume the shared locale contract instead of reading the dictionary directly, while preserving the existing zh/en detection behavior.
+- Migrated `web/modules/ui_dialog.js` to the shared translator for alert/confirm buttons. No larger UI module, Russian locale, or MIT license was changed in this snapshot.
+
+**Validation**
+
+- `node --check` passed for every JavaScript file under `web/`.
+- Direct i18n foundation checks passed for locale normalization, unsupported-locale fallback, translation lookup, and missing-key fallback.
+- `node tests/recipe_parser_roundtrip.mjs` passed.
+- Python compilation passed for every `api/*.py` module and `scraper.py` using the bundled Python runtime.
+- `git diff --check` passed.
+
+**Next**
+
+- Continue only with the next explicitly approved migration batch. The remaining inline branches stay unchanged so each later batch remains independently reviewable and reversible.
+
 ## [Plan Snapshot] 2026-08-06 - Full project audit and staged i18n plan
 
 **Audited**
