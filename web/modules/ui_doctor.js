@@ -221,13 +221,7 @@ for (const w of node.widgets) {
         const insertionCapabilities = getModelChainInsertionCapabilities(app.graph, node);
         const canInsert = insertionCapabilities.before.supported || insertionCapabilities.after.supported;
 
-        if (modelWidgets.length === 0 && !canInsert) {
-            placeholder.innerHTML = `<div style="font-size:36px;">⚠️</div><div style="text-align:center;">${t('assistantNoModelParameter')}</div><div style="font-size:12px;color:#555;margin-top:4px;">${escapeHtml(node.type || '')}</div>`;
-            placeholder.style.display = 'flex';
-            nodeContent.style.display = 'none';
-            nodeContent.innerHTML = '';
-            return;
-        }
+        const hasModelOrInsertion = modelWidgets.length > 0 || canInsert;
 
         placeholder.style.display = 'none';
         nodeContent.style.display = 'flex';
@@ -308,13 +302,61 @@ for (const w of node.widgets) {
             onClick: () => this.openLoraInsertionPicker(node, 'after'),
             capability: insertionCapabilities.after,
         });
-        nodeContent.appendChild(quickActions);
+        const tabsRow = document.createElement('div');
+        tabsRow.style.cssText = 'display:flex; padding: 10px 16px 0; gap: 8px; flex-shrink:0;';
+        
+        const btnActions = document.createElement('button');
+        btnActions.textContent = t('assistantTabActions') || '🛠️ Quick Actions';
+        btnActions.style.cssText = 'flex:1; padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; border: none; font-size: 11px; font-weight: bold; transition: background 0.2s;';
+        
+        const btnPresets = document.createElement('button');
+        btnPresets.textContent = t('assistantTabPresets') || '📚 Parameter Presets';
+        btnPresets.style.cssText = 'flex:1; padding: 8px; border-radius: 8px; background: transparent; color: #aaa; cursor: pointer; border: none; font-size: 11px; font-weight: bold; transition: background 0.2s;';
+        
+        tabsRow.append(btnActions, btnPresets);
+        nodeContent.appendChild(tabsRow);
 
-        renderParameterPresets.call(this, node, nodeContent);
+        const actionsContainer = document.createElement('div');
+        actionsContainer.style.cssText = 'display:flex; flex-direction:column; flex:1; overflow-y:auto;';
 
-        for (const w of modelWidgets) {
-            this.renderAssistantModelCard(node, w, nodeContent);
+        const presetsContainer = document.createElement('div');
+        presetsContainer.style.cssText = 'display:none; flex-direction:column; flex:1; overflow-y:auto;';
+
+        nodeContent.append(actionsContainer, presetsContainer);
+
+        btnActions.onclick = () => {
+            btnActions.style.background = 'rgba(255,255,255,0.1)';
+            btnActions.style.color = '#fff';
+            btnPresets.style.background = 'transparent';
+            btnPresets.style.color = '#aaa';
+            actionsContainer.style.display = 'flex';
+            presetsContainer.style.display = 'none';
+        };
+
+        btnPresets.onclick = () => {
+            btnPresets.style.background = 'rgba(255,255,255,0.1)';
+            btnPresets.style.color = '#fff';
+            btnActions.style.background = 'transparent';
+            btnActions.style.color = '#aaa';
+            presetsContainer.style.display = 'flex';
+            actionsContainer.style.display = 'none';
+        };
+
+        if (hasModelOrInsertion) {
+            actionsContainer.appendChild(quickActions);
+            for (const w of modelWidgets) {
+                this.renderAssistantModelCard(node, w, actionsContainer);
+            }
+        } else {
+            const noModelWarning = document.createElement('div');
+            noModelWarning.style.cssText = 'display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 30px 20px;';
+            noModelWarning.innerHTML = `<div style="font-size:36px;margin-bottom:10px;">⚠️</div><div style="text-align:center;color:#aaa;font-size:12px;">${t('assistantNoModelParameter')}</div><div style="font-size:10px;color:#555;margin-top:6px;">${escapeHtml(node.type || '')}</div>`;
+            actionsContainer.appendChild(noModelWarning);
+            
+            btnPresets.onclick(); // switch to presets by default if no model actions
         }
+
+        renderParameterPresets.call(this, node, presetsContainer);
     }
 
 export function renderGlobalDashboard() {
@@ -1466,7 +1508,7 @@ export function renderParameterPresets(node, container) {
                 
                 const recipeHeader = document.createElement('div');
                 recipeHeader.style.cssText = 'padding:10px 12px; font-size:12px; font-weight:bold; color:#c9d6ff; cursor:pointer; display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.2);';
-                recipeHeader.innerHTML = `<span>📁</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(group.recipe_filename === 'unbound' ? 'Unbound' : group.recipe_filename)}</span> <span>▼</span>`;
+                recipeHeader.innerHTML = `<span>📁</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(group.recipe_name || group.recipe_filename)}</span> <span>▼</span>`;
                 
                 const notebookList = document.createElement('div');
                 notebookList.style.cssText = 'display:flex; flex-direction:column; gap:6px; padding:8px;';

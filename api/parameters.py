@@ -8,7 +8,7 @@ import re
 from aiohttp import web
 import folder_paths
 from .utils import require_filename, resolve_within
-from .recipes import MAX_RECIPE_BYTES, _parameter_signature, _parameter_gallery_images
+from .recipes import MAX_RECIPE_BYTES, _parameter_signature, _parameter_gallery_images, get_recipes_dir, _read_recipe
 
 def get_parameters_dir():
     # Store parameter notebooks in the user directory
@@ -108,10 +108,25 @@ async def api_get_parameters_by_type(request):
             "nodes": matched_nodes
         })
         
+    recipes_dir = get_recipes_dir()
+    recipe_name_cache = {}
+
     result = []
     for r_fn, nbs in grouped.items():
+        if r_fn == "unbound":
+            human_name = "Unbound"
+        else:
+            if r_fn not in recipe_name_cache:
+                try:
+                    r_data = _read_recipe(resolve_within(recipes_dir, r_fn))
+                    recipe_name_cache[r_fn] = r_data.get("name") if r_data else r_fn
+                except Exception:
+                    recipe_name_cache[r_fn] = r_fn
+            human_name = recipe_name_cache[r_fn] or r_fn
+
         result.append({
             "recipe_filename": r_fn,
+            "recipe_name": human_name,
             "notebooks": nbs
         })
         

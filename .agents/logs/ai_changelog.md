@@ -1,5 +1,18 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-07 - Node Assistant Layout & Bug Fixes
+
+**Implemented**
+
+- **Tabs Layout in Node Assistant**: Redesigned the Node Assistant panel (`ui_doctor.js`) to use a dual-tab layout ("🛠️ Quick Actions" and "📚 Parameter Presets"). This prevents the UI from becoming cluttered with both action buttons and preset trees simultaneously.
+- **Node Detection Bug Fix**: Fixed an issue in `diagnoseNode` where non-model nodes (like `KSampler` or `CLIPTextEncode`) were incorrectly short-circuited and prevented from rendering Parameter Presets. Now, if a node has no model parameters, the Node Assistant defaults to opening the "Parameter Presets" tab directly rather than displaying a blocking error.
+- **Human-Readable Recipe Names**: Updated `api/parameters.py` to cross-reference the actual `name` property from the source Recipe files instead of displaying raw file paths (e.g., `recipe_1786017329_37f3947d.json`). This ensures the UI properly displays human-readable names for grouped parameter presets.
+
+**Validation**
+
+- Verified `diagnoseNode` correctly falls back to the parameter preset tab for nodes without model parameters.
+- Verified recipe names are accurately fetched and displayed in the tree structure.
+
 ## [Snapshot] 2026-08-07 - Node Assistant and Parameter Notebook Integration
 
 **Implemented**
