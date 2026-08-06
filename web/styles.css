@@ -1876,6 +1876,8 @@
 .anomalous-recipe-detail-label {
     color: #999;
     font-size: 0.8rem;
+    word-break: break-all;
+    overflow-wrap: anywhere;
 }
 
 .anomalous-recipe-detail-stat strong {
