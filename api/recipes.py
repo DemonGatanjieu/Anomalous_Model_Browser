@@ -874,7 +874,7 @@ def _normalise_recipe(payload):
         presentation = {}
     if not isinstance(presentation, dict):
         raise ValueError("Invalid recipe presentation")
-    save_model_preview_snapshots = presentation.get("save_model_preview_snapshots", False)
+    save_model_preview_snapshots = presentation.get("save_model_preview_snapshots", True)
     if not isinstance(save_model_preview_snapshots, bool):
         raise ValueError("Invalid recipe presentation")
     cover_asset_id = presentation.get("cover_asset_id")

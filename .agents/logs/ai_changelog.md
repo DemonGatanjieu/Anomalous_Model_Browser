@@ -1073,6 +1073,7 @@
 **Implemented**
 
 - Removed the per-recipe model-preview snapshot checkbox from the save dialog; the bounded sharing-friendly default is now internal, while legacy explicit `false` values remain compatible until a future Workflow Recipe global setting exists.
+- Aligned the backend recipe normalizer with the same default, so non-UI saves and imported recipes without a stored preference also receive portable model previews.
 - Added a prominent right-side active-notebook banner with the selected note name, timestamp, and current-state badge.
 - Added a short panel transition when switching parameter notebooks so the right pane visibly confirms the change.
 - Added request-token guards so a slow parameter-gallery response from the previous notebook cannot replace the newly selected notebook's gallery.
