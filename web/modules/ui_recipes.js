@@ -340,7 +340,10 @@ function showRecipeSaveDialog(owner, canvasThumbnail, initial = null) {
         const selection = {
             thumbnail: safeThumbnail(initial?.thumbnail) || safeThumbnail(canvasThumbnail),
             sourceImage: initial?.source_image || null,
-            saveModelPreviewSnapshots: initial?.presentation?.save_model_preview_snapshots === true,
+            // A saved snapshot is what makes the cover portable in an export.
+            // Preserve an explicit opt-out, but enable the sharing-oriented
+            // behavior for new and legacy recipes without a stored preference.
+            saveModelPreviewSnapshots: initial?.presentation?.save_model_preview_snapshots !== false,
         };
         const overlay = document.createElement('div');
         overlay.className = 'anomalous-recipe-dialog-overlay';

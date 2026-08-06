@@ -546,3 +546,9 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: Applying values one node at a time can leave a partially modified canvas when a recipe node or dynamic widget is missing.
 
 **The Practice**: Match every source node before mutating anything, validate all target widget slots up front, then apply inside the host graph's change boundary. Keep a complete previous-value list so callback failures can roll back the whole parameter action; extra local nodes may remain untouched.
+
+## 83. Exportable presentation data must be created before export
+
+**The Problem**: A recipe export can include model-preview snapshots only when those snapshots already exist in the saved recipe. Leaving the save-time packaging option unchecked by default makes the later export choice appear to do nothing.
+
+**The Practice**: Enable sharing-oriented presentation assets by default when creating a recipe or editing one with no stored preference. Preserve an explicit `false` as a user opt-out, and keep export-time inclusion as a separate choice so package size remains under the user's control.

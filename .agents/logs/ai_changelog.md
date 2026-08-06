@@ -1034,6 +1034,22 @@
 - All 19 JavaScript files passed `node --check`.
 - The unrelated pre-existing `README.md` and untracked `LICENSE` were left untouched.
 
+## [Snapshot] 2026-08-06 - Enable portable model covers by default
+
+**Implemented**
+
+- New recipe saves now enable model-preview snapshot packaging by default.
+- Legacy recipes without an explicit snapshot preference receive the same default when edited.
+- An explicit `false` preference remains an opt-out, so this change does not silently re-enable a user's deliberate choice.
+- Updated `ARCHITECTURE.md` to document why export-ready snapshots are enabled at save time and that export still has its own include/exclude choice.
+
+**Validation**
+
+- All 19 JavaScript files passed `node --check`.
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
+- `node tests/recipe_parser_roundtrip.mjs`.
+- Changed-file `git diff --check` passed; unrelated pre-existing `README.md` and untracked `LICENSE` were left untouched.
+
 ## [Snapshot] 2026-08-04 - Bind parameter snapshots to recipes
 
 **Implemented**
