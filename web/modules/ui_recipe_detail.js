@@ -239,11 +239,17 @@ function promptValues(recipe) {
         const widget = (node.widgets || []).find((candidate) => /^(text|prompt)$/i.test(String(candidate?.name || '')));
         const text = widget ? fullWidgetValue(recipe, node, widget) : null;
         if (typeof text !== 'string' || !text.trim()) continue;
-        const descriptor = `${node?.title || ''} ${node?.type || ''}`;
-        if (/(negative|neg|负面|反向)/i.test(descriptor)) {
+        if (node.role === 'negative') {
             if (!negative.includes(text)) negative.push(text);
-        } else if (!positive.length && !positive.includes(text)) {
-            positive.push(text);
+        } else if (node.role === 'positive') {
+            if (!positive.includes(text)) positive.push(text);
+        } else {
+            const descriptor = `${node?.title || ''} ${node?.type || ''}`;
+            if (/(negative|neg|负面|反向)/i.test(descriptor)) {
+                if (!negative.includes(text)) negative.push(text);
+            } else if (!positive.length && !positive.includes(text)) {
+                positive.push(text);
+            }
         }
     }
     return { positive, negative };

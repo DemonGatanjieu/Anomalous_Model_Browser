@@ -247,15 +247,34 @@ function findLink(graph, linkId) {
 
 function inputLinkOrigin(graph, node, inputNames) {
     const wanted = new Set(inputNames.map(normaliseName));
+
+function buildNodeIndex(graph) {
+    return new Map((graph?._nodes || []).filter(Boolean).map((node) => [node.id, node]));
+}
+
+function linkOriginId(link) {
+    if (Array.isArray(link)) return link[1];
+    return link?.origin_id;
+}
+
+function findLink(graph, linkId) {
+    if (linkId === null || linkId === undefined) return null;
+    const links = graph?.links;
+    if (Array.isArray(links)) return links.find((link) => Array.isArray(link) && link[0] === linkId) || null;
+    return links?.[linkId] || null;
+}
+
+function inputLinkOrigin(graph, node, inputNames) {
+    const wanted = new Set(inputNames.map(normaliseName));
     const input = (node?.inputs || []).find((item) => wanted.has(normaliseName(item?.name)));
     const link = findLink(graph, input?.link);
     return linkOriginId(link);
 }
 
-function collectPromptTexts(graph, startNodeId, nodeIndex) {
+function collectConditioningNodes(graph, startNodeId, nodeIndex) {
     const queue = [startNodeId];
     const visited = new Set();
-    const prompts = [];
+    const clipNodes = [];
 
     while (queue.length && visited.size < MAX_UPSTREAM_NODES) {
         const nodeId = queue.shift();
@@ -265,8 +284,7 @@ function collectPromptTexts(graph, startNodeId, nodeIndex) {
         if (!node) continue;
 
         if (/cliptextencode/i.test(nodeType(node))) {
-            const prompt = textValue(widgetValue(node, ['text', 'prompt'], 0));
-            if (prompt && !prompts.includes(prompt)) prompts.push(prompt);
+            if (!clipNodes.includes(node)) clipNodes.push(node);
             continue;
         }
 
@@ -277,7 +295,7 @@ function collectPromptTexts(graph, startNodeId, nodeIndex) {
             }
         }
     }
-    return prompts;
+    return clipNodes;
 }
 
 function appendUnique(target, values) {
@@ -335,6 +353,9 @@ export function extractRecipeMetadata(graph) {
     if (!graph || !Array.isArray(graph._nodes)) return metadata;
 
     const nodeIndex = buildNodeIndex(graph);
+    const positiveNodes = [];
+    const negativeNodes = [];
+
     for (const node of graph._nodes) {
         const type = nodeType(node);
         if (metadata.nodes.length < MAX_SUMMARY_NODES) metadata.nodes.push(extractGenericNodeSummary(node));
@@ -362,11 +383,25 @@ export function extractRecipeMetadata(graph) {
 
         if (/^ksampler(advanced)?$/i.test(type) || /samplercustom/i.test(type)) {
             mergeSampler(metadata, recipeSampler(node));
+        }
 
-            const positiveOrigin = inputLinkOrigin(graph, node, ['positive', 'conditioning', 'guider']);
-            const negativeOrigin = inputLinkOrigin(graph, node, ['negative']);
-            appendUnique(metadata.promptPositive, collectPromptTexts(graph, positiveOrigin, nodeIndex));
-            appendUnique(metadata.promptNegative, collectPromptTexts(graph, negativeOrigin, nodeIndex));
+        const posInputs = [];
+        const negInputs = [];
+        for (const input of node.inputs || []) {
+            const name = (input.name || '').toLowerCase();
+            if (name.includes('positive') || name === 'conditioning' || name === 'guider') posInputs.push(input.name);
+            if (name.includes('negative')) negInputs.push(input.name);
+        }
+        
+        if (posInputs.length > 0) {
+            const origin = inputLinkOrigin(graph, node, posInputs);
+            const clips = collectConditioningNodes(graph, origin, nodeIndex);
+            for (const clip of clips) { if (!positiveNodes.includes(clip)) positiveNodes.push(clip); }
+        }
+        if (negInputs.length > 0) {
+            const origin = inputLinkOrigin(graph, node, negInputs);
+            const clips = collectConditioningNodes(graph, origin, nodeIndex);
+            for (const clip of clips) { if (!negativeNodes.includes(clip)) negativeNodes.push(clip); }
         }
 
         if (/empty.*latent/i.test(type) && !metadata.resolution) {
@@ -375,15 +410,34 @@ export function extractRecipeMetadata(graph) {
             if (width && height) metadata.resolution = { width, height };
         }
     }
-    if (!metadata.promptPositive.length || !metadata.promptNegative.length) {
-        for (const node of graph._nodes) {
-            if (!/cliptextencode/i.test(nodeType(node))) continue;
+
+    for (const summary of metadata.nodes) {
+        if (!/cliptextencode/i.test(summary.type)) continue;
+        const node = nodeIndex.get(summary.id);
+        const prompt = textValue(widgetValue(node, ['text', 'prompt'], 0));
+        
+        if (positiveNodes.includes(node)) {
+            summary.role = 'positive';
+            if (prompt) appendUnique(metadata.promptPositive, [prompt]);
+        } else if (negativeNodes.includes(node)) {
+            summary.role = 'negative';
+            if (prompt) appendUnique(metadata.promptNegative, [prompt]);
+        }
+    }
+
+    if (!metadata.promptPositive.length && !metadata.promptNegative.length) {
+        for (const summary of metadata.nodes) {
+            if (!/cliptextencode/i.test(summary.type)) continue;
+            if (summary.role) continue;
+            const node = nodeIndex.get(summary.id);
             const prompt = textValue(widgetValue(node, ['text', 'prompt'], 0));
             if (!prompt) continue;
-            const descriptor = `${node?.title || ''} ${nodeType(node)}`;
+            const descriptor = `${summary.title || ''} ${summary.type}`;
             if (/(negative|neg|负面|反向)/i.test(descriptor)) {
+                summary.role = 'negative';
                 if (!metadata.promptNegative.length) appendUnique(metadata.promptNegative, [prompt]);
             } else if (!metadata.promptPositive.length) {
+                summary.role = 'positive';
                 appendUnique(metadata.promptPositive, [prompt]);
             }
         }

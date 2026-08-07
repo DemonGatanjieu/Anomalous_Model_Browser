@@ -1543,7 +1543,15 @@ export function renderParameterPresets(node, container) {
                             summary += ` - ${n.title}${valStr}`;
                         }
                         
-                        const displayHtml = `<span style="font-size:14px;">✨</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(summary)}</span>`;
+                        let roleTag = '';
+                        if (n.role === 'positive') roleTag = '[🟢 正面] ';
+                        else if (n.role === 'negative') roleTag = '[🔴 负面] ';
+                        else {
+                            const descriptor = `${n.title || ''} ${n.type || ''}`;
+                            if (/(negative|neg|负面|反向)/i.test(descriptor)) roleTag = '[🔴 负面] ';
+                        }
+                        
+                        const displayHtml = `<span style="font-size:14px;">✨</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${roleTag}${escapeHtml(summary)}</span>`;
                         applyBtn.innerHTML = displayHtml;
                         applyBtn.onmouseover = () => { applyBtn.style.background = 'rgba(25,118,210,0.4)'; };
                         applyBtn.onmouseout = () => { applyBtn.style.background = 'rgba(255,255,255,0.05)'; };
