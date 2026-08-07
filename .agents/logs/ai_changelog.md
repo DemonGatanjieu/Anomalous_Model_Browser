@@ -1,5 +1,15 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-07 - Node Assistant Preset Hierarchy Clarity Update
+
+**Implemented**
+
+- **UI Hierarchy Clarification**: Fixed a UX issue in the Node Assistant's "Parameter Presets" tab where users confused Recipe Group folders with Notebooks. Added explicit prefixes `🍱 配方:` (Recipe Group) and `📓 笔记本:` (Notebook) to clarify the data structure.
+- **Graceful Fallbacks for Deleted/Unbound Recipes**: 
+  - Parameter notebooks that belong to a deleted recipe (previously showing raw `recipe_xxx.json` filenames) now correctly display as `⚠️ 已删除配方 (Deleted)`.
+  - Notebooks without a specific recipe (`unbound`) are now labeled as `🌍 全局无绑定 (Global/Unbound)`.
+- **Apply Button Clarity**: Added the `✨ 应用到 -> (Apply To)` prefix on the terminal buttons that inject parameters to the selected node, clarifying their function.
+
 ## [Snapshot] 2026-08-07 - Node Assistant Layout & Bug Fixes
 
 **Implemented**

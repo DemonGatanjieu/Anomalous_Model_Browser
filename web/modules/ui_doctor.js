@@ -1508,7 +1508,15 @@ export function renderParameterPresets(node, container) {
                 
                 const recipeHeader = document.createElement('div');
                 recipeHeader.style.cssText = 'padding:10px 12px; font-size:12px; font-weight:bold; color:#c9d6ff; cursor:pointer; display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.2);';
-                recipeHeader.innerHTML = `<span>📁</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(group.recipe_name || group.recipe_filename)}</span> <span>▼</span>`;
+                
+                let displayName = group.recipe_name || group.recipe_filename;
+                if (displayName === 'Unbound' || displayName === 'unbound') {
+                    displayName = t('assistantUnboundRecipe') || '🌍 全局无绑定 (Global/Unbound)';
+                } else if (displayName.endsWith('.json')) {
+                    displayName = '⚠️ ' + (t('assistantDeletedRecipe') || '已删除配方 (Deleted)') + ' - ' + displayName.substring(0, 15) + '...';
+                }
+                
+                recipeHeader.innerHTML = `<span style="font-size:14px;">🍱</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t('assistantRecipeGroup') || '配方'}: ${escapeHtml(displayName)}</span> <span>▼</span>`;
                 
                 const notebookList = document.createElement('div');
                 notebookList.style.cssText = 'display:flex; flex-direction:column; gap:6px; padding:8px;';
@@ -1534,7 +1542,7 @@ export function renderParameterPresets(node, container) {
                     
                     const nbTitle = document.createElement('div');
                     nbTitle.style.cssText = 'font-size:11px; color:#aaa; font-weight:bold; display:flex; align-items:center; gap:6px;';
-                    nbTitle.innerHTML = `<span>📄</span> <span style="flex:1;">${escapeHtml(nb.name || 'Untitled')}</span>`;
+                    nbTitle.innerHTML = `<span style="font-size:13px;">📓</span> <span style="flex:1;">${t('assistantNotebook') || '笔记本'}: ${escapeHtml(nb.name || 'Untitled')}</span>`;
                     nbBox.appendChild(nbTitle);
                     
                     for (const n of nb.nodes) {
@@ -1548,7 +1556,7 @@ export function renderParameterPresets(node, container) {
                             summary += ` (${val.length > 15 ? val.substring(0,15)+'...' : val})`;
                         }
                         
-                        applyBtn.innerHTML = `<span style="font-size:12px;">✨</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(summary)}</span>`;
+                        applyBtn.innerHTML = `<span style="font-size:12px;">✨</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t('assistantApplyTo') || '应用到'} -> ${escapeHtml(summary)}</span>`;
                         applyBtn.onmouseover = () => { applyBtn.style.background = 'rgba(25,118,210,0.4)'; };
                         applyBtn.onmouseout = () => { applyBtn.style.background = 'rgba(255,255,255,0.05)'; };
                         applyBtn.onclick = () => {
