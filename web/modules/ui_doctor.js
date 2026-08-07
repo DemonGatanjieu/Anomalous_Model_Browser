@@ -1502,84 +1502,61 @@ export function renderParameterPresets(node, container) {
                 return;
             }
 
-            for (const group of data.groups) {
-                const recipeBox = document.createElement('div');
-                recipeBox.style.cssText = 'background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; overflow:hidden;';
-                
-                const recipeHeader = document.createElement('div');
-                recipeHeader.style.cssText = 'padding:10px 12px; font-size:12px; font-weight:bold; color:#c9d6ff; cursor:pointer; display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.2);';
-                
-                let displayName = group.recipe_name || group.recipe_filename;
-                if (displayName === 'Unbound' || displayName === 'unbound') {
-                    displayName = t('assistantUnboundRecipe') || '🌍 全局无绑定 (Global/Unbound)';
-                } else if (displayName.endsWith('.json')) {
-                    displayName = '⚠️ ' + (t('assistantDeletedRecipe') || '已删除配方 (Deleted)') + ' - ' + displayName.substring(0, 15) + '...';
-                }
-                
-                recipeHeader.innerHTML = `<span style="font-size:14px;">🍱</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t('assistantRecipeGroup') || '配方'}: ${escapeHtml(displayName)}</span> <span>▼</span>`;
-                
-                const notebookList = document.createElement('div');
-                notebookList.style.cssText = 'display:flex; flex-direction:column; gap:6px; padding:8px;';
-                // By default expand unbound or first group
-                if (group.recipe_filename !== 'unbound' && data.groups.length > 1) {
-                    notebookList.style.display = 'none';
-                    recipeHeader.querySelector('span:last-child').textContent = '▶';
-                }
+            const flatContainer = document.createElement('div');
+            flatContainer.style.cssText = 'display:flex; flex-direction:column; gap:6px; margin-top:8px;';
+            let presetCount = 0;
 
-                recipeHeader.onclick = () => {
-                    if (notebookList.style.display === 'none') {
-                        notebookList.style.display = 'flex';
-                        recipeHeader.querySelector('span:last-child').textContent = '▼';
-                    } else {
-                        notebookList.style.display = 'none';
-                        recipeHeader.querySelector('span:last-child').textContent = '▶';
-                    }
-                };
+            for (const group of data.groups) {
+                let displayName = group.recipe_name || group.recipe_filename;
+                // Hide unbound and deleted recipes as per user request
+                if (group.recipe_filename === 'unbound' || displayName.endsWith('.json')) {
+                    continue;
+                }
                 
                 for (const nb of group.notebooks) {
-                    const nbBox = document.createElement('div');
-                    nbBox.style.cssText = 'background:rgba(0,0,0,0.3); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:6px;';
-                    
-                    const nbTitle = document.createElement('div');
-                    nbTitle.style.cssText = 'font-size:11px; color:#aaa; font-weight:bold; display:flex; align-items:center; gap:6px;';
-                    nbTitle.innerHTML = `<span style="font-size:13px;">📓</span> <span style="flex:1;">${t('assistantNotebook') || '笔记本'}: ${escapeHtml(nb.name || 'Untitled')}</span>`;
-                    nbBox.appendChild(nbTitle);
-                    
                     for (const n of nb.nodes) {
+                        presetCount++;
                         const applyBtn = document.createElement('button');
-                        applyBtn.style.cssText = 'background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; padding:6px 10px; font-size:10px; cursor:pointer; text-align:left; transition:background 0.2s; display:flex; align-items:center; gap:6px;';
+                        applyBtn.style.cssText = 'background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; padding:8px 12px; font-size:12px; cursor:pointer; text-align:left; transition:background 0.2s; display:flex; align-items:center; gap:8px;';
                         
-                        // Show a brief summary of widgets if possible
-                        let summary = n.title;
-                        if (n.widgets_values && n.widgets_values.length > 0) {
-                            const val = String(n.widgets_values[0]);
-                            summary += ` (${val.length > 15 ? val.substring(0,15)+'...' : val})`;
+                        let summary = nb.name || t('recipeParameterUntitled') || 'Untitled';
+                        if (nb.nodes.length > 1) {
+                            let valStr = '';
+                            if (n.widgets_values && n.widgets_values.length > 0) {
+                                const val = String(n.widgets_values[0]);
+                                valStr = ` (${val.length > 15 ? val.substring(0,15)+'...' : val})`;
+                            }
+                            summary += ` - ${n.title}${valStr}`;
                         }
                         
-                        applyBtn.innerHTML = `<span style="font-size:12px;">✨</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t('assistantApplyTo') || '应用到'} -> ${escapeHtml(summary)}</span>`;
+                        const displayHtml = `<span style="font-size:14px;">✨</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(summary)}</span>`;
+                        applyBtn.innerHTML = displayHtml;
                         applyBtn.onmouseover = () => { applyBtn.style.background = 'rgba(25,118,210,0.4)'; };
                         applyBtn.onmouseout = () => { applyBtn.style.background = 'rgba(255,255,255,0.05)'; };
                         applyBtn.onclick = () => {
-                            applyBtn.innerHTML = '⏳...';
+                            applyBtn.innerHTML = `⏳...`;
                             setTimeout(() => {
                                 applyLocalNodeParameters(node, n.widgets_values);
-                                applyBtn.innerHTML = '✅ Applied';
+                                applyBtn.innerHTML = `✅ ${t('recipeParameterApplied').replace('{count}', '')}`.trim();
                                 applyBtn.style.background = 'rgba(46,139,87,0.6)';
                                 setTimeout(() => {
-                                    applyBtn.innerHTML = `<span style="font-size:12px;">✨</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(summary)}</span>`;
+                                    applyBtn.innerHTML = displayHtml;
                                     applyBtn.style.background = 'rgba(255,255,255,0.05)';
                                 }, 1500);
                             }, 50);
                         };
-                        nbBox.appendChild(applyBtn);
+                        flatContainer.appendChild(applyBtn);
                     }
-                    
-                    notebookList.appendChild(nbBox);
                 }
-                
-                recipeBox.appendChild(recipeHeader);
-                recipeBox.appendChild(notebookList);
-                presetSection.appendChild(recipeBox);
+            }
+
+            if (presetCount === 0) {
+                const empty = document.createElement('div');
+                empty.style.cssText = 'color:#aaa; font-style:italic; font-size:12px; padding:10px; text-align:center;';
+                empty.textContent = t('assistantNoPresets') || 'No presets found for this node type.';
+                presetSection.appendChild(empty);
+            } else {
+                presetSection.appendChild(flatContainer);
             }
         } catch (e) {
             console.error("Failed to load parameter presets", e);

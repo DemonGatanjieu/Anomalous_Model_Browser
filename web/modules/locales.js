@@ -625,7 +625,15 @@ export const i18n = {
         recipeDetailCurrentPreview: '当前本机预览',
         recipeDetailNoPreview: '暂无预览',
         recipeDetailSavedSnapshot: '已保存快照',
-
+        recipeParameterNotebooks: 'RECIPE PARAMETER NOTEBOOKS',
+        assistantTabActions: '动作',
+        assistantTabPresets: '参数笔记本',
+        assistantRecipeGroup: '配方',
+        assistantDeletedRecipe: '已删除配方',
+        assistantUnboundRecipe: '全局无绑定',
+        assistantNotebook: '笔记本',
+        assistantApplyTo: '应用到',
+        assistantNoPresets: '该节点类型暂无参数预设。',
     },
     en: {
         title: '📦 Anomalous Model Browser',
@@ -1246,9 +1254,18 @@ export const i18n = {
         recipeDiffOther: 'Other',
         recipeDetailUnknownTime: 'Unknown time',
         recipeDetailLoadingPreviews: 'Loading local model previews…',
-        recipeDetailCurrentPreview: 'Current local preview',
-        recipeDetailNoPreview: 'No preview available',
-        recipeDetailSavedSnapshot: 'Saved snapshot',
+        recipeDetailCurrentPreview: 'Current Local Preview',
+        recipeDetailNoPreview: 'No Preview',
+        recipeDetailSavedSnapshot: 'Snapshot Saved',
+        recipeParameterNotebooks: 'RECIPE PARAMETER NOTEBOOKS',
+        assistantTabActions: 'Actions',
+        assistantTabPresets: 'Parameter Presets',
+        assistantRecipeGroup: 'Recipe',
+        assistantDeletedRecipe: 'Deleted Recipe',
+        assistantUnboundRecipe: 'Global Unbound',
+        assistantNotebook: 'Notebook',
+        assistantApplyTo: 'Apply to',
+        assistantNoPresets: 'No parameter presets found for this node type.',
     }
 };
 
