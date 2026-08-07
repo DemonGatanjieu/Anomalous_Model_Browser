@@ -370,8 +370,8 @@ export function extractRecipeMetadata(graph) {
         const negInputs = [];
         for (const input of node.inputs || []) {
             const name = (input.name || '').toLowerCase();
-            if (name.includes('positive') || name === 'conditioning' || name === 'guider') posInputs.push(input.name);
-            if (name.includes('negative')) negInputs.push(input.name);
+            if (name.includes('positive') || name === 'guider' || (name.includes('cond') && !name.includes('uncond'))) posInputs.push(input.name);
+            if (name.includes('negative') || name.includes('uncond')) negInputs.push(input.name);
         }
         
         if (posInputs.length > 0) {
@@ -414,12 +414,12 @@ export function extractRecipeMetadata(graph) {
             const prompt = textValue(widgetValue(node, ['text', 'prompt'], 0));
             if (!prompt) continue;
             const descriptor = `${summary.title || ''} ${summary.type}`;
-            if (/(negative|neg|负面|反向)/i.test(descriptor)) {
+            if (/(negative|neg|负面|反向|uncond)/i.test(descriptor)) {
                 summary.role = 'negative';
                 if (!metadata.promptNegative.length) appendUnique(metadata.promptNegative, [prompt]);
-            } else if (!metadata.promptPositive.length) {
+            } else {
                 summary.role = 'positive';
-                appendUnique(metadata.promptPositive, [prompt]);
+                if (!metadata.promptPositive.length) appendUnique(metadata.promptPositive, [prompt]);
             }
         }
     }

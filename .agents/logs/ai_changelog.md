@@ -4,8 +4,8 @@
 
 **Implemented**
 
-- **Topological Backward-Tracing**: Replaced the fragile regex/fuzzy-name matching for Positive/Negative prompts in `recipe_parser.js`. Implemented `collectConditioningNodes` to trace upstream from KSampler inputs (like `positive`, `negative`, `conditioning`) through the node links directly to the originating `CLIPTextEncode` nodes.
-- **Role Tagging**: Added a permanent `role` property (`positive` or `negative`) to node summaries extracted in `recipe_parser.js`, which is now strictly adhered to by `ui_recipe_detail.js` when constructing parameter lists and by `ui_doctor.js` for applying correct prefixes (`[🟢 正面]`, `[🔴 负面]`).
+- **Topological Backward-Tracing Fix**: Replaced the fragile regex/fuzzy-name matching for Positive/Negative prompts in `recipe_parser.js`. Implemented `collectConditioningNodes` to trace upstream from KSampler inputs (like `positive`, `negative`, `conditioning`). Critically, fixed a blindspot where custom sampler inputs named `uncond`, `model_cond`, or `cond` were ignored, ensuring negative prompts are strictly traced across all sampler varieties.
+- **Node Assistant Dynamic Role Injection**: Fixed an issue where the Node Assistant failed to render `[🟢 正面]` and `[🔴 负面]` tags for old/new parameter notebooks. The backend (`api/parameters.py`) now dynamically reads the bounded recipe's `metadata.nodes` to resolve topological `role` by `node.id`, injecting it directly into the parameter responses. Added a smart fallback for global unbound notebooks to default to Positive if "negative" isn't in the title.
 - **ES Module Syntax Crash Fix**: Fixed a massive unclosed-bracket syntax error in `recipe_parser.js` resulting from a malformed code replacement. The error caused the UI to disappear silently due to the browser aborting the ES Module parsing.
 
 ## [Snapshot] 2026-08-07 - Node Assistant Preset Hierarchy Clarity Update

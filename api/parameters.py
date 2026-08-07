@@ -91,6 +91,7 @@ async def api_get_parameters_by_type(request):
                 matched_nodes.append({
                     "id": n.get("id"),
                     "title": n.get("title") or n.get("type"),
+                    "type": n.get("type"),
                     "widgets_values": n.get("widgets_values", [])
                 })
         
@@ -110,9 +111,11 @@ async def api_get_parameters_by_type(request):
         
     recipes_dir = get_recipes_dir()
     recipe_name_cache = {}
+    recipe_role_cache = {}
 
     result = []
     for r_fn, nbs in grouped.items():
+        recipe_roles = {}
         if r_fn == "unbound":
             human_name = "Unbound"
         else:
@@ -120,9 +123,22 @@ async def api_get_parameters_by_type(request):
                 try:
                     r_data = _read_recipe(resolve_within(recipes_dir, r_fn))
                     recipe_name_cache[r_fn] = r_data.get("name") if r_data else r_fn
+                    if r_data and isinstance(r_data.get("metadata"), dict) and isinstance(r_data["metadata"].get("nodes"), list):
+                        role_map = {}
+                        for n in r_data["metadata"]["nodes"]:
+                            if isinstance(n, dict) and "id" in n and "role" in n:
+                                role_map[n["id"]] = n["role"]
+                        recipe_role_cache[r_fn] = role_map
                 except Exception:
                     recipe_name_cache[r_fn] = r_fn
             human_name = recipe_name_cache[r_fn] or r_fn
+            recipe_roles = recipe_role_cache.get(r_fn, {})
+
+        for nb in nbs:
+            for n in nb["nodes"]:
+                node_id = n.get("id")
+                if node_id in recipe_roles:
+                    n["role"] = recipe_roles[node_id]
 
         result.append({
             "recipe_filename": r_fn,

@@ -1548,7 +1548,8 @@ export function renderParameterPresets(node, container) {
                         else if (n.role === 'negative') roleTag = '[🔴 负面] ';
                         else {
                             const descriptor = `${n.title || ''} ${n.type || ''}`;
-                            if (/(negative|neg|负面|反向)/i.test(descriptor)) roleTag = '[🔴 负面] ';
+                            if (/(negative|neg|负面|反向|uncond)/i.test(descriptor)) roleTag = '[🔴 负面] ';
+                            else if (/cliptextencode/i.test(n.type || '')) roleTag = '[🟢 正面] ';
                         }
                         
                         const displayHtml = `<span style="font-size:14px;">✨</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${roleTag}${escapeHtml(summary)}</span>`;
