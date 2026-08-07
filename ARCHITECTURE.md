@@ -46,7 +46,11 @@ Parameter Notebook actions include “Read current and create” and “Apply to
 
 The Parameter Notebook system has been extended to act as a contextual preset library within the Node Assistant (`ui_doctor.js`). When a user selects a specific node (e.g., `KSampler`), the Node Assistant automatically queries the backend for all historical Parameter Notebooks across all recipes, filtering specifically for saved nodes that match the selected `type`. 
 
-The backend (`api/parameters.py`) implements a lightweight in-memory cache for notebook parsing to ensure instantaneous UI updates without heavy disk I/O. The filtered presets are rendered hierarchically (Recipe -> Notebook -> Parameter Summary). Applying a preset invokes `applyLocalNodeParameters`, which performs a targeted, single-node widget replacement while preserving the rest of the canvas and safely triggering all required ComfyUI widget callbacks.
+The backend (`api/parameters.py`) implements a lightweight in-memory cache for notebook parsing to ensure instantaneous UI updates without heavy disk I/O, which can be bypassed via `?refresh=1` for immediate UI synchronization. The filtered presets are rendered hierarchically (Recipe -> Notebook -> Parameter Summary). Applying a preset invokes `applyLocalNodeParameters`, which performs a targeted, single-node widget replacement while preserving the rest of the canvas and safely triggering all required ComfyUI widget callbacks.
+
+### Topological Prompt Tracing and Dynamic Role Injection
+Prompt tagging (Positive vs Negative) leverages a robust Topological Backward-Tracing engine (`recipe_parser.js`) rather than fragile regex matching on node titles. During recipe save, the engine starts from known conditioning ports on samplers (including `positive`, `negative`, `conditioning`, `cond`, `uncond`, `model_cond`, etc.) and traces backward through the graph to explicitly tag upstream `CLIPTextEncode` nodes.
+These topological `role` properties are baked into the recipe's `metadata.nodes`. To seamlessly bridge this structural knowledge to the Node Assistant, `api/parameters.py` performs Dynamic Role Injection—reading the bounded recipe's metadata by `node_id` and injecting the `role` back into the Parameter Notebook response. This ensures the UI accurately displays `[🟢 正面]` or `[🔴 负面]` prefixes without guessing.
 
 ## 1. Project Philosophy (设计理念)
 * **Zero Frameworks**: No React, Vue, or build tools. Everything is Vanilla JS and CSS for maximum compatibility, minimum overhead, and zero compilation steps.
