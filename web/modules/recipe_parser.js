@@ -247,25 +247,6 @@ function findLink(graph, linkId) {
 
 function inputLinkOrigin(graph, node, inputNames) {
     const wanted = new Set(inputNames.map(normaliseName));
-
-function buildNodeIndex(graph) {
-    return new Map((graph?._nodes || []).filter(Boolean).map((node) => [node.id, node]));
-}
-
-function linkOriginId(link) {
-    if (Array.isArray(link)) return link[1];
-    return link?.origin_id;
-}
-
-function findLink(graph, linkId) {
-    if (linkId === null || linkId === undefined) return null;
-    const links = graph?.links;
-    if (Array.isArray(links)) return links.find((link) => Array.isArray(link) && link[0] === linkId) || null;
-    return links?.[linkId] || null;
-}
-
-function inputLinkOrigin(graph, node, inputNames) {
-    const wanted = new Set(inputNames.map(normaliseName));
     const input = (node?.inputs || []).find((item) => wanted.has(normaliseName(item?.name)));
     const link = findLink(graph, input?.link);
     return linkOriginId(link);
