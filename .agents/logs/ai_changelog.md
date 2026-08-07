@@ -1261,3 +1261,12 @@
 **Handoff**
 
 - Two pre-existing untracked investigation files (`test.mjs`, `test2.mjs`) were not staged or modified.
+
+## [2026-08-07] Fix Legacy Positive/Negative Role Recovery
+
+- Fixed Node Assistant labels for recipes saved before per-node prompt roles existed.
+- The backend now matches a complete CLIP text widget value against the saved recipe/parameter `promptPositive` and `promptNegative` arrays when no explicit role is available.
+- Explicit metadata roles remain authoritative; prompts appearing in both lists remain intentionally unresolved instead of being guessed.
+- Added regression coverage for negative-role recovery and ambiguous prompt values.
+
+Validation: all JS syntax checks passed, the parser test passed, and the Python suite passed (17 tests).

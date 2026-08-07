@@ -591,3 +591,9 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: A merged assistant/doctor implementation called a removed doctor-specific method from the shared canvas selection callback. Selecting a node could therefore throw even when the assistant itself was not the active panel.
 
 **The Practice**: Preserve prior host callbacks, keep panel-specific work behind existence checks, and never let an optional panel update call determine whether ComfyUI can continue selecting nodes.
+
+## 90. Legacy metadata needs a value-based compatibility bridge
+
+**The Problem**: A recipe saved before per-node prompt roles could still contain correct positive/negative prompt arrays, but the assistant had no role field to display and defaulted every `CLIPTextEncode` node to positive.
+
+**The Practice**: When adding a new derived metadata field, recover it from an existing authoritative value for legacy records. Require an exact unambiguous match, preserve explicit new metadata as the source of truth, and leave collisions unresolved rather than inventing a role.

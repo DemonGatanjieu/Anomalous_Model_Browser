@@ -54,6 +54,24 @@ def _invalidate_parameter_notebooks_cache():
     _parameter_notebooks_cache = None
     _parameter_notebooks_cache_time = 0
 
+def _prompt_role_for_node(node, params):
+    """Recover prompt roles for legacy recipes that predate metadata node roles."""
+    if not isinstance(node, dict) or not isinstance(params, dict):
+        return None
+    values = node.get("widgets_values")
+    if not isinstance(values, list) or not values:
+        return None
+    value = values[0]
+    positive_values = params.get("promptPositive", [])
+    negative_values = params.get("promptNegative", [])
+    positive = set(item for item in positive_values if isinstance(item, str)) if isinstance(positive_values, list) else set()
+    negative = set(item for item in negative_values if isinstance(item, str)) if isinstance(negative_values, list) else set()
+    if value in negative and value not in positive:
+        return "negative"
+    if value in positive and value not in negative:
+        return "positive"
+    return None
+
 def _get_all_notebooks_cached(parameters_dir, force_refresh=False):
     global _parameter_notebooks_cache, _parameter_notebooks_cache_time
     # Cache for 2 seconds to prevent rapid disk I/O on UI interactions
@@ -98,7 +116,8 @@ async def api_get_parameters_by_type(request):
                     "id": n.get("id"),
                     "title": n.get("title") or n.get("type"),
                     "type": n.get("type"),
-                    "widgets_values": n.get("widgets_values", [])
+                    "widgets_values": n.get("widgets_values", []),
+                    "role": _prompt_role_for_node(n, nb.get("data", {}).get("params")),
                 })
         
         if not matched_nodes:
@@ -146,6 +165,8 @@ async def api_get_parameters_by_type(request):
                 role = recipe_roles.get(node_id)
                 if role is None:
                     role = recipe_roles.get(str(node_id))
+                if role is None:
+                    role = n.get("role")
                 if role is not None:
                     n["role"] = role
 

@@ -317,3 +317,7 @@ Applying a node preset is a transactional live-widget operation: volatile seed s
 Prompt roles are derived from linked conditioning inputs by bounded upstream traversal. Link storage may be an array, object, or `Map`, and a named input without a link must not mask another linked input with the same semantic role. Saved role metadata is joined to assistant records using string-safe node IDs; legacy recipes still fall back to descriptor-based classification and retain all discoverable positive/negative prompts.
 
 The assistant must not call removed doctor-panel methods from canvas selection hooks. Existing host selection callbacks are preserved, and the assistant hook only updates its own panel.
+
+## 72. Legacy Prompt Roles Are Recovered from Full Prompt Values
+
+Older recipes may contain correct `params.promptPositive` and `params.promptNegative` arrays but no per-node `role` field. When the Node Assistant prepares a node-type preset response, the backend compares the node's complete saved text widget value against those arrays and injects a role only when the match is unambiguous. An identical value present in both arrays remains unclassified rather than being guessed; explicit metadata roles always take precedence.
