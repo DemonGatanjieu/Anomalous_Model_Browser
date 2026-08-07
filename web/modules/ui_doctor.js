@@ -192,9 +192,9 @@ export function openLoraInsertionPicker(anchorNode, direction) {
     });
 }
 
-export function diagnoseNode(node) {
+export function diagnoseNode(node, forceRefresh = false) {
         // This method serves the Node Assistant panel only
-if (!this.assistantPanelInitialized) {
+        if (!this.assistantPanelInitialized) {
             this.initAssistantPanel();
         }
         const placeholder = document.getElementById('anomalous-assistant-placeholder');
@@ -232,6 +232,19 @@ for (const w of node.widgets) {
         titleBar.innerHTML = `<span style="width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;background:linear-gradient(135deg,#8ab4f8,#7c4dff);box-shadow:0 6px 16px rgba(66,133,244,0.3);">🤖</span><span style="display:flex;flex-direction:column;min-width:0;gap:3px;"><span style="font-size:10px;letter-spacing:0.11em;text-transform:uppercase;color:#8ab4f8;">${t('assistantSelectedNode')}</span><span class="ast-title" style="font-weight:750;color:#fff;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span></span><span class="ast-type" style="font-size:10px;color:#c9d6ff;margin-left:auto;padding:5px 8px;border-radius:999px;border:1px solid rgba(138,180,248,0.24);background:rgba(138,180,248,0.08);max-width:38%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>`;
         titleBar.querySelector('.ast-title').textContent = node.title || node.type || 'Node';
         titleBar.querySelector('.ast-type').textContent = node.type || '';
+
+        const refreshBtn = document.createElement('button');
+        refreshBtn.title = t('refresh') || 'Refresh';
+        refreshBtn.innerHTML = '🔄';
+        refreshBtn.style.cssText = 'background:none; border:none; color:#c9d6ff; cursor:pointer; font-size:14px; padding:4px; margin-left:4px; border-radius:4px; transition:background 0.2s, transform 0.3s; display:flex; align-items:center; justify-content:center;';
+        refreshBtn.onmouseover = () => refreshBtn.style.background = 'rgba(255,255,255,0.1)';
+        refreshBtn.onmouseout = () => refreshBtn.style.background = 'none';
+        refreshBtn.onclick = () => {
+            refreshBtn.style.transform = 'rotate(180deg)';
+            setTimeout(() => this.diagnoseNode(node, true), 150);
+        };
+        titleBar.appendChild(refreshBtn);
+
         nodeContent.appendChild(titleBar);
 
         const quickActions = document.createElement('div');
@@ -356,7 +369,7 @@ for (const w of node.widgets) {
             btnPresets.onclick(); // switch to presets by default if no model actions
         }
 
-        renderParameterPresets.call(this, node, presetsContainer);
+        renderParameterPresets.call(this, node, presetsContainer, forceRefresh);
     }
 
 export function renderGlobalDashboard() {
@@ -649,9 +662,6 @@ if (!this._assistantPanelHooked) {
                 if (self.assistantPanel && self.assistantPanel.style.display !== 'none') {
                     self.diagnoseNode(node);
                 }
-                if (self.doctorPanel && self.doctorPanel.style.display !== 'none') {
-                    self.diagnoseNodeForDoctor(node);
-                }
             };
             const originalOnDeselected = app.canvas.onNodeDeselected;
             app.canvas.onNodeDeselected = function (node) {
@@ -660,11 +670,6 @@ if (!this._assistantPanelHooked) {
                     const stillSelected = Object.values(app.canvas.selected_nodes || {});
                     if (stillSelected.length > 0) self.diagnoseNode(stillSelected[0]);
                     else self.diagnoseNode(null);
-                }
-                if (self.doctorPanel && self.doctorPanel.style.display !== 'none') {
-                    const stillSelected = Object.values(app.canvas.selected_nodes || {});
-                    if (stillSelected.length > 0) self.diagnoseNodeForDoctor(stillSelected[0]);
-                    else self.diagnoseNodeForDoctor(null);
                 }
             };
         }
@@ -1420,13 +1425,33 @@ if (!isHealthy) {
         }
     }
 
+function cloneAssistantValue(value) {
+    if (value === undefined) return undefined;
+    try { return JSON.parse(JSON.stringify(value)); } catch (error) { return value; }
+}
+
+function isVolatileAssistantWidget(node, widget, index) {
+    const name = String(widget?.name || '').toLowerCase();
+    if (/(^|[_\s-])(seed|noise_seed|random_seed|variation_seed|last_seed)([_\s-]|$)/i.test(name)) return true;
+    const type = String(node?.type || '').toLowerCase();
+    if (type === 'ksampler') return index === 0;
+    if (type === 'ksampleradvanced') return index === 1;
+    return false;
+}
+
 export function applyLocalNodeParameters(targetNode, sourceWidgetValues) {
-    if (!targetNode || !targetNode.widgets || !Array.isArray(sourceWidgetValues)) return;
+    if (!targetNode || !Array.isArray(targetNode.widgets) || !Array.isArray(sourceWidgetValues)) {
+        throw new Error('assistant_parameter_target_unavailable');
+    }
+    if (sourceWidgetValues.length > targetNode.widgets.length) {
+        throw new Error('assistant_parameter_widget_mismatch');
+    }
+    if (!app.graph) throw new Error('assistant_parameter_graph_unavailable');
     const previousValues = [];
     
     // Save previous values in case of error
     for (let i = 0; i < targetNode.widgets.length; i++) {
-        previousValues.push(JSON.parse(JSON.stringify(targetNode.widgets[i].value !== undefined ? targetNode.widgets[i].value : null)));
+        previousValues.push(cloneAssistantValue(targetNode.widgets[i].value));
     }
     
     try {
@@ -1434,8 +1459,8 @@ export function applyLocalNodeParameters(targetNode, sourceWidgetValues) {
         for (let i = 0; i < sourceWidgetValues.length; i++) {
             if (!targetNode.widgets[i]) continue;
             
-            // Skip volatile widgets if we could detect them, but for now we just assign
-            const val = JSON.parse(JSON.stringify(sourceWidgetValues[i] !== undefined ? sourceWidgetValues[i] : null));
+            if (isVolatileAssistantWidget(targetNode, targetNode.widgets[i], i)) continue;
+            const val = cloneAssistantValue(sourceWidgetValues[i]);
             const prevVal = previousValues[i];
             
             targetNode.widgets[i].value = val;
@@ -1453,19 +1478,22 @@ export function applyLocalNodeParameters(targetNode, sourceWidgetValues) {
         app.graph.change?.();
         app.graph.setDirtyCanvas?.(true, true);
         app.canvas?.setDirty?.(true, true);
+        try { window.dispatchEvent(new CustomEvent('graphChanged')); } catch (error) {}
+        return { widgets: sourceWidgetValues.length };
     } catch (e) {
         console.error("Error applying local node parameters:", e);
         // Rollback
         for (let i = 0; i < previousValues.length; i++) {
-            if (targetNode.widgets[i]) targetNode.widgets[i].value = previousValues[i];
-            if (Array.isArray(targetNode.widgets_values)) targetNode.widgets_values[i] = previousValues[i];
+            if (targetNode.widgets[i]) targetNode.widgets[i].value = cloneAssistantValue(previousValues[i]);
+            if (Array.isArray(targetNode.widgets_values)) targetNode.widgets_values[i] = cloneAssistantValue(previousValues[i]);
         }
+        throw e;
     } finally {
         app.graph.afterChange?.();
     }
 }
 
-export function renderParameterPresets(node, container) {
+export function renderParameterPresets(node, container, forceRefresh = false) {
     if (!node || !node.type) return;
 
     const presetSection = document.createElement('div');
@@ -1488,13 +1516,14 @@ export function renderParameterPresets(node, container) {
     if (this._presetFetchTimer) clearTimeout(this._presetFetchTimer);
     this._presetFetchTimer = setTimeout(async () => {
         try {
-            const res = await fetch(`/anomalous/parameters/by_node_type?type=${encodeURIComponent(node.type)}`);
+            const fetchUrl = `/anomalous/parameters/by_node_type?type=${encodeURIComponent(node.type)}${forceRefresh ? '&refresh=1' : ''}`;
+            const res = await fetch(fetchUrl);
             if (!res.ok) throw new Error('Network error');
             const data = await res.json();
             
             loader.style.display = 'none';
             
-            if (!data.groups || data.groups.length === 0) {
+            if (!Array.isArray(data.groups) || data.groups.length === 0) {
                 const empty = document.createElement('div');
                 empty.style.cssText = 'font-size:11px; color:#666; text-align:center; padding:10px; background:rgba(0,0,0,0.2); border-radius:8px; border:1px dashed rgba(255,255,255,0.1);';
                 empty.textContent = t('assistantNoPresets') || 'No presets found for this node type.';
@@ -1508,7 +1537,7 @@ export function renderParameterPresets(node, container) {
 
             let renderedGroups = 0;
             for (const group of data.groups) {
-                let displayName = group.recipe_name || group.recipe_filename;
+                const displayName = String(group.recipe_name || group.recipe_filename || t('recipeUntitled'));
                 // Hide unbound and deleted recipes as per user request
                 if (group.recipe_filename === 'unbound' || displayName.endsWith('.json')) {
                     continue;
@@ -1526,8 +1555,8 @@ export function renderParameterPresets(node, container) {
                 
                 let hasNodes = false;
                 
-                for (const nb of group.notebooks) {
-                    for (const n of nb.nodes) {
+                for (const nb of (Array.isArray(group.notebooks) ? group.notebooks : [])) {
+                    for (const n of (Array.isArray(nb?.nodes) ? nb.nodes : [])) {
                         hasNodes = true;
                         presetCount++;
                         const applyBtn = document.createElement('button');
@@ -1557,16 +1586,22 @@ export function renderParameterPresets(node, container) {
                         applyBtn.onmouseover = () => { applyBtn.style.background = 'rgba(25,118,210,0.4)'; };
                         applyBtn.onmouseout = () => { applyBtn.style.background = 'rgba(255,255,255,0.05)'; };
                         applyBtn.onclick = () => {
+                            applyBtn.disabled = true;
                             applyBtn.innerHTML = `⏳...`;
-                            setTimeout(() => {
+                            try {
                                 applyLocalNodeParameters(node, n.widgets_values);
                                 applyBtn.innerHTML = `✅ ${t('recipeParameterApplied').replace('{count}', '')}`.trim();
                                 applyBtn.style.background = 'rgba(46,139,87,0.6)';
-                                setTimeout(() => {
-                                    applyBtn.innerHTML = displayHtml;
-                                    applyBtn.style.background = 'rgba(255,255,255,0.05)';
-                                }, 1500);
-                            }, 50);
+                            } catch (error) {
+                                console.error('[Anomalous] Failed to apply assistant parameters:', error);
+                                applyBtn.innerHTML = `⚠️ ${t('recipeParameterApplyError') || 'Apply failed'}`;
+                                applyBtn.style.background = 'rgba(180,60,60,0.55)';
+                            }
+                            setTimeout(() => {
+                                applyBtn.disabled = false;
+                                applyBtn.innerHTML = displayHtml;
+                                applyBtn.style.background = 'rgba(255,255,255,0.05)';
+                            }, 1500);
                         };
                         notebookList.appendChild(applyBtn);
                     }

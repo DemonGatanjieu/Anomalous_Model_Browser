@@ -49,10 +49,15 @@ async def api_get_parameters(request):
 _parameter_notebooks_cache = None
 _parameter_notebooks_cache_time = 0
 
-def _get_all_notebooks_cached(parameters_dir):
+def _invalidate_parameter_notebooks_cache():
+    global _parameter_notebooks_cache, _parameter_notebooks_cache_time
+    _parameter_notebooks_cache = None
+    _parameter_notebooks_cache_time = 0
+
+def _get_all_notebooks_cached(parameters_dir, force_refresh=False):
     global _parameter_notebooks_cache, _parameter_notebooks_cache_time
     # Cache for 2 seconds to prevent rapid disk I/O on UI interactions
-    if _parameter_notebooks_cache is not None and time.time() - _parameter_notebooks_cache_time < 2.0:
+    if not force_refresh and _parameter_notebooks_cache is not None and time.time() - _parameter_notebooks_cache_time < 2.0:
         return _parameter_notebooks_cache
     notebooks = _read_parameter_notebooks(parameters_dir)
     _parameter_notebooks_cache = notebooks
@@ -68,7 +73,8 @@ async def api_get_parameters_by_type(request):
         return web.json_response({"status": "error", "message": "Missing node type"}, status=400)
     
     parameters_dir = get_parameters_dir()
-    notebooks = await asyncio.to_thread(_get_all_notebooks_cached, parameters_dir)
+    force_refresh = request.query.get("refresh") == "1"
+    notebooks = await asyncio.to_thread(_get_all_notebooks_cached, parameters_dir, force_refresh)
     
     # Filter and extract node data
     # Structure: [ { "recipe_filename": ..., "notebooks": [ { "name": ..., "nodes": [...] } ] } ]
@@ -137,8 +143,11 @@ async def api_get_parameters_by_type(request):
         for nb in nbs:
             for n in nb["nodes"]:
                 node_id = n.get("id")
-                if node_id in recipe_roles:
-                    n["role"] = recipe_roles[node_id]
+                role = recipe_roles.get(node_id)
+                if role is None:
+                    role = recipe_roles.get(str(node_id))
+                if role is not None:
+                    n["role"] = role
 
         result.append({
             "recipe_filename": r_fn,
@@ -217,6 +226,7 @@ async def api_save_parameter(request):
         finally:
             if os.path.exists(temp_path):
                 os.remove(temp_path)
+        _invalidate_parameter_notebooks_cache()
     except OSError:
         return web.json_response({"status": "error", "message": "Could not save parameter notebook"}, status=500)
         
@@ -236,6 +246,7 @@ async def api_delete_parameter(request):
         file_path = resolve_within(parameters_dir, filename)
         if os.path.exists(file_path):
             os.remove(file_path)
+        _invalidate_parameter_notebooks_cache()
     except OSError:
         return web.json_response({"status": "error", "message": "Could not delete parameter notebook"}, status=500)
         

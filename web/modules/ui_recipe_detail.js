@@ -245,9 +245,9 @@ function promptValues(recipe) {
             if (!positive.includes(text)) positive.push(text);
         } else {
             const descriptor = `${node?.title || ''} ${node?.type || ''}`;
-            if (/(negative|neg|负面|反向)/i.test(descriptor)) {
+            if (/(negative|neg|负面|反向|uncond)/i.test(descriptor)) {
                 if (!negative.includes(text)) negative.push(text);
-            } else if (!positive.length && !positive.includes(text)) {
+            } else if (!positive.includes(text)) {
                 positive.push(text);
             }
         }

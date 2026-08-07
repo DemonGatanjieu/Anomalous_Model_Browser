@@ -307,3 +307,13 @@ The output gallery is a user-refreshed view of ComfyUI's output directory. Openi
 The floating trigger is created by `web/main.js`, but ComfyUI loads every JavaScript file in the custom node's `WEB_DIRECTORY` as an ES module. A syntax or duplicate top-level declaration in any imported module prevents `main.js` from registering and leaves no visible plugin icon, even when the backend routes and the optional hash resolver are healthy.
 
 When a trigger disappears, verify the browser extension registry and load the main entry in isolation before changing CSS or z-index values. In particular, do not duplicate helper declarations while merging recipe UI changes; shared helpers in `ui_recipes.js` must have one definition per module. `node --check` is required for the affected module, and a real ComfyUI runtime check must confirm that `#anomalous-trigger-btn` is created.
+
+## 71. Recipe and Node Assistant Integration Must Fail Loudly and Preserve Host State
+
+The Node Assistant consumes parameter notebooks by node type, while the Recipe detail remains the authoritative source for full-workflow skeleton matching. The assistant's preset endpoint may cache notebook discovery briefly, but save/delete operations invalidate that cache and an explicit assistant refresh requests a fresh read.
+
+Applying a node preset is a transactional live-widget operation: volatile seed slots are ignored, values are cloned safely, widget callbacks and ComfyUI's four-argument `onWidgetChanged(index, value, previousValue, liveWidget)` hook are invoked only when callable, and callback failures roll back the node before the UI reports failure. A successful write marks both graph and canvas dirty and emits `graphChanged` so recipe and assistant surfaces can refresh.
+
+Prompt roles are derived from linked conditioning inputs by bounded upstream traversal. Link storage may be an array, object, or `Map`, and a named input without a link must not mask another linked input with the same semantic role. Saved role metadata is joined to assistant records using string-safe node IDs; legacy recipes still fall back to descriptor-based classification and retain all discoverable positive/negative prompts.
+
+The assistant must not call removed doctor-panel methods from canvas selection hooks. Existing host selection callbacks are preserved, and the assistant hook only updates its own panel.

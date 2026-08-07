@@ -230,7 +230,7 @@ export function applyRecipeWidgetChanges(params, workflow, changes) {
 }
 
 function buildNodeIndex(graph) {
-    return new Map((graph?._nodes || []).filter(Boolean).map((node) => [node.id, node]));
+    return new Map((graph?._nodes || []).filter(Boolean).map((node) => [String(node.id), node]));
 }
 
 function linkOriginId(link) {
@@ -242,12 +242,17 @@ function findLink(graph, linkId) {
     if (linkId === null || linkId === undefined) return null;
     const links = graph?.links;
     if (Array.isArray(links)) return links.find((link) => Array.isArray(link) && link[0] === linkId) || null;
+    if (links instanceof Map) return links.get(linkId) || links.get(String(linkId)) || null;
     return links?.[linkId] || null;
 }
 
 function inputLinkOrigin(graph, node, inputNames) {
     const wanted = new Set(inputNames.map(normaliseName));
-    const input = (node?.inputs || []).find((item) => wanted.has(normaliseName(item?.name)));
+    const input = (node?.inputs || []).find((item) => (
+        wanted.has(normaliseName(item?.name))
+        && item?.link !== null
+        && item?.link !== undefined
+    ));
     const link = findLink(graph, input?.link);
     return linkOriginId(link);
 }
@@ -261,7 +266,7 @@ function collectConditioningNodes(graph, startNodeId, nodeIndex) {
         const nodeId = queue.shift();
         if (nodeId === null || nodeId === undefined || visited.has(nodeId)) continue;
         visited.add(nodeId);
-        const node = nodeIndex.get(nodeId);
+        const node = nodeIndex.get(String(nodeId));
         if (!node) continue;
 
         if (/cliptextencode/i.test(nodeType(node))) {
@@ -394,7 +399,7 @@ export function extractRecipeMetadata(graph) {
 
     for (const summary of metadata.nodes) {
         if (!/cliptextencode/i.test(summary.type)) continue;
-        const node = nodeIndex.get(summary.id);
+        const node = nodeIndex.get(String(summary.id));
         const prompt = textValue(widgetValue(node, ['text', 'prompt'], 0));
         
         if (positiveNodes.includes(node)) {
@@ -410,16 +415,16 @@ export function extractRecipeMetadata(graph) {
         for (const summary of metadata.nodes) {
             if (!/cliptextencode/i.test(summary.type)) continue;
             if (summary.role) continue;
-            const node = nodeIndex.get(summary.id);
+            const node = nodeIndex.get(String(summary.id));
             const prompt = textValue(widgetValue(node, ['text', 'prompt'], 0));
             if (!prompt) continue;
             const descriptor = `${summary.title || ''} ${summary.type}`;
             if (/(negative|neg|负面|反向|uncond)/i.test(descriptor)) {
                 summary.role = 'negative';
-                if (!metadata.promptNegative.length) appendUnique(metadata.promptNegative, [prompt]);
+                appendUnique(metadata.promptNegative, [prompt]);
             } else {
                 summary.role = 'positive';
-                if (!metadata.promptPositive.length) appendUnique(metadata.promptPositive, [prompt]);
+                appendUnique(metadata.promptPositive, [prompt]);
             }
         }
     }

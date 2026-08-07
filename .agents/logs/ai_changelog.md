@@ -1237,3 +1237,27 @@
 - Any node with an input slot named positive or negative will now correctly trace upstream to identify the true role of the CLIPTextEncode nodes.
 - A permanent role tag is now assigned to these nodes and saved inside recipe.params.nodes metadata.
 - Node Assistant parameter presets now read this tag directly to accurately prepend [🟢 正面] or [🔴 负面] on the buttons, ensuring absolute stability for custom workflows.
+## [2026-08-07] Recipe/Node Assistant Integration Stabilization
+
+**Implemented**
+
+- Fixed the assistant refresh path that referenced an out-of-scope `forceRefresh`, which prevented parameter presets from rendering after refresh or node changes.
+- Removed calls to the deleted `diagnoseNodeForDoctor` method from canvas selection hooks; existing ComfyUI selection callbacks remain chained safely.
+- Made node-preset application transactional and observable: volatile seed slots are ignored, callback failures roll back and report failure, successful changes dirty the host graph/canvas, and `graphChanged` is emitted.
+- Kept the current ComfyUI widget hook contract by passing the live widget as the fourth `onWidgetChanged` argument.
+- Hardened prompt tracing for `Map` links, mixed numeric/string node IDs, and duplicate semantic inputs where the first matching input is unlinked.
+- Synchronized legacy and topological prompt fallback so multiple positive and negative CLIP prompts are retained.
+- Synchronized the legacy model-picker write path back into `widgets_values`, host change callbacks, and graph dirty state.
+- Invalidated the node-assistant notebook cache after parameter-note save/delete operations.
+
+**Validation**
+
+- All JavaScript modules passed `node --check`.
+- `node tests/recipe_parser_roundtrip.mjs` passed, including linked-input and `Map`-link coverage.
+- `python_embeded/python.exe tests/test_recipe_roundtrip.py` passed (15 tests).
+- `python_embeded/python.exe -m py_compile api/parameters.py api/recipes.py` passed.
+- `git diff --check` passed.
+
+**Handoff**
+
+- Two pre-existing untracked investigation files (`test.mjs`, `test2.mjs`) were not staged or modified.

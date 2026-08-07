@@ -580,3 +580,14 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: ComfyUI's frontend wraps `onWidgetChanged` to clear node errors and expects the live widget object in the fourth argument. Calling it with only an index and value made the host inspect `sourceNodeId` on `undefined` and abort an otherwise valid parameter update.
 
 **The Practice**: Inspect the active host frontend's callback wrapper, pass the complete host-compatible argument shape, and keep the live widget object available for host-side validation and error cleanup.
+## 88. Cross-panel integrations must not report success after a swallowed exception
+
+**The Problem**: The Node Assistant preset button caught application errors internally, then the caller unconditionally changed the button to a success state. A separate refresh addition also referenced a parameter that was not in scope, so the preset panel could fail before rendering.
+
+**The Practice**: Keep the transaction owner responsible for success/failure UI. Validate optional data before iterating, rethrow after rollback, and pass refresh state explicitly through every render boundary. A host integration should emit its graph-change signal only after the write and callbacks complete successfully.
+
+## 89. Selection hooks are shared host infrastructure
+
+**The Problem**: A merged assistant/doctor implementation called a removed doctor-specific method from the shared canvas selection callback. Selecting a node could therefore throw even when the assistant itself was not the active panel.
+
+**The Practice**: Preserve prior host callbacks, keep panel-specific work behind existence checks, and never let an optional panel update call determine whether ComfyUI can continue selecting nodes.
