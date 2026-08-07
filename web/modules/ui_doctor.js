@@ -1506,6 +1506,7 @@ export function renderParameterPresets(node, container) {
             flatContainer.style.cssText = 'display:flex; flex-direction:column; gap:6px; margin-top:8px;';
             let presetCount = 0;
 
+            let renderedGroups = 0;
             for (const group of data.groups) {
                 let displayName = group.recipe_name || group.recipe_filename;
                 // Hide unbound and deleted recipes as per user request
@@ -1513,8 +1514,21 @@ export function renderParameterPresets(node, container) {
                     continue;
                 }
                 
+                const recipeBox = document.createElement('div');
+                recipeBox.style.cssText = 'background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:10px; overflow:hidden;';
+                
+                const recipeHeader = document.createElement('div');
+                recipeHeader.style.cssText = 'padding:10px 12px; font-size:12px; font-weight:bold; color:#c9d6ff; cursor:pointer; display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.2);';
+                recipeHeader.innerHTML = `<span style="font-size:14px;">🍱</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(displayName)}</span> <span>▼</span>`;
+                
+                const notebookList = document.createElement('div');
+                notebookList.style.cssText = 'display:flex; flex-direction:column; gap:6px; padding:8px;';
+                
+                let hasNodes = false;
+                
                 for (const nb of group.notebooks) {
                     for (const n of nb.nodes) {
+                        hasNodes = true;
                         presetCount++;
                         const applyBtn = document.createElement('button');
                         applyBtn.style.cssText = 'background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:6px; padding:8px 12px; font-size:12px; cursor:pointer; text-align:left; transition:background 0.2s; display:flex; align-items:center; gap:8px;';
@@ -1545,8 +1559,30 @@ export function renderParameterPresets(node, container) {
                                 }, 1500);
                             }, 50);
                         };
-                        flatContainer.appendChild(applyBtn);
+                        notebookList.appendChild(applyBtn);
                     }
+                }
+                
+                if (hasNodes) {
+                    recipeBox.appendChild(recipeHeader);
+                    recipeBox.appendChild(notebookList);
+                    flatContainer.appendChild(recipeBox);
+                    
+                    if (renderedGroups > 0) {
+                        notebookList.style.display = 'none';
+                        recipeHeader.querySelector('span:last-child').textContent = '▶';
+                    }
+                    renderedGroups++;
+                    
+                    recipeHeader.onclick = () => {
+                        if (notebookList.style.display === 'none') {
+                            notebookList.style.display = 'flex';
+                            recipeHeader.querySelector('span:last-child').textContent = '▼';
+                        } else {
+                            notebookList.style.display = 'none';
+                            recipeHeader.querySelector('span:last-child').textContent = '▶';
+                        }
+                    };
                 }
             }
 
