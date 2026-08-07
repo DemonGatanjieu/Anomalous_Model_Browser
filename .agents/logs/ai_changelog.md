@@ -1,5 +1,13 @@
 # AI Changelog
 
+## [Snapshot] 2026-08-07 - Core: Topological Prompt Tracing Engine & Crash Fix
+
+**Implemented**
+
+- **Topological Backward-Tracing**: Replaced the fragile regex/fuzzy-name matching for Positive/Negative prompts in `recipe_parser.js`. Implemented `collectConditioningNodes` to trace upstream from KSampler inputs (like `positive`, `negative`, `conditioning`) through the node links directly to the originating `CLIPTextEncode` nodes.
+- **Role Tagging**: Added a permanent `role` property (`positive` or `negative`) to node summaries extracted in `recipe_parser.js`, which is now strictly adhered to by `ui_recipe_detail.js` when constructing parameter lists and by `ui_doctor.js` for applying correct prefixes (`[🟢 正面]`, `[🔴 负面]`).
+- **ES Module Syntax Crash Fix**: Fixed a massive unclosed-bracket syntax error in `recipe_parser.js` resulting from a malformed code replacement. The error caused the UI to disappear silently due to the browser aborting the ES Module parsing.
+
 ## [Snapshot] 2026-08-07 - Node Assistant Preset Hierarchy Clarity Update
 
 **Implemented**
@@ -1211,3 +1219,21 @@
 - `python_embeded/python.exe tests/test_recipe_roundtrip.py` (15 tests passed).
 - `node tests/recipe_parser_roundtrip.mjs`.
 - Changed-file `git diff --check` passed.
+
+## [2026-08-07] Refactor Node Assistant Presets
+- Flattened Node Assistant parameter presets list (removed Recipe Group folders as per user feedback).
+- Hid unbound and deleted recipes from the Node Assistant preset list.
+- Switched Apply button text to use the Notebook Name instead of node titles.
+- Added missing localization keys for Node Assistant to locales.js (ssistantTabActions, ssistantTabPresets, etc.).
+- Cleaned up hardcoded English strings in ui_doctor.js.
+
+## [2026-08-07] Refactor Node Assistant Presets (Follow-up)
+- Reintroduced single-level folding by Recipe for Node Assistant parameter presets.
+- The first group expands by default while subsequent groups are collapsed to keep the UI compact.
+- Retained the flat notebook-styled buttons inside each group for a clean hierarchy without excessive nesting.
+
+## [2026-08-07] Core: Robust Prompt Tracing
+- Replaced fuzzy name-matching for prompts with a robust topological backward-tracing algorithm.
+- Any node with an input slot named positive or negative will now correctly trace upstream to identify the true role of the CLIPTextEncode nodes.
+- A permanent role tag is now assigned to these nodes and saved inside recipe.params.nodes metadata.
+- Node Assistant parameter presets now read this tag directly to accurately prepend [🟢 正面] or [🔴 负面] on the buttons, ensuring absolute stability for custom workflows.

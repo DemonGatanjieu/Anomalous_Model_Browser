@@ -2,7 +2,11 @@
 
 This document serves as an architectural retrospective and UX diagnostic log for the development of the Anomalous Model Browser.
 
-## 56. UI Refactors Must Preserve Reachable Semantic Tabs
+## 60. Beware of `node -c` False Negatives with ES Modules
+
+When checking syntax using `node -c` for browser-targeted ES Module JavaScript files on Windows PowerShell, the Node.js CommonJS parser can stop at the first `export` keyword it encounters, throwing an early `SyntaxError: Unexpected token 'export'`. If a severe syntax error (such as an unclosed bracket or duplicated function definition) occurs earlier in the file, it will cause the browser to silently abort parsing the module without rendering the UI, yet `node -c` might not properly expose the real location of the mismatch if it bails out at the `export` keyword or misinterprets the module boundary. Never blindly trust `node -c` returning `0` if the browser UI disappears; prioritize a manual eyeball check of the replaced blocks and unclosed symbols.
+
+
 
 When a visual refactor merges information into a compact overview, do not remove a semantic tab until every dependent interaction has an intentional replacement. Model preview loading, model navigation, and return-state restoration were still designed around a Models tab, so removing only the tab made those actions unreachable. Keep tab state, asynchronous loading conditions, and return paths aligned with the visible navigation.
 
