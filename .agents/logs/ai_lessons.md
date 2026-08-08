@@ -603,3 +603,9 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: Treating every text-like or `CLIPTextEncode`-named node as positive made the UI look decisive while silently reversing prompts in third-party workflows. Titles and type-name fragments are presentation data, not proof of graph semantics.
 
 **The Practice**: Keep the automatic contract as an explicit allowlist, stop traversal at unknown semantic nodes, and show an `unknown` state instead of guessing. Store user corrections separately from derived metadata, guard them with structural identity, and make every consuming surface honor the same override priority.
+
+## 92. Destructive list actions need their own interaction boundary
+
+**The Problem**: A full-row button is convenient for selecting a history item, but placing a delete button inside it creates invalid nested interactive elements and unreliable click behavior. Deleting the selected item can also leave stale detail/gallery state behind.
+
+**The Practice**: Make selection and deletion sibling buttons inside one row, confirm the exact item, disable the row during the request, and invalidate dependent asynchronous state before refreshing the collection. Never expose deletion for a virtual baseline that has no standalone persisted file.

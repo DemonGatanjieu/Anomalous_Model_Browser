@@ -1803,10 +1803,13 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         appendText(snapshotList, 'p', t('recipeParameterLoadError'), 'anomalous-recipe-dialog-error');
     } else if (parameterState?.notebooks?.length) {
         for (const notebook of parameterState.notebooks) {
-            const item = button(snapshotList, notebook.name || t('recipeParameterUntitled'), 'anomalous-recipe-parameter-notebook-item');
+            const row = document.createElement('div');
+            row.className = 'anomalous-recipe-parameter-notebook-row';
+            const notebookName = notebook.name || t('recipeParameterUntitled');
+            const item = button(row, notebookName, 'anomalous-recipe-parameter-notebook-item');
             item.classList.toggle('is-active', notebook.filename === parameterState.selectedFilename);
             item.setAttribute('aria-pressed', notebook.filename === parameterState.selectedFilename ? 'true' : 'false');
-            item.title = `${notebook.name || t('recipeParameterUntitled')} · ${dateText(notebook.timestamp)}`;
+            item.title = `${notebookName} · ${dateText(notebook.timestamp)}`;
             appendText(item, 'small', dateText(notebook.timestamp), 'anomalous-recipe-detail-muted');
             item.onclick = () => {
                 if (parameterState.selectedFilename === notebook.filename) return;
@@ -1819,6 +1822,39 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 gallery.scanned = 0;
                 selectParameterTab?.();
             };
+
+            const remove = button(row, '×', 'anomalous-recipe-parameter-notebook-delete');
+            remove.title = t('recipeParameterDelete');
+            remove.setAttribute('aria-label', `${t('recipeParameterDelete')}: ${notebookName}`);
+            remove.onclick = async () => {
+                if (!await anomalousConfirm(t('recipeParameterDeleteConfirm', { name: notebookName }))) return;
+                remove.disabled = true;
+                item.disabled = true;
+                row.classList.add('is-deleting');
+                try {
+                    const response = await fetch('/anomalous/delete_parameter', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ filename: notebook.filename }),
+                    });
+                    const payload = await response.json();
+                    if (!response.ok || payload.status !== 'success') throw new Error(payload.message || 'parameter notebook delete failed');
+                    if (parameterState.selectedFilename === notebook.filename) parameterState.selectedFilename = null;
+                    parameterState.editor = null;
+                    parameterState.parameterGalleryRequestId += 1;
+                    gallery.status = 'idle';
+                    gallery.images = [];
+                    gallery.scanned = 0;
+                    await parameterState.refresh?.(true);
+                } catch (error) {
+                    console.error('Could not delete parameter notebook:', error);
+                    remove.disabled = false;
+                    item.disabled = false;
+                    row.classList.remove('is-deleting');
+                    await anomalousAlert(t('recipeParameterDeleteError'));
+                }
+            };
+            snapshotList.appendChild(row);
         }
     } else {
         appendText(snapshotList, 'p', t('recipeParameterNoSnapshots'), 'anomalous-recipe-detail-muted');

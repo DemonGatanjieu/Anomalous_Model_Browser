@@ -296,6 +296,8 @@ The save dialog records recipe identity, notes, tags, and cover/source image. It
 
 The Parameters tab is a two-pane history browser, so highlighting only the left notebook list is insufficient feedback. The right pane must show the active notebook name and timestamp in a prominent selection banner and animate the panel on a genuine notebook switch. Parameter-gallery requests carry a selection token and must discard stale responses after the user switches notebooks.
 
+Saved parameter notes are individually removable from the notebook sidebar. The row uses sibling selection and delete buttons rather than nested interactive controls, asks for explicit confirmation, and posts only the validated notebook filename to `/anomalous/delete_parameter`. Deleting the active note clears its selection, invalidates in-flight parameter-gallery requests, reloads the notebook list, and selects the newest remaining note. The current recipe parameter baseline is not a stored notebook row and therefore cannot be deleted through this control.
+
 ## 69. Docked Notebook Controls Must Shrink as a Unit
 
 The notebook create row contains a text input and a confirmation button. In the 660px docked browser, the notebook sidebar is reduced to 80px, so the input must have `min-width: 0` and the confirmation button must remain a non-shrinking fixed-size item. Otherwise the input's placeholder intrinsic width pushes the check button outside the clickable sidebar.

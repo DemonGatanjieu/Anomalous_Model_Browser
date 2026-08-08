@@ -1283,3 +1283,15 @@ Validation: all JS syntax checks passed, the parser test passed, and the Python 
 Validation: affected JavaScript modules passed `node --check`; the local parser regression passed; Python compilation passed; the local Python suite passed 19 tests; `git diff --check` passed.
 
 Handoff: automatic compatibility with arbitrary third-party text/conditioning nodes is intentionally not claimed. The registry/conflict-evidence stages remain in `.agents/plans/prompt_role_recognition_hardening_plan.md`. Pre-existing untracked `test.mjs` and `test2.mjs` remain untouched.
+
+## [2026-08-08] Parameter Notebook Deletion
+
+- Added a compact delete control beside every stored parameter note in the Recipe Parameters sidebar.
+- Added explicit confirmation, busy feedback, localized failure reporting, and immediate notebook-list refresh.
+- Deleting the selected note now clears its selection and invalidates stale parameter-gallery requests before choosing the newest remaining note.
+- Reused the existing contained `/anomalous/delete_parameter` endpoint; the current recipe baseline remains non-deletable.
+- Reviewed the repository licensing without changing legal text: `LICENSE` is the standard MIT grant with a 2026 copyright line, while README branding restrictions remain a separate boundary that should be clarified before release.
+
+Validation: affected JavaScript modules passed `node --check`; the parser and Python regression suites still passed; `git diff --check` passed.
+
+Handoff: pre-existing untracked `test.mjs` and `test2.mjs` remain untouched.
