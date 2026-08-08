@@ -630,6 +630,12 @@ export async function showRecipes() {
         this.nbPanel.style.display = 'flex';
         await this.showNotebooks();
     }
+    if (typeof this.recipeModelReturn === 'function') {
+        const returnToRecipe = this.recipeModelReturn;
+        this.recipeModelReturn = null;
+        returnToRecipe();
+        return;
+    }
     this.recipeDetailFinish?.('closed');
     this.notebookBody.style.display = 'none';
     this.notebookNotesTab?.classList.remove('active');
@@ -640,7 +646,16 @@ export async function showRecipes() {
         this.recipeListContainer.style.display = '';
         this.recipeView.querySelector('.anomalous-recipe-actionbar').style.display = '';
     }
-    if (this.recipeView) this.recipeView.style.display = 'flex';
+    if (this.recipeView) {
+        this.recipeView.style.display = 'flex';
+        if (!this.recipeDetailView) {
+            if (this.recipeListContainer) this.recipeListContainer.style.display = '';
+            const actionbar = this.recipeView.querySelector('.anomalous-recipe-actionbar');
+            if (actionbar) actionbar.style.display = '';
+            this.recipeReturnState = null;
+            delete this.recipeDetailPayload;
+        }
+    }
     if (this.recipesInitialized) {
         await this.refreshRecipes();
         return;

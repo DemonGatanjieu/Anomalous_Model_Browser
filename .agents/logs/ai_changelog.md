@@ -1333,3 +1333,16 @@ Handoff: public `CHANGELOG.md` was not changed. Pre-existing untracked `test.mjs
 Validation: affected JavaScript modules passed `node --check`; locale audit confirmed 636 unique keys per language, no parity/duplicate errors, and 497 resolved static `t('key')` references; the recipe parser and all 19 Python tests passed; `git diff --check` passed. Live ComfyUI verification with a selected KSampler confirmed that the Actions tab has no beta text, Parameter Presets shows the localized banner, language switching refreshes it, and no Anomalous frontend errors were logged.
 
 Handoff: pre-existing untracked `test.mjs` and `test2.mjs` remain outside this change.
+
+## [2026-08-08] Repair Recipe / Node Assistant Panel Transitions
+
+- Fixed Recipe Overview model navigation so it hides Node Assistant and every other main surface before showing model detail.
+- Preserved the original Workspace return state while model detail owns a pending return-to-recipe callback.
+- Made the model Back action and direct Workspace-to-Recipes navigation reconstruct the prior recipe detail, including active tab and scroll state.
+- Made direct navigation to Node Assistant/Doctor/Gallery/Models and closing Workspace abandon the pending return safely, release model-detail media/DOM, and restore the recipe list/action bar.
+- Added defensive Recipe-list normalization whenever no detail view is active, preventing a cleared callback from leaving an empty recipe body.
+- Added the fix to the public `v1.55 Beta` reliability notes.
+
+Validation: all 19 JavaScript modules passed `node --check`; the recipe parser and all 19 Python tests passed; `git diff --check` passed. Live ComfyUI testing reproduced the original KSampler → Node Assistant → Workflow Recipe → Overview model sequence and confirmed exclusive panel visibility. Directly switching back to Node Assistant, reopening Recipes twice, using model Back, reopening Workspace from model detail, and closing Workspace mid-return all restored visible recipe cards with no Anomalous/recipe console errors.
+
+Handoff: pre-existing untracked `test.mjs` and `test2.mjs` remain untouched.

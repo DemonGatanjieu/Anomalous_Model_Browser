@@ -23,6 +23,7 @@
 - Beta and data-protection guidance is available in the Recipe list, the Node Assistant Parameter Presets tab, Settings Help, and README in both Chinese and English.
 
 ### 🐛 Reliability Fixes
+- Fixed a cross-panel state leak where opening a model from a Recipe Overview could overlap Node Assistant, then leave the next Workflow Recipe visit with an empty list. Returning normally, switching directly to another main panel, reopening Workspace, and closing Workspace mid-return now all restore one coherent surface.
 - Fixed blank Workspace/Parameter Notebook surfaces and restored the plugin trigger when frontend module errors prevented registration.
 - Fixed parameter application against current ComfyUI widget callbacks and added transactional rollback when a node update fails.
 - Fixed positive/negative prompt duplication and legacy role recovery while keeping ambiguous third-party prompt nodes visibly unknown.

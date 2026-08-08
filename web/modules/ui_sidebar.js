@@ -263,13 +263,23 @@ export function createDOM() {
         }
 
         nbBtn.onclick = () => {
-            this.workspaceReturnState = {
-                grid: this.grid?.style.display || 'none',
-                detail: this.detailPanel?.style.display || 'none',
-                gallery: this.galleryPanel?.style.display || 'none',
-                doctor: this.doctorPanel?.style.display || 'none',
-                assistant: this.assistantPanel?.style.display || 'none',
-            };
+            if (typeof this.recipeModelReturn !== 'function') {
+                this.workspaceReturnState = {
+                    grid: this.grid?.style.display || 'none',
+                    detail: this.detailPanel?.style.display || 'none',
+                    gallery: this.galleryPanel?.style.display || 'none',
+                    doctor: this.doctorPanel?.style.display || 'none',
+                    assistant: this.assistantPanel?.style.display || 'none',
+                };
+            } else if (!this.workspaceReturnState) {
+                this.workspaceReturnState = {
+                    grid: 'grid',
+                    detail: 'none',
+                    gallery: 'none',
+                    doctor: 'none',
+                    assistant: 'none',
+                };
+            }
             this.nbPanel.style.display = 'flex';
             this.showNotebooks();
         };
@@ -2035,7 +2045,21 @@ export function showHelp() {
 
 
 export function hideAllPanels() {
+        const abandonedRecipeModel = typeof this.recipeModelReturn === 'function';
         this.recipeModelReturn = null;
+        if (abandonedRecipeModel) {
+            this.recipeReturnState = null;
+            delete this.recipeDetailPayload;
+            if (this.recipeListContainer) this.recipeListContainer.style.display = '';
+            const actionbar = this.recipeView?.querySelector('.anomalous-recipe-actionbar');
+            if (actionbar) actionbar.style.display = '';
+            if (this.detailPanel) {
+                this.stopMediaInContainer?.(this.detailPanel);
+                this.detailPanel.replaceChildren();
+            }
+            this.currentDetailModel = null;
+            this.historyStack = [];
+        }
         this.grid.style.display = 'none';
         this.detailPanel.style.display = 'none';
         if (this.galleryPanel) this.galleryPanel.style.display = 'none';

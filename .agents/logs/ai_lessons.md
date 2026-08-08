@@ -633,3 +633,9 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: A beta banner attached to the Node Assistant root visually classified its mature Actions tab as experimental even though only the recipe-powered Parameter Notebook tab was under test.
 
 **The Practice**: Put maturity labels inside the exact tab, control, or workflow they qualify, and state adjacent stable behavior explicitly when confusion is likely. Release notes, README, Help, and runtime placement must describe the same boundary.
+
+## 97. Cross-panel return callbacks need an abandonment path
+
+**The Problem**: Recipe model detail had a callback for its own Back button, but top-level navigation simply nulled that callback. The source recipe list stayed hidden, while a previously visible Node Assistant resurfaced beneath model detail.
+
+**The Practice**: Treat temporary cross-panel navigation as an exclusive transition with both consume and abandon semantics. Hide all sibling surfaces on entry; on normal return reconstruct the source; on top-level escape clear temporary state, release destination content, and normalize the source list. The destination's fallback rendering must not depend solely on the return callback still existing.

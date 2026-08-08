@@ -30,7 +30,22 @@ function restoreWorkspaceReturnPanel(owner) {
 
 export function closeWorkspace() {
     this.recipeDetailFinish?.('closed');
+    const abandonedRecipeModel = typeof this.recipeModelReturn === 'function';
     this.recipeModelReturn = null;
+    if (abandonedRecipeModel) {
+        this.recipeReturnState = null;
+        delete this.recipeDetailPayload;
+        if (this.recipeListContainer) this.recipeListContainer.style.display = '';
+        const actionbar = this.recipeView?.querySelector('.anomalous-recipe-actionbar');
+        if (actionbar) actionbar.style.display = '';
+        if (this.detailPanel) {
+            this.stopMediaInContainer?.(this.detailPanel);
+            this.detailPanel.replaceChildren();
+            this.detailPanel.style.display = 'none';
+        }
+        this.currentDetailModel = null;
+        this.historyStack = [];
+    }
     if (this.paramPanel) this.paramPanel.style.display = 'none';
     if (this.recipeView) this.recipeView.style.display = 'none';
     if (this.notebookBody) this.notebookBody.style.display = 'none';

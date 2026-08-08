@@ -521,8 +521,17 @@ function openLocalModel(owner, model) {
     // The recipe workspace is a child overlay of the main browser modal. Closing
     // the browser here also hides the detail panel we are navigating to.
     owner.modal?.classList.add('visible');
+    for (const panel of [
+        owner.grid,
+        owner.galleryPanel,
+        owner.doctorPanel,
+        owner.assistantPanel,
+        owner.paramPanel,
+        owner.nbPanel,
+    ]) {
+        if (panel) panel.style.display = 'none';
+    }
     owner.showDetail(model);
-    owner.nbPanel && (owner.nbPanel.style.display = 'none');
     return true;
 }
 
@@ -1172,6 +1181,9 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
                 owner.recipeModelReturn = () => {
                     owner.modal?.classList.add('visible');
                     if (owner.nbPanel) owner.nbPanel.style.display = 'flex';
+                    if (owner.notebookBody) owner.notebookBody.style.display = 'none';
+                    owner.notebookNotesTab?.classList.remove('active');
+                    owner.notebookRecipesTab?.classList.add('active');
                     if (owner.detailPanel) {
                         owner.detailPanel.style.display = 'none';
                         owner.stopMediaInContainer?.(owner.detailPanel);
