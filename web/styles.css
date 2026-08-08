@@ -2571,17 +2571,71 @@ dialog.anomalous-gallery-viewer[open] {
 
 .anomalous-recipe-detail-prompt {
     display: grid;
-    grid-template-columns: minmax(110px, 0.24fr) minmax(0, 1fr);
-    gap: 9px;
+    grid-template-columns: minmax(170px, 0.28fr) minmax(0, 1fr);
+    gap: 12px;
     align-items: start;
-    padding: 9px;
-    border-left: 3px solid #6ba7ff;
-    border-radius: 7px;
+    padding: 11px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 3px solid #7d8796;
+    border-radius: 9px;
     background: rgba(0, 0, 0, 0.14);
+    transition: opacity 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
 
-.anomalous-recipe-detail-prompt-negative { border-left-color: #df8d9a; }
+.anomalous-recipe-detail-prompt.is-saving { opacity: 0.55; }
+.anomalous-recipe-prompt-role-positive { border-left-color: #6ee7b7; }
+.anomalous-recipe-prompt-role-negative { border-left-color: #df8d9a; }
+.anomalous-recipe-prompt-role-both { border-left-color: #c4a7ff; }
+.anomalous-recipe-prompt-role-ignored,
+.anomalous-recipe-prompt-role-unknown { border-left-color: #7d8796; }
 .anomalous-recipe-detail-prompt-label { padding-top: 5px; color: #d7e6ff; font-size: 0.85rem; }
+
+.anomalous-recipe-prompt-meta {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.anomalous-recipe-prompt-meta strong,
+.anomalous-recipe-prompt-meta small {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-recipe-prompt-role-badge {
+    display: inline-flex;
+    width: fit-content;
+    padding: 2px 7px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.05);
+    font-size: 0.72rem;
+}
+
+.anomalous-recipe-prompt-role-badge.is-positive { color: #9af0d0; border-color: rgba(110, 231, 183, 0.35); }
+.anomalous-recipe-prompt-role-badge.is-negative { color: #f2a8b3; border-color: rgba(223, 141, 154, 0.38); }
+.anomalous-recipe-prompt-role-badge.is-both { color: #d6c4ff; border-color: rgba(196, 167, 255, 0.4); }
+
+.anomalous-recipe-prompt-role-select {
+    width: 100%;
+    min-width: 0;
+    padding: 6px 28px 6px 8px;
+    border: 1px solid rgba(159, 196, 255, 0.3);
+    border-radius: 7px;
+    color: var(--input-text, #e8eef7);
+    background: var(--comfy-input-bg, #24272d);
+    cursor: pointer;
+}
+
+.anomalous-recipe-prompt-role-select:focus-visible {
+    outline: 2px solid rgba(80, 170, 255, 0.7);
+    outline-offset: 1px;
+}
+
+.anomalous-recipe-prompt-value { min-width: 0; }
 
 .anomalous-recipe-version-row {
     justify-content: space-between;

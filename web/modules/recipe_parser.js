@@ -11,6 +11,28 @@ const MAX_WIDGET_TEXT = 320;
 const MAX_PINNED_VALUE_JSON = 2400;
 const MAX_PARAMETER_CHOICES = 5000;
 const SENSITIVE_WIDGET_NAME = /(?:api.?key|access.?token|auth|password|passwd|secret|credential)/i;
+const SUPPORTED_PROMPT_NODE_TYPES = new Set([
+    'cliptextencode',
+]);
+const SUPPORTED_PROMPT_CONSUMERS = new Map([
+    ['ksampler', { positive: 'positive', negative: 'negative' }],
+    ['ksampleradvanced', { positive: 'positive', negative: 'negative' }],
+    ['cfgguider', { positive: 'positive', negative: 'negative' }],
+    ['basicguider', { conditioning: 'positive' }],
+    ['dualcfgguider', { cond1: 'positive', cond2: 'positive', negative: 'negative' }],
+]);
+const SUPPORTED_CONDITIONING_PASSTHROUGH = new Set([
+    'conditioningaverage',
+    'conditioningcombine',
+    'conditioningconcat',
+    'conditioningmultiply',
+    'conditioningsetarea',
+    'conditioningsetareapercentage',
+    'conditioningsetareastrength',
+    'conditioningsetmask',
+    'conditioningsettimesteprange',
+    'conditioningzeroout',
+]);
 
 function nodeType(node) {
     return String(node?.type || node?.comfyClass || '');
@@ -18,6 +40,10 @@ function nodeType(node) {
 
 function normaliseName(value) {
     return String(value || '').trim().toLowerCase();
+}
+
+export function isSupportedPromptNodeType(value) {
+    return SUPPORTED_PROMPT_NODE_TYPES.has(normaliseName(value));
 }
 
 function widgetValue(node, names, fallbackIndex = -1) {
@@ -186,7 +212,7 @@ function syncCommonRecipeMetadata(params, change) {
         const field = { seed: 'seed', noise_seed: 'seed', steps: 'steps', cfg: 'cfg', cfg_scale: 'cfg', sampler_name: 'sampler_name', sampler: 'sampler_name', scheduler: 'scheduler', denoise: 'denoise' }[widget];
         if (field) params[field] = ['steps', 'cfg', 'denoise'].includes(field) ? numberValue(value) : value;
     }
-    if (/cliptextencode/.test(type) && /^(text|prompt)$/.test(widget)) {
+    if (isSupportedPromptNodeType(type) && /^(text|prompt)$/.test(widget)) {
         const positive = Array.isArray(params.promptPositive) ? params.promptPositive : (params.promptPositive = []);
         const negative = Array.isArray(params.promptNegative) ? params.promptNegative : (params.promptNegative = []);
         const position = positive.findIndex((item) => item === change.previousValue);
@@ -199,10 +225,13 @@ function syncCommonRecipeMetadata(params, change) {
             negative[negativePosition] = textValue(value);
             return;
         }
-        const descriptor = `${change.nodeTitle || ''} ${change.nodeType || ''}`;
-        const target = /(negative|neg|负面|反向)/i.test(descriptor) ? negative : positive;
+        const summary = (params.nodes || []).find((item) => String(item?.id) === String(change.nodeId));
+        const override = params.promptRoleOverrides?.[String(change.nodeId)]?.role;
+        const role = ['positive', 'negative', 'both'].includes(override) ? override : summary?.role;
         const prompt = textValue(value);
-        if (prompt && !target.includes(prompt)) target.push(prompt);
+        if (!prompt) return;
+        if ((role === 'positive' || role === 'both') && !positive.includes(prompt)) positive.push(prompt);
+        if ((role === 'negative' || role === 'both') && !negative.includes(prompt)) negative.push(prompt);
     }
 }
 
@@ -246,15 +275,15 @@ function findLink(graph, linkId) {
     return links?.[linkId] || null;
 }
 
-function inputLinkOrigin(graph, node, inputNames) {
+function inputLinkOrigins(graph, node, inputNames) {
     const wanted = new Set(inputNames.map(normaliseName));
-    const input = (node?.inputs || []).find((item) => (
-        wanted.has(normaliseName(item?.name))
-        && item?.link !== null
-        && item?.link !== undefined
-    ));
-    const link = findLink(graph, input?.link);
-    return linkOriginId(link);
+    const origins = [];
+    for (const input of node?.inputs || []) {
+        if (!wanted.has(normaliseName(input?.name)) || input?.link === null || input?.link === undefined) continue;
+        const origin = linkOriginId(findLink(graph, input.link));
+        if (origin !== null && origin !== undefined && !origins.includes(origin)) origins.push(origin);
+    }
+    return origins;
 }
 
 function collectConditioningNodes(graph, startNodeId, nodeIndex) {
@@ -269,12 +298,19 @@ function collectConditioningNodes(graph, startNodeId, nodeIndex) {
         const node = nodeIndex.get(String(nodeId));
         if (!node) continue;
 
-        if (/cliptextencode/i.test(nodeType(node))) {
+        if (isSupportedPromptNodeType(nodeType(node))) {
             if (!clipNodes.includes(node)) clipNodes.push(node);
             continue;
         }
 
+        // Unknown third-party conditioning nodes are deliberately opaque.
+        // Users can label their text nodes manually in the recipe detail view.
+        if (!SUPPORTED_CONDITIONING_PASSTHROUGH.has(normaliseName(nodeType(node)))) continue;
+
         for (const input of node.inputs || []) {
+            const inputType = normaliseName(input?.type);
+            const inputName = normaliseName(input?.name);
+            if (inputType !== 'conditioning' && !inputName.includes('conditioning')) continue;
             const originId = linkOriginId(findLink(graph, input?.link));
             if (originId !== null && originId !== undefined && !visited.has(originId)) {
                 queue.push(originId);
@@ -371,23 +407,15 @@ export function extractRecipeMetadata(graph) {
             mergeSampler(metadata, recipeSampler(node));
         }
 
-        const posInputs = [];
-        const negInputs = [];
-        for (const input of node.inputs || []) {
-            const name = (input.name || '').toLowerCase();
-            if (name.includes('positive') || name === 'guider' || (name.includes('cond') && !name.includes('uncond'))) posInputs.push(input.name);
-            if (name.includes('negative') || name.includes('uncond')) negInputs.push(input.name);
-        }
-        
-        if (posInputs.length > 0) {
-            const origin = inputLinkOrigin(graph, node, posInputs);
-            const clips = collectConditioningNodes(graph, origin, nodeIndex);
-            for (const clip of clips) { if (!positiveNodes.includes(clip)) positiveNodes.push(clip); }
-        }
-        if (negInputs.length > 0) {
-            const origin = inputLinkOrigin(graph, node, negInputs);
-            const clips = collectConditioningNodes(graph, origin, nodeIndex);
-            for (const clip of clips) { if (!negativeNodes.includes(clip)) negativeNodes.push(clip); }
+        const roleInputs = SUPPORTED_PROMPT_CONSUMERS.get(normaliseName(type));
+        if (roleInputs) {
+            for (const [inputName, role] of Object.entries(roleInputs)) {
+                for (const origin of inputLinkOrigins(graph, node, [inputName])) {
+                    const clips = collectConditioningNodes(graph, origin, nodeIndex);
+                    const target = role === 'negative' ? negativeNodes : positiveNodes;
+                    for (const clip of clips) if (!target.includes(clip)) target.push(clip);
+                }
+            }
         }
 
         if (/empty.*latent/i.test(type) && !metadata.resolution) {
@@ -398,34 +426,30 @@ export function extractRecipeMetadata(graph) {
     }
 
     for (const summary of metadata.nodes) {
-        if (!/cliptextencode/i.test(summary.type)) continue;
+        if (!isSupportedPromptNodeType(summary.type)) continue;
         const node = nodeIndex.get(String(summary.id));
         const prompt = textValue(widgetValue(node, ['text', 'prompt'], 0));
-        
-        if (positiveNodes.includes(node)) {
-            summary.role = 'positive';
-            if (prompt) appendUnique(metadata.promptPositive, [prompt]);
-        } else if (negativeNodes.includes(node)) {
-            summary.role = 'negative';
-            if (prompt) appendUnique(metadata.promptNegative, [prompt]);
-        }
-    }
+        const isPositive = positiveNodes.includes(node);
+        const isNegative = negativeNodes.includes(node);
 
-    if (!metadata.promptPositive.length && !metadata.promptNegative.length) {
-        for (const summary of metadata.nodes) {
-            if (!/cliptextencode/i.test(summary.type)) continue;
-            if (summary.role) continue;
-            const node = nodeIndex.get(String(summary.id));
-            const prompt = textValue(widgetValue(node, ['text', 'prompt'], 0));
-            if (!prompt) continue;
-            const descriptor = `${summary.title || ''} ${summary.type}`;
-            if (/(negative|neg|负面|反向|uncond)/i.test(descriptor)) {
-                summary.role = 'negative';
-                appendUnique(metadata.promptNegative, [prompt]);
-            } else {
-                summary.role = 'positive';
+        if (isPositive && isNegative) {
+            summary.role = 'both';
+            summary.roleSource = 'topology';
+            if (prompt) {
                 appendUnique(metadata.promptPositive, [prompt]);
+                appendUnique(metadata.promptNegative, [prompt]);
             }
+        } else if (isPositive) {
+            summary.role = 'positive';
+            summary.roleSource = 'topology';
+            if (prompt) appendUnique(metadata.promptPositive, [prompt]);
+        } else if (isNegative) {
+            summary.role = 'negative';
+            summary.roleSource = 'topology';
+            if (prompt) appendUnique(metadata.promptNegative, [prompt]);
+        } else {
+            summary.role = 'unknown';
+            summary.roleSource = 'unresolved';
         }
     }
     return metadata;

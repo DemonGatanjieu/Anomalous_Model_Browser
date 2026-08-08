@@ -314,10 +314,16 @@ The Node Assistant consumes parameter notebooks by node type, while the Recipe d
 
 Applying a node preset is a transactional live-widget operation: volatile seed slots are ignored, values are cloned safely, widget callbacks and ComfyUI's four-argument `onWidgetChanged(index, value, previousValue, liveWidget)` hook are invoked only when callable, and callback failures roll back the node before the UI reports failure. A successful write marks both graph and canvas dirty and emits `graphChanged` so recipe and assistant surfaces can refresh.
 
-Prompt roles are derived from linked conditioning inputs by bounded upstream traversal. Link storage may be an array, object, or `Map`, and a named input without a link must not mask another linked input with the same semantic role. Saved role metadata is joined to assistant records using string-safe node IDs; legacy recipes still fall back to descriptor-based classification and retain all discoverable positive/negative prompts.
+Prompt roles are derived only from an explicit allowlist of ComfyUI prompt nodes, consumers, and conditioning pass-through nodes. Link storage may be an array, object, or `Map`, and every linked role input is inspected. Unknown third-party nodes are opaque boundaries: neither their title nor their type name may turn an unresolved text into a positive or negative prompt. Saved role metadata is joined to assistant records using string-safe node IDs; legacy recipes use exact, unambiguous full-value recovery and otherwise remain unknown.
 
 The assistant must not call removed doctor-panel methods from canvas selection hooks. Existing host selection callbacks are preserved, and the assistant hook only updates its own panel.
 
 ## 72. Legacy Prompt Roles Are Recovered from Full Prompt Values
 
 Older recipes may contain correct `params.promptPositive` and `params.promptNegative` arrays but no per-node `role` field. When the Node Assistant prepares a node-type preset response, the backend compares the node's complete saved text widget value against those arrays and injects a role only when the match is unambiguous. An identical value present in both arrays remains unclassified rather than being guessed; explicit metadata roles always take precedence.
+
+## 73. Prompt Roles Are Conservative and User-Correctable
+
+The first supported automatic contract is intentionally narrow: ComfyUI's native `CLIPTextEncode` can receive a role only through allowlisted official sampler/Guider inputs and allowlisted conditioning pass-through nodes. An unresolved native prompt is `unknown`; a third-party text candidate is also `unknown` unless the user labels it. The detail panel states this limitation directly and never uses node titles, prompt content, or a default-positive rule as semantic evidence.
+
+Manual labels are recipe-skeleton metadata stored in `params.promptRoleOverrides`, keyed by string-safe node ID and guarded by the saved node type. Supported values are `positive`, `negative`, `both`, `ignored`, and `unknown`; removing an override restores the saved automatic result. Recipe updates retain an override only while node ID and type still match. The Parameters view and Node Assistant must consume the recipe override before automatic or legacy metadata, so all surfaces show the same role. Future third-party adapters may expand the allowlist, but unknown nodes must remain conservative until explicitly supported.

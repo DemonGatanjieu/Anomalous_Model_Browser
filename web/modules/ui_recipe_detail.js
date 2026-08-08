@@ -14,8 +14,11 @@ import {
     applyRecipeParametersToCanvas,
     assertRecipeSkeleton,
 } from './recipe_actions.js';
-import { applyRecipeWidgetChanges } from './recipe_parser.js';
-import { captureRecipeDraft } from './recipe_parser.js';
+import {
+    applyRecipeWidgetChanges,
+    captureRecipeDraft,
+    isSupportedPromptNodeType,
+} from './recipe_parser.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -228,31 +231,95 @@ function appendValueViewer(parent, value, className = '', options = {}) {
     return viewer;
 }
 
-function promptValues(recipe) {
-    const params = recipe?.params || {};
-    const positive = [...new Set((Array.isArray(params?.promptPositive) ? params.promptPositive : [params?.promptPositive])
-        .filter((value) => typeof value === 'string' && value.trim()))];
-    const negative = [...new Set((Array.isArray(params?.promptNegative) ? params.promptNegative : [params?.promptNegative])
-        .filter((value) => typeof value === 'string' && value.trim()))];
-    for (const node of params?.nodes || []) {
-        if (!/cliptextencode/i.test(String(node?.type || ''))) continue;
-        const widget = (node.widgets || []).find((candidate) => /^(text|prompt)$/i.test(String(candidate?.name || '')));
-        const text = widget ? fullWidgetValue(recipe, node, widget) : null;
-        if (typeof text !== 'string' || !text.trim()) continue;
-        if (node.role === 'negative') {
-            if (!negative.includes(text)) negative.push(text);
-        } else if (node.role === 'positive') {
-            if (!positive.includes(text)) positive.push(text);
-        } else {
-            const descriptor = `${node?.title || ''} ${node?.type || ''}`;
-            if (/(negative|neg|负面|反向|uncond)/i.test(descriptor)) {
-                if (!negative.includes(text)) negative.push(text);
-            } else if (!positive.includes(text)) {
-                positive.push(text);
-            }
-        }
+const PROMPT_ROLES = new Set(['positive', 'negative', 'both', 'ignored', 'unknown']);
+const PROMPT_WIDGET_NAME = /^(?:text|prompt|text_[gl]|positive|negative)$/i;
+
+function promptTextForNode(source, node) {
+    const values = [];
+    for (const widget of node?.widgets || []) {
+        if (!PROMPT_WIDGET_NAME.test(String(widget?.name || ''))) continue;
+        const value = fullWidgetValue(source, node, widget);
+        if (typeof value === 'string' && value.trim() && !values.includes(value.trim())) values.push(value.trim());
     }
-    return { positive, negative };
+    if (!values.length && isSupportedPromptNodeType(node?.type)) {
+        const workflowNode = (source?.workflow?.nodes || []).find((candidate) => String(candidate?.id) === String(node?.id));
+        const value = workflowNode?.widgets_values?.find((candidate) => typeof candidate === 'string' && candidate.trim());
+        if (value) values.push(value.trim());
+    }
+    return values.join('\n\n');
+}
+
+function legacyPromptRole(params, text) {
+    if (!text) return null;
+    const positive = new Set(Array.isArray(params?.promptPositive) ? params.promptPositive : []);
+    const negative = new Set(Array.isArray(params?.promptNegative) ? params.promptNegative : []);
+    if (positive.has(text) && !negative.has(text)) return 'positive';
+    if (negative.has(text) && !positive.has(text)) return 'negative';
+    return null;
+}
+
+function promptEntries(source, roleOwner = source) {
+    const params = source?.params || {};
+    const roleParams = roleOwner?.params || {};
+    const overrides = roleParams.promptRoleOverrides || {};
+    const entries = [];
+    for (const node of params.nodes || []) {
+        const text = promptTextForNode(source, node);
+        if (!text) continue;
+        const isKnown = isSupportedPromptNodeType(node?.type);
+        const isTextCandidate = isKnown || (node.widgets || []).some((widget) => PROMPT_WIDGET_NAME.test(String(widget?.name || '')));
+        if (!isTextCandidate) continue;
+        const override = overrides[String(node.id)]?.role;
+        const automaticRole = PROMPT_ROLES.has(node.role)
+            ? node.role
+            : (isKnown ? legacyPromptRole(params, text) : null);
+        entries.push({
+            id: node.id,
+            type: node.type || 'Unknown',
+            title: node.title || node.type || t('recipeDetailUnknownNode'),
+            text,
+            supported: isKnown,
+            automaticRole: automaticRole || 'unknown',
+            role: PROMPT_ROLES.has(override) ? override : (automaticRole || 'unknown'),
+            manual: PROMPT_ROLES.has(override),
+        });
+    }
+    return entries;
+}
+
+function promptValues(source, roleOwner = source) {
+    const positive = [];
+    const negative = [];
+    const entries = promptEntries(source, roleOwner);
+    for (const entry of entries) {
+        if ((entry.role === 'positive' || entry.role === 'both') && !positive.includes(entry.text)) positive.push(entry.text);
+        if ((entry.role === 'negative' || entry.role === 'both') && !negative.includes(entry.text)) negative.push(entry.text);
+    }
+    return { positive, negative, entries };
+}
+
+function paramsWithPromptRole(recipe, nodeId, selectedRole) {
+    const params = JSON.parse(JSON.stringify(recipe?.params || {}));
+    const overrides = { ...(params.promptRoleOverrides || {}) };
+    const key = String(nodeId);
+    if (selectedRole === 'auto') {
+        delete overrides[key];
+    } else if (PROMPT_ROLES.has(selectedRole)) {
+        const workflowNode = (recipe?.workflow?.nodes || []).find((node) => String(node?.id) === key);
+        overrides[key] = {
+            role: selectedRole,
+            nodeType: workflowNode?.type || (params.nodes || []).find((node) => String(node?.id) === key)?.type || 'Unknown',
+            source: 'manual',
+        };
+    }
+    if (Object.keys(overrides).length) params.promptRoleOverrides = overrides;
+    else delete params.promptRoleOverrides;
+
+    const owner = { ...recipe, params };
+    const resolved = promptEntries(owner, owner);
+    params.promptPositive = [...new Set(resolved.filter((entry) => entry.role === 'positive' || entry.role === 'both').map((entry) => entry.text))];
+    params.promptNegative = [...new Set(resolved.filter((entry) => entry.role === 'negative' || entry.role === 'both').map((entry) => entry.text))];
+    return params;
 }
 
 function fullWidgetValue(recipe, node, widget) {
@@ -1525,6 +1592,87 @@ function renderParameterNotebookEditor(wrapper, owner, recipe, parameterState, s
     wrapper.appendChild(editor);
 }
 
+function promptRoleLabel(role) {
+    return t({
+        positive: 'recipePromptRolePositive',
+        negative: 'recipePromptRoleNegative',
+        both: 'recipePromptRoleBoth',
+        ignored: 'recipePromptRoleIgnored',
+        unknown: 'recipePromptRoleUnknown',
+    }[role] || 'recipePromptRoleUnknown');
+}
+
+function renderPromptSection(parent, owner, recipe, source, rerender) {
+    const prompts = promptValues(source, recipe);
+    if (!prompts.entries.length) {
+        appendText(parent, 'p', t('recipeDetailNoPrompts'), 'anomalous-recipe-detail-muted');
+        return;
+    }
+
+    const heading = document.createElement('div');
+    heading.className = 'anomalous-recipe-detail-section-heading';
+    appendText(heading, 'h5', t('recipeDetailPrompts'));
+    appendText(heading, 'small', t('recipePromptSupportNotice'), 'anomalous-recipe-detail-muted');
+    parent.appendChild(heading);
+
+    const promptList = document.createElement('div');
+    promptList.className = 'anomalous-recipe-detail-prompt-list';
+    for (const entry of prompts.entries) {
+        const card = document.createElement('article');
+        card.className = `anomalous-recipe-detail-prompt anomalous-recipe-prompt-role-${entry.role}`;
+
+        const meta = document.createElement('div');
+        meta.className = 'anomalous-recipe-prompt-meta';
+        appendText(meta, 'strong', entry.title, 'anomalous-recipe-detail-prompt-label');
+        appendText(meta, 'small', entry.type, 'anomalous-recipe-detail-muted');
+        const badge = appendText(meta, 'span', promptRoleLabel(entry.role), `anomalous-recipe-prompt-role-badge is-${entry.role}`);
+        badge.title = entry.manual ? t('recipePromptRoleManual') : t('recipePromptRoleAutomatic');
+
+        const roleSelect = document.createElement('select');
+        roleSelect.className = 'anomalous-recipe-prompt-role-select';
+        roleSelect.setAttribute('aria-label', t('recipePromptRoleChoose'));
+        const choices = [
+            ['auto', `${t('recipePromptRoleAutomatic')} · ${promptRoleLabel(entry.automaticRole)}`],
+            ['positive', t('recipePromptRolePositive')],
+            ['negative', t('recipePromptRoleNegative')],
+            ['both', t('recipePromptRoleBoth')],
+            ['unknown', t('recipePromptRoleUnknown')],
+            ['ignored', t('recipePromptRoleIgnored')],
+        ];
+        for (const [value, label] of choices) {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = label;
+            roleSelect.appendChild(option);
+        }
+        roleSelect.value = entry.manual ? entry.role : 'auto';
+        roleSelect.onchange = async () => {
+            const previous = entry.manual ? entry.role : 'auto';
+            roleSelect.disabled = true;
+            card.classList.add('is-saving');
+            try {
+                const params = paramsWithPromptRole(recipe, entry.id, roleSelect.value);
+                await updateInlineRecipeMetadata(owner, recipe, { params });
+                rerender?.();
+            } catch (error) {
+                console.error('Could not update prompt role:', error);
+                roleSelect.value = previous;
+                roleSelect.disabled = false;
+                card.classList.remove('is-saving');
+                await anomalousAlert(t('recipePromptRoleSaveError'));
+            }
+        };
+        meta.appendChild(roleSelect);
+
+        const value = document.createElement('div');
+        value.className = 'anomalous-recipe-prompt-value';
+        appendValueViewer(value, entry.text);
+        card.append(meta, value);
+        promptList.appendChild(card);
+    }
+    parent.appendChild(promptList);
+}
+
 function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery, parameterState, selectParameterTab) {
     const selectedNotebook = parameterState?.notebooks?.find((item) => item.filename === parameterState.selectedFilename);
     const baseSource = selectedNotebook?.data?.workflow ? selectedNotebook.data : recipe;
@@ -1718,29 +1866,7 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     intro.appendChild(introHeading);
     appendText(intro, 'p', t('recipeDetailParametersHint'), 'anomalous-recipe-detail-muted');
 
-    const prompts = promptValues(source);
-    if (prompts.positive.length || prompts.negative.length) {
-        appendText(intro, 'h5', t('recipeDetailPrompts'));
-        const promptList = document.createElement('div');
-        promptList.className = 'anomalous-recipe-detail-prompt-list';
-        if (prompts.positive.length) {
-            const positive = document.createElement('div');
-            positive.className = 'anomalous-recipe-detail-prompt';
-            appendText(positive, 'span', t('recipeDetailPositivePrompt'), 'anomalous-recipe-detail-prompt-label');
-            appendValueViewer(positive, prompts.positive.join('\n\n'));
-            promptList.appendChild(positive);
-        }
-        if (prompts.negative.length) {
-            const negative = document.createElement('div');
-            negative.className = 'anomalous-recipe-detail-prompt anomalous-recipe-detail-prompt-negative';
-            appendText(negative, 'span', t('recipeDetailNegativePrompt'), 'anomalous-recipe-detail-prompt-label');
-            appendValueViewer(negative, prompts.negative.join('\n\n'));
-            promptList.appendChild(negative);
-        }
-        intro.appendChild(promptList);
-    } else {
-        appendText(intro, 'p', t('recipeDetailNoPrompts'), 'anomalous-recipe-detail-muted');
-    }
+    renderPromptSection(intro, owner, recipe, source, selectParameterTab);
 
     const params = source?.params || {};
     const summary = document.createElement('section');

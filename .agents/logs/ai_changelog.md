@@ -1270,3 +1270,16 @@
 - Added regression coverage for negative-role recovery and ambiguous prompt values.
 
 Validation: all JS syntax checks passed, the parser test passed, and the Python suite passed (17 tests).
+
+## [2026-08-08] Conservative Prompt Roles and Manual Labels
+
+- Limited automatic prompt-role analysis to native `CLIPTextEncode` and an explicit set of official sampler, Guider, and conditioning pass-through nodes.
+- Removed title/descriptor guessing and the Node Assistant's default-positive fallback; unresolved and third-party text candidates now remain visibly unknown.
+- Added per-node role controls in Recipe Parameters: automatic, positive, negative, shared positive/negative, and ignored.
+- Persisted manual labels in `params.promptRoleOverrides`, guarded them with node type, retained valid labels across recipe refreshes, and shared them with the Node Assistant API.
+- Fixed the Node Assistant recipe lookup to read the actual `params` field instead of the obsolete `metadata` field.
+- Added `both` handling for one native text node connected to both official roles and changed role tracing to inspect all matching linked inputs.
+
+Validation: affected JavaScript modules passed `node --check`; the local parser regression passed; Python compilation passed; the local Python suite passed 19 tests; `git diff --check` passed.
+
+Handoff: automatic compatibility with arbitrary third-party text/conditioning nodes is intentionally not claimed. The registry/conflict-evidence stages remain in `.agents/plans/prompt_role_recognition_hardening_plan.md`. Pre-existing untracked `test.mjs` and `test2.mjs` remain untouched.

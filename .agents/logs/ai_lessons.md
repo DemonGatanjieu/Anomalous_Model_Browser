@@ -597,3 +597,9 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: A recipe saved before per-node prompt roles could still contain correct positive/negative prompt arrays, but the assistant had no role field to display and defaulted every `CLIPTextEncode` node to positive.
 
 **The Practice**: When adding a new derived metadata field, recover it from an existing authoritative value for legacy records. Require an exact unambiguous match, preserve explicit new metadata as the source of truth, and leave collisions unresolved rather than inventing a role.
+
+## 91. Unknown prompt semantics are a valid product state
+
+**The Problem**: Treating every text-like or `CLIPTextEncode`-named node as positive made the UI look decisive while silently reversing prompts in third-party workflows. Titles and type-name fragments are presentation data, not proof of graph semantics.
+
+**The Practice**: Keep the automatic contract as an explicit allowlist, stop traversal at unknown semantic nodes, and show an `unknown` state instead of guessing. Store user corrections separately from derived metadata, guard them with structural identity, and make every consuming surface honor the same override priority.

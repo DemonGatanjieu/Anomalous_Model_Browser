@@ -859,6 +859,22 @@ export async function handleSaveRecipe() {
     const details = await showRecipeSaveDialog(this, canvasThumbnail, editing?.data || null);
     if (!details) return;
 
+    // Prompt-role labels belong to the recipe skeleton. Preserve labels whose
+    // node id and type still match when an existing recipe is refreshed from
+    // the live canvas; stale labels are discarded safely.
+    const previousPromptRoles = editing?.data?.params?.promptRoleOverrides;
+    if (previousPromptRoles && typeof previousPromptRoles === 'object') {
+        const workflowNodes = new Map((draft.workflow.nodes || []).map((node) => [String(node?.id), node]));
+        const retained = {};
+        for (const [nodeId, override] of Object.entries(previousPromptRoles)) {
+            const node = workflowNodes.get(String(nodeId));
+            if (!node || !override || typeof override !== 'object') continue;
+            if (override.nodeType && override.nodeType !== node.type) continue;
+            retained[nodeId] = { ...override, nodeType: node.type || override.nodeType || 'Unknown' };
+        }
+        if (Object.keys(retained).length) draft.metadata.promptRoleOverrides = retained;
+    }
+
     const saveButton = this.recipeView?.querySelector('[data-recipe-save-current]');
     if (saveButton) {
         saveButton.disabled = true;

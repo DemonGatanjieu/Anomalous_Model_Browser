@@ -55,9 +55,30 @@ def _invalidate_parameter_notebooks_cache():
     _parameter_notebooks_cache_time = 0
 
 def _prompt_role_for_node(node, params):
-    """Recover prompt roles for legacy recipes that predate metadata node roles."""
+    """Return an explicit role, or conservatively recover one from legacy values."""
     if not isinstance(node, dict) or not isinstance(params, dict):
         return None
+    allowed_roles = {"positive", "negative", "both", "ignored", "unknown"}
+    node_id = node.get("id")
+    overrides = params.get("promptRoleOverrides")
+    if isinstance(overrides, dict):
+        override = overrides.get(str(node_id))
+        if override is None:
+            override = overrides.get(node_id)
+        if isinstance(override, dict) and override.get("role") in allowed_roles:
+            expected_type = override.get("nodeType")
+            if not expected_type or expected_type == node.get("type"):
+                return override["role"]
+
+    summaries = params.get("nodes")
+    if isinstance(summaries, list):
+        for summary in summaries:
+            if not isinstance(summary, dict) or str(summary.get("id")) != str(node_id):
+                continue
+            if summary.get("role") in allowed_roles:
+                return summary["role"]
+            break
+
     values = node.get("widgets_values")
     if not isinstance(values, list) or not values:
         return None
@@ -148,11 +169,17 @@ async def api_get_parameters_by_type(request):
                 try:
                     r_data = _read_recipe(resolve_within(recipes_dir, r_fn))
                     recipe_name_cache[r_fn] = r_data.get("name") if r_data else r_fn
-                    if r_data and isinstance(r_data.get("metadata"), dict) and isinstance(r_data["metadata"].get("nodes"), list):
+                    recipe_params = r_data.get("params") if isinstance(r_data, dict) else None
+                    if r_data and isinstance(recipe_params, dict):
                         role_map = {}
-                        for n in r_data["metadata"]["nodes"]:
-                            if isinstance(n, dict) and "id" in n and "role" in n:
-                                role_map[n["id"]] = n["role"]
+                        workflow = r_data.get("workflow")
+                        workflow_nodes = workflow.get("nodes", []) if isinstance(workflow, dict) else []
+                        for n in workflow_nodes:
+                            if not isinstance(n, dict) or "id" not in n:
+                                continue
+                            role = _prompt_role_for_node(n, recipe_params)
+                            if role is not None:
+                                role_map[n["id"]] = role
                         recipe_role_cache[r_fn] = role_map
                 except Exception:
                     recipe_name_cache[r_fn] = r_fn

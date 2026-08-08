@@ -1572,14 +1572,15 @@ export function renderParameterPresets(node, container, forceRefresh = false) {
                             summary += ` - ${n.title}${valStr}`;
                         }
                         
-                        let roleTag = '';
-                        if (n.role === 'positive') roleTag = '[🟢 正面] ';
-                        else if (n.role === 'negative') roleTag = '[🔴 负面] ';
-                        else {
-                            const descriptor = `${n.title || ''} ${n.type || ''}`;
-                            if (/(negative|neg|负面|反向|uncond)/i.test(descriptor)) roleTag = '[🔴 负面] ';
-                            else if (/cliptextencode/i.test(n.type || '')) roleTag = '[🟢 正面] ';
-                        }
+                        const promptRoleTag = {
+                            positive: `[🟢 ${t('recipePromptRolePositive')}] `,
+                            negative: `[🔴 ${t('recipePromptRoleNegative')}] `,
+                            both: `[🟣 ${t('recipePromptRoleBoth')}] `,
+                            ignored: `[⚪ ${t('recipePromptRoleIgnored')}] `,
+                            unknown: `[⚪ ${t('recipePromptRoleUnknown')}] `,
+                        }[n.role];
+                        const roleTag = promptRoleTag
+                            || (/cliptextencode/i.test(n.type || '') ? `[⚪ ${t('recipePromptRoleUnknown')}] ` : '');
                         
                         const displayHtml = `<span style="font-size:14px;">✨</span> <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${roleTag}${escapeHtml(summary)}</span>`;
                         applyBtn.innerHTML = displayHtml;
