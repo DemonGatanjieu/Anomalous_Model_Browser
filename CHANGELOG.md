@@ -1,12 +1,33 @@
 # 📈 Anomalous Model Browser Changelog
 
-## Unreleased
+## v1.55 Beta (Workflow Recipes Preview)
 
-### Workflow Recipe details
-- Added a detailed view for saved Workflow Recipes, including recipe information, model requirements, parameters, and version history.
-- Added clearer reproducibility information and safe version restoration for saved recipes.
-- Renamed the combined Notes and Recipes area to Workspace / 创作工作台, with separate Prompt Notes and Workflow Recipes sections.
-- Recipe model requirements now show current local previews on demand. You can optionally save small model-preview snapshots with a recipe version for future visual reference.
+> **Beta scope:** Workflow Recipes, Parameter Notebooks, and the recipe-powered Parameter Presets tab in Node Assistant are preview features. The Node Assistant's Actions tab—visual model replacement and LoRA insertion—is not part of this beta. Save the current canvas and back up `workflows/anomalous_recipes` plus `workflows/anomalous_parameters` before updating, importing, restoring, deleting, or applying recipe data. The stable target for these preview features is v1.6.
+
+### 🚀 Major Features
+- **Workflow Recipes (工作流配方)**: Save a complete workflow with a cover, name, tags, notes, model references, prompts, sampler settings, safe node parameters, and a reproducibility fingerprint. Recipes append to the current canvas without replacing it.
+- **Recipe Detail Workspace (配方详情)**: Added Overview, Parameter Notebook, Gallery, and Versions tabs. Long values can be expanded or copied, model requirements are shown as separate cards, and the overview avoids exposing local model paths as display names.
+- **Parameter Notebooks (参数笔记本)**: Create edited parameter notes, capture a fresh note from a matching live canvas, switch between saved notes with clear feedback, delete individual notes, and apply one note back to a workflow only after the complete recipe skeleton matches. Volatile values such as seeds are intentionally ignored.
+- **Node Assistant Recipe Presets (节点助手配方预设)**: The Parameter Presets tab reads same-type node values saved by Workflow Recipes. Select a node such as KSampler and apply sampler, scheduler, steps, CFG, denoise, and other safe values in one click without replacing the rest of the workflow.
+- **Model Identity and Local Matching (模型身份与本地匹配)**: Recipe model cards retain hashes, size, model category, available Civitai origin names/links, and previews. Imported recipes can match another author's model references to local files without trusting their folder paths.
+- **Recipe Gallery and Parameter Comparison (配方图库与参数对比)**: Find historical outputs with the same node structure, inspect embedded generation data, compare differing parameters, and promote an output image to the recipe cover.
+- **Version History (版本历史)**: Recipe updates retain bounded local history. Compare meaningful changes, restore an older version safely, and preserve the current version before restoration.
+- **Portable Recipe Packages (便携配方包)**: Import or export recipes with optional preview snapshots and history. Model identity hashes can be removed for privacy. Preview snapshots contain presentation images only and never include model files.
+- **Conservative Prompt Roles (保守的正负提示词识别)**: Native supported prompt paths are classified without title guessing. Unknown third-party text nodes remain unclassified until the user labels them as positive, negative, shared, or ignored.
+
+### ✨ Interface and Interaction
+- Renamed the combined Notes and Recipes area to **Creative Workspace / 创作工作台**, with separate Prompt Notes and Workflow Recipes sections.
+- Recipe models, LoRAs, prompt text, common parameters, and generic node controls use dedicated responsive layouts with copy and full-content expansion where needed.
+- Returning from a model detail page restores the previous recipe position instead of jumping back to the top.
+- The main output gallery refreshes when opened, avoiding continuous background polling.
+- Beta and data-protection guidance is available in the Recipe list, the Node Assistant Parameter Presets tab, Settings Help, and README in both Chinese and English.
+
+### 🐛 Reliability Fixes
+- Fixed blank Workspace/Parameter Notebook surfaces and restored the plugin trigger when frontend module errors prevented registration.
+- Fixed parameter application against current ComfyUI widget callbacks and added transactional rollback when a node update fails.
+- Fixed positive/negative prompt duplication and legacy role recovery while keeping ambiguous third-party prompt nodes visibly unknown.
+- Fixed panel closing and canvas handoff behavior, docked notebook confirmation controls, recipe scroll restoration, long model status text, and narrow parameter layouts.
+- Added backend validation and regression coverage for recipe round-tripping, linked inputs, parameter-note deletion, model matching, and prompt-role metadata.
 
 ## v1.5.1 (The Workflow Exchange & Deep Scan Update)
 ### 🚀 Major Features

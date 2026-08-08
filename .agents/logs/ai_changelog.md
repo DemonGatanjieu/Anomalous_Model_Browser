@@ -1322,3 +1322,14 @@ Handoff: this is a policy clarification rather than legal advice. No public rele
 Validation: all JavaScript modules passed `node --check`; Chinese and English dictionaries each contain 636 unique keys with no parity differences; every statically referenced `t('key')` resolves in both dictionaries; parser and Python regression suites passed; `git diff --check` passed. A live ComfyUI browser check confirmed the Recipe warning, Node Assistant warning, expanded Settings Help, and in-place English warning refresh.
 
 Handoff: public `CHANGELOG.md` was not changed. Pre-existing untracked `test.mjs` and `test2.mjs` remain untouched.
+
+## [2026-08-08] Scope Beta Warning and Prepare v1.55 Beta Notes
+
+- Moved the Node Assistant beta banner from the assistant root into the Parameter Presets container, so the mature Actions tab no longer appears experimental.
+- Clarified in Chinese and English runtime copy, README, and Settings Help that only Workflow Recipes and the recipe-powered Parameter Notebook integration are beta.
+- Converted the public changelog's Unreleased recipe stub into a detailed `v1.55 Beta` entry covering recipes, parameter notebooks, Node Assistant presets, model identity, galleries, versions, package sharing, prompt roles, UX work, reliability fixes, and the v1.6 stable target.
+- Kept runtime versioning unchanged because the plugin has no separate application-version constant or package manifest; the release label is currently owned by `CHANGELOG.md`.
+
+Validation: affected JavaScript modules passed `node --check`; locale audit confirmed 636 unique keys per language, no parity/duplicate errors, and 497 resolved static `t('key')` references; the recipe parser and all 19 Python tests passed; `git diff --check` passed. Live ComfyUI verification with a selected KSampler confirmed that the Actions tab has no beta text, Parameter Presets shows the localized banner, language switching refreshes it, and no Anomalous frontend errors were logged.
+
+Handoff: pre-existing untracked `test.mjs` and `test2.mjs` remain outside this change.

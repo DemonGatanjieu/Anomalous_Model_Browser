@@ -653,18 +653,6 @@ export function initAssistantPanel() {
         this.assistantPanel.style.padding = '0';
         this.assistantPanel.style.overflow = 'hidden';
 
-        const betaNotice = document.createElement('div');
-        betaNotice.className = 'anomalous-beta-notice anomalous-assistant-beta-notice';
-        const betaBadge = document.createElement('strong');
-        betaBadge.className = 'anomalous-beta-badge';
-        betaBadge.dataset.anomalousI18nKey = 'betaFeature';
-        betaBadge.textContent = t('betaFeature');
-        const betaText = document.createElement('span');
-        betaText.dataset.anomalousI18nKey = 'assistantBetaNotice';
-        betaText.textContent = t('assistantBetaNotice');
-        betaNotice.append(betaBadge, betaText);
-        this.assistantPanel.appendChild(betaNotice);
-
 if (!this._assistantPanelHooked) {
             this._assistantPanelHooked = true;
             const self = this;
@@ -1507,6 +1495,18 @@ export function applyLocalNodeParameters(targetNode, sourceWidgetValues) {
 
 export function renderParameterPresets(node, container, forceRefresh = false) {
     if (!node || !node.type) return;
+
+    const betaNotice = document.createElement('div');
+    betaNotice.className = 'anomalous-beta-notice anomalous-assistant-beta-notice';
+    const betaBadge = document.createElement('strong');
+    betaBadge.className = 'anomalous-beta-badge';
+    betaBadge.dataset.anomalousI18nKey = 'betaFeature';
+    betaBadge.textContent = t('betaFeature');
+    const betaText = document.createElement('span');
+    betaText.dataset.anomalousI18nKey = 'assistantBetaNotice';
+    betaText.textContent = t('assistantBetaNotice');
+    betaNotice.append(betaBadge, betaText);
+    container.appendChild(betaNotice);
 
     const presetSection = document.createElement('div');
     presetSection.className = 'anomalous-assistant-parameter-presets';

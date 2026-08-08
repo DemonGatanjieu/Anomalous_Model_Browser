@@ -627,3 +627,9 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: Both locale dictionaries can contain the right keys while a panel created before the language change keeps its old text in the DOM. Static key audits and syntax checks cannot detect that stale rendered state.
 
 **The Practice**: Give persistent localized elements their locale-key metadata and refresh those elements when the language changes. Verify the switch in the running host with the affected panel already open, then switch the user's language back after testing.
+
+## 96. Beta labels belong to the smallest experimental surface
+
+**The Problem**: A beta banner attached to the Node Assistant root visually classified its mature Actions tab as experimental even though only the recipe-powered Parameter Notebook tab was under test.
+
+**The Practice**: Put maturity labels inside the exact tab, control, or workflow they qualify, and state adjacent stable behavior explicitly when confusion is likely. Release notes, README, Help, and runtime placement must describe the same boundary.
