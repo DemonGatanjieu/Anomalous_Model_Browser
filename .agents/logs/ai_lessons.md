@@ -609,3 +609,9 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: A full-row button is convenient for selecting a history item, but placing a delete button inside it creates invalid nested interactive elements and unreliable click behavior. Deleting the selected item can also leave stale detail/gallery state behind.
 
 **The Practice**: Make selection and deletion sibling buttons inside one row, confirm the exact item, disable the row during the request, and invalidate dependent asynchronous state before refreshing the collection. Never expose deletion for a virtual baseline that has no standalone persisted file.
+
+## 93. Keep open-source permission separate from brand identity
+
+**The Problem**: Saying the whole repository is MIT-licensed while also calling broad, undefined “UI assets” proprietary makes downstream rights unclear and can look like an extra restriction on an otherwise permissive license.
+
+**The Practice**: Leave the standard software license untouched, state exactly which repository materials it covers, and put source-identification rules in a separate trademark/brand policy. Limit that policy to named marks and designated logos, permit truthful attribution, and target confusing claims of official status rather than ordinary code modification.

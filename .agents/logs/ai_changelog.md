@@ -1295,3 +1295,16 @@ Handoff: automatic compatibility with arbitrary third-party text/conditioning no
 Validation: affected JavaScript modules passed `node --check`; the parser and Python regression suites still passed; `git diff --check` passed.
 
 Handoff: pre-existing untracked `test.mjs` and `test2.mjs` remain untouched.
+
+## [2026-08-08] Clarify MIT and Brand Boundaries
+
+- Kept `LICENSE` as the standard OSI-approved MIT text without project-specific additions.
+- Added bilingual `TRADEMARKS.md` separating copyright permission from source-identifying project marks.
+- Explicitly kept repository code, documentation, stylesheets, and ordinary UI resources under MIT unless a file states otherwise.
+- Limited the brand policy to the project name, its official stylized presentation, and graphics expressly designated as official logos.
+- Permitted truthful references, links, compatibility statements, unmodified redistribution, screenshots, and clear “based on” attribution.
+- Replaced README's ambiguous “official UI assets are proprietary” language with a concise MIT/brand distinction and a link to the full policy.
+
+Validation: compared the local license text with the Open Source Initiative MIT text; reviewed repository assets for existing logo files; `git diff --check` passed.
+
+Handoff: this is a policy clarification rather than legal advice. No public release changelog entry was added. Pre-existing untracked `test.mjs` and `test2.mjs` remain untouched.

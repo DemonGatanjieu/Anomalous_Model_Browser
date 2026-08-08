@@ -126,6 +126,6 @@ The source code of this project is released under the [MIT License](LICENSE). Yo
 本项目的源代码基于 MIT 许可证开源，您可以自由地使用、修改和分发代码。
 
 **Branding & Trademarks (品牌与商标保护)**
-The name **"Anomalous Model Browser"**, the project logo, and official UI assets are proprietary to the original author. 
-If you choose to fork, modify, and distribute a customized version of this extension, you **MUST** rename your project and change the logo to avoid confusing users with the official release. You may not distribute modified versions under the official name.
-“Anomalous Model Browser” 的名称、项目 Logo 以及官方发布的 UI 资产归原作者所有。如果您修改了本插件并对外分发，您**必须**更改项目名称和 Logo，以免误导用户。您不得以官方名义分发修改后的版本。
+The MIT License covers the repository's code, documentation, stylesheets, and ordinary UI resources. The name **Anomalous Model Browser** and the official project logo identify official releases; the MIT License does not imply that a modified distribution is official or endorsed. Publicly distributed forks should use a distinct primary name and logo, while they may truthfully say that they are based on Anomalous Model Browser. See the [Trademark and Brand Policy](TRADEMARKS.md).
+
+MIT 许可证适用于本仓库的代码、文档、样式表和普通 UI 资源。名称 **Anomalous Model Browser** 与官方项目 Logo 用于识别官方版本；采用 MIT 许可证并不表示修改后的发行版属于官方版本或获得认可。公开分发的修改版本应使用不同的主要名称与 Logo，但可以如实说明其基于 Anomalous Model Browser。详见[商标与品牌政策](TRADEMARKS.md)。
