@@ -706,6 +706,14 @@ export async function showRecipes() {
     };
     this.recipeView.appendChild(actionBar);
 
+    const betaNotice = document.createElement('div');
+    betaNotice.className = 'anomalous-beta-notice anomalous-recipe-beta-notice';
+    const betaBadge = appendText(betaNotice, 'strong', t('betaFeature'), 'anomalous-beta-badge');
+    betaBadge.dataset.anomalousI18nKey = 'betaFeature';
+    const betaText = appendText(betaNotice, 'span', t('recipeBetaNotice'));
+    betaText.dataset.anomalousI18nKey = 'recipeBetaNotice';
+    this.recipeView.appendChild(betaNotice);
+
     this.recipeListContainer = document.createElement('div');
     this.recipeListContainer.className = 'anomalous-recipe-list';
     this.recipeView.appendChild(this.recipeListContainer);

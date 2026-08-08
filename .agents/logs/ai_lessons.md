@@ -615,3 +615,15 @@ Keep visual identifiers stable during bug fixing. Restore the established 📦 t
 **The Problem**: Saying the whole repository is MIT-licensed while also calling broad, undefined “UI assets” proprietary makes downstream rights unclear and can look like an extra restriction on an otherwise permissive license.
 
 **The Practice**: Leave the standard software license untouched, state exactly which repository materials it covers, and put source-identification rules in a separate trademark/brand policy. Limit that policy to named marks and designated logos, permit truthful attribution, and target confusing claims of official status rather than ordinary code modification.
+
+## 94. Beta warnings must say what to protect and when
+
+**The Problem**: A generic “experimental” badge does not help users avoid loss when a feature can import, restore, delete, or apply saved workflow data. Documentation can also become misleading when one surface describes an older, narrower feature than the UI currently ships.
+
+**The Practice**: Name the risky operations, the exact user-data directories to back up, and the distinction between presentation snapshots and real model backups. Keep the warning visible in each beta surface and repeat the fuller instructions in Help and README. Drive runtime text from the locale dictionary and verify language-key parity instead of maintaining separate hardcoded copies.
+
+## 95. Locale parity does not prove live language switching
+
+**The Problem**: Both locale dictionaries can contain the right keys while a panel created before the language change keeps its old text in the DOM. Static key audits and syntax checks cannot detect that stale rendered state.
+
+**The Practice**: Give persistent localized elements their locale-key metadata and refresh those elements when the language changes. Verify the switch in the running host with the affected panel already open, then switch the user's language back after testing.

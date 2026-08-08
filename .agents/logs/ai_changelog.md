@@ -1308,3 +1308,17 @@ Handoff: pre-existing untracked `test.mjs` and `test2.mjs` remain untouched.
 Validation: compared the local license text with the Open Source Initiative MIT text; reviewed repository assets for existing logo files; `git diff --check` passed.
 
 Handoff: this is a policy clarification rather than legal advice. No public release changelog entry was added. Pre-existing untracked `test.mjs` and `test2.mjs` remain untouched.
+
+## [2026-08-08] Refresh Beta Feature Documentation and Help
+
+- Compared the published GitHub README with the local feature set; the cloud copy covered model actions but did not document Workflow Recipes, Parameter Notebooks, recipe-powered Node Assistant presets, or current data-safety boundaries.
+- Rewrote the README's English and Chinese overview/guide sections for Node Assistant, Workflow Recipes, model matching, parameters, output comparison, version history, and package sharing.
+- Added prominent bilingual beta warnings that name the recipe/parameter data folders to back up and clarify that preview snapshots never contain model files.
+- Updated Settings Help in both languages with the same current workflows and safety guidance.
+- Added localized, compact beta notices to the Workflow Recipe list and Node Assistant without hardcoding their copy in UI modules.
+- Marked live beta-notice elements with locale keys and rebuilt the active Node Assistant state so an in-place Chinese/English switch refreshes both warnings and selected-node/placeholder content instead of leaving stale text.
+- Removed four obsolete English-suffixed keys from the Chinese dictionary, removed duplicate `recipeDetailWidget` declarations, and added missing shared `loading`/`refresh` keys.
+
+Validation: all JavaScript modules passed `node --check`; Chinese and English dictionaries each contain 636 unique keys with no parity differences; every statically referenced `t('key')` resolves in both dictionaries; parser and Python regression suites passed; `git diff --check` passed. A live ComfyUI browser check confirmed the Recipe warning, Node Assistant warning, expanded Settings Help, and in-place English warning refresh.
+
+Handoff: public `CHANGELOG.md` was not changed. Pre-existing untracked `test.mjs` and `test2.mjs` remain untouched.

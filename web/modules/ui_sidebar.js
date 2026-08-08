@@ -1064,9 +1064,19 @@ export function createDOM() {
                     b.doctorPanel.innerHTML = '';
                     b.doctorPanelInitialized = false;
                 }
+                if (b.assistantPanel && b.assistantPanelInitialized) {
+                    const selectedNode = Object.values(app.canvas?.selected_nodes || {})[0] || null;
+                    b.assistantPanelInitialized = false;
+                    b.initAssistantPanel();
+                    b.diagnoseNode(selectedNode, true);
+                }
                 if (b.notebookNotesTab) b.notebookNotesTab.textContent = t('promptNotes');
                 if (b.notebookRecipesTab) b.notebookRecipesTab.textContent = t('recipeTitle');
             }
+            document.querySelectorAll('[data-anomalous-i18n-key]').forEach((element) => {
+                const key = element.dataset.anomalousI18nKey;
+                if (key) element.textContent = t(key);
+            });
             const impOverlay = document.getElementById('anomalous-import-overlay');
             if (impOverlay && impOverlay.parentNode) {
                 impOverlay.parentNode.removeChild(impOverlay);

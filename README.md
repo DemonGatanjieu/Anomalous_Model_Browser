@@ -8,7 +8,10 @@
 
 <h2 id="english">🇬🇧 English</h2>
 
-> A highly professional, multi-functional ComfyUI model browser plugin. It integrates advanced model management, workflow healing, an intelligent drafting notebook, and a native output gallery.
+> A multi-functional ComfyUI model browser and workflow companion. It combines model management, workflow repair, visual node actions, reusable Workflow Recipes, prompt notes, and a native output gallery.
+
+> [!WARNING]
+> **Beta features and data protection:** Workflow Recipes and the Node Assistant's recipe-powered Parameter Presets are currently in testing. Before updating the plugin, importing someone else's recipe, restoring or deleting recipe data, or applying saved parameters, save the current canvas and back up `workflows/anomalous_recipes` and `workflows/anomalous_parameters` inside your ComfyUI user directory. Recipe model-preview snapshots do not contain model files and are not model backups.
 
 ### 🌟 Core Capabilities
 
@@ -16,6 +19,8 @@
 | :--- | :--- |
 | **Comprehensive Model Management** | Automatically extract Base Model architectures, cover images, trigger words, and author info by scanning model hashes. Customize model names, notes, and covers. Safely delete unwanted models or quickly replace them visually with cover icons. |
 | **Workflow Node Repair (🩺)** | As long as a workflow/image was exported with this plugin active, the **Model Doctor (🩺)** can auto-detect missing nodes and replace them with correct local paths. Stubborn models? Use "Deep Hash Scan" or get Civitai links. |
+| **Node Assistant & Recipe Presets (🤖)** | Select a canvas node to visually replace a model, safely insert a LoRA into a compatible chain, or load same-type node parameters saved by Workflow Recipes. A saved KSampler note, for example, can apply sampler, scheduler, steps, CFG, and denoise in one click while volatile seeds are ignored. |
+| **Workflow Recipes (🧰)** | Save a complete workflow with a cover, notes, tags, model identity, prompts, sampler settings, node parameters, matching output images, and version history. Append recipes to the canvas, compare output/version parameters, match foreign model references to local files, and import or export portable recipe packages. |
 | **Smart Notebook (📑)** | Leveraging scanned local architectures, it offers rapid matching between Checkpoints, UNet, and compatible LoRAs. Features a built-in translation tool, auto-chunks prompts into tags, and supports 1-click canvas deployment. |
 | **History Gallery (🖼️)** | Natively reads your local `output` folder. Supports 1-click viewing, deleting, and mouse-wheel zooming. Drag and drop any generated image directly onto the canvas to instantly load its embedded workflow! |
 | **Additional Features** | Click the top-right `➕` of any model card to deploy it to the canvas. The UI supports side-docking to leave space for your canvas operations. |
@@ -33,17 +38,26 @@
 
 #### 3. Visual Swapping (Node Assistant) 🤖
 * **Location**: The third Robot icon (**🤖**) from the bottom left.
-* **Operation**: After opening, select a model node on your ComfyUI canvas. The redesigned action card can visually replace its current model or insert a LoRA before/after a compatible MODEL + CLIP chain. Picker cards show both model category and base-model badges. When choosing a LoRA, the connected main model's type is selected automatically when metadata is available; the filter can always be switched back to all LoRAs. Folder browsing, full-path search, sorting, and safe handling of ambiguous branches remain available.
+* **Actions**: Select a node on the ComfyUI canvas. For model nodes, the Actions tab can visually replace the current model or insert a LoRA before/after a compatible MODEL + CLIP chain. Picker cards support previews, model-category/base-model badges, folders, full-path search, sorting, and safe handling of ambiguous branches.
+* **Parameter Presets (Beta)**: Switch to **Parameter Presets** to read parameter notes associated with Workflow Recipes. Presets are grouped by recipe and contain saved values for the same node type as the selected node. Clicking a preset applies it transactionally to that one node; runtime-changing values such as seeds are ignored.
 
-#### 4. Settings Panel ⚙️
+#### 4. Workflow Recipes & Parameter Notebooks 🧰
+* **Location**: Open **Creative Workspace (📑)** and switch from **Prompt Notes** to **Workflow Recipes**.
+* **Save and reuse**: Save the complete current graph with a cover, name, tags, notes, model references, prompts, sampler settings, and bounded node summaries. Recipes can be appended to the current canvas without replacing it.
+* **Details**: Overview shows model composition and reproducibility information. Models can be matched to local files by hash, size, and model category rather than the author's path; Civitai origin names/links and local previews can be retained when available.
+* **Parameter Notebook**: Browse the recipe's saved values, copy or expand long fields, create an edited parameter note, or read a fresh matching canvas into a new note. **Apply to Current Workflow** first checks that the recipe skeleton matches, then updates safe widgets; volatile values such as seeds are ignored. Stored notes can be deleted individually. Unknown third-party prompt roles can be labelled manually.
+* **Gallery and Versions**: Find historical outputs with the same node structure, open an image to compare parameter differences, set an output as the recipe cover, compare recipe versions, or restore an older version while archiving the current one.
+* **Sharing**: Export/import portable recipe packages with optional model-preview snapshots and history. Identity hashes can be removed during export. A preview snapshot is presentation data only—it never includes a model file.
+
+#### 5. Settings Panel ⚙️
 * **Location**: The Gear icon (**⚙️**) at the bottom left.
-* **Operation**: Here you can adjust the UI language and main UI font size. Open **Model Settings** to choose always-play or hover-play video covers and optimized card thumbnails or original covers. Detail pages continue to use the original cover.
+* **Operation**: Adjust the UI language and main UI font size. Open **Model Settings** to choose always-play or hover-play video covers and optimized card thumbnails or original covers. Detail pages continue to use the original cover. **Folder Manager** can hide folders from both the sidebar and background reads, and reorder them. **Help** contains the current safety and feature guide.
 
-#### 5. Top Navigation & Smart Notebook 📑
-**Location**: The top tabs: **Models (📦)**, **Gallery (🖼️)**, **Notebook (📑)**, and **Dock Side (◧)**.
+#### 6. Top Navigation & Prompt Notes 📑
+**Location**: The top tabs: **Models (📦)**, **Gallery (🖼️)**, **Creative Workspace (📑)**, and **Dock Side (◧)**.
 
-**Notebook Operation**: 
-1. Click the **Notebook (📑)** tab, then click the **➕ (New)** button and confirm.
+**Prompt Notes Operation**:
+1. Open **Creative Workspace (📑)**, choose **Prompt Notes**, then click the **➕ (New)** button and confirm.
 2. Select a Base Model (e.g., SD1.5). You can then select compatible Main Models and LoRAs.
 3. Click **📝 Edit Raw / Paste** to paste your prompts. Select the language at the top-left for bilingual translation.
 4. After confirming, the plugin will automatically chunk your prompt into tags. You can find/replace or directly edit tags.
@@ -64,7 +78,10 @@ git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
 
 <h2 id="中文">🇨🇳 中文</h2>
 
-> 一个高度专业、多功能的 ComfyUI 模型浏览器插件。集成了模型管理、工作流自愈修复、智能草稿本与原生图库管理。
+> 一个多功能的 ComfyUI 模型浏览器与工作流搭档，集成模型管理、工作流修复、节点可视化操作、可复用工作流配方、提示词笔记与原生图库管理。
+
+> [!WARNING]
+> **测试功能与数据保护：** 工作流配方以及节点助手中由配方驱动的“参数笔记本”目前属于测试功能。更新插件、导入他人配方、恢复或删除配方数据、应用已保存参数之前，请先保存当前画布，并备份 ComfyUI 用户目录中的 `workflows/anomalous_recipes` 与 `workflows/anomalous_parameters`。配方中的模型预览快照不包含模型文件，不能替代模型备份。
 
 ### 🌟 核心功能特性
 
@@ -72,6 +89,8 @@ git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
 | :--- | :--- |
 | **全方位模型管理** | 通过扫描哈希值，自动获取模型的基础架构、封面、提示词、作者简介等信息。支持自定义名称、备注和封面。点开模型即刻呈现封面图标，支持看图一键替换模型，彻底告别复杂的模型路径！ |
 | **节点智能修复 (🩺)** | 凡是由本插件导出的工作流和图片，在载入他人工作流时出现节点爆红，只需点开**模型医生 (🩺)**，即可自动识别正确的模型路径并一键替换。内置深度扫描与 C 站直达链接。 |
+| **节点助手与配方参数 (🤖)** | 选中画布节点后，可视化替换模型、向兼容链路安全插入 LoRA，或读取工作流配方保存的同类型节点参数。例如保存过的 K 采样器笔记可一键应用采样器、调度器、步数、CFG 与降噪，同时忽略易变的种子。 |
+| **工作流配方 (🧰)** | 保存完整工作流及封面、备注、标签、模型身份、提示词、采样参数、节点参数、匹配出图与版本历史。支持追加到画布、比较出图/版本参数、将他人的模型引用匹配到本地文件，以及导入导出便携配方包。 |
 | **智能笔记本 (📑)** | 基于本地基础架构，提供快速的架构匹配功能，极速选择兼容的主模型与 LoRA。内置强大的翻译功能，自动将提示词分块打上标签，实现双语对照，并支持一键发布组装到工作流画布中。 |
 | **原生图库管理 (🖼️)** | 无缝读取本地的 `output` 文件夹。支持鼠标滚轮缩放、一键查看和安全删除。更绝的是，您可以**直接将图片拖动到画布上，瞬间原地加载内嵌的工作流！** |
 | **其它便捷功能** | 点击模型卡片右上角的 `➕` 号，快捷将节点发布到画布。支持侧边栏停靠 (Dock)，将界面吸附在左侧，为您的画布留出充足的操作空间。 |
@@ -90,17 +109,26 @@ git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
 
 #### 3. 选中交互 (节点助手) 🤖
 * **具体位置**：左侧底部第三个 **机器人按钮 (🤖)**。
-* **操作步骤**：打开后，在画布上选择模型节点。重新设计的操作卡可以替换当前模型，也可在兼容的 MODEL + CLIP 链前方或后方插入 LoRA。选择器卡片会标注模型类别和基础模型类型；选择 LoRA 时，如元数据可用，会自动按照已连接主模型的类型筛选，也可以随时切回全部 LoRA。文件夹浏览、完整路径搜索、排序和多分支安全保护仍然保留。
+* **动作**：打开后在 ComfyUI 画布上选中节点。对于模型节点，“动作”页可以可视化替换当前模型，或在兼容的 MODEL + CLIP 链前后插入 LoRA。选择器提供模型预览、模型类别/基础模型标记、文件夹、完整路径搜索、排序与多分支安全保护。
+* **参数笔记本（测试）**：切换到“参数笔记本”，可以读取与工作流配方关联的参数笔记。内容会按配方分组，只展示和当前选中节点类型相同的保存记录。点击一条记录即可事务式应用到该节点；种子等每次运行都会变化的值会被忽略。
 
-#### 4. 个性化配置 (设置面板) ⚙️
+#### 4. 工作流配方与参数笔记本 🧰
+* **具体位置**：打开 **创作工作台 (📑)**，从“提示词笔记”切换到 **工作流配方**。
+* **保存与复用**：保存当前完整节点图，并附带封面、名称、标签、备注、模型引用、提示词、采样设置与受限节点摘要。配方可以追加到当前画布，不会覆盖当前内容。
+* **详细信息**：概览展示模型组成与复现信息。模型匹配根据哈希、文件大小与模型类别查找本地文件，不依赖原作者路径；可用时还会保留 C 站官方名称/链接与本地预览。
+* **参数笔记本**：查看配方保存的参数，复制或展开长内容，新建可编辑参数笔记，或者从骨架匹配的当前画布读取全新参数。点击“应用到当前工作流”时会先检查配方骨架，再更新安全控件；种子等易变值会被忽略。保存的参数笔记可以单独删除；无法可靠识别的第三方提示词节点可以手动标注正负角色。
+* **图库与版本**：查找节点结构相同的历史出图，打开图片比较参数差异，将出图设为配方封面，比较配方历史版本，或在自动归档当前版本后恢复旧版本。
+* **分享**：导入导出便携配方包，可选择包含模型预览快照与历史版本，也可在导出时移除身份哈希。预览快照只是展示数据，绝不会包含模型文件。
+
+#### 5. 个性化配置 (设置面板) ⚙️
 * **具体位置**：左侧底部的 **齿轮按钮 (⚙️)**。
-* **操作步骤**：在此可以调节语言和主页面字体大小。进入 **模型设置** 后，可选择视频封面始终播放或悬停播放，也可选择卡片使用流畅缩略图或原始封面；模型详情页始终使用原始封面。
+* **操作步骤**：在此可以调节语言和主页面字体大小。进入 **模型设置** 后，可选择视频封面始终播放或悬停播放，也可选择卡片使用流畅缩略图或原始封面；模型详情页始终使用原始封面。**文件夹管理**可以让指定目录同时退出侧栏和后台读取，并支持调整顺序；**帮助**中会持续更新安全提醒与功能说明。
 
-#### 5. 顶部导航与笔记本 (Notebook) 实战 📑
-**具体位置**：右侧顶部的按钮分别为 **模型 (📦)**、**图库 (🖼️)**、**笔记本 (📑)**、**停靠侧边栏 (◧)**。
+#### 6. 顶部导航与提示词笔记 📑
+**具体位置**：右侧顶部的按钮分别为 **模型 (📦)**、**图库 (🖼️)**、**创作工作台 (📑)**、**停靠侧边栏 (◧)**。
 
-**笔记本操作步骤**：
-1. 点击**笔记本 (📑)** 按钮，点击新建 **➕** 号，确认后进入草稿本。
+**提示词笔记操作步骤**：
+1. 打开**创作工作台 (📑)**，进入“提示词笔记”，点击新建 **➕** 号并确认。
 2. 首先选择基础模型（例如 SD1.5），系统会过滤出兼容的主模型与对应的 LoRA 模型供你选择。
 3. 点击下方的 **📝 纯文本/粘贴** 复制提示词进去，选择左上角的语言即可实现双语对照翻译。
 4. 确认后，插件会自动生成标签 (Tags)，支持查找替换，也支持直接双击修改单个标签。

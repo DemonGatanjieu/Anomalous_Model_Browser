@@ -2144,6 +2144,42 @@ dialog.anomalous-gallery-viewer[open] {
     overflow-y: auto;
 }
 
+.anomalous-beta-notice {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    gap: 9px;
+    margin: 10px 14px 0;
+    padding: 9px 11px;
+    border: 1px solid rgba(245, 190, 73, 0.38);
+    border-radius: 9px;
+    color: #e9d7aa;
+    background: linear-gradient(110deg, rgba(245, 158, 11, 0.13), rgba(245, 158, 11, 0.04));
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.anomalous-beta-notice > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-beta-badge {
+    flex: 0 0 auto;
+    padding: 2px 7px;
+    border: 1px solid rgba(251, 191, 36, 0.5);
+    border-radius: 999px;
+    color: #ffe4a3;
+    background: rgba(245, 158, 11, 0.12);
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+.anomalous-assistant-beta-notice {
+    margin: 10px 12px 0;
+    flex-shrink: 0;
+}
+
 .anomalous-recipe-parameter-notebook-row {
     display: grid;
     min-width: 0;

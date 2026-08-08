@@ -36,6 +36,8 @@ export const i18n = {
         copied: '✅ 已复制!',
         clickToCopy: '点击复制: ',
         compatibleModels: '🔗 兼容模型',
+        refresh: '刷新',
+        loading: '加载中…',
         loadingCompatible: '加载中...',
         backToPrev: '🔙 返回上一层',
         applyToCanvas: '➕ 插入节点',
@@ -45,14 +47,16 @@ export const i18n = {
         helpContent: `
 <div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
     <h3 style="color:#00ffcc; margin-top:0;">📖 标准操作说明</h3>
+    <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 测试功能与数据保护</strong><br>工作流配方及节点助手的“参数笔记本”联动目前属于测试功能。更新插件、导入他人配方、恢复版本、删除配方或应用参数前，请先保存当前画布并备份 ComfyUI 用户目录中 <code>workflows/anomalous_recipes</code> 与 <code>workflows/anomalous_parameters</code> 文件夹。模型预览快照不包含模型文件，不能代替模型备份。</div>
     <p><strong>1. 🔄 前置准备 (扫描向导)</strong><br>具体位置：界面左侧底部的 <strong>扫描向导 (🔄)</strong>。<br>这是最重要的前置操作！请先打开扫描向导执行扫描。切记保持网络畅通。部分 C站限制级模型信息需要在设置中填入 API-KEY。扫描完成后，插件的各项功能基本激活。</p>
     <p><strong>2. 🩺 拯救爆红 (模型医生)</strong><br>具体位置：左侧底部第二个 <strong>听诊器 (🩺)</strong> 按钮。<br>当导入别人使用该插件输出的工作流或者图片时，若模型路径爆红，点击模型医生就能智能识别当前所有节点实现正确路径的替换。</p>
-    <p><strong>3. 🤖 选中交互 (节点助手)</strong><br>具体位置：左侧第三个 <strong>机器人 (🤖)</strong> 按钮。<br>打开后在画布上选择模型节点。新版操作卡可以替换当前模型，也可在兼容的 MODEL + CLIP 链前方或后方插入 LoRA。模型卡会标注类别与基础模型类型；选择 LoRA 时会优先按已连接主模型的类型自动筛选，也可切回全部 LoRA。文件夹、完整路径搜索、排序和多分支安全保护仍然保留。</p>
-    <p><strong>4. ⚙️ 个性化配置 (设置面板)</strong><br>具体位置：左侧底部的 <strong>齿轮 (⚙️)</strong> 按钮。<br>可以调节语言、主页面字体大小；进入“模型设置”可选择视频封面始终播放或悬停播放，以及卡片使用流畅缩略图或原始封面。详情页始终保留原图画质。</p>
-    <p><strong>5. 📑 顶部导航与笔记本功能</strong><br>具体位置：右侧顶部的按钮分别为 <strong>模型 (📦)</strong>、<strong>图库 (🖼️)</strong>、<strong>笔记本 (📑)</strong>、<strong>停靠侧边栏 (◧)</strong>。<br>点击笔记本，点击新建 <strong>➕</strong> 号。确认后选择基础模型（如SD1.5），接着选择主模型和对应的 lora。点击下方的 <strong>📝纯文本/粘贴</strong> 填入提示词，选择左上角的语言即可实现双语对照。确认后自动分块标签，支持查找替换和直接修改单个标签。最后点击 <strong>🚀 发送到画布</strong> 即可一键连线！</p>
-    <p><strong>6. 📁 文件夹管理 (Folder Manager)</strong><br>具体位置：设置 (⚙️) 面板内的 <strong>📁 文件夹管理</strong>。<br>可以用来隐藏不需要的内置文件夹。隐藏后的文件夹不仅从侧边栏消失，后端的静默扫描和本地读取也会完全跳过，实现真正的“零性能损耗”。并且可以在这里拖拽调整文件夹在侧边栏显示的顺序。</p>
-    <p><strong>7. 📥 工作流导出与导入 (分享码)</strong><br>具体位置：设置 (⚙️) 按钮左侧的 <strong>导入/导出 (📥)</strong> 按钮。<br>该功能可以将当前的工作流一键编码导出为一段专属分享码，方便发到社交平台。别人只需复制这串分享码，在此界面粘贴即可直接还原导入完整的工作流，并且在导入前系统会自动校验模型是否在本地存在。</p>
-    <p><strong>8. 💬 提交反馈 / 报告问题</strong><br>具体位置：设置 (⚙️) 面板内的 <strong>💬 提交反馈 / 报告问题</strong>。<br>当你遇到插件报错或有新功能建议时，点击该按钮可一键直达 GitHub Issues 页面提交反馈。</p>
+    <p><strong>3. 🤖 选中交互与参数预设 (节点助手)</strong><br>具体位置：左侧第三个 <strong>机器人 (🤖)</strong> 按钮。<br>在画布上选中节点后，“动作”页可以可视化替换模型，或在兼容的 MODEL + CLIP 链前后插入 LoRA。“参数笔记本”页会按配方分组读取工作流配方保存的同类型节点参数；点击一条记录即可把参数应用到当前选中节点。例如选中 KSampler 后，可一键载入配方中的采样器、调度器、步数、CFG 与降噪等值；种子等每次运行变化的参数会被忽略。</p>
+    <p><strong>4. 🧰 工作流配方与参数笔记本</strong><br>具体位置：打开 <strong>创作工作台</strong>，切换到 <strong>工作流配方</strong>。<br>配方会保存完整工作流、封面、标签、备注、模型引用及常用参数，可追加到当前画布，并支持导入/导出配方包。详情页包含概览、参数笔记本、图库和版本：可匹配本地模型、查看与复制完整参数、比较历史出图参数、比较或恢复配方版本。参数笔记可从当前画布读取同一骨架的新参数，也可编辑安全控件并保存；“应用到当前工作流”只会在骨架匹配后写入参数。第三方提示词节点无法可靠自动判断正负时，可在配方中手动标注。</p>
+    <p><strong>5. ⚙️ 个性化配置 (设置面板)</strong><br>具体位置：左侧底部的 <strong>齿轮 (⚙️)</strong> 按钮。<br>可以调节语言、主页面字体大小；进入“模型设置”可选择视频封面始终播放或悬停播放，以及卡片使用流畅缩略图或原始封面。详情页始终保留原图画质。</p>
+    <p><strong>6. 📑 顶部导航与提示词笔记</strong><br>具体位置：右侧顶部的按钮分别为 <strong>模型 (📦)</strong>、<strong>图库 (🖼️)</strong>、<strong>创作工作台 (📑)</strong>、<strong>停靠侧边栏 (◧)</strong>。<br>进入创作工作台的“提示词笔记”，点击新建 <strong>➕</strong>。选择基础模型、主模型和 LoRA 后，可通过 <strong>📝纯文本/粘贴</strong> 填入提示词并进行双语对照、分块、查找替换和标签编辑，最后点击 <strong>🚀 发送到画布</strong> 一键组装节点。</p>
+    <p><strong>7. 📁 文件夹管理 (Folder Manager)</strong><br>具体位置：设置 (⚙️) 面板内的 <strong>📁 文件夹管理</strong>。<br>可以用来隐藏不需要的内置文件夹。隐藏后的文件夹不仅从侧边栏消失，后端的静默扫描和本地读取也会完全跳过，实现真正的“零性能损耗”。并且可以在这里拖拽调整文件夹在侧边栏显示的顺序。</p>
+    <p><strong>8. 📥 工作流导出与导入 (分享码)</strong><br>具体位置：设置 (⚙️) 按钮左侧的 <strong>导入/导出 (📥)</strong> 按钮。<br>该功能可以将当前的工作流一键编码导出为一段专属分享码，方便发到社交平台。别人只需复制这串分享码，在此界面粘贴即可直接还原导入完整的工作流，并且在导入前系统会自动校验模型是否在本地存在。</p>
+    <p><strong>9. 💬 提交反馈 / 报告问题</strong><br>具体位置：设置 (⚙️) 面板内的 <strong>💬 提交反馈 / 报告问题</strong>。<br>当你遇到插件报错或有新功能建议时，点击该按钮可一键直达 GitHub Issues 页面提交反馈。</p>
 </div>`,
         notebooks: '笔记本',
         notebookTitle: '笔记本管理',
@@ -193,6 +197,8 @@ export const i18n = {
         doctorManualReplace: '🔀 手动替换',
         doctorOriginalPath: '原路径: {path}',
         assistantPreviewFailed: '无法加载预览',
+        betaFeature: '测试功能',
+        assistantBetaNotice: '节点助手的配方参数预设仍在测试。应用前请保存当前工作流；它会修改选中节点的参数，但会忽略种子等运行时变化值。',
         assistantHistoryTitle: '🖼️ 历史生成图 ({count})',
         assistantViewAll: '查看全部 →',
         assistantRestoreWorkflow: '点击恢复此工作流',
@@ -297,7 +303,6 @@ export const i18n = {
         sidebarStep2: 'Step 2. 规范命名',
         sidebarNormalize: '自动规范命名',
         sidebarNormalizeDesc: '强迫症福音。自动将杂乱无章的模型文件名重命名为 <b>模型名_版本名.safetensors</b> 的标准格式。<br><span style="color:#8AB4F8; display:inline-block; margin-top:4px;">例如：</span> <span style="color:#ff6b6b; text-decoration:line-through;">model_final(1).safetensors</span> ➔ <span style="color:#28a745;">Beautiful_Mix_V1.0.safetensors</span>',
-        sidebarNormalizeDescEn: 'Automatically rename messy model files to the official standard format: <b>ModelName_VersionName.safetensors</b>.<br><span style="color:#8AB4F8; display:inline-block; margin-top:4px;">e.g. </span> <span style="color:#ff6b6b; text-decoration:line-through;">model_final(1).safetensors</span> ➔ <span style="color:#28a745;">Beautiful_Mix_V1.0.safetensors</span>',
         sidebarVirtualRename: '虚拟重命名 (安全推荐)',
         sidebarVirtualRenameDesc: '仅将标准名称注入浏览器插件中，不修改硬盘上的真实文件名，随时可无损还原。',
         sidebarPhysicalRename: '物理重命名',
@@ -305,13 +310,10 @@ export const i18n = {
         sidebarStep3: 'Step 3. 工作流保障与修复',
         sidebarProvenance: '模型溯源绑定',
         sidebarProvenanceDesc: '全局生效。每次生成图片或保存工作流时，将模型的精确哈希值隐式写入到图像元数据与工作流 JSON 中，防止未来模型改名或换环境后报错找不到。',
-        sidebarProvenanceDescEn: 'Global effect. Implicitly embed exact model hashes into generated images and saved workflows, ensuring missing models can always be auto-fixed.',
         sidebarOverwrite: '强制覆盖已有配置',
         sidebarOverwriteDesc: '扫描时忽略本地已存在的 .info 文件，强制重新计算哈希并覆盖下载。用于修复匹配错乱的模型。',
-        sidebarOverwriteDescEn: 'Ignore existing .info files and force re-scan/overwrite. Useful for fixing mismatched models.',
         sidebarSmartFix: '智能修复当前工作流',
         sidebarSmartFixDesc: '扫描完成后，自动尝试用最新数据修复当前画布中提示缺失的报错模型节点。',
-        sidebarSmartFixDescEn: 'After scanning, automatically attempt to fix missing model errors on the current canvas.',
         sidebarNoModelsSelected: '未选择任何模型',
         sidebarScanFailed: '扫描失败: ',
         sidebarCancel: '取消',
@@ -386,6 +388,7 @@ export const i18n = {
         doctorBtn: '节点助手',
         importBtn: '📥 导入 / 导出工作流 (分享码)',
         recipeTitle: '工作流配方',
+        recipeBetaNotice: '工作流配方仍在测试。更新插件以及导入、恢复、删除或应用参数前，请保存当前画布并备份用户 workflows 目录中的 anomalous_recipes 与 anomalous_parameters。',
         recipeClose: '关闭工作流配方',
         recipeSaveCurrent: '保存当前工作流',
         recipeSaveTitle: '保存为工作流配方',
@@ -616,7 +619,6 @@ export const i18n = {
         recipeLocalModelAmbiguous: '找到多个候选，请先补充模型身份信息。',
         recipeLocalModelMatchError: '匹配失败，请稍后重试。',
         recipeDetailSearchParameters: '按节点、类型或控件名称搜索…',
-        recipeDetailWidget: '控件',
         recipeDetailNoParameters: '没有匹配的安全参数。',
         recipeDetailCurrentVersion: '当前版本',
         recipeCompareVersion: '对比此版本',
@@ -685,6 +687,8 @@ export const i18n = {
         copied: '✅ Copied!',
         clickToCopy: 'Click to copy: ',
         compatibleModels: '🔗 Compatible Models',
+        refresh: 'Refresh',
+        loading: 'Loading…',
         loadingCompatible: 'Loading...',
         backToPrev: '🔙 Back to prev',
         applyToCanvas: '➕ Add Node',
@@ -694,14 +698,16 @@ export const i18n = {
         helpContent: `
 <div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
     <h3 style="color:#00ffcc; margin-top:0;">📖 Step-by-Step Guide</h3>
+    <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 Beta features and data protection</strong><br>Workflow Recipes and the Node Assistant's Parameter Presets integration are currently beta features. Before updating the plugin, importing another person's recipe, restoring a version, deleting a recipe, or applying parameters, save the current canvas and back up the <code>workflows/anomalous_recipes</code> and <code>workflows/anomalous_parameters</code> folders in your ComfyUI user directory. Model preview snapshots do not contain model files and are not model backups.</div>
     <p><strong>1. 🔄 Prerequisites (Scan Wizard)</strong><br>Location: The <strong>Scan (🔄)</strong> icon at the bottom left.<br>This is the most crucial step! Open the Scan Wizard and execute a scan. Keep your network connected. (API-KEY may be needed in Settings for NSFW Civitai models). Scanning activates all core features.</p>
     <p><strong>2. 🩺 Fix Broken Nodes (Model Doctor)</strong><br>Location: The 2nd icon <strong>(Stethoscope 🩺)</strong> from the bottom left.<br>When importing a workflow/image exported by this plugin and nodes turn red, open the Model Doctor to intelligently identify and replace them with correct local paths.</p>
-    <p><strong>3. 🤖 Visual Info (Node Assistant)</strong><br>Location: The 3rd icon <strong>(Robot 🤖)</strong> from the bottom left.<br>The redesigned action card can replace the current model or insert a LoRA before/after a compatible MODEL + CLIP chain. Picker cards show category and base-model badges. LoRA choices default to the connected main model's type when metadata is available, with an option to show all LoRAs. Folder browsing, full-path search, sorting, and ambiguous-branch protection remain available.</p>
-    <p><strong>4. ⚙️ Settings Panel</strong><br>Location: The <strong>Gear (⚙️)</strong> icon at the bottom left.<br>Adjust language and UI scale. Open “Model Settings” to choose always-play or hover-play video covers and optimized thumbnails or original covers. Detail pages always retain original image quality.</p>
-    <p><strong>5. 📑 Top Navigation & Notebook</strong><br>Location: Top right tabs <strong>Models (📦)</strong>, <strong>Gallery (🖼️)</strong>, <strong>Notebook (📑)</strong>, <strong>Dock (◧)</strong>.<br>Click Notebook -> click <strong>➕</strong> -> select Base Model (e.g. SD1.5) -> pick Main Model & LoRA. Click <strong>📝 Edit Raw/Paste</strong> to input prompts, select language on top-left for bilingual translation. Confirm to auto-chunk tags (supports find/replace & direct edit). Finally, click <strong>🚀 Send to Canvas</strong>!</p>
-    <p><strong>6. 📁 Folder Manager</strong><br>Location: Inside the Settings (⚙️) panel, click <strong>📁 Manage Folders</strong>.<br>Use this to hide unneeded built-in folders. Hidden folders will be completely skipped by background scans and I/O reads, achieving true "zero performance cost". You can also drag and drop to reorder how folders appear in the sidebar.</p>
-    <p><strong>7. 📥 Workflow Export & Import (Share Code)</strong><br>Location: The <strong>Import/Export (📥)</strong> icon to the left of the Settings gear.<br>You can encode your current workflow into a single share code for easy sharing on social platforms. Others can simply copy this code and paste it here to instantly import the workflow. The system will also automatically pre-check if the required models exist locally.</p>
-    <p><strong>8. 💬 Submit Feedback / Report Bug</strong><br>Location: Inside the Settings (⚙️) panel, click <strong>💬 Submit Feedback / Report Bug</strong>.<br>If you encounter bugs or have feature requests, click this to go directly to our GitHub Issues page.</p>
+    <p><strong>3. 🤖 Node actions and parameter presets (Node Assistant)</strong><br>Location: The 3rd icon <strong>(Robot 🤖)</strong> from the bottom left.<br>After selecting a canvas node, Actions can visually replace its model or insert a LoRA before/after a compatible MODEL + CLIP chain. Parameter Presets reads same-type node values saved by Workflow Recipes and groups them by recipe. Click one record to apply it to the selected node. For example, selecting a KSampler can load its sampler, scheduler, steps, CFG, and denoise values in one click; volatile values such as seeds are ignored.</p>
+    <p><strong>4. 🧰 Workflow Recipes and Parameter Notebooks</strong><br>Location: Open the <strong>Creative Workspace</strong> and switch to <strong>Workflow Recipes</strong>.<br>A recipe saves the complete workflow, cover, tags, notes, model references, and common parameters. It can be appended to the canvas or shared as an import/export package. Details include Overview, Parameter Notebook, Gallery, and Versions for local model matching, full parameter viewing/copying, output comparison, and version comparison/restoration. Parameter notes can capture fresh values from a matching live canvas or edit safe controls; Apply to Current Workflow writes only after the recipe skeleton matches. Third-party prompt nodes that cannot be classified reliably can be labelled manually.</p>
+    <p><strong>5. ⚙️ Settings Panel</strong><br>Location: The <strong>Gear (⚙️)</strong> icon at the bottom left.<br>Adjust language and UI scale. Open “Model Settings” to choose always-play or hover-play video covers and optimized thumbnails or original covers. Detail pages always retain original image quality.</p>
+    <p><strong>6. 📑 Top Navigation & Prompt Notes</strong><br>Location: Top-right tabs <strong>Models (📦)</strong>, <strong>Gallery (🖼️)</strong>, <strong>Creative Workspace (📑)</strong>, and <strong>Dock (◧)</strong>.<br>Open Prompt Notes in the Creative Workspace and click <strong>➕</strong>. Select a Base Model, Main Model, and LoRAs; use <strong>📝 Edit Raw/Paste</strong> for bilingual prompts, chunking, find/replace, and tag editing; then click <strong>🚀 Send to Canvas</strong> to assemble the nodes.</p>
+    <p><strong>7. 📁 Folder Manager</strong><br>Location: Inside the Settings (⚙️) panel, click <strong>📁 Manage Folders</strong>.<br>Use this to hide unneeded built-in folders. Hidden folders will be completely skipped by background scans and I/O reads, achieving true "zero performance cost". You can also drag and drop to reorder how folders appear in the sidebar.</p>
+    <p><strong>8. 📥 Workflow Export & Import (Share Code)</strong><br>Location: The <strong>Import/Export (📥)</strong> icon to the left of the Settings gear.<br>You can encode your current workflow into a single share code for easy sharing on social platforms. Others can simply copy this code and paste it here to instantly import the workflow. The system will also automatically pre-check if the required models exist locally.</p>
+    <p><strong>9. 💬 Submit Feedback / Report Bug</strong><br>Location: Inside the Settings (⚙️) panel, click <strong>💬 Submit Feedback / Report Bug</strong>.<br>If you encounter bugs or have feature requests, click this to go directly to our GitHub Issues page.</p>
 </div>`,
         notebooks: 'Notebooks',
         notebookTitle: 'Notebook Manager',
@@ -842,6 +848,8 @@ export const i18n = {
         doctorManualReplace: '🔀 Manual Replace',
         doctorOriginalPath: 'Original: {path}',
         assistantPreviewFailed: 'Failed to load preview',
+        betaFeature: 'Beta feature',
+        assistantBetaNotice: 'Recipe parameter presets in Node Assistant are still in beta. Save the current workflow before applying them; they change the selected node while ignoring volatile values such as seeds.',
         assistantHistoryTitle: '🖼️ History ({count})',
         assistantViewAll: 'View All →',
         assistantRestoreWorkflow: 'Click to restore workflow',
@@ -1031,6 +1039,7 @@ export const i18n = {
         doctorBtn: 'Node Assistant',
         importBtn: '📥 Import / Export Workflow (Share Code)',
         recipeTitle: 'Workflow Recipes',
+        recipeBetaNotice: 'Workflow Recipes are still in beta. Before updating the plugin or importing, restoring, deleting, or applying parameters, save the canvas and back up anomalous_recipes and anomalous_parameters under your user workflows directory.',
         recipeClose: 'Close Workflow Recipes',
         recipeSaveCurrent: 'Save Current Workflow',
         recipeSaveTitle: 'Save Workflow Recipe',
@@ -1261,7 +1270,6 @@ export const i18n = {
         recipeLocalModelAmbiguous: 'Multiple candidates found; add model identity information first.',
         recipeLocalModelMatchError: 'Matching failed. Try again later.',
         recipeDetailSearchParameters: 'Search node, type, or widget name…',
-        recipeDetailWidget: 'Widget',
         recipeDetailNoParameters: 'No safe parameters match the search.',
         recipeDetailCurrentVersion: 'Current version',
         recipeCompareVersion: 'Compare version',
