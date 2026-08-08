@@ -8,7 +8,7 @@
 
 <h2 id="english">🇬🇧 English</h2>
 
-> A multi-functional ComfyUI model browser and workflow companion. It combines model management, workflow repair, visual node actions, reusable Workflow Recipes, prompt notes, and a native output gallery.
+> The ultimate Creative Workspace and Model Manager for ComfyUI. Features blazing-fast Civitai scraping, a self-healing Model Doctor, visual Node Assistant, lossless Workflow Exchange, and reusable Workflow Recipes with Parameter Notebooks.
 
 > [!WARNING]
 > **Beta features and data protection:** Workflow Recipes and only the recipe-powered **Parameter Presets** tab inside Node Assistant are currently in testing; the Node Assistant's **Actions** tab is not part of this beta. Before updating the plugin, importing someone else's recipe, restoring or deleting recipe data, or applying saved parameters, save the current canvas and back up `workflows/anomalous_recipes` and `workflows/anomalous_parameters` inside your ComfyUI user directory. Recipe model-preview snapshots do not contain model files and are not model backups.
@@ -78,7 +78,7 @@ git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
 
 <h2 id="中文">🇨🇳 中文</h2>
 
-> 一个多功能的 ComfyUI 模型浏览器与工作流搭档，集成模型管理、工作流修复、节点可视化操作、可复用工作流配方、提示词笔记与原生图库管理。
+> 终极 ComfyUI 创作工作台与模型管家。集成极速 C 站抓取、自愈型模型医生、可视化节点助手、无损工作流交互，以及强大的工作流配方与参数笔记本体系。
 
 > [!WARNING]
 > **测试功能与数据保护：** 工作流配方以及节点助手中由配方驱动的“参数笔记本”目前属于测试功能；节点助手的“动作”页不在测试范围内。更新插件、导入他人配方、恢复或删除配方数据、应用已保存参数之前，请先保存当前画布，并备份 ComfyUI 用户目录中的 `workflows/anomalous_recipes` 与 `workflows/anomalous_parameters`。配方中的模型预览快照不包含模型文件，不能替代模型备份。
