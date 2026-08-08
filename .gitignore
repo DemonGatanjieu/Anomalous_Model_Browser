@@ -60,6 +60,7 @@ AI_SYSTEM_TEMPLATE.md
 
 # Test files
 test_*.js
+test*.mjs
 tests/
 
 # Local diagnostic/test artifacts
