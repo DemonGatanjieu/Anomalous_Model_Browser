@@ -1,5 +1,21 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.56 Beta (Model Doctor Intelligence & Smart Civitai Routing)
+
+### 🚀 Major Improvements & Features
+- **On-Demand Dynamic Hash Resolution (按需动态算哈希与智能认亲)**: Upgraded Model Doctor's fallback resolution engine. When a local candidate model matches the exact byte size of a missing reference but lacks local metadata (e.g., after renaming and deleting `.info` files), the backend dynamically calculates its SHA256 on demand. Upon cryptographic verification, the node is seamlessly resolved and an offline inferred `.info` record is saved locally.
+- **Dedicated Hash Inspection Modal (🔑 查看哈希透视详情)**: Added a dedicated `🔑 查看哈希 (View Hash)` button on every model card in the Doctor Dashboard. Clicking it opens a crystal-clear inspection modal comparing the workflow-embedded provenance hash & size with local disk hash & size, featuring one-click clipboard copying.
+- **Smart Civitai by-hash Routing & NSFW Domain Dispatch (C 站精准直达与 .red/.com 智能分流)**: Upgraded the "🌐 Civitai" action buttons across Model Doctor and Workflow Import. Instead of crude search bar queries, it now queries the official Civitai `by-hash` API to resolve exact Model IDs and Version IDs, automatically routing NSFW models to `civitai.red` and safe models to `civitai.com`.
+- **UNET Default Scan Coverage (UNET 目录扫描补齐)**: Added `models/unet` to the default scanned model types, ensuring UNET / Diffusion Models are consistently indexed during background deep scans.
+- **Cross-Platform Path Separator Normalization (跨平台斜杠全链路归一化)**: Fully unified Windows `\` and Unix `/` path handling across workflow serialization, hash retrieval, and node diagnostic matching, preventing lookup misses caused by cross-platform workflow exchange.
+- **Model Doctor Logic Whitepaper (模型医生自然语言架构白皮书)**: Authored a comprehensive, plain-language architecture guide at `.agents/docs/model_doctor_core_logic.md` outlining Model Doctor's identity boundaries, triple-fallback scanning engine, and lifecycle invariants.
+
+### 🐛 Bug Fixes & UX Polish
+- Fixed a false-negative rejection issue where size-matching renamed models without local `.info` files were incorrectly rejected as `identity_conflict`.
+- Fixed duplicate key icons on the Model Doctor Hash Inspection modal header.
+- Fixed a loop duplication issue in the workflow import modal preflight inspection.
+- Updated unit test suite with comprehensive coverage for dynamic hash resolution and unet folder discovery.
+
 ## v1.55 Beta (Workflow Recipes Preview)
 
 > **Beta scope:** Workflow Recipes, Parameter Notebooks, and the recipe-powered Parameter Presets tab in Node Assistant are preview features. The Node Assistant's Actions tab—visual model replacement and LoRA insertion—is not part of this beta. Save the current canvas and back up `workflows/anomalous_recipes` plus `workflows/anomalous_parameters` before updating, importing, restoring, deleting, or applying recipe data. The stable target for these preview features is v1.6.
