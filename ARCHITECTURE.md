@@ -259,6 +259,7 @@ Scans all nodes in `app.graph._nodes` that are colored red.
 * Sends hash, byte size, and the inferred model category to `/anomalous/resolve_hash` (or `/anomalous/resolve_hash_batch`).
 * **On-Demand Dynamic Hash Resolution**: If size matches a candidate that lacks cached hash metadata, the backend calculates its SHA256 on demand. If the hash matches, it establishes identity and writes an offline inferred `.info` file to cache the provenance.
 * **Civitai Direct Lookup & Domain Routing**: Clicking the Civitai button queries the official `/api/v1/model-versions/by-hash/<hash>` endpoint to resolve `modelId` and version, dynamically routing NSFW models to `civitai.red` and safe models to `civitai.com`.
+* **View Hash Details Inspection (`openHashDetailDialog`)**: Every model card provides a dedicated `🔑 查看哈希 (View Hash)` button. Clicking opens an intuitive modal comparing the workflow-embedded provenance hash and size against the local disk model's hash and size, with one-click clipboard copying.
 * If a match is found, the frontend refreshes native ComfyUI combo definitions and requires the returned path to exist in that widget's native choices. Cross-category or otherwise invalid paths are rejected; the resolver must never append a foreign path to `widget.options.values` merely to report success.
 * After native validation succeeds, it mutates the dropdown `value`, removes the red color, and flags it as `anomalous_auto_resolved`.
 
