@@ -675,12 +675,143 @@ for (const data of missingNodesData) {
                 item.appendChild(pathText);
             }
             
+            const viewHashBtn = document.createElement('button');
+            viewHashBtn.textContent = t('doctorViewHash');
+            viewHashBtn.style.cssText = 'padding:8px 16px; background:rgba(255,255,255,0.1); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:12px; transition:background 0.2s;';
+            viewHashBtn.onmouseover = () => viewHashBtn.style.background = 'rgba(255,255,255,0.2)';
+            viewHashBtn.onmouseout = () => viewHashBtn.style.background = 'rgba(255,255,255,0.1)';
+            viewHashBtn.onclick = () => {
+                openHashDetailDialog(node, w, val);
+            };
+
+            actionRow.appendChild(viewHashBtn);
             actionRow.appendChild(civitaiBtn);
             item.appendChild(actionRow);
 
             content.appendChild(item);
         }
     }
+
+function openHashDetailDialog(node, widget, val) {
+    let workflowHash = null;
+    let workflowSize = null;
+    if (app.graph && app.graph.extra && app.graph.extra.anomalous_hashes) {
+        const normVal = val.replace(/\\/g, '/');
+        const winVal = val.replace(/\//g, '\\');
+        const hData = app.graph.extra.anomalous_hashes[`${node.id}_${val}`] ||
+                      app.graph.extra.anomalous_hashes[`${node.id}_${normVal}`] ||
+                      app.graph.extra.anomalous_hashes[`${node.id}_${winVal}`] ||
+                      app.graph.extra.anomalous_hashes[val] ||
+                      app.graph.extra.anomalous_hashes[normVal] ||
+                      app.graph.extra.anomalous_hashes[winVal];
+        if (hData) {
+            workflowHash = typeof hData === 'string' ? hData : (hData.hash || null);
+            workflowSize = typeof hData === 'object' ? (hData.size || null) : null;
+        }
+    }
+
+    let localHash = null;
+    let localSize = null;
+    if (window.anomalous_hash_cache) {
+        const normVal = val.replace(/\\/g, '/');
+        const basename = val.split(/[/\\]/).pop();
+        const cData = window.anomalous_hash_cache[val] || window.anomalous_hash_cache[normVal] || window.anomalous_hash_cache[basename];
+        if (cData) {
+            localHash = typeof cData === 'string' ? cData : (cData.hash || null);
+            localSize = typeof cData === 'object' ? (cData.size || null) : null;
+        }
+    }
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);z-index:9999999;display:flex;align-items:center;justify-content:center;font-family:Inter,-apple-system,sans-serif;';
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+    const modal = document.createElement('div');
+    modal.style.cssText = 'background:#1a1c23;border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:24px;width:540px;max-width:92vw;max-height:85vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,0.6);display:flex;flex-direction:column;gap:18px;color:#fff;';
+
+    const headerRow = document.createElement('div');
+    headerRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:14px;';
+    headerRow.innerHTML = `<div style="font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;"><span>🔑</span><span>${escapeHtml(t('doctorHashModalTitle'))}</span></div>`;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color 0.2s;';
+    closeBtn.onmouseover = () => closeBtn.style.color = '#fff';
+    closeBtn.onmouseout = () => closeBtn.style.color = '#aaa';
+    closeBtn.onclick = () => overlay.remove();
+    headerRow.appendChild(closeBtn);
+    modal.appendChild(headerRow);
+
+    const metaSection = document.createElement('div');
+    metaSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;background:rgba(255,255,255,0.03);padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);';
+    metaSection.innerHTML = `
+        <div style="font-size:11px;color:#8ab4f8;font-weight:600;">#${escapeHtml(String(node.id))} · ${escapeHtml(node.title || node.type || 'Node')} · ${escapeHtml(widget?.name || '')}</div>
+        <div style="font-size:13px;font-weight:600;word-break:break-all;color:#e8eaed;">${escapeHtml(val)}</div>
+    `;
+    modal.appendChild(metaSection);
+
+    const formatBytes = (bytes) => {
+        if (!bytes || isNaN(bytes)) return '';
+        const b = parseInt(bytes);
+        if (b > 1024 * 1024 * 1024) return (b / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        return (b / (1024 * 1024)).toFixed(2) + ' MB';
+    };
+
+    const renderHashCard = (title, hash, size, badgeColor, isProvenance) => {
+        const card = document.createElement('div');
+        card.style.cssText = 'display:flex;flex-direction:column;gap:8px;padding:12px 14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;';
+
+        const cardHeader = document.createElement('div');
+        cardHeader.style.cssText = 'display:flex;align-items:center;justify-content:space-between;font-size:12px;';
+        cardHeader.innerHTML = `<span style="font-weight:600;color:${badgeColor};">${escapeHtml(title)}</span>${size ? `<span style="color:#aaa;font-size:11px;">${formatBytes(size)} (${size} B)</span>` : ''}`;
+        card.appendChild(cardHeader);
+
+        if (hash) {
+            const hashBox = document.createElement('div');
+            hashBox.style.cssText = 'display:flex;align-items:center;gap:8px;background:#0d0e12;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.08);';
+
+            const hashText = document.createElement('code');
+            hashText.style.cssText = 'font-size:11px;color:#00ffcc;word-break:break-all;flex:1;font-family:Consolas,monospace;letter-spacing:0.5px;';
+            hashText.textContent = hash;
+
+            const copyBtn = document.createElement('button');
+            copyBtn.textContent = '📋';
+            copyBtn.title = 'Copy';
+            copyBtn.style.cssText = 'background:rgba(255,255,255,0.08);border:none;color:#fff;cursor:pointer;padding:4px 8px;border-radius:4px;font-size:12px;transition:background 0.2s;flex-shrink:0;';
+            copyBtn.onmouseover = () => copyBtn.style.background = 'rgba(255,255,255,0.18)';
+            copyBtn.onmouseout = () => copyBtn.style.background = 'rgba(255,255,255,0.08)';
+            copyBtn.onclick = () => {
+                navigator.clipboard.writeText(hash);
+                copyBtn.textContent = '✅';
+                setTimeout(() => copyBtn.textContent = '📋', 1500);
+            };
+
+            hashBox.append(hashText, copyBtn);
+            card.appendChild(hashBox);
+        } else {
+            const emptyTip = document.createElement('div');
+            emptyTip.style.cssText = 'font-size:12px;color:#888;font-style:italic;padding:4px 0;';
+            emptyTip.textContent = isProvenance ? t('doctorNoHashInWorkflow') : t('doctorNoLocalHash');
+            card.appendChild(emptyTip);
+        }
+        return card;
+    };
+
+    modal.appendChild(renderHashCard(t('doctorWorkflowHash'), workflowHash, workflowSize, '#8ab4f8', true));
+    modal.appendChild(renderHashCard(t('doctorLocalHash'), localHash, localSize, '#81c995', false));
+
+    const footer = document.createElement('div');
+    footer.style.cssText = 'display:flex;justify-content:flex-end;margin-top:4px;';
+    const okBtn = document.createElement('button');
+    okBtn.textContent = 'OK';
+    okBtn.style.cssText = 'padding:8px 24px;background:#1a73e8;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;';
+    okBtn.onclick = () => overlay.remove();
+    footer.appendChild(okBtn);
+    modal.appendChild(footer);
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+}
 
 export function initAssistantPanel() {
         this.assistantPanelInitialized = true;
