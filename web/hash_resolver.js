@@ -67,13 +67,26 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
     }
 
     const hashes = (app.graph.extra && app.graph.extra.anomalous_hashes) || {};
+    const getWorkflowHash = (nodeId, val) => {
+        if (!hashes || typeof val !== 'string') return null;
+        const normVal = val.replace(/\\/g, '/');
+        const winVal = val.replace(/\//g, '\\');
+        return hashes[`${nodeId}_${val}`] ||
+               hashes[`${nodeId}_${normVal}`] ||
+               hashes[`${nodeId}_${winVal}`] ||
+               hashes[val] ||
+               hashes[normVal] ||
+               hashes[winVal] ||
+               null;
+    };
+
     let needsGlobalHashRefresh = false;
     provenanceCheck:
     for (const node of app.graph._nodes) {
         for (const widget of (node.widgets || [])) {
             const value = widget.value;
             if (typeof value !== 'string' || !(value.endsWith('.safetensors') || value.endsWith('.ckpt') || value.endsWith('.pt'))) continue;
-            if (!hashes[`${node.id}_${value}`]) {
+            if (!getWorkflowHash(node.id, value)) {
                 needsGlobalHashRefresh = true;
                 break provenanceCheck;
             }
@@ -97,11 +110,12 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
     let fixed_count = 0;
 
     const findHashData = (node, widget, value) => {
-        let hashData = hashes[`${node.id}_${value}`];
-        if (!hashData && window.anomalous_hash_cache) {
+        let hashData = getWorkflowHash(node.id, value);
+        if (!hashData && window.anomalous_hash_cache && typeof value === 'string') {
             const parts = value.split(/[/\\]/);
             const basename = parts[parts.length - 1];
-            const cacheData = window.anomalous_hash_cache[value] || window.anomalous_hash_cache[basename];
+            const normVal = value.replace(/\\/g, '/');
+            const cacheData = window.anomalous_hash_cache[value] || window.anomalous_hash_cache[normVal] || window.anomalous_hash_cache[basename];
             if (cacheData) hashData = typeof cacheData === 'string' ? { hash: cacheData, size: "" } : cacheData;
         }
         return hashData;
@@ -366,12 +380,13 @@ app.registerExtension({
                                 }
 
                                 if (!valIsMissing) {
-                                    const cache_data = window.anomalous_hash_cache[val] || window.anomalous_hash_cache[basename];
+                                    const normVal = val.replace(/\\/g, '/');
+                                    const cache_data = window.anomalous_hash_cache[val] || window.anomalous_hash_cache[normVal] || window.anomalous_hash_cache[basename];
                                     if (cache_data) {
-                                        if (typeof cache_data === 'string') {
-                                            extraObj.anomalous_hashes[`${node.id}_${val}`] = { hash: cache_data, size: "" };
-                                        } else {
-                                            extraObj.anomalous_hashes[`${node.id}_${val}`] = cache_data;
+                                        const hashObj = typeof cache_data === 'string' ? { hash: cache_data, size: "" } : cache_data;
+                                        extraObj.anomalous_hashes[`${node.id}_${val}`] = hashObj;
+                                        if (normVal !== val) {
+                                            extraObj.anomalous_hashes[`${node.id}_${normVal}`] = hashObj;
                                         }
                                     } else {
                                         if (!unscanned_models.includes(basename)) {
@@ -385,13 +400,9 @@ app.registerExtension({
                 }
             }
             data.extra = extraObj;
-
-            data.extra = extraObj;
             window.anomalous_unscanned_models = unscanned_models;
             return data;
         };
-
-
 
         // Intercept loadGraphData to resolve missing models
         if (typeof app.loadGraphData === 'function') {

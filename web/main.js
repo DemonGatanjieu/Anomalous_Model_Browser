@@ -345,14 +345,55 @@ class AnomalousBrowser {
 
                         if (!isHealthy) {
                             const right = document.createElement('a');
-                            const searchHash = cacheHit ? (typeof cacheHit === 'string' ? cacheHit : cacheHit.hash) : null;
-                            const searchStr = searchHash || basename.replace('.safetensors', '').replace('.ckpt', '').replace('.pt', '').replace('.sft', '');
-                            right.href = `https://civitai.com/search/models?sortBy=models_v9&query=${encodeURIComponent(searchStr)}`;
+                            const normVal = val.replace(/\\/g, '/');
+                            const winVal = val.replace(/\//g, '\\');
+                            let workflowHash = null;
+                            if (app.graph && app.graph.extra && app.graph.extra.anomalous_hashes) {
+                                const hData = app.graph.extra.anomalous_hashes[`${m.nodeId || ''}_${val}`] ||
+                                              app.graph.extra.anomalous_hashes[`${m.nodeId || ''}_${normVal}`] ||
+                                              app.graph.extra.anomalous_hashes[`${m.nodeId || ''}_${winVal}`] ||
+                                              app.graph.extra.anomalous_hashes[val] ||
+                                              app.graph.extra.anomalous_hashes[normVal] ||
+                                              app.graph.extra.anomalous_hashes[winVal];
+                                if (hData) workflowHash = typeof hData === 'string' ? hData : hData.hash;
+                            }
+                            const searchHash = workflowHash || (cacheHit ? (typeof cacheHit === 'string' ? cacheHit : cacheHit.hash) : null);
+                            const searchStr = basename.replace('.safetensors', '').replace('.ckpt', '').replace('.pt', '').replace('.sft', '');
+                            right.href = `https://civitai.com/search/models?sortBy=models_v9&query=${encodeURIComponent(searchHash || searchStr)}`;
                             right.target = '_blank';
                             right.textContent = t('mainDownloadCivitai');
                             right.style.color = '#1a73e8';
                             right.style.fontSize = '12px';
                             right.style.textDecoration = 'none';
+                            right.style.cursor = 'pointer';
+
+                            if (searchHash) {
+                                right.onclick = async (e) => {
+                                    e.preventDefault();
+                                    const prevText = right.textContent;
+                                    right.textContent = '⏳...';
+                                    try {
+                                        const res = await fetch(`https://civitai.com/api/v1/model-versions/by-hash/${encodeURIComponent(searchHash)}`);
+                                        if (res.ok) {
+                                            const data = await res.json();
+                                            if (data && data.modelId) {
+                                                const nsfwLevel = data.nsfwLevel || 1;
+                                                const isNsfw = (data.model && data.model.nsfw) || (nsfwLevel > 1);
+                                                const domain = isNsfw ? 'civitai.red' : 'civitai.com';
+                                                let targetUrl = `https://${domain}/models/${data.modelId}`;
+                                                if (data.id) targetUrl += `?modelVersionId=${data.id}`;
+                                                window.open(targetUrl, '_blank');
+                                                right.textContent = prevText;
+                                                return;
+                                            }
+                                        }
+                                    } catch (err) {
+                                        console.warn("[Anomalous] Civitai by-hash lookup failed:", err);
+                                    }
+                                    right.textContent = prevText;
+                                    window.open(`https://civitai.com/search/models?sortBy=models_v9&query=${encodeURIComponent(searchStr)}`, '_blank');
+                                };
+                            }
                             item.appendChild(right);
                         } else {
                             const right = document.createElement('span');
@@ -364,7 +405,6 @@ class AnomalousBrowser {
 
                         resultArea.appendChild(item);
                     }
-
                 } catch (e) {
                     alert(t('mainInvalidJson') + ' ' + e.message);
                 }
@@ -385,11 +425,6 @@ class AnomalousBrowser {
             overlay.appendChild(modal);
             document.body.appendChild(overlay);
         }
-
-        const textarea = document.getElementById('anomalous-import-textarea');
-        const resultArea = document.getElementById('anomalous-import-result');
-        const analyzeBtn = document.getElementById('anomalous-import-analyze-btn');
-        const loadBtn = document.getElementById('anomalous-import-load-btn');
 
         if (textarea) {
             textarea.value = '';

@@ -255,8 +255,10 @@ When "Deep Hash Scan" is triggered, it runs in a background thread to prevent UI
 
 ### Resolution Execution (`window.anomalous_resolve_all_missing_nodes`)
 Scans all nodes in `app.graph._nodes` that are colored red.
-* Extracts the saved hash from the graph's `anomalous_hashes`.
-* Sends hash, byte size, and the inferred model category to `/anomalous/resolve_hash`. The endpoint accepts a result only when the identity signals agree, or when a unique in-category size resolves a request that has no usable hash; a contradictory supplied hash remains unresolved.
+* Extracts the saved hash from the graph's `anomalous_hashes` using normalized path separators (`/` and `\`).
+* Sends hash, byte size, and the inferred model category to `/anomalous/resolve_hash` (or `/anomalous/resolve_hash_batch`).
+* **On-Demand Dynamic Hash Resolution**: If size matches a candidate that lacks cached hash metadata, the backend calculates its SHA256 on demand. If the hash matches, it establishes identity and writes an offline inferred `.info` file to cache the provenance.
+* **Civitai Direct Lookup & Domain Routing**: Clicking the Civitai button queries the official `/api/v1/model-versions/by-hash/<hash>` endpoint to resolve `modelId` and version, dynamically routing NSFW models to `civitai.red` and safe models to `civitai.com`.
 * If a match is found, the frontend refreshes native ComfyUI combo definitions and requires the returned path to exist in that widget's native choices. Cross-category or otherwise invalid paths are rejected; the resolver must never append a foreign path to `widget.options.values` merely to report success.
 * After native validation succeeds, it mutates the dropdown `value`, removes the red color, and flags it as `anomalous_auto_resolved`.
 

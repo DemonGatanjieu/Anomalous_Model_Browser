@@ -508,29 +508,63 @@ for (const data of missingNodesData) {
 
             const actionRow = document.createElement('div');
             actionRow.style.cssText = 'display:flex; gap:10px; margin-top:16px; margin-left:8px;';
-            
             const civitaiBtn = document.createElement('button');
             civitaiBtn.textContent = t('doctorCivitai');
             civitaiBtn.style.cssText = 'padding:8px 16px; background:rgba(255,255,255,0.1); color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:12px; transition:background 0.2s;';
             civitaiBtn.onmouseover = () => civitaiBtn.style.background = 'rgba(255,255,255,0.2)';
             civitaiBtn.onmouseout = () => civitaiBtn.style.background = 'rgba(255,255,255,0.1)';
-            civitaiBtn.onclick = () => {
+            civitaiBtn.onclick = async () => {
                 let searchHash = null;
                 if (app.graph && app.graph.extra && app.graph.extra.anomalous_hashes) {
-                    const hData = app.graph.extra.anomalous_hashes[`${node.id}_${val}`];
+                    const normVal = val.replace(/\\/g, '/');
+                    const winVal = val.replace(/\//g, '\\');
+                    const hData = app.graph.extra.anomalous_hashes[`${node.id}_${val}`] ||
+                                  app.graph.extra.anomalous_hashes[`${node.id}_${normVal}`] ||
+                                  app.graph.extra.anomalous_hashes[`${node.id}_${winVal}`] ||
+                                  app.graph.extra.anomalous_hashes[val] ||
+                                  app.graph.extra.anomalous_hashes[normVal] ||
+                                  app.graph.extra.anomalous_hashes[winVal];
                     if (hData) searchHash = typeof hData === 'string' ? hData : hData.hash;
                 }
                 if (!searchHash && window.anomalous_hash_cache) {
+                    const normVal = val.replace(/\\/g, '/');
                     const basename = val.split(/[/\\]/).pop();
-                    const cData = window.anomalous_hash_cache[basename] || window.anomalous_hash_cache[val];
+                    const cData = window.anomalous_hash_cache[val] || window.anomalous_hash_cache[normVal] || window.anomalous_hash_cache[basename];
                     if (cData) searchHash = typeof cData === 'string' ? cData : cData.hash;
                 }
-                const searchStr = searchHash || val.split(/[/\\]/).pop().replace('.safetensors', '').replace('.ckpt', '').replace('.pt', '').replace('.sft', '');
+
+                if (searchHash) {
+                    const prevText = civitaiBtn.textContent;
+                    civitaiBtn.textContent = '⏳...';
+                    try {
+                        const res = await fetch(`https://civitai.com/api/v1/model-versions/by-hash/${encodeURIComponent(searchHash)}`);
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data && data.modelId) {
+                                const nsfwLevel = data.nsfwLevel || 1;
+                                const isNsfw = (data.model && data.model.nsfw) || (nsfwLevel > 1);
+                                const domain = isNsfw ? 'civitai.red' : 'civitai.com';
+                                let targetUrl = `https://${domain}/models/${data.modelId}`;
+                                if (data.id) {
+                                    targetUrl += `?modelVersionId=${data.id}`;
+                                }
+                                window.open(targetUrl, '_blank');
+                                civitaiBtn.textContent = prevText;
+                                return;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn("[Anomalous Doctor] Failed to query Civitai by hash, fallback to query search:", e);
+                    }
+                    civitaiBtn.textContent = prevText;
+                }
+
+                const searchStr = val.split(/[/\\]/).pop().replace('.safetensors', '').replace('.ckpt', '').replace('.pt', '').replace('.sft', '');
                 const url = `https://civitai.com/search/models?sortBy=models_v9&query=${encodeURIComponent(searchStr)}`;
                 window.open(url, '_blank');
             };
             
-if (!isHealthy) {
+            if (!isHealthy) {
                 const deepScanBtn = document.createElement('button');
                 deepScanBtn.textContent = t('doctorDeepHashScan');
                 deepScanBtn.style.cssText = 'padding:8px 16px; background:#1a73e8; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:12px; transition:background 0.2s;';
@@ -558,13 +592,13 @@ if (!isHealthy) {
                                 if (!statusRes.ok) throw new Error(`HTTP ${statusRes.status}`);
                                 const statusData = await statusRes.json();
                                 
-if (statusData.scanning) {
+                                if (statusData.scanning) {
                                     let filename = statusData.filename || '';
                                     if (filename.length > 20) filename = filename.substring(0, 10) + '...' + filename.substring(filename.length - 7);
                                     deepScanBtn.textContent = t('doctorScanning', { current: statusData.current, total: statusData.total, filename });
                                     setTimeout(pollStatus, 500);
                                 } else {
-if (statusData.error) {
+                                    if (statusData.error) {
                                         alert(t('doctorScanError') + statusData.error);
                                         deepScanBtn.textContent = t('doctorDeepHashScan');
                                         deepScanBtn.disabled = false;
@@ -574,27 +608,28 @@ if (statusData.error) {
                                     
                                     deepScanBtn.textContent = t('doctorMatching');
                                     
-if (window.anomalous_reload_hashes) {
+                                    if (window.anomalous_reload_hashes) {
                                         await window.anomalous_reload_hashes();
                                     }
                                     
-if (window.anomalous_resolve_all_missing_nodes) {
+                                    if (window.anomalous_resolve_all_missing_nodes) {
                                         await window.anomalous_resolve_all_missing_nodes(true, false);
                                     }
                                     
                                     let stillMissing = false;
-                                    const normVal = w.value.replace(/\\/g, '/');
-                                    for (let i = 0; i < node.widgets.length; i++) {
-                                        const wi = node.widgets[i];
-                                        if (wi.name === w.name && wi.options && wi.options.values) {
-                                            const match = wi.options.values.find(v => typeof v === 'string' && v.replace(/\\/g, '/') === normVal);
-                                            if (!match) stillMissing = true;
-                                        }
+                                    const currentVal = w.value;
+                                    const currentNorm = typeof currentVal === 'string' ? currentVal.replace(/\\/g, '/') : '';
+                                    if (w.options && w.options.values) {
+                                        const match = w.options.values.find(v => typeof v === 'string' && v.replace(/\\/g, '/') === currentNorm);
+                                        if (!match) stillMissing = true;
+                                    }
+                                    if (node.has_errors || node.color === "#FF3333" || node.bgcolor === "#FF3333") {
+                                        stillMissing = true;
                                     }
                                     
                                     const scanInfo = t('doctorDeepScanSummary', { total: statusData.total });
                                         
-if (stillMissing) {
+                                    if (stillMissing) {
                                         alert(t('doctorNoLocalMatch', { summary: scanInfo }));
                                     } else {
                                         alert(t('doctorScanSuccess', { summary: scanInfo }));

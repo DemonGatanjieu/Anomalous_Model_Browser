@@ -619,6 +619,35 @@ def _resolved_payload(candidate, **details):
     return payload
 
 
+def _compute_and_save_fallback_info(file_path, file_hash):
+    try:
+        base_path = os.path.splitext(file_path)[0]
+        info_path = base_path + ".info"
+        civitai_info_path = base_path + ".civitai.info"
+        if not os.path.exists(info_path) and not os.path.exists(civitai_info_path):
+            from scraper import infer_base_model_from_header
+            filename = os.path.basename(file_path)
+            inferred_base = infer_base_model_from_header(file_path) if file_path.lower().endswith('.safetensors') else ""
+            if inferred_base == 'Unknown':
+                inferred_base = ""
+            info_data = {
+                "id": -1,
+                "modelId": -1,
+                "name": os.path.splitext(filename)[0],
+                "baseModel": inferred_base,
+                "description": "<p>Automatically inferred by Anomalous Local Engine.</p>",
+                "model": {
+                    "name": os.path.splitext(filename)[0],
+                    "type": "LORA" if "lora" in file_path.lower() else "Checkpoint"
+                },
+                "files": [{"hashes": {"SHA256": file_hash.lower()}}]
+            }
+            with open(info_path, 'w', encoding='utf-8') as f:
+                json.dump(info_data, f, ensure_ascii=True, indent=4)
+    except Exception:
+        pass
+
+
 def _resolve_from_candidates(candidates, target_hash="", target_size=None, filename_query=""):
     target_hash = str(target_hash or "").strip().upper()
     # A saved filename/path is not identity evidence. It is intentionally
@@ -637,6 +666,26 @@ def _resolve_from_candidates(candidates, target_hash="", target_size=None, filen
             return _resolved_payload(combined_matches[0], matched_by_hash=True, matched_by_size=True)
         if len(combined_matches) > 1:
             return {"found": False, "ambiguous": True}
+
+        # If no combined match found from static cache, but there are size-matching candidates without hash metadata,
+        # dynamically compute their hash on-demand to test against target_hash
+        unhashed_size_matches = [c for c in size_matches if not _candidate_hashes(c)]
+        if unhashed_size_matches:
+            from scraper import calculate_sha256
+            for candidate in unhashed_size_matches:
+                try:
+                    computed_hash = calculate_sha256(candidate["path"]).upper()
+                    candidate.setdefault("hashes", set()).add(computed_hash)
+                    if computed_hash == target_hash:
+                        _compute_and_save_fallback_info(candidate["path"], computed_hash)
+                except Exception:
+                    pass
+
+            dynamic_matches = [c for c in size_matches if target_hash in c.get("hashes", set())]
+            if len(dynamic_matches) == 1:
+                return _resolved_payload(dynamic_matches[0], matched_by_hash=True, matched_by_size=True)
+            if len(dynamic_matches) > 1:
+                return {"found": False, "ambiguous": True}
 
         hash_matches = [candidate for candidate in candidates if target_hash in _candidate_hashes(candidate)]
         if hash_matches:

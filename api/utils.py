@@ -515,7 +515,7 @@ def get_active_folder_types():
     config_path = os.path.join(script_dir, "config.json")
     
     all_types = list(folder_paths.folder_names_and_paths.keys())
-    default_types = ['checkpoints', 'loras', 'diffusion_models', 'controlnet', 'vae']
+    default_types = ['checkpoints', 'loras', 'diffusion_models', 'unet', 'controlnet', 'vae']
     
     try:
         if os.path.exists(config_path):
