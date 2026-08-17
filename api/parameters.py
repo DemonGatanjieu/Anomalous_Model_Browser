@@ -300,6 +300,52 @@ async def api_delete_parameter(request):
         
     return web.json_response({"status": "success"})
 
+async def api_rename_parameter(request):
+    try:
+        data = await request.json()
+        filename = require_filename(data.get("filename", ""))
+        if not filename.endswith(".json"):
+            raise ValueError("Invalid filename")
+        new_name = str(data.get("name", "")).strip()
+        if not new_name:
+            raise ValueError("Name cannot be empty")
+        if len(new_name) > 200:
+            new_name = new_name[:200]
+    except (ValueError, AttributeError, json.JSONDecodeError):
+        return web.json_response({"status": "error", "message": "Invalid parameter data"}, status=400)
+
+    try:
+        parameters_dir = get_parameters_dir()
+        file_path = resolve_within(parameters_dir, filename)
+        if not os.path.exists(file_path):
+            return web.json_response({"status": "error", "message": "Parameter notebook not found"}, status=404)
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            nb_data = json.load(f)
+
+        if not isinstance(nb_data, dict):
+            return web.json_response({"status": "error", "message": "Invalid parameter file format"}, status=400)
+
+        nb_data["name"] = new_name
+        nb_data["timestamp"] = int(time.time() * 1000)
+
+        fd, temp_path = tempfile.mkstemp(prefix=".parameter-", suffix=".tmp", dir=parameters_dir)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(nb_data, f, ensure_ascii=False, separators=(",", ":"))
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(temp_path, file_path)
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+        _invalidate_parameter_notebooks_cache()
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not update parameter notebook"}, status=500)
+
+    return web.json_response({"status": "success", "filename": filename, "name": new_name})
+
 async def api_get_parameter_gallery(request):
     """Find recent output PNGs whose embedded parameters match one parameter notebook."""
     try:

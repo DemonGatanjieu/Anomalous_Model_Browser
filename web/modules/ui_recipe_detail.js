@@ -1,6 +1,6 @@
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
-import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
+import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import {
     deriveRecipeModelReferences,
     formatIdentitySize,
@@ -1835,6 +1835,35 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 selectParameterTab?.();
             };
 
+            const rename = button(row, '✏️', 'anomalous-recipe-parameter-notebook-rename');
+            rename.title = t('recipeParameterRename');
+            rename.setAttribute('aria-label', `${t('recipeParameterRename')}: ${notebookName}`);
+            rename.onclick = async () => {
+                const newName = await anomalousPrompt(t('recipeParameterRenamePrompt'), notebookName);
+                if (newName === null || !newName.trim() || newName.trim() === notebookName) return;
+                const trimmedName = newName.trim();
+                rename.disabled = true;
+                item.disabled = true;
+                row.classList.add('is-busy');
+                try {
+                    const response = await fetch('/anomalous/rename_parameter', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ filename: notebook.filename, name: trimmedName }),
+                    });
+                    const payload = await response.json();
+                    if (!response.ok || payload.status !== 'success') throw new Error(payload.message || 'rename failed');
+                    notebook.name = trimmedName;
+                    await parameterState.refresh?.(true);
+                } catch (error) {
+                    console.error('Could not rename parameter notebook:', error);
+                    rename.disabled = false;
+                    item.disabled = false;
+                    row.classList.remove('is-busy');
+                    await anomalousAlert(t('recipeParameterRenameError'));
+                }
+            };
+
             const remove = button(row, '×', 'anomalous-recipe-parameter-notebook-delete');
             remove.title = t('recipeParameterDelete');
             remove.setAttribute('aria-label', `${t('recipeParameterDelete')}: ${notebookName}`);
@@ -1885,6 +1914,31 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     const introHeading = document.createElement('div');
     introHeading.className = 'anomalous-recipe-detail-section-heading';
     appendText(introHeading, 'h4', t('recipeDetailParameters'));
+    if (parameterState?.selectedFilename) {
+        const currentNotebook = parameterState.notebooks?.find(nb => nb.filename === parameterState.selectedFilename);
+        const currentName = currentNotebook?.name || source?.name || t('recipeParameterUntitled');
+        const renameHeadingBtn = button(introHeading, '✏️ ' + t('recipeParameterRename'), 'anomalous-btn-ghost');
+        renameHeadingBtn.onclick = async () => {
+            const newName = await anomalousPrompt(t('recipeParameterRenamePrompt'), currentName);
+            if (newName === null || !newName.trim() || newName.trim() === currentName) return;
+            const trimmedName = newName.trim();
+            renameHeadingBtn.disabled = true;
+            try {
+                const response = await fetch('/anomalous/rename_parameter', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: parameterState.selectedFilename, name: trimmedName }),
+                });
+                const payload = await response.json();
+                if (!response.ok || payload.status !== 'success') throw new Error(payload.message || 'rename failed');
+                await parameterState.refresh?.(true);
+            } catch (error) {
+                console.error('Could not rename parameter notebook:', error);
+                renameHeadingBtn.disabled = false;
+                await anomalousAlert(t('recipeParameterRenameError'));
+            }
+        };
+    }
     const applyButton = button(introHeading, t('recipeParameterApply'), 'anomalous-btn-primary');
     const applyStatus = appendText(introHeading, 'small', '', 'anomalous-recipe-header-status');
     applyButton.onclick = async () => {

@@ -7,6 +7,7 @@
 - **Dedicated Hash Inspection Modal (🔑 查看哈希透视详情)**: Added a dedicated `🔑 查看哈希 (View Hash)` button on every model card in the Doctor Dashboard. Clicking it opens a crystal-clear inspection modal comparing the workflow-embedded provenance hash & size with local disk hash & size, featuring one-click clipboard copying.
 - **Smart Civitai by-hash Routing & NSFW Domain Dispatch (C 站精准直达与 .red/.com 智能分流)**: Upgraded the "🌐 Civitai" action buttons across Model Doctor and Workflow Import. Instead of crude search bar queries, it now queries the official Civitai `by-hash` API to resolve exact Model IDs and Version IDs, automatically routing NSFW models to `civitai.red` and safe models to `civitai.com`.
 - **UNET Default Scan Coverage (UNET 目录扫描补齐)**: Added `models/unet` to the default scanned model types, ensuring UNET / Diffusion Models are consistently indexed during background deep scans.
+- **Parameter Notebook Renaming (参数笔记本重命名)**: Users can now rename saved parameter notebooks directly from both the recipe sidebar list and the detail heading via inline `✏️` action buttons and modal prompts, safely updating names with atomic writes without disrupting parameter provenance or canvas matching.
 - **Cross-Platform Path Separator Normalization (跨平台斜杠全链路归一化)**: Fully unified Windows `\` and Unix `/` path handling across workflow serialization, hash retrieval, and node diagnostic matching, preventing lookup misses caused by cross-platform workflow exchange.
 
 ### 🐛 Bug Fixes & UX Polish
