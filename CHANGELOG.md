@@ -8,7 +8,6 @@
 - **Smart Civitai by-hash Routing & NSFW Domain Dispatch (C 站精准直达与 .red/.com 智能分流)**: Upgraded the "🌐 Civitai" action buttons across Model Doctor and Workflow Import. Instead of crude search bar queries, it now queries the official Civitai `by-hash` API to resolve exact Model IDs and Version IDs, automatically routing NSFW models to `civitai.red` and safe models to `civitai.com`.
 - **UNET Default Scan Coverage (UNET 目录扫描补齐)**: Added `models/unet` to the default scanned model types, ensuring UNET / Diffusion Models are consistently indexed during background deep scans.
 - **Cross-Platform Path Separator Normalization (跨平台斜杠全链路归一化)**: Fully unified Windows `\` and Unix `/` path handling across workflow serialization, hash retrieval, and node diagnostic matching, preventing lookup misses caused by cross-platform workflow exchange.
-- **Model Doctor Logic Whitepaper (模型医生自然语言架构白皮书)**: Authored a comprehensive, plain-language architecture guide at `.agents/docs/model_doctor_core_logic.md` outlining Model Doctor's identity boundaries, triple-fallback scanning engine, and lifecycle invariants.
 
 ### 🐛 Bug Fixes & UX Polish
 - Fixed a false-negative rejection issue where size-matching renamed models without local `.info` files were incorrectly rejected as `identity_conflict`.
