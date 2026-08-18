@@ -64,7 +64,7 @@ The extension is a UI-only ComfyUI integration: `NODE_CLASS_MAPPINGS` is intenti
 
 `web/modules/locales.js` is the canonical home for user-facing translation data. The current codebase still contains substantial inline `zh`/`en` branches across `main.js`, Sidebar, Detail, Gallery, Doctor, Notebook, Dialog, Grid, and the optional hash resolver. The first i18n migration snapshot now provides `supportedLocales`, `normalizeLocale`, `resolveLocale`, `formatTranslation`, `translate`, and `createTranslator`. `main.js` and `ui_dialog.js` use this contract; the remaining modules are intentionally unmigrated until their own reviewable snapshots. The refactor must preserve current Chinese and English behavior, keep model names/paths/node types/user data out of locale dictionaries, and keep translated HTML inside the existing `safe_dom.js` boundary. Missing translations must never prevent a panel or action from rendering. Language selection remains the existing zh/en toggle until a later phase introduces a registered locale selector.
 
-Every i18n or licensing change is a local, reviewable snapshot. The implementation must update this document and `.agents/logs/ai_changelog.md` in the same change, run proportional syntax/runtime checks, and create a local Git commit. Remote pushes require explicit user authorization. The MIT license applies to project-owned code and documentation only; external service content and host-project dependencies retain their own terms.
+Every i18n or licensing change is a local, reviewable snapshot. The implementation must update this document in the same change, run proportional syntax/runtime checks, and create a local Git commit. Remote pushes require explicit user authorization. The MIT license applies to project-owned code and documentation only; external service content and host-project dependencies retain their own terms.
 
 The second migration snapshot extends the shared translation contract to `ui_grid.js` and `ui_gallery.js`. Gallery confirmation and cover-selection banners are assembled with DOM nodes and `textContent` rather than translated raw HTML; user-controlled model names remain text content. These modules resolve strings at render time through `translate`, so existing global language changes continue to be reflected without introducing a new locale selector.
 
@@ -84,7 +84,6 @@ The sixth migration snapshot completes the Stage 2 UI i18n pass for `ui_recipes.
 Anomalous_Model_Browser/
 ├── .agents/                     # Local, ignored AI handoff material
 │   ├── logs/
-│   │   ├── ai_changelog.md      # Engineering snapshots, decisions, checks, and handoff notes
 │   │   └── ai_lessons.md        # Curated experience summary and recurring pitfalls
 │   └── plans/                   # Product/design proposals that are not runtime behavior
 ├── __init__.py                  # ComfyUI Extension Entry Point. Registers nodes and sets WEB_DIRECTORY = "./web"
@@ -271,15 +270,15 @@ Scans all nodes in `app.graph._nodes` that are colored red.
 * **Variable Naming Collisions**: When moving UI elements, search for ALL references to the old `const` declaration. A single duplicate `const` in the same scope kills the entire module at parse time.
 * **Data Scaling & Payload Limits**: When passing arrays/lists (e.g. hundreds of selected files), NEVER append them to URL query parameters (`GET` requests), or you will trigger `414 URI Too Long`. Use `POST` with a `JSON Body`. Similarly, NEVER pass massive arrays directly to `subprocess.run` via CLI arguments, as it will crash silently due to OS character limits (8191 on Windows). Always dump massive data to an intermediate `.json` file for the subprocess to read.
 
-> For a complete list of past mistakes and detailed post-mortems, refer to `.agents/logs/ai_lessons.md`. Engineering snapshots and handoff notes belong in `.agents/logs/ai_changelog.md`.
+> For a complete list of past mistakes and detailed post-mortems, refer to `.agents/logs/ai_lessons.md`. Engineering history and change tracking are managed via Git commits and ARCHITECTURE.md.
 
 ## 7. Mandatory Change Snapshot Protocol (强制变更快照流程)
 
 Every product-code change in this plugin must finish as one coherent local Git snapshot:
 
 1. Run checks proportional to the touched behavior before committing.
-2. Update `.agents/logs/ai_changelog.md` in the same change with the implementation summary, architectural decision, checks run, and handoff notes.
-3. Update this `ARCHITECTURE.md` in the same change so directory ownership, data flow, API contracts, naming boundaries, and non-negotiable rules remain accurate. If the code does not alter an architectural boundary, record that the existing boundary is intentionally unchanged rather than inventing a new abstraction.
+2. Update this `ARCHITECTURE.md` in the same change so directory ownership, data flow, API contracts, naming boundaries, and non-negotiable rules remain accurate. If the code does not alter an architectural boundary, record that the existing boundary is intentionally unchanged rather than inventing a new abstraction.
+3. If critical bugs or architectural pitfalls were resolved, record lessons learned into `.agents/logs/ai_lessons.md`.
 4. Create a local Git commit after verification. Keep unrelated work out of the snapshot and do not push unless the user explicitly requests it.
 5. Leave a clean worktree for the next agent, or document every intentional uncommitted file in the handoff.
 
