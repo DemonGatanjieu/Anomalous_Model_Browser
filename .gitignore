@@ -66,3 +66,4 @@ tests/
 # Local diagnostic/test artifacts
 grep_doctor.txt
 test_folders.json
+*.bat
