@@ -1152,7 +1152,7 @@ export function createDOM() {
         const modelSettingsDialog = document.createElement('div');
         modelSettingsDialog.className = 'anomalous-model-settings-dialog';
         modelSettingsDialog.setAttribute('role', 'dialog');
-        modelSettingsDialog.setAttribute('aria-modal', 'true');
+        modelSettingsDialog.setAttribute('aria-modal', 'false');
 
         const modelSettingsTitle = document.createElement('h2');
         const modelSettingsDescription = document.createElement('p');
@@ -1218,11 +1218,15 @@ export function createDOM() {
         };
         refreshModelSettingsText();
 
-        const closeModelSettings = () => { modelSettingsOverlay.hidden = true; };
+        const setModelSettingsOpen = (isOpen) => {
+            modelSettingsOverlay.hidden = !isOpen;
+            modelSettingsDialog.setAttribute('aria-modal', String(isOpen));
+        };
+        const closeModelSettings = () => { setModelSettingsOpen(false); };
         modelSettingsBtn.onclick = () => {
             refreshModelSettingsText();
             settingsHubModal.style.display = 'none';
-            modelSettingsOverlay.hidden = false;
+            setModelSettingsOpen(true);
             videoSetting.select.focus();
         };
         modelSettingsClose.onclick = closeModelSettings;
