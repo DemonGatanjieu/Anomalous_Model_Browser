@@ -6,6 +6,8 @@ Workspace lifecycle note: reopening an already initialized Workspace must restor
 
 The floating trigger follows the browser modal lifecycle: opening the main browser hides the trigger, while every normal close path restores it. The hidden state uses a scoped class with pointer-events disabled; initialization errors keep the trigger available as the recovery entry point.
 
+Hidden plugin dialogs must not advertise an active modal state. The model-card settings dialog remains mounted for reuse, but its `aria-modal` value follows the overlay lifecycle: `false` while hidden and `true` only while visibly open. This preserves accessibility semantics without tripping ComfyUI Frontend's global modal guard, which otherwise suppresses command-backed shortcuts such as Queue Prompt, Interrupt, and Escape-to-exit-subgraph. The plugin does not install replacement global keyboard handlers or mutate ComfyUI command bindings.
+
 Origin refresh is an explicit enrichment mode passed into `_enrich_recipe`; it must not mutate the Python list of references with ad-hoc state. Origin refresh writes schema v5, while normal updates preserve previously imported identity/origin records when the current machine cannot re-resolve them.
 
 Recipe identity badges use short, bounded labels in the card layout; detailed explanations belong in the help tooltip. Identity badges and model-name rows must remain shrinkable flex children so localized or imported text cannot expand the recipe card beyond its container.
