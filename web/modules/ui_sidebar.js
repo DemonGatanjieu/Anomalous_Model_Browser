@@ -715,7 +715,13 @@ export function createDOM() {
             };
 
             const virtualSwitch = createMaterialSwitch(enableVirtualRename, (s) => enableVirtualRename = s);
-            const physicalSwitch = createMaterialSwitch(enablePhysicalRename, (s) => enablePhysicalRename = s);
+            let physicalProtectionNotice = null;
+            const physicalSwitch = createMaterialSwitch(enablePhysicalRename, (s) => {
+                enablePhysicalRename = s;
+                if (physicalProtectionNotice) {
+                    physicalProtectionNotice.style.display = s ? 'block' : 'none';
+                }
+            });
 
             const vContainer = document.createElement('div');
             vContainer.style.display = 'flex';
@@ -754,6 +760,19 @@ export function createDOM() {
             pDesc.innerHTML = t('sidebarPhysicalRenameDesc');
             pContainer.appendChild(pRow);
             pContainer.appendChild(pDesc);
+
+            physicalProtectionNotice = document.createElement('div');
+            physicalProtectionNotice.style.display = enablePhysicalRename ? 'block' : 'none';
+            physicalProtectionNotice.style.marginTop = '8px';
+            physicalProtectionNotice.style.padding = '9px 11px';
+            physicalProtectionNotice.style.border = '1px solid rgba(251, 188, 4, 0.45)';
+            physicalProtectionNotice.style.borderRadius = '6px';
+            physicalProtectionNotice.style.background = 'rgba(251, 188, 4, 0.08)';
+            physicalProtectionNotice.style.color = '#fdd663';
+            physicalProtectionNotice.style.fontSize = '0.8em';
+            physicalProtectionNotice.style.lineHeight = '1.45';
+            physicalProtectionNotice.textContent = t('sidebarPhysicalRenameProtectedNotice');
+            pContainer.appendChild(physicalProtectionNotice);
 
             dualChannelRow.appendChild(vContainer);
             dualChannelRow.appendChild(pContainer);

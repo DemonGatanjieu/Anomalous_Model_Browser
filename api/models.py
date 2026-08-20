@@ -11,6 +11,7 @@ from aiohttp import web
 import folder_paths
 import struct
 from .utils import get_active_folder_types, get_folder_view_mode, get_active_physical_basenames, require_filename, resolve_folder_subdir, resolve_within
+from ..model_policies import is_physical_rename_protected
 
 
 # Cover and sidecar lifecycle is intentionally bounded to exact candidate paths.
@@ -837,7 +838,7 @@ async def api_update_metadata(request):
         filename = data.get('filename', '')
         custom_name = data.get('custom_name', '')
         custom_notes = data.get('custom_notes', '')
-        physical_rename = data.get('physical_rename', False)
+        physical_rename_requested = data.get('physical_rename', False)
         try: path_idx = int(data.get('path_idx', 0))
         except: path_idx = 0
 
@@ -850,6 +851,12 @@ async def api_update_metadata(request):
         
         if not os.path.exists(file_path):
             return web.json_response({"status": "error", "message": "Model not found"})
+
+        physical_rename_skipped = physical_rename_requested and is_physical_rename_protected(
+            folder_type=folder_type,
+            folder_path=target_dir,
+        )
+        physical_rename = physical_rename_requested and not physical_rename_skipped
             
         base_name = os.path.splitext(file_path)[0]
         model_ext = os.path.splitext(file_path)[1]
@@ -903,7 +910,11 @@ async def api_update_metadata(request):
             elif os.path.exists(new_file_path) and new_file_path != file_path:
                 return web.json_response({"status": "error", "message": "A file with the target physical name already exists."})
             
-        response_data = {"status": "success", "new_filename": new_filename}
+        response_data = {
+            "status": "success",
+            "new_filename": new_filename,
+            "physical_rename_skipped": physical_rename_skipped,
+        }
         if reset_cover:
             response_data.update({
                 "cover_reset": cover_reset,

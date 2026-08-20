@@ -1,5 +1,8 @@
 import os
 import sys
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
 try:
     sys.stdout.reconfigure(encoding="utf-8")
 except:
@@ -18,6 +21,7 @@ import urllib.parse
 import argparse
 import shutil
 from typing import Dict, Optional
+from model_policies import is_physical_rename_protected
 
 
 # Fixed tuples avoid rebuilding long extension lists for every scanned model.
@@ -220,12 +224,17 @@ def main():
     parser.add_argument("--force-overwrite", action="store_true", help="强制覆盖已存在的信息文件")
     parser.add_argument("--skip-local-metadata", action="store_true", help="忽略本地已有的.info / .json文件")
     parser.add_argument("--target-files", type=str, default="", help="仅扫描逗号分隔的具体文件(相对路径)")
+    parser.add_argument("--folder-type", default="", help="由 ComfyUI 传入的模型目录类型，用于执行安全策略")
     args = parser.parse_args()
 
     target_folder = args.folder
     if not os.path.isdir(target_folder):
         print(f"[-] 错误: 文件夹不存在 -> {target_folder}")
         sys.exit(1)
+
+    if args.physical_rename and is_physical_rename_protected(args.folder_type, target_folder):
+        print("[*] 基础组件目录受保护：VAE、CLIP/Text Encoder 与 CLIP Vision 不执行物理重命名。")
+        args.physical_rename = False
 
     backup_log_path = os.path.join(target_folder, "backup_rename_log.json")
 

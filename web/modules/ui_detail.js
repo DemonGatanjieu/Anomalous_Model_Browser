@@ -6,6 +6,7 @@
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { escapeHtml, setSafeRichHtml } from './safe_dom.js';
+import { isPhysicalRenameProtectedType } from './model_policies.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -971,13 +972,17 @@ export function showEditModal(model) {
         physicalCheckbox.type = 'checkbox';
         physicalCheckbox.id = 'anomalous-physical-rename-checkbox';
         physicalCheckbox.style.cursor = 'pointer';
+        const physicalRenameProtected = isPhysicalRenameProtectedType(this.currentType);
+        physicalCheckbox.disabled = physicalRenameProtected;
+        physicalCheckbox.style.cursor = physicalRenameProtected ? 'not-allowed' : 'pointer';
 
         const physicalLabel = document.createElement('label');
         physicalLabel.htmlFor = 'anomalous-physical-rename-checkbox';
         physicalLabel.textContent = t('detailPhysicalRename');
         physicalLabel.style.color = '#e8eaed';
         physicalLabel.style.fontSize = '0.9em';
-        physicalLabel.style.cursor = 'pointer';
+        physicalLabel.style.cursor = physicalRenameProtected ? 'not-allowed' : 'pointer';
+        physicalLabel.style.opacity = physicalRenameProtected ? '0.6' : '1';
 
         physicalCheckboxWrapper.appendChild(physicalCheckbox);
         physicalCheckboxWrapper.appendChild(physicalLabel);
@@ -986,7 +991,9 @@ export function showEditModal(model) {
         physicalDesc.style.fontSize = '0.8em';
         physicalDesc.style.color = '#9aa0a6';
         physicalDesc.style.marginLeft = '22px';
-        physicalDesc.textContent = t('detailPhysicalRenameDesc');
+        physicalDesc.textContent = t(physicalRenameProtected
+            ? 'detailPhysicalRenameProtectedDesc'
+            : 'detailPhysicalRenameDesc');
 
         physicalRow.appendChild(physicalCheckboxWrapper);
         physicalRow.appendChild(physicalDesc);

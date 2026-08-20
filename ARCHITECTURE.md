@@ -89,6 +89,7 @@ Anomalous_Model_Browser/
 │   │   └── ai_lessons.md        # Curated experience summary and recurring pitfalls
 │   └── plans/                   # Product/design proposals that are not runtime behavior
 ├── __init__.py                  # ComfyUI Extension Entry Point. Registers nodes and sets WEB_DIRECTORY = "./web"
+├── model_policies.py            # Central backend safety policy for protected model categories
 ├── api/                         # Backend Python API (Modularized)
 │   ├── __init__.py              # Appends all modular routes to server
 │   ├── config.py                # Configuration and paths setup
@@ -107,6 +108,7 @@ Anomalous_Model_Browser/
 │   ├── hash_resolver.js         # Frontend auto-fix engine: scans workflows for missing models
 │   ├── styles.css               # Vanilla CSS with scoped classes (.anomalous-*)
 │   └── modules/                 # Extracted UI logic modules
+│       ├── model_policies.js    # Frontend mirror of protected model-category UI policy
 │       ├── ui_sidebar.js        # Sidebar and folder tree logic
 │       ├── ui_detail.js         # Model detail panel
 │       ├── ui_doctor.js         # Model Doctor and Assistant panel
@@ -146,6 +148,7 @@ All endpoints are prefixed with `/anomalous/`.
 * `.civitai_bak.*` is a persistent restore source created from a real Civitai download. Setting a custom cover MUST modify only `.preview.*`; it MUST NOT delete, overwrite, or repurpose `.civitai_bak.*`.
 * Reset cover priority is fixed: restore `.civitai_bak.*` to `.preview.*`; otherwise remove `.preview.*` only when a bare original cover (`model.png`, etc.) can take over naturally. If the active `.preview.*` is the only image, preserve it and return a visible warning instead of causing irreversible cover loss. Reset does not silently redownload from the network.
 * Physical rename means **move/rename** every recognized sidecar, including `.civitai_bak.*`, to the new model stem. It never means deleting the Civitai backup. Model deletion may clean sidecars only after the selected main model was successfully deleted.
+* Foundation components (`vae`, `vae_approx`, `clip`, `text_encoders`, and `clip_vision`) are never physical-rename targets. The scan wizard may still fetch their metadata and apply virtual display names, but its physical-rename mode must visibly disclose the protection. Detail UI, scan APIs, metadata updates, and the standalone scraper all enforce the same denial so stale clients or direct requests cannot bypass it.
 * Main model extensions (`.safetensors`, `.ckpt`, `.pt`, `.bin`) are never sidecar suffixes. A cleanup operation MUST NOT delete a same-stem model with another extension. If such a sibling survives, stem-keyed sidecars are ambiguous and must be preserved for it.
 * Performance boundary: sidecar operations use centralized immutable suffix tuples and a constant number of exact-path checks. Do not use `os.walk`, directory-wide globbing, full-directory indexing, hashes, or network calls for rename/delete/reset. This keeps the operation independent of model-folder size.
 * Preserve the product-language distinction in documentation and UI: **delete cleans sidecars; rename migrates sidecars**. Never describe both operations as deleting or "taking away" the files.

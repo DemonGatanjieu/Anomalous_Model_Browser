@@ -9,6 +9,21 @@ from aiohttp import web
 import folder_paths
 import struct
 from .utils import get_active_folder_types, get_active_scan_paths, resolve_folder_subdir
+from ..model_policies import is_physical_rename_protected
+
+
+def _protected_type_for_path(folder_path):
+    """Resolve protected registered aliases for a global physical-folder scan."""
+    target = os.path.realpath(folder_path)
+    for folder_type in folder_paths.folder_names_and_paths.keys():
+        if not is_physical_rename_protected(folder_type=folder_type):
+            continue
+        try:
+            if any(os.path.realpath(path) == target for path in folder_paths.get_folder_paths(folder_type)):
+                return folder_type
+        except Exception:
+            continue
+    return ""
 
 async def api_scan_status(request):
     folder_type = request.query.get('type', 'checkpoints')
@@ -77,7 +92,11 @@ async def api_scan_folder(request):
     offline_only = data.get("offline_only", False)
     skip_rename = data.get("skip_rename", False)
     virtual_rename = data.get("virtual_rename", False)
-    physical_rename = data.get("physical_rename", False)
+    physical_rename_requested = data.get("physical_rename", False)
+    physical_rename = physical_rename_requested and not is_physical_rename_protected(
+        folder_type=folder_type,
+        folder_path=target_dir,
+    )
     force_overwrite = data.get("force_overwrite", False)
     
     target_files_list = data.get("target_files", [])
@@ -100,7 +119,7 @@ async def api_scan_folder(request):
 
         def run_bg():
             try:
-                cmd = [sys.executable, scraper_path, target_dir]
+                cmd = [sys.executable, scraper_path, target_dir, "--folder-type", folder_type]
                 if offline_only:
                     cmd.append("--offline-only")
                 if skip_rename:
@@ -174,13 +193,19 @@ async def api_scan_all(request):
                     try:
                         print(f"[Anomalous Browser] Global scan processing: {base_dir}")
                         cmd = [sys.executable, scraper_path, base_dir]
+                        protected_type = _protected_type_for_path(base_dir)
+                        if protected_type:
+                            cmd.extend(["--folder-type", protected_type])
                         if offline_only:
                             cmd.append("--offline-only")
                         if skip_rename:
                             cmd.append("--skip-rename")
                         if virtual_rename:
                             cmd.append("--virtual-rename")
-                        if physical_rename:
+                        if physical_rename and not is_physical_rename_protected(
+                            folder_type=protected_type,
+                            folder_path=base_dir,
+                        ):
                             cmd.append("--physical-rename")
                         if force_overwrite:
                             cmd.append("--force-overwrite")
