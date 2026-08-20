@@ -11,7 +11,10 @@ from aiohttp import web
 import folder_paths
 import struct
 from .utils import get_active_folder_types, get_folder_view_mode, get_active_physical_basenames, require_filename, resolve_folder_subdir, resolve_within
-from ..model_policies import is_physical_rename_protected
+try:
+    from ..model_policies import is_physical_rename_protected, requires_hash_for_model_recovery
+except ImportError:
+    from model_policies import is_physical_rename_protected, requires_hash_for_model_recovery
 
 
 # Cover and sidecar lifecycle is intentionally bounded to exact candidate paths.
@@ -148,6 +151,7 @@ def _collect_folder_models(target_dir, folder_type, path_idx, rel_subfolder, pag
             size_bytes = 0
         models.append({
             "filename": filename,
+            "file_path": os.path.abspath(file_path),
             "size_mb": size_mb,
             "size_bytes": size_bytes,
             "metadata": metadata,
@@ -313,62 +317,51 @@ async def api_get_models(request):
     )
     return web.json_response(payload)
 
+def _iter_search_models():
+    for folder_type in folder_paths.folder_names_and_paths.keys():
+        try:
+            paths = folder_paths.get_folder_paths(folder_type)
+        except Exception:
+            continue
+        for path_idx, base_dir in enumerate(paths):
+            if not os.path.isdir(base_dir):
+                continue
+            for root, _, files in os.walk(base_dir):
+                for filename in files:
+                    if filename.lower().endswith(MODEL_EXTENSIONS + ('.sft',)):
+                        yield folder_type, path_idx, base_dir, os.path.join(root, filename)
+
+
+def _find_model_sync(search):
+    normalized_search = search.replace('\\', '/').lower()
+    for folder_type, path_idx, base_dir, file_path in _iter_search_models():
+        normalized_path = file_path.replace(os.sep, '/').lower()
+        if normalized_search in os.path.basename(file_path).lower() or normalized_search in normalized_path:
+            return _model_info_for_path(folder_type, path_idx, base_dir, file_path)
+
+    for folder_type, path_idx, base_dir, file_path in _iter_search_models():
+        metadata = get_metadata(file_path)
+        searchable_names = (metadata.get('custom_name', ''), metadata.get('name', ''))
+        if any(normalized_search in str(name).lower() for name in searchable_names if name):
+            return _model_info_for_path(folder_type, path_idx, base_dir, file_path)
+    return None
+
+
 async def api_find_model(request):
-    search = request.query.get('search', '').lower()
+    search = request.query.get('search', '').strip()
     if not search:
         return web.json_response({"status": "error", "message": "No search query provided"})
-        
-    for folder_type in folder_paths.folder_names_and_paths.keys():
-        paths = folder_paths.get_folder_paths(folder_type)
-        if not paths: continue
-        for path_idx, base_dir in enumerate(paths):
-            if not os.path.exists(base_dir): continue
-            for root, dirs, files in os.walk(base_dir):
-                for f in files:
-                    if f.endswith('.safetensors') or f.endswith('.ckpt') or f.endswith('.pt') or f.endswith('.bin') or f.endswith('.sft'):
-                        search_norm = search.replace(os.sep, '/')
-                        abs_path_norm = os.path.join(root, f).replace(os.sep, '/').lower()
-                        if search_norm in f.lower() or search_norm in abs_path_norm:
-                            rel_subfolder = os.path.relpath(root, base_dir)
-                            if rel_subfolder == '.': rel_subfolder = '/'
-                            
-                            file_path = os.path.join(root, f)
-                            meta = get_metadata(file_path)
-                            
-                            base_name = os.path.splitext(f)[0]
-                            preview_file = None
-                            for ext in PREVIEW_SUFFIXES + MEDIA_EXTENSIONS:
-                                if os.path.exists(os.path.join(root, base_name + ext)):
-                                    preview_file = base_name + ext
-                                    break
-                                    
-                            preview_url = ""
-                            if preview_file:
-                                q_type = urllib.parse.quote(folder_type)
-                                q_idx = str(path_idx)
-                                q_sub = urllib.parse.quote(rel_subfolder)
-                                q_file = urllib.parse.quote(preview_file)
-                                mtime = _cache_token(os.path.join(root, preview_file))
-                                preview_url = f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}&t={mtime}"
 
-                            try: size_mb = round(os.path.getsize(file_path) / (1024 * 1024), 1)
-                            except: size_mb = 0
-
-                            modelData = {
-                                "filename": f,
-                                "size_mb": size_mb,
-                                "metadata": meta,
-                                "preview_url": preview_url
-                            }
-                            return web.json_response({
-                                "status": "success",
-                                "model": modelData,
-                                "type": folder_type,
-                                "path_idx": path_idx,
-                                "subfolder": rel_subfolder
-                            })
-                            
-    return web.json_response({"status": "error", "message": "Model not found"})
+    result = await asyncio.to_thread(_find_model_sync, search)
+    if not result:
+        return web.json_response({"status": "error", "message": "Model not found"})
+    return web.json_response({
+        "status": "success",
+        "model": result,
+        "type": result["type"],
+        "path_idx": result["path_idx"],
+        "subfolder": result["subfolder"],
+    })
 
 async def api_delete_model(request):
     try:
@@ -542,7 +535,10 @@ async def api_base_models(request):
                             
     return web.json_response({"base_models": sorted(list(base_models))})
 
-RESOLVABLE_MODEL_TYPES = ('checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae')
+RESOLVABLE_MODEL_TYPES = (
+    'checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet',
+    'vae', 'vae_approx', 'clip', 'text_encoders', 'clip_vision',
+)
 
 
 def _parse_resolution_types(expected_types_raw):
@@ -569,7 +565,7 @@ def _collect_resolution_candidates(types):
                 continue
             for root, _, files in os.walk(base_dir):
                 for filename in files:
-                    if not filename.lower().endswith(('.safetensors', '.ckpt', '.pt')):
+                    if not filename.lower().endswith(MODEL_EXTENSIONS):
                         continue
                     file_path = os.path.join(root, filename)
                     real_path = os.path.realpath(file_path)
@@ -649,7 +645,7 @@ def _compute_and_save_fallback_info(file_path, file_hash):
         pass
 
 
-def _resolve_from_candidates(candidates, target_hash="", target_size=None, filename_query=""):
+def _resolve_from_candidates(candidates, target_hash="", target_size=None, filename_query="", require_hash=False):
     target_hash = str(target_hash or "").strip().upper()
     # A saved filename/path is not identity evidence. It is intentionally
     # ignored here; exact path lookup for previews lives in the bounded
@@ -700,6 +696,9 @@ def _resolve_from_candidates(candidates, target_hash="", target_size=None, filen
         if len(hash_matches) > 1:
             return {"found": False, "ambiguous": True}
 
+    if require_hash:
+        return {"found": False, "hash_required": True}
+
     if target_size is not None:
         if len(size_matches) == 1:
             return _resolved_payload(size_matches[0], matched_by_size=True)
@@ -722,7 +721,13 @@ async def api_resolve_hash(request):
 
     def resolve_one():
         candidates = _collect_resolution_candidates(types)
-        return _resolve_from_candidates(candidates, target_hash, target_size, filename_query)
+        return _resolve_from_candidates(
+            candidates,
+            target_hash,
+            target_size,
+            filename_query,
+            require_hash=requires_hash_for_model_recovery(types),
+        )
 
     return web.json_response(await asyncio.to_thread(resolve_one))
 
@@ -763,6 +768,7 @@ async def api_resolve_hash_batch(request):
                 candidate_groups[types],
                 item["hash"],
                 item["size"],
+                require_hash=requires_hash_for_model_recovery(types),
             )
             results.append({"key": item["key"], "result": result})
         return results
@@ -790,7 +796,7 @@ async def api_get_all_hashes(request):
                 hashes.pop(key, None)
                 ambiguous_keys.add(key)
 
-        types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
+        types = RESOLVABLE_MODEL_TYPES
         seen_dirs = set()
         for t in types:
             try:
@@ -802,7 +808,7 @@ async def api_get_all_hashes(request):
                     if not os.path.exists(base_dir): continue
                     for root, dirs, files in os.walk(base_dir):
                         for file in files:
-                            if file.endswith('.safetensors') or file.endswith('.ckpt') or file.endswith('.pt'):
+                            if file.lower().endswith(MODEL_EXTENSIONS):
                                 file_path = os.path.join(root, file)
                                 try:
                                     size_bytes = os.path.getsize(file_path)
@@ -1057,11 +1063,18 @@ def _model_info_for_path(folder_type, path_idx, base_dir, file_path):
         rel_subfolder = '/'
     else:
         rel_subfolder = '/' + rel_subfolder.replace(os.sep, '/')
+    try:
+        size_bytes = os.path.getsize(file_path)
+    except OSError:
+        size_bytes = 0
     return {
         "type": folder_type,
         "path_idx": path_idx,
         "subfolder": rel_subfolder,
         "filename": os.path.basename(file_path),
+        "file_path": os.path.abspath(file_path),
+        "size_bytes": size_bytes,
+        "size_mb": round(size_bytes / (1024 * 1024), 2),
         "preview_url": _preview_url_for_model(folder_type, path_idx, base_dir, file_path),
         "metadata": get_metadata(file_path),
     }

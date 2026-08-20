@@ -12,12 +12,49 @@ import {
     getBaseModelFamily,
     inferPickerModelType,
 } from './model_picker.js';
+import { requiresHashForModelRecovery } from './model_policies.js';
 /**
  * ui_doctor.js
  * Extracted Doctor Panel & Assistant Panel methods.
  */
 
 const t = (key, params) => translate(key, params);
+
+function workflowHashRecord(nodeId, value) {
+    const hashes = app.graph?.extra?.anomalous_hashes;
+    if (!hashes || typeof value !== 'string') return null;
+    const normalized = value.replace(/\\/g, '/');
+    const windowsPath = value.replace(/\//g, '\\');
+    return hashes[`${nodeId}_${value}`]
+        || hashes[`${nodeId}_${normalized}`]
+        || hashes[`${nodeId}_${windowsPath}`]
+        || hashes[value]
+        || hashes[normalized]
+        || hashes[windowsPath]
+        || null;
+}
+
+function localHashRecord(value) {
+    if (!window.anomalous_hash_cache || typeof value !== 'string') return null;
+    const normalized = value.replace(/\\/g, '/');
+    const basename = normalized.split('/').pop();
+    return window.anomalous_hash_cache[value]
+        || window.anomalous_hash_cache[normalized]
+        || window.anomalous_hash_cache[basename]
+        || null;
+}
+
+function hashFromRecord(record) {
+    const value = typeof record === 'string' ? record : record?.hash;
+    return String(value || '').trim().toUpperCase();
+}
+
+function hasFoundationIdentityMismatch(node, widget, value) {
+    if (!requiresHashForModelRecovery(node, widget)) return false;
+    const workflowHash = hashFromRecord(workflowHashRecord(node.id, value));
+    const localHash = hashFromRecord(localHashRecord(value));
+    return Boolean(workflowHash && localHash && workflowHash !== localHash);
+}
 
 export function initDoctorPanel() {
         this.doctorPanelInitialized = true;
@@ -71,6 +108,7 @@ export function initDoctorPanel() {
             refreshBtn.disabled = true;
             refreshBtn.style.opacity = '0.5';
             if (app.refreshComboInNodes) await app.refreshComboInNodes();
+            if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();
             if (app.lastNodeErrors) app.lastNodeErrors = null;
             if (typeof app.clearErrors === 'function') app.clearErrors();
             if (app.graph) {
@@ -388,7 +426,7 @@ export function renderGlobalDashboard() {
             nodes = app.graph._nodes;
         }
 
-        let total = 0, healthy = 0, missing = 0;
+        let total = 0, healthy = 0, missing = 0, identityWarnings = 0;
         let missingNodesData = [];
         let has_native_fixes = false;
 
@@ -425,9 +463,11 @@ export function renderGlobalDashboard() {
                             }
                         }
                     }
+                    const identityMismatch = isHealthy && hasFoundationIdentityMismatch(node, w, val);
+                    if (identityMismatch) identityWarnings++;
                     if (isHealthy) healthy++; else missing++;
                     
-                    missingNodesData.push({ node, w, val, isHealthy, exactMatch });
+                    missingNodesData.push({ node, w, val, isHealthy, exactMatch, identityMismatch });
                 }
             }
         }
@@ -448,6 +488,7 @@ export function renderGlobalDashboard() {
         statsRow.innerHTML = `
             ${createBadge(t('doctorTotal'), total, '#aaa', 'rgba(255,255,255,0.05)')}
             ${createBadge(t('doctorHealthy'), healthy, '#28a745', 'rgba(40, 167, 69, 0.1)')}
+            ${identityWarnings ? createBadge(t('doctorIdentityWarning'), identityWarnings, '#ffc107', 'rgba(255, 193, 7, 0.1)') : ''}
             ${createBadge(t('doctorMissing'), missing, '#ff6b6b', 'rgba(220, 53, 69, 0.1)')}
         `;
 
@@ -461,7 +502,7 @@ export function renderGlobalDashboard() {
 
         // Render List
 for (const data of missingNodesData) {
-            const { node, w, val, isHealthy, exactMatch } = data;
+            const { node, w, val, isHealthy, exactMatch, identityMismatch } = data;
             
             const item = document.createElement('div');
             item.style.cssText = `display:flex; flex-direction:column; padding:16px 20px; background:rgba(255,255,255,0.02); border-radius:12px; border:1px solid rgba(255,255,255,0.04); transition:all 0.2s; position:relative; overflow:hidden; flex-shrink:0;`;
@@ -470,7 +511,7 @@ for (const data of missingNodesData) {
             
             // Accent bar
             const accent = document.createElement('div');
-            accent.style.cssText = `position:absolute; left:0; top:0; bottom:0; width:4px; background:${isHealthy ? '#28a745' : '#ff6b6b'};`;
+            accent.style.cssText = `position:absolute; left:0; top:0; bottom:0; width:4px; background:${identityMismatch ? '#ffc107' : (isHealthy ? '#28a745' : '#ff6b6b')};`;
             item.appendChild(accent);
 
             const top = document.createElement('div');
@@ -494,7 +535,9 @@ for (const data of missingNodesData) {
             const right = document.createElement('div');
             right.style.cssText = 'display:flex; align-items:center; gap:12px;';
             
-            if (isHealthy && exactMatch && exactMatch !== val) {
+            if (identityMismatch) {
+                right.innerHTML = `<div style="color:#ffc107;font-size:13px;font-weight:bold;padding:6px 12px;background:rgba(255,193,7,0.1);border-radius:20px;">🟡 ${t('doctorIdentityChanged')}</div>`;
+            } else if (isHealthy && exactMatch && exactMatch !== val) {
                 right.innerHTML = `<div style="text-align:right;"><div style="color:#ffc107;font-size:13px;font-weight:bold;">🟡 ${t('doctorAutoRedirected')}</div><div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:4px;">${escapeHtml(exactMatch.split(/[\/]/).pop())}</div></div>`;
 } else if (isHealthy) {
                 right.innerHTML = `<div style="color:#28a745;font-size:13px;font-weight:bold;padding:6px 12px;background:rgba(40,167,69,0.1);border-radius:20px;">🟢 ${t('doctorReady')}</div>`;

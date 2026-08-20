@@ -390,7 +390,8 @@ function folderTypesForReference(reference) {
 
 function resolutionTypesForReference(reference) {
     return folderTypesForReference(reference).filter((type) => [
-        'checkpoints', 'unet', 'diffusion_models', 'loras', 'vae', 'controlnet',
+        'checkpoints', 'unet', 'diffusion_models', 'loras', 'vae', 'vae_approx',
+        'controlnet', 'clip', 'text_encoders', 'clip_vision',
     ].includes(type));
 }
 

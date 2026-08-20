@@ -9,7 +9,10 @@ from aiohttp import web
 import folder_paths
 import struct
 from .utils import get_active_folder_types, get_active_scan_paths, resolve_folder_subdir
-from ..model_policies import is_physical_rename_protected
+try:
+    from ..model_policies import is_physical_rename_protected
+except ImportError:
+    from model_policies import is_physical_rename_protected
 
 
 def _protected_type_for_path(folder_path):

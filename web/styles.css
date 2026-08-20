@@ -237,12 +237,35 @@
     height: 300px;
 }
 
+.anomalous-card-labels {
+    min-width: 0;
+    padding: 9px 11px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+}
+
 .anomalous-card-title {
-    padding: 10px;
     color: var(--fg-color, #fff);
     font-size: 0.9em;
-    text-align: center;
-    word-break: break-all;
+    font-weight: 650;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-card-filename {
+    color: rgba(255, 255, 255, 0.55);
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 0.72em;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #anomalous-content {
@@ -2142,6 +2165,49 @@ dialog.anomalous-gallery-viewer[open] {
     flex-direction: column;
     gap: 6px;
     overflow-y: auto;
+}
+
+.anomalous-model-location {
+    display: grid;
+    gap: 7px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color, #444);
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.anomalous-model-location-row {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 9px;
+    align-items: baseline;
+}
+
+.anomalous-model-location-label {
+    color: #9aa0a6;
+    font-size: 0.78em;
+}
+
+.anomalous-model-location code {
+    min-width: 0;
+    color: #d7dbe5;
+    font-size: 0.76em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.anomalous-model-location-copy {
+    justify-self: start;
+    padding: 4px 9px;
+    border: 1px solid rgba(138, 180, 248, 0.3);
+    border-radius: 5px;
+    background: rgba(138, 180, 248, 0.08);
+    color: #8ab4f8;
+    cursor: pointer;
+    font-size: 0.75em;
 }
 
 .anomalous-beta-notice {

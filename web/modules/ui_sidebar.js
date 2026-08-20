@@ -1612,13 +1612,11 @@ export function createDOM() {
                 this.initDoctorPanel();
             }
             // Trigger auto hash-resolve when opening Doctor
+            if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();
             if (window.anomalous_resolve_all_missing_nodes) {
-                window.anomalous_resolve_all_missing_nodes(true, false).then(() => {
-                    if (app.graph && app.graph.extra && app.graph.extra.anomalous_hashes) {
-                        this.renderGlobalDashboard(app.graph.extra.anomalous_hashes);
-                    }
-                });
+                await window.anomalous_resolve_all_missing_nodes(true, false);
             }
+            this.renderGlobalDashboard();
         };
 
         const assistantBtn = document.createElement('button');

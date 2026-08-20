@@ -12,6 +12,11 @@ PHYSICAL_RENAME_PROTECTED_TYPES = frozenset({
     "clip_vision",
 })
 
+# Foundation components may be recovered under a different local filename, but
+# only when the workflow carries a cryptographic identity. File size alone is
+# too weak for shared VAE/text-encoder libraries.
+HASH_ONLY_RECOVERY_TYPES = PHYSICAL_RENAME_PROTECTED_TYPES
+
 
 def is_physical_rename_protected(folder_type=None, folder_path=None):
     """Return True when a model category must keep its physical filename."""
@@ -30,3 +35,13 @@ def is_physical_rename_protected(folder_type=None, folder_path=None):
     except (OSError, TypeError, ValueError):
         return False
     return bool(parts.intersection(PHYSICAL_RENAME_PROTECTED_TYPES))
+
+
+def requires_hash_for_model_recovery(folder_types):
+    """Return True when every requested category requires a hash match."""
+    normalized = {
+        str(folder_type or "").strip().lower()
+        for folder_type in (folder_types or ())
+        if str(folder_type or "").strip()
+    }
+    return bool(normalized) and normalized.issubset(HASH_ONLY_RECOVERY_TYPES)

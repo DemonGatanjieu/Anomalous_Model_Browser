@@ -13,6 +13,11 @@ export function cardPreviewUrl(previewUrl, thumbnailMode) {
     return `${previewUrl}${previewUrl.includes('?') ? '&' : '?'}variant=card`;
 }
 
+function modelCardDisplayName(model) {
+    const metadata = model?.metadata || {};
+    return metadata.custom_name || model?.filename || '';
+}
+
 
 
 export async function loadModels() {
@@ -112,7 +117,6 @@ export async function loadModels() {
                     ph.innerHTML = `<div style="text-align:center;color:#666;margin-top:80px;">${t('noPreview')}</div><div style="font-size:0.8em;text-align:center;opacity:0.5;margin-top:5px">${t('clickScan')}</div>`;
                     card.appendChild(ph);
                 }
-                const title = document.createElement('div');
                 if (model.metadata && model.metadata.baseModel) {
                     const badge = document.createElement('div');
                     badge.innerText = model.metadata.baseModel;
@@ -130,9 +134,19 @@ export async function loadModels() {
                     badge.style.zIndex = '10';
                     card.appendChild(badge);
                 }
+                const labels = document.createElement('div');
+                labels.className = 'anomalous-card-labels';
+                const title = document.createElement('div');
                 title.className = 'anomalous-card-title';
-                title.innerText = model.filename;
-                card.appendChild(title);
+                title.textContent = modelCardDisplayName(model);
+                labels.appendChild(title);
+
+                const physicalName = document.createElement('div');
+                physicalName.className = 'anomalous-card-filename';
+                physicalName.textContent = model.filename;
+                physicalName.title = model.file_path || model.filename;
+                labels.appendChild(physicalName);
+                card.appendChild(labels);
 
                 card.onclick = () => { 
                     this.recipeModelReturn = null;

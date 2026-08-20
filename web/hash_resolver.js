@@ -1,5 +1,9 @@
 import { app } from "../../scripts/app.js";
 import { translate } from './modules/locales.js';
+import {
+    inferModelFolderTypes,
+    requiresHashForModelRecovery,
+} from './modules/model_policies.js';
 
 // Global cache for hashes: filename -> hash
 window.anomalous_hash_cache = window.anomalous_hash_cache || {};
@@ -17,17 +21,12 @@ window.anomalous_update_hash_cache = function (models) {
     }
 };
 
-function inferExpectedModelTypes(node, widget) {
-    const widgetName = String(widget?.name || '').toLowerCase();
-    const nodeType = String(node?.type || '').toLowerCase();
-    const key = `${widgetName} ${nodeType}`;
+function isModelFilename(value) {
+    return typeof value === 'string' && /\.(safetensors|ckpt|pt|bin)$/i.test(value);
+}
 
-    if (widgetName.includes('vae') || nodeType === 'vaeloader' || key.includes('vae loader')) return 'vae';
-    if (widgetName.includes('lora') || key.includes('lora')) return 'loras';
-    if (widgetName.includes('control_net') || widgetName.includes('controlnet') || key.includes('controlnet')) return 'controlnet';
-    if (widgetName.includes('ckpt') || widgetName.includes('checkpoint') || key.includes('checkpoint')) return 'checkpoints';
-    if (widgetName.includes('unet') || widgetName.includes('diffusion_model') || key.includes('unet loader')) return 'diffusion_models,unet';
-    return '';
+function inferExpectedModelTypes(node, widget) {
+    return inferModelFolderTypes(node, widget).join(',');
 }
 
 window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, silent = false) {
@@ -44,7 +43,7 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
         if (node.widgets) {
             for (let i = 0; i < node.widgets.length; i++) {
                 const w = node.widgets[i];
-                if (typeof w.value === 'string' && (w.value.endsWith('.safetensors') || w.value.endsWith('.ckpt') || w.value.endsWith('.pt'))) {
+                if (isModelFilename(w.value)) {
                     if (w.options && w.options.values && !w.options.values.includes(w.value)) {
                         has_missing = true;
                         break;
@@ -85,7 +84,7 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
     for (const node of app.graph._nodes) {
         for (const widget of (node.widgets || [])) {
             const value = widget.value;
-            if (typeof value !== 'string' || !(value.endsWith('.safetensors') || value.endsWith('.ckpt') || value.endsWith('.pt'))) continue;
+            if (!isModelFilename(value)) continue;
             if (!getWorkflowHash(node.id, value)) {
                 needsGlobalHashRefresh = true;
                 break provenanceCheck;
@@ -111,7 +110,7 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
 
     const findHashData = (node, widget, value) => {
         let hashData = getWorkflowHash(node.id, value);
-        if (!hashData && window.anomalous_hash_cache && typeof value === 'string') {
+        if (!hashData && !requiresHashForModelRecovery(node, widget) && window.anomalous_hash_cache && typeof value === 'string') {
             const parts = value.split(/[/\\]/);
             const basename = parts[parts.length - 1];
             const normVal = value.replace(/\\/g, '/');
@@ -130,7 +129,7 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
         for (let i = 0; i < node.widgets.length; i++) {
             const widget = node.widgets[i];
             const value = widget.value;
-            if (typeof value !== 'string' || !(value.endsWith('.safetensors') || value.endsWith('.ckpt') || value.endsWith('.pt'))) continue;
+            if (!isModelFilename(value)) continue;
             if (widget.options && widget.options.values && !widget.options.values.includes(value)) {
                 const normalized = value.replace(/\\/g, '/');
                 const nativeMatch = widget.options.values.find(v => typeof v === 'string' && v.replace(/\\/g, '/') === normalized);
@@ -173,7 +172,7 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
             for (let i = 0; i < node.widgets.length; i++) {
                 const w = node.widgets[i];
                 const val = w.value;
-                if (typeof val === 'string' && (val.endsWith('.safetensors') || val.endsWith('.ckpt') || val.endsWith('.pt'))) {
+                if (isModelFilename(val)) {
 
                     // Native slash mismatch fix: if val isn't in options, but matches if we normalize slashes
                     if (w.options && w.options.values && !w.options.values.includes(val)) {
@@ -367,13 +366,14 @@ app.registerExtension({
 
                     if (node.widgets_values && node.widgets_values.length > 0) {
                         for (const val of node.widgets_values) {
-                            if (typeof val === 'string' && (val.endsWith('.safetensors') || val.endsWith('.ckpt') || val.endsWith('.pt'))) {
+                            if (isModelFilename(val)) {
                                 const parts = val.split(/[/\\]/);
                                 const basename = parts[parts.length - 1];
 
                                 let valIsMissing = false;
+                                let matchingWidget = null;
                                 if (liveNode && liveNode.widgets) {
-                                    const matchingWidget = liveNode.widgets.find(w => w.value === val && w.type === "combo");
+                                    matchingWidget = liveNode.widgets.find(w => w.value === val && w.type === "combo") || null;
                                     if (matchingWidget && matchingWidget.options && matchingWidget.options.values && !matchingWidget.options.values.includes(val)) {
                                         valIsMissing = true;
                                     }
@@ -384,6 +384,10 @@ app.registerExtension({
                                     const cache_data = window.anomalous_hash_cache[val] || window.anomalous_hash_cache[normVal] || window.anomalous_hash_cache[basename];
                                     if (cache_data) {
                                         const hashObj = typeof cache_data === 'string' ? { hash: cache_data, size: "" } : cache_data;
+                                        if (matchingWidget && requiresHashForModelRecovery(liveNode, matchingWidget) && !hashObj.hash) {
+                                            if (!unscanned_models.includes(basename)) unscanned_models.push(basename);
+                                            continue;
+                                        }
                                         extraObj.anomalous_hashes[`${node.id}_${val}`] = hashObj;
                                         if (normVal !== val) {
                                             extraObj.anomalous_hashes[`${node.id}_${normVal}`] = hashObj;
