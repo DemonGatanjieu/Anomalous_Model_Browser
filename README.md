@@ -1,6 +1,6 @@
 # Anomalous Model Browser
 
-[![Changelog](https://img.shields.io/badge/📖_Read_the-Changelog-blue?style=for-the-badge)](CHANGELOG.md) [![ComfyUI Manager](https://img.shields.io/badge/ComfyUI-Manager-green?style=for-the-badge)](https://github.com/ltdrdata/ComfyUI-Manager)
+[![Changelog](https://img.shields.io/badge/📖_Read_the-Changelog-blue?style=for-the-badge)](CHANGELOG.md) [![ComfyUI Manager](https://img.shields.io/badge/ComfyUI-Manager-green?style=for-the-badge)](https://github.com/ltdrdata/ComfyUI-Manager) [![Bilibili Video](https://img.shields.io/badge/Bilibili-Video_Demo-00A1D6?style=for-the-badge&logo=bilibili)](https://www.bilibili.com/video/BV1a1bv68EuA/) [![YouTube Video](https://img.shields.io/badge/YouTube-Video_Demo-red?style=for-the-badge&logo=youtube)](https://youtu.be/hAvsj7uiaCw)
 
 [English](#english) | [中文](#中文)
 
@@ -24,6 +24,11 @@
 | **Smart Notebook (📑)** | Leveraging scanned local architectures, it offers rapid matching between Checkpoints, UNet, and compatible LoRAs. Features a built-in translation tool, auto-chunks prompts into tags, and supports 1-click canvas deployment. |
 | **History Gallery (🖼️)** | Natively reads your local `output` folder. Supports 1-click viewing, deleting, and mouse-wheel zooming. Drag and drop any generated image directly onto the canvas to instantly load its embedded workflow! |
 | **Additional Features** | Click the top-right `➕` of any model card to deploy it to the canvas. The UI supports side-docking to leave space for your canvas operations. |
+
+### 🎬 Video Demos & Tutorials
+
+* 📺 **YouTube**: [Watch Quick Walkthrough on YouTube](https://youtu.be/hAvsj7uiaCw)
+* 📺 **Bilibili**: [在哔哩哔哩观看使用演示](https://www.bilibili.com/video/BV1a1bv68EuA/)
 
 ### 📖 Step-by-Step Operating Guide
 
@@ -94,6 +99,11 @@ git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
 | **智能笔记本 (📑)** | 基于本地基础架构，提供快速的架构匹配功能，极速选择兼容的主模型与 LoRA。内置强大的翻译功能，自动将提示词分块打上标签，实现双语对照，并支持一键发布组装到工作流画布中。 |
 | **原生图库管理 (🖼️)** | 无缝读取本地的 `output` 文件夹。支持鼠标滚轮缩放、一键查看和安全删除。更绝的是，您可以**直接将图片拖动到画布上，瞬间原地加载内嵌的工作流！** |
 | **其它便捷功能** | 点击模型卡片右上角的 `➕` 号，快捷将节点发布到画布。支持侧边栏停靠 (Dock)，将界面吸附在左侧，为您的画布留出充足的操作空间。 |
+
+### 🎬 视频演示与教程
+
+* 📺 **哔哩哔哩 (Bilibili)**：[在 B 站观看快速上手与使用演示](https://www.bilibili.com/video/BV1a1bv68EuA/)
+* 📺 **YouTube**：[在 YouTube 观看视频演示](https://youtu.be/hAvsj7uiaCw)
 
 ### 📖 标准操作指南
 
