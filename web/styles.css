@@ -246,6 +246,84 @@
     text-align: center;
 }
 
+.anomalous-scan-progress {
+    position: fixed;
+    right: 24px;
+    bottom: 104px;
+    z-index: 1000000;
+    width: min(380px, calc(100vw - 32px));
+    box-sizing: border-box;
+    padding: 16px;
+    border: 1px solid rgba(138, 180, 248, 0.35);
+    border-radius: 12px;
+    background: rgba(24, 24, 27, 0.96);
+    color: #f1f3f4;
+    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(12px);
+}
+
+.anomalous-scan-progress-title,
+.anomalous-scan-progress-detail,
+.anomalous-scan-progress-item {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-scan-progress-title {
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.anomalous-scan-progress-track {
+    position: relative;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.anomalous-scan-progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: #8ab4f8;
+    transition: width 180ms ease;
+}
+
+.anomalous-scan-progress-fill.is-indeterminate {
+    animation: anomalous-scan-progress-slide 1.2s ease-in-out infinite;
+}
+
+.anomalous-scan-progress-detail {
+    margin-top: 10px;
+    color: #d7dde8;
+    font-size: 12px;
+}
+
+.anomalous-scan-progress-item {
+    margin-top: 4px;
+    color: #9aa0a6;
+    font-size: 11px;
+}
+
+.anomalous-scan-progress.is-complete .anomalous-scan-progress-fill {
+    background: #81c995;
+}
+
+.anomalous-scan-progress.is-error {
+    border-color: rgba(242, 139, 130, 0.5);
+}
+
+.anomalous-scan-progress.is-error .anomalous-scan-progress-fill {
+    background: #f28b82;
+}
+
+@keyframes anomalous-scan-progress-slide {
+    from { transform: translateX(-120%); }
+    to { transform: translateX(340%); }
+}
+
 .anomalous-card-title {
     color: var(--fg-color, #fff);
     font-size: 0.9em;

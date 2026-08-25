@@ -1,5 +1,11 @@
 # 📈 Anomalous Model Browser Changelog
 
+## Unreleased
+
+### 🐛 Reliability & Scan Feedback
+- **Interrupted Scan Recovery (异常扫描自动恢复)**: Closing ComfyUI during a folder or global scan no longer leaves the browser permanently locked. Versioned scan ownership records distinguish live workers from stale or legacy markers, clean interrupted state automatically, and allow an immediate retry without reinstalling the extension.
+- **Real Scan Progress (真实扫描进度)**: Folder, custom-selection, and global scans now show a non-blocking localized progress panel backed by the scanner's actual folder/model counts and current filename. Reopening the browser reconnects to the running task through the existing status polling contract.
+
 ## v1.56 Beta (Model Doctor Intelligence & Smart Civitai Routing)
 
 ### 🚀 Major Improvements & Features

@@ -24,6 +24,10 @@ temp/
 *.pid
 *.tmp
 *.temp
+*.scan_in_progress
+*.scan_progress.json
+.global_scan_in_progress
+.global_scan_progress.json
 *.bak
 *.backup
 *.sqlite

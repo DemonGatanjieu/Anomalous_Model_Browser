@@ -6,6 +6,7 @@
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
+import { updateScanProgress, finishScanProgress, failScanProgress } from './scan_progress.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -323,15 +324,28 @@ export function createDOM() {
         setInterval(async () => {
             try {
                 let isScanning = false;
+                let activeStatus = null;
                 if (this.currentType) {
                     const params = new URLSearchParams({ type: this.currentType, path_idx: this.currentPathIdx || 0, subfolder: this.currentSubfolder || '/' });
                     const resLocal = await fetch('/anomalous/scan_status?' + params.toString());
                     const dataLocal = await resLocal.json();
-                    if (dataLocal.scanning) isScanning = true;
+                    if (dataLocal.scanning) {
+                        isScanning = true;
+                        activeStatus = dataLocal;
+                    } else if (dataLocal.interrupted) {
+                        failScanProgress(t('scanProgressInterrupted'));
+                    }
                 }
                 const resGlobal = await fetch('/anomalous/global_scan_status');
                 const dataGlobal = await resGlobal.json();
-                if (dataGlobal.scanning) isScanning = true;
+                if (dataGlobal.scanning) {
+                    isScanning = true;
+                    activeStatus = dataGlobal;
+                } else if (dataGlobal.interrupted) {
+                    failScanProgress(t('scanProgressInterrupted'));
+                }
+
+                if (activeStatus) updateScanProgress(activeStatus);
 
                 if (isScanning && !isCurrentlyScanning) {
                     isCurrentlyScanning = true;
@@ -341,6 +355,7 @@ export function createDOM() {
                     isCurrentlyScanning = false;
                     scanBtn.innerHTML = `🔄`;
                     scanBtn.style.opacity = '1';
+                    finishScanProgress();
                     this.loadModels();
                     if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();
                     alert(t('sidebarScanComplete'));
@@ -846,10 +861,19 @@ export function createDOM() {
                             scanBtn.innerHTML = `⏳`;
                             scanBtn.style.animation = 'anomalous-spin 2s linear infinite';
                         }
+
+                        const customFolders = Array.from(selectedForScan.entries()).filter(([, files]) => files.size > 0);
+                        let customFolderCurrent = 0;
+                        updateScanProgress({
+                            scanning: true,
+                            phase: 'preparing',
+                            folder_total: customFolders.length,
+                            folder_current: 0,
+                        });
                         
                         // Sequential scan for multiple folders
-                        for (const [folderKey, fileSet] of selectedForScan.entries()) {
-                            if (fileSet.size === 0) continue;
+                        for (const [folderKey, fileSet] of customFolders) {
+                            customFolderCurrent += 1;
                             const parts = folderKey.split('|');
                             if (parts.length < 3) continue;
                             const type = parts[0], path_idx = parts[1], subfolder = parts.slice(2).join('|');
@@ -874,6 +898,12 @@ export function createDOM() {
                                                 const statusUrl = '/anomalous/scan_status?' + params.toString();
                                                 const statusRes = await fetch(statusUrl);
                                                 const statusData = await statusRes.json();
+                                                updateScanProgress({
+                                                    ...statusData,
+                                                    folder_total: customFolders.length,
+                                                    folder_current: customFolderCurrent,
+                                                    folder: subfolder,
+                                                });
                                                 if (!statusData.scanning) {
                                                     clearInterval(poll);
                                                     resolve();
@@ -896,6 +926,7 @@ export function createDOM() {
                             scanBtn.innerHTML = `🔄`;
                             scanBtn.style.animation = '';
                         }
+                        finishScanProgress();
                         if (enableAutoCheck && window.anomalous_resolve_all_missing_nodes) {
                             window.anomalous_resolve_all_missing_nodes(true);
                         }
@@ -927,6 +958,7 @@ export function createDOM() {
                     
                     const data = await res.json();
                     if (data.status === 'ok') {
+                        updateScanProgress({ scanning: true, phase: 'preparing', recovered: data.recovered });
                         if (typeof scanBtn !== 'undefined') {
                             scanBtn.innerHTML = `⏳`;
                             scanBtn.style.animation = 'anomalous-spin 2s linear infinite';
@@ -942,8 +974,11 @@ export function createDOM() {
                                 }
                                 const statusRes = await fetch(statusUrl);
                                 const statusData = await statusRes.json();
+                                updateScanProgress(statusData);
                                 if (!statusData.scanning) {
                                     clearInterval(poll);
+                                    if (statusData.interrupted) failScanProgress(t('scanProgressInterrupted'));
+                                    else finishScanProgress();
                                     if (typeof scanBtn !== 'undefined') {
                                         scanBtn.innerHTML = `🔄`;
                                         scanBtn.style.animation = '';
@@ -965,9 +1000,13 @@ export function createDOM() {
                         document.body.removeChild(wizard);
                         return; // return early so we don't remove wizard again below
                     } else {
+                        failScanProgress(t('sidebarScanFailed') + data.message);
                         alert(t('sidebarScanFailed') + data.message);
                     }
-                } catch (e) { alert("Error: " + e); }
+                } catch (e) {
+                    failScanProgress(String(e));
+                    alert("Error: " + e);
+                }
 
                 document.body.removeChild(wizard);
             };
@@ -1284,13 +1323,17 @@ export function createDOM() {
                 });
                 const data = await res.json();
                 if (data.status === 'ok') {
+                    updateScanProgress({ scanning: true, phase: 'preparing', recovered: data.recovered });
                     alert(t('sidebarGlobalStarted'));
                     const pollTimer = setInterval(async () => {
                         try {
                             const statusRes = await fetch('/anomalous/global_scan_status');
                             const statusData = await statusRes.json();
+                            updateScanProgress(statusData);
                             if (!statusData.scanning) {
                                 clearInterval(pollTimer);
+                                if (statusData.interrupted) failScanProgress(t('scanProgressInterrupted'));
+                                else finishScanProgress();
                                 globalScanBtn.textContent = t('sidebarScanDone');
                                 setTimeout(() => {
                                     globalScanBtn.textContent = t('sidebarGlobalQuickScanShort');
@@ -1300,10 +1343,12 @@ export function createDOM() {
                         } catch (e) { }
                     }, 3000);
                 } else {
+                    failScanProgress(t('sidebarError') + data.message);
                     alert(t('sidebarError') + data.message);
                     globalScanBtn.disabled = false;
                 }
             } catch (e) {
+                failScanProgress(String(e));
                 globalScanBtn.disabled = false;
             }
         };
@@ -1353,12 +1398,16 @@ export function createDOM() {
                     });
                     const scanData = await scanRes.json();
                     if (scanData.status === 'ok') {
+                        updateScanProgress({ scanning: true, phase: 'preparing', recovered: scanData.recovered });
                         const pollTimer = setInterval(async () => {
                             try {
                                 const statusRes = await fetch('/anomalous/global_scan_status');
                                 const statusData = await statusRes.json();
+                                updateScanProgress(statusData);
                                 if (!statusData.scanning) {
                                     clearInterval(pollTimer);
+                                    if (statusData.interrupted) failScanProgress(t('scanProgressInterrupted'));
+                                    else finishScanProgress();
                                     checkUnscannedBtn.textContent = t('sidebarInfoComplete');
                                     setTimeout(() => {
                                         checkUnscannedBtn.textContent = t('sidebarCheckMissing');
@@ -1368,6 +1417,7 @@ export function createDOM() {
                             } catch (e) { }
                         }, 3000);
                     } else {
+                        failScanProgress(t('sidebarError') + scanData.message);
                         alert(t('sidebarError') + scanData.message);
                         checkUnscannedBtn.disabled = false;
                         checkUnscannedBtn.textContent = t('sidebarCheckMissing');
@@ -1380,6 +1430,7 @@ export function createDOM() {
                     }, 3000);
                 }
             } catch (e) {
+                failScanProgress(String(e));
                 checkUnscannedBtn.disabled = false;
                 checkUnscannedBtn.textContent = t('sidebarCheckMissing');
             }

@@ -38,6 +38,37 @@ SIDECAR_SUFFIXES = (
     *CIVITAI_BACKUP_SUFFIXES,
 )
 
+
+def write_scan_progress(progress_file, phase, total=0, current=0, filename=""):
+    if not progress_file:
+        return
+    temp_file = f"{progress_file}.{os.getpid()}.tmp"
+    try:
+        with open(temp_file, 'w', encoding='utf-8') as f:
+            json.dump({
+                "phase": phase,
+                "total": total,
+                "current": current,
+                "filename": filename,
+            }, f, ensure_ascii=False)
+        os.replace(temp_file, progress_file)
+    except OSError:
+        try:
+            os.remove(temp_file)
+        except OSError:
+            pass
+
+
+def count_scan_files(target_folder, target_files_basenames):
+    total = 0
+    selected = set(target_files_basenames)
+    for _, _, files in os.walk(target_folder):
+        total += sum(
+            1 for filename in files
+            if filename.endswith(".safetensors") and (not selected or filename in selected)
+        )
+    return total
+
 # ==============================================================================
 # CIVITAI API 配置读取
 # 请在插件目录 (Anomalous_Model_Browser) 下新建 config.json 文件：
@@ -225,6 +256,7 @@ def main():
     parser.add_argument("--skip-local-metadata", action="store_true", help="忽略本地已有的.info / .json文件")
     parser.add_argument("--target-files", type=str, default="", help="仅扫描逗号分隔的具体文件(相对路径)")
     parser.add_argument("--folder-type", default="", help="由 ComfyUI 传入的模型目录类型，用于执行安全策略")
+    parser.add_argument("--progress-file", default="", help=argparse.SUPPRESS)
     args = parser.parse_args()
 
     target_folder = args.folder
@@ -301,6 +333,12 @@ def main():
         print("[警告]: 当前处于 Dry-Run (空跑) 模式，不会修改系统中的任何文件！")
         print("==================================================")
 
+    write_scan_progress(args.progress_file, "enumerating")
+    total_files = count_scan_files(target_folder, target_files_basenames)
+    write_scan_progress(args.progress_file, "scanning", total_files)
+    current_file = 0
+    last_progress_write = 0.0
+
     for root, _, files in os.walk(target_folder):
         for filename in files:
             if not filename.endswith(".safetensors"):
@@ -308,6 +346,12 @@ def main():
 
             if target_files_basenames and filename not in target_files_basenames:
                 continue
+
+            current_file += 1
+            now = time.monotonic()
+            if current_file == 1 or current_file == total_files or now - last_progress_write >= 0.2:
+                write_scan_progress(args.progress_file, "scanning", total_files, current_file, filename)
+                last_progress_write = now
 
             file_path = os.path.join(root, filename)
             old_base = os.path.splitext(file_path)[0]
@@ -532,6 +576,7 @@ def main():
                     
     
     # Save scan results
+    write_scan_progress(args.progress_file, "complete", total_files, total_files)
     if not args.dry_run:
         result_path = os.path.join(target_folder, ".scan_result.json")
         try:
