@@ -1,14 +1,17 @@
 #anomalous-trigger-btn {
+    --anomalous-trigger-size: 60px;
+    --anomalous-trigger-font-size: 28px;
+    --anomalous-trigger-pill-padding: 18px;
     position: fixed;
     bottom: 30px;
     right: 30px;
-    width: 60px;
-    height: 60px;
+    width: var(--anomalous-trigger-size);
+    height: var(--anomalous-trigger-size);
     border-radius: 50%;
     background: linear-gradient(135deg, #1e1e1e 0%, #333 100%);
     color: var(--fg-color, #fff);
     border: 2px solid #555;
-    font-size: 28px;
+    font-size: var(--anomalous-trigger-font-size);
     cursor: pointer;
     z-index: 2147483000 !important;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.1);
@@ -19,6 +22,51 @@
     justify-content: center;
     user-select: none;
     transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    gap: 8px;
+    white-space: nowrap;
+}
+
+#anomalous-trigger-btn[data-size="small"] {
+    --anomalous-trigger-size: 44px;
+    --anomalous-trigger-font-size: 20px;
+    --anomalous-trigger-pill-padding: 13px;
+}
+
+#anomalous-trigger-btn[data-size="large"] {
+    --anomalous-trigger-size: 76px;
+    --anomalous-trigger-font-size: 34px;
+    --anomalous-trigger-pill-padding: 22px;
+}
+
+#anomalous-trigger-btn .anomalous-trigger-label {
+    display: none;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+#anomalous-trigger-btn[data-style="pill"] {
+    width: auto;
+    min-width: calc(var(--anomalous-trigger-size) * 1.8);
+    padding: 0 var(--anomalous-trigger-pill-padding);
+    border-radius: 999px;
+}
+
+#anomalous-trigger-btn[data-style="pill"] .anomalous-trigger-label {
+    display: inline;
+}
+
+#anomalous-trigger-btn[data-style="minimal"] {
+    background: color-mix(in srgb, var(--comfy-menu-bg, #222) 84%, transparent);
+    border-width: 1px;
+    border-color: color-mix(in srgb, var(--fg-color, #fff) 28%, transparent);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.32);
+    backdrop-filter: blur(8px);
+}
+
+#anomalous-trigger-btn[data-style="minimal"] .anomalous-trigger-icon {
+    filter: grayscale(1);
+    opacity: 0.82;
 }
 
 #anomalous-trigger-btn:hover {
@@ -37,6 +85,14 @@
 #anomalous-trigger-btn.anomalous-trigger-error {
     border-color: #ff9f43;
     box-shadow: 0 4px 15px rgba(255, 159, 67, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+.anomalous-topbar-entry {
+    display: none !important;
+}
+
+html.anomalous-topbar-entry-enabled .anomalous-topbar-entry {
+    display: inline-flex !important;
 }
 
 #anomalous-modal {

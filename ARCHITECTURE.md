@@ -4,7 +4,7 @@ This document provides a high-level overview of the Anomalous Model Browser plug
 
 Workspace lifecycle note: reopening an already initialized Workspace must restore the visible notebook body and reset the hidden recipe body before refreshing data. Hiding the overlay alone is not enough because the next open reuses the existing DOM tree.
 
-The browser has two entry points backed by one shared `openBrowser()` path: the optional floating trigger and the always-registered ComfyUI command under `Extensions -> Anomalous Model Browser`. ComfyUI's native `Anomalous.ModelBrowser.ShowFloatingTrigger` setting controls only whether the floating trigger is available. Opening the main browser hides the trigger, while closing restores it only when that preference is enabled. The hidden state uses a scoped class with pointer-events disabled; disabling the trigger never destroys the browser instance or removes the native menu recovery path.
+The browser has three entry presentations backed by one shared `openBrowser()` path: the customizable floating trigger, an opt-in ComfyUI action-bar button, and the always-registered command under `Extensions -> Anomalous Model Browser`. Native ComfyUI settings independently control the floating and action-bar presentations; floating size is bounded to small/standard/large and appearance to icon/pill/minimal. The action-bar button uses the host's extension-level `actionBarButtons` contract instead of locating or rewriting another component's DOM. If the action bar is unavailable or unsupported while it is selected as the replacement entry, the floating trigger returns automatically. Opening the main browser hides only the floating trigger, while closing restores it according to the current settings and fallback policy. Disabling an entry never destroys the browser instance or removes the native menu command.
 
 Hidden plugin dialogs must not advertise an active modal state. The model-card settings dialog remains mounted for reuse, but its `aria-modal` value follows the overlay lifecycle: `false` while hidden and `true` only while visibly open. This preserves accessibility semantics without tripping ComfyUI Frontend's global modal guard, which otherwise suppresses command-backed shortcuts such as Queue Prompt, Interrupt, and Escape-to-exit-subgraph. The plugin does not install replacement global keyboard handlers or mutate ComfyUI command bindings.
 
@@ -108,6 +108,7 @@ Anomalous_Model_Browser/
 │   ├── hash_resolver.js         # Frontend auto-fix engine: scans workflows for missing models
 │   ├── styles.css               # Vanilla CSS with scoped classes (.anomalous-*)
 │   └── modules/                 # Extracted UI logic modules
+│       ├── entry_controls.js    # Pure entry preference normalization, fallback policy, and viewport clamping
 │       ├── scan_progress.js     # Shared recoverable scan progress panel and status formatting
 │       ├── model_policies.js    # Frontend category inference plus protected rename/recovery policy
 │       ├── ui_sidebar.js        # Sidebar and folder tree logic

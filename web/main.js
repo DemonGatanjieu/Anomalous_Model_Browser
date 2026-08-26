@@ -7,6 +7,12 @@ import { showRecipes, refreshRecipes, renderRecipeList, handleSaveRecipe } from 
 import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, _openGalleryReplacer, openLoraInsertionPicker, runGlobalDoctorScan } from './modules/ui_doctor.js';
 import { app } from "../../scripts/app.js";
 import { normalizeLocale, resolveLocale, translate } from './modules/locales.js';
+import {
+    clampFloatingTriggerPosition,
+    normalizeFloatingTriggerSize,
+    normalizeFloatingTriggerStyle,
+    shouldShowFloatingTrigger as resolveFloatingTriggerVisibility
+} from './modules/entry_controls.js';
 // ============================================================================
 // TABLE OF CONTENTS (TOC)
 // 1. App Registration & Entry     (Search for "app.registerExtension")
@@ -60,10 +66,18 @@ window.anomalous_browser_lang = currentLang;
 const t = (key, params) => translate(key, params, window.anomalous_browser_lang || currentLang);
 
 const FLOATING_TRIGGER_SETTING_ID = 'Anomalous.ModelBrowser.ShowFloatingTrigger';
+const TOPBAR_TRIGGER_SETTING_ID = 'Anomalous.ModelBrowser.ShowTopbarTrigger';
+const FLOATING_TRIGGER_SIZE_SETTING_ID = 'Anomalous.ModelBrowser.FloatingTriggerSize';
+const FLOATING_TRIGGER_STYLE_SETTING_ID = 'Anomalous.ModelBrowser.FloatingTriggerStyle';
 const OPEN_BROWSER_COMMAND_ID = 'Anomalous.ModelBrowser.Open';
+const RESET_TRIGGER_POSITION_COMMAND_ID = 'Anomalous.ModelBrowser.ResetFloatingTriggerPosition';
 let floatingTriggerEnabled = true;
+let topbarTriggerEnabled = false;
+let floatingTriggerSize = 'medium';
+let floatingTriggerStyle = 'icon';
 let browserInstance = null;
 let triggerButton = null;
+let triggerBoundsUpdater = null;
 
 class AnomalousBrowser {
     constructor() {
@@ -123,7 +137,7 @@ class AnomalousBrowser {
 
     setTriggerVisible(visible) {
         const trigger = this.triggerButton || document.getElementById('anomalous-trigger-btn');
-        trigger?.classList.toggle('anomalous-trigger-hidden', !visible || !floatingTriggerEnabled);
+        trigger?.classList.toggle('anomalous-trigger-hidden', !visible || !shouldShowFloatingTrigger());
     }
     // [EXTRACTED] showNotebooks
 
@@ -497,10 +511,55 @@ AnomalousBrowser.prototype.showEditModal = showEditModal;
 AnomalousBrowser.prototype._openAdvancedModelSelector = _openAdvancedModelSelector;
 AnomalousBrowser.prototype.setWidgetValuePath = setWidgetValuePath;
 
+function isTopbarTriggerAvailable() {
+    if (!topbarTriggerEnabled) return false;
+    const entry = document.querySelector('.anomalous-topbar-entry');
+    return Boolean(entry?.isConnected && entry.getClientRects().length > 0);
+}
+
+function shouldShowFloatingTrigger() {
+    return resolveFloatingTriggerVisibility({
+        floatingEnabled: floatingTriggerEnabled,
+        topbarEnabled: topbarTriggerEnabled,
+        topbarAvailable: isTopbarTriggerAvailable()
+    });
+}
+
 function syncFloatingTriggerVisibility() {
+    document.documentElement.classList.toggle('anomalous-topbar-entry-enabled', topbarTriggerEnabled);
     const browserIsOpen = browserInstance?.modal?.classList.contains('visible') === true;
-    const shouldShow = floatingTriggerEnabled && !browserIsOpen;
+    const shouldShow = shouldShowFloatingTrigger() && !browserIsOpen;
     triggerButton?.classList.toggle('anomalous-trigger-hidden', !shouldShow);
+}
+
+function applyFloatingTriggerPresentation() {
+    if (!triggerButton) return;
+    triggerButton.dataset.size = floatingTriggerSize;
+    triggerButton.dataset.style = floatingTriggerStyle;
+
+    const icon = document.createElement('span');
+    icon.className = 'anomalous-trigger-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.textContent = '📦';
+
+    const label = document.createElement('span');
+    label.className = 'anomalous-trigger-label';
+    label.textContent = t('mainFloatingTriggerLabel');
+    triggerButton.replaceChildren(icon, label);
+    triggerButton.title = t('mainOpenTitle');
+    triggerButton.setAttribute('aria-label', t('mainOpenTitle'));
+    requestAnimationFrame(() => triggerBoundsUpdater?.());
+}
+
+function resetFloatingTriggerPosition() {
+    localStorage.removeItem('anomalous_btn_x');
+    localStorage.removeItem('anomalous_btn_y');
+    if (!triggerButton) return;
+    triggerButton.style.left = '';
+    triggerButton.style.top = '';
+    triggerButton.style.right = '30px';
+    triggerButton.style.bottom = '30px';
+    requestAnimationFrame(() => triggerBoundsUpdater?.());
 }
 
 function ensureBrowser() {
@@ -512,7 +571,7 @@ function ensureBrowser() {
         triggerButton?.classList.remove('anomalous-trigger-error');
         if (triggerButton) {
             triggerButton.title = t('mainOpenTitle');
-            triggerButton.setAttribute('aria-label', 'Anomalous Model Browser');
+            triggerButton.setAttribute('aria-label', t('mainOpenTitle'));
         }
         syncFloatingTriggerVisibility();
         return browserInstance;
@@ -545,6 +604,62 @@ app.registerExtension({
                 floatingTriggerEnabled = value !== false;
                 syncFloatingTriggerVisibility();
             }
+        },
+        {
+            id: TOPBAR_TRIGGER_SETTING_ID,
+            name: t('mainTopbarTriggerSetting'),
+            category: ['Anomalous Model Browser', t('mainInterfaceCategory'), 'topbar-trigger'],
+            tooltip: t('mainTopbarTriggerTooltip'),
+            type: 'boolean',
+            defaultValue: false,
+            onChange(value) {
+                topbarTriggerEnabled = value === true;
+                syncFloatingTriggerVisibility();
+                setTimeout(syncFloatingTriggerVisibility, 250);
+            }
+        },
+        {
+            id: FLOATING_TRIGGER_SIZE_SETTING_ID,
+            name: t('mainFloatingTriggerSizeSetting'),
+            category: ['Anomalous Model Browser', t('mainInterfaceCategory'), 'floating-trigger-size'],
+            tooltip: t('mainFloatingTriggerSizeTooltip'),
+            type: 'combo',
+            defaultValue: 'medium',
+            options: [
+                { value: 'small', text: t('mainFloatingTriggerSizeSmall') },
+                { value: 'medium', text: t('mainFloatingTriggerSizeMedium') },
+                { value: 'large', text: t('mainFloatingTriggerSizeLarge') }
+            ],
+            onChange(value) {
+                floatingTriggerSize = normalizeFloatingTriggerSize(value);
+                applyFloatingTriggerPresentation();
+            }
+        },
+        {
+            id: FLOATING_TRIGGER_STYLE_SETTING_ID,
+            name: t('mainFloatingTriggerStyleSetting'),
+            category: ['Anomalous Model Browser', t('mainInterfaceCategory'), 'floating-trigger-style'],
+            tooltip: t('mainFloatingTriggerStyleTooltip'),
+            type: 'combo',
+            defaultValue: 'icon',
+            options: [
+                { value: 'icon', text: t('mainFloatingTriggerStyleIcon') },
+                { value: 'pill', text: t('mainFloatingTriggerStylePill') },
+                { value: 'minimal', text: t('mainFloatingTriggerStyleMinimal') }
+            ],
+            onChange(value) {
+                floatingTriggerStyle = normalizeFloatingTriggerStyle(value);
+                applyFloatingTriggerPresentation();
+            }
+        }
+    ],
+    actionBarButtons: [
+        {
+            icon: 'pi pi-box',
+            label: t('mainTopbarTriggerLabel'),
+            tooltip: t('mainOpenTitle'),
+            class: 'anomalous-topbar-entry',
+            onClick: openBrowser
         }
     ],
     commands: [
@@ -552,12 +667,17 @@ app.registerExtension({
             id: OPEN_BROWSER_COMMAND_ID,
             label: t('mainOpenTitle'),
             function: openBrowser
+        },
+        {
+            id: RESET_TRIGGER_POSITION_COMMAND_ID,
+            label: t('mainResetFloatingTriggerPosition'),
+            function: resetFloatingTriggerPosition
         }
     ],
     menuCommands: [
         {
             path: ['Extensions', 'Anomalous Model Browser'],
-            commands: [OPEN_BROWSER_COMMAND_ID]
+            commands: [OPEN_BROWSER_COMMAND_ID, RESET_TRIGGER_POSITION_COMMAND_ID]
         }
     ],
     async setup() {
@@ -582,7 +702,6 @@ app.registerExtension({
         }
         const btn = document.createElement('button');
         btn.id = 'anomalous-trigger-btn';
-        btn.textContent = '📦';
         btn.setAttribute('aria-label', 'Anomalous Model Browser');
         triggerButton = btn;
         if (browserInstance) browserInstance.triggerButton = btn;
@@ -600,14 +719,17 @@ app.registerExtension({
         window.addEventListener('mousemove', (e) => {
             if (!isDragging) return;
             e.preventDefault();
-            let newX = initialX + (e.clientX - startX);
-            let newY = initialY + (e.clientY - startY);
-            if (newX < 0) newX = 0;
-            if (newY < 0) newY = 0;
-            if (newX > window.innerWidth - 60) newX = window.innerWidth - 60;
-            if (newY > window.innerHeight - 60) newY = window.innerHeight - 60;
-            btn.style.left = newX + 'px';
-            btn.style.top = newY + 'px';
+            const nextPosition = clampFloatingTriggerPosition({
+                x: initialX + (e.clientX - startX),
+                y: initialY + (e.clientY - startY),
+                width: btn.offsetWidth,
+                height: btn.offsetHeight,
+                viewportWidth: window.innerWidth,
+                viewportHeight: window.innerHeight,
+                margin: 0
+            });
+            btn.style.left = nextPosition.x + 'px';
+            btn.style.top = nextPosition.y + 'px';
             btn.style.right = 'auto'; btn.style.bottom = 'auto';
         });
         window.addEventListener('mouseup', (e) => {
@@ -622,22 +744,26 @@ app.registerExtension({
             }
         });
 
-        const savedX = localStorage.getItem('anomalous_btn_x');
-        const savedY = localStorage.getItem('anomalous_btn_y');
+        let savedX = localStorage.getItem('anomalous_btn_x');
+        let savedY = localStorage.getItem('anomalous_btn_y');
 
         const updateBtnBounds = () => {
-            let numX = parseInt(btn.style.left || savedX);
-            let numY = parseInt(btn.style.top || savedY);
-            if (isNaN(numX)) numX = window.innerWidth - 90;
-            if (isNaN(numY)) numY = window.innerHeight - 90;
-
-            if (numX < 0) numX = 0;
-            if (numY < 0) numY = 0;
-            if (numX > window.innerWidth - 60) numX = window.innerWidth - 60;
-            if (numY > window.innerHeight - 60) numY = window.innerHeight - 60;
-            btn.style.left = numX + 'px';
-            btn.style.top = numY + 'px';
+            savedX = localStorage.getItem('anomalous_btn_x');
+            savedY = localStorage.getItem('anomalous_btn_y');
+            const position = clampFloatingTriggerPosition({
+                x: btn.style.left || savedX,
+                y: btn.style.top || savedY,
+                width: btn.offsetWidth,
+                height: btn.offsetHeight,
+                viewportWidth: window.innerWidth,
+                viewportHeight: window.innerHeight
+            });
+            btn.style.left = position.x + 'px';
+            btn.style.top = position.y + 'px';
+            btn.style.right = 'auto';
+            btn.style.bottom = 'auto';
         };
+        triggerBoundsUpdater = updateBtnBounds;
 
         if (savedX && savedY && savedX !== 'NaN' && savedY !== 'NaN') {
             btn.style.right = 'auto';
@@ -651,16 +777,42 @@ app.registerExtension({
 
         window.addEventListener('resize', () => {
             if (btn.style.left) updateBtnBounds();
+            syncFloatingTriggerVisibility();
         });
 
         document.body.appendChild(btn);
         try {
-            const configuredValue = app.extensionManager?.setting?.get(FLOATING_TRIGGER_SETTING_ID);
-            if (typeof configuredValue === 'boolean') floatingTriggerEnabled = configuredValue;
+            const settings = app.extensionManager?.setting;
+            const configuredFloating = settings?.get(FLOATING_TRIGGER_SETTING_ID);
+            const configuredTopbar = settings?.get(TOPBAR_TRIGGER_SETTING_ID);
+            const configuredSize = settings?.get(FLOATING_TRIGGER_SIZE_SETTING_ID);
+            const configuredStyle = settings?.get(FLOATING_TRIGGER_STYLE_SETTING_ID);
+            if (typeof configuredFloating === 'boolean') floatingTriggerEnabled = configuredFloating;
+            if (typeof configuredTopbar === 'boolean') topbarTriggerEnabled = configuredTopbar;
+            floatingTriggerSize = normalizeFloatingTriggerSize(configuredSize);
+            floatingTriggerStyle = normalizeFloatingTriggerStyle(configuredStyle);
         } catch (error) {
-            console.warn('[Anomalous Model Browser] Unable to read floating trigger preference:', error);
+            console.warn('[Anomalous Model Browser] Unable to read entry preferences:', error);
         }
+        applyFloatingTriggerPresentation();
         syncFloatingTriggerVisibility();
+        const topbarHost = document.getElementById('comfyui-body-top');
+        if (topbarHost) {
+            let topbarSyncFrame = null;
+            const topbarObserver = new MutationObserver(() => {
+                if (topbarSyncFrame !== null) return;
+                topbarSyncFrame = requestAnimationFrame(() => {
+                    topbarSyncFrame = null;
+                    syncFloatingTriggerVisibility();
+                });
+            });
+            topbarObserver.observe(topbarHost, {
+                childList: true,
+                subtree: true
+            });
+        }
+        setTimeout(syncFloatingTriggerVisibility, 250);
+        setTimeout(syncFloatingTriggerVisibility, 1000);
         // Keep the entry point visible even when a panel regression prevents
         // the full browser UI from being constructed.
         ensureBrowser();
