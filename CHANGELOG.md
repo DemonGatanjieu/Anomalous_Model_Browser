@@ -1,9 +1,9 @@
 # 📈 Anomalous Model Browser Changelog
 
-## Unreleased
+## v1.56.1 Beta (Interface Preferences & Scan Reliability) — 2026-08-26
 
 ### ✨ Interface & Access
-- **Customizable Browser Entries (可定制浏览器入口)**: Added one native ComfyUI entry-mode setting with three strictly exclusive choices: floating button, action-bar button beside the run controls, or Extensions menu only. The draggable floating entry keeps small/standard/large sizes plus circular-icon/labeled-pill styles, and its menu command can reset the saved position. Entry selection is authoritative and never changes in response to temporary action-bar DOM redraws. Every entry uses the same browser instance and open path, so no duplicate page or maintenance surface is introduced.
+- **Native Interface Preferences (原生界面偏好)**: Added one native ComfyUI entry-mode setting with three strictly exclusive choices: floating button, action-bar button beside the run controls, or Extensions menu only. Floating size/style controls now appear only when floating mode is selected. A colocated language preference follows ComfyUI by default or applies a plugin-only Chinese/English override, and the existing in-browser language shortcut updates that same native setting. Entry selection remains authoritative during action-bar redraws, and every entry reuses the same browser instance and open path.
 
 ### 🐛 Reliability & Scan Feedback
 - **Interrupted Scan Recovery (异常扫描自动恢复)**: Closing ComfyUI during a folder or global scan no longer leaves the browser permanently locked. Versioned scan ownership records distinguish live workers from stale or legacy markers, clean interrupted state automatically, and allow an immediate retry without reinstalling the extension.

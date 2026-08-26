@@ -1102,10 +1102,7 @@ export function createDOM() {
         const langBtn = document.createElement('button');
         langBtn.className = 'anomalous-lang-btn';
         langBtn.textContent = t(window.anomalous_browser_lang === 'zh' ? 'sidebarSwitchToEnglish' : 'sidebarSwitchToChinese');
-        langBtn.onclick = () => {
-            let newLang = window.anomalous_browser_lang === 'zh' ? 'en' : 'zh';
-            localStorage.setItem('anomalous_lang', newLang);
-            window.anomalous_browser_lang = newLang;
+        const refreshLanguageUi = () => {
             langBtn.textContent = t(window.anomalous_browser_lang === 'zh' ? 'sidebarSwitchToEnglish' : 'sidebarSwitchToChinese');
             updateLangClass();
             modelsBtn.innerHTML = `🏠 <span class="anomalous-btn-text">${t('models')}</span>`;
@@ -1180,6 +1177,20 @@ export function createDOM() {
                 this.refreshNotebooks();
             }
         };
+
+        langBtn.onclick = async () => {
+            const newLang = window.anomalous_browser_lang === 'zh' ? 'en' : 'zh';
+            try {
+                const settings = app.extensionManager?.setting;
+                if (typeof settings?.set !== 'function') throw new Error('Settings API unavailable');
+                await settings.set('Anomalous.ModelBrowser.Language', newLang);
+            } catch (error) {
+                localStorage.setItem('anomalous_lang', newLang);
+                window.anomalous_browser_lang = newLang;
+                refreshLanguageUi();
+            }
+        };
+        window.addEventListener('anomalous-language-change', refreshLanguageUi);
 
         const styleHubBtn = (btn) => {
             btn.style.background = 'transparent';

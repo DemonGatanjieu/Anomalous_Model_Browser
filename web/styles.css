@@ -82,6 +82,11 @@ html.anomalous-topbar-entry-enabled .anomalous-topbar-entry {
     display: inline-flex !important;
 }
 
+html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBrowser.FloatingTriggerSize"],
+html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBrowser.FloatingTriggerStyle"] {
+    display: none !important;
+}
+
 #anomalous-modal {
     position: fixed;
     top: 0;

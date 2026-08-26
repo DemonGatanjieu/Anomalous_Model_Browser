@@ -9,7 +9,7 @@
 
 [![ComfyUI Manager](https://img.shields.io/badge/ComfyUI-Manager-green?style=for-the-badge&logo=comfyui)](https://github.com/ltdrdata/ComfyUI-Manager)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
-[![Changelog](https://img.shields.io/badge/📖_Changelog-v1.56_Beta-blue?style=for-the-badge)](CHANGELOG.md)
+[![Changelog](https://img.shields.io/badge/📖_Changelog-v1.56.1_Beta-blue?style=for-the-badge)](CHANGELOG.md)
 [![Bilibili Video](https://img.shields.io/badge/Bilibili-视频演示-00A1D6?style=for-the-badge&logo=bilibili)](https://www.bilibili.com/video/BV1a1bv68EuA/)
 [![YouTube Video](https://img.shields.io/badge/YouTube-Video_Demo-red?style=for-the-badge&logo=youtube)](https://youtu.be/hAvsj7uiaCw)
 
@@ -49,7 +49,7 @@
    ```
 2. Restart ComfyUI. *(Alternatively, install via **ComfyUI Manager** by searching for `Anomalous Model Browser`)*
 
-Open it with the floating **📦** button or from **Extensions → Anomalous Model Browser** in ComfyUI's top menu. In **ComfyUI Settings → Anomalous Model Browser → Interface**, choose exactly one entry mode: the floating button, a native action-bar button beside the run controls, or Extensions menu only. The floating entry provides small/standard/large sizes and circular-icon/labeled-pill styles. The selected mode remains authoritative during action-bar redraws, while the Extensions command stays registered as the recovery path.
+Open it with the floating **📦** button or from **Extensions → Anomalous Model Browser** in ComfyUI's top menu. In **ComfyUI Settings → Anomalous Model Browser → Interface**, the plugin language follows ComfyUI by default and can be overridden to Chinese or English. Choose exactly one entry mode: the floating button, a native action-bar button beside the run controls, or Extensions menu only. Floating size and style controls appear only in floating mode. The selected mode remains authoritative during action-bar redraws, while the Extensions command stays registered as the recovery path.
 
 <br/>
 
@@ -118,7 +118,7 @@ Open it with the floating **📦** button or from **Extensions → Anomalous Mod
    ```
 2. 重启 ComfyUI 即可使用。（*也可以直接在 **ComfyUI Manager** 搜索 `Anomalous Model Browser` 点击安装*）
 
-可以点击画布上的悬浮 **📦**，或从 ComfyUI 顶部菜单 **扩展 → Anomalous Model Browser** 打开。在 **ComfyUI 设置 → Anomalous Model Browser → 界面** 中，入口模式严格三选一：悬浮入口、运行按钮旁的原生顶部入口，或仅使用扩展菜单。悬浮入口提供小/标准/大尺寸和圆形图标/胶囊文字两种样式。顶部栏重绘不会擅自改变所选模式，扩展菜单命令则始终保留，便于恢复设置。
+可以点击画布上的悬浮 **📦**，或从 ComfyUI 顶部菜单 **扩展 → Anomalous Model Browser** 打开。在 **ComfyUI 设置 → Anomalous Model Browser → 界面** 中，插件语言默认跟随 ComfyUI，也可以单独固定为中文或 English；入口模式严格三选一：悬浮入口、运行按钮旁的原生顶部入口，或仅使用扩展菜单。只有选择悬浮入口时才显示大小和样式选项。顶部栏重绘不会擅自改变所选模式，扩展菜单命令则始终保留，便于恢复设置。
 
 <br/>
 
