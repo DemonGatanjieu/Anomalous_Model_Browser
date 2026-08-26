@@ -708,6 +708,12 @@ app.registerExtension({
             function: resetFloatingTriggerPosition
         }
     ],
+    keybindings: [
+        {
+            combo: { key: 'm', ctrl: true, shift: true },
+            commandId: OPEN_BROWSER_COMMAND_ID
+        }
+    ],
     menuCommands: [
         {
             path: ['Extensions', 'Anomalous Model Browser'],

@@ -1,5 +1,10 @@
 # 📈 Anomalous Model Browser Changelog
 
+## Unreleased
+
+### ✨ Interface & Access
+- **Native Configurable Shortcut (原生可配置快捷键)**: Added `Ctrl + Shift + M` as the default shortcut for opening the browser. It is registered against the existing shared open command, so ComfyUI handles conflict detection, user remapping, removal, reserved-key guidance, and modal guards without a separate global keyboard listener.
+
 ## v1.56.1 Beta (Interface Preferences & Scan Reliability) — 2026-08-26
 
 ### ✨ Interface & Access
