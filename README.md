@@ -49,6 +49,8 @@
    ```
 2. Restart ComfyUI. *(Alternatively, install via **ComfyUI Manager** by searching for `Anomalous Model Browser`)*
 
+Open it with the floating **📦** button or from **Extensions → Anomalous Model Browser** in ComfyUI's top menu. To remove the floating button from the canvas, disable **Show floating entry button** in ComfyUI Settings; the top-menu entry remains available.
+
 <br/>
 
 <details>
@@ -115,6 +117,8 @@
    git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
    ```
 2. 重启 ComfyUI 即可使用。（*也可以直接在 **ComfyUI Manager** 搜索 `Anomalous Model Browser` 点击安装*）
+
+可以点击画布上的悬浮 **📦**，或从 ComfyUI 顶部菜单 **扩展 → Anomalous Model Browser** 打开。若不想显示悬浮按钮，请在 ComfyUI 设置中关闭 **显示悬浮入口按钮**；顶部菜单入口仍会保留。
 
 <br/>
 

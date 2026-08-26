@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### ✨ Interface & Access
+- **Optional Floating Entry (可隐藏悬浮入口)**: Added a native ComfyUI setting for hiding the floating package button while keeping the existing browser fully available from `Extensions -> Anomalous Model Browser`. Both entry points use the same browser instance and open path, so this adds no duplicate page or maintenance surface.
+
 ### 🐛 Reliability & Scan Feedback
 - **Interrupted Scan Recovery (异常扫描自动恢复)**: Closing ComfyUI during a folder or global scan no longer leaves the browser permanently locked. Versioned scan ownership records distinguish live workers from stale or legacy markers, clean interrupted state automatically, and allow an immediate retry without reinstalling the extension.
 - **Real Scan Progress (真实扫描进度)**: Folder, custom-selection, and global scans now show a non-blocking localized progress panel backed by the scanner's actual folder/model counts and current filename. Reopening the browser reconnects to the running task through the existing status polling contract.

@@ -4,7 +4,7 @@ This document provides a high-level overview of the Anomalous Model Browser plug
 
 Workspace lifecycle note: reopening an already initialized Workspace must restore the visible notebook body and reset the hidden recipe body before refreshing data. Hiding the overlay alone is not enough because the next open reuses the existing DOM tree.
 
-The floating trigger follows the browser modal lifecycle: opening the main browser hides the trigger, while every normal close path restores it. The hidden state uses a scoped class with pointer-events disabled; initialization errors keep the trigger available as the recovery entry point.
+The browser has two entry points backed by one shared `openBrowser()` path: the optional floating trigger and the always-registered ComfyUI command under `Extensions -> Anomalous Model Browser`. ComfyUI's native `Anomalous.ModelBrowser.ShowFloatingTrigger` setting controls only whether the floating trigger is available. Opening the main browser hides the trigger, while closing restores it only when that preference is enabled. The hidden state uses a scoped class with pointer-events disabled; disabling the trigger never destroys the browser instance or removes the native menu recovery path.
 
 Hidden plugin dialogs must not advertise an active modal state. The model-card settings dialog remains mounted for reuse, but its `aria-modal` value follows the overlay lifecycle: `false` while hidden and `true` only while visibly open. This preserves accessibility semantics without tripping ComfyUI Frontend's global modal guard, which otherwise suppresses command-backed shortcuts such as Queue Prompt, Interrupt, and Escape-to-exit-subgraph. The plugin does not install replacement global keyboard handlers or mutate ComfyUI command bindings.
 
@@ -56,7 +56,7 @@ These topological `role` properties are baked into the recipe's `metadata.nodes`
 
 ## 1. Project Philosophy (设计理念)
 * **Zero Frameworks**: No React, Vue, or build tools. Everything is Vanilla JS and CSS for maximum compatibility, minimum overhead, and zero compilation steps.
-* **Non-Intrusive Integration**: Operates as a floating Gemini-style popover (`#anomalous-container`) mounted via ComfyUI's standard UI extension system. It avoids altering the native ComfyUI canvas except when explicit interaction is required. The floating trigger is mounted before browser panels are initialized and retries initialization on click, so a panel regression or missing optional browser API cannot hide the plugin entry point.
+* **Non-Intrusive Integration**: Operates as a Gemini-style popover (`#anomalous-container`) mounted via ComfyUI's standard UI extension system. It avoids altering the native ComfyUI canvas except when explicit interaction is required. The floating trigger remains enabled by default but can be hidden through ComfyUI's native settings; the native Extensions menu command remains available and opens the same browser instance. Both entry points share initialization and retry behavior rather than maintaining separate interfaces.
 * **Strict DOM Obliteration**: Rather than caching complex DOM structures (like `display: none` for large grids), the UI strictly employs `innerHTML = ''` when navigating between folders. This enforces immediate Garbage Collection, crucial for performance when users have thousands of models.
 * **Offline-First Resilience**: Model metadata is parsed from local `.info` and `.civitai.info` files or extracted directly from `.safetensors` headers via Python `struct`. API calls to Civitai are explicit, user-initiated actions.
 

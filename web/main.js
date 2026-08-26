@@ -59,6 +59,12 @@ let currentLang = resolveLocale(localStorage.getItem('anomalous_lang') || defaul
 window.anomalous_browser_lang = currentLang;
 const t = (key, params) => translate(key, params, window.anomalous_browser_lang || currentLang);
 
+const FLOATING_TRIGGER_SETTING_ID = 'Anomalous.ModelBrowser.ShowFloatingTrigger';
+const OPEN_BROWSER_COMMAND_ID = 'Anomalous.ModelBrowser.Open';
+let floatingTriggerEnabled = true;
+let browserInstance = null;
+let triggerButton = null;
+
 class AnomalousBrowser {
     constructor() {
         this.modal = null;
@@ -117,7 +123,7 @@ class AnomalousBrowser {
 
     setTriggerVisible(visible) {
         const trigger = this.triggerButton || document.getElementById('anomalous-trigger-btn');
-        trigger?.classList.toggle('anomalous-trigger-hidden', !visible);
+        trigger?.classList.toggle('anomalous-trigger-hidden', !visible || !floatingTriggerEnabled);
     }
     // [EXTRACTED] showNotebooks
 
@@ -491,8 +497,69 @@ AnomalousBrowser.prototype.showEditModal = showEditModal;
 AnomalousBrowser.prototype._openAdvancedModelSelector = _openAdvancedModelSelector;
 AnomalousBrowser.prototype.setWidgetValuePath = setWidgetValuePath;
 
+function syncFloatingTriggerVisibility() {
+    const browserIsOpen = browserInstance?.modal?.classList.contains('visible') === true;
+    const shouldShow = floatingTriggerEnabled && !browserIsOpen;
+    triggerButton?.classList.toggle('anomalous-trigger-hidden', !shouldShow);
+}
+
+function ensureBrowser() {
+    if (browserInstance) return browserInstance;
+    try {
+        browserInstance = new AnomalousBrowser();
+        browserInstance.triggerButton = triggerButton;
+        window.anomalousBrowserInstance = browserInstance;
+        triggerButton?.classList.remove('anomalous-trigger-error');
+        if (triggerButton) {
+            triggerButton.title = t('mainOpenTitle');
+            triggerButton.setAttribute('aria-label', 'Anomalous Model Browser');
+        }
+        syncFloatingTriggerVisibility();
+        return browserInstance;
+    } catch (error) {
+        console.error('[Anomalous Model Browser] UI initialization failed:', error);
+        triggerButton?.classList.add('anomalous-trigger-error');
+        if (triggerButton) {
+            triggerButton.title = currentLang === 'zh' ? t('mainRetryInit') : t('mainRetryInitEn');
+            triggerButton.setAttribute('aria-label', triggerButton.title);
+        }
+        return null;
+    }
+}
+
+function openBrowser() {
+    ensureBrowser()?.show();
+}
+
 app.registerExtension({
     name: 'Anomalous.ModelBrowser',
+    settings: [
+        {
+            id: FLOATING_TRIGGER_SETTING_ID,
+            name: t('mainFloatingTriggerSetting'),
+            category: ['Anomalous Model Browser', t('mainInterfaceCategory'), 'floating-trigger'],
+            tooltip: t('mainFloatingTriggerTooltip'),
+            type: 'boolean',
+            defaultValue: true,
+            onChange(value) {
+                floatingTriggerEnabled = value !== false;
+                syncFloatingTriggerVisibility();
+            }
+        }
+    ],
+    commands: [
+        {
+            id: OPEN_BROWSER_COMMAND_ID,
+            label: t('mainOpenTitle'),
+            function: openBrowser
+        }
+    ],
+    menuCommands: [
+        {
+            path: ['Extensions', 'Anomalous Model Browser'],
+            commands: [OPEN_BROWSER_COMMAND_ID]
+        }
+    ],
     async setup() {
         const cssUrl = '/extensions/Anomalous_Model_Browser/styles.css?v=' + Date.now();
         if (!document.querySelector(`link[href^="/extensions/Anomalous_Model_Browser/styles.css"]`)) {
@@ -513,29 +580,12 @@ app.registerExtension({
                 }
             } catch (e) { }
         }
-
-        let browser = null;
         const btn = document.createElement('button');
         btn.id = 'anomalous-trigger-btn';
         btn.textContent = '📦';
         btn.setAttribute('aria-label', 'Anomalous Model Browser');
-
-        const ensureBrowser = () => {
-            if (browser) return browser;
-            try {
-                browser = new AnomalousBrowser();
-                browser.triggerButton = btn;
-                window.anomalousBrowserInstance = browser;
-                btn.classList.remove('anomalous-trigger-error');
-                return browser;
-            } catch (error) {
-                console.error('[Anomalous Model Browser] UI initialization failed:', error);
-                btn.classList.add('anomalous-trigger-error');
-                btn.title = currentLang === 'zh' ? t('mainRetryInit') : t('mainRetryInitEn');
-                btn.setAttribute('aria-label', btn.title);
-                return null;
-            }
-        };
+        triggerButton = btn;
+        if (browserInstance) browserInstance.triggerButton = btn;
         btn.title = t('mainOpenTitle');
         let isDragging = false;
         let startX, startY, initialX, initialY;
@@ -567,7 +617,7 @@ app.registerExtension({
                 localStorage.setItem('anomalous_btn_x', btn.style.left);
                 localStorage.setItem('anomalous_btn_y', btn.style.top);
                 if (Math.abs(e.clientX - startX) < 5 && Math.abs(e.clientY - startY) < 5) {
-                    ensureBrowser()?.show();
+                    openBrowser();
                 }
             }
         });
@@ -604,6 +654,13 @@ app.registerExtension({
         });
 
         document.body.appendChild(btn);
+        try {
+            const configuredValue = app.extensionManager?.setting?.get(FLOATING_TRIGGER_SETTING_ID);
+            if (typeof configuredValue === 'boolean') floatingTriggerEnabled = configuredValue;
+        } catch (error) {
+            console.warn('[Anomalous Model Browser] Unable to read floating trigger preference:', error);
+        }
+        syncFloatingTriggerVisibility();
         // Keep the entry point visible even when a panel regression prevents
         // the full browser UI from being constructed.
         ensureBrowser();
