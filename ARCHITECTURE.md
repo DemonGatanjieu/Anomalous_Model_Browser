@@ -4,7 +4,7 @@ This document provides a high-level overview of the Anomalous Model Browser plug
 
 Workspace lifecycle note: reopening an already initialized Workspace must restore the visible notebook body and reset the hidden recipe body before refreshing data. Hiding the overlay alone is not enough because the next open reuses the existing DOM tree.
 
-The browser has three entry presentations backed by one shared `openBrowser()` path: the customizable floating trigger, an opt-in ComfyUI action-bar button, and the always-registered command under `Extensions -> Anomalous Model Browser`. Native ComfyUI settings independently control the floating and action-bar presentations; floating size is bounded to small/standard/large and appearance to icon/pill/minimal. The action-bar button uses the host's extension-level `actionBarButtons` contract instead of locating or rewriting another component's DOM. If the action bar is unavailable or unsupported while it is selected as the replacement entry, the floating trigger returns automatically. Opening the main browser hides only the floating trigger, while closing restores it according to the current settings and fallback policy. Disabling an entry never destroys the browser instance or removes the native menu command.
+The browser has three entry modes backed by one shared `openBrowser()` path: the customizable floating trigger, a ComfyUI action-bar button, or the command under `Extensions -> Anomalous Model Browser` alone. One native combo setting makes these presentations strictly exclusive; temporary host redraws must never override the saved mode or reveal a second entry. Floating size is bounded to small/standard/large and appearance to icon/pill. The action-bar button uses the host's extension-level `actionBarButtons` contract instead of locating or rewriting another component's DOM. Opening the main browser hides only the floating trigger, while closing restores it only in floating mode. The Extensions command remains registered in every mode as a recovery path, and all modes reuse the same browser instance.
 
 Hidden plugin dialogs must not advertise an active modal state. The model-card settings dialog remains mounted for reuse, but its `aria-modal` value follows the overlay lifecycle: `false` while hidden and `true` only while visibly open. This preserves accessibility semantics without tripping ComfyUI Frontend's global modal guard, which otherwise suppresses command-backed shortcuts such as Queue Prompt, Interrupt, and Escape-to-exit-subgraph. The plugin does not install replacement global keyboard handlers or mutate ComfyUI command bindings.
 
@@ -56,7 +56,7 @@ These topological `role` properties are baked into the recipe's `metadata.nodes`
 
 ## 1. Project Philosophy (设计理念)
 * **Zero Frameworks**: No React, Vue, or build tools. Everything is Vanilla JS and CSS for maximum compatibility, minimum overhead, and zero compilation steps.
-* **Non-Intrusive Integration**: Operates as a Gemini-style popover (`#anomalous-container`) mounted via ComfyUI's standard UI extension system. It avoids altering the native ComfyUI canvas except when explicit interaction is required. The floating trigger remains enabled by default but can be hidden through ComfyUI's native settings; the native Extensions menu command remains available and opens the same browser instance. Both entry points share initialization and retry behavior rather than maintaining separate interfaces.
+* **Non-Intrusive Integration**: Operates as a Gemini-style popover (`#anomalous-container`) mounted via ComfyUI's standard UI extension system. It avoids altering the native ComfyUI canvas except when explicit interaction is required. The floating trigger remains the default, while one native setting can replace it with the ComfyUI action-bar entry or leave only the Extensions menu command. Entry modes are authoritative and mutually exclusive; all entry paths share initialization and retry behavior rather than maintaining separate interfaces.
 * **Strict DOM Obliteration**: Rather than caching complex DOM structures (like `display: none` for large grids), the UI strictly employs `innerHTML = ''` when navigating between folders. This enforces immediate Garbage Collection, crucial for performance when users have thousands of models.
 * **Offline-First Resilience**: Model metadata is parsed from local `.info` and `.civitai.info` files or extracted directly from `.safetensors` headers via Python `struct`. API calls to Civitai are explicit, user-initiated actions.
 
@@ -108,7 +108,7 @@ Anomalous_Model_Browser/
 │   ├── hash_resolver.js         # Frontend auto-fix engine: scans workflows for missing models
 │   ├── styles.css               # Vanilla CSS with scoped classes (.anomalous-*)
 │   └── modules/                 # Extracted UI logic modules
-│       ├── entry_controls.js    # Pure entry preference normalization, fallback policy, and viewport clamping
+│       ├── entry_controls.js    # Pure entry-mode/style normalization and viewport clamping
 │       ├── scan_progress.js     # Shared recoverable scan progress panel and status formatting
 │       ├── model_policies.js    # Frontend category inference plus protected rename/recovery policy
 │       ├── ui_sidebar.js        # Sidebar and folder tree logic

@@ -9,9 +9,9 @@ import { app } from "../../scripts/app.js";
 import { normalizeLocale, resolveLocale, translate } from './modules/locales.js';
 import {
     clampFloatingTriggerPosition,
+    normalizeEntryMode,
     normalizeFloatingTriggerSize,
-    normalizeFloatingTriggerStyle,
-    shouldShowFloatingTrigger as resolveFloatingTriggerVisibility
+    normalizeFloatingTriggerStyle
 } from './modules/entry_controls.js';
 // ============================================================================
 // TABLE OF CONTENTS (TOC)
@@ -65,14 +65,12 @@ let currentLang = resolveLocale(localStorage.getItem('anomalous_lang') || defaul
 window.anomalous_browser_lang = currentLang;
 const t = (key, params) => translate(key, params, window.anomalous_browser_lang || currentLang);
 
-const FLOATING_TRIGGER_SETTING_ID = 'Anomalous.ModelBrowser.ShowFloatingTrigger';
-const TOPBAR_TRIGGER_SETTING_ID = 'Anomalous.ModelBrowser.ShowTopbarTrigger';
+const ENTRY_MODE_SETTING_ID = 'Anomalous.ModelBrowser.EntryMode';
 const FLOATING_TRIGGER_SIZE_SETTING_ID = 'Anomalous.ModelBrowser.FloatingTriggerSize';
 const FLOATING_TRIGGER_STYLE_SETTING_ID = 'Anomalous.ModelBrowser.FloatingTriggerStyle';
 const OPEN_BROWSER_COMMAND_ID = 'Anomalous.ModelBrowser.Open';
 const RESET_TRIGGER_POSITION_COMMAND_ID = 'Anomalous.ModelBrowser.ResetFloatingTriggerPosition';
-let floatingTriggerEnabled = true;
-let topbarTriggerEnabled = false;
+let entryMode = 'floating';
 let floatingTriggerSize = 'medium';
 let floatingTriggerStyle = 'icon';
 let browserInstance = null;
@@ -137,7 +135,7 @@ class AnomalousBrowser {
 
     setTriggerVisible(visible) {
         const trigger = this.triggerButton || document.getElementById('anomalous-trigger-btn');
-        trigger?.classList.toggle('anomalous-trigger-hidden', !visible || !shouldShowFloatingTrigger());
+        trigger?.classList.toggle('anomalous-trigger-hidden', !visible || entryMode !== 'floating');
     }
     // [EXTRACTED] showNotebooks
 
@@ -511,24 +509,10 @@ AnomalousBrowser.prototype.showEditModal = showEditModal;
 AnomalousBrowser.prototype._openAdvancedModelSelector = _openAdvancedModelSelector;
 AnomalousBrowser.prototype.setWidgetValuePath = setWidgetValuePath;
 
-function isTopbarTriggerAvailable() {
-    if (!topbarTriggerEnabled) return false;
-    const entry = document.querySelector('.anomalous-topbar-entry');
-    return Boolean(entry?.isConnected && entry.getClientRects().length > 0);
-}
-
-function shouldShowFloatingTrigger() {
-    return resolveFloatingTriggerVisibility({
-        floatingEnabled: floatingTriggerEnabled,
-        topbarEnabled: topbarTriggerEnabled,
-        topbarAvailable: isTopbarTriggerAvailable()
-    });
-}
-
 function syncFloatingTriggerVisibility() {
-    document.documentElement.classList.toggle('anomalous-topbar-entry-enabled', topbarTriggerEnabled);
+    document.documentElement.classList.toggle('anomalous-topbar-entry-enabled', entryMode === 'topbar');
     const browserIsOpen = browserInstance?.modal?.classList.contains('visible') === true;
-    const shouldShow = shouldShowFloatingTrigger() && !browserIsOpen;
+    const shouldShow = entryMode === 'floating' && !browserIsOpen;
     triggerButton?.classList.toggle('anomalous-trigger-hidden', !shouldShow);
 }
 
@@ -594,28 +578,20 @@ app.registerExtension({
     name: 'Anomalous.ModelBrowser',
     settings: [
         {
-            id: FLOATING_TRIGGER_SETTING_ID,
-            name: t('mainFloatingTriggerSetting'),
-            category: ['Anomalous Model Browser', t('mainInterfaceCategory'), 'floating-trigger'],
-            tooltip: t('mainFloatingTriggerTooltip'),
-            type: 'boolean',
-            defaultValue: true,
+            id: ENTRY_MODE_SETTING_ID,
+            name: t('mainEntryModeSetting'),
+            category: ['Anomalous Model Browser', t('mainInterfaceCategory'), 'entry-mode'],
+            tooltip: t('mainEntryModeTooltip'),
+            type: 'combo',
+            defaultValue: 'floating',
+            options: [
+                { value: 'floating', text: t('mainEntryModeFloating') },
+                { value: 'topbar', text: t('mainEntryModeTopbar') },
+                { value: 'menu', text: t('mainEntryModeMenu') }
+            ],
             onChange(value) {
-                floatingTriggerEnabled = value !== false;
+                entryMode = normalizeEntryMode(value);
                 syncFloatingTriggerVisibility();
-            }
-        },
-        {
-            id: TOPBAR_TRIGGER_SETTING_ID,
-            name: t('mainTopbarTriggerSetting'),
-            category: ['Anomalous Model Browser', t('mainInterfaceCategory'), 'topbar-trigger'],
-            tooltip: t('mainTopbarTriggerTooltip'),
-            type: 'boolean',
-            defaultValue: false,
-            onChange(value) {
-                topbarTriggerEnabled = value === true;
-                syncFloatingTriggerVisibility();
-                setTimeout(syncFloatingTriggerVisibility, 250);
             }
         },
         {
@@ -644,8 +620,7 @@ app.registerExtension({
             defaultValue: 'icon',
             options: [
                 { value: 'icon', text: t('mainFloatingTriggerStyleIcon') },
-                { value: 'pill', text: t('mainFloatingTriggerStylePill') },
-                { value: 'minimal', text: t('mainFloatingTriggerStyleMinimal') }
+                { value: 'pill', text: t('mainFloatingTriggerStylePill') }
             ],
             onChange(value) {
                 floatingTriggerStyle = normalizeFloatingTriggerStyle(value);
@@ -783,12 +758,10 @@ app.registerExtension({
         document.body.appendChild(btn);
         try {
             const settings = app.extensionManager?.setting;
-            const configuredFloating = settings?.get(FLOATING_TRIGGER_SETTING_ID);
-            const configuredTopbar = settings?.get(TOPBAR_TRIGGER_SETTING_ID);
+            const configuredEntryMode = settings?.get(ENTRY_MODE_SETTING_ID);
             const configuredSize = settings?.get(FLOATING_TRIGGER_SIZE_SETTING_ID);
             const configuredStyle = settings?.get(FLOATING_TRIGGER_STYLE_SETTING_ID);
-            if (typeof configuredFloating === 'boolean') floatingTriggerEnabled = configuredFloating;
-            if (typeof configuredTopbar === 'boolean') topbarTriggerEnabled = configuredTopbar;
+            entryMode = normalizeEntryMode(configuredEntryMode);
             floatingTriggerSize = normalizeFloatingTriggerSize(configuredSize);
             floatingTriggerStyle = normalizeFloatingTriggerStyle(configuredStyle);
         } catch (error) {
@@ -796,25 +769,7 @@ app.registerExtension({
         }
         applyFloatingTriggerPresentation();
         syncFloatingTriggerVisibility();
-        const topbarHost = document.getElementById('comfyui-body-top');
-        if (topbarHost) {
-            let topbarSyncFrame = null;
-            const topbarObserver = new MutationObserver(() => {
-                if (topbarSyncFrame !== null) return;
-                topbarSyncFrame = requestAnimationFrame(() => {
-                    topbarSyncFrame = null;
-                    syncFloatingTriggerVisibility();
-                });
-            });
-            topbarObserver.observe(topbarHost, {
-                childList: true,
-                subtree: true
-            });
-        }
-        setTimeout(syncFloatingTriggerVisibility, 250);
-        setTimeout(syncFloatingTriggerVisibility, 1000);
-        // Keep the entry point visible even when a panel regression prevents
-        // the full browser UI from being constructed.
+        // Initialize the shared browser instance once for every entry mode.
         ensureBrowser();
 
         // Pre-create a lightweight, translucent, and aesthetic drag ghost image for huge Hires Fix images

@@ -49,7 +49,7 @@
    ```
 2. Restart ComfyUI. *(Alternatively, install via **ComfyUI Manager** by searching for `Anomalous Model Browser`)*
 
-Open it with the floating **📦** button or from **Extensions → Anomalous Model Browser** in ComfyUI's top menu. The **Anomalous Model Browser → Interface** section in ComfyUI Settings provides small/standard/large floating sizes, circular/labeled-pill/minimal styles, and an optional experimental action-bar button beside the run controls. If that action bar is unavailable, the floating entry returns automatically; the Extensions command always remains registered.
+Open it with the floating **📦** button or from **Extensions → Anomalous Model Browser** in ComfyUI's top menu. In **ComfyUI Settings → Anomalous Model Browser → Interface**, choose exactly one entry mode: the floating button, a native action-bar button beside the run controls, or Extensions menu only. The floating entry provides small/standard/large sizes and circular-icon/labeled-pill styles. The selected mode remains authoritative during action-bar redraws, while the Extensions command stays registered as the recovery path.
 
 <br/>
 
@@ -118,7 +118,7 @@ Open it with the floating **📦** button or from **Extensions → Anomalous Mod
    ```
 2. 重启 ComfyUI 即可使用。（*也可以直接在 **ComfyUI Manager** 搜索 `Anomalous Model Browser` 点击安装*）
 
-可以点击画布上的悬浮 **📦**，或从 ComfyUI 顶部菜单 **扩展 → Anomalous Model Browser** 打开。在 ComfyUI 设置的 **Anomalous Model Browser → 界面** 中，可以选择悬浮入口的小/标准/大尺寸、圆形/胶囊/极简样式，也可以启用运行按钮旁的实验性顶部动作栏入口。顶部动作栏不可用时悬浮入口会自动恢复，扩展菜单命令则始终保留。
+可以点击画布上的悬浮 **📦**，或从 ComfyUI 顶部菜单 **扩展 → Anomalous Model Browser** 打开。在 **ComfyUI 设置 → Anomalous Model Browser → 界面** 中，入口模式严格三选一：悬浮入口、运行按钮旁的原生顶部入口，或仅使用扩展菜单。悬浮入口提供小/标准/大尺寸和圆形图标/胶囊文字两种样式。顶部栏重绘不会擅自改变所选模式，扩展菜单命令则始终保留，便于恢复设置。
 
 <br/>
 

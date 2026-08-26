@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### ✨ Interface & Access
-- **Customizable Browser Entries (可定制浏览器入口)**: Added native ComfyUI settings for small/standard/large floating sizes, circular/labeled-pill/minimal floating styles, and an opt-in action-bar button beside ComfyUI's run controls. The floating button remains draggable, its menu command can reset the saved position, and it automatically returns when an enabled action-bar entry is unavailable. Floating, action-bar, and `Extensions -> Anomalous Model Browser` entries all use the same browser instance and open path, so no duplicate page or maintenance surface is introduced.
+- **Customizable Browser Entries (可定制浏览器入口)**: Added one native ComfyUI entry-mode setting with three strictly exclusive choices: floating button, action-bar button beside the run controls, or Extensions menu only. The draggable floating entry keeps small/standard/large sizes plus circular-icon/labeled-pill styles, and its menu command can reset the saved position. Entry selection is authoritative and never changes in response to temporary action-bar DOM redraws. Every entry uses the same browser instance and open path, so no duplicate page or maintenance surface is introduced.
 
 ### 🐛 Reliability & Scan Feedback
 - **Interrupted Scan Recovery (异常扫描自动恢复)**: Closing ComfyUI during a folder or global scan no longer leaves the browser permanently locked. Versioned scan ownership records distinguish live workers from stale or legacy markers, clean interrupted state automatically, and allow an immediate retry without reinstalling the extension.

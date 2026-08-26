@@ -1,5 +1,6 @@
 export const FLOATING_TRIGGER_SIZES = new Set(['small', 'medium', 'large']);
-export const FLOATING_TRIGGER_STYLES = new Set(['icon', 'pill', 'minimal']);
+export const FLOATING_TRIGGER_STYLES = new Set(['icon', 'pill']);
+export const ENTRY_MODES = new Set(['floating', 'topbar', 'menu']);
 
 export function normalizeFloatingTriggerSize(value) {
     return FLOATING_TRIGGER_SIZES.has(value) ? value : 'medium';
@@ -9,8 +10,8 @@ export function normalizeFloatingTriggerStyle(value) {
     return FLOATING_TRIGGER_STYLES.has(value) ? value : 'icon';
 }
 
-export function shouldShowFloatingTrigger({ floatingEnabled, topbarEnabled, topbarAvailable }) {
-    return Boolean(floatingEnabled || (topbarEnabled && !topbarAvailable));
+export function normalizeEntryMode(value) {
+    return ENTRY_MODES.has(value) ? value : 'floating';
 }
 
 export function clampFloatingTriggerPosition({
