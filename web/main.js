@@ -13,6 +13,10 @@ import {
     normalizeFloatingTriggerSize,
     normalizeFloatingTriggerStyle
 } from './modules/entry_controls.js';
+import {
+    createShortcutSettingControl,
+    DEFAULT_BROWSER_SHORTCUT
+} from './modules/shortcut_controls.js';
 // ============================================================================
 // TABLE OF CONTENTS (TOC)
 // 1. App Registration & Entry     (Search for "app.registerExtension")
@@ -67,6 +71,7 @@ const t = (key, params) => translate(key, params, window.anomalous_browser_lang 
 
 const LANGUAGE_SETTING_ID = 'Anomalous.ModelBrowser.Language';
 const ENTRY_MODE_SETTING_ID = 'Anomalous.ModelBrowser.EntryMode';
+const SHORTCUT_SETTING_ID = 'Anomalous.ModelBrowser.Shortcut';
 const FLOATING_TRIGGER_SIZE_SETTING_ID = 'Anomalous.ModelBrowser.FloatingTriggerSize';
 const FLOATING_TRIGGER_STYLE_SETTING_ID = 'Anomalous.ModelBrowser.FloatingTriggerStyle';
 const OPEN_BROWSER_COMMAND_ID = 'Anomalous.ModelBrowser.Open';
@@ -654,6 +659,19 @@ app.registerExtension({
             }
         },
         {
+            id: SHORTCUT_SETTING_ID,
+            name: t('mainShortcutSetting'),
+            category: ['Anomalous Model Browser', t('mainInterfaceCategory'), 'shortcut'],
+            tooltip: t('mainShortcutTooltip'),
+            type: () => createShortcutSettingControl({
+                app,
+                commandId: OPEN_BROWSER_COMMAND_ID,
+                translate: t
+            }),
+            defaultValue: '',
+            telemetry: { trackChanges: false }
+        },
+        {
             id: ENTRY_MODE_SETTING_ID,
             name: t('mainEntryModeSetting'),
             category: ['Anomalous Model Browser', t('mainInterfaceCategory'), 'entry-mode'],
@@ -710,7 +728,7 @@ app.registerExtension({
     ],
     keybindings: [
         {
-            combo: { key: 'm', ctrl: true, shift: true },
+            combo: DEFAULT_BROWSER_SHORTCUT,
             commandId: OPEN_BROWSER_COMMAND_ID
         }
     ],

@@ -87,6 +87,43 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     display: none !important;
 }
 
+.anomalous-shortcut-setting {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.anomalous-shortcut-current {
+    min-width: 8.5rem;
+    padding: 0.38rem 0.65rem;
+    border: 1px solid var(--border-default, #4b5563);
+    border-radius: 0.4rem;
+    background: var(--comfy-input-bg, #101113);
+    color: var(--fg-color, #f3f4f6);
+    font: 600 0.78rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.anomalous-shortcut-customize {
+    padding: 0.42rem 0.72rem;
+    border: 1px solid var(--border-default, #4b5563);
+    border-radius: 0.4rem;
+    background: var(--comfy-input-bg, #24262b);
+    color: var(--fg-color, #f3f4f6);
+    cursor: pointer;
+}
+
+.anomalous-shortcut-customize:hover:not(:disabled) {
+    border-color: var(--p-primary-color, #60a5fa);
+}
+
+.anomalous-shortcut-customize:disabled {
+    cursor: wait;
+    opacity: 0.6;
+}
+
 #anomalous-modal {
     position: fixed;
     top: 0;
