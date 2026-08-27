@@ -56,7 +56,11 @@ api/notebooks/
 # AI Dev Scripts & Temporary text dumps
 scripts/
 doctor_code.txt
-docs/
+docs/*
+!docs/architecture/
+!docs/architecture/*.md
+!docs/decisions/
+!docs/decisions/*.md
 AI_SYSTEM_TEMPLATE.md
 
 # AI Agents Directory
