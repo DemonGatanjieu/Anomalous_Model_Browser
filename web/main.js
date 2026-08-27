@@ -99,6 +99,71 @@ function resolveComfyLanguage() {
     }
 }
 
+function getInterfaceSettingTranslations() {
+    const category = t('mainInterfaceCategory');
+    return {
+        [FLOATING_TRIGGER_STYLE_SETTING_ID]: {
+            name: t('mainFloatingTriggerStyleSetting'),
+            category: ['Anomalous Model Browser', category, 'floating-trigger-style'],
+            tooltip: t('mainFloatingTriggerStyleTooltip'),
+            options: [
+                { value: 'icon', text: t('mainFloatingTriggerStyleIcon') },
+                { value: 'pill', text: t('mainFloatingTriggerStylePill') }
+            ]
+        },
+        [FLOATING_TRIGGER_SIZE_SETTING_ID]: {
+            name: t('mainFloatingTriggerSizeSetting'),
+            category: ['Anomalous Model Browser', category, 'floating-trigger-size'],
+            tooltip: t('mainFloatingTriggerSizeTooltip'),
+            options: [
+                { value: 'small', text: t('mainFloatingTriggerSizeSmall') },
+                { value: 'medium', text: t('mainFloatingTriggerSizeMedium') },
+                { value: 'large', text: t('mainFloatingTriggerSizeLarge') }
+            ]
+        },
+        [SHORTCUT_SETTING_ID]: {
+            name: t('mainShortcutSetting'),
+            category: ['Anomalous Model Browser', category, 'shortcut'],
+            tooltip: t('mainShortcutTooltip')
+        },
+        [ENTRY_MODE_SETTING_ID]: {
+            name: t('mainEntryModeSetting'),
+            category: ['Anomalous Model Browser', category, 'entry-mode'],
+            tooltip: t('mainEntryModeTooltip'),
+            options: [
+                { value: 'floating', text: t('mainEntryModeFloating') },
+                { value: 'topbar', text: t('mainEntryModeTopbar') },
+                { value: 'menu', text: t('mainEntryModeMenu') }
+            ]
+        },
+        [LANGUAGE_SETTING_ID]: {
+            name: t('mainLanguageSetting'),
+            category: ['Anomalous Model Browser', category, 'language'],
+            tooltip: t('mainLanguageTooltip'),
+            options: [
+                { value: 'auto', text: t('mainLanguageAuto') },
+                { value: 'zh', text: t('mainLanguageChinese') },
+                { value: 'en', text: t('mainLanguageEnglish') }
+            ]
+        }
+    };
+}
+
+function refreshRegisteredInterfaceSettings() {
+    const settingsApi = app.extensionManager?.setting;
+    const registry = settingsApi?.settings?.value || settingsApi?.settings;
+    if (!registry || typeof registry !== 'object') return;
+
+    const translations = getInterfaceSettingTranslations();
+    for (const [id, patch] of Object.entries(translations)) {
+        const current = registry[id];
+        if (!current) continue;
+        // Replacing the descriptor keeps ComfyUI's computed settings tree reactive,
+        // including the open settings dialog and its translated combo options.
+        registry[id] = { ...current, ...patch };
+    }
+}
+
 function applyLanguagePreference(value) {
     const preference = normalizeLanguagePreference(value);
     if (preference === 'auto') {
@@ -112,6 +177,7 @@ function applyLanguagePreference(value) {
     currentLang = nextLanguage;
     window.anomalous_browser_lang = nextLanguage;
     applyFloatingTriggerPresentation();
+    refreshRegisteredInterfaceSettings();
     if (changed) {
         window.dispatchEvent(new CustomEvent('anomalous-language-change', {
             detail: { language: nextLanguage, preference }

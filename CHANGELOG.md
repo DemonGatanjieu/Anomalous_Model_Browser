@@ -5,6 +5,9 @@
 ### ✨ Interface & Access
 - **Native Configurable Shortcut (原生可配置快捷键)**: Added `Ctrl + Shift + M` as the default shortcut for opening the browser. The plugin's Interface settings show the currently active binding and open ComfyUI's native key recorder for customization. Conflict detection, overwrite confirmation, removal, reserved-key guidance, and modal guards therefore remain centralized without a separate global keyboard listener.
 
+### 🐛 Bug Fixes
+- **Live Language Switching (语言即时切换)**: Changing the plugin language now immediately re-translates the open native Interface settings—including labels, tooltips, and combo choices—as well as the browser UI, without refreshing ComfyUI.
+
 ## v1.56.1 Beta (Interface Preferences & Scan Reliability) — 2026-08-26
 
 ### ✨ Interface & Access
