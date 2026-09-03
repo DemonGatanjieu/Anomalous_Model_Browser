@@ -733,8 +733,10 @@ export async function showRecipes() {
     }
     this.recipeDetailFinish?.('closed');
     this.notebookBody.style.display = 'none';
+    if (this.materialView) this.materialView.style.display = 'none';
     this.notebookNotesTab?.classList.remove('active');
     this.notebookRecipesTab?.classList.add('active');
+    this.notebookMaterialsTab?.classList.remove('active');
     if (this.recipeDetailView) {
         this.recipeDetailView.remove();
         this.recipeDetailView = null;

@@ -20,6 +20,7 @@ import {
     isSupportedPromptNodeType,
 } from './recipe_parser.js';
 import { replaceWorkflowModelHashRecord } from './recipe_provenance.js';
+import { showImageMaterialDetail } from './ui_materials.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -2406,6 +2407,14 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 image.loading = 'lazy';
                 image.onclick = () => owner.showGalleryViewer?.(url);
                 card.appendChild(image);
+                const actions = document.createElement('div');
+                actions.className = 'anomalous-recipe-gallery-card-actions';
+                const details = button(actions, `🔎 ${t('materialViewDetails')}`, 'anomalous-btn-primary');
+                details.onclick = event => {
+                    event.stopPropagation();
+                    void showImageMaterialDetail(owner, sourceImage, url);
+                };
+                card.appendChild(actions);
                 grid.appendChild(card);
             }
             dialog.appendChild(grid);
@@ -2659,6 +2668,14 @@ function renderRecipeGallery(content, owner, recipe, gallery, refresh) {
         image.loading = 'lazy';
         image.onclick = () => owner.showGalleryViewer?.(url);
         card.appendChild(image);
+        const actions = document.createElement('div');
+        actions.className = 'anomalous-recipe-gallery-card-actions';
+        const details = button(actions, `🔎 ${t('materialViewDetails')}`, 'anomalous-btn-primary');
+        details.onclick = event => {
+            event.stopPropagation();
+            void showImageMaterialDetail(owner, sourceImage, url);
+        };
+        card.appendChild(actions);
         grid.appendChild(card);
     }
     section.appendChild(grid);

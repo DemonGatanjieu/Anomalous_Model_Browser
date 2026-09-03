@@ -12,6 +12,7 @@ by default.
 | Python routes, storage, paths, metadata, covers, or scan state | [`docs/architecture/backend.md`](docs/architecture/backend.md) |
 | Browser lifecycle, UI state, localization, media, or graph edits | [`docs/architecture/frontend.md`](docs/architecture/frontend.md) |
 | Workflow Recipes, packages, galleries, Parameter Notebooks, or prompt roles | [`docs/architecture/recipes.md`](docs/architecture/recipes.md) |
+| Material Library snapshots, image parameter details, or reusable node blocks | [`docs/architecture/material-library.md`](docs/architecture/material-library.md) |
 | Model Doctor, provenance hashes, missing-model recovery, or deep scanning | [`docs/architecture/model-resolution.md`](docs/architecture/model-resolution.md) |
 | Why a current product boundary exists | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Recurring implementation mistakes and post-mortems | [`.agents/logs/ai_lessons.md`](.agents/logs/ai_lessons.md) |
@@ -42,6 +43,7 @@ User-owned data
   ComfyUI model folders              models and sidecars
   user/.../anomalous_recipes         workflow recipes and recipe assets
   user/.../anomalous_parameters      immutable parameter snapshots
+  user/.../anomalous_materials       curated image/workflow material bundles
 ```
 
 The frontend and backend communicate through narrow JSON contracts. The
@@ -60,6 +62,8 @@ DOM or live LiteGraph state.
 - `api/recipes.py` owns recipe validation, CRUD, history, and integrity receipts.
 - `api/recipe_packages.py` owns bounded inspect-stage-commit package handling.
 - `api/parameters.py` owns Parameter Notebook persistence and lookup.
+- `api/materials.py` owns curated material persistence, private image assets,
+  and node-type lookup.
 - `model_policies.py` owns shared backend rename and protected-category policy.
 
 ### Frontend
@@ -71,6 +75,8 @@ DOM or live LiteGraph state.
   primary model-browser surfaces.
 - `ui_notebooks.js`, `ui_recipes.js`, and `ui_recipe_detail.js` own Workspace
   presentation, featuring Bento-style visual cards, quick spec tags, real-time environment readiness indicators (🟢/🟡/🔴), one-click batch model matching, and lazy DOM rendering for node parameter trees.
+- `ui_materials.js` owns image snapshot inspection and the Workspace Material
+  Library; Node Assistant remains the owner of applying a material node block.
 - `recipe_parser.js`, `recipe_identity.js`, `recipe_diff.js`, and
   `recipe_actions.js` own pure or transactional recipe behavior.
 - `ui_doctor.js`, `model_picker.js`, and `graph_splice.js` own assistant and
@@ -116,7 +122,7 @@ documents.
 - Runtime settings and newly saved API keys live in `api/config.json`.
   `scraper.py` may read the legacy root `config.json` only as a compatibility
   fallback. API keys are not stored in browser `localStorage`.
-- Recipes and Parameter Notebooks are user data outside the extension directory.
+- Recipes, Parameter Notebooks, and Material Library records/assets are user data outside the extension directory.
   They are never bundled with or silently migrated into the plugin source.
 - The extension may integrate with Civitai and optional translation services
   only through explicit product behavior. External content and dependencies keep

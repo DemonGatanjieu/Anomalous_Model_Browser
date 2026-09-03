@@ -1729,6 +1729,93 @@ export function applyLocalNodeParameters(targetNode, sourceWidgetValues) {
     }
 }
 
+function attachMaterialHashRecords(targetNode, sourceNodeId, workflowHashes) {
+    if (!app.graph || !workflowHashes || typeof workflowHashes !== 'object') return 0;
+    const prefix = `${sourceNodeId}_`;
+    const mapped = [];
+    for (const [key, value] of Object.entries(workflowHashes)) {
+        if (!key.startsWith(prefix)) continue;
+        mapped.push([`${targetNode.id}_${key.slice(prefix.length)}`, cloneAssistantValue(value)]);
+    }
+    if (!mapped.length) return 0;
+    if (!app.graph.extra || typeof app.graph.extra !== 'object') app.graph.extra = {};
+    if (!app.graph.extra.anomalous_hashes || typeof app.graph.extra.anomalous_hashes !== 'object') {
+        app.graph.extra.anomalous_hashes = {};
+    }
+    for (const [key, value] of mapped) app.graph.extra.anomalous_hashes[key] = value;
+    return mapped.length;
+}
+
+function renderMaterialPresets(node, container, forceRefresh) {
+    const section = document.createElement('div');
+    section.className = 'anomalous-assistant-parameter-presets anomalous-assistant-material-presets';
+    section.style.cssText = 'margin:14px 16px; display:flex; flex-direction:column; gap:8px;';
+    const header = document.createElement('div');
+    header.style.cssText = 'color:#68cdb9;font-size:10px;font-weight:750;letter-spacing:0.1em;text-transform:uppercase;';
+    header.textContent = t('materialLibrary');
+    const loader = document.createElement('div');
+    loader.style.cssText = 'font-size:12px;color:#555;text-align:center;padding:10px;';
+    loader.textContent = t('loading');
+    section.append(header, loader);
+    container.appendChild(section);
+
+    const url = `/anomalous/materials/by_node_type?type=${encodeURIComponent(node.type)}${forceRefresh ? '&refresh=1' : ''}`;
+    fetch(url, { cache: 'no-store' }).then(response => {
+        if (!response.ok) throw new Error('material preset request failed');
+        return response.json();
+    }).then(payload => {
+        loader.remove();
+        const materials = Array.isArray(payload.materials) ? payload.materials : [];
+        if (!materials.length) {
+            const empty = document.createElement('div');
+            empty.style.cssText = 'font-size:11px;color:#666;text-align:center;padding:10px;background:rgba(0,0,0,.2);border-radius:8px;border:1px dashed rgba(255,255,255,.1);';
+            empty.textContent = t('materialNoNodePresets');
+            section.appendChild(empty);
+            return;
+        }
+        for (const material of materials) {
+            const group = document.createElement('div');
+            group.style.cssText = 'display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid rgba(92,202,180,.16);border-radius:9px;background:rgba(92,202,180,.045);';
+            const name = document.createElement('strong');
+            name.textContent = `🖼️ ${material.name || t('materialUntitled')}`;
+            name.style.cssText = 'font-size:12px;color:#bcebe1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+            group.appendChild(name);
+            for (const block of (Array.isArray(material.blocks) ? material.blocks : [])) {
+                const apply = document.createElement('button');
+                const suffix = material.blocks.length > 1 ? ` #${block.occurrence}` : '';
+                const label = `✨ ${block.title || block.type}${suffix}`;
+                apply.textContent = label;
+                apply.style.cssText = 'padding:8px 10px;border:1px solid rgba(255,255,255,.1);border-radius:6px;background:rgba(255,255,255,.05);color:#fff;text-align:left;cursor:pointer;';
+                apply.onclick = () => {
+                    apply.disabled = true;
+                    try {
+                        applyLocalNodeParameters(node, block.widgets_values);
+                        attachMaterialHashRecords(node, block.node_id, material.workflow_hashes);
+                        apply.textContent = `✅ ${t('materialNodeApplied')}`;
+                        apply.style.background = 'rgba(46,139,87,.6)';
+                        window.setTimeout(() => window.anomalous_resolve_all_missing_nodes?.(true, false), 0);
+                    } catch (error) {
+                        console.error('[Anomalous] Failed to apply material node parameters:', error);
+                        apply.textContent = `⚠️ ${t('recipeParameterApplyError')}`;
+                        apply.style.background = 'rgba(180,60,60,.55)';
+                    }
+                    window.setTimeout(() => {
+                        apply.disabled = false;
+                        apply.textContent = label;
+                        apply.style.background = 'rgba(255,255,255,.05)';
+                    }, 1500);
+                };
+                group.appendChild(apply);
+            }
+            section.appendChild(group);
+        }
+    }).catch(error => {
+        console.error('Failed to load material presets:', error);
+        loader.textContent = t('materialLoadError');
+        loader.style.color = '#ff7070';
+    });
+}
+
 export function renderParameterPresets(node, container, forceRefresh = false) {
     if (!node || !node.type) return;
 
@@ -1743,6 +1830,8 @@ export function renderParameterPresets(node, container, forceRefresh = false) {
     betaText.textContent = t('assistantBetaNotice');
     betaNotice.append(betaBadge, betaText);
     container.appendChild(betaNotice);
+
+    renderMaterialPresets(node, container, forceRefresh);
 
     const presetSection = document.createElement('div');
     presetSection.className = 'anomalous-assistant-parameter-presets';

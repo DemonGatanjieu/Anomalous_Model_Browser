@@ -4,6 +4,7 @@ import { createDOM, renderSidebar, loadFolders, showHelp, hideAllPanels, openFol
 import { loadGalleryImages, refreshGalleryImages, showGeneratedGallery, showGallerySelectMode, showGalleryViewer } from './modules/ui_gallery.js';
 import { showNotebooks, closeWorkspace, refreshNotebooks, saveCurrentNotebook, deleteCurrentNotebook, renderNotebookEditor, fillNotebookGalleries, sendNotebookToCanvas } from './modules/ui_notebooks.js';
 import { showRecipes, refreshRecipes, renderRecipeList, handleSaveRecipe } from './modules/ui_recipes.js';
+import { showMaterials, refreshMaterials } from './modules/ui_materials.js';
 import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, _openGalleryReplacer, openLoraInsertionPicker, runGlobalDoctorScan } from './modules/ui_doctor.js';
 import { app } from "../../scripts/app.js";
 import { normalizeLocale, resolveLocale, translate } from './modules/locales.js';
@@ -601,6 +602,8 @@ AnomalousBrowser.prototype.showRecipes = showRecipes;
 AnomalousBrowser.prototype.refreshRecipes = refreshRecipes;
 AnomalousBrowser.prototype.renderRecipeList = renderRecipeList;
 AnomalousBrowser.prototype.handleSaveRecipe = handleSaveRecipe;
+AnomalousBrowser.prototype.showMaterials = showMaterials;
+AnomalousBrowser.prototype.refreshMaterials = refreshMaterials;
 
 AnomalousBrowser.prototype.loadGalleryImages = loadGalleryImages;
 AnomalousBrowser.prototype.refreshGalleryImages = refreshGalleryImages;

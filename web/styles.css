@@ -3539,7 +3539,137 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-gallery-card-actions {
-    display: none !important;
+    right: 10px;
+    bottom: 10px;
+    display: flex;
+    opacity: 0;
+    transform: translateY(4px);
+    pointer-events: none;
+}
+
+.anomalous-recipe-gallery-card:hover .anomalous-recipe-gallery-card-actions,
+.anomalous-recipe-gallery-card:focus-within .anomalous-recipe-gallery-card-actions {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.anomalous-material-body {
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #141519;
+}
+
+.anomalous-material-intro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 18px 22px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.anomalous-material-intro h3,
+.anomalous-material-intro p,
+.anomalous-material-card h3 { margin: 0; }
+
+.anomalous-material-muted { color: #9298a8; }
+
+.anomalous-material-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 320px));
+    align-content: start;
+    gap: 16px;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.anomalous-material-empty { grid-column: 1 / -1; padding: 36px; text-align: center; color: #818797; }
+
+.anomalous-material-card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 13px;
+    background: linear-gradient(155deg, #232630, #191b21);
+    box-shadow: 0 12px 28px rgba(0,0,0,.2);
+}
+
+.anomalous-material-card-preview {
+    display: flex;
+    height: 180px;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #0d0e12;
+    font-size: 34px;
+}
+
+.anomalous-material-card-preview img { width: 100%; height: 100%; object-fit: cover; }
+.anomalous-material-card-body { display: grid; gap: 7px; padding: 14px; }
+.anomalous-material-card-body h3 { overflow: hidden; color: #f5f7fb; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-material-types { overflow: hidden; color: #6fcbb7; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-material-card-actions { display: flex; gap: 8px; margin-top: auto; padding: 0 14px 14px; }
+.anomalous-material-card-actions .anomalous-btn-primary { flex: 1; }
+
+.anomalous-material-detail-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(3,4,7,.82);
+    backdrop-filter: blur(8px);
+}
+
+.anomalous-material-detail-dialog {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr);
+    width: min(1100px, 94vw);
+    max-height: 90vh;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 18px;
+    background: #181a20;
+    box-shadow: 0 30px 90px rgba(0,0,0,.65);
+}
+
+.anomalous-material-detail-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 50%;
+    background: rgba(12,13,16,.75);
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.anomalous-material-detail-media { min-height: 420px; overflow: hidden; background: #090a0d; }
+.anomalous-material-detail-media img { width: 100%; height: 100%; max-height: 90vh; object-fit: contain; }
+.anomalous-material-detail-side { display: flex; min-height: 0; flex-direction: column; gap: 14px; padding: 32px 28px 26px; overflow-y: auto; }
+.anomalous-material-detail-side h2 { margin: 0; }
+.anomalous-material-detail-side label { display: grid; gap: 7px; color: #cbd0dc; font-size: 12px; font-weight: 700; }
+.anomalous-material-detail-side input { padding: 10px 12px; border: 1px solid #494d59; border-radius: 8px; background: #111217; color: #fff; }
+.anomalous-material-detail-stats { display: flex; flex-wrap: wrap; gap: 8px; }
+.anomalous-material-detail-stats span { padding: 6px 9px; border-radius: 999px; background: rgba(78,201,176,.12); color: #78d7c5; font-size: 11px; }
+.anomalous-material-prompt-excerpt { margin: 0; padding: 12px; border-left: 3px solid #5ccab4; background: rgba(255,255,255,.035); color: #c7ccd7; font-size: 12px; }
+
+@media (max-width: 780px) {
+    .anomalous-material-detail-dialog { grid-template-columns: 1fr; overflow-y: auto; }
+    .anomalous-material-detail-media { min-height: 260px; max-height: 42vh; }
 }
 
 /* Ensure wide widgets (like long prompts) span full width in the node cards */
