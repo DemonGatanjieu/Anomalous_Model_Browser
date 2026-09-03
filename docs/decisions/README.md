@@ -19,12 +19,13 @@ are immutable generation-value snapshots attached to a recipe and browsed inside
 its Parameters tab. The Node Assistant may reuse those snapshots for a selected
 same-type node, but this does not replace full-skeleton recipe application.
 
-## AD-003 — Append is the recipe composition action
+## AD-003 — Recipe canvas actions follow graph scope
 
-Recipe cards and detail views expose Append to Canvas because it has one stable
-meaning across supported ComfyUI versions and preserves the user's existing
-graph. Structural editing is a separate, explicitly confirmed workflow. The
-ambiguous Open-to-canvas composition action remains removed.
+Recipe cards and detail views append partial recipes because their open required
+connections make them composition fragments. Complete, independently runnable
+recipes load through ComfyUI's workflow path and therefore open as a new canvas
+in the current frontend. Structural editing remains a separate, explicitly
+confirmed workflow.
 
 ## AD-004 — Recipe save hides implementation policy
 
@@ -44,7 +45,9 @@ prevents silent substitution after local rename or across categories.
 VAE, VAE Approx, CLIP/Text Encoder, and CLIP Vision files can commonly share
 sizes or ambiguous names. Automated redirection therefore requires one exact
 in-category hash match. Existing native combo values remain usable with a
-visible identity-change warning when provenance differs.
+visible identity-change warning when provenance differs. This does not restrict
+scan coverage: scanning may calculate hashes for any active registered folder,
+including categories whose Civitai metadata coverage is weak.
 
 ## AD-007 — Recipe origins and local availability are separate
 

@@ -8,14 +8,64 @@ import {
     captureRecipeDraft,
 } from './recipe_parser.js';
 import {
-    appendRecipeOnCanvas,
+    applyRecipeToCanvas,
     showRecipeDetail,
 } from './ui_recipe_detail.js';
+import {
+    canVerifyRecipeModelReference,
+    deriveRecipeModelReferences,
+    normaliseIdentity,
+} from './recipe_identity.js';
 
 const t = (key, params) => translate(key, params);
 const RECIPE_PRESENTATION_DEFAULTS = Object.freeze({
     saveModelPreviewSnapshots: true,
 });
+
+function recipeAuditKey(reference) {
+    return `${reference?.node_id ?? ''}\u001f${reference?.widget_index ?? ''}\u001f${reference?.saved_value ?? ''}`;
+}
+
+async function inspectRecipeModelIdentities(draft) {
+    const references = deriveRecipeModelReferences({
+        workflow: draft?.workflow,
+        params: draft?.metadata,
+    });
+    if (!references.length) return { verifiableMissing: [] };
+
+    try {
+        const response = await fetch('/anomalous/refresh_recipe_identity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ references }),
+        });
+        const payload = await response.json();
+        if (!response.ok || payload.status !== 'success') throw new Error('recipe identity inspection failed');
+        const results = new Map((payload.results || []).map((result) => [recipeAuditKey(result), result]));
+        for (const reference of references) {
+            const result = results.get(recipeAuditKey(reference));
+            if (!result) continue;
+            reference.currentAvailability = result.availability;
+            const current = normaliseIdentity(reference.identity);
+            const inspected = normaliseIdentity(result.identity);
+            if (current.status !== 'verified' && inspected.status === 'verified') {
+                reference.identity = inspected;
+            }
+        }
+    } catch (error) {
+        // The audit is advisory. A temporary inspection failure must never
+        // prevent the workflow snapshot itself from being saved.
+        console.warn('Could not inspect recipe model identities:', error);
+    }
+
+    return {
+        verifiableMissing: references.filter((reference) => (
+            canVerifyRecipeModelReference(reference)
+            && normaliseIdentity(reference.identity).status !== 'verified'
+            && reference.currentAvailability !== 'missing'
+        )),
+    };
+}
 
 function formatRecipeText(key, values = {}) {
     return Object.entries(values).reduce((text, [name, value]) => text.replaceAll(`{${name}}`, String(value)), t(key));
@@ -338,7 +388,7 @@ async function editRecipe(owner, recipe, filename, history = null) {
     }
 }
 
-function showRecipeSaveDialog(owner, canvasThumbnail, initial = null) {
+function showRecipeSaveDialog(owner, canvasThumbnail, workflowScope, modelAudit, initial = null) {
     return new Promise((resolve) => {
         const selection = {
             thumbnail: safeThumbnail(initial?.thumbnail) || safeThumbnail(canvasThumbnail),
@@ -357,6 +407,12 @@ function showRecipeSaveDialog(owner, canvasThumbnail, initial = null) {
         const dialog = document.createElement('div');
         dialog.className = 'anomalous-recipe-dialog';
         appendText(dialog, 'h3', t('recipeSaveTitle'));
+        appendText(
+            dialog,
+            'p',
+            t(workflowScope === 'partial' ? 'recipeScopePartialSaveHint' : 'recipeScopeCompleteSaveHint'),
+            'anomalous-recipe-detail-muted',
+        );
 
         const nameLabel = appendText(dialog, 'label', t('recipeName'));
         const nameInput = document.createElement('input');
@@ -382,6 +438,41 @@ function showRecipeSaveDialog(owner, canvasThumbnail, initial = null) {
         notesInput.placeholder = t('recipeNotesHint');
         notesInput.value = initial?.notes || '';
         notesLabel.appendChild(notesInput);
+
+        const verifiableMissing = modelAudit?.verifiableMissing || [];
+        let verifyModelIdentitiesInput = null;
+        if (verifiableMissing.length) {
+            const verificationSection = document.createElement('section');
+            verificationSection.className = 'anomalous-recipe-save-section';
+            appendText(
+                verificationSection,
+                'strong',
+                formatRecipeText('recipeVerificationMissing', { count: verifiableMissing.length }),
+            );
+            appendText(
+                verificationSection,
+                'small',
+                verifiableMissing.map((reference) => reference.saved_value).join('、'),
+                'anomalous-recipe-node-hint',
+            );
+            const verificationChoice = document.createElement('label');
+            verificationChoice.className = 'anomalous-recipe-checkbox';
+            verifyModelIdentitiesInput = document.createElement('input');
+            verifyModelIdentitiesInput.type = 'checkbox';
+            verifyModelIdentitiesInput.checked = false;
+            verificationChoice.append(
+                verifyModelIdentitiesInput,
+                document.createTextNode(t('recipeVerifyOnSave')),
+            );
+            verificationSection.appendChild(verificationChoice);
+            appendText(
+                verificationSection,
+                'small',
+                t('recipeVerifyOnSaveHint'),
+                'anomalous-recipe-node-hint',
+            );
+            dialog.appendChild(verificationSection);
+        }
 
         const coverSection = document.createElement('section');
         coverSection.className = 'anomalous-recipe-save-section';
@@ -504,6 +595,7 @@ function showRecipeSaveDialog(owner, canvasThumbnail, initial = null) {
                 thumbnail: selection.thumbnail,
                 sourceImage: selection.sourceImage,
                 saveModelPreviewSnapshots: selection.saveModelPreviewSnapshots,
+                verifyModelIdentities: Boolean(verifyModelIdentitiesInput?.checked),
             });
         };
         dialog.appendChild(actions);
@@ -775,6 +867,10 @@ export function renderRecipeList(recipes) {
         const card = document.createElement('article');
         card.className = 'anomalous-recipe-card';
         appendText(card, 'h3', data.name || t('recipeUntitled'));
+        card.appendChild(createBadge(
+            t(data.workflow_scope === 'partial' ? 'recipeScopePartial' : 'recipeScopeComplete'),
+            data.workflow_scope === 'partial' ? 'accent' : 'module',
+        ));
 
         const sourceImageUrl = outputImageUrl(data.source_image);
         const savedCover = recipeAssetUrl(recipe.filename, data.presentation?.cover_asset_id);
@@ -851,12 +947,17 @@ export function renderRecipeList(recipes) {
         const primaryActions = document.createElement('div');
         primaryActions.className = 'anomalous-recipe-actions-primary';
         
-        const append = appendText(primaryActions, 'button', t('recipeAppendCanvas'), 'anomalous-btn-ghost');
+        const append = appendText(
+            primaryActions,
+            'button',
+            t(data.workflow_scope === 'partial' ? 'recipeAppendCanvas' : 'recipeOpenCanvas'),
+            'anomalous-btn-ghost',
+        );
         append.type = 'button';
         append.onclick = (e) => { e.stopPropagation(); runRecipeCardAction(append, async () => {
-            const data = await fetchRecipeData(recipe.filename);
-            if (!await appendRecipeOnCanvas(this, data)) throw new Error('recipe append failed');
-        }, 'recipeAppendError'); };
+            const fullRecipe = await fetchRecipeData(recipe.filename);
+            await applyRecipeToCanvas(this, fullRecipe);
+        }, data.workflow_scope === 'partial' ? 'recipeAppendError' : 'recipeOpenError'); };
 
         secondaryActions.append(edit, exportButton, remove);
         primaryActions.append(append);
@@ -879,7 +980,14 @@ export async function handleSaveRecipe() {
     }
     const canvasThumbnail = captureCanvasThumbnail(app.canvas?.canvas);
     const editing = this.recipeEditing || null;
-    const details = await showRecipeSaveDialog(this, canvasThumbnail, editing?.data || null);
+    const modelAudit = await inspectRecipeModelIdentities(draft);
+    const details = await showRecipeSaveDialog(
+        this,
+        canvasThumbnail,
+        draft.workflowScope,
+        modelAudit,
+        editing?.data || null,
+    );
     if (!details) return;
 
     // Prompt-role labels belong to the recipe skeleton. Preserve labels whose
@@ -922,9 +1030,11 @@ export async function handleSaveRecipe() {
                 notes: details.notes,
                 params: draft.metadata,
                 workflow: draft.workflow,
+                workflow_scope: draft.workflowScope,
                 thumbnail,
                 source_image: details.sourceImage,
                 presentation: { save_model_preview_snapshots: details.saveModelPreviewSnapshots },
+                verify_model_identities: details.verifyModelIdentities,
             }),
         });
         const payload = await response.json();

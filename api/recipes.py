@@ -299,7 +299,70 @@ def _identity_for_reference(saved_value):
     return identity, origin
 
 
-def _build_model_references(recipe):
+VERIFIABLE_RECIPE_MODEL_CATEGORIES = frozenset({
+    "checkpoint",
+    "lora",
+    "unet",
+    "controlnet",
+    "vae",
+    "text_encoder",
+    "clip_vision",
+})
+
+
+def _computed_identity_for_reference(saved_value):
+    """Compute an exact SHA-256 only after an explicit save-time opt-in."""
+    resolved = _resolve_exact_model_reference(saved_value)
+    if not resolved:
+        return {"status": "unavailable"}
+    digest = hashlib.sha256()
+    try:
+        with open(resolved["path"], "rb") as model_file:
+            for block in iter(lambda: model_file.read(4 * 1024 * 1024), b""):
+                digest.update(block)
+        return {
+            "status": "verified",
+            "sha256": digest.hexdigest(),
+            "size": os.path.getsize(resolved["path"]),
+            "provenance": "computed during recipe save",
+        }
+    except OSError:
+        return {"status": "unverified"}
+
+
+def _workflow_identity_for_reference(workflow, node_id, saved_value):
+    extra = workflow.get("extra") if isinstance(workflow, dict) else None
+    hashes = extra.get("anomalous_hashes") if isinstance(extra, dict) else None
+    if not isinstance(hashes, dict) or not isinstance(saved_value, str):
+        return None
+    normalized = saved_value.replace("\\", "/")
+    windows_path = saved_value.replace("/", "\\")
+    keys = (
+        f"{node_id}_{saved_value}",
+        f"{node_id}_{normalized}",
+        f"{node_id}_{windows_path}",
+        saved_value,
+        normalized,
+        windows_path,
+    )
+    record = next((hashes[key] for key in keys if key in hashes), None)
+    candidate_hash = record if isinstance(record, str) else record.get("hash") if isinstance(record, dict) else None
+    if not isinstance(candidate_hash, str) or not SHA256_PATTERN.fullmatch(candidate_hash.strip()):
+        return None
+    identity = {
+        "status": "verified",
+        "sha256": candidate_hash.strip().lower(),
+        "provenance": "workflow snapshot",
+    }
+    if isinstance(record, dict):
+        try:
+            identity["size"] = int(record.get("size"))
+        except (TypeError, ValueError):
+            pass
+    return identity
+
+
+def _build_model_references(recipe, verify_identities=False):
     workflow = recipe.get("workflow") if isinstance(recipe, dict) else None
     params = recipe.get("params") if isinstance(recipe, dict) else None
     base_model = params.get("baseModel") if isinstance(params, dict) else None
@@ -319,6 +382,15 @@ def _build_model_references(recipe):
                 # Keep compatibility with older callers/tests that provide the
                 # pre-origin helper contract and return identity only.
                 identity, origin = identity_result, None
+            workflow_identity = _workflow_identity_for_reference(workflow, node.get("id"), saved_value)
+            if workflow_identity:
+                identity = workflow_identity
+            elif (
+                verify_identities
+                and category in VERIFIABLE_RECIPE_MODEL_CATEGORIES
+                and identity.get("status") != "verified"
+            ):
+                identity = _computed_identity_for_reference(saved_value)
             ref_dict = {
                 "node_id": node.get("id"),
                 "node_type": _node_type(node) or "Unknown",
@@ -671,7 +743,14 @@ def _preserve_model_reference_fields(previous_references, references, preserve_i
                     reference[field] = json.loads(json.dumps(prior[field], ensure_ascii=False))
 
 
-def _enrich_recipe(recipe, recipes_dir=None, filename=None, recapture_previews=True, refresh_identities=False):
+def _enrich_recipe(
+    recipe,
+    recipes_dir=None,
+    filename=None,
+    recapture_previews=True,
+    refresh_identities=False,
+    verify_identities=False,
+):
     recipe["workflow_fingerprint"] = _workflow_fingerprint(recipe["workflow"])
     # Keep the exact parameter-match identity alongside the structural
     # fingerprint. The detail panel can use this value for result discovery
@@ -679,17 +758,19 @@ def _enrich_recipe(recipe, recipes_dir=None, filename=None, recapture_previews=T
     recipe["parameter_signature"] = _parameter_signature(recipe["workflow"])
     params = dict(recipe.get("params") or {})
     previous_references = params.get("model_references", [])
-    references = _build_model_references(recipe)
+    references = _build_model_references(recipe, verify_identities=verify_identities)
     _preserve_model_reference_fields(
         previous_references,
         references,
-        preserve_identity=not refresh_identities,
+        preserve_identity=not (refresh_identities or verify_identities),
     )
     if recipes_dir and filename and recapture_previews:
         _attach_preview_snapshots(recipe, recipes_dir, filename, references)
     params["model_references"] = references
     recipe["params"] = params
-    recipe["schema_version"] = 5
+    if recipe.get("workflow_scope") not in {"partial", "complete"}:
+        recipe["workflow_scope"] = "complete"
+    recipe["schema_version"] = 6
     encoded = json.dumps(recipe, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     if len(encoded) > MAX_RECIPE_BYTES:
         raise ValueError("Recipe is too large")
@@ -859,6 +940,9 @@ def _normalise_recipe(payload):
     if not isinstance(params, dict) or not isinstance(workflow, dict):
         raise ValueError("Invalid recipe workflow")
     _validate_workflow(workflow)
+    workflow_scope = payload.get("workflow_scope", "complete")
+    if workflow_scope not in {"partial", "complete"}:
+        raise ValueError("Invalid recipe workflow scope")
 
     thumbnail = payload.get("thumbnail")
     if thumbnail is not None:
@@ -890,6 +974,7 @@ def _normalise_recipe(payload):
         "notes": notes.strip(),
         "params": params,
         "workflow": workflow,
+        "workflow_scope": workflow_scope,
         "thumbnail": thumbnail,
         "source_image": _normalise_source_image(payload.get("source_image")),
         "presentation": {
@@ -1014,7 +1099,11 @@ async def api_get_recipes(request):
 
 async def api_save_recipe(request):
     try:
-        recipe = _normalise_recipe(await request.json())
+        payload = await request.json()
+        verify_identities = payload.get("verify_model_identities", False)
+        if not isinstance(verify_identities, bool):
+            raise ValueError("Invalid verification preference")
+        recipe = _normalise_recipe(payload)
     except (ValueError, json.JSONDecodeError):
         return web.json_response({"status": "error", "message": "Invalid recipe"}, status=400)
     except Exception:
@@ -1025,7 +1114,15 @@ async def api_save_recipe(request):
         recipes_dir = get_recipes_dir()
         recipe["created_timestamp"] = recipe["timestamp"]
         recipe["updated_timestamp"] = recipe["timestamp"]
-        recipe = await asyncio.to_thread(_enrich_recipe, recipe, recipes_dir, filename)
+        recipe = await asyncio.to_thread(
+            _enrich_recipe,
+            recipe,
+            recipes_dir,
+            filename,
+            True,
+            False,
+            verify_identities,
+        )
         await asyncio.to_thread(_write_recipe, recipes_dir, filename, recipe)
     except (OSError, ValueError):
         return web.json_response({"status": "error", "message": "Could not save recipe"}, status=500)
@@ -1215,7 +1312,9 @@ async def api_set_recipe_gallery_cover(request):
     recipe["timestamp"] = int(time.time() * 1000)
     recipe["updated_timestamp"] = recipe["timestamp"]
     recipe["workflow_fingerprint"] = _workflow_fingerprint(recipe["workflow"])
-    recipe["schema_version"] = max(5, int(recipe.get("schema_version") or 1))
+    if recipe.get("workflow_scope") not in {"partial", "complete"}:
+        recipe["workflow_scope"] = "complete"
+    recipe["schema_version"] = max(6, int(recipe.get("schema_version") or 1))
 
     try:
         await asyncio.to_thread(_archive_recipe, recipes_dir, filename, existing)
@@ -1244,9 +1343,20 @@ async def api_update_recipe(request):
         if not isinstance(existing, dict) or not isinstance(existing.get("workflow"), dict):
             raise ValueError("Invalid recipe")
         refresh_identities = bool(payload.get("refreshIdentities"))
+        verify_identities = payload.get("verify_model_identities", False)
+        if not isinstance(verify_identities, bool):
+            raise ValueError("Invalid verification preference")
         refresh_only = refresh_identities and set(payload).issubset({"filename", "refreshIdentities"})
         recipe = copy.deepcopy(existing) if refresh_only else _updated_recipe(payload, existing)
-        recipe = await asyncio.to_thread(_enrich_recipe, recipe, recipes_dir, filename, True, refresh_identities)
+        recipe = await asyncio.to_thread(
+            _enrich_recipe,
+            recipe,
+            recipes_dir,
+            filename,
+            True,
+            refresh_identities,
+            verify_identities,
+        )
     except (AttributeError, ValueError, json.JSONDecodeError):
         return web.json_response({"status": "error", "message": "Invalid recipe"}, status=400)
     except FileNotFoundError:
@@ -1377,6 +1487,7 @@ async def api_refresh_recipe_identity(request):
         }
         if resolved:
             result["local_path"] = resolved["path"]
-            result["identity"] = _identity_for_reference(saved_value)
+            identity_result = _identity_for_reference(saved_value)
+            result["identity"] = identity_result[0] if isinstance(identity_result, tuple) else identity_result
         results.append(result)
     return web.json_response({"status": "success", "results": results})

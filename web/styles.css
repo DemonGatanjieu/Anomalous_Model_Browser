@@ -1601,6 +1601,17 @@ dialog.anomalous-gallery-viewer[open] {
     gap: 8px;
 }
 
+.anomalous-recipe-dialog label.anomalous-recipe-checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.anomalous-recipe-checkbox input {
+    margin: 0;
+}
+
 .anomalous-recipe-cover-choices {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));

@@ -57,18 +57,29 @@ async function runRecipeAction(actionButton, action) {
     }
 }
 
-export async function appendRecipeOnCanvas(owner, recipe) {
+export async function applyRecipeToCanvas(owner, recipe) {
     try {
-        appendRecipeToCanvas(recipe);
+        if (recipe?.workflow_scope === 'partial') {
+            appendRecipeToCanvas(recipe);
+        } else {
+            if (!recipe?.workflow || typeof app.loadGraphData !== 'function') throw new Error('recipe_open_unavailable');
+            await app.loadGraphData(JSON.parse(JSON.stringify(recipe.workflow)));
+            app.canvas?.setDirty?.(true, true);
+        }
         closeRecipeWorkspace(owner);
         return true;
     } catch (error) {
-        console.error('Could not append Workflow Recipe:', error);
-        await anomalousAlert(error.code === 'recipe_append_missing_node'
+        const partial = recipe?.workflow_scope === 'partial';
+        console.error(`Could not ${partial ? 'append' : 'open'} Workflow Recipe:`, error);
+        await anomalousAlert(partial && error.code === 'recipe_append_missing_node'
             ? `${t('recipeAppendError')}\n${error.message}`
-            : t('recipeAppendError'));
+            : t(partial ? 'recipeAppendError' : 'recipeOpenError'));
         return false;
     }
+}
+
+function recipeCanvasActionLabel(recipe) {
+    return t(recipe?.workflow_scope === 'partial' ? 'recipeAppendCanvas' : 'recipeOpenCanvas');
 }
 
 function displayValue(value) {
@@ -812,10 +823,10 @@ function renderOverview(content, owner, recipe, references, finish) {
         }
     };
     
-    const heroAppend = button(overviewActions, t('recipeAppendCanvas'), 'anomalous-btn-ghost');
+    const heroAppend = button(overviewActions, recipeCanvasActionLabel(recipe), 'anomalous-btn-ghost');
     heroAppend.onclick = () => {
         void runRecipeAction(heroAppend, async () => {
-            if (await appendRecipeOnCanvas(owner, recipe)) finish('append');
+            if (await applyRecipeToCanvas(owner, recipe)) finish('canvas');
         });
     };
     
@@ -836,6 +847,7 @@ function renderOverview(content, owner, recipe, references, finish) {
     const verified = references.filter((reference) => normaliseIdentity(reference.identity).status === 'verified').length;
     const unverified = references.filter((reference) => normaliseIdentity(reference.identity).status === 'unverified').length;
     const missing = missingNodeTypes(recipe).length;
+    renderStat(stats, t('recipeScope'), t(recipe?.workflow_scope === 'partial' ? 'recipeScopePartial' : 'recipeScopeComplete'), 'good');
     renderStat(stats, t('recipeDetailIdentity'), `${verified}/${references.length}`, verified === references.length ? 'good' : 'warn');
     renderStat(stats, t('recipeDetailUnverified'), String(unverified), unverified ? 'warn' : 'good');
     renderStat(stats, t('recipeDetailMissingNodes'), String(missing), missing ? 'warn' : 'good');
@@ -868,10 +880,10 @@ function renderOverview(content, owner, recipe, references, finish) {
     actions.className = 'anomalous-recipe-actions anomalous-recipe-detail-actions';
     const edit = button(actions, t('recipeEdit'), 'anomalous-btn-success');
     edit.onclick = () => finish('edit');
-    const append = button(actions, t('recipeAppendCanvas'), 'anomalous-btn-primary');
+    const append = button(actions, recipeCanvasActionLabel(recipe), 'anomalous-btn-primary');
     append.onclick = () => {
         void runRecipeAction(append, async () => {
-            if (await appendRecipeOnCanvas(owner, recipe)) finish('append');
+            if (await applyRecipeToCanvas(owner, recipe)) finish('canvas');
         });
     };
     overview.appendChild(actions);

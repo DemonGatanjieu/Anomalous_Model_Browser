@@ -1,6 +1,15 @@
 /** Pure helpers for recipe model references and provenance labels. */
 
 const MODEL_FILE_PATTERN = /\.(?:safetensors|ckpt|pt|bin|sft)$/i;
+const VERIFIABLE_RECIPE_MODEL_CATEGORIES = new Set([
+    'checkpoint',
+    'lora',
+    'unet',
+    'controlnet',
+    'vae',
+    'text_encoder',
+    'clip_vision',
+]);
 
 function nodeType(node) {
     return String(node?.type || node?.class_type || '').trim();
@@ -40,6 +49,34 @@ export function normaliseIdentity(identity) {
     return result;
 }
 
+function workflowIdentity(workflow, nodeId, savedValue) {
+    const hashes = workflow?.extra?.anomalous_hashes;
+    if (!hashes || typeof savedValue !== 'string') return null;
+    const normalized = savedValue.replace(/\\/g, '/');
+    const windowsPath = savedValue.replace(/\//g, '\\');
+    const record = hashes[`${nodeId}_${savedValue}`]
+        || hashes[`${nodeId}_${normalized}`]
+        || hashes[`${nodeId}_${windowsPath}`]
+        || hashes[savedValue]
+        || hashes[normalized]
+        || hashes[windowsPath];
+    const sha256 = typeof record === 'string' ? record : record?.hash;
+    if (typeof sha256 !== 'string' || !/^[0-9a-f]{64}$/i.test(sha256)) return null;
+    const identity = {
+        status: 'verified',
+        sha256: sha256.toLowerCase(),
+        provenance: 'workflow snapshot',
+    };
+    if (record?.size !== null && record?.size !== '' && Number.isFinite(Number(record?.size))) {
+        identity.size = Number(record.size);
+    }
+    return identity;
+}
+
+export function canVerifyRecipeModelReference(reference) {
+    return VERIFIABLE_RECIPE_MODEL_CATEGORIES.has(String(reference?.category || '').toLowerCase());
+}
+
 export function deriveRecipeModelReferences(recipe) {
     const stored = recipe?.params?.model_references;
     if (Array.isArray(stored) && stored.length) {
@@ -56,6 +93,8 @@ export function deriveRecipeModelReferences(recipe) {
         for (const [widgetIndex, category, widgetName] of modelSpecs(type)) {
             const savedValue = values[widgetIndex];
             if (typeof savedValue !== 'string' || !savedValue.trim()) continue;
+            const identity = workflowIdentity(recipe?.workflow, node?.id, savedValue)
+                || { status: 'unverified' };
             references.push({
                 node_id: node?.id ?? null,
                 node_type: type || 'Unknown',
@@ -65,7 +104,7 @@ export function deriveRecipeModelReferences(recipe) {
                 saved_value: savedValue,
                 category,
                 base_model: recipe?.params?.baseModel || null,
-                identity: { status: 'unverified' },
+                identity,
             });
         }
     }

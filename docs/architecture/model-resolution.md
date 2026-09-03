@@ -24,6 +24,11 @@ locate presentation media, and verify the value against ComfyUI's native choices
 Foundation components—`vae`, `vae_approx`, `clip`, `text_encoders`, and
 `clip_vision`—are hash-only recovery categories. Byte size alone cannot repair
 them. A supplied hash mismatch never falls back to a filename or size-only guess.
+This is a Model Doctor confidence boundary, not a scanner-support boundary. The
+scan wizard may traverse any active registered model folder and can still
+calculate a local hash when Civitai has no matching record. Sparse or ambiguous
+remote metadata is a reason to require cryptographic identity, not to exclude
+the category from scanning.
 
 An existing native combo value remains loadable even if a foundation component's
 current local hash differs from stored provenance. Model Doctor shows a

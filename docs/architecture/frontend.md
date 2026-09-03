@@ -107,10 +107,11 @@ restore prior nodes, links, and widget values if any operation or callback fails
 A successful change marks graph and canvas dirty and emits the host change event
 expected by dependent surfaces.
 
-Recipe Append clones serialized nodes, remaps IDs and links, supports groups,
-and rolls back everything it created on failure. It never calls `loadGraphData`
-on the live graph and rejects unsupported subgraph definitions until they have a
-complete remapping path.
+Partial Recipe Append clones serialized nodes, remaps IDs and links, supports
+groups, and rolls back everything it created on failure. It never calls
+`loadGraphData` on the live graph and rejects unsupported subgraph definitions
+until they have a complete remapping path. Complete recipes use
+`loadGraphData` intentionally so ComfyUI owns new-workflow canvas creation.
 
 `graph_splice.js` handles deliberate MODEL/CLIP insertion. It analyzes declared
 port types rather than slot indexes or display names. Ambiguous downstream

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### 🧰 Workflow Recipes
+- **Scope-aware recipes (局部/整体配方)**: Graphs with open required connections or no runnable output are saved as partial recipes and append to the current canvas. Independently runnable graphs are saved as complete recipes and open in a new workflow canvas.
+- **Optional save-time model verification (保存时可选模型核验)**: Recipe saving now performs a lightweight cached-identity check. Recognized model references missing identity are listed in the save dialog, while full SHA-256 calculation remains explicitly opt-in. This is especially useful for hash-only Model Doctor categories such as VAE and text encoders.
+
 ### ✨ Interface & Access
 - **Native Configurable Shortcut (原生可配置快捷键)**: Added `Ctrl + Shift + M` as the default shortcut for opening the browser. The plugin's Interface settings show the currently active binding and open ComfyUI's native key recorder for customization. Conflict detection, overwrite confirmation, removal, reserved-key guidance, and modal guards therefore remain centralized without a separate global keyboard listener.
 

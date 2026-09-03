@@ -22,11 +22,14 @@ demand. Every update archives the previous full recipe locally, bounded to 20
 versions. The structural fingerprint (`sha256-structural-v1`) is an integrity
 and version-comparison value, not model identity evidence.
 
-The current persisted recipe schema is v5. Earlier schema steps introduced the
+The current persisted recipe schema is v6. Earlier schema steps introduced the
 structural fingerprint, explicit model-reference identity records, and optional
 recipe-owned preview descriptors; v5 separates model identity from editable
-official-origin fields. Normal save/update paths preserve compatible imported
-records rather than rebuilding identity from the current machine.
+official-origin fields. V6 records whether the saved graph is a partial or
+complete recipe. Normal save/update paths preserve compatible imported
+records rather than rebuilding identity from the current machine. An explicit
+save-time verification choice may replace missing identity with a freshly
+computed SHA-256 for supported model categories.
 
 Recipe model references separate saved identity from current-machine
 availability and official origin metadata. Origin refresh is an explicit
@@ -42,6 +45,14 @@ snapshot is the graph sent to the backend. The dialog records recipe identity,
 notes, tags, and cover/source image. It does not ask users to select presentation
 pins or a per-recipe snapshot policy. Existing `params.pinned` values survive an
 edit, while new recipes use an empty list.
+
+Before the dialog opens, an advisory check reads only the captured workflow hash
+records and cached local metadata. Recognized model references without verified
+identity appear as an optional action. The checkbox is off by default; enabling
+it computes the exact full-file SHA-256 in a worker thread during persistence.
+Foundation components such as VAE and text encoders are included because Model
+Doctor requires their hash and deliberately rejects size-only recovery.
+Inspection failure never blocks the workflow snapshot from being saved.
 
 The detail view contains Overview, Parameters, Gallery, and Versions as
 applicable. Compact cards may ellipsize bounded values while preserving their
@@ -69,11 +80,15 @@ ID.
 
 ## Canvas actions
 
-Recipe cards and details expose **Append to Canvas** as the safe composition
-action. Append clones saved nodes into the current graph, assigns collision-free
-IDs, remaps links, places/selects the inserted content, treats groups as
-first-class items, and rolls back the complete insertion on failure. It does not
-replace the current graph or mutate the saved recipe.
+Recipe cards and details expose a scope-aware canvas action. A live graph with
+an active output node and no unconnected required inputs is saved as a complete
+recipe and opens as a new workflow canvas. A graph without an output node or
+with required connection boundaries is saved as a partial recipe and appends to
+the current canvas. Append clones saved nodes, assigns collision-free IDs,
+remaps links, places/selects the inserted content, treats groups as first-class
+items, and rolls back the complete insertion on failure. Legacy recipes without
+scope metadata are complete recipes because earlier releases only documented
+and captured complete workflows.
 
 Structural editing is separate from composition. It may load a recipe into a new
 canvas after explicit confirmation and saves back through the full-recipe update

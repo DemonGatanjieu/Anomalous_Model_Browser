@@ -12,10 +12,16 @@ PHYSICAL_RENAME_PROTECTED_TYPES = frozenset({
     "clip_vision",
 })
 
-# Foundation components may be recovered under a different local filename, but
-# only when the workflow carries a cryptographic identity. File size alone is
-# too weak for shared VAE/text-encoder libraries.
-HASH_ONLY_RECOVERY_TYPES = PHYSICAL_RENAME_PROTECTED_TYPES
+# This is a recovery-confidence policy, not a scanner-support list. The scan
+# wizard may hash these folders, but Model Doctor must not redirect one of these
+# components from size, filename, metadata labels, or Civitai availability.
+HASH_ONLY_RECOVERY_TYPES = frozenset({
+    "vae",
+    "vae_approx",
+    "clip",
+    "text_encoders",
+    "clip_vision",
+})
 
 
 def is_physical_rename_protected(folder_type=None, folder_path=None):

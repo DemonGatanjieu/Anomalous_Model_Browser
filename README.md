@@ -36,7 +36,7 @@
 | **Comprehensive Model Management** | Automatically extract Base Model architectures, cover images, trigger words, and author info via hash scanning. Customize names, notes, and covers with safe deletion & visual replacement. |
 | **Workflow Repair (Model Doctor 🩺)** | Auto-detect missing model nodes when loading external workflows and swap them with matching local paths in one click. |
 | **Node Assistant & Presets (🤖)** | Visually replace models or safely insert LoRAs into compatible chains directly from the canvas. Apply node parameters from Workflow Recipes transactionally. |
-| **Workflow Recipes & Presets (🧰)** | Save complete workflows with covers, notes, tags, model identities, and parameter snapshots. Append to canvas, compare versions, and export portable packages. |
+| **Workflow Recipes & Presets (🧰)** | Save partial or complete workflows with covers, notes, tags, model identities, and parameter snapshots. Partial recipes append to the current canvas; complete recipes open in a new canvas. |
 | **Smart Prompt Notebook (📑)** | Architecture-aware compatibility matching for Checkpoints and LoRAs, built-in translation, auto-tagging, and 1-click canvas deployment. |
 | **History Gallery (🖼️)** | Native viewer for your `output` folder with mouse-wheel zoom, deletion, and direct drag-and-drop workflow reconstruction onto the canvas. |
 
@@ -105,7 +105,7 @@ Open it with **Ctrl + Shift + M**, the floating **📦** button, or **Extensions
 | **全方位模型管理** | 通过文件哈希自动提取基础架构、封面图、触发词与作者信息；支持看图一键替换模型、自定义备注与安全删除。 |
 | **节点智能修复 (模型医生 🩺)** | 导入他人工作流发生节点爆红时，模型医生可自动识别缺失模型并一键替换为本地有效路径。 |
 | **节点助手与参数预设 (🤖)** | 画布选中节点即可可视化选图换模型、向兼容链路插入 LoRA，或一键应用工作流配方中沉淀的节点参数（自动跳过易变种子）。 |
-| **工作流配方 (🧰)** | 保存完整工作流及封面、标签、模型身份与参数快照；支持追加到画布、历史版本比对、参数差异分析及便携分享包导入导出。 |
+| **工作流配方 (🧰)** | 保存局部或整体工作流及封面、标签、模型身份与参数快照；局部配方追加到当前画布，整体配方在新画布打开。 |
 | **智能提示词笔记 (📑)** | 架构级兼容性匹配（主模型+兼容 LoRA），内置双语分块翻译与标签编辑，支持一键打包发送至画布。 |
 | **原生出图图库 (🖼️)** | 原生读取本地 `output` 文件夹，支持滚轮缩放与安全删除，**直接将图片拖拽至画布即可原地还原工作流**。 |
 
@@ -142,7 +142,7 @@ Open it with **Ctrl + Shift + M**, the floating **📦** button, or **Extensions
 
 #### 4. 工作流配方与参数笔记本 🧰
 * **入口位置**：顶部 **创作工作台 (📑)** ➔ 切换至 **工作流配方**。
-* **主要功能**：完整保存当前节点图、封面、标签与参数快照；支持无损追加到当前画布、出图参数差异对比、版本回滚与便携包分享。
+* **主要功能**：保存当前节点图、封面、标签与参数快照；未闭合的局部配方追加到当前画布，可独立运行的整体配方在新画布打开，并支持出图参数差异对比、版本回滚与便携包分享。
 
 #### 5. 个性化配置 (设置面板) ⚙️
 * **入口位置**：侧边栏左下角 **齿轮图标 (⚙️)**。
