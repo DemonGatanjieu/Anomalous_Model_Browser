@@ -194,13 +194,132 @@ export async function showImageMaterialDetail(owner, sourceImage, imageUrl) {
         loading.remove();
         text(side, 'p', t('materialSnapshotExplanation'), 'anomalous-material-muted');
 
-        const stats = document.createElement('div');
-        stats.className = 'anomalous-material-detail-stats';
-        text(stats, 'span', t('materialNodeSummary', { count: payload.node_count || 0 }));
-        text(stats, 'span', t('materialModelSummary', { count: payload.model_references?.length || 0 }));
-        side.appendChild(stats);
-        if (payload.prompt_excerpt) text(side, 'blockquote', payload.prompt_excerpt, 'anomalous-material-prompt-excerpt');
+        // 1. Key generation parameters (Steps, CFG, Sampler, Resolution)
+        const params = payload.params || {};
+        const hasSamplingParams = params.steps || params.cfg || params.sampler_name || params.resolution;
+        if (hasSamplingParams) {
+            const metricGrid = document.createElement('div');
+            metricGrid.className = 'anomalous-material-metric-grid';
 
+            const addMetric = (labelStr, val) => {
+                if (val == null || val === '') return;
+                const card = document.createElement('div');
+                card.className = 'anomalous-material-metric-card';
+                text(card, 'span', labelStr, 'anomalous-material-metric-label');
+                text(card, 'span', String(val), 'anomalous-material-metric-val');
+                metricGrid.appendChild(card);
+            };
+
+            addMetric(t('recipeCardSpecsSteps') || '步数', params.steps);
+            addMetric('CFG', params.cfg);
+            const samplerFull = [params.sampler_name, params.scheduler].filter(Boolean).join(' / ');
+            addMetric(t('recipeCardSpecsSampler') || '采样', samplerFull);
+            addMetric(t('recipeCardSpecsResolution') || '尺寸', params.resolution);
+
+            if (metricGrid.childElementCount) side.appendChild(metricGrid);
+        }
+
+        // 2. Prompt Preview Card with copy and expand
+        const promptFullText = (Array.isArray(payload.prompts) && payload.prompts.length)
+            ? payload.prompts.join('\n\n')
+            : (payload.prompt_excerpt || '');
+
+        if (promptFullText) {
+            const promptCard = document.createElement('div');
+            promptCard.className = 'anomalous-material-prompt-card';
+
+            const bar = document.createElement('div');
+            bar.className = 'anomalous-material-prompt-bar';
+            text(bar, 'span', t('materialPromptText') || '提示词', 'anomalous-material-prompt-bar-label');
+
+            const btns = document.createElement('div');
+            btns.className = 'anomalous-material-prompt-bar-btns';
+
+            if (promptFullText.length > 80 || promptFullText.includes('\n')) {
+                const expandBtn = text(btns, 'button', t('materialExpandAll') || '展开', 'anomalous-material-mini-btn');
+                expandBtn.type = 'button';
+                expandBtn.onclick = () => {
+                    const isExp = promptContent.classList.toggle('is-expanded');
+                    expandBtn.textContent = isExp ? (t('materialCollapse') || '收起') : (t('materialExpandAll') || '展开');
+                };
+            }
+
+            const copyBtn = text(btns, 'button', t('materialCopyPrompt') || '📋 复制', 'anomalous-material-mini-btn');
+            copyBtn.type = 'button';
+            copyBtn.onclick = () => {
+                navigator.clipboard.writeText(promptFullText).then(() => {
+                    copyBtn.textContent = t('materialCopied') || '✅ 已复制';
+                    setTimeout(() => { copyBtn.textContent = t('materialCopyPrompt') || '📋 复制'; }, 1500);
+                });
+            };
+
+            bar.appendChild(btns);
+            promptCard.appendChild(bar);
+
+            const promptContent = text(promptCard, 'div', promptFullText, 'anomalous-material-prompt-content');
+            side.appendChild(promptCard);
+        }
+
+        // 3. Collapsible: Referenced Models
+        const models = Array.isArray(payload.model_references) ? payload.model_references : [];
+        if (models.length) {
+            const modelDetails = document.createElement('details');
+            modelDetails.className = 'anomalous-material-accordion';
+
+            const modelSummary = document.createElement('summary');
+            modelSummary.textContent = `📦 ${t('materialReferencedModels', { count: models.length })} ▾`;
+            modelDetails.appendChild(modelSummary);
+
+            const modelContent = document.createElement('div');
+            modelContent.className = 'anomalous-material-accordion-content';
+
+            for (const ref of models) {
+                const row = document.createElement('div');
+                row.className = 'anomalous-material-model-row';
+                const modelName = String(ref.saved_value || ref.name || 'Unknown').replace(/\\/g, '/').split('/').pop();
+                const nameEl = text(row, 'span', modelName, 'anomalous-material-model-name');
+                nameEl.title = ref.saved_value || modelName;
+                text(row, 'span', ref.category || 'model', 'anomalous-material-model-tag');
+                modelContent.appendChild(row);
+            }
+            modelDetails.appendChild(modelContent);
+            side.appendChild(modelDetails);
+        }
+
+        // 4. Collapsible: Included Nodes
+        const blocks = Array.isArray(payload.node_blocks) ? payload.node_blocks : [];
+        if (blocks.length) {
+            const nodeDetails = document.createElement('details');
+            nodeDetails.className = 'anomalous-material-accordion';
+
+            const nodeSummary = document.createElement('summary');
+            nodeSummary.textContent = `⚙️ ${t('materialIncludedNodes', { count: blocks.length })} ▾`;
+            nodeDetails.appendChild(nodeSummary);
+
+            const nodeContent = document.createElement('div');
+            nodeContent.className = 'anomalous-material-accordion-content';
+
+            const typeCounts = {};
+            for (const b of blocks) {
+                const tName = b.title || b.type || 'Node';
+                typeCounts[tName] = (typeCounts[tName] || 0) + 1;
+            }
+
+            const chipFlow = document.createElement('div');
+            chipFlow.className = 'anomalous-material-chip-flow';
+            for (const [nTitle, cnt] of Object.entries(typeCounts)) {
+                const chip = document.createElement('span');
+                chip.className = 'anomalous-material-chip';
+                text(chip, 'span', nTitle);
+                if (cnt > 1) text(chip, 'span', `×${cnt}`, 'anomalous-material-chip-count');
+                chipFlow.appendChild(chip);
+            }
+            nodeContent.appendChild(chipFlow);
+            nodeDetails.appendChild(nodeContent);
+            side.appendChild(nodeDetails);
+        }
+
+        // 5. Name input and save action
         const label = text(side, 'label', t('materialName'));
         const name = document.createElement('input');
         name.type = 'text';

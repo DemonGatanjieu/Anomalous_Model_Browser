@@ -121,6 +121,46 @@ def _prompt_excerpt(workflow):
     return ""
 
 
+def _extract_workflow_params(workflow):
+    params = {}
+    prompts = []
+    if not isinstance(workflow, dict):
+        return params, prompts
+
+    for node in workflow.get("nodes", []):
+        if not isinstance(node, dict):
+            continue
+        ntype = str(node.get("type") or "").strip()
+        ntype_lower = ntype.lower()
+        widgets = node.get("widgets_values") or []
+
+        if ntype_lower in ("ksampler", "ksampleradvanced") and isinstance(widgets, (list, tuple)):
+            is_adv = ntype_lower == "ksampleradvanced"
+            offset = 1 if is_adv else 0
+            if len(widgets) > 2 + offset and widgets[2 + offset] is not None:
+                params.setdefault("steps", widgets[2 + offset])
+            if len(widgets) > 3 + offset and widgets[3 + offset] is not None:
+                params.setdefault("cfg", widgets[3 + offset])
+            if len(widgets) > 4 + offset and widgets[4 + offset] is not None:
+                params.setdefault("sampler_name", widgets[4 + offset])
+            if len(widgets) > 5 + offset and widgets[5 + offset] is not None:
+                params.setdefault("scheduler", widgets[5 + offset])
+            if len(widgets) > 6 + offset and widgets[6 + offset] is not None:
+                params.setdefault("denoise", widgets[6 + offset])
+        elif ntype_lower == "emptylatentimage" and isinstance(widgets, (list, tuple)):
+            if len(widgets) >= 2 and widgets[0] and widgets[1]:
+                params.setdefault("resolution", f"{widgets[0]}×{widgets[1]}")
+
+        if "cliptextencode" in ntype_lower and isinstance(widgets, (list, tuple)):
+            for val in widgets:
+                if isinstance(val, str) and val.strip():
+                    cleaned = val.strip()
+                    if cleaned not in prompts:
+                        prompts.append(cleaned)
+
+    return params, prompts
+
+
 def _display_model_name(reference):
     value = str(reference.get("saved_value") or "").replace("\\", "/").split("/")[-1]
     return re.sub(r"\.(?:safetensors|ckpt|pt|bin|sft)$", "", value, flags=re.IGNORECASE)
@@ -257,6 +297,7 @@ async def api_inspect_image_material(request):
         return web.json_response({"status": "error", "message": "Output image not found"}, status=404)
     except OSError:
         return web.json_response({"status": "error", "message": "Could not inspect output image"}, status=500)
+    sampling_params, prompts = _extract_workflow_params(workflow)
     return web.json_response({
         "status": "success",
         "source_image": source,
@@ -265,6 +306,8 @@ async def api_inspect_image_material(request):
         "node_blocks": blocks,
         "model_references": references,
         "prompt_excerpt": _prompt_excerpt(workflow),
+        "params": sampling_params,
+        "prompts": prompts,
     })
 
 
