@@ -4226,3 +4226,233 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-recipe-beta-notice[style*="display: none"] {
     display: none !important;
 }
+
+/* ========================================================================== */
+/* Modern Studio Presets (Parameter Notebook Overhaul)                        */
+/* ========================================================================== */
+
+.anomalous-preset-btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    border: 1px solid rgba(129, 140, 248, 0.4);
+    color: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    transition: all 0.2s ease;
+}
+
+.anomalous-preset-btn-primary:hover {
+    filter: brightness(1.12);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45);
+    transform: translateY(-1px);
+}
+
+.anomalous-preset-btn-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    color: #cbd5e1;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.anomalous-preset-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+}
+
+.anomalous-preset-item-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 6px;
+}
+
+.anomalous-preset-item-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.anomalous-preset-item-card.is-active {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(79, 70, 229, 0.06));
+    border-color: rgba(129, 140, 248, 0.5);
+    box-shadow: inset 3px 0 0 #818cf8, 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.anomalous-preset-item-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.anomalous-preset-item-title {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: #e2e8f0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-preset-item-card.is-active .anomalous-preset-item-title {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.anomalous-preset-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: #94a3b8;
+}
+
+.anomalous-preset-item-badge {
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+    font-size: 0.68rem;
+    font-weight: 600;
+}
+
+.anomalous-preset-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0.4;
+    transition: opacity 0.15s ease;
+}
+
+.anomalous-preset-item-card:hover .anomalous-preset-item-actions {
+    opacity: 1;
+}
+
+.anomalous-preset-item-btn {
+    padding: 5px 7px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 0.78rem;
+    line-height: 1;
+    transition: all 0.15s;
+}
+
+.anomalous-preset-item-btn:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.anomalous-preset-item-btn.is-delete:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+}
+
+/* Preset Console Header (Right Main Stage) */
+.anomalous-preset-console-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(30, 32, 38, 0.7), rgba(18, 19, 23, 0.85));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 14px;
+    backdrop-filter: blur(12px);
+}
+
+.anomalous-preset-console-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anomalous-preset-console-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.anomalous-preset-console-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #f8fafc;
+    margin: 0;
+}
+
+.anomalous-preset-console-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.anomalous-preset-compact-gallery {
+    position: relative;
+    width: 120px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.anomalous-preset-compact-gallery:hover {
+    transform: scale(1.03);
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+.anomalous-preset-compact-gallery img {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+    object-fit: cover !important;
+}
+
+.anomalous-preset-compact-gallery-badge {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: 0.68rem;
+    backdrop-filter: blur(4px);
+    white-space: nowrap;
+}

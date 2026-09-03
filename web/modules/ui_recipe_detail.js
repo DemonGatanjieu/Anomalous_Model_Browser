@@ -2091,22 +2091,6 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     const wrapper = document.createElement('div');
     wrapper.className = `anomalous-recipe-detail-parameters${animateSelection ? ' is-switching' : ''}`;
 
-    const selectionBanner = document.createElement('section');
-    selectionBanner.className = 'anomalous-recipe-parameter-selection-banner';
-    selectionBanner.setAttribute('aria-live', 'polite');
-    const selectionCopy = document.createElement('div');
-    selectionCopy.className = 'anomalous-recipe-parameter-selection-copy';
-    appendText(selectionCopy, 'small', t('recipeParameterShowing'), 'anomalous-recipe-detail-muted');
-    appendText(
-        selectionCopy,
-        'strong',
-        parameterState?.editor?.name || selectedNotebook?.name || t('recipeParameterCurrentRecipe'),
-    );
-    if (selectedNotebook?.timestamp) appendText(selectionCopy, 'small', dateText(selectedNotebook.timestamp), 'anomalous-recipe-detail-muted');
-    appendText(selectionBanner, 'span', t('recipeParameterActive'), 'anomalous-recipe-parameter-selection-badge');
-    selectionBanner.prepend(selectionCopy);
-    wrapper.appendChild(selectionBanner);
-
     const layout = document.createElement('div');
     layout.className = 'anomalous-recipe-parameter-notebook-layout';
     const sidebar = document.createElement('aside');
@@ -2133,24 +2117,7 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     sidebarActions.style.display = 'grid';
     sidebarActions.style.gap = '8px';
     sidebarActions.style.marginBottom = '12px';
-    
-    const newSnapshot = button(sidebarActions, t('recipeParameterNew'), 'anomalous-btn-primary');
-    newSnapshot.onclick = () => {
-        const draft = cloneJson({
-            workflow: baseSource.workflow,
-            params: baseSource.params || {},
-        });
-        if (!draft?.workflow) return;
-        parameterState.editor = {
-            draft,
-            name: `${recipe.name || t('recipeUntitled')} · ${t('recipeParameterNew')}`,
-        };
-        parameterState.selectedFilename = null;
-        gallery.status = 'idle';
-        gallery.images = [];
-        gallery.scanned = 0;
-        selectParameterTab?.();
-    };
+
     const readCurrentHandler = async () => {
         readCurrent.disabled = true;
         readCurrent.classList.add('is-busy');
@@ -2192,31 +2159,48 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
             readCurrent.textContent = originalLabel;
         }
     };
-    
-    const readCurrent = button(sidebarActions, t('recipeParameterReadCurrent'), 'anomalous-btn-success');
+
+    const readCurrent = button(sidebarActions, '💾 ' + t('recipeParameterReadCurrent'), 'anomalous-preset-btn-primary');
     readCurrent.onclick = readCurrentHandler;
-    
+
+    const newSnapshot = button(sidebarActions, '➕ ' + t('recipeParameterNew'), 'anomalous-preset-btn-secondary');
+    newSnapshot.onclick = () => {
+        const draft = cloneJson({
+            workflow: baseSource.workflow,
+            params: baseSource.params || {},
+        });
+        if (!draft?.workflow) return;
+        parameterState.editor = {
+            draft,
+            name: `${recipe.name || t('recipeUntitled')} · ${t('recipeParameterNew')}`,
+        };
+        parameterState.selectedFilename = null;
+        gallery.status = 'idle';
+        gallery.images = [];
+        gallery.scanned = 0;
+        selectParameterTab?.();
+    };
+
     sidebar.appendChild(sidebarActions);
     appendText(sidebar, 'small', t('recipeParameterSnapshotsHint'), 'anomalous-recipe-detail-muted');
     const snapshotList = document.createElement('div');
     snapshotList.className = 'anomalous-recipe-parameter-notebook-list';
+    snapshotList.style.marginTop = '8px';
     if (parameterState?.status === 'loading') {
         appendText(snapshotList, 'p', t('recipeParameterLoading'), 'anomalous-recipe-detail-muted');
     } else if (parameterState?.status === 'error') {
         appendText(snapshotList, 'p', t('recipeParameterLoadError'), 'anomalous-recipe-dialog-error');
     } else if (parameterState?.notebooks?.length) {
         for (const notebook of parameterState.notebooks) {
+            const isSelected = notebook.filename === parameterState.selectedFilename;
             const row = document.createElement('div');
-            row.className = 'anomalous-recipe-parameter-notebook-row';
+            row.className = `anomalous-preset-item-card${isSelected ? ' is-active' : ''}`;
             const notebookName = notebook.name || t('recipeParameterUntitled');
-            const item = button(row, notebookName, 'anomalous-recipe-parameter-notebook-item');
-            item.classList.toggle('is-active', notebook.filename === parameterState.selectedFilename);
-            item.setAttribute('aria-pressed', notebook.filename === parameterState.selectedFilename ? 'true' : 'false');
-            item.title = `${notebookName} · ${dateText(notebook.timestamp)}`;
-            appendText(item, 'small', dateText(notebook.timestamp), 'anomalous-recipe-detail-muted');
-            item.onclick = () => {
+
+            const main = document.createElement('div');
+            main.className = 'anomalous-preset-item-main';
+            main.onclick = () => {
                 if (parameterState.selectedFilename === notebook.filename) return;
-                item.classList.add('is-switching');
                 parameterState.editor = null;
                 parameterState.selectedFilename = notebook.filename;
                 parameterState.switchToken = (parameterState.switchToken || 0) + 1;
@@ -2226,15 +2210,29 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 selectParameterTab?.();
             };
 
-            const rename = button(row, '✏️', 'anomalous-recipe-parameter-notebook-rename');
+            const titleEl = appendText(main, 'div', notebookName, 'anomalous-preset-item-title');
+            titleEl.title = notebookName;
+
+            const meta = document.createElement('div');
+            meta.className = 'anomalous-preset-item-meta';
+            appendText(meta, 'span', dateText(notebook.timestamp), 'anomalous-preset-item-date');
+            if (isSelected) {
+                appendText(meta, 'span', t('recipeParameterActive'), 'anomalous-preset-item-badge');
+            }
+            main.appendChild(meta);
+            row.appendChild(main);
+
+            const actions = document.createElement('div');
+            actions.className = 'anomalous-preset-item-actions';
+
+            const rename = button(actions, '✏️', 'anomalous-preset-item-btn');
             rename.title = t('recipeParameterRename');
-            rename.setAttribute('aria-label', `${t('recipeParameterRename')}: ${notebookName}`);
-            rename.onclick = async () => {
+            rename.onclick = async (e) => {
+                e.stopPropagation();
                 const newName = await anomalousPrompt(t('recipeParameterRenamePrompt'), notebookName);
                 if (newName === null || !newName.trim() || newName.trim() === notebookName) return;
                 const trimmedName = newName.trim();
                 rename.disabled = true;
-                item.disabled = true;
                 row.classList.add('is-busy');
                 try {
                     const response = await fetch('/anomalous/rename_parameter', {
@@ -2249,19 +2247,17 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 } catch (error) {
                     console.error('Could not rename parameter notebook:', error);
                     rename.disabled = false;
-                    item.disabled = false;
                     row.classList.remove('is-busy');
                     await anomalousAlert(t('recipeParameterRenameError'));
                 }
             };
 
-            const remove = button(row, '×', 'anomalous-recipe-parameter-notebook-delete');
+            const remove = button(actions, '🗑️', 'anomalous-preset-item-btn is-delete');
             remove.title = t('recipeParameterDelete');
-            remove.setAttribute('aria-label', `${t('recipeParameterDelete')}: ${notebookName}`);
-            remove.onclick = async () => {
+            remove.onclick = async (e) => {
+                e.stopPropagation();
                 if (!await anomalousConfirm(t('recipeParameterDeleteConfirm', { name: notebookName }))) return;
                 remove.disabled = true;
-                item.disabled = true;
                 row.classList.add('is-deleting');
                 try {
                     const response = await fetch('/anomalous/delete_parameter', {
@@ -2281,11 +2277,12 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 } catch (error) {
                     console.error('Could not delete parameter notebook:', error);
                     remove.disabled = false;
-                    item.disabled = false;
                     row.classList.remove('is-deleting');
                     await anomalousAlert(t('recipeParameterDeleteError'));
                 }
             };
+
+            row.appendChild(actions);
             snapshotList.appendChild(row);
         }
     } else {
@@ -2301,37 +2298,30 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     }
 
     const intro = document.createElement('section');
-    intro.className = 'anomalous-recipe-detail-section';
-    const introHeading = document.createElement('div');
-    introHeading.className = 'anomalous-recipe-detail-section-heading';
-    appendText(introHeading, 'h4', t('recipeDetailParameters'));
-    if (parameterState?.selectedFilename) {
-        const currentNotebook = parameterState.notebooks?.find(nb => nb.filename === parameterState.selectedFilename);
-        const currentName = currentNotebook?.name || source?.name || t('recipeParameterUntitled');
-        const renameHeadingBtn = button(introHeading, '✏️ ' + t('recipeParameterRename'), 'anomalous-btn-ghost');
-        renameHeadingBtn.onclick = async () => {
-            const newName = await anomalousPrompt(t('recipeParameterRenamePrompt'), currentName);
-            if (newName === null || !newName.trim() || newName.trim() === currentName) return;
-            const trimmedName = newName.trim();
-            renameHeadingBtn.disabled = true;
-            try {
-                const response = await fetch('/anomalous/rename_parameter', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ filename: parameterState.selectedFilename, name: trimmedName }),
-                });
-                const payload = await response.json();
-                if (!response.ok || payload.status !== 'success') throw new Error(payload.message || 'rename failed');
-                await parameterState.refresh?.(true);
-            } catch (error) {
-                console.error('Could not rename parameter notebook:', error);
-                renameHeadingBtn.disabled = false;
-                await anomalousAlert(t('recipeParameterRenameError'));
-            }
-        };
-    }
-    const applyButton = button(introHeading, t('recipeParameterApply'), 'anomalous-btn-primary');
-    const applyStatus = appendText(introHeading, 'small', '', 'anomalous-recipe-header-status');
+    intro.className = 'anomalous-preset-console-header';
+
+    const consoleInfo = document.createElement('div');
+    consoleInfo.className = 'anomalous-preset-console-info';
+
+    const titleRow = document.createElement('div');
+    titleRow.className = 'anomalous-preset-console-title-row';
+
+    const currentNotebook = parameterState.notebooks?.find(nb => nb.filename === parameterState.selectedFilename);
+    const currentName = currentNotebook?.name || source?.name || t('recipeParameterCurrentRecipe');
+
+    appendText(titleRow, 'h3', currentName, 'anomalous-preset-console-title');
+    appendText(titleRow, 'span', t('recipeParameterActive'), 'anomalous-preset-item-badge');
+    consoleInfo.appendChild(titleRow);
+
+    appendText(consoleInfo, 'p', t('recipeDetailParametersHint'), 'anomalous-recipe-detail-muted');
+
+    const consoleActions = document.createElement('div');
+    consoleActions.className = 'anomalous-preset-console-actions';
+
+    const applyButton = button(consoleActions, '🚀 ' + t('recipeParameterApply'), 'anomalous-preset-btn-primary');
+    applyButton.style.padding = '8px 16px';
+    applyButton.style.fontSize = '0.88rem';
+    const applyStatus = appendText(consoleActions, 'small', '', 'anomalous-recipe-header-status');
     applyButton.onclick = async () => {
         applyButton.disabled = true;
         applyButton.classList.add('is-busy');
@@ -2356,10 +2346,74 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
             applyButton.classList.remove('is-busy');
         }
     };
-    intro.appendChild(introHeading);
-    appendText(intro, 'p', t('recipeDetailParametersHint'), 'anomalous-recipe-detail-muted');
 
-    renderPromptSection(intro, owner, recipe, source, selectParameterTab);
+    if (parameterState?.selectedFilename) {
+        const renameHeadingBtn = button(consoleActions, '✏️ ' + t('recipeParameterRename'), 'anomalous-btn-ghost');
+        renameHeadingBtn.onclick = async () => {
+            const newName = await anomalousPrompt(t('recipeParameterRenamePrompt'), currentName);
+            if (newName === null || !newName.trim() || newName.trim() === currentName) return;
+            const trimmedName = newName.trim();
+            renameHeadingBtn.disabled = true;
+            try {
+                const response = await fetch('/anomalous/rename_parameter', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: parameterState.selectedFilename, name: trimmedName }),
+                });
+                const payload = await response.json();
+                if (!response.ok || payload.status !== 'success') throw new Error(payload.message || 'rename failed');
+                await parameterState.refresh?.(true);
+            } catch (error) {
+                console.error('Could not rename parameter notebook:', error);
+                renameHeadingBtn.disabled = false;
+                await anomalousAlert(t('recipeParameterRenameError'));
+            }
+        };
+    }
+    consoleInfo.appendChild(consoleActions);
+    intro.appendChild(consoleInfo);
+
+    // Compact gallery showcase tile on top right
+    if (gallery.status === 'ready' && gallery.images.length) {
+        const compactGallery = document.createElement('div');
+        compactGallery.className = 'anomalous-preset-compact-gallery';
+        compactGallery.title = `${t('recipeParameterGallery')} (${gallery.images.length})`;
+        const thumb = document.createElement('img');
+        thumb.src = outputImageUrl(gallery.images[0]);
+        compactGallery.appendChild(thumb);
+        appendText(compactGallery, 'span', `🖼️ ${gallery.images.length}`, 'anomalous-preset-compact-gallery-badge');
+        compactGallery.onclick = () => {
+            const dialog = document.createElement('dialog');
+            dialog.className = 'anomalous-recipe-gallery-dialog';
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'anomalous-dialog-close anomalous-btn-ghost';
+            closeBtn.innerHTML = '✕';
+            closeBtn.onclick = () => dialog.close();
+            dialog.appendChild(closeBtn);
+            const heading = document.createElement('h3');
+            heading.textContent = `${t('recipeParameterGallery')} (${gallery.images.length})`;
+            heading.className = 'anomalous-recipe-gallery-dialog-title';
+            dialog.appendChild(heading);
+            const grid = document.createElement('div');
+            grid.className = 'anomalous-recipe-gallery-grid';
+            for (const sourceImage of gallery.images) {
+                const card = document.createElement('article');
+                card.className = 'anomalous-recipe-gallery-card';
+                const url = outputImageUrl(sourceImage);
+                const image = document.createElement('img');
+                image.src = url;
+                image.loading = 'lazy';
+                image.onclick = () => owner.showGalleryViewer?.(url);
+                card.appendChild(image);
+                grid.appendChild(card);
+            }
+            dialog.appendChild(grid);
+            document.body.appendChild(dialog);
+            dialog.addEventListener('close', () => dialog.remove());
+            dialog.showModal();
+        };
+        intro.appendChild(compactGallery);
+    }
 
     const params = source?.params || {};
     const resDisplay = formatRecipeResolution(params.resolution);
@@ -2413,64 +2467,15 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     if (summaryGrid.childElementCount) summary.appendChild(summaryGrid);
     else appendText(summary, 'p', t('recipeDetailNoSavedParameters'), 'anomalous-recipe-detail-muted');
 
+    const promptWrap = document.createElement('div');
+    promptWrap.style.marginBottom = '14px';
+    renderPromptSection(promptWrap, owner, recipe, source, selectParameterTab);
+
     const nodesSection = document.createElement('section');
     nodesSection.className = 'anomalous-recipe-detail-section';
     renderRawNodesLazy(nodesSection, source);
 
-    wrapper.append(intro, summary, nodesSection);
-    
-    // Replace old bottom gallery with Hero Section at the top
-    if (gallery.status === 'ready' && gallery.images.length) {
-        const heroSection = document.createElement('section');
-        heroSection.className = 'anomalous-recipe-detail-hero';
-        
-        const heroImage = document.createElement('img');
-        heroImage.src = outputImageUrl(gallery.images[0]);
-        heroImage.className = 'anomalous-recipe-detail-hero-image';
-        heroImage.onclick = () => owner.showGalleryViewer?.(heroImage.src);
-        heroSection.appendChild(heroImage);
-        
-        const galleryButton = document.createElement('button');
-        galleryButton.className = 'anomalous-recipe-detail-hero-gallery-btn';
-        galleryButton.innerHTML = `🖼️ ${t('recipeParameterGallery')}`;
-        galleryButton.onclick = () => {
-            const dialog = document.createElement('dialog');
-            dialog.className = 'anomalous-recipe-gallery-dialog';
-            
-            const closeBtn = document.createElement('button');
-            closeBtn.className = 'anomalous-dialog-close anomalous-btn-ghost';
-            closeBtn.innerHTML = '✕';
-            closeBtn.onclick = () => dialog.close();
-            dialog.appendChild(closeBtn);
-            
-            const heading = document.createElement('h3');
-            heading.textContent = t('recipeParameterGallery');
-            heading.className = 'anomalous-recipe-gallery-dialog-title';
-            dialog.appendChild(heading);
-            
-            const grid = document.createElement('div');
-            grid.className = 'anomalous-recipe-gallery-grid';
-            for (const sourceImage of gallery.images) {
-                const card = document.createElement('article');
-                card.className = 'anomalous-recipe-gallery-card';
-                const url = outputImageUrl(sourceImage);
-                const image = document.createElement('img');
-                image.src = url;
-                image.loading = 'lazy';
-                image.onclick = () => owner.showGalleryViewer?.(url);
-                card.appendChild(image);
-                grid.appendChild(card);
-            }
-            dialog.appendChild(grid);
-            document.body.appendChild(dialog);
-            
-            dialog.addEventListener('close', () => dialog.remove());
-            dialog.showModal();
-        };
-        heroSection.appendChild(galleryButton);
-        wrapper.insertBefore(heroSection, intro);
-    }
-
+    wrapper.append(intro, summary, promptWrap, nodesSection);
     layout.append(sidebar, wrapper);
     content.appendChild(layout);
 }
