@@ -1995,11 +1995,6 @@ dialog.anomalous-gallery-viewer[open] {
     font-size: 0.85rem;
 }
 
-.anomalous-recipe-advanced-info > summary::before {
-    content: "⚙️";
-    font-size: 1.1em;
-}
-
 .anomalous-recipe-advanced-info > summary:hover,
 .anomalous-recipe-advanced-info > summary:focus-visible {
     background: rgba(169, 205, 255, 0.15);
