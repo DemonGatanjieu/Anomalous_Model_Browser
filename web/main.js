@@ -233,6 +233,8 @@ class AnomalousBrowser {
     close() {
         this.modal.classList.remove('visible');
         this.setTriggerVisible(true);
+        const canvas = document.getElementById('graph-canvas');
+        if (canvas instanceof HTMLElement) canvas.focus({ preventScroll: true });
         if (this._modelLoadController) this._modelLoadController.abort();
         if (this._modelMediaObserver) this._modelMediaObserver.disconnect();
         this.modal.querySelectorAll('video, audio').forEach(media => media.pause());
