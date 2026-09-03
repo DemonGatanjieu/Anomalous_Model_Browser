@@ -106,6 +106,9 @@ def _node_blocks(workflow, include_values=True):
         }
         if include_values:
             block["widgets_values"] = copy.deepcopy(node.get("widgets_values") or [])
+            block["properties"] = copy.deepcopy(node.get("properties") or {})
+            if node.get("mode") is not None:
+                block["mode"] = node.get("mode")
         blocks.append(block)
     return blocks
 
@@ -298,12 +301,13 @@ async def api_inspect_image_material(request):
     except OSError:
         return web.json_response({"status": "error", "message": "Could not inspect output image"}, status=500)
     sampling_params, prompts = _extract_workflow_params(workflow)
+    detailed_blocks = _node_blocks(workflow, include_values=True)
     return web.json_response({
         "status": "success",
         "source_image": source,
         "suggested_name": suggested_name,
         "node_count": len(blocks),
-        "node_blocks": blocks,
+        "node_blocks": detailed_blocks,
         "model_references": references,
         "prompt_excerpt": _prompt_excerpt(workflow),
         "params": sampling_params,

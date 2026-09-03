@@ -4862,6 +4862,126 @@ dialog.anomalous-gallery-viewer::backdrop {
     opacity: 0.6;
 }
 
+/* Lazy, two-level disclosure for the exact serialized node parameters. */
+.anomalous-material-node-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: 10px;
+}
+
+.anomalous-material-node-detail {
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 7px;
+    background: rgba(5, 7, 11, 0.22);
+}
+
+.anomalous-material-node-detail > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    color: #d8dee9;
+    cursor: pointer;
+    user-select: none;
+}
+
+.anomalous-material-node-detail > summary:hover { background: rgba(255, 255, 255, 0.035); }
+.anomalous-material-node-detail[open] > summary { border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+
+.anomalous-material-node-heading {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.anomalous-material-node-heading strong,
+.anomalous-material-node-heading small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-material-node-heading strong { font-size: 0.77rem; font-weight: 600; }
+.anomalous-material-node-heading small { color: #788396; font-size: 0.67rem; font-family: monospace; }
+.anomalous-material-node-count { flex-shrink: 0; color: #8290a5; font-size: 0.68rem; }
+
+.anomalous-material-node-parameter-content {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 9px;
+}
+
+.anomalous-material-node-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    color: #7f8a9d;
+    font-size: 0.67rem;
+}
+
+.anomalous-material-node-meta button { margin-left: auto; }
+
+.anomalous-material-parameter-row {
+    display: grid;
+    grid-template-columns: minmax(112px, 0.42fr) minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    padding: 7px 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.anomalous-material-parameter-label {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding-top: 2px;
+    color: #aab3c2;
+    font-size: 0.7rem;
+}
+
+.anomalous-material-parameter-label code {
+    color: #687487;
+    font-size: 0.62rem;
+}
+
+.anomalous-material-volatile-badge {
+    padding: 1px 5px;
+    border: 1px solid rgba(245, 158, 11, 0.22);
+    border-radius: 999px;
+    background: rgba(245, 158, 11, 0.08);
+    color: #d6a756;
+    font-size: 0.59rem;
+}
+
+.anomalous-material-parameter-value {
+    max-height: 150px;
+    overflow: auto;
+    margin: 0;
+    padding: 6px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.18);
+    color: #d5dae4;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 0.67rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+    .anomalous-material-parameter-row { grid-template-columns: 1fr; }
+}
+
 /* Model Categorized Groups */
 .anomalous-material-model-group {
     display: flex;

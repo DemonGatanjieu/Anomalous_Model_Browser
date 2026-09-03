@@ -16,8 +16,11 @@ The backend accepts output-image descriptors only after applying the shared
 filename and containment checks. It reads bounded embedded metadata, requires a
 valid UI workflow, copies at most 64 MiB of source image data, validates the
 graph with the Recipe workflow validator, and writes JSON atomically. List
-responses omit the full workflow. Asset reads require both a valid material
-record and a contained private asset path.
+responses omit the full workflow. The explicit image-inspection route may
+return exact `widgets_values`, bounded node `properties`, mode, and volatile
+widget indexes because it runs only after the user opens one image detail; the
+frontend keeps these records behind lazy nested disclosure. Asset reads require
+both a valid material record and a contained private asset path.
 
 The route family is:
 

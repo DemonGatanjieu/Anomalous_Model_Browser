@@ -333,6 +333,154 @@ function extractWorkflowDetails(workflow) {
     return { params, positivePrompts, negativePrompts, allPrompts, loraDetailsMap, discoveredModels };
 }
 
+function detailedBlocksFromWorkflow(workflow, serverBlocks = []) {
+    const nodes = Array.isArray(workflow?.nodes) ? workflow.nodes : [];
+    if (!nodes.length) return Array.isArray(serverBlocks) ? serverBlocks : [];
+    const serverById = new Map((serverBlocks || []).map(block => [String(block?.node_id), block]));
+    const occurrences = {};
+    return nodes.filter(node => node && typeof node === 'object' && node.type).map(node => {
+        const nodeType = String(node.type);
+        occurrences[nodeType] = (occurrences[nodeType] || 0) + 1;
+        const server = serverById.get(String(node.id)) || {};
+        const lower = nodeType.toLowerCase();
+        const volatile = lower === 'ksampler' ? [0] : lower === 'ksampleradvanced' ? [1] : [];
+        return {
+            node_id: node.id,
+            type: nodeType,
+            title: node.title || server.title || nodeType,
+            occurrence: occurrences[nodeType],
+            widget_count: Array.isArray(node.widgets_values) ? node.widgets_values.length : 0,
+            widgets_values: Array.isArray(node.widgets_values) ? node.widgets_values : [],
+            volatile_widget_indexes: Array.isArray(server.volatile_widget_indexes)
+                ? server.volatile_widget_indexes
+                : volatile,
+            properties: node.properties && typeof node.properties === 'object' ? node.properties : {},
+            mode: node.mode,
+        };
+    });
+}
+
+function materialWidgetLabels(nodeType) {
+    const type = String(nodeType || '').toLowerCase();
+    if (type === 'ksampler') return [
+        t('materialParamSeed'), t('materialParamSeedControl'), t('recipeCardSpecsSteps'),
+        'CFG', t('recipeCardSpecsSampler'), t('materialScheduler'), t('materialDenoise'),
+    ];
+    if (type === 'ksampleradvanced') return [
+        t('materialParamAddNoise'), t('materialParamSeed'), t('materialParamSeedControl'),
+        t('recipeCardSpecsSteps'), 'CFG', t('recipeCardSpecsSampler'), t('materialScheduler'),
+        t('materialParamStartStep'), t('materialParamEndStep'), t('materialParamLeftoverNoise'),
+    ];
+    if (type === 'emptylatentimage') return [t('materialParamWidth'), t('materialParamHeight'), t('materialParamBatchSize')];
+    if (/checkpointloader(simple)?$/.test(type)) return [t('materialParamCheckpoint')];
+    if (type.endsWith('unetloader')) return [t('materialParamUnet'), t('materialParamWeightDtype')];
+    if (type.includes('loraloader')) return [t('materialParamLora'), t('materialParamModelStrength'), t('materialParamClipStrength')];
+    if (type.endsWith('vaeloader')) return [t('materialParamVae')];
+    if (type.includes('cliptextencode')) return [t('materialPromptText')];
+    if (type.endsWith('clipvisionloader')) return [t('materialParamClipVision')];
+    if (type.endsWith('controlnetloader')) return [t('materialParamControlNet')];
+    if (type.endsWith('dualcliploader')) return [t('materialParamClipOne'), t('materialParamClipTwo'), t('materialParamClipType')];
+    if (type.endsWith('triplecliploader')) return [t('materialParamClipOne'), t('materialParamClipTwo'), t('materialParamClipThree')];
+    if (type.endsWith('cliploader')) return [t('materialParamClipOne'), t('materialParamClipType')];
+    if (type === 'saveimage') return [t('materialParamFilenamePrefix')];
+    return [];
+}
+
+function formatMaterialParameterValue(value) {
+    if (value === null) return 'null';
+    if (value === undefined) return 'undefined';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    try { return JSON.stringify(value, null, 2); } catch (error) { return String(value); }
+}
+
+function renderDetailedNodeCards(parent, blocks) {
+    const list = document.createElement('div');
+    list.className = 'anomalous-material-node-list';
+
+    for (const block of blocks) {
+        const node = document.createElement('details');
+        node.className = 'anomalous-material-node-detail';
+        const summary = document.createElement('summary');
+        const heading = document.createElement('span');
+        heading.className = 'anomalous-material-node-heading';
+        text(heading, 'strong', block.title || block.type || t('recipeUnknownNode'));
+        text(heading, 'small', block.type || t('recipeUnknownNode'));
+        const widgetValues = Array.isArray(block.widgets_values) ? block.widgets_values : [];
+        text(summary, 'span', t('materialParameterCount', { count: widgetValues.length }), 'anomalous-material-node-count');
+        summary.prepend(heading);
+        node.appendChild(summary);
+
+        let rendered = false;
+        node.addEventListener('toggle', () => {
+            if (!node.open || rendered) return;
+            rendered = true;
+            const content = document.createElement('div');
+            content.className = 'anomalous-material-node-parameter-content';
+
+            const meta = document.createElement('div');
+            meta.className = 'anomalous-material-node-meta';
+            text(meta, 'span', `${t('materialNodeId')}: ${block.node_id ?? '—'}`);
+            if (block.mode != null) text(meta, 'span', `${t('materialNodeMode')}: ${block.mode}`);
+            const copy = text(meta, 'button', t('materialCopyNodeParameters'), 'anomalous-material-mini-btn');
+            copy.type = 'button';
+            copy.onclick = () => {
+                const snapshot = {
+                    node_id: block.node_id,
+                    type: block.type,
+                    title: block.title,
+                    widgets_values: widgetValues,
+                    properties: block.properties || {},
+                    mode: block.mode,
+                };
+                navigator.clipboard.writeText(JSON.stringify(snapshot, null, 2)).then(() => {
+                    copy.textContent = t('materialCopied');
+                    setTimeout(() => { copy.textContent = t('materialCopyNodeParameters'); }, 1200);
+                });
+            };
+            content.appendChild(meta);
+
+            const labels = materialWidgetLabels(block.type);
+            const volatileIndexes = new Set(Array.isArray(block.volatile_widget_indexes) ? block.volatile_widget_indexes : []);
+            if (!widgetValues.length) {
+                text(content, 'p', t('materialNoWidgetParameters'), 'anomalous-material-muted');
+            }
+            widgetValues.forEach((value, index) => {
+                const row = document.createElement('div');
+                row.className = 'anomalous-material-parameter-row';
+                const labelWrap = document.createElement('div');
+                labelWrap.className = 'anomalous-material-parameter-label';
+                text(labelWrap, 'span', labels[index] || t('materialWidgetIndex', { index: index + 1 }));
+                text(labelWrap, 'code', `#${index}`);
+                if (volatileIndexes.has(index)) {
+                    text(labelWrap, 'span', t('materialVolatileParameter'), 'anomalous-material-volatile-badge');
+                }
+                const valueText = text(row, 'pre', formatMaterialParameterValue(value), 'anomalous-material-parameter-value');
+                valueText.title = t('materialParameterFullValue');
+                row.prepend(labelWrap);
+                content.appendChild(row);
+            });
+
+            const properties = block.properties && typeof block.properties === 'object' ? block.properties : {};
+            if (Object.keys(properties).length) {
+                const row = document.createElement('div');
+                row.className = 'anomalous-material-parameter-row';
+                const labelWrap = document.createElement('div');
+                labelWrap.className = 'anomalous-material-parameter-label';
+                text(labelWrap, 'span', t('materialNodeProperties'));
+                const propertyValue = document.createElement('pre');
+                propertyValue.className = 'anomalous-material-parameter-value';
+                propertyValue.textContent = formatMaterialParameterValue(properties);
+                row.append(labelWrap, propertyValue);
+                content.appendChild(row);
+            }
+            node.appendChild(content);
+        });
+        list.appendChild(node);
+    }
+    parent.appendChild(list);
+}
+
 export async function showImageMaterialDetail(owner, sourceImage, imageUrl) {
     const overlay = document.createElement('div');
     overlay.className = 'anomalous-material-detail-overlay';
@@ -600,14 +748,14 @@ export async function showImageMaterialDetail(owner, sourceImage, imageUrl) {
             sideBody.appendChild(modelDetails);
         }
 
-        // Section D: Included Nodes (Collapsible)
-        const blocks = Array.isArray(inspectPayload.node_blocks) ? inspectPayload.node_blocks : [];
+        // Section D: Full node parameters (two-level progressive disclosure)
+        const blocks = detailedBlocksFromWorkflow(clientWorkflow, inspectPayload.node_blocks);
         if (blocks.length) {
             const nodeDetails = document.createElement('details');
             nodeDetails.className = 'anomalous-material-accordion';
 
             const nodeSummary = document.createElement('summary');
-            nodeSummary.textContent = `⚙️ ${t('materialIncludedNodes', { count: blocks.length })} ▾`;
+            nodeSummary.textContent = `⚙️ ${t('materialDetailedNodeParameters', { count: blocks.length })} ▾`;
             nodeDetails.appendChild(nodeSummary);
 
             const nodeContent = document.createElement('div');
@@ -629,6 +777,12 @@ export async function showImageMaterialDetail(owner, sourceImage, imageUrl) {
                 chipFlow.appendChild(chip);
             }
             nodeContent.appendChild(chipFlow);
+            let detailedNodesRendered = false;
+            nodeDetails.addEventListener('toggle', () => {
+                if (!nodeDetails.open || detailedNodesRendered) return;
+                detailedNodesRendered = true;
+                renderDetailedNodeCards(nodeContent, blocks);
+            });
             nodeDetails.appendChild(nodeContent);
             sideBody.appendChild(nodeDetails);
         }
