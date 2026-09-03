@@ -847,6 +847,166 @@ export async function refreshRecipes() {
     }
 }
 
+function createRecipeQuickSpecs(params) {
+    if (!params || typeof params !== 'object') return null;
+    const strip = document.createElement('div');
+    strip.className = 'anomalous-recipe-specs-strip';
+
+    const loras = Array.isArray(params.loras) ? params.loras : [];
+    if (loras.length > 0) {
+        const loraTag = appendText(strip, 'span', `🧩 ${loras.length} ${t('recipeCardSpecsLoras')}`, 'anomalous-recipe-spec-tag is-lora');
+        loraTag.title = loras.map((l) => (typeof l === 'object' && l?.name ? l.name : String(l))).join(', ');
+    }
+
+    if (params.steps) {
+        const samplerName = params.sampler_name ? ` · ${params.sampler_name}` : '';
+        const stepTag = appendText(strip, 'span', `⏱️ ${params.steps} ${t('recipeCardSpecsSteps')}${samplerName}`, 'anomalous-recipe-spec-tag is-step');
+        stepTag.title = `${params.steps} ${t('recipeCardSpecsSteps')}${samplerName}`;
+    }
+
+    if (params.resolution) {
+        const resTag = appendText(strip, 'span', `📐 ${params.resolution}`, 'anomalous-recipe-spec-tag');
+        resTag.title = `${t('recipeCardSpecsResolution')}: ${params.resolution}`;
+    }
+
+    return strip.childElementCount ? strip : null;
+}
+
+function createRecipeCard(owner, recipe) {
+    const data = recipe?.data || {};
+    const card = document.createElement('article');
+    card.className = 'anomalous-recipe-card';
+    card.style.cursor = 'pointer';
+
+    // 1. Header with title & scope badge
+    const header = document.createElement('div');
+    header.className = 'anomalous-recipe-card-header';
+    appendText(header, 'h3', data.name || t('recipeUntitled'), 'anomalous-recipe-card-title');
+    header.appendChild(createBadge(
+        t(data.workflow_scope === 'partial' ? 'recipeScopePartial' : 'recipeScopeComplete'),
+        data.workflow_scope === 'partial' ? 'accent' : 'module',
+    ));
+    card.appendChild(header);
+
+    // 2. Bento Media Wrap with Base Model Pill
+    const mediaWrap = document.createElement('div');
+    mediaWrap.className = 'anomalous-recipe-card-media-wrap';
+    const sourceImageUrl = outputImageUrl(data.source_image);
+    const savedCover = recipeAssetUrl(recipe.filename, data.presentation?.cover_asset_id);
+    const thumbnail = savedCover || (previewIsVideo(sourceImageUrl)
+        ? sourceImageUrl
+        : safeThumbnail(data.thumbnail) || sourceImageUrl);
+    appendRecipeCover(mediaWrap, thumbnail, data.name || t('recipeThumbnail'));
+
+    const baseModelStr = data.params?.baseModel || data.params?.baseModels;
+    if (baseModelStr) {
+        const pill = appendText(mediaWrap, 'span', `📦 ${modelDisplayName(baseModelStr)}`, 'anomalous-recipe-cover-pill');
+        pill.title = String(baseModelStr);
+    }
+    card.appendChild(mediaWrap);
+
+    // 3. Quick Specs Strip
+    const specs = createRecipeQuickSpecs(data.params);
+    if (specs) card.appendChild(specs);
+
+    // 4. Compact Tags
+    if (Array.isArray(data.tags) && data.tags.length) {
+        const tags = document.createElement('div');
+        tags.className = 'anomalous-recipe-tags';
+        for (const tag of data.tags.slice(0, 4)) {
+            const tagButton = appendText(tags, 'button', compactText(tag, 24), 'anomalous-recipe-badge anomalous-recipe-badge-tag');
+            tagButton.type = 'button';
+            tagButton.title = t('recipeFilterByTag');
+            tagButton.onclick = (event) => {
+                event.stopPropagation();
+                if (!owner.recipeSelectedTags) owner.recipeSelectedTags = new Set();
+                owner.recipeSelectedTags.add(tag);
+                owner.renderRecipeList(owner.recipeRecords || []);
+                updateRecipeFilterControls(owner, owner.recipeRecords || []);
+            };
+        }
+        card.appendChild(tags);
+    }
+
+    // 5. Notes (if any)
+    if (data.notes) {
+        const note = appendText(card, 'p', compactText(data.notes, 90), 'anomalous-recipe-notes');
+        note.title = data.notes;
+    }
+
+    // 6. Card Click for Detail
+    card.onclick = () => runRecipeCardAction(card, async () => {
+        const bundle = await fetchRecipeBundle(recipe.filename);
+        const result = await showRecipeDetail(owner, {
+            recipe: bundle.data,
+            filename: recipe.filename,
+            history: bundle.history,
+        });
+        if (result?.mode === 'edit') await editRecipe(owner, bundle.data, recipe.filename, bundle.history);
+    }, 'recipeLoadError');
+
+    // 7. Footer: Primary Execute Button + Mini Management Actions
+    const footer = document.createElement('div');
+    footer.className = 'anomalous-recipe-card-footer';
+
+    const appendBtn = appendText(
+        footer,
+        'button',
+        `${data.workflow_scope === 'partial' ? '🧩' : '🚀'} ${t(data.workflow_scope === 'partial' ? 'recipeAppendCanvas' : 'recipeOpenCanvas')}`,
+        'anomalous-recipe-btn-primary-action',
+    );
+    appendBtn.type = 'button';
+    appendBtn.onclick = (e) => {
+        e.stopPropagation();
+        runRecipeCardAction(appendBtn, async () => {
+            const fullRecipe = await fetchRecipeData(recipe.filename);
+            await applyRecipeToCanvas(owner, fullRecipe);
+        }, data.workflow_scope === 'partial' ? 'recipeAppendError' : 'recipeOpenError');
+    };
+
+    const miniActions = document.createElement('div');
+    miniActions.className = 'anomalous-recipe-card-mini-actions';
+
+    const editBtn = appendText(miniActions, 'button', '✏️', 'anomalous-recipe-card-mini-btn');
+    editBtn.type = 'button';
+    editBtn.title = t('recipeEdit');
+    editBtn.onclick = (e) => {
+        e.stopPropagation();
+        runRecipeCardAction(editBtn, () => editRecipe(owner, recipe?.data || {}, recipe.filename), 'recipeUpdateError');
+    };
+
+    const exportBtn = appendText(miniActions, 'button', '📥', 'anomalous-recipe-card-mini-btn');
+    exportBtn.type = 'button';
+    exportBtn.title = t('recipeExport');
+    exportBtn.onclick = (e) => {
+        e.stopPropagation();
+        runRecipeCardAction(exportBtn, () => exportRecipePackage(recipe.filename), 'recipeExportError');
+    };
+
+    const removeBtn = appendText(miniActions, 'button', '🗑️', 'anomalous-recipe-card-mini-btn');
+    removeBtn.type = 'button';
+    removeBtn.title = t('recipeDelete');
+    removeBtn.onclick = (e) => {
+        e.stopPropagation();
+        runRecipeCardAction(removeBtn, async () => {
+            if (!await anomalousConfirm(t('recipeDeleteConfirm'))) return;
+            const response = await fetch('/anomalous/delete_recipe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename: recipe.filename }),
+            });
+            if (!response.ok) throw new Error('recipe deletion failed');
+            await owner.refreshRecipes();
+        }, 'recipeDeleteError');
+    };
+
+    miniActions.append(editBtn, exportBtn, removeBtn);
+    footer.appendChild(miniActions);
+    card.appendChild(footer);
+
+    return card;
+}
+
 export function renderRecipeList(recipes) {
     this.recipeListContainer.replaceChildren();
     const records = Array.isArray(recipes) ? recipes : [];
@@ -866,108 +1026,7 @@ export function renderRecipeList(recipes) {
         return;
     }
     for (const recipe of filtered) {
-        const data = recipe?.data || {};
-        const card = document.createElement('article');
-        card.className = 'anomalous-recipe-card';
-        appendText(card, 'h3', data.name || t('recipeUntitled'));
-        card.appendChild(createBadge(
-            t(data.workflow_scope === 'partial' ? 'recipeScopePartial' : 'recipeScopeComplete'),
-            data.workflow_scope === 'partial' ? 'accent' : 'module',
-        ));
-
-        const sourceImageUrl = outputImageUrl(data.source_image);
-        const savedCover = recipeAssetUrl(recipe.filename, data.presentation?.cover_asset_id);
-        const thumbnail = savedCover || (previewIsVideo(sourceImageUrl)
-            ? sourceImageUrl
-            : safeThumbnail(data.thumbnail) || sourceImageUrl);
-        appendRecipeCover(card, thumbnail, data.name || t('recipeThumbnail'));
-        if (Array.isArray(data.tags) && data.tags.length) {
-            const tags = document.createElement('div');
-            tags.className = 'anomalous-recipe-tags';
-            for (const tag of data.tags.slice(0, 8)) {
-                const tagButton = appendText(tags, 'button', compactText(tag, 32), 'anomalous-recipe-badge anomalous-recipe-badge-tag');
-                tagButton.type = 'button';
-                tagButton.title = t('recipeFilterByTag');
-                tagButton.onclick = (event) => {
-                    event.stopPropagation();
-                    if (!this.recipeSelectedTags) this.recipeSelectedTags = new Set();
-                    this.recipeSelectedTags.add(tag);
-                    this.renderRecipeList(this.recipeRecords || []);
-                    updateRecipeFilterControls(this, this.recipeRecords || []);
-                };
-            }
-            card.appendChild(tags);
-        }
-        if (data.notes) appendText(card, 'p', compactText(data.notes, 180), 'anomalous-recipe-notes');
-        
-        const actions = document.createElement('div');
-        actions.className = 'anomalous-recipe-actions';
-        
-        // Make card clickable for details
-        card.style.cursor = 'pointer';
-        card.onclick = () => runRecipeCardAction(card, async () => {
-                const bundle = await fetchRecipeBundle(recipe.filename);
-                const result = await showRecipeDetail(this, {
-                    recipe: bundle.data,
-                    filename: recipe.filename,
-                    history: bundle.history,
-                });
-                if (result?.mode === 'edit') await editRecipe(this, bundle.data, recipe.filename, bundle.history);
-        }, 'recipeLoadError');
-
-        // Secondary actions (Icon buttons)
-        const secondaryActions = document.createElement('div');
-        secondaryActions.className = 'anomalous-recipe-actions-secondary';
-        
-        const edit = appendText(secondaryActions, 'button', '✏️', 'anomalous-btn-icon anomalous-btn-edit');
-        edit.type = 'button';
-        edit.title = t('recipeEdit');
-        edit.onclick = (e) => { e.stopPropagation(); runRecipeCardAction(edit, () => editRecipe(this, recipe?.data || {}, recipe.filename), 'recipeUpdateError'); };
-        
-        const exportButton = appendText(secondaryActions, 'button', '📥', 'anomalous-btn-icon anomalous-btn-export');
-        exportButton.type = 'button';
-        exportButton.title = t('recipeExport');
-        exportButton.onclick = (e) => { e.stopPropagation(); runRecipeCardAction(exportButton, () => exportRecipePackage(recipe.filename), 'recipeExportError'); };
-        
-        const remove = appendText(secondaryActions, 'button', '🗑️', 'anomalous-btn-icon anomalous-btn-delete');
-        remove.type = 'button';
-        remove.title = t('recipeDelete');
-        remove.onclick = (e) => {
-            e.stopPropagation();
-            runRecipeCardAction(remove, async () => {
-                if (!await anomalousConfirm(t('recipeDeleteConfirm'))) return;
-                const response = await fetch('/anomalous/delete_recipe', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ filename: recipe.filename }),
-                });
-                if (!response.ok) throw new Error('recipe deletion failed');
-                await this.refreshRecipes();
-            }, 'recipeDeleteError');
-        };
-
-        // Primary actions (Main buttons)
-        const primaryActions = document.createElement('div');
-        primaryActions.className = 'anomalous-recipe-actions-primary';
-        
-        const append = appendText(
-            primaryActions,
-            'button',
-            t(data.workflow_scope === 'partial' ? 'recipeAppendCanvas' : 'recipeOpenCanvas'),
-            'anomalous-btn-ghost',
-        );
-        append.type = 'button';
-        append.onclick = (e) => { e.stopPropagation(); runRecipeCardAction(append, async () => {
-            const fullRecipe = await fetchRecipeData(recipe.filename);
-            await applyRecipeToCanvas(this, fullRecipe);
-        }, data.workflow_scope === 'partial' ? 'recipeAppendError' : 'recipeOpenError'); };
-
-        secondaryActions.append(edit, exportButton, remove);
-        primaryActions.append(append);
-        actions.append(secondaryActions, primaryActions);
-        
-        card.appendChild(actions);
-        this.recipeListContainer.appendChild(card);
+        this.recipeListContainer.appendChild(createRecipeCard(this, recipe));
     }
 }
 

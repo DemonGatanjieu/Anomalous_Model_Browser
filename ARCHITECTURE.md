@@ -70,7 +70,7 @@ DOM or live LiteGraph state.
 - `ui_sidebar.js`, `ui_grid.js`, `ui_detail.js`, and `ui_gallery.js` own the
   primary model-browser surfaces.
 - `ui_notebooks.js`, `ui_recipes.js`, and `ui_recipe_detail.js` own Workspace
-  presentation.
+  presentation, featuring Bento-style visual cards, quick spec tags, real-time environment readiness indicators (🟢/🟡/🔴), one-click batch model matching, and lazy DOM rendering for node parameter trees.
 - `recipe_parser.js`, `recipe_identity.js`, `recipe_diff.js`, and
   `recipe_actions.js` own pure or transactional recipe behavior.
 - `ui_doctor.js`, `model_picker.js`, and `graph_splice.js` own assistant and

@@ -742,6 +742,55 @@ async function applyLocalModelMatch(owner, recipe, reference, status, rerender) 
     }
 }
 
+async function applyAllLocalModelMatches(owner, recipe, references, status, rerender) {
+    const candidates = (references || []).filter((ref) => ref?.localMatch?.filename);
+    if (!candidates.length) return false;
+
+    const workflow = JSON.parse(JSON.stringify(recipe.workflow));
+    const params = JSON.parse(JSON.stringify(recipe.params || {}));
+    if (!Array.isArray(params.model_references)) params.model_references = [];
+
+    let appliedCount = 0;
+    for (const reference of candidates) {
+        const filename = reference.localMatch.filename;
+        const target = workflow.nodes?.find((c) => String(c?.id ?? '') === String(reference.node_id ?? ''));
+        const index = Number(reference.widget_index);
+        if (!target || !Array.isArray(target.widgets_values) || index < 0 || index >= target.widgets_values.length) continue;
+
+        target.widgets_values[index] = filename;
+        const previousValue = reference.saved_value;
+        const localIdentity = normaliseIdentity(reference.localMatch.identity);
+        replaceWorkflowModelHashRecord(workflow, reference.node_id, previousValue, filename, localIdentity);
+
+        const stored = params.model_references.find((c) => sameStoredModelReference(c, reference));
+        if (stored) {
+            stored.saved_value = filename;
+            stored.identity = localIdentity;
+        }
+        if (params.baseModel === previousValue) params.baseModel = filename;
+
+        reference.saved_value = filename;
+        reference.identity = localIdentity;
+        reference.localMatch = null;
+        reference.currentAvailability = 'available';
+        appliedCount += 1;
+    }
+
+    if (appliedCount === 0) return false;
+
+    if (status) status.textContent = t('recipeApplyingAllMatches');
+    try {
+        await updateInlineRecipeMetadata(owner, recipe, { workflow, params });
+        if (typeof rerender === 'function') rerender();
+        if (status) status.textContent = t('recipeApplyAllMatchesSuccess');
+        return true;
+    } catch (error) {
+        console.error('Could not apply all local model matches:', error);
+        if (status) status.textContent = t('recipeApplyLocalMatchError');
+        return false;
+    }
+}
+
 async function updateRecipeModelNote(owner, recipe, reference, note, rerender) {
     const params = JSON.parse(JSON.stringify(recipe.params || {}));
     if (!Array.isArray(params.model_references)) params.model_references = [];
@@ -837,6 +886,68 @@ function renderInlineTags(parent, owner, recipe) {
     );
 }
 
+function renderReadinessBanner(parent, owner, recipe, references, finish, onRerender) {
+    const banner = document.createElement('div');
+    const hasPendingMatches = (references || []).some((ref) => ref.localMatch && !ref.localModel);
+    const missingCandidates = (references || []).filter((ref) => !ref.localModel && ref.currentAvailability === 'missing' && !ref.localMatch);
+    const missingNodes = missingNodeTypes(recipe);
+
+    let bannerKind = 'is-ready';
+    let statusText = t('recipeStatusReady');
+
+    if (hasPendingMatches) {
+        bannerKind = 'is-warning';
+        const pendingCount = (references || []).filter((ref) => ref.localMatch && !ref.localModel).length;
+        statusText = t('recipeStatusNeedAttention').replace('{count}', String(pendingCount));
+    } else if (missingCandidates.length > 0) {
+        bannerKind = 'is-missing';
+        statusText = t('recipeStatusMissing').replace('{count}', String(missingCandidates.length));
+    }
+
+    banner.className = `anomalous-recipe-readiness-banner ${bannerKind}`;
+
+    const textWrap = document.createElement('div');
+    textWrap.style.display = 'flex';
+    textWrap.style.flexDirection = 'column';
+    textWrap.style.gap = '3px';
+
+    const mainStatus = appendText(textWrap, 'strong', statusText);
+    if (missingNodes.length > 0) {
+        appendText(textWrap, 'small', `⚠️ ${t('recipeMissingNodes')}: ${missingNodes.slice(0, 3).join(', ')}${missingNodes.length > 3 ? '…' : ''}`, 'anomalous-recipe-detail-muted');
+    }
+    banner.appendChild(textWrap);
+
+    const actionWrap = document.createElement('div');
+    actionWrap.style.display = 'flex';
+    actionWrap.style.gap = '8px';
+    actionWrap.style.alignItems = 'center';
+
+    if (hasPendingMatches) {
+        const applyAllBtn = button(actionWrap, t('recipeApplyAllMatches'), 'anomalous-recipe-banner-btn is-match-all');
+        applyAllBtn.onclick = async () => {
+            applyAllBtn.disabled = true;
+            await applyAllLocalModelMatches(owner, recipe, references, mainStatus, onRerender);
+        };
+    } else if (missingCandidates.length > 0) {
+        const matchBtn = button(actionWrap, '🔎 ' + t('recipeMatchRecipeModels'), 'anomalous-btn-ghost');
+        matchBtn.style.padding = '4px 10px';
+        matchBtn.style.fontSize = '0.8rem';
+        matchBtn.onclick = async () => {
+            matchBtn.disabled = true;
+            matchBtn.textContent = t('recipeMatchingRecipeModels');
+            try {
+                await matchRecipeModels(owner, references, mainStatus, onRerender);
+            } finally {
+                matchBtn.disabled = false;
+                matchBtn.textContent = '🔎 ' + t('recipeMatchRecipeModels');
+            }
+        };
+    }
+
+    banner.appendChild(actionWrap);
+    parent.appendChild(banner);
+}
+
 function renderOverview(content, owner, recipe, references, finish) {
     const overview = document.createElement('div');
     overview.className = 'anomalous-recipe-detail-overview';
@@ -887,7 +998,11 @@ function renderOverview(content, owner, recipe, references, finish) {
         }
     };
     
-    const heroAppend = button(overviewActions, recipeCanvasActionLabel(recipe), 'anomalous-btn-ghost');
+    const heroAppend = button(
+        overviewActions,
+        `${recipe?.workflow_scope === 'partial' ? '🧩' : '🚀'} ${recipeCanvasActionLabel(recipe)}`,
+        'anomalous-recipe-btn-primary-action',
+    );
     heroAppend.onclick = () => {
         void runRecipeAction(heroAppend, async () => {
             if (await applyRecipeToCanvas(owner, recipe)) finish('canvas');
@@ -906,16 +1021,13 @@ function renderOverview(content, owner, recipe, references, finish) {
     overview.appendChild(hero);
 
 
-    const stats = document.createElement('div');
-    stats.className = 'anomalous-recipe-detail-stats';
-    const verified = references.filter((reference) => normaliseIdentity(reference.identity).status === 'verified').length;
-    const unverified = references.filter((reference) => normaliseIdentity(reference.identity).status === 'unverified').length;
-    const missing = missingNodeTypes(recipe).length;
-    renderStat(stats, t('recipeScope'), t(recipe?.workflow_scope === 'partial' ? 'recipeScopePartial' : 'recipeScopeComplete'), 'good');
-    renderStat(stats, t('recipeDetailIdentity'), `${verified}/${references.length}`, verified === references.length ? 'good' : 'warn');
-    renderStat(stats, t('recipeDetailUnverified'), String(unverified), unverified ? 'warn' : 'good');
-    renderStat(stats, t('recipeDetailMissingNodes'), String(missing), missing ? 'warn' : 'good');
-    overview.appendChild(stats);
+    // Intuitive environment readiness banner replacing technical identity stats
+    renderReadinessBanner(overview, owner, recipe, references, finish, () => {
+        if (owner.recipeDetailActiveTab === 'overview') {
+            content.replaceChildren();
+            renderOverview(content, owner, recipe, references, finish);
+        }
+    });
 
     const advanced = document.createElement('details');
     advanced.className = 'anomalous-recipe-advanced-info';
@@ -1725,6 +1837,91 @@ function promptRoleLabel(role) {
     }[role] || 'recipePromptRoleUnknown');
 }
 
+function renderRawNodesLazy(parent, source) {
+    const ordered = parameterNodeOrder(source);
+    if (!ordered.length) return;
+
+    const details = document.createElement('details');
+    details.className = 'anomalous-recipe-advanced-info anomalous-recipe-raw-nodes-details';
+
+    const summary = document.createElement('summary');
+    summary.className = 'anomalous-recipe-raw-nodes-summary';
+    summary.textContent = `⚙️ ${t('recipeRawNodesToggle')} (${ordered.length} ${t('recipeRawNodesCount')}) ▾`;
+    details.appendChild(summary);
+
+    const nodeList = document.createElement('div');
+    nodeList.className = 'anomalous-recipe-detail-parameter-list';
+    nodeList.style.marginTop = '12px';
+
+    let renderedCount = 0;
+    const PAGE_SIZE = 10;
+
+    const renderNextBatch = () => {
+        const batch = ordered.slice(renderedCount, renderedCount + PAGE_SIZE);
+        for (const { summary: node, workflowNode } of batch) {
+            const widgets = Array.isArray(node?.widgets) && node.widgets.length
+                ? node.widgets
+                : (Array.isArray(workflowNode?.widgets_values)
+                    ? workflowNode.widgets_values.map((value, index) => ({
+                        name: `${t('recipeDetailWidget')} ${index + 1}`,
+                        index,
+                        value,
+                    }))
+                    : []);
+            if (!widgets.length) continue;
+            const block = document.createElement('article');
+            block.className = 'anomalous-recipe-detail-parameter-node';
+            const title = [node.title, node.type].filter(Boolean).join(' · ') || t('recipeDetailUnknownNode');
+            appendText(block, 'strong', title, 'anomalous-recipe-detail-node-title');
+            const widgetsContainer = document.createElement('div');
+            widgetsContainer.className = 'anomalous-recipe-detail-node-widgets';
+            for (let visibleIndex = 0; visibleIndex < widgets.length; visibleIndex += 1) {
+                const widget = widgets[visibleIndex] || {};
+                const index = Number.isInteger(widget.index) ? widget.index : visibleIndex;
+                const value = Array.isArray(workflowNode?.widgets_values) && workflowNode.widgets_values[index] !== undefined
+                    ? workflowNode.widgets_values[index]
+                    : widget.value;
+                const label = widget.name || `${t('recipeDetailWidget')} ${index + 1}`;
+                const volatile = isVolatileParameter(node, widget, index);
+                renderParameterField(widgetsContainer, label, volatile ? 0 : value, {
+                    redact: volatile,
+                    collapse: false,
+                });
+            }
+            if (widgetsContainer.childElementCount) {
+                block.appendChild(widgetsContainer);
+                nodeList.appendChild(block);
+            }
+        }
+        renderedCount += batch.length;
+
+        const oldBtn = details.querySelector('.anomalous-recipe-lazy-expand-btn');
+        if (oldBtn) oldBtn.remove();
+
+        if (renderedCount < ordered.length) {
+            const remaining = ordered.length - renderedCount;
+            const expandBtn = document.createElement('button');
+            expandBtn.type = 'button';
+            expandBtn.className = 'anomalous-recipe-lazy-expand-btn';
+            expandBtn.textContent = `${t('recipeRawNodesShowMore')} (${remaining})`;
+            expandBtn.onclick = (e) => {
+                e.preventDefault();
+                renderNextBatch();
+            };
+            details.appendChild(expandBtn);
+        }
+    };
+
+    details.ontoggle = () => {
+        if (details.open && renderedCount === 0) {
+            renderNextBatch();
+        }
+    };
+
+    details.appendChild(nodeList);
+    parent.appendChild(details);
+}
+
 function renderPromptSection(parent, owner, recipe, source, rerender) {
     const prompts = promptValues(source, recipe);
     if (!prompts.entries.length) {
@@ -2085,6 +2282,27 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     const summary = document.createElement('section');
     summary.className = 'anomalous-recipe-detail-section';
     appendText(summary, 'h5', t('recipeDetailParameterSummary'));
+
+    if (params.steps || params.cfg || params.sampler_name || params.resolution) {
+        const metricGrid = document.createElement('div');
+        metricGrid.className = 'anomalous-recipe-metric-grid';
+        const addMetric = (labelKey, value) => {
+            if (value === undefined || value === null || value === '') return;
+            const card = document.createElement('div');
+            card.className = 'anomalous-recipe-metric-card';
+            appendText(card, 'span', t(labelKey), 'anomalous-recipe-metric-label');
+            appendText(card, 'span', String(value), 'anomalous-recipe-metric-value');
+            metricGrid.appendChild(card);
+        };
+        addMetric('recipeDetailSteps', params.steps);
+        addMetric('recipeDetailCFG', params.cfg);
+        addMetric('recipeDetailDenoise', params.denoise);
+        addMetric('recipeDetailSampler', params.sampler_name || params.samplers);
+        addMetric('recipeDetailScheduler', params.scheduler);
+        addMetric('recipeDetailResolution', params.resolution);
+        if (metricGrid.childElementCount) summary.appendChild(metricGrid);
+    }
+
     const summaryGrid = document.createElement('div');
     summaryGrid.className = 'anomalous-recipe-detail-summary-grid';
     let formattedLoras = params.loras;
@@ -2113,48 +2331,7 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
 
     const nodesSection = document.createElement('section');
     nodesSection.className = 'anomalous-recipe-detail-section';
-    appendText(nodesSection, 'h5', t('recipeDetailNodeParameters'));
-    const nodeList = document.createElement('div');
-    nodeList.className = 'anomalous-recipe-detail-parameter-list';
-    let renderedWidgets = 0;
-    for (const { summary: node, workflowNode } of parameterNodeOrder(source)) {
-        const widgets = Array.isArray(node?.widgets) && node.widgets.length
-            ? node.widgets
-            : (Array.isArray(workflowNode?.widgets_values)
-                ? workflowNode.widgets_values.map((value, index) => ({
-                    name: `${t('recipeDetailWidget')} ${index + 1}`,
-                    index,
-                    value,
-                }))
-                : []);
-        if (!widgets.length) continue;
-        const block = document.createElement('article');
-        block.className = 'anomalous-recipe-detail-parameter-node';
-        const title = [node.title, node.type].filter(Boolean).join(' · ') || t('recipeDetailUnknownNode');
-        appendText(block, 'strong', title, 'anomalous-recipe-detail-node-title');
-        const widgetsContainer = document.createElement('div');
-        widgetsContainer.className = 'anomalous-recipe-detail-node-widgets';
-        for (let visibleIndex = 0; visibleIndex < widgets.length && renderedWidgets < 1200; visibleIndex += 1) {
-            const widget = widgets[visibleIndex] || {};
-            const index = Number.isInteger(widget.index) ? widget.index : visibleIndex;
-            const value = Array.isArray(workflowNode?.widgets_values) && workflowNode.widgets_values[index] !== undefined
-                ? workflowNode.widgets_values[index]
-                : widget.value;
-            const label = widget.name || `${t('recipeDetailWidget')} ${index + 1}`;
-            const volatile = isVolatileParameter(node, widget, index);
-            if (renderParameterField(widgetsContainer, label, volatile ? 0 : value, {
-                redact: volatile,
-                collapse: false,
-            })) renderedWidgets += 1;
-        }
-        if (widgetsContainer.childElementCount) {
-            block.appendChild(widgetsContainer);
-
-            nodeList.appendChild(block);
-        }
-    }
-    if (nodeList.childElementCount) nodesSection.appendChild(nodeList);
-    else appendText(nodesSection, 'p', t('recipeDetailNoSavedParameters'), 'anomalous-recipe-detail-muted');
+    renderRawNodesLazy(nodesSection, source);
 
     wrapper.append(intro, summary, nodesSection);
     
