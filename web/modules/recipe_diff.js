@@ -161,7 +161,13 @@ export function buildRecipeDiff(beforeRecipe, afterRecipe) {
         before.params?.model_references || [],
         after.params?.model_references || [],
         (item, index) => itemKey(item, `model:${index}`),
-        (item) => item?.saved_value,
+        (item) => ({
+            saved_value: item?.saved_value,
+            user_note: item?.user_note || '',
+            identity_status: item?.identity?.status,
+            identity_sha256: item?.identity?.sha256,
+            identity_size: item?.identity?.size,
+        }),
         (item) => `${item?.category || 'model'} · ${item?.node_title || item?.node_type || 'loader'}`,
     );
 

@@ -29,6 +29,7 @@ MAX_NAME_LENGTH = 120
 MAX_TAGS = 20
 MAX_TAG_LENGTH = 60
 MAX_NOTES_LENGTH = 3000
+MAX_MODEL_NOTE_LENGTH = 1000
 MAX_THUMBNAIL_LENGTH = 1_500_000
 MAX_SOURCE_SUBFOLDER_LENGTH = 500
 MAX_RECIPE_BYTES = 12 * 1024 * 1024
@@ -741,6 +742,9 @@ def _preserve_model_reference_fields(previous_references, references, preserve_i
             if field == "preview" or (field in ("identity", "origin") and preserve_identity):
                 if isinstance(prior.get(field), dict):
                     reference[field] = json.loads(json.dumps(prior[field], ensure_ascii=False))
+        user_note = prior.get("user_note")
+        if isinstance(user_note, str) and user_note.strip():
+            reference["user_note"] = user_note.strip()
 
 
 def _enrich_recipe(
@@ -770,7 +774,7 @@ def _enrich_recipe(
     recipe["params"] = params
     if recipe.get("workflow_scope") not in {"partial", "complete"}:
         recipe["workflow_scope"] = "complete"
-    recipe["schema_version"] = 6
+    recipe["schema_version"] = 7
     encoded = json.dumps(recipe, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
     if len(encoded) > MAX_RECIPE_BYTES:
         raise ValueError("Recipe is too large")
@@ -939,6 +943,22 @@ def _normalise_recipe(payload):
     workflow = payload.get("workflow")
     if not isinstance(params, dict) or not isinstance(workflow, dict):
         raise ValueError("Invalid recipe workflow")
+    model_references = params.get("model_references")
+    if model_references is not None:
+        if not isinstance(model_references, list):
+            raise ValueError("Invalid recipe model references")
+        for reference in model_references:
+            if not isinstance(reference, dict):
+                raise ValueError("Invalid recipe model reference")
+            user_note = reference.get("user_note")
+            if user_note is None:
+                continue
+            if not isinstance(user_note, str) or len(user_note) > MAX_MODEL_NOTE_LENGTH:
+                raise ValueError("Invalid recipe model note")
+            if user_note.strip():
+                reference["user_note"] = user_note.strip()
+            else:
+                reference.pop("user_note", None)
     _validate_workflow(workflow)
     workflow_scope = payload.get("workflow_scope", "complete")
     if workflow_scope not in {"partial", "complete"}:
@@ -1314,7 +1334,7 @@ async def api_set_recipe_gallery_cover(request):
     recipe["workflow_fingerprint"] = _workflow_fingerprint(recipe["workflow"])
     if recipe.get("workflow_scope") not in {"partial", "complete"}:
         recipe["workflow_scope"] = "complete"
-    recipe["schema_version"] = max(6, int(recipe.get("schema_version") or 1))
+    recipe["schema_version"] = max(7, int(recipe.get("schema_version") or 1))
 
     try:
         await asyncio.to_thread(_archive_recipe, recipes_dir, filename, existing)

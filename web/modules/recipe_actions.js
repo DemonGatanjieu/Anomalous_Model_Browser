@@ -1,4 +1,5 @@
 import { app } from '../../../scripts/app.js';
+import { mergeRecipeHashRecords } from './recipe_provenance.js';
 
 function cloneJson(value) {
     if (value === undefined) return undefined;
@@ -272,6 +273,8 @@ export function appendRecipeToCanvas(recipe) {
     const offsetX = targetBounds ? targetBounds.maxX + 140 - sourceBounds.minX : 40 - sourceBounds.minX;
     const offsetY = targetBounds ? targetBounds.minY - sourceBounds.minY : 40 - sourceBounds.minY;
     const insertedGroups = [];
+    const hadHashRecords = Boolean(graph.extra && Object.prototype.hasOwnProperty.call(graph.extra, 'anomalous_hashes'));
+    const previousHashRecords = cloneJson(graph.extra?.anomalous_hashes);
 
     graph.beforeChange?.();
     try {
@@ -320,15 +323,22 @@ export function appendRecipeToCanvas(recipe) {
             graph.add(group);
             insertedGroups.push(group);
         }
+        const hashRecords = mergeRecipeHashRecords(graph, recipe.workflow, idMap);
         graph.change?.();
         graph.setDirtyCanvas?.(true, true);
         app.canvas?.setDirty?.(true, true);
         app.canvas?.selectNodes?.(inserted);
         app.canvas?.selectItems?.(inserted);
-        return { nodes: inserted.length, links: savedLinks.length, groups: insertedGroups.length };
+        return { nodes: inserted.length, links: savedLinks.length, groups: insertedGroups.length, hashRecords };
     } catch (error) {
         for (const group of insertedGroups) graph.remove?.(group);
         for (const node of inserted) graph.remove?.(node);
+        if (hadHashRecords) {
+            if (!graph.extra || typeof graph.extra !== 'object') graph.extra = {};
+            graph.extra.anomalous_hashes = previousHashRecords;
+        } else if (graph.extra && typeof graph.extra === 'object') {
+            delete graph.extra.anomalous_hashes;
+        }
         graph.change?.();
         graph.setDirtyCanvas?.(true, true);
         throw error;

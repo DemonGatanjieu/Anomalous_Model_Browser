@@ -155,12 +155,14 @@ def _validate_manifest(manifest, archive, names):
             raise ValueError("Package checksum mismatch")
 
 
-def _sanitize_recipe_for_export(recipe, include_snapshots=True, include_identity=True):
+def _sanitize_recipe_for_export(recipe, include_snapshots=True, include_identity=True, include_model_notes=True):
     value = json.loads(json.dumps(recipe, ensure_ascii=False))
     # A source_image points into the exporting machine's output directory and
     # is not portable package data. The bounded thumbnail remains the cover.
     value["source_image"] = None
     for reference in value.get("params", {}).get("model_references", []):
+        if not include_model_notes:
+            reference.pop("user_note", None)
         if not include_snapshots:
             reference.pop("preview", None)
         if not include_identity:
@@ -209,7 +211,8 @@ def _build_export(raw_recipe, recipes_dir, filename, options):
     include_snapshots = options.get("include_snapshots") is True
     include_history = options.get("include_history") is True
     include_identity = options.get("include_identity", True) is True
-    recipe = _sanitize_recipe_for_export(raw_recipe, include_snapshots, include_identity)
+    include_model_notes = options.get("include_model_notes", True) is True
+    recipe = _sanitize_recipe_for_export(raw_recipe, include_snapshots, include_identity, include_model_notes)
     history_recipes = []
     if include_history:
         for history_name in _recipe_history_files(recipes_dir, filename):
@@ -219,7 +222,12 @@ def _build_export(raw_recipe, recipes_dir, filename, options):
             if len(data) > MAX_ENTRY_BYTES:
                 raise ValueError("Historical recipe is too large")
             history_recipe = _parse_json(data, "historical recipe")
-            history_recipes.append((history_name, _sanitize_recipe_for_export(history_recipe, include_snapshots, include_identity)))
+            history_recipes.append((history_name, _sanitize_recipe_for_export(
+                history_recipe,
+                include_snapshots,
+                include_identity,
+                include_model_notes,
+            )))
     asset_ids = _referenced_asset_ids(recipe, include_snapshots)
     for _, history_recipe in history_recipes:
         asset_ids.update(_referenced_asset_ids(history_recipe, include_snapshots))
@@ -254,6 +262,7 @@ def _build_export(raw_recipe, recipes_dir, filename, options):
                 "include_snapshots": include_snapshots,
                 "include_history": include_history,
                 "include_identity": include_identity,
+                "include_model_notes": include_model_notes,
             },
             "entries": entries,
         }

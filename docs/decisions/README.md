@@ -35,19 +35,22 @@ pin data is preserved without exposing a control; new recipes default to none.
 
 ## AD-005 — Model identity excludes names and previews
 
-Model Doctor proves identity through provenance hash, controlled size evidence,
-and required category. Local paths, filenames, display names, previews, and
-similarity are presentation or post-resolution routing data. This boundary
-prevents silent substitution after local rename or across categories.
+Model Doctor automatically proves identity through provenance hash and required
+category; byte size may disambiguate that hash. A unique size-only match is a
+manual candidate, never proof or an automatic redirect. Hash/size conflicts are
+rejected. Local paths, filenames, display names, previews, and similarity are
+presentation or post-resolution routing data. This boundary prevents silent
+substitution after local rename or across categories.
 
 ## AD-006 — Foundation components are hash-only recovery categories
 
 VAE, VAE Approx, CLIP/Text Encoder, and CLIP Vision files can commonly share
 sizes or ambiguous names. Automated redirection therefore requires one exact
-in-category hash match. Existing native combo values remain usable with a
-visible identity-change warning when provenance differs. This does not restrict
-scan coverage: scanning may calculate hashes for any active registered folder,
-including categories whose Civitai metadata coverage is weak.
+in-category hash match. A size-only candidate may still be shown for explicit,
+one-time confirmation on the current node. Existing native combo values remain
+usable with a visible identity-change warning when provenance differs. This does
+not restrict scan coverage: scanning may calculate hashes for any active
+registered folder, including categories whose Civitai metadata coverage is weak.
 
 ## AD-007 — Recipe origins and local availability are separate
 
@@ -104,3 +107,11 @@ persistence format, security boundary, or critical invariant changes. Ordinary
 fixes do not append “unchanged” entries. Git is the implementation history;
 `CHANGELOG.md` is user-facing release history; `.agents/logs/ai_lessons.md` holds
 only durable recurring traps.
+
+## AD-015 — Recipe model mutations update all identity representations
+
+The authoritative workflow widget, structured model reference, and node-scoped
+Model Doctor Hash index form one mutation boundary. Local matching updates all
+three through the archived full-recipe path. Partial append remaps Hash records
+with node IDs and rolls them back with the inserted graph. Personal model notes
+are recipe-scoped presentation data and may be excluded from package export.

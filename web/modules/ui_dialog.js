@@ -116,12 +116,12 @@ export function anomalousConfirm(message, title = 'Anomalous', options = {}) {
         footer.style.marginTop = '8px';
         
         const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = t('dialogCancel');
+        cancelBtn.textContent = options.cancelLabel || t('dialogCancel');
         cancelBtn.className = 'anomalous-btn-ghost';
         cancelBtn.style.padding = '8px 24px';
         
         const okBtn = document.createElement('button');
-        okBtn.textContent = t('dialogOk');
+        okBtn.textContent = options.okLabel || t('dialogOk');
         okBtn.className = 'anomalous-btn-danger';
         okBtn.style.padding = '8px 24px';
         
@@ -151,7 +151,7 @@ export function anomalousConfirm(message, title = 'Anomalous', options = {}) {
     });
 }
 
-export function anomalousPrompt(message, defaultValue = '', title = 'Anomalous') {
+export function anomalousPrompt(message, defaultValue = '', title = 'Anomalous', options = {}) {
     return new Promise((resolve) => {
         const overlay = document.createElement('div');
         overlay.style.position = 'fixed';
@@ -189,10 +189,11 @@ export function anomalousPrompt(message, defaultValue = '', title = 'Anomalous')
         text.style.lineHeight = '1.5';
         text.style.color = '#ccc';
 
-        const input = document.createElement('input');
-        input.type = 'text';
+        const input = document.createElement(options.multiline ? 'textarea' : 'input');
+        if (!options.multiline) input.type = 'text';
         input.value = defaultValue;
-        input.maxLength = 200;
+        input.maxLength = options.maxLength || 200;
+        if (options.multiline) input.rows = options.rows || 6;
         input.style.width = '100%';
         input.style.padding = '10px 14px';
         input.style.borderRadius = '8px';
@@ -202,6 +203,7 @@ export function anomalousPrompt(message, defaultValue = '', title = 'Anomalous')
         input.style.fontSize = '14px';
         input.style.boxSizing = 'border-box';
         input.style.outline = 'none';
+        if (options.multiline) input.style.resize = 'vertical';
         input.onfocus = () => input.style.borderColor = '#1a73e8';
         input.onblur = () => input.style.borderColor = 'rgba(255, 255, 255, 0.18)';
 
@@ -233,7 +235,7 @@ export function anomalousPrompt(message, defaultValue = '', title = 'Anomalous')
         };
 
         input.onkeydown = (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && (!options.multiline || e.ctrlKey || e.metaKey)) {
                 e.preventDefault();
                 okBtn.click();
             } else if (e.key === 'Escape') {

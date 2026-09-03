@@ -19,6 +19,7 @@ import {
     captureRecipeDraft,
     isSupportedPromptNodeType,
 } from './recipe_parser.js';
+import { replaceWorkflowModelHashRecord } from './recipe_provenance.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -568,6 +569,33 @@ async function resolveMatchedModelPreview(reference, model) {
     return payload.context_models?.match || null;
 }
 
+function sameStoredModelReference(candidate, reference) {
+    return String(candidate?.node_id ?? '') === String(reference?.node_id ?? '')
+        && Number(candidate?.widget_index) === Number(reference?.widget_index)
+        && String(candidate?.category || '') === String(reference?.category || '')
+        && candidate?.saved_value === reference?.saved_value;
+}
+
+function identityForLocalMatch(reference, model, result) {
+    const sourceIdentity = normaliseIdentity(reference?.identity);
+    const metadataHash = String(model?.metadata?.hash || '').trim();
+    const sha256 = result?.matched_by_hash && sourceIdentity.sha256
+        ? sourceIdentity.sha256
+        : (/^[0-9a-f]{64}$/i.test(metadataHash) ? metadataHash.toLowerCase() : '');
+    const modelSize = Number(model?.size_bytes);
+    const resultSize = Number(result?.size);
+    const size = Number.isFinite(modelSize) && modelSize > 0 ? modelSize : resultSize;
+    const identity = {
+        status: sha256 ? 'verified' : 'unverified',
+        provenance: result?.matched_by_hash
+            ? 'local hash match'
+            : (sha256 ? 'confirmed local candidate metadata' : 'manual size confirmation'),
+    };
+    if (sha256) identity.sha256 = sha256;
+    if (Number.isFinite(size) && size > 0) identity.size = size;
+    return identity;
+}
+
 async function matchLocalModel(owner, recipe, reference, status, rerender) {
     const identity = normaliseIdentity(reference.identity);
     const query = new URLSearchParams({
@@ -582,10 +610,12 @@ async function matchLocalModel(owner, recipe, reference, status, rerender) {
         const response = await fetch(`/anomalous/resolve_hash?${query.toString()}`);
         const result = await response.json();
         if (!response.ok) throw new Error('local model matching failed');
-        if (!result.found) {
-            status.textContent = result.ambiguous
-                ? t('recipeLocalModelAmbiguous')
-                : t('recipeLocalModelNotFound');
+        if (!result.found && !result.confirmation_required) {
+            status.textContent = result.identity_conflict
+                ? t('recipeLocalModelIdentityConflict')
+                : result.ambiguous
+                    ? t('recipeLocalModelAmbiguous')
+                    : t('recipeLocalModelNotFound');
             return;
         }
         const model = await resolveMatchedModelPreview(reference, result);
@@ -594,10 +624,12 @@ async function matchLocalModel(owner, recipe, reference, status, rerender) {
         reference.currentPreviewUrl = model.preview_url || '';
         reference.currentAvailability = 'available';
         reference.localMatch = {
-            filename: model.filename,
+            filename: result.filename,
             type: model.type,
             matched_by_hash: result.matched_by_hash === true,
             matched_by_size: result.matched_by_size === true,
+            confirmation_required: result.confirmation_required === true,
+            identity: identityForLocalMatch(reference, model, result),
         };
         rerender();
     } catch (error) {
@@ -635,7 +667,7 @@ async function matchRecipeModels(owner, references, status, rerender) {
     for (const item of payload.results) {
         const reference = candidates[Number(item.key)];
         const result = item.result;
-        if (!reference || !result?.found) continue;
+        if (!reference || (!result?.found && !result?.confirmation_required)) continue;
         let model;
         try {
             model = await resolveMatchedModelPreview(reference, result);
@@ -648,10 +680,12 @@ async function matchRecipeModels(owner, references, status, rerender) {
         reference.currentPreviewUrl = model.preview_url || '';
         reference.currentAvailability = 'available';
         reference.localMatch = {
-            filename: model.filename,
+            filename: result.filename,
             type: model.type,
             matched_by_hash: result.matched_by_hash === true,
             matched_by_size: result.matched_by_size === true,
+            confirmation_required: result.confirmation_required === true,
+            identity: identityForLocalMatch(reference, model, result),
         };
         found += 1;
     }
@@ -677,22 +711,25 @@ async function applyLocalModelMatch(owner, recipe, reference, status, rerender) 
         return false;
     }
     target.widgets_values[index] = filename;
+    const previousValue = reference.saved_value;
+    const localIdentity = normaliseIdentity(reference.localMatch?.identity);
+    replaceWorkflowModelHashRecord(workflow, reference.node_id, previousValue, filename, localIdentity);
 
     const params = JSON.parse(JSON.stringify(recipe.params || {}));
     if (Array.isArray(params.model_references)) {
-        const stored = params.model_references.find((candidate) => (
-            String(candidate?.node_id ?? '') === String(reference?.node_id ?? '')
-            && Number(candidate?.widget_index) === index
-            && String(candidate?.category || '') === String(reference?.category || '')
-            && candidate?.saved_value === reference?.saved_value
-        ));
-        if (stored) stored.saved_value = filename;
+        const stored = params.model_references.find((candidate) => sameStoredModelReference(candidate, reference));
+        if (stored) {
+            stored.saved_value = filename;
+            stored.identity = localIdentity;
+        }
     }
+    if (params.baseModel === previousValue) params.baseModel = filename;
 
     status.textContent = t('recipeApplyingLocalMatch');
     try {
         await updateInlineRecipeMetadata(owner, recipe, { workflow, params });
         reference.saved_value = filename;
+        reference.identity = localIdentity;
         reference.localMatch = null;
         reference.currentAvailability = 'available';
         rerender();
@@ -703,6 +740,33 @@ async function applyLocalModelMatch(owner, recipe, reference, status, rerender) 
         status.textContent = t('recipeApplyLocalMatchError');
         return false;
     }
+}
+
+async function updateRecipeModelNote(owner, recipe, reference, note, rerender) {
+    const params = JSON.parse(JSON.stringify(recipe.params || {}));
+    if (!Array.isArray(params.model_references)) params.model_references = [];
+    let stored = params.model_references.find((candidate) => sameStoredModelReference(candidate, reference));
+    if (!stored) {
+        stored = {
+            node_id: reference.node_id,
+            node_type: reference.node_type,
+            node_title: reference.node_title,
+            widget_index: reference.widget_index,
+            widget_name: reference.widget_name,
+            saved_value: reference.saved_value,
+            category: reference.category,
+            base_model: reference.base_model,
+            identity: normaliseIdentity(reference.identity),
+        };
+        params.model_references.push(stored);
+    }
+    const cleanNote = String(note || '').trim();
+    if (cleanNote) stored.user_note = cleanNote;
+    else delete stored.user_note;
+    await updateInlineRecipeMetadata(owner, recipe, { params });
+    recipe.params = params;
+    reference.user_note = cleanNote;
+    rerender();
 }
 
 function missingNodeTypes(recipe) {
@@ -1296,6 +1360,37 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
         appendText(meta, 'span', reference.currentAvailability === 'available'
             ? t('recipeDetailAvailable')
             : reference.currentAvailability === 'missing' ? t('recipeDetailMissing') : t('recipeDetailAvailabilityNotChecked'));
+        const noteText = appendText(
+            meta,
+            'small',
+            reference.user_note || t('recipeModelNoteEmpty'),
+            'anomalous-recipe-model-note anomalous-recipe-detail-muted',
+        );
+        noteText.title = reference.user_note || t('recipeModelNoteEmpty');
+        const noteButton = button(
+            meta,
+            t(reference.user_note ? 'recipeModelNoteEdit' : 'recipeModelNoteAdd'),
+            'anomalous-btn-ghost anomalous-recipe-model-match',
+        );
+        noteButton.onclick = async () => {
+            const note = await anomalousPrompt(
+                t('recipeModelNotePrompt'),
+                reference.user_note || '',
+                t('recipeModelNoteTitle'),
+                { multiline: true, maxLength: 1000, rows: 6 },
+            );
+            if (note === null) return;
+            noteButton.disabled = true;
+            try {
+                await updateRecipeModelNote(owner, recipe, reference, note, () => {
+                    renderModelComposition(container, owner, recipe, references, finish, params);
+                });
+            } catch (error) {
+                console.error('Could not update recipe model note:', error);
+                noteButton.disabled = false;
+                await anomalousAlert(t('recipeModelNoteError'));
+            }
+        };
         if (!isLocal) {
             const matchStatus = appendText(meta, 'small', '', 'anomalous-recipe-model-match-status');
             const match = button(meta, t('recipeMatchLocalModel'), 'anomalous-btn-primary anomalous-recipe-model-match');
@@ -1309,7 +1404,10 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
         }
         if (reference.localMatch?.filename && reference.localMatch.filename !== reference.saved_value) {
             const applyStatus = appendText(meta, 'small', '', 'anomalous-recipe-model-match-status');
-            const apply = button(meta, t('recipeApplyLocalMatch'), 'anomalous-btn-ghost anomalous-recipe-model-match');
+            const applyLabel = reference.localMatch.confirmation_required
+                ? t('recipeConfirmSizeCandidate')
+                : t('recipeApplyLocalMatch');
+            const apply = button(meta, applyLabel, 'anomalous-btn-ghost anomalous-recipe-model-match');
             apply.title = t('recipeApplyLocalMatchDesc');
             apply.onclick = async () => {
                 apply.disabled = true;

@@ -616,6 +616,19 @@ def _resolved_payload(candidate, **details):
     return payload
 
 
+def _size_candidate_payload(candidate, require_hash=False):
+    """Expose one in-category size match for explicit user confirmation only."""
+    return {
+        "found": False,
+        "confirmation_required": True,
+        "matched_by_size": True,
+        "hash_required": bool(require_hash),
+        "type": candidate["type"],
+        "filename": candidate["filename"],
+        "size": candidate["size"],
+    }
+
+
 def _compute_and_save_fallback_info(file_path, file_hash):
     try:
         base_path = os.path.splitext(file_path)[0]
@@ -696,14 +709,13 @@ def _resolve_from_candidates(candidates, target_hash="", target_size=None, filen
         if len(hash_matches) > 1:
             return {"found": False, "ambiguous": True}
 
-    if require_hash:
-        return {"found": False, "hash_required": True}
-
     if target_size is not None:
         if len(size_matches) == 1:
-            return _resolved_payload(size_matches[0], matched_by_size=True)
+            return _size_candidate_payload(size_matches[0], require_hash=require_hash)
         if len(size_matches) > 1:
             return {"found": False, "ambiguous": True}
+    if require_hash:
+        return {"found": False, "hash_required": True}
     return {"found": False}
 
 

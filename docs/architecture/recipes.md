@@ -22,11 +22,13 @@ demand. Every update archives the previous full recipe locally, bounded to 20
 versions. The structural fingerprint (`sha256-structural-v1`) is an integrity
 and version-comparison value, not model identity evidence.
 
-The current persisted recipe schema is v6. Earlier schema steps introduced the
+The current persisted recipe schema is v7. Earlier schema steps introduced the
 structural fingerprint, explicit model-reference identity records, and optional
 recipe-owned preview descriptors; v5 separates model identity from editable
 official-origin fields. V6 records whether the saved graph is a partial or
-complete recipe. Normal save/update paths preserve compatible imported
+complete recipe. V7 adds bounded recipe-scoped model notes and makes Hash
+synchronization across local matching and partial append an explicit invariant.
+Normal save/update paths preserve compatible imported
 records rather than rebuilding identity from the current machine. An explicit
 save-time verification choice may replace missing identity with a freshly
 computed SHA-256 for supported model categories.
@@ -51,7 +53,8 @@ records and cached local metadata. Recognized model references without verified
 identity appear as an optional action. The checkbox is off by default; enabling
 it computes the exact full-file SHA-256 in a worker thread during persistence.
 Foundation components such as VAE and text encoders are included because Model
-Doctor requires their hash and deliberately rejects size-only recovery.
+Doctor requires their hash for automatic recovery and treats size-only evidence
+as a manual candidate at most.
 Inspection failure never blocks the workflow snapshot from being saved.
 
 The detail view contains Overview, Parameters, Gallery, and Versions as
@@ -67,8 +70,10 @@ only after the reference is already understood; it cannot establish identity.
 Import matching is a separate explicit recovery action. Unresolved references
 are sent to the hash/size/category resolver. A discovered candidate remains
 presentation-only until the user chooses Apply match; that action updates the
-authoritative workflow widget through the full-recipe update path and archives
-the previous recipe. The author's saved filename or path is never match evidence.
+authoritative workflow widget, model reference, and node-scoped Hash index
+through the full-recipe update path and archives the previous recipe. The
+author's saved filename or path is never match evidence. Model-reference
+`user_note` is recipe-scoped presentation metadata and never match evidence.
 
 Recipe-owned model preview snapshots are bounded, content-addressed WebP files
 below `.assets/<recipe-stem>/`. They are at most 320 px or 96 KiB each, limited
@@ -86,7 +91,8 @@ recipe and opens as a new workflow canvas. A graph without an output node or
 with required connection boundaries is saved as a partial recipe and appends to
 the current canvas. Append clones saved nodes, assigns collision-free IDs,
 remaps links, places/selects the inserted content, treats groups as first-class
-items, and rolls back the complete insertion on failure. Legacy recipes without
+items, remaps node-scoped model Hash records, and rolls back nodes/groups/Hash
+records together on failure. Legacy recipes without
 scope metadata are complete recipes because earlier releases only documented
 and captured complete workflows.
 

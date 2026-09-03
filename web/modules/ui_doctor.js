@@ -467,7 +467,16 @@ export function renderGlobalDashboard() {
                     if (identityMismatch) identityWarnings++;
                     if (isHealthy) healthy++; else missing++;
                     
-                    missingNodesData.push({ node, w, val, isHealthy, exactMatch, identityMismatch });
+                    missingNodesData.push({
+                        node,
+                        w,
+                        val,
+                        isHealthy,
+                        exactMatch,
+                        identityMismatch,
+                        resolutionStatus: w.anomalous_resolution_status || '',
+                        sizeCandidate: w.anomalous_size_candidate || null,
+                    });
                 }
             }
         }
@@ -502,7 +511,18 @@ export function renderGlobalDashboard() {
 
         // Render List
 for (const data of missingNodesData) {
-            const { node, w, val, isHealthy, exactMatch, identityMismatch } = data;
+            const {
+                node,
+                w,
+                val,
+                isHealthy,
+                exactMatch,
+                identityMismatch,
+                resolutionStatus,
+                sizeCandidate,
+            } = data;
+            const hasIdentityConflict = resolutionStatus === 'identity_conflict';
+            const hasSizeCandidate = resolutionStatus === 'size_candidate' && sizeCandidate?.filename;
             
             const item = document.createElement('div');
             item.style.cssText = `display:flex; flex-direction:column; padding:16px 20px; background:rgba(255,255,255,0.02); border-radius:12px; border:1px solid rgba(255,255,255,0.04); transition:all 0.2s; position:relative; overflow:hidden; flex-shrink:0;`;
@@ -511,7 +531,10 @@ for (const data of missingNodesData) {
             
             // Accent bar
             const accent = document.createElement('div');
-            accent.style.cssText = `position:absolute; left:0; top:0; bottom:0; width:4px; background:${identityMismatch ? '#ffc107' : (isHealthy ? '#28a745' : '#ff6b6b')};`;
+            const accentColor = hasSizeCandidate
+                ? '#ffc107'
+                : (hasIdentityConflict || !isHealthy ? '#ff6b6b' : (identityMismatch ? '#ffc107' : '#28a745'));
+            accent.style.cssText = `position:absolute; left:0; top:0; bottom:0; width:4px; background:${accentColor};`;
             item.appendChild(accent);
 
             const top = document.createElement('div');
@@ -535,7 +558,11 @@ for (const data of missingNodesData) {
             const right = document.createElement('div');
             right.style.cssText = 'display:flex; align-items:center; gap:12px;';
             
-            if (identityMismatch) {
+            if (hasIdentityConflict) {
+                right.innerHTML = `<div style="color:#ff6b6b;font-size:13px;font-weight:bold;padding:6px 12px;background:rgba(220,53,69,0.1);border-radius:20px;">⛔ ${t('doctorIdentityConflict')}</div>`;
+            } else if (hasSizeCandidate) {
+                right.innerHTML = `<div style="text-align:right;"><div style="color:#ffc107;font-size:13px;font-weight:bold;">🟡 ${t('doctorSizeCandidate')}</div><div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:4px;">${escapeHtml(sizeCandidate.filename.split(/[\\/]/).pop())}</div></div>`;
+            } else if (identityMismatch) {
                 right.innerHTML = `<div style="color:#ffc107;font-size:13px;font-weight:bold;padding:6px 12px;background:rgba(255,193,7,0.1);border-radius:20px;">🟡 ${t('doctorIdentityChanged')}</div>`;
             } else if (isHealthy && exactMatch && exactMatch !== val) {
                 right.innerHTML = `<div style="text-align:right;"><div style="color:#ffc107;font-size:13px;font-weight:bold;">🟡 ${t('doctorAutoRedirected')}</div><div style="color:rgba(255,255,255,0.4);font-size:11px;margin-top:4px;">${escapeHtml(exactMatch.split(/[\/]/).pop())}</div></div>`;

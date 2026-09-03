@@ -165,6 +165,8 @@ async function exportRecipePackage(filename) {
     if (includeSnapshots === null) return;
     const includeHistory = await anomalousConfirm(t('recipeExportHistoryConfirm'), 'Anomalous', choice);
     if (includeHistory === null) return;
+    const includeModelNotes = await anomalousConfirm(t('recipeExportModelNotesConfirm'), 'Anomalous', choice);
+    if (includeModelNotes === null) return;
     const redactIdentity = await anomalousConfirm(t('recipeExportRedactIdentityConfirm'), 'Anomalous', choice);
     if (redactIdentity === null) return;
     const includeIdentity = !redactIdentity;
@@ -176,6 +178,7 @@ async function exportRecipePackage(filename) {
             include_snapshots: includeSnapshots,
             include_history: includeHistory,
             include_identity: includeIdentity,
+            include_model_notes: includeModelNotes,
         }),
     });
     if (!response.ok) throw new Error('recipe export failed');
