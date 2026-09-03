@@ -969,8 +969,9 @@ function renderPromptOverviewSection(parent, recipe) {
         header.style.alignItems = 'center';
         header.style.marginBottom = '6px';
 
-        const label = appendText(header, 'strong', isNegative ? '🔴 负向提示词 (Negative Prompt)' : '🟢 正向提示词 (Positive Prompt)');
+        const label = appendText(header, 'strong', isNegative ? '负向提示词 (Negative)' : '正向提示词 (Positive)');
         label.style.fontSize = '0.78rem';
+        label.style.color = '#94a3b8';
 
         const copyBtn = button(header, '📋 复制', 'anomalous-recipe-prompt-copy-btn');
         copyBtn.onclick = () => {

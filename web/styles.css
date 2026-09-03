@@ -3940,23 +3940,22 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-recipe-btn-primary-action {
     flex: 1;
-    padding: 8px 12px;
+    padding: 8px 14px;
     border-radius: 8px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.85), rgba(79, 70, 229, 0.95));
-    border: 1px solid rgba(129, 140, 248, 0.4);
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #f1f5f9;
     font-size: 0.82rem;
     font-weight: 500;
     cursor: pointer;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
 }
 
 .anomalous-recipe-btn-primary-action:hover {
-    filter: brightness(1.15);
-    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45);
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.28);
+    color: #ffffff;
 }
 
 .anomalous-recipe-card-mini-actions {
@@ -3978,62 +3977,21 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-card-mini-btn:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.1);
     color: #fff;
-    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
-/* Detail View: Readiness Banner */
-.anomalous-recipe-readiness-banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 16px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    font-size: 0.88rem;
-    backdrop-filter: blur(10px);
-}
-
-.anomalous-recipe-readiness-banner.is-ready {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.08));
-    border: 1px solid rgba(16, 185, 129, 0.35);
-    color: #a7f3d0;
-}
-
-.anomalous-recipe-readiness-banner.is-warning {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.08));
-    border: 1px solid rgba(245, 158, 11, 0.4);
-    color: #fde68a;
-}
-
-.anomalous-recipe-readiness-banner.is-missing {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(185, 28, 28, 0.08));
-    border: 1px solid rgba(239, 68, 68, 0.4);
-    color: #fecaca;
-}
-
-.anomalous-recipe-banner-btn {
-    padding: 6px 14px;
-    border-radius: 7px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-}
 
 .anomalous-recipe-banner-btn.is-match-all {
-    background: #f59e0b;
-    color: #1a1a1a;
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #e2e8f0;
 }
 
 .anomalous-recipe-banner-btn.is-match-all:hover {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
 }
 
 /* Metric Cards for Sampling Parameters */
@@ -4181,27 +4139,24 @@ dialog.anomalous-gallery-viewer::backdrop {
     white-space: nowrap;
 }
 
-/* Prompt Showcase Boxes */
+/* Prompt Showcase Boxes - Clean Monochromatic Dark */
 .anomalous-recipe-prompt-box {
     position: relative;
     padding: 12px 14px;
-    border-radius: 10px;
+    border-radius: 8px;
     margin-bottom: 10px;
     font-size: 0.84rem;
     line-height: 1.55;
     word-break: break-word;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
 }
 
-.anomalous-recipe-prompt-box.is-positive {
-    background: rgba(16, 185, 129, 0.06);
-    border: 1px solid rgba(16, 185, 129, 0.22);
-    color: #ecfdf5;
-}
-
+.anomalous-recipe-prompt-box.is-positive,
 .anomalous-recipe-prompt-box.is-negative {
-    background: rgba(244, 63, 94, 0.06);
-    border: 1px solid rgba(244, 63, 94, 0.22);
-    color: #fff1f2;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .anomalous-recipe-prompt-copy-btn {
@@ -4210,8 +4165,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     right: 8px;
     padding: 3px 8px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: #cbd5e1;
     font-size: 0.72rem;
     cursor: pointer;
@@ -4219,7 +4174,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-prompt-copy-btn:hover {
-    background: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.15);
     color: #fff;
 }
 
@@ -4236,22 +4191,21 @@ dialog.anomalous-gallery-viewer::backdrop {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 9px 12px;
+    padding: 8px 14px;
     border-radius: 8px;
-    background: linear-gradient(135deg, #6366f1, #4f46e5);
-    border: 1px solid rgba(129, 140, 248, 0.4);
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #f1f5f9;
     font-size: 0.82rem;
     font-weight: 500;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
 }
 
 .anomalous-preset-btn-primary:hover {
-    filter: brightness(1.12);
-    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45);
-    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.28);
+    color: #ffffff;
 }
 
 .anomalous-preset-btn-secondary {
@@ -4261,18 +4215,18 @@ dialog.anomalous-gallery-viewer::backdrop {
     gap: 6px;
     padding: 8px 12px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
     font-size: 0.82rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
 }
 
 .anomalous-preset-btn-secondary:hover {
-    background: rgba(255, 255, 255, 0.09);
-    border-color: rgba(255, 255, 255, 0.16);
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
 }
 
 .anomalous-preset-item-card {
@@ -4282,23 +4236,23 @@ dialog.anomalous-gallery-viewer::backdrop {
     justify-content: space-between;
     gap: 8px;
     padding: 10px 12px;
-    border-radius: 9px;
-    background: rgba(255, 255, 255, 0.025);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.07);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
     margin-bottom: 6px;
 }
 
 .anomalous-preset-item-card:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.045);
     border-color: rgba(255, 255, 255, 0.14);
 }
 
 .anomalous-preset-item-card.is-active {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(79, 70, 229, 0.06));
-    border-color: rgba(129, 140, 248, 0.5);
-    box-shadow: inset 3px 0 0 #818cf8, 0 4px 12px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: inset 3px 0 0 rgba(255, 255, 255, 0.7);
 }
 
 .anomalous-preset-item-main {
@@ -4312,7 +4266,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-preset-item-title {
     font-size: 0.88rem;
     font-weight: 500;
-    color: #e2e8f0;
+    color: #cbd5e1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -4328,16 +4282,16 @@ dialog.anomalous-gallery-viewer::backdrop {
     align-items: center;
     gap: 6px;
     font-size: 0.72rem;
-    color: #94a3b8;
+    color: #64748b;
 }
 
 .anomalous-preset-item-badge {
     padding: 1px 6px;
     border-radius: 4px;
-    background: rgba(99, 102, 241, 0.2);
-    color: #a5b4fc;
+    background: rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
     font-size: 0.68rem;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 .anomalous-preset-item-actions {
