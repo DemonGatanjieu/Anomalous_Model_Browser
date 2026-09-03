@@ -4710,7 +4710,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-material-metric-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
     gap: 8px;
     margin: 4px 0 10px;
 }
@@ -4731,12 +4731,11 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-material-metric-val {
-    font-size: 0.86rem;
+    font-size: 0.82rem;
     font-weight: 600;
     color: #f1f5f9;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    word-break: break-word;
+    line-height: 1.25;
 }
 
 .anomalous-material-prompt-card {
@@ -4753,7 +4752,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-material-prompt-content {
     font-family: monospace;
-    max-height: 4.5em;
+    max-height: 4.8em;
     overflow: hidden;
     white-space: pre-wrap;
     word-break: break-word;
@@ -4761,8 +4760,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-material-prompt-content.is-expanded {
-    max-height: 300px;
-    overflow-y: auto;
+    max-height: none !important;
+    overflow: visible !important;
 }
 
 .anomalous-material-prompt-bar {
@@ -4806,7 +4805,6 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.07);
     margin-bottom: 8px;
-    overflow: hidden;
 }
 
 .anomalous-material-accordion > summary {
@@ -4820,6 +4818,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     cursor: pointer;
     user-select: none;
     background: rgba(255, 255, 255, 0.025);
+    border-radius: 8px;
     transition: background 0.15s;
 }
 
@@ -4830,12 +4829,12 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-material-accordion[open] > summary {
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
 .anomalous-material-accordion-content {
     padding: 10px 12px;
-    max-height: 180px;
-    overflow-y: auto;
     font-size: 0.78rem;
 }
 
@@ -4863,32 +4862,99 @@ dialog.anomalous-gallery-viewer::backdrop {
     opacity: 0.6;
 }
 
-/* Model rows */
-.anomalous-material-model-row {
+/* Model Categorized Groups */
+.anomalous-material-model-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.anomalous-material-model-group:last-child {
+    margin-bottom: 0;
+}
+
+.anomalous-material-model-group-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #94a3b8;
+    padding-bottom: 3px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.anomalous-material-model-card-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    padding: 4px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    gap: 10px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.anomalous-material-model-row:last-child {
-    border-bottom: none;
+.anomalous-material-model-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
 }
 
-.anomalous-material-model-name {
-    color: #cbd5e1;
+.anomalous-material-model-filename {
+    color: #e2e8f0;
+    font-size: 0.79rem;
+    font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.anomalous-material-model-tag {
-    padding: 1px 6px;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.06);
+.anomalous-material-model-params {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.71rem;
     color: #94a3b8;
+}
+
+.anomalous-material-model-tag-badge {
+    padding: 2px 7px;
+    border-radius: 4px;
     font-size: 0.68rem;
+    font-weight: 600;
     flex-shrink: 0;
+}
+
+.anomalous-tag-base {
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.anomalous-tag-lora {
+    background: rgba(192, 132, 252, 0.12);
+    color: #c084fc;
+    border: 1px solid rgba(192, 132, 252, 0.25);
+}
+
+.anomalous-tag-vae {
+    background: rgba(251, 146, 60, 0.12);
+    color: #fb923c;
+    border: 1px solid rgba(251, 146, 60, 0.25);
+}
+
+.anomalous-tag-clip {
+    background: rgba(45, 212, 191, 0.12);
+    color: #2dd4bf;
+    border: 1px solid rgba(45, 212, 191, 0.25);
+}
+
+.anomalous-tag-other {
+    background: rgba(148, 163, 184, 0.12);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.25);
 }

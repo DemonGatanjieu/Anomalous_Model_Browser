@@ -229,16 +229,25 @@ async function parsePngMetadataFromUrl(url) {
 }
 
 /**
- * Extract generation parameters and full prompts from a ComfyUI workflow JSON.
+ * Extract generation parameters, full prompts, and categorized model references with details (e.g. LoRA strengths)
+ * directly from the workflow.
  */
 function extractWorkflowDetails(workflow) {
     const params = {};
     const positivePrompts = [];
     const negativePrompts = [];
     const allPrompts = [];
+    const loraDetailsMap = new Map();
+    const discoveredModels = {
+        checkpoints: [],
+        loras: [],
+        textEncoders: [],
+        vaes: [],
+        others: [],
+    };
 
     if (!workflow || typeof workflow !== 'object') {
-        return { params, positivePrompts, negativePrompts, allPrompts };
+        return { params, positivePrompts, negativePrompts, allPrompts, loraDetailsMap, discoveredModels };
     }
 
     const nodes = Array.isArray(workflow.nodes) ? workflow.nodes : [];
@@ -249,6 +258,7 @@ function extractWorkflowDetails(workflow) {
         const ntypeLower = ntype.toLowerCase();
         const widgets = Array.isArray(node.widgets_values) ? node.widgets_values : [];
 
+        // 1. Sampling parameters
         if (ntypeLower === 'ksampler' || ntypeLower === 'ksampleradvanced') {
             const isAdv = ntypeLower === 'ksampleradvanced';
             const offset = isAdv ? 1 : 0;
@@ -263,6 +273,7 @@ function extractWorkflowDetails(workflow) {
             }
         }
 
+        // 2. Full un-truncated prompts
         if (ntypeLower.includes('cliptextencode') || ntypeLower.includes('prompt')) {
             const nodeTitle = String(node.title || ntype).toLowerCase();
             for (const val of widgets) {
@@ -277,9 +288,49 @@ function extractWorkflowDetails(workflow) {
                 }
             }
         }
+
+        // 3. Categorized model references & LoRA weights
+        if (ntypeLower.includes('checkpoint') || ntypeLower === 'unetloader' || ntypeLower.includes('diffusionmodel')) {
+            if (widgets[0] && typeof widgets[0] === 'string') {
+                const name = widgets[0];
+                if (!discoveredModels.checkpoints.some(c => c.name === name)) {
+                    discoveredModels.checkpoints.push({
+                        name,
+                        category: ntypeLower.includes('unet') ? 'unet' : 'checkpoint',
+                    });
+                }
+            }
+        } else if (ntypeLower.includes('lora')) {
+            if (widgets[0] && typeof widgets[0] === 'string') {
+                const name = widgets[0];
+                const strengthModel = widgets[1] != null ? Number(widgets[1]) : 1.0;
+                const strengthClip = widgets[2] != null ? Number(widgets[2]) : strengthModel;
+                loraDetailsMap.set(name, { strengthModel, strengthClip });
+                const baseName = name.replace(/\\/g, '/').split('/').pop();
+                loraDetailsMap.set(baseName, { strengthModel, strengthClip });
+                if (!discoveredModels.loras.some(l => l.name === name)) {
+                    discoveredModels.loras.push({ name, strengthModel, strengthClip, category: 'lora' });
+                }
+            }
+        } else if (ntypeLower.includes('vaeloader') || (ntypeLower.includes('vae') && !ntypeLower.includes('encode') && !ntypeLower.includes('decode'))) {
+            if (widgets[0] && typeof widgets[0] === 'string') {
+                const name = widgets[0];
+                if (!discoveredModels.vaes.some(v => v.name === name)) {
+                    discoveredModels.vaes.push({ name, category: 'vae' });
+                }
+            }
+        } else if (ntypeLower.includes('cliploader') || ntypeLower.includes('dualcliploader') || ntypeLower.includes('textencoder')) {
+            for (const w of widgets) {
+                if (typeof w === 'string' && (w.endsWith('.safetensors') || w.endsWith('.bin') || w.endsWith('.pt') || w.endsWith('.sft'))) {
+                    if (!discoveredModels.textEncoders.some(t => t.name === w)) {
+                        discoveredModels.textEncoders.push({ name: w, category: 'text_encoder' });
+                    }
+                }
+            }
+        }
     }
 
-    return { params, positivePrompts, negativePrompts, allPrompts };
+    return { params, positivePrompts, negativePrompts, allPrompts, loraDetailsMap, discoveredModels };
 }
 
 export async function showImageMaterialDetail(owner, sourceImage, imageUrl) {
@@ -450,28 +501,101 @@ export async function showImageMaterialDetail(owner, sourceImage, imageUrl) {
             if (fallbackText) renderPromptCard(t('materialPromptText') || '提示词', fallbackText);
         }
 
-        // Section C: Referenced Models (Collapsible)
-        const models = Array.isArray(inspectPayload.model_references) ? inspectPayload.model_references : [];
-        if (models.length) {
+        // Section C: Categorized Referenced Models (Grouped, Detailed, Never mixed)
+        const allModelRefs = Array.isArray(inspectPayload.model_references) ? [...inspectPayload.model_references] : [];
+
+        const addIfNotExists = (item) => {
+            const clean = (val) => String(val || '').replace(/\\/g, '/').split('/').pop().toLowerCase();
+            const target = clean(item.saved_value || item.name);
+            if (!target) return;
+            if (!allModelRefs.some(m => clean(m.saved_value || m.name) === target)) {
+                allModelRefs.push(item);
+            }
+        };
+
+        if (clientDetails.discoveredModels) {
+            for (const c of clientDetails.discoveredModels.checkpoints) addIfNotExists({ saved_value: c.name, category: c.category });
+            for (const l of clientDetails.discoveredModels.loras) addIfNotExists({ saved_value: l.name, category: 'lora' });
+            for (const tModel of clientDetails.discoveredModels.textEncoders) addIfNotExists({ saved_value: tModel.name, category: 'text_encoder' });
+            for (const v of clientDetails.discoveredModels.vaes) addIfNotExists({ saved_value: v.name, category: 'vae' });
+        }
+
+        const groups = {
+            base: [],
+            lora: [],
+            clip: [],
+            vae: [],
+            other: [],
+        };
+
+        for (const ref of allModelRefs) {
+            const cat = String(ref.category || '').toLowerCase();
+            const val = String(ref.saved_value || ref.name || '').toLowerCase();
+            if (cat === 'checkpoint' || cat === 'unet' || val.includes('checkpoint') || val.includes('anima') || val.includes('unet')) {
+                groups.base.push(ref);
+            } else if (cat === 'lora' || val.includes('lora')) {
+                groups.lora.push(ref);
+            } else if (cat === 'text_encoder' || cat === 'clip' || val.includes('clip') || val.includes('qwen_3_06b') || val.includes('t5')) {
+                groups.clip.push(ref);
+            } else if (cat === 'vae' || val.includes('vae')) {
+                groups.vae.push(ref);
+            } else {
+                groups.other.push(ref);
+            }
+        }
+
+        const totalModelCount = allModelRefs.length;
+        if (totalModelCount > 0) {
             const modelDetails = document.createElement('details');
             modelDetails.className = 'anomalous-material-accordion';
+            modelDetails.open = true; // 默认展开，让用户一眼看清分类与详细参数
 
             const modelSummary = document.createElement('summary');
-            modelSummary.textContent = `📦 ${t('materialReferencedModels', { count: models.length })} ▾`;
+            modelSummary.textContent = `📦 ${t('materialReferencedModels', { count: totalModelCount })} ▾`;
             modelDetails.appendChild(modelSummary);
 
             const modelContent = document.createElement('div');
             modelContent.className = 'anomalous-material-accordion-content';
 
-            for (const ref of models) {
-                const row = document.createElement('div');
-                row.className = 'anomalous-material-model-row';
-                const modelName = String(ref.saved_value || ref.name || 'Unknown').replace(/\\/g, '/').split('/').pop();
-                const nameEl = text(row, 'span', modelName, 'anomalous-material-model-name');
-                nameEl.title = ref.saved_value || modelName;
-                text(row, 'span', ref.category || 'model', 'anomalous-material-model-tag');
-                modelContent.appendChild(row);
-            }
+            const renderModelGroup = (titleText, items, tagClass, defaultTag) => {
+                if (!items.length) return;
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'anomalous-material-model-group';
+
+                text(groupDiv, 'div', titleText, 'anomalous-material-model-group-title');
+
+                for (const item of items) {
+                    const row = document.createElement('div');
+                    row.className = 'anomalous-material-model-card-item';
+
+                    const info = document.createElement('div');
+                    info.className = 'anomalous-material-model-info';
+
+                    const rawVal = String(item.saved_value || item.name || 'Unknown');
+                    const fileName = rawVal.replace(/\\/g, '/').split('/').pop();
+                    const nameEl = text(info, 'span', fileName, 'anomalous-material-model-filename');
+                    nameEl.title = rawVal;
+
+                    // Show LoRA weights (Strength & CLIP) if available
+                    const loraWeights = clientDetails.loraDetailsMap?.get(rawVal) || clientDetails.loraDetailsMap?.get(fileName);
+                    if (loraWeights) {
+                        const paramText = `${t('materialLoraStrength') || '权重'}: ${loraWeights.strengthModel} · CLIP: ${loraWeights.strengthClip}`;
+                        text(info, 'span', paramText, 'anomalous-material-model-params');
+                    }
+
+                    row.appendChild(info);
+                    text(row, 'span', item.category || defaultTag, `anomalous-material-model-tag-badge ${tagClass}`);
+                    groupDiv.appendChild(row);
+                }
+                modelContent.appendChild(groupDiv);
+            };
+
+            renderModelGroup(t('materialModelBase') || '🎯 主模型 / UNet', groups.base, 'anomalous-tag-base', 'unet');
+            renderModelGroup(t('materialModelLora') || '🎨 LoRA 微调层', groups.lora, 'anomalous-tag-lora', 'lora');
+            renderModelGroup(t('materialModelClip') || '👁️ 文本编码器 (CLIP)', groups.clip, 'anomalous-tag-clip', 'clip');
+            renderModelGroup(t('materialModelVae') || '🖼️ VAE 编码器', groups.vae, 'anomalous-tag-vae', 'vae');
+            renderModelGroup(t('materialModelOther') || '⚡ 其它模型组件', groups.other, 'anomalous-tag-other', 'model');
+
             modelDetails.appendChild(modelContent);
             sideBody.appendChild(modelDetails);
         }
