@@ -5,6 +5,7 @@
 
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
+import { showImageMaterialDetail } from './ui_materials.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -86,6 +87,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
                                     this.gallerySelectModel = null;
                                     const banner = document.getElementById('anomalous-gallery-select-banner');
                                     if (banner) banner.style.display = 'none';
+                                    this.galleryPanel.classList.remove('is-cover-selecting');
                                     this.galleryPanel.style.display = 'none';
 
                                     await this.loadModels();
@@ -208,7 +210,23 @@ export async function loadGalleryImages(page = 1, reset = false) {
                         card.appendChild(overlay);
                     };
 
+                    const detailsBtn = document.createElement('button');
+                    detailsBtn.className = 'anomalous-gallery-details';
+                    detailsBtn.type = 'button';
+                    detailsBtn.textContent = `🔎 ${t('materialViewParameters')}`;
+                    detailsBtn.title = t('materialViewDetails');
+                    detailsBtn.onclick = (event) => {
+                        event.stopPropagation();
+                        if (this.gallerySelectModel) return;
+                        void showImageMaterialDetail(this, {
+                            type: 'output',
+                            filename: imgData.filename,
+                            subfolder: imgData.subfolder || '',
+                        }, imgUrl);
+                    };
+
                     card.appendChild(img);
+                    card.appendChild(detailsBtn);
                     card.appendChild(delBtn);
                     this.galleryGrid.insertBefore(card, this.gallerySentinel);
                 });
@@ -451,6 +469,7 @@ export function showGallerySelectMode(model) {
         this.grid.style.display = 'none';
         this.detailPanel.style.display = 'none';
         this.galleryPanel.style.display = 'flex';
+        this.galleryPanel.classList.add('is-cover-selecting');
         let banner = document.getElementById('anomalous-gallery-select-banner');
         if (!banner) {
             banner = document.createElement('div');
@@ -487,6 +506,7 @@ export function showGallerySelectMode(model) {
         cancelSelect.onclick = () => {
             const tempModel = this.gallerySelectModel;
             this.gallerySelectModel = null;
+            this.galleryPanel.classList.remove('is-cover-selecting');
             banner.style.display = 'none';
             this.galleryPanel.style.display = 'none';
             if (this.currentDetailModel) {

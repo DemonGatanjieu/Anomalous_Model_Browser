@@ -1148,6 +1148,40 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     opacity: 1;
 }
 
+.anomalous-gallery-details {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    z-index: 2;
+    max-width: calc(100% - 16px);
+    padding: 7px 10px;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 7px;
+    background: rgba(18,20,26,.82);
+    color: #f5f7fb;
+    font-size: 12px;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(4px);
+    pointer-events: none;
+    backdrop-filter: blur(5px);
+    transition: opacity .16s ease, transform .16s ease, background .16s ease;
+}
+
+.anomalous-gallery-card:hover .anomalous-gallery-details,
+.anomalous-gallery-card:focus-within .anomalous-gallery-details {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.anomalous-gallery-details:hover { background: rgba(31,111,91,.94); }
+
+#anomalous-gallery-panel.is-cover-selecting .anomalous-gallery-details,
+#anomalous-gallery-panel.is-cover-selecting .anomalous-gallery-delete {
+    display: none;
+}
+
 .anomalous-gallery-delete:hover {
     background: #ff0000;
     transform: scale(1.1);

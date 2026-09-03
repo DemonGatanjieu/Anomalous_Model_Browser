@@ -51,7 +51,7 @@ export const i18n = {
     <p><strong>1. 🔄 前置准备 (扫描向导)</strong><br>具体位置：界面左侧底部的 <strong>扫描向导 (🔄)</strong>。<br>这是最重要的前置操作！请先打开扫描向导执行扫描。切记保持网络畅通。部分 C站限制级模型信息需要在设置中填入 API-KEY。扫描完成后，插件的各项功能基本激活。</p>
     <p><strong>2. 🩺 拯救爆红 (模型医生)</strong><br>具体位置：左侧底部第二个 <strong>听诊器 (🩺)</strong> 按钮。<br>当导入别人使用该插件输出的工作流或者图片时，若模型路径爆红，点击模型医生就能智能识别当前所有节点实现正确路径的替换。</p>
     <p><strong>3. 🤖 选中交互与参数预设 (节点助手)</strong><br>具体位置：左侧第三个 <strong>机器人 (🤖)</strong> 按钮。<br>在画布上选中节点后，“动作”页可以可视化替换模型，或在兼容的 MODEL + CLIP 链前后插入 LoRA。“参数笔记本”页会按配方分组读取工作流配方保存的同类型节点参数；点击一条记录即可把参数应用到当前选中节点。例如选中 KSampler 后，可一键载入配方中的采样器、调度器、步数、CFG 与降噪等值；种子等每次运行变化的参数会被忽略。</p>
-    <p><strong>4. 🧰 工作流配方、参数笔记本与素材库</strong><br>具体位置：打开 <strong>创作工作台</strong>。<br>配方会保存工作流、封面、标签、备注、模型引用及常用参数。未闭合的局部配方默认追加到当前画布，可独立运行的整体配方会在新画布打开；两者都支持导入/导出配方包。详情页包含概览、参数笔记本、图库和版本：可匹配本地模型、查看与复制完整参数、比较历史出图参数、比较或恢复配方版本。图库图片悬浮后可进入参数详情，把原图、完整工作流和节点参数保存为一个素材快照；素材库可打开完整工作流，节点助手则按当前节点类型筛选并应用其中的参数。参数笔记可从当前画布读取同一骨架的新参数，也可编辑安全控件并保存；“应用到当前工作流”只会在骨架匹配后写入参数。</p>
+    <p><strong>4. 🧰 工作流配方、参数笔记本与素材库</strong><br>具体位置：打开 <strong>创作工作台</strong>。<br>配方会保存工作流、封面、标签、备注、模型引用及常用参数。未闭合的局部配方默认追加到当前画布，可独立运行的整体配方会在新画布打开；两者都支持导入/导出配方包。详情页包含概览、参数笔记本、图库和版本：可匹配本地模型、查看与复制完整参数、比较历史出图参数、比较或恢复配方版本。主图库或配方图库的图片悬浮后可进入参数详情，把原图、完整工作流和节点参数保存为一个素材快照；素材库可打开完整工作流，节点助手则按当前节点类型筛选并应用其中的参数。参数笔记可从当前画布读取同一骨架的新参数，也可编辑安全控件并保存；“应用到当前工作流”只会在骨架匹配后写入参数。</p>
     <p><strong>5. ⚙️ 个性化配置 (设置面板)</strong><br>具体位置：左侧底部的 <strong>齿轮 (⚙️)</strong> 按钮。<br>可以调节语言、主页面字体大小；进入“模型设置”可选择视频封面始终播放或悬停播放，以及卡片使用流畅缩略图或原始封面。详情页始终保留原图画质。</p>
     <p><strong>6. 📑 顶部导航与提示词笔记</strong><br>具体位置：右侧顶部的按钮分别为 <strong>模型 (📦)</strong>、<strong>图库 (🖼️)</strong>、<strong>创作工作台 (📑)</strong>、<strong>停靠侧边栏 (◧)</strong>。<br>进入创作工作台的“提示词笔记”，点击新建 <strong>➕</strong>。选择基础模型、主模型和 LoRA 后，可通过 <strong>📝纯文本/粘贴</strong> 填入提示词并进行双语对照、分块、查找替换和标签编辑，最后点击 <strong>🚀 发送到画布</strong> 一键组装节点。</p>
     <p><strong>7. 📁 文件夹管理 (Folder Manager)</strong><br>具体位置：设置 (⚙️) 面板内的 <strong>📁 文件夹管理</strong>。<br>可以用来隐藏不需要的内置文件夹。隐藏后的文件夹不仅从侧边栏消失，后端的静默扫描和本地读取也会完全跳过，实现真正的“零性能损耗”。并且可以在这里拖拽调整文件夹在侧边栏显示的顺序。</p>
@@ -76,6 +76,7 @@ export const i18n = {
         materialDeleteConfirm: '确定删除这个素材包及其中保存的参考图片吗？',
         materialDeleteError: '素材删除失败。',
         materialViewDetails: '查看详情',
+        materialViewParameters: '查看参数',
         materialImageDetail: '图片参数详情',
         materialInspecting: '正在读取图片中的工作流与参数…',
         materialInspectError: '这张图片没有可复用的完整 UI 工作流，暂时不能保存为素材快照。',
@@ -851,6 +852,7 @@ export const i18n = {
         materialDeleteConfirm: 'Delete this material bundle and its saved reference image?',
         materialDeleteError: 'Could not delete the material.',
         materialViewDetails: 'View Details',
+        materialViewParameters: 'View Parameters',
         materialImageDetail: 'Image Parameter Details',
         materialInspecting: 'Reading the embedded workflow and parameters…',
         materialInspectError: 'This image has no reusable full UI workflow and cannot be saved as a snapshot yet.',

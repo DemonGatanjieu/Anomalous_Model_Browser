@@ -206,6 +206,10 @@ export function createDOM() {
         galleryBtn.innerHTML = `🖼️ <span class="anomalous-btn-text">${t('gallery') || '图库'}</span>`;
         galleryBtn.onclick = () => {
             this.hideAllPanels();
+            this.gallerySelectModel = null;
+            this.galleryPanel.classList.remove('is-cover-selecting');
+            const selectBanner = document.getElementById('anomalous-gallery-select-banner');
+            if (selectBanner) selectBanner.style.display = 'none';
             container.classList.add('anomalous-sidebar-closed');
             menuBtn.disabled = true;
             menuBtn.style.opacity = '0.3';

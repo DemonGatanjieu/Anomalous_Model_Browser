@@ -32,10 +32,12 @@ The route family is:
 ## Frontend ownership
 
 `ui_materials.js` owns the Workspace library, image-inspection/save dialog,
-full-workflow handoff, and library CRUD presentation. `ui_recipe_detail.js`
-only supplies the gallery entry point. `ui_doctor.js` owns application to the
-currently selected node because that mutation already belongs to Node
-Assistant.
+full-workflow handoff, and library CRUD presentation. `ui_gallery.js` and
+`ui_recipe_detail.js` only supply non-invasive gallery entry points. Main
+Gallery retains click-to-view, drag, delete, and cover-selection behavior; the
+material action appears only on hover and is hidden during cover selection.
+`ui_doctor.js` owns application to the currently selected node because that
+mutation already belongs to Node Assistant.
 
 A full material workflow is exact and retains its seed. Node-sized reuse is a
 preset operation and therefore uses the existing transactional parameter

@@ -180,7 +180,7 @@ export async function showImageMaterialDetail(owner, sourceImage, imageUrl) {
     const loading = text(side, 'p', t('materialInspecting'), 'anomalous-material-muted');
     dialog.append(media, side);
     overlay.appendChild(dialog);
-    (owner?.nbPanel || document.body).appendChild(overlay);
+    document.body.appendChild(overlay);
     overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove(); });
 
     try {
