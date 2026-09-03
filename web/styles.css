@@ -3651,6 +3651,7 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-material-card-actions { display: flex; gap: 8px; margin-top: auto; padding: 0 14px 14px; }
 .anomalous-material-card-actions .anomalous-btn-primary { flex: 1; }
 
+/* Professional Studio Material Detail Modal */
 .anomalous-material-detail-overlay {
     position: fixed;
     inset: 0;
@@ -3659,51 +3660,184 @@ dialog.anomalous-gallery-viewer[open] {
     align-items: center;
     justify-content: center;
     padding: 24px;
-    background: rgba(3,4,7,.82);
-    backdrop-filter: blur(8px);
+    background: rgba(3, 4, 7, 0.88);
+    backdrop-filter: blur(12px);
 }
 
 .anomalous-material-detail-dialog {
     position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(320px, .65fr);
-    width: min(1100px, 94vw);
-    max-height: 90vh;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,.12);
+    grid-template-columns: minmax(0, 1.4fr) minmax(440px, 1fr);
+    width: min(1380px, 96vw);
+    height: min(880px, 92vh);
+    max-height: 92vh;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 18px;
-    background: #181a20;
-    box-shadow: 0 30px 90px rgba(0,0,0,.65);
+    background: #111216;
+    box-shadow: 0 32px 100px rgba(0, 0, 0, 0.8);
+    overflow: hidden;
 }
 
 .anomalous-material-detail-close {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    z-index: 2;
-    width: 36px;
-    height: 36px;
-    border: 1px solid rgba(255,255,255,.16);
+    top: 14px;
+    right: 14px;
+    z-index: 10;
+    width: 34px;
+    height: 34px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 50%;
-    background: rgba(12,13,16,.75);
-    color: #fff;
-    font-size: 24px;
+    background: rgba(18, 20, 26, 0.7);
+    color: #cbd5e1;
+    font-size: 20px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: all 0.15s;
 }
 
-.anomalous-material-detail-media { min-height: 420px; overflow: hidden; background: #090a0d; }
-.anomalous-material-detail-media img { width: 100%; height: 100%; max-height: 90vh; object-fit: contain; }
-.anomalous-material-detail-side { display: flex; min-height: 0; flex-direction: column; gap: 14px; padding: 32px 28px 26px; overflow-y: auto; }
-.anomalous-material-detail-side h2 { margin: 0; }
-.anomalous-material-detail-side label { display: grid; gap: 7px; color: #cbd0dc; font-size: 12px; font-weight: 700; }
-.anomalous-material-detail-side input { padding: 10px 12px; border: 1px solid #494d59; border-radius: 8px; background: #111217; color: #fff; }
-.anomalous-material-detail-stats { display: flex; flex-wrap: wrap; gap: 8px; }
-.anomalous-material-detail-stats span { padding: 6px 9px; border-radius: 999px; background: rgba(78,201,176,.12); color: #78d7c5; font-size: 11px; }
-.anomalous-material-prompt-excerpt { margin: 0; padding: 12px; border-left: 3px solid #5ccab4; background: rgba(255,255,255,.035); color: #c7ccd7; font-size: 12px; }
+.anomalous-material-detail-close:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    transform: scale(1.06);
+}
 
-@media (max-width: 780px) {
-    .anomalous-material-detail-dialog { grid-template-columns: 1fr; overflow-y: auto; }
-    .anomalous-material-detail-media { min-height: 260px; max-height: 42vh; }
+/* Left Media Showcase */
+.anomalous-material-detail-media {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #07080b;
+    overflow: hidden;
+    height: 100%;
+    min-height: 0;
+}
+
+.anomalous-material-detail-media img {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    user-select: none;
+}
+
+.anomalous-material-media-bar {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
+    right: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    border-radius: 9px;
+    background: rgba(14, 16, 22, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    font-size: 0.76rem;
+    color: #cbd5e1;
+}
+
+/* Right Inspector Panel - 3-Tier Layout (Fixed Header + Scroll Body + Sticky Footer) */
+.anomalous-material-detail-side {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: #14161c;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.anomalous-material-side-header {
+    padding: 22px 24px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+}
+
+.anomalous-material-side-header h2 {
+    margin: 0 0 6px;
+    font-size: 1.22rem;
+    font-weight: 600;
+    color: #f8fafc;
+}
+
+.anomalous-material-side-header p {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    line-height: 1.45;
+}
+
+/* Scrollable Body */
+.anomalous-material-side-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.anomalous-material-side-body::-webkit-scrollbar {
+    width: 6px;
+}
+.anomalous-material-side-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 3px;
+}
+.anomalous-material-side-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.24);
+}
+
+/* Sticky Footer */
+.anomalous-material-side-footer {
+    padding: 14px 24px 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: #111318;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.anomalous-material-side-footer label {
+    display: grid;
+    gap: 6px;
+    color: #cbd5e1;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.anomalous-material-side-footer input {
+    padding: 9px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #ffffff;
+    font-size: 0.82rem;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.anomalous-material-side-footer input:focus {
+    border-color: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+@media (max-width: 860px) {
+    .anomalous-material-detail-dialog {
+        grid-template-columns: 1fr;
+        height: 94vh;
+    }
+    .anomalous-material-detail-media {
+        min-height: 280px;
+        max-height: 40vh;
+    }
 }
 
 /* Ensure wide widgets (like long prompts) span full width in the node cards */

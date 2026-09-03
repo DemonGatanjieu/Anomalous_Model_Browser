@@ -160,42 +160,221 @@ export async function showMaterials() {
     await this.refreshMaterials();
 }
 
+/**
+ * Direct client-side PNG chunk parser to safely extract embedded ComfyUI metadata
+ * without requiring a server reboot or server-side re-encoding.
+ */
+async function parsePngMetadataFromUrl(url) {
+    if (!url) return null;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) return null;
+        const buffer = await response.arrayBuffer();
+        const view = new DataView(buffer);
+        if (view.byteLength < 32) return null;
+        // PNG magic bytes: 137, 80, 78, 71, 13, 10, 26, 10
+        if (view.getUint32(0) !== 0x89504E47 || view.getUint32(4) !== 0x0D0A1A0A) return null;
+
+        let offset = 8;
+        const utf8 = new TextDecoder('utf-8');
+        const latin1 = new TextDecoder('iso-8859-1');
+        const result = {};
+
+        while (offset + 8 <= buffer.byteLength) {
+            const length = view.getUint32(offset);
+            const type = String.fromCharCode(
+                view.getUint8(offset + 4),
+                view.getUint8(offset + 5),
+                view.getUint8(offset + 6),
+                view.getUint8(offset + 7),
+            );
+            const dataOffset = offset + 8;
+            if (type === 'IDAT') break; // Reached image raster data, text metadata is prior
+
+            if (dataOffset + length > buffer.byteLength) break;
+
+            if (type === 'tEXt') {
+                const bytes = new Uint8Array(buffer, dataOffset, length);
+                const nullIdx = bytes.indexOf(0);
+                if (nullIdx > -1) {
+                    const key = latin1.decode(bytes.subarray(0, nullIdx));
+                    const val = latin1.decode(bytes.subarray(nullIdx + 1));
+                    try { result[key] = JSON.parse(val); } catch { result[key] = val; }
+                }
+            } else if (type === 'iTXt') {
+                const bytes = new Uint8Array(buffer, dataOffset, length);
+                const nullIdx = bytes.indexOf(0);
+                if (nullIdx > -1) {
+                    const key = latin1.decode(bytes.subarray(0, nullIdx));
+                    let ptr = nullIdx + 1;
+                    const compFlag = bytes[ptr++];
+                    const compMethod = bytes[ptr++];
+                    while (ptr < bytes.length && bytes[ptr] !== 0) ptr++;
+                    ptr++;
+                    while (ptr < bytes.length && bytes[ptr] !== 0) ptr++;
+                    ptr++;
+                    if (compFlag === 0 && ptr <= bytes.length) {
+                        const val = utf8.decode(bytes.subarray(ptr));
+                        try { result[key] = JSON.parse(val); } catch { result[key] = val; }
+                    }
+                }
+            }
+            offset += 12 + length;
+        }
+        return result.workflow || result.prompt || null;
+    } catch (e) {
+        console.warn('Client-side PNG metadata read skipped:', e);
+        return null;
+    }
+}
+
+/**
+ * Extract generation parameters and full prompts from a ComfyUI workflow JSON.
+ */
+function extractWorkflowDetails(workflow) {
+    const params = {};
+    const positivePrompts = [];
+    const negativePrompts = [];
+    const allPrompts = [];
+
+    if (!workflow || typeof workflow !== 'object') {
+        return { params, positivePrompts, negativePrompts, allPrompts };
+    }
+
+    const nodes = Array.isArray(workflow.nodes) ? workflow.nodes : [];
+
+    for (const node of nodes) {
+        if (!node || typeof node !== 'object') continue;
+        const ntype = String(node.type || '').trim();
+        const ntypeLower = ntype.toLowerCase();
+        const widgets = Array.isArray(node.widgets_values) ? node.widgets_values : [];
+
+        if (ntypeLower === 'ksampler' || ntypeLower === 'ksampleradvanced') {
+            const isAdv = ntypeLower === 'ksampleradvanced';
+            const offset = isAdv ? 1 : 0;
+            if (widgets[2 + offset] != null && params.steps == null) params.steps = widgets[2 + offset];
+            if (widgets[3 + offset] != null && params.cfg == null) params.cfg = widgets[3 + offset];
+            if (widgets[4 + offset] != null && params.sampler_name == null) params.sampler_name = widgets[4 + offset];
+            if (widgets[5 + offset] != null && params.scheduler == null) params.scheduler = widgets[5 + offset];
+            if (widgets[6 + offset] != null && params.denoise == null) params.denoise = widgets[6 + offset];
+        } else if (ntypeLower === 'emptylatentimage') {
+            if (widgets[0] && widgets[1] && params.resolution == null) {
+                params.resolution = `${widgets[0]} × ${widgets[1]}`;
+            }
+        }
+
+        if (ntypeLower.includes('cliptextencode') || ntypeLower.includes('prompt')) {
+            const nodeTitle = String(node.title || ntype).toLowerCase();
+            for (const val of widgets) {
+                if (typeof val === 'string' && val.trim()) {
+                    const textVal = val.trim();
+                    if (!allPrompts.includes(textVal)) allPrompts.push(textVal);
+                    if (nodeTitle.includes('neg') || nodeTitle.includes('负向')) {
+                        if (!negativePrompts.includes(textVal)) negativePrompts.push(textVal);
+                    } else {
+                        if (!positivePrompts.includes(textVal)) positivePrompts.push(textVal);
+                    }
+                }
+            }
+        }
+    }
+
+    return { params, positivePrompts, negativePrompts, allPrompts };
+}
+
 export async function showImageMaterialDetail(owner, sourceImage, imageUrl) {
     const overlay = document.createElement('div');
     overlay.className = 'anomalous-material-detail-overlay';
+
     const dialog = document.createElement('div');
     dialog.className = 'anomalous-material-detail-dialog';
+
     const close = text(dialog, 'button', '×', 'anomalous-material-detail-close');
     close.type = 'button';
     close.onclick = () => overlay.remove();
+
+    // 1. Left Media Stage
     const media = document.createElement('div');
     media.className = 'anomalous-material-detail-media';
     const image = document.createElement('img');
     image.src = imageUrl;
     image.alt = t('materialImageDetail');
     media.appendChild(image);
+
+    const mediaBar = document.createElement('div');
+    mediaBar.className = 'anomalous-material-media-bar';
+    const mediaResText = text(mediaBar, 'span', sourceImage?.filename || 'PNG Image');
+    const fullViewBtn = text(mediaBar, 'button', t('materialViewOriginal') || '🔍 查看大图', 'anomalous-material-mini-btn');
+    fullViewBtn.type = 'button';
+    fullViewBtn.onclick = () => owner?.showGalleryViewer?.(imageUrl);
+    media.appendChild(mediaBar);
+
+    // 2. Right Inspector Panel with 3-Tier Layout
     const side = document.createElement('div');
     side.className = 'anomalous-material-detail-side';
-    text(side, 'h2', t('materialImageDetail'));
-    const loading = text(side, 'p', t('materialInspecting'), 'anomalous-material-muted');
+
+    // Tier 1: Fixed Header
+    const sideHeader = document.createElement('div');
+    sideHeader.className = 'anomalous-material-side-header';
+    text(sideHeader, 'h2', t('materialImageDetail'));
+    text(sideHeader, 'p', t('materialSnapshotExplanation'));
+    side.appendChild(sideHeader);
+
+    // Tier 2: Scrollable Body (Independent scroll container)
+    const sideBody = document.createElement('div');
+    sideBody.className = 'anomalous-material-side-body';
+    const loading = text(sideBody, 'p', t('materialInspecting'), 'anomalous-material-muted');
+    side.appendChild(sideBody);
+
+    // Tier 3: Sticky Footer
+    const sideFooter = document.createElement('div');
+    sideFooter.className = 'anomalous-material-side-footer';
+
+    const label = text(sideFooter, 'label', t('materialName'));
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.maxLength = 120;
+    nameInput.placeholder = t('materialName');
+    label.appendChild(nameInput);
+
+    text(sideFooter, 'small', t('materialSaveHint'), 'anomalous-material-muted');
+    const saveBtn = text(sideFooter, 'button', `💾 ${t('materialSaveSnapshot')}`, 'anomalous-btn-primary');
+    saveBtn.type = 'button';
+    saveBtn.disabled = true;
+    side.appendChild(sideFooter);
+
     dialog.append(media, side);
     overlay.appendChild(dialog);
     document.body.appendChild(overlay);
     overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove(); });
 
+    // Load data: parallel fetch from backend inspection AND direct PNG client-side parse
     try {
-        const response = await fetch('/anomalous/inspect_image_material', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ source_image: sourceImage }),
-        });
-        const payload = await jsonResponse(response, 'material inspection failed');
-        if (payload.status !== 'success') throw new Error(payload.message || 'material inspection failed');
-        loading.remove();
-        text(side, 'p', t('materialSnapshotExplanation'), 'anomalous-material-muted');
+        const [inspectPayload, clientWorkflow] = await Promise.all([
+            fetch('/anomalous/inspect_image_material', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ source_image: sourceImage }),
+            }).then(r => jsonResponse(r, 'material inspection failed')),
+            parsePngMetadataFromUrl(imageUrl).catch(() => null),
+        ]);
 
-        // 1. Key generation parameters (Steps, CFG, Sampler, Resolution)
-        const params = payload.params || {};
+        loading.remove();
+        saveBtn.disabled = false;
+
+        const clientDetails = extractWorkflowDetails(clientWorkflow);
+
+        // Merge generation parameters
+        const params = {
+            ...(clientDetails.params || {}),
+            ...(inspectPayload.params || {}),
+        };
+
+        if (params.resolution) {
+            mediaResText.textContent = `${params.resolution} · ${sourceImage?.filename || 'PNG'}`;
+        }
+
+        // Section A: Essential Metric Grid
         const hasSamplingParams = params.steps || params.cfg || params.sampler_name || params.resolution;
         if (hasSamplingParams) {
             const metricGrid = document.createElement('div');
@@ -214,28 +393,26 @@ export async function showImageMaterialDetail(owner, sourceImage, imageUrl) {
             addMetric('CFG', params.cfg);
             const samplerFull = [params.sampler_name, params.scheduler].filter(Boolean).join(' / ');
             addMetric(t('recipeCardSpecsSampler') || '采样', samplerFull);
+            if (params.denoise != null) addMetric(t('materialDenoise') || '降噪', params.denoise);
             addMetric(t('recipeCardSpecsResolution') || '尺寸', params.resolution);
 
-            if (metricGrid.childElementCount) side.appendChild(metricGrid);
+            if (metricGrid.childElementCount) sideBody.appendChild(metricGrid);
         }
 
-        // 2. Prompt Preview Card with copy and expand
-        const promptFullText = (Array.isArray(payload.prompts) && payload.prompts.length)
-            ? payload.prompts.join('\n\n')
-            : (payload.prompt_excerpt || '');
-
-        if (promptFullText) {
+        // Section B: Prompts (Full, un-truncated prompts)
+        const renderPromptCard = (titleText, promptStr) => {
+            if (!promptStr || !promptStr.trim()) return;
             const promptCard = document.createElement('div');
             promptCard.className = 'anomalous-material-prompt-card';
 
             const bar = document.createElement('div');
             bar.className = 'anomalous-material-prompt-bar';
-            text(bar, 'span', t('materialPromptText') || '提示词', 'anomalous-material-prompt-bar-label');
+            text(bar, 'span', titleText, 'anomalous-material-prompt-bar-label');
 
             const btns = document.createElement('div');
             btns.className = 'anomalous-material-prompt-bar-btns';
 
-            if (promptFullText.length > 80 || promptFullText.includes('\n')) {
+            if (promptStr.length > 90 || promptStr.includes('\n')) {
                 const expandBtn = text(btns, 'button', t('materialExpandAll') || '展开', 'anomalous-material-mini-btn');
                 expandBtn.type = 'button';
                 expandBtn.onclick = () => {
@@ -247,7 +424,7 @@ export async function showImageMaterialDetail(owner, sourceImage, imageUrl) {
             const copyBtn = text(btns, 'button', t('materialCopyPrompt') || '📋 复制', 'anomalous-material-mini-btn');
             copyBtn.type = 'button';
             copyBtn.onclick = () => {
-                navigator.clipboard.writeText(promptFullText).then(() => {
+                navigator.clipboard.writeText(promptStr).then(() => {
                     copyBtn.textContent = t('materialCopied') || '✅ 已复制';
                     setTimeout(() => { copyBtn.textContent = t('materialCopyPrompt') || '📋 复制'; }, 1500);
                 });
@@ -256,12 +433,25 @@ export async function showImageMaterialDetail(owner, sourceImage, imageUrl) {
             bar.appendChild(btns);
             promptCard.appendChild(bar);
 
-            const promptContent = text(promptCard, 'div', promptFullText, 'anomalous-material-prompt-content');
-            side.appendChild(promptCard);
+            const promptContent = text(promptCard, 'div', promptStr, 'anomalous-material-prompt-content');
+            sideBody.appendChild(promptCard);
+        };
+
+        const posText = clientDetails.positivePrompts.join('\n\n');
+        const negText = clientDetails.negativePrompts.join('\n\n');
+
+        if (posText || negText) {
+            if (posText) renderPromptCard(t('materialPositivePrompt') || '正向提示词', posText);
+            if (negText) renderPromptCard(t('materialNegativePrompt') || '负向提示词', negText);
+        } else {
+            const fallbackText = (Array.isArray(inspectPayload.prompts) && inspectPayload.prompts.length)
+                ? inspectPayload.prompts.join('\n\n')
+                : (inspectPayload.prompt_excerpt || '');
+            if (fallbackText) renderPromptCard(t('materialPromptText') || '提示词', fallbackText);
         }
 
-        // 3. Collapsible: Referenced Models
-        const models = Array.isArray(payload.model_references) ? payload.model_references : [];
+        // Section C: Referenced Models (Collapsible)
+        const models = Array.isArray(inspectPayload.model_references) ? inspectPayload.model_references : [];
         if (models.length) {
             const modelDetails = document.createElement('details');
             modelDetails.className = 'anomalous-material-accordion';
@@ -283,11 +473,11 @@ export async function showImageMaterialDetail(owner, sourceImage, imageUrl) {
                 modelContent.appendChild(row);
             }
             modelDetails.appendChild(modelContent);
-            side.appendChild(modelDetails);
+            sideBody.appendChild(modelDetails);
         }
 
-        // 4. Collapsible: Included Nodes
-        const blocks = Array.isArray(payload.node_blocks) ? payload.node_blocks : [];
+        // Section D: Included Nodes (Collapsible)
+        const blocks = Array.isArray(inspectPayload.node_blocks) ? inspectPayload.node_blocks : [];
         if (blocks.length) {
             const nodeDetails = document.createElement('details');
             nodeDetails.className = 'anomalous-material-accordion';
@@ -316,29 +506,20 @@ export async function showImageMaterialDetail(owner, sourceImage, imageUrl) {
             }
             nodeContent.appendChild(chipFlow);
             nodeDetails.appendChild(nodeContent);
-            side.appendChild(nodeDetails);
+            sideBody.appendChild(nodeDetails);
         }
 
-        // 5. Name input and save action
-        const label = text(side, 'label', t('materialName'));
-        const name = document.createElement('input');
-        name.type = 'text';
-        name.maxLength = 120;
-        name.value = payload.suggested_name || '';
-        label.appendChild(name);
-        const hint = text(side, 'small', t('materialSaveHint'), 'anomalous-material-muted');
-        hint.style.marginTop = 'auto';
-        const save = text(side, 'button', `💾 ${t('materialSaveSnapshot')}`, 'anomalous-btn-primary');
-        save.type = 'button';
-        save.onclick = async () => {
-            const value = name.value.trim();
-            if (!value) { name.focus(); return; }
-            save.disabled = true;
+        // Tier 3 Setup: Name Input & Save
+        nameInput.value = inspectPayload.suggested_name || '';
+        saveBtn.onclick = async () => {
+            const val = nameInput.value.trim();
+            if (!val) { nameInput.focus(); return; }
+            saveBtn.disabled = true;
             try {
                 const saveResponse = await fetch('/anomalous/save_image_material', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ source_image: sourceImage, name: value }),
+                    body: JSON.stringify({ source_image: sourceImage, name: val }),
                 });
                 const savePayload = await jsonResponse(saveResponse, 'material save failed');
                 if (savePayload.status !== 'success') throw new Error(savePayload.message || 'material save failed');
@@ -348,11 +529,12 @@ export async function showImageMaterialDetail(owner, sourceImage, imageUrl) {
             } catch (error) {
                 console.error('Could not save image material:', error);
                 await anomalousAlert(t('materialSaveError'));
-                save.disabled = false;
+                saveBtn.disabled = false;
             }
         };
-        name.focus();
-        name.select();
+
+        nameInput.focus();
+        nameInput.select();
     } catch (error) {
         console.error('Could not inspect image material:', error);
         loading.textContent = t('materialInspectError');
