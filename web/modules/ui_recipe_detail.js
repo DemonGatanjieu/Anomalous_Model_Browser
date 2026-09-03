@@ -948,90 +948,174 @@ function renderReadinessBanner(parent, owner, recipe, references, finish, onRere
     parent.appendChild(banner);
 }
 
+function renderPromptOverviewSection(parent, recipe) {
+    const prompts = promptValues(recipe, recipe);
+    if (!prompts?.entries?.length) return;
+
+    const wrap = document.createElement('div');
+    wrap.style.display = 'grid';
+    wrap.style.gap = '10px';
+    wrap.style.marginBottom = '16px';
+
+    for (const entry of prompts.entries) {
+        if (!entry?.value || typeof entry.value !== 'string' || !entry.value.trim()) continue;
+        const isNegative = entry.role === 'negative';
+        const box = document.createElement('div');
+        box.className = `anomalous-recipe-prompt-box ${isNegative ? 'is-negative' : 'is-positive'}`;
+
+        const header = document.createElement('div');
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.alignItems = 'center';
+        header.style.marginBottom = '6px';
+
+        const label = appendText(header, 'strong', isNegative ? '🔴 负向提示词 (Negative Prompt)' : '🟢 正向提示词 (Positive Prompt)');
+        label.style.fontSize = '0.78rem';
+
+        const copyBtn = button(header, '📋 复制', 'anomalous-recipe-prompt-copy-btn');
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(entry.value).then(() => {
+                copyBtn.textContent = '✅ 已复制';
+                setTimeout(() => { copyBtn.textContent = '📋 复制'; }, 1500);
+            });
+        };
+
+        box.appendChild(header);
+        const text = appendText(box, 'div', entry.value);
+        text.style.whiteSpace = 'pre-wrap';
+        text.style.fontFamily = 'monospace';
+        text.style.fontSize = '0.82rem';
+
+        wrap.appendChild(box);
+    }
+
+    if (wrap.childElementCount) {
+        parent.appendChild(wrap);
+    }
+}
+
 function renderOverview(content, owner, recipe, references, finish) {
     const overview = document.createElement('div');
     overview.className = 'anomalous-recipe-detail-overview';
     const hero = document.createElement('div');
     hero.className = 'anomalous-recipe-detail-hero';
-    appendRecipeCover(hero, owner, recipe);
+    
+    // Left media wrap
+    const mediaWrap = document.createElement('div');
+    mediaWrap.className = 'anomalous-recipe-detail-hero-media';
+    appendRecipeCover(mediaWrap, owner, recipe);
+    hero.appendChild(mediaWrap);
+
+    // Right control deck
     const copy = document.createElement('div');
     copy.className = 'anomalous-recipe-detail-hero-copy';
-    const title = document.createElement('div');
-    title.className = 'anomalous-recipe-inline-title-row';
-    renderInlineTitle(title, owner, recipe);
-    copy.appendChild(title);
-    const notes = document.createElement('div');
-    notes.className = 'anomalous-recipe-detail-notes';
-    renderInlineNotes(notes, owner, recipe);
-    copy.appendChild(notes);
-    const tags = document.createElement('div');
-    tags.className = 'anomalous-recipe-tags anomalous-recipe-detail-tags';
-    renderInlineTags(tags, owner, recipe);
-    copy.appendChild(tags);
-    appendText(copy, 'small', `${t('recipeDetailUpdated')}: ${dateText(recipe.updated_timestamp || recipe.timestamp)}`, 'anomalous-recipe-detail-muted');
     
-    const overviewActions = document.createElement('div');
-    overviewActions.className = 'anomalous-recipe-actions-primary';
-    overviewActions.style.marginTop = '12px';
-    const matchRecipe = button(overviewActions, '🔎 ' + t('recipeMatchRecipeModels'), 'anomalous-btn-ghost');
-    matchRecipe.title = t('recipeMatchRecipeModelsDesc');
-    const matchRecipeStatus = appendText(overviewActions, 'small', '', 'anomalous-recipe-header-status');
-    matchRecipeStatus.setAttribute('aria-live', 'polite');
-    matchRecipe.onclick = async () => {
-        matchRecipe.disabled = true;
-        matchRecipe.classList.add('is-busy');
-        matchRecipe.textContent = t('recipeMatchingRecipeModels');
-        try {
-            const result = await matchRecipeModels(owner, references, matchRecipeStatus, () => {
-                if (owner.recipeDetailActiveTab === 'overview') selectTab('overview');
-            });
-            matchRecipeStatus.textContent = result.total
-                ? t('recipeRecipeMatchSummary').replace('{found}', String(result.found)).replace('{total}', String(result.total))
-                : t('recipeAllModelsMatched');
-        } catch (error) {
-            console.error('Could not match recipe models locally:', error);
-            matchRecipeStatus.textContent = t('recipeLocalModelMatchError');
-        } finally {
-            matchRecipe.disabled = false;
-            matchRecipe.classList.remove('is-busy');
-            matchRecipe.textContent = '🔎 ' + t('recipeMatchRecipeModels');
-        }
-    };
+    // Title + Scope Capsule
+    const titleRow = document.createElement('div');
+    titleRow.className = 'anomalous-recipe-inline-title-row';
+    titleRow.style.display = 'flex';
+    titleRow.style.alignItems = 'center';
+    titleRow.style.gap = '8px';
+    titleRow.style.flexWrap = 'wrap';
+    renderInlineTitle(titleRow, owner, recipe);
     
-    const heroAppend = button(
-        overviewActions,
-        `${recipe?.workflow_scope === 'partial' ? '🧩' : '🚀'} ${recipeCanvasActionLabel(recipe)}`,
-        'anomalous-recipe-btn-primary-action',
-    );
-    heroAppend.onclick = () => {
-        void runRecipeAction(heroAppend, async () => {
-            if (await applyRecipeToCanvas(owner, recipe)) finish('canvas');
-        });
-    };
-    
-    const secondaryActions = document.createElement('div');
-    secondaryActions.className = 'anomalous-recipe-actions-secondary';
-    const heroEdit = button(secondaryActions, '✏️', 'anomalous-btn-icon anomalous-btn-edit');
-    heroEdit.title = t('recipeEdit');
-    heroEdit.onclick = () => finish('edit');
-    overviewActions.appendChild(secondaryActions);
-    copy.appendChild(overviewActions);
-    
-    hero.appendChild(copy);
-    overview.appendChild(hero);
+    const scopePill = document.createElement('span');
+    scopePill.className = 'anomalous-recipe-scope-pill';
+    scopePill.textContent = recipe.workflow_scope === 'partial' ? t('recipeScopePartial') : t('recipeScopeComplete');
+    titleRow.appendChild(scopePill);
+    copy.appendChild(titleRow);
 
-
-    // Intuitive environment readiness banner replacing technical identity stats
-    renderReadinessBanner(overview, owner, recipe, references, finish, () => {
+    // Readiness status banner inside Hero
+    renderReadinessBanner(copy, owner, recipe, references, finish, () => {
         if (owner.recipeDetailActiveTab === 'overview') {
             content.replaceChildren();
             renderOverview(content, owner, recipe, references, finish);
         }
     });
 
+    // Primary action bar
+    const overviewActions = document.createElement('div');
+    overviewActions.className = 'anomalous-recipe-actions-primary';
+    overviewActions.style.margin = '8px 0';
+    overviewActions.style.display = 'flex';
+    overviewActions.style.alignItems = 'center';
+    overviewActions.style.gap = '8px';
+
+    const heroAppend = button(
+        overviewActions,
+        `${recipe?.workflow_scope === 'partial' ? '🧩' : '🚀'} ${recipeCanvasActionLabel(recipe)}`,
+        'anomalous-recipe-btn-primary-action',
+    );
+    heroAppend.style.padding = '8px 16px';
+    heroAppend.style.fontSize = '0.88rem';
+    heroAppend.onclick = () => {
+        void runRecipeAction(heroAppend, async () => {
+            if (await applyRecipeToCanvas(owner, recipe)) finish('canvas');
+        });
+    };
+
+    const heroEdit = button(overviewActions, '✏️ ' + t('recipeEdit'), 'anomalous-btn-ghost');
+    heroEdit.title = t('recipeEdit');
+    heroEdit.onclick = () => finish('edit');
+
+    const heroExport = button(overviewActions, '📥 ' + t('recipeExport'), 'anomalous-btn-ghost');
+    heroExport.title = t('recipeExport');
+    heroExport.onclick = async () => {
+        try {
+            await exportRecipePackage(owner.recipeDetailFilename, recipe);
+        } catch (error) {
+            console.error('Could not export recipe package:', error);
+            await anomalousAlert(t('recipeExportError'));
+        }
+    };
+
+    copy.appendChild(overviewActions);
+
+    // Studio Metrics Grid
+    const params = recipe?.params || {};
+    const resDisplay = formatRecipeResolution(params.resolution);
+    if (params.steps || params.cfg || params.sampler_name || resDisplay) {
+        const metrics = document.createElement('div');
+        metrics.className = 'anomalous-recipe-studio-metrics';
+        const addTile = (labelKey, val) => {
+            if (val === undefined || val === null || val === '') return;
+            const tile = document.createElement('div');
+            tile.className = 'anomalous-recipe-studio-metric-tile';
+            appendText(tile, 'span', t(labelKey), 'anomalous-recipe-studio-metric-label');
+            appendText(tile, 'span', String(val), 'anomalous-recipe-studio-metric-val');
+            metrics.appendChild(tile);
+        };
+        addTile('recipeDetailSteps', params.steps);
+        addTile('recipeDetailCFG', params.cfg);
+        addTile('recipeDetailSampler', params.sampler_name || params.samplers);
+        addTile('recipeDetailResolution', resDisplay);
+        copy.appendChild(metrics);
+    }
+
+    // Notes & Tags
+    const notes = document.createElement('div');
+    notes.className = 'anomalous-recipe-detail-notes';
+    renderInlineNotes(notes, owner, recipe);
+    copy.appendChild(notes);
+
+    const tags = document.createElement('div');
+    tags.className = 'anomalous-recipe-tags anomalous-recipe-detail-tags';
+    renderInlineTags(tags, owner, recipe);
+    copy.appendChild(tags);
+
+    appendText(copy, 'small', `${t('recipeDetailUpdated')}: ${dateText(recipe.updated_timestamp || recipe.timestamp)}`, 'anomalous-recipe-detail-muted');
+
+    hero.appendChild(copy);
+    overview.appendChild(hero);
+
+    // Prompt Showcase Section
+    renderPromptOverviewSection(overview, recipe);
+
+    // Technical details
     const advanced = document.createElement('details');
     advanced.className = 'anomalous-recipe-advanced-info';
-    appendText(advanced, 'summary', t('recipeAdvancedInfo'));
+    advanced.style.marginBottom = '14px';
+    appendText(advanced, 'summary', `⚙️ ${t('recipeAdvancedInfo')}`);
     const fingerprint = document.createElement('div');
     fingerprint.className = 'anomalous-recipe-advanced-row';
     appendText(fingerprint, 'span', `${t('recipeDetailFingerprint')}:`);
@@ -1040,29 +1124,16 @@ function renderOverview(content, owner, recipe, references, finish) {
     advanced.appendChild(fingerprint);
     overview.appendChild(advanced);
 
+    // Model Equipment Summary
     const summary = document.createElement('section');
     summary.className = 'anomalous-recipe-detail-section';
     appendText(summary, 'h4', t('recipeDetailSummary'));
-    const summaryGrid = document.createElement('div');
-    summaryGrid.className = 'anomalous-recipe-detail-summary-grid';
-    const params = recipe.params || {};
     const modelComposition = document.createElement('div');
     modelComposition.className = 'anomalous-recipe-model-composition';
     summary.appendChild(modelComposition);
     renderModelComposition(modelComposition, owner, recipe, references, finish, params);
     overview.appendChild(summary);
 
-    const actions = document.createElement('div');
-    actions.className = 'anomalous-recipe-actions anomalous-recipe-detail-actions';
-    const edit = button(actions, t('recipeEdit'), 'anomalous-btn-success');
-    edit.onclick = () => finish('edit');
-    const append = button(actions, recipeCanvasActionLabel(recipe), 'anomalous-btn-primary');
-    append.onclick = () => {
-        void runRecipeAction(append, async () => {
-            if (await applyRecipeToCanvas(owner, recipe)) finish('canvas');
-        });
-    };
-    overview.appendChild(actions);
     content.appendChild(overview);
 }
 
@@ -2641,7 +2712,10 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     owner.recipeDetailPayload = { recipe, filename, history };
     owner.recipeDetailFilename = filename;
     owner.recipeListContainer.style.display = 'none';
-    owner.recipeView.querySelector('.anomalous-recipe-actionbar').style.display = 'none';
+    const actionbar = owner.recipeView?.querySelector('.anomalous-recipe-actionbar');
+    if (actionbar) actionbar.style.display = 'none';
+    const betaNotice = owner.recipeView?.querySelector('.anomalous-recipe-beta-notice');
+    if (betaNotice) betaNotice.style.display = 'none';
     if (owner.recipeDetailView) owner.recipeDetailView.remove();
 
     const view = document.createElement('div');
@@ -2659,8 +2733,8 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         owner.recipeDetailView = null;
         if (!['canvas', 'append', 'model'].includes(mode)) {
             owner.recipeListContainer.style.display = '';
-            const actionbar = owner.recipeView?.querySelector('.anomalous-recipe-actionbar');
             if (actionbar) actionbar.style.display = '';
+            if (betaNotice) betaNotice.style.display = '';
         }
         if (owner.recipeDetailFinish === finish) owner.recipeDetailFinish = null;
         if (mode !== 'model') delete owner.recipeDetailPayload;

@@ -3901,6 +3901,201 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: #cbd5e1;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.anomalous-recipe-readiness-pill.is-ready {
+    background: rgba(16, 185, 129, 0.16);
+    border-color: rgba(16, 185, 129, 0.45);
+    color: #6ee7b7;
+}
+
+.anomalous-recipe-readiness-pill.is-warning {
+    background: rgba(245, 158, 11, 0.16);
+    border-color: rgba(245, 158, 11, 0.45);
+    color: #fcd34d;
+}
+
+.anomalous-recipe-readiness-pill.is-missing {
+    background: rgba(239, 68, 68, 0.16);
+    border-color: rgba(239, 68, 68, 0.45);
+    color: #fca5a5;
+}
+
+.anomalous-recipe-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.anomalous-recipe-btn-primary-action {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.85), rgba(79, 70, 229, 0.95));
+    border: 1px solid rgba(129, 140, 248, 0.4);
+    color: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+    transition: all 0.2s ease;
+}
+
+.anomalous-recipe-btn-primary-action:hover {
+    filter: brightness(1.15);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45);
+    transform: translateY(-1px);
+}
+
+.anomalous-recipe-card-mini-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.anomalous-recipe-card-mini-btn {
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.85rem;
+    line-height: 1;
+    transition: all 0.15s ease;
+}
+
+.anomalous-recipe-card-mini-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+/* Detail View: Readiness Banner */
+.anomalous-recipe-readiness-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    font-size: 0.88rem;
+    backdrop-filter: blur(10px);
+}
+
+.anomalous-recipe-readiness-banner.is-ready {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.08));
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: #a7f3d0;
+}
+
+.anomalous-recipe-readiness-banner.is-warning {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.08));
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #fde68a;
+}
+
+.anomalous-recipe-readiness-banner.is-missing {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(185, 28, 28, 0.08));
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #fecaca;
+}
+
+.anomalous-recipe-banner-btn {
+    padding: 6px 14px;
+    border-radius: 7px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.anomalous-recipe-banner-btn.is-match-all {
+    background: #f59e0b;
+    color: #1a1a1a;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.anomalous-recipe-banner-btn.is-match-all:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+/* Metric Cards for Sampling Parameters */
+.anomalous-recipe-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.anomalous-recipe-metric-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.anomalous-recipe-metric-label {
+    font-size: 0.74rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.anomalous-recipe-metric-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #f8fafc;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Lazy Loaded Raw Nodes Container */
+.anomalous-recipe-raw-nodes-summary {
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #93c5fd;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.anomalous-recipe-raw-nodes-summary:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.anomalous-recipe-lazy-expand-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 9px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
     font-size: 0.82rem;
     cursor: pointer;
     transition: all 0.2s;
@@ -3909,4 +4104,125 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-recipe-lazy-expand-btn:hover {
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
+}
+
+/* Studio Layout Overhaul */
+.anomalous-recipe-detail-overview .anomalous-recipe-detail-hero {
+    display: grid !important;
+    grid-template-columns: 260px minmax(0, 1fr) !important;
+    gap: 20px !important;
+    align-items: start !important;
+    padding: 16px !important;
+    border-radius: 14px !important;
+    background: linear-gradient(145deg, rgba(30, 32, 38, 0.7), rgba(18, 19, 23, 0.85)) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    margin-bottom: 16px !important;
+    backdrop-filter: blur(12px);
+}
+
+.anomalous-recipe-detail-hero-media {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0d0e11;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.anomalous-recipe-detail-hero-media img,
+.anomalous-recipe-detail-hero-media video {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+    object-fit: cover !important;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: transform 0.25s ease;
+}
+
+.anomalous-recipe-detail-hero-media:hover img {
+    transform: scale(1.02);
+}
+
+.anomalous-recipe-studio-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 8px;
+    margin: 12px 0 8px 0;
+}
+
+.anomalous-recipe-studio-metric-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.anomalous-recipe-studio-metric-label {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.anomalous-recipe-studio-metric-val {
+    font-size: 0.96rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Prompt Showcase Boxes */
+.anomalous-recipe-prompt-box {
+    position: relative;
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-size: 0.84rem;
+    line-height: 1.55;
+    word-break: break-word;
+}
+
+.anomalous-recipe-prompt-box.is-positive {
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.22);
+    color: #ecfdf5;
+}
+
+.anomalous-recipe-prompt-box.is-negative {
+    background: rgba(244, 63, 94, 0.06);
+    border: 1px solid rgba(244, 63, 94, 0.22);
+    color: #fff1f2;
+}
+
+.anomalous-recipe-prompt-copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #cbd5e1;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.anomalous-recipe-prompt-copy-btn:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+}
+
+.anomalous-recipe-beta-notice[style*="display: none"] {
+    display: none !important;
 }
