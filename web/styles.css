@@ -3570,33 +3570,39 @@ dialog.anomalous-gallery-viewer::backdrop {
 /* ========================================================================== */
 
 .anomalous-recipe-list {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)) !important;
-    gap: 18px !important;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 360px));
+    gap: 18px;
     overflow-y: auto;
     padding: 18px;
 }
 
+.anomalous-recipe-list[style*="display: none"],
+.anomalous-recipe-actionbar[style*="display: none"] {
+    display: none !important;
+}
+
 .anomalous-recipe-card {
-    position: relative !important;
-    display: flex !important;
-    min-width: 0 !important;
-    flex-direction: column !important;
-    gap: 10px !important;
-    padding: 14px !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-radius: 14px !important;
-    background: linear-gradient(145deg, rgba(34, 36, 42, 0.85), rgba(20, 21, 25, 0.96)) !important;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28) !important;
-    backdrop-filter: blur(12px) !important;
-    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease, box-shadow 0.22s ease !important;
-    overflow: hidden !important;
+    position: relative;
+    display: flex;
+    min-width: 0;
+    max-width: 420px;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    background: linear-gradient(145deg, rgba(34, 36, 42, 0.85), rgba(20, 21, 25, 0.96));
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(12px);
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease, box-shadow 0.22s ease;
+    overflow: hidden;
 }
 
 .anomalous-recipe-card:hover {
-    transform: translateY(-3px) !important;
-    border-color: rgba(99, 102, 241, 0.5) !important;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 0 0 20px rgba(99, 102, 241, 0.18) !important;
+    transform: translateY(-3px);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 0 0 20px rgba(99, 102, 241, 0.18);
 }
 
 .anomalous-recipe-card-header {

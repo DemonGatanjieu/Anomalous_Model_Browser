@@ -847,6 +847,18 @@ export async function refreshRecipes() {
     }
 }
 
+function formatRecipeResolution(res) {
+    if (!res) return '';
+    if (typeof res === 'string' || typeof res === 'number') return String(res);
+    if (Array.isArray(res) && res.length >= 2) return `${res[0]}x${res[1]}`;
+    if (typeof res === 'object') {
+        const w = res.width ?? res.w ?? res.x;
+        const h = res.height ?? res.h ?? res.y;
+        if (w && h) return `${w}x${h}`;
+    }
+    return '';
+}
+
 function createRecipeQuickSpecs(params) {
     if (!params || typeof params !== 'object') return null;
     const strip = document.createElement('div');
@@ -864,9 +876,10 @@ function createRecipeQuickSpecs(params) {
         stepTag.title = `${params.steps} ${t('recipeCardSpecsSteps')}${samplerName}`;
     }
 
-    if (params.resolution) {
-        const resTag = appendText(strip, 'span', `📐 ${params.resolution}`, 'anomalous-recipe-spec-tag');
-        resTag.title = `${t('recipeCardSpecsResolution')}: ${params.resolution}`;
+    const formattedRes = formatRecipeResolution(params.resolution);
+    if (formattedRes) {
+        const resTag = appendText(strip, 'span', `📐 ${formattedRes}`, 'anomalous-recipe-spec-tag');
+        resTag.title = `${t('recipeCardSpecsResolution')}: ${formattedRes}`;
     }
 
     return strip.childElementCount ? strip : null;

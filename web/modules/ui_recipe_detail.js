@@ -2299,7 +2299,14 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         addMetric('recipeDetailDenoise', params.denoise);
         addMetric('recipeDetailSampler', params.sampler_name || params.samplers);
         addMetric('recipeDetailScheduler', params.scheduler);
-        addMetric('recipeDetailResolution', params.resolution);
+        
+        let resDisplay = params.resolution;
+        if (typeof resDisplay === 'object' && resDisplay !== null) {
+            const w = resDisplay.width ?? resDisplay.w ?? resDisplay.x;
+            const h = resDisplay.height ?? resDisplay.h ?? resDisplay.y;
+            resDisplay = (w && h) ? `${w}x${h}` : '';
+        }
+        addMetric('recipeDetailResolution', resDisplay);
         if (metricGrid.childElementCount) summary.appendChild(metricGrid);
     }
 
@@ -2321,7 +2328,7 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         ['recipeDetailCFG', params.cfg, {}],
         ['recipeDetailDenoise', params.denoise, {}],
         ['recipeDetailSeed', params.seed ?? 0, { redact: true, copy: false }],
-        ['recipeDetailResolution', params.resolution, { wide: true }],
+        ['recipeDetailResolution', resDisplay || params.resolution, { wide: true }],
         ['recipeDetailBaseModel', params.baseModel || params.baseModels, { wide: true }],
         ['recipeDetailLoraSummary', formattedLoras, { wide: true }],
     ];
