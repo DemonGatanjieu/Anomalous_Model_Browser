@@ -1837,6 +1837,18 @@ function promptRoleLabel(role) {
     }[role] || 'recipePromptRoleUnknown');
 }
 
+function formatRecipeResolution(res) {
+    if (!res) return '';
+    if (typeof res === 'string' || typeof res === 'number') return String(res);
+    if (Array.isArray(res) && res.length >= 2) return `${res[0]}x${res[1]}`;
+    if (typeof res === 'object') {
+        const w = res.width ?? res.w ?? res.x;
+        const h = res.height ?? res.h ?? res.y;
+        if (w && h) return `${w}x${h}`;
+    }
+    return '';
+}
+
 function renderRawNodesLazy(parent, source) {
     const ordered = parameterNodeOrder(source);
     if (!ordered.length) return;
@@ -2279,11 +2291,12 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     renderPromptSection(intro, owner, recipe, source, selectParameterTab);
 
     const params = source?.params || {};
+    const resDisplay = formatRecipeResolution(params.resolution);
     const summary = document.createElement('section');
     summary.className = 'anomalous-recipe-detail-section';
     appendText(summary, 'h5', t('recipeDetailParameterSummary'));
 
-    if (params.steps || params.cfg || params.sampler_name || params.resolution) {
+    if (params.steps || params.cfg || params.sampler_name || resDisplay) {
         const metricGrid = document.createElement('div');
         metricGrid.className = 'anomalous-recipe-metric-grid';
         const addMetric = (labelKey, value) => {
@@ -2299,13 +2312,6 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         addMetric('recipeDetailDenoise', params.denoise);
         addMetric('recipeDetailSampler', params.sampler_name || params.samplers);
         addMetric('recipeDetailScheduler', params.scheduler);
-        
-        let resDisplay = params.resolution;
-        if (typeof resDisplay === 'object' && resDisplay !== null) {
-            const w = resDisplay.width ?? resDisplay.w ?? resDisplay.x;
-            const h = resDisplay.height ?? resDisplay.h ?? resDisplay.y;
-            resDisplay = (w && h) ? `${w}x${h}` : '';
-        }
         addMetric('recipeDetailResolution', resDisplay);
         if (metricGrid.childElementCount) summary.appendChild(metricGrid);
     }
@@ -2777,7 +2783,12 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
             const tab = tabs.querySelector(`[data-tab="${key}"]`);
             tab?.classList.toggle('active', key === active);
         }
-        tabDefinitions.find(([key]) => key === active)?.[2]();
+        try {
+            tabDefinitions.find(([key]) => key === active)?.[2]();
+        } catch (tabError) {
+            console.error(`Error rendering recipe detail tab "${active}":`, tabError);
+            appendText(content, 'p', `Tab render error: ${tabError?.message || tabError}`, 'anomalous-recipe-dialog-error');
+        }
         if (active === 'parameters') {
             if (parameterState.status === 'idle') void refreshParameterNotebooks();
             else if (parameterState.status === 'ready' && parameterGallery.status === 'idle') void refreshParameterGallery();
