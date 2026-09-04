@@ -130,6 +130,66 @@ async function copyToClipboard(str, btn, successLabel, defaultLabel) {
     }
 }
 
+function materialSourceImage(item) {
+    return item.sourceImage || {
+        type: 'output',
+        filename: item.filename,
+        subfolder: item.subfolder || '',
+    };
+}
+
+async function saveImageMaterial(item, name, selectedNodeIds = null) {
+    const owner = wb?.owner;
+    const response = await fetch('/anomalous/save_image_material', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            source_image: materialSourceImage(item),
+            name: String(name || '').trim().slice(0, 120),
+            ...(selectedNodeIds?.length ? { selected_node_ids: selectedNodeIds } : {}),
+        }),
+    });
+    const payload = await jsonResponse(response, 'material save failed');
+    if (payload.status !== 'success') throw new Error(payload.message || 'material save failed');
+    await owner?.refreshMaterials?.();
+    return payload;
+}
+
+function selectedMaterialName(baseName, blocks) {
+    const base = String(baseName || '').trim();
+    const suffix = blocks.length === 1
+        ? materialNodeHeading(blocks[0])
+        : t('materialSelectedNodesName', { count: blocks.length });
+    return `${base ? `${base} · ` : ''}${suffix}`.slice(0, 120);
+}
+
+async function saveSelectedBlocks(item, suggestedName, blocks, button) {
+    if (!blocks.length || !button || button.disabled) return;
+    const defaultLabel = blocks.length === 1
+        ? t('materialSaveNode')
+        : t('materialSaveSelectedAction', { count: blocks.length });
+    button.disabled = true;
+    button.textContent = t('materialSaving');
+    try {
+        await saveImageMaterial(
+            item,
+            selectedMaterialName(suggestedName || fileBaseName(item.filename), blocks),
+            blocks.map(block => String(block.node_id)),
+        );
+        button.textContent = t('materialSaved');
+        window.setTimeout(() => {
+            if (!button.isConnected) return;
+            button.textContent = defaultLabel;
+            button.disabled = false;
+        }, 1400);
+    } catch (error) {
+        console.error('Could not save selected material nodes:', error);
+        button.textContent = defaultLabel;
+        button.disabled = false;
+        await anomalousAlert(t('materialSaveError') || '素材快照保存失败。');
+    }
+}
+
 /**
  * Preload adjacent images for smooth instant transitions
  */
@@ -578,7 +638,7 @@ function buildModelsSection(orderedRefs, groups, onOpenModel) {
 /**
  * Build Workflow Nodes Section
  */
-function buildWorkflowNodesSection(blocks, clientWorkflow) {
+function buildWorkflowNodesSection(blocks, clientWorkflow, item, suggestedName) {
     const wrap = document.createElement('div');
     wrap.className = 'anomalous-workbench-nodes-wrap';
 
@@ -612,12 +672,16 @@ function buildWorkflowNodesSection(blocks, clientWorkflow) {
     selectAllBtn.type = 'button';
     const clearBtn = text(selectionBar, 'button', t('materialClearNodeSelection'), 'anomalous-workbench-mini-action-btn');
     clearBtn.type = 'button';
+    const saveSelectedBtn = text(selectionBar, 'button', t('materialSaveSelectedAction', { count: 0 }), 'anomalous-workbench-save-selected-btn');
+    saveSelectedBtn.type = 'button';
+    saveSelectedBtn.disabled = true;
     wrap.appendChild(selectionBar);
 
     const updateSelection = () => {
         const count = wb?.selectedNodeIds?.size || 0;
         selectionText.textContent = t('materialSelectedNodeCount', { count });
-        wb?.refreshSaveSelectionState?.();
+        saveSelectedBtn.textContent = t('materialSaveSelectedAction', { count });
+        saveSelectedBtn.disabled = count === 0;
     };
 
     // Copy full workflow JSON button
@@ -644,23 +708,18 @@ function buildWorkflowNodesSection(blocks, clientWorkflow) {
         selectedIds: wb?.selectedNodeIds,
         onSelectionChange: (block, checked) => {
             const key = String(block.node_id);
-            if (checked) {
-                wb?.selectedNodeIds?.add(key);
-                if (wb) wb.saveScope = 'selected';
-            }
+            if (checked) wb?.selectedNodeIds?.add(key);
             else wb?.selectedNodeIds?.delete(key);
             updateSelection();
         },
+        onSaveBlock: (block, button) => saveSelectedBlocks(item, suggestedName, [block], button),
     });
     wrap.appendChild(detailedContainer);
 
     const setAllSelections = checked => {
         if (!wb?.selectedNodeIds) return;
         wb.selectedNodeIds.clear();
-        if (checked) {
-            blocks.forEach(block => wb.selectedNodeIds.add(String(block.node_id)));
-            wb.saveScope = 'selected';
-        }
+        if (checked) blocks.forEach(block => wb.selectedNodeIds.add(String(block.node_id)));
         detailedContainer.querySelectorAll('.anomalous-material-node-select').forEach(input => {
             input.checked = checked;
             input.closest('.anomalous-material-node-detail')?.classList.toggle('is-selected', checked);
@@ -669,6 +728,10 @@ function buildWorkflowNodesSection(blocks, clientWorkflow) {
     };
     selectAllBtn.onclick = () => setAllSelections(true);
     clearBtn.onclick = () => setAllSelections(false);
+    saveSelectedBtn.onclick = () => {
+        const selected = blocks.filter(block => wb?.selectedNodeIds?.has(String(block.node_id)));
+        return saveSelectedBlocks(item, suggestedName, selected, saveSelectedBtn);
+    };
     updateSelection();
 
     return wrap;
@@ -712,8 +775,6 @@ async function loadWorkbenchImage(index) {
 
     wb.currentIndex = index;
     wb.selectedNodeIds = new Set();
-    wb.saveScope = 'all';
-    wb.refreshSaveSelectionState = null;
     const item = wb.items[index];
     const total = wb.items.length;
 
@@ -1006,37 +1067,23 @@ async function renderInspectorContent(data, item) {
     const nodesPanel = document.createElement('div');
     nodesPanel.className = 'anomalous-workbench-tab-panel';
     nodesPanel.style.display = wb.activeTab === 'nodes' ? 'flex' : 'none';
-    nodesPanel.appendChild(buildWorkflowNodesSection(blocks, clientWorkflow));
+    nodesPanel.appendChild(buildWorkflowNodesSection(blocks, clientWorkflow, item, inspectPayload.suggested_name));
     tabPanels.nodes = nodesPanel;
     wb.sideBodyEl.appendChild(nodesPanel);
 
     // Bottom Snapshot Drawer in Footer
-    renderSaveSnapshotFooter(inspectPayload, item, blocks);
+    renderSaveSnapshotFooter(inspectPayload, item);
 }
 
 /**
  * Render Save Snapshot form in the sticky footer
  */
-function renderSaveSnapshotFooter(inspectPayload, item, blocks = []) {
+function renderSaveSnapshotFooter(inspectPayload, item) {
     if (!wb || !wb.sideFooterEl) return;
     wb.sideFooterEl.replaceChildren();
 
     const saveRow = document.createElement('div');
     saveRow.className = 'anomalous-workbench-save-row';
-
-    const scopeWrap = document.createElement('label');
-    scopeWrap.className = 'anomalous-workbench-save-scope-wrap';
-    text(scopeWrap, 'span', t('materialSaveScope'));
-    const scopeSelect = document.createElement('select');
-    scopeSelect.className = 'anomalous-workbench-save-scope';
-    const allOption = document.createElement('option');
-    allOption.value = 'all';
-    allOption.textContent = t('materialSaveFullWorkflow');
-    const selectedOption = document.createElement('option');
-    selectedOption.value = 'selected';
-    scopeSelect.append(allOption, selectedOption);
-    scopeWrap.appendChild(scopeSelect);
-    saveRow.appendChild(scopeWrap);
 
     const inputWrap = document.createElement('div');
     inputWrap.className = 'anomalous-workbench-save-input-wrap';
@@ -1046,10 +1093,8 @@ function renderSaveSnapshotFooter(inspectPayload, item, blocks = []) {
     nameInput.maxLength = 120;
     nameInput.placeholder = t('materialName') || '输入素材快照名称…';
     nameInput.value = inspectPayload.suggested_name || fileBaseName(item.filename) || '';
-    const baseSuggestedName = nameInput.value;
-    let nameWasEdited = false;
-    nameInput.addEventListener('input', () => { nameWasEdited = true; });
     inputWrap.appendChild(nameInput);
+    text(inputWrap, 'small', t('materialFullSaveHint'), 'anomalous-workbench-save-hint');
 
     saveRow.appendChild(inputWrap);
 
@@ -1058,58 +1103,13 @@ function renderSaveSnapshotFooter(inspectPayload, item, blocks = []) {
     saveBtn.className = 'anomalous-workbench-action-btn is-save';
     saveBtn.innerHTML = `💾 ${t('materialSaveSnapshot') || '保存为素材'}`;
 
-    const selectionHint = text(inputWrap, 'small', '', 'anomalous-workbench-save-selection-hint');
-
-    const refreshState = () => {
-        const selectedCount = wb?.selectedNodeIds?.size || 0;
-        selectedOption.textContent = t('materialSaveSelectedNodes', { count: selectedCount });
-        scopeSelect.value = wb?.saveScope || 'all';
-        const selectedScope = scopeSelect.value === 'selected';
-        saveBtn.disabled = selectedScope && selectedCount === 0;
-        selectionHint.textContent = selectedScope
-            ? (selectedCount ? t('materialSelectedSaveHint', { count: selectedCount }) : t('materialSelectNodesFirst'))
-            : t('materialFullSaveHint');
-        if (!nameWasEdited) {
-            if (!selectedScope) {
-                nameInput.value = baseSuggestedName;
-            } else if (selectedCount === 1) {
-                const selectedId = [...wb.selectedNodeIds][0];
-                const block = blocks.find(candidate => String(candidate.node_id) === selectedId);
-                nameInput.value = `${baseSuggestedName} · ${block ? materialNodeHeading(block) : t('materialSelectedNodesName', { count: 1 })}`.slice(0, 120);
-            } else if (selectedCount > 1) {
-                nameInput.value = `${baseSuggestedName} · ${t('materialSelectedNodesName', { count: selectedCount })}`.slice(0, 120);
-            }
-        }
-    };
-    scopeSelect.onchange = () => {
-        if (wb) wb.saveScope = scopeSelect.value;
-        refreshState();
-    };
-    if (wb) wb.refreshSaveSelectionState = refreshState;
-
     saveBtn.onclick = async () => {
         const val = nameInput.value.trim();
         if (!val) { nameInput.focus(); return; }
         saveBtn.disabled = true;
         saveBtn.textContent = '💾 正在保存…';
         try {
-            const sourceImage = item.sourceImage || {
-                type: 'output',
-                filename: item.filename,
-                subfolder: item.subfolder || '',
-            };
-            const saveResponse = await fetch('/anomalous/save_image_material', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    source_image: sourceImage,
-                    name: val,
-                    ...(scopeSelect.value === 'selected' ? { selected_node_ids: [...wb.selectedNodeIds] } : {}),
-                }),
-            });
-            const savePayload = await jsonResponse(saveResponse, 'material save failed');
-            if (savePayload.status !== 'success') throw new Error(savePayload.message || 'material save failed');
-            wb.owner?.refreshMaterials?.();
+            await saveImageMaterial(item, val);
             saveBtn.textContent = '✅ 已保存素材';
             await anomalousAlert(t('materialSaveSuccess') || '素材快照已保存！');
         } catch (error) {
@@ -1122,7 +1122,6 @@ function renderSaveSnapshotFooter(inspectPayload, item, blocks = []) {
 
     saveRow.appendChild(saveBtn);
     wb.sideFooterEl.appendChild(saveRow);
-    refreshState();
 }
 
 /**
@@ -1204,8 +1203,6 @@ export async function showImageWorkbench(owner, sourceImage, imageUrl, options =
         inspectingModel: false,
         abortController: null,
         selectedNodeIds: new Set(),
-        saveScope: 'all',
-        refreshSaveSelectionState: null,
     };
 
     // 1. Overlay container

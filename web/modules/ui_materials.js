@@ -525,6 +525,13 @@ export function renderDetailedNodeCards(parent, blocks, options = {}) {
         text(heading, 'small', block.type || t('recipeUnknownNode'));
         const widgetValues = Array.isArray(block.widgets_values) ? block.widgets_values : [];
         text(summary, 'span', t('materialParameterCount', { count: widgetValues.length }), 'anomalous-material-node-count');
+        if (typeof options.onSaveBlock === 'function') {
+            const save = text(summary, 'button', t('materialSaveNode'), 'anomalous-material-node-save');
+            save.type = 'button';
+            save.title = t('materialSaveNodeHint');
+            save.addEventListener('click', event => event.stopPropagation());
+            save.addEventListener('click', () => options.onSaveBlock(block, save));
+        }
         summary.prepend(heading);
         node.appendChild(summary);
 

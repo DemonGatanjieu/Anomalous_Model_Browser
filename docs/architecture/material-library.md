@@ -53,11 +53,14 @@ application path, which skips known volatile seed widgets. The lookup endpoint
 filters blocks by exact `node.type`; when more than one source node matches, the
 user chooses the block explicitly.
 
-The image workbench also allows one or more nodes to be checked and saved as an
-`image_node_selection`. The original workflow remains in the record as source
-provenance, but list/count/lookup APIs expose only the selected blocks. Such a
-material deliberately lacks `open_workflow`; it is consumed from Node Assistant
-instead of unexpectedly replacing the canvas with the hidden source workflow.
+Every node card in the image workbench can be saved directly as an
+`image_node_selection`; checking several cards exposes one colocated save action
+above the node list. The sticky footer remains dedicated to the full image and
+workflow snapshot rather than mixing both concepts in a scope selector. The
+original workflow remains in a selected-node record as source provenance, but
+list/count/lookup APIs expose only the selected blocks. Such a material
+deliberately lacks `open_workflow`; it is consumed from Node Assistant instead
+of unexpectedly replacing the canvas with the hidden source workflow.
 
 ## Model identity handoff
 

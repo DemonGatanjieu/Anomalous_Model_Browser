@@ -5111,6 +5111,31 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-material-node-heading small { color: #788396; font-size: 0.67rem; font-family: monospace; }
 .anomalous-material-node-count { flex-shrink: 0; color: #8290a5; font-size: 0.68rem; }
 
+.anomalous-material-node-save,
+.anomalous-workbench-save-selected-btn {
+    flex: 0 0 auto;
+    padding: 5px 9px;
+    border: 1px solid rgba(45, 212, 191, 0.24);
+    border-radius: 6px;
+    background: rgba(45, 212, 191, 0.08);
+    color: #8fe1d4;
+    font-size: 0.66rem;
+    cursor: pointer;
+}
+
+.anomalous-material-node-save:hover,
+.anomalous-workbench-save-selected-btn:hover:not(:disabled) {
+    border-color: rgba(45, 212, 191, 0.42);
+    background: rgba(45, 212, 191, 0.14);
+    color: #d8fff8;
+}
+
+.anomalous-material-node-save:disabled,
+.anomalous-workbench-save-selected-btn:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
 .anomalous-material-node-parameter-content {
     display: flex;
     flex-direction: column;
@@ -6236,6 +6261,10 @@ dialog.anomalous-gallery-viewer::backdrop {
     font-size: 0.7rem;
 }
 
+.anomalous-workbench-save-selected-btn {
+    margin-left: auto;
+}
+
 /* Sticky Footer Snapshot Drawer */
 .anomalous-workbench-inspector-footer {
     flex-shrink: 0;
@@ -6251,28 +6280,6 @@ dialog.anomalous-gallery-viewer::backdrop {
     align-items: center;
 }
 
-.anomalous-workbench-save-scope-wrap {
-    display: flex;
-    flex: 0 1 175px;
-    min-width: 145px;
-    flex-direction: column;
-    gap: 3px;
-    color: #7f8a9d;
-    font-size: 0.65rem;
-}
-
-.anomalous-workbench-save-scope {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 7px 9px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 8px;
-    background: #151821;
-    color: #dbe3ee;
-    font-size: 0.74rem;
-    outline: none;
-}
-
 .anomalous-workbench-save-input-wrap {
     display: flex;
     flex: 1 1 220px;
@@ -6281,7 +6288,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     gap: 3px;
 }
 
-.anomalous-workbench-save-selection-hint {
+.anomalous-workbench-save-hint {
     min-height: 1em;
     color: #748196;
     font-size: 0.62rem;
