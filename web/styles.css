@@ -6069,8 +6069,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-prompt-content.is-expanded {
-    max-height: 800px;
-    overflow-y: auto;
+    max-height: none;
+    overflow-y: visible;
 }
 
 /* Models & LoRA Section */

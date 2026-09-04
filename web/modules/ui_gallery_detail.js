@@ -474,10 +474,12 @@ function buildPromptsStation(posText, negText, fallbackPrompt) {
             const expandBtn = document.createElement('button');
             expandBtn.type = 'button';
             expandBtn.className = 'anomalous-workbench-mini-action-btn';
-            expandBtn.textContent = t('materialExpandAll') || '展开';
+            expandBtn.textContent = t('materialCollapse') || (window.anomalous_browser_lang === 'zh' ? '收起' : 'Collapse');
             expandBtn.onclick = () => {
                 const isExp = contentEl.classList.toggle('is-expanded');
-                expandBtn.textContent = isExp ? (t('materialCollapse') || '收起') : (t('materialExpandAll') || '展开');
+                expandBtn.textContent = isExp
+                    ? (t('materialCollapse') || (window.anomalous_browser_lang === 'zh' ? '收起' : 'Collapse'))
+                    : (t('materialExpandAll') || (window.anomalous_browser_lang === 'zh' ? '展开全部' : 'Expand All'));
             };
             btns.appendChild(expandBtn);
         }
@@ -485,7 +487,7 @@ function buildPromptsStation(posText, negText, fallbackPrompt) {
         topBar.appendChild(btns);
         card.appendChild(topBar);
 
-        const contentEl = text(card, 'div', promptStr, 'anomalous-workbench-prompt-content');
+        const contentEl = text(card, 'div', promptStr, 'anomalous-workbench-prompt-content is-expanded');
         return card;
     };
 
