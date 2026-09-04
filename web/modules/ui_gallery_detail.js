@@ -456,8 +456,8 @@ function buildPromptsStation(posText, negText, fallbackPrompt) {
         const copyBtn = document.createElement('button');
         copyBtn.type = 'button';
         copyBtn.className = 'anomalous-workbench-mini-action-btn';
-        copyBtn.textContent = `📋 ${t('materialCopyPrompt') || '复制'}`;
-        copyBtn.onclick = () => copyToClipboard(promptStr, copyBtn, `✅ ${t('materialCopied') || '已复制'}`, `📋 ${t('materialCopyPrompt') || '复制'}`);
+        copyBtn.textContent = t('materialCopyPrompt') || '📋 复制提示词';
+        copyBtn.onclick = () => copyToClipboard(promptStr, copyBtn, t('materialCopied') || '✅ 已复制', t('materialCopyPrompt') || '📋 复制提示词');
         btns.appendChild(copyBtn);
 
         if (promptStr.length > 120 || promptStr.includes('\n')) {
