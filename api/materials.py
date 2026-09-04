@@ -140,6 +140,8 @@ def _extract_workflow_params(workflow):
         if ntype_lower in ("ksampler", "ksampleradvanced") and isinstance(widgets, (list, tuple)):
             is_adv = ntype_lower == "ksampleradvanced"
             offset = 1 if is_adv else 0
+            if len(widgets) > offset and widgets[offset] is not None:
+                params.setdefault("seed", widgets[offset])
             if len(widgets) > 2 + offset and widgets[2 + offset] is not None:
                 params.setdefault("steps", widgets[2 + offset])
             if len(widgets) > 3 + offset and widgets[3 + offset] is not None:

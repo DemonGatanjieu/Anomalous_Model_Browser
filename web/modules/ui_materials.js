@@ -3,10 +3,11 @@
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
+import { showImageWorkbench } from './ui_gallery_detail.js';
 
 const t = (key, params) => translate(key, params);
 
-function text(parent, tag, value, className = '') {
+export function text(parent, tag, value, className = '') {
     const element = document.createElement(tag);
     if (className) element.className = className;
     element.textContent = value == null ? '' : String(value);
@@ -14,12 +15,77 @@ function text(parent, tag, value, className = '') {
     return element;
 }
 
+export function sectionLabel(parent, value) {
+    return text(parent, 'div', value, 'anomalous-material-section-label');
+}
+
+export function fileBaseName(value) {
+    return String(value || '').replace(/\\/g, '/').split('/').pop();
+}
+
+function previewIsVideo(url) {
+    return /\.(?:mp4|webm)(?:$|\?|&|#)/i.test(url || '');
+}
+
+export function modelCustomNotes(model) {
+    return String(model?.metadata?.custom_notes || '').trim();
+}
+
+function bindHoverPreviewVideo(video) {
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.preload = 'metadata';
+    video.onpointerenter = () => video.play().catch(() => {});
+    video.onpointerleave = () => {
+        video.pause();
+        video.currentTime = 0;
+    };
+}
+
+export function appendLocalPreview(parent, url, className) {
+    if (!url) return null;
+    const wrap = document.createElement('div');
+    wrap.className = className;
+    if (previewIsVideo(url)) {
+        const video = document.createElement('video');
+        video.src = url;
+        bindHoverPreviewVideo(video);
+        wrap.appendChild(video);
+    } else {
+        const image = document.createElement('img');
+        image.src = url;
+        image.alt = '';
+        image.loading = 'lazy';
+        wrap.appendChild(image);
+    }
+    parent.appendChild(wrap);
+    return wrap;
+}
+
+export async function resolveLocalModels(paths) {
+    const unique = [...new Set((paths || []).filter(Boolean))];
+    if (!unique.length) return {};
+    const response = await fetch('/anomalous/resolve_paths_to_previews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paths: unique, exact_only: false }),
+    });
+    const payload = await jsonResponse(response, 'preview resolve failed');
+    return payload.models || {};
+}
+
+export function lookupLocalModel(localModels, path) {
+    if (!path || !localModels) return null;
+    return localModels[path] || localModels[fileBaseName(path)] || null;
+}
+
 function materialAssetUrl(filename, asset) {
     if (!filename || !asset) return '';
     return `/anomalous/material_asset?filename=${encodeURIComponent(filename)}&asset=${encodeURIComponent(asset)}`;
 }
 
-async function jsonResponse(response, fallbackMessage) {
+export async function jsonResponse(response, fallbackMessage) {
     let payload = {};
     try { payload = await response.json(); } catch (error) { /* non-JSON server failure */ }
     if (!response.ok) throw new Error(payload.message || fallbackMessage);
@@ -164,7 +230,7 @@ export async function showMaterials() {
  * Direct client-side PNG chunk parser to safely extract embedded ComfyUI metadata
  * without requiring a server reboot or server-side re-encoding.
  */
-async function parsePngMetadataFromUrl(url) {
+export async function parsePngMetadataFromUrl(url) {
     if (!url) return null;
     try {
         const response = await fetch(url);
@@ -232,7 +298,7 @@ async function parsePngMetadataFromUrl(url) {
  * Extract generation parameters, full prompts, and categorized model references with details (e.g. LoRA strengths)
  * directly from the workflow.
  */
-function extractWorkflowDetails(workflow) {
+export function extractWorkflowDetails(workflow) {
     const params = {};
     const positivePrompts = [];
     const negativePrompts = [];
@@ -262,6 +328,7 @@ function extractWorkflowDetails(workflow) {
         if (ntypeLower === 'ksampler' || ntypeLower === 'ksampleradvanced') {
             const isAdv = ntypeLower === 'ksampleradvanced';
             const offset = isAdv ? 1 : 0;
+            if (widgets[offset] != null && params.seed == null) params.seed = widgets[offset];
             if (widgets[2 + offset] != null && params.steps == null) params.steps = widgets[2 + offset];
             if (widgets[3 + offset] != null && params.cfg == null) params.cfg = widgets[3 + offset];
             if (widgets[4 + offset] != null && params.sampler_name == null) params.sampler_name = widgets[4 + offset];
@@ -333,7 +400,7 @@ function extractWorkflowDetails(workflow) {
     return { params, positivePrompts, negativePrompts, allPrompts, loraDetailsMap, discoveredModels };
 }
 
-function detailedBlocksFromWorkflow(workflow, serverBlocks = []) {
+export function detailedBlocksFromWorkflow(workflow, serverBlocks = []) {
     const nodes = Array.isArray(workflow?.nodes) ? workflow.nodes : [];
     if (!nodes.length) return Array.isArray(serverBlocks) ? serverBlocks : [];
     const serverById = new Map((serverBlocks || []).map(block => [String(block?.node_id), block]));
@@ -386,6 +453,32 @@ function materialWidgetLabels(nodeType) {
     return [];
 }
 
+const comfyWidgetLabelCache = new Map();
+
+function comfyNodeTitle(nodeType) {
+    const ctor = globalThis.LiteGraph?.registered_node_types?.[nodeType];
+    return (ctor && ctor.title) || nodeType;
+}
+
+function comfyWidgetLabels(nodeType) {
+    if (comfyWidgetLabelCache.has(nodeType)) return comfyWidgetLabelCache.get(nodeType);
+    let labels = [];
+    try {
+        const node = globalThis.LiteGraph?.createNode?.(nodeType);
+        if (node?.widgets?.length) labels = node.widgets.map(widget => widget.label || widget.name || '');
+    } catch (error) { /* some node types cannot be instantiated off-canvas */ }
+    if (!labels.length) labels = materialWidgetLabels(nodeType);
+    comfyWidgetLabelCache.set(nodeType, labels);
+    return labels;
+}
+
+export function materialNodeHeading(block) {
+    const type = block.type || '';
+    const saved = block.title || '';
+    if (saved && saved !== type) return saved;
+    return comfyNodeTitle(type) || saved || type;
+}
+
 function formatMaterialParameterValue(value) {
     if (value === null) return 'null';
     if (value === undefined) return 'undefined';
@@ -394,7 +487,7 @@ function formatMaterialParameterValue(value) {
     try { return JSON.stringify(value, null, 2); } catch (error) { return String(value); }
 }
 
-function renderDetailedNodeCards(parent, blocks) {
+export function renderDetailedNodeCards(parent, blocks) {
     const list = document.createElement('div');
     list.className = 'anomalous-material-node-list';
 
@@ -404,7 +497,7 @@ function renderDetailedNodeCards(parent, blocks) {
         const summary = document.createElement('summary');
         const heading = document.createElement('span');
         heading.className = 'anomalous-material-node-heading';
-        text(heading, 'strong', block.title || block.type || t('recipeUnknownNode'));
+        text(heading, 'strong', materialNodeHeading(block));
         text(heading, 'small', block.type || t('recipeUnknownNode'));
         const widgetValues = Array.isArray(block.widgets_values) ? block.widgets_values : [];
         text(summary, 'span', t('materialParameterCount', { count: widgetValues.length }), 'anomalous-material-node-count');
@@ -440,7 +533,7 @@ function renderDetailedNodeCards(parent, blocks) {
             };
             content.appendChild(meta);
 
-            const labels = materialWidgetLabels(block.type);
+            const labels = comfyWidgetLabels(block.type);
             const volatileIndexes = new Set(Array.isArray(block.volatile_widget_indexes) ? block.volatile_widget_indexes : []);
             if (!widgetValues.length) {
                 text(content, 'p', t('materialNoWidgetParameters'), 'anomalous-material-muted');
@@ -481,340 +574,7 @@ function renderDetailedNodeCards(parent, blocks) {
     parent.appendChild(list);
 }
 
-export async function showImageMaterialDetail(owner, sourceImage, imageUrl) {
-    const overlay = document.createElement('div');
-    overlay.className = 'anomalous-material-detail-overlay';
-
-    const dialog = document.createElement('div');
-    dialog.className = 'anomalous-material-detail-dialog';
-
-    const close = text(dialog, 'button', '×', 'anomalous-material-detail-close');
-    close.type = 'button';
-    close.onclick = () => overlay.remove();
-
-    // 1. Left Media Stage
-    const media = document.createElement('div');
-    media.className = 'anomalous-material-detail-media';
-    const image = document.createElement('img');
-    image.src = imageUrl;
-    image.alt = t('materialImageDetail');
-    media.appendChild(image);
-
-    const mediaBar = document.createElement('div');
-    mediaBar.className = 'anomalous-material-media-bar';
-    const mediaResText = text(mediaBar, 'span', sourceImage?.filename || 'PNG Image');
-    const fullViewBtn = text(mediaBar, 'button', t('materialViewOriginal') || '🔍 查看大图', 'anomalous-material-mini-btn');
-    fullViewBtn.type = 'button';
-    fullViewBtn.onclick = () => owner?.showGalleryViewer?.(imageUrl);
-    media.appendChild(mediaBar);
-
-    // 2. Right Inspector Panel with 3-Tier Layout
-    const side = document.createElement('div');
-    side.className = 'anomalous-material-detail-side';
-
-    // Tier 1: Fixed Header
-    const sideHeader = document.createElement('div');
-    sideHeader.className = 'anomalous-material-side-header';
-    text(sideHeader, 'h2', t('materialImageDetail'));
-    text(sideHeader, 'p', t('materialSnapshotExplanation'));
-    side.appendChild(sideHeader);
-
-    // Tier 2: Scrollable Body (Independent scroll container)
-    const sideBody = document.createElement('div');
-    sideBody.className = 'anomalous-material-side-body';
-    const loading = text(sideBody, 'p', t('materialInspecting'), 'anomalous-material-muted');
-    side.appendChild(sideBody);
-
-    // Tier 3: Sticky Footer
-    const sideFooter = document.createElement('div');
-    sideFooter.className = 'anomalous-material-side-footer';
-
-    const label = text(sideFooter, 'label', t('materialName'));
-    const nameInput = document.createElement('input');
-    nameInput.type = 'text';
-    nameInput.maxLength = 120;
-    nameInput.placeholder = t('materialName');
-    label.appendChild(nameInput);
-
-    text(sideFooter, 'small', t('materialSaveHint'), 'anomalous-material-muted');
-    const saveBtn = text(sideFooter, 'button', `💾 ${t('materialSaveSnapshot')}`, 'anomalous-btn-primary');
-    saveBtn.type = 'button';
-    saveBtn.disabled = true;
-    side.appendChild(sideFooter);
-
-    dialog.append(media, side);
-    overlay.appendChild(dialog);
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', event => { if (event.target === overlay) overlay.remove(); });
-
-    // Load data: parallel fetch from backend inspection AND direct PNG client-side parse
-    try {
-        const [inspectPayload, clientWorkflow] = await Promise.all([
-            fetch('/anomalous/inspect_image_material', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ source_image: sourceImage }),
-            }).then(r => jsonResponse(r, 'material inspection failed')),
-            parsePngMetadataFromUrl(imageUrl).catch(() => null),
-        ]);
-
-        loading.remove();
-        saveBtn.disabled = false;
-
-        const clientDetails = extractWorkflowDetails(clientWorkflow);
-
-        // Merge generation parameters
-        const params = {
-            ...(clientDetails.params || {}),
-            ...(inspectPayload.params || {}),
-        };
-
-        if (params.resolution) {
-            mediaResText.textContent = `${params.resolution} · ${sourceImage?.filename || 'PNG'}`;
-        }
-
-        // Section A: Essential Metric Grid
-        const hasSamplingParams = params.steps || params.cfg || params.sampler_name || params.resolution;
-        if (hasSamplingParams) {
-            const metricGrid = document.createElement('div');
-            metricGrid.className = 'anomalous-material-metric-grid';
-
-            const addMetric = (labelStr, val) => {
-                if (val == null || val === '') return;
-                const card = document.createElement('div');
-                card.className = 'anomalous-material-metric-card';
-                text(card, 'span', labelStr, 'anomalous-material-metric-label');
-                text(card, 'span', String(val), 'anomalous-material-metric-val');
-                metricGrid.appendChild(card);
-            };
-
-            addMetric(t('recipeCardSpecsSteps') || '步数', params.steps);
-            addMetric('CFG', params.cfg);
-            const samplerFull = [params.sampler_name, params.scheduler].filter(Boolean).join(' / ');
-            addMetric(t('recipeCardSpecsSampler') || '采样', samplerFull);
-            if (params.denoise != null) addMetric(t('materialDenoise') || '降噪', params.denoise);
-            addMetric(t('recipeCardSpecsResolution') || '尺寸', params.resolution);
-
-            if (metricGrid.childElementCount) sideBody.appendChild(metricGrid);
-        }
-
-        // Section B: Prompts (Full, un-truncated prompts)
-        const renderPromptCard = (titleText, promptStr) => {
-            if (!promptStr || !promptStr.trim()) return;
-            const promptCard = document.createElement('div');
-            promptCard.className = 'anomalous-material-prompt-card';
-
-            const bar = document.createElement('div');
-            bar.className = 'anomalous-material-prompt-bar';
-            text(bar, 'span', titleText, 'anomalous-material-prompt-bar-label');
-
-            const btns = document.createElement('div');
-            btns.className = 'anomalous-material-prompt-bar-btns';
-
-            if (promptStr.length > 90 || promptStr.includes('\n')) {
-                const expandBtn = text(btns, 'button', t('materialExpandAll') || '展开', 'anomalous-material-mini-btn');
-                expandBtn.type = 'button';
-                expandBtn.onclick = () => {
-                    const isExp = promptContent.classList.toggle('is-expanded');
-                    expandBtn.textContent = isExp ? (t('materialCollapse') || '收起') : (t('materialExpandAll') || '展开');
-                };
-            }
-
-            const copyBtn = text(btns, 'button', t('materialCopyPrompt') || '📋 复制', 'anomalous-material-mini-btn');
-            copyBtn.type = 'button';
-            copyBtn.onclick = () => {
-                navigator.clipboard.writeText(promptStr).then(() => {
-                    copyBtn.textContent = t('materialCopied') || '✅ 已复制';
-                    setTimeout(() => { copyBtn.textContent = t('materialCopyPrompt') || '📋 复制'; }, 1500);
-                });
-            };
-
-            bar.appendChild(btns);
-            promptCard.appendChild(bar);
-
-            const promptContent = text(promptCard, 'div', promptStr, 'anomalous-material-prompt-content');
-            sideBody.appendChild(promptCard);
-        };
-
-        const posText = clientDetails.positivePrompts.join('\n\n');
-        const negText = clientDetails.negativePrompts.join('\n\n');
-
-        if (posText || negText) {
-            if (posText) renderPromptCard(t('materialPositivePrompt') || '正向提示词', posText);
-            if (negText) renderPromptCard(t('materialNegativePrompt') || '负向提示词', negText);
-        } else {
-            const fallbackText = (Array.isArray(inspectPayload.prompts) && inspectPayload.prompts.length)
-                ? inspectPayload.prompts.join('\n\n')
-                : (inspectPayload.prompt_excerpt || '');
-            if (fallbackText) renderPromptCard(t('materialPromptText') || '提示词', fallbackText);
-        }
-
-        // Section C: Categorized Referenced Models (Grouped, Detailed, Never mixed)
-        const allModelRefs = Array.isArray(inspectPayload.model_references) ? [...inspectPayload.model_references] : [];
-
-        const addIfNotExists = (item) => {
-            const clean = (val) => String(val || '').replace(/\\/g, '/').split('/').pop().toLowerCase();
-            const target = clean(item.saved_value || item.name);
-            if (!target) return;
-            if (!allModelRefs.some(m => clean(m.saved_value || m.name) === target)) {
-                allModelRefs.push(item);
-            }
-        };
-
-        if (clientDetails.discoveredModels) {
-            for (const c of clientDetails.discoveredModels.checkpoints) addIfNotExists({ saved_value: c.name, category: c.category });
-            for (const l of clientDetails.discoveredModels.loras) addIfNotExists({ saved_value: l.name, category: 'lora' });
-            for (const tModel of clientDetails.discoveredModels.textEncoders) addIfNotExists({ saved_value: tModel.name, category: 'text_encoder' });
-            for (const v of clientDetails.discoveredModels.vaes) addIfNotExists({ saved_value: v.name, category: 'vae' });
-        }
-
-        const groups = {
-            base: [],
-            lora: [],
-            clip: [],
-            vae: [],
-            other: [],
-        };
-
-        for (const ref of allModelRefs) {
-            const cat = String(ref.category || '').toLowerCase();
-            const val = String(ref.saved_value || ref.name || '').toLowerCase();
-            if (cat === 'checkpoint' || cat === 'unet' || val.includes('checkpoint') || val.includes('anima') || val.includes('unet')) {
-                groups.base.push(ref);
-            } else if (cat === 'lora' || val.includes('lora')) {
-                groups.lora.push(ref);
-            } else if (cat === 'text_encoder' || cat === 'clip' || val.includes('clip') || val.includes('qwen_3_06b') || val.includes('t5')) {
-                groups.clip.push(ref);
-            } else if (cat === 'vae' || val.includes('vae')) {
-                groups.vae.push(ref);
-            } else {
-                groups.other.push(ref);
-            }
-        }
-
-        const totalModelCount = allModelRefs.length;
-        if (totalModelCount > 0) {
-            const modelDetails = document.createElement('details');
-            modelDetails.className = 'anomalous-material-accordion';
-            modelDetails.open = true; // 默认展开，让用户一眼看清分类与详细参数
-
-            const modelSummary = document.createElement('summary');
-            modelSummary.textContent = `📦 ${t('materialReferencedModels', { count: totalModelCount })} ▾`;
-            modelDetails.appendChild(modelSummary);
-
-            const modelContent = document.createElement('div');
-            modelContent.className = 'anomalous-material-accordion-content';
-
-            const renderModelGroup = (titleText, items, tagClass, defaultTag) => {
-                if (!items.length) return;
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'anomalous-material-model-group';
-
-                text(groupDiv, 'div', titleText, 'anomalous-material-model-group-title');
-
-                for (const item of items) {
-                    const row = document.createElement('div');
-                    row.className = 'anomalous-material-model-card-item';
-
-                    const info = document.createElement('div');
-                    info.className = 'anomalous-material-model-info';
-
-                    const rawVal = String(item.saved_value || item.name || 'Unknown');
-                    const fileName = rawVal.replace(/\\/g, '/').split('/').pop();
-                    const nameEl = text(info, 'span', fileName, 'anomalous-material-model-filename');
-                    nameEl.title = rawVal;
-
-                    // Show LoRA weights (Strength & CLIP) if available
-                    const loraWeights = clientDetails.loraDetailsMap?.get(rawVal) || clientDetails.loraDetailsMap?.get(fileName);
-                    if (loraWeights) {
-                        const paramText = `${t('materialLoraStrength') || '权重'}: ${loraWeights.strengthModel} · CLIP: ${loraWeights.strengthClip}`;
-                        text(info, 'span', paramText, 'anomalous-material-model-params');
-                    }
-
-                    row.appendChild(info);
-                    text(row, 'span', item.category || defaultTag, `anomalous-material-model-tag-badge ${tagClass}`);
-                    groupDiv.appendChild(row);
-                }
-                modelContent.appendChild(groupDiv);
-            };
-
-            renderModelGroup(t('materialModelBase') || '🎯 主模型 / UNet', groups.base, 'anomalous-tag-base', 'unet');
-            renderModelGroup(t('materialModelLora') || '🎨 LoRA 微调层', groups.lora, 'anomalous-tag-lora', 'lora');
-            renderModelGroup(t('materialModelClip') || '👁️ 文本编码器 (CLIP)', groups.clip, 'anomalous-tag-clip', 'clip');
-            renderModelGroup(t('materialModelVae') || '🖼️ VAE 编码器', groups.vae, 'anomalous-tag-vae', 'vae');
-            renderModelGroup(t('materialModelOther') || '⚡ 其它模型组件', groups.other, 'anomalous-tag-other', 'model');
-
-            modelDetails.appendChild(modelContent);
-            sideBody.appendChild(modelDetails);
-        }
-
-        // Section D: Full node parameters (two-level progressive disclosure)
-        const blocks = detailedBlocksFromWorkflow(clientWorkflow, inspectPayload.node_blocks);
-        if (blocks.length) {
-            const nodeDetails = document.createElement('details');
-            nodeDetails.className = 'anomalous-material-accordion';
-
-            const nodeSummary = document.createElement('summary');
-            nodeSummary.textContent = `⚙️ ${t('materialDetailedNodeParameters', { count: blocks.length })} ▾`;
-            nodeDetails.appendChild(nodeSummary);
-
-            const nodeContent = document.createElement('div');
-            nodeContent.className = 'anomalous-material-accordion-content';
-
-            const typeCounts = {};
-            for (const b of blocks) {
-                const tName = b.title || b.type || 'Node';
-                typeCounts[tName] = (typeCounts[tName] || 0) + 1;
-            }
-
-            const chipFlow = document.createElement('div');
-            chipFlow.className = 'anomalous-material-chip-flow';
-            for (const [nTitle, cnt] of Object.entries(typeCounts)) {
-                const chip = document.createElement('span');
-                chip.className = 'anomalous-material-chip';
-                text(chip, 'span', nTitle);
-                if (cnt > 1) text(chip, 'span', `×${cnt}`, 'anomalous-material-chip-count');
-                chipFlow.appendChild(chip);
-            }
-            nodeContent.appendChild(chipFlow);
-            let detailedNodesRendered = false;
-            nodeDetails.addEventListener('toggle', () => {
-                if (!nodeDetails.open || detailedNodesRendered) return;
-                detailedNodesRendered = true;
-                renderDetailedNodeCards(nodeContent, blocks);
-            });
-            nodeDetails.appendChild(nodeContent);
-            sideBody.appendChild(nodeDetails);
-        }
-
-        // Tier 3 Setup: Name Input & Save
-        nameInput.value = inspectPayload.suggested_name || '';
-        saveBtn.onclick = async () => {
-            const val = nameInput.value.trim();
-            if (!val) { nameInput.focus(); return; }
-            saveBtn.disabled = true;
-            try {
-                const saveResponse = await fetch('/anomalous/save_image_material', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ source_image: sourceImage, name: val }),
-                });
-                const savePayload = await jsonResponse(saveResponse, 'material save failed');
-                if (savePayload.status !== 'success') throw new Error(savePayload.message || 'material save failed');
-                owner?.refreshMaterials?.();
-                overlay.remove();
-                await anomalousAlert(t('materialSaveSuccess'));
-            } catch (error) {
-                console.error('Could not save image material:', error);
-                await anomalousAlert(t('materialSaveError'));
-                saveBtn.disabled = false;
-            }
-        };
-
-        nameInput.focus();
-        nameInput.select();
-    } catch (error) {
-        console.error('Could not inspect image material:', error);
-        loading.textContent = t('materialInspectError');
-    }
+export async function showImageMaterialDetail(owner, sourceImage, imageUrl, options = {}) {
+    return showImageWorkbench(owner, sourceImage, imageUrl, options);
 }
+

@@ -73,12 +73,15 @@ DOM or live LiteGraph state.
   native command/keybinding integration.
 - `ui_sidebar.js`, `ui_grid.js`, `ui_detail.js`, and `ui_gallery.js` own the
   primary model-browser surfaces.
+- `ui_gallery_detail.js` owns the full-screen / studio Image Detail Workbench,
+  multi-dimensional image navigation (keyboard shortcuts, floating glass arrows,
+  bottom filmstrip rail), and segmented Bento parameter inspection with ComfyUI
+  canvas injection (`app.loadGraphData`).
 - `ui_notebooks.js`, `ui_recipes.js`, and `ui_recipe_detail.js` own Workspace
   presentation, featuring Bento-style visual cards, quick spec tags, real-time environment readiness indicators (🟢/🟡/🔴), one-click batch model matching, and lazy DOM rendering for node parameter trees.
-- `ui_materials.js` owns image snapshot inspection with progressive disclosure
-  (key metric tiles, expandable prompt card, collapsible model/node details)
-  and the Workspace Material Library; Node Assistant remains the owner of
-  applying a material node block.
+- `ui_materials.js` owns the Workspace Material Library and material CRUD presentation;
+  delegates image inspection to `ui_gallery_detail.js`; Node Assistant remains the owner
+  of applying a material node block.
 - `recipe_parser.js`, `recipe_identity.js`, `recipe_diff.js`, and
   `recipe_actions.js` own pure or transactional recipe behavior.
 - `ui_doctor.js`, `model_picker.js`, and `graph_splice.js` own assistant and

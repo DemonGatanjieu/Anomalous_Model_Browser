@@ -20,7 +20,7 @@ The main surfaces are:
 
 - Sidebar and folder manager: navigation, folder visibility, scan controls.
 - Grid and model detail: model browsing and metadata/media presentation.
-- Gallery: the user's generated outputs.
+- Gallery: the user's generated outputs and the full-screen Image Detail Studio Workbench (`ui_gallery_detail.js`).
 - Workspace: Prompt Notes and Workflow Recipes.
 - Node Assistant/Model Doctor: selected-node actions, diagnostics, parameter
   presets, and missing-model recovery.

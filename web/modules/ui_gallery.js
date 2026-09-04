@@ -39,9 +39,30 @@ export async function loadGalleryImages(page = 1, reset = false) {
                 const cards = this.galleryGrid.querySelectorAll('.anomalous-gallery-card');
                 cards.forEach(c => c.remove());
                 this.galleryLoaded = true;
+                this.galleryImagesList = [];
             }
 
             if (data.images && data.images.length > 0) {
+                const incomingItems = data.images.map(imgData => {
+                    const q_sub = encodeURIComponent(imgData.subfolder);
+                    const q_file = encodeURIComponent(imgData.filename);
+                    return {
+                        filename: imgData.filename,
+                        subfolder: imgData.subfolder || '',
+                        url: `/view?filename=${q_file}&subfolder=${q_sub}&type=output`,
+                        sourceImage: {
+                            type: 'output',
+                            filename: imgData.filename,
+                            subfolder: imgData.subfolder || '',
+                        }
+                    };
+                });
+                if (reset) {
+                    this.galleryImagesList = incomingItems;
+                } else {
+                    this.galleryImagesList = [...(this.galleryImagesList || []), ...incomingItems];
+                }
+
                 data.images.forEach(imgData => {
                     const card = document.createElement('div');
                     card.className = 'anomalous-gallery-card';
@@ -66,6 +87,24 @@ export async function loadGalleryImages(page = 1, reset = false) {
                             e.dataTransfer.setDragImage(window.anomalousDragGhostImg, 40, 40);
                         }
                     });
+
+                    const openDetail = () => {
+                        const curIdx = (this.galleryImagesList || []).findIndex(it => it.filename === imgData.filename && it.subfolder === (imgData.subfolder || ''));
+                        void showImageMaterialDetail(this, {
+                            type: 'output',
+                            filename: imgData.filename,
+                            subfolder: imgData.subfolder || '',
+                        }, imgUrl, {
+                            items: this.galleryImagesList || [],
+                            currentIndex: curIdx >= 0 ? curIdx : 0,
+                            loadMore: async () => {
+                                if (this.galleryHasMore && !this.galleryLoading) {
+                                    await this.loadGalleryImages(this.galleryCurrentPage + 1);
+                                }
+                                return this.galleryImagesList || [];
+                            }
+                        });
+                    };
 
                     // Click to view
                     img.onclick = () => {
@@ -108,7 +147,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
                             });
                             return;
                         }
-                        this.showGalleryViewer(imgUrl);
+                        openDetail();
                     };
 
                     const delBtn = document.createElement('button');
@@ -192,6 +231,9 @@ export async function loadGalleryImages(page = 1, reset = false) {
                                 const dd = await dr.json();
                                 if (dd.status === 'success') {
                                     card.remove();
+                                    if (this.galleryImagesList) {
+                                        this.galleryImagesList = this.galleryImagesList.filter(it => !(it.filename === imgData.filename && it.subfolder === (imgData.subfolder || '')));
+                                    }
                                 } else {
                                     alert(t('galleryDeleteFailed') + dd.message);
                                     overlay.remove();
@@ -218,11 +260,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
                     detailsBtn.onclick = (event) => {
                         event.stopPropagation();
                         if (this.gallerySelectModel) return;
-                        void showImageMaterialDetail(this, {
-                            type: 'output',
-                            filename: imgData.filename,
-                            subfolder: imgData.subfolder || '',
-                        }, imgUrl);
+                        openDetail();
                     };
 
                     card.appendChild(img);
@@ -443,7 +481,36 @@ export async function showGeneratedGallery(model) {
                 };
 
                 imgCont.onclick = () => {
-                    this.showGalleryViewer(img.url || img);
+                    const allGenCards = Array.from(contentCont.querySelectorAll('.anomalous-card'));
+                    const curIndex = allGenCards.indexOf(imgCont);
+                    const genItems = (data.images || []).map(im => {
+                        const u = im.url || im;
+                        let fn = '';
+                        let sub = '';
+                        if (im.url) {
+                            try {
+                                const up = new URLSearchParams(im.url.split('?')[1]);
+                                fn = up.get('filename') || '';
+                                sub = up.get('subfolder') || '';
+                            } catch (_) {}
+                        } else {
+                            fn = String(im).split('/').pop().split('?')[0];
+                        }
+                        return {
+                            filename: fn,
+                            subfolder: sub,
+                            url: u,
+                            sourceImage: { type: 'output', filename: fn, subfolder: sub }
+                        };
+                    });
+                    void showImageMaterialDetail(this, {
+                        type: 'output',
+                        filename: filenameText,
+                        subfolder: source_image.includes('/') ? source_image.split('/')[0] : '',
+                    }, img.url || img, {
+                        items: genItems,
+                        currentIndex: curIndex >= 0 ? curIndex : 0,
+                    });
                 };
 
                 imgCont.appendChild(el);
