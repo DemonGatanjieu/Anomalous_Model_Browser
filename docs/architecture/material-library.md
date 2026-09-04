@@ -16,11 +16,16 @@ The backend accepts output-image descriptors only after applying the shared
 filename and containment checks. It reads bounded embedded metadata, requires a
 valid UI workflow, copies at most 64 MiB of source image data, validates the
 graph with the Recipe workflow validator, and writes JSON atomically. List
-responses omit the full workflow. The explicit image-inspection route may
-return exact `widgets_values`, bounded node `properties`, mode, and volatile
-widget indexes because it runs only after the user opens one image detail; the
-frontend keeps these records behind lazy nested disclosure. Asset reads require
-both a valid material record and a contained private asset path.
+responses omit the full workflow. The explicit image-inspection route returns
+the validated workflow plus summary node blocks only after the user opens one
+image detail. This lets the workbench display exact `widgets_values`, bounded
+node `properties`, mode, and volatile widget indexes without allocating a
+second full-PNG buffer in the browser. Direct PNG parsing remains a temporary
+compatibility fallback for an older running backend. Exact metadata is kept in
+a small 16-entry in-memory LRU, and duplicate workflow/widget fields are
+discarded before caching. Local-model preview resolution is deferred until the
+Models tab is opened and then cached with that image's metadata. Asset reads
+require both a valid material record and a contained private asset path.
 
 The route family is:
 
@@ -47,6 +52,12 @@ preset operation and therefore uses the existing transactional parameter
 application path, which skips known volatile seed widgets. The lookup endpoint
 filters blocks by exact `node.type`; when more than one source node matches, the
 user chooses the block explicitly.
+
+The image workbench also allows one or more nodes to be checked and saved as an
+`image_node_selection`. The original workflow remains in the record as source
+provenance, but list/count/lookup APIs expose only the selected blocks. Such a
+material deliberately lacks `open_workflow`; it is consumed from Node Assistant
+instead of unexpectedly replacing the canvas with the hidden source workflow.
 
 ## Model identity handoff
 

@@ -8,7 +8,7 @@
  * - High-speed in-memory LRU metadata cache (imageMetadataCache)
  * - Preloading of adjacent images and AbortController request cancellation
  * - Segmented Bento Inspector: Key Specs Bento grid, Prompts Station, Models & LoRA with weight pills, Node structure
- * - One-click actions: Load Workflow to ComfyUI canvas (app.loadGraphData), Copy Civitai format params, Save Material snapshot
+ * - One-click actions: load Workflow, copy Civitai/WebUI share text, save a full or selected-node Material
  */
 
 import { app } from '../../../scripts/app.js';
@@ -34,7 +34,9 @@ const t = (key, params) => translate(key, params);
 
 // In-memory LRU metadata cache: key -> { inspectPayload, clientWorkflow, clientDetails, params }
 const imageMetadataCache = new Map();
-const MAX_METADATA_CACHE = 120;
+// A workflow can contain large prompt strings and hundreds of nodes. Keep only
+// a small navigation window rather than retaining an entire long gallery.
+const MAX_METADATA_CACHE = 16;
 
 function getCachedMetadata(key) {
     if (!key || !imageMetadataCache.has(key)) return null;
@@ -52,6 +54,25 @@ function setCachedMetadata(key, val) {
         imageMetadataCache.delete(oldestKey);
     }
     imageMetadataCache.set(key, val);
+}
+
+function compactInspectPayload(payload, hasClientWorkflow) {
+    if (!payload || typeof payload !== 'object' || !hasClientWorkflow) return payload || {};
+    const compact = { ...payload };
+    delete compact.workflow;
+    // Older running backends may still return exact values here. The client
+    // workflow already owns them, so discard the duplicate before LRU caching.
+    if (Array.isArray(compact.node_blocks)) {
+        compact.node_blocks = compact.node_blocks.map(block => ({
+            node_id: block?.node_id,
+            type: block?.type,
+            title: block?.title,
+            occurrence: block?.occurrence,
+            widget_count: block?.widget_count,
+            volatile_widget_indexes: block?.volatile_widget_indexes,
+        }));
+    }
+    return compact;
 }
 
 // Active singleton workbench state
@@ -113,7 +134,7 @@ async function copyToClipboard(str, btn, successLabel, defaultLabel) {
  * Preload adjacent images for smooth instant transitions
  */
 function preloadAdjacentImages(items, currentIndex) {
-    const indices = [currentIndex - 1, currentIndex + 1, currentIndex + 2];
+    const indices = [currentIndex - 1, currentIndex + 1];
     for (const idx of indices) {
         if (idx >= 0 && idx < items.length) {
             const url = items[idx]?.url;
@@ -583,6 +604,21 @@ function buildWorkflowNodesSection(blocks, clientWorkflow) {
     }
     wrap.appendChild(chipFlow);
 
+    const selectionBar = document.createElement('div');
+    selectionBar.className = 'anomalous-workbench-node-selection-bar';
+    const selectionText = text(selectionBar, 'span', '', 'anomalous-workbench-node-selection-count');
+    const selectAllBtn = text(selectionBar, 'button', t('materialSelectAllNodes'), 'anomalous-workbench-mini-action-btn');
+    selectAllBtn.type = 'button';
+    const clearBtn = text(selectionBar, 'button', t('materialClearNodeSelection'), 'anomalous-workbench-mini-action-btn');
+    clearBtn.type = 'button';
+    wrap.appendChild(selectionBar);
+
+    const updateSelection = () => {
+        const count = wb?.selectedNodeIds?.size || 0;
+        selectionText.textContent = t('materialSelectedNodeCount', { count });
+        wb?.refreshSaveSelectionState?.();
+    };
+
     // Copy full workflow JSON button
     const jsonActionRow = document.createElement('div');
     jsonActionRow.className = 'anomalous-workbench-action-row';
@@ -602,8 +638,37 @@ function buildWorkflowNodesSection(blocks, clientWorkflow) {
     // Detailed node cards
     const detailedContainer = document.createElement('div');
     detailedContainer.className = 'anomalous-workbench-node-list-box';
-    renderDetailedNodeCards(detailedContainer, blocks);
+    renderDetailedNodeCards(detailedContainer, blocks, {
+        selectable: true,
+        selectedIds: wb?.selectedNodeIds,
+        onSelectionChange: (block, checked) => {
+            const key = String(block.node_id);
+            if (checked) {
+                wb?.selectedNodeIds?.add(key);
+                if (wb) wb.saveScope = 'selected';
+            }
+            else wb?.selectedNodeIds?.delete(key);
+            updateSelection();
+        },
+    });
     wrap.appendChild(detailedContainer);
+
+    const setAllSelections = checked => {
+        if (!wb?.selectedNodeIds) return;
+        wb.selectedNodeIds.clear();
+        if (checked) {
+            blocks.forEach(block => wb.selectedNodeIds.add(String(block.node_id)));
+            wb.saveScope = 'selected';
+        }
+        detailedContainer.querySelectorAll('.anomalous-material-node-select').forEach(input => {
+            input.checked = checked;
+            input.closest('.anomalous-material-node-detail')?.classList.toggle('is-selected', checked);
+        });
+        updateSelection();
+    };
+    selectAllBtn.onclick = () => setAllSelections(true);
+    clearBtn.onclick = () => setAllSelections(false);
+    updateSelection();
 
     return wrap;
 }
@@ -663,6 +728,9 @@ async function loadWorkbenchImage(index) {
     if (!wb || !wb.items || index < 0 || index >= wb.items.length) return;
 
     wb.currentIndex = index;
+    wb.selectedNodeIds = new Set();
+    wb.saveScope = 'all';
+    wb.refreshSaveSelectionState = null;
     const item = wb.items[index];
     const total = wb.items.length;
 
@@ -743,26 +811,31 @@ async function loadWorkbenchImage(index) {
             subfolder: item.subfolder || '',
         };
 
-        const [inspectPayload, clientWorkflow] = await Promise.all([
-            fetch('/anomalous/inspect_image_material', {
+        const inspectPayload = await fetch('/anomalous/inspect_image_material', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ source_image: sourceImage }),
                 signal,
-            }).then(r => jsonResponse(r, 'material inspection failed')).catch(() => ({})),
-            parsePngMetadataFromUrl(item.url).catch(() => null),
-        ]);
+            }).then(r => jsonResponse(r, 'material inspection failed')).catch(() => ({}));
 
         if (signal.aborted) return;
 
+        // Current backends return the already validated workflow, avoiding a
+        // second full-image ArrayBuffer in the browser. Direct PNG parsing is
+        // retained only as a compatibility fallback before a server restart.
+        const clientWorkflow = inspectPayload.workflow
+            || await parsePngMetadataFromUrl(item.url, { signal }).catch(() => null);
+        if (signal.aborted) return;
+
+        const compactPayload = compactInspectPayload(inspectPayload, Boolean(clientWorkflow));
         const clientDetails = extractWorkflowDetails(clientWorkflow);
         const params = {
             ...(clientDetails.params || {}),
-            ...(inspectPayload.params || {}),
+            ...(compactPayload.params || {}),
         };
 
         const metadataBundle = {
-            inspectPayload,
+            inspectPayload: compactPayload,
             clientWorkflow,
             clientDetails,
             params,
@@ -830,23 +903,12 @@ async function renderInspectorContent(data, item) {
 
     const orderedRefs = [...groups.base, ...groups.lora, ...groups.clip, ...groups.vae, ...groups.other];
 
-    // Asynchronously resolve local models for thumbnails
-    if (!data._localModelsResolved) {
-        data._localModelsResolved = true;
-        resolveLocalModels(orderedRefs.map(r => r.saved_value || r.name)).then(localModels => {
-            for (const r of orderedRefs) {
-                r.localModel = lookupLocalModel(localModels, r.saved_value || r.name);
-            }
-            // If user is currently looking at models tab, refresh it
-            if (wb?.activeTab === 'models' || wb?.activeTab === 'all') {
-                const modelsContainer = wb.sideBodyEl.querySelector('.anomalous-workbench-models-wrap');
-                if (modelsContainer) {
-                    const fresh = buildModelsSection(orderedRefs, groups, (m) => openMaterialLocalModel(m));
-                    modelsContainer.replaceWith(fresh);
-                }
-            }
-        }).catch(() => {});
-    }
+    const applyResolvedModels = localModels => {
+        for (const reference of orderedRefs) {
+            reference.localModel = lookupLocalModel(localModels, reference.saved_value || reference.name);
+        }
+    };
+    if (data._localModels) applyResolvedModels(data._localModels);
 
     const posText = clientDetails.positivePrompts.join('\n\n');
     const negText = clientDetails.negativePrompts.join('\n\n');
@@ -869,11 +931,11 @@ async function renderInspectorContent(data, item) {
     const copyParamsBtn = document.createElement('button');
     copyParamsBtn.type = 'button';
     copyParamsBtn.className = 'anomalous-workbench-action-btn';
-    copyParamsBtn.innerHTML = '📋 复制生图参数';
-    copyParamsBtn.title = '复制标准 Civitai/WebUI 格式生图参数（含提示词、种子、采样器等）';
+    copyParamsBtn.textContent = t('workbenchCopyParams');
+    copyParamsBtn.title = t('workbenchCopyParamsHint');
     copyParamsBtn.onclick = () => {
         const formatted = formatGenerationParamsText(posText, negText, params, allModelRefs);
-        copyToClipboard(formatted, copyParamsBtn, '✅ 参数已复制', '📋 复制生图参数');
+        copyToClipboard(formatted, copyParamsBtn, t('workbenchCopySuccess'), t('workbenchCopyParams'));
     };
     toolbar.appendChild(copyParamsBtn);
 
@@ -891,6 +953,7 @@ async function renderInspectorContent(data, item) {
     ];
 
     const tabPanels = {};
+    let ensureModelsResolved = () => {};
 
     tabs.forEach(tDef => {
         const tabBtn = document.createElement('button');
@@ -906,6 +969,7 @@ async function renderInspectorContent(data, item) {
             tabBtn.classList.add('is-active');
             Object.values(tabPanels).forEach(p => p.style.display = 'none');
             if (tabPanels[tDef.id]) tabPanels[tDef.id].style.display = 'flex';
+            if (tDef.id === 'models') ensureModelsResolved();
         };
 
         tabsBar.appendChild(tabBtn);
@@ -936,6 +1000,23 @@ async function renderInspectorContent(data, item) {
     modelsPanel.appendChild(buildModelsSection(orderedRefs, groups, (m) => openMaterialLocalModel(m)));
     tabPanels.models = modelsPanel;
     wb.sideBodyEl.appendChild(modelsPanel);
+    ensureModelsResolved = () => {
+        if (data._localModels) return;
+        if (!data._localModelsPromise) {
+            data._localModelsPromise = resolveLocalModels(orderedRefs.map(reference => reference.saved_value || reference.name))
+                .then(localModels => {
+                    data._localModels = localModels;
+                    return localModels;
+                })
+                .catch(() => ({}));
+        }
+        data._localModelsPromise.then(localModels => {
+            if (!modelsPanel.isConnected) return;
+            applyResolvedModels(localModels);
+            modelsPanel.replaceChildren(buildModelsSection(orderedRefs, groups, model => openMaterialLocalModel(model)));
+        });
+    };
+    if (wb.activeTab === 'models') ensureModelsResolved();
 
     // Panel 4: Nodes Section
     const blocks = detailedBlocksFromWorkflow(clientWorkflow, inspectPayload.node_blocks);
@@ -947,18 +1028,32 @@ async function renderInspectorContent(data, item) {
     wb.sideBodyEl.appendChild(nodesPanel);
 
     // Bottom Snapshot Drawer in Footer
-    renderSaveSnapshotFooter(inspectPayload, item);
+    renderSaveSnapshotFooter(inspectPayload, item, blocks);
 }
 
 /**
  * Render Save Snapshot form in the sticky footer
  */
-function renderSaveSnapshotFooter(inspectPayload, item) {
+function renderSaveSnapshotFooter(inspectPayload, item, blocks = []) {
     if (!wb || !wb.sideFooterEl) return;
     wb.sideFooterEl.replaceChildren();
 
     const saveRow = document.createElement('div');
     saveRow.className = 'anomalous-workbench-save-row';
+
+    const scopeWrap = document.createElement('label');
+    scopeWrap.className = 'anomalous-workbench-save-scope-wrap';
+    text(scopeWrap, 'span', t('materialSaveScope'));
+    const scopeSelect = document.createElement('select');
+    scopeSelect.className = 'anomalous-workbench-save-scope';
+    const allOption = document.createElement('option');
+    allOption.value = 'all';
+    allOption.textContent = t('materialSaveFullWorkflow');
+    const selectedOption = document.createElement('option');
+    selectedOption.value = 'selected';
+    scopeSelect.append(allOption, selectedOption);
+    scopeWrap.appendChild(scopeSelect);
+    saveRow.appendChild(scopeWrap);
 
     const inputWrap = document.createElement('div');
     inputWrap.className = 'anomalous-workbench-save-input-wrap';
@@ -968,6 +1063,9 @@ function renderSaveSnapshotFooter(inspectPayload, item) {
     nameInput.maxLength = 120;
     nameInput.placeholder = t('materialName') || '输入素材快照名称…';
     nameInput.value = inspectPayload.suggested_name || fileBaseName(item.filename) || '';
+    const baseSuggestedName = nameInput.value;
+    let nameWasEdited = false;
+    nameInput.addEventListener('input', () => { nameWasEdited = true; });
     inputWrap.appendChild(nameInput);
 
     saveRow.appendChild(inputWrap);
@@ -976,6 +1074,35 @@ function renderSaveSnapshotFooter(inspectPayload, item) {
     saveBtn.type = 'button';
     saveBtn.className = 'anomalous-workbench-action-btn is-save';
     saveBtn.innerHTML = `💾 ${t('materialSaveSnapshot') || '保存为素材'}`;
+
+    const selectionHint = text(inputWrap, 'small', '', 'anomalous-workbench-save-selection-hint');
+
+    const refreshState = () => {
+        const selectedCount = wb?.selectedNodeIds?.size || 0;
+        selectedOption.textContent = t('materialSaveSelectedNodes', { count: selectedCount });
+        scopeSelect.value = wb?.saveScope || 'all';
+        const selectedScope = scopeSelect.value === 'selected';
+        saveBtn.disabled = selectedScope && selectedCount === 0;
+        selectionHint.textContent = selectedScope
+            ? (selectedCount ? t('materialSelectedSaveHint', { count: selectedCount }) : t('materialSelectNodesFirst'))
+            : t('materialFullSaveHint');
+        if (!nameWasEdited) {
+            if (!selectedScope) {
+                nameInput.value = baseSuggestedName;
+            } else if (selectedCount === 1) {
+                const selectedId = [...wb.selectedNodeIds][0];
+                const block = blocks.find(candidate => String(candidate.node_id) === selectedId);
+                nameInput.value = `${baseSuggestedName} · ${block ? materialNodeHeading(block) : t('materialSelectedNodesName', { count: 1 })}`.slice(0, 120);
+            } else if (selectedCount > 1) {
+                nameInput.value = `${baseSuggestedName} · ${t('materialSelectedNodesName', { count: selectedCount })}`.slice(0, 120);
+            }
+        }
+    };
+    scopeSelect.onchange = () => {
+        if (wb) wb.saveScope = scopeSelect.value;
+        refreshState();
+    };
+    if (wb) wb.refreshSaveSelectionState = refreshState;
 
     saveBtn.onclick = async () => {
         const val = nameInput.value.trim();
@@ -991,7 +1118,11 @@ function renderSaveSnapshotFooter(inspectPayload, item) {
             const saveResponse = await fetch('/anomalous/save_image_material', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ source_image: sourceImage, name: val }),
+                body: JSON.stringify({
+                    source_image: sourceImage,
+                    name: val,
+                    ...(scopeSelect.value === 'selected' ? { selected_node_ids: [...wb.selectedNodeIds] } : {}),
+                }),
             });
             const savePayload = await jsonResponse(saveResponse, 'material save failed');
             if (savePayload.status !== 'success') throw new Error(savePayload.message || 'material save failed');
@@ -1008,6 +1139,7 @@ function renderSaveSnapshotFooter(inspectPayload, item) {
 
     saveRow.appendChild(saveBtn);
     wb.sideFooterEl.appendChild(saveRow);
+    refreshState();
 }
 
 /**
@@ -1096,6 +1228,9 @@ export async function showImageWorkbench(owner, sourceImage, imageUrl, options =
         isFilmstripVisible: true,
         inspectingModel: false,
         abortController: null,
+        selectedNodeIds: new Set(),
+        saveScope: 'all',
+        refreshSaveSelectionState: null,
     };
 
     // 1. Overlay container

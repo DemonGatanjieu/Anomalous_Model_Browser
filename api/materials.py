@@ -113,6 +113,48 @@ def _node_blocks(workflow, include_values=True):
     return blocks
 
 
+def _normalise_selected_node_ids(workflow, raw_node_ids):
+    """Validate an optional node selection while preserving workflow ID types."""
+    if raw_node_ids is None:
+        return None
+    if not isinstance(raw_node_ids, list) or not raw_node_ids:
+        raise ValueError("Selected material nodes are required")
+
+    workflow_nodes = [node for node in workflow.get("nodes", []) if isinstance(node, dict)]
+    existing = {str(node.get("id")): node.get("id") for node in workflow_nodes if node.get("id") is not None}
+    selected = []
+    seen = set()
+    for raw_node_id in raw_node_ids:
+        key = str(raw_node_id)
+        if key not in existing:
+            raise ValueError("Selected material node does not exist")
+        if key in seen:
+            continue
+        seen.add(key)
+        selected.append(existing[key])
+    if not selected:
+        raise ValueError("Selected material nodes are required")
+    return selected
+
+
+def _material_node_ids(material):
+    selection = material.get("selection") if isinstance(material, dict) else None
+    if not isinstance(selection, dict) or selection.get("scope") != "nodes":
+        return None
+    node_ids = selection.get("node_ids")
+    if not isinstance(node_ids, list):
+        return None
+    return {str(node_id) for node_id in node_ids}
+
+
+def _material_node_blocks(material, include_values=True):
+    blocks = _node_blocks(material.get("workflow") or {}, include_values=include_values)
+    selected_ids = _material_node_ids(material)
+    if selected_ids is None:
+        return blocks
+    return [block for block in blocks if str(block.get("node_id")) in selected_ids]
+
+
 def _prompt_excerpt(workflow):
     for node in workflow.get("nodes", []):
         if not isinstance(node, dict) or "cliptextencode" not in str(node.get("type") or "").lower():
@@ -240,16 +282,17 @@ def _store_assets(materials_dir, filename, source_path):
 
 
 def _material_summary(filename, material):
-    workflow = material.get("workflow") or {}
     image = material.get("image") or {}
+    blocks = _material_node_blocks(material, include_values=False)
     return {
         "filename": filename,
         "id": material.get("id"),
         "name": material.get("name") or "未命名素材",
         "kind": material.get("kind"),
         "timestamp": material.get("timestamp", 0),
-        "node_count": len(workflow.get("nodes") or []),
-        "node_types": sorted({block["type"] for block in _node_blocks(workflow, include_values=False)}),
+        "node_count": len(blocks),
+        "node_types": sorted({block["type"] for block in blocks}),
+        "selection": copy.deepcopy(material.get("selection")),
         "image": {
             "preview_asset_id": image.get("preview_asset_id"),
             "source_asset_id": image.get("source_asset_id"),
@@ -303,13 +346,16 @@ async def api_inspect_image_material(request):
     except OSError:
         return web.json_response({"status": "error", "message": "Could not inspect output image"}, status=500)
     sampling_params, prompts = _extract_workflow_params(workflow)
-    detailed_blocks = _node_blocks(workflow, include_values=True)
     return web.json_response({
         "status": "success",
         "source_image": source,
         "suggested_name": suggested_name,
         "node_count": len(blocks),
-        "node_blocks": detailed_blocks,
+        # The browser already reads the embedded workflow for exact values.
+        # Keep the server response summary-only to avoid holding/transferring a
+        # second copy of every widget value for each inspected image.
+        "node_blocks": blocks,
+        "workflow": workflow,
         "model_references": references,
         "prompt_excerpt": _prompt_excerpt(workflow),
         "params": sampling_params,
@@ -326,6 +372,14 @@ async def api_save_image_material(request):
         name = payload.get("name") or suggested_name
         if not isinstance(name, str) or not (name := name.strip()) or len(name) > MAX_MATERIAL_NAME_LENGTH:
             raise ValueError("Invalid material name")
+        selected_node_ids = _normalise_selected_node_ids(workflow, payload.get("selected_node_ids"))
+        selected_id_keys = {str(node_id) for node_id in selected_node_ids or []}
+        if selected_node_ids is not None:
+            blocks = [block for block in blocks if str(block.get("node_id")) in selected_id_keys]
+            references = [
+                reference for reference in references
+                if str(reference.get("node_id")) in selected_id_keys
+            ]
         material_id = uuid.uuid4().hex
         filename = f"material_{int(time.time())}_{material_id[:8]}.json"
         materials_dir = get_materials_dir()
@@ -334,15 +388,21 @@ async def api_save_image_material(request):
         material = {
             "schema_version": MATERIAL_SCHEMA_VERSION,
             "id": material_id,
-            "kind": "image_workflow_snapshot",
+            "kind": "image_node_selection" if selected_node_ids is not None else "image_workflow_snapshot",
             "name": name,
             "timestamp": now,
             "source": {"type": "generated_image", "image": source},
             "image": image,
             "workflow": workflow,
             "model_references": references,
-            "capabilities": ["open_workflow", "apply_node_parameters", "reference_image"],
+            "capabilities": (
+                ["apply_node_parameters", "reference_image"]
+                if selected_node_ids is not None
+                else ["open_workflow", "apply_node_parameters", "reference_image"]
+            ),
         }
+        if selected_node_ids is not None:
+            material["selection"] = {"scope": "nodes", "node_ids": selected_node_ids}
         await asyncio.to_thread(_atomic_write_json, resolve_within(materials_dir, filename), material)
     except (AttributeError, ValueError, json.JSONDecodeError):
         return web.json_response({"status": "error", "message": "Could not save image material"}, status=400)
@@ -378,7 +438,7 @@ async def api_get_material_full(request):
     return web.json_response({
         "status": "success",
         "data": material,
-        "node_blocks": _node_blocks(material["workflow"], include_values=True),
+        "node_blocks": _material_node_blocks(material, include_values=True),
     })
 
 
@@ -395,7 +455,7 @@ async def api_get_materials_by_node_type(request):
                 material = _read_material(resolve_within(materials_dir, summary["filename"]))
             except (OSError, ValueError, json.JSONDecodeError):
                 continue
-            blocks = [block for block in _node_blocks(material["workflow"], include_values=True) if block["type"] == node_type]
+            blocks = [block for block in _material_node_blocks(material, include_values=True) if block["type"] == node_type]
             if blocks:
                 matches.append({
                     "filename": summary["filename"],

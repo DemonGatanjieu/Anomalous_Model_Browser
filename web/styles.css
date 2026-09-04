@@ -5059,6 +5059,20 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: rgba(5, 7, 11, 0.22);
 }
 
+.anomalous-material-node-detail.is-selected {
+    border-color: rgba(45, 212, 191, 0.34);
+    background: rgba(45, 212, 191, 0.045);
+}
+
+.anomalous-material-node-select {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    margin: 0;
+    accent-color: #2dd4bf;
+    cursor: pointer;
+}
+
 .anomalous-material-node-detail > summary {
     display: flex;
     align-items: center;
@@ -5081,6 +5095,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-material-node-heading {
     display: flex;
     min-width: 0;
+    flex: 1;
     flex-direction: column;
     gap: 1px;
 }
@@ -6166,6 +6181,23 @@ dialog.anomalous-gallery-viewer::backdrop {
     gap: 6px;
 }
 
+.anomalous-workbench-node-selection-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 8px 10px;
+    border: 1px solid rgba(45, 212, 191, 0.14);
+    border-radius: 8px;
+    background: rgba(45, 212, 191, 0.035);
+}
+
+.anomalous-workbench-node-selection-count {
+    flex: 1 1 180px;
+    color: #8fa0b5;
+    font-size: 0.7rem;
+}
+
 /* Sticky Footer Snapshot Drawer */
 .anomalous-workbench-inspector-footer {
     flex-shrink: 0;
@@ -6176,13 +6208,62 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-workbench-save-row {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     align-items: center;
 }
 
+.anomalous-workbench-save-scope-wrap {
+    display: flex;
+    flex: 0 1 175px;
+    min-width: 145px;
+    flex-direction: column;
+    gap: 3px;
+    color: #7f8a9d;
+    font-size: 0.65rem;
+}
+
+.anomalous-workbench-save-scope {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 9px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    background: #151821;
+    color: #dbe3ee;
+    font-size: 0.74rem;
+    outline: none;
+}
+
 .anomalous-workbench-save-input-wrap {
-    flex: 1;
+    display: flex;
+    flex: 1 1 220px;
     min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.anomalous-workbench-save-selection-hint {
+    min-height: 1em;
+    color: #748196;
+    font-size: 0.62rem;
+    line-height: 1.25;
+}
+
+.anomalous-material-scope-badge {
+    align-self: flex-start;
+    padding: 2px 7px;
+    border: 1px solid rgba(45, 212, 191, 0.22);
+    border-radius: 999px;
+    background: rgba(45, 212, 191, 0.07);
+    color: #80d8ca;
+    font-size: 0.65rem;
+}
+
+.anomalous-material-card-use-hint {
+    flex: 1;
+    color: #8591a5;
+    font-size: 0.68rem;
 }
 
 .anomalous-workbench-save-input-wrap input {

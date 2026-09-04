@@ -137,6 +137,9 @@ function renderMaterialCard(owner, material) {
     const body = document.createElement('div');
     body.className = 'anomalous-material-card-body';
     text(body, 'h3', material.name || t('materialUntitled'));
+    if (material.selection?.scope === 'nodes') {
+        text(body, 'span', t('materialSelectedNodeMaterial'), 'anomalous-material-scope-badge');
+    }
     text(body, 'p', t('materialNodeSummary', { count: material.node_count || 0 }), 'anomalous-material-muted');
     if (Array.isArray(material.node_types) && material.node_types.length) {
         text(body, 'small', material.node_types.slice(0, 5).join(' · '), 'anomalous-material-types');
@@ -145,18 +148,22 @@ function renderMaterialCard(owner, material) {
 
     const actions = document.createElement('div');
     actions.className = 'anomalous-material-card-actions';
-    const open = text(actions, 'button', `🚀 ${t('materialOpenWorkflow')}`, 'anomalous-btn-primary');
-    open.type = 'button';
-    open.onclick = async () => {
-        open.disabled = true;
-        try {
-            await openMaterialWorkflow(owner, material.filename);
-        } catch (error) {
-            console.error('Could not open material workflow:', error);
-            await anomalousAlert(t('materialOpenError'));
-            open.disabled = false;
-        }
-    };
+    if ((material.capabilities || []).includes('open_workflow')) {
+        const open = text(actions, 'button', `🚀 ${t('materialOpenWorkflow')}`, 'anomalous-btn-primary');
+        open.type = 'button';
+        open.onclick = async () => {
+            open.disabled = true;
+            try {
+                await openMaterialWorkflow(owner, material.filename);
+            } catch (error) {
+                console.error('Could not open material workflow:', error);
+                await anomalousAlert(t('materialOpenError'));
+                open.disabled = false;
+            }
+        };
+    } else {
+        text(actions, 'span', t('materialUseFromNodeAssistant'), 'anomalous-material-card-use-hint');
+    }
     const remove = text(actions, 'button', '🗑️', 'anomalous-btn-ghost');
     remove.type = 'button';
     remove.title = t('materialDelete');
@@ -230,10 +237,10 @@ export async function showMaterials() {
  * Direct client-side PNG chunk parser to safely extract embedded ComfyUI metadata
  * without requiring a server reboot or server-side re-encoding.
  */
-export async function parsePngMetadataFromUrl(url) {
+export async function parsePngMetadataFromUrl(url, options = {}) {
     if (!url) return null;
     try {
-        const response = await fetch(url);
+        const response = await fetch(url, { cache: 'force-cache', signal: options.signal });
         if (!response.ok) return null;
         const buffer = await response.arrayBuffer();
         const view = new DataView(buffer);
@@ -289,6 +296,7 @@ export async function parsePngMetadataFromUrl(url) {
         }
         return result.workflow || result.prompt || null;
     } catch (e) {
+        if (e?.name === 'AbortError') return null;
         console.warn('Client-side PNG metadata read skipped:', e);
         return null;
     }
@@ -487,7 +495,7 @@ function formatMaterialParameterValue(value) {
     try { return JSON.stringify(value, null, 2); } catch (error) { return String(value); }
 }
 
-export function renderDetailedNodeCards(parent, blocks) {
+export function renderDetailedNodeCards(parent, blocks, options = {}) {
     const list = document.createElement('div');
     list.className = 'anomalous-material-node-list';
 
@@ -495,6 +503,22 @@ export function renderDetailedNodeCards(parent, blocks) {
         const node = document.createElement('details');
         node.className = 'anomalous-material-node-detail';
         const summary = document.createElement('summary');
+        if (options.selectable) {
+            const select = document.createElement('input');
+            select.type = 'checkbox';
+            select.className = 'anomalous-material-node-select';
+            select.dataset.nodeId = String(block.node_id);
+            select.checked = options.selectedIds?.has(String(block.node_id)) || false;
+            select.title = t('materialSelectNodeForSaving');
+            select.setAttribute('aria-label', t('materialSelectNodeForSaving'));
+            select.addEventListener('click', event => event.stopPropagation());
+            select.addEventListener('change', () => {
+                options.onSelectionChange?.(block, select.checked);
+                node.classList.toggle('is-selected', select.checked);
+            });
+            node.classList.toggle('is-selected', select.checked);
+            summary.appendChild(select);
+        }
         const heading = document.createElement('span');
         heading.className = 'anomalous-material-node-heading';
         text(heading, 'strong', materialNodeHeading(block));
