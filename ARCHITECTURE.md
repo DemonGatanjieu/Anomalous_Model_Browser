@@ -73,7 +73,7 @@ DOM or live LiteGraph state.
   native command/keybinding integration.
 - `ui_sidebar.js`, `ui_grid.js`, `ui_detail.js`, and `ui_gallery.js` own the
   primary model-browser surfaces.
-- `ui_gallery_detail.js` owns the full-screen / studio Image Detail Workbench,
+- `ui_gallery_detail.js` owns the studio modal Image Detail Workbench,
   multi-dimensional image navigation (keyboard shortcuts, floating glass arrows,
   left vertical thumbnail rail), and segmented Bento parameter inspection with ComfyUI
   canvas injection (`app.loadGraphData`).

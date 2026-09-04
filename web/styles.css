@@ -5327,7 +5327,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 /* ==========================================================================
-   Image Detail Studio Workbench (Professional Fullscreen & Bento Design)
+   Image Detail Studio Workbench (Studio Windowed Modal & Bento Design)
    ========================================================================== */
 
 .anomalous-workbench-overlay {
@@ -5339,8 +5339,10 @@ dialog.anomalous-gallery-viewer::backdrop {
     justify-content: center;
     width: 100vw;
     height: 100vh;
-    background: rgba(3, 4, 7, 0.94);
-    backdrop-filter: blur(20px);
+    padding: clamp(16px, 2.5vw, 24px);
+    box-sizing: border-box;
+    background: rgba(3, 4, 7, 0.88);
+    backdrop-filter: blur(16px);
     overflow: hidden;
     user-select: none;
 }
@@ -5350,27 +5352,17 @@ dialog.anomalous-gallery-viewer::backdrop {
     pointer-events: none;
 }
 
-.anomalous-workbench-overlay.is-windowed {
-    padding: 24px;
-}
-
 .anomalous-workbench-dialog {
     position: relative;
     display: flex;
     flex-direction: column;
-    width: 100vw;
-    height: 100vh;
-    background: #0b0d14;
-    overflow: hidden;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.anomalous-workbench-overlay.is-windowed .anomalous-workbench-dialog {
     width: min(1600px, 96vw);
     height: min(940px, 94vh);
+    background: #0b0d14;
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 32px 96px rgba(0, 0, 0, 0.88), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    overflow: hidden;
 }
 
 /* Workbench Top Header */

@@ -2,7 +2,7 @@
  * ui_gallery_detail.js
  * Professional Image Detail Studio Workbench for ComfyUI.
  * Features:
- * - Fullscreen studio workspace / windowed modal toggle
+ * - Studio modal workspace covering most of viewport with blurred backdrop
  * - Prev / Next image navigation (keyboard arrows, floating glass arrows, counter jump)
  * - Collapsible left thumbnail rail with smooth vertical auto-centering
  * - High-speed in-memory LRU metadata cache (imageMetadataCache)
@@ -232,17 +232,6 @@ function buildWorkbenchHeader(item, index, total, onNavigate) {
         if (wb.filmstripEl) wb.filmstripEl.classList.toggle('is-hidden', !wb.isFilmstripVisible);
     };
     rightWrap.appendChild(filmstripToggle);
-
-    // Fullscreen / Windowed toggle
-    const fsToggle = document.createElement('button');
-    fsToggle.type = 'button';
-    fsToggle.className = 'anomalous-workbench-tool-btn';
-    fsToggle.innerHTML = wb?.isFullscreen ? '⛶' : '🗖';
-    fsToggle.title = wb?.isFullscreen
-        ? (t('workbenchWindowed') || '窗口模式')
-        : (t('workbenchFullscreen') || '全屏工作台');
-    fsToggle.onclick = () => toggleWorkbenchFullscreen(fsToggle);
-    rightWrap.appendChild(fsToggle);
 
     // Close button
     const closeBtn = document.createElement('button');
@@ -683,24 +672,6 @@ function buildWorkflowNodesSection(blocks, clientWorkflow) {
     updateSelection();
 
     return wrap;
-}
-
-/**
- * Toggle Fullscreen vs Windowed modal
- */
-function toggleWorkbenchFullscreen(btnEl) {
-    if (!wb || !wb.overlay) return;
-    wb.isFullscreen = !wb.isFullscreen;
-    wb.overlay.classList.toggle('is-windowed', !wb.isFullscreen);
-    if (btnEl) {
-        btnEl.innerHTML = wb.isFullscreen ? '⛶' : '🗖';
-        btnEl.title = wb.isFullscreen
-            ? (t('workbenchWindowed') || '窗口模式')
-            : (t('workbenchFullscreen') || '全屏工作台');
-    }
-    try {
-        localStorage.setItem('anomalous_workbench_fullscreen', wb.isFullscreen ? '1' : '0');
-    } catch (_) {}
 }
 
 /**
@@ -1222,13 +1193,6 @@ export async function showImageWorkbench(owner, sourceImage, imageUrl, options =
         }
     }
 
-    // Determine initial fullscreen state from preferences
-    let isFullscreen = true;
-    try {
-        const savedFs = localStorage.getItem('anomalous_workbench_fullscreen');
-        if (savedFs === '0') isFullscreen = false;
-    } catch (_) {}
-
     // Initialize workbench singleton
     wb = {
         owner,
@@ -1236,7 +1200,6 @@ export async function showImageWorkbench(owner, sourceImage, imageUrl, options =
         currentIndex,
         loadMore: options.loadMore || null,
         activeTab: 'specs',
-        isFullscreen,
         isFilmstripVisible: true,
         inspectingModel: false,
         abortController: null,
@@ -1247,7 +1210,7 @@ export async function showImageWorkbench(owner, sourceImage, imageUrl, options =
 
     // 1. Overlay container
     const overlay = document.createElement('div');
-    overlay.className = isFullscreen ? 'anomalous-workbench-overlay' : 'anomalous-workbench-overlay is-windowed';
+    overlay.className = 'anomalous-workbench-overlay';
     overlay.id = 'anomalous-workbench-overlay';
     wb.overlay = overlay;
 
@@ -1374,9 +1337,6 @@ export async function showImageWorkbench(owner, sourceImage, imageUrl, options =
         } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
             e.preventDefault();
             if (wb.currentIndex < wb.items.length - 1) loadWorkbenchImage(wb.currentIndex + 1);
-        } else if (e.key === 'f' || e.key === 'F') {
-            e.preventDefault();
-            toggleWorkbenchFullscreen();
         }
     };
 
@@ -1384,7 +1344,7 @@ export async function showImageWorkbench(owner, sourceImage, imageUrl, options =
     window.addEventListener('keydown', onKeyDown);
 
     overlay.addEventListener('click', (e) => {
-        if (e.target === overlay && !wb.isFullscreen) dismissWorkbench();
+        if (e.target === overlay) dismissWorkbench();
     });
 
     // Start loading current item metadata
