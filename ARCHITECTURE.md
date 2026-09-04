@@ -75,7 +75,7 @@ DOM or live LiteGraph state.
   primary model-browser surfaces.
 - `ui_gallery_detail.js` owns the full-screen / studio Image Detail Workbench,
   multi-dimensional image navigation (keyboard shortcuts, floating glass arrows,
-  bottom filmstrip rail), and segmented Bento parameter inspection with ComfyUI
+  left vertical thumbnail rail), and segmented Bento parameter inspection with ComfyUI
   canvas injection (`app.loadGraphData`).
 - `ui_notebooks.js`, `ui_recipes.js`, and `ui_recipe_detail.js` own Workspace
   presentation, featuring Bento-style visual cards, quick spec tags, real-time environment readiness indicators (🟢/🟡/🔴), one-click batch model matching, and lazy DOM rendering for node parameter trees.

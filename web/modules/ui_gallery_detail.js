@@ -4,7 +4,7 @@
  * Features:
  * - Fullscreen studio workspace / windowed modal toggle
  * - Prev / Next image navigation (keyboard arrows, floating glass arrows, counter jump)
- * - Collapsible bottom thumbnail filmstrip with smooth auto-centering
+ * - Collapsible left thumbnail rail with smooth vertical auto-centering
  * - High-speed in-memory LRU metadata cache (imageMetadataCache)
  * - Preloading of adjacent images and AbortController request cancellation
  * - Segmented Bento Inspector: Key Specs Bento grid, Prompts Station, Models & LoRA with weight pills, Node structure
@@ -225,7 +225,7 @@ function buildWorkbenchHeader(item, index, total, onNavigate) {
         ? 'anomalous-workbench-tool-btn is-active'
         : 'anomalous-workbench-tool-btn';
     filmstripToggle.innerHTML = '🎞️';
-    filmstripToggle.title = t('workbenchFilmstrip') || '底栏缩略图';
+    filmstripToggle.title = t('workbenchFilmstrip') || (window.anomalous_browser_lang === 'zh' ? '侧栏缩略图' : 'Thumbnail Rail');
     filmstripToggle.onclick = () => {
         wb.isFilmstripVisible = !wb.isFilmstripVisible;
         filmstripToggle.classList.toggle('is-active', wb.isFilmstripVisible);
@@ -338,11 +338,14 @@ function setupStagePanZoom(stage, img) {
 }
 
 /**
- * Build Bottom Filmstrip Rail
+ * Build Left Vertical Filmstrip Rail
  */
 function buildFilmstripRail(items, currentIndex, onNavigate) {
     const rail = document.createElement('div');
     rail.className = 'anomalous-workbench-filmstrip';
+    if (wb && wb.isFilmstripVisible === false) {
+        rail.classList.add('is-hidden');
+    }
 
     const track = document.createElement('div');
     track.className = 'anomalous-workbench-filmstrip-track';
@@ -360,6 +363,11 @@ function buildFilmstripRail(items, currentIndex, onNavigate) {
         thumbImg.alt = '';
         thumbWrap.appendChild(thumbImg);
 
+        const badge = document.createElement('span');
+        badge.className = 'anomalous-workbench-thumb-index';
+        badge.textContent = String(idx + 1);
+        thumbWrap.appendChild(badge);
+
         thumbWrap.onclick = (e) => {
             e.stopPropagation();
             if (idx !== currentIndex) onNavigate(idx);
@@ -367,10 +375,12 @@ function buildFilmstripRail(items, currentIndex, onNavigate) {
 
         track.appendChild(thumbWrap);
 
-        // Auto-center active thumbnail
+        // Auto-center active thumbnail vertically
         if (idx === currentIndex) {
             requestAnimationFrame(() => {
-                thumbWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                setTimeout(() => {
+                    thumbWrap.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+                }, 40);
             });
         }
     });
@@ -758,7 +768,7 @@ async function loadWorkbenchImage(index) {
         thumbs.forEach((el, i) => {
             el.classList.toggle('is-active', i === index);
             if (i === index) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
             }
         });
     }
@@ -1321,14 +1331,15 @@ export async function showImageWorkbench(owner, sourceImage, imageUrl, options =
     zoomBar.append(fitBtn, actualBtn, zoomOutBtn, zoomInBtn);
     stageArea.appendChild(zoomBar);
 
-    // Bottom Filmstrip
+    // 4A. Left Vertical Filmstrip Rail
     const filmstripRail = buildFilmstripRail(items, currentIndex, (idx) => loadWorkbenchImage(idx));
     wb.filmstripEl = filmstripRail;
-    stageArea.appendChild(filmstripRail);
+    bodyContainer.appendChild(filmstripRail);
 
+    // 4B. Center Canvas Stage Area
     bodyContainer.appendChild(stageArea);
 
-    // 4B. Right Inspector Panel
+    // 4C. Right Inspector Panel
     const inspector = document.createElement('div');
     inspector.className = 'anomalous-workbench-inspector';
 
