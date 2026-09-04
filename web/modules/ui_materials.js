@@ -147,9 +147,31 @@ function renderMaterialInspector(content, payload) {
         content.appendChild(models);
     }
 
-    sectionLabel(content, t('materialDetailedNodeParameters', { count: blocks.length }));
+    const blocksHeader = document.createElement('div');
+    blocksHeader.className = 'anomalous-material-blocks-header';
+    sectionLabel(blocksHeader, t('materialDetailedNodeParameters', { count: blocks.length }));
+
+    if (blocks.length > 1) {
+        let allOpen = true;
+        const toggleAllBtn = document.createElement('button');
+        toggleAllBtn.type = 'button';
+        toggleAllBtn.className = 'anomalous-material-toggle-all-btn';
+        toggleAllBtn.textContent = t('materialCollapseAll') || '全部收起';
+        toggleAllBtn.onclick = () => {
+            allOpen = !allOpen;
+            content.querySelectorAll('.anomalous-material-node-detail').forEach(d => {
+                d.open = allOpen;
+            });
+            toggleAllBtn.textContent = allOpen
+                ? (t('materialCollapseAll') || '全部收起')
+                : (t('materialExpandAllNodes') || '全部展开');
+        };
+        blocksHeader.appendChild(toggleAllBtn);
+    }
+    content.appendChild(blocksHeader);
+
     if (blocks.length) {
-        renderDetailedNodeCards(content, blocks);
+        renderDetailedNodeCards(content, blocks, { defaultOpen: true });
     } else {
         text(content, 'p', t('materialNoNodeParameters'), 'anomalous-material-muted');
     }
@@ -190,19 +212,10 @@ async function openMaterialWorkflow(owner, filename) {
     window.setTimeout(() => window.anomalous_resolve_all_missing_nodes?.(true, false), 0);
 }
 
-async function showMaterialDetail(owner, material) {
-    owner.materialDetailController?.abort();
-    owner.materialDetailView?.remove();
-    owner.materialDetailView = null;
-    if (owner.materialIntro) owner.materialIntro.style.display = 'none';
-    if (owner.materialList) owner.materialList.style.display = 'none';
-
-    const detail = document.createElement('section');
-    detail.className = 'anomalous-library-detail-view';
-    owner.materialDetailView = detail;
-
+function buildMaterialDetailHeader(owner, material) {
     const header = document.createElement('header');
     header.className = 'anomalous-library-detail-header';
+
     const back = text(header, 'button', `← ${t('materialBackToLibrary')}`, 'anomalous-library-detail-back');
     back.type = 'button';
     back.onclick = () => leaveMaterialDetail(owner);
@@ -239,18 +252,21 @@ async function showMaterialDetail(owner, material) {
     remove.type = 'button';
     remove.onclick = () => deleteMaterial(owner, material);
     header.appendChild(headerActions);
-    detail.appendChild(header);
 
-    const layout = document.createElement('div');
-    layout.className = 'anomalous-library-detail-layout';
+    return header;
+}
+
+function buildMaterialMediaStage(owner, material, sourceNameElement) {
     const media = document.createElement('aside');
     media.className = 'anomalous-library-detail-media';
     const previewUrl = materialAssetUrl(material.filename, material.image?.preview_asset_id || material.image?.source_asset_id);
     const sourceUrl = materialAssetUrl(material.filename, material.image?.source_asset_id || material.image?.preview_asset_id);
+
     const imageStage = document.createElement('button');
     imageStage.className = 'anomalous-library-detail-image-stage';
     imageStage.type = 'button';
     imageStage.title = t('materialOpenSourceImage');
+
     if (previewUrl) {
         const image = document.createElement('img');
         image.src = previewUrl;
@@ -263,24 +279,53 @@ async function showMaterialDetail(owner, material) {
         imageStage.disabled = true;
     }
     media.appendChild(imageStage);
+
     const sourceMeta = document.createElement('div');
     sourceMeta.className = 'anomalous-library-detail-source';
     const sourceCopy = document.createElement('div');
     sourceCopy.className = 'anomalous-library-detail-source-copy';
     text(sourceCopy, 'span', t('materialSourceImage'));
-    const sourceNameElement = text(sourceCopy, 'strong', t('loading'));
+    sourceCopy.appendChild(sourceNameElement);
     sourceMeta.appendChild(sourceCopy);
+
     const openSource = text(sourceMeta, 'button', t('materialOpenSourceImage'), 'anomalous-library-detail-source-open');
     openSource.type = 'button';
     openSource.disabled = !sourceUrl;
     openSource.onclick = () => owner.showGalleryViewer?.(sourceUrl);
+    sourceMeta.appendChild(openSource);
+
     media.appendChild(sourceMeta);
+    return media;
+}
+
+async function showMaterialDetail(owner, material) {
+    owner.materialDetailController?.abort();
+    owner.materialDetailView?.remove();
+    owner.materialDetailView = null;
+    if (owner.materialIntro) owner.materialIntro.style.display = 'none';
+    if (owner.materialList) owner.materialList.style.display = 'none';
+
+    const detail = document.createElement('section');
+    detail.className = 'anomalous-library-detail-view';
+    owner.materialDetailView = detail;
+
+    const sourceNameElement = document.createElement('strong');
+    sourceNameElement.textContent = t('loading');
+
+    const header = buildMaterialDetailHeader(owner, material);
+    detail.appendChild(header);
+
+    const layout = document.createElement('div');
+    layout.className = 'anomalous-library-detail-layout';
+
+    const media = buildMaterialMediaStage(owner, material, sourceNameElement);
     layout.appendChild(media);
 
     const inspector = document.createElement('main');
     inspector.className = 'anomalous-library-detail-inspector';
     text(inspector, 'p', t('loading'), 'anomalous-material-muted');
     layout.appendChild(inspector);
+
     detail.appendChild(layout);
     owner.materialView.appendChild(detail);
 
@@ -308,6 +353,37 @@ async function showMaterialDetail(owner, material) {
 function renderMaterialCard(owner, material) {
     const card = document.createElement('article');
     card.className = 'anomalous-material-card';
+    card.title = t('materialViewDetails') || '点击查看详细参数';
+    card.onclick = () => showMaterialDetail(owner, material);
+
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'anomalous-material-card-delete';
+    remove.innerHTML = '🗑️';
+    remove.title = t('materialDelete');
+    remove.onclick = (e) => {
+        e.stopPropagation();
+        deleteMaterial(owner, material);
+    };
+    card.appendChild(remove);
+
+    if ((material.capabilities || []).includes('open_workflow')) {
+        const quickOpen = document.createElement('button');
+        quickOpen.type = 'button';
+        quickOpen.className = 'anomalous-material-card-quick-load';
+        quickOpen.innerHTML = '🚀';
+        quickOpen.title = t('materialOpenWorkflow');
+        quickOpen.onclick = async (e) => {
+            e.stopPropagation();
+            try {
+                await openMaterialWorkflow(owner, material.filename);
+            } catch (error) {
+                await anomalousAlert(t('materialOpenError'));
+            }
+        };
+        card.appendChild(quickOpen);
+    }
+
     const preview = document.createElement('div');
     preview.className = 'anomalous-material-card-preview';
     const previewUrl = materialAssetUrl(material.filename, material.image?.preview_asset_id || material.image?.source_asset_id);
@@ -326,30 +402,28 @@ function renderMaterialCard(owner, material) {
     body.className = 'anomalous-material-card-body';
     const cardTitle = text(body, 'h3', material.name || t('materialUntitled'));
     cardTitle.title = material.name || t('materialUntitled');
+
     const metadata = document.createElement('div');
     metadata.className = 'anomalous-material-card-meta';
     if (material.selection?.scope === 'nodes') {
-        text(metadata, 'span', t('materialSelectedNodeMaterial'), 'anomalous-material-scope-badge');
+        const isPromptOnly = Array.isArray(material.node_types) &&
+            material.node_types.length > 0 &&
+            material.node_types.every(tp => /cliptextencode/i.test(tp));
+        const badgeText = isPromptOnly
+            ? `💬 ${t('materialPromptNode') || '提示词'}`
+            : t('materialSelectedNodeMaterial');
+        text(metadata, 'span', badgeText, 'anomalous-material-scope-badge is-nodes');
     } else {
         text(metadata, 'span', t('materialFullWorkflowMaterial'), 'anomalous-material-scope-badge is-workflow');
     }
     text(metadata, 'span', t('materialNodeSummary', { count: material.node_count || 0 }), 'anomalous-material-meta-pill');
     body.appendChild(metadata);
+
     if (Array.isArray(material.node_types) && material.node_types.length) {
         text(body, 'small', material.node_types.slice(0, 5).join(' · '), 'anomalous-material-types');
     }
     card.appendChild(body);
 
-    const actions = document.createElement('div');
-    actions.className = 'anomalous-material-card-actions';
-    const inspect = text(actions, 'button', `⚙️ ${t('materialViewDetails')}`, 'anomalous-btn-primary');
-    inspect.type = 'button';
-    inspect.onclick = () => showMaterialDetail(owner, material);
-    const remove = text(actions, 'button', '🗑️', 'anomalous-btn-ghost');
-    remove.type = 'button';
-    remove.title = t('materialDelete');
-    remove.onclick = () => deleteMaterial(owner, material);
-    card.appendChild(actions);
     return card;
 }
 
@@ -666,114 +740,200 @@ function formatMaterialParameterValue(value) {
     try { return JSON.stringify(value, null, 2); } catch (error) { return String(value); }
 }
 
+function isPromptBlock(block) {
+    const type = String(block?.type || '').toLowerCase();
+    return (type.includes('cliptextencode') || type.includes('prompt')) &&
+        Array.isArray(block.widgets_values) &&
+        block.widgets_values.length > 0 &&
+        typeof block.widgets_values[0] === 'string';
+}
+
+function renderPromptBlock(content, block, widgetValues) {
+    const promptWrap = document.createElement('div');
+    promptWrap.className = 'anomalous-material-prompt-station';
+
+    const promptText = String(widgetValues[0] || '').trim();
+    const charCount = promptText.length;
+
+    const bar = document.createElement('div');
+    bar.className = 'anomalous-material-prompt-bar';
+
+    const titleSec = document.createElement('div');
+    titleSec.className = 'anomalous-material-prompt-title-sec';
+    text(titleSec, 'span', `💬 ${t('materialPromptNode') || '提示词'}`, 'anomalous-material-prompt-title');
+    text(titleSec, 'span', `${charCount} chars`, 'anomalous-material-prompt-count');
+    bar.appendChild(titleSec);
+
+    const copyPromptBtn = text(bar, 'button', t('materialCopyNodeParameters') || '复制提示词', 'anomalous-material-copy-prompt-btn');
+    copyPromptBtn.type = 'button';
+    copyPromptBtn.onclick = (e) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(promptText).then(() => {
+            copyPromptBtn.textContent = t('materialPromptCopied') || '已复制提示词!';
+            setTimeout(() => {
+                copyPromptBtn.textContent = t('materialCopyNodeParameters') || '复制提示词';
+            }, 1200);
+        });
+    };
+    promptWrap.appendChild(bar);
+
+    const body = document.createElement('div');
+    body.className = 'anomalous-material-prompt-body';
+    body.textContent = promptText || t('materialNoWidgetParameters');
+    promptWrap.appendChild(body);
+
+    content.appendChild(promptWrap);
+}
+
+function renderNodeParameterRows(content, block, widgetValues) {
+    const labels = comfyWidgetLabels(block.type);
+    const volatileIndexes = new Set(Array.isArray(block.volatile_widget_indexes) ? block.volatile_widget_indexes : []);
+    if (!widgetValues.length) {
+        text(content, 'p', t('materialNoWidgetParameters'), 'anomalous-material-muted');
+        return;
+    }
+    widgetValues.forEach((value, index) => {
+        const row = document.createElement('div');
+        row.className = 'anomalous-material-parameter-row';
+        const labelWrap = document.createElement('div');
+        labelWrap.className = 'anomalous-material-parameter-label';
+        text(labelWrap, 'span', labels[index] || t('materialWidgetIndex', { index: index + 1 }));
+        text(labelWrap, 'code', `#${index}`);
+        if (volatileIndexes.has(index)) {
+            text(labelWrap, 'span', t('materialVolatileParameter'), 'anomalous-material-volatile-badge');
+        }
+        const valueText = text(row, 'pre', formatMaterialParameterValue(value), 'anomalous-material-parameter-value');
+        valueText.title = t('materialParameterFullValue');
+        row.prepend(labelWrap);
+        content.appendChild(row);
+    });
+}
+
+function renderNodeProperties(content, properties) {
+    const props = properties && typeof properties === 'object' ? properties : {};
+    if (!Object.keys(props).length) return;
+    const row = document.createElement('div');
+    row.className = 'anomalous-material-parameter-row';
+    const labelWrap = document.createElement('div');
+    labelWrap.className = 'anomalous-material-parameter-label';
+    text(labelWrap, 'span', t('materialNodeProperties'));
+    const propertyValue = document.createElement('pre');
+    propertyValue.className = 'anomalous-material-parameter-value';
+    propertyValue.textContent = formatMaterialParameterValue(props);
+    row.append(labelWrap, propertyValue);
+    content.appendChild(row);
+}
+
+function renderNodeCardContent(node, block, widgetValues) {
+    const content = document.createElement('div');
+    content.className = 'anomalous-material-node-parameter-content';
+
+    const meta = document.createElement('div');
+    meta.className = 'anomalous-material-node-meta';
+    text(meta, 'span', `${t('materialNodeId')}: ${block.node_id ?? '—'}`);
+    if (block.mode != null) text(meta, 'span', `${t('materialNodeMode')}: ${block.mode}`);
+
+    const copy = text(meta, 'button', t('materialCopyNodeParameters'), 'anomalous-material-mini-btn');
+    copy.type = 'button';
+    copy.onclick = (e) => {
+        e.stopPropagation();
+        const snapshot = {
+            node_id: block.node_id,
+            type: block.type,
+            title: block.title,
+            widgets_values: widgetValues,
+            properties: block.properties || {},
+            mode: block.mode,
+        };
+        navigator.clipboard.writeText(JSON.stringify(snapshot, null, 2)).then(() => {
+            copy.textContent = t('materialCopied');
+            setTimeout(() => { copy.textContent = t('materialCopyNodeParameters'); }, 1200);
+        });
+    };
+    content.appendChild(meta);
+
+    if (isPromptBlock(block)) {
+        renderPromptBlock(content, block, widgetValues);
+        if (widgetValues.length > 1) {
+            renderNodeParameterRows(content, block, widgetValues.slice(1));
+        }
+    } else {
+        renderNodeParameterRows(content, block, widgetValues);
+    }
+
+    renderNodeProperties(content, block.properties);
+    node.appendChild(content);
+}
+
+function renderSingleNodeCard(block, options = {}) {
+    const node = document.createElement('details');
+    node.className = 'anomalous-material-node-detail';
+    const widgetValues = Array.isArray(block.widgets_values) ? block.widgets_values : [];
+
+    const summary = document.createElement('summary');
+    if (options.selectable) {
+        const select = document.createElement('input');
+        select.type = 'checkbox';
+        select.className = 'anomalous-material-node-select';
+        select.dataset.nodeId = String(block.node_id);
+        select.checked = options.selectedIds?.has(String(block.node_id)) || false;
+        select.title = t('materialSelectNodeForSaving');
+        select.setAttribute('aria-label', t('materialSelectNodeForSaving'));
+        select.addEventListener('click', event => event.stopPropagation());
+        select.addEventListener('change', () => {
+            options.onSelectionChange?.(block, select.checked);
+            node.classList.toggle('is-selected', select.checked);
+        });
+        node.classList.toggle('is-selected', select.checked);
+        summary.appendChild(select);
+    }
+
+    const heading = document.createElement('span');
+    heading.className = 'anomalous-material-node-heading';
+    text(heading, 'strong', materialNodeHeading(block));
+    text(heading, 'small', block.type || t('recipeUnknownNode'));
+    summary.prepend(heading);
+
+    text(summary, 'span', t('materialParameterCount', { count: widgetValues.length }), 'anomalous-material-node-count');
+
+    if (typeof options.onSaveBlock === 'function') {
+        const save = text(summary, 'button', t('materialSaveNode'), 'anomalous-material-node-save');
+        save.type = 'button';
+        save.title = t('materialSaveNodeHint');
+        save.addEventListener('click', event => event.stopPropagation());
+        save.addEventListener('click', () => options.onSaveBlock(block, save));
+    }
+    node.appendChild(summary);
+
+    const shouldOpen = options.defaultOpen === true || (options.selectable ? false : true);
+    let rendered = false;
+
+    const renderContentIfNeeded = () => {
+        if (rendered) return;
+        rendered = true;
+        renderNodeCardContent(node, block, widgetValues);
+    };
+
+    if (shouldOpen) {
+        node.open = true;
+        renderContentIfNeeded();
+    }
+
+    node.addEventListener('toggle', () => {
+        if (node.open) renderContentIfNeeded();
+    });
+
+    return node;
+}
+
 export function renderDetailedNodeCards(parent, blocks, options = {}) {
     const list = document.createElement('div');
     list.className = 'anomalous-material-node-list';
-
-    for (const block of blocks) {
-        const node = document.createElement('details');
-        node.className = 'anomalous-material-node-detail';
-        const summary = document.createElement('summary');
-        if (options.selectable) {
-            const select = document.createElement('input');
-            select.type = 'checkbox';
-            select.className = 'anomalous-material-node-select';
-            select.dataset.nodeId = String(block.node_id);
-            select.checked = options.selectedIds?.has(String(block.node_id)) || false;
-            select.title = t('materialSelectNodeForSaving');
-            select.setAttribute('aria-label', t('materialSelectNodeForSaving'));
-            select.addEventListener('click', event => event.stopPropagation());
-            select.addEventListener('change', () => {
-                options.onSelectionChange?.(block, select.checked);
-                node.classList.toggle('is-selected', select.checked);
-            });
-            node.classList.toggle('is-selected', select.checked);
-            summary.appendChild(select);
-        }
-        const heading = document.createElement('span');
-        heading.className = 'anomalous-material-node-heading';
-        text(heading, 'strong', materialNodeHeading(block));
-        text(heading, 'small', block.type || t('recipeUnknownNode'));
-        const widgetValues = Array.isArray(block.widgets_values) ? block.widgets_values : [];
-        text(summary, 'span', t('materialParameterCount', { count: widgetValues.length }), 'anomalous-material-node-count');
-        if (typeof options.onSaveBlock === 'function') {
-            const save = text(summary, 'button', t('materialSaveNode'), 'anomalous-material-node-save');
-            save.type = 'button';
-            save.title = t('materialSaveNodeHint');
-            save.addEventListener('click', event => event.stopPropagation());
-            save.addEventListener('click', () => options.onSaveBlock(block, save));
-        }
-        summary.prepend(heading);
-        node.appendChild(summary);
-
-        let rendered = false;
-        node.addEventListener('toggle', () => {
-            if (!node.open || rendered) return;
-            rendered = true;
-            const content = document.createElement('div');
-            content.className = 'anomalous-material-node-parameter-content';
-
-            const meta = document.createElement('div');
-            meta.className = 'anomalous-material-node-meta';
-            text(meta, 'span', `${t('materialNodeId')}: ${block.node_id ?? '—'}`);
-            if (block.mode != null) text(meta, 'span', `${t('materialNodeMode')}: ${block.mode}`);
-            const copy = text(meta, 'button', t('materialCopyNodeParameters'), 'anomalous-material-mini-btn');
-            copy.type = 'button';
-            copy.onclick = () => {
-                const snapshot = {
-                    node_id: block.node_id,
-                    type: block.type,
-                    title: block.title,
-                    widgets_values: widgetValues,
-                    properties: block.properties || {},
-                    mode: block.mode,
-                };
-                navigator.clipboard.writeText(JSON.stringify(snapshot, null, 2)).then(() => {
-                    copy.textContent = t('materialCopied');
-                    setTimeout(() => { copy.textContent = t('materialCopyNodeParameters'); }, 1200);
-                });
-            };
-            content.appendChild(meta);
-
-            const labels = comfyWidgetLabels(block.type);
-            const volatileIndexes = new Set(Array.isArray(block.volatile_widget_indexes) ? block.volatile_widget_indexes : []);
-            if (!widgetValues.length) {
-                text(content, 'p', t('materialNoWidgetParameters'), 'anomalous-material-muted');
-            }
-            widgetValues.forEach((value, index) => {
-                const row = document.createElement('div');
-                row.className = 'anomalous-material-parameter-row';
-                const labelWrap = document.createElement('div');
-                labelWrap.className = 'anomalous-material-parameter-label';
-                text(labelWrap, 'span', labels[index] || t('materialWidgetIndex', { index: index + 1 }));
-                text(labelWrap, 'code', `#${index}`);
-                if (volatileIndexes.has(index)) {
-                    text(labelWrap, 'span', t('materialVolatileParameter'), 'anomalous-material-volatile-badge');
-                }
-                const valueText = text(row, 'pre', formatMaterialParameterValue(value), 'anomalous-material-parameter-value');
-                valueText.title = t('materialParameterFullValue');
-                row.prepend(labelWrap);
-                content.appendChild(row);
-            });
-
-            const properties = block.properties && typeof block.properties === 'object' ? block.properties : {};
-            if (Object.keys(properties).length) {
-                const row = document.createElement('div');
-                row.className = 'anomalous-material-parameter-row';
-                const labelWrap = document.createElement('div');
-                labelWrap.className = 'anomalous-material-parameter-label';
-                text(labelWrap, 'span', t('materialNodeProperties'));
-                const propertyValue = document.createElement('pre');
-                propertyValue.className = 'anomalous-material-parameter-value';
-                propertyValue.textContent = formatMaterialParameterValue(properties);
-                row.append(labelWrap, propertyValue);
-                content.appendChild(row);
-            }
-            node.appendChild(content);
-        });
-        list.appendChild(node);
-    }
+    blocks.forEach(block => {
+        list.appendChild(renderSingleNodeCard(block, options));
+    });
     parent.appendChild(list);
+    return list;
 }
 
 export async function showImageMaterialDetail(owner, sourceImage, imageUrl, options = {}) {

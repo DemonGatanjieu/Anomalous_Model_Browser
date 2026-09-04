@@ -80,8 +80,10 @@ DOM or live LiteGraph state.
 - `ui_notebooks.js`, `ui_recipes.js`, and `ui_recipe_detail.js` own Workspace
   presentation, featuring Bento-style visual cards, quick spec tags, real-time environment readiness indicators (🟢/🟡/🔴), one-click batch model matching, and lazy DOM rendering for node parameter trees.
 - `ui_materials.js` owns the Workspace Material Library and material CRUD presentation;
-  delegates image inspection to `ui_gallery_detail.js`; Node Assistant remains the owner
-  of applying a material node block.
+  features direct card-click inspection, floating quick actions (delete/workflow load),
+  default-expanded node parameters with dedicated prompt station views (1-click copy),
+  and global collapse/expand toggles; delegates image inspection to `ui_gallery_detail.js`;
+  Node Assistant remains the owner of applying a material node block.
 - `recipe_parser.js`, `recipe_identity.js`, `recipe_diff.js`, and
   `recipe_actions.js` own pure or transactional recipe behavior.
 - `ui_doctor.js`, `model_picker.js`, and `graph_splice.js` own assistant and
