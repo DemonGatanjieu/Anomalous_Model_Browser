@@ -110,10 +110,29 @@ async function fetchMaterial(filename, options = {}) {
     return payload;
 }
 
-function renderExpandedMaterial(content, payload) {
+function renderMaterialInspector(content, payload) {
     const references = Array.isArray(payload.data?.model_references) ? payload.data.model_references : [];
+    const blocks = Array.isArray(payload.node_blocks) ? payload.node_blocks : [];
+
+    const overview = document.createElement('div');
+    overview.className = 'anomalous-library-detail-stats';
+    const nodeStat = document.createElement('div');
+    nodeStat.className = 'anomalous-library-detail-stat';
+    text(nodeStat, 'strong', blocks.length);
+    text(nodeStat, 'span', t('materialParameterNodes'));
+    const modelStat = document.createElement('div');
+    modelStat.className = 'anomalous-library-detail-stat';
+    text(modelStat, 'strong', references.length);
+    text(modelStat, 'span', t('materialModelReferences'));
+    overview.append(nodeStat, modelStat);
+    content.appendChild(overview);
+
+    if (payload.data?.selection?.scope === 'nodes') {
+        text(content, 'p', t('materialUseFromNodeAssistant'), 'anomalous-library-detail-callout');
+    }
+
     if (references.length) {
-        sectionLabel(content, t('materialModelSummary', { count: references.length }));
+        sectionLabel(content, t('materialModelReferences'));
         const models = document.createElement('div');
         models.className = 'anomalous-material-expanded-models';
         for (const reference of references) {
@@ -128,13 +147,37 @@ function renderExpandedMaterial(content, payload) {
         content.appendChild(models);
     }
 
-    const blocks = Array.isArray(payload.node_blocks) ? payload.node_blocks : [];
     sectionLabel(content, t('materialDetailedNodeParameters', { count: blocks.length }));
     if (blocks.length) {
         renderDetailedNodeCards(content, blocks);
     } else {
         text(content, 'p', t('materialNoNodeParameters'), 'anomalous-material-muted');
     }
+}
+
+function leaveMaterialDetail(owner) {
+    owner.materialDetailController?.abort();
+    owner.materialDetailController = null;
+    owner.materialDetailView?.remove();
+    owner.materialDetailView = null;
+    if (owner.materialIntro) owner.materialIntro.style.display = 'flex';
+    if (owner.materialList) owner.materialList.style.display = 'grid';
+}
+
+async function deleteMaterial(owner, material) {
+    if (!await anomalousConfirm(t('materialDeleteConfirm'))) return false;
+    const response = await fetch('/anomalous/delete_material', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: material.filename }),
+    });
+    if (!response.ok) {
+        await anomalousAlert(t('materialDeleteError'));
+        return false;
+    }
+    leaveMaterialDetail(owner);
+    await owner.refreshMaterials?.();
+    return true;
 }
 
 async function openMaterialWorkflow(owner, filename) {
@@ -145,6 +188,121 @@ async function openMaterialWorkflow(owner, filename) {
     owner.closeWorkspace?.();
     owner.close?.();
     window.setTimeout(() => window.anomalous_resolve_all_missing_nodes?.(true, false), 0);
+}
+
+async function showMaterialDetail(owner, material) {
+    owner.materialDetailController?.abort();
+    owner.materialDetailView?.remove();
+    owner.materialDetailView = null;
+    if (owner.materialIntro) owner.materialIntro.style.display = 'none';
+    if (owner.materialList) owner.materialList.style.display = 'none';
+
+    const detail = document.createElement('section');
+    detail.className = 'anomalous-library-detail-view';
+    owner.materialDetailView = detail;
+
+    const header = document.createElement('header');
+    header.className = 'anomalous-library-detail-header';
+    const back = text(header, 'button', `← ${t('materialBackToLibrary')}`, 'anomalous-library-detail-back');
+    back.type = 'button';
+    back.onclick = () => leaveMaterialDetail(owner);
+
+    const heading = document.createElement('div');
+    heading.className = 'anomalous-library-detail-heading';
+    const title = text(heading, 'h2', material.name || t('materialUntitled'));
+    title.title = material.name || t('materialUntitled');
+    text(
+        heading,
+        'span',
+        material.selection?.scope === 'nodes' ? t('materialSelectedNodeMaterial') : t('materialFullWorkflowMaterial'),
+        'anomalous-material-scope-badge',
+    );
+    header.appendChild(heading);
+
+    const headerActions = document.createElement('div');
+    headerActions.className = 'anomalous-library-detail-actions';
+    if ((material.capabilities || []).includes('open_workflow')) {
+        const open = text(headerActions, 'button', `🚀 ${t('materialOpenWorkflow')}`, 'anomalous-btn-primary');
+        open.type = 'button';
+        open.onclick = async () => {
+            open.disabled = true;
+            try {
+                await openMaterialWorkflow(owner, material.filename);
+            } catch (error) {
+                console.error('Could not open material workflow:', error);
+                await anomalousAlert(t('materialOpenError'));
+                open.disabled = false;
+            }
+        };
+    }
+    const remove = text(headerActions, 'button', `🗑️ ${t('materialDelete')}`, 'anomalous-btn-ghost');
+    remove.type = 'button';
+    remove.onclick = () => deleteMaterial(owner, material);
+    header.appendChild(headerActions);
+    detail.appendChild(header);
+
+    const layout = document.createElement('div');
+    layout.className = 'anomalous-library-detail-layout';
+    const media = document.createElement('aside');
+    media.className = 'anomalous-library-detail-media';
+    const previewUrl = materialAssetUrl(material.filename, material.image?.preview_asset_id || material.image?.source_asset_id);
+    const sourceUrl = materialAssetUrl(material.filename, material.image?.source_asset_id || material.image?.preview_asset_id);
+    const imageStage = document.createElement('button');
+    imageStage.className = 'anomalous-library-detail-image-stage';
+    imageStage.type = 'button';
+    imageStage.title = t('materialOpenSourceImage');
+    if (previewUrl) {
+        const image = document.createElement('img');
+        image.src = previewUrl;
+        image.alt = material.name || t('materialUntitled');
+        image.decoding = 'async';
+        imageStage.appendChild(image);
+        imageStage.onclick = () => owner.showGalleryViewer?.(sourceUrl);
+    } else {
+        imageStage.textContent = '🖼️';
+        imageStage.disabled = true;
+    }
+    media.appendChild(imageStage);
+    const sourceMeta = document.createElement('div');
+    sourceMeta.className = 'anomalous-library-detail-source';
+    const sourceCopy = document.createElement('div');
+    sourceCopy.className = 'anomalous-library-detail-source-copy';
+    text(sourceCopy, 'span', t('materialSourceImage'));
+    const sourceNameElement = text(sourceCopy, 'strong', t('loading'));
+    sourceMeta.appendChild(sourceCopy);
+    const openSource = text(sourceMeta, 'button', t('materialOpenSourceImage'), 'anomalous-library-detail-source-open');
+    openSource.type = 'button';
+    openSource.disabled = !sourceUrl;
+    openSource.onclick = () => owner.showGalleryViewer?.(sourceUrl);
+    media.appendChild(sourceMeta);
+    layout.appendChild(media);
+
+    const inspector = document.createElement('main');
+    inspector.className = 'anomalous-library-detail-inspector';
+    text(inspector, 'p', t('loading'), 'anomalous-material-muted');
+    layout.appendChild(inspector);
+    detail.appendChild(layout);
+    owner.materialView.appendChild(detail);
+
+    const controller = new AbortController();
+    owner.materialDetailController = controller;
+    try {
+        const payload = await fetchMaterial(material.filename, { signal: controller.signal });
+        if (owner.materialDetailView !== detail) return;
+        const sourceImage = payload.data?.source?.image || {};
+        const sourceName = sourceImage.filename || material.name || t('materialUntitled');
+        sourceNameElement.textContent = sourceName;
+        sourceNameElement.title = sourceName;
+        inspector.replaceChildren();
+        renderMaterialInspector(inspector, payload);
+    } catch (error) {
+        if (error?.name === 'AbortError') return;
+        console.error('Could not load material detail:', error);
+        inspector.replaceChildren();
+        text(inspector, 'p', t('materialDetailLoadError'), 'anomalous-material-empty');
+    } finally {
+        if (owner.materialDetailController === controller) owner.materialDetailController = null;
+    }
 }
 
 function renderMaterialCard(owner, material) {
@@ -166,11 +324,17 @@ function renderMaterialCard(owner, material) {
 
     const body = document.createElement('div');
     body.className = 'anomalous-material-card-body';
-    text(body, 'h3', material.name || t('materialUntitled'));
+    const cardTitle = text(body, 'h3', material.name || t('materialUntitled'));
+    cardTitle.title = material.name || t('materialUntitled');
+    const metadata = document.createElement('div');
+    metadata.className = 'anomalous-material-card-meta';
     if (material.selection?.scope === 'nodes') {
-        text(body, 'span', t('materialSelectedNodeMaterial'), 'anomalous-material-scope-badge');
+        text(metadata, 'span', t('materialSelectedNodeMaterial'), 'anomalous-material-scope-badge');
+    } else {
+        text(metadata, 'span', t('materialFullWorkflowMaterial'), 'anomalous-material-scope-badge is-workflow');
     }
-    text(body, 'p', t('materialNodeSummary', { count: material.node_count || 0 }), 'anomalous-material-muted');
+    text(metadata, 'span', t('materialNodeSummary', { count: material.node_count || 0 }), 'anomalous-material-meta-pill');
+    body.appendChild(metadata);
     if (Array.isArray(material.node_types) && material.node_types.length) {
         text(body, 'small', material.node_types.slice(0, 5).join(' · '), 'anomalous-material-types');
     }
@@ -178,78 +342,14 @@ function renderMaterialCard(owner, material) {
 
     const actions = document.createElement('div');
     actions.className = 'anomalous-material-card-actions';
-    if ((material.capabilities || []).includes('open_workflow')) {
-        const open = text(actions, 'button', `🚀 ${t('materialOpenWorkflow')}`, 'anomalous-btn-primary');
-        open.type = 'button';
-        open.onclick = async () => {
-            open.disabled = true;
-            try {
-                await openMaterialWorkflow(owner, material.filename);
-            } catch (error) {
-                console.error('Could not open material workflow:', error);
-                await anomalousAlert(t('materialOpenError'));
-                open.disabled = false;
-            }
-        };
-    } else {
-        text(actions, 'span', t('materialUseFromNodeAssistant'), 'anomalous-material-card-use-hint');
-    }
+    const inspect = text(actions, 'button', `⚙️ ${t('materialViewDetails')}`, 'anomalous-btn-primary');
+    inspect.type = 'button';
+    inspect.onclick = () => showMaterialDetail(owner, material);
     const remove = text(actions, 'button', '🗑️', 'anomalous-btn-ghost');
     remove.type = 'button';
     remove.title = t('materialDelete');
-    remove.onclick = async () => {
-        if (!await anomalousConfirm(t('materialDeleteConfirm'))) return;
-        const response = await fetch('/anomalous/delete_material', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ filename: material.filename }),
-        });
-        if (!response.ok) {
-            await anomalousAlert(t('materialDeleteError'));
-            return;
-        }
-        await owner.refreshMaterials?.();
-    };
+    remove.onclick = () => deleteMaterial(owner, material);
     card.appendChild(actions);
-
-    const details = document.createElement('details');
-    details.className = 'anomalous-material-card-details';
-    const summary = document.createElement('summary');
-    summary.textContent = `⚙️ ${t('materialViewParameters')}`;
-    details.appendChild(summary);
-    const detailContent = document.createElement('div');
-    detailContent.className = 'anomalous-material-card-detail-content';
-    details.appendChild(detailContent);
-
-    let requestController = null;
-    details.addEventListener('toggle', async () => {
-        card.classList.toggle('is-expanded', details.open);
-        if (!details.open) {
-            requestController?.abort();
-            requestController = null;
-            detailContent.replaceChildren();
-            return;
-        }
-
-        const controller = new AbortController();
-        requestController = controller;
-        detailContent.replaceChildren();
-        text(detailContent, 'p', t('loading'), 'anomalous-material-muted');
-        try {
-            const payload = await fetchMaterial(material.filename, { signal: controller.signal });
-            if (!details.open) return;
-            detailContent.replaceChildren();
-            renderExpandedMaterial(detailContent, payload);
-        } catch (error) {
-            if (error?.name === 'AbortError') return;
-            console.error('Could not expand material parameters:', error);
-            detailContent.replaceChildren();
-            text(detailContent, 'p', t('materialDetailLoadError'), 'anomalous-material-muted');
-        } finally {
-            if (requestController === controller) requestController = null;
-        }
-    });
-    card.appendChild(details);
     return card;
 }
 
@@ -280,11 +380,13 @@ export async function showMaterials() {
         await this.showNotebooks();
     }
     hideSiblingWorkspaceViews(this);
+    leaveMaterialDetail(this);
     if (!this.materialView) {
         this.materialView = document.createElement('div');
         this.materialView.className = 'anomalous-material-body';
         const intro = document.createElement('div');
         intro.className = 'anomalous-material-intro';
+        this.materialIntro = intro;
         const introCopy = document.createElement('div');
         text(introCopy, 'h3', t('materialLibrary'));
         text(introCopy, 'p', t('materialLibraryHint'), 'anomalous-material-muted');

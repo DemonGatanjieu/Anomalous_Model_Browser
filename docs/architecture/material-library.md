@@ -47,11 +47,13 @@ material action appears only on hover and is hidden during cover selection.
 `ui_doctor.js` owns application to the currently selected node because that
 mutation already belongs to Node Assistant.
 
-Material cards remain summary-only until their parameter disclosure is opened.
-Opening one card fetches `material_full` and shows its scoped model references
-and node blocks; exact widget values remain nested under each node. Collapsing
-the card aborts an unfinished request and releases the expanded payload/DOM so
-closed libraries do not accumulate full workflows in browser memory.
+Material cards remain compact, summary-only discovery items. “View Details”
+switches the library itself to a master-detail inspector: a contained reference
+image stays on the left, while scope, model references, and reusable node blocks
+are grouped on the right; exact widget values remain nested under each node.
+Only the opened material fetches `material_full`. Returning to the list aborts
+an unfinished request and releases the detail payload/DOM so browsing never
+accumulates full workflows in browser memory.
 
 A full material workflow is exact and retains its seed. Node-sized reuse is a
 preset operation and therefore uses the existing transactional parameter
