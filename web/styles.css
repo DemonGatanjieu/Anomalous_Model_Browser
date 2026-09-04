@@ -3651,6 +3651,71 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-material-card-actions { display: flex; gap: 8px; margin-top: auto; padding: 0 14px 14px; }
 .anomalous-material-card-actions .anomalous-btn-primary { flex: 1; }
 
+.anomalous-material-card.is-expanded {
+    grid-column: 1 / -1;
+}
+
+.anomalous-material-card-details {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.anomalous-material-card-details > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 11px 14px;
+    color: #aeb8c8;
+    font-size: 0.76rem;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.anomalous-material-card-details > summary::-webkit-details-marker { display: none; }
+.anomalous-material-card-details > summary:hover { background: rgba(255, 255, 255, 0.035); color: #f2f5f9; }
+.anomalous-material-card-details > summary::after { content: '⌄'; color: #738096; transition: transform 0.15s ease; }
+.anomalous-material-card-details[open] > summary::after { transform: rotate(180deg); }
+
+.anomalous-material-card-detail-content {
+    max-height: min(58vh, 620px);
+    overflow: auto;
+    padding: 4px 14px 16px;
+}
+
+.anomalous-material-expanded-models {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 7px;
+    margin: 8px 0 14px;
+}
+
+.anomalous-material-expanded-model {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 9px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 7px;
+    background: rgba(0, 0, 0, 0.16);
+}
+
+.anomalous-material-expanded-model span {
+    overflow: hidden;
+    color: #cbd4df;
+    font-size: 0.7rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-material-expanded-model small {
+    flex: 0 0 auto;
+    color: #6fcbb7;
+    font-size: 0.62rem;
+}
+
 /* Professional Studio Material Detail Modal */
 .anomalous-material-detail-overlay {
     position: fixed;

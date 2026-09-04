@@ -100,11 +100,41 @@ function hideSiblingWorkspaceViews(owner) {
     owner.notebookMaterialsTab?.classList.add('active');
 }
 
-async function fetchMaterial(filename) {
-    const response = await fetch(`/anomalous/material_full?filename=${encodeURIComponent(filename)}`, { cache: 'no-store' });
+async function fetchMaterial(filename, options = {}) {
+    const response = await fetch(`/anomalous/material_full?filename=${encodeURIComponent(filename)}`, {
+        cache: 'no-store',
+        signal: options.signal,
+    });
     const payload = await jsonResponse(response, 'material load failed');
     if (payload.status !== 'success') throw new Error(payload.message || 'material load failed');
     return payload;
+}
+
+function renderExpandedMaterial(content, payload) {
+    const references = Array.isArray(payload.data?.model_references) ? payload.data.model_references : [];
+    if (references.length) {
+        sectionLabel(content, t('materialModelSummary', { count: references.length }));
+        const models = document.createElement('div');
+        models.className = 'anomalous-material-expanded-models';
+        for (const reference of references) {
+            const item = document.createElement('div');
+            item.className = 'anomalous-material-expanded-model';
+            const rawValue = reference.saved_value || reference.name || t('materialUntitled');
+            const name = text(item, 'span', fileBaseName(rawValue));
+            name.title = String(rawValue);
+            text(item, 'small', reference.category || 'model');
+            models.appendChild(item);
+        }
+        content.appendChild(models);
+    }
+
+    const blocks = Array.isArray(payload.node_blocks) ? payload.node_blocks : [];
+    sectionLabel(content, t('materialDetailedNodeParameters', { count: blocks.length }));
+    if (blocks.length) {
+        renderDetailedNodeCards(content, blocks);
+    } else {
+        text(content, 'p', t('materialNoNodeParameters'), 'anomalous-material-muted');
+    }
 }
 
 async function openMaterialWorkflow(owner, filename) {
@@ -181,6 +211,45 @@ function renderMaterialCard(owner, material) {
         await owner.refreshMaterials?.();
     };
     card.appendChild(actions);
+
+    const details = document.createElement('details');
+    details.className = 'anomalous-material-card-details';
+    const summary = document.createElement('summary');
+    summary.textContent = `⚙️ ${t('materialViewParameters')}`;
+    details.appendChild(summary);
+    const detailContent = document.createElement('div');
+    detailContent.className = 'anomalous-material-card-detail-content';
+    details.appendChild(detailContent);
+
+    let requestController = null;
+    details.addEventListener('toggle', async () => {
+        card.classList.toggle('is-expanded', details.open);
+        if (!details.open) {
+            requestController?.abort();
+            requestController = null;
+            detailContent.replaceChildren();
+            return;
+        }
+
+        const controller = new AbortController();
+        requestController = controller;
+        detailContent.replaceChildren();
+        text(detailContent, 'p', t('loading'), 'anomalous-material-muted');
+        try {
+            const payload = await fetchMaterial(material.filename, { signal: controller.signal });
+            if (!details.open) return;
+            detailContent.replaceChildren();
+            renderExpandedMaterial(detailContent, payload);
+        } catch (error) {
+            if (error?.name === 'AbortError') return;
+            console.error('Could not expand material parameters:', error);
+            detailContent.replaceChildren();
+            text(detailContent, 'p', t('materialDetailLoadError'), 'anomalous-material-muted');
+        } finally {
+            if (requestController === controller) requestController = null;
+        }
+    });
+    card.appendChild(details);
     return card;
 }
 
