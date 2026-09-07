@@ -29,7 +29,7 @@ from .recipes import (
     _validate_workflow,
     _volatile_widget_indexes,
 )
-from .utils import require_filename, resolve_within
+from .utils import require_filename, resolve_within, atomic_write_json as _atomic_write_json
 
 
 MATERIAL_SCHEMA_VERSION = 1
@@ -57,23 +57,6 @@ def _material_assets_dir(materials_dir, filename, create=False):
     if create:
         os.makedirs(assets_dir, exist_ok=True)
     return assets_dir
-
-
-def _atomic_write_json(path, value):
-    encoded = json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    if len(encoded) > MAX_RECIPE_BYTES:
-        raise ValueError("Material snapshot is too large")
-    target_dir = os.path.dirname(path)
-    fd, temp_path = tempfile.mkstemp(prefix=".material-", suffix=".tmp", dir=target_dir)
-    try:
-        with os.fdopen(fd, "wb") as output:
-            output.write(encoded)
-            output.flush()
-            os.fsync(output.fileno())
-        os.replace(temp_path, path)
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
 
 
 def _read_material(path):
@@ -363,6 +346,24 @@ async def api_inspect_image_material(request):
     })
 
 
+def _persist_material(materials_dir, filename, source_path, material):
+    target = resolve_within(materials_dir, filename)
+    assets_target = _material_assets_dir(materials_dir, filename)
+    if os.path.exists(target) or os.path.exists(assets_target):
+        raise ValueError("Material already exists")
+    with tempfile.TemporaryDirectory(prefix=".save-", dir=materials_dir) as staging:
+        material["image"] = _store_assets(staging, filename, source_path)
+        staged_json = resolve_within(staging, filename)
+        _atomic_write_json(staged_json, material)
+        os.makedirs(os.path.dirname(assets_target), exist_ok=True)
+        os.replace(_material_assets_dir(staging, filename), assets_target)
+        try:
+            os.replace(staged_json, target)
+        except OSError:
+            shutil.rmtree(assets_target)
+            raise
+
+
 async def api_save_image_material(request):
     try:
         payload = await request.json()
@@ -381,9 +382,8 @@ async def api_save_image_material(request):
                 if str(reference.get("node_id")) in selected_id_keys
             ]
         material_id = uuid.uuid4().hex
-        filename = f"material_{int(time.time())}_{material_id[:8]}.json"
+        filename = f"material_{int(time.time())}_{material_id}.json"
         materials_dir = get_materials_dir()
-        image = await asyncio.to_thread(_store_assets, materials_dir, filename, source_path)
         now = int(time.time() * 1000)
         material = {
             "schema_version": MATERIAL_SCHEMA_VERSION,
@@ -392,7 +392,6 @@ async def api_save_image_material(request):
             "name": name,
             "timestamp": now,
             "source": {"type": "generated_image", "image": source},
-            "image": image,
             "workflow": workflow,
             "model_references": references,
             "capabilities": (
@@ -403,7 +402,7 @@ async def api_save_image_material(request):
         }
         if selected_node_ids is not None:
             material["selection"] = {"scope": "nodes", "node_ids": selected_node_ids}
-        await asyncio.to_thread(_atomic_write_json, resolve_within(materials_dir, filename), material)
+        await asyncio.to_thread(_persist_material, materials_dir, filename, source_path, material)
     except (AttributeError, ValueError, json.JSONDecodeError):
         return web.json_response({"status": "error", "message": "Could not save image material"}, status=400)
     except FileNotFoundError:

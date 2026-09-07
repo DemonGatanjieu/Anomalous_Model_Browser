@@ -44,6 +44,7 @@ User-owned data
   user/.../anomalous_recipes         workflow recipes and recipe assets
   user/.../anomalous_parameters      immutable parameter snapshots
   user/.../anomalous_materials       curated image/workflow material bundles
+  user/.../anomalous_notebooks       prompt notes, with legacy originals preserved
 ```
 
 The frontend and backend communicate through narrow JSON contracts. The
@@ -62,6 +63,7 @@ DOM or live LiteGraph state.
 - `api/recipes.py` owns recipe validation, CRUD, history, and integrity receipts.
 - `api/recipe_packages.py` owns bounded inspect-stage-commit package handling.
 - `api/parameters.py` owns Parameter Notebook persistence and lookup.
+- `api/notebooks.py` owns Prompt Note persistence and recoverable legacy copying.
 - `api/materials.py` owns curated material persistence, private image assets,
   and node-type lookup.
 - `model_policies.py` owns shared backend rename and protected-category policy.

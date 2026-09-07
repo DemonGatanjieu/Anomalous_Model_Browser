@@ -14,7 +14,7 @@ import shutil
 from aiohttp import web
 import folder_paths
 import struct
-from .utils import get_active_folder_types, get_folder_view_mode, get_active_physical_basenames, require_filename, resolve_folder_subdir, resolve_within
+from .utils import get_active_folder_types, get_folder_view_mode, get_active_physical_basenames, require_filename, resolve_folder_subdir, resolve_within, atomic_write_json
 try:
     from ..model_policies import is_physical_rename_protected, requires_hash_for_model_recovery
 except ImportError:
@@ -655,8 +655,7 @@ def _compute_and_save_fallback_info(file_path, file_hash):
                 "files": [{"hashes": {"SHA256": file_hash.lower()}}]
             }
         info_data["anomalous_file_identity"] = computed_file_identity(file_path, file_hash)
-        with open(info_path, 'w', encoding='utf-8') as f:
-            json.dump(info_data, f, ensure_ascii=True, indent=4)
+        atomic_write_json(info_path, info_data)
     except Exception:
         pass
 

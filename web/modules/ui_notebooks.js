@@ -231,28 +231,44 @@ export async function refreshNotebooks(autoOpenFirst = false) {
 
 
 export async function saveCurrentNotebook() {
-        if (!this.currentNotebook) return;
+    if (!this.currentNotebook) return false;
+    const body = JSON.stringify(this.currentNotebook);
+    this.notebookSaveQueue = (this.notebookSaveQueue || Promise.resolve()).then(async () => {
         try {
-            await fetch('/anomalous/save_notebook', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(this.currentNotebook)
+            const response = await fetch('/anomalous/save_notebook', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body,
             });
-            this.refreshNotebooks();
-        } catch (e) { }
-    }
-
+            const result = await response.json();
+            if (!response.ok || result.status !== 'success') throw new Error('notebook save failed');
+            this.nbSaveStatus?.remove();
+            this.nbSaveStatus = null;
+            await this.refreshNotebooks();
+            return true;
+        } catch (error) {
+            if (this.nbEditor && !this.nbSaveStatus?.isConnected) {
+                this.nbSaveStatus = document.createElement('p');
+                this.nbSaveStatus.setAttribute('role', 'alert');
+                this.nbEditor.prepend(this.nbSaveStatus);
+            }
+            if (this.nbSaveStatus) this.nbSaveStatus.textContent = t('notebookSaveError');
+            return false;
+        }
+    });
+    return this.notebookSaveQueue;
+}
 
 
 export async function deleteCurrentNotebook(skipConfirm = false) {
         if (!this.currentNotebook) return;
         if (!skipConfirm && !confirm(t('deleteNotebook') + ' ?')) return;
         try {
-            await fetch('/anomalous/delete_notebook', {
+            await this.notebookSaveQueue;
+            const response = await fetch('/anomalous/delete_notebook', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ filename: this.currentNotebook.filename })
             });
+            if (!response.ok || (await response.json()).status !== 'success') throw new Error('notebook delete failed');
             this.currentNotebook = null;
             this.nbEditor.innerHTML = '';
             this.refreshNotebooks();
@@ -284,7 +300,8 @@ export function renderNotebookEditor() {
         saveBtn.onclick = async () => {
             const orig = saveBtn.innerHTML;
             saveBtn.innerHTML = '⏳...';
-            await this.saveCurrentNotebook();
+            const saved = await this.saveCurrentNotebook();
+            if (!saved) { saveBtn.innerHTML = orig; return; }
             saveBtn.innerHTML = '✅';
             saveBtn.style.background = '#2e8b57';
             setTimeout(() => {

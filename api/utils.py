@@ -54,6 +54,22 @@ def require_filename(filename):
     return filename
 
 
+def atomic_write_json(path, value, max_bytes=12 * 1024 * 1024):
+    encoded = json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    if len(encoded) > max_bytes:
+        raise ValueError("JSON record is too large")
+    fd, temporary = tempfile.mkstemp(prefix=".write-", suffix=".tmp", dir=os.path.dirname(path))
+    try:
+        with os.fdopen(fd, "wb") as output:
+            output.write(encoded)
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.remove(temporary)
+
+
 def _thumbnail_cache_directory():
     try:
         base_dir = folder_paths.get_temp_directory()

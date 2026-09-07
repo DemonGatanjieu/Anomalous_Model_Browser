@@ -27,6 +27,11 @@ discarded before caching. Local-model preview resolution is deferred until the
 Models tab is opened and then cached with that image's metadata. Asset reads
 require both a valid material record and a contained private asset path.
 
+Saving stages the image, preview, and JSON together below a private temporary
+directory. Assets are promoted before the record becomes visible. A failed final
+record commit removes only the newly promoted assets; staging is cleaned on exit.
+Existing records and their images are never overwritten by this path.
+
 The route family is:
 
 - `POST /anomalous/inspect_image_material`

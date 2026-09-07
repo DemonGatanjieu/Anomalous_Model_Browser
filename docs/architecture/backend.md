@@ -37,6 +37,15 @@ Workflow Recipes live below the active ComfyUI user directory in
 `workflows/anomalous_parameters`. They are user data, not repository assets.
 Writes validate their bounded schema and use atomic replacement.
 
+Prompt Notes use `workflows/anomalous_notebooks`. First access copies legacy
+`api/notebooks` records without deleting originals or overwriting current notes.
+Conflicts receive a deterministic recovered filename. A completion marker makes
+the copy retryable after write failure and prevents deleted notes reappearing.
+Invalid legacy records remain untouched and are listed in the migration marker.
+Notebook I/O runs in a worker under its persistence lock; the UI queues snapshots
+and reports failed saves instead of showing success. `api.utils.atomic_write_json`
+owns bounded, flushed temporary writes followed by atomic file replacement.
+
 The recipe card endpoint returns lightweight metadata. Full graphs and history
 are fetched only for detail, edit, compare, restore, export, or another operation
 that needs them. Successful save, update, and restore responses include a compact

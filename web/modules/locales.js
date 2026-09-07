@@ -1,5 +1,6 @@
 export const i18n = {
     zh: {
+        notebookSaveError: '保存失败，修改仍留在编辑器中，请重试。',
         title: '📦 Anomalous 模型浏览器',
         scan: '🔄 扫描目录并同步 C 站数据',
         scanTitle: '扫描目录',
@@ -879,6 +880,7 @@ export const i18n = {
         recipeCardSpecsResolution: '尺寸',
     },
     en: {
+        notebookSaveError: 'Save failed. Your edits remain in the editor; please retry.',
         title: '📦 Anomalous Model Browser',
         scan: '🔄 Scan folder and sync Civitai data',
         scanTitle: 'Scan Folder',
