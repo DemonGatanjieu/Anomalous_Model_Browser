@@ -85,6 +85,10 @@ polling after its UI has been reopened.
 
 ## Metadata and cache behavior
 
+The output gallery keeps one ordered directory snapshot for at most ten seconds
+and 50,000 images. Page requests reuse it; explicit refresh and image deletion
+invalidate it immediately. Larger inventories are returned normally but not cached.
+
 Metadata and embedded safetensors-header hashes may be cached only in a bounded
 cache. The key includes the model's real path and the physical `size`, `mtime_ns`,
 and `ctime_ns` signatures of the model and relevant sidecars. Return independent

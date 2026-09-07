@@ -15,6 +15,7 @@ import shutil
 import tempfile
 import time
 import uuid
+from functools import lru_cache
 
 from aiohttp import web
 import folder_paths
@@ -298,21 +299,34 @@ def _workflow_hashes_for_blocks(workflow, blocks):
     }
 
 
+@lru_cache(maxsize=4096)
+def _cached_material_summary(path, signature):
+    return _material_summary(os.path.basename(path), _read_material(path))
+
+
+def _summary_for_path(path, stat=None):
+    stat = stat or os.stat(path)
+    signature = (stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
+    return _cached_material_summary(path, signature)
+
+
 def _list_materials(materials_dir):
     result = []
     try:
+        materials_dir = os.path.realpath(materials_dir)
         entries = os.scandir(materials_dir)
     except OSError:
         return result
     with entries:
         for entry in entries:
-            if not entry.is_file() or not entry.name.endswith(".json"):
+            if not entry.is_file() or not entry.name.endswith(".json") or entry.name.startswith("."):
                 continue
             try:
-                result.append(_material_summary(entry.name, _read_material(entry.path)))
-            except (OSError, ValueError, json.JSONDecodeError):
+                path = resolve_within(materials_dir, entry.name) if entry.is_symlink() else entry.path
+                result.append(copy.deepcopy(_summary_for_path(path, entry.stat())))
+            except (OSError, ValueError):
                 continue
-    result.sort(key=lambda item: item.get("timestamp", 0), reverse=True)
+    result.sort(key=lambda item: (item.get("timestamp", 0), item["filename"]), reverse=True)
     return result
 
 
@@ -450,6 +464,8 @@ async def api_get_materials_by_node_type(request):
     def collect():
         matches = []
         for summary in _list_materials(materials_dir):
+            if node_type not in summary["node_types"]:
+                continue
             try:
                 material = _read_material(resolve_within(materials_dir, summary["filename"]))
             except (OSError, ValueError, json.JSONDecodeError):
@@ -477,7 +493,7 @@ async def api_get_material_asset(request):
         if not filename.endswith(".json") or not asset_id.lower().endswith((".png", ".webp")):
             raise ValueError("Invalid material asset")
         materials_dir = get_materials_dir()
-        await asyncio.to_thread(_read_material, resolve_within(materials_dir, filename))
+        await asyncio.to_thread(_summary_for_path, resolve_within(materials_dir, filename))
         asset_path = resolve_within(_material_assets_dir(materials_dir, filename), asset_id)
         if not os.path.isfile(asset_path):
             raise FileNotFoundError

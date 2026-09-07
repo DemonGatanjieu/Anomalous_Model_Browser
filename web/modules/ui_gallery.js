@@ -31,7 +31,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
         this.gallerySentinel.textContent = t('galleryLoading');
 
         try {
-            const res = await fetch(`/anomalous/gallery_images?page=${page}&limit=50`);
+            const res = await fetch(`/anomalous/gallery_images?page=${page}&limit=50${reset ? "&refresh=1" : ""}`);
             const data = await res.json();
 
             if (reset) {

@@ -32,6 +32,12 @@ directory. Assets are promoted before the record becomes visible. A failed final
 record commit removes only the newly promoted assets; staging is cleaned on exit.
 Existing records and their images are never overwritten by this path.
 
+Material discovery caches up to 4,096 summaries, keyed by the contained record's
+real path, size, mtime, and ctime. It never caches full workflows. A directory
+inventory detects additions/deletions and re-parses only changed records. Node-type
+lookup filters summaries before opening matching workflows; asset authorization
+uses the same validated summary cache. Callers receive independent summary copies.
+
 The route family is:
 
 - `POST /anomalous/inspect_image_material`

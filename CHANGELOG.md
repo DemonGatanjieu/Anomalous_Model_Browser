@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Reliability
+- Material browsing reuses signature-validated summaries and reads full workflows only for matching node types. Gallery pagination shares a short-lived directory snapshot; refresh and deletion invalidate it immediately.
 - Prompt Notes now use the ComfyUI user directory with recoverable legacy copying, atomic saves, and visible save failures. Material saves stage their files and roll back new assets if persistence fails.
 - File identity now uses full-file SHA-256 only. BLAKE3 and tensor/header digests cannot become verified file identities. Older offline metadata is reverified on demand while preserving personal notes.
 
