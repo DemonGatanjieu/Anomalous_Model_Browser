@@ -1,13 +1,16 @@
 import { translate } from './locales.js';
 
 const t = (key, params) => translate(key, params);
+// Confirmations must remain above the image workbench (z-index: 1000000).
+const DIALOG_Z_INDEX = '1000001';
 
 export function anomalousAlert(message, title = 'Anomalous') {
     return new Promise((resolve) => {
         const overlay = document.createElement('div');
         overlay.style.position = 'fixed';
         overlay.style.inset = '0';
-        overlay.style.zIndex = '999999';
+        overlay.className = 'anomalous-dialog-overlay';
+        overlay.style.zIndex = DIALOG_Z_INDEX;
         overlay.style.display = 'flex';
         overlay.style.alignItems = 'center';
         overlay.style.justifyContent = 'center';
@@ -73,7 +76,8 @@ export function anomalousConfirm(message, title = 'Anomalous', options = {}) {
         const overlay = document.createElement('div');
         overlay.style.position = 'fixed';
         overlay.style.inset = '0';
-        overlay.style.zIndex = '999999';
+        overlay.className = 'anomalous-dialog-overlay';
+        overlay.style.zIndex = DIALOG_Z_INDEX;
         overlay.style.display = 'flex';
         overlay.style.alignItems = 'center';
         overlay.style.justifyContent = 'center';
@@ -156,7 +160,8 @@ export function anomalousPrompt(message, defaultValue = '', title = 'Anomalous',
         const overlay = document.createElement('div');
         overlay.style.position = 'fixed';
         overlay.style.inset = '0';
-        overlay.style.zIndex = '999999';
+        overlay.className = 'anomalous-dialog-overlay';
+        overlay.style.zIndex = DIALOG_Z_INDEX;
         overlay.style.display = 'flex';
         overlay.style.alignItems = 'center';
         overlay.style.justifyContent = 'center';

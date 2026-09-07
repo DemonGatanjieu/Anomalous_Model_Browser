@@ -15,6 +15,7 @@ import shutil
 import tempfile
 import time
 import uuid
+import threading
 from functools import lru_cache
 
 from aiohttp import web
@@ -36,6 +37,7 @@ from .utils import require_filename, resolve_within, atomic_write_json as _atomi
 MATERIAL_SCHEMA_VERSION = 1
 MAX_MATERIAL_NAME_LENGTH = 120
 MAX_SOURCE_IMAGE_BYTES = 64 * 1024 * 1024
+_material_write_lock = threading.RLock()
 MODEL_PRIORITY = {"checkpoint": 0, "unet": 1, "lora": 2}
 
 
@@ -273,6 +275,8 @@ def _material_summary(filename, material):
         "id": material.get("id"),
         "name": material.get("name") or "未命名素材",
         "kind": material.get("kind"),
+        "tags": _normalise_material_tags(material.get("tags") or []),
+        "source_sha256": image.get("source_sha256", ""),
         "timestamp": material.get("timestamp", 0),
         "node_count": len(blocks),
         "node_types": sorted({block["type"] for block in blocks}),
@@ -360,13 +364,39 @@ async def api_inspect_image_material(request):
     })
 
 
-def _persist_material(materials_dir, filename, source_path, material):
+def _normalise_material_tags(tags):
+    if not isinstance(tags, list) or len(tags) > 20:
+        raise ValueError("Invalid material tags")
+    result = []
+    seen = set()
+    for tag in tags:
+        if not isinstance(tag, str) or not tag.strip() or len(tag.strip()) > 60:
+            raise ValueError("Invalid material tag")
+        tag = tag.strip()
+        if tag.casefold() not in seen:
+            result.append(tag)
+            seen.add(tag.casefold())
+    return result
+
+
+def _persist_material(materials_dir, filename, source_path, material, allow_duplicate=False):
+    with _material_write_lock:
+        return _persist_material_files(materials_dir, filename, source_path, material, allow_duplicate)
+
+
+def _persist_material_files(materials_dir, filename, source_path, material, allow_duplicate):
     target = resolve_within(materials_dir, filename)
     assets_target = _material_assets_dir(materials_dir, filename)
     if os.path.exists(target) or os.path.exists(assets_target):
         raise ValueError("Material already exists")
     with tempfile.TemporaryDirectory(prefix=".save-", dir=materials_dir) as staging:
         material["image"] = _store_assets(staging, filename, source_path)
+        if not allow_duplicate:
+            selection = sorted(str(value) for value in (material.get("selection") or {}).get("node_ids", []))
+            for summary in _list_materials(materials_dir):
+                candidate_selection = sorted(str(value) for value in (summary.get("selection") or {}).get("node_ids", []))
+                if summary.get("source_sha256") == material["image"]["source_sha256"] and summary.get("kind") == material.get("kind") and candidate_selection == selection:
+                    return summary
         staged_json = resolve_within(staging, filename)
         _atomic_write_json(staged_json, material)
         os.makedirs(os.path.dirname(assets_target), exist_ok=True)
@@ -387,6 +417,10 @@ async def api_save_image_material(request):
         name = payload.get("name") or suggested_name
         if not isinstance(name, str) or not (name := name.strip()) or len(name) > MAX_MATERIAL_NAME_LENGTH:
             raise ValueError("Invalid material name")
+        tags = _normalise_material_tags(payload.get("tags", []))
+        allow_duplicate = payload.get("allow_duplicate", False)
+        if not isinstance(allow_duplicate, bool):
+            raise ValueError("Invalid duplicate preference")
         selected_node_ids = _normalise_selected_node_ids(workflow, payload.get("selected_node_ids"))
         selected_id_keys = {str(node_id) for node_id in selected_node_ids or []}
         if selected_node_ids is not None:
@@ -404,6 +438,7 @@ async def api_save_image_material(request):
             "id": material_id,
             "kind": "image_node_selection" if selected_node_ids is not None else "image_workflow_snapshot",
             "name": name,
+            "tags": tags,
             "timestamp": now,
             "source": {"type": "generated_image", "image": source},
             "workflow": workflow,
@@ -416,7 +451,9 @@ async def api_save_image_material(request):
         }
         if selected_node_ids is not None:
             material["selection"] = {"scope": "nodes", "node_ids": selected_node_ids}
-        await asyncio.to_thread(_persist_material, materials_dir, filename, source_path, material)
+        duplicate = await asyncio.to_thread(_persist_material, materials_dir, filename, source_path, material, allow_duplicate)
+        if duplicate:
+            return web.json_response({"status": "duplicate", "filename": duplicate["filename"], "name": duplicate["name"]}, status=409)
     except (AttributeError, ValueError, json.JSONDecodeError):
         return web.json_response({"status": "error", "message": "Could not save image material"}, status=400)
     except FileNotFoundError:
@@ -431,9 +468,64 @@ async def api_save_image_material(request):
     })
 
 
+def _query_materials(materials_dir, query):
+    materials = _list_materials(materials_dir)
+    all_tags = sorted({tag for material in materials for tag in material.get("tags", [])}, key=str.casefold)
+    search = query.get("q", "").strip().casefold()
+    tag = query.get("tag", "").strip().casefold()
+    kind = query.get("kind", "")
+    if len(search) > 200 or len(tag) > 60 or kind not in ("", "image_workflow_snapshot", "image_node_selection"):
+        raise ValueError("Invalid material filter")
+    materials = [material for material in materials
+                 if (not search or search in " ".join([material["name"], *material["node_types"], *material.get("tags", [])]).casefold())
+                 and (not tag or tag in [value.casefold() for value in material.get("tags", [])])
+                 and (not kind or material["kind"] == kind)]
+    total = len(materials)
+    limit = min(100, max(1, int(query.get("limit", 48))))
+    pages = max(1, (total + limit - 1) // limit)
+    page = min(pages, max(1, int(query.get("page", 1))))
+    # Existing non-paginated callers retain their response; the library requests pages.
+    if "page" in query or "limit" in query:
+        materials = materials[(page - 1) * limit:page * limit]
+    return {"status": "success", "materials": materials, "total": total,
+            "page": page, "pages": pages, "tags": all_tags}
+
+
 async def api_get_materials(request):
-    materials = await asyncio.to_thread(_list_materials, get_materials_dir())
-    return web.json_response({"status": "success", "materials": materials})
+    try:
+        payload = await asyncio.to_thread(_query_materials, get_materials_dir(), dict(request.query))
+        return web.json_response(payload)
+    except (TypeError, ValueError):
+        return web.json_response({"status": "error", "message": "Invalid material filter"}, status=400)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not list materials"}, status=500)
+
+
+def _update_material_details(materials_dir, filename, name, tags):
+    with _material_write_lock:
+        path = resolve_within(materials_dir, filename)
+        material = _read_material(path)
+        material.update(name=name, tags=tags)
+        _atomic_write_json(path, material)
+        return _material_summary(filename, material)
+
+
+async def api_update_material(request):
+    try:
+        payload = await request.json()
+        filename = require_filename(payload.get("filename", ""))
+        name = payload.get("name", "")
+        if not filename.endswith(".json") or filename.startswith(".") or not isinstance(name, str) or not name.strip() or len(name.strip()) > MAX_MATERIAL_NAME_LENGTH:
+            raise ValueError("Invalid material details")
+        tags = _normalise_material_tags(payload.get("tags", []))
+        material = await asyncio.to_thread(_update_material_details, get_materials_dir(), filename, name.strip(), tags)
+        return web.json_response({"status": "success", "material": material})
+    except (AttributeError, TypeError, ValueError):
+        return web.json_response({"status": "error", "message": "Invalid material details"}, status=400)
+    except FileNotFoundError:
+        return web.json_response({"status": "error", "message": "Material not found"}, status=404)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not update material"}, status=500)
 
 
 async def api_get_material_full(request):
@@ -525,8 +617,9 @@ async def api_delete_material(request):
 
 
 def _delete_material(materials_dir, filename, path):
-    _read_material(path)
-    os.remove(path)
-    assets_dir = _material_assets_dir(materials_dir, filename)
-    if os.path.isdir(assets_dir):
-        shutil.rmtree(assets_dir)
+    with _material_write_lock:
+        _read_material(path)
+        os.remove(path)
+        assets_dir = _material_assets_dir(materials_dir, filename)
+        if os.path.isdir(assets_dir):
+            shutil.rmtree(assets_dir)

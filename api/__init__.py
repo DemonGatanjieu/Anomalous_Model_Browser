@@ -62,6 +62,7 @@ def setup_routes(app):
     app.router.add_post('/anomalous/inspect_image_material', api_inspect_image_material)
     app.router.add_post('/anomalous/save_image_material', api_save_image_material)
     app.router.add_post('/anomalous/delete_material', api_delete_material)
+    app.router.add_post('/anomalous/update_material', api_update_material)
 
     app.router.add_post('/anomalous/translate', api_translate)
     app.router.add_get('/anomalous/base_models', api_base_models)

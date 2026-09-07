@@ -65,7 +65,7 @@ DOM or live LiteGraph state.
 - `api/parameters.py` owns Parameter Notebook persistence and lookup.
 - `api/notebooks.py` owns Prompt Note persistence and recoverable legacy copying.
 - `api/materials.py` owns curated material persistence, private image assets,
-  and node-type lookup.
+  summary search/pagination, editable names/tags, and node-type lookup.
 - `model_policies.py` owns shared backend rename and protected-category policy.
 - `model_identity.py` owns file SHA-256 evidence shared with the standalone scanner.
 
@@ -87,6 +87,9 @@ DOM or live LiteGraph state.
   default-expanded node parameters with dedicated prompt station views (1-click copy),
   and global collapse/expand toggles; delegates image inspection to `ui_gallery_detail.js`;
   Node Assistant remains the owner of applying a material node block.
+- `material_inspector.js` owns shared image-metadata parsing and node-parameter
+  rendering used by the library and Image Detail Workbench. The workbench does
+  not import the library UI.
 - `recipe_parser.js`, `recipe_identity.js`, `recipe_diff.js`, and
   `recipe_actions.js` own pure or transactional recipe behavior.
 - `ui_doctor.js`, `model_picker.js`, and `graph_splice.js` own assistant and

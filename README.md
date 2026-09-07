@@ -83,6 +83,11 @@ Open it with **Ctrl + Shift + M**, the floating **📦** button, or **Extensions
 * **Location**: Top navigation tabs (**Models 📦**, **Gallery 🖼️**, **Workspace 📑**, **Dock Side ◧**).
 * **Usage**: Select a Base Model architecture, attach compatible LoRAs, paste & auto-tag bilingual prompts, and click **Send to Canvas** to deploy directly.
 
+#### 7. Material Library 🖼️
+* **Capture**: Open a generated PNG's parameter details to save its image and complete workflow, or save selected node parameters. Repeated saves of the same image and selection ask before creating another copy.
+* **Find and reuse**: In Workspace → Material Library, search names, tags, or node types; filter by type/tag; edit names and tags in a material's details. Complete snapshots open as workflows; node parameters are applied through Node Assistant.
+* **Storage**: Materials live in the ComfyUI user directory under `workflows/anomalous_materials`. Prompt Notes use `workflows/anomalous_notebooks`; old notes in the extension are copied on first access, retaining the originals.
+
 > [!WARNING]
 > **Beta Data Protection:** Workflow Recipes and Parameter Presets are currently in testing. Please back up `workflows/anomalous_recipes` and `workflows/anomalous_parameters` inside your ComfyUI user directory before updating.
 
@@ -151,6 +156,11 @@ Open it with **Ctrl + Shift + M**, the floating **📦** button, or **Extensions
 #### 6. 创作工作台与提示词笔记 📑
 * **入口位置**：顶部导航栏 (**模型 📦**、**图库 🖼️**、**工作台 📑**、**侧栏停靠 ◧**)。
 * **提示词组装**：选择基础模型架构过滤兼容 LoRA，粘贴提示词并一键双语翻译，点击 **发送到画布** 即可自动连线布署。
+
+#### 7. 素材库 🖼️
+* **保存素材**：打开生成 PNG 的参数详情，可以保存图片与完整工作流，也可以只保存选中节点参数。相同图片和节点范围再次保存时，会先提示是否另存一份。
+* **查找复用**：在「工作台 → 素材库」按名称、标签或节点类型搜索，按类型和标签筛选；进入详情可修改名称与标签。完整素材可打开工作流，节点参数通过节点助手应用。
+* **本地存储**：素材保存在 ComfyUI 用户目录的 `workflows/anomalous_materials`，提示词笔记保存在 `workflows/anomalous_notebooks`。首次访问会复制插件内的旧笔记，并保留原文件。
 
 > [!WARNING]
 > **测试功能数据安全提醒：** 工作流配方与参数预设目前属于测试阶段，更新插件前建议备份 ComfyUI 用户目录下的 `workflows/anomalous_recipes` 与 `workflows/anomalous_parameters` 文件夹。

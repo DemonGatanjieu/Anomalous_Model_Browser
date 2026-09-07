@@ -29,6 +29,10 @@ function restoreWorkspaceReturnPanel(owner) {
 }
 
 export function closeWorkspace() {
+    clearTimeout(this.materialSearchTimer);
+    this.materialListController?.abort();
+    this.materialListController = null;
+    this.materialDetailController?.abort();
     this.recipeDetailFinish?.('closed');
     const abandonedRecipeModel = typeof this.recipeModelReturn === 'function';
     this.recipeModelReturn = null;

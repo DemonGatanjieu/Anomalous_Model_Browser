@@ -3613,13 +3613,50 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-material-muted { color: #9298a8; }
 
 .anomalous-material-list {
+    flex: 1;
+    min-height: 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 300px));
+    grid-auto-rows: max-content;
     align-content: start;
     gap: 16px;
     padding: 20px;
     overflow-y: auto;
 }
+
+.anomalous-material-toolbar,
+.anomalous-material-pager {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 20px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.anomalous-material-toolbar input { flex: 1 1 220px; }
+.anomalous-material-toolbar select { flex: 0 1 200px; }
+.anomalous-material-toolbar input,
+.anomalous-material-toolbar select,
+.anomalous-material-editor input {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
+    border: 1px solid #3d4350;
+    border-radius: 8px;
+    background: #1d2028;
+    color: #e5e9f0;
+    padding: 9px 11px;
+    font: inherit;
+}
+.anomalous-material-pager { justify-content: center; border-top: 1px solid rgba(255,255,255,.08); }
+.anomalous-material-pager button:disabled { opacity: .4; cursor: default; }
+.anomalous-material-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.anomalous-material-tag { max-width: 100%; overflow-wrap: anywhere; border-radius: 5px; background: #292e39; color: #b9c4d6; padding: 3px 7px; font-size: 12px; }
+.anomalous-material-editor { display: flex; flex: 1 0 100%; flex-wrap: wrap; gap: 12px; align-items: end; }
+.anomalous-material-editor label { display: flex; flex: 1 1 240px; gap: 6px; flex-direction: column; font-size: 13px; }
+.anomalous-library-detail-header:has(.anomalous-material-editor) { flex-wrap: wrap; }
+.anomalous-material-card:focus-visible { outline: 2px solid #91b3df; outline-offset: 3px; }
 
 .anomalous-material-empty { grid-column: 1 / -1; padding: 36px; text-align: center; color: #818797; }
 
@@ -3709,6 +3746,7 @@ dialog.anomalous-gallery-viewer[open] {
 
 .anomalous-material-card-preview {
     display: flex;
+    flex-shrink: 0;
     height: 180px;
     align-items: center;
     justify-content: center;

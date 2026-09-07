@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Material Library
+- Added search by name, tag, or node type, type/tag filters, and pagination. Material names and tags can be edited in place without changing their workflow.
+- Saving the same source image and node selection now prompts before creating another copy. Save labels distinguish full image/workflow snapshots, node parameters, and Prompt Notes.
+- Shared parameter inspection between the library and image workbench, improved keyboard card access and clipboard failure feedback, and fixed confirmation dialogs being covered by the workbench.
+
 ### Reliability
 - Material browsing reuses signature-validated summaries and reads full workflows only for matching node types. Gallery pagination shares a short-lived directory snapshot; refresh and deletion invalidate it immediately.
 - Prompt Notes now use the ComfyUI user directory with recoverable legacy copying, atomic saves, and visible save failures. Material saves stage their files and roll back new assets if persistence fails.

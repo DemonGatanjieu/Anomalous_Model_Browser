@@ -13,7 +13,7 @@
 
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
-import { anomalousAlert } from './ui_dialog.js';
+import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import {
     text,
     sectionLabel,
@@ -28,7 +28,7 @@ import {
     detailedBlocksFromWorkflow,
     materialNodeHeading,
     renderDetailedNodeCards
-} from './ui_materials.js';
+} from './material_inspector.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -138,17 +138,23 @@ function materialSourceImage(item) {
     };
 }
 
-async function saveImageMaterial(item, name, selectedNodeIds = null) {
+async function saveImageMaterial(item, name, selectedNodeIds = null, tags = []) {
     const owner = wb?.owner;
-    const response = await fetch('/anomalous/save_image_material', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            source_image: materialSourceImage(item),
-            name: String(name || '').trim().slice(0, 120),
-            ...(selectedNodeIds?.length ? { selected_node_ids: selectedNodeIds } : {}),
-        }),
+    const body = {
+        source_image: materialSourceImage(item), name: String(name || '').trim().slice(0, 120), tags,
+        ...(selectedNodeIds?.length ? { selected_node_ids: selectedNodeIds } : {}),
+    };
+    const send = () => fetch('/anomalous/save_image_material', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
     });
+    let response = await send();
+    if (response.status === 409) {
+        const duplicate = await response.json();
+        if (duplicate.status !== 'duplicate') throw new Error('material save conflict');
+        if (!await anomalousConfirm(t('materialDuplicateConfirm', { name: duplicate.name }))) return null;
+        body.allow_duplicate = true;
+        response = await send();
+    }
     const payload = await jsonResponse(response, 'material save failed');
     if (payload.status !== 'success') throw new Error(payload.message || 'material save failed');
     await owner?.refreshMaterials?.();
@@ -171,11 +177,12 @@ async function saveSelectedBlocks(item, suggestedName, blocks, button) {
     button.disabled = true;
     button.textContent = t('materialSaving');
     try {
-        await saveImageMaterial(
+        const saved = await saveImageMaterial(
             item,
             selectedMaterialName(suggestedName || fileBaseName(item.filename), blocks),
             blocks.map(block => String(block.node_id)),
         );
+        if (!saved) { button.textContent = defaultLabel; button.disabled = false; return; }
         button.textContent = t('materialSaved');
         window.setTimeout(() => {
             if (!button.isConnected) return;
@@ -1093,7 +1100,14 @@ function renderSaveSnapshotFooter(inspectPayload, item) {
     nameInput.maxLength = 120;
     nameInput.placeholder = t('materialName') || '输入素材快照名称…';
     nameInput.value = inspectPayload.suggested_name || fileBaseName(item.filename) || '';
+    nameInput.setAttribute('aria-label', t('materialName'));
     inputWrap.appendChild(nameInput);
+    const tagsInput = document.createElement('input');
+    tagsInput.type = 'text';
+    tagsInput.maxLength = 1200;
+    tagsInput.placeholder = t('materialTagsHint');
+    tagsInput.setAttribute('aria-label', t('materialTags'));
+    inputWrap.appendChild(tagsInput);
     text(inputWrap, 'small', t('materialFullSaveHint'), 'anomalous-workbench-save-hint');
 
     saveRow.appendChild(inputWrap);
@@ -1107,10 +1121,12 @@ function renderSaveSnapshotFooter(inspectPayload, item) {
         const val = nameInput.value.trim();
         if (!val) { nameInput.focus(); return; }
         saveBtn.disabled = true;
-        saveBtn.textContent = '💾 正在保存…';
+        saveBtn.textContent = t('materialSaving');
         try {
-            await saveImageMaterial(item, val);
-            saveBtn.textContent = '✅ 已保存素材';
+            const tags = tagsInput.value.split(/[,，]/).map(value => value.trim()).filter(Boolean);
+            const saved = await saveImageMaterial(item, val, null, tags);
+            if (!saved) { saveBtn.disabled = false; saveBtn.textContent = t('materialSaveSnapshot'); return; }
+            saveBtn.textContent = t('materialSaved');
             await anomalousAlert(t('materialSaveSuccess') || '素材快照已保存！');
         } catch (error) {
             console.error('Could not save image material:', error);
@@ -1323,6 +1339,7 @@ export async function showImageWorkbench(owner, sourceImage, imageUrl, options =
     // Keyboard navigation listener
     const onKeyDown = (e) => {
         if (wb.inspectingModel) return;
+        if (document.querySelector('.anomalous-dialog-overlay')) return;
         if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
 
         if (e.key === 'Escape') {

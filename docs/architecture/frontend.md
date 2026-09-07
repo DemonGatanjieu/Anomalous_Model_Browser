@@ -21,9 +21,15 @@ The main surfaces are:
 - Sidebar and folder manager: navigation, folder visibility, scan controls.
 - Grid and model detail: model browsing and metadata/media presentation.
 - Gallery: the user's generated outputs and the full-screen Image Detail Studio Workbench (`ui_gallery_detail.js`).
-- Workspace: Prompt Notes and Workflow Recipes.
+- Workspace: Prompt Notes, Workflow Recipes, and the Material Library.
 - Node Assistant/Model Doctor: selected-node actions, diagnostics, parameter
   presets, and missing-model recovery.
+
+`material_inspector.js` shares image metadata helpers and node-parameter rendering
+between `ui_materials.js` and `ui_gallery_detail.js`. The workbench does not import
+the library UI, keeping this dependency chain acyclic. Library discovery uses
+server-side filters and pages with cancellable requests; full records load only
+on detail entry. See `material-library.md` for the API and persistence contract.
 
 ## Entry modes and host integration
 
