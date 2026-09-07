@@ -1,4 +1,8 @@
 from .metadata import get_metadata
+try:
+    from ..model_identity import computed_file_identity, normalise_sha256
+except ImportError:
+    from model_identity import computed_file_identity, normalise_sha256
 import os
 import sys
 import json
@@ -586,8 +590,6 @@ def _collect_resolution_candidates(types):
 
 
 def _candidate_hashes(candidate):
-    from .metadata import _extract_safetensors_hash
-
     if "hashes" in candidate:
         return candidate["hashes"]
     values = set()
@@ -595,13 +597,9 @@ def _candidate_hashes(candidate):
     if metadata is None:
         metadata = get_metadata(candidate["path"])
         candidate["metadata"] = metadata
-    meta_hash = metadata.get("hash", "")
+    meta_hash = normalise_sha256(metadata.get("hash", ""))
     if meta_hash:
         values.add(str(meta_hash).upper())
-    if candidate["path"].lower().endswith('.safetensors'):
-        header_hash = _extract_safetensors_hash(candidate["path"])
-        if header_hash:
-            values.add(str(header_hash).upper())
     candidate["hashes"] = values
     return values
 
@@ -634,7 +632,11 @@ def _compute_and_save_fallback_info(file_path, file_hash):
         base_path = os.path.splitext(file_path)[0]
         info_path = base_path + ".info"
         civitai_info_path = base_path + ".civitai.info"
-        if not os.path.exists(info_path) and not os.path.exists(civitai_info_path):
+        if os.path.exists(info_path) or os.path.exists(civitai_info_path):
+            info_path = info_path if os.path.exists(info_path) else civitai_info_path
+            with open(info_path, encoding='utf-8') as source:
+                info_data = json.load(source)
+        else:
             from scraper import infer_base_model_from_header
             filename = os.path.basename(file_path)
             inferred_base = infer_base_model_from_header(file_path) if file_path.lower().endswith('.safetensors') else ""
@@ -652,8 +654,9 @@ def _compute_and_save_fallback_info(file_path, file_hash):
                 },
                 "files": [{"hashes": {"SHA256": file_hash.lower()}}]
             }
-            with open(info_path, 'w', encoding='utf-8') as f:
-                json.dump(info_data, f, ensure_ascii=True, indent=4)
+        info_data["anomalous_file_identity"] = computed_file_identity(file_path, file_hash)
+        with open(info_path, 'w', encoding='utf-8') as f:
+            json.dump(info_data, f, ensure_ascii=True, indent=4)
     except Exception:
         pass
 

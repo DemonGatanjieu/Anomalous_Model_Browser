@@ -65,6 +65,7 @@ DOM or live LiteGraph state.
 - `api/materials.py` owns curated material persistence, private image assets,
   and node-type lookup.
 - `model_policies.py` owns shared backend rename and protected-category policy.
+- `model_identity.py` owns file SHA-256 evidence shared with the standalone scanner.
 
 ### Frontend
 

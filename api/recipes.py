@@ -285,6 +285,7 @@ def _identity_for_reference(saved_value):
         if SHA256_PATTERN.fullmatch(candidate_hash):
             identity["status"] = "verified"
             identity["sha256"] = candidate_hash.lower()
+            identity["provenance"] = metadata.get("hash_source") or "sidecar file SHA-256"
         
         civitai_url = metadata.get("civitai_url")
         if civitai_url:

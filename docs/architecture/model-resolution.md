@@ -91,11 +91,19 @@ position is not identity.
 Deep Hash Scan runs outside the aiohttp event loop and identifies a model through
 the established fallback sequence:
 
-1. read a bounded safetensors header and use an embedded SHA-256 or supported
-   model hash when present;
-2. otherwise calculate the complete file SHA-256;
+1. use existing valid file SHA-256 metadata when the scan does not request refresh;
+2. otherwise calculate the complete file SHA-256, never a ModelSpec header digest;
 3. if the remote service has no record, infer a bounded local base-model family
    from tensor/header fingerprints and write offline metadata.
+
+`model_identity.py` owns digest validation and the `anomalous_file_identity`
+sidecar record: algorithm, file scope, digest, physical size/mtime, and computed
+source. ModelSpec hashes may describe tensor content and are never full-file
+identity ([specification](https://github.com/Stability-AI/ModelSpec)). Old locally
+inferred sidecars without this record keep their display data but need an explicit
+scan or successful on-demand SHA-256 check before supplying identity again.
+Successful on-demand verification preserves existing notes and remote metadata.
+Imported workflow provenance stays intact; it must match valid local file evidence.
 
 Remote metadata requests are part of an explicit user-initiated scan. Local
 browsing and offline inference remain usable when the service is unavailable.

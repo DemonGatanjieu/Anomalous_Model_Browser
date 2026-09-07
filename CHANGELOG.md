@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Reliability
+- File identity now uses full-file SHA-256 only. BLAKE3 and tensor/header digests cannot become verified file identities. Older offline metadata is reverified on demand while preserving personal notes.
+
 ### 🩺 Model Doctor
 - **Manual size fallback (模型大小手动兜底)**: A unique same-size local model is now presented for explicit confirmation instead of being applied automatically. Background checks never apply it, while hash/size identity conflicts are rejected and shown in the Doctor dashboard.
 
