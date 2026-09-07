@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Material Library
+- Material details initially expand prompt cards only; other node parameters render on first expansion. Details omit the complete source workflow, which loads separately when opening a full snapshot. Selected-node materials never return their hidden source graph.
+- Current material capture comes from PNG workflows, including their prompt nodes. Direct Prompt Note capture and applying reference images to LoadImage remain future work.
 - Added search by name, tag, or node type, type/tag filters, and pagination. Material names and tags can be edited in place without changing their workflow.
 - Saving the same source image and node selection now prompts before creating another copy. Save labels distinguish full image/workflow snapshots, node parameters, and Prompt Notes.
 - Shared parameter inspection between the library and image workbench, improved keyboard card access and clipboard failure feedback, and fixed confirmation dialogs being covered by the workbench.

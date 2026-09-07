@@ -72,7 +72,7 @@ def _read_material(path):
     return value
 
 
-def _node_blocks(workflow, include_values=True):
+def _node_blocks(workflow, include_values=True, selected_ids=None):
     blocks = []
     occurrences = {}
     for node in workflow.get("nodes", []):
@@ -82,6 +82,8 @@ def _node_blocks(workflow, include_values=True):
         if not node_type:
             continue
         occurrences[node_type] = occurrences.get(node_type, 0) + 1
+        if selected_ids is not None and str(node.get("id")) not in selected_ids:
+            continue
         block = {
             "node_id": node.get("id"),
             "type": node_type,
@@ -134,11 +136,8 @@ def _material_node_ids(material):
 
 
 def _material_node_blocks(material, include_values=True):
-    blocks = _node_blocks(material.get("workflow") or {}, include_values=include_values)
-    selected_ids = _material_node_ids(material)
-    if selected_ids is None:
-        return blocks
-    return [block for block in blocks if str(block.get("node_id")) in selected_ids]
+    return _node_blocks(material.get("workflow") or {}, include_values=include_values,
+                        selected_ids=_material_node_ids(material))
 
 
 def _prompt_excerpt(workflow):
@@ -528,23 +527,37 @@ async def api_update_material(request):
         return web.json_response({"status": "error", "message": "Could not update material"}, status=500)
 
 
+def _material_detail_response(path, include_workflow):
+    material = _read_material(path)
+    can_open = (material.get("kind") == "image_workflow_snapshot"
+                and (material.get("selection") or {}).get("scope") != "nodes"
+                and "open_workflow" in material.get("capabilities", []))
+    if include_workflow == "1" and not can_open:
+        return web.json_response({"status": "error", "message": "Material cannot open a full workflow"}, status=403)
+    blocks = _material_node_blocks(material, include_values=True) if include_workflow != "1" else []
+    if include_workflow == "0" or not can_open:
+        material.pop("workflow", None)
+    # Omitted flag keeps the legacy full-snapshot response. Explicit workflow
+    # loading avoids duplicating widget values in node_blocks.
+    return web.json_response({"status": "success", "data": material, "node_blocks": blocks})
+
+
 async def api_get_material_full(request):
     try:
         filename = require_filename(request.query.get("filename", ""))
         if not filename.endswith(".json"):
             raise ValueError("Invalid material filename")
-        material = await asyncio.to_thread(_read_material, resolve_within(get_materials_dir(), filename))
+        include_workflow = request.query.get("include_workflow")
+        if include_workflow not in (None, "0", "1"):
+            raise ValueError("Invalid workflow inclusion flag")
+        return await asyncio.to_thread(_material_detail_response,
+                                       resolve_within(get_materials_dir(), filename), include_workflow)
     except (AttributeError, ValueError, json.JSONDecodeError):
         return web.json_response({"status": "error", "message": "Invalid material"}, status=400)
     except FileNotFoundError:
         return web.json_response({"status": "error", "message": "Material not found"}, status=404)
     except OSError:
         return web.json_response({"status": "error", "message": "Could not read material"}, status=500)
-    return web.json_response({
-        "status": "success",
-        "data": material,
-        "node_blocks": _material_node_blocks(material, include_values=True),
-    })
 
 
 async def api_get_materials_by_node_type(request):

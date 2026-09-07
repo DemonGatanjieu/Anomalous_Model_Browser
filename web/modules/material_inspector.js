@@ -501,7 +501,7 @@ function renderSingleNodeCard(block, options = {}) {
     }
     node.appendChild(summary);
 
-    const shouldOpen = options.defaultOpen === true || (options.selectable ? false : true);
+    const shouldOpen = !options.selectable && isPromptBlock(block);
     let rendered = false;
 
     const renderContentIfNeeded = () => {

@@ -22,7 +22,8 @@ function hideSiblingWorkspaceViews(owner) {
 }
 
 async function fetchMaterial(filename, options = {}) {
-    const response = await fetch(`/anomalous/material_full?filename=${encodeURIComponent(filename)}`, {
+    const query = new URLSearchParams({ filename, include_workflow: options.includeWorkflow ? '1' : '0' });
+    const response = await fetch(`/anomalous/material_full?${query}`, {
         cache: 'no-store',
         signal: options.signal,
     });
@@ -72,27 +73,25 @@ function renderMaterialInspector(content, payload) {
     blocksHeader.className = 'anomalous-material-blocks-header';
     sectionLabel(blocksHeader, t('materialDetailedNodeParameters', { count: blocks.length }));
 
-    if (blocks.length > 1) {
-        let allOpen = true;
-        const toggleAllBtn = document.createElement('button');
-        toggleAllBtn.type = 'button';
-        toggleAllBtn.className = 'anomalous-material-toggle-all-btn';
-        toggleAllBtn.textContent = t('materialCollapseAll') || '全部收起';
-        toggleAllBtn.onclick = () => {
-            allOpen = !allOpen;
-            content.querySelectorAll('.anomalous-material-node-detail').forEach(d => {
-                d.open = allOpen;
-            });
-            toggleAllBtn.textContent = allOpen
-                ? (t('materialCollapseAll') || '全部收起')
-                : (t('materialExpandAllNodes') || '全部展开');
-        };
-        blocksHeader.appendChild(toggleAllBtn);
-    }
     content.appendChild(blocksHeader);
 
     if (blocks.length) {
-        renderDetailedNodeCards(content, blocks, { defaultOpen: true });
+        const list = renderDetailedNodeCards(content, blocks);
+        if (blocks.length > 1) {
+            const cards = Array.from(list.children);
+            const toggleAllBtn = text(blocksHeader, 'button', '', 'anomalous-material-toggle-all-btn');
+            toggleAllBtn.type = 'button';
+            const updateToggle = () => {
+                toggleAllBtn.textContent = t(cards.every(card => card.open) ? 'materialCollapseAll' : 'materialExpandAllNodes');
+            };
+            toggleAllBtn.onclick = () => {
+                const open = cards.some(card => !card.open);
+                cards.forEach(card => { card.open = open; });
+                updateToggle();
+            };
+            list.addEventListener('toggle', updateToggle, true);
+            updateToggle();
+        }
     } else {
         text(content, 'p', t('materialNoNodeParameters'), 'anomalous-material-muted');
     }
@@ -126,7 +125,7 @@ async function deleteMaterial(owner, material) {
 }
 
 async function openMaterialWorkflow(owner, filename) {
-    const payload = await fetchMaterial(filename);
+    const payload = await fetchMaterial(filename, { includeWorkflow: true });
     if (!payload.data?.workflow || typeof app.loadGraphData !== 'function') throw new Error('material workflow unavailable');
     await app.loadGraphData(JSON.parse(JSON.stringify(payload.data.workflow)));
     app.canvas?.setDirty?.(true, true);

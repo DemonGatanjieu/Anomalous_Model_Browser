@@ -82,9 +82,23 @@ Material cards remain compact, summary-only discovery items. “View Details”
 switches the library itself to a master-detail inspector: a contained reference
 image stays on the left, while scope, model references, and reusable node blocks
 are grouped on the right; exact widget values remain nested under each node.
-Only the opened material fetches `material_full`. Returning to the list aborts
+Only the opened material fetches `material_full?include_workflow=0`: metadata and
+scoped node blocks, with no complete source workflow. Only prompt cards initially
+expand; other node cards build their parameter DOM on first expansion and reuse
+it on later toggles. Expand/collapse-all follows the actual card state. Selectable
+cards in the image workbench remain closed initially.
+Returning to the list aborts
 an unfinished request and releases the detail payload/DOM so browsing never
 accumulates full workflows in browser memory.
+
+Opening a complete snapshot explicitly requests `include_workflow=1`, which
+returns the original workflow and an empty `node_blocks` array to avoid duplicate
+widget payloads. The original seed and hash evidence remain intact. The server
+reads, shapes, and serializes these responses in a worker thread. Selected-node
+records filter before copying widget values; they never return a full workflow
+and reject explicit workflow requests with HTTP 403. For legacy callers, omitting
+the flag retains both workflow and node blocks for complete, openable snapshots.
+Only `0`, `1`, or an omitted flag are accepted.
 
 Search is debounced and each list request cancels its predecessor. Changing a
 filter resets the page; returning from detail preserves the current filters.
@@ -123,3 +137,10 @@ as Recipe selections and Prompt Note blocks should add explicit kinds or
 source metadata without weakening the image snapshot contract. Existing direct
 Recipe and Prompt Note use paths remain available; the library is optional
 curation rather than a mandatory intermediary.
+
+The currently saved kinds are `image_workflow_snapshot` and
+`image_node_selection`. A prompt badge on a CLIPTextEncode selection describes
+an image's prompt node, not a Prompt Note import. Direct Recipe parameter and
+Prompt Note capture remain unimplemented. The `reference_image` capability
+currently means a preserved image that can be viewed; copying it into ComfyUI
+input or configuring LoadImage is also future work.

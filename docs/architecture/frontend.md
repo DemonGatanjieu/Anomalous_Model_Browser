@@ -28,8 +28,9 @@ The main surfaces are:
 `material_inspector.js` shares image metadata helpers and node-parameter rendering
 between `ui_materials.js` and `ui_gallery_detail.js`. The workbench does not import
 the library UI, keeping this dependency chain acyclic. Library discovery uses
-server-side filters and pages with cancellable requests; full records load only
-on detail entry. See `material-library.md` for the API and persistence contract.
+server-side filters and pages with cancellable requests. Detail entry fetches
+metadata and scoped node blocks; the complete workflow loads only on the explicit
+open action. See `material-library.md` for the API and persistence contract.
 
 ## Entry modes and host integration
 

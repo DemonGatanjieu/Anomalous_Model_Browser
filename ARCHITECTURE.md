@@ -84,7 +84,7 @@ DOM or live LiteGraph state.
   presentation, featuring Bento-style visual cards, quick spec tags, real-time environment readiness indicators (🟢/🟡/🔴), one-click batch model matching, and lazy DOM rendering for node parameter trees.
 - `ui_materials.js` owns the Workspace Material Library and material CRUD presentation;
   features direct card-click inspection, floating quick actions (delete/workflow load),
-  default-expanded node parameters with dedicated prompt station views (1-click copy),
+  initially expanded prompt cards and lazily rendered closed parameter cards,
   and global collapse/expand toggles; delegates image inspection to `ui_gallery_detail.js`;
   Node Assistant remains the owner of applying a material node block.
 - `material_inspector.js` owns shared image-metadata parsing and node-parameter
