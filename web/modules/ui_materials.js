@@ -450,7 +450,13 @@ function renderMaterialCard(owner, material) {
     body.appendChild(metadata);
 
     if (Array.isArray(material.node_types) && material.node_types.length) {
-        text(body, 'small', material.node_types.slice(0, 5).join(' · '), 'anomalous-material-types');
+        // ComfyUI registers titles in its active locale; keep type IDs for matching.
+        const labels = material.node_types.slice(0, 5).map(type => {
+            const registered = globalThis.LiteGraph?.registered_node_types?.[type];
+            return registered?.title || registered?.nodeData?.display_name || type;
+        });
+        const types = text(body, 'small', labels.join(' · '), 'anomalous-material-types');
+        types.title = material.node_types.join(' · ');
     }
     if (material.tags?.length) {
         const tags = text(body, 'div', '', 'anomalous-material-tags');
