@@ -3485,10 +3485,42 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-material-node-select {
+    appearance: none;
+    -webkit-appearance: none;
     width: 16px;
     height: 16px;
-    flex: 0 0 auto;
-    accent-color: #2dd4bf;
+    flex: 0 0 16px;
+    margin: 0;
+    border-radius: 4px;
+    border: 1.5px solid rgba(255, 255, 255, 0.22);
+    background-color: rgba(15, 23, 42, 0.5);
+    cursor: pointer;
+    position: relative;
+    outline: none;
+    display: inline-grid;
+    place-content: center;
+    vertical-align: middle;
+    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.anomalous-recipe-material-node-select:hover {
+    border-color: rgba(45, 212, 191, 0.6);
+    background-color: rgba(45, 212, 191, 0.08);
+}
+
+.anomalous-recipe-material-node-select:checked {
+    background-color: #2dd4bf;
+    border-color: #2dd4bf;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230b0f17' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-6'/%3E%3C/svg%3E");
+    background-size: 11px 11px;
+    background-position: center;
+    background-repeat: no-repeat;
+    box-shadow: 0 0 8px rgba(45, 212, 191, 0.35);
+}
+
+.anomalous-recipe-material-node-select:focus-visible {
+    outline: 2px solid #2dd4bf;
+    outline-offset: 2px;
 }
 
 /* Grid Layout for Node Widgets */
@@ -5506,12 +5538,42 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-material-node-select {
+    appearance: none;
+    -webkit-appearance: none;
     width: 16px;
     height: 16px;
-    flex: 0 0 auto;
+    flex: 0 0 16px;
     margin: 0;
-    accent-color: #2dd4bf;
+    border-radius: 4px;
+    border: 1.5px solid rgba(255, 255, 255, 0.22);
+    background-color: rgba(15, 23, 42, 0.5);
     cursor: pointer;
+    position: relative;
+    outline: none;
+    display: inline-grid;
+    place-content: center;
+    vertical-align: middle;
+    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.anomalous-material-node-select:hover {
+    border-color: rgba(45, 212, 191, 0.6);
+    background-color: rgba(45, 212, 191, 0.08);
+}
+
+.anomalous-material-node-select:checked {
+    background-color: #2dd4bf;
+    border-color: #2dd4bf;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230b0f17' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-6'/%3E%3C/svg%3E");
+    background-size: 11px 11px;
+    background-position: center;
+    background-repeat: no-repeat;
+    box-shadow: 0 0 8px rgba(45, 212, 191, 0.35);
+}
+
+.anomalous-material-node-select:focus-visible {
+    outline: 2px solid #2dd4bf;
+    outline-offset: 2px;
 }
 
 .anomalous-material-node-detail > summary {

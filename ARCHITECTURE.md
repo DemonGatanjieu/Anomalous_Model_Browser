@@ -94,8 +94,9 @@ DOM or live LiteGraph state.
   and global collapse/expand toggles; delegates image inspection to `ui_gallery_detail.js`;
   Node Assistant remains the owner of applying a material node block.
 - `material_inspector.js` owns shared image-metadata parsing and node-parameter
-  rendering used by the library and Image Detail Workbench. The workbench does
-  not import the library UI.
+  rendering used by the library and Image Detail Workbench. Node cards feature leading
+  aligned frosted-glass checkboxes with cyan micro-interactions for batch selection.
+  The workbench does not import the library UI.
 - `recipe_parser.js`, `recipe_identity.js`, `recipe_diff.js`, and
   `recipe_actions.js` own pure or transactional recipe behavior.
 - `ui_doctor.js`, `model_picker.js`, and `graph_splice.js` own assistant and

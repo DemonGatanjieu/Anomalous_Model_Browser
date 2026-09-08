@@ -597,7 +597,7 @@ function renderSingleNodeCard(block, options = {}) {
         badge.title = block.promptRoleManual ? t('recipePromptRoleManual') : t('recipePromptRoleAutomatic');
     };
     renderRoleBadge();
-    summary.prepend(heading);
+    summary.appendChild(heading);
 
     text(summary, 'span', t('materialParameterCount', { count: widgetValues.length }), 'anomalous-material-node-count');
 
