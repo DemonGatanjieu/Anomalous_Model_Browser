@@ -3411,6 +3411,46 @@ dialog.anomalous-gallery-viewer[open] {
     padding-bottom: 8px;
 }
 
+.anomalous-recipe-material-selection {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 9px 10px;
+    border: 1px solid rgba(45, 212, 191, 0.16);
+    border-radius: 8px;
+    background: rgba(45, 212, 191, 0.045);
+}
+
+.anomalous-recipe-material-selection .anomalous-workbench-node-selection-count {
+    margin-right: auto;
+}
+
+.anomalous-recipe-material-node-header {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.anomalous-recipe-material-node-header .anomalous-recipe-detail-node-title {
+    min-width: 0;
+    flex: 1;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.anomalous-recipe-material-node-select {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    accent-color: #2dd4bf;
+}
+
 /* Grid Layout for Node Widgets */
 .anomalous-recipe-detail-node-widgets {
     display: grid;
@@ -3768,6 +3808,35 @@ dialog.anomalous-gallery-viewer[open] {
     -webkit-line-clamp: 2;
 }
 .anomalous-material-card-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.anomalous-material-source-mark {
+    max-width: 100%;
+    overflow: hidden;
+    padding: 3px 7px;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 999px;
+    background: rgba(255,255,255,.035);
+    color: #a7afbe;
+    font-size: .66rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.anomalous-material-source-mark.is-current {
+    border-color: rgba(81,221,190,.22);
+    color: #8fdcc8;
+}
+.anomalous-material-source-mark.is-modified,
+.anomalous-material-source-mark.is-missing {
+    border-color: rgba(245,158,11,.28);
+    background: rgba(245,158,11,.08);
+    color: #e0b56a;
+}
+.anomalous-material-source-mark.is-detail {
+    width: fit-content;
+    max-width: 100%;
+    padding: 6px 10px;
+    border-radius: 8px;
+    white-space: normal;
+}
 .anomalous-material-meta-pill {
     padding: 3px 7px;
     border: 1px solid rgba(255,255,255,.08);
@@ -3825,6 +3894,17 @@ dialog.anomalous-gallery-viewer[open] {
     flex: 1;
     grid-template-columns: minmax(300px, .88fr) minmax(410px, 1.12fr);
     overflow: hidden;
+}
+
+.anomalous-library-detail-layout.is-parameter {
+    grid-template-columns: minmax(220px, .48fr) minmax(410px, 1.52fr);
+}
+
+.anomalous-library-detail-layout.is-parameter .anomalous-library-detail-image-stage {
+    flex: 0 0 180px;
+    border-color: rgba(45, 212, 191, 0.18);
+    background: radial-gradient(circle at 50% 45%, rgba(45, 212, 191, 0.12), rgba(13, 15, 20, 0.9) 72%);
+    cursor: default;
 }
 
 .anomalous-library-detail-media {
@@ -3894,6 +3974,9 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-library-detail-inspector {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     min-width: 0;
     overflow-y: auto;
     padding: 20px;
@@ -3932,6 +4015,7 @@ dialog.anomalous-gallery-viewer[open] {
     .anomalous-library-detail-heading { order: -1; flex-basis: 100%; }
     .anomalous-library-detail-layout { grid-template-columns: 1fr; overflow-y: auto; }
     .anomalous-library-detail-media { min-height: 390px; border-right: 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .anomalous-library-detail-layout.is-parameter .anomalous-library-detail-media { min-height: 260px; }
     .anomalous-library-detail-inspector { overflow: visible; }
 }
 
@@ -5413,8 +5497,9 @@ dialog.anomalous-gallery-viewer::backdrop {
     display: flex;
     min-width: 0;
     flex: 1;
-    flex-direction: column;
-    gap: 1px;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
 .anomalous-material-node-heading strong,
@@ -5427,6 +5512,14 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-material-node-heading strong { font-size: 0.77rem; font-weight: 600; }
 .anomalous-material-node-heading small { color: #788396; font-size: 0.67rem; font-family: monospace; }
 .anomalous-material-node-count { flex-shrink: 0; color: #8290a5; font-size: 0.68rem; }
+
+.anomalous-material-prompt-role-select {
+    width: auto;
+    max-width: 190px;
+    flex: 0 1 190px;
+    padding-block: 5px;
+    font-size: 0.68rem;
+}
 
 .anomalous-material-node-save,
 .anomalous-workbench-save-selected-btn {
@@ -6389,6 +6482,26 @@ dialog.anomalous-gallery-viewer::backdrop {
     color: #fff;
 }
 
+.anomalous-workbench-spec-save {
+    flex: 0 0 auto;
+    margin-left: auto;
+    padding: 3px 7px;
+    border: 1px solid rgba(45, 212, 191, 0.26);
+    border-radius: 6px;
+    background: rgba(45, 212, 191, 0.08);
+    color: #8fe1d4;
+    font-size: 0.62rem;
+    cursor: pointer;
+}
+
+.anomalous-workbench-spec-copy + .anomalous-workbench-spec-save { margin-left: 3px; }
+.anomalous-workbench-spec-save:hover:not(:disabled) {
+    border-color: rgba(45, 212, 191, 0.48);
+    background: rgba(45, 212, 191, 0.16);
+    color: #d8fff8;
+}
+.anomalous-workbench-spec-save:disabled { cursor: default; opacity: 0.55; }
+
 .anomalous-workbench-spec-val {
     color: #f1f5f9;
     font-size: 0.94rem;
@@ -6788,3 +6901,25 @@ dialog.anomalous-gallery-viewer::backdrop {
     font-size: 0.78rem;
     font-style: italic;
 }
+/* Progressive disclosure shared by material capture surfaces. */
+.anomalous-workbench-inspector-footer[hidden],
+.anomalous-recipe-prompt-role-select[hidden],
+.anomalous-recipe-material-selection[hidden],
+.anomalous-recipe-material-node-select[hidden] { display: none !important; }
+.anomalous-material-receipt {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    z-index: 1000010; display: flex; align-items: center; gap: 16px;
+    max-width: calc(100vw - 32px); padding: 12px 18px; border-radius: 12px;
+    background: #22372e; color: #f0f7f3; border: 1px solid #537360;
+    box-shadow: 0 8px 32px #0008;
+}
+.anomalous-material-receipt button { cursor: pointer; color: inherit; background: transparent; border: 0; white-space: nowrap; }
+.anomalous-material-receipt button:first-of-type { text-decoration: underline; }
+.anomalous-notebook-fold, .anomalous-secondary-actions { padding: 8px; }
+.anomalous-notebook-fold > summary, .anomalous-secondary-actions > summary { cursor: pointer; color: var(--input-text, #ddd); padding: 4px; }
+.anomalous-notebook-fold > p { color: #aaa; font-size: 13px; }
+.anomalous-notebook-fold > button { margin: 6px 8px 0 0; }
+.anomalous-workbench-generation-save { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.anomalous-material-note-text { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.7; }
+.anomalous-notebook-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.anomalous-nb-editor .anomalous-nb-textarea { font: inherit; line-height: 1.6; padding: 12px; box-sizing: border-box; }

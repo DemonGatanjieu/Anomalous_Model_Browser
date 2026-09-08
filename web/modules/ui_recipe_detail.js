@@ -1,3 +1,4 @@
+import { showMaterialSaved } from './material_feedback.js';
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
@@ -423,6 +424,26 @@ function outputImageUrl(image) {
     const query = new URLSearchParams({ filename: image.filename, type: 'output' });
     if (image.subfolder) query.set('subfolder', image.subfolder);
     return `/view?${query.toString()}`;
+}
+
+function galleryWorkbenchItems(images) {
+    return (images || []).map(sourceImage => ({
+        filename: sourceImage.filename,
+        subfolder: sourceImage.subfolder || '',
+        url: outputImageUrl(sourceImage),
+        sourceImage,
+    })).filter(item => item.url);
+}
+
+function openGalleryImageDetail(owner, images, sourceImage, url) {
+    const items = galleryWorkbenchItems(images);
+    const currentIndex = items.findIndex(item =>
+        item.filename === sourceImage?.filename && (item.subfolder || '') === (sourceImage?.subfolder || '')
+    );
+    void showImageMaterialDetail(owner, sourceImage, url, {
+        items,
+        currentIndex: currentIndex >= 0 ? currentIndex : 0,
+    });
 }
 
 function appendRecipeCover(parent, owner, recipe) {
@@ -1056,11 +1077,16 @@ function renderOverview(content, owner, recipe, references, finish) {
         });
     };
 
-    const heroEdit = button(overviewActions, '✏️ ' + t('recipeEdit'), 'anomalous-btn-ghost');
+    const more = document.createElement('details');
+    more.className = 'anomalous-secondary-actions';
+    appendText(more, 'summary', t('notebookMore'));
+    overviewActions.appendChild(more);
+
+    const heroEdit = button(more, '✏️ ' + t('recipeEdit'), 'anomalous-btn-ghost');
     heroEdit.title = t('recipeEdit');
     heroEdit.onclick = () => finish('edit');
 
-    const heroExport = button(overviewActions, '📥 ' + t('recipeExport'), 'anomalous-btn-ghost');
+    const heroExport = button(more, '📥 ' + t('recipeExport'), 'anomalous-btn-ghost');
     heroExport.title = t('recipeExport');
     heroExport.onclick = async () => {
         try {
@@ -1510,7 +1536,6 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
             e.stopPropagation();
             openOriginEditDialog(owner, recipe, reference, finish);
         };
-        nameRow.appendChild(editOriginBtn);
 
         if (officialNameStr) {
             const subName = document.createElement('div');
@@ -1522,6 +1547,7 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
         const referenceDetails = document.createElement('details');
         referenceDetails.className = 'anomalous-recipe-advanced-info anomalous-recipe-model-path';
         appendText(referenceDetails, 'summary', t('recipeAdvancedInfo'));
+        referenceDetails.appendChild(editOriginBtn);
         const referenceValue = document.createElement('div');
         referenceValue.className = 'anomalous-recipe-advanced-row';
         appendText(referenceValue, 'span', `${t('recipeModelPath')}:`);
@@ -1757,6 +1783,55 @@ function cloneJson(value) {
     try { return JSON.parse(JSON.stringify(value)); } catch (error) { return null; }
 }
 
+async function saveParameterMaterial(owner, recipe, parameterState, nodeIds, name, actionButton) {
+    if (!owner?.recipeDetailFilename || !actionButton || actionButton.disabled) return false;
+    const originalLabel = actionButton.textContent;
+    actionButton.disabled = true;
+    actionButton.textContent = t('materialSaving');
+    const body = {
+        recipe_filename: owner.recipeDetailFilename,
+        ...(parameterState?.selectedFilename ? { parameter_filename: parameterState.selectedFilename } : {}),
+        ...(Array.isArray(nodeIds) && nodeIds.length ? { selected_node_ids: nodeIds } : {}),
+        name: String(name || '').trim().slice(0, 120),
+        tags: Array.isArray(recipe?.tags) ? recipe.tags : [],
+    };
+    const send = () => fetch('/anomalous/save_parameter_material', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    try {
+        let response = await send();
+        if (response.status === 409) {
+            const duplicate = await response.json();
+            if (duplicate.status !== 'duplicate') throw new Error('parameter material conflict');
+            if (!await anomalousConfirm(t('materialDuplicateConfirm', { name: duplicate.name }))) return false;
+            body.allow_duplicate = true;
+            response = await send();
+        }
+        const payload = await response.json();
+        if (!response.ok || payload.status !== 'success') throw new Error(payload.message || 'parameter material save failed');
+        actionButton.textContent = t('materialSaved');
+        showMaterialSaved(owner, payload.material);
+        await owner.refreshMaterials?.();
+        window.setTimeout(() => {
+            if (!actionButton.isConnected) return;
+            actionButton.textContent = originalLabel;
+            actionButton.disabled = false;
+        }, 1400);
+        return true;
+    } catch (error) {
+        console.error('Could not save recipe parameter material:', error);
+        await anomalousAlert(t('materialSaveError'));
+        return false;
+    } finally {
+        if (actionButton.isConnected && actionButton.textContent !== t('materialSaved')) {
+            actionButton.textContent = originalLabel;
+            actionButton.disabled = false;
+        }
+    }
+}
+
 function editorValueText(value) {
     if (typeof value === 'string') return value;
     if (value === undefined) return '';
@@ -1922,9 +1997,13 @@ function formatRecipeResolution(res) {
     return '';
 }
 
-function renderRawNodesLazy(parent, source) {
+function renderRawNodesLazy(parent, source, options = {}) {
     const ordered = parameterNodeOrder(source);
     if (!ordered.length) return;
+    const reusable = ordered.filter(({ workflowNode }) =>
+        workflowNode?.id != null && Array.isArray(workflowNode.widgets_values) && workflowNode.widgets_values.length
+    );
+    const selectedIds = new Set();
 
     const details = document.createElement('details');
     details.className = 'anomalous-recipe-advanced-info anomalous-recipe-raw-nodes-details';
@@ -1933,6 +2012,53 @@ function renderRawNodesLazy(parent, source) {
     summary.className = 'anomalous-recipe-raw-nodes-summary';
     summary.textContent = `⚙️ ${t('recipeRawNodesToggle')} (${ordered.length} ${t('recipeRawNodesCount')}) ▾`;
     details.appendChild(summary);
+
+    let selecting = false;
+    let updateSelection = () => {};
+    if (typeof options.onSaveNodes === 'function' && reusable.length) {
+        const selectionBar = document.createElement('div');
+        selectionBar.className = 'anomalous-recipe-material-selection';
+        selectionBar.hidden = true;
+        const choose = button(details, t('materialChooseParameters'), 'anomalous-btn-ghost');
+        choose.setAttribute('aria-expanded', 'false');
+        choose.onclick = () => {
+            selecting = !selecting;
+            selectionBar.hidden = !selecting;
+            choose.textContent = t(selecting ? 'materialFinishSelection' : 'materialChooseParameters');
+            choose.setAttribute('aria-expanded', String(selecting));
+            if (!selecting) selectedIds.clear();
+            updateSelection();
+        };
+        const selectionText = appendText(selectionBar, 'span', '', 'anomalous-workbench-node-selection-count');
+        const selectAll = button(selectionBar, t('materialSelectAllNodes'), 'anomalous-btn-ghost');
+        const clear = button(selectionBar, t('materialClearNodeSelection'), 'anomalous-btn-ghost');
+        const saveSelected = button(selectionBar, t('materialSaveSelectedAction', { count: 0 }), 'anomalous-preset-btn-primary');
+        updateSelection = () => {
+            const count = selectedIds.size;
+            selectionText.textContent = t('materialSelectedNodeCount', { count });
+            saveSelected.textContent = t('materialSaveSelectedAction', { count });
+            saveSelected.disabled = count === 0;
+            details.querySelectorAll('.anomalous-recipe-material-node-select').forEach(input => {
+                input.hidden = !selecting;
+                input.checked = selectedIds.has(input.dataset.nodeId);
+            });
+        };
+        selectAll.onclick = () => {
+            reusable.forEach(({ workflowNode }) => selectedIds.add(String(workflowNode.id)));
+            updateSelection();
+        };
+        clear.onclick = () => {
+            selectedIds.clear();
+            updateSelection();
+        };
+        saveSelected.onclick = () => options.onSaveNodes(
+            [...selectedIds],
+            t('materialSelectedNodesName', { count: selectedIds.size }),
+            saveSelected,
+        );
+        updateSelection();
+        details.appendChild(selectionBar);
+    }
 
     const nodeList = document.createElement('div');
     nodeList.className = 'anomalous-recipe-detail-parameter-list';
@@ -1957,7 +2083,30 @@ function renderRawNodesLazy(parent, source) {
             const block = document.createElement('article');
             block.className = 'anomalous-recipe-detail-parameter-node';
             const title = [node.title, node.type].filter(Boolean).join(' · ') || t('recipeDetailUnknownNode');
-            appendText(block, 'strong', title, 'anomalous-recipe-detail-node-title');
+            const nodeHeader = document.createElement('div');
+            nodeHeader.className = 'anomalous-recipe-material-node-header';
+            if (typeof options.onSaveNodes === 'function' && workflowNode?.id != null) {
+                const select = document.createElement('input');
+                select.type = 'checkbox';
+                select.hidden = !selecting;
+                select.className = 'anomalous-recipe-material-node-select';
+                select.setAttribute('aria-label', t('materialSelectNodeForSaving'));
+                select.dataset.nodeId = String(workflowNode.id);
+                select.checked = selectedIds.has(select.dataset.nodeId);
+                select.title = t('materialSelectNodeForSaving');
+                select.onchange = () => {
+                    if (select.checked) selectedIds.add(select.dataset.nodeId);
+                    else selectedIds.delete(select.dataset.nodeId);
+                    updateSelection();
+                };
+                nodeHeader.appendChild(select);
+            }
+            appendText(nodeHeader, 'strong', title, 'anomalous-recipe-detail-node-title');
+            if (typeof options.onSaveNodes === 'function' && workflowNode?.id != null) {
+                const saveNode = button(nodeHeader, t('materialSaveToLibraryShort'), 'anomalous-material-node-save');
+                saveNode.onclick = () => options.onSaveNodes([workflowNode.id], title, saveNode);
+            }
+            block.appendChild(nodeHeader);
             const widgetsContainer = document.createElement('div');
             widgetsContainer.className = 'anomalous-recipe-detail-node-widgets';
             for (let visibleIndex = 0; visibleIndex < widgets.length; visibleIndex += 1) {
@@ -1979,6 +2128,7 @@ function renderRawNodesLazy(parent, source) {
             }
         }
         renderedCount += batch.length;
+        updateSelection();
 
         const oldBtn = details.querySelector('.anomalous-recipe-lazy-expand-btn');
         if (oldBtn) oldBtn.remove();
@@ -2007,7 +2157,7 @@ function renderRawNodesLazy(parent, source) {
     parent.appendChild(details);
 }
 
-function renderPromptSection(parent, owner, recipe, source, rerender) {
+function renderPromptSection(parent, owner, recipe, source, rerender, onSaveNodes) {
     const prompts = promptValues(source, recipe);
     if (!prompts.entries.length) {
         appendText(parent, 'p', t('recipeDetailNoPrompts'), 'anomalous-recipe-detail-muted');
@@ -2067,7 +2217,19 @@ function renderPromptSection(parent, owner, recipe, source, rerender) {
                 await anomalousAlert(t('recipePromptRoleSaveError'));
             }
         };
+        roleSelect.hidden = true;
+        const adjustRole = button(meta, t('promptAdjustRole'), 'anomalous-btn-ghost');
+        adjustRole.setAttribute('aria-expanded', 'false');
+        adjustRole.onclick = () => {
+            roleSelect.hidden = !roleSelect.hidden;
+            adjustRole.setAttribute('aria-expanded', String(!roleSelect.hidden));
+            if (!roleSelect.hidden) roleSelect.focus();
+        };
         meta.appendChild(roleSelect);
+        if (typeof onSaveNodes === 'function') {
+            const savePrompt = button(meta, t('materialSavePromptAction'), 'anomalous-material-node-save');
+            savePrompt.onclick = () => onSaveNodes([entry.id], entry.title || t('materialPromptNode'), savePrompt);
+        }
 
         const value = document.createElement('div');
         value.className = 'anomalous-recipe-prompt-value';
@@ -2224,8 +2386,23 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
             main.appendChild(meta);
             row.appendChild(main);
 
-            const actions = document.createElement('div');
-            actions.className = 'anomalous-preset-item-actions';
+            const actions = document.createElement('details');
+            actions.className = 'anomalous-preset-item-actions anomalous-secondary-actions';
+            appendText(actions, 'summary', t('notebookMore'));
+
+            const saveMaterial = button(actions, '🧰', 'anomalous-preset-item-btn');
+            saveMaterial.title = t('materialSaveNotebookHint');
+            saveMaterial.onclick = async (e) => {
+                e.stopPropagation();
+                await saveParameterMaterial(
+                    owner,
+                    recipe,
+                    { ...parameterState, selectedFilename: notebook.filename },
+                    null,
+                    `${notebookName} · ${t('materialAllParameters')}`,
+                    saveMaterial,
+                );
+            };
 
             const rename = button(actions, '✏️', 'anomalous-preset-item-btn');
             rename.title = t('recipeParameterRename');
@@ -2349,6 +2526,16 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         }
     };
 
+    const saveAllMaterial = button(consoleActions, t('materialSaveAllParameters'), 'anomalous-preset-btn-secondary');
+    saveAllMaterial.onclick = () => saveParameterMaterial(
+        owner,
+        recipe,
+        parameterState,
+        null,
+        `${currentName} · ${t('materialAllParameters')}`,
+        saveAllMaterial,
+    );
+
     if (parameterState?.selectedFilename) {
         const renameHeadingBtn = button(consoleActions, '✏️ ' + t('recipeParameterRename'), 'anomalous-btn-ghost');
         renameHeadingBtn.onclick = async () => {
@@ -2412,7 +2599,9 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 const details = button(actions, `🔎 ${t('materialViewDetails')}`, 'anomalous-btn-primary');
                 details.onclick = event => {
                     event.stopPropagation();
-                    void showImageMaterialDetail(owner, sourceImage, url);
+                    const images = gallery.images;
+                    dialog.close();
+                    openGalleryImageDetail(owner, images, sourceImage, url);
                 };
                 card.appendChild(actions);
                 grid.appendChild(card);
@@ -2430,26 +2619,6 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     const summary = document.createElement('section');
     summary.className = 'anomalous-recipe-detail-section';
     appendText(summary, 'h5', t('recipeDetailParameterSummary'));
-
-    if (params.steps || params.cfg || params.sampler_name || resDisplay) {
-        const metricGrid = document.createElement('div');
-        metricGrid.className = 'anomalous-recipe-metric-grid';
-        const addMetric = (labelKey, value) => {
-            if (value === undefined || value === null || value === '') return;
-            const card = document.createElement('div');
-            card.className = 'anomalous-recipe-metric-card';
-            appendText(card, 'span', t(labelKey), 'anomalous-recipe-metric-label');
-            appendText(card, 'span', String(value), 'anomalous-recipe-metric-value');
-            metricGrid.appendChild(card);
-        };
-        addMetric('recipeDetailSteps', params.steps);
-        addMetric('recipeDetailCFG', params.cfg);
-        addMetric('recipeDetailDenoise', params.denoise);
-        addMetric('recipeDetailSampler', params.sampler_name || params.samplers);
-        addMetric('recipeDetailScheduler', params.scheduler);
-        addMetric('recipeDetailResolution', resDisplay);
-        if (metricGrid.childElementCount) summary.appendChild(metricGrid);
-    }
 
     const summaryGrid = document.createElement('div');
     summaryGrid.className = 'anomalous-recipe-detail-summary-grid';
@@ -2479,11 +2648,19 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
 
     const promptWrap = document.createElement('div');
     promptWrap.style.marginBottom = '14px';
-    renderPromptSection(promptWrap, owner, recipe, source, selectParameterTab);
+    const saveNamedNodes = (nodeIds, label, actionButton) => saveParameterMaterial(
+        owner,
+        recipe,
+        parameterState,
+        nodeIds,
+        `${currentName} · ${label}`,
+        actionButton,
+    );
+    renderPromptSection(promptWrap, owner, recipe, source, selectParameterTab, saveNamedNodes);
 
     const nodesSection = document.createElement('section');
     nodesSection.className = 'anomalous-recipe-detail-section';
-    renderRawNodesLazy(nodesSection, source);
+    renderRawNodesLazy(nodesSection, source, { onSaveNodes: saveNamedNodes });
 
     wrapper.append(intro, summary, promptWrap, nodesSection);
     layout.append(sidebar, wrapper);
@@ -2673,7 +2850,7 @@ function renderRecipeGallery(content, owner, recipe, gallery, refresh) {
         const details = button(actions, `🔎 ${t('materialViewDetails')}`, 'anomalous-btn-primary');
         details.onclick = event => {
             event.stopPropagation();
-            void showImageMaterialDetail(owner, sourceImage, url);
+            openGalleryImageDetail(owner, gallery.images, sourceImage, url);
         };
         card.appendChild(actions);
         grid.appendChild(card);

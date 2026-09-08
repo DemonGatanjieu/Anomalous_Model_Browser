@@ -57,6 +57,8 @@ The route family is:
 
 - `POST /anomalous/inspect_image_material`
 - `POST /anomalous/save_image_material`
+- `POST /anomalous/save_parameter_material`
+- `POST /anomalous/save_prompt_note_material`
 - `GET /anomalous/materials`
 - `GET /anomalous/material_full`
 - `GET /anomalous/material_asset`
@@ -77,6 +79,13 @@ Gallery retains click-to-view, drag, delete, and cover-selection behavior; the
 material action appears only on hover and is hidden during cover selection.
 `ui_doctor.js` owns application to the currently selected node because that
 mutation already belongs to Node Assistant.
+
+`ui_recipe_detail.js` can publish the active Recipe parameters or the selected
+Parameter Notebook as `recipe_parameter_selection`. The primary panel saves all
+reusable widget-bearing nodes; the raw-node inspector supports direct single-node
+save and explicit multi-selection. Prompt cards expose the same direct save.
+The backend reloads the named Recipe/Parameter Notebook from its contained user
+directory instead of trusting a browser-supplied workflow.
 
 Material cards remain compact, summary-only discovery items. “View Details”
 switches the library itself to a master-detail inspector: a contained reference
@@ -114,12 +123,26 @@ user chooses the block explicitly.
 
 Every node card in the image workbench can be saved directly as an
 `image_node_selection`; checking several cards exposes one colocated save action
-above the node list. The sticky footer remains dedicated to the full image and
+above the node list. The initially hidden footer remains dedicated to the full image and
 workflow snapshot rather than mixing both concepts in a scope selector. The
 original workflow remains in a selected-node record as source provenance, but
 list/count/lookup APIs expose only the selected blocks. Such a material
 deliberately lacks `open_workflow`; it is consumed from Node Assistant instead
 of unexpectedly replacing the canvas with the hidden source workflow.
+
+The image workbench also exposes saving on its primary surfaces. The top action
+reveals the full-snapshot name/tag form. One generation-settings action captures
+the sampler and size nodes together; each prompt node can be saved without visiting
+the all-nodes tab. A metric action is intentionally node-sized: it does not claim
+to persist one isolated widget value. The former plain-text “share text” action
+is not part of this workbench.
+
+Prompt roles are inferred from workflow topology first, with node-title hints as
+a fallback. Image details display the inferred role beside every prompt node and
+allow an explicit positive, negative, shared, unknown, or ignored override.
+Overrides travel into the saved material but never write back to a source Recipe.
+Material details expose the same selector; `update_material` atomically persists
+or clears these overrides, and choosing Automatic restores the topology result.
 
 ## Model identity handoff
 
@@ -138,9 +161,47 @@ source metadata without weakening the image snapshot contract. Existing direct
 Recipe and Prompt Note use paths remain available; the library is optional
 curation rather than a mandatory intermediary.
 
-The currently saved kinds are `image_workflow_snapshot` and
-`image_node_selection`. A prompt badge on a CLIPTextEncode selection describes
-an image's prompt node, not a Prompt Note import. Direct Recipe parameter and
-Prompt Note capture remain unimplemented. The `reference_image` capability
-currently means a preserved image that can be viewed; copying it into ComfyUI
-input or configuring LoadImage is also future work.
+The currently saved kinds are `image_workflow_snapshot`, `image_node_selection`,
+and `recipe_parameter_selection`. Recipe parameter materials intentionally have
+no image asset and only advertise `apply_node_parameters`; they cannot replace
+the canvas with the source Recipe. A prompt badge on a CLIPTextEncode selection
+still describes a workflow prompt node, not a Prompt Note import. Prompt Notes use the explicit kinds described below. The `reference_image` capability currently
+means a preserved image that can be viewed; copying it into ComfyUI input or
+configuring LoadImage is also future work.
+
+## Prompt Note capture and return
+
+`POST save_prompt_note_material` accepts `notebook_filename` as a provenance
+label, `name`, optional `tags`, `scope` (`note` or `prompt`), and an immutable
+client snapshot in `note`. It does not use that filename to read a file. The
+snapshot includes the latest text before the editor's autosave timer fires.
+The server bounds it to the notebook's 2 MiB limit and retains only the supported
+prompt, translation, language, base-model, main-model and LoRA fields. Model
+objects remain saved selections, never identity evidence. Prompt-only capture
+excludes all model fields. `promptZh` is a translation, not a negative prompt.
+
+- `prompt_note_bundle`: entire note, translations and companion model selections.
+- `prompt_text`: prompt text and translations without companion models.
+
+Both kinds advertise `copy_prompt` and `restore_prompt_note`, contain no image
+assets or synthetic workflow, and never appear in node-type lookup. Explicit
+full-workflow requests return 403. Atomic creation and duplicate confirmation
+reuse the image-free material writer; deduplication compares content signature
+and kind. Editing a note later cannot alter its captured material.
+
+The library copies prompt text or loads the snapshot as a newly named, uniquely
+identified Prompt Note. It flushes any pending note before switching, writes the
+new record successfully before navigation, and preserves both original note and
+material. Canvas use remains the existing explicit Prompt Note action.
+
+`material_feedback.js` supplies a shared save receipt with View Material.
+`web/main.js` binds `openSavedMaterial` from `ui_materials.js`; it owns navigation
+and workspace return state, keeping workbench imports acyclic. Image details,
+recipes and Prompt Notes use that same handoff. Node-sized receipts lead to a
+detail that explains reuse through Node Assistant.
+
+Primary surfaces use progressive disclosure: image save form, prompt role
+selectors, technical node metadata, companion models, recipe export/source
+editing, and recipe multi-selection are revealed on request. Parameter-page
+metrics appear once with exact-value copy controls. Display wording is Parameter
+Sets (参数方案); existing notebook routes and storage identifiers stay stable.

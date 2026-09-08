@@ -325,11 +325,33 @@ function comfyWidgetLabels(nodeType) {
     return labels;
 }
 
+const NODE_TITLE_SUFFIX = /\s*(\((?:negative|positive|neg|pos)\)|（(?:负向|正向|反向)）|#\d+)\s*$/i;
+
+function compactNodeToken(value) {
+    return String(value || '').toLowerCase().replace(/[^a-z0-9\u4e00-\u9fff]+/g, '');
+}
+
+function comfyNodeDefaultTitles(nodeType) {
+    const ctor = globalThis.LiteGraph?.registered_node_types?.[nodeType];
+    const data = ctor?.nodeData;
+    return [nodeType, ctor?.title, ctor?.comfyClass, data?.name, data?.display_name].filter(Boolean);
+}
+
 export function materialNodeHeading(block) {
-    const type = block.type || '';
-    const saved = block.title || '';
-    if (saved && saved !== type) return saved;
-    return comfyNodeTitle(type) || saved || type;
+    const type = String(block?.type || '');
+    const saved = String(block?.title || '').trim();
+    const localized = comfyNodeTitle(type) || type;
+    const suffixMatch = saved.match(NODE_TITLE_SUFFIX);
+    const suffix = suffixMatch ? ` ${suffixMatch[1]}` : '';
+    if (!saved || saved === type) return localized + suffix;
+
+    const core = saved.replace(NODE_TITLE_SUFFIX, '').trim();
+    const compactCore = compactNodeToken(core);
+    const isDefault = [type, localized, ...comfyNodeDefaultTitles(type)].some(name => {
+        const compactName = compactNodeToken(name);
+        return core === name || compactCore === compactName || (compactName && compactCore.startsWith(compactName));
+    });
+    return isDefault ? localized + suffix : saved;
 }
 
 function formatMaterialParameterValue(value) {
@@ -346,6 +368,83 @@ function isPromptBlock(block) {
         Array.isArray(block.widgets_values) &&
         block.widgets_values.length > 0 &&
         typeof block.widgets_values[0] === 'string';
+}
+
+function promptRoleLabel(role) {
+    return t({
+        positive: 'recipePromptRolePositive',
+        negative: 'recipePromptRoleNegative',
+        both: 'recipePromptRoleBoth',
+        ignored: 'recipePromptRoleIgnored',
+        unknown: 'recipePromptRoleUnknown',
+    }[role] || 'recipePromptRoleUnknown');
+}
+
+export function applyPromptRolesToBlocks(blocks, promptRoles) {
+    if (!Array.isArray(blocks) || !promptRoles || typeof promptRoles !== 'object') return blocks;
+    for (const block of blocks) {
+        const info = promptRoles[String(block?.node_id)];
+        if (!info || typeof info !== 'object') continue;
+        block.promptRole = info.role;
+        block.promptRoleSource = info.source;
+        block.promptRoleManual = info.source === 'manual';
+        block.promptRoleAutomatic = info.automatic_role || (info.source === 'manual' ? 'unknown' : info.role);
+    }
+    return blocks;
+}
+
+export function mergePromptRoleOverrides(promptRoles, overrides) {
+    const roles = { ...(promptRoles || {}) };
+    if (!overrides || typeof overrides !== 'object') return roles;
+    for (const [nodeId, entry] of Object.entries(overrides)) {
+        if (entry?.role) {
+            const automatic = roles[String(nodeId)];
+            roles[String(nodeId)] = {
+                role: entry.role,
+                source: 'manual',
+                automatic_role: automatic?.automatic_role || automatic?.role || 'unknown',
+            };
+        }
+    }
+    return roles;
+}
+
+export function promptGroupsFromBlocks(blocks) {
+    const positive = [];
+    const negative = [];
+    for (const block of Array.isArray(blocks) ? blocks : []) {
+        const value = (block.widgets_values || []).find(item => typeof item === 'string' && item.trim());
+        if (!value) continue;
+        const textVal = value.trim();
+        if ((block.promptRole === 'positive' || block.promptRole === 'both') && !positive.includes(textVal)) positive.push(textVal);
+        if ((block.promptRole === 'negative' || block.promptRole === 'both') && !negative.includes(textVal)) negative.push(textVal);
+    }
+    return { positive, negative };
+}
+
+export function renderMaterialPromptGroups(parent, groups, options = {}) {
+    const positive = Array.isArray(groups?.positive) ? groups.positive.filter(Boolean) : [];
+    const negative = Array.isArray(groups?.negative) ? groups.negative.filter(Boolean) : [];
+    if (!positive.length && !negative.length) return false;
+
+    const renderCard = (titleText, promptStr, tone) => {
+        const card = document.createElement('div');
+        card.className = tone ? `anomalous-material-prompt-card is-${tone}` : 'anomalous-material-prompt-card';
+        const bar = document.createElement('div');
+        bar.className = 'anomalous-material-prompt-bar';
+        text(bar, 'span', titleText, 'anomalous-material-prompt-bar-label');
+        const copyBtn = text(bar, 'button', t('materialCopyPrompt'), 'anomalous-material-mini-btn');
+        copyBtn.type = 'button';
+        bindCopyButton(copyBtn, () => promptStr, 'materialCopied');
+        card.appendChild(bar);
+        text(card, 'div', promptStr, 'anomalous-material-prompt-content is-expanded');
+        parent.appendChild(card);
+    };
+
+    if (positive.length) renderCard(t('materialPositivePrompt'), positive.join('\n\n'), 'positive');
+    if (negative.length) renderCard(t('materialNegativePrompt'), negative.join('\n\n'), 'negative');
+    if (options.manual) text(parent, 'p', t('materialPromptRoleFromRecipe'), 'anomalous-material-muted');
+    return true;
 }
 
 function bindCopyButton(button, value, successKey) {
@@ -446,7 +545,10 @@ function renderNodeCardContent(node, block, widgetValues) {
         node_id: block.node_id, type: block.type, title: block.title,
         widgets_values: widgetValues, properties: block.properties || {}, mode: block.mode,
     }, null, 2), 'materialCopied');
-    content.appendChild(meta);
+    const technical = document.createElement('details');
+    technical.className = 'anomalous-notebook-fold';
+    text(technical, 'summary', t('recipeAdvancedInfo'));
+    technical.appendChild(meta);
 
     if (isPromptBlock(block)) {
         renderPromptBlock(content, block, widgetValues);
@@ -457,7 +559,8 @@ function renderNodeCardContent(node, block, widgetValues) {
         renderNodeParameterRows(content, block, widgetValues);
     }
 
-    renderNodeProperties(content, block.properties);
+    renderNodeProperties(technical, block.properties);
+    content.appendChild(technical);
     node.appendChild(content);
 }
 
@@ -487,13 +590,66 @@ function renderSingleNodeCard(block, options = {}) {
     const heading = document.createElement('span');
     heading.className = 'anomalous-material-node-heading';
     text(heading, 'strong', materialNodeHeading(block));
-    text(heading, 'small', block.type || t('recipeUnknownNode'));
+    const renderRoleBadge = () => {
+        heading.querySelector('.anomalous-recipe-prompt-role-badge')?.remove();
+        if (!block.promptRole) return;
+        const badge = text(heading, 'span', promptRoleLabel(block.promptRole), `anomalous-recipe-prompt-role-badge is-${block.promptRole}`);
+        badge.title = block.promptRoleManual ? t('recipePromptRoleManual') : t('recipePromptRoleAutomatic');
+    };
+    renderRoleBadge();
     summary.prepend(heading);
 
     text(summary, 'span', t('materialParameterCount', { count: widgetValues.length }), 'anomalous-material-node-count');
 
+    if (isPromptBlock(block) && typeof options.onPromptRoleChange === 'function') {
+        const roleSelect = document.createElement('select');
+        roleSelect.className = 'anomalous-recipe-prompt-role-select anomalous-material-prompt-role-select';
+        roleSelect.setAttribute('aria-label', t('recipePromptRoleChoose'));
+        const automaticRole = block.promptRoleAutomatic || (block.promptRoleManual ? 'unknown' : block.promptRole) || 'unknown';
+        const choices = [
+            ['auto', `${t('recipePromptRoleAutomatic')} · ${promptRoleLabel(automaticRole)}`],
+            ['positive', t('recipePromptRolePositive')],
+            ['negative', t('recipePromptRoleNegative')],
+            ['both', t('recipePromptRoleBoth')],
+            ['unknown', t('recipePromptRoleUnknown')],
+            ['ignored', t('recipePromptRoleIgnored')],
+        ];
+        for (const [value, label] of choices) {
+            const option = text(roleSelect, 'option', label);
+            option.value = value;
+        }
+        roleSelect.value = block.promptRoleManual ? block.promptRole : 'auto';
+        roleSelect.addEventListener('click', event => event.stopPropagation());
+        roleSelect.addEventListener('change', async event => {
+            event.stopPropagation();
+            const previous = block.promptRoleManual ? block.promptRole : 'auto';
+            roleSelect.disabled = true;
+            try {
+                await options.onPromptRoleChange(block, roleSelect.value, roleSelect);
+                renderRoleBadge();
+            } catch (error) {
+                roleSelect.value = previous;
+                console.error('Could not update prompt role:', error);
+            } finally {
+                if (roleSelect.isConnected) roleSelect.disabled = false;
+            }
+        });
+        roleSelect.hidden = true;
+        const adjust = text(summary, 'button', t('promptAdjustRole'), 'anomalous-btn-ghost');
+        adjust.type = 'button';
+        adjust.setAttribute('aria-expanded', 'false');
+        adjust.onclick = event => {
+            event.preventDefault();
+            event.stopPropagation();
+            roleSelect.hidden = !roleSelect.hidden;
+            adjust.setAttribute('aria-expanded', String(!roleSelect.hidden));
+            if (!roleSelect.hidden) roleSelect.focus();
+        };
+        summary.appendChild(roleSelect);
+    }
+
     if (typeof options.onSaveBlock === 'function') {
-        const save = text(summary, 'button', t('materialSaveNode'), 'anomalous-material-node-save');
+        const save = text(summary, 'button', t(isPromptBlock(block) ? 'materialSavePromptAction' : 'materialSaveNode'), 'anomalous-material-node-save');
         save.type = 'button';
         save.title = t('materialSaveNodeHint');
         save.addEventListener('click', event => event.stopPropagation());
@@ -531,4 +687,3 @@ export function renderDetailedNodeCards(parent, blocks, options = {}) {
     parent.appendChild(list);
     return list;
 }
-

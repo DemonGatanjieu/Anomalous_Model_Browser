@@ -1,3 +1,4 @@
+import { showMaterialSaved } from './material_feedback.js';
 /**
  * ui_gallery_detail.js
  * Professional Image Detail Studio Workbench for ComfyUI.
@@ -8,7 +9,7 @@
  * - High-speed in-memory LRU metadata cache (imageMetadataCache)
  * - Preloading of adjacent images and AbortController request cancellation
  * - Segmented Bento Inspector: Key Specs Bento grid, Prompts Station, Models & LoRA with weight pills, Node structure
- * - One-click actions: load Workflow, copy Civitai/WebUI share text, save a full or selected-node Material
+ * - One-click actions: load Workflow and save a full or selected-node Material
  */
 
 import { app } from '../../../scripts/app.js';
@@ -27,7 +28,9 @@ import {
     lookupLocalModel,
     detailedBlocksFromWorkflow,
     materialNodeHeading,
-    renderDetailedNodeCards
+    renderDetailedNodeCards,
+    applyPromptRolesToBlocks,
+    mergePromptRoleOverrides,
 } from './material_inspector.js';
 
 const t = (key, params) => translate(key, params);
@@ -79,39 +82,6 @@ function compactInspectPayload(payload, hasClientWorkflow) {
 let wb = null;
 
 /**
- * Format generation parameters into Civitai / WebUI standard prompt text for 1-click copy
- */
-function formatGenerationParamsText(posPrompt, negPrompt, params, allModelRefs) {
-    const lines = [];
-    if (posPrompt) lines.push(posPrompt.trim());
-    if (negPrompt) lines.push(`Negative prompt: ${negPrompt.trim()}`);
-
-    const parts = [];
-    if (params.steps != null) parts.push(`Steps: ${params.steps}`);
-    if (params.sampler_name) parts.push(`Sampler: ${params.sampler_name}`);
-    if (params.scheduler) parts.push(`Schedule type: ${params.scheduler}`);
-    if (params.cfg != null) parts.push(`CFG scale: ${params.cfg}`);
-    if (params.seed != null) parts.push(`Seed: ${params.seed}`);
-    if (params.resolution) {
-        const cleanRes = String(params.resolution).replace(/\s*×\s*/, 'x').replace(/\s+/g, '');
-        parts.push(`Size: ${cleanRes}`);
-    }
-    if (params.denoise != null) parts.push(`Denoise: ${params.denoise}`);
-
-    // Add main model name if found
-    const baseModel = (allModelRefs || []).find(m => {
-        const cat = String(m.category || '').toLowerCase();
-        return cat === 'checkpoint' || cat === 'unet';
-    });
-    if (baseModel) {
-        parts.push(`Model: ${fileBaseName(baseModel.saved_value || baseModel.name)}`);
-    }
-
-    if (parts.length) lines.push(parts.join(', '));
-    return lines.join('\n\n');
-}
-
-/**
  * Copy text to clipboard with button feedback
  */
 async function copyToClipboard(str, btn, successLabel, defaultLabel) {
@@ -140,9 +110,12 @@ function materialSourceImage(item) {
 
 async function saveImageMaterial(item, name, selectedNodeIds = null, tags = []) {
     const owner = wb?.owner;
+    const promptRoleOverrides = wb?.promptRoleOverrides;
     const body = {
         source_image: materialSourceImage(item), name: String(name || '').trim().slice(0, 120), tags,
         ...(selectedNodeIds?.length ? { selected_node_ids: selectedNodeIds } : {}),
+        ...(owner?.recipeDetailFilename ? { recipe_filename: owner.recipeDetailFilename } : {}),
+        ...(promptRoleOverrides && typeof promptRoleOverrides === 'object' ? { promptRoleOverrides } : {}),
     };
     const send = () => fetch('/anomalous/save_image_material', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -157,6 +130,7 @@ async function saveImageMaterial(item, name, selectedNodeIds = null, tags = []) 
     }
     const payload = await jsonResponse(response, 'material save failed');
     if (payload.status !== 'success') throw new Error(payload.message || 'material save failed');
+    showMaterialSaved(owner, payload.material, dismissWorkbench);
     await owner?.refreshMaterials?.();
     return payload;
 }
@@ -171,9 +145,9 @@ function selectedMaterialName(baseName, blocks) {
 
 async function saveSelectedBlocks(item, suggestedName, blocks, button) {
     if (!blocks.length || !button || button.disabled) return;
-    const defaultLabel = blocks.length === 1
+    const defaultLabel = button.dataset.defaultLabel || (blocks.length === 1
         ? t('materialSaveNode')
-        : t('materialSaveSelectedAction', { count: blocks.length });
+        : t('materialSaveSelectedAction', { count: blocks.length }));
     button.disabled = true;
     button.textContent = t('materialSaving');
     try {
@@ -448,9 +422,12 @@ function buildFilmstripRail(items, currentIndex, onNavigate) {
 /**
  * Build Specs Bento Grid
  */
-function buildSpecsGrid(params) {
+function buildSpecsGrid(params, blocks, item, suggestedName) {
     const grid = document.createElement('div');
     grid.className = 'anomalous-workbench-specs-grid';
+
+    const samplerBlock = (blocks || []).find(block => /^(ksampler|ksampleradvanced)$/i.test(block.type || ''));
+    const sizeBlock = (blocks || []).find(block => /^(emptylatentimage|emptylatentimage.*)$/i.test(block.type || ''));
 
     const addTile = (labelStr, val, options = {}) => {
         if (val == null || val === '') return;
@@ -483,12 +460,24 @@ function buildSpecsGrid(params) {
     };
 
     addTile(t('materialParamSeed') || '种子 (Seed)', params.seed, { copyable: true, mono: true, accent: 'seed' });
-    addTile(t('recipeCardSpecsSteps') || '采样步数 (Steps)', params.steps != null ? `${params.steps} 步` : null);
-    addTile('CFG Scale', params.cfg);
-    addTile(t('materialDenoise') || '重绘降噪 (Denoise)', params.denoise);
-    addTile(t('recipeCardSpecsSampler') || '采样器 (Sampler)', params.sampler_name);
-    addTile(t('materialScheduler') || '调度器 (Scheduler)', params.scheduler);
+    addTile(t('recipeCardSpecsSteps') || '采样步数 (Steps)', params.steps != null ? `${params.steps} 步` : null, { });
+    addTile('CFG Scale', params.cfg, { });
+    addTile(t('materialDenoise') || '重绘降噪 (Denoise)', params.denoise, { });
+    addTile(t('recipeCardSpecsSampler') || '采样器 (Sampler)', params.sampler_name, { });
+    addTile(t('materialScheduler') || '调度器 (Scheduler)', params.scheduler, { });
     addTile(t('recipeCardSpecsResolution') || '分辨率 (Resolution)', params.resolution, { wide: true, mono: true, accent: 'res' });
+
+    const generationBlocks = [samplerBlock, sizeBlock].filter(Boolean);
+    if (generationBlocks.length) {
+        const actions = document.createElement('div');
+        actions.className = 'anomalous-workbench-generation-save';
+        const save = text(actions, 'button', t('materialSaveGeneration'), 'anomalous-btn-ghost');
+        save.type = 'button';
+        save.dataset.defaultLabel = save.textContent;
+        save.onclick = () => saveSelectedBlocks(item, suggestedName, generationBlocks, save);
+        text(actions, 'small', t('materialGenerationScope'), 'anomalous-workbench-muted');
+        grid.appendChild(actions);
+    }
 
     return grid;
 }
@@ -496,72 +485,48 @@ function buildSpecsGrid(params) {
 /**
  * Build Prompts Station
  */
-function buildPromptsStation(posText, negText, fallbackPrompt) {
+function buildPromptsStation(blocks, fallbackPrompt, item, suggestedName) {
     const wrap = document.createElement('div');
     wrap.className = 'anomalous-workbench-prompts-wrap';
 
-    const renderCard = (titleText, promptStr, tone = '') => {
-        if (!promptStr || !promptStr.trim()) return null;
+    const promptBlocks = (blocks || []).filter(block =>
+        /cliptextencode/i.test(block.type || '') &&
+        (block.widgets_values || []).some(value => typeof value === 'string' && value.trim())
+    );
+    if (promptBlocks.length) {
+        text(wrap, 'p', t('materialPromptRoleHelp'), 'anomalous-workbench-muted');
+        renderDetailedNodeCards(wrap, promptBlocks, {
+            onSaveBlock: (block, button) => saveSelectedBlocks(item, suggestedName, [block], button),
+            onPromptRoleChange: async (block, selectedRole) => {
+                const key = String(block.node_id);
+                if (!wb.promptRoleOverrides || typeof wb.promptRoleOverrides !== 'object') wb.promptRoleOverrides = {};
+                if (selectedRole === 'auto') {
+                    delete wb.promptRoleOverrides[key];
+                    block.promptRole = block.promptRoleAutomatic || 'unknown';
+                    block.promptRoleManual = false;
+                    block.promptRoleSource = 'automatic';
+                } else {
+                    wb.promptRoleOverrides[key] = { role: selectedRole, nodeType: block.type || null };
+                    block.promptRole = selectedRole;
+                    block.promptRoleManual = true;
+                    block.promptRoleSource = 'manual';
+                }
+            },
+        });
+    } else if (fallbackPrompt) {
         const card = document.createElement('div');
-        card.className = tone ? `anomalous-workbench-prompt-card is-${tone}` : 'anomalous-workbench-prompt-card';
-
+        card.className = 'anomalous-workbench-prompt-card';
         const topBar = document.createElement('div');
         topBar.className = 'anomalous-workbench-prompt-bar';
-
-        const titleSection = document.createElement('div');
-        titleSection.className = 'anomalous-workbench-prompt-title-section';
-        text(titleSection, 'span', titleText, 'anomalous-workbench-prompt-title');
-
-        const charCount = promptStr.length;
-        text(titleSection, 'span', `${charCount} 字符`, 'anomalous-workbench-prompt-count');
-        topBar.appendChild(titleSection);
-
-        const btns = document.createElement('div');
-        btns.className = 'anomalous-workbench-prompt-btns';
-
-        const copyBtn = document.createElement('button');
+        text(topBar, 'span', t('materialPromptText') || '提示词', 'anomalous-workbench-prompt-title');
+        const copyBtn = text(topBar, 'button', t('materialCopyPrompt'), 'anomalous-workbench-mini-action-btn');
         copyBtn.type = 'button';
-        copyBtn.className = 'anomalous-workbench-mini-action-btn';
-        copyBtn.textContent = t('materialCopyPrompt') || '📋 复制提示词';
-        copyBtn.onclick = () => copyToClipboard(promptStr, copyBtn, t('materialCopied') || '✅ 已复制', t('materialCopyPrompt') || '📋 复制提示词');
-        btns.appendChild(copyBtn);
-
-        if (promptStr.length > 120 || promptStr.includes('\n')) {
-            const expandBtn = document.createElement('button');
-            expandBtn.type = 'button';
-            expandBtn.className = 'anomalous-workbench-mini-action-btn';
-            expandBtn.textContent = t('materialCollapse') || (window.anomalous_browser_lang === 'zh' ? '收起' : 'Collapse');
-            expandBtn.onclick = () => {
-                const isExp = contentEl.classList.toggle('is-expanded');
-                expandBtn.textContent = isExp
-                    ? (t('materialCollapse') || (window.anomalous_browser_lang === 'zh' ? '收起' : 'Collapse'))
-                    : (t('materialExpandAll') || (window.anomalous_browser_lang === 'zh' ? '展开全部' : 'Expand All'));
-            };
-            btns.appendChild(expandBtn);
-        }
-
-        topBar.appendChild(btns);
+        copyBtn.onclick = () => copyToClipboard(fallbackPrompt, copyBtn, t('materialCopied'), t('materialCopyPrompt'));
         card.appendChild(topBar);
-
-        const contentEl = text(card, 'div', promptStr, 'anomalous-workbench-prompt-content is-expanded');
-        return card;
-    };
-
-    if (posText || negText) {
-        if (posText) {
-            const posCard = renderCard(t('materialPositivePrompt') || '正向提示词 (Positive)', posText, 'positive');
-            if (posCard) wrap.appendChild(posCard);
-        }
-        if (negText) {
-            const negCard = renderCard(t('materialNegativePrompt') || '负向提示词 (Negative)', negText, 'negative');
-            if (negCard) wrap.appendChild(negCard);
-        }
-    } else if (fallbackPrompt) {
-        const card = renderCard(t('materialPromptText') || '提示词', fallbackPrompt);
-        if (card) wrap.appendChild(card);
+        text(card, 'div', fallbackPrompt, 'anomalous-workbench-prompt-content is-expanded');
+        wrap.appendChild(card);
     } else {
-        const empty = text(wrap, 'div', '（无嵌入提示词数据）', 'anomalous-workbench-muted');
-        empty.style.padding = '12px';
+        text(wrap, 'div', t('materialNoPromptData'), 'anomalous-workbench-muted');
     }
 
     return wrap;
@@ -961,8 +926,21 @@ async function renderInspectorContent(data, item) {
     };
     if (data._localModels) applyResolvedModels(data._localModels);
 
-    const posText = clientDetails.positivePrompts.join('\n\n');
-    const negText = clientDetails.negativePrompts.join('\n\n');
+    const recipe = wb?.owner?.recipeDetailPayload?.recipe;
+    const recipeOverrides = recipe?.params?.promptRoleOverrides || recipe?.data?.params?.promptRoleOverrides || {};
+    const promptSourceKey = `${item.subfolder || ''}/${item.filename || item.url || ''}`;
+    if (wb.promptRoleSourceKey !== promptSourceKey) {
+        wb.promptRoleSourceKey = promptSourceKey;
+        wb.promptRoleOverrides = JSON.parse(JSON.stringify(recipeOverrides));
+    }
+    const promptRoles = mergePromptRoleOverrides(
+        inspectPayload.prompt_roles,
+        wb.promptRoleOverrides,
+    );
+    const blocks = applyPromptRolesToBlocks(
+        detailedBlocksFromWorkflow(clientWorkflow, inspectPayload.node_blocks),
+        promptRoles,
+    );
     const fallbackPrompt = (Array.isArray(inspectPayload.prompts) && inspectPayload.prompts.length)
         ? inspectPayload.prompts.join('\n\n')
         : (inspectPayload.prompt_excerpt || '');
@@ -974,21 +952,29 @@ async function renderInspectorContent(data, item) {
     const loadCanvasBtn = document.createElement('button');
     loadCanvasBtn.type = 'button';
     loadCanvasBtn.className = 'anomalous-workbench-action-btn is-primary';
-    loadCanvasBtn.innerHTML = '⚡ 加载到画布';
+    loadCanvasBtn.textContent = t('materialOpenWorkflow');
     loadCanvasBtn.title = '将这张图片中包含的完整工作流直接还原到 ComfyUI 画布';
     loadCanvasBtn.onclick = () => loadWorkflowToComfyCanvas(clientWorkflow || inspectPayload.workflow);
     toolbar.appendChild(loadCanvasBtn);
 
-    const copyParamsBtn = document.createElement('button');
-    copyParamsBtn.type = 'button';
-    copyParamsBtn.className = 'anomalous-workbench-action-btn';
-    copyParamsBtn.textContent = t('workbenchCopyParams');
-    copyParamsBtn.title = t('workbenchCopyParamsHint');
-    copyParamsBtn.onclick = () => {
-        const formatted = formatGenerationParamsText(posText, negText, params, allModelRefs);
-        copyToClipboard(formatted, copyParamsBtn, t('workbenchCopySuccess'), t('workbenchCopyParams'));
+    const saveMaterialBtn = document.createElement('button');
+    saveMaterialBtn.type = 'button';
+    saveMaterialBtn.className = 'anomalous-workbench-action-btn is-save';
+    saveMaterialBtn.textContent = t('materialSaveSnapshotShort');
+    saveMaterialBtn.title = t('materialSaveSnapshotFocusHint');
+    saveMaterialBtn.setAttribute('aria-expanded', 'false');
+    saveMaterialBtn.onclick = () => {
+        const footer = wb?.sideFooterEl;
+        if (!footer) return;
+        footer.hidden = !footer.hidden;
+        saveMaterialBtn.setAttribute('aria-expanded', String(!footer.hidden));
+        if (footer.hidden) return;
+        const nameInput = wb?.sideFooterEl?.querySelector('input[type="text"]');
+        wb?.sideFooterEl?.scrollIntoView?.({ behavior: 'smooth', block: 'end' });
+        nameInput?.focus();
+        nameInput?.select();
     };
-    toolbar.appendChild(copyParamsBtn);
+    toolbar.appendChild(saveMaterialBtn);
 
     wb.sideBodyEl.appendChild(toolbar);
 
@@ -1032,7 +1018,7 @@ async function renderInspectorContent(data, item) {
     const specsPanel = document.createElement('div');
     specsPanel.className = 'anomalous-workbench-tab-panel';
     specsPanel.style.display = wb.activeTab === 'specs' ? 'flex' : 'none';
-    specsPanel.appendChild(buildSpecsGrid(params));
+    specsPanel.appendChild(buildSpecsGrid(params, blocks, item, inspectPayload.suggested_name));
     tabPanels.specs = specsPanel;
     wb.sideBodyEl.appendChild(specsPanel);
 
@@ -1040,7 +1026,7 @@ async function renderInspectorContent(data, item) {
     const promptsPanel = document.createElement('div');
     promptsPanel.className = 'anomalous-workbench-tab-panel';
     promptsPanel.style.display = wb.activeTab === 'prompts' ? 'flex' : 'none';
-    promptsPanel.appendChild(buildPromptsStation(posText, negText, fallbackPrompt));
+    promptsPanel.appendChild(buildPromptsStation(blocks, fallbackPrompt, item, inspectPayload.suggested_name));
     tabPanels.prompts = promptsPanel;
     wb.sideBodyEl.appendChild(promptsPanel);
 
@@ -1070,7 +1056,6 @@ async function renderInspectorContent(data, item) {
     if (wb.activeTab === 'models') ensureModelsResolved();
 
     // Panel 4: Nodes Section
-    const blocks = detailedBlocksFromWorkflow(clientWorkflow, inspectPayload.node_blocks);
     const nodesPanel = document.createElement('div');
     nodesPanel.className = 'anomalous-workbench-tab-panel';
     nodesPanel.style.display = wb.activeTab === 'nodes' ? 'flex' : 'none';
@@ -1088,6 +1073,7 @@ async function renderInspectorContent(data, item) {
 function renderSaveSnapshotFooter(inspectPayload, item) {
     if (!wb || !wb.sideFooterEl) return;
     wb.sideFooterEl.replaceChildren();
+    wb.sideFooterEl.hidden = true;
 
     const saveRow = document.createElement('div');
     saveRow.className = 'anomalous-workbench-save-row';
@@ -1127,7 +1113,7 @@ function renderSaveSnapshotFooter(inspectPayload, item) {
             const saved = await saveImageMaterial(item, val, null, tags);
             if (!saved) { saveBtn.disabled = false; saveBtn.textContent = t('materialSaveSnapshot'); return; }
             saveBtn.textContent = t('materialSaved');
-            await anomalousAlert(t('materialSaveSuccess') || '素材快照已保存！');
+            saveBtn.disabled = false;
         } catch (error) {
             console.error('Could not save image material:', error);
             saveBtn.textContent = `💾 ${t('materialSaveSnapshot') || '保存为素材'}`;

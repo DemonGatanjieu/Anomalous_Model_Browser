@@ -1,12 +1,14 @@
-/** Curated material snapshots: generated image + exact workflow + node blocks. */
+/** Curated image/workflow and Recipe parameter materials. */
 
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
-import { text, sectionLabel, fileBaseName, jsonResponse, renderDetailedNodeCards } from './material_inspector.js';
+import { text, sectionLabel, fileBaseName, jsonResponse, renderDetailedNodeCards, applyPromptRolesToBlocks, renderMaterialPromptGroups } from './material_inspector.js';
 
 const t = (key, params) => translate(key, params);
+const isPromptMaterial = material => ['prompt_note_bundle', 'prompt_text'].includes(material.kind);
+const promptKindLabel = material => t(material.kind === 'prompt_text' ? 'materialPromptTextKind' : 'materialPromptNoteBundle');
 
 function materialAssetUrl(filename, asset) {
     if (!filename || !asset) return '';
@@ -32,26 +34,98 @@ async function fetchMaterial(filename, options = {}) {
     return payload;
 }
 
-function renderMaterialInspector(content, payload) {
-    const references = Array.isArray(payload.data?.model_references) ? payload.data.model_references : [];
-    const blocks = Array.isArray(payload.node_blocks) ? payload.node_blocks : [];
+function renderSourceRecipeMark(parent, info, className = '') {
+    if (!info?.filename) return null;
+    const status = info.status === 'missing' || info.status === 'modified' ? info.status : 'current';
+    const name = info.name || info.filename;
+    const key = status === 'missing'
+        ? 'materialSourceRecipeMissing'
+        : status === 'modified'
+            ? 'materialSourceRecipeModified'
+            : 'materialSourceRecipeCurrent';
+    return text(parent, 'span', t(key, { name }), `anomalous-material-source-mark is-${status}${className ? ` ${className}` : ''}`);
+}
 
-    const overview = document.createElement('div');
-    overview.className = 'anomalous-library-detail-stats';
-    const nodeStat = document.createElement('div');
-    nodeStat.className = 'anomalous-library-detail-stat';
-    text(nodeStat, 'strong', blocks.length);
-    text(nodeStat, 'span', t('materialParameterNodes'));
-    const modelStat = document.createElement('div');
-    modelStat.className = 'anomalous-library-detail-stat';
-    text(modelStat, 'strong', references.length);
-    text(modelStat, 'span', t('materialModelReferences'));
-    overview.append(nodeStat, modelStat);
-    content.appendChild(overview);
+async function updateMaterialPromptRole(owner, material, payload, block, selectedRole) {
+    const overrides = { ...(payload.data?.promptRoleOverrides || {}) };
+    const key = String(block.node_id);
+    if (selectedRole === 'auto') delete overrides[key];
+    else overrides[key] = { role: selectedRole, nodeType: block.type || null };
+
+    const response = await fetch('/anomalous/update_material', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            filename: material.filename,
+            name: payload.data?.name || material.name,
+            tags: payload.data?.tags || material.tags || [],
+            promptRoleOverrides: overrides,
+        }),
+    });
+    const result = await jsonResponse(response, 'material prompt role update failed');
+    if (result.status !== 'success') throw new Error(result.message || 'material prompt role update failed');
+    Object.assign(material, result.material);
+    await showMaterialDetail(owner, material);
+}
+
+function renderMaterialInspector(content, payload, owner, material) {
+    if (isPromptMaterial(material)) {
+        const note = payload.data?.note || {};
+        sectionLabel(content, t('notebookPromptTitle'));
+        const prompt = text(content, 'pre', note.promptEn || '', 'anomalous-material-note-text');
+        const copy = text(content, 'button', t('materialCopyPrompt'), 'anomalous-btn-ghost');
+        copy.type = 'button';
+        copy.disabled = !note.promptEn;
+        copy.onclick = async () => {
+            try { await navigator.clipboard.writeText(prompt.textContent); copy.textContent = t('materialCopied'); }
+            catch (error) { await anomalousAlert(t('materialCopyError')); }
+        };
+        const models = [note.mainModel, ...(note.loras || [])].filter(Boolean);
+        if (models.length) {
+            sectionLabel(content, t('notebookCompanionModels'));
+            models.forEach(model => text(content, 'p', model.filename || model.name || t('materialUntitled')));
+        }
+        text(content, 'p', t('materialRestoreNoteHint'), 'anomalous-material-muted');
+        const restore = text(content, 'button', t('materialRestoreNote'), 'anomalous-btn-primary');
+        restore.type = 'button';
+        restore.onclick = async () => {
+            restore.disabled = true;
+            try {
+                clearTimeout(owner.pTimeout);
+                if (owner.currentNotebook && !await owner.saveCurrentNotebook()) throw new Error('pending note save failed');
+                const data = JSON.parse(JSON.stringify(note));
+                const name = t('materialNoteCopyName', { name: material.name }).slice(0, 120);
+                const notebook = { filename: `nb_${crypto.randomUUID()}.json`,
+                    name, data: { ...data, name } };
+                const response = await fetch('/anomalous/save_notebook', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(notebook),
+                });
+                const result = await jsonResponse(response, 'notebook restore failed');
+                if (result.status !== 'success') throw new Error('notebook restore failed');
+                leaveMaterialDetail(owner);
+                owner.currentNotebook = notebook;
+                await owner.showNotebooks();
+                owner.renderNotebookEditor();
+            } catch (error) { await anomalousAlert(t('notebookSaveError')); }
+            finally { restore.disabled = false; }
+        };
+        return;
+    }
+    const references = Array.isArray(payload.data?.model_references) ? payload.data.model_references : [];
+    const blocks = applyPromptRolesToBlocks(
+        Array.isArray(payload.node_blocks) ? payload.node_blocks : [],
+        payload.prompt_roles,
+    );
+    const promptRoles = payload.prompt_roles || {};
+    const hasManualRole = Object.values(promptRoles).some(info => info?.source === 'manual');
+
+    renderSourceRecipeMark(content, payload.source_recipe || payload.data?.source_recipe, 'is-detail');
 
     if (payload.data?.selection?.scope === 'nodes') {
-        text(content, 'p', t('materialUseFromNodeAssistant'), 'anomalous-library-detail-callout');
+        text(content, 'p', t('materialUseFromNodeAssistant'), 'anomalous-material-muted');
     }
+
+    renderMaterialPromptGroups(content, payload.prompt_groups, { manual: hasManualRole });
 
     if (references.length) {
         sectionLabel(content, t('materialModelReferences'));
@@ -76,7 +150,17 @@ function renderMaterialInspector(content, payload) {
     content.appendChild(blocksHeader);
 
     if (blocks.length) {
-        const list = renderDetailedNodeCards(content, blocks);
+        const list = renderDetailedNodeCards(content, blocks, {
+            onPromptRoleChange: async (block, selectedRole) => {
+                try {
+                    await updateMaterialPromptRole(owner, material, payload, block, selectedRole);
+                } catch (error) {
+                    console.error('Could not update material prompt role:', error);
+                    await anomalousAlert(t('recipePromptRoleSaveError'));
+                    throw error;
+                }
+            },
+        });
         if (blocks.length > 1) {
             const cards = Array.from(list.children);
             const toggleAllBtn = text(blocksHeader, 'button', '', 'anomalous-material-toggle-all-btn');
@@ -146,12 +230,12 @@ function buildMaterialDetailHeader(owner, material) {
     heading.className = 'anomalous-library-detail-heading';
     const title = text(heading, 'h2', material.name || t('materialUntitled'));
     title.title = material.name || t('materialUntitled');
-    text(
-        heading,
-        'span',
-        material.selection?.scope === 'nodes' ? t('materialSelectedNodeMaterial') : t('materialFullWorkflowMaterial'),
-        'anomalous-material-scope-badge',
-    );
+    const scopeLabel = isPromptMaterial(material) ? promptKindLabel(material) : material.kind === 'recipe_parameter_selection'
+        ? t('materialRecipeParameterMaterial')
+        : material.selection?.scope === 'nodes'
+            ? t('materialSelectedNodeMaterial')
+            : t('materialFullWorkflowMaterial');
+    text(heading, 'span', scopeLabel, 'anomalous-material-scope-badge');
     header.appendChild(heading);
 
     const headerActions = document.createElement('div');
@@ -200,7 +284,7 @@ function buildMaterialMediaStage(owner, material, sourceNameElement) {
         imageStage.appendChild(image);
         imageStage.onclick = () => owner.showGalleryViewer?.(sourceUrl);
     } else {
-        imageStage.textContent = '🖼️';
+        imageStage.textContent = isPromptMaterial(material) ? '💬' : material.kind === 'recipe_parameter_selection' ? '🧰' : '🖼️';
         imageStage.disabled = true;
     }
     media.appendChild(imageStage);
@@ -209,15 +293,18 @@ function buildMaterialMediaStage(owner, material, sourceNameElement) {
     sourceMeta.className = 'anomalous-library-detail-source';
     const sourceCopy = document.createElement('div');
     sourceCopy.className = 'anomalous-library-detail-source-copy';
-    text(sourceCopy, 'span', t('materialSourceImage'));
+    text(sourceCopy, 'span', isPromptMaterial(material) ? t('materialPromptNoteBundle') : material.kind === 'recipe_parameter_selection'
+        ? t('materialSourceParameters')
+        : t('materialSourceImage'));
     sourceCopy.appendChild(sourceNameElement);
     sourceMeta.appendChild(sourceCopy);
 
-    const openSource = text(sourceMeta, 'button', t('materialOpenSourceImage'), 'anomalous-library-detail-source-open');
-    openSource.type = 'button';
-    openSource.disabled = !sourceUrl;
-    openSource.onclick = () => owner.showGalleryViewer?.(sourceUrl);
-    sourceMeta.appendChild(openSource);
+    if (sourceUrl) {
+        const openSource = text(sourceMeta, 'button', t('materialOpenSourceImage'), 'anomalous-library-detail-source-open');
+        openSource.type = 'button';
+        openSource.onclick = () => owner.showGalleryViewer?.(sourceUrl);
+        sourceMeta.appendChild(openSource);
+    }
 
     media.appendChild(sourceMeta);
     return media;
@@ -244,6 +331,7 @@ async function showMaterialDetail(owner, material) {
 
     const layout = document.createElement('div');
     layout.className = 'anomalous-library-detail-layout';
+    if (material.kind === 'recipe_parameter_selection' || isPromptMaterial(material)) layout.classList.add('is-parameter');
 
     const media = buildMaterialMediaStage(owner, material, sourceNameElement);
     layout.appendChild(media);
@@ -262,11 +350,13 @@ async function showMaterialDetail(owner, material) {
         const payload = await fetchMaterial(material.filename, { signal: controller.signal });
         if (owner.materialDetailView !== detail) return;
         const sourceImage = payload.data?.source?.image || {};
-        const sourceName = sourceImage.filename || material.name || t('materialUntitled');
+        const materialSource = payload.data?.source || {};
+        const sourceName = sourceImage.filename || materialSource.parameter_name
+            || materialSource.recipe_name || materialSource.notebook_name || material.name || t('materialUntitled');
         sourceNameElement.textContent = sourceName;
         sourceNameElement.title = sourceName;
         inspector.replaceChildren();
-        renderMaterialInspector(inspector, payload);
+        renderMaterialInspector(inspector, payload, owner, material);
     } catch (error) {
         if (error?.name === 'AbortError') return;
         console.error('Could not load material detail:', error);
@@ -329,7 +419,7 @@ function renderMaterialCard(owner, material) {
         image.loading = 'lazy';
         preview.appendChild(image);
     } else {
-        preview.textContent = '🖼️';
+        preview.textContent = isPromptMaterial(material) ? '💬' : material.kind === 'recipe_parameter_selection' ? '🧰' : '🖼️';
     }
     card.appendChild(preview);
 
@@ -340,7 +430,11 @@ function renderMaterialCard(owner, material) {
 
     const metadata = document.createElement('div');
     metadata.className = 'anomalous-material-card-meta';
-    if (material.selection?.scope === 'nodes') {
+    if (isPromptMaterial(material)) {
+        text(metadata, 'span', promptKindLabel(material), 'anomalous-material-scope-badge');
+    } else if (material.kind === 'recipe_parameter_selection') {
+        text(metadata, 'span', t('materialRecipeParameterMaterial'), 'anomalous-material-scope-badge is-nodes');
+    } else if (material.selection?.scope === 'nodes') {
         const isPromptOnly = Array.isArray(material.node_types) &&
             material.node_types.length > 0 &&
             material.node_types.every(tp => /cliptextencode/i.test(tp));
@@ -351,7 +445,8 @@ function renderMaterialCard(owner, material) {
     } else {
         text(metadata, 'span', t('materialFullWorkflowMaterial'), 'anomalous-material-scope-badge is-workflow');
     }
-    text(metadata, 'span', t('materialNodeSummary', { count: material.node_count || 0 }), 'anomalous-material-meta-pill');
+    if (!isPromptMaterial(material)) text(metadata, 'span', t('materialNodeSummary', { count: material.node_count || 0 }), 'anomalous-material-meta-pill');
+    renderSourceRecipeMark(metadata, material.source_recipe);
     body.appendChild(metadata);
 
     if (Array.isArray(material.node_types) && material.node_types.length) {
@@ -426,7 +521,14 @@ function buildMaterialFilters(owner) {
     };
     const kind = text(toolbar, 'select', '');
     kind.setAttribute('aria-label', t('materialFilterKind'));
-    for (const [value, key] of [['', 'materialAllKinds'], ['image_workflow_snapshot', 'materialFullWorkflowMaterial'], ['image_node_selection', 'materialSelectedNodeMaterial']]) {
+    for (const [value, key] of [
+        ['', 'materialAllKinds'],
+        ['image_workflow_snapshot', 'materialFullWorkflowMaterial'],
+        ['image_node_selection', 'materialSelectedNodeMaterial'],
+        ['recipe_parameter_selection', 'materialRecipeParameterMaterial'],
+        ['prompt_note_bundle', 'materialPromptNoteBundle'],
+        ['prompt_text', 'materialPromptTextKind'],
+    ]) {
         const option = text(kind, 'option', t(key));
         option.value = value;
     }
@@ -531,3 +633,19 @@ export async function showImageMaterialDetail(owner, sourceImage, imageUrl, opti
     return showImageWorkbench(owner, sourceImage, imageUrl, options);
 }
 
+export async function openSavedMaterial(material) {
+    this.recipeDetailFinish?.('closed');
+    this.modal?.classList.add('visible');
+    if (this.nbPanel.style.display !== 'flex' && !this.workspaceReturnState) {
+        this.workspaceReturnState = Object.fromEntries([
+            ['grid', this.grid], ['detail', this.detailPanel], ['gallery', this.galleryPanel],
+            ['doctor', this.doctorPanel], ['assistant', this.assistantPanel],
+        ].filter(([, panel]) => panel).map(([key, panel]) => [key, panel.style.display]));
+    }
+    this.nbPanel.style.display = 'flex';
+    for (const panel of [this.grid, this.detailPanel, this.galleryPanel, this.doctorPanel, this.assistantPanel, this.paramPanel]) {
+        if (panel) panel.style.display = 'none';
+    }
+    await showMaterials.call(this);
+    await showMaterialDetail(this, material);
+}

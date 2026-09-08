@@ -6,6 +6,8 @@
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
+import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
+import { showMaterialSaved } from './material_feedback.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -297,6 +299,7 @@ export function renderNotebookEditor() {
         titleArea.style.margin = '0';
 
         const rightBtns = document.createElement('div');
+        rightBtns.className = 'anomalous-notebook-actions';
 
         const saveBtn = document.createElement('button');
         saveBtn.innerHTML = t('saveNotebook');
@@ -362,7 +365,12 @@ export function renderNotebookEditor() {
 
         rightBtns.appendChild(saveBtn);
         rightBtns.appendChild(sendBtn);
-        rightBtns.appendChild(delContainer);
+        const moreActions = document.createElement('details');
+        moreActions.className = 'anomalous-secondary-actions';
+        const moreSummary = document.createElement('summary');
+        moreSummary.textContent = t('notebookMore');
+        moreActions.append(moreSummary, delContainer);
+        rightBtns.appendChild(moreActions);
 
         tb.appendChild(titleArea);
         tb.appendChild(rightBtns);
@@ -370,6 +378,11 @@ export function renderNotebookEditor() {
         // Settings / Models
         const modelSection = document.createElement('div');
         modelSection.className = 'anomalous-nb-section';
+        const modelsFold = document.createElement('details');
+        modelsFold.className = 'anomalous-notebook-fold';
+        const modelsLabel = document.createElement('summary');
+        modelsLabel.textContent = t('notebookCompanionModels');
+        modelsFold.append(modelsLabel, modelSection);
 
         // Base Model
         const baseRow = document.createElement('div');
@@ -493,22 +506,24 @@ export function renderNotebookEditor() {
         toggleRow.style.display = 'flex';
         toggleRow.style.justifyContent = 'space-between';
         toggleRow.style.marginBottom = '5px';
-        toggleRow.innerHTML = `<strong>Prompt Editor</strong>`;
+        toggleRow.innerHTML = `<strong>${t('notebookPromptTitle')}</strong>`;
         const rawBtn = document.createElement('button');
         rawBtn.className = 'anomalous-btn-primary';
-        rawBtn.innerHTML = t('editRaw');
+        rawBtn.textContent = t('notebookDoneEditing');
         toggleRow.appendChild(rawBtn);
 
         // Raw Textarea
         const rawArea = document.createElement('textarea');
         rawArea.className = 'anomalous-nb-textarea';
         rawArea.value = data.promptEn || '';
-        rawArea.style.display = 'none';
+        rawArea.style.display = 'block';
+        rawArea.setAttribute('aria-label', t('notebookPromptTitle'));
         rawArea.style.height = '150px';
 
         // Visual Dual Pane
         const dualPane = document.createElement('div');
         dualPane.className = 'anomalous-nb-dual-pane';
+        dualPane.style.display = 'none';
 
         if (!data.translations) data.translations = {};
 
@@ -611,13 +626,11 @@ export function renderNotebookEditor() {
             if (rawArea.style.display === 'none') {
                 rawArea.style.display = 'block';
                 dualPane.style.display = 'none';
-                rawBtn.innerHTML = '👁️ Done Editing';
-                pToolbar.style.display = 'none';
+                rawBtn.textContent = t('notebookDoneEditing');
             } else {
                 rawArea.style.display = 'none';
                 dualPane.style.display = 'flex';
-                rawBtn.innerHTML = '📝 Edit Raw / Paste';
-                pToolbar.style.display = 'flex';
+                rawBtn.textContent = t('editRaw');
                 updateVisualTags();
             }
         };
@@ -633,22 +646,75 @@ export function renderNotebookEditor() {
 
         rawArea.oninput = () => {
             clearTimeout(this.pTimeout);
-            this.pTimeout = setTimeout(() => { data.promptEn = rawArea.value; this.saveCurrentNotebook(); }, 500);
+            data.promptEn = rawArea.value;
+            this.pTimeout = setTimeout(() => this.saveCurrentNotebook(), 500);
         };
 
-        updateVisualTags();
+        const promptTools = document.createElement('details');
+        promptTools.className = 'anomalous-notebook-fold';
+        const toolsLabel = document.createElement('summary');
+        toolsLabel.textContent = t('notebookMore');
+        promptTools.append(toolsLabel, pToolbar);
 
-        promptSec.appendChild(pToolbar);
+        const capture = document.createElement('details');
+        capture.className = 'anomalous-notebook-fold';
+        const captureLabel = document.createElement('summary');
+        captureLabel.textContent = t('materialSaveSnapshotShort');
+        const captureHint = document.createElement('p');
+        captureHint.textContent = t('materialNoteScopeHint');
+        capture.append(captureLabel, captureHint);
+        const sourceFilename = this.currentNotebook.filename;
+        const sourceName = this.currentNotebook.name;
+        for (const [scope, key] of [['note', 'materialSaveNoteBundle'], ['prompt', 'materialSavePromptText']]) {
+            const saveMaterial = document.createElement('button');
+            saveMaterial.type = 'button';
+            saveMaterial.className = 'anomalous-btn-ghost';
+            saveMaterial.textContent = t(key);
+            saveMaterial.onclick = async () => {
+                saveMaterial.disabled = true;
+                // Capture immediately, including text entered before the autosave timer fires.
+                const body = JSON.parse(JSON.stringify({ notebook_filename: sourceFilename,
+                    name: String(sourceName || t('notebookPromptTitle')).slice(0, 120), scope, note: data }));
+                const send = () => fetch('/anomalous/save_prompt_note_material', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+                });
+                try {
+                    let response = await send();
+                    if (response.status === 409) {
+                        const duplicate = await response.json();
+                        if (duplicate.status !== 'duplicate') throw new Error('material conflict');
+                        if (!await anomalousConfirm(t('materialDuplicateConfirm', { name: duplicate.name }))) return;
+                        body.allow_duplicate = true;
+                        response = await send();
+                    }
+                    const result = await response.json();
+                    if (!response.ok || result.status !== 'success') throw new Error('material save failed');
+                    showMaterialSaved(this, result.material);
+                    await this.refreshMaterials?.();
+                } catch (error) {
+                    await anomalousAlert(t('materialSaveError'));
+                } finally { saveMaterial.disabled = false; }
+            };
+            capture.appendChild(saveMaterial);
+        }
+
         promptSec.appendChild(toggleRow);
         promptSec.appendChild(rawArea);
         promptSec.appendChild(dualPane);
+        promptSec.appendChild(promptTools);
 
         this.nbEditor.appendChild(tb);
-        this.nbEditor.appendChild(modelSection);
         this.nbEditor.appendChild(promptSec);
+        this.nbEditor.appendChild(capture);
+        this.nbEditor.appendChild(modelsFold);
 
         // Fetch compatible models and fill galleries
-        this.fillNotebookGalleries(data.baseModel, mainGallery, loraGallery, data);
+        let modelsLoaded = false;
+        modelsFold.ontoggle = () => {
+            if (!modelsFold.open || modelsLoaded) return;
+            modelsLoaded = true;
+            this.fillNotebookGalleries(data.baseModel, mainGallery, loraGallery, data);
+        };
     }
 
 
