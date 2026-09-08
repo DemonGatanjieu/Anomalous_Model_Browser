@@ -439,17 +439,60 @@ function buildSpecsGrid(params, blocks, item, suggestedName) {
         headerRow.className = 'anomalous-workbench-spec-header';
         text(headerRow, 'span', labelStr, 'anomalous-workbench-spec-label');
 
+        let copyIndicator = null;
         if (options.copyable) {
-            const copyBtn = document.createElement('button');
-            copyBtn.type = 'button';
-            copyBtn.className = 'anomalous-workbench-spec-copy';
-            copyBtn.innerHTML = '📋';
-            copyBtn.title = t('copy') || '复制';
-            copyBtn.onclick = (e) => {
+            card.classList.add('is-copyable');
+            card.setAttribute('role', 'button');
+            card.tabIndex = 0;
+            const clickHint = window.anomalous_browser_lang === 'zh' ? '点击复制数值' : 'Click to copy';
+            card.title = clickHint;
+
+            copyIndicator = document.createElement('span');
+            copyIndicator.className = 'anomalous-workbench-copy-indicator';
+            copyIndicator.innerHTML = `
+                <svg class="anomalous-workbench-spec-copy-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="5.5" y="5.5" width="8" height="8" rx="1.5"></rect>
+                    <path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2"></path>
+                </svg>
+            `;
+            headerRow.appendChild(copyIndicator);
+
+            const handleCopy = async (e) => {
                 e.stopPropagation();
-                copyToClipboard(String(val), copyBtn, '✅', '📋');
+                try {
+                    await navigator.clipboard.writeText(String(val));
+                    card.classList.add('is-copied');
+                    if (copyIndicator) {
+                        copyIndicator.innerHTML = `
+                            <svg class="anomalous-workbench-spec-copy-icon is-success" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="3.5 8.5 6.5 11.5 12.5 4.5"></polyline>
+                            </svg>
+                            <span class="anomalous-workbench-copy-badge">${window.anomalous_browser_lang === 'zh' ? '已复制' : 'Copied'}</span>
+                        `;
+                    }
+                    setTimeout(() => {
+                        card.classList.remove('is-copied');
+                        if (copyIndicator) {
+                            copyIndicator.innerHTML = `
+                                <svg class="anomalous-workbench-spec-copy-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <rect x="5.5" y="5.5" width="8" height="8" rx="1.5"></rect>
+                                    <path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2"></path>
+                                </svg>
+                            `;
+                        }
+                    }, 1400);
+                } catch (err) {
+                    console.warn('Clipboard copy error:', err);
+                }
             };
-            headerRow.appendChild(copyBtn);
+
+            card.onclick = handleCopy;
+            card.onkeydown = (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleCopy(e);
+                }
+            };
         }
         card.appendChild(headerRow);
 
@@ -471,11 +514,31 @@ function buildSpecsGrid(params, blocks, item, suggestedName) {
     if (generationBlocks.length) {
         const actions = document.createElement('div');
         actions.className = 'anomalous-workbench-generation-save';
-        const save = text(actions, 'button', t('materialSaveGeneration'), 'anomalous-btn-ghost');
+
+        const infoBox = document.createElement('div');
+        infoBox.className = 'anomalous-workbench-generation-info';
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'anomalous-workbench-generation-title';
+        titleEl.innerHTML = `
+            <svg class="anomalous-workbench-generation-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="2" y="2" width="12" height="12" rx="3"></rect>
+                <path d="M5 8h6m-3-3v6"></path>
+            </svg>
+            <span>${t('materialSaveGeneration')}</span>
+        `;
+        infoBox.appendChild(titleEl);
+        text(infoBox, 'div', t('materialGenerationScope'), 'anomalous-workbench-generation-hint');
+
+        const save = document.createElement('button');
         save.type = 'button';
+        save.className = 'anomalous-workbench-generation-btn';
+        save.textContent = window.anomalous_browser_lang === 'zh' ? '保存预设' : 'Save Preset';
         save.dataset.defaultLabel = save.textContent;
         save.onclick = () => saveSelectedBlocks(item, suggestedName, generationBlocks, save);
-        text(actions, 'small', t('materialGenerationScope'), 'anomalous-workbench-muted');
+
+        actions.appendChild(infoBox);
+        actions.appendChild(save);
         grid.appendChild(actions);
     }
 
@@ -952,21 +1015,38 @@ async function renderInspectorContent(data, item) {
     const loadCanvasBtn = document.createElement('button');
     loadCanvasBtn.type = 'button';
     loadCanvasBtn.className = 'anomalous-workbench-action-btn is-primary';
-    loadCanvasBtn.textContent = t('materialOpenWorkflow');
-    loadCanvasBtn.title = '将这张图片中包含的完整工作流直接还原到 ComfyUI 画布';
+    loadCanvasBtn.innerHTML = `
+        <svg class="anomalous-workbench-action-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="3" width="4" height="4" rx="1"></rect>
+            <rect x="10" y="3" width="4" height="4" rx="1"></rect>
+            <rect x="6" y="9.5" width="4" height="4" rx="1"></rect>
+            <path d="M4 7v2a1 1 0 0 0 1 1h1m6-3v2a1 1 0 0 1-1 1H8"></path>
+        </svg>
+        <span>${t('materialOpenWorkflow')}</span>
+    `;
+    loadCanvasBtn.title = window.anomalous_browser_lang === 'zh'
+        ? '将这张图片中包含的完整工作流直接还原到 ComfyUI 画布'
+        : 'Restore the full workflow from this image directly to ComfyUI canvas';
     loadCanvasBtn.onclick = () => loadWorkflowToComfyCanvas(clientWorkflow || inspectPayload.workflow);
     toolbar.appendChild(loadCanvasBtn);
 
     const saveMaterialBtn = document.createElement('button');
     saveMaterialBtn.type = 'button';
     saveMaterialBtn.className = 'anomalous-workbench-action-btn is-save';
-    saveMaterialBtn.textContent = t('materialSaveSnapshotShort');
+    const cleanSaveLabel = (t('materialSaveSnapshotShort') || '保存到素材库').replace(/^[^\w\u4e00-\u9fa5]+/, '').trim();
+    saveMaterialBtn.innerHTML = `
+        <svg class="anomalous-workbench-action-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3.5 2.5h9a1 1 0 0 1 1 1v10.5l-5.5-3-5.5 3V3.5a1 1 0 0 1 1-1z"></path>
+        </svg>
+        <span>${cleanSaveLabel}</span>
+    `;
     saveMaterialBtn.title = t('materialSaveSnapshotFocusHint');
     saveMaterialBtn.setAttribute('aria-expanded', 'false');
     saveMaterialBtn.onclick = () => {
         const footer = wb?.sideFooterEl;
         if (!footer) return;
         footer.hidden = !footer.hidden;
+        saveMaterialBtn.classList.toggle('is-active', !footer.hidden);
         saveMaterialBtn.setAttribute('aria-expanded', String(!footer.hidden));
         if (footer.hidden) return;
         const nameInput = wb?.sideFooterEl?.querySelector('input[type="text"]');
@@ -1101,7 +1181,16 @@ function renderSaveSnapshotFooter(inspectPayload, item) {
     const saveBtn = document.createElement('button');
     saveBtn.type = 'button';
     saveBtn.className = 'anomalous-workbench-action-btn is-save';
-    saveBtn.innerHTML = `💾 ${t('materialSaveSnapshot') || '保存为素材'}`;
+    const snapshotLabel = (t('materialSaveSnapshot') || '保存为素材').replace(/^[^\w\u4e00-\u9fa5]+/, '').trim();
+    const renderSaveBtnNormal = () => {
+        saveBtn.innerHTML = `
+            <svg class="anomalous-workbench-action-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3.5 2.5h9a1 1 0 0 1 1 1v10.5l-5.5-3-5.5 3V3.5a1 1 0 0 1 1-1z"></path>
+            </svg>
+            <span>${snapshotLabel}</span>
+        `;
+    };
+    renderSaveBtnNormal();
 
     saveBtn.onclick = async () => {
         const val = nameInput.value.trim();
@@ -1111,12 +1200,12 @@ function renderSaveSnapshotFooter(inspectPayload, item) {
         try {
             const tags = tagsInput.value.split(/[,，]/).map(value => value.trim()).filter(Boolean);
             const saved = await saveImageMaterial(item, val, null, tags);
-            if (!saved) { saveBtn.disabled = false; saveBtn.textContent = t('materialSaveSnapshot'); return; }
+            if (!saved) { saveBtn.disabled = false; renderSaveBtnNormal(); return; }
             saveBtn.textContent = t('materialSaved');
             saveBtn.disabled = false;
         } catch (error) {
             console.error('Could not save image material:', error);
-            saveBtn.textContent = `💾 ${t('materialSaveSnapshot') || '保存为素材'}`;
+            renderSaveBtnNormal();
             saveBtn.disabled = false;
             await anomalousAlert(t('materialSaveError') || '素材快照保存失败。');
         }

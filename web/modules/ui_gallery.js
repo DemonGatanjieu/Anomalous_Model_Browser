@@ -255,7 +255,17 @@ export async function loadGalleryImages(page = 1, reset = false) {
                     const detailsBtn = document.createElement('button');
                     detailsBtn.className = 'anomalous-gallery-details';
                     detailsBtn.type = 'button';
-                    detailsBtn.textContent = `🔎 ${t('materialViewParameters')}`;
+                    detailsBtn.innerHTML = `
+                        <svg class="anomalous-gallery-details-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                            <line x1="2" y1="5" x2="8" y2="5"></line>
+                            <line x1="12" y1="5" x2="14" y2="5"></line>
+                            <circle cx="10" cy="5" r="2"></circle>
+                            <line x1="2" y1="11" x2="4" y2="11"></line>
+                            <line x1="8" y1="11" x2="14" y2="11"></line>
+                            <circle cx="6" cy="11" r="2"></circle>
+                        </svg>
+                        <span>${t('materialViewParameters')}</span>
+                    `;
                     detailsBtn.title = t('materialViewDetails');
                     detailsBtn.onclick = (event) => {
                         event.stopPropagation();

@@ -1153,19 +1153,32 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     left: 8px;
     bottom: 8px;
     z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     max-width: calc(100% - 16px);
-    padding: 7px 10px;
-    border: 1px solid rgba(255,255,255,.18);
-    border-radius: 7px;
-    background: rgba(18,20,26,.82);
-    color: #f5f7fb;
-    font-size: 12px;
+    padding: 6px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(15, 20, 30, 0.82);
+    color: #f1f5f9;
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1;
     cursor: pointer;
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(5px);
     pointer-events: none;
-    backdrop-filter: blur(5px);
-    transition: opacity .16s ease, transform .16s ease, background .16s ease;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    transition: opacity .18s cubic-bezier(0.16, 1, 0.3, 1), 
+                transform .18s cubic-bezier(0.16, 1, 0.3, 1), 
+                background .18s ease, 
+                border-color .18s ease, 
+                box-shadow .18s ease,
+                color .18s ease;
+    user-select: none;
 }
 
 .anomalous-gallery-card:hover .anomalous-gallery-details,
@@ -1175,7 +1188,29 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     pointer-events: auto;
 }
 
-.anomalous-gallery-details:hover { background: rgba(31,111,91,.94); }
+.anomalous-gallery-details:hover {
+    background: rgba(20, 29, 44, 0.94);
+    border-color: rgba(45, 212, 191, 0.55);
+    color: #5eead4;
+    box-shadow: 0 4px 16px rgba(45, 212, 191, 0.25);
+    transform: translateY(-1px);
+}
+
+.anomalous-gallery-details:active {
+    transform: translateY(0) scale(0.96);
+}
+
+.anomalous-gallery-details-icon {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    stroke: currentColor;
+    transition: transform .2s ease;
+}
+
+.anomalous-gallery-details:hover .anomalous-gallery-details-icon {
+    transform: scale(1.1);
+}
 
 #anomalous-gallery-panel.is-cover-selecting .anomalous-gallery-details,
 #anomalous-gallery-panel.is-cover-selecting .anomalous-gallery-delete {
@@ -6318,7 +6353,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 /* Inspector Top Actions Toolbar */
 .anomalous-workbench-inspector-toolbar {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
     flex-shrink: 0;
 }
@@ -6328,49 +6363,82 @@ dialog.anomalous-gallery-viewer::backdrop {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 8px 12px;
-    border-radius: 9px;
+    gap: 7px;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(255, 255, 255, 0.05);
     color: #e2e8f0;
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.18s;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     white-space: nowrap;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.anomalous-workbench-action-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    stroke: currentColor;
+    transition: transform 0.18s ease;
+}
+
+.anomalous-workbench-action-btn:hover .anomalous-workbench-action-icon {
+    transform: scale(1.1);
 }
 
 .anomalous-workbench-action-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.09);
+    color: #ffffff;
     border-color: rgba(255, 255, 255, 0.22);
 }
 
 .anomalous-workbench-action-btn.is-primary {
-    background: linear-gradient(135deg, rgba(45, 212, 191, 0.22), rgba(56, 189, 248, 0.22));
-    border-color: rgba(45, 212, 191, 0.45);
-    color: #5eead4;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(45, 212, 191, 0.26) 100%);
+    border-color: rgba(45, 212, 191, 0.42);
+    color: #e0f2fe;
 }
 
 .anomalous-workbench-action-btn.is-primary:hover {
-    background: linear-gradient(135deg, rgba(45, 212, 191, 0.35), rgba(56, 189, 248, 0.35));
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.36) 0%, rgba(45, 212, 191, 0.4) 100%);
     border-color: #2dd4bf;
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(45, 212, 191, 0.3);
+    color: #ffffff;
+    box-shadow: 0 4px 18px rgba(45, 212, 191, 0.28);
+    transform: translateY(-1px);
+}
+
+.anomalous-workbench-action-btn.is-primary:active {
+    transform: translateY(0) scale(0.98);
 }
 
 .anomalous-workbench-action-btn.is-save {
-    background: rgba(99, 102, 241, 0.2);
-    border-color: rgba(99, 102, 241, 0.4);
-    color: #a5b4fc;
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #cbd5e1;
     flex: 0 0 auto;
 }
 
 .anomalous-workbench-action-btn.is-save:hover {
-    background: rgba(99, 102, 241, 0.32);
-    color: #fff;
-    border-color: #818cf8;
+    background: rgba(255, 255, 255, 0.09);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.24);
+    transform: translateY(-1px);
+}
+
+.anomalous-workbench-action-btn.is-save.is-active,
+.anomalous-workbench-action-btn.is-save[aria-expanded="true"] {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(129, 140, 248, 0.5);
+    color: #c7d2fe;
+    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.25);
+}
+
+.anomalous-workbench-action-btn.is-save:active {
+    transform: translateY(0) scale(0.98);
 }
 
 /* Segmented Tabs Bar */
@@ -6400,13 +6468,18 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-tab-btn:hover {
-    color: #e2e8f0;
+    color: #f1f5f9;
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .anomalous-workbench-tab-btn.is-active {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.09);
     color: #2dd4bf;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.anomalous-workbench-tab-btn:active {
+    transform: scale(0.97);
 }
 
 /* Tab Panels */
@@ -6426,12 +6499,14 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-workbench-spec-card {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
     padding: 10px 12px;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.035);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: all 0.15s;
+    transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    user-select: text;
 }
 
 .anomalous-workbench-spec-card:hover {
@@ -6444,19 +6519,45 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-spec-card.is-seed {
-    border-color: rgba(245, 158, 11, 0.25);
-    background: rgba(245, 158, 11, 0.04);
+    border-color: rgba(245, 158, 11, 0.28);
+    background: rgba(245, 158, 11, 0.035);
+}
+
+.anomalous-workbench-spec-card.is-seed:hover {
+    border-color: rgba(245, 158, 11, 0.45);
+    background: rgba(245, 158, 11, 0.06);
 }
 
 .anomalous-workbench-spec-card.is-res {
     border-color: rgba(56, 189, 248, 0.25);
-    background: rgba(56, 189, 248, 0.04);
+    background: rgba(56, 189, 248, 0.035);
+}
+
+/* Card Click-to-copy interaction */
+.anomalous-workbench-spec-card.is-copyable {
+    cursor: pointer;
+}
+
+.anomalous-workbench-spec-card.is-copyable:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+}
+
+.anomalous-workbench-spec-card.is-copyable:active {
+    transform: translateY(0) scale(0.99);
+}
+
+.anomalous-workbench-spec-card.is-copied {
+    border-color: rgba(45, 212, 191, 0.6) !important;
+    background: rgba(45, 212, 191, 0.08) !important;
+    box-shadow: 0 0 14px rgba(45, 212, 191, 0.25) !important;
 }
 
 .anomalous-workbench-spec-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 6px;
 }
 
 .anomalous-workbench-spec-label {
@@ -6465,42 +6566,41 @@ dialog.anomalous-gallery-viewer::backdrop {
     font-weight: 500;
 }
 
-.anomalous-workbench-spec-copy {
-    border: none;
-    background: transparent;
+.anomalous-workbench-copy-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0.45;
+    transition: opacity 0.15s ease, transform 0.15s ease;
     color: #94a3b8;
-    font-size: 11px;
-    cursor: pointer;
-    padding: 2px 4px;
-    border-radius: 4px;
-    transition: all 0.15s;
-    line-height: 1;
 }
 
-.anomalous-workbench-spec-copy:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+.anomalous-workbench-spec-card.is-copyable:hover .anomalous-workbench-copy-indicator {
+    opacity: 1;
+    transform: scale(1.05);
 }
 
-.anomalous-workbench-spec-save {
-    flex: 0 0 auto;
-    margin-left: auto;
-    padding: 3px 7px;
-    border: 1px solid rgba(45, 212, 191, 0.26);
-    border-radius: 6px;
-    background: rgba(45, 212, 191, 0.08);
-    color: #8fe1d4;
-    font-size: 0.62rem;
-    cursor: pointer;
+.anomalous-workbench-spec-copy-icon {
+    width: 12px;
+    height: 12px;
+    stroke: currentColor;
 }
 
-.anomalous-workbench-spec-copy + .anomalous-workbench-spec-save { margin-left: 3px; }
-.anomalous-workbench-spec-save:hover:not(:disabled) {
-    border-color: rgba(45, 212, 191, 0.48);
-    background: rgba(45, 212, 191, 0.16);
-    color: #d8fff8;
+.anomalous-workbench-spec-copy-icon.is-success {
+    stroke: #2dd4bf;
 }
-.anomalous-workbench-spec-save:disabled { cursor: default; opacity: 0.55; }
+
+.anomalous-workbench-copy-badge {
+    font-size: 10px;
+    font-weight: 600;
+    color: #2dd4bf;
+    animation: anomalous-fade-in 0.15s ease forwards;
+}
+
+@keyframes anomalous-fade-in {
+    from { opacity: 0; transform: translateX(2px); }
+    to { opacity: 1; transform: translateX(0); }
+}
 
 .anomalous-workbench-spec-val {
     color: #f1f5f9;
@@ -6513,6 +6613,89 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-workbench-spec-val.is-mono {
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
     font-variant-numeric: tabular-nums;
+}
+
+/* Generation Parameter Preset Section */
+.anomalous-workbench-generation-save {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.05) 0%, rgba(56, 189, 248, 0.03) 100%);
+    border: 1px solid rgba(45, 212, 191, 0.2);
+    margin-top: 4px;
+    transition: all 0.18s ease;
+}
+
+.anomalous-workbench-generation-save:hover {
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.08) 0%, rgba(56, 189, 248, 0.05) 100%);
+    border-color: rgba(45, 212, 191, 0.35);
+    box-shadow: 0 3px 12px rgba(45, 212, 191, 0.08);
+}
+
+.anomalous-workbench-generation-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    flex: 1;
+}
+
+.anomalous-workbench-generation-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.anomalous-workbench-generation-icon {
+    width: 13px;
+    height: 13px;
+    stroke: #2dd4bf;
+    flex-shrink: 0;
+}
+
+.anomalous-workbench-generation-hint {
+    font-size: 0.66rem;
+    color: #8e9dae;
+    line-height: 1.35;
+}
+
+.anomalous-workbench-generation-btn {
+    flex-shrink: 0;
+    padding: 6px 13px;
+    border-radius: 7px;
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.22), rgba(56, 189, 248, 0.22));
+    border: 1px solid rgba(45, 212, 191, 0.45);
+    color: #e0f2fe;
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.16s ease;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.anomalous-workbench-generation-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(45, 212, 191, 0.36), rgba(56, 189, 248, 0.36));
+    border-color: #2dd4bf;
+    color: #ffffff;
+    box-shadow: 0 3px 12px rgba(45, 212, 191, 0.28);
+    transform: translateY(-1px);
+}
+
+.anomalous-workbench-generation-btn:active:not(:disabled) {
+    transform: translateY(0) scale(0.97);
+}
+
+.anomalous-workbench-generation-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
 }
 
 /* Prompts Station */

@@ -75,11 +75,14 @@ DOM or live LiteGraph state.
 - `web/modules/entry_controls.js` and `shortcut_controls.js` own entry modes and
   native command/keybinding integration.
 - `ui_sidebar.js`, `ui_grid.js`, `ui_detail.js`, and `ui_gallery.js` own the
-  primary model-browser surfaces.
+  primary model-browser surfaces, including the frosted-glass capsule parameter inspection
+  button with lightweight vector SVG icons and GPU-accelerated micro-interactions.
 - `ui_gallery_detail.js` owns the studio modal Image Detail Workbench,
   multi-dimensional image navigation (keyboard shortcuts, floating glass arrows,
-  left vertical thumbnail rail), and segmented Bento parameter inspection with ComfyUI
-  canvas injection (`app.loadGraphData`).
+  left vertical thumbnail rail), streamlined workflow/material action buttons,
+  seamless card click-to-copy Bento spec tiles (replacing standalone emoji boxes),
+  full-width generation parameter preset saving, and segmented Bento parameter inspection
+  with ComfyUI canvas injection (`app.loadGraphData`).
 - `ui_notebooks.js`, `ui_recipes.js`, and `ui_recipe_detail.js` own Workspace
   presentation, featuring Bento-style visual cards, quick spec tags, real-time environment readiness indicators (🟢/🟡/🔴), one-click batch model matching, and lazy DOM rendering for node parameter trees.
 - `ui_materials.js` owns the Workspace Material Library and material CRUD presentation;
