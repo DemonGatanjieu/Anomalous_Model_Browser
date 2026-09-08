@@ -367,6 +367,68 @@ async function showMaterialDetail(owner, material) {
     }
 }
 
+function startInlineTitleEdit(owner, material, titleRow, cardTitle, editBtn) {
+    if (titleRow.querySelector('.anomalous-material-inline-input')) return;
+    const originalName = material.name || '';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'anomalous-material-inline-input';
+    input.value = originalName;
+    input.maxLength = 120;
+    input.placeholder = t('materialName') || '输入短标题…';
+
+    cardTitle.style.display = 'none';
+    editBtn.style.display = 'none';
+    titleRow.appendChild(input);
+    input.focus();
+    input.select();
+
+    let isSaving = false;
+    const finish = async (shouldSave) => {
+        if (isSaving) return;
+        const newName = input.value.trim();
+        if (shouldSave && newName && newName !== originalName) {
+            isSaving = true;
+            input.disabled = true;
+            try {
+                const response = await fetch('/anomalous/update_material', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filename: material.filename,
+                        name: newName,
+                        tags: material.tags || [],
+                    }),
+                });
+                const payload = await jsonResponse(response, 'material update failed');
+                if (payload.status === 'success' && payload.material) {
+                    Object.assign(material, payload.material);
+                    cardTitle.textContent = material.name;
+                    cardTitle.title = material.name;
+                }
+            } catch (err) {
+                console.warn('Failed to update title:', err);
+            }
+        }
+        input.remove();
+        cardTitle.style.display = '';
+        editBtn.style.display = '';
+    };
+
+    input.onclick = (e) => e.stopPropagation();
+    input.onkeydown = (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            finish(true);
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            finish(false);
+        }
+    };
+    input.onblur = () => finish(true);
+}
+
 function renderMaterialCard(owner, material) {
     const card = document.createElement('article');
     card.className = 'anomalous-material-card';
@@ -425,13 +487,36 @@ function renderMaterialCard(owner, material) {
 
     const body = document.createElement('div');
     body.className = 'anomalous-material-card-body';
-    const cardTitle = text(body, 'h3', material.name || t('materialUntitled'));
+
+    const titleRow = document.createElement('div');
+    titleRow.className = 'anomalous-material-card-title-row';
+
+    const cardTitle = document.createElement('h3');
+    cardTitle.className = 'anomalous-material-card-title-text';
+    cardTitle.textContent = material.name || t('materialUntitled');
     cardTitle.title = material.name || t('materialUntitled');
+    titleRow.appendChild(cardTitle);
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'anomalous-material-card-edit-btn';
+    editBtn.title = t('materialQuickEditTitle') || '修改短标题';
+    editBtn.innerHTML = `
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11.5 2.5l2 2L5 13H3v-2l8.5-8.5z"></path>
+        </svg>
+    `;
+    editBtn.onclick = (e) => {
+        e.stopPropagation();
+        startInlineTitleEdit(owner, material, titleRow, cardTitle, editBtn);
+    };
+    titleRow.appendChild(editBtn);
+    body.appendChild(titleRow);
 
     const metadata = document.createElement('div');
     metadata.className = 'anomalous-material-card-meta';
     if (isPromptMaterial(material)) {
-        text(metadata, 'span', promptKindLabel(material), 'anomalous-material-scope-badge');
+        text(metadata, 'span', promptKindLabel(material), 'anomalous-material-scope-badge is-prompt');
     } else if (material.kind === 'recipe_parameter_selection') {
         text(metadata, 'span', t('materialRecipeParameterMaterial'), 'anomalous-material-scope-badge is-nodes');
     } else if (material.selection?.scope === 'nodes') {
@@ -446,17 +531,36 @@ function renderMaterialCard(owner, material) {
         text(metadata, 'span', t('materialFullWorkflowMaterial'), 'anomalous-material-scope-badge is-workflow');
     }
     if (!isPromptMaterial(material)) text(metadata, 'span', t('materialNodeSummary', { count: material.node_count || 0 }), 'anomalous-material-meta-pill');
-    renderSourceRecipeMark(metadata, material.source_recipe);
     body.appendChild(metadata);
 
+    const secondaryRow = document.createElement('div');
+    secondaryRow.className = 'anomalous-material-card-subinfo';
+    if (material.timestamp) {
+        const dateStr = new Date(material.timestamp * 1000).toLocaleDateString();
+        text(secondaryRow, 'span', dateStr, 'anomalous-material-card-date');
+    }
+    renderSourceRecipeMark(secondaryRow, material.source_recipe);
+    if (secondaryRow.hasChildNodes()) {
+        body.appendChild(secondaryRow);
+    }
+
     if (Array.isArray(material.node_types) && material.node_types.length) {
-        // ComfyUI registers titles in its active locale; keep type IDs for matching.
-        const labels = material.node_types.slice(0, 5).map(type => {
+        const displayLimit = 2;
+        const shownTypes = material.node_types.slice(0, displayLimit);
+        const labels = shownTypes.map(type => {
             const registered = globalThis.LiteGraph?.registered_node_types?.[type];
             return registered?.title || registered?.nodeData?.display_name || type;
         });
-        const types = text(body, 'small', labels.join(' · '), 'anomalous-material-types');
-        types.title = material.node_types.join(' · ');
+        const remaining = material.node_types.length - shownTypes.length;
+        let summaryText = labels.join(' · ');
+        if (remaining > 0) {
+            summaryText += t('materialOtherNodeTypes', { count: remaining });
+        }
+        const types = text(body, 'small', summaryText, 'anomalous-material-types');
+        types.title = material.node_types.map(type => {
+            const registered = globalThis.LiteGraph?.registered_node_types?.[type];
+            return registered?.title || registered?.nodeData?.display_name || type;
+        }).join(' · ');
     }
     if (material.tags?.length) {
         const tags = text(body, 'div', '', 'anomalous-material-tags');

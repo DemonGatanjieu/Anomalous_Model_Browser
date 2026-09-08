@@ -444,45 +444,57 @@ function buildSpecsGrid(params, blocks, item, suggestedName) {
             card.classList.add('is-copyable');
             card.setAttribute('role', 'button');
             card.tabIndex = 0;
-            const clickHint = window.anomalous_browser_lang === 'zh' ? '点击复制数值' : 'Click to copy';
-            card.title = clickHint;
+            card.title = t('materialClickToCopy') || '点击复制数值';
 
             copyIndicator = document.createElement('span');
             copyIndicator.className = 'anomalous-workbench-copy-indicator';
-            copyIndicator.innerHTML = `
-                <svg class="anomalous-workbench-spec-copy-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <rect x="5.5" y="5.5" width="8" height="8" rx="1.5"></rect>
-                    <path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2"></path>
-                </svg>
-            `;
-            headerRow.appendChild(copyIndicator);
+            const renderNormalCopyIcon = () => {
+                copyIndicator.innerHTML = `
+                    <svg class="anomalous-workbench-spec-copy-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="5.5" y="5.5" width="8" height="8" rx="1.5"></rect>
+                        <path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2"></path>
+                    </svg>
+                `;
+            };
+            renderNormalCopyIcon();
+            card.appendChild(copyIndicator);
 
             const handleCopy = async (e) => {
                 e.stopPropagation();
                 try {
                     await navigator.clipboard.writeText(String(val));
+                    card.classList.remove('is-copy-failed');
                     card.classList.add('is-copied');
                     if (copyIndicator) {
                         copyIndicator.innerHTML = `
                             <svg class="anomalous-workbench-spec-copy-icon is-success" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <polyline points="3.5 8.5 6.5 11.5 12.5 4.5"></polyline>
                             </svg>
-                            <span class="anomalous-workbench-copy-badge">${window.anomalous_browser_lang === 'zh' ? '已复制' : 'Copied'}</span>
+                            <span class="anomalous-workbench-copy-badge">${t('materialCopySuccess')}</span>
                         `;
                     }
                     setTimeout(() => {
                         card.classList.remove('is-copied');
-                        if (copyIndicator) {
-                            copyIndicator.innerHTML = `
-                                <svg class="anomalous-workbench-spec-copy-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                    <rect x="5.5" y="5.5" width="8" height="8" rx="1.5"></rect>
-                                    <path d="M10.5 5.5v-2a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2"></path>
-                                </svg>
-                            `;
-                        }
-                    }, 1400);
+                        if (copyIndicator) renderNormalCopyIcon();
+                    }, 1500);
                 } catch (err) {
                     console.warn('Clipboard copy error:', err);
+                    card.classList.remove('is-copied');
+                    card.classList.add('is-copy-failed');
+                    if (copyIndicator) {
+                        copyIndicator.innerHTML = `
+                            <svg class="anomalous-workbench-spec-copy-icon is-error" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="8" cy="8" r="6"></circle>
+                                <line x1="8" y1="5" x2="8" y2="8.5"></line>
+                                <line x1="8" y1="11" x2="8.01" y2="11"></line>
+                            </svg>
+                            <span class="anomalous-workbench-copy-badge is-error">${t('materialCopyFailed')}</span>
+                        `;
+                    }
+                    setTimeout(() => {
+                        card.classList.remove('is-copy-failed');
+                        if (copyIndicator) renderNormalCopyIcon();
+                    }, 2000);
                 }
             };
 
@@ -533,7 +545,7 @@ function buildSpecsGrid(params, blocks, item, suggestedName) {
         const save = document.createElement('button');
         save.type = 'button';
         save.className = 'anomalous-workbench-generation-btn';
-        save.textContent = window.anomalous_browser_lang === 'zh' ? '保存预设' : 'Save Preset';
+        save.textContent = t('materialSaveGenerationAction');
         save.dataset.defaultLabel = save.textContent;
         save.onclick = () => saveSelectedBlocks(item, suggestedName, generationBlocks, save);
 

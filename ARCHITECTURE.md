@@ -80,13 +80,16 @@ DOM or live LiteGraph state.
 - `ui_gallery_detail.js` owns the studio modal Image Detail Workbench,
   multi-dimensional image navigation (keyboard shortcuts, floating glass arrows,
   left vertical thumbnail rail), streamlined workflow/material action buttons,
-  seamless card click-to-copy Bento spec tiles (replacing standalone emoji boxes),
-  full-width generation parameter preset saving, and segmented Bento parameter inspection
-  with ComfyUI canvas injection (`app.loadGraphData`).
+  seamless non-shifting click-to-copy Bento spec tiles with error retry state,
+  keyboard accessible focus indicators, full-width generation parameter saving to Material Library,
+  and segmented Bento parameter inspection with ComfyUI canvas injection (`app.loadGraphData`).
 - `ui_notebooks.js`, `ui_recipes.js`, and `ui_recipe_detail.js` own Workspace
-  presentation, featuring Bento-style visual cards, quick spec tags, real-time environment readiness indicators (🟢/🟡/🔴), one-click batch model matching, and lazy DOM rendering for node parameter trees.
+  presentation, featuring Bento-style visual cards, solid high-performance gradients without
+  costly backdrop blurs, quick spec tags, real-time environment readiness indicators (🟢/🟡/🔴),
+  one-click batch model matching, and lazy DOM rendering for node parameter trees.
 - `ui_materials.js` owns the Workspace Material Library and material CRUD presentation;
-  features direct card-click inspection, floating quick actions (delete/workflow load),
+  features direct card-click inspection, inline short-title editing on cards, collapsed secondary
+  node types (leading types plus `+N more`), semantic muted scope badges, floating quick actions,
   initially expanded prompt cards and lazily rendered closed parameter cards,
   and global collapse/expand toggles; delegates image inspection to `ui_gallery_detail.js`;
   Node Assistant remains the owner of applying a material node block.

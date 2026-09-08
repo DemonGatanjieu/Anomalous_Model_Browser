@@ -2630,8 +2630,13 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .anomalous-recipe-detail-parameters.is-switching {
-        animation: none;
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
     }
 }
 
@@ -3880,7 +3885,7 @@ dialog.anomalous-gallery-viewer[open] {
     color: #a7afbe;
     font-size: .66rem;
 }
-.anomalous-material-types { overflow: hidden; color: #6fcbb7; text-overflow: ellipsis; white-space: nowrap; }
+.anomalous-material-types { overflow: hidden; color: #718096; font-size: 0.72rem; text-overflow: ellipsis; white-space: nowrap; }
 
 .anomalous-library-detail-view {
     display: flex;
@@ -4437,9 +4442,9 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 14px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 14px;
-    background: linear-gradient(145deg, rgba(34, 36, 42, 0.85), rgba(20, 21, 25, 0.96));
+    background: linear-gradient(145deg, #1f2229, #131418);
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
-    backdrop-filter: blur(12px);
+    /* backdrop-filter removed for scrolling performance */
     transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease, box-shadow 0.22s ease;
     overflow: hidden;
 }
@@ -6504,7 +6509,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     border-radius: 9px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
     position: relative;
     user-select: text;
 }
@@ -6567,17 +6572,27 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-copy-indicator {
+    position: absolute;
+    right: 10px;
+    top: 10px;
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    opacity: 0.45;
+    opacity: 0;
     transition: opacity 0.15s ease, transform 0.15s ease;
     color: #94a3b8;
+    pointer-events: none;
 }
 
-.anomalous-workbench-spec-card.is-copyable:hover .anomalous-workbench-copy-indicator {
+.anomalous-workbench-spec-card.is-copyable:hover .anomalous-workbench-copy-indicator,
+.anomalous-workbench-spec-card.is-copyable:focus-visible .anomalous-workbench-copy-indicator {
     opacity: 1;
     transform: scale(1.05);
+}
+
+.anomalous-workbench-spec-card.is-copyable:focus-visible {
+    outline: 2px solid rgba(45, 212, 191, 0.55);
+    outline-offset: 1px;
 }
 
 .anomalous-workbench-spec-copy-icon {
@@ -6590,11 +6605,24 @@ dialog.anomalous-gallery-viewer::backdrop {
     stroke: #2dd4bf;
 }
 
+.anomalous-workbench-spec-copy-icon.is-error {
+    stroke: #f87171;
+}
+
 .anomalous-workbench-copy-badge {
     font-size: 10px;
     font-weight: 600;
     color: #2dd4bf;
     animation: anomalous-fade-in 0.15s ease forwards;
+}
+
+.anomalous-workbench-copy-badge.is-error {
+    color: #f87171;
+}
+
+.anomalous-workbench-spec-card.is-copy-failed {
+    border-color: rgba(239, 68, 68, 0.5) !important;
+    background: rgba(239, 68, 68, 0.06) !important;
 }
 
 @keyframes anomalous-fade-in {
@@ -6627,7 +6655,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: linear-gradient(135deg, rgba(45, 212, 191, 0.05) 0%, rgba(56, 189, 248, 0.03) 100%);
     border: 1px solid rgba(45, 212, 191, 0.2);
     margin-top: 4px;
-    transition: all 0.18s ease;
+    transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .anomalous-workbench-generation-save:hover {
@@ -6676,7 +6704,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     font-size: 0.74rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.16s ease;
+    transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, color 0.16s ease;
     white-space: nowrap;
     user-select: none;
 }
@@ -7008,10 +7036,10 @@ dialog.anomalous-gallery-viewer::backdrop {
     flex: 0 0 auto;
     align-self: flex-start;
     padding: 2px 7px;
-    border: 1px solid rgba(45, 212, 191, 0.22);
+    border: 1px solid rgba(148, 163, 184, 0.24);
     border-radius: 999px;
-    background: rgba(45, 212, 191, 0.07);
-    color: #80d8ca;
+    background: rgba(148, 163, 184, 0.08);
+    color: #cbd5e1;
     font-size: 0.65rem;
     white-space: nowrap;
 }
@@ -7020,6 +7048,95 @@ dialog.anomalous-gallery-viewer::backdrop {
     border-color: rgba(96, 165, 250, 0.24);
     background: rgba(96, 165, 250, 0.08);
     color: #9cc7ff;
+}
+
+.anomalous-material-scope-badge.is-prompt {
+    border-color: rgba(168, 85, 247, 0.28);
+    background: rgba(168, 85, 247, 0.08);
+    color: #c084fc;
+}
+
+.anomalous-material-scope-badge.is-nodes {
+    border-color: rgba(148, 163, 184, 0.24);
+    background: rgba(148, 163, 184, 0.08);
+    color: #94a3b8;
+}
+
+.anomalous-material-card-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+}
+
+.anomalous-material-card-title-text {
+    margin: 0;
+    font-size: 0.94rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.anomalous-material-card-edit-btn {
+    opacity: 0;
+    background: transparent;
+    border: none;
+    padding: 3px;
+    cursor: pointer;
+    color: #94a3b8;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+    flex-shrink: 0;
+}
+
+.anomalous-material-card-edit-btn svg {
+    width: 13px;
+    height: 13px;
+}
+
+.anomalous-material-card:hover .anomalous-material-card-edit-btn,
+.anomalous-material-card:focus-within .anomalous-material-card-edit-btn {
+    opacity: 1;
+}
+
+.anomalous-material-card-edit-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.anomalous-material-inline-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 4px 8px;
+    font-size: 0.88rem;
+    background: rgba(10, 12, 18, 0.92);
+    border: 1px solid rgba(45, 212, 191, 0.55);
+    border-radius: 6px;
+    color: #ffffff;
+    outline: none;
+    box-shadow: 0 0 10px rgba(45, 212, 191, 0.2);
+}
+
+.anomalous-material-card-subinfo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 0.68rem;
+    color: #64748b;
+    margin-top: -2px;
+}
+
+.anomalous-material-card-date {
+    color: #64748b;
+    font-size: 0.68rem;
 }
 
 .anomalous-material-card-use-hint {
@@ -7102,7 +7219,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-notebook-fold > summary, .anomalous-secondary-actions > summary { cursor: pointer; color: var(--input-text, #ddd); padding: 4px; }
 .anomalous-notebook-fold > p { color: #aaa; font-size: 13px; }
 .anomalous-notebook-fold > button { margin: 6px 8px 0 0; }
-.anomalous-workbench-generation-save { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+/* duplicate workbench-generation-save selector cleaned up */
 .anomalous-material-note-text { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.7; }
 .anomalous-notebook-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .anomalous-nb-editor .anomalous-nb-textarea { font: inherit; line-height: 1.6; padding: 12px; box-sizing: border-box; }
