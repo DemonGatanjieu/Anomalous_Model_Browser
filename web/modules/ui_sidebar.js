@@ -1630,7 +1630,7 @@ export function createDOM() {
         importBtn.id = 'anomalous-materials-btn';
         importBtn.title = t('materialLibrary');
         importBtn.setAttribute('aria-label', t('materialLibrary'));
-        importBtn.innerHTML = `🧰`;
+        importBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`;
         importBtn.style.background = 'transparent';
         importBtn.style.color = '#ccc';
         importBtn.style.border = 'none';
@@ -1639,7 +1639,7 @@ export function createDOM() {
         importBtn.style.fontSize = '1.1em';
         importBtn.style.cursor = 'pointer';
         importBtn.style.transition = 'all 0.2s ease';
-        importBtn.onmouseover = () => { importBtn.style.background = 'rgba(255,255,255,0.1)'; importBtn.style.color = '#fff'; };
+        importBtn.onmouseover = () => { importBtn.style.background = 'rgba(255,255,255,0.1)'; importBtn.style.color = '#2dd4bf'; };
         importBtn.onmouseout = () => { importBtn.style.background = 'transparent'; importBtn.style.color = '#ccc'; };
         importBtn.onclick = () => this.openMaterialLibrary();
 

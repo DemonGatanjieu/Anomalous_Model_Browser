@@ -14,6 +14,16 @@ const t = (key, params) => translate(key, params);
 const isPromptMaterial = material => ['prompt_note_bundle', 'prompt_text'].includes(material.kind);
 const promptKindLabel = material => t(material.kind === 'prompt_text' ? 'materialPromptTextKind' : 'materialPromptNoteBundle');
 
+function getMaterialPlaceholderSvg(material, size = 36) {
+    if (isPromptMaterial(material) || material?.kind === 'prompt_plan') {
+        return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto;filter:drop-shadow(0 2px 8px rgba(56,189,248,0.3));"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`;
+    }
+    if (material?.kind === 'recipe_parameter_selection') {
+        return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto;filter:drop-shadow(0 2px 8px rgba(45,212,191,0.3));"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`;
+    }
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:auto;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`;
+}
+
 function materialAssetUrl(filename, asset) {
     if (!filename || !asset) return '';
     return `/anomalous/material_asset?filename=${encodeURIComponent(filename)}&asset=${encodeURIComponent(asset)}`;
@@ -296,7 +306,7 @@ function buildMaterialMediaStage(owner, material, sourceNameElement) {
         imageStage.appendChild(image);
         imageStage.onclick = () => owner.showGalleryViewer?.(sourceUrl);
     } else {
-        imageStage.textContent = (isPromptMaterial(material) || material.kind === 'prompt_plan') ? '💬' : material.kind === 'recipe_parameter_selection' ? '🧰' : '🖼️';
+        imageStage.innerHTML = getMaterialPlaceholderSvg(material, 56);
         imageStage.disabled = true;
     }
     media.appendChild(imageStage);
@@ -510,7 +520,7 @@ function renderMaterialCard(owner, material) {
         image.draggable = false;
         preview.appendChild(image);
     } else {
-        preview.textContent = (isPromptMaterial(material) || material.kind === 'prompt_plan') ? '💬' : material.kind === 'recipe_parameter_selection' ? '🧰' : '🖼️';
+        preview.innerHTML = getMaterialPlaceholderSvg(material, 36);
     }
     card.appendChild(preview);
 
