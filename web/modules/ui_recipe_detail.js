@@ -989,25 +989,42 @@ function renderPromptOverviewSection(parent, recipe) {
         header.style.display = 'flex';
         header.style.justifyContent = 'space-between';
         header.style.alignItems = 'center';
-        header.style.marginBottom = '6px';
+        header.style.marginBottom = '8px';
 
-        const label = appendText(header, 'strong', isNegative ? '负向提示词 (Negative)' : '正向提示词 (Positive)');
-        label.style.fontSize = '0.78rem';
-        label.style.color = '#94a3b8';
+        const badge = document.createElement('span');
+        badge.className = `anomalous-recipe-prompt-badge ${isNegative ? 'is-negative' : 'is-positive'}`;
+        const isZh = window.anomalous_browser_lang === 'zh';
+        badge.textContent = isNegative ? (isZh ? '🔴 负向提示词 (Negative)' : '🔴 Negative Prompt') : (isZh ? '🟢 正向提示词 (Positive)' : '🟢 Positive Prompt');
+        header.appendChild(badge);
 
-        const copyBtn = button(header, '📋 复制', 'anomalous-recipe-prompt-copy-btn');
-        copyBtn.onclick = () => {
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'anomalous-recipe-prompt-micro-copy';
+        const copyTitle = isZh ? '复制提示词' : 'Copy prompt';
+        const copiedTitle = isZh ? '已复制' : 'Copied';
+        copyBtn.title = copyTitle;
+        copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+        copyBtn.onclick = (e) => {
+            e.stopPropagation();
             navigator.clipboard.writeText(entry.value).then(() => {
-                copyBtn.textContent = '✅ 已复制';
-                setTimeout(() => { copyBtn.textContent = '📋 复制'; }, 1500);
+                copyBtn.classList.add('is-copied');
+                copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+                copyBtn.title = copiedTitle;
+                setTimeout(() => {
+                    copyBtn.classList.remove('is-copied');
+                    copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+                    copyBtn.title = copyTitle;
+                }, 1500);
             });
         };
+        header.appendChild(copyBtn);
 
         box.appendChild(header);
         const text = appendText(box, 'div', entry.value);
         text.style.whiteSpace = 'pre-wrap';
-        text.style.fontFamily = 'monospace';
+        text.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
         text.style.fontSize = '0.82rem';
+        text.style.lineHeight = '1.6';
+        text.style.color = '#cbd5e1';
 
         wrap.appendChild(box);
     }
@@ -1131,7 +1148,10 @@ function renderOverview(content, owner, recipe, references, finish) {
     renderInlineTags(tags, owner, recipe);
     copy.appendChild(tags);
 
-    appendText(copy, 'small', `${t('recipeDetailUpdated')}: ${dateText(recipe.updated_timestamp || recipe.timestamp)}`, 'anomalous-recipe-detail-muted');
+    const updatedSmall = appendText(copy, 'small', `${t('recipeDetailUpdated')}: ${dateText(recipe.updated_timestamp || recipe.timestamp)}`, 'anomalous-recipe-detail-muted');
+    updatedSmall.style.marginTop = '6px';
+    updatedSmall.style.display = 'block';
+    updatedSmall.style.opacity = '0.75';
 
     hero.appendChild(copy);
     overview.appendChild(hero);
@@ -2231,9 +2251,27 @@ function renderPromptSection(parent, owner, recipe, source, rerender, onSaveNode
             savePrompt.onclick = () => onSaveNodes([entry.id], entry.title || t('materialPromptNode'), savePrompt);
         }
 
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'anomalous-recipe-prompt-micro-copy';
+        const isZh = window.anomalous_browser_lang === 'zh';
+        copyBtn.title = isZh ? '复制提示词' : 'Copy prompt';
+        copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+        copyBtn.onclick = (e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(entry.text || '').then(() => {
+                copyBtn.classList.add('is-copied');
+                copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+                setTimeout(() => {
+                    copyBtn.classList.remove('is-copied');
+                    copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+                }, 1200);
+            });
+        };
+        meta.appendChild(copyBtn);
+
         const value = document.createElement('div');
         value.className = 'anomalous-recipe-prompt-value';
-        appendValueViewer(value, entry.text);
+        appendValueViewer(value, entry.text, '', { copy: false });
         card.append(meta, value);
         promptList.appendChild(card);
     }
@@ -2386,12 +2424,11 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
             main.appendChild(meta);
             row.appendChild(main);
 
-            const actions = document.createElement('details');
-            actions.className = 'anomalous-preset-item-actions anomalous-secondary-actions';
-            appendText(actions, 'summary', t('notebookMore'));
+            const actions = document.createElement('div');
+            actions.className = 'anomalous-preset-item-actions';
 
             const saveMaterial = button(actions, '', 'anomalous-preset-item-btn');
-            saveMaterial.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`;
+            saveMaterial.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`;
             saveMaterial.title = t('materialSaveNotebookHint');
             saveMaterial.onclick = async (e) => {
                 e.stopPropagation();
@@ -2618,34 +2655,113 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     const params = source?.params || {};
     const resDisplay = formatRecipeResolution(params.resolution);
     const summary = document.createElement('section');
-    summary.className = 'anomalous-recipe-detail-section';
-    appendText(summary, 'h5', t('recipeDetailParameterSummary'));
+    summary.className = 'anomalous-recipe-detail-section anomalous-preset-bento-deck';
 
-    const summaryGrid = document.createElement('div');
-    summaryGrid.className = 'anomalous-recipe-detail-summary-grid';
-    let formattedLoras = params.loras;
-    if (Array.isArray(params.loras) && params.loras.length > 0) {
-        formattedLoras = params.loras.map(lora => 
-            typeof lora === 'object' && lora !== null 
-                ? `• ${lora.name || 'Unknown'}\n  (Model: ${lora.strength_model ?? 1}, CLIP: ${lora.strength_clip ?? 1})` 
-                : String(lora)
-        ).join('\n\n');
+    const summaryHeader = document.createElement('div');
+    summaryHeader.className = 'anomalous-recipe-detail-section-heading';
+    summaryHeader.style.display = 'flex';
+    summaryHeader.style.justifyContent = 'space-between';
+    summaryHeader.style.alignItems = 'center';
+    summaryHeader.style.marginBottom = '12px';
+    appendText(summaryHeader, 'h5', t('recipeDetailParameterSummary') || '参数概览');
+    summary.appendChild(summaryHeader);
+
+    // Bento Grid for core scalar generation parameters
+    const bentoGrid = document.createElement('div');
+    bentoGrid.className = 'anomalous-recipe-bento-grid';
+
+    const bentoItems = [
+        { label: t('recipeDetailSteps') || '步数', val: params.steps, icon: '⚡' },
+        { label: t('recipeDetailCFG') || 'CFG Scale', val: params.cfg, icon: '🎯' },
+        { label: t('recipeDetailSampler') || '采样器', val: params.sampler_name || params.samplers, icon: '🎲' },
+        { label: t('recipeDetailScheduler') || '调度器', val: params.scheduler, icon: '📈' },
+        { label: t('recipeDetailResolution') || '分辨率', val: resDisplay || params.resolution, icon: '📐' },
+        { label: t('recipeDetailDenoise') || '降噪比', val: params.denoise, icon: '🌊' },
+        { label: t('recipeDetailSeed') || '随机种子', val: params.seed, icon: '🌱', isSeed: true },
+    ].filter(item => item.val !== undefined && item.val !== null && item.val !== '');
+
+    if (bentoItems.length > 0) {
+        for (const item of bentoItems) {
+            const tile = document.createElement('div');
+            tile.className = 'anomalous-recipe-bento-tile';
+
+            const labelRow = document.createElement('div');
+            labelRow.className = 'anomalous-recipe-bento-label-row';
+            labelRow.style.display = 'flex';
+            labelRow.style.justifyContent = 'space-between';
+            labelRow.style.alignItems = 'center';
+
+            appendText(labelRow, 'span', `${item.icon} ${item.label}`, 'anomalous-recipe-bento-label');
+
+            if (item.isSeed) {
+                const copySeedBtn = document.createElement('button');
+                copySeedBtn.className = 'anomalous-recipe-prompt-micro-copy';
+                copySeedBtn.title = t('recipeCopyParameter') || '复制参数';
+                copySeedBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+                copySeedBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(String(item.val)).then(() => {
+                        copySeedBtn.classList.add('is-copied');
+                        setTimeout(() => copySeedBtn.classList.remove('is-copied'), 1200);
+                    });
+                };
+                labelRow.appendChild(copySeedBtn);
+            }
+
+            tile.appendChild(labelRow);
+            const valEl = appendText(tile, 'span', String(item.val), 'anomalous-recipe-bento-val');
+            valEl.title = String(item.val);
+            bentoGrid.appendChild(tile);
+        }
+        summary.appendChild(bentoGrid);
     }
 
-    const scalarFields = [
-        ['recipeDetailSampler', params.sampler_name || params.samplers, {}],
-        ['recipeDetailScheduler', params.scheduler, {}],
-        ['recipeDetailSteps', params.steps, {}],
-        ['recipeDetailCFG', params.cfg, {}],
-        ['recipeDetailDenoise', params.denoise, {}],
-        ['recipeDetailSeed', params.seed ?? 0, { redact: true, copy: false }],
-        ['recipeDetailResolution', resDisplay || params.resolution, { wide: true }],
-        ['recipeDetailBaseModel', params.baseModel || params.baseModels, { wide: true }],
-        ['recipeDetailLoraSummary', formattedLoras, { wide: true }],
-    ];
-    for (const [labelKey, value, options] of scalarFields) renderParameterField(summaryGrid, t(labelKey), value, { ...options, collapse: false });
-    if (summaryGrid.childElementCount) summary.appendChild(summaryGrid);
-    else appendText(summary, 'p', t('recipeDetailNoSavedParameters'), 'anomalous-recipe-detail-muted');
+    // Base Model & LoRA Matrix
+    const baseModelVal = params.baseModel || params.baseModels;
+    if (baseModelVal || (Array.isArray(params.loras) && params.loras.length > 0)) {
+        const modelsDeck = document.createElement('div');
+        modelsDeck.className = 'anomalous-recipe-models-bento-deck';
+        modelsDeck.style.display = 'grid';
+        modelsDeck.style.gap = '8px';
+        modelsDeck.style.marginTop = '10px';
+
+        if (baseModelVal) {
+            const modelCard = document.createElement('div');
+            modelCard.className = 'anomalous-recipe-model-highlight-card';
+            modelCard.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:1.1rem;">🧠</span><span style="font-size:0.75rem;color:#94a3b8;text-transform:uppercase;font-weight:600;">${t('recipeDetailBaseModel') || '底模'}</span></div><div style="font-size:0.9rem;font-weight:600;color:#f8fafc;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${baseModelVal}">${baseModelVal}</div>`;
+            modelsDeck.appendChild(modelCard);
+        }
+
+        if (Array.isArray(params.loras) && params.loras.length > 0) {
+            const loraSection = document.createElement('div');
+            loraSection.className = 'anomalous-recipe-lora-stack';
+            appendText(loraSection, 'div', `⚡ ${t('recipeDetailLoraSummary') || 'LoRA 阵容'} (${params.loras.length})`, 'anomalous-recipe-bento-label');
+
+            const loraGrid = document.createElement('div');
+            loraGrid.style.display = 'grid';
+            loraGrid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(220px, 1fr))';
+            loraGrid.style.gap = '8px';
+            loraGrid.style.marginTop = '6px';
+
+            for (const lora of params.loras) {
+                const loraPill = document.createElement('div');
+                loraPill.className = 'anomalous-recipe-lora-pill';
+                const loraName = typeof lora === 'object' && lora !== null ? (lora.name || 'Unknown') : String(lora);
+                const modelWeight = typeof lora === 'object' && lora !== null && lora.strength_model !== undefined ? lora.strength_model : 1;
+                const clipWeight = typeof lora === 'object' && lora !== null && lora.strength_clip !== undefined ? lora.strength_clip : 1;
+
+                loraPill.innerHTML = `<div class="anomalous-recipe-lora-name" title="${loraName}">🎭 ${loraName}</div><div class="anomalous-recipe-lora-weights"><span title="Model Strength">M:${modelWeight}</span><span title="CLIP Strength">C:${clipWeight}</span></div>`;
+                loraGrid.appendChild(loraPill);
+            }
+            loraSection.appendChild(loraGrid);
+            modelsDeck.appendChild(loraSection);
+        }
+        summary.appendChild(modelsDeck);
+    }
+
+    if (!bentoItems.length && !baseModelVal && (!Array.isArray(params.loras) || !params.loras.length)) {
+        appendText(summary, 'p', t('recipeDetailNoSavedParameters'), 'anomalous-recipe-detail-muted');
+    }
 
     const promptWrap = document.createElement('div');
     promptWrap.style.marginBottom = '14px';
@@ -2913,8 +3029,8 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     owner.recipeDetailPayload = { recipe, filename, history };
     owner.recipeDetailFilename = filename;
     owner.recipeListContainer.style.display = 'none';
-    const actionbar = owner.recipeView?.querySelector('.anomalous-recipe-actionbar');
-    if (actionbar) actionbar.style.display = 'none';
+    const topbars = owner.recipeView ? Array.from(owner.recipeView.querySelectorAll('.anomalous-recipe-topbar, .anomalous-recipe-actionbar')) : [];
+    topbars.forEach(bar => { bar.style.display = 'none'; });
     const betaNotice = owner.recipeView?.querySelector('.anomalous-recipe-beta-notice');
     if (betaNotice) betaNotice.style.display = 'none';
     if (owner.recipeDetailView) owner.recipeDetailView.remove();
@@ -2934,7 +3050,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         owner.recipeDetailView = null;
         if (!['canvas', 'append', 'model'].includes(mode)) {
             owner.recipeListContainer.style.display = '';
-            if (actionbar) actionbar.style.display = '';
+            topbars.forEach(bar => { bar.style.display = ''; });
             if (betaNotice) betaNotice.style.display = '';
         }
         if (owner.recipeDetailFinish === finish) owner.recipeDetailFinish = null;

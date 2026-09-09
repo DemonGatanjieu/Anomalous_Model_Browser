@@ -93,6 +93,13 @@ DOM or live LiteGraph state.
   Direct canvas drag-drop ("一拖直达画布") allows dragging any recipe card across the translucent
   modal directly onto the ComfyUI canvas to immediately load the workflow into a fresh canvas
   (or append subgraphs), mimicking native ComfyUI image-drop behavior.
+  Recipe Detail Studio View (`showRecipeDetail`) is completely overhauled: dynamically hides
+  outer `.anomalous-recipe-topbar` on entry and cleanly restores it on exit to reclaim 100% of the
+  vertical workspace; replaces clumsy text copy buttons with sleek SVG micro-copy icons with instant
+  green checkmark feedback; rebuilds the Parameters Tab (`renderRecipeParameters`) into a modern
+  Bento Matrix (`.anomalous-recipe-bento-grid`, steps/CFG/sampler/resolution/denoise/seed tiles,
+  independent base model card, and structured LoRA pill stacks); snapshot rail replaces legacy `<details>`
+  with smooth hover-reveal micro-actions; enforces 48px bottom safety padding to eliminate clipping and overlap.
 - `ui_materials.js` owns the Workspace Material Library and material CRUD presentation;
   features an integrated single-row Studio topbar with category micro-pills (`all`, `workflow`, `params`, `prompts`),
   unified search with tag filtering, grid/list view mode toggle (persisted to localStorage),

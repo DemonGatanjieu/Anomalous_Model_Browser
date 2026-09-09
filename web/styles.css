@@ -1896,7 +1896,8 @@ dialog.anomalous-gallery-viewer[open] {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 14px;
+    padding: 16px 20px 48px 20px;
+    box-sizing: border-box;
 }
 
 .anomalous-recipe-gallery {
@@ -5764,43 +5765,83 @@ dialog.anomalous-gallery-viewer::backdrop {
     white-space: nowrap;
 }
 
-/* Prompt Showcase Boxes - Clean Monochromatic Dark */
+/* Prompt Showcase Boxes - Ultra-clean Dark Glassmorphism */
 .anomalous-recipe-prompt-box {
     position: relative;
-    padding: 12px 14px;
-    border-radius: 8px;
-    margin-bottom: 10px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin-bottom: 12px;
     font-size: 0.84rem;
-    line-height: 1.55;
+    line-height: 1.6;
     word-break: break-word;
     background: rgba(255, 255, 255, 0.025);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     color: #cbd5e1;
+    transition: border-color 0.2s ease, background 0.2s ease;
 }
 
-.anomalous-recipe-prompt-box.is-positive,
+.anomalous-recipe-prompt-box:hover {
+    background: rgba(255, 255, 255, 0.035);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.anomalous-recipe-prompt-box.is-positive {
+    border-left: 3px solid rgba(16, 185, 129, 0.6);
+}
+
 .anomalous-recipe-prompt-box.is-negative {
-    background: rgba(255, 255, 255, 0.025);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 3px solid rgba(244, 63, 94, 0.6);
 }
 
-.anomalous-recipe-prompt-copy-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    padding: 3px 8px;
+.anomalous-recipe-prompt-micro-copy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #cbd5e1;
-    font-size: 0.72rem;
+    color: #94a3b8;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.18s ease;
 }
 
-.anomalous-recipe-prompt-copy-btn:hover {
+.anomalous-recipe-prompt-micro-copy:hover {
     background: rgba(255, 255, 255, 0.15);
-    color: #fff;
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.anomalous-recipe-prompt-micro-copy.is-copied {
+    background: rgba(16, 185, 129, 0.2) !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+    color: #34d399 !important;
+}
+
+.anomalous-recipe-prompt-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+.anomalous-recipe-prompt-badge.is-positive {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.anomalous-recipe-prompt-badge.is-negative {
+    background: rgba(244, 63, 94, 0.12);
+    color: #fb7185;
+    border: 1px solid rgba(244, 63, 94, 0.25);
 }
 
 .anomalous-recipe-beta-notice[style*="display: none"] {
@@ -5953,6 +5994,117 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: rgba(239, 68, 68, 0.2);
     border-color: rgba(239, 68, 68, 0.4);
     color: #fca5a5;
+}
+
+/* Modern Parameter Bento Matrix */
+.anomalous-preset-bento-deck {
+    background: linear-gradient(145deg, rgba(28, 30, 36, 0.6), rgba(18, 19, 23, 0.8)) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+    margin-bottom: 14px !important;
+}
+
+.anomalous-recipe-bento-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.anomalous-recipe-bento-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    transition: all 0.18s ease;
+}
+
+.anomalous-recipe-bento-tile:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.14);
+    transform: translateY(-1px);
+}
+
+.anomalous-recipe-bento-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.anomalous-recipe-bento-label {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-weight: 600;
+}
+
+.anomalous-recipe-bento-val {
+    font-size: 1.02rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-recipe-models-bento-deck {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.anomalous-recipe-model-highlight-card {
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.anomalous-recipe-lora-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.anomalous-recipe-lora-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.82rem;
+    transition: all 0.15s ease;
+}
+
+.anomalous-recipe-lora-pill:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.anomalous-recipe-lora-name {
+    color: #e2e8f0;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-recipe-lora-weights {
+    display: flex;
+    gap: 8px;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    font-family: monospace;
 }
 
 /* Preset Console Header (Right Main Stage) */
