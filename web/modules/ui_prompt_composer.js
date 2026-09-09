@@ -343,19 +343,20 @@ function buildPromptComposer(owner, container, options = {}) {
     const leftTitleWrap = text(leftHeader, 'div', '', 'anomalous-workbench-col-title');
     leftTitleWrap.innerHTML = `📚 <strong>${window.anomalous_browser_lang === 'zh' ? '成型提示词库' : 'Prompt Library'}</strong> <span class="anomalous-sub-counter"></span>`;
 
-    const leftHeaderActions = text(leftHeader, 'div', '', 'anomalous-workbench-header-actions');
+    // Button: Create New Custom Card (placed in header right, never wraps)
+    const newCardTriggerBtn = text(leftHeader, 'button', `➕ ${window.anomalous_browser_lang === 'zh' ? '新建词卡' : 'New Card'}`, 'anomalous-btn-ghost anomalous-btn-sm');
+    newCardTriggerBtn.title = window.anomalous_browser_lang === 'zh' ? '新建并保存一张提示词卡片' : 'Create a new prompt card';
+
+    // Sub-action bar: Node extract and Material Library import (full-width, balanced)
+    const leftSubActions = text(leftPanel, 'div', '', 'anomalous-workbench-sub-actions');
 
     // Button 1: Extract Prompts from Selected Canvas Node
-    const extractNodeBtn = text(leftHeaderActions, 'button', `🎯 ${window.anomalous_browser_lang === 'zh' ? '从节点提取' : 'From Node'}`, 'anomalous-btn-primary anomalous-btn-sm anomalous-btn-extract-node');
+    const extractNodeBtn = text(leftSubActions, 'button', `🎯 ${window.anomalous_browser_lang === 'zh' ? '从节点提取' : 'From Node'}`, 'anomalous-btn-primary anomalous-btn-sm anomalous-btn-extract-node');
     extractNodeBtn.title = window.anomalous_browser_lang === 'zh' ? '读取 ComfyUI 画布当前选中节点的提示词文本并生成词卡' : 'Extract prompt text from selected canvas node into cards';
 
     // Button 2: One-click Sync / Import from Material Library
-    const importMaterialsBtn = text(leftHeaderActions, 'button', `📥 ${window.anomalous_browser_lang === 'zh' ? '导入素材库' : 'Import Library'}`, 'anomalous-btn-ghost anomalous-btn-sm');
-    importMaterialsBtn.title = window.anomalous_browser_lang === 'zh' ? '一键从素材库同步并导入所有已保存的提示词' : 'Sync and import all prompts from Material Library';
-
-    // Button 3: Create New Custom Card
-    const newCardTriggerBtn = text(leftHeaderActions, 'button', `➕ ${window.anomalous_browser_lang === 'zh' ? '新建词卡' : 'New Card'}`, 'anomalous-btn-ghost anomalous-btn-sm');
-    newCardTriggerBtn.title = window.anomalous_browser_lang === 'zh' ? '新建并保存一张提示词卡片' : 'Create a new prompt card';
+    const importMaterialsBtn = text(leftSubActions, 'button', `📥 ${window.anomalous_browser_lang === 'zh' ? '从素材库导入' : 'Import from Library'}`, 'anomalous-btn-ghost anomalous-btn-sm');
+    importMaterialsBtn.title = window.anomalous_browser_lang === 'zh' ? '读取素材库，一键把素材库里沉淀的提示词捞入当前工坊词库' : 'Read and import all prompts from Material Library into workbench';
 
     // Search and category filters bar
     const leftFilterBar = text(leftPanel, 'div', '', 'anomalous-workbench-filter-bar');
@@ -424,7 +425,7 @@ function buildPromptComposer(owner, container, options = {}) {
     const outputBody = text(outputDeck, 'div', '', 'anomalous-mixer-output-body');
     const outputTextarea = text(outputBody, 'textarea', '', 'anomalous-mixer-output-textarea');
     outputTextarea.readOnly = true;
-    outputTextarea.rows = isSide ? 3 : 3;
+    outputTextarea.rows = 2;
 
     const outputFooter = text(outputDeck, 'div', '', 'anomalous-mixer-output-footer');
     const dragHint = text(outputFooter, 'div', '', 'anomalous-mixer-drag-hint');
@@ -557,7 +558,7 @@ function buildPromptComposer(owner, container, options = {}) {
             await anomalousAlert(t('materialLoadError'));
         } finally {
             importMaterialsBtn.disabled = false;
-            importMaterialsBtn.textContent = `📥 ${window.anomalous_browser_lang === 'zh' ? '导入素材库' : 'Import Library'}`;
+            importMaterialsBtn.textContent = `📥 ${window.anomalous_browser_lang === 'zh' ? '从素材库导入' : 'Import from Library'}`;
         }
     }
 
@@ -942,7 +943,7 @@ function buildPromptComposer(owner, container, options = {}) {
             const blockBody = text(blockEl, 'div', '', 'anomalous-mixer-block-body');
             const textarea = text(blockBody, 'textarea', '', 'anomalous-mixer-block-textarea');
             textarea.value = block.content || '';
-            textarea.rows = isSide ? 3 : 2;
+            textarea.rows = 1;
             textarea.oninput = () => {
                 block.content = textarea.value;
                 syncDraftSynthesizedText(draft);
