@@ -821,11 +821,11 @@ function buildStudioTopbar(owner) {
     const transfer = text(more, 'button', t('materialTransferCenter'), 'anomalous-btn-ghost');
     transfer.onclick = () => showTransferCenter(owner);
 
-    // 提示词工坊抽屉开关
-    const studioToggle = text(right, 'button', `✨ ${t('materialPromptStudio') || '提示词工坊'}`, 'anomalous-material-topbar-btn anomalous-material-studio-toggle');
+    // 提示词工坊：单开全幅左右双分栏工作台
+    const studioToggle = text(right, 'button', `🎛️ ${t('materialPromptStudio') || '提示词工坊'}`, 'anomalous-material-topbar-btn anomalous-material-studio-toggle');
     studioToggle.type = 'button';
     owner.materialStudioToggle = studioToggle;
-    studioToggle.onclick = () => owner.toggleSideStudio();
+    studioToggle.onclick = () => showPromptComposer(owner);
 }
 
 function renderMaterialPagination(owner, payload) {

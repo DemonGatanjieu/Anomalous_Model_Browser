@@ -20,12 +20,58 @@ const newDraft = () => ({
     },
 });
 
-const CATEGORY_META = {
+export const CATEGORY_META = {
     base: { zh: '通用底模', en: 'Base Quality', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.4)' },
     style: { zh: '风格氛围', en: 'Art Style', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.15)', border: 'rgba(192, 132, 252, 0.4)' },
     subject: { zh: '主体内容', en: 'Subject', color: '#4ade80', bg: 'rgba(74, 222, 128, 0.15)', border: 'rgba(74, 222, 128, 0.4)' },
     trigger: { zh: 'LoRA/触发', en: 'LoRA / Trigger', color: '#fb923c', bg: 'rgba(251, 146, 60, 0.15)', border: 'rgba(251, 146, 60, 0.4)' },
 };
+
+// Built-in starter prompt cards for left source deck
+const STARTER_SOURCE_PROMPTS = [
+    {
+        id: 'preset_base_quality',
+        title: '画质底模词 (Quality Base)',
+        content: 'masterpiece, best quality, highly detailed, ultra-detailed, 8k, hdr, absurdres',
+        role: 'positive',
+        category: 'base',
+    },
+    {
+        id: 'preset_real_detail',
+        title: '写实与材质增强 (Realistic Detail)',
+        content: 'highres, realistic skin texture, sharp focus, subsurface scattering, 35mm photograph',
+        role: 'positive',
+        category: 'base',
+    },
+    {
+        id: 'preset_cinematic_light',
+        title: '电影胶片光影 (Cinematic Lighting)',
+        content: 'cinematic lighting, dramatic shadows, soft volumetric glow, ray tracing, atmospheric',
+        role: 'positive',
+        category: 'style',
+    },
+    {
+        id: 'preset_anime_cyber',
+        title: '赛博霓虹风 (Cyberpunk Neon)',
+        content: 'anime style, cyberpunk aesthetic, vibrant neon reflections, futuristic metropolis backdrop',
+        role: 'positive',
+        category: 'style',
+    },
+    {
+        id: 'preset_girl_face',
+        title: '美少女面部特写 (Portrait 1girl)',
+        content: '1girl, beautiful detailed expressive eyes, smile, delicate face, soft wind-blown hair',
+        role: 'positive',
+        category: 'subject',
+    },
+    {
+        id: 'preset_neg_filter',
+        title: '通用负向过滤词 (Negative Base Filter)',
+        content: 'worst quality, low quality, normal quality, lowres, bad anatomy, bad hands, missing fingers, extra digits, cropped, blurry, watermark',
+        role: 'negative',
+        category: 'base',
+    },
+];
 
 function normalizeBlock(part, index = 0) {
     const id = part.id || `blk_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 6)}`;
@@ -144,9 +190,6 @@ export function renderSidePromptComposer(owner, container, onClose) {
 
 export function appendPromptToStudio(owner, textSnippet, isPositive = true, noteTitle = '') {
     if (!textSnippet || !textSnippet.trim()) return;
-    if (typeof owner.openSideStudio === 'function') {
-        owner.openSideStudio();
-    }
     const role = isPositive ? 'positive' : 'negative';
     const cat = isPositive ? categorizePromptSnippet(textSnippet) : 'base';
     const block = normalizeBlock({
@@ -158,6 +201,8 @@ export function appendPromptToStudio(owner, textSnippet, isPositive = true, note
 
     if (owner.sidePromptComposerControl?.addBlock) {
         owner.sidePromptComposerControl.addBlock(block);
+    } else if (owner.workbenchComposerControl?.addBlock) {
+        owner.workbenchComposerControl.addBlock(block);
     } else {
         owner.promptPlanDraft ||= newDraft();
         owner.promptPlanDraft.plan.parts ||= [];
@@ -169,12 +214,11 @@ export function appendPromptToStudio(owner, textSnippet, isPositive = true, note
 
 export function addBlockToMixer(owner, blockData) {
     if (!blockData || !blockData.content?.trim()) return;
-    if (typeof owner.openSideStudio === 'function') {
-        owner.openSideStudio();
-    }
     const block = normalizeBlock(blockData);
     if (owner.sidePromptComposerControl?.addBlock) {
         owner.sidePromptComposerControl.addBlock(block);
+    } else if (owner.workbenchComposerControl?.addBlock) {
+        owner.workbenchComposerControl.addBlock(block);
     } else {
         owner.promptPlanDraft ||= newDraft();
         owner.promptPlanDraft.plan.parts ||= [];
@@ -185,7 +229,7 @@ export function addBlockToMixer(owner, blockData) {
 
 function buildPromptComposer(owner, container, options = {}) {
     const isSide = !!options.isSideStudio;
-    const view = text(container, 'section', '', `anomalous-prompt-composer${isSide ? ' is-side-studio' : ''}`);
+    const view = text(container, 'section', '', `anomalous-prompt-composer anomalous-prompt-workbench${isSide ? ' is-side-studio' : ''}`);
     if (isSide) owner.sidePromptComposerView = view;
     else owner.promptComposerView = view;
 
@@ -212,34 +256,32 @@ function buildPromptComposer(owner, container, options = {}) {
             }, 1));
         }
         if (!draft.plan.parts.length) {
-            draft.plan.parts.push(normalizeBlock({
-                title: window.anomalous_browser_lang === 'zh' ? '画质底模词' : 'Quality Base',
-                content: 'masterpiece, best quality, highly detailed, ultra-detailed, 8k, hdr',
-                role: 'positive',
-                category: 'base',
-            }, 0));
+            draft.plan.parts.push(normalizeBlock(STARTER_SOURCE_PROMPTS[0], 0));
         }
     }
     syncDraftSynthesizedText(draft);
 
-    let activeTab = 'positive'; // 'positive' | 'negative' | 'all'
+    let activeTab = 'positive'; // 'positive' | 'negative'
+    let sourceFilterCategory = 'all';
+    let sourceFilterKeyword = '';
     let draggedBlockId = null;
 
-    // 1. Topbar
-    const topbar = text(view, 'div', '', 'anomalous-prompt-topbar');
+    // Local in-memory source prompt cards (merged starters + materials)
+    let sourceCards = [...STARTER_SOURCE_PROMPTS];
+    let isCreatingNewCard = false;
+
+    // 1. Studio Topbar
+    const topbar = text(view, 'header', '', 'anomalous-prompt-topbar');
     const topLeft = text(topbar, 'div', '', 'anomalous-prompt-topbar-left');
     if (!isSide) {
         const backBtn = text(topLeft, 'button', `← ${t('materialBackToLibrary')}`, 'anomalous-btn-ghost');
         backBtn.onclick = () => owner.showMaterials();
-        text(topLeft, 'h3', window.anomalous_browser_lang === 'zh' ? '🎛️ 提示词乐高调音台' : '🎛️ Prompt Mixer Deck');
+        text(topLeft, 'h3', window.anomalous_browser_lang === 'zh' ? '🎛️ 提示词双栏调音工作台' : '🎛️ Prompt Studio Workbench');
     } else {
         text(topLeft, 'h3', `🎛️ ${window.anomalous_browser_lang === 'zh' ? '提示词调音台' : 'Prompt Mixer'}`);
     }
 
     const topActions = text(topbar, 'div', '', 'anomalous-prompt-topbar-actions');
-    const importBtn = text(topActions, 'button', `📥 ${t('promptImportFromMaterials')}`, 'anomalous-btn-ghost');
-    importBtn.title = t('promptDrawerTitle');
-
     const newBtn = text(topActions, 'button', `✨ ${t('promptNewDraft')}`, 'anomalous-btn-ghost');
     const saveBtn = text(topActions, 'button', `💾 ${t('promptSavePlan')}`, 'anomalous-btn-primary');
     const exportBtn = text(topActions, 'button', `📤 ${t('promptExportPlan')}`, 'anomalous-btn-ghost');
@@ -250,7 +292,7 @@ function buildPromptComposer(owner, container, options = {}) {
         closeBtn.onclick = () => options.onClose();
     }
 
-    // 2. Metadata strip (Name, Tags, Insert Position)
+    // 2. Metadata Strip (Preset Name, Tags, Target Insert Position)
     const metaStrip = text(view, 'div', '', 'anomalous-prompt-meta-strip');
     const nameInput = text(metaStrip, 'input', '', 'anomalous-prompt-name-input');
     nameInput.placeholder = window.anomalous_browser_lang === 'zh' ? '方案名称（如：赛博朋克光影组合）...' : 'Mixer preset name...';
@@ -278,23 +320,75 @@ function buildPromptComposer(owner, container, options = {}) {
         renderTargetBar();
     };
 
-    // 3. Mixer Controls Bar (Tabs & Smart Sort)
-    const mixerControls = text(view, 'div', '', 'anomalous-mixer-controls');
-    const tabsWrapper = text(mixerControls, 'div', '', 'anomalous-mixer-tabs');
+    // 3. Two-Column Split Grid
+    const workbenchGrid = text(view, 'div', '', 'anomalous-prompt-workbench-grid');
 
-    const actionWrapper = text(mixerControls, 'div', '', 'anomalous-mixer-actions');
-    const smartSortBtn = text(actionWrapper, 'button', window.anomalous_browser_lang === 'zh' ? '🪄 智能理顺' : '🪄 Smart Sort', 'anomalous-mixer-smart-sort-btn');
-    smartSortBtn.title = window.anomalous_browser_lang === 'zh' ? '根据词性智能理顺：[通用底模 ➔ 风格氛围 ➔ 主体内容 ➔ LoRA/触发词]' : 'Smart sort: [Base Quality ➔ Style ➔ Subject ➔ LoRA/Trigger]';
+    // =========================================================================
+    // LEFT COLUMN: Ready-to-use Prompt Cards (成型提示词库)
+    // =========================================================================
+    const leftPanel = text(workbenchGrid, 'section', '', 'anomalous-workbench-left-panel');
+    const leftHeader = text(leftPanel, 'div', '', 'anomalous-workbench-col-header');
+    const leftTitleWrap = text(leftHeader, 'div', '', 'anomalous-workbench-col-title');
+    leftTitleWrap.innerHTML = `📚 <strong>${window.anomalous_browser_lang === 'zh' ? '成型提示词库' : 'Prompt Library'}</strong> <span class="anomalous-sub-counter"></span>`;
 
-    const addBlockBtn = text(actionWrapper, 'button', `➕ ${window.anomalous_browser_lang === 'zh' ? '添加词块' : 'Add Block'}`, 'anomalous-btn-ghost');
-    const clearBlocksBtn = text(actionWrapper, 'button', '🧹', 'anomalous-btn-ghost');
-    clearBlocksBtn.title = window.anomalous_browser_lang === 'zh' ? '清空当前分类词块' : 'Clear current blocks';
+    const newCardTriggerBtn = text(leftHeader, 'button', `➕ ${window.anomalous_browser_lang === 'zh' ? '新建词卡' : 'New Card'}`, 'anomalous-btn-primary anomalous-btn-sm');
+    newCardTriggerBtn.title = window.anomalous_browser_lang === 'zh' ? '新建并保存一张提示词卡片' : 'Create a new prompt card';
 
-    // 4. Blocks Container
-    const blocksContainer = text(view, 'div', '', 'anomalous-mixer-blocks-container');
+    // Search and category filters bar
+    const leftFilterBar = text(leftPanel, 'div', '', 'anomalous-workbench-filter-bar');
+    const leftSearch = text(leftFilterBar, 'input', '', 'anomalous-workbench-search-input');
+    leftSearch.placeholder = window.anomalous_browser_lang === 'zh' ? '搜索提示词或分类...' : 'Search prompt snippet...';
+    leftSearch.oninput = () => {
+        sourceFilterKeyword = leftSearch.value.trim().toLowerCase();
+        renderSourceCardsList();
+    };
 
-    // 5. Output Preview & Node Target Injection Bar
-    const outputDeck = text(view, 'div', '', 'anomalous-mixer-deck-output');
+    const leftCategoryPills = text(leftPanel, 'div', '', 'anomalous-workbench-category-pills');
+    const filterCats = [
+        { id: 'all', label: window.anomalous_browser_lang === 'zh' ? '全部' : 'All' },
+        { id: 'base', label: window.anomalous_browser_lang === 'zh' ? '💎 通用' : '💎 Base' },
+        { id: 'style', label: window.anomalous_browser_lang === 'zh' ? '🎨 风格' : '🎨 Style' },
+        { id: 'subject', label: window.anomalous_browser_lang === 'zh' ? '🧍 主体' : '🧍 Subject' },
+        { id: 'trigger', label: window.anomalous_browser_lang === 'zh' ? '⚡ 触发' : '⚡ LoRA' },
+    ];
+    filterCats.forEach(cat => {
+        const pill = text(leftCategoryPills, 'button', cat.label, `anomalous-workbench-pill${sourceFilterCategory === cat.id ? ' is-active' : ''}`);
+        pill.onclick = () => {
+            sourceFilterCategory = cat.id;
+            leftCategoryPills.querySelectorAll('.anomalous-workbench-pill').forEach(el => el.classList.remove('is-active'));
+            pill.classList.add('is-active');
+            renderSourceCardsList();
+        };
+    });
+
+    // Inline New Card Form (Hidden by default, shown on demand)
+    const newCardForm = text(leftPanel, 'div', '', 'anomalous-workbench-new-card-form');
+    newCardForm.style.display = 'none';
+
+    // Source Cards List
+    const sourceCardsList = text(leftPanel, 'div', '', 'anomalous-source-cards-list');
+
+    // =========================================================================
+    // RIGHT COLUMN: Assembler & Arranger Stage (顺序拼装调音台)
+    // =========================================================================
+    const rightPanel = text(workbenchGrid, 'section', '', 'anomalous-workbench-right-panel');
+    const rightHeader = text(rightPanel, 'div', '', 'anomalous-workbench-col-header');
+    
+    // Role switch tabs (Positive / Negative)
+    const rightTabs = text(rightHeader, 'div', '', 'anomalous-mixer-tabs');
+
+    const rightActions = text(rightHeader, 'div', '', 'anomalous-mixer-actions');
+    const smartSortBtn = text(rightActions, 'button', window.anomalous_browser_lang === 'zh' ? '🪄 智能理顺' : '🪄 Smart Sort', 'anomalous-mixer-smart-sort-btn');
+    smartSortBtn.title = window.anomalous_browser_lang === 'zh' ? '按 [通用底模 ➔ 风格氛围 ➔ 主体内容 ➔ LoRA/触发词] 自动排序' : 'Auto sort: [Base ➔ Style ➔ Subject ➔ Trigger]';
+
+    const clearRightBtn = text(rightActions, 'button', '🧹', 'anomalous-btn-ghost');
+    clearRightBtn.title = window.anomalous_browser_lang === 'zh' ? '清空当前拼装池' : 'Clear current track';
+
+    // Blocks Container & Dropzone
+    const blocksContainer = text(rightPanel, 'div', '', 'anomalous-mixer-blocks-container anomalous-assembly-track');
+
+    // Bottom Live Assembled Output Deck
+    const outputDeck = text(rightPanel, 'div', '', 'anomalous-mixer-deck-output');
     const outputHeader = text(outputDeck, 'div', '', 'anomalous-mixer-output-header');
     const outputTitle = text(outputHeader, 'div', '', 'anomalous-mixer-output-title');
     const outputStats = text(outputHeader, 'div', '', 'anomalous-mixer-output-stats');
@@ -302,62 +396,243 @@ function buildPromptComposer(owner, container, options = {}) {
     const outputBody = text(outputDeck, 'div', '', 'anomalous-mixer-output-body');
     const outputTextarea = text(outputBody, 'textarea', '', 'anomalous-mixer-output-textarea');
     outputTextarea.readOnly = true;
-    outputTextarea.rows = isSide ? 3 : 4;
+    outputTextarea.rows = isSide ? 3 : 3;
 
     const outputFooter = text(outputDeck, 'div', '', 'anomalous-mixer-output-footer');
     const dragHint = text(outputFooter, 'div', '', 'anomalous-mixer-drag-hint');
-    dragHint.innerHTML = `🖐️ <strong>${window.anomalous_browser_lang === 'zh' ? '拖动此调音坞' : 'Drag this deck'}</strong> ${window.anomalous_browser_lang === 'zh' ? '直达 ComfyUI 画布节点' : 'onto canvas node'}`;
+    dragHint.innerHTML = `🖐️ <strong>${window.anomalous_browser_lang === 'zh' ? '按住此预览坞' : 'Drag this deck'}</strong> ${window.anomalous_browser_lang === 'zh' ? '直接丢入 ComfyUI 画布节点' : 'onto canvas node'}`;
 
     const outputActions = text(outputFooter, 'div', '', 'anomalous-mixer-output-actions');
     const copyOutputBtn = text(outputActions, 'button', `📋 ${t('copy')}`, 'anomalous-btn-ghost');
 
-    // Target node direct injection bar
-    const targetBar = text(view, 'div', '', 'anomalous-prompt-target-bar');
+    // Target Node Direct Write Bar
+    const targetBar = text(rightPanel, 'div', '', 'anomalous-prompt-target-bar');
 
-    // Render logic functions
-    function updateTabsUI() {
-        tabsWrapper.replaceChildren();
+    // -------------------------------------------------------------------------
+    // RENDER: Left Panel Cards & Form
+    // -------------------------------------------------------------------------
+    function renderNewCardFormUI() {
+        if (!isCreatingNewCard) {
+            newCardForm.style.display = 'none';
+            newCardForm.replaceChildren();
+            return;
+        }
+        newCardForm.style.display = 'flex';
+        newCardForm.replaceChildren();
+
+        const formTitle = text(newCardForm, 'div', window.anomalous_browser_lang === 'zh' ? '✨ 新建提示词卡片' : '✨ New Prompt Card', 'anomalous-form-title');
+        
+        const titleInput = text(newCardForm, 'input', '', 'anomalous-form-input');
+        titleInput.placeholder = window.anomalous_browser_lang === 'zh' ? '卡片名称（如：赛博光影、角色面部）...' : 'Card name...';
+
+        const catRow = text(newCardForm, 'div', '', 'anomalous-form-cat-row');
+        text(catRow, 'span', `${window.anomalous_browser_lang === 'zh' ? '词性' : 'Type'}: `);
+        let selectedCat = 'style';
+        const catSelect = text(catRow, 'select', '', 'anomalous-form-select');
+        ['base', 'style', 'subject', 'trigger'].forEach(catKey => {
+            const meta = CATEGORY_META[catKey];
+            const opt = text(catSelect, 'option', window.anomalous_browser_lang === 'zh' ? meta.zh : meta.en);
+            opt.value = catKey;
+            if (catKey === selectedCat) opt.selected = true;
+        });
+        catSelect.onchange = () => { selectedCat = catSelect.value; };
+
+        const contentInput = text(newCardForm, 'textarea', '', 'anomalous-form-textarea');
+        contentInput.placeholder = window.anomalous_browser_lang === 'zh' ? '输入提示词内容，多个短语用逗号隔开...' : 'Enter prompt text...';
+        contentInput.rows = 3;
+
+        const formBtnRow = text(newCardForm, 'div', '', 'anomalous-form-btn-row');
+        const submitBtn = text(formBtnRow, 'button', window.anomalous_browser_lang === 'zh' ? '✓ 保存并加入库' : '✓ Save to Library', 'anomalous-btn-primary anomalous-btn-sm');
+        const cancelBtn = text(formBtnRow, 'button', t('cancel'), 'anomalous-btn-ghost anomalous-btn-sm');
+
+        submitBtn.onclick = () => {
+            const rawContent = contentInput.value.trim();
+            if (!rawContent) {
+                contentInput.focus();
+                return;
+            }
+            const newCard = {
+                id: `usr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                title: titleInput.value.trim() || (window.anomalous_browser_lang === 'zh' ? CATEGORY_META[selectedCat].zh : CATEGORY_META[selectedCat].en),
+                content: rawContent,
+                role: selectedCat === 'base' && /worst|low quality|bad anatomy/i.test(rawContent) ? 'negative' : 'positive',
+                category: selectedCat,
+            };
+            sourceCards.unshift(newCard);
+            isCreatingNewCard = false;
+            renderNewCardFormUI();
+            renderSourceCardsList();
+        };
+
+        cancelBtn.onclick = () => {
+            isCreatingNewCard = false;
+            renderNewCardFormUI();
+        };
+
+        titleInput.focus();
+    }
+
+    newCardTriggerBtn.onclick = () => {
+        isCreatingNewCard = !isCreatingNewCard;
+        renderNewCardFormUI();
+    };
+
+    function renderSourceCardsList() {
+        sourceCardsList.replaceChildren();
+        const filtered = sourceCards.filter(card => {
+            if (sourceFilterCategory !== 'all' && card.category !== sourceFilterCategory) return false;
+            if (sourceFilterKeyword) {
+                const matchTitle = card.title.toLowerCase().includes(sourceFilterKeyword);
+                const matchContent = card.content.toLowerCase().includes(sourceFilterKeyword);
+                if (!matchTitle && !matchContent) return false;
+            }
+            return true;
+        });
+
+        leftTitleWrap.querySelector('.anomalous-sub-counter').textContent = `(${filtered.length})`;
+
+        if (!filtered.length) {
+            const empty = text(sourceCardsList, 'div', '', 'anomalous-source-empty');
+            empty.innerHTML = `
+                <div style="font-size: 24px; margin-bottom: 6px;">🔍</div>
+                <div>${window.anomalous_browser_lang === 'zh' ? '未找到匹配的提示词卡片' : 'No matching prompt cards found'}</div>
+            `;
+            return;
+        }
+
+        filtered.forEach(card => {
+            const cardEl = text(sourceCardsList, 'article', '', `anomalous-source-prompt-card is-cat-${card.category}`);
+            cardEl.setAttribute('draggable', 'true');
+
+            // Drag Start -> transfer prompt card payload
+            cardEl.ondragstart = (e) => {
+                const payload = {
+                    title: card.title,
+                    content: card.content,
+                    role: card.role,
+                    category: card.category,
+                };
+                e.dataTransfer.setData('application/json', JSON.stringify(payload));
+                e.dataTransfer.setData('text/plain', card.content);
+                e.dataTransfer.effectAllowed = 'copyMove';
+                cardEl.classList.add('is-dragging-source');
+            };
+
+            cardEl.ondragend = () => {
+                cardEl.classList.remove('is-dragging-source');
+            };
+
+            // Card Header
+            const header = text(cardEl, 'div', '', 'anomalous-source-card-header');
+            const meta = CATEGORY_META[card.category] || CATEGORY_META.subject;
+
+            const badge = text(header, 'span', window.anomalous_browser_lang === 'zh' ? meta.zh : meta.en, 'anomalous-source-card-badge');
+            badge.style.color = meta.color;
+            badge.style.backgroundColor = meta.bg;
+            badge.style.borderColor = meta.border;
+
+            const title = text(header, 'strong', card.title, 'anomalous-source-card-title');
+            title.title = card.title;
+
+            // Card Body snippet
+            const snippet = text(cardEl, 'div', card.content, 'anomalous-source-card-snippet');
+            snippet.title = card.content;
+
+            // Card Footer Actions
+            const footer = text(cardEl, 'div', '', 'anomalous-source-card-footer');
+            const dragHint = text(footer, 'span', '🖐️ 抓取拖入右侧', 'anomalous-source-card-drag-hint');
+
+            const actions = text(footer, 'div', '', 'anomalous-source-card-actions');
+            const copyBtn = text(actions, 'button', '📋', 'anomalous-source-action-btn');
+            copyBtn.title = t('copy');
+            copyBtn.onclick = async (e) => {
+                e.stopPropagation();
+                try {
+                    await navigator.clipboard.writeText(card.content);
+                    copyBtn.textContent = '✅';
+                    setTimeout(() => { if (copyBtn.isConnected) copyBtn.textContent = '📋'; }, 1200);
+                } catch (err) {
+                    await anomalousAlert(t('materialCopyError'));
+                }
+            };
+
+            const dockBtn = text(actions, 'button', `➕ ${window.anomalous_browser_lang === 'zh' ? '入坞' : 'Dock'}`, 'anomalous-source-action-btn is-dock');
+            dockBtn.title = window.anomalous_browser_lang === 'zh' ? '直接放入右侧当前拼装台' : 'Add into mixer track';
+            dockBtn.onclick = (e) => {
+                e.stopPropagation();
+                addSourceCardToMixer(card);
+            };
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // RENDER: Right Assembler Stage & Lego Blocks
+    // -------------------------------------------------------------------------
+    function updateRightTabsUI() {
+        rightTabs.replaceChildren();
         const posCount = draft.plan.parts.filter(p => p.role === 'positive').length;
         const negCount = draft.plan.parts.filter(p => p.role === 'negative').length;
-        const allCount = draft.plan.parts.length;
 
         const tabs = [
-            { key: 'positive', label: `✨ ${window.anomalous_browser_lang === 'zh' ? '正向调音坞' : 'Positive'} (${posCount})` },
-            { key: 'negative', label: `🚫 ${window.anomalous_browser_lang === 'zh' ? '负向调音坞' : 'Negative'} (${negCount})` },
-            { key: 'all', label: `👁️ ${window.anomalous_browser_lang === 'zh' ? '全部词块' : 'All'} (${allCount})` },
+            { key: 'positive', label: `✨ ${window.anomalous_browser_lang === 'zh' ? '正向拼装台' : 'Positive'} (${posCount})` },
+            { key: 'negative', label: `🚫 ${window.anomalous_browser_lang === 'zh' ? '负向拼装台' : 'Negative'} (${negCount})` },
         ];
 
         for (const tab of tabs) {
-            const btn = text(tabsWrapper, 'button', tab.label, `anomalous-mixer-tab-btn${activeTab === tab.key ? ' is-active' : ''}`);
+            const btn = text(rightTabs, 'button', tab.label, `anomalous-mixer-tab-btn${activeTab === tab.key ? ' is-active' : ''}`);
             btn.onclick = () => {
                 activeTab = tab.key;
-                updateTabsUI();
+                updateRightTabsUI();
                 renderBlocksList();
                 updateOutputPreview();
             };
         }
     }
 
+    function addSourceCardToMixer(cardData, targetIndex = null) {
+        const targetRole = activeTab;
+        const newBlock = normalizeBlock({
+            title: cardData.title,
+            content: cardData.content,
+            role: targetRole,
+            category: cardData.category,
+            enabled: true,
+        }, draft.plan.parts.length);
+
+        if (targetIndex !== null && targetIndex >= 0) {
+            draft.plan.parts.splice(targetIndex, 0, newBlock);
+        } else {
+            draft.plan.parts.push(newBlock);
+        }
+
+        syncDraftSynthesizedText(draft);
+        updateRightTabsUI();
+        renderBlocksList();
+        updateOutputPreview();
+    }
+
     function renderBlocksList() {
         blocksContainer.replaceChildren();
-        const parts = draft.plan.parts.filter(p => activeTab === 'all' || p.role === activeTab);
+        const currentRoleParts = draft.plan.parts.filter(p => p.role === activeTab);
 
-        if (!parts.length) {
-            const emptyNotice = text(blocksContainer, 'div', '', 'anomalous-mixer-empty-notice');
-            emptyNotice.innerHTML = `
-                <div style="font-size: 24px; margin-bottom: 8px;">🧩</div>
-                <div style="font-weight: 600; color: #94a3b8;">${window.anomalous_browser_lang === 'zh' ? '当前分类暂无提示词块' : 'No prompt blocks in this category'}</div>
-                <div style="font-size: 12px; color: #64748b; margin-top: 4px;">${window.anomalous_browser_lang === 'zh' ? '点击右上角“添加词块”或在素材库点击“🎛️ 调音台”送入积木' : 'Click "Add Block" or pick from Materials to dock snippets.'}</div>
+        if (!currentRoleParts.length) {
+            const dropzoneNotice = text(blocksContainer, 'div', '', 'anomalous-assembly-dropzone');
+            dropzoneNotice.innerHTML = `
+                <div style="font-size: 30px; margin-bottom: 8px;">📥</div>
+                <div style="font-size: 0.92rem; font-weight: 600; color: #e2e8f0;">${window.anomalous_browser_lang === 'zh' ? '将左侧的成型提示词拖放到这里摆放与拼装' : 'Drop prompt cards from the left panel here'}</div>
+                <div style="font-size: 0.76rem; color: #64748b; margin-top: 4px;">${window.anomalous_browser_lang === 'zh' ? '支持自由调换次序，点击【智能理顺】自动按画质底模➔风格➔主体➔LoRA排序' : 'Drag to reorder anytime, or click Smart Sort to auto-align.'}</div>
             `;
+            // Accept drops on empty dropzone
+            setupDropzoneListeners(dropzoneNotice);
             return;
         }
 
-        parts.forEach((block, index) => {
+        currentRoleParts.forEach((block, index) => {
             const blockEl = text(blocksContainer, 'article', '', `anomalous-mixer-block${!block.enabled ? ' is-bypassed' : ''} is-role-${block.role}`);
             blockEl.setAttribute('draggable', 'true');
             blockEl.dataset.blockId = block.id;
 
-            // Drag & Drop Reordering handlers
+            // Reorder Drag Listeners
             blockEl.ondragstart = (e) => {
                 draggedBlockId = block.id;
                 blockEl.classList.add('is-dragging');
@@ -375,7 +650,6 @@ function buildPromptComposer(owner, container, options = {}) {
 
             blockEl.ondragover = (e) => {
                 e.preventDefault();
-                if (!draggedBlockId || draggedBlockId === block.id) return;
                 const rect = blockEl.getBoundingClientRect();
                 const mid = rect.top + rect.height / 2;
                 if (e.clientY < mid) {
@@ -394,8 +668,21 @@ function buildPromptComposer(owner, container, options = {}) {
             blockEl.ondrop = (e) => {
                 e.preventDefault();
                 blockEl.classList.remove('is-drag-over-top', 'is-drag-over-bottom');
-                if (!draggedBlockId || draggedBlockId === block.id) return;
 
+                // Case 1: Drop from Left Source Card
+                const jsonStr = e.dataTransfer.getData('application/json');
+                if (jsonStr) {
+                    try {
+                        const parsed = JSON.parse(jsonStr);
+                        const toIndex = draft.plan.parts.findIndex(p => p.id === block.id);
+                        const insertAfter = e.clientY >= (blockEl.getBoundingClientRect().top + blockEl.offsetHeight / 2);
+                        addSourceCardToMixer(parsed, insertAfter ? toIndex + 1 : toIndex);
+                        return;
+                    } catch (err) {}
+                }
+
+                // Case 2: Reorder inside Right Track
+                if (!draggedBlockId || draggedBlockId === block.id) return;
                 const fromIndex = draft.plan.parts.findIndex(p => p.id === draggedBlockId);
                 const toIndex = draft.plan.parts.findIndex(p => p.id === block.id);
                 if (fromIndex < 0 || toIndex < 0) return;
@@ -411,19 +698,19 @@ function buildPromptComposer(owner, container, options = {}) {
                 updateOutputPreview();
             };
 
-            // Block Header
+            // Header
             const blockHeader = text(blockEl, 'div', '', 'anomalous-mixer-block-header');
             const headerLeft = text(blockHeader, 'div', '', 'anomalous-mixer-block-header-left');
 
-            // Drag handle
             const dragHandle = text(headerLeft, 'span', '⠿', 'anomalous-mixer-drag-handle');
             dragHandle.title = window.anomalous_browser_lang === 'zh' ? '抓取按住上下拖拽排序' : 'Drag to reorder';
 
-            // Toggle Checkbox (A/B testing switch)
+            // A/B Bypass Checkbox
             const toggleWrap = text(headerLeft, 'label', '', 'anomalous-mixer-block-toggle');
             const checkbox = text(toggleWrap, 'input', '');
             checkbox.type = 'checkbox';
             checkbox.checked = !!block.enabled;
+            checkbox.title = window.anomalous_browser_lang === 'zh' ? '勾选参与拼装，取消勾选即旁路跳过（做A/B对比）' : 'Include or bypass in assembly';
             checkbox.onchange = () => {
                 block.enabled = checkbox.checked;
                 blockEl.classList.toggle('is-bypassed', !block.enabled);
@@ -437,7 +724,7 @@ function buildPromptComposer(owner, container, options = {}) {
             catBadge.style.color = catMeta.color;
             catBadge.style.backgroundColor = catMeta.bg;
             catBadge.style.borderColor = catMeta.border;
-            catBadge.title = window.anomalous_browser_lang === 'zh' ? '点击切换词块类型（通用底模/风格/主体/LoRA触发词）' : 'Click to cycle category';
+            catBadge.title = window.anomalous_browser_lang === 'zh' ? '点击切换词性分类' : 'Cycle category';
             catBadge.onclick = () => {
                 const cats = ['base', 'style', 'subject', 'trigger'];
                 const nextIdx = (cats.indexOf(block.category) + 1) % cats.length;
@@ -445,16 +732,14 @@ function buildPromptComposer(owner, container, options = {}) {
                 renderBlocksList();
             };
 
-            // Title input
+            // Editable title
             const titleInput = text(headerLeft, 'input', '', 'anomalous-mixer-block-title-input');
             titleInput.value = block.title || '';
-            titleInput.placeholder = window.anomalous_browser_lang === 'zh' ? '词块标题...' : 'Block title...';
             titleInput.oninput = () => { block.title = titleInput.value; };
 
-            // Header Right Actions
+            // Right Action micro buttons
             const headerRight = text(blockHeader, 'div', '', 'anomalous-mixer-block-header-right');
 
-            // Move Up/Down Micro-buttons
             const upBtn = text(headerRight, 'button', '▲', 'anomalous-mixer-block-btn');
             upBtn.title = window.anomalous_browser_lang === 'zh' ? '上移' : 'Move up';
             upBtn.disabled = index === 0;
@@ -472,7 +757,7 @@ function buildPromptComposer(owner, container, options = {}) {
 
             const downBtn = text(headerRight, 'button', '▼', 'anomalous-mixer-block-btn');
             downBtn.title = window.anomalous_browser_lang === 'zh' ? '下移' : 'Move down';
-            downBtn.disabled = index === parts.length - 1;
+            downBtn.disabled = index === currentRoleParts.length - 1;
             downBtn.onclick = () => {
                 const realIdx = draft.plan.parts.findIndex(p => p.id === block.id);
                 if (realIdx < draft.plan.parts.length - 1) {
@@ -485,42 +770,24 @@ function buildPromptComposer(owner, container, options = {}) {
                 }
             };
 
-            // Copy block content
-            const copyBtn = text(headerRight, 'button', '📋', 'anomalous-mixer-block-btn');
-            copyBtn.title = window.anomalous_browser_lang === 'zh' ? '复制本块' : 'Copy block';
-            copyBtn.onclick = async () => {
-                try {
-                    await navigator.clipboard.writeText(block.content);
-                    copyBtn.textContent = '✅';
-                    setTimeout(() => { if (copyBtn.isConnected) copyBtn.textContent = '📋'; }, 1200);
-                } catch (e) {
-                    await anomalousAlert(t('materialCopyError'));
-                }
-            };
-
-            // Delete block
             const delBtn = text(headerRight, 'button', '✕', 'anomalous-mixer-block-btn is-delete');
-            delBtn.title = window.anomalous_browser_lang === 'zh' ? '删除词块' : 'Delete block';
+            delBtn.title = window.anomalous_browser_lang === 'zh' ? '移除此块' : 'Remove block';
             delBtn.onclick = () => {
                 const realIdx = draft.plan.parts.findIndex(p => p.id === block.id);
                 if (realIdx >= 0) {
                     draft.plan.parts.splice(realIdx, 1);
                     syncDraftSynthesizedText(draft);
-                    updateTabsUI();
+                    updateRightTabsUI();
                     renderBlocksList();
                     updateOutputPreview();
                 }
             };
 
-            // Block Body (Textarea)
+            // Body
             const blockBody = text(blockEl, 'div', '', 'anomalous-mixer-block-body');
             const textarea = text(blockBody, 'textarea', '', 'anomalous-mixer-block-textarea');
             textarea.value = block.content || '';
-            textarea.placeholder = block.role === 'positive'
-                ? (window.anomalous_browser_lang === 'zh' ? '输入正面提示词，支持英文短语、权重与 LoRA...' : 'Enter positive prompts, tags, weights...')
-                : (window.anomalous_browser_lang === 'zh' ? '输入负面过滤词，如 low quality, bad hands...' : 'Enter negative prompts...');
             textarea.rows = isSide ? 3 : 2;
-
             textarea.oninput = () => {
                 block.content = textarea.value;
                 syncDraftSynthesizedText(draft);
@@ -529,14 +796,33 @@ function buildPromptComposer(owner, container, options = {}) {
         });
     }
 
+    function setupDropzoneListeners(el) {
+        el.ondragover = (e) => {
+            e.preventDefault();
+            el.classList.add('is-drag-over');
+        };
+        el.ondragleave = () => {
+            el.classList.remove('is-drag-over');
+        };
+        el.ondrop = (e) => {
+            e.preventDefault();
+            el.classList.remove('is-drag-over');
+            const jsonStr = e.dataTransfer.getData('application/json');
+            if (jsonStr) {
+                try {
+                    addSourceCardToMixer(JSON.parse(jsonStr));
+                } catch (err) {}
+            }
+        };
+    }
+
     function updateOutputPreview() {
         syncDraftSynthesizedText(draft);
-        const role = activeTab === 'negative' ? 'negative' : 'positive';
-        const compiledText = draft.plan[role] || '';
+        const compiledText = draft.plan[activeTab] || '';
 
         outputTitle.innerHTML = activeTab === 'negative'
-            ? `🚫 <strong>${window.anomalous_browser_lang === 'zh' ? '合成负向文本' : 'Assembled Negative'}</strong>`
-            : `✨ <strong>${window.anomalous_browser_lang === 'zh' ? '合成正向文本' : 'Assembled Positive'}</strong>`;
+            ? `🚫 <strong>${window.anomalous_browser_lang === 'zh' ? '实时合成负向文本' : 'Assembled Negative'}</strong>`
+            : `✨ <strong>${window.anomalous_browser_lang === 'zh' ? '实时合成正向文本' : 'Assembled Positive'}</strong>`;
 
         const words = compiledText.trim() ? compiledText.split(/[\s,，\n\r]+/).filter(Boolean).length : 0;
         outputStats.textContent = window.anomalous_browser_lang === 'zh'
@@ -545,12 +831,12 @@ function buildPromptComposer(owner, container, options = {}) {
 
         outputTextarea.value = compiledText;
 
-        // Bind Whole Deck Drag directly to canvas node
+        // Whole deck drag to ComfyUI canvas node
         bindMaterialDrag(outputDeck, owner, {
             payload: () => compiledText.trim() ? {
                 content: compiledText,
                 position: posSelect.value,
-                dragHint: role === 'positive'
+                dragHint: activeTab === 'positive'
                     ? (window.anomalous_browser_lang === 'zh' ? '✨ 拖拽合成正面词至画布节点' : '✨ Drag Assembled Positive onto Node')
                     : (window.anomalous_browser_lang === 'zh' ? '🚫 拖拽合成负面词至画布节点' : '🚫 Drag Assembled Negative onto Node'),
             } : null,
@@ -561,67 +847,37 @@ function buildPromptComposer(owner, container, options = {}) {
         renderTargetBar();
     }
 
-    // Smart Sort Execution
+    // Smart Sort
     smartSortBtn.onclick = () => {
         if (!draft.plan.parts.length) return;
-        const targetRole = activeTab === 'all' ? null : activeTab;
-
-        if (targetRole) {
-            const roleParts = draft.plan.parts.filter(p => p.role === targetRole);
-            const otherParts = draft.plan.parts.filter(p => p.role !== targetRole);
-            const sorted = smartSortPromptBlocks(roleParts, targetRole);
-            draft.plan.parts = [...sorted, ...otherParts];
-        } else {
-            const pos = smartSortPromptBlocks(draft.plan.parts.filter(p => p.role === 'positive'), 'positive');
-            const neg = smartSortPromptBlocks(draft.plan.parts.filter(p => p.role === 'negative'), 'negative');
-            draft.plan.parts = [...pos, ...neg];
-        }
+        const roleParts = draft.plan.parts.filter(p => p.role === activeTab);
+        const otherParts = draft.plan.parts.filter(p => p.role !== activeTab);
+        const sorted = smartSortPromptBlocks(roleParts, activeTab);
+        draft.plan.parts = [...sorted, ...otherParts];
 
         syncDraftSynthesizedText(draft);
         renderBlocksList();
         updateOutputPreview();
 
-        // Visual feedback
         smartSortBtn.classList.add('is-animating');
-        setTimeout(() => smartSortBtn.classList.remove('is-animating'), 600);
+        setTimeout(() => smartSortBtn.classList.remove('is-animating'), 500);
     };
 
-    // Add new blank block
-    addBlockBtn.onclick = () => {
-        const role = activeTab === 'negative' ? 'negative' : 'positive';
-        const newBlock = normalizeBlock({
-            title: window.anomalous_browser_lang === 'zh' ? (role === 'positive' ? '新建词块' : '新建负向块') : 'New Block',
-            content: '',
-            role,
-            category: role === 'positive' ? 'subject' : 'base',
-        }, draft.plan.parts.length);
-        draft.plan.parts.push(newBlock);
-        syncDraftSynthesizedText(draft);
-        updateTabsUI();
-        renderBlocksList();
-        updateOutputPreview();
-    };
-
-    // Clear blocks
-    clearBlocksBtn.onclick = async () => {
-        const msg = activeTab === 'all'
-            ? (window.anomalous_browser_lang === 'zh' ? '确定清空调音台内的全部词块吗？' : 'Clear all blocks in mixer?')
-            : (window.anomalous_browser_lang === 'zh' ? `确定清空当前【${activeTab === 'positive' ? '正向' : '负向'}】词块吗？` : `Clear ${activeTab} blocks?`);
-
+    // Clear track
+    clearRightBtn.onclick = async () => {
+        const msg = window.anomalous_browser_lang === 'zh'
+            ? `确定清空当前【${activeTab === 'positive' ? '正向' : '负向'}】拼装池吗？`
+            : `Clear ${activeTab} mixer track?`;
         if (await anomalousConfirm(msg)) {
-            if (activeTab === 'all') {
-                draft.plan.parts = [];
-            } else {
-                draft.plan.parts = draft.plan.parts.filter(p => p.role !== activeTab);
-            }
+            draft.plan.parts = draft.plan.parts.filter(p => p.role !== activeTab);
             syncDraftSynthesizedText(draft);
-            updateTabsUI();
+            updateRightTabsUI();
             renderBlocksList();
             updateOutputPreview();
         }
     };
 
-    // Copy Output
+    // Copy preview text
     copyOutputBtn.onclick = async () => {
         const textToCopy = outputTextarea.value;
         if (!textToCopy) return;
@@ -634,7 +890,9 @@ function buildPromptComposer(owner, container, options = {}) {
         }
     };
 
-    // 6. Target Node Bar & Direct Application
+    // -------------------------------------------------------------------------
+    // Target Node Direct Injection Toolbar
+    // -------------------------------------------------------------------------
     const renderTargetBar = () => {
         if (!view.isConnected) return;
         targetBar.replaceChildren();
@@ -681,17 +939,7 @@ function buildPromptComposer(owner, container, options = {}) {
     if (isSide) owner.refreshSidePromptTarget = renderTargetBar;
     else owner.refreshPromptTarget = renderTargetBar;
 
-    // Drawer Integration
-    importBtn.onclick = () => {
-        openMaterialImportDrawer(owner, draft, () => {
-            syncDraftSynthesizedText(draft);
-            updateTabsUI();
-            renderBlocksList();
-            updateOutputPreview();
-        });
-    };
-
-    // Save Plan
+    // Save Plan to Material Library
     saveBtn.onclick = async () => {
         if (!draft.name.trim()) {
             nameInput.focus();
@@ -767,12 +1015,11 @@ function buildPromptComposer(owner, container, options = {}) {
     // New Draft
     newBtn.onclick = async () => {
         if (await anomalousConfirm(t('promptReplaceDraft'))) {
-            owner.closePromptImportDrawer?.();
             owner.promptPlanDraft = draft = newDraft();
             if (!isSide) {
                 showPromptComposer(owner);
             } else {
-                updateTabsUI();
+                updateRightTabsUI();
                 renderBlocksList();
                 updateOutputPreview();
                 nameInput.value = '';
@@ -781,29 +1028,63 @@ function buildPromptComposer(owner, container, options = {}) {
         }
     };
 
-    // Initial render
-    updateTabsUI();
+    // Async Fetch Materials into Left Panel
+    (async () => {
+        try {
+            const res = await fetch('/anomalous/materials?category=prompts&limit=100');
+            const data = await jsonResponse(res, 'materials list');
+            if (Array.isArray(data.materials)) {
+                for (const item of data.materials) {
+                    try {
+                        const prompts = await loadMaterialPrompts(item.filename);
+                        if (prompts.positive) {
+                            sourceCards.push({
+                                id: `mat_pos_${item.filename}`,
+                                title: item.name ? `${item.name} (Pos)` : '素材正向',
+                                content: prompts.positive,
+                                role: 'positive',
+                                category: categorizePromptSnippet(prompts.positive),
+                            });
+                        }
+                        if (prompts.negative) {
+                            sourceCards.push({
+                                id: `mat_neg_${item.filename}`,
+                                title: item.name ? `${item.name} (Neg)` : '素材负向',
+                                content: prompts.negative,
+                                role: 'negative',
+                                category: 'base',
+                            });
+                        }
+                    } catch (e) {}
+                }
+                if (view.isConnected) {
+                    renderSourceCardsList();
+                }
+            }
+        } catch (e) {}
+    })();
+
+    // Initial render execution
+    renderNewCardFormUI();
+    renderSourceCardsList();
+    updateRightTabsUI();
     renderBlocksList();
     updateOutputPreview();
 
-    return {
+    const control = {
         updateAll: () => {
-            updateTabsUI();
+            updateRightTabsUI();
             renderBlocksList();
             updateOutputPreview();
+            renderSourceCardsList();
         },
         addBlock: (blockData) => {
-            const block = normalizeBlock(blockData, draft.plan.parts.length);
-            draft.plan.parts.push(block);
-            syncDraftSynthesizedText(draft);
-            if (block.role !== activeTab && activeTab !== 'all') {
-                activeTab = block.role;
-            }
-            updateTabsUI();
-            renderBlocksList();
-            updateOutputPreview();
+            addSourceCardToMixer(blockData);
         },
     };
+
+    if (!isSide) owner.workbenchComposerControl = control;
+    return control;
 }
 
 function applyPromptDrop(node, data, graph, parent) {
@@ -840,102 +1121,4 @@ function applyPromptDrop(node, data, graph, parent) {
     close.onclick = () => dialog.close();
     dialog.onclose = () => dialog.remove();
     dialog.showModal();
-}
-
-/**
- * Slide-out Drawer: Quick Prompt Importer from Material Library
- */
-async function openMaterialImportDrawer(owner, draft, onUpdated) {
-    owner.closePromptImportDrawer?.();
-    const drawer = text(document.body, 'div', '', 'anomalous-prompt-import-drawer');
-    const header = text(drawer, 'div', '', 'anomalous-drawer-header');
-    text(header, 'h4', `📥 ${t('promptDrawerTitle')}`);
-    let controller, timer;
-    const close = () => {
-        controller?.abort(); clearTimeout(timer); drawer.remove();
-        window.removeEventListener('keydown', onKeydown);
-        if (owner.closePromptImportDrawer === close) owner.closePromptImportDrawer = null;
-    };
-    const onKeydown = event => { if (event.key === 'Escape') close(); };
-    owner.closePromptImportDrawer = close;
-    window.addEventListener('keydown', onKeydown);
-    text(header, 'button', '✕', 'anomalous-paper-note-btn').onclick = close;
-    const search = text(text(drawer, 'div', '', 'anomalous-drawer-search'), 'input', '');
-    search.type = 'search'; search.placeholder = t('promptDrawerSearchPlaceholder');
-    const list = text(drawer, 'div', '', 'anomalous-drawer-list');
-    const pager = text(drawer, 'div', '', 'anomalous-prompt-actions');
-
-    const load = async (page = 1) => {
-        controller?.abort(); controller = new AbortController(); const current = controller;
-        list.replaceChildren(); pager.replaceChildren(); text(list, 'p', t('loading'));
-        try {
-            const query = new URLSearchParams({ category: 'prompts', q: search.value, page, limit: 48 });
-            const response = await fetch(`/anomalous/materials?${query}`, { signal: current.signal });
-            const payload = await jsonResponse(response, 'material list failed');
-            if (current.signal.aborted || !drawer.isConnected) return;
-            list.replaceChildren();
-            if (!payload.materials?.length) text(list, 'p', t('materialNoMatches'));
-            for (const item of payload.materials || []) {
-                const card = text(list, 'div', '', 'anomalous-drawer-item');
-                text(card, 'strong', item.name || t('materialUntitled'));
-                text(card, 'small', (item.tags || []).join(' · '));
-                const inspect = text(card, 'button', t('materialViewDetails'), 'anomalous-drawer-item-btn');
-                inspect.onclick = async () => {
-                    inspect.disabled = true;
-                    try {
-                        const prompts = await loadMaterialPrompts(item.filename, current.signal);
-                        if (current.signal.aborted || !card.isConnected) return;
-                        if (!prompts.positive && !prompts.negative) {
-                            inspect.textContent = t('materialNoPromptContent'); inspect.disabled = false; return;
-                        }
-                        for (const role of ['positive', 'negative']) {
-                            if (!prompts[role]) continue;
-                            text(card, 'strong', t(`promptFinal_${role}`));
-                            text(card, 'pre', prompts[role], 'anomalous-material-note-text');
-                            const append = text(card, 'button', `➕ ${window.anomalous_browser_lang === 'zh' ? '入坞词块' : 'Add Block'}`, 'anomalous-drawer-item-btn');
-                            append.onclick = () => {
-                                draft.plan.parts.push(normalizeBlock({
-                                    title: item.name || (role === 'positive' ? '正向词块' : '负向词块'),
-                                    content: prompts[role],
-                                    role,
-                                    category: role === 'positive' ? categorizePromptSnippet(prompts[role]) : 'base',
-                                }, draft.plan.parts.length));
-                                onUpdated();
-                            };
-                        }
-                        const whole = text(card, 'button', `🎛️ ${window.anomalous_browser_lang === 'zh' ? '全部入坞' : 'Add Both to Mixer'}`, 'anomalous-drawer-item-btn');
-                        whole.onclick = () => {
-                            if (prompts.positive) {
-                                draft.plan.parts.push(normalizeBlock({
-                                    title: `${item.name} (Pos)`,
-                                    content: prompts.positive,
-                                    role: 'positive',
-                                    category: categorizePromptSnippet(prompts.positive),
-                                }, draft.plan.parts.length));
-                            }
-                            if (prompts.negative) {
-                                draft.plan.parts.push(normalizeBlock({
-                                    title: `${item.name} (Neg)`,
-                                    content: prompts.negative,
-                                    role: 'negative',
-                                    category: 'base',
-                                }, draft.plan.parts.length));
-                            }
-                            if (!draft.name.trim()) draft.name = item.name;
-                            draft.tags = [...new Set([...draft.tags, ...(item.tags || [])])].slice(0, 20);
-                            onUpdated();
-                        };
-                        inspect.remove();
-                    } catch (error) { if (error.name !== 'AbortError') { inspect.textContent = t('materialDetailLoadError'); inspect.disabled = false; } }
-                };
-            }
-            const previous = text(pager, 'button', t('materialPrevious'), 'anomalous-btn-ghost');
-            previous.disabled = payload.page <= 1; previous.onclick = () => load(payload.page - 1);
-            text(pager, 'span', t('materialPageSummary', { page: payload.page, pages: payload.pages, count: payload.total }));
-            const next = text(pager, 'button', t('materialNext'), 'anomalous-btn-ghost');
-            next.disabled = payload.page >= payload.pages; next.onclick = () => load(payload.page + 1);
-        } catch (error) { if (!current.signal.aborted) { list.replaceChildren(); text(list, 'p', t('materialLoadError')); } }
-    };
-    search.oninput = () => { clearTimeout(timer); timer = setTimeout(() => load(), 250); };
-    await load(); search.focus();
 }
