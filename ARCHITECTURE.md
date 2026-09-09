@@ -119,14 +119,16 @@ DOM or live LiteGraph state.
   the library and Node Assistant use `ui_material_application.js` for the same receipt.
 - `ui_prompt_composer.js` owns the Prompt Studio Dual-Column Workbench (提示词工坊左右双分栏工作台);
   replaces the cramped 380px drawer with a dedicated full-width two-column workspace (`.anomalous-prompt-workbench`):
-  the Left Column hosts the Ready-to-use Prompt Cards Library (成型提示词库), aggregating user-saved prompts from Material Library
-  and curated starter presets, completely eliminating default empty textareas; displays an on-demand inline creation card only when
-  clicking `➕ 新建词卡`, and cards support native HTML5 drag-and-drop (`dragstart`);
-  the Right Column hosts the Assembler & Arranger Stage (顺序编排调音台), providing a high-visibility dropzone (`.anomalous-assembly-dropzone`)
-  that ingests dragged cards into positive/negative tracks, supports bidirectional drag-and-drop reordering with ghost indicator lines,
-  instant A/B bypass toggles (greyscale dimming without deleting), interactive category pills, one-click Smart Sort (`🪄 智能理顺`, Base ➔ Style ➔ Subject ➔ Trigger),
-  and a live assembled output deck with real-time word/token counts, whole-deck canvas dragging (`bindMaterialDrag` onto CLIPTextEncode nodes),
-  direct target node injection toolbar, and seamless return to Material Library;
+  the Left Column hosts the Ready-to-use Prompt Cards Library (成型提示词库), featuring one-click canvas node prompt extraction
+  (`🎯 从节点提取`, reading selected ComfyUI text nodes like `CLIPTextEncode` and auto-generating categorised cards), one-click
+  Material Library batch sync (`📥 导入素材库`, auto-scanning and deduplicating all saved material prompts), and on-demand
+  inline card creation (`➕ 新建词卡`), completely eliminating default empty textareas; cards support native HTML5 drag-and-drop;
+  the Right Column hosts the Assembler & Arranger Stage (顺序编排调音台), featuring quick node suction (`🎯 从节点吸入`), a high-visibility
+  dropzone (`.anomalous-assembly-dropzone`) that ingests dragged cards into positive/negative tracks, supports bidirectional
+  drag-and-drop reordering with ghost indicator lines, instant A/B bypass toggles (greyscale dimming without deleting), interactive
+  category pills, one-click Smart Sort (`🪄 智能理顺`, Base ➔ Style ➔ Subject ➔ Trigger), and a live assembled output deck with
+  real-time word/token counts, whole-deck canvas dragging (`bindMaterialDrag` onto CLIPTextEncode nodes), direct target node injection
+  toolbar, and seamless return to Material Library;
   `prompt_composition.js` provides `categorizePromptSnippet`, `smartSortPromptBlocks`, `assemblePromptBlocks`,
   as well as backward-compatible text joining and fragment plan composition;
   `api/materials.py` validates prompt plans with extended categories (`general`, `specific`, `base`, `style`, `subject`, `trigger`).

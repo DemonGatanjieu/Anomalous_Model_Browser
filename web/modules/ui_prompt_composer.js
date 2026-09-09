@@ -227,6 +227,18 @@ export function addBlockToMixer(owner, blockData) {
     }
 }
 
+function showWorkbenchToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'anomalous-mixer-toast';
+    toast.innerHTML = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('is-show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('is-show');
+        setTimeout(() => toast.remove(), 300);
+    }, 2400);
+}
+
 function buildPromptComposer(owner, container, options = {}) {
     const isSide = !!options.isSideStudio;
     const view = text(container, 'section', '', `anomalous-prompt-composer anomalous-prompt-workbench${isSide ? ' is-side-studio' : ''}`);
@@ -266,7 +278,7 @@ function buildPromptComposer(owner, container, options = {}) {
     let sourceFilterKeyword = '';
     let draggedBlockId = null;
 
-    // Local in-memory source prompt cards (merged starters + materials)
+    // Local in-memory source prompt cards (merged starters + materials + user custom)
     let sourceCards = [...STARTER_SOURCE_PROMPTS];
     let isCreatingNewCard = false;
 
@@ -331,7 +343,18 @@ function buildPromptComposer(owner, container, options = {}) {
     const leftTitleWrap = text(leftHeader, 'div', '', 'anomalous-workbench-col-title');
     leftTitleWrap.innerHTML = `📚 <strong>${window.anomalous_browser_lang === 'zh' ? '成型提示词库' : 'Prompt Library'}</strong> <span class="anomalous-sub-counter"></span>`;
 
-    const newCardTriggerBtn = text(leftHeader, 'button', `➕ ${window.anomalous_browser_lang === 'zh' ? '新建词卡' : 'New Card'}`, 'anomalous-btn-primary anomalous-btn-sm');
+    const leftHeaderActions = text(leftHeader, 'div', '', 'anomalous-workbench-header-actions');
+
+    // Button 1: Extract Prompts from Selected Canvas Node
+    const extractNodeBtn = text(leftHeaderActions, 'button', `🎯 ${window.anomalous_browser_lang === 'zh' ? '从节点提取' : 'From Node'}`, 'anomalous-btn-primary anomalous-btn-sm anomalous-btn-extract-node');
+    extractNodeBtn.title = window.anomalous_browser_lang === 'zh' ? '读取 ComfyUI 画布当前选中节点的提示词文本并生成词卡' : 'Extract prompt text from selected canvas node into cards';
+
+    // Button 2: One-click Sync / Import from Material Library
+    const importMaterialsBtn = text(leftHeaderActions, 'button', `📥 ${window.anomalous_browser_lang === 'zh' ? '导入素材库' : 'Import Library'}`, 'anomalous-btn-ghost anomalous-btn-sm');
+    importMaterialsBtn.title = window.anomalous_browser_lang === 'zh' ? '一键从素材库同步并导入所有已保存的提示词' : 'Sync and import all prompts from Material Library';
+
+    // Button 3: Create New Custom Card
+    const newCardTriggerBtn = text(leftHeaderActions, 'button', `➕ ${window.anomalous_browser_lang === 'zh' ? '新建词卡' : 'New Card'}`, 'anomalous-btn-ghost anomalous-btn-sm');
     newCardTriggerBtn.title = window.anomalous_browser_lang === 'zh' ? '新建并保存一张提示词卡片' : 'Create a new prompt card';
 
     // Search and category filters bar
@@ -378,6 +401,11 @@ function buildPromptComposer(owner, container, options = {}) {
     const rightTabs = text(rightHeader, 'div', '', 'anomalous-mixer-tabs');
 
     const rightActions = text(rightHeader, 'div', '', 'anomalous-mixer-actions');
+
+    // Right quick extract: suck into right mixer directly
+    const rightSuckNodeBtn = text(rightActions, 'button', `🎯 ${window.anomalous_browser_lang === 'zh' ? '从节点吸入' : 'Pull from Node'}`, 'anomalous-btn-ghost anomalous-btn-sm');
+    rightSuckNodeBtn.title = window.anomalous_browser_lang === 'zh' ? '直接将画布选中节点的提示词作为积木吸入当前拼装台' : 'Extract node prompt directly into current mixer track';
+
     const smartSortBtn = text(rightActions, 'button', window.anomalous_browser_lang === 'zh' ? '🪄 智能理顺' : '🪄 Smart Sort', 'anomalous-mixer-smart-sort-btn');
     smartSortBtn.title = window.anomalous_browser_lang === 'zh' ? '按 [通用底模 ➔ 风格氛围 ➔ 主体内容 ➔ LoRA/触发词] 自动排序' : 'Auto sort: [Base ➔ Style ➔ Subject ➔ Trigger]';
 
@@ -407,6 +435,133 @@ function buildPromptComposer(owner, container, options = {}) {
 
     // Target Node Direct Write Bar
     const targetBar = text(rightPanel, 'div', '', 'anomalous-prompt-target-bar');
+
+    // -------------------------------------------------------------------------
+    // FEATURE IMPLEMENTATIONS: Node Extraction & Material Sync
+    // -------------------------------------------------------------------------
+
+    // Extract prompts from selected canvas node
+    function extractPromptsFromSelectedNode(intoRightMixer = false) {
+        const node = selectedMaterialNode(app);
+        if (!node) {
+            anomalousAlert(window.anomalous_browser_lang === 'zh'
+                ? '💡 请先在 ComfyUI 画布上点击选中一个提示词节点（例如 CLIPTextEncode 或包含 prompt 文本的节点）！'
+                : '💡 Please select a prompt node (e.g. CLIPTextEncode) on the ComfyUI canvas first!');
+            return;
+        }
+
+        const heading = materialNodeHeading(node) || node.title || node.type || `Node #${node.id}`;
+        let targets = promptWidgetTargets(node);
+
+        // Fallback: scan any widget containing string prompt
+        if (!targets.length && Array.isArray(node.widgets)) {
+            targets = node.widgets.flatMap((w, idx) => {
+                if (typeof w.value === 'string' && w.value.trim().length > 0 && !w.options?.values) {
+                    return [{ index: idx, name: w.name || 'text' }];
+                }
+                return [];
+            });
+        }
+
+        if (!targets.length) {
+            anomalousAlert(window.anomalous_browser_lang === 'zh'
+                ? `⚠️ 选中的节点【${heading}】中未检测到有效的文本输入或提示词内容！`
+                : `⚠️ No valid text prompt found in selected node [${heading}]!`);
+            return;
+        }
+
+        let extractedCount = 0;
+        targets.forEach(t => {
+            const rawVal = String(node.widgets[t.index]?.value || '').trim();
+            if (!rawVal) return;
+            const isNeg = /neg/i.test(t.name);
+            const role = isNeg ? 'negative' : 'positive';
+            const cat = isNeg ? 'base' : categorizePromptSnippet(rawVal);
+            const cardTitle = `${heading} · ${t.name}`;
+
+            const newCard = {
+                id: `node_${node.id}_${t.index}_${Date.now()}`,
+                title: cardTitle,
+                content: rawVal,
+                role,
+                category: cat,
+            };
+
+            // Add into left source deck
+            sourceCards.unshift(newCard);
+            extractedCount++;
+
+            // If user clicked right panel, also insert into mixer track directly
+            if (intoRightMixer) {
+                addSourceCardToMixer(newCard);
+            }
+        });
+
+        if (extractedCount > 0) {
+            renderSourceCardsList();
+            showWorkbenchToast(`🎯 ${window.anomalous_browser_lang === 'zh'
+                ? `已成功从节点【${heading}】提取 ${extractedCount} 段提示词${intoRightMixer ? '并直接入坞' : '并加入左侧词库'}！`
+                : `Successfully extracted ${extractedCount} prompts from [${heading}]!`}`);
+        } else {
+            anomalousAlert(window.anomalous_browser_lang === 'zh'
+                ? `⚠️ 选中的节点【${heading}】文本内容为空！`
+                : `⚠️ The text fields in node [${heading}] are empty!`);
+        }
+    }
+
+    extractNodeBtn.onclick = () => extractPromptsFromSelectedNode(false);
+    rightSuckNodeBtn.onclick = () => extractPromptsFromSelectedNode(true);
+
+    // One-click Sync / Import from Material Library
+    async function syncMaterialsIntoSourceDeck() {
+        importMaterialsBtn.disabled = true;
+        importMaterialsBtn.textContent = `⏳ ${window.anomalous_browser_lang === 'zh' ? '同步中...' : 'Syncing...'}`;
+        let addedCount = 0;
+
+        try {
+            const res = await fetch('/anomalous/materials?limit=150');
+            const data = await jsonResponse(res, 'materials list');
+            if (Array.isArray(data.materials)) {
+                for (const item of data.materials) {
+                    try {
+                        const prompts = await loadMaterialPrompts(item.filename);
+                        if (prompts.positive && !sourceCards.some(c => c.content === prompts.positive.trim())) {
+                            sourceCards.push({
+                                id: `mat_pos_${item.filename}`,
+                                title: item.name ? `${item.name} (Pos)` : '素材正向',
+                                content: prompts.positive.trim(),
+                                role: 'positive',
+                                category: categorizePromptSnippet(prompts.positive),
+                            });
+                            addedCount++;
+                        }
+                        if (prompts.negative && !sourceCards.some(c => c.content === prompts.negative.trim())) {
+                            sourceCards.push({
+                                id: `mat_neg_${item.filename}`,
+                                title: item.name ? `${item.name} (Neg)` : '素材负向',
+                                content: prompts.negative.trim(),
+                                role: 'negative',
+                                category: 'base',
+                            });
+                            addedCount++;
+                        }
+                    } catch (err) {}
+                }
+            }
+
+            renderSourceCardsList();
+            showWorkbenchToast(`📥 ${window.anomalous_browser_lang === 'zh'
+                ? (addedCount > 0 ? `已从素材库成功同步并导入 ${addedCount} 条提示词卡片！` : '素材库提示词已是最新状态，未发现新词条。')
+                : `Synced from Material Library: ${addedCount} new prompts added!`}`);
+        } catch (error) {
+            await anomalousAlert(t('materialLoadError'));
+        } finally {
+            importMaterialsBtn.disabled = false;
+            importMaterialsBtn.textContent = `📥 ${window.anomalous_browser_lang === 'zh' ? '导入素材库' : 'Import Library'}`;
+        }
+    }
+
+    importMaterialsBtn.onclick = () => syncMaterialsIntoSourceDeck();
 
     // -------------------------------------------------------------------------
     // RENDER: Left Panel Cards & Form
@@ -1028,29 +1183,29 @@ function buildPromptComposer(owner, container, options = {}) {
         }
     };
 
-    // Async Fetch Materials into Left Panel
+    // Initial silent sync from Material Library on mount
     (async () => {
         try {
-            const res = await fetch('/anomalous/materials?category=prompts&limit=100');
+            const res = await fetch('/anomalous/materials?category=prompts&limit=80');
             const data = await jsonResponse(res, 'materials list');
             if (Array.isArray(data.materials)) {
                 for (const item of data.materials) {
                     try {
                         const prompts = await loadMaterialPrompts(item.filename);
-                        if (prompts.positive) {
+                        if (prompts.positive && !sourceCards.some(c => c.content === prompts.positive.trim())) {
                             sourceCards.push({
                                 id: `mat_pos_${item.filename}`,
                                 title: item.name ? `${item.name} (Pos)` : '素材正向',
-                                content: prompts.positive,
+                                content: prompts.positive.trim(),
                                 role: 'positive',
                                 category: categorizePromptSnippet(prompts.positive),
                             });
                         }
-                        if (prompts.negative) {
+                        if (prompts.negative && !sourceCards.some(c => c.content === prompts.negative.trim())) {
                             sourceCards.push({
                                 id: `mat_neg_${item.filename}`,
                                 title: item.name ? `${item.name} (Neg)` : '素材负向',
-                                content: prompts.negative,
+                                content: prompts.negative.trim(),
                                 role: 'negative',
                                 category: 'base',
                             });
