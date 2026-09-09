@@ -1003,12 +1003,28 @@ function createRecipeCard(owner, recipe) {
         : safeThumbnail(data.thumbnail) || sourceImageUrl);
     appendRecipeCover(mediaWrap, thumbnail, data.name || t('recipeThumbnail'));
 
-    // Base Model Pill (Frosted glass at bottom-left of cover)
+    // Frosted Glass Chips at bottom-left of cover (Readiness Pill + Base Model)
+    const bottomChips = document.createElement('div');
+    bottomChips.className = 'anomalous-recipe-cover-bottom-chips';
+
+    const readiness = getRecipeReadiness(data);
+    const readinessPill = document.createElement('span');
+    readinessPill.className = `anomalous-recipe-readiness-pill is-${readiness.status}`;
+    readinessPill.title = readiness.label;
+    const dot = document.createElement('span');
+    dot.className = `anomalous-recipe-readiness-dot is-${readiness.status}`;
+    const rText = document.createElement('span');
+    rText.className = 'anomalous-recipe-readiness-text';
+    rText.textContent = readiness.label;
+    readinessPill.append(dot, rText);
+    bottomChips.appendChild(readinessPill);
+
     const baseModelStr = data.params?.baseModel || data.params?.baseModels;
     if (baseModelStr) {
-        const pill = appendText(mediaWrap, 'span', `📦 ${modelDisplayName(baseModelStr)}`, 'anomalous-recipe-cover-pill');
+        const pill = appendText(bottomChips, 'span', `📦 ${modelDisplayName(baseModelStr)}`, 'anomalous-recipe-cover-pill');
         pill.title = String(baseModelStr);
     }
+    mediaWrap.appendChild(bottomChips);
 
     // Scope Pill (Top-right of cover)
     const isPartial = data.workflow_scope === 'partial';
@@ -1024,17 +1040,11 @@ function createRecipeCard(owner, recipe) {
     const body = document.createElement('div');
     body.className = 'anomalous-recipe-card-body';
 
-    // Header: Title + Readiness Dot
+    // Header: Clean Title (Readiness relocated to cover pill)
     const header = document.createElement('div');
     header.className = 'anomalous-recipe-card-header';
     const title = appendText(header, 'h3', data.name || t('recipeUntitled'), 'anomalous-recipe-card-title');
     title.title = data.name || t('recipeUntitled');
-
-    const readiness = getRecipeReadiness(data);
-    const dot = document.createElement('span');
-    dot.className = `anomalous-recipe-readiness-dot is-${readiness.status}`;
-    dot.title = readiness.label;
-    header.appendChild(dot);
     body.appendChild(header);
 
     // Quick Specs Strip

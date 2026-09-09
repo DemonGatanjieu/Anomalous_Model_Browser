@@ -522,14 +522,18 @@ export function renderNotebookEditor() {
 
         if (!data.translations) data.translations = {};
 
+        let visualDebounceTimer = null;
         const updateVisualTags = () => {
-            dualPane.innerHTML = '';
             const txt = rawArea.value;
             data.promptEn = txt;
             this.saveCurrentNotebook();
-            if (!txt.trim()) return;
+            if (!txt.trim()) {
+                dualPane.replaceChildren();
+                return;
+            }
 
             const tags = txt.split(',').map(s => s.trim()).filter(s => s);
+            const fragment = document.createDocumentFragment();
             tags.forEach((tag, idx) => {
                 const tagRow = document.createElement('div');
                 tagRow.className = 'anomalous-nb-tag-row';
@@ -600,7 +604,7 @@ export function renderNotebookEditor() {
 
                 tagRow.appendChild(tagL);
                 tagRow.appendChild(tagR);
-                dualPane.appendChild(tagRow);
+                fragment.appendChild(tagRow);
 
                 if (!data.translations[tag]) {
                     fetch('/anomalous/translate', {
@@ -615,6 +619,7 @@ export function renderNotebookEditor() {
                     }).catch(() => { });
                 }
             });
+            dualPane.replaceChildren(fragment);
         };
 
         rawBtn.onclick = () => {
@@ -643,6 +648,13 @@ export function renderNotebookEditor() {
             clearTimeout(this.pTimeout);
             data.promptEn = rawArea.value;
             this.pTimeout = setTimeout(() => this.saveCurrentNotebook(), 500);
+
+            if (dualPane.style.display !== 'none') {
+                clearTimeout(visualDebounceTimer);
+                visualDebounceTimer = setTimeout(() => {
+                    updateVisualTags();
+                }, 300);
+            }
         };
 
         const promptTools = document.createElement('details');

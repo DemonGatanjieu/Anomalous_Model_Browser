@@ -87,12 +87,12 @@ DOM or live LiteGraph state.
   keyboard accessible focus indicators, full-width generation parameter saving to Material Library,
   and segmented Bento parameter inspection with ComfyUI canvas injection (`app.loadGraphData`).
 - `ui_notebooks.js`, `ui_recipes.js`, and `ui_recipe_detail.js` own Workspace
-  presentation, featuring an integrated 48px Studio topbar (`.anomalous-recipe-topbar`)
-  with scope filter micro-pills (`all`, `complete`, `partial`), unified search & tag dropdown,
-  and dual view modes (uniform 264px Bento grid & 44px compact list view); eliminates noisy
-  Beta notices and visual bumpiness; cards feature 136px golden-ratio top covers, bottom-left
-  frosted glass base model pills, top-right scope pills, real-time environment readiness indicators
-  (🟢/🟡/🔴), quick spec tags, and one-click canvas load (`🚀 载入画布` / `🧩 追加画布`).
+  presentation, featuring an integrated Studio topbar (`.anomalous-recipe-topbar`) with responsive `flex-wrap: wrap`,
+  a subtle 1px border-bottom (`rgba(255,255,255,0.05)`), scope filter micro-pills (`all`, `complete`, `partial`) with high-transparency default backgrounds,
+  unified search & tag dropdown, and dual view modes (uniform 264px Bento grid & compact list view);
+  cards feature 136px golden-ratio top covers, clean titles without badge clutter (relocating isolated readiness dots into a sleek frosted-glass
+  `anomalous-recipe-readiness-pill` chip at the bottom-left of the cover alongside base model pills), single-row ellipsis text tags (`white-space: nowrap; text-overflow: ellipsis`),
+  top-right scope pills, and one-click canvas load (`🚀 载入画布` / `🧩 追加画布`).
   Direct canvas drag-drop ("一拖直达画布") allows dragging any recipe card across the translucent
   modal directly onto the ComfyUI canvas to immediately load the workflow into a fresh canvas
   (or append subgraphs), mimicking native ComfyUI image-drop behavior.
@@ -108,6 +108,10 @@ DOM or live LiteGraph state.
   replaces legacy `<details>` and vertical text badges with smooth hover-reveal micro-actions and a glowing
   green active pulse dot (`.anomalous-preset-active-dot`); enforces 48px bottom safety padding to eliminate
   clipping and overlap.
+  `ui_notebooks.js` resolves the long-text input bottleneck through 300ms Debounce on `rawArea.oninput`,
+  `DocumentFragment` batch mounting in `updateVisualTags`, and modern CSS Grid layout (`.anomalous-nb-tag-row`)
+  with hover-revealed copy buttons (`.anomalous-nb-copy-btn`); LoRA gallery performance is hardened via
+  `content-visibility: auto`, `contain-intrinsic-size: 70px`, and fixed `aspect-ratio: 1/1` preventing Layout Shift.
 - `ui_materials.js` owns the Workspace Material Library and material CRUD presentation;
   features an integrated single-row Studio topbar with category micro-pills (`all`, `workflow`, `params`, `prompts`),
   unified search with tag filtering, grid/list view mode toggle (persisted to localStorage),
@@ -119,19 +123,21 @@ DOM or live LiteGraph state.
   the library and Node Assistant use `ui_material_application.js` for the same receipt.
 - `ui_prompt_composer.js` owns the Prompt Studio Dual-Column Workbench (提示词工坊左右双分栏工作台);
   replaces the cramped 380px drawer with a dedicated full-width two-column workspace (`.anomalous-prompt-workbench`):
-  the Left Column hosts the Ready-to-use Prompt Cards Library (成型提示词库), featuring non-wrapping title layout, a dedicated
-  sub-action bar with one-click canvas node prompt extraction (`🎯 从节点提取`, reading selected ComfyUI text nodes like `CLIPTextEncode`
+  the Left Column hosts the Ready-to-use Prompt Cards Library (成型提示词库), featuring restrained dark grey card backgrounds (`#222630`)
+  with category-specific left accent borders (`border-left: 3.5px solid ...`, Base/Style/Subject/Trigger) eliminating color-palette clutter,
+  non-wrapping title layout, a dedicated sub-action bar with one-click canvas node prompt extraction (`🎯 从节点提取`, reading selected ComfyUI text nodes like `CLIPTextEncode`
   with downstream link connection traversal for accurate negative conditioning detection, auto-generating categorised cards) and one-click
   Material Library batch sync (`📥 从素材库导入`, cancellable fetch scoped to `category=prompts`), plus on-demand persistent card creation
   (`➕ 新建词卡`, with explicit positive/negative role radios and `/anomalous/save_prompt_plan` backend persistence; temporary cards
   show `[未保存]` badge with one-click `💾 存入库`), completely eliminating default empty textareas; cards support native HTML5 drag-and-drop;
+  dragging cards activates a pulsing dashed accent summon border (`@keyframes anomalousTrackPulse`, `border: 2px dashed #2dd4bf`) on the Assembler Stage;
   the Right Column hosts the expanded Assembler & Arranger Stage (顺序编排调音台, `minmax(460px, 1fr)`), featuring quick node reading
   (`🎯 读取选中节点`), compact modular Lego block cards (~56px height, expandable on focus) allowing generous top-to-bottom sequence stacking,
   a high-visibility dropzone (`.anomalous-assembly-dropzone`) that ingests dragged cards into positive/negative tracks with strict role isolation,
   supports bidirectional drag-and-drop reordering with ghost indicator lines, role-aware up/down swapping, instant A/B bypass toggles (greyscale dimming without deleting),
   interactive category pills, one-click Smart Sort (`🪄 按分类排序`, Base ➔ Style ➔ Subject ➔ Trigger), a target widget dropdown with sticky
-  selection cache (`targetWidgetIndexByNodeId`), and a pinned live assembled output deck with real-time word/token counts, single-mount
-  canvas dragging (`bindMaterialDrag` onto text nodes), direct target node injection toolbar, and seamless return to Material Library;
+  selection cache (`targetWidgetIndexByNodeId`), and a sticky floating frosted-glass output deck (`.anomalous-mixer-deck-output`, `position: sticky; bottom: 0; backdrop-filter: blur(12px)`)
+  with real-time word/token counts, single-mount canvas dragging (`bindMaterialDrag` onto text nodes), direct target node injection toolbar, and seamless return to Material Library;
   `prompt_composition.js` provides bidirectional schema mapping (`planToWorkbenchDraft` and `workbenchDraftToSavedPlan`) ensuring
   100% roundtrip data integrity across `anomalous-prompt-plan-v1` and `version: 2`, lossless legacy dual-role splitting and trailing text retention,
   `categorizePromptSnippet`, `smartSortPromptBlocks`, `assemblePromptBlocks`, as well as backward-compatible text joining;

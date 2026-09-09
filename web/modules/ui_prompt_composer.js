@@ -845,10 +845,12 @@ function buildPromptComposer(owner, container, options = {}) {
                 e.dataTransfer.setData('text/plain', card.content);
                 e.dataTransfer.effectAllowed = 'copyMove';
                 cardEl.classList.add('is-dragging-source');
+                workbenchGrid.classList.add('is-source-dragging');
             };
 
             cardEl.ondragend = () => {
                 cardEl.classList.remove('is-dragging-source');
+                workbenchGrid.classList.remove('is-source-dragging');
             };
 
             // Card Header

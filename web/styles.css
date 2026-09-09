@@ -914,6 +914,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     gap: 10px;
     flex-wrap: wrap;
     padding: 10px 0;
+    content-visibility: auto;
+    contain-intrinsic-size: 70px;
 }
 
 .anomalous-nb-minicheck,
@@ -922,29 +924,31 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     align-items: center;
     gap: 12px;
     padding: 8px 12px 8px 8px;
-    background: #2a2a2a;
-    border: 1px solid #444;
+    background: #222630;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     cursor: pointer;
     flex: 1 1 220px;
     max-width: 320px;
-    transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    content-visibility: auto;
+    contain-intrinsic-size: 70px;
 }
 
 .anomalous-nb-minicheck:hover,
 .anomalous-nb-minilora:hover {
-    border-color: #888;
-    background: #383838;
+    border-color: rgba(255, 255, 255, 0.2);
+    background: #2a3140;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    transition-delay: 0.08s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    transition-delay: 0.04s;
 }
 
 .anomalous-nb-minicheck.selected,
 .anomalous-nb-minilora.selected {
-    border-color: #00ffcc;
-    background: rgba(0, 255, 204, 0.15);
-    box-shadow: 0 0 12px rgba(0, 255, 204, 0.2);
+    border-color: #2dd4bf;
+    background: rgba(45, 212, 191, 0.15);
+    box-shadow: 0 0 12px rgba(45, 212, 191, 0.25);
 }
 
 .anomalous-nb-minicheck img,
@@ -953,6 +957,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-nb-minilora video {
     width: 52px;
     height: 52px;
+    aspect-ratio: 1 / 1;
     object-fit: cover;
     border-radius: 6px;
     flex-shrink: 0;
@@ -973,7 +978,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-nb-minicheck.selected .anomalous-nb-minicheck-name,
 .anomalous-nb-minilora.selected .anomalous-nb-minilora-name {
-    color: #00ffcc;
+    color: #2dd4bf;
     font-weight: bold;
 }
 
@@ -990,23 +995,25 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     box-sizing: border-box;
 }
 
+/* 提示词双语对照面板 (CSS Grid 双栏排版) */
 .anomalous-nb-dual-pane {
     display: flex;
     flex-direction: column;
     width: 100%;
-    background: #1a1a1a;
+    background: rgba(22, 26, 35, 0.95);
     padding: 10px;
     border-radius: 8px;
-    border: 1px solid #444;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     box-sizing: border-box;
+    gap: 6px;
 }
 
 .anomalous-nb-tag-row {
-    display: flex;
-    gap: 15px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
     width: 100%;
     align-items: stretch;
-    margin-bottom: 6px;
 }
 
 .anomalous-nb-gallery-box {
@@ -1018,53 +1025,59 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-nb-visual-tag {
-    background: #2a2a2a;
-    color: #eee;
-    padding: 8px 12px;
+    background: #222630;
+    color: #e2e8f0;
+    padding: 6px 10px;
     border-radius: 6px;
-    border: 1px solid #444;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     cursor: pointer;
-    transition: all 0.2s;
-    min-height: 36px;
+    transition: all 0.18s ease;
+    min-height: 34px;
     display: flex;
     align-items: center;
     word-break: break-word;
-    font-size: 0.95em;
+    font-size: 0.84rem;
     line-height: 1.4;
 }
 
 .anomalous-nb-visual-tag.hover {
-    background: #3a3a3a;
-    border-color: #00ffcc;
-    color: #fff;
-    box-shadow: inset 0 0 5px rgba(0, 255, 204, 0.2);
+    background: #2a3140;
+    border-color: rgba(45, 212, 191, 0.5);
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* 复制按钮默认隐藏，悬停才浮现 */
 .anomalous-nb-copy-btn {
-    opacity: 0.3;
-    transition: all 0.2s;
-    padding-left: 10px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease;
+    padding-left: 8px;
     flex-shrink: 0;
     user-select: none;
+    font-size: 0.78rem;
 }
 
 .anomalous-nb-visual-tag:hover .anomalous-nb-copy-btn {
-    opacity: 1;
+    opacity: 0.85;
+    visibility: visible;
 }
 
 .anomalous-nb-copy-btn:hover {
-    transform: scale(1.3);
+    transform: scale(1.2);
+    opacity: 1;
 }
 
 .anomalous-nb-tag-edit {
-    background: #111;
-    color: #fff;
-    border: 1px solid #00ffcc;
+    background: #111827;
+    color: #f1f5f9;
+    border: 1px solid rgba(45, 212, 191, 0.6);
     border-radius: 4px;
     padding: 6px;
     width: 100%;
-    font-size: 1em;
+    font-size: 0.84rem;
     box-sizing: border-box;
+    outline: none;
 }
 
 /* Gallery Styles */
@@ -1340,17 +1353,21 @@ dialog.anomalous-gallery-viewer[open] {
     display: none !important;
 }
 
-/* 一体化 Studio 顶栏 */
+/* 一体化 Studio 沉浸顶栏 (无厚重底色，细微下划线，支持弹性折行) */
 .anomalous-recipe-topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    height: 48px;
-    padding: 0 16px;
-    background: #16181f;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    min-height: 48px;
+    height: auto;
+    padding: 8px 16px;
+    background: rgba(18, 22, 32, 0.65);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     flex-shrink: 0;
+    flex-wrap: wrap;
     z-index: 10;
 }
 
@@ -1358,6 +1375,7 @@ dialog.anomalous-gallery-viewer[open] {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
     flex-shrink: 0;
 }
 
@@ -1365,10 +1383,10 @@ dialog.anomalous-gallery-viewer[open] {
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    background: rgba(0, 0, 0, 0.32);
+    background: rgba(255, 255, 255, 0.02);
     padding: 3px 4px;
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .anomalous-recipe-pill {
@@ -1384,22 +1402,24 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-pill:hover {
-    color: #e2e8f0;
+    color: #f1f5f9;
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .anomalous-recipe-pill.is-active {
-    background: rgba(99, 102, 241, 0.22);
-    color: #a5b4fc;
+    background: rgba(99, 102, 241, 0.28);
+    color: #c7d2fe;
     font-weight: 600;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 6px rgba(99, 102, 241, 0.2);
 }
 
 .anomalous-recipe-topbar-center {
     display: flex;
     align-items: center;
     gap: 8px;
-    flex: 1;
-    max-width: 440px;
+    flex: 1 1 260px;
+    max-width: 460px;
+    flex-wrap: wrap;
 }
 
 .anomalous-recipe-search-wrap {
@@ -1458,6 +1478,7 @@ dialog.anomalous-gallery-viewer[open] {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
     flex-shrink: 0;
 }
 
@@ -5208,24 +5229,57 @@ dialog.anomalous-gallery-viewer::backdrop {
     transform: scale(1.03);
 }
 
-/* 封面内嵌浮动底模胶囊 (Glass Pill) */
-.anomalous-recipe-cover-pill {
+/* 封面内嵌浮动底模与就绪微胶囊组 (Frosted Glass Chips at Bottom-Left) */
+.anomalous-recipe-cover-bottom-chips {
     position: absolute;
-    bottom: 6px;
-    left: 6px;
+    bottom: 8px;
+    left: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: calc(100% - 16px);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.anomalous-recipe-readiness-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 7px;
+    border-radius: 12px;
+    background: rgba(12, 14, 20, 0.78);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: #e2e8f0;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.anomalous-recipe-readiness-text {
+    font-size: 0.64rem;
+    line-height: 1;
+    color: #cbd5e1;
+}
+
+.anomalous-recipe-cover-pill {
+    position: relative;
     padding: 2px 7px;
     border-radius: 6px;
-    background: rgba(12, 14, 18, 0.85);
+    background: rgba(12, 14, 18, 0.82);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.12);
     color: #e2e8f0;
-    font-size: 0.68rem;
+    font-size: 0.66rem;
     font-weight: 500;
-    max-width: 80%;
+    max-width: 140px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    pointer-events: none;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
@@ -5286,10 +5340,10 @@ dialog.anomalous-gallery-viewer::backdrop {
     font-weight: 500;
 }
 
-/* 环境就绪指示灯 (直接点缀在标题右侧) */
+/* 环境就绪指示灯微点 */
 .anomalous-recipe-readiness-dot {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     flex-shrink: 0;
     box-shadow: 0 0 6px currentColor;
@@ -5297,17 +5351,17 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-recipe-readiness-dot.is-ready {
     background-color: #10b981;
-    color: rgba(16, 185, 129, 0.6);
+    color: rgba(16, 185, 129, 0.7);
 }
 
 .anomalous-recipe-readiness-dot.is-warning {
     background-color: #f59e0b;
-    color: rgba(245, 158, 11, 0.6);
+    color: rgba(245, 158, 11, 0.7);
 }
 
 .anomalous-recipe-readiness-dot.is-missing {
     background-color: #ef4444;
-    color: rgba(239, 68, 68, 0.6);
+    color: rgba(239, 68, 68, 0.7);
 }
 
 /* 规格微胶囊行 */
@@ -5343,6 +5397,39 @@ dialog.anomalous-gallery-viewer::backdrop {
     color: #86efac;
     background: rgba(16, 185, 129, 0.08);
     border-color: rgba(16, 185, 129, 0.2);
+}
+
+/* 配方单行文本标签 (收拢至单行 Flex，溢出截断) */
+.anomalous-recipe-tags {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    margin-top: 2px;
+}
+
+.anomalous-recipe-badge-tag {
+    display: inline-block;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.66rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.anomalous-recipe-badge-tag:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f1f5f9;
 }
 
 /* 网格卡片底部主动作与悬浮微操作 */
@@ -9188,13 +9275,17 @@ dialog.anomalous-gallery-viewer::backdrop {
     height: 52px;
 }
 
-/* 4. Assembled Output Deck & Whole-Deck Canvas Drag */
+/* 4. Assembled Output Deck & Whole-Deck Canvas Drag (Sticky Floating Glass Deck) */
 .anomalous-mixer-deck-output {
-    position: relative;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
     border-radius: 10px;
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, rgba(10, 15, 28, 0.95) 100%);
+    background: rgba(22, 28, 42, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(56, 189, 248, 0.28);
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45);
     padding: 8px 10px;
     display: flex;
     flex-direction: column;
@@ -9523,11 +9614,12 @@ dialog.anomalous-gallery-viewer::backdrop {
     border: 1px dashed rgba(255, 255, 255, 0.08);
 }
 
-/* Individual Source Prompt Card */
+/* Individual Source Prompt Card (Restrained Dark Grey Base with Category Left Border) */
 .anomalous-source-prompt-card {
     border-radius: 8px;
-    background: rgba(22, 29, 44, 0.65);
+    background: #222630;
     border: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 3.5px solid #64748b;
     padding: 8px 10px;
     display: flex;
     flex-direction: column;
@@ -9537,11 +9629,27 @@ dialog.anomalous-gallery-viewer::backdrop {
     transition: all 0.16s ease;
 }
 
+.anomalous-source-prompt-card.is-cat-base {
+    border-left-color: #38bdf8;
+}
+
+.anomalous-source-prompt-card.is-cat-style {
+    border-left-color: #c084fc;
+}
+
+.anomalous-source-prompt-card.is-cat-subject {
+    border-left-color: #4ade80;
+}
+
+.anomalous-source-prompt-card.is-cat-trigger {
+    border-left-color: #fb923c;
+}
+
 .anomalous-source-prompt-card:hover {
-    background: rgba(30, 41, 59, 0.85);
-    border-color: rgba(56, 189, 248, 0.35);
+    background: #2a303e;
+    border-color: rgba(255, 255, 255, 0.16);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 .anomalous-source-prompt-card:active {
@@ -9703,6 +9811,30 @@ dialog.anomalous-gallery-viewer::backdrop {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    border: 2px dashed transparent;
+    border-radius: 10px;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+@keyframes anomalousTrackPulse {
+    0% {
+        border-color: rgba(45, 212, 191, 0.45);
+        box-shadow: inset 0 0 14px rgba(45, 212, 191, 0.12), 0 0 8px rgba(45, 212, 191, 0.15);
+    }
+    50% {
+        border-color: rgba(45, 212, 191, 0.95);
+        box-shadow: inset 0 0 26px rgba(45, 212, 191, 0.28), 0 0 16px rgba(45, 212, 191, 0.38);
+    }
+    100% {
+        border-color: rgba(45, 212, 191, 0.45);
+        box-shadow: inset 0 0 14px rgba(45, 212, 191, 0.12), 0 0 8px rgba(45, 212, 191, 0.15);
+    }
+}
+
+.anomalous-prompt-workbench:has(.is-dragging-source) .anomalous-assembly-track,
+.is-source-dragging .anomalous-assembly-track {
+    border: 2px dashed #2dd4bf !important;
+    animation: anomalousTrackPulse 1.8s ease-in-out infinite;
 }
 
 .anomalous-assembly-dropzone {
