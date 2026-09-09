@@ -5229,6 +5229,24 @@ dialog.anomalous-gallery-viewer::backdrop {
     transform: scale(1.03);
 }
 
+/* 默认封面占位图微光与材质渲染 (AI Abstract Art Blind Box) */
+.anomalous-recipe-thumbnail.is-default-placeholder {
+    filter: brightness(0.92) contrast(1.08);
+    opacity: 0.95;
+    transition: filter 0.25s ease, transform 0.25s ease, opacity 0.25s ease;
+}
+
+.anomalous-recipe-card:hover .anomalous-recipe-thumbnail.is-default-placeholder {
+    filter: brightness(1.08) contrast(1.15);
+    opacity: 1;
+}
+
+.anomalous-recipe-card-media-wrap:not(:has(img, video)) {
+    background-image: url('assets/default_cover_1.webp');
+    background-size: cover;
+    background-position: center;
+}
+
 /* 封面内嵌浮动底模与就绪微胶囊组 (Frosted Glass Chips at Bottom-Left) */
 .anomalous-recipe-cover-bottom-chips {
     position: absolute;
@@ -9402,6 +9420,7 @@ dialog.anomalous-gallery-viewer::backdrop {
    ========================================================================== */
 
 .anomalous-prompt-workbench {
+    position: relative;
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -9410,6 +9429,27 @@ dialog.anomalous-gallery-viewer::backdrop {
     height: 100%;
     box-sizing: border-box;
     background: radial-gradient(circle at 15% 15%, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.85) 100%);
+    overflow: hidden;
+}
+
+/* 沉浸式科技机能暗纹叠加 (Cyber Deck Atmospheric Background) */
+.anomalous-prompt-workbench::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('assets/cyber_deck_bg.webp');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    mix-blend-mode: overlay; /* 只保留光影，过滤亮色 */
+    opacity: 0.15; /* 保持极低透明度，防止干扰阅读 */
+    pointer-events: none; /* 绝对不能阻挡点击事件 */
+    z-index: 0;
+}
+
+.anomalous-prompt-workbench > * {
+    position: relative;
+    z-index: 1;
 }
 
 .anomalous-prompt-workbench-grid {
@@ -9604,14 +9644,43 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding-right: 2px;
 }
 
-.anomalous-source-empty {
-    padding: 36px 16px;
+.anomalous-empty-state-container,
+.anomalous-source-empty,
+.anomalous-recipe-empty {
+    position: relative;
+    padding: 42px 16px;
     text-align: center;
-    color: #64748b;
+    color: #94a3b8;
     font-size: 0.82rem;
-    background: rgba(0, 0, 0, 0.15);
-    border-radius: 8px;
-    border: 1px dashed rgba(255, 255, 255, 0.08);
+    background-color: rgba(15, 23, 42, 0.45);
+    background-image: url('assets/empty_library_concept.webp');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center 40%;
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.75) 75%, rgba(0, 0, 0, 0.3) 100%);
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.75) 75%, rgba(0, 0, 0, 0.3) 100%);
+    border-radius: 10px;
+    border: 1px dashed rgba(56, 189, 248, 0.25);
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.anomalous-empty-state-container::before,
+.anomalous-source-empty::before,
+.anomalous-recipe-empty::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(15, 23, 42, 0.55) 0%, rgba(10, 15, 26, 0.88) 100%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.anomalous-empty-state-container > *,
+.anomalous-source-empty > *,
+.anomalous-recipe-empty > * {
+    position: relative;
+    z-index: 1;
 }
 
 /* Individual Source Prompt Card (Restrained Dark Grey Base with Category Left Border) */

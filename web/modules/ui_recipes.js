@@ -134,12 +134,35 @@ function previewIsVideo(url) {
     return /\.(?:mp4|webm)(?:$|\?|&|#)/i.test(url || '');
 }
 
-function appendRecipeCover(parent, url, alt) {
-    if (!url) return;
-    if (previewIsVideo(url)) {
+const DEFAULT_RECIPE_COVERS = [
+    new URL('../assets/default_cover_1.webp', import.meta.url).href,
+    new URL('../assets/default_cover_2.webp', import.meta.url).href,
+    new URL('../assets/default_cover_3.webp', import.meta.url).href,
+    new URL('../assets/default_cover_4.webp', import.meta.url).href,
+    new URL('../assets/default_cover_5.webp', import.meta.url).href,
+    new URL('../assets/default_cover_6.webp', import.meta.url).href,
+];
+
+function getDefaultRecipeCover(seed = '') {
+    if (!seed) return DEFAULT_RECIPE_COVERS[Math.floor(Math.random() * DEFAULT_RECIPE_COVERS.length)];
+    let hash = 0;
+    const str = String(seed);
+    for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+    }
+    const idx = Math.abs(hash) % DEFAULT_RECIPE_COVERS.length;
+    return DEFAULT_RECIPE_COVERS[idx];
+}
+
+function appendRecipeCover(parent, url, alt, seed = '') {
+    const isPlaceholder = !url;
+    const finalUrl = url || getDefaultRecipeCover(seed || alt);
+
+    if (!isPlaceholder && previewIsVideo(finalUrl)) {
         const video = document.createElement('video');
         video.className = 'anomalous-recipe-thumbnail';
-        video.src = url;
+        video.src = finalUrl;
         video.muted = true;
         video.loop = true;
         video.playsInline = true;
@@ -153,9 +176,9 @@ function appendRecipeCover(parent, url, alt) {
         return;
     }
     const image = document.createElement('img');
-    image.className = 'anomalous-recipe-thumbnail';
-    image.src = url;
-    image.alt = alt;
+    image.className = 'anomalous-recipe-thumbnail' + (isPlaceholder ? ' is-default-placeholder' : '');
+    image.src = finalUrl;
+    image.alt = alt || '';
     image.loading = 'lazy';
     parent.appendChild(image);
 }
@@ -1001,7 +1024,7 @@ function createRecipeCard(owner, recipe) {
     const thumbnail = savedCover || (previewIsVideo(sourceImageUrl)
         ? sourceImageUrl
         : safeThumbnail(data.thumbnail) || sourceImageUrl);
-    appendRecipeCover(mediaWrap, thumbnail, data.name || t('recipeThumbnail'));
+    appendRecipeCover(mediaWrap, thumbnail, data.name || t('recipeThumbnail'), recipe?.filename || data.name);
 
     // Frosted Glass Chips at bottom-left of cover (Readiness Pill + Base Model)
     const bottomChips = document.createElement('div');
