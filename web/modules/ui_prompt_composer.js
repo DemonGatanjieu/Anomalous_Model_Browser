@@ -21,7 +21,7 @@ const newDraft = () => ({
 });
 
 const CATEGORY_META = {
-    base: { zh: '通用画质', en: 'Base Quality', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.4)' },
+    base: { zh: '通用底模', en: 'Base Quality', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.4)' },
     style: { zh: '风格氛围', en: 'Art Style', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.15)', border: 'rgba(192, 132, 252, 0.4)' },
     subject: { zh: '主体内容', en: 'Subject', color: '#4ade80', bg: 'rgba(74, 222, 128, 0.15)', border: 'rgba(74, 222, 128, 0.4)' },
     trigger: { zh: 'LoRA/触发', en: 'LoRA / Trigger', color: '#fb923c', bg: 'rgba(251, 146, 60, 0.15)', border: 'rgba(251, 146, 60, 0.4)' },
@@ -35,7 +35,8 @@ function normalizeBlock(part, index = 0) {
     if (!CATEGORY_META[category]) {
         category = categorizePromptSnippet(content);
     }
-    const defaultTitle = (window.anomalous_browser_lang === 'zh' ? CATEGORY_META[category].zh : CATEGORY_META[category].en) + (index ? ` #${index + 1}` : '');
+    const meta = CATEGORY_META[category] || CATEGORY_META.subject;
+    const defaultTitle = (window.anomalous_browser_lang === 'zh' ? meta.zh : meta.en) + (index ? ` #${index + 1}` : '');
     return {
         id,
         title: part.name || part.title || defaultTitle,
@@ -262,7 +263,7 @@ function buildPromptComposer(owner, container, options = {}) {
     tagsInput.value = (draft.tags || []).join(', ');
     tagsInput.maxLength = 1200;
     tagsInput.oninput = () => {
-        draft.tags = tagsInput.value.split(/[,，]/).map(val => val.trim()).filter(Boolean);
+        draft.tags = tagsInput.value.split(/[\s,，\n\r]+/).map(val => val.trim()).filter(Boolean);
     };
 
     const posWrap = text(metaStrip, 'label', '', 'anomalous-prompt-insert-pos');
@@ -283,10 +284,10 @@ function buildPromptComposer(owner, container, options = {}) {
 
     const actionWrapper = text(mixerControls, 'div', '', 'anomalous-mixer-actions');
     const smartSortBtn = text(actionWrapper, 'button', window.anomalous_browser_lang === 'zh' ? '🪄 智能理顺' : '🪄 Smart Sort', 'anomalous-mixer-smart-sort-btn');
-    smartSortBtn.title = window.anomalous_browser_lang === 'zh' ? '根据词性智能理顺：[通用画质 ➔ 风格氛围 ➔ 主体内容 ➔ LoRA/触发词]' : 'Smart sort: [Base Quality ➔ Style ➔ Subject ➔ LoRA/Trigger]';
+    smartSortBtn.title = window.anomalous_browser_lang === 'zh' ? '根据词性智能理顺：[通用底模 ➔ 风格氛围 ➔ 主体内容 ➔ LoRA/触发词]' : 'Smart sort: [Base Quality ➔ Style ➔ Subject ➔ LoRA/Trigger]';
 
     const addBlockBtn = text(actionWrapper, 'button', `➕ ${window.anomalous_browser_lang === 'zh' ? '添加词块' : 'Add Block'}`, 'anomalous-btn-ghost');
-    const clearBlocksBtn = text(actionWrapper, 'button', `🧹`, 'anomalous-btn-ghost');
+    const clearBlocksBtn = text(actionWrapper, 'button', '🧹', 'anomalous-btn-ghost');
     clearBlocksBtn.title = window.anomalous_browser_lang === 'zh' ? '清空当前分类词块' : 'Clear current blocks';
 
     // 4. Blocks Container
@@ -537,8 +538,7 @@ function buildPromptComposer(owner, container, options = {}) {
             ? `🚫 <strong>${window.anomalous_browser_lang === 'zh' ? '合成负向文本' : 'Assembled Negative'}</strong>`
             : `✨ <strong>${window.anomalous_browser_lang === 'zh' ? '合成正向文本' : 'Assembled Positive'}</strong>`;
 
-        const words = compiledText.trim() ? compiledText.split(/[,，
-]+/).filter(Boolean).length : 0;
+        const words = compiledText.trim() ? compiledText.split(/[\s,，\n\r]+/).filter(Boolean).length : 0;
         outputStats.textContent = window.anomalous_browser_lang === 'zh'
             ? `${compiledText.length} 字符 · 约 ${words} 个词组`
             : `${compiledText.length} chars · ~${words} tags`;
