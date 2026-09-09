@@ -2186,8 +2186,25 @@ function renderPromptSection(parent, owner, recipe, source, rerender, onSaveNode
 
     const heading = document.createElement('div');
     heading.className = 'anomalous-recipe-detail-section-heading';
-    appendText(heading, 'h5', t('recipeDetailPrompts'));
-    appendText(heading, 'small', t('recipePromptSupportNotice'), 'anomalous-recipe-detail-muted');
+    heading.style.display = 'flex';
+    heading.style.alignItems = 'center';
+    heading.style.justifyContent = 'space-between';
+    heading.style.marginBottom = '12px';
+
+    const headingLeft = document.createElement('div');
+    headingLeft.style.display = 'flex';
+    headingLeft.style.alignItems = 'center';
+    headingLeft.style.gap = '8px';
+    appendText(headingLeft, 'h5', t('recipeDetailPrompts') || '提示词');
+
+    const noticeTooltip = t('recipePromptSupportNotice') || '当前仅自动识别 ComfyUI 原生 CLIPTextEncode 与已知官方连接；第三方文本节点请手动标注。';
+    const infoIcon = document.createElement('span');
+    infoIcon.className = 'anomalous-recipe-info-bubble';
+    infoIcon.title = noticeTooltip;
+    infoIcon.innerHTML = `ⓘ <span style="font-size:0.75rem;font-weight:normal;opacity:0.75;">${window.anomalous_browser_lang === 'zh' ? '支持说明' : 'Notice'}</span>`;
+    infoIcon.style.cursor = 'help';
+    headingLeft.appendChild(infoIcon);
+    heading.appendChild(headingLeft);
     parent.appendChild(heading);
 
     const promptList = document.createElement('div');
@@ -2196,12 +2213,30 @@ function renderPromptSection(parent, owner, recipe, source, rerender, onSaveNode
         const card = document.createElement('article');
         card.className = `anomalous-recipe-detail-prompt anomalous-recipe-prompt-role-${entry.role}`;
 
-        const meta = document.createElement('div');
-        meta.className = 'anomalous-recipe-prompt-meta';
-        appendText(meta, 'strong', entry.title, 'anomalous-recipe-detail-prompt-label');
-        appendText(meta, 'small', entry.type, 'anomalous-recipe-detail-muted');
-        const badge = appendText(meta, 'span', promptRoleLabel(entry.role), `anomalous-recipe-prompt-role-badge is-${entry.role}`);
-        badge.title = entry.manual ? t('recipePromptRoleManual') : t('recipePromptRoleAutomatic');
+        // Top full-width header bar
+        const headerRow = document.createElement('div');
+        headerRow.className = 'anomalous-recipe-prompt-card-header';
+        headerRow.style.display = 'flex';
+        headerRow.style.justifyContent = 'space-between';
+        headerRow.style.alignItems = 'center';
+        headerRow.style.gap = '10px';
+        headerRow.style.marginBottom = '8px';
+
+        // Left info group: Interactive role badge + Node title & type
+        const leftGroup = document.createElement('div');
+        leftGroup.className = 'anomalous-recipe-prompt-card-header-left';
+        leftGroup.style.display = 'flex';
+        leftGroup.style.alignItems = 'center';
+        leftGroup.style.gap = '8px';
+        leftGroup.style.flexWrap = 'wrap';
+
+        const isZh = window.anomalous_browser_lang === 'zh';
+        const roleBadge = document.createElement('button');
+        roleBadge.type = 'button';
+        roleBadge.className = `anomalous-recipe-prompt-role-badge is-${entry.role} is-interactive`;
+        const roleDot = entry.role === 'positive' ? '🟢' : entry.role === 'negative' ? '🔴' : '🟣';
+        roleBadge.innerHTML = `${roleDot} <span>${promptRoleLabel(entry.role)}</span> <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>`;
+        roleBadge.title = isZh ? '点击切换提示词用途 (正向/负向/忽略)' : 'Click to adjust prompt role';
 
         const roleSelect = document.createElement('select');
         roleSelect.className = 'anomalous-recipe-prompt-role-select';
@@ -2221,6 +2256,7 @@ function renderPromptSection(parent, owner, recipe, source, rerender, onSaveNode
             roleSelect.appendChild(option);
         }
         roleSelect.value = entry.manual ? entry.role : 'auto';
+        roleSelect.style.display = 'none';
         roleSelect.onchange = async () => {
             const previous = entry.manual ? entry.role : 'auto';
             roleSelect.disabled = true;
@@ -2237,42 +2273,83 @@ function renderPromptSection(parent, owner, recipe, source, rerender, onSaveNode
                 await anomalousAlert(t('recipePromptRoleSaveError'));
             }
         };
-        roleSelect.hidden = true;
-        const adjustRole = button(meta, t('promptAdjustRole'), 'anomalous-btn-ghost');
-        adjustRole.setAttribute('aria-expanded', 'false');
-        adjustRole.onclick = () => {
-            roleSelect.hidden = !roleSelect.hidden;
-            adjustRole.setAttribute('aria-expanded', String(!roleSelect.hidden));
-            if (!roleSelect.hidden) roleSelect.focus();
+        roleBadge.onclick = () => {
+            if (roleSelect.style.display === 'none') {
+                roleSelect.style.display = 'inline-block';
+                roleSelect.focus();
+            } else {
+                roleSelect.style.display = 'none';
+            }
         };
-        meta.appendChild(roleSelect);
-        if (typeof onSaveNodes === 'function') {
-            const savePrompt = button(meta, t('materialSavePromptAction'), 'anomalous-material-node-save');
-            savePrompt.onclick = () => onSaveNodes([entry.id], entry.title || t('materialPromptNode'), savePrompt);
+
+        leftGroup.appendChild(roleBadge);
+        leftGroup.appendChild(roleSelect);
+
+        const nodeTitle = document.createElement('span');
+        nodeTitle.className = 'anomalous-recipe-prompt-card-node-title';
+        nodeTitle.textContent = entry.title || 'CLIPTextEncode';
+        nodeTitle.title = entry.type || '';
+        leftGroup.appendChild(nodeTitle);
+
+        if (entry.type && entry.type !== entry.title) {
+            const nodeTypeEl = document.createElement('span');
+            nodeTypeEl.className = 'anomalous-recipe-prompt-card-node-type';
+            nodeTypeEl.textContent = `(${entry.type})`;
+            leftGroup.appendChild(nodeTypeEl);
         }
 
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'anomalous-recipe-prompt-micro-copy';
-        const isZh = window.anomalous_browser_lang === 'zh';
-        copyBtn.title = isZh ? '复制提示词' : 'Copy prompt';
-        copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
-        copyBtn.onclick = (e) => {
+        headerRow.appendChild(leftGroup);
+
+        // Right actions tray (Save to Material + Micro Copy)
+        const actionTray = document.createElement('div');
+        actionTray.className = 'anomalous-recipe-prompt-card-action-tray';
+        actionTray.style.display = 'flex';
+        actionTray.style.alignItems = 'center';
+        actionTray.style.gap = '6px';
+
+        if (typeof onSaveNodes === 'function') {
+            const savePromptBtn = document.createElement('button');
+            savePromptBtn.type = 'button';
+            savePromptBtn.className = 'anomalous-recipe-prompt-micro-copy';
+            savePromptBtn.title = t('materialSavePromptAction') || '存入素材库';
+            savePromptBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`;
+            savePromptBtn.onclick = (e) => {
+                e.stopPropagation();
+                onSaveNodes([entry.id], entry.title || t('materialPromptNode'), savePromptBtn);
+            };
+            actionTray.appendChild(savePromptBtn);
+        }
+
+        const copyPromptBtn = document.createElement('button');
+        copyPromptBtn.type = 'button';
+        copyPromptBtn.className = 'anomalous-recipe-prompt-micro-copy';
+        const copyTitle = isZh ? '复制提示词' : 'Copy prompt';
+        const copiedTitle = isZh ? '已复制' : 'Copied';
+        copyPromptBtn.title = copyTitle;
+        copyPromptBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+        copyPromptBtn.onclick = (e) => {
             e.stopPropagation();
             navigator.clipboard.writeText(entry.text || '').then(() => {
-                copyBtn.classList.add('is-copied');
-                copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+                copyPromptBtn.classList.add('is-copied');
+                copyPromptBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+                copyPromptBtn.title = copiedTitle;
                 setTimeout(() => {
-                    copyBtn.classList.remove('is-copied');
-                    copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+                    copyPromptBtn.classList.remove('is-copied');
+                    copyPromptBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+                    copyPromptBtn.title = copyTitle;
                 }, 1200);
             });
         };
-        meta.appendChild(copyBtn);
+        actionTray.appendChild(copyPromptBtn);
+        headerRow.appendChild(actionTray);
+        card.appendChild(headerRow);
 
-        const value = document.createElement('div');
-        value.className = 'anomalous-recipe-prompt-value';
-        appendValueViewer(value, entry.text, '', { copy: false });
-        card.append(meta, value);
+        // Full-width prompt body
+        const body = document.createElement('div');
+        body.className = 'anomalous-recipe-prompt-card-body';
+        appendValueViewer(body, entry.text, '', { copy: false });
+        card.appendChild(body);
+
         promptList.appendChild(card);
     }
     parent.appendChild(promptList);
@@ -2412,15 +2489,27 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 selectParameterTab?.();
             };
 
-            const titleEl = appendText(main, 'div', notebookName, 'anomalous-preset-item-title');
+            const titleRow = document.createElement('div');
+            titleRow.className = 'anomalous-preset-item-title-row';
+            titleRow.style.display = 'flex';
+            titleRow.style.alignItems = 'center';
+            titleRow.style.gap = '6px';
+            titleRow.style.minWidth = '0';
+
+            if (isSelected) {
+                const activeDot = document.createElement('span');
+                activeDot.className = 'anomalous-preset-active-dot';
+                activeDot.title = t('recipeParameterActive') || '当前生效';
+                titleRow.appendChild(activeDot);
+            }
+
+            const titleEl = appendText(titleRow, 'div', notebookName, 'anomalous-preset-item-title');
             titleEl.title = notebookName;
+            main.appendChild(titleRow);
 
             const meta = document.createElement('div');
             meta.className = 'anomalous-preset-item-meta';
             appendText(meta, 'span', dateText(notebook.timestamp), 'anomalous-preset-item-date');
-            if (isSelected) {
-                appendText(meta, 'span', t('recipeParameterActive'), 'anomalous-preset-item-badge');
-            }
             main.appendChild(meta);
             row.appendChild(main);
 

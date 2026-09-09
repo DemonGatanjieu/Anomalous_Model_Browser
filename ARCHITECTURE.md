@@ -98,8 +98,13 @@ DOM or live LiteGraph state.
   vertical workspace; replaces clumsy text copy buttons with sleek SVG micro-copy icons with instant
   green checkmark feedback; rebuilds the Parameters Tab (`renderRecipeParameters`) into a modern
   Bento Matrix (`.anomalous-recipe-bento-grid`, steps/CFG/sampler/resolution/denoise/seed tiles,
-  independent base model card, and structured LoRA pill stacks); snapshot rail replaces legacy `<details>`
-  with smooth hover-reveal micro-actions; enforces 48px bottom safety padding to eliminate clipping and overlap.
+  independent base model card, and structured LoRA pill stacks); prompts section (`renderPromptSection`)
+  is upgraded into full-width streamlined cards eliminating the cramped two-column split, clumsy
+  "调整用途" buttons, and isolated square copy boxes, moving actions into a top-right action tray
+  (save to material + micro copy) and making the role badge interactively clickable; snapshot rail
+  replaces legacy `<details>` and vertical text badges with smooth hover-reveal micro-actions and a glowing
+  green active pulse dot (`.anomalous-preset-active-dot`); enforces 48px bottom safety padding to eliminate
+  clipping and overlap.
 - `ui_materials.js` owns the Workspace Material Library and material CRUD presentation;
   features an integrated single-row Studio topbar with category micro-pills (`all`, `workflow`, `params`, `prompts`),
   unified search with tag filtering, grid/list view mode toggle (persisted to localStorage),
