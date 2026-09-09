@@ -3,6 +3,7 @@
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
+import { bindMaterialDrag } from './material_drag.js';
 import {
     captureCanvasThumbnail,
     captureRecipeDraft,
