@@ -88,15 +88,19 @@ DOM or live LiteGraph state.
   costly backdrop blurs, quick spec tags, real-time environment readiness indicators (🟢/🟡/🔴),
   one-click batch model matching, and lazy DOM rendering for node parameter trees.
 - `ui_materials.js` owns the Workspace Material Library and material CRUD presentation;
-  features direct card-click inspection, inline short-title editing on cards, collapsed secondary
-  node types (leading types plus `+N more`), semantic muted scope badges, floating quick actions,
-  initially expanded prompt cards and lazily rendered closed parameter cards,
-  and global collapse/expand toggles; delegates image inspection to `ui_gallery_detail.js`;
+  features an integrated single-row Studio topbar with category micro-pills (`all`, `workflow`, `params`, `prompts`),
+  unified search with tag filtering, grid/list view mode toggle (persisted to localStorage),
+  and a seamless split-screen side studio panel (`.anomalous-material-side-studio`);
+  cards feature strict uniform height (248px) with rich micro-skeuomorphic fallbacks for non-image assets (prompt code snippets
+  and 3D asset parameter previews) eliminating visual bumpiness, direct inline title editing, one-click Send-to-Studio (`📝`),
+  floating quick actions, and lazy DOM rendering; delegates image inspection to `ui_gallery_detail.js`;
   `node_material_actions.js` owns shared transactional node application and guarded undo;
   the library and Node Assistant use `ui_material_application.js` for the same receipt.
-- `ui_prompt_composer.js` owns the Prompt Combinations paper note studio, featuring
-  paper-like note cards with colored washi tapes, active whole-card dragging, quick
-  actions, and a slide-out drawer to conveniently import prompts from the Material Library;
+- `ui_prompt_composer.js` owns the Prompt Studio and prompt combinations note engine;
+  supports both full-modal composition and the docked split-screen side studio (`renderSidePromptComposer`),
+  featuring paper-like note cards with colored washi tapes, active whole-card dragging directly onto ComfyUI canvas nodes,
+  instant `appendPromptToStudio` dispatch from material cards, quick node injection toolbar, and a slide-out drawer
+  to conveniently import prompts from the Material Library;
   `prompt_composition.js` joins text at the beginning/end and reads older fragment plans.
 - `material_drag.js` owns temporary canvas drop listeners, target hit testing and
   window restoration. During active dragging, the main modal smoothly transitions to

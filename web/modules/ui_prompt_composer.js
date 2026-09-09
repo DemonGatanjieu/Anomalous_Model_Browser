@@ -52,30 +52,73 @@ export async function showPromptComposer(owner, material) {
     owner.materialDetailView?.remove();
     owner.materialDetailView = null;
 
-    for (const panel of [owner.materialIntro, owner.materialList, owner.materialToolbar, owner.materialPager, owner.materialContext]) {
+    for (const panel of [owner.materialTopbar, owner.materialMainArea, owner.materialIntro, owner.materialList, owner.materialToolbar, owner.materialPager, owner.materialContext]) {
         if (panel) panel.style.display = 'none';
     }
     owner.promptComposerView?.remove();
 
-    const view = text(owner.materialView, 'section', '', 'anomalous-prompt-composer');
+    buildPromptComposer(owner, owner.materialView, { isSideStudio: false });
+}
+
+export function renderSidePromptComposer(owner, container, onClose) {
+    container.replaceChildren();
+    owner.promptPlanDraft ||= newDraft();
+    const composer = buildPromptComposer(owner, container, {
+        isSideStudio: true,
+        onClose: () => {
+            if (typeof onClose === 'function') onClose();
+        },
+    });
+    owner.sidePromptComposerControl = composer;
+    return composer;
+}
+
+export function appendPromptToStudio(owner, textSnippet, isPositive = true, noteTitle = '') {
+    if (!textSnippet || !textSnippet.trim()) return;
+    if (typeof owner.openSideStudio === 'function') {
+        owner.openSideStudio();
+    }
+    if (owner.sidePromptComposerControl?.appendPrompt) {
+        owner.sidePromptComposerControl.appendPrompt(textSnippet, isPositive, noteTitle);
+    } else {
+        owner.promptPlanDraft ||= newDraft();
+        const role = isPositive ? 'positive' : 'negative';
+        owner.promptPlanDraft.plan[role] = joinPromptText(owner.promptPlanDraft.plan[role] || '', textSnippet, owner.promptInsertPosition || 'after');
+        if (!owner.promptPlanDraft.name?.trim() && noteTitle) owner.promptPlanDraft.name = noteTitle;
+    }
+}
+
+function buildPromptComposer(owner, container, options = {}) {
+    const isSide = !!options.isSideStudio;
+    const view = text(container, 'section', '', `anomalous-prompt-composer${isSide ? ' is-side-studio' : ''}`);
     owner.promptComposerView = view;
-    const draft = owner.promptPlanDraft;
+    const draft = owner.promptPlanDraft ||= newDraft();
     draft.plan = { parts: [], ...composePromptPlan(draft.plan) };
 
     // 1. Topbar
     const topbar = text(view, 'div', '', 'anomalous-prompt-topbar');
     const topLeft = text(topbar, 'div', '', 'anomalous-prompt-topbar-left');
-    const backBtn = text(topLeft, 'button', `← ${t('materialBackToLibrary')}`, 'anomalous-btn-ghost');
-    backBtn.onclick = () => owner.showMaterials();
-    text(topLeft, 'h3', t('promptCombinations'));
+    if (!isSide) {
+        const backBtn = text(topLeft, 'button', `← ${t('materialBackToLibrary')}`, 'anomalous-btn-ghost');
+        backBtn.onclick = () => owner.showMaterials();
+        text(topLeft, 'h3', t('promptCombinations'));
+    } else {
+        text(topLeft, 'h3', `✨ ${t('materialPromptStudio') || '提示词工坊'}`);
+    }
 
     const topActions = text(topbar, 'div', '', 'anomalous-prompt-topbar-actions');
     const importBtn = text(topActions, 'button', `📥 ${t('promptImportFromMaterials')}`, 'anomalous-btn-ghost');
     importBtn.title = t('promptDrawerTitle');
 
+    const newBtn = text(topActions, 'button', `✨ ${t('promptNewDraft')}`, 'anomalous-btn-ghost');
     const saveBtn = text(topActions, 'button', `💾 ${t('promptSavePlan')}`, 'anomalous-btn-primary');
     const exportBtn = text(topActions, 'button', `📤 ${t('promptExportPlan')}`, 'anomalous-btn-ghost');
-    const newBtn = text(topActions, 'button', `✨ ${t('promptNewDraft')}`, 'anomalous-btn-ghost');
+
+    if (isSide && options.onClose) {
+        const closeBtn = text(topActions, 'button', '✕', 'anomalous-btn-ghost');
+        closeBtn.title = t('materialCollapseStudio') || '收起工坊';
+        closeBtn.onclick = () => options.onClose();
+    }
 
     // 2. Metadata strip (Name, Tags, Position)
     const metaStrip = text(view, 'div', '', 'anomalous-prompt-meta-strip');
@@ -150,7 +193,7 @@ export async function showPromptComposer(owner, material) {
         const textarea = text(noteBody, 'textarea', '', 'anomalous-paper-note-textarea');
         textarea.value = draft.plan[role] || '';
         textarea.placeholder = isPositive ? '输入或导入正面提示词...' : '输入或导入负面提示词...';
-        textarea.rows = 5;
+        textarea.rows = isSide ? 6 : 5;
 
         textarea.oninput = () => {
             draft.plan[role] = textarea.value;
@@ -296,8 +339,22 @@ export async function showPromptComposer(owner, material) {
     newBtn.onclick = async () => {
         if (await anomalousConfirm(t('promptReplaceDraft'))) {
             owner.promptPlanDraft = newDraft();
-            showPromptComposer(owner);
+            if (!isSide) {
+                showPromptComposer(owner);
+            } else {
+                refreshAllNotes();
+            }
         }
+    };
+
+    return {
+        refreshAllNotes,
+        appendPrompt: (textSnippet, isPositive = true, noteTitle = '') => {
+            const role = isPositive ? 'positive' : 'negative';
+            draft.plan[role] = joinPromptText(draft.plan[role] || '', textSnippet, owner.promptInsertPosition || 'after');
+            if (!draft.name?.trim() && noteTitle) draft.name = noteTitle;
+            refreshAllNotes();
+        },
     };
 }
 

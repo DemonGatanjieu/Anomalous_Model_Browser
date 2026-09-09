@@ -1,7 +1,7 @@
 import { bindMaterialDrag } from './material_drag.js';
 import { selectedMaterialNode } from './node_material_actions.js';
 import { applyMaterialToSelectedNode, applyMaterialToNode } from './ui_material_application.js';
-import { showPromptComposer, addPromptToDraft } from './ui_prompt_composer.js';
+import { showPromptComposer, addPromptToDraft, renderSidePromptComposer, appendPromptToStudio } from './ui_prompt_composer.js';
 /** Curated image/workflow and Recipe parameter materials. */
 
 import { app } from '../../../scripts/app.js';
@@ -207,8 +207,10 @@ function leaveMaterialDetail(owner) {
     owner.materialDetailController = null;
     owner.materialDetailView?.remove();
     owner.materialDetailView = null;
+    if (owner.materialTopbar) owner.materialTopbar.style.display = 'flex';
+    if (owner.materialMainArea) owner.materialMainArea.style.display = 'flex';
     if (owner.materialIntro) owner.materialIntro.style.display = 'flex';
-    if (owner.materialList) owner.materialList.style.display = 'grid';
+    if (owner.materialList) owner.materialList.style.display = owner.materialViewMode === 'list' ? 'flex' : 'grid';
     if (owner.materialToolbar) owner.materialToolbar.style.display = 'flex';
     if (owner.materialPager) owner.materialPager.style.display = 'flex';
     if (owner.materialContext) owner.materialContext.style.display = '';
@@ -338,6 +340,8 @@ async function showMaterialDetail(owner, material) {
     owner.materialDetailController?.abort();
     owner.materialDetailView?.remove();
     owner.materialDetailView = null;
+    if (owner.materialTopbar) owner.materialTopbar.style.display = 'none';
+    if (owner.materialMainArea) owner.materialMainArea.style.display = 'none';
     if (owner.materialIntro) owner.materialIntro.style.display = 'none';
     if (owner.materialList) owner.materialList.style.display = 'none';
     if (owner.materialToolbar) owner.materialToolbar.style.display = 'none';
@@ -453,6 +457,40 @@ function startInlineTitleEdit(owner, material, titleRow, cardTitle, editBtn) {
     input.onblur = () => finish(true);
 }
 
+async function sendMaterialToStudio(owner, material) {
+    let promptText = '';
+    let negativeText = '';
+    if (material.kind === 'prompt_plan' && material.plan) {
+        promptText = material.plan.positive || '';
+        negativeText = material.plan.negative || '';
+    } else if (material.kind === 'prompt_text') {
+        promptText = material.content || material.summary || '';
+    } else {
+        try {
+            const payload = await fetchMaterial(material.filename);
+            const data = payload.data || {};
+            if (data.note?.promptEn) {
+                promptText = data.note.promptEn;
+            } else if (Array.isArray(data.node_blocks)) {
+                for (const block of data.node_blocks) {
+                    const textVal = Array.isArray(block.widgets_values) && typeof block.widgets_values[0] === 'string' ? block.widgets_values[0] : '';
+                    if (!textVal) continue;
+                    if (block.promptRole === 'negative') negativeText = negativeText ? `${negativeText}, ${textVal}` : textVal;
+                    else promptText = promptText ? `${promptText}, ${textVal}` : textVal;
+                }
+            }
+        } catch (err) {
+            console.error('Fetch material for studio failed:', err);
+        }
+    }
+    if (promptText) {
+        appendPromptToStudio(owner, promptText, true, material.name);
+    }
+    if (negativeText) {
+        appendPromptToStudio(owner, negativeText, false, material.name);
+    }
+}
+
 function renderMaterialCard(owner, material) {
     const card = document.createElement('article');
     card.className = 'anomalous-material-card';
@@ -481,9 +519,13 @@ function renderMaterialCard(owner, material) {
         const inspect = text(card, 'button', t('materialViewDetails'), 'anomalous-material-inspect-action');
         inspect.onclick = event => { event.stopPropagation(); showMaterialDetail(owner, material); };
     }
+
+    const actionsWrapper = document.createElement('div');
+    actionsWrapper.className = 'anomalous-material-card-actions-wrapper';
+
     const remove = document.createElement('button');
     remove.type = 'button';
-    remove.className = 'anomalous-material-card-delete';
+    remove.className = 'anomalous-material-card-action-btn anomalous-material-card-delete';
     remove.innerHTML = '🗑️';
     remove.title = t('materialDelete');
     remove.onclick = (e) => {
@@ -491,11 +533,13 @@ function renderMaterialCard(owner, material) {
         deleteMaterial(owner, material);
     };
     card.appendChild(remove);
+    actionsWrapper.appendChild(remove.cloneNode(true));
+    actionsWrapper.lastChild.onclick = remove.onclick;
 
     if (!owner.materialApplyMode && (material.capabilities || []).includes('open_workflow')) {
         const quickOpen = document.createElement('button');
         quickOpen.type = 'button';
-        quickOpen.className = 'anomalous-material-card-quick-load';
+        quickOpen.className = 'anomalous-material-card-action-btn anomalous-material-card-quick-load';
         quickOpen.innerHTML = '🚀';
         quickOpen.title = t('materialOpenWorkflow');
         quickOpen.onclick = async (e) => {
@@ -507,6 +551,24 @@ function renderMaterialCard(owner, material) {
             }
         };
         card.appendChild(quickOpen);
+        actionsWrapper.appendChild(quickOpen.cloneNode(true));
+        actionsWrapper.lastChild.onclick = quickOpen.onclick;
+    }
+
+    const hasPromptTrait = isPromptMaterial(material) || material.kind === 'prompt_plan' || (Array.isArray(material.node_types) && material.node_types.some(tp => /cliptextencode/i.test(tp)));
+    if (hasPromptTrait) {
+        const sendToStudioBtn = document.createElement('button');
+        sendToStudioBtn.type = 'button';
+        sendToStudioBtn.className = 'anomalous-material-card-action-btn anomalous-material-card-send-studio';
+        sendToStudioBtn.innerHTML = '📝';
+        sendToStudioBtn.title = t('materialSendToStudio') || '加入工坊便签';
+        sendToStudioBtn.onclick = async (e) => {
+            e.stopPropagation();
+            await sendMaterialToStudio(owner, material);
+        };
+        card.appendChild(sendToStudioBtn);
+        actionsWrapper.appendChild(sendToStudioBtn.cloneNode(true));
+        actionsWrapper.lastChild.onclick = sendToStudioBtn.onclick;
     }
 
     const preview = document.createElement('div');
@@ -520,7 +582,24 @@ function renderMaterialCard(owner, material) {
         image.draggable = false;
         preview.appendChild(image);
     } else {
-        preview.innerHTML = getMaterialPlaceholderSvg(material, 36);
+        if (isPromptMaterial(material) || material.kind === 'prompt_plan') {
+            preview.classList.add('is-prompt-fallback');
+            preview.innerHTML = getMaterialPlaceholderSvg(material, 28);
+            const snippet = document.createElement('div');
+            snippet.className = 'anomalous-material-preview-snippet';
+            snippet.textContent = material.summary || material.name || 'Prompt Note';
+            preview.appendChild(snippet);
+        } else if (material.kind === 'recipe_parameter_selection') {
+            preview.classList.add('is-params-fallback');
+            preview.innerHTML = getMaterialPlaceholderSvg(material, 28);
+            const snippet = document.createElement('div');
+            snippet.className = 'anomalous-material-preview-snippet';
+            snippet.textContent = material.name || 'Parameters Scheme';
+            preview.appendChild(snippet);
+        } else {
+            preview.classList.add('is-workflow-fallback');
+            preview.innerHTML = getMaterialPlaceholderSvg(material, 28);
+        }
     }
     card.appendChild(preview);
 
@@ -602,6 +681,7 @@ function renderMaterialCard(owner, material) {
         material.tags.forEach(tag => text(tags, 'span', tag, 'anomalous-material-tag'));
     }
     card.appendChild(body);
+    card.appendChild(actionsWrapper);
 
     return card;
 }
@@ -650,44 +730,113 @@ function toggleMaterialEditor(owner, material, header) {
     name.focus();
 }
 
-function buildMaterialFilters(owner) {
-    const toolbar = text(owner.materialView, 'div', '', 'anomalous-material-toolbar');
-    owner.materialToolbar = toolbar;
-    const search = text(toolbar, 'input', '');
+function buildStudioTopbar(owner) {
+    const topbar = text(owner.materialView, 'header', '', 'anomalous-material-topbar');
+    owner.materialTopbar = topbar;
+
+    // 1. 左侧微胶囊分类切换
+    const left = text(topbar, 'div', '', 'anomalous-material-topbar-left');
+    const pills = text(left, 'div', '', 'anomalous-material-pills');
+    const categories = [
+        { id: 'all', key: 'materialKindPill_all', kind: '' },
+        { id: 'workflow', key: 'materialKindPill_workflow', kind: 'image_workflow_snapshot' },
+        { id: 'params', key: 'materialKindPill_params', kind: 'recipe_parameter_selection' },
+        { id: 'prompts', key: 'materialKindPill_prompts', kind: 'prompt_plan' },
+    ];
+    owner.materialKindPills = {};
+    for (const cat of categories) {
+        const pill = text(pills, 'button', t(cat.key) || cat.id, 'anomalous-material-pill');
+        pill.type = 'button';
+        if ((!owner.materialKindCategory && cat.id === 'all') || owner.materialKindCategory === cat.id) {
+            pill.classList.add('is-active');
+        }
+        pill.onclick = () => {
+            for (const p of Object.values(owner.materialKindPills)) p.classList.remove('is-active');
+            pill.classList.add('is-active');
+            owner.materialKindCategory = cat.id;
+            owner.materialKind = cat.kind;
+            if (cat.id === 'prompts') owner.materialApplyMode = false;
+            owner.refreshMaterials(1);
+        };
+        owner.materialKindPills[cat.id] = pill;
+    }
+
+    // 2. 中间紧凑搜索与标签下拉
+    const center = text(topbar, 'div', '', 'anomalous-material-topbar-center');
+    const searchWrap = text(center, 'div', '', 'anomalous-material-search-wrap');
+    const searchIcon = text(searchWrap, 'span', '', 'anomalous-material-search-icon');
+    searchIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`;
+    const search = text(searchWrap, 'input', '', 'anomalous-material-search-input');
     search.type = 'search';
-    search.placeholder = t('materialSearchHint');
-    search.setAttribute('aria-label', t('materialSearchHint'));
-    search.maxLength = 200;
+    search.placeholder = t('materialSearchHint') || '搜索素材名称或标签...';
     search.value = owner.materialQuery || '';
     search.oninput = () => {
         clearTimeout(owner.materialSearchTimer);
         owner.materialQuery = search.value;
         owner.materialSearchTimer = setTimeout(() => owner.refreshMaterials(1), 250);
     };
-    const kind = text(toolbar, 'select', '');
-    kind.setAttribute('aria-label', t('materialFilterKind'));
-    for (const [value, key] of [
-        ['', 'materialAllKinds'],
-        ['image_workflow_snapshot', 'materialFullWorkflowMaterial'],
-        ['image_node_selection', 'materialSelectedNodeMaterial'],
-        ['recipe_parameter_selection', 'materialRecipeParameterMaterial'],
-        ['prompt_note_bundle', 'materialPromptNoteBundle'],
-        ['prompt_text', 'materialPromptTextKind'],
-        ['prompt_plan', 'promptPlan'],
-    ]) {
-        const option = text(kind, 'option', t(key));
-        option.value = value;
-    }
-    owner.materialKindInput = kind;
-    kind.value = owner.materialKind || '';
-    kind.onchange = () => {
-        owner.materialKind = kind.value;
-        if (['prompt_plan', 'prompt_text', 'prompt_note_bundle'].includes(kind.value)) owner.materialApplyMode = false;
+
+    owner.materialTagSelect = text(center, 'select', '', 'anomalous-material-tag-select');
+    owner.materialTagSelect.setAttribute('aria-label', t('materialTags'));
+    owner.materialTagSelect.onchange = () => {
+        owner.materialTag = owner.materialTagSelect.value;
         owner.refreshMaterials(1);
     };
-    owner.materialTagSelect = text(toolbar, 'select', '');
-    owner.materialTagSelect.setAttribute('aria-label', t('materialTags'));
-    owner.materialTagSelect.onchange = () => { owner.materialTag = owner.materialTagSelect.value; owner.refreshMaterials(1); };
+
+    // 3. 右侧操作组
+    const right = text(topbar, 'div', '', 'anomalous-material-topbar-right');
+
+    // 视图切换 (网格 / 列表)
+    const viewSwitch = text(right, 'div', '', 'anomalous-material-view-switch');
+    const currentMode = owner.materialViewMode || localStorage.getItem('anomalous_material_view_mode') || 'grid';
+    owner.materialViewMode = currentMode;
+
+    const gridBtn = text(viewSwitch, 'button', '', `anomalous-material-view-btn${currentMode === 'grid' ? ' is-active' : ''}`);
+    gridBtn.type = 'button';
+    gridBtn.title = t('materialViewGrid') || '网格视图';
+    gridBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>`;
+
+    const listBtn = text(viewSwitch, 'button', '', `anomalous-material-view-btn${currentMode === 'list' ? ' is-active' : ''}`);
+    listBtn.type = 'button';
+    listBtn.title = t('materialViewList') || '列表视图';
+    listBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>`;
+
+    gridBtn.onclick = () => {
+        owner.materialViewMode = 'grid';
+        localStorage.setItem('anomalous_material_view_mode', 'grid');
+        gridBtn.classList.add('is-active');
+        listBtn.classList.remove('is-active');
+        owner.materialList?.classList.remove('is-list');
+        owner.materialList?.classList.add('is-grid');
+    };
+
+    listBtn.onclick = () => {
+        owner.materialViewMode = 'list';
+        localStorage.setItem('anomalous_material_view_mode', 'list');
+        listBtn.classList.add('is-active');
+        gridBtn.classList.remove('is-active');
+        owner.materialList?.classList.remove('is-grid');
+        owner.materialList?.classList.add('is-list');
+    };
+
+    // 刷新按钮
+    const refreshBtn = text(right, 'button', '↻', 'anomalous-material-topbar-btn');
+    refreshBtn.type = 'button';
+    refreshBtn.title = t('refresh');
+    refreshBtn.onclick = () => owner.refreshMaterials();
+
+    // 更多/转移中心
+    const more = text(right, 'details', '', 'anomalous-secondary-actions');
+    text(more, 'summary', '···');
+    more.title = t('notebookMore') || '更多';
+    const transfer = text(more, 'button', t('materialTransferCenter'), 'anomalous-btn-ghost');
+    transfer.onclick = () => showTransferCenter(owner);
+
+    // 提示词工坊抽屉开关
+    const studioToggle = text(right, 'button', `✨ ${t('materialPromptStudio') || '提示词工坊'}`, 'anomalous-material-topbar-btn anomalous-material-studio-toggle');
+    studioToggle.type = 'button';
+    owner.materialStudioToggle = studioToggle;
+    studioToggle.onclick = () => owner.toggleSideStudio();
 }
 
 function renderMaterialPagination(owner, payload) {
@@ -701,12 +850,15 @@ function renderMaterialPagination(owner, payload) {
     next.type = 'button';
     next.disabled = payload.page >= payload.pages;
     next.onclick = () => owner.refreshMaterials(payload.page + 1);
-    const tags = owner.materialTagSelect;
-    tags.replaceChildren();
-    text(tags, 'option', t('materialAllTags')).value = '';
-    for (const tag of payload.tags || []) text(tags, 'option', tag).value = tag;
-    if (owner.materialTag && !(payload.tags || []).includes(owner.materialTag)) text(tags, 'option', owner.materialTag).value = owner.materialTag;
-    tags.value = owner.materialTag || '';
+
+    if (owner.materialTagSelect) {
+        const tags = owner.materialTagSelect;
+        tags.replaceChildren();
+        text(tags, 'option', t('materialAllTags')).value = '';
+        for (const tag of payload.tags || []) text(tags, 'option', tag).value = tag;
+        if (owner.materialTag && !(payload.tags || []).includes(owner.materialTag)) text(tags, 'option', owner.materialTag).value = owner.materialTag;
+        tags.value = owner.materialTag || '';
+    }
 }
 
 export async function refreshMaterials(page = this.materialPage || 1) {
@@ -717,8 +869,13 @@ export async function refreshMaterials(page = this.materialPage || 1) {
     this.materialList.replaceChildren();
     text(this.materialList, 'p', t('loading'), 'anomalous-material-empty');
     updateMaterialContext(this);
-    const query = new URLSearchParams({ page, limit: 48, q: this.materialQuery || '',
-        tag: this.materialTag || '', kind: this.materialKind || '' });
+    const query = new URLSearchParams({
+        page,
+        limit: 48,
+        q: this.materialQuery || '',
+        tag: this.materialTag || '',
+        kind: this.materialKind || '',
+    });
     if (this.materialApplyMode && this.materialTarget) query.set('node_type', this.materialTarget.type);
     try {
         const response = await fetch(`/anomalous/materials?${query}`, { cache: 'no-store', signal: controller.signal });
@@ -771,36 +928,64 @@ export async function showMaterials() {
         this.materialViewLocale = resolveLocale();
         this.materialView = document.createElement('div');
         this.materialView.className = 'anomalous-material-body';
-        const intro = document.createElement('div');
-        intro.className = 'anomalous-material-intro';
-        this.materialIntro = intro;
-        const introCopy = document.createElement('div');
-        text(introCopy, 'p', t('materialLibraryHint'), 'anomalous-material-muted');
-        const refresh = text(intro, 'button', `↻ ${t('refresh')}`, 'anomalous-btn-ghost');
-        refresh.type = 'button';
-        refresh.onclick = () => this.refreshMaterials();
-        intro.prepend(introCopy);
-        this.materialView.appendChild(intro);
-        const actions = text(introCopy, 'div', '', 'anomalous-prompt-actions');
-        const compose = text(actions, 'button', t('promptCombinations'), 'anomalous-btn-primary');
-        compose.onclick = () => showPromptComposer(this);
-        const plans = text(actions, 'button', t('promptSavedPlans'), 'anomalous-btn-ghost');
-        plans.onclick = () => { this.materialApplyMode = false; this.materialKind = 'prompt_plan'; this.materialKindInput.value = 'prompt_plan'; this.refreshMaterials(1); };
-        const more = text(actions, 'details', '', 'anomalous-secondary-actions');
-        text(more, 'summary', t('notebookMore'));
-        const transfer = text(more, 'button', t('materialTransferCenter'), 'anomalous-btn-ghost');
-        transfer.onclick = () => showTransferCenter(this);
-        this.materialContext = text(this.materialView, 'div', '', 'anomalous-material-target-context');
-        buildMaterialFilters(this);
+
+        // 1. 一体化 Studio 顶栏
+        buildStudioTopbar(this);
+
+        // 2. 主区域分屏容器
+        const mainArea = text(this.materialView, 'div', '', 'anomalous-material-main-area');
+        this.materialMainArea = mainArea;
+
+        // 2.1 左侧主内容区
+        const contentArea = text(mainArea, 'div', '', 'anomalous-material-content');
+        this.materialContentArea = contentArea;
+
+        this.materialContext = text(contentArea, 'div', '', 'anomalous-material-target-context');
+
+        const initialMode = this.materialViewMode || localStorage.getItem('anomalous_material_view_mode') || 'grid';
         this.materialList = document.createElement('div');
-        this.materialList.className = 'anomalous-material-list';
-        this.materialView.appendChild(this.materialList);
-        this.materialPager = text(this.materialView, 'nav', '', 'anomalous-material-pager');
+        this.materialList.className = `anomalous-material-list is-${initialMode}`;
+        contentArea.appendChild(this.materialList);
+
+        this.materialPager = text(contentArea, 'nav', '', 'anomalous-material-pager');
         this.materialPager.setAttribute('aria-label', t('materialPagination'));
+
+        // 2.2 右侧并排便签工坊
+        const sideStudio = text(mainArea, 'aside', '', 'anomalous-material-side-studio');
+        this.materialSideStudio = sideStudio;
+
+        this.openSideStudio = () => {
+            this.materialSideStudio.classList.add('is-open');
+            this.materialStudioToggle?.classList.add('is-active');
+            localStorage.setItem('anomalous_side_studio_open', '1');
+            if (!this.sideStudioInitialized) {
+                renderSidePromptComposer(this, this.materialSideStudio, () => this.closeSideStudio());
+                this.sideStudioInitialized = true;
+            }
+        };
+
+        this.closeSideStudio = () => {
+            this.materialSideStudio.classList.remove('is-open');
+            this.materialStudioToggle?.classList.remove('is-active');
+            localStorage.setItem('anomalous_side_studio_open', '0');
+        };
+
+        this.toggleSideStudio = () => {
+            if (this.materialSideStudio.classList.contains('is-open')) {
+                this.closeSideStudio();
+            } else {
+                this.openSideStudio();
+            }
+        };
+
         this.materialContainer.appendChild(this.materialView);
+
+        // 如果用户上次打开了工坊，自动保持状态
+        if (localStorage.getItem('anomalous_side_studio_open') === '1') {
+            this.openSideStudio();
+        }
     }
     this.materialView.style.display = 'flex';
-    this.materialKindInput.value = this.materialKind || '';
     updateMaterialContext(this);
     await this.refreshMaterials();
 }
@@ -848,8 +1033,17 @@ function updateMaterialContext(owner) {
         ? t(owner.materialApplyMode ? 'materialApplyingTo' : 'materialSelectedTarget', { name: materialNodeHeading(node), id: node.id })
         : t('materialSelectOneNode'));
     if (node) {
-        const toggle = text(owner.materialContext, 'button', t(owner.materialApplyMode ? 'materialBrowseAll' : 'materialShowCompatible'), 'anomalous-btn-ghost');
-        toggle.onclick = () => { owner.materialApplyMode = !owner.materialApplyMode; owner.materialKind = ''; owner.materialKindInput.value = ''; owner.refreshMaterials(1); };
+        toggle.onclick = () => {
+            owner.materialApplyMode = !owner.materialApplyMode;
+            owner.materialKind = '';
+            owner.materialKindCategory = 'all';
+            if (owner.materialKindPills) {
+                for (const p of Object.values(owner.materialKindPills)) p.classList.remove('is-active');
+                owner.materialKindPills.all?.classList.add('is-active');
+            }
+            if (owner.materialKindInput) owner.materialKindInput.value = '';
+            owner.refreshMaterials(1);
+        };
     }
     text(owner.materialContext, 'small', t('materialApplyContextHint'));
 }
