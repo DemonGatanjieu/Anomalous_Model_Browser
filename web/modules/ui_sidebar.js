@@ -1141,7 +1141,6 @@ export function createDOM() {
                 }
                 if (b.notebookNotesTab) b.notebookNotesTab.textContent = t('promptNotes');
                 if (b.notebookRecipesTab) b.notebookRecipesTab.textContent = t('recipeTitle');
-                if (b.notebookMaterialsTab) b.notebookMaterialsTab.textContent = t('materialLibrary');
             }
             document.querySelectorAll('[data-anomalous-i18n-key]').forEach((element) => {
                 const key = element.dataset.anomalousI18nKey;

@@ -1,8 +1,9 @@
+import { bindMaterialDrag } from './material_drag.js';
 import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
 import { text, jsonResponse, materialNodeHeading } from './material_inspector.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
-import { composePromptPlan } from './prompt_composition.js';
+import { composePromptPlan, joinPromptText } from './prompt_composition.js';
 import { applyNodeMaterialValues, promptWidgetTargets, selectedMaterialNode } from './node_material_actions.js';
 import { showMaterialApplication } from './ui_material_application.js';
 import { showMaterialSaved } from './material_feedback.js';
@@ -12,8 +13,9 @@ const newDraft = () => ({ name: '', tags: [], plan: { parts: [], positive: '', n
 
 export function addPromptToDraft(owner, name, positive, negative = '') {
     owner.promptPlanDraft ||= newDraft();
-    if (owner.promptPlanDraft.plan.parts.length >= 100) return anomalousAlert(t('promptPartLimit'));
-    owner.promptPlanDraft.plan.parts.push({ name: String(name).slice(0, 120), category: 'specific', enabled: true, positive, negative });
+    const current = composePromptPlan(owner.promptPlanDraft.plan);
+    owner.promptPlanDraft.name ||= String(name).slice(0, 120);
+    owner.promptPlanDraft.plan = { parts: [], positive: joinPromptText(current.positive, positive, 'after'), negative: joinPromptText(current.negative, negative, 'after') };
     showPromptComposer(owner);
 }
 
@@ -47,6 +49,7 @@ export async function showPromptComposer(owner, material) {
     const view = text(owner.materialView, 'section', '', 'anomalous-prompt-composer');
     owner.promptComposerView = view;
     const draft = owner.promptPlanDraft;
+    draft.plan = { parts: [], ...composePromptPlan(draft.plan) };
     const header = text(view, 'div', '', 'anomalous-prompt-actions');
     const back = text(header, 'button', t('materialBackToLibrary'), 'anomalous-btn-ghost');
     back.onclick = () => owner.showMaterials();
@@ -59,31 +62,31 @@ export async function showPromptComposer(owner, material) {
     tags.oninput = () => { draft.tags = tags.value.split(/[,，]/).map(value => value.trim()).filter(Boolean); };
     text(view, 'p', t('promptCompositionHint'), 'anomalous-material-muted');
     text(view, 'small', t('promptDraftHint'), 'anomalous-material-muted');
-    const parts = text(view, 'div', '', 'anomalous-prompt-parts');
-    const addActions = text(view, 'div', '', 'anomalous-prompt-actions');
-    const add = text(addActions, 'button', t('promptAddPart'), 'anomalous-btn-ghost');
-    add.onclick = () => {
-        if (draft.plan.parts.length >= 100) return anomalousAlert(t('promptPartLimit'));
-        draft.plan.parts.push({ name: '', category: 'general', enabled: true, positive: '', negative: '' });
-        renderParts(); update();
-    };
-    const browse = text(addActions, 'button', t('promptChooseMaterial'), 'anomalous-btn-ghost');
-    browse.onclick = () => { owner.materialApplyMode = false; owner.materialKind = ''; owner.materialPage = 1; owner.showMaterials(); };
-    text(view, 'h4', t('promptCurrentContent'));
     const field = (parent, label, value, oninput, readOnly = false) => {
         const wrap = text(parent, 'label', label, 'anomalous-prompt-field');
         const input = text(wrap, 'textarea', ''); input.value = value; input.rows = 3; input.readOnly = readOnly;
         input.setAttribute('aria-label', label); input.oninput = () => oninput(input.value);
         return input;
     };
-    for (const role of ['positive', 'negative']) field(view, t(`promptCurrent_${role}`), draft.plan[role], value => { draft.plan[role] = value; update(); });
-    text(view, 'h4', t('promptFinalPreview'));
-    const previews = {};
+    const placement = text(view, 'label', t('promptInsertPosition'), 'anomalous-prompt-field');
+    const position = text(placement, 'select', '');
+    position.setAttribute('aria-label', t('promptInsertPosition'));
+    for (const value of ['before', 'after']) text(position, 'option', t(`promptInsert_${value}`)).value = value;
+    position.value = owner.promptInsertPosition || 'after';
+    position.onchange = () => { owner.promptInsertPosition = position.value; };
     for (const role of ['positive', 'negative']) {
-        previews[role] = field(view, t(`promptFinal_${role}`), '', () => {}, true);
-        const copy = text(view, 'button', t(`promptCopy_${role}`), 'anomalous-btn-ghost');
+        const card = text(view, 'div', '', 'anomalous-prompt-drag-card');
+        field(card, t(`promptFinal_${role}`), draft.plan[role], value => { draft.plan[role] = value; });
+        const drag = text(card, 'button', t('promptDragText'), 'anomalous-btn-primary');
+        drag.type = 'button';
+        bindMaterialDrag(drag, owner, {
+            payload: () => draft.plan[role].trim() ? { content: draft.plan[role], position: position.value } : null,
+            accepts: node => promptWidgetTargets(node).length > 0,
+            drop: (node, data, graph) => applyPromptDrop(node, data, graph, targetArea),
+        });
+        const copy = text(card, 'button', t(`promptCopy_${role}`), 'anomalous-btn-ghost');
         copy.onclick = async () => {
-            try { await navigator.clipboard.writeText(composePromptPlan(draft.plan)[role]); copy.textContent = t('materialCopied'); }
+            try { await navigator.clipboard.writeText(draft.plan[role]); copy.textContent = t('materialCopied'); }
             catch (error) { await anomalousAlert(t('materialCopyError')); }
         };
     }
@@ -99,16 +102,17 @@ export async function showPromptComposer(owner, material) {
         for (const target of targets) text(widget, 'option', target.name).value = String(target.index);
         const role = text(targetArea, 'select', ''); role.setAttribute('aria-label', t('promptTargetRole'));
         for (const value of ['positive', 'negative']) text(role, 'option', t(`promptFinal_${value}`)).value = value;
-        for (const append of [false, true]) {
-            const action = text(targetArea, 'button', t(append ? 'promptAppend' : 'promptReplace'), 'anomalous-btn-primary');
+        for (const placement of ['before', 'after']) {
+            const action = text(targetArea, 'button', t(`promptInsert_${placement}`), 'anomalous-btn-primary');
             action.onclick = async () => {
                 try {
                     if (selectedMaterialNode(app) !== node) throw new Error('materialTargetChanged');
                     const index = Number(widget.value);
                     if (!promptWidgetTargets(node).some(target => target.index === index)) throw new Error('materialTargetChanged');
                     const content = composePromptPlan(draft.plan)[role.value];
-                    const value = append ? [node.widgets[index].value, content].filter(value => value.trim()).join('\n') : content;
-                    showMaterialApplication(targetArea, applyNodeMaterialValues(app, node, [{ index, value }]));
+                    if (!content.trim()) return;
+                    const value = joinPromptText(node.widgets[index].value, content, placement);
+                    showMaterialApplication(targetArea, applyNodeMaterialValues(app, node, [{ index, value }]), node);
                 } catch (error) { await anomalousAlert(t(error.message) === error.message ? t('materialApplyFailed') : t(error.message)); }
             };
         }
@@ -147,31 +151,29 @@ export async function showPromptComposer(owner, material) {
     };
     const reset = text(actions, 'button', t('promptNewDraft'), 'anomalous-btn-ghost');
     reset.onclick = async () => { if (await anomalousConfirm(t('promptReplaceDraft'))) { owner.promptPlanDraft = newDraft(); showPromptComposer(owner); } };
-    function update() { const composed = composePromptPlan(draft.plan); for (const role of ['positive', 'negative']) previews[role].value = composed[role]; }
-    function renderParts() {
-        parts.replaceChildren();
-        draft.plan.parts.forEach((part, index) => {
-            const card = text(parts, 'details', '', 'anomalous-prompt-part'); card.open = !part.positive && !part.negative;
-            const summary = text(card, 'summary', '');
-            const enabled = text(summary, 'input', ''); enabled.type = 'checkbox'; enabled.checked = part.enabled;
-            enabled.setAttribute('aria-label', t('promptEnablePart'));
-            enabled.onclick = event => event.stopPropagation(); enabled.onchange = () => { part.enabled = enabled.checked; update(); };
-            const title = text(summary, 'span', part.name || t('promptUnnamedPart'));
-            const categoryBadge = text(summary, 'small', t(`promptCategory_${part.category}`));
-            const category = text(card, 'select', ''); category.setAttribute('aria-label', t('promptPartCategory'));
-            for (const value of ['general', 'specific']) text(category, 'option', t(`promptCategory_${value}`)).value = value;
-            category.value = part.category; category.onchange = () => { part.category = category.value; categoryBadge.textContent = t(`promptCategory_${part.category}`); };
-            const label = text(card, 'input', ''); label.value = part.name; label.maxLength = 120; label.placeholder = t('promptPartName'); label.setAttribute('aria-label', t('promptPartName'));
-            label.oninput = () => { part.name = label.value; title.textContent = part.name || t('promptUnnamedPart'); };
-            for (const role of ['positive', 'negative']) field(card, t(`promptFinal_${role}`), part[role], value => { part[role] = value; update(); });
-            for (const step of [-1, 1]) {
-                const move = text(card, 'button', t(step < 0 ? 'promptMoveUp' : 'promptMoveDown'), 'anomalous-btn-ghost');
-                move.disabled = index + step < 0 || index + step >= draft.plan.parts.length;
-                move.onclick = () => { [draft.plan.parts[index], draft.plan.parts[index + step]] = [draft.plan.parts[index + step], part]; renderParts(); update(); };
-            }
-            const remove = text(card, 'button', t('promptRemovePart'), 'anomalous-btn-ghost');
-            remove.onclick = () => { draft.plan.parts.splice(index, 1); renderParts(); update(); };
-        });
+    renderTarget();
+}
+
+
+function applyPromptDrop(node, data, graph, parent) {
+    const targets = promptWidgetTargets(node);
+    const apply = index => {
+        if (app.graph !== graph || graph.getNodeById(node.id) !== node || !promptWidgetTargets(node).some(target => target.index === index)) throw new Error('materialTargetChanged');
+        const value = joinPromptText(node.widgets[index].value, data.content, data.position);
+        showMaterialApplication(parent, applyNodeMaterialValues(app, node, [{ index, value }]), node);
+    };
+    if (targets.length === 1) { apply(targets[0].index); return; }
+    if (!targets.length) throw new Error('materialNoCompatibleValues');
+    const dialog = text(document.body, 'dialog', '', 'anomalous-material-choice');
+    text(dialog, 'h3', t('promptChooseTarget'));
+    const status = text(dialog, 'p', ''); status.setAttribute('role', 'alert');
+    for (const target of targets) {
+        const choose = text(dialog, 'button', target.name, 'anomalous-btn-primary');
+        choose.onclick = () => {
+            try { apply(target.index); dialog.close(); }
+            catch (error) { status.textContent = t(error.message) === error.message ? t('materialApplyFailed') : t(error.message); }
+        };
     }
-    renderParts(); update(); renderTarget();
+    const close = text(dialog, 'button', t('close'), 'anomalous-btn-ghost'); close.onclick = () => dialog.close();
+    dialog.onclose = () => dialog.remove(); dialog.showModal();
 }

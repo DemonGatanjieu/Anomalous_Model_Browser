@@ -1,5 +1,6 @@
+import { bindMaterialDrag } from './material_drag.js';
 import { selectedMaterialNode } from './node_material_actions.js';
-import { applyMaterialToSelectedNode } from './ui_material_application.js';
+import { applyMaterialToSelectedNode, applyMaterialToNode } from './ui_material_application.js';
 import { showPromptComposer, addPromptToDraft } from './ui_prompt_composer.js';
 /** Curated image/workflow and Recipe parameter materials. */
 
@@ -19,11 +20,11 @@ function materialAssetUrl(filename, asset) {
 }
 
 function hideSiblingWorkspaceViews(owner) {
+    if (owner.notebookContainer) owner.notebookContainer.style.display = 'none';
     if (owner.notebookBody) owner.notebookBody.style.display = 'none';
     if (owner.recipeView) owner.recipeView.style.display = 'none';
     owner.notebookNotesTab?.classList.remove('active');
     owner.notebookRecipesTab?.classList.remove('active');
-    owner.notebookMaterialsTab?.classList.add('active');
 }
 
 async function fetchMaterial(filename, options = {}) {
@@ -448,6 +449,14 @@ function renderMaterialCard(owner, material) {
     card.title = t('materialViewDetails') || '点击查看详细参数';
     const activate = () => owner.materialApplyMode ? applyLibraryMaterial(owner, material) : showMaterialDetail(owner, material);
     card.onclick = activate;
+    if (material.node_types?.length) {
+        bindMaterialDrag(card, owner, {
+            payload: () => ({ ...material, node_types: [...material.node_types] }),
+            accepts: (node, source) => source.node_types.includes(node.type),
+            drop: (node, source, graph) => applyLibraryMaterial(owner, source, node, graph),
+        });
+        text(card, 'span', t('materialDragParameters'), 'anomalous-material-drag-label');
+    }
     card.tabIndex = 0;
     card.setAttribute('aria-label', `${material.name} — ${t('materialViewDetails')}`);
     card.onkeydown = event => {
@@ -499,6 +508,7 @@ function renderMaterialCard(owner, material) {
         image.src = previewUrl;
         image.alt = material.name || t('materialUntitled');
         image.loading = 'lazy';
+        image.draggable = false;
         preview.appendChild(image);
     } else {
         preview.textContent = (isPromptMaterial(material) || material.kind === 'prompt_plan') ? '💬' : material.kind === 'recipe_parameter_selection' ? '🧰' : '🖼️';
@@ -727,10 +737,17 @@ export async function refreshMaterials(page = this.materialPage || 1) {
 }
 
 export async function showMaterials() {
-    if (!this.notebookContainer) {
-        this.nbPanel.style.display = 'flex';
-        await this.showNotebooks();
+    this.nbPanel.style.display = 'flex';
+    if (!this.materialContainer) {
+        this.materialContainer = text(this.nbPanel, 'div', '', 'anomalous-nb-container anomalous-material-container');
+        const header = text(this.materialContainer, 'div', '', 'anomalous-nb-header');
+        this.materialHeading = text(header, 'h2', t('materialLibrary'));
+        const close = text(header, 'button', '×', 'anomalous-btn-ghost');
+        close.setAttribute('aria-label', t('close'));
+        close.onclick = () => this.closeWorkspace();
     }
+    this.materialHeading.textContent = t('materialLibrary');
+    this.materialContainer.style.display = 'flex';
     watchMaterialSelection(this);
     this.promptComposerView?.remove();
     this.promptComposerView = null;
@@ -749,7 +766,6 @@ export async function showMaterials() {
         intro.className = 'anomalous-material-intro';
         this.materialIntro = intro;
         const introCopy = document.createElement('div');
-        text(introCopy, 'h3', t('materialLibrary'));
         text(introCopy, 'p', t('materialLibraryHint'), 'anomalous-material-muted');
         const refresh = text(intro, 'button', `↻ ${t('refresh')}`, 'anomalous-btn-ghost');
         refresh.type = 'button';
@@ -772,7 +788,7 @@ export async function showMaterials() {
         this.materialView.appendChild(this.materialList);
         this.materialPager = text(this.materialView, 'nav', '', 'anomalous-material-pager');
         this.materialPager.setAttribute('aria-label', t('materialPagination'));
-        this.notebookContainer.appendChild(this.materialView);
+        this.materialContainer.appendChild(this.materialView);
     }
     this.materialView.style.display = 'flex';
     this.materialKindInput.value = this.materialKind || '';
@@ -865,20 +881,21 @@ function watchMaterialSelection(owner) {
     }
 }
 
-async function applyLibraryMaterial(owner, material) {
-    const node = selectedMaterialNode(app);
+async function applyLibraryMaterial(owner, material, droppedNode = null, graph = app.graph) {
+    const node = droppedNode || selectedMaterialNode(app);
     if (!node) { await anomalousAlert(t('materialTargetChanged')); return; }
     if (owner.materialApplying) return;
     owner.materialApplying = true;
     try {
         const payload = await fetchMaterial(material.filename);
-        if (selectedMaterialNode(app) !== node) throw new Error('materialTargetChanged');
+        if (app.graph !== graph || graph.getNodeById(node.id) !== node || (!droppedNode && selectedMaterialNode(app) !== node)) throw new Error('materialTargetChanged');
         if (owner.nbPanel?.style.display !== 'flex' || owner.materialView?.style.display !== 'flex'
             || (owner.modal && !owner.modal.classList.contains('visible'))) return;
         const blocks = (payload.node_blocks || []).filter(block => block.type === node.type && block.widgets_values?.length);
         if (!blocks.length) throw new Error('materialNoCompatibleValues');
+        const apply = droppedNode ? applyMaterialToNode : applyMaterialToSelectedNode;
         if (blocks.length === 1) {
-            applyMaterialToSelectedNode(node, blocks[0], payload.workflow_hashes, owner.materialContext);
+            apply(node, blocks[0], payload.workflow_hashes, owner.materialContext);
         } else {
             owner.materialBlockDialog?.close();
             const dialog = document.createElement('dialog'); dialog.className = 'anomalous-material-choice';
@@ -888,7 +905,10 @@ async function applyLibraryMaterial(owner, material) {
             for (const block of blocks) {
                 const choose = text(dialog, 'button', `${materialNodeHeading(block)} #${block.node_id}`, 'anomalous-btn-primary');
                 choose.onclick = async () => {
-                    try { applyMaterialToSelectedNode(node, block, payload.workflow_hashes, owner.materialContext); dialog.close(); }
+                    try {
+                        if (app.graph !== graph) throw new Error('materialTargetChanged');
+                        apply(node, block, payload.workflow_hashes, owner.materialContext); dialog.close();
+                    }
                     catch (error) { status.textContent = t(error.message) === error.message ? t('materialApplyFailed') : t(error.message); }
                 };
             }

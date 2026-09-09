@@ -95,7 +95,9 @@ DOM or live LiteGraph state.
   `node_material_actions.js` owns shared transactional node application and guarded undo;
   the library and Node Assistant use `ui_material_application.js` for the same receipt.
 - `ui_prompt_composer.js` owns Prompt Combinations inside the library;
-  `prompt_composition.js` joins enabled fragments without rewriting their text.
+  `prompt_composition.js` joins text at the beginning/end and reads older fragment plans.
+- `material_drag.js` owns temporary canvas drop listeners, target hit testing and
+  window restoration. Dropped materials use replacement; prompt-panel drops insert text.
 - `material_inspector.js` owns shared image-metadata parsing and node-parameter
   rendering used by the library and Image Detail Workbench. Node cards feature leading
   aligned frosted-glass checkboxes with cyan micro-interactions for batch selection.

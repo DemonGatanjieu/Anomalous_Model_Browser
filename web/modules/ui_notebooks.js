@@ -56,6 +56,7 @@ export function closeWorkspace() {
     if (this.recipeView) this.recipeView.style.display = 'none';
     if (this.materialView) this.materialView.style.display = 'none';
     if (this.notebookBody) this.notebookBody.style.display = 'none';
+    if (this.materialContainer) this.materialContainer.style.display = 'none';
     if (this.nbPanel) this.nbPanel.style.display = 'none';
     restoreWorkspaceReturnPanel(this);
 }
@@ -63,6 +64,8 @@ export function closeWorkspace() {
 
 
 export async function showNotebooks() {
+        if (this.materialContainer) this.materialContainer.style.display = 'none';
+        if (this.notebookContainer) this.notebookContainer.style.display = 'flex';
         if (this.nbInitialized) {
             this.nbPanel.style.display = 'flex';
             if (this.notebookBody) this.notebookBody.style.display = 'flex';
@@ -70,13 +73,10 @@ export async function showNotebooks() {
             if (this.materialView) this.materialView.style.display = 'none';
             this.notebookNotesTab?.classList.add('active');
             this.notebookRecipesTab?.classList.remove('active');
-            this.notebookMaterialsTab?.classList.remove('active');
             this.refreshNotebooks(true);
             return;
         }
         this.nbInitialized = true;
-
-        this.nbPanel.innerHTML = '';
 
         const nbContainer = document.createElement('div');
         nbContainer.className = 'anomalous-nb-container';
@@ -97,11 +97,7 @@ export async function showNotebooks() {
         recipesTab.type = 'button';
         recipesTab.className = 'anomalous-nb-section-tab';
         recipesTab.textContent = t('recipeTitle');
-        const materialsTab = document.createElement('button');
-        materialsTab.type = 'button';
-        materialsTab.className = 'anomalous-nb-section-tab';
-        materialsTab.textContent = t('materialLibrary');
-        sectionTabs.append(notesTab, recipesTab, materialsTab);
+        sectionTabs.append(notesTab, recipesTab);
         headerMain.append(heading, sectionTabs);
         nbHeader.appendChild(headerMain);
         const closeNb = document.createElement('span');
@@ -116,7 +112,6 @@ export async function showNotebooks() {
         this.notebookContainer = nbContainer;
         this.notebookNotesTab = notesTab;
         this.notebookRecipesTab = recipesTab;
-        this.notebookMaterialsTab = materialsTab;
 
         notesTab.onclick = () => {
             this.notebookBody.style.display = 'flex';
@@ -124,11 +119,9 @@ export async function showNotebooks() {
             if (this.materialView) this.materialView.style.display = 'none';
             notesTab.classList.add('active');
             recipesTab.classList.remove('active');
-            materialsTab.classList.remove('active');
             this.refreshNotebooks(true);
         };
         recipesTab.onclick = () => this.showRecipes();
-        materialsTab.onclick = () => this.showMaterials();
 
         // Sidebar for notebooks list
         const sidebar = document.createElement('div');

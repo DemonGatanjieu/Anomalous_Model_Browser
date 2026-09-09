@@ -725,6 +725,8 @@ export async function showRecipes() {
         this.nbPanel.style.display = 'flex';
         await this.showNotebooks();
     }
+    if (this.materialContainer) this.materialContainer.style.display = 'none';
+    this.notebookContainer.style.display = 'flex';
     if (typeof this.recipeModelReturn === 'function') {
         const returnToRecipe = this.recipeModelReturn;
         this.recipeModelReturn = null;
@@ -736,7 +738,6 @@ export async function showRecipes() {
     if (this.materialView) this.materialView.style.display = 'none';
     this.notebookNotesTab?.classList.remove('active');
     this.notebookRecipesTab?.classList.add('active');
-    this.notebookMaterialsTab?.classList.remove('active');
     if (this.recipeDetailView) {
         this.recipeDetailView.remove();
         this.recipeDetailView = null;

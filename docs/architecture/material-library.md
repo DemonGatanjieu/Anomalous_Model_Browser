@@ -210,9 +210,11 @@ Sets (参数方案); existing notebook routes and storage identifiers stay stabl
 
 ## Entry points and shared application
 
-The lower-left control opens Material Library. The upper-right control opens
-Workflow Recipes directly; the existing workspace tabs still expose Recipes,
-Prompt Notes and Materials. Import/export is secondary under the library's More
+The lower-left control opens a standalone Material Library container, with no
+workspace tabs and no initial Prompt Note fetch. The upper-right control opens
+Workflow Recipes; that workspace retains its Recipes and Prompt Notes tabs.
+Both containers share the browser's panel area but have separate headers and
+lifecycle state; switching restores the appropriate container. Import/export is secondary under the library's More
 menu, linking existing workflow tools and recipe packages, plus prompt-plan JSON
 import. It does not claim to import/export arbitrary image material bundles.
 
@@ -250,21 +252,48 @@ draft. Node labels reuse ComfyUI's registered localized titles with raw type fal
 synthetic workflow. `POST save_prompt_plan` accepts a name, tags, and `plan`:
 `parts` is an ordered list of up to 100 records with `name` (up to 120 characters),
 `category` (`general` or `specific`), `enabled`, `positive`, and `negative`.
-Top-level `positive` and `negative` hold this run's content. The plan is bounded to
+Top-level `positive` and `negative` hold prompt text. The plan is bounded to
 2 MiB; unknown fields are discarded. Atomic writes and explicit duplicate-copy
 confirmation reuse the material persistence lock and canonical content signature.
 
-The composer joins each role's enabled, nonblank fragment strings in order using
-newlines, then appends that role's current content. It preserves weights, commas,
-duplicates and original nonblank string whitespace. It never translates or infers
-negative text from a Prompt Note's `promptZh` translation. Captured Prompt Notes
-and classified workflow prompt groups can seed a fragment; unknown workflow roles
-are not silently promoted to positive or negative prompts.
+The current panel has simple positive/negative text fields and a beginning/end
+drop-position selector. Fragment categories, ordering and enable controls are
+deferred. Opening an older plan joins its enabled fragments and final content
+into those two fields; a new save has empty `parts`, leaving the original record
+intact. Text insertion preserves weights, commas, duplicates and original nonblank
+string whitespace. A Prompt Note's `promptZh` translation is never inferred as
+negative text. Captured notes and classified workflow prompt groups can populate
+the fields; unknown workflow roles are not silently assigned a role.
 
 Saving creates an independent new snapshot. There is no automatic source sync or
 model binding. A page-session draft survives library navigation and is replaced
 by an existing saved plan only after confirmation; it must be saved before page
 reload. Stale detail requests cannot replace the current draft. Export/import use
 JSON format `anomalous-prompt-plan-v1`; imports are bounded to 2 MiB and validated
-by the same save endpoint. The composer exposes role and target-widget selection,
-separate Replace/Append actions, copy controls and the shared guarded undo.
+by the same save endpoint. The panel also exposes role and target-widget selection,
+beginning/end buttons for a selected node, copy controls and guarded undo.
+
+## Canvas drag and drop
+
+`material_drag.js` binds native drag handles to parameter-bearing library cards
+and to each prompt field's drag button. Only an active, same-page drag is trusted;
+transfer data is a marker, not an external mutation command. During drag, the
+browser window becomes transparent and stops intercepting pointer events. End,
+drop, Escape and loss of focus restore it and remove temporary event listeners.
+There is no persistent drag polling or detail request during hover.
+
+Hit testing uses the host canvas coordinate conversion (including pan/zoom),
+canvas bounds and the graph's live node lookup. Canvas and DOM-widget surfaces are
+accepted. The graph/canvas identities are captured at drag start and checked again
+at drop; async material application rechecks the graph/node after loading detail.
+The actual drop node is the target, regardless of the previously selected node.
+Receipts name that target and provide the shared guarded undo.
+
+Parameter-bearing materials fetch their scoped node blocks only after drop and
+replace compatible widget values through the same transaction as Node Assistant,
+preserving seed, node position and links. Multiple matching blocks require a
+choice. No full workflow is loaded. Prompt-panel drops instead insert the chosen
+role's text before or after existing node text; multiple eligible text widgets
+require choosing one. Empty/unsupported targets and canceled drags do not mutate
+the graph. Neither drop path queues generation. Actual host drag visuals and
+third-party/Vue node compatibility remain part of the deferred browser acceptance.
