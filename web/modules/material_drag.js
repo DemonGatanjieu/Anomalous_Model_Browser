@@ -33,7 +33,8 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop }) {
         event.stopPropagation();
         event.dataTransfer.setData('application/x-anomalous-material', 'local-drag');
         event.dataTransfer.effectAllowed = 'copy';
-        const hint = text(document.body, 'div', t('materialDropHint'), 'anomalous-material-drag-hint');
+        const defaultHint = data.dragHint || t('materialDropHint');
+        const hint = text(document.body, 'div', defaultHint, 'anomalous-material-drag-hint');
         hint.setAttribute('role', 'status');
         const cleanup = () => {
             clearTimeout(reveal);
@@ -48,7 +49,8 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop }) {
             const node = target(event);
             const valid = !!node && accepts(node, data);
             event.dataTransfer.dropEffect = valid ? 'copy' : 'none';
-            hint.textContent = valid ? t('materialDropTarget', { name: materialNodeHeading(node) }) : t('materialDropHint');
+            hint.classList.toggle('is-target-valid', valid);
+            hint.textContent = valid ? t('materialDropTarget', { name: materialNodeHeading(node) }) : defaultHint;
             hint.style.left = `${Math.max(8, Math.min(event.clientX + 16, window.innerWidth - 250))}px`;
             hint.style.top = `${Math.max(8, event.clientY - 48)}px`;
         };

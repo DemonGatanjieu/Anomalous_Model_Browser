@@ -7366,17 +7366,462 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: #202428;
     color: #eee;
 }
-.anomalous-material-drag-label {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    padding: 4px 8px;
-    background: #202428;
-    color: #eee;
-    border-radius: 6px;
-    font-size: 12px;
-    pointer-events: none;
+/* ==========================================================================
+   Prompt Composer & Paper Note Studio / Material Drag System
+   ========================================================================== */
+
+/* 1. Modal Dragging State: Instantly ghost modal to reveal ComfyUI canvas */
+#anomalous-modal.anomalous-material-dragging {
+    pointer-events: none !important;
 }
-.anomalous-material-card[draggable="true"], .anomalous-prompt-drag-card button[draggable="true"] { cursor: grab; }
-.anomalous-prompt-drag-card { padding: 12px; border: 1px solid var(--border-color, #454545); border-radius: 8px; }
-.anomalous-prompt-drag-card > button { margin: 10px 8px 0 0; }
+
+#anomalous-modal.anomalous-material-dragging #anomalous-container {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: scale(0.985);
+    transition: opacity 0.16s cubic-bezier(0.4, 0, 0.2, 1), transform 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 2. Drag Cursor & Hover Feedback */
+.anomalous-material-card[draggable="true"],
+.anomalous-paper-note[draggable="true"] {
+    cursor: grab;
+}
+
+.anomalous-material-card[draggable="true"]:active,
+.anomalous-paper-note[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+/* Hide legacy bulky drag label to restore clean card visuals */
+.anomalous-material-drag-label {
+    display: none !important;
+}
+
+/* 3. Drag Follower Floating Badge */
+.anomalous-material-drag-hint {
+    position: fixed;
+    z-index: 999999;
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-radius: 20px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1.5px solid rgba(45, 212, 191, 0.55);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 16px rgba(45, 212, 191, 0.2);
+    color: #f1f5f9;
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1.2;
+    backdrop-filter: blur(8px);
+    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.anomalous-material-drag-hint.is-target-valid {
+    border-color: #2dd4bf;
+    background: rgba(13, 37, 42, 0.94);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75), 0 0 24px rgba(45, 212, 191, 0.45);
+    color: #5eead4;
+}
+
+/* 4. Prompt Composer Layout (Warm Paper Studio) */
+.anomalous-prompt-composer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 20px 24px;
+    overflow-y: auto;
+    max-height: 100%;
+    color: #e2e8f0;
+}
+
+.anomalous-prompt-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.anomalous-prompt-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.anomalous-prompt-topbar-left h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #f8fafc;
+    letter-spacing: 0.02em;
+}
+
+.anomalous-prompt-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.anomalous-prompt-meta-strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    flex-wrap: wrap;
+}
+
+.anomalous-prompt-meta-strip input {
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #f1f5f9;
+    font-size: 0.82rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.anomalous-prompt-meta-strip input:focus {
+    border-color: #2dd4bf;
+}
+
+.anomalous-prompt-name-input {
+    flex: 1 1 200px;
+}
+
+.anomalous-prompt-tags-input {
+    flex: 1 1 180px;
+}
+
+.anomalous-prompt-insert-pos {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+.anomalous-prompt-insert-pos select {
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 5px 8px;
+    color: #f1f5f9;
+    font-size: 0.78rem;
+    outline: none;
+    cursor: pointer;
+}
+
+/* 5. Paper-like Note Cards Grid */
+.anomalous-paper-notes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 18px;
+}
+
+.anomalous-paper-note {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    background: linear-gradient(175deg, #1c2028 0%, #15181f 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.4), 0 4px 10px -2px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease;
+    user-select: none;
+}
+
+.anomalous-paper-note:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px -4px rgba(0, 0, 0, 0.55), 0 6px 14px -2px rgba(0, 0, 0, 0.35);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Note Top Tape Effect (纸胶带) */
+.anomalous-paper-note-tape {
+    height: 6px;
+    width: 100%;
+    opacity: 0.85;
+}
+
+.anomalous-paper-note.is-positive .anomalous-paper-note-tape {
+    background: linear-gradient(90deg, #2dd4bf 0%, #0d9488 100%);
+    box-shadow: 0 0 10px rgba(45, 212, 191, 0.35);
+}
+
+.anomalous-paper-note.is-negative .anomalous-paper-note-tape {
+    background: linear-gradient(90deg, #fb7185 0%, #e11d48 100%);
+    box-shadow: 0 0 10px rgba(251, 113, 133, 0.35);
+}
+
+/* Note Header */
+.anomalous-paper-note-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px 6px;
+    gap: 8px;
+}
+
+.anomalous-paper-note-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.anomalous-paper-note.is-positive .anomalous-paper-note-title {
+    color: #5eead4;
+}
+
+.anomalous-paper-note.is-negative .anomalous-paper-note-title {
+    color: #fda4af;
+}
+
+.anomalous-paper-note-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.anomalous-paper-note-count {
+    font-size: 0.72rem;
+    color: #64748b;
+    font-family: monospace;
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 4px;
+}
+
+.anomalous-paper-note-btn {
+    padding: 3px 8px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    font-size: 0.74rem;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.anomalous-paper-note-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #f8fafc;
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Note Textarea */
+.anomalous-paper-note-body {
+    padding: 6px 14px 10px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.anomalous-paper-note-textarea {
+    width: 100%;
+    min-height: 120px;
+    resize: vertical;
+    border: none;
+    outline: none;
+    background: rgba(0, 0, 0, 0.2);
+    color: #f1f5f9;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    padding: 10px;
+    border-radius: 6px;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: background 0.15s ease;
+}
+
+.anomalous-paper-note-textarea:focus {
+    background: rgba(0, 0, 0, 0.35);
+}
+
+/* Note Footer Drag Hint */
+.anomalous-paper-note-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 14px 10px;
+    font-size: 0.73rem;
+    color: #64748b;
+    border-top: 1px dashed rgba(255, 255, 255, 0.06);
+}
+
+.anomalous-paper-note-drag-prompt {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #94a3b8;
+}
+
+/* 6. Active Target Status & Injection Bar */
+.anomalous-prompt-target-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(45, 212, 191, 0.2);
+}
+
+.anomalous-prompt-target-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: #cbd5e1;
+}
+
+.anomalous-prompt-target-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 7. Slide-out Material Import Drawer */
+.anomalous-prompt-import-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 440px;
+    max-width: 90vw;
+    height: 100vh;
+    background: rgba(18, 22, 30, 0.96);
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: -10px 0 40px rgba(0, 0, 0, 0.75);
+    z-index: 10005;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(12px);
+    animation: drawerSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes drawerSlideIn {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+.anomalous-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.anomalous-drawer-header h4 {
+    margin: 0;
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+
+.anomalous-drawer-search {
+    padding: 10px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.anomalous-drawer-search input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 12px;
+    border-radius: 6px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #f1f5f9;
+    font-size: 0.82rem;
+    outline: none;
+}
+
+.anomalous-drawer-search input:focus {
+    border-color: #2dd4bf;
+}
+
+.anomalous-drawer-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.anomalous-drawer-item {
+    padding: 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.anomalous-drawer-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(45, 212, 191, 0.3);
+}
+
+.anomalous-drawer-item-title {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #f8fafc;
+}
+
+.anomalous-drawer-item-preview {
+    font-size: 0.76rem;
+    color: #94a3b8;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 6px 8px;
+    border-radius: 4px;
+}
+
+.anomalous-drawer-item-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.anomalous-drawer-item-btn {
+    padding: 4px 9px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.anomalous-drawer-item-btn:hover {
+    background: #2dd4bf;
+    color: #0f172a;
+    border-color: #2dd4bf;
+    font-weight: 600;
+}
+

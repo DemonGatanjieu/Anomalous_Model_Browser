@@ -451,11 +451,10 @@ function renderMaterialCard(owner, material) {
     card.onclick = activate;
     if (material.node_types?.length) {
         bindMaterialDrag(card, owner, {
-            payload: () => ({ ...material, node_types: [...material.node_types] }),
+            payload: () => ({ ...material, node_types: [...material.node_types], dragHint: t('materialDragParameters') || '拖拽素材参数至目标节点' }),
             accepts: (node, source) => source.node_types.includes(node.type),
             drop: (node, source, graph) => applyLibraryMaterial(owner, source, node, graph),
         });
-        text(card, 'span', t('materialDragParameters'), 'anomalous-material-drag-label');
     }
     card.tabIndex = 0;
     card.setAttribute('aria-label', `${material.name} — ${t('materialViewDetails')}`);
