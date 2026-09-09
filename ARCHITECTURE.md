@@ -84,9 +84,15 @@ DOM or live LiteGraph state.
   keyboard accessible focus indicators, full-width generation parameter saving to Material Library,
   and segmented Bento parameter inspection with ComfyUI canvas injection (`app.loadGraphData`).
 - `ui_notebooks.js`, `ui_recipes.js`, and `ui_recipe_detail.js` own Workspace
-  presentation, featuring Bento-style visual cards, solid high-performance gradients without
-  costly backdrop blurs, quick spec tags, real-time environment readiness indicators (🟢/🟡/🔴),
-  one-click batch model matching, and lazy DOM rendering for node parameter trees.
+  presentation, featuring an integrated 48px Studio topbar (`.anomalous-recipe-topbar`)
+  with scope filter micro-pills (`all`, `complete`, `partial`), unified search & tag dropdown,
+  and dual view modes (uniform 264px Bento grid & 44px compact list view); eliminates noisy
+  Beta notices and visual bumpiness; cards feature 136px golden-ratio top covers, bottom-left
+  frosted glass base model pills, top-right scope pills, real-time environment readiness indicators
+  (🟢/🟡/🔴), quick spec tags, and one-click canvas load (`🚀 载入画布` / `🧩 追加画布`).
+  Direct canvas drag-drop ("一拖直达画布") allows dragging any recipe card across the translucent
+  modal directly onto the ComfyUI canvas to immediately load the workflow into a fresh canvas
+  (or append subgraphs), mimicking native ComfyUI image-drop behavior.
 - `ui_materials.js` owns the Workspace Material Library and material CRUD presentation;
   features an integrated single-row Studio topbar with category micro-pills (`all`, `workflow`, `params`, `prompts`),
   unified search with tag filtering, grid/list view mode toggle (persisted to localStorage),
@@ -105,7 +111,9 @@ DOM or live LiteGraph state.
 - `material_drag.js` owns temporary canvas drop listeners, target hit testing and
   window restoration. During active dragging, the main modal smoothly transitions to
   full transparency (`opacity: 0; pointer-events: none`) to fully reveal the underlying
-  ComfyUI canvas, restoring on drop/cancel. Dropped materials use replacement; prompt-panel drops insert text.
+  ComfyUI canvas, restoring on drop/cancel. Supports both node-targeted drops (materials replace,
+  prompt notes insert text) and whole-canvas drops via `dropOnCanvas` (recipes load new workflows
+  or append subgraphs).
 - `material_inspector.js` owns shared image-metadata parsing and node-parameter
   rendering used by the library and Image Detail Workbench. Node cards feature leading
   aligned frosted-glass checkboxes with cyan micro-interactions for batch selection.

@@ -1323,171 +1323,214 @@ dialog.anomalous-gallery-viewer[open] {
     color: #fff;
 }
 
-/* Workflow Recipes: uses the Notebook modal shell while keeping cards compact. */
+/* Workflow Recipes: Studio Topbar and Modern Layout System */
 .anomalous-recipe-body {
     display: flex;
     flex: 1;
     min-height: 0;
     flex-direction: column;
     font-family: Inter, Roboto, "Segoe UI", sans-serif;
+    background: #111317;
+    overflow: hidden;
 }
 
-.anomalous-recipe-actionbar {
+/* 彻底隐匿原本粗暴占位的 Beta 警示大黄框 */
+.anomalous-recipe-beta-notice,
+.anomalous-beta-notice.anomalous-recipe-beta-notice {
+    display: none !important;
+}
+
+/* 一体化 Studio 顶栏 */
+.anomalous-recipe-topbar {
     display: flex;
     align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid #3d3d3d;
+    justify-content: space-between;
+    gap: 12px;
+    height: 48px;
+    padding: 0 16px;
+    background: #16181f;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    flex-shrink: 0;
+    z-index: 10;
 }
 
-.anomalous-recipe-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-    overflow-y: auto;
-    padding: 16px;
-}
-
-.anomalous-recipe-card {
+.anomalous-recipe-topbar-left {
     display: flex;
-    min-width: 0;
-    flex-direction: column;
-    gap: 10px;
-    padding: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.05);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-    backdrop-filter: blur(10px);
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
-.anomalous-recipe-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(112, 178, 255, 0.42);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+.anomalous-recipe-pills {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(0, 0, 0, 0.32);
+    padding: 3px 4px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.anomalous-recipe-card h3 {
-    overflow: hidden;
-    margin: 0;
-    color: #f1f1f1;
-    font-size: 1rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.anomalous-recipe-pill {
+    padding: 3px 11px;
+    border-radius: 14px;
+    font-size: 12px;
+    color: #94a3b8;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-weight: 500;
 }
 
-.anomalous-recipe-thumbnail,
-.anomalous-recipe-dialog-preview,
-.anomalous-recipe-detail-hero video {
+.anomalous-recipe-pill:hover {
+    color: #e2e8f0;
+}
+
+.anomalous-recipe-pill.is-active {
+    background: rgba(99, 102, 241, 0.22);
+    color: #a5b4fc;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.anomalous-recipe-topbar-center {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    max-width: 440px;
+}
+
+.anomalous-recipe-search-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.anomalous-recipe-search-icon {
+    position: absolute;
+    left: 10px;
+    pointer-events: none;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+}
+
+.anomalous-recipe-search-input {
     width: 100%;
-    border-radius: 7px;
-    background: #111;
-    object-fit: contain;
+    height: 30px;
+    padding: 0 12px 0 30px;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    color: #e2e8f0;
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.anomalous-recipe-thumbnail {
-    height: 148px;
+.anomalous-recipe-search-input:focus {
+    border-color: rgba(99, 102, 241, 0.45);
+    background: rgba(0, 0, 0, 0.4);
 }
 
-.anomalous-recipe-summary {
+.anomalous-recipe-tag-select {
+    height: 30px;
+    padding: 0 10px;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    color: #94a3b8;
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+    max-width: 130px;
+}
+
+.anomalous-recipe-tag-select:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.anomalous-recipe-topbar-right {
     display: flex;
-    min-width: 0;
-    flex-direction: column;
-    gap: 7px;
-    color: #c9c9c9;
-    font-size: 0.8rem;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
-.anomalous-recipe-model,
-.anomalous-recipe-prompt,
-.anomalous-recipe-notes {
-    overflow: hidden;
-    margin: 0;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.anomalous-recipe-view-switch {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 2px;
 }
 
-.anomalous-recipe-sampling,
-.anomalous-recipe-loras,
-.anomalous-recipe-tags,
-.anomalous-recipe-actions {
+.anomalous-recipe-view-btn {
+    width: 26px;
+    height: 26px;
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.anomalous-recipe-view-btn:hover {
+    color: #cbd5e1;
+}
+
+.anomalous-recipe-view-btn.is-active {
+    background: rgba(255, 255, 255, 0.09);
+    color: #a5b4fc;
+}
+
+.anomalous-recipe-topbar-btn {
+    height: 30px;
+    padding: 0 12px;
+    display: inline-flex;
     align-items: center;
     gap: 6px;
-}
-
-.anomalous-recipe-actions button,
-.anomalous-recipe-detail-actions button,
-.anomalous-recipe-inline-controls button {
     border-radius: 8px;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    color: #cbd5e1;
 }
 
-.anomalous-recipe-save-status {
-    color: #8bd5ca;
-    flex: 1 1 180px;
-    line-height: 1.35;
+.anomalous-recipe-topbar-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
 }
 
-.anomalous-recipe-save-status.is-warning {
-    color: #ffcf70;
+.anomalous-recipe-topbar-btn.is-primary {
+    background: rgba(99, 102, 241, 0.18);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #c7d2fe;
 }
 
-.anomalous-recipe-actions button:hover,
-.anomalous-recipe-detail-actions button:hover,
-.anomalous-recipe-inline-controls button:hover {
-    transform: translateY(-1px);
+.anomalous-recipe-topbar-btn.is-primary:hover {
+    background: rgba(99, 102, 241, 0.3);
+    border-color: rgba(99, 102, 241, 0.6);
+    color: #ffffff;
 }
 
-.anomalous-recipe-copy-param.copied-success,
-.anomalous-recipe-actions button.copied-success,
-.anomalous-recipe-detail-actions button.copied-success {
-    border-color: rgba(110, 231, 183, 0.7);
-    color: #6ee7b7;
-}
-
-.anomalous-recipe-copy-param.copied-failure,
-.anomalous-recipe-actions button.copied-failure,
-.anomalous-recipe-detail-actions button.copied-failure {
-    border-color: rgba(255, 153, 153, 0.7);
-    color: #ff9999;
-}
-
-.anomalous-recipe-label {
-    color: #999;
-}
-
-.anomalous-recipe-badge {
-    max-width: 100%;
-    overflow: hidden;
-    padding: 3px 7px;
-    border: 1px solid #4d4d4d;
-    border-radius: 999px;
-    color: #d4d4d4;
-    font-size: 0.75rem;
-    line-height: 1.1;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.anomalous-recipe-badge-accent {
-    border-color: rgba(0, 255, 204, 0.55);
-    color: #00ffcc;
-}
-
-.anomalous-recipe-badge-lora {
-    border-color: rgba(116, 173, 255, 0.55);
-    color: #a9cdff;
-}
-
-.anomalous-recipe-badge-tag {
-    color: #ffd493;
-}
-
-.anomalous-recipe-badge-module {
-    border-color: rgba(189, 138, 255, 0.5);
-    color: #cfadff;
+/* 列表容器 */
+.anomalous-recipe-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .anomalous-recipe-node-details {
@@ -4997,87 +5040,104 @@ dialog.anomalous-gallery-viewer::backdrop {
     display: none !important;
 }
 
+/* ==========================================================================
+   Recipe Cards: Uniform 264px Bento Grid & 44px Compact List System
+   ========================================================================== */
+
+/* 1. 网格模式下的卡片几何规范 (抚平坑洼，高度严格锁死 264px) */
+.anomalous-recipe-list.is-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-auto-rows: 264px;
+    align-content: start;
+    gap: 14px;
+    padding: 16px;
+}
+
+.anomalous-recipe-list.is-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 16px;
+}
+
+/* 卡片基础骨架 */
 .anomalous-recipe-card {
     position: relative;
     display: flex;
     min-width: 0;
-    max-width: 420px;
-    flex-direction: column;
-    gap: 10px;
-    padding: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 14px;
-    background: linear-gradient(145deg, #1f2229, #131418);
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
-    /* backdrop-filter removed for scrolling performance */
-    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s ease, box-shadow 0.22s ease;
     overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(155deg, #1d2027, #15171d);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+    box-sizing: border-box;
 }
 
 .anomalous-recipe-card:hover {
+    border-color: rgba(99, 102, 241, 0.45);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 16px rgba(99, 102, 241, 0.16);
+}
+
+.anomalous-recipe-card:focus-visible {
+    outline: 2px solid #818cf8;
+    outline-offset: 2px;
+}
+
+/* 网格模式卡片 */
+.anomalous-recipe-list.is-grid .anomalous-recipe-card {
+    height: 264px;
+    max-height: 264px;
+    flex-direction: column;
+    border-radius: 12px;
+    padding: 0;
+}
+
+.anomalous-recipe-list.is-grid .anomalous-recipe-card:hover {
     transform: translateY(-3px);
-    border-color: rgba(99, 102, 241, 0.5);
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 0 0 20px rgba(99, 102, 241, 0.18);
 }
 
-.anomalous-recipe-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    min-width: 0;
-}
-
-.anomalous-recipe-card-title {
-    overflow: hidden;
-    margin: 0;
-    color: #f8fafc;
-    font-size: 1.05rem;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    letter-spacing: -0.01em;
-}
-
-.anomalous-recipe-card-media-wrap {
+/* 顶部封面展示区 (标准黄金高度 136px) */
+.anomalous-recipe-list.is-grid .anomalous-recipe-card-media-wrap {
     position: relative;
     width: 100%;
-    height: 155px;
-    border-radius: 9px;
+    height: 136px;
+    flex-shrink: 0;
+    background: #0d0f14;
     overflow: hidden;
-    background: #111215;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.anomalous-recipe-card-media-wrap .anomalous-recipe-thumbnail,
-.anomalous-recipe-card-media-wrap video {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    transition: transform 0.3s ease !important;
+.anomalous-recipe-list.is-grid .anomalous-recipe-card-media-wrap img,
+.anomalous-recipe-list.is-grid .anomalous-recipe-card-media-wrap video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.25s ease;
 }
 
-.anomalous-recipe-card:hover .anomalous-recipe-thumbnail,
-.anomalous-recipe-card:hover video {
-    transform: scale(1.03) !important;
+.anomalous-recipe-list.is-grid .anomalous-recipe-card:hover .anomalous-recipe-card-media-wrap img,
+.anomalous-recipe-list.is-grid .anomalous-recipe-card:hover .anomalous-recipe-card-media-wrap video {
+    transform: scale(1.03);
 }
 
+/* 封面内嵌浮动底模胶囊 (Glass Pill) */
 .anomalous-recipe-cover-pill {
     position: absolute;
-    bottom: 8px;
-    left: 8px;
-    padding: 3px 8px;
+    bottom: 6px;
+    left: 6px;
+    padding: 2px 7px;
     border-radius: 6px;
-    background: rgba(10, 10, 12, 0.82);
+    background: rgba(12, 14, 18, 0.85);
     backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: #e2e8f0;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 500;
-    max-width: 85%;
+    max-width: 80%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -5085,115 +5145,185 @@ dialog.anomalous-gallery-viewer::backdrop {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
+/* 封面右上角作用域徽章 */
+.anomalous-recipe-scope-pill {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    background: rgba(10, 12, 16, 0.85);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+.anomalous-recipe-scope-pill.is-partial {
+    border-color: rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
+}
+
+.anomalous-recipe-scope-pill.is-complete {
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #a5b4fc;
+}
+
+/* 网格卡片信息区 */
+.anomalous-recipe-list.is-grid .anomalous-recipe-card-body {
+    flex: 1;
+    min-height: 0;
+    padding: 9px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 4px;
+}
+
+.anomalous-recipe-list.is-grid .anomalous-recipe-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    width: 100%;
+}
+
+.anomalous-recipe-list.is-grid .anomalous-recipe-card-title {
+    flex: 1;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    line-height: 18px;
+    color: #f1f5f9;
+    font-weight: 500;
+}
+
+/* 环境就绪指示灯 (直接点缀在标题右侧) */
+.anomalous-recipe-readiness-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px currentColor;
+}
+
+.anomalous-recipe-readiness-dot.is-ready {
+    background-color: #10b981;
+    color: rgba(16, 185, 129, 0.6);
+}
+
+.anomalous-recipe-readiness-dot.is-warning {
+    background-color: #f59e0b;
+    color: rgba(245, 158, 11, 0.6);
+}
+
+.anomalous-recipe-readiness-dot.is-missing {
+    background-color: #ef4444;
+    color: rgba(239, 68, 68, 0.6);
+}
+
+/* 规格微胶囊行 */
 .anomalous-recipe-specs-strip {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
-    font-size: 0.74rem;
-    min-height: 24px;
+    gap: 4px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 10px;
 }
 
 .anomalous-recipe-spec-tag {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
-    padding: 3px 7px;
-    border-radius: 5px;
+    gap: 2px;
+    padding: 1px 5px;
+    border-radius: 4px;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #94a3b8;
     white-space: nowrap;
 }
 
 .anomalous-recipe-spec-tag.is-lora {
     color: #93c5fd;
-    background: rgba(59, 130, 246, 0.1);
-    border-color: rgba(59, 130, 246, 0.25);
+    background: rgba(59, 130, 246, 0.08);
+    border-color: rgba(59, 130, 246, 0.2);
 }
 
 .anomalous-recipe-spec-tag.is-step {
-    color: #a7f3d0;
-    background: rgba(16, 185, 129, 0.1);
-    border-color: rgba(16, 185, 129, 0.25);
+    color: #86efac;
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.2);
 }
 
-.anomalous-recipe-readiness-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    white-space: nowrap;
-    border: 1px solid transparent;
-}
-
-.anomalous-recipe-readiness-pill.is-ready {
-    background: rgba(16, 185, 129, 0.16);
-    border-color: rgba(16, 185, 129, 0.45);
-    color: #6ee7b7;
-}
-
-.anomalous-recipe-readiness-pill.is-warning {
-    background: rgba(245, 158, 11, 0.16);
-    border-color: rgba(245, 158, 11, 0.45);
-    color: #fcd34d;
-}
-
-.anomalous-recipe-readiness-pill.is-missing {
-    background: rgba(239, 68, 68, 0.16);
-    border-color: rgba(239, 68, 68, 0.45);
-    color: #fca5a5;
-}
-
-.anomalous-recipe-card-footer {
+/* 网格卡片底部主动作与悬浮微操作 */
+.anomalous-recipe-list.is-grid .anomalous-recipe-card-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    margin-top: auto;
-    padding-top: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    gap: 6px;
+    margin-top: 2px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .anomalous-recipe-btn-primary-action {
     flex: 1;
-    padding: 8px 12px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.85), rgba(79, 70, 229, 0.95));
-    border: 1px solid rgba(129, 140, 248, 0.4);
-    color: #ffffff;
-    font-size: 0.82rem;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 6px;
+    background: rgba(99, 102, 241, 0.16);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    color: #c7d2fe;
+    font-size: 11px;
     font-weight: 500;
     cursor: pointer;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
 }
 
 .anomalous-recipe-btn-primary-action:hover {
-    filter: brightness(1.15);
-    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45);
+    background: rgba(99, 102, 241, 0.32);
+    border-color: rgba(99, 102, 241, 0.6);
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.25);
     transform: translateY(-1px);
 }
 
 .anomalous-recipe-card-mini-actions {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.anomalous-recipe-card:hover .anomalous-recipe-card-mini-actions {
+    opacity: 1;
 }
 
 .anomalous-recipe-card-mini-btn {
-    padding: 6px 8px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.09);
     color: #94a3b8;
     cursor: pointer;
-    font-size: 0.85rem;
-    line-height: 1;
+    font-size: 11px;
     transition: all 0.15s ease;
 }
 
@@ -5201,6 +5331,86 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: rgba(255, 255, 255, 0.12);
     color: #fff;
     transform: translateY(-1px);
+}
+
+.anomalous-recipe-card-mini-btn.is-delete:hover {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #fca5a5;
+}
+
+/* 2. 紧凑行列表模式 (44px 极速视图) */
+.anomalous-recipe-list.is-list .anomalous-recipe-card {
+    height: 44px;
+    min-height: 44px;
+    flex-direction: row;
+    align-items: center;
+    padding: 0 12px;
+    gap: 12px;
+    border-radius: 8px;
+}
+
+.anomalous-recipe-list.is-list .anomalous-recipe-card:hover {
+    transform: translateX(2px);
+}
+
+.anomalous-recipe-list.is-list .anomalous-recipe-card-media-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: #0d0f14;
+}
+
+.anomalous-recipe-list.is-list .anomalous-recipe-cover-pill,
+.anomalous-recipe-list.is-list .anomalous-recipe-scope-pill,
+.anomalous-recipe-list.is-list .anomalous-recipe-specs-strip {
+    display: none;
+}
+
+.anomalous-recipe-list.is-list .anomalous-recipe-card-body {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.anomalous-recipe-list.is-list .anomalous-recipe-card-header {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.anomalous-recipe-list.is-list .anomalous-recipe-card-title {
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    color: #f1f5f9;
+}
+
+.anomalous-recipe-list.is-list .anomalous-recipe-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.anomalous-recipe-list.is-list .anomalous-recipe-btn-primary-action {
+    flex: 0 0 auto;
+    height: 26px;
+    padding: 0 10px;
 }
 
 /* Detail View: Readiness Banner */

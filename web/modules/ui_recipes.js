@@ -720,6 +720,148 @@ function showRecipeEditDialog(owner, recipeData, filename, history) {
     });
 }
 
+function buildRecipeStudioTopbar(owner) {
+    const topbar = document.createElement('div');
+    topbar.className = 'anomalous-recipe-topbar';
+
+    // 1. Left: Scope Pills (All / Complete / Partial)
+    const left = document.createElement('div');
+    left.className = 'anomalous-recipe-topbar-left';
+    const pillsWrap = document.createElement('div');
+    pillsWrap.className = 'anomalous-recipe-pills';
+
+    const scopes = [
+        { id: 'all', label: t('recipeScopePill_all') },
+        { id: 'complete', label: t('recipeScopePill_complete') },
+        { id: 'partial', label: t('recipeScopePill_partial') },
+    ];
+    owner.recipeScopeFilter = owner.recipeScopeFilter || 'all';
+
+    scopes.forEach(({ id, label }) => {
+        const btn = appendText(pillsWrap, 'button', label, 'anomalous-recipe-pill');
+        btn.type = 'button';
+        if (owner.recipeScopeFilter === id) btn.classList.add('is-active');
+        btn.onclick = () => {
+            if (owner.recipeScopeFilter === id) return;
+            owner.recipeScopeFilter = id;
+            pillsWrap.querySelectorAll('.anomalous-recipe-pill').forEach((el) => el.classList.remove('is-active'));
+            btn.classList.add('is-active');
+            owner.renderRecipeList(owner.recipeRecords || []);
+        };
+    });
+    left.appendChild(pillsWrap);
+    topbar.appendChild(left);
+
+    // 2. Center: Search input + Tag select dropdown + Filter count summary
+    const center = document.createElement('div');
+    center.className = 'anomalous-recipe-topbar-center';
+
+    const searchWrap = document.createElement('div');
+    searchWrap.className = 'anomalous-recipe-search-wrap';
+    appendText(searchWrap, 'span', '🔍', 'anomalous-recipe-search-icon');
+    const searchInput = document.createElement('input');
+    searchInput.type = 'search';
+    searchInput.className = 'anomalous-recipe-search-input';
+    searchInput.placeholder = t('recipeSearchPlaceholder');
+    searchInput.value = owner.recipeSearchQuery || '';
+    searchInput.oninput = () => {
+        owner.recipeSearchQuery = searchInput.value;
+        owner.renderRecipeList(owner.recipeRecords || []);
+    };
+    owner.recipeSearchInput = searchInput;
+    searchWrap.appendChild(searchInput);
+    center.appendChild(searchWrap);
+
+    const tagSelect = document.createElement('select');
+    tagSelect.className = 'anomalous-recipe-tag-select';
+    tagSelect.onchange = () => {
+        const val = tagSelect.value;
+        if (!val) {
+            owner.recipeSelectedTags = new Set();
+        } else {
+            owner.recipeSelectedTags = new Set([val]);
+        }
+        owner.renderRecipeList(owner.recipeRecords || []);
+    };
+    owner.recipeTagSelect = tagSelect;
+    center.appendChild(tagSelect);
+
+    owner.recipeFilterSummary = appendText(center, 'small', '0/0', 'anomalous-recipe-filter-summary');
+    topbar.appendChild(center);
+
+    // 3. Right: View switcher (Grid / List) + Save button + Import button
+    const right = document.createElement('div');
+    right.className = 'anomalous-recipe-topbar-right';
+
+    const viewSwitch = document.createElement('div');
+    viewSwitch.className = 'anomalous-recipe-view-switch';
+    owner.recipeViewMode = owner.recipeViewMode || 'grid';
+
+    const gridBtn = document.createElement('button');
+    gridBtn.type = 'button';
+    gridBtn.className = 'anomalous-recipe-view-btn' + (owner.recipeViewMode === 'grid' ? ' is-active' : '');
+    gridBtn.title = t('recipeViewGrid');
+    gridBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h7v7H3V3zm11 0h7v7h-7V3zm-11 11h7v7H3v-7zm11 0h7v7h-7v-7z"/></svg>';
+
+    const listBtn = document.createElement('button');
+    listBtn.type = 'button';
+    listBtn.className = 'anomalous-recipe-view-btn' + (owner.recipeViewMode === 'list' ? ' is-active' : '');
+    listBtn.title = t('recipeViewList');
+    listBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v3H3V4zm0 7h18v3H3v-3zm0 7h18v3H3v-3z"/></svg>';
+
+    gridBtn.onclick = () => {
+        if (owner.recipeViewMode === 'grid') return;
+        owner.recipeViewMode = 'grid';
+        gridBtn.classList.add('is-active');
+        listBtn.classList.remove('is-active');
+        if (owner.recipeListContainer) {
+            owner.recipeListContainer.classList.add('is-grid');
+            owner.recipeListContainer.classList.remove('is-list');
+        }
+    };
+
+    listBtn.onclick = () => {
+        if (owner.recipeViewMode === 'list') return;
+        owner.recipeViewMode = 'list';
+        listBtn.classList.add('is-active');
+        gridBtn.classList.remove('is-active');
+        if (owner.recipeListContainer) {
+            owner.recipeListContainer.classList.add('is-list');
+            owner.recipeListContainer.classList.remove('is-grid');
+        }
+    };
+
+    viewSwitch.append(gridBtn, listBtn);
+    right.appendChild(viewSwitch);
+
+    const saveBtn = appendText(right, 'button', `💾 ${t('recipeSaveCurrent')}`, 'anomalous-recipe-topbar-btn is-primary');
+    saveBtn.dataset.recipeSaveCurrent = 'true';
+    saveBtn.type = 'button';
+    saveBtn.onclick = () => owner.handleSaveRecipe();
+
+    const importBtn = appendText(right, 'button', `📥 ${t('recipeImport')}`, 'anomalous-recipe-topbar-btn');
+    importBtn.type = 'button';
+    importBtn.onclick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.zip,.anomalous-recipe.zip,application/zip';
+        input.onchange = async () => {
+            const file = input.files?.[0];
+            if (!file) return;
+            try {
+                await importRecipePackage(owner, file);
+            } catch (error) {
+                console.error('Could not import Workflow Recipe package:', error);
+                await anomalousAlert(t('recipeImportError'));
+            }
+        };
+        input.click();
+    };
+
+    topbar.appendChild(right);
+    return topbar;
+}
+
 export async function showRecipes() {
     if (!this.notebookContainer) {
         this.nbPanel.style.display = 'flex';
@@ -741,15 +883,16 @@ export async function showRecipes() {
     if (this.recipeDetailView) {
         this.recipeDetailView.remove();
         this.recipeDetailView = null;
-        this.recipeListContainer.style.display = '';
-        this.recipeView.querySelector('.anomalous-recipe-actionbar').style.display = '';
+        if (this.recipeListContainer) this.recipeListContainer.style.display = '';
+        const topbar = this.recipeView?.querySelector('.anomalous-recipe-topbar');
+        if (topbar) topbar.style.display = '';
     }
     if (this.recipeView) {
         this.recipeView.style.display = 'flex';
         if (!this.recipeDetailView) {
             if (this.recipeListContainer) this.recipeListContainer.style.display = '';
-            const actionbar = this.recipeView.querySelector('.anomalous-recipe-actionbar');
-            if (actionbar) actionbar.style.display = '';
+            const topbar = this.recipeView?.querySelector('.anomalous-recipe-topbar');
+            if (topbar) topbar.style.display = '';
             this.recipeReturnState = null;
             delete this.recipeDetailPayload;
         }
@@ -761,74 +904,17 @@ export async function showRecipes() {
     this.recipesInitialized = true;
     this.recipeSelectedTags = this.recipeSelectedTags || new Set();
     this.recipeSearchQuery = this.recipeSearchQuery || '';
+    this.recipeScopeFilter = this.recipeScopeFilter || 'all';
+    this.recipeViewMode = this.recipeViewMode || 'grid';
 
     this.recipeView = document.createElement('div');
     this.recipeView.className = 'anomalous-recipe-body';
-    const actionBar = document.createElement('div');
-    actionBar.className = 'anomalous-recipe-actionbar';
-    const search = document.createElement('input');
-    search.type = 'search';
-    search.className = 'anomalous-recipe-search';
-    search.placeholder = t('recipeSearchPlaceholder');
-    search.value = this.recipeSearchQuery || '';
-    search.oninput = () => {
-        this.recipeSearchQuery = search.value;
-        this.renderRecipeList(this.recipeRecords || []);
-    };
-    this.recipeSearchInput = search;
-    actionBar.appendChild(search);
 
-    const clearFilters = appendText(actionBar, 'button', t('recipeClearFilters'), 'anomalous-btn-danger');
-    clearFilters.type = 'button';
-    clearFilters.onclick = () => {
-        this.recipeSearchQuery = '';
-        this.recipeSelectedTags = new Set();
-        search.value = '';
-        updateRecipeFilterControls(this, this.recipeRecords || []);
-        this.renderRecipeList(this.recipeRecords || []);
-    };
-
-    this.recipeTagBar = document.createElement('div');
-    this.recipeTagBar.className = 'anomalous-recipe-filter-tags';
-    actionBar.appendChild(this.recipeTagBar);
-
-    this.recipeFilterSummary = appendText(actionBar, 'small', '0/0', 'anomalous-recipe-filter-summary');
-
-    const save = appendText(actionBar, 'button', t('recipeSaveCurrent'), 'anomalous-btn-primary');
-    save.dataset.recipeSaveCurrent = 'true';
-    save.type = 'button';
-    save.onclick = () => this.handleSaveRecipe();
-    this.recipeSaveStatus = appendText(actionBar, 'small', '', 'anomalous-recipe-save-status');
-    const importButton = appendText(actionBar, 'button', t('recipeImport'), 'anomalous-btn-primary');
-    importButton.type = 'button';
-    importButton.onclick = () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.zip,.anomalous-recipe.zip,application/zip';
-        input.onchange = async () => {
-            const file = input.files?.[0];
-            if (!file) return;
-            try {
-                await importRecipePackage(this, file);
-            } catch (error) {
-                console.error('Could not import Workflow Recipe package:', error);
-                await anomalousAlert(t('recipeImportError'));
-            }
-        };
-        input.click();
-    };
-    this.recipeView.appendChild(actionBar);
-
-    const betaNotice = document.createElement('div');
-    betaNotice.className = 'anomalous-beta-notice anomalous-recipe-beta-notice';
-    const betaBadge = appendText(betaNotice, 'strong', t('betaFeature'), 'anomalous-beta-badge');
-    betaBadge.dataset.anomalousI18nKey = 'betaFeature';
-    const betaText = appendText(betaNotice, 'span', t('recipeBetaNotice'));
-    betaText.dataset.anomalousI18nKey = 'recipeBetaNotice';
-    this.recipeView.appendChild(betaNotice);
+    const topbar = buildRecipeStudioTopbar(this);
+    this.recipeView.appendChild(topbar);
 
     this.recipeListContainer = document.createElement('div');
-    this.recipeListContainer.className = 'anomalous-recipe-list';
+    this.recipeListContainer.className = `anomalous-recipe-list ${this.recipeViewMode === 'list' ? 'is-list' : 'is-grid'}`;
     this.recipeView.appendChild(this.recipeListContainer);
     this.notebookContainer.appendChild(this.recipeView);
     await this.refreshRecipes();
@@ -888,23 +974,30 @@ function createRecipeQuickSpecs(params) {
     return strip.childElementCount ? strip : null;
 }
 
+function getRecipeReadiness(recipeData) {
+    const refs = recipeData?.params?.model_references;
+    if (!Array.isArray(refs) || !refs.length) {
+        return { status: 'ready', label: t('recipeStatusReady') };
+    }
+    let missing = 0;
+    let unverified = 0;
+    for (const ref of refs) {
+        const status = ref?.identity?.status || ref?.currentAvailability;
+        if (status === 'unavailable' || status === 'missing') missing++;
+        else if (status === 'unverified') unverified++;
+    }
+    if (missing > 0) return { status: 'missing', label: `${missing} ${t('recipeStatusMissing')}` };
+    if (unverified > 0) return { status: 'warning', label: `${unverified} ${t('recipeStatusUnverified')}` };
+    return { status: 'ready', label: t('recipeStatusReady') };
+}
+
 function createRecipeCard(owner, recipe) {
     const data = recipe?.data || {};
     const card = document.createElement('article');
     card.className = 'anomalous-recipe-card';
     card.style.cursor = 'pointer';
 
-    // 1. Header with title & scope badge
-    const header = document.createElement('div');
-    header.className = 'anomalous-recipe-card-header';
-    appendText(header, 'h3', data.name || t('recipeUntitled'), 'anomalous-recipe-card-title');
-    header.appendChild(createBadge(
-        t(data.workflow_scope === 'partial' ? 'recipeScopePartial' : 'recipeScopeComplete'),
-        data.workflow_scope === 'partial' ? 'accent' : 'module',
-    ));
-    card.appendChild(header);
-
-    // 2. Bento Media Wrap with Base Model Pill
+    // 1. Bento Media Wrap: Cover on TOP (136px)
     const mediaWrap = document.createElement('div');
     mediaWrap.className = 'anomalous-recipe-card-media-wrap';
     const sourceImageUrl = outputImageUrl(data.source_image);
@@ -914,70 +1007,81 @@ function createRecipeCard(owner, recipe) {
         : safeThumbnail(data.thumbnail) || sourceImageUrl);
     appendRecipeCover(mediaWrap, thumbnail, data.name || t('recipeThumbnail'));
 
+    // Base Model Pill (Frosted glass at bottom-left of cover)
     const baseModelStr = data.params?.baseModel || data.params?.baseModels;
     if (baseModelStr) {
         const pill = appendText(mediaWrap, 'span', `📦 ${modelDisplayName(baseModelStr)}`, 'anomalous-recipe-cover-pill');
         pill.title = String(baseModelStr);
     }
+
+    // Scope Pill (Top-right of cover)
+    const isPartial = data.workflow_scope === 'partial';
+    appendText(
+        mediaWrap,
+        'span',
+        isPartial ? '🧩 ' + t('recipeScopePill_partial') : '⚡ ' + t('recipeScopePill_complete'),
+        `anomalous-recipe-scope-pill ${isPartial ? 'is-partial' : 'is-complete'}`,
+    );
     card.appendChild(mediaWrap);
 
-    // 3. Quick Specs Strip
-    const specs = createRecipeQuickSpecs(data.params);
-    if (specs) card.appendChild(specs);
+    // 2. Card Body
+    const body = document.createElement('div');
+    body.className = 'anomalous-recipe-card-body';
 
-    // 4. Compact Tags
+    // Header: Title + Readiness Dot
+    const header = document.createElement('div');
+    header.className = 'anomalous-recipe-card-header';
+    const title = appendText(header, 'h3', data.name || t('recipeUntitled'), 'anomalous-recipe-card-title');
+    title.title = data.name || t('recipeUntitled');
+
+    const readiness = getRecipeReadiness(data);
+    const dot = document.createElement('span');
+    dot.className = `anomalous-recipe-readiness-dot is-${readiness.status}`;
+    dot.title = readiness.label;
+    header.appendChild(dot);
+    body.appendChild(header);
+
+    // Quick Specs Strip
+    const specs = createRecipeQuickSpecs(data.params);
+    if (specs) body.appendChild(specs);
+
+    // Compact Tags (first 3)
     if (Array.isArray(data.tags) && data.tags.length) {
         const tags = document.createElement('div');
         tags.className = 'anomalous-recipe-tags';
-        for (const tag of data.tags.slice(0, 4)) {
-            const tagButton = appendText(tags, 'button', compactText(tag, 24), 'anomalous-recipe-badge anomalous-recipe-badge-tag');
+        for (const tag of data.tags.slice(0, 3)) {
+            const tagButton = appendText(tags, 'button', compactText(tag, 18), 'anomalous-recipe-badge anomalous-recipe-badge-tag');
             tagButton.type = 'button';
             tagButton.title = t('recipeFilterByTag');
             tagButton.onclick = (event) => {
                 event.stopPropagation();
                 if (!owner.recipeSelectedTags) owner.recipeSelectedTags = new Set();
                 owner.recipeSelectedTags.add(tag);
+                if (owner.recipeTagSelect) owner.recipeTagSelect.value = tag;
                 owner.renderRecipeList(owner.recipeRecords || []);
-                updateRecipeFilterControls(owner, owner.recipeRecords || []);
             };
         }
-        card.appendChild(tags);
+        body.appendChild(tags);
     }
 
-    // 5. Notes (if any)
-    if (data.notes) {
-        const note = appendText(card, 'p', compactText(data.notes, 90), 'anomalous-recipe-notes');
-        note.title = data.notes;
-    }
-
-    // 6. Card Click for Detail
-    card.onclick = () => runRecipeCardAction(card, async () => {
-        const bundle = await fetchRecipeBundle(recipe.filename);
-        const result = await showRecipeDetail(owner, {
-            recipe: bundle.data,
-            filename: recipe.filename,
-            history: bundle.history,
-        });
-        if (result?.mode === 'edit') await editRecipe(owner, bundle.data, recipe.filename, bundle.history);
-    }, 'recipeLoadError');
-
-    // 7. Footer: Primary Execute Button + Mini Management Actions
+    // Footer: Primary Action Button ("🚀 载入画布" / "🧩 追加画布") + Mini Actions
     const footer = document.createElement('div');
     footer.className = 'anomalous-recipe-card-footer';
 
     const appendBtn = appendText(
         footer,
         'button',
-        `${data.workflow_scope === 'partial' ? '🧩' : '🚀'} ${t(data.workflow_scope === 'partial' ? 'recipeAppendCanvas' : 'recipeOpenCanvas')}`,
+        `${isPartial ? '🧩' : '🚀'} ${t(isPartial ? 'recipeAppendCanvas' : 'recipeOpenCanvas')}`,
         'anomalous-recipe-btn-primary-action',
     );
     appendBtn.type = 'button';
+    appendBtn.title = isPartial ? t('recipeAppendCanvas') : t('recipeOpenCanvas');
     appendBtn.onclick = (e) => {
         e.stopPropagation();
         runRecipeCardAction(appendBtn, async () => {
             const fullRecipe = await fetchRecipeData(recipe.filename);
             await applyRecipeToCanvas(owner, fullRecipe);
-        }, data.workflow_scope === 'partial' ? 'recipeAppendError' : 'recipeOpenError');
+        }, isPartial ? 'recipeAppendError' : 'recipeOpenError');
     };
 
     const miniActions = document.createElement('div');
@@ -999,7 +1103,7 @@ function createRecipeCard(owner, recipe) {
         runRecipeCardAction(exportBtn, () => exportRecipePackage(recipe.filename), 'recipeExportError');
     };
 
-    const removeBtn = appendText(miniActions, 'button', '🗑️', 'anomalous-recipe-card-mini-btn');
+    const removeBtn = appendText(miniActions, 'button', '🗑️', 'anomalous-recipe-card-mini-btn is-delete');
     removeBtn.type = 'button';
     removeBtn.title = t('recipeDelete');
     removeBtn.onclick = (e) => {
@@ -1018,7 +1122,35 @@ function createRecipeCard(owner, recipe) {
 
     miniActions.append(editBtn, exportBtn, removeBtn);
     footer.appendChild(miniActions);
-    card.appendChild(footer);
+    body.appendChild(footer);
+    card.appendChild(body);
+
+    // Card click for Detail Modal
+    card.onclick = () => runRecipeCardAction(card, async () => {
+        const bundle = await fetchRecipeBundle(recipe.filename);
+        const result = await showRecipeDetail(owner, {
+            recipe: bundle.data,
+            filename: recipe.filename,
+            history: bundle.history,
+        });
+        if (result?.mode === 'edit') await editRecipe(owner, bundle.data, recipe.filename, bundle.history);
+    }, 'recipeLoadError');
+
+    // 3. 一拖直达画布: "拖入画布后直接打开一个新的画布，就像拖入一个ComfyUI的图片一样"
+    bindMaterialDrag(card, owner, {
+        payload: () => ({
+            type: 'recipe',
+            filename: recipe.filename,
+            scope: data.workflow_scope || 'complete',
+            dragHint: t('recipeDragHint'),
+            dragTargetHint: t('recipeDragTargetCanvas'),
+        }),
+        accepts: () => false,
+        dropOnCanvas: async (event, dragData, graph) => {
+            const fullRecipe = await fetchRecipeData(recipe.filename);
+            await applyRecipeToCanvas(owner, fullRecipe);
+        },
+    });
 
     return card;
 }
@@ -1027,11 +1159,18 @@ export function renderRecipeList(recipes) {
     this.recipeListContainer.replaceChildren();
     const records = Array.isArray(recipes) ? recipes : [];
     const selectedTags = this.recipeSelectedTags || new Set();
-    const filtered = records.filter((recipe) => recipeMatchesFilter(
-        recipe?.data || {},
-        this.recipeSearchQuery || '',
-        selectedTags,
-    ));
+    const scopeFilter = this.recipeScopeFilter || 'all';
+
+    const filtered = records.filter((recipe) => {
+        const data = recipe?.data || {};
+        return recipeMatchesFilter(
+            data,
+            this.recipeSearchQuery || '',
+            selectedTags,
+            scopeFilter,
+        );
+    });
+
     if (this.recipeFilterSummary) this.recipeFilterSummary.textContent = `${filtered.length}/${records.length}`;
     if (!records.length) {
         appendText(this.recipeListContainer, 'p', t('recipeEmpty'), 'anomalous-recipe-empty');

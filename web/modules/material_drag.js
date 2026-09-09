@@ -21,7 +21,7 @@ export function materialDropNode(event, canvas, graph) {
 }
 
 /** Only this page's active drag can mutate a node; transfer data is never trusted. */
-export function bindMaterialDrag(element, owner, { payload, accepts, drop }) {
+export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropOnCanvas }) {
     element.draggable = true;
     element.addEventListener('dragstart', event => {
         if (event.target !== element && event.target?.closest?.('button, input, textarea, select')) { event.preventDefault(); return; }
@@ -43,22 +43,40 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop }) {
             for (const [name, fn] of listeners) window.removeEventListener(name, fn, true);
             if (activeDrag === cleanup) activeDrag = null;
         };
+        const isOverCanvasSurface = event => {
+            const surface = canvas?.canvas;
+            if (!surface) return false;
+            const rect = surface.getBoundingClientRect();
+            return event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+        };
         const target = event => app.graph === graph && app.canvas === canvas ? materialDropNode(event, canvas, graph) : null;
         const over = event => {
             event.preventDefault(); event.stopImmediatePropagation();
-            const node = target(event);
-            const valid = !!node && accepts(node, data);
-            event.dataTransfer.dropEffect = valid ? 'copy' : 'none';
-            hint.classList.toggle('is-target-valid', valid);
-            hint.textContent = valid ? t('materialDropTarget', { name: materialNodeHeading(node) }) : defaultHint;
+            if (dropOnCanvas && isOverCanvasSurface(event)) {
+                event.dataTransfer.dropEffect = 'copy';
+                hint.classList.add('is-target-valid');
+                hint.textContent = data.dragTargetHint || defaultHint;
+            } else {
+                const node = target(event);
+                const valid = !!node && accepts?.(node, data);
+                event.dataTransfer.dropEffect = valid ? 'copy' : 'none';
+                hint.classList.toggle('is-target-valid', valid);
+                hint.textContent = valid ? t('materialDropTarget', { name: materialNodeHeading(node) }) : defaultHint;
+            }
             hint.style.left = `${Math.max(8, Math.min(event.clientX + 16, window.innerWidth - 250))}px`;
             hint.style.top = `${Math.max(8, event.clientY - 48)}px`;
         };
         const finish = async event => {
             event.preventDefault(); event.stopImmediatePropagation();
+            const overCanvas = isOverCanvasSurface(event);
             const node = target(event);
             cleanup();
-            if (!node || !accepts(node, data)) return;
+            if (dropOnCanvas && overCanvas) {
+                try { await dropOnCanvas(event, data, graph); }
+                catch (error) { await anomalousAlert(t(error.message) === error.message ? t('recipeOpenError') : t(error.message)); }
+                return;
+            }
+            if (!node || !accepts?.(node, data)) return;
             try { await drop(node, data, graph); }
             catch (error) { await anomalousAlert(t(error.message) === error.message ? t('materialApplyFailed') : t(error.message)); }
         };
