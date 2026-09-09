@@ -7,6 +7,9 @@ by default.
 
 ## Reading map
 
+The prompt studio reads material prompt payloads through `web/modules/material_prompt_data.js`;
+list summaries do not contain prompt bodies. See the Material Library contract below.
+
 | When changing... | Read... |
 | --- | --- |
 | Python routes, storage, paths, metadata, covers, or scan state | [`docs/architecture/backend.md`](docs/architecture/backend.md) |

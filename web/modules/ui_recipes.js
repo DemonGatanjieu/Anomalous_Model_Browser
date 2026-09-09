@@ -290,7 +290,8 @@ function normaliseSearchText(value) {
     try { return text.normalize('NFKC'); } catch (error) { return text; }
 }
 
-function recipeMatchesFilter(data, query, selectedTags) {
+function recipeMatchesFilter(data, query, selectedTags, scope = 'all') {
+    if (scope !== 'all' && (data?.workflow_scope || 'complete') !== scope) return false;
     const terms = normaliseSearchText(query).split(/\s+/).filter(Boolean);
     const haystack = normaliseSearchText([
         data?.name || '',
@@ -304,23 +305,15 @@ function recipeMatchesFilter(data, query, selectedTags) {
 }
 
 function updateRecipeFilterControls(owner, recipes) {
-    if (!owner.recipeTagBar) return;
-    owner.recipeTagBar.replaceChildren();
-    const tags = [...new Set((recipes || []).flatMap((item) => item?.data?.tags || []))]
-        .filter(Boolean)
-        .sort((left, right) => String(left).localeCompare(String(right)));
-    for (const tag of tags) {
-        const chip = appendText(owner.recipeTagBar, 'button', tag, 'anomalous-recipe-filter-tag');
-        chip.type = 'button';
-        chip.classList.toggle('active', owner.recipeSelectedTags?.has(tag));
-        chip.onclick = () => {
-            if (!owner.recipeSelectedTags) owner.recipeSelectedTags = new Set();
-            if (owner.recipeSelectedTags.has(tag)) owner.recipeSelectedTags.delete(tag);
-            else owner.recipeSelectedTags.add(tag);
-            owner.renderRecipeList(owner.recipeRecords || []);
-        };
-    }
-    if (!tags.length) appendText(owner.recipeTagBar, 'small', t('recipeNoTags'), 'anomalous-recipe-detail-muted');
+    if (!owner.recipeTagSelect) return;
+    const tags = [...new Set((recipes || []).flatMap(item => item?.data?.tags || []))].filter(Boolean).sort((a, b) => a.localeCompare(b));
+    const selected = [...(owner.recipeSelectedTags || [])][0] || '';
+    owner.recipeSelectedTags = new Set(selected ? [selected] : []);
+    owner.recipeTagSelect.replaceChildren();
+    appendText(owner.recipeTagSelect, 'option', t('materialAllTags')).value = '';
+    if (selected && !tags.includes(selected)) tags.push(selected);
+    for (const tag of tags) appendText(owner.recipeTagSelect, 'option', tag).value = tag;
+    owner.recipeTagSelect.value = selected;
 }
 
 function summaryValue(value, fallback = '—') {
@@ -864,6 +857,7 @@ function buildRecipeStudioTopbar(owner) {
 }
 
 export async function showRecipes() {
+    this.closePromptImportDrawer?.();
     if (!this.notebookContainer) {
         this.nbPanel.style.display = 'flex';
         await this.showNotebooks();
@@ -984,9 +978,9 @@ function getRecipeReadiness(recipeData) {
     let missing = 0;
     let unverified = 0;
     for (const ref of refs) {
-        const status = ref?.identity?.status || ref?.currentAvailability;
+        const status = ref?.currentAvailability;
         if (status === 'unavailable' || status === 'missing') missing++;
-        else if (status === 'unverified') unverified++;
+        else if (status !== 'available') unverified++;
     }
     if (missing > 0) return { status: 'missing', label: `${missing} ${t('recipeStatusMissing')}` };
     if (unverified > 0) return { status: 'warning', label: `${unverified} ${t('recipeStatusUnverified')}` };
@@ -1058,7 +1052,7 @@ function createRecipeCard(owner, recipe) {
             tagButton.onclick = (event) => {
                 event.stopPropagation();
                 if (!owner.recipeSelectedTags) owner.recipeSelectedTags = new Set();
-                owner.recipeSelectedTags.add(tag);
+                owner.recipeSelectedTags = new Set([tag]);
                 if (owner.recipeTagSelect) owner.recipeTagSelect.value = tag;
                 owner.renderRecipeList(owner.recipeRecords || []);
             };
@@ -1081,7 +1075,8 @@ function createRecipeCard(owner, recipe) {
     appendBtn.onclick = (e) => {
         e.stopPropagation();
         runRecipeCardAction(appendBtn, async () => {
-            const fullRecipe = await fetchRecipeData(recipe.filename);
+            const fullRecipe = await fetchRecipeData(dragData.filename);
+            if (app.graph !== graph) throw new Error('materialTargetChanged');
             await applyRecipeToCanvas(owner, fullRecipe);
         }, isPartial ? 'recipeAppendError' : 'recipeOpenError');
     };
@@ -1149,7 +1144,8 @@ function createRecipeCard(owner, recipe) {
         }),
         accepts: () => false,
         dropOnCanvas: async (event, dragData, graph) => {
-            const fullRecipe = await fetchRecipeData(recipe.filename);
+            const fullRecipe = await fetchRecipeData(dragData.filename);
+            if (app.graph !== graph) throw new Error('materialTargetChanged');
             await applyRecipeToCanvas(owner, fullRecipe);
         },
     });

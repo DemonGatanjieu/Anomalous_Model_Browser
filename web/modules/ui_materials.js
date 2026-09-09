@@ -1,3 +1,4 @@
+import { loadMaterialPrompts } from './material_prompt_data.js';
 import { bindMaterialDrag } from './material_drag.js';
 import { selectedMaterialNode } from './node_material_actions.js';
 import { applyMaterialToSelectedNode, applyMaterialToNode } from './ui_material_application.js';
@@ -210,7 +211,7 @@ function leaveMaterialDetail(owner) {
     if (owner.materialTopbar) owner.materialTopbar.style.display = 'flex';
     if (owner.materialMainArea) owner.materialMainArea.style.display = 'flex';
     if (owner.materialIntro) owner.materialIntro.style.display = 'flex';
-    if (owner.materialList) owner.materialList.style.display = owner.materialViewMode === 'list' ? 'flex' : 'grid';
+    if (owner.materialList) owner.materialList.style.display = '';
     if (owner.materialToolbar) owner.materialToolbar.style.display = 'flex';
     if (owner.materialPager) owner.materialPager.style.display = 'flex';
     if (owner.materialContext) owner.materialContext.style.display = '';
@@ -458,37 +459,12 @@ function startInlineTitleEdit(owner, material, titleRow, cardTitle, editBtn) {
 }
 
 async function sendMaterialToStudio(owner, material) {
-    let promptText = '';
-    let negativeText = '';
-    if (material.kind === 'prompt_plan' && material.plan) {
-        promptText = material.plan.positive || '';
-        negativeText = material.plan.negative || '';
-    } else if (material.kind === 'prompt_text') {
-        promptText = material.content || material.summary || '';
-    } else {
-        try {
-            const payload = await fetchMaterial(material.filename);
-            const data = payload.data || {};
-            if (data.note?.promptEn) {
-                promptText = data.note.promptEn;
-            } else if (Array.isArray(data.node_blocks)) {
-                for (const block of data.node_blocks) {
-                    const textVal = Array.isArray(block.widgets_values) && typeof block.widgets_values[0] === 'string' ? block.widgets_values[0] : '';
-                    if (!textVal) continue;
-                    if (block.promptRole === 'negative') negativeText = negativeText ? `${negativeText}, ${textVal}` : textVal;
-                    else promptText = promptText ? `${promptText}, ${textVal}` : textVal;
-                }
-            }
-        } catch (err) {
-            console.error('Fetch material for studio failed:', err);
-        }
-    }
-    if (promptText) {
-        appendPromptToStudio(owner, promptText, true, material.name);
-    }
-    if (negativeText) {
-        appendPromptToStudio(owner, negativeText, false, material.name);
-    }
+    try {
+        const { positive, negative } = await loadMaterialPrompts(material.filename);
+        if (!positive && !negative) { await anomalousAlert(t('materialNoPromptContent')); return; }
+        if (positive) appendPromptToStudio(owner, positive, true, material.name);
+        if (negative) appendPromptToStudio(owner, negative, false, material.name);
+    } catch (error) { await anomalousAlert(t('materialDetailLoadError')); }
 }
 
 function renderMaterialCard(owner, material) {
@@ -754,7 +730,7 @@ function buildStudioTopbar(owner) {
             for (const p of Object.values(owner.materialKindPills)) p.classList.remove('is-active');
             pill.classList.add('is-active');
             owner.materialKindCategory = cat.id;
-            owner.materialKind = cat.kind;
+            owner.materialKind = '';
             if (cat.id === 'prompts') owner.materialApplyMode = false;
             owner.refreshMaterials(1);
         };
@@ -869,12 +845,14 @@ export async function refreshMaterials(page = this.materialPage || 1) {
     this.materialList.replaceChildren();
     text(this.materialList, 'p', t('loading'), 'anomalous-material-empty');
     updateMaterialContext(this);
+    for (const [key, pill] of Object.entries(this.materialKindPills || {})) pill.classList.toggle('is-active', key === (this.materialKindCategory || 'all'));
     const query = new URLSearchParams({
         page,
         limit: 48,
         q: this.materialQuery || '',
         tag: this.materialTag || '',
         kind: this.materialKind || '',
+        category: this.materialKindCategory || 'all',
     });
     if (this.materialApplyMode && this.materialTarget) query.set('node_type', this.materialTarget.type);
     try {
@@ -903,6 +881,7 @@ export async function refreshMaterials(page = this.materialPage || 1) {
 }
 
 export async function showMaterials() {
+    this.closePromptImportDrawer?.();
     this.nbPanel.style.display = 'flex';
     if (!this.materialContainer) {
         this.materialContainer = text(this.nbPanel, 'div', '', 'anomalous-nb-container anomalous-material-container');
@@ -925,6 +904,8 @@ export async function showMaterials() {
         this.materialView = null;
     }
     if (!this.materialView) {
+        this.sideStudioInitialized = false;
+        this.sidePromptComposerControl = null;
         this.materialViewLocale = resolveLocale();
         this.materialView = document.createElement('div');
         this.materialView.className = 'anomalous-material-body';
@@ -965,6 +946,7 @@ export async function showMaterials() {
         };
 
         this.closeSideStudio = () => {
+            this.closePromptImportDrawer?.();
             this.materialSideStudio.classList.remove('is-open');
             this.materialStudioToggle?.classList.remove('is-active');
             localStorage.setItem('anomalous_side_studio_open', '0');
@@ -986,6 +968,10 @@ export async function showMaterials() {
         }
     }
     this.materialView.style.display = 'flex';
+    if (this.materialSideStudio?.classList.contains('is-open')) {
+        renderSidePromptComposer(this, this.materialSideStudio, () => this.closeSideStudio());
+        this.sideStudioInitialized = true;
+    }
     updateMaterialContext(this);
     await this.refreshMaterials();
 }
@@ -1019,7 +1005,7 @@ export async function openSavedMaterial(material) {
 export async function openMaterialLibrary() {
     this.materialApplyMode = !!selectedMaterialNode(app);
     this.materialTarget = selectedMaterialNode(app);
-    if (this.materialApplyMode) this.materialKind = '';
+    if (this.materialApplyMode) { this.materialKind = ''; this.materialKindCategory = 'all'; }
     await openSavedMaterial.call(this, null);
 }
 
@@ -1072,9 +1058,10 @@ function watchMaterialSelection(owner) {
                     const target = selectedMaterialNode(app);
                     if (target !== owner.materialTarget) {
                         owner.materialTarget = target;
-                        owner.materialApplyMode = !!target && !['prompt_plan', 'prompt_text', 'prompt_note_bundle'].includes(owner.materialKind);
+                        owner.materialApplyMode = !!target && !(owner.materialKindCategory === 'prompts' || ['prompt_plan', 'prompt_text', 'prompt_note_bundle'].includes(owner.materialKind));
                         updateMaterialContext(owner);
                         owner.refreshPromptTarget?.();
+                        owner.refreshSidePromptTarget?.();
                         if (!owner.promptComposerView && !owner.materialDetailView) owner.refreshMaterials(1);
                     }
                 });
@@ -1151,7 +1138,7 @@ function showTransferCenter(owner) {
             const result = await jsonResponse(response, 'plan import failed');
             if (result.status !== 'success') throw new Error('import failed');
             if (!dialog.open) return;
-            dialog.close(); owner.materialApplyMode = false; owner.materialKind = 'prompt_plan'; await owner.showMaterials();
+            dialog.close(); owner.materialApplyMode = false; owner.materialKind = 'prompt_plan'; owner.materialKindCategory = 'prompts'; await owner.showMaterials();
         } catch (error) { status.textContent = t('promptImportError'); }
         finally { file.value = ''; importPlan.disabled = false; }
     };

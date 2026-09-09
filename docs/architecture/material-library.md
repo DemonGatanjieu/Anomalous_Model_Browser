@@ -39,12 +39,22 @@ lookup filters summaries before opening matching workflows; asset authorization
 uses the same validated summary cache. Callers receive independent summary copies.
 
 The library requests 48 summaries per page. `materials` accepts `q` (name, tags,
-or node type), `tag`, `kind`, exact `node_type`, `page`, and `limit` (at most 100), and returns
+or node type), `tag`, `kind`, `category`, exact `node_type`, `page`, and `limit` (at most 100), and returns
 `total`, `page`, `pages`, and the library's available `tags`. Older callers without
 page/limit retain their complete summary response. Name/tag edits use
 `update_material`, preserve the source workflow, and atomically replace the record.
 Tags are trimmed, deduplicated without case sensitivity, and limited to 20 tags
 of 60 characters each; older records without tags remain valid.
+
+`category` groups sources before pagination: `workflow` contains full snapshots;
+`prompts` contains note/text/plan kinds and selections consisting only of prompt
+nodes; `params` contains other node/recipe selections. `all` is the default.
+Exact `kind` remains compatible. `material_prompt_data.js` reads authoritative
+detail fields for the studio: notes use `note.promptEn`, plans compose saved
+parts, and workflow selections use top-level `prompt_groups`. The import drawer
+pages summaries and fetches prompt text only on inspection; search covers names,
+tags and node types. Side/full editors have separate view references and share
+the active draft; closing or resetting their importer cancels pending requests.
 
 Save, edit, and delete serialize their writes within the server process. Before
 publishing a new record, save compares the source PNG SHA-256, material kind, and

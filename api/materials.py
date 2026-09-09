@@ -1067,12 +1067,26 @@ async def api_save_prompt_plan(request):
         return web.json_response({"status": "error", "message": "Could not save prompt plan"}, status=500)
 
 
+def _material_category(material):
+    if material.get("kind") == "image_workflow_snapshot":
+        return "workflow"
+    if material.get("kind") in ("prompt_text", "prompt_note_bundle", "prompt_plan"):
+        return "prompts"
+    types = material.get("node_types", [])
+    if types and all(_is_prompt_node_type(value) for value in types):
+        return "prompts"
+    return "params"
+
+
 def _query_materials(materials_dir, query):
     materials = _list_materials(materials_dir)
     all_tags = sorted({tag for material in materials for tag in material.get("tags", [])}, key=str.casefold)
     search = query.get("q", "").strip().casefold()
     tag = query.get("tag", "").strip().casefold()
     kind = query.get("kind", "")
+    category = query.get("category", "all")
+    if category not in ("all", "workflow", "params", "prompts"):
+        raise ValueError("Invalid material category")
     node_type = query.get("node_type", "")
     if len(node_type) > 200:
         raise ValueError("Invalid node type")
@@ -1084,6 +1098,7 @@ def _query_materials(materials_dir, query):
                  if (not search or search in " ".join([material["name"], *material["node_types"], *material.get("tags", [])]).casefold())
                  and (not tag or tag in [value.casefold() for value in material.get("tags", [])])
                  and (not kind or material["kind"] == kind)
+                 and (category == "all" or _material_category(material) == category)
                  and (not node_type or node_type in material["node_types"])]
     total = len(materials)
     limit = min(100, max(1, int(query.get("limit", 48))))

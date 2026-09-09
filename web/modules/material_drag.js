@@ -45,7 +45,8 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropO
         };
         const isOverCanvasSurface = event => {
             const surface = canvas?.canvas;
-            if (!surface) return false;
+            if (!surface || app.graph !== graph || app.canvas !== canvas || canvas.graph !== graph) return false;
+            if (event.target !== surface && !event.target?.closest?.('.dom-widget')) return false;
             const rect = surface.getBoundingClientRect();
             return event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
         };

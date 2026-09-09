@@ -1,5 +1,9 @@
 export const i18n = {
     zh: {
+        materialNoPromptContent: '这份素材没有已明确分类的提示词，请先在详情中检查提示词角色。',
+        promptDrawerReplace: '替换这组文字',
+        promptDrawerAppend: '加入这组文字',
+        promptDrawerLoadAll: '载入整套提示词',
         materialAppliedTarget: '已应用到：{name} · #{id}',
         materialDropHint: '拖到兼容的节点上，松手应用；Esc 取消',
         materialDropTarget: '松手应用到：{name}',
@@ -69,7 +73,7 @@ export const i18n = {
         promptWordCount: "{count} 字符",
         promptDragNoteHint: "按住卡头或便签，直接拖拽至画布节点",
         promptDrawerTitle: "素材库提示词速选",
-        promptDrawerSearchPlaceholder: "搜索素材名称或提示词...",
+        promptDrawerSearchPlaceholder: "搜索素材名称、标签或节点类型...",
         promptDrawerEmpty: "未在素材库中找到可用的提示词素材",
         promptClearText: "清空便签",
         promptClearConfirm: "确定要清空该便签的内容吗？",
@@ -1041,6 +1045,10 @@ export const i18n = {
         recipeCardSpecsResolution: '尺寸',
     },
     en: {
+        materialNoPromptContent: 'This material has no classified prompts. Check its prompt roles in details first.',
+        promptDrawerReplace: 'Replace this text',
+        promptDrawerAppend: 'Add this text',
+        promptDrawerLoadAll: 'Load both prompts',
         materialAppliedTarget: 'Applied to: {name} · #{id}',
         materialDropHint: 'Drop on a compatible node to apply; Esc cancels',
         materialDropTarget: 'Drop to apply to: {name}',
@@ -1110,7 +1118,7 @@ export const i18n = {
         promptWordCount: "{count} chars",
         promptDragNoteHint: "Hold card or header to drag onto canvas node",
         promptDrawerTitle: "Material Library Prompts",
-        promptDrawerSearchPlaceholder: "Search material title or prompt text...",
+        promptDrawerSearchPlaceholder: "Search material name, tags or node type...",
         promptDrawerEmpty: "No prompt materials found in library",
         promptClearText: "Clear note",
         promptClearConfirm: "Are you sure you want to clear this note?",

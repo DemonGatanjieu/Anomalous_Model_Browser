@@ -1,3 +1,4 @@
+import { loadMaterialPrompts } from './material_prompt_data.js';
 import { bindMaterialDrag } from './material_drag.js';
 import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
@@ -24,6 +25,7 @@ export function addPromptToDraft(owner, name, positive, negative = '') {
 }
 
 export async function showPromptComposer(owner, material) {
+    owner.closePromptImportDrawer?.();
     owner.materialDetailController?.abort();
     if (material) {
         const controller = new AbortController();
@@ -91,8 +93,9 @@ export function appendPromptToStudio(owner, textSnippet, isPositive = true, note
 function buildPromptComposer(owner, container, options = {}) {
     const isSide = !!options.isSideStudio;
     const view = text(container, 'section', '', `anomalous-prompt-composer${isSide ? ' is-side-studio' : ''}`);
-    owner.promptComposerView = view;
-    const draft = owner.promptPlanDraft ||= newDraft();
+    if (isSide) owner.sidePromptComposerView = view;
+    else owner.promptComposerView = view;
+    let draft = owner.promptPlanDraft ||= newDraft();
     draft.plan = { parts: [], ...composePromptPlan(draft.plan) };
 
     // 1. Topbar
@@ -143,7 +146,7 @@ function buildPromptComposer(owner, container, options = {}) {
         text(posSelect, 'option', t(`promptInsert_${value}`)).value = value;
     }
     posSelect.value = owner.promptInsertPosition || 'after';
-    posSelect.onchange = () => { owner.promptInsertPosition = posSelect.value; };
+    posSelect.onchange = () => { owner.promptInsertPosition = posSelect.value; renderTargetBar(); };
 
     // 3. Paper-like Note Cards Grid
     const notesGrid = text(view, 'div', '', 'anomalous-paper-notes-grid');
@@ -248,7 +251,7 @@ function buildPromptComposer(owner, container, options = {}) {
         }
 
         const info = text(targetBar, 'div', '', 'anomalous-prompt-target-info');
-        info.innerHTML = `🎯 ${t('materialApplyingTo', { name: materialNodeHeading(node), id: node.id })}`;
+        info.textContent = `🎯 ${t('materialApplyingTo', { name: materialNodeHeading(node), id: node.id })}`;
 
         const actions = text(targetBar, 'div', '', 'anomalous-prompt-target-actions');
         const widgetSelect = text(actions, 'select', '');
@@ -279,7 +282,8 @@ function buildPromptComposer(owner, container, options = {}) {
         applyRole('negative', `写入负面 (${t(`promptInsert_${posSelect.value}`)})`);
     };
 
-    owner.refreshPromptTarget = renderTargetBar;
+    if (isSide) owner.refreshSidePromptTarget = renderTargetBar;
+    else owner.refreshPromptTarget = renderTargetBar;
     renderTargetBar();
 
     // 5. Drawer Integration: Import Prompts from Material Library
@@ -338,7 +342,8 @@ function buildPromptComposer(owner, container, options = {}) {
 
     newBtn.onclick = async () => {
         if (await anomalousConfirm(t('promptReplaceDraft'))) {
-            owner.promptPlanDraft = newDraft();
+            owner.closePromptImportDrawer?.();
+            owner.promptPlanDraft = draft = newDraft();
             if (!isSide) {
                 showPromptComposer(owner);
             } else {
@@ -398,152 +403,74 @@ function applyPromptDrop(node, data, graph, parent) {
  * Slide-out Drawer: Quick Prompt Importer from Material Library
  */
 async function openMaterialImportDrawer(owner, draft, onUpdated) {
-    document.querySelector('.anomalous-prompt-import-drawer')?.remove();
-
-    const drawer = document.createElement('div');
-    drawer.className = 'anomalous-prompt-import-drawer';
-
-    // Header
+    owner.closePromptImportDrawer?.();
+    const drawer = text(document.body, 'div', '', 'anomalous-prompt-import-drawer');
     const header = text(drawer, 'div', '', 'anomalous-drawer-header');
     text(header, 'h4', `📥 ${t('promptDrawerTitle')}`);
-    const closeBtn = text(header, 'button', '✕', 'anomalous-paper-note-btn');
-    closeBtn.onclick = () => drawer.remove();
-
-    // Search bar
-    const searchWrap = text(drawer, 'div', '', 'anomalous-drawer-search');
-    const searchInput = text(searchWrap, 'input', '');
-    searchInput.placeholder = t('promptDrawerSearchPlaceholder');
-    searchInput.type = 'search';
-
-    // List container
-    const listContainer = text(drawer, 'div', '', 'anomalous-drawer-list');
-    text(listContainer, 'div', '⏳ 正在加载素材库提示词...', 'anomalous-material-muted');
-
-    document.body.appendChild(drawer);
-
-    const onKeydown = e => {
-        if (e.key === 'Escape') {
-            drawer.remove();
-            window.removeEventListener('keydown', onKeydown);
-        }
+    let controller, timer;
+    const close = () => {
+        controller?.abort(); clearTimeout(timer); drawer.remove();
+        window.removeEventListener('keydown', onKeydown);
+        if (owner.closePromptImportDrawer === close) owner.closePromptImportDrawer = null;
     };
+    const onKeydown = event => { if (event.key === 'Escape') close(); };
+    owner.closePromptImportDrawer = close;
     window.addEventListener('keydown', onKeydown);
-
-    try {
-        const response = await fetch('/anomalous/materials?limit=100');
-        const payload = await jsonResponse(response, 'load materials failed');
-        const items = payload.data?.items || [];
-
-        // Extract and shape prompt data
-        const promptMaterials = [];
-        for (const item of items) {
-            let pos = '';
-            let neg = '';
-
-            if (item.kind === 'prompt_plan' && item.plan) {
-                pos = item.plan.positive || '';
-                neg = item.plan.negative || '';
-            } else if (item.kind === 'prompt_text') {
-                pos = item.content || item.summary || '';
-            } else if (Array.isArray(item.node_blocks)) {
-                for (const block of item.node_blocks) {
-                    const textVal = Array.isArray(block.widgets_values) && typeof block.widgets_values[0] === 'string'
-                        ? block.widgets_values[0]
-                        : '';
-                    if (!textVal) continue;
-                    if (block.promptRole === 'positive') pos = pos ? `${pos}, ${textVal}` : textVal;
-                    else if (block.promptRole === 'negative') neg = neg ? `${neg}, ${textVal}` : textVal;
-                    else if (/cliptextencode/i.test(block.type || '')) pos = pos ? `${pos}, ${textVal}` : textVal;
-                }
-            }
-
-            if (pos || neg || item.kind === 'prompt_plan') {
-                promptMaterials.push({
-                    raw: item,
-                    name: item.name || '未命名素材',
-                    positive: pos,
-                    negative: neg,
-                    tags: item.tags || [],
-                });
-            }
-        }
-
-        const renderList = (filter = '') => {
-            listContainer.replaceChildren();
-            const lower = filter.toLowerCase().trim();
-            const filtered = promptMaterials.filter(m =>
-                !lower ||
-                m.name.toLowerCase().includes(lower) ||
-                m.positive.toLowerCase().includes(lower) ||
-                m.negative.toLowerCase().includes(lower) ||
-                m.tags.some(tag => tag.toLowerCase().includes(lower))
-            );
-
-            if (!filtered.length) {
-                text(listContainer, 'div', t('promptDrawerEmpty'), 'anomalous-material-empty');
-                return;
-            }
-
-            for (const item of filtered) {
-                const card = text(listContainer, 'div', '', 'anomalous-drawer-item');
-                text(card, 'div', item.name, 'anomalous-drawer-item-title');
-
-                if (item.positive) {
-                    const prev = text(card, 'div', `✨ 正面: ${item.positive}`, 'anomalous-drawer-item-preview');
-                    prev.title = item.positive;
-                }
-                if (item.negative) {
-                    const prev = text(card, 'div', `🚫 负面: ${item.negative}`, 'anomalous-drawer-item-preview');
-                    prev.title = item.negative;
-                }
-
-                const actions = text(card, 'div', '', 'anomalous-drawer-item-actions');
-
-                if (item.positive) {
-                    const overwritePos = text(actions, 'button', `覆盖正面`, 'anomalous-drawer-item-btn');
-                    overwritePos.onclick = () => {
-                        draft.plan.positive = item.positive;
-                        onUpdated();
-                    };
-
-                    const appendPos = text(actions, 'button', `追加正面`, 'anomalous-drawer-item-btn');
-                    appendPos.onclick = () => {
-                        draft.plan.positive = joinPromptText(draft.plan.positive, item.positive, owner.promptInsertPosition || 'after');
-                        onUpdated();
-                    };
-                }
-
-                if (item.negative) {
-                    const overwriteNeg = text(actions, 'button', `覆盖负面`, 'anomalous-drawer-item-btn');
-                    overwriteNeg.onclick = () => {
-                        draft.plan.negative = item.negative;
-                        onUpdated();
-                    };
-
-                    const appendNeg = text(actions, 'button', `追加负面`, 'anomalous-drawer-item-btn');
-                    appendNeg.onclick = () => {
-                        draft.plan.negative = joinPromptText(draft.plan.negative, item.negative, owner.promptInsertPosition || 'after');
-                        onUpdated();
-                    };
-                }
-
-                const loadAll = text(actions, 'button', `整套导入`, 'anomalous-drawer-item-btn');
-                loadAll.onclick = () => {
-                    if (item.positive) draft.plan.positive = item.positive;
-                    if (item.negative) draft.plan.negative = item.negative;
-                    if (!draft.name.trim() && item.name) draft.name = item.name;
-                    if (item.tags?.length) draft.tags = [...new Set([...draft.tags, ...item.tags])];
-                    onUpdated();
+    text(header, 'button', '✕', 'anomalous-paper-note-btn').onclick = close;
+    const search = text(text(drawer, 'div', '', 'anomalous-drawer-search'), 'input', '');
+    search.type = 'search'; search.placeholder = t('promptDrawerSearchPlaceholder');
+    const list = text(drawer, 'div', '', 'anomalous-drawer-list');
+    const pager = text(drawer, 'div', '', 'anomalous-prompt-actions');
+    const load = async (page = 1) => {
+        controller?.abort(); controller = new AbortController(); const current = controller;
+        list.replaceChildren(); pager.replaceChildren(); text(list, 'p', t('loading'));
+        try {
+            const query = new URLSearchParams({ category: 'prompts', q: search.value, page, limit: 48 });
+            const response = await fetch(`/anomalous/materials?${query}`, { signal: current.signal });
+            const payload = await jsonResponse(response, 'material list failed');
+            if (current.signal.aborted || !drawer.isConnected) return;
+            list.replaceChildren();
+            if (!payload.materials?.length) text(list, 'p', t('materialNoMatches'));
+            for (const item of payload.materials || []) {
+                const card = text(list, 'div', '', 'anomalous-drawer-item');
+                text(card, 'strong', item.name || t('materialUntitled'));
+                text(card, 'small', (item.tags || []).join(' · '));
+                const inspect = text(card, 'button', t('materialViewDetails'), 'anomalous-drawer-item-btn');
+                inspect.onclick = async () => {
+                    inspect.disabled = true;
+                    try {
+                        const prompts = await loadMaterialPrompts(item.filename, current.signal);
+                        if (current.signal.aborted || !card.isConnected) return;
+                        if (!prompts.positive && !prompts.negative) {
+                            inspect.textContent = t('materialNoPromptContent'); inspect.disabled = false; return;
+                        }
+                        for (const role of ['positive', 'negative']) {
+                            if (!prompts[role]) continue;
+                            text(card, 'strong', t(`promptFinal_${role}`));
+                            text(card, 'pre', prompts[role], 'anomalous-material-note-text');
+                            const replace = text(card, 'button', t('promptDrawerReplace'), 'anomalous-drawer-item-btn');
+                            replace.onclick = () => { draft.plan[role] = prompts[role]; onUpdated(); };
+                            const append = text(card, 'button', t('promptDrawerAppend'), 'anomalous-drawer-item-btn');
+                            append.onclick = () => { draft.plan[role] = joinPromptText(draft.plan[role], prompts[role], owner.promptInsertPosition || 'after'); onUpdated(); };
+                        }
+                        const whole = text(card, 'button', t('promptDrawerLoadAll'), 'anomalous-drawer-item-btn');
+                        whole.onclick = () => {
+                            draft.plan.positive = prompts.positive; draft.plan.negative = prompts.negative;
+                            if (!draft.name.trim()) draft.name = item.name;
+                            draft.tags = [...new Set([...draft.tags, ...(item.tags || [])])].slice(0, 20);
+                            onUpdated();
+                        };
+                        inspect.remove();
+                    } catch (error) { if (error.name !== 'AbortError') { inspect.textContent = t('materialDetailLoadError'); inspect.disabled = false; } }
                 };
             }
-        };
-
-        renderList();
-        searchInput.oninput = () => renderList(searchInput.value);
-        searchInput.focus();
-
-    } catch (err) {
-        listContainer.replaceChildren();
-        text(listContainer, 'div', `加载素材库失败: ${err.message}`, 'anomalous-material-empty');
-    }
+            const previous = text(pager, 'button', t('materialPrevious'), 'anomalous-btn-ghost');
+            previous.disabled = payload.page <= 1; previous.onclick = () => load(payload.page - 1);
+            text(pager, 'span', t('materialPageSummary', { page: payload.page, pages: payload.pages, count: payload.total }));
+            const next = text(pager, 'button', t('materialNext'), 'anomalous-btn-ghost');
+            next.disabled = payload.page >= payload.pages; next.onclick = () => load(payload.page + 1);
+        } catch (error) { if (!current.signal.aborted) { list.replaceChildren(); text(list, 'p', t('materialLoadError')); } }
+    };
+    search.oninput = () => { clearTimeout(timer); timer = setTimeout(() => load(), 250); };
+    await load(); search.focus();
 }

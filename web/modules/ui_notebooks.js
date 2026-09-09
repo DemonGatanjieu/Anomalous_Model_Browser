@@ -31,6 +31,7 @@ function restoreWorkspaceReturnPanel(owner) {
 }
 
 export function closeWorkspace() {
+    this.closePromptImportDrawer?.();
     clearTimeout(this.materialSearchTimer);
     this.materialListController?.abort();
     this.materialListController = null;
@@ -64,6 +65,7 @@ export function closeWorkspace() {
 
 
 export async function showNotebooks() {
+        this.closePromptImportDrawer?.();
         if (this.materialContainer) this.materialContainer.style.display = 'none';
         if (this.notebookContainer) this.notebookContainer.style.display = 'flex';
         if (this.nbInitialized) {

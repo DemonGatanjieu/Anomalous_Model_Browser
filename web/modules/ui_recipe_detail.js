@@ -1,3 +1,4 @@
+import { escapeHtml } from './safe_dom.js';
 import { showMaterialSaved } from './material_feedback.js';
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
@@ -2817,7 +2818,7 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         if (baseModelVal) {
             const modelCard = document.createElement('div');
             modelCard.className = 'anomalous-recipe-model-highlight-card';
-            modelCard.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:1.1rem;">🧠</span><span style="font-size:0.75rem;color:#94a3b8;text-transform:uppercase;font-weight:600;">${t('recipeDetailBaseModel') || '底模'}</span></div><div style="font-size:0.9rem;font-weight:600;color:#f8fafc;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${baseModelVal}">${baseModelVal}</div>`;
+            modelCard.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:1.1rem;">🧠</span><span style="font-size:0.75rem;color:#94a3b8;text-transform:uppercase;font-weight:600;">${t('recipeDetailBaseModel') || '底模'}</span></div><div style="font-size:0.9rem;font-weight:600;color:#f8fafc;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(String(baseModelVal))}">${escapeHtml(String(baseModelVal))}</div>`;
             modelsDeck.appendChild(modelCard);
         }
 
@@ -2839,7 +2840,7 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 const modelWeight = typeof lora === 'object' && lora !== null && lora.strength_model !== undefined ? lora.strength_model : 1;
                 const clipWeight = typeof lora === 'object' && lora !== null && lora.strength_clip !== undefined ? lora.strength_clip : 1;
 
-                loraPill.innerHTML = `<div class="anomalous-recipe-lora-name" title="${loraName}">🎭 ${loraName}</div><div class="anomalous-recipe-lora-weights"><span title="Model Strength">M:${modelWeight}</span><span title="CLIP Strength">C:${clipWeight}</span></div>`;
+                loraPill.innerHTML = `<div class="anomalous-recipe-lora-name" title="${escapeHtml(String(loraName))}">🎭 ${escapeHtml(String(loraName))}</div><div class="anomalous-recipe-lora-weights"><span title="Model Strength">M:${escapeHtml(String(modelWeight))}</span><span title="CLIP Strength">C:${escapeHtml(String(clipWeight))}</span></div>`;
                 loraGrid.appendChild(loraPill);
             }
             loraSection.appendChild(loraGrid);

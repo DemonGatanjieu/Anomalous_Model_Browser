@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Material Library
+- Fixed grouped material filters, Recipe scope/tag filters, and prompt studio imports using actual detail payloads. Fixed side-studio draft reset/return state and guarded recipe drops against canvas changes. Recipe model status no longer treats saved hash verification as current availability.
 - Separated the lower-left Material Library from the Recipes/Prompt Notes workspace. Added canvas drag-and-drop: parameter materials replace matching node values, while the simplified prompt panel inserts text at the beginning or end, with undo.
 - Material Library now opens from the lower-left control; Workflow Recipes stays at the upper right. Import/export tools are available from the library's More menu.
 - Added Prompt Combinations: ordered general/specific fragments, enable switches, separate positive/negative content, saved snapshots, and JSON import/export.
