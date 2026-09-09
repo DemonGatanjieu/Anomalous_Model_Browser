@@ -63,6 +63,7 @@ def setup_routes(app):
     app.router.add_post('/anomalous/save_image_material', api_save_image_material)
     app.router.add_post('/anomalous/save_parameter_material', api_save_parameter_material)
     app.router.add_post('/anomalous/save_prompt_note_material', api_save_prompt_note_material)
+    app.router.add_post('/anomalous/save_prompt_plan', api_save_prompt_plan)
     app.router.add_post('/anomalous/delete_material', api_delete_material)
     app.router.add_post('/anomalous/update_material', api_update_material)
 

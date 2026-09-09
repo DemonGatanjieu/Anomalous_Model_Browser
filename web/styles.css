@@ -7285,3 +7285,69 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-material-note-text { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.7; }
 .anomalous-notebook-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .anomalous-nb-editor .anomalous-nb-textarea { font: inherit; line-height: 1.6; padding: 12px; box-sizing: border-box; }
+/* Material application and prompt composition: structural styling, no animation or blur. */
+.anomalous-prompt-composer {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    gap: 12px;
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 16px;
+    box-sizing: border-box;
+}
+.anomalous-prompt-composer > * { flex-shrink: 0; }
+.anomalous-prompt-actions,
+.anomalous-prompt-target,
+.anomalous-material-application-result {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.anomalous-prompt-actions h3 { margin: 0; }
+.anomalous-prompt-field { display: flex; flex-direction: column; gap: 6px; }
+.anomalous-prompt-composer textarea,
+.anomalous-prompt-composer input:not([type="checkbox"]),
+.anomalous-prompt-composer select {
+    box-sizing: border-box;
+    max-width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color, #454545);
+    border-radius: 6px;
+    background: var(--comfy-input-bg, #222);
+    color: var(--input-text, #ddd);
+    font: inherit;
+}
+.anomalous-prompt-composer textarea { width: 100%; resize: vertical; min-height: 72px; }
+.anomalous-prompt-composer textarea[readonly] { min-height: 100px; }
+.anomalous-prompt-parts { display: flex; flex-direction: column; gap: 10px; }
+.anomalous-prompt-part {
+    padding: 12px;
+    border: 1px solid var(--border-color, #454545);
+    border-radius: 8px;
+}
+.anomalous-prompt-part > *:not(summary) { margin-top: 10px; }
+.anomalous-prompt-part summary { cursor: pointer; overflow-wrap: anywhere; }
+.anomalous-prompt-part summary input { margin-right: 8px; }
+.anomalous-prompt-part summary small { margin-left: 10px; color: var(--descrip-text, #aaa); }
+.anomalous-material-target-context { padding: 12px 16px; border-bottom: 1px solid var(--border-color, #454545); }
+.anomalous-material-target-context > button { margin-left: 10px; }
+.anomalous-material-target-context > small { display: block; margin-top: 6px; color: var(--descrip-text, #aaa); }
+.anomalous-material-application-result { margin-top: 10px; }
+.anomalous-material-choice {
+    max-width: min(560px, calc(100vw - 32px));
+    max-height: 80vh;
+    overflow-y: auto;
+    border: 1px solid var(--border-color, #454545);
+    border-radius: 10px;
+    padding: 20px;
+    background: var(--comfy-menu-bg, #222);
+    color: var(--input-text, #ddd);
+}
+.anomalous-material-choice > button { display: block; margin: 10px 0; }
+.anomalous-material-choice::backdrop { background: rgba(0, 0, 0, .55); }
+.anomalous-material-inspect-action { position: absolute; bottom: 10px; right: 10px; z-index: 2; }

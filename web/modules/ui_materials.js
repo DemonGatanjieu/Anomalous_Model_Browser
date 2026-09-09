@@ -1,10 +1,13 @@
+import { selectedMaterialNode } from './node_material_actions.js';
+import { applyMaterialToSelectedNode } from './ui_material_application.js';
+import { showPromptComposer, addPromptToDraft } from './ui_prompt_composer.js';
 /** Curated image/workflow and Recipe parameter materials. */
 
 import { app } from '../../../scripts/app.js';
-import { translate } from './locales.js';
+import { translate, resolveLocale } from './locales.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
-import { text, sectionLabel, fileBaseName, jsonResponse, renderDetailedNodeCards, applyPromptRolesToBlocks, renderMaterialPromptGroups } from './material_inspector.js';
+import { text, sectionLabel, fileBaseName, jsonResponse, renderDetailedNodeCards, applyPromptRolesToBlocks, renderMaterialPromptGroups, materialNodeHeading } from './material_inspector.js';
 
 const t = (key, params) => translate(key, params);
 const isPromptMaterial = material => ['prompt_note_bundle', 'prompt_text'].includes(material.kind);
@@ -80,6 +83,8 @@ function renderMaterialInspector(content, payload, owner, material) {
             try { await navigator.clipboard.writeText(prompt.textContent); copy.textContent = t('materialCopied'); }
             catch (error) { await anomalousAlert(t('materialCopyError')); }
         };
+        const add = text(content, 'button', t('promptAddToDraft'), 'anomalous-btn-ghost');
+        add.onclick = () => addPromptToDraft(owner, material.name, note.promptEn || '');
         const models = [note.mainModel, ...(note.loras || [])].filter(Boolean);
         if (models.length) {
             sectionLabel(content, t('notebookCompanionModels'));
@@ -125,7 +130,11 @@ function renderMaterialInspector(content, payload, owner, material) {
         text(content, 'p', t('materialUseFromNodeAssistant'), 'anomalous-material-muted');
     }
 
-    renderMaterialPromptGroups(content, payload.prompt_groups, { manual: hasManualRole });
+    if (renderMaterialPromptGroups(content, payload.prompt_groups, { manual: hasManualRole })) {
+        const add = text(content, 'button', t('promptAddToDraft'), 'anomalous-btn-ghost');
+        add.onclick = () => addPromptToDraft(owner, material.name,
+            (payload.prompt_groups.positive || []).join('\n'), (payload.prompt_groups.negative || []).join('\n'));
+    }
 
     if (references.length) {
         sectionLabel(content, t('materialModelReferences'));
@@ -182,6 +191,7 @@ function renderMaterialInspector(content, payload, owner, material) {
 }
 
 function leaveMaterialDetail(owner) {
+    owner.materialOpenedDetail = null;
     owner.materialDetailController?.abort();
     owner.materialDetailController = null;
     owner.materialDetailView?.remove();
@@ -190,6 +200,7 @@ function leaveMaterialDetail(owner) {
     if (owner.materialList) owner.materialList.style.display = 'grid';
     if (owner.materialToolbar) owner.materialToolbar.style.display = 'flex';
     if (owner.materialPager) owner.materialPager.style.display = 'flex';
+    if (owner.materialContext) owner.materialContext.style.display = '';
 }
 
 async function deleteMaterial(owner, material) {
@@ -284,7 +295,7 @@ function buildMaterialMediaStage(owner, material, sourceNameElement) {
         imageStage.appendChild(image);
         imageStage.onclick = () => owner.showGalleryViewer?.(sourceUrl);
     } else {
-        imageStage.textContent = isPromptMaterial(material) ? '💬' : material.kind === 'recipe_parameter_selection' ? '🧰' : '🖼️';
+        imageStage.textContent = (isPromptMaterial(material) || material.kind === 'prompt_plan') ? '💬' : material.kind === 'recipe_parameter_selection' ? '🧰' : '🖼️';
         imageStage.disabled = true;
     }
     media.appendChild(imageStage);
@@ -311,6 +322,8 @@ function buildMaterialMediaStage(owner, material, sourceNameElement) {
 }
 
 async function showMaterialDetail(owner, material) {
+    if (material.kind === 'prompt_plan') return showPromptComposer(owner, material);
+    owner.materialOpenedDetail = material;
     owner.materialDetailController?.abort();
     owner.materialDetailView?.remove();
     owner.materialDetailView = null;
@@ -433,16 +446,23 @@ function renderMaterialCard(owner, material) {
     const card = document.createElement('article');
     card.className = 'anomalous-material-card';
     card.title = t('materialViewDetails') || '点击查看详细参数';
-    card.onclick = () => showMaterialDetail(owner, material);
+    const activate = () => owner.materialApplyMode ? applyLibraryMaterial(owner, material) : showMaterialDetail(owner, material);
+    card.onclick = activate;
     card.tabIndex = 0;
     card.setAttribute('aria-label', `${material.name} — ${t('materialViewDetails')}`);
     card.onkeydown = event => {
         if (event.target === card && ['Enter', ' '].includes(event.key)) {
             event.preventDefault();
-            showMaterialDetail(owner, material);
+            activate();
         }
     };
 
+    if (owner.materialApplyMode) {
+        card.title = t('materialApplyCard');
+        card.setAttribute('aria-label', `${material.name} — ${t('materialApplyCard')}`);
+        const inspect = text(card, 'button', t('materialViewDetails'), 'anomalous-material-inspect-action');
+        inspect.onclick = event => { event.stopPropagation(); showMaterialDetail(owner, material); };
+    }
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'anomalous-material-card-delete';
@@ -454,7 +474,7 @@ function renderMaterialCard(owner, material) {
     };
     card.appendChild(remove);
 
-    if ((material.capabilities || []).includes('open_workflow')) {
+    if (!owner.materialApplyMode && (material.capabilities || []).includes('open_workflow')) {
         const quickOpen = document.createElement('button');
         quickOpen.type = 'button';
         quickOpen.className = 'anomalous-material-card-quick-load';
@@ -481,7 +501,7 @@ function renderMaterialCard(owner, material) {
         image.loading = 'lazy';
         preview.appendChild(image);
     } else {
-        preview.textContent = isPromptMaterial(material) ? '💬' : material.kind === 'recipe_parameter_selection' ? '🧰' : '🖼️';
+        preview.textContent = (isPromptMaterial(material) || material.kind === 'prompt_plan') ? '💬' : material.kind === 'recipe_parameter_selection' ? '🧰' : '🖼️';
     }
     card.appendChild(preview);
 
@@ -515,7 +535,9 @@ function renderMaterialCard(owner, material) {
 
     const metadata = document.createElement('div');
     metadata.className = 'anomalous-material-card-meta';
-    if (isPromptMaterial(material)) {
+    if (material.kind === 'prompt_plan') {
+        text(metadata, 'span', t('promptPlan'), 'anomalous-material-scope-badge');
+    } else if (isPromptMaterial(material)) {
         text(metadata, 'span', promptKindLabel(material), 'anomalous-material-scope-badge is-prompt');
     } else if (material.kind === 'recipe_parameter_selection') {
         text(metadata, 'span', t('materialRecipeParameterMaterial'), 'anomalous-material-scope-badge is-nodes');
@@ -530,13 +552,13 @@ function renderMaterialCard(owner, material) {
     } else {
         text(metadata, 'span', t('materialFullWorkflowMaterial'), 'anomalous-material-scope-badge is-workflow');
     }
-    if (!isPromptMaterial(material)) text(metadata, 'span', t('materialNodeSummary', { count: material.node_count || 0 }), 'anomalous-material-meta-pill');
+    if (!isPromptMaterial(material) && material.kind !== 'prompt_plan') text(metadata, 'span', t('materialNodeSummary', { count: material.node_count || 0 }), 'anomalous-material-meta-pill');
     body.appendChild(metadata);
 
     const secondaryRow = document.createElement('div');
     secondaryRow.className = 'anomalous-material-card-subinfo';
     if (material.timestamp) {
-        const dateStr = new Date(material.timestamp * 1000).toLocaleDateString();
+        const dateStr = new Date(material.timestamp).toLocaleDateString();
         text(secondaryRow, 'span', dateStr, 'anomalous-material-card-date');
     }
     renderSourceRecipeMark(secondaryRow, material.source_recipe);
@@ -547,20 +569,14 @@ function renderMaterialCard(owner, material) {
     if (Array.isArray(material.node_types) && material.node_types.length) {
         const displayLimit = 2;
         const shownTypes = material.node_types.slice(0, displayLimit);
-        const labels = shownTypes.map(type => {
-            const registered = globalThis.LiteGraph?.registered_node_types?.[type];
-            return registered?.title || registered?.nodeData?.display_name || type;
-        });
+        const labels = shownTypes.map(type => materialNodeHeading({ type }));
         const remaining = material.node_types.length - shownTypes.length;
         let summaryText = labels.join(' · ');
         if (remaining > 0) {
             summaryText += t('materialOtherNodeTypes', { count: remaining });
         }
         const types = text(body, 'small', summaryText, 'anomalous-material-types');
-        types.title = material.node_types.map(type => {
-            const registered = globalThis.LiteGraph?.registered_node_types?.[type];
-            return registered?.title || registered?.nodeData?.display_name || type;
-        }).join(' · ');
+        types.title = material.node_types.map(type => materialNodeHeading({ type })).join(' · ');
     }
     if (material.tags?.length) {
         const tags = text(body, 'div', '', 'anomalous-material-tags');
@@ -638,12 +654,18 @@ function buildMaterialFilters(owner) {
         ['recipe_parameter_selection', 'materialRecipeParameterMaterial'],
         ['prompt_note_bundle', 'materialPromptNoteBundle'],
         ['prompt_text', 'materialPromptTextKind'],
+        ['prompt_plan', 'promptPlan'],
     ]) {
         const option = text(kind, 'option', t(key));
         option.value = value;
     }
+    owner.materialKindInput = kind;
     kind.value = owner.materialKind || '';
-    kind.onchange = () => { owner.materialKind = kind.value; owner.refreshMaterials(1); };
+    kind.onchange = () => {
+        owner.materialKind = kind.value;
+        if (['prompt_plan', 'prompt_text', 'prompt_note_bundle'].includes(kind.value)) owner.materialApplyMode = false;
+        owner.refreshMaterials(1);
+    };
     owner.materialTagSelect = text(toolbar, 'select', '');
     owner.materialTagSelect.setAttribute('aria-label', t('materialTags'));
     owner.materialTagSelect.onchange = () => { owner.materialTag = owner.materialTagSelect.value; owner.refreshMaterials(1); };
@@ -675,8 +697,10 @@ export async function refreshMaterials(page = this.materialPage || 1) {
     this.materialListController = controller;
     this.materialList.replaceChildren();
     text(this.materialList, 'p', t('loading'), 'anomalous-material-empty');
+    updateMaterialContext(this);
     const query = new URLSearchParams({ page, limit: 48, q: this.materialQuery || '',
         tag: this.materialTag || '', kind: this.materialKind || '' });
+    if (this.materialApplyMode && this.materialTarget) query.set('node_type', this.materialTarget.type);
     try {
         const response = await fetch(`/anomalous/materials?${query}`, { cache: 'no-store', signal: controller.signal });
         const payload = await jsonResponse(response, 'material list failed');
@@ -707,9 +731,18 @@ export async function showMaterials() {
         this.nbPanel.style.display = 'flex';
         await this.showNotebooks();
     }
+    watchMaterialSelection(this);
+    this.promptComposerView?.remove();
+    this.promptComposerView = null;
+    this.refreshPromptTarget = null;
     hideSiblingWorkspaceViews(this);
     leaveMaterialDetail(this);
+    if (this.materialView && this.materialViewLocale !== resolveLocale()) {
+        this.materialView.remove();
+        this.materialView = null;
+    }
     if (!this.materialView) {
+        this.materialViewLocale = resolveLocale();
         this.materialView = document.createElement('div');
         this.materialView.className = 'anomalous-material-body';
         const intro = document.createElement('div');
@@ -723,6 +756,16 @@ export async function showMaterials() {
         refresh.onclick = () => this.refreshMaterials();
         intro.prepend(introCopy);
         this.materialView.appendChild(intro);
+        const actions = text(introCopy, 'div', '', 'anomalous-prompt-actions');
+        const compose = text(actions, 'button', t('promptCombinations'), 'anomalous-btn-primary');
+        compose.onclick = () => showPromptComposer(this);
+        const plans = text(actions, 'button', t('promptSavedPlans'), 'anomalous-btn-ghost');
+        plans.onclick = () => { this.materialApplyMode = false; this.materialKind = 'prompt_plan'; this.materialKindInput.value = 'prompt_plan'; this.refreshMaterials(1); };
+        const more = text(actions, 'details', '', 'anomalous-secondary-actions');
+        text(more, 'summary', t('notebookMore'));
+        const transfer = text(more, 'button', t('materialTransferCenter'), 'anomalous-btn-ghost');
+        transfer.onclick = () => showTransferCenter(this);
+        this.materialContext = text(this.materialView, 'div', '', 'anomalous-material-target-context');
         buildMaterialFilters(this);
         this.materialList = document.createElement('div');
         this.materialList.className = 'anomalous-material-list';
@@ -732,6 +775,8 @@ export async function showMaterials() {
         this.notebookContainer.appendChild(this.materialView);
     }
     this.materialView.style.display = 'flex';
+    this.materialKindInput.value = this.materialKind || '';
+    updateMaterialContext(this);
     await this.refreshMaterials();
 }
 
@@ -757,5 +802,137 @@ export async function openSavedMaterial(material) {
         if (panel) panel.style.display = 'none';
     }
     await showMaterials.call(this);
-    await showMaterialDetail(this, material);
+    if (material) await showMaterialDetail(this, material);
+}
+
+
+export async function openMaterialLibrary() {
+    this.materialApplyMode = !!selectedMaterialNode(app);
+    this.materialTarget = selectedMaterialNode(app);
+    if (this.materialApplyMode) this.materialKind = '';
+    await openSavedMaterial.call(this, null);
+}
+
+function updateMaterialContext(owner) {
+    const node = selectedMaterialNode(app);
+    owner.materialTarget = node;
+    if (!node) owner.materialApplyMode = false;
+    if (!owner.materialContext) return;
+    owner.materialContext.replaceChildren();
+    text(owner.materialContext, 'strong', node
+        ? t(owner.materialApplyMode ? 'materialApplyingTo' : 'materialSelectedTarget', { name: materialNodeHeading(node), id: node.id })
+        : t('materialSelectOneNode'));
+    if (node) {
+        const toggle = text(owner.materialContext, 'button', t(owner.materialApplyMode ? 'materialBrowseAll' : 'materialShowCompatible'), 'anomalous-btn-ghost');
+        toggle.onclick = () => { owner.materialApplyMode = !owner.materialApplyMode; owner.materialKind = ''; owner.materialKindInput.value = ''; owner.refreshMaterials(1); };
+    }
+    text(owner.materialContext, 'small', t('materialApplyContextHint'));
+}
+
+function watchMaterialSelection(owner) {
+    if (owner.materialSelectionHooked || !app.canvas) return;
+    owner.materialSelectionHooked = true;
+    window.addEventListener('anomalous-language-change', async () => {
+        if (owner.nbPanel?.style.display !== 'flex' || owner.materialView?.style.display !== 'flex') return;
+        const detail = owner.materialOpenedDetail;
+        const composing = !!owner.promptComposerView;
+        await owner.showMaterials();
+        if (composing) await showPromptComposer(owner);
+        else if (detail) await showMaterialDetail(owner, detail);
+    });
+    let scheduled = false;
+    for (const key of ['onNodeSelected', 'onNodeDeselected']) {
+        const previous = app.canvas[key];
+        app.canvas[key] = function (...args) {
+            const result = previous?.apply(this, args);
+            if (!scheduled) {
+                scheduled = true;
+                queueMicrotask(() => {
+                    scheduled = false;
+                    if (owner.nbPanel?.style.display === 'none' || owner.materialView?.style.display !== 'flex') return;
+                    const target = selectedMaterialNode(app);
+                    if (target !== owner.materialTarget) {
+                        owner.materialTarget = target;
+                        owner.materialApplyMode = !!target && !['prompt_plan', 'prompt_text', 'prompt_note_bundle'].includes(owner.materialKind);
+                        updateMaterialContext(owner);
+                        owner.refreshPromptTarget?.();
+                        if (!owner.promptComposerView && !owner.materialDetailView) owner.refreshMaterials(1);
+                    }
+                });
+            }
+            return result;
+        };
+    }
+}
+
+async function applyLibraryMaterial(owner, material) {
+    const node = selectedMaterialNode(app);
+    if (!node) { await anomalousAlert(t('materialTargetChanged')); return; }
+    if (owner.materialApplying) return;
+    owner.materialApplying = true;
+    try {
+        const payload = await fetchMaterial(material.filename);
+        if (selectedMaterialNode(app) !== node) throw new Error('materialTargetChanged');
+        if (owner.nbPanel?.style.display !== 'flex' || owner.materialView?.style.display !== 'flex'
+            || (owner.modal && !owner.modal.classList.contains('visible'))) return;
+        const blocks = (payload.node_blocks || []).filter(block => block.type === node.type && block.widgets_values?.length);
+        if (!blocks.length) throw new Error('materialNoCompatibleValues');
+        if (blocks.length === 1) {
+            applyMaterialToSelectedNode(node, blocks[0], payload.workflow_hashes, owner.materialContext);
+        } else {
+            owner.materialBlockDialog?.close();
+            const dialog = document.createElement('dialog'); dialog.className = 'anomalous-material-choice';
+            owner.materialBlockDialog = dialog;
+            text(dialog, 'h3', t('materialChooseBlock'));
+            const status = text(dialog, 'p', ''); status.setAttribute('role', 'alert');
+            for (const block of blocks) {
+                const choose = text(dialog, 'button', `${materialNodeHeading(block)} #${block.node_id}`, 'anomalous-btn-primary');
+                choose.onclick = async () => {
+                    try { applyMaterialToSelectedNode(node, block, payload.workflow_hashes, owner.materialContext); dialog.close(); }
+                    catch (error) { status.textContent = t(error.message) === error.message ? t('materialApplyFailed') : t(error.message); }
+                };
+            }
+            const close = text(dialog, 'button', t('close'), 'anomalous-btn-ghost'); close.onclick = () => dialog.close();
+            dialog.onclose = () => { dialog.remove(); if (owner.materialBlockDialog === dialog) owner.materialBlockDialog = null; };
+            document.body.appendChild(dialog); dialog.showModal();
+        }
+    } catch (error) { await anomalousAlert(t(error.message) === error.message ? t('materialApplyFailed') : t(error.message)); }
+    finally { owner.materialApplying = false; }
+}
+
+function showTransferCenter(owner) {
+    const dialog = document.createElement('dialog'); dialog.className = 'anomalous-material-choice';
+    text(dialog, 'h3', t('materialTransferCenter'));
+    const status = text(dialog, 'p', ''); status.setAttribute('role', 'alert');
+    const workflow = text(dialog, 'button', t('materialTransferWorkflow'), 'anomalous-btn-primary');
+    workflow.onclick = async () => {
+        if (!window.AMB_WorkflowShare) { status.textContent = t('sidebarModuleNotLoaded'); return; }
+        dialog.close(); window.AMB_WorkflowShare.showUnifiedModal();
+    };
+    const recipe = text(dialog, 'button', t('materialTransferRecipes'), 'anomalous-btn-ghost');
+    recipe.onclick = () => { dialog.close(); owner.showRecipes?.(); };
+    const importPlan = text(dialog, 'button', t('promptImportPlan'), 'anomalous-btn-ghost');
+    const file = text(dialog, 'input', ''); file.type = 'file'; file.accept = '.json'; file.hidden = true;
+    importPlan.onclick = () => file.click();
+    file.onchange = async () => {
+        const source = file.files?.[0]; if (!source) return;
+        importPlan.disabled = true;
+        try {
+            if (source.size > 2 * 1024 * 1024) throw new Error('oversize');
+            const plan = JSON.parse(await source.text());
+            if (!dialog.open) return;
+            if (plan.format !== 'anomalous-prompt-plan-v1') throw new Error('format');
+            const response = await fetch('/anomalous/save_prompt_plan', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: plan.name, tags: plan.tags || [], plan: plan.plan }) });
+            if (response.status === 409) { status.textContent = t('promptAlreadyImported'); return; }
+            const result = await jsonResponse(response, 'plan import failed');
+            if (result.status !== 'success') throw new Error('import failed');
+            if (!dialog.open) return;
+            dialog.close(); owner.materialApplyMode = false; owner.materialKind = 'prompt_plan'; await owner.showMaterials();
+        } catch (error) { status.textContent = t('promptImportError'); }
+        finally { file.value = ''; importPlan.disabled = false; }
+    };
+    text(dialog, 'p', t('promptExportLocation'));
+    const close = text(dialog, 'button', t('close'), 'anomalous-btn-ghost'); close.onclick = () => dialog.close();
+    dialog.onclose = () => dialog.remove(); document.body.appendChild(dialog); dialog.showModal();
 }

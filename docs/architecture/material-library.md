@@ -39,7 +39,7 @@ lookup filters summaries before opening matching workflows; asset authorization
 uses the same validated summary cache. Callers receive independent summary copies.
 
 The library requests 48 summaries per page. `materials` accepts `q` (name, tags,
-or node type), `tag`, `kind`, `page`, and `limit` (at most 100), and returns
+or node type), `tag`, `kind`, exact `node_type`, `page`, and `limit` (at most 100), and returns
 `total`, `page`, `pages`, and the library's available `tags`. Older callers without
 page/limit retain their complete summary response. Name/tag edits use
 `update_material`, preserve the source workflow, and atomically replace the record.
@@ -59,6 +59,7 @@ The route family is:
 - `POST /anomalous/save_image_material`
 - `POST /anomalous/save_parameter_material`
 - `POST /anomalous/save_prompt_note_material`
+- `POST /anomalous/save_prompt_plan`
 - `GET /anomalous/materials`
 - `GET /anomalous/material_full`
 - `GET /anomalous/material_asset`
@@ -77,8 +78,8 @@ parameter rendering; the workbench does not import the library UI.
 `ui_recipe_detail.js` only supply non-invasive gallery entry points. Main
 Gallery retains click-to-view, drag, delete, and cover-selection behavior; the
 material action appears only on hover and is hidden during cover selection.
-`ui_doctor.js` owns application to the currently selected node because that
-mutation already belongs to Node Assistant.
+`ui_doctor.js` presents Node Assistant presets; it shares node application with
+the library through `ui_material_application.js` and `node_material_actions.js`.
 
 `ui_recipe_detail.js` can publish the active Recipe parameters or the selected
 Parameter Notebook as `recipe_parameter_selection`. The primary panel saves all
@@ -127,8 +128,8 @@ above the node list. The initially hidden footer remains dedicated to the full i
 workflow snapshot rather than mixing both concepts in a scope selector. The
 original workflow remains in a selected-node record as source provenance, but
 list/count/lookup APIs expose only the selected blocks. Such a material
-deliberately lacks `open_workflow`; it is consumed from Node Assistant instead
-of unexpectedly replacing the canvas with the hidden source workflow.
+deliberately lacks `open_workflow`; the library and Node Assistant apply its
+parameters to one node without opening the hidden source workflow.
 
 The image workbench also exposes saving on its primary surfaces. The top action
 reveals the full-snapshot name/tag form. One generation-settings action captures
@@ -198,10 +199,72 @@ material. Canvas use remains the existing explicit Prompt Note action.
 `web/main.js` binds `openSavedMaterial` from `ui_materials.js`; it owns navigation
 and workspace return state, keeping workbench imports acyclic. Image details,
 recipes and Prompt Notes use that same handoff. Node-sized receipts lead to a
-detail that explains reuse through Node Assistant.
+detail that explains reuse through the library or Node Assistant.
 
 Primary surfaces use progressive disclosure: image save form, prompt role
 selectors, technical node metadata, companion models, recipe export/source
 editing, and recipe multi-selection are revealed on request. Parameter-page
 metrics appear once with exact-value copy controls. Display wording is Parameter
 Sets (参数方案); existing notebook routes and storage identifiers stay stable.
+
+
+## Entry points and shared application
+
+The lower-left control opens Material Library. The upper-right control opens
+Workflow Recipes directly; the existing workspace tabs still expose Recipes,
+Prompt Notes and Materials. Import/export is secondary under the library's More
+menu, linking existing workflow tools and recipe packages, plus prompt-plan JSON
+import. It does not claim to import/export arbitrary image material bundles.
+
+Opening the library with exactly one live selected node enables apply mode.
+Summary requests filter by exact `node_type`; activating a card fetches only that
+material's scoped detail. No selection means normal detail browsing. An explicit
+toggle returns to browsing all materials; prompt-only kinds also use browse mode.
+Multiple source blocks of the same type require choosing one block. The full
+workflow quick-open button is omitted from apply-mode cards.
+
+`node_material_actions.js` is the shared, UI-independent mutation owner. It checks
+live graph/node identity, indexes, value types and native combo choices before
+editing. It skips seed widgets, preserves node identity/links/position, calls the
+live widget callback and four-argument node hook, and marks the graph dirty.
+Values, serialized widget values and target-scoped hash evidence change in one
+before/after transaction; hook failures restore their snapshots. Model paths must
+already be available in the native combo. This path does not invoke global model
+repair after application. Hash transport remains evidence, never verification.
+
+`material_full?include_workflow=0` includes `workflow_hashes` restricted to returned
+blocks, without exposing the hidden workflow. Both library and assistant show the
+same application receipt. Undo restores values and scoped hashes only while the
+same live node, values, serialized values and target hashes still match the applied
+state. Later edits are protected. Unsupported third-party widget side effects
+still require real-host compatibility testing.
+
+Selection hooks chain the host's callbacks and batch updates in a microtask;
+there is no polling. List browsing retains 48-item pagination and cancellation.
+Language changes rebuild visible library/composer text while keeping the current
+draft. Node labels reuse ComfyUI's registered localized titles with raw type fallback.
+
+## Prompt combinations
+
+`prompt_plan` is an image-free material with `compose_prompt` capability and no
+synthetic workflow. `POST save_prompt_plan` accepts a name, tags, and `plan`:
+`parts` is an ordered list of up to 100 records with `name` (up to 120 characters),
+`category` (`general` or `specific`), `enabled`, `positive`, and `negative`.
+Top-level `positive` and `negative` hold this run's content. The plan is bounded to
+2 MiB; unknown fields are discarded. Atomic writes and explicit duplicate-copy
+confirmation reuse the material persistence lock and canonical content signature.
+
+The composer joins each role's enabled, nonblank fragment strings in order using
+newlines, then appends that role's current content. It preserves weights, commas,
+duplicates and original nonblank string whitespace. It never translates or infers
+negative text from a Prompt Note's `promptZh` translation. Captured Prompt Notes
+and classified workflow prompt groups can seed a fragment; unknown workflow roles
+are not silently promoted to positive or negative prompts.
+
+Saving creates an independent new snapshot. There is no automatic source sync or
+model binding. A page-session draft survives library navigation and is replaced
+by an existing saved plan only after confirmation; it must be saved before page
+reload. Stale detail requests cannot replace the current draft. Export/import use
+JSON format `anomalous-prompt-plan-v1`; imports are bounded to 2 MiB and validated
+by the same save endpoint. The composer exposes role and target-widget selection,
+separate Replace/Append actions, copy controls and the shared guarded undo.

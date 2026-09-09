@@ -242,15 +242,15 @@ export function createDOM() {
 
         const nbBtn = document.createElement('button');
         nbBtn.id = 'anomalous-notebook-btn';
-        nbBtn.title = t('workspaceTitle');
-        nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('workspace')}</span>`;
+        nbBtn.title = t('recipeTitle');
+        nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('recipeTitle')}</span>`;
 
         const dBtn = document.getElementById('anomalous-doctor-btn');
         if (dBtn) dBtn.title = t('sidebarDoctor');
         const aBtn = document.getElementById('anomalous-assistant-btn');
         if (aBtn) aBtn.title = t('sidebarAssistant');
-        const iBtn = document.getElementById('anomalous-import-btn');
-        if (iBtn) iBtn.title = t('sidebarPreflight');
+        const iBtn = document.getElementById('anomalous-materials-btn');
+        if (iBtn) iBtn.title = t('materialLibrary');
         const sBtn = document.getElementById('anomalous-settings-btn');
         if (sBtn) sBtn.title = t('sidebarSettings');
 
@@ -286,7 +286,7 @@ export function createDOM() {
                 };
             }
             this.nbPanel.style.display = 'flex';
-            this.showNotebooks();
+            this.showRecipes();
         };
 
         rightGroup.appendChild(modelsBtn);
@@ -1114,15 +1114,15 @@ export function createDOM() {
             scanBtn.title = t('scanTitle');
             scanBtn.innerHTML = `🔄`;
             helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
-            nbBtn.title = t('workspaceTitle');
-            nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('workspace')}</span>`;
+            nbBtn.title = t('recipeTitle');
+            nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('recipeTitle')}</span>`;
 
             const dBtn = document.getElementById('anomalous-doctor-btn');
             if (dBtn) dBtn.title = t('sidebarDoctor');
             const aBtn = document.getElementById('anomalous-assistant-btn');
             if (aBtn) aBtn.title = t('sidebarAssistant');
-            const iBtn = document.getElementById('anomalous-import-btn');
-            if (iBtn) iBtn.title = t('sidebarImportExport');
+            const iBtn = document.getElementById('anomalous-materials-btn');
+            if (iBtn) { iBtn.title = t('materialLibrary'); iBtn.setAttribute('aria-label', t('materialLibrary')); }
             const sBtn = document.getElementById('anomalous-global-settings-btn');
             if (sBtn) sBtn.title = t('sidebarSettings');
 
@@ -1628,9 +1628,10 @@ export function createDOM() {
         };
 
         const importBtn = document.createElement('button');
-        importBtn.id = 'anomalous-import-btn';
-        importBtn.title = t('importBtn');
-        importBtn.innerHTML = `📥`;
+        importBtn.id = 'anomalous-materials-btn';
+        importBtn.title = t('materialLibrary');
+        importBtn.setAttribute('aria-label', t('materialLibrary'));
+        importBtn.innerHTML = `🧰`;
         importBtn.style.background = 'transparent';
         importBtn.style.color = '#ccc';
         importBtn.style.border = 'none';
@@ -1641,13 +1642,8 @@ export function createDOM() {
         importBtn.style.transition = 'all 0.2s ease';
         importBtn.onmouseover = () => { importBtn.style.background = 'rgba(255,255,255,0.1)'; importBtn.style.color = '#fff'; };
         importBtn.onmouseout = () => { importBtn.style.background = 'transparent'; importBtn.style.color = '#ccc'; };
-        importBtn.onclick = () => {
-            if (window.AMB_WorkflowShare) {
-                window.AMB_WorkflowShare.showUnifiedModal();
-            } else {
-                alert(t('sidebarModuleNotLoaded'));
-            }
-        };
+        importBtn.onclick = () => this.openMaterialLibrary();
+
 
 
         const doctorBtn = document.createElement('button');

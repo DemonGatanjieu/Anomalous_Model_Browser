@@ -75,7 +75,9 @@ def _read_material(path):
         value = json.load(material_file)
     if not isinstance(value, dict):
         raise ValueError("Invalid material snapshot")
-    if value.get("kind") in ("prompt_note_bundle", "prompt_text"):
+    if value.get("kind") == "prompt_plan":
+        _normalise_prompt_plan(value.get("plan"))
+    elif value.get("kind") in ("prompt_note_bundle", "prompt_text"):
         _normalise_prompt_note(value.get("note"), value["kind"] == "prompt_text")
     elif not isinstance(value.get("workflow"), dict):
         raise ValueError("Invalid material snapshot")
@@ -146,7 +148,7 @@ def _material_node_ids(material):
 
 
 def _material_node_blocks(material, include_values=True):
-    if material.get("kind") in ("prompt_note_bundle", "prompt_text"):
+    if material.get("kind") in ("prompt_note_bundle", "prompt_text", "prompt_plan"):
         return []
     return _node_blocks(material.get("workflow") or {}, include_values=include_values,
                         selected_ids=_material_node_ids(material))
@@ -1011,20 +1013,78 @@ async def api_save_prompt_note_material(request):
         return web.json_response({"status": "error", "message": "Could not save prompt note material"}, status=500)
 
 
+def _normalise_prompt_plan(plan):
+    if not isinstance(plan, dict) or len(json.dumps(plan, ensure_ascii=False, allow_nan=False).encode("utf-8")) > MAX_NOTEBOOK_BYTES:
+        raise ValueError("Invalid prompt plan")
+    parts = plan.get("parts", [])
+    if not isinstance(parts, list) or len(parts) > 100:
+        raise ValueError("Invalid prompt parts")
+    result = {"parts": []}
+    for key in ("positive", "negative"):
+        if not isinstance(plan.get(key, ""), str):
+            raise ValueError("Invalid prompt text")
+        result[key] = plan.get(key, "")
+    for part in parts:
+        if not isinstance(part, dict) or part.get("category") not in ("general", "specific") or not isinstance(part.get("enabled", True), bool):
+            raise ValueError("Invalid prompt part")
+        item = {"category": part["category"], "enabled": part.get("enabled", True)}
+        for key in ("name", "positive", "negative"):
+            if not isinstance(part.get(key, ""), str):
+                raise ValueError("Invalid prompt part text")
+            item[key] = part.get(key, "")
+        if len(item["name"]) > 120:
+            raise ValueError("Prompt part name is too long")
+        result["parts"].append(item)
+    return result
+
+
+async def api_save_prompt_plan(request):
+    try:
+        payload = await request.json()
+        name = payload.get("name", "")
+        if not isinstance(name, str) or not name.strip() or len(name.strip()) > MAX_MATERIAL_NAME_LENGTH:
+            raise ValueError("Invalid plan name")
+        plan = _normalise_prompt_plan(payload.get("plan"))
+        tags = _normalise_material_tags(payload.get("tags", []))
+        allow_duplicate = payload.get("allow_duplicate", False)
+        if not isinstance(allow_duplicate, bool):
+            raise ValueError("Invalid duplicate preference")
+        signature = hashlib.sha256(json.dumps(plan, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+        material_id = uuid.uuid4().hex
+        filename = f"material_{int(time.time())}_{material_id}.json"
+        material = {"schema_version": MATERIAL_SCHEMA_VERSION, "id": material_id,
+                    "kind": "prompt_plan", "name": name.strip(), "tags": tags,
+                    "timestamp": int(time.time() * 1000), "plan": plan,
+                    "source": {"type": "prompt_plan", "parameter_signature": signature},
+                    "capabilities": ["compose_prompt"], "selection": {"scope": "prompt_plan"}}
+        duplicate = await asyncio.to_thread(_persist_parameter_material, get_materials_dir(), filename, material, allow_duplicate)
+        if duplicate:
+            return web.json_response({"status": "duplicate", "filename": duplicate["filename"], "name": duplicate["name"]}, status=409)
+        return web.json_response({"status": "success", "filename": filename, "material": _material_summary(filename, material)})
+    except (AttributeError, TypeError, ValueError):
+        return web.json_response({"status": "error", "message": "Invalid prompt plan"}, status=400)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not save prompt plan"}, status=500)
+
+
 def _query_materials(materials_dir, query):
     materials = _list_materials(materials_dir)
     all_tags = sorted({tag for material in materials for tag in material.get("tags", [])}, key=str.casefold)
     search = query.get("q", "").strip().casefold()
     tag = query.get("tag", "").strip().casefold()
     kind = query.get("kind", "")
+    node_type = query.get("node_type", "")
+    if len(node_type) > 200:
+        raise ValueError("Invalid node type")
     if len(search) > 200 or len(tag) > 60 or kind not in (
-        "", "image_workflow_snapshot", "image_node_selection", "recipe_parameter_selection", "prompt_note_bundle", "prompt_text"
+        "", "image_workflow_snapshot", "image_node_selection", "recipe_parameter_selection", "prompt_note_bundle", "prompt_text", "prompt_plan"
     ):
         raise ValueError("Invalid material filter")
     materials = [material for material in materials
                  if (not search or search in " ".join([material["name"], *material["node_types"], *material.get("tags", [])]).casefold())
                  and (not tag or tag in [value.casefold() for value in material.get("tags", [])])
-                 and (not kind or material["kind"] == kind)]
+                 and (not kind or material["kind"] == kind)
+                 and (not node_type or node_type in material["node_types"])]
     total = len(materials)
     limit = min(100, max(1, int(query.get("limit", 48))))
     pages = max(1, (total + limit - 1) // limit)
@@ -1110,6 +1170,7 @@ def _material_detail_response(path, include_workflow):
         "data": material,
         "source_recipe": _live_recipe_source(material.get("source") or {}),
         "node_blocks": blocks,
+        "workflow_hashes": _workflow_hashes_for_blocks(workflow, blocks),
         "prompt_roles": prompt_roles,
         "prompt_groups": prompt_groups,
     })

@@ -92,7 +92,10 @@ DOM or live LiteGraph state.
   node types (leading types plus `+N more`), semantic muted scope badges, floating quick actions,
   initially expanded prompt cards and lazily rendered closed parameter cards,
   and global collapse/expand toggles; delegates image inspection to `ui_gallery_detail.js`;
-  Node Assistant remains the owner of applying a material node block.
+  `node_material_actions.js` owns shared transactional node application and guarded undo;
+  the library and Node Assistant use `ui_material_application.js` for the same receipt.
+- `ui_prompt_composer.js` owns Prompt Combinations inside the library;
+  `prompt_composition.js` joins enabled fragments without rewriting their text.
 - `material_inspector.js` owns shared image-metadata parsing and node-parameter
   rendering used by the library and Image Detail Workbench. Node cards feature leading
   aligned frosted-glass checkboxes with cyan micro-interactions for batch selection.

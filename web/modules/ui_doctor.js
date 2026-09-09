@@ -1,3 +1,5 @@
+import { applyNodeMaterialValues } from './node_material_actions.js';
+import { applyMaterialToSelectedNode } from './ui_material_application.js';
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
@@ -1661,90 +1663,11 @@ if (!isHealthy) {
         }
     }
 
-function cloneAssistantValue(value) {
-    if (value === undefined) return undefined;
-    try { return JSON.parse(JSON.stringify(value)); } catch (error) { return value; }
-}
-
-function isVolatileAssistantWidget(node, widget, index) {
-    const name = String(widget?.name || '').toLowerCase();
-    if (/(^|[_\s-])(seed|noise_seed|random_seed|variation_seed|last_seed)([_\s-]|$)/i.test(name)) return true;
-    const type = String(node?.type || '').toLowerCase();
-    if (type === 'ksampler') return index === 0;
-    if (type === 'ksampleradvanced') return index === 1;
-    return false;
-}
-
 export function applyLocalNodeParameters(targetNode, sourceWidgetValues) {
-    if (!targetNode || !Array.isArray(targetNode.widgets) || !Array.isArray(sourceWidgetValues)) {
-        throw new Error('assistant_parameter_target_unavailable');
-    }
-    if (sourceWidgetValues.length > targetNode.widgets.length) {
-        throw new Error('assistant_parameter_widget_mismatch');
-    }
-    if (!app.graph) throw new Error('assistant_parameter_graph_unavailable');
-    const previousValues = [];
-    
-    // Save previous values in case of error
-    for (let i = 0; i < targetNode.widgets.length; i++) {
-        previousValues.push(cloneAssistantValue(targetNode.widgets[i].value));
-    }
-    
-    try {
-        app.graph.beforeChange?.();
-        for (let i = 0; i < sourceWidgetValues.length; i++) {
-            if (!targetNode.widgets[i]) continue;
-            
-            if (isVolatileAssistantWidget(targetNode, targetNode.widgets[i], i)) continue;
-            const val = cloneAssistantValue(sourceWidgetValues[i]);
-            const prevVal = previousValues[i];
-            
-            targetNode.widgets[i].value = val;
-            if (Array.isArray(targetNode.widgets_values)) {
-                targetNode.widgets_values[i] = val;
-            }
-            
-            if (typeof targetNode.widgets[i].callback === 'function') {
-                targetNode.widgets[i].callback.call(targetNode.widgets[i], val, app.canvas, targetNode);
-            }
-            if (typeof targetNode.onWidgetChanged === 'function') {
-                targetNode.onWidgetChanged(i, val, prevVal, targetNode.widgets[i]);
-            }
-        }
-        app.graph.change?.();
-        app.graph.setDirtyCanvas?.(true, true);
-        app.canvas?.setDirty?.(true, true);
-        try { window.dispatchEvent(new CustomEvent('graphChanged')); } catch (error) {}
-        return { widgets: sourceWidgetValues.length };
-    } catch (e) {
-        console.error("Error applying local node parameters:", e);
-        // Rollback
-        for (let i = 0; i < previousValues.length; i++) {
-            if (targetNode.widgets[i]) targetNode.widgets[i].value = cloneAssistantValue(previousValues[i]);
-            if (Array.isArray(targetNode.widgets_values)) targetNode.widgets_values[i] = cloneAssistantValue(previousValues[i]);
-        }
-        throw e;
-    } finally {
-        app.graph.afterChange?.();
-    }
+    if (!Array.isArray(sourceWidgetValues)) throw new Error('materialNoCompatibleValues');
+    return applyNodeMaterialValues(app, targetNode, sourceWidgetValues.map((value, index) => ({ index, value })));
 }
 
-function attachMaterialHashRecords(targetNode, sourceNodeId, workflowHashes) {
-    if (!app.graph || !workflowHashes || typeof workflowHashes !== 'object') return 0;
-    const prefix = `${sourceNodeId}_`;
-    const mapped = [];
-    for (const [key, value] of Object.entries(workflowHashes)) {
-        if (!key.startsWith(prefix)) continue;
-        mapped.push([`${targetNode.id}_${key.slice(prefix.length)}`, cloneAssistantValue(value)]);
-    }
-    if (!mapped.length) return 0;
-    if (!app.graph.extra || typeof app.graph.extra !== 'object') app.graph.extra = {};
-    if (!app.graph.extra.anomalous_hashes || typeof app.graph.extra.anomalous_hashes !== 'object') {
-        app.graph.extra.anomalous_hashes = {};
-    }
-    for (const [key, value] of mapped) app.graph.extra.anomalous_hashes[key] = value;
-    return mapped.length;
-}
 
 function renderMaterialPresets(node, container, forceRefresh) {
     const section = document.createElement('div');
@@ -1753,6 +1676,11 @@ function renderMaterialPresets(node, container, forceRefresh) {
     const header = document.createElement('div');
     header.style.cssText = 'color:#68cdb9;font-size:10px;font-weight:750;letter-spacing:0.1em;text-transform:uppercase;';
     header.textContent = t('materialLibrary');
+    const browse = document.createElement('button');
+    browse.textContent = t('materialShowCompatible');
+    browse.className = 'anomalous-btn-ghost';
+    browse.onclick = () => window.anomalousBrowserInstance?.openMaterialLibrary();
+    header.appendChild(browse);
     const loader = document.createElement('div');
     loader.style.cssText = 'font-size:12px;color:#555;text-align:center;padding:10px;';
     loader.textContent = t('loading');
@@ -1789,11 +1717,10 @@ function renderMaterialPresets(node, container, forceRefresh) {
                 apply.onclick = () => {
                     apply.disabled = true;
                     try {
-                        applyLocalNodeParameters(node, block.widgets_values);
-                        attachMaterialHashRecords(node, block.node_id, material.workflow_hashes);
+                        applyMaterialToSelectedNode(node, block, material.workflow_hashes, group);
                         apply.textContent = `✅ ${t('materialNodeApplied')}`;
                         apply.style.background = 'rgba(46,139,87,.6)';
-                        window.setTimeout(() => window.anomalous_resolve_all_missing_nodes?.(true, false), 0);
+
                     } catch (error) {
                         console.error('[Anomalous] Failed to apply material node parameters:', error);
                         apply.textContent = `⚠️ ${t('recipeParameterApplyError')}`;

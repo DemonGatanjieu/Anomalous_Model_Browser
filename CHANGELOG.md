@@ -3,6 +3,9 @@
 ## Unreleased
 
 ### Material Library
+- Material Library now opens from the lower-left control; Workflow Recipes stays at the upper right. Import/export tools are available from the library's More menu.
+- Added Prompt Combinations: ordered general/specific fragments, enable switches, separate positive/negative content, saved snapshots, and JSON import/export.
+- Library cards can apply matching parameters to one selected node through the same transaction as Node Assistant, with seed preservation, native-option validation and guarded undo. Prompt combinations support explicit text replacement or append.
 - Material details initially expand prompt cards only; other node parameters render on first expansion. Details omit the complete source workflow, which loads separately when opening a full snapshot. Selected-node materials never return their hidden source graph.
 - Material capture supports PNG workflows, Recipe parameters and Prompt Notes. Applying reference images to LoadImage remains future work.
 - Added search by name, tag, or node type, type/tag filters, and pagination. Material names and tags can be edited in place without changing their workflow.
