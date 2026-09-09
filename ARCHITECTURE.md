@@ -92,9 +92,10 @@ DOM or live LiteGraph state.
   unified search & tag dropdown, and dual view modes (uniform 264px Bento grid & compact list view);
   cards feature 136px golden-ratio top covers, clean titles without badge clutter (relocating isolated readiness dots into a sleek frosted-glass
   `anomalous-recipe-readiness-pill` chip at the bottom-left of the cover alongside base model pills), single-row ellipsis text tags (`white-space: nowrap; text-overflow: ellipsis`),
-  top-right scope pills, and one-click canvas load (`🚀 载入画布` / `🧩 追加画布`); cards without custom thumbnails automatically receive deterministic
-  AI-generated abstract material blind-box artwork (`web/assets/default_cover_1.webp` ~ `default_cover_6.webp`), eliminating dry grey placeholder boxes.
-  Empty state displays (`.anomalous-recipe-empty`) seamlessly blend with the futuristic cyber library concept art (`empty_library_concept.webp`)
+  top-right scope pills, and one-click canvas load (`🚀 载入画布` / `🧩 追加画布`, powered by quantum energy fluid micro-textures `btn_energy_core.webp` with sharp text drop-shadows);
+  filter pills (`.anomalous-recipe-pill.is-active`, `.anomalous-workbench-pill.is-active`) feature micro-crystalline quantum glow underlays (`pill_active_glow.webp`);
+  cards without custom thumbnails automatically receive deterministic AI-generated abstract material blind-box artwork (`web/assets/default_cover_1.webp` ~ `default_cover_6.webp`),
+  eliminating dry grey placeholder boxes. Empty state displays (`.anomalous-recipe-empty`) seamlessly blend with the futuristic cyber library concept art (`empty_library_concept.webp`)
   using vertical gradient alpha masks (`mask-image: linear-gradient(...)`).
   Direct canvas drag-drop ("一拖直达画布") allows dragging any recipe card across the translucent
   modal directly onto the ComfyUI canvas to immediately load the workflow into a fresh canvas
@@ -130,8 +131,8 @@ DOM or live LiteGraph state.
   the Left Column hosts the Ready-to-use Prompt Cards Library (成型提示词库), featuring restrained dark grey card backgrounds (`#222630`)
   with category-specific left accent borders (`border-left: 3.5px solid ...`, Base/Style/Subject/Trigger) eliminating color-palette clutter,
   empty state container (`.anomalous-source-empty`) featuring an atmospheric holographic library backdrop (`empty_library_concept.webp`),
-  non-wrapping title layout, a dedicated sub-action bar with one-click canvas node prompt extraction (`🎯 从节点提取`, reading selected ComfyUI text nodes like `CLIPTextEncode`
-  with downstream link connection traversal for accurate negative conditioning detection, auto-generating categorised cards) and one-click
+  non-wrapping title layout, a dedicated sub-action bar with one-click canvas node prompt extraction (`🎯 从节点提取`, powered by subtle cybernetic matrix micro-textures `btn_cyber_grid.webp`,
+  reading selected ComfyUI text nodes like `CLIPTextEncode` with downstream link connection traversal for accurate negative conditioning detection, auto-generating categorised cards) and one-click
   Material Library batch sync (`📥 从素材库导入`, cancellable fetch scoped to `category=prompts`), plus on-demand persistent card creation
   (`➕ 新建词卡`, with explicit positive/negative role radios and `/anomalous/save_prompt_plan` backend persistence; temporary cards
   show `[未保存]` badge with one-click `💾 存入库`), completely eliminating default empty textareas; cards support native HTML5 drag-and-drop;
@@ -140,7 +141,7 @@ DOM or live LiteGraph state.
   (`🎯 读取选中节点`), compact modular Lego block cards (~56px height, expandable on focus) allowing generous top-to-bottom sequence stacking,
   a high-visibility dropzone (`.anomalous-assembly-dropzone`) that ingests dragged cards into positive/negative tracks with strict role isolation,
   supports bidirectional drag-and-drop reordering with ghost indicator lines, role-aware up/down swapping, instant A/B bypass toggles (greyscale dimming without deleting),
-  interactive category pills, one-click Smart Sort (`🪄 按分类排序`, Base ➔ Style ➔ Subject ➔ Trigger), a target widget dropdown with sticky
+  interactive category pills, one-click Smart Sort (`🪄 按分类排序`, Base ➔ Style ➔ Subject ➔ Trigger, enhanced with cyber micro-texture `btn_cyber_grid.webp`), a target widget dropdown with sticky
   selection cache (`targetWidgetIndexByNodeId`), and a sticky floating frosted-glass output deck (`.anomalous-mixer-deck-output`, `position: sticky; bottom: 0; backdrop-filter: blur(12px)`)
   with real-time word/token counts, single-mount canvas dragging (`bindMaterialDrag` onto text nodes), direct target node injection toolbar, and seamless return to Material Library;
   `prompt_composition.js` provides bidirectional schema mapping (`planToWorkbenchDraft` and `workbenchDraftToSavedPlan`) ensuring

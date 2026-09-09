@@ -1407,10 +1407,15 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-pill.is-active {
-    background: rgba(99, 102, 241, 0.28);
-    color: #c7d2fe;
+    background-color: rgba(99, 102, 241, 0.32);
+    background-image: url('assets/pill_active_glow.webp');
+    background-size: cover;
+    background-position: center;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
     font-weight: 600;
-    box-shadow: 0 1px 6px rgba(99, 102, 241, 0.2);
+    box-shadow: 0 1px 8px rgba(99, 102, 241, 0.35), inset 0 0 4px rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(165, 180, 252, 0.35);
 }
 
 .anomalous-recipe-topbar-center {
@@ -5462,30 +5467,44 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-btn-primary-action {
+    position: relative;
     flex: 1;
-    height: 26px;
+    height: 27px;
     padding: 0 10px;
     border-radius: 6px;
-    background: rgba(99, 102, 241, 0.16);
-    border: 1px solid rgba(99, 102, 241, 0.35);
-    color: #c7d2fe;
+    background-color: rgba(28, 32, 54, 0.88);
+    background-image: url('assets/btn_energy_core.webp');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border: 1px solid rgba(99, 102, 241, 0.45);
+    color: #f1f5f9;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: 0.2px;
     cursor: pointer;
     text-align: center;
-    transition: all 0.15s ease;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(99, 102, 241, 0.15);
 }
 
 .anomalous-recipe-btn-primary-action:hover {
-    background: rgba(99, 102, 241, 0.32);
-    border-color: rgba(99, 102, 241, 0.6);
+    border-color: #38bdf8;
     color: #ffffff;
-    box-shadow: 0 0 10px rgba(99, 102, 241, 0.25);
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.4), inset 0 0 14px rgba(99, 102, 241, 0.3);
     transform: translateY(-1px);
+    filter: brightness(1.15);
+}
+
+.anomalous-recipe-btn-primary-action:active {
+    transform: translateY(0);
+    filter: brightness(0.95);
 }
 
 .anomalous-recipe-card-mini-actions {
@@ -9571,10 +9590,15 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-pill.is-active {
-    background: rgba(56, 189, 248, 0.18);
-    border-color: rgba(56, 189, 248, 0.4);
-    color: #38bdf8;
+    background-color: rgba(56, 189, 248, 0.22);
+    background-image: url('assets/pill_active_glow.webp');
+    background-size: cover;
+    background-position: center;
+    border-color: rgba(56, 189, 248, 0.55);
+    color: #f0fdf4;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
     font-weight: 600;
+    box-shadow: 0 1px 6px rgba(56, 189, 248, 0.25);
 }
 
 /* Inline New Card Creation Form */
@@ -9958,19 +9982,51 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-btn-extract-node {
-    background: linear-gradient(135deg, #0284c7 0%, #0d9488 100%) !important;
-    border: 1px solid rgba(56, 189, 248, 0.5) !important;
+    position: relative;
+    background-color: #0c3340 !important;
+    background-image: url('assets/btn_cyber_grid.webp') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    border: 1px solid rgba(56, 189, 248, 0.55) !important;
     color: #ffffff !important;
     font-weight: 600 !important;
-    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85) !important;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3), inset 0 0 10px rgba(56, 189, 248, 0.2) !important;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    overflow: hidden;
 }
 
 .anomalous-btn-extract-node:hover {
-    background: linear-gradient(135deg, #0369a1 0%, #0f766e 100%) !important;
     border-color: #38bdf8 !important;
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.45) !important;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.55), inset 0 0 14px rgba(45, 212, 191, 0.35) !important;
     transform: translateY(-1px);
+    filter: brightness(1.18);
+}
+
+.anomalous-mixer-smart-sort-btn {
+    position: relative;
+    background-color: rgba(32, 26, 52, 0.9) !important;
+    background-image: url('assets/btn_energy_core.webp') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    border: 1px solid rgba(192, 132, 252, 0.45) !important;
+    color: #f3e8ff !important;
+    font-size: 0.74rem !important;
+    padding: 4px 9px !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+    box-shadow: 0 2px 8px rgba(192, 132, 252, 0.25);
+    cursor: pointer;
+    transition: all 0.2s ease !important;
+    overflow: hidden;
+}
+
+.anomalous-mixer-smart-sort-btn:hover {
+    border-color: #c084fc !important;
+    box-shadow: 0 0 14px rgba(192, 132, 252, 0.5), inset 0 0 10px rgba(192, 132, 252, 0.2) !important;
+    transform: translateY(-1px);
+    filter: brightness(1.15);
 }
 
 
