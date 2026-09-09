@@ -1025,7 +1025,7 @@ def _normalise_prompt_plan(plan):
             raise ValueError("Invalid prompt text")
         result[key] = plan.get(key, "")
     for part in parts:
-        if not isinstance(part, dict) or part.get("category") not in ("general", "specific") or not isinstance(part.get("enabled", True), bool):
+        if not isinstance(part, dict) or part.get("category") not in ("general", "specific", "base", "style", "subject", "trigger") or not isinstance(part.get("enabled", True), bool):
             raise ValueError("Invalid prompt part")
         item = {"category": part["category"], "enabled": part.get("enabled", True)}
         for key in ("name", "positive", "negative"):

@@ -113,16 +113,22 @@ DOM or live LiteGraph state.
   unified search with tag filtering, grid/list view mode toggle (persisted to localStorage),
   and a seamless split-screen side studio panel (`.anomalous-material-side-studio`);
   cards feature strict uniform height (248px) with rich micro-skeuomorphic fallbacks for non-image assets (prompt code snippets
-  and 3D asset parameter previews) eliminating visual bumpiness, direct inline title editing, one-click Send-to-Studio (`📝`),
-  floating quick actions, and lazy DOM rendering; delegates image inspection to `ui_gallery_detail.js`;
+  and 3D asset parameter previews) eliminating visual bumpiness, direct inline title editing, one-click dock to Prompt Mixer (`🎛️`),
+  floating quick actions, floating status toast feedback, and lazy DOM rendering; delegates image inspection to `ui_gallery_detail.js`;
   `node_material_actions.js` owns shared transactional node application and guarded undo;
   the library and Node Assistant use `ui_material_application.js` for the same receipt.
-- `ui_prompt_composer.js` owns the Prompt Studio and prompt combinations note engine;
+- `ui_prompt_composer.js` owns the Prompt Mixer & Lego Assembler Deck (提示词乐高调音台);
   supports both full-modal composition and the docked split-screen side studio (`renderSidePromptComposer`),
-  featuring paper-like note cards with colored washi tapes, active whole-card dragging directly onto ComfyUI canvas nodes,
-  instant `appendPromptToStudio` dispatch from material cards, quick node injection toolbar, and a slide-out drawer
-  to conveniently import prompts from the Material Library;
-  `prompt_composition.js` joins text at the beginning/end and reads older fragment plans.
+  compactly adapting to narrow sidebar viewports (320px-450px) with segmented role tabs (`✨ 正向调音坞`, `🚫 负向调音坞`, `👁️ 全部词块`);
+  features a modular block pool (`parts`) with HTML5 drag-and-drop reordering (drop indicator lines & micro move up/down controls),
+  A/B bypass checkboxes (greyscale dimmed state excluded from final prompt for instant contrast testing),
+  interactive category badges (Base Quality, Art Style, Subject, LoRA/Trigger with instant cycling),
+  dreamy-gradient Smart Sort (`🪄 智能理顺`, auto-ordering blocks from Base ➔ Style ➔ Subject ➔ Trigger),
+  live assembled output deck with real-time word/token counts, canvas whole-deck dragging (`bindMaterialDrag` straight onto CLIPTextEncode nodes),
+  direct target node injection toolbar, and slide-out material import drawer;
+  `prompt_composition.js` provides `categorizePromptSnippet`, `smartSortPromptBlocks`, `assemblePromptBlocks`,
+  as well as backward-compatible text joining and fragment plan composition;
+  `api/materials.py` validates prompt plans with extended categories (`general`, `specific`, `base`, `style`, `subject`, `trigger`).
 - `material_drag.js` owns temporary canvas drop listeners, target hit testing and
   window restoration. During active dragging, the main modal smoothly transitions to
   full transparency (`opacity: 0; pointer-events: none`) to fully reveal the underlying

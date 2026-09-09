@@ -458,12 +458,25 @@ function startInlineTitleEdit(owner, material, titleRow, cardTitle, editBtn) {
     input.onblur = () => finish(true);
 }
 
+function showMixerToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'anomalous-mixer-toast';
+    toast.innerHTML = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('is-show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('is-show');
+        setTimeout(() => toast.remove(), 300);
+    }, 2200);
+}
+
 async function sendMaterialToStudio(owner, material) {
     try {
         const { positive, negative } = await loadMaterialPrompts(material.filename);
         if (!positive && !negative) { await anomalousAlert(t('materialNoPromptContent')); return; }
         if (positive) appendPromptToStudio(owner, positive, true, material.name);
-        if (negative) appendPromptToStudio(owner, negative, false, material.name);
+        if (negative) appendPromptToStudio(owner, negative, false, `${material.name || ''} (Neg)`);
+        showMixerToast(`🎛️ ${window.anomalous_browser_lang === 'zh' ? `已将【${material.name || '素材'}】送入调音台` : `Added "${material.name || 'Material'}" to Prompt Mixer`}`);
     } catch (error) { await anomalousAlert(t('materialDetailLoadError')); }
 }
 
@@ -536,8 +549,8 @@ function renderMaterialCard(owner, material) {
         const sendToStudioBtn = document.createElement('button');
         sendToStudioBtn.type = 'button';
         sendToStudioBtn.className = 'anomalous-material-card-action-btn anomalous-material-card-send-studio';
-        sendToStudioBtn.innerHTML = '📝';
-        sendToStudioBtn.title = t('materialSendToStudio') || '加入工坊便签';
+        sendToStudioBtn.innerHTML = '🎛️';
+        sendToStudioBtn.title = window.anomalous_browser_lang === 'zh' ? '送入提示词调音台拼装' : 'Dock to Prompt Mixer';
         sendToStudioBtn.onclick = async (e) => {
             e.stopPropagation();
             await sendMaterialToStudio(owner, material);

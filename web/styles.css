@@ -8837,3 +8837,456 @@ dialog.anomalous-gallery-viewer::backdrop {
     font-weight: 600;
 }
 
+
+/* ==========================================================================
+   Prompt Mixer & Lego Assembler Deck (提示词乐高调音台)
+   ========================================================================== */
+
+/* 1. Mixer Controls (Tabs & Action Bar) */
+.anomalous-mixer-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    flex-wrap: wrap;
+    backdrop-filter: blur(8px);
+}
+
+.anomalous-mixer-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.anomalous-mixer-tab-btn {
+    padding: 5px 11px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.16s ease;
+    white-space: nowrap;
+}
+
+.anomalous-mixer-tab-btn:hover {
+    color: #f1f5f9;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.anomalous-mixer-tab-btn.is-active {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(45, 212, 191, 0.25));
+    color: #38bdf8;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.anomalous-mixer-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Smart Sort Button with Dreamy Gradient & Micro-interaction */
+.anomalous-mixer-smart-sort-btn {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(192, 132, 252, 0.5);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(56, 189, 248, 0.25) 100%);
+    color: #e9d5ff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.2);
+}
+
+.anomalous-mixer-smart-sort-btn:hover {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.4) 0%, rgba(56, 189, 248, 0.4) 100%);
+    border-color: #c084fc;
+    color: #ffffff;
+    box-shadow: 0 0 14px rgba(192, 132, 252, 0.45);
+    transform: translateY(-1px);
+}
+
+.anomalous-mixer-smart-sort-btn.is-animating {
+    animation: mixerSortPulse 0.5s ease;
+}
+
+@keyframes mixerSortPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.95); filter: brightness(1.3); }
+    100% { transform: scale(1); }
+}
+
+/* 2. Blocks Container & Empty Notice */
+.anomalous-mixer-blocks-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 48vh;
+    min-height: 140px;
+    overflow-y: auto;
+    padding: 4px 2px;
+}
+
+.is-side-studio .anomalous-mixer-blocks-container {
+    max-height: 42vh;
+}
+
+.anomalous-mixer-empty-notice {
+    padding: 32px 16px;
+    text-align: center;
+    background: rgba(15, 23, 42, 0.35);
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+}
+
+/* 3. Individual Lego Prompt Block */
+.anomalous-mixer-block {
+    position: relative;
+    border-radius: 10px;
+    background: rgba(22, 27, 38, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(10px);
+    transition: transform 0.15s ease, border-color 0.15s ease, opacity 0.2s ease, box-shadow 0.15s ease;
+}
+
+.anomalous-mixer-block:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.anomalous-mixer-block.is-role-positive {
+    border-left: 3px solid #38bdf8;
+}
+
+.anomalous-mixer-block.is-role-negative {
+    border-left: 3px solid #fb7185;
+}
+
+/* Bypass state for A/B testing */
+.anomalous-mixer-block.is-bypassed {
+    opacity: 0.42;
+    filter: grayscale(0.85);
+    background: rgba(15, 23, 42, 0.4);
+    border-left-color: #64748b !important;
+}
+
+.anomalous-mixer-block.is-bypassed .anomalous-mixer-block-textarea {
+    text-decoration: line-through rgba(255, 255, 255, 0.4);
+}
+
+/* Dragging & Reorder Indicators */
+.anomalous-mixer-block.is-dragging {
+    opacity: 0.25;
+    transform: scale(0.98);
+}
+
+.anomalous-mixer-block.is-drag-over-top::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    border-radius: 2px;
+    background: #38bdf8;
+    box-shadow: 0 0 8px #38bdf8;
+    z-index: 10;
+}
+
+.anomalous-mixer-block.is-drag-over-bottom::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    border-radius: 2px;
+    background: #38bdf8;
+    box-shadow: 0 0 8px #38bdf8;
+    z-index: 10;
+}
+
+/* Block Header */
+.anomalous-mixer-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px 6px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    gap: 6px;
+}
+
+.anomalous-mixer-block-header-left {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: 1;
+    min-width: 0;
+}
+
+.anomalous-mixer-drag-handle {
+    cursor: grab;
+    user-select: none;
+    font-size: 0.95rem;
+    color: #64748b;
+    padding: 2px 4px;
+    transition: color 0.15s ease;
+}
+
+.anomalous-mixer-drag-handle:hover {
+    color: #38bdf8;
+}
+
+.anomalous-mixer-drag-handle:active {
+    cursor: grabbing;
+}
+
+.anomalous-mixer-block-toggle {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    margin: 0;
+}
+
+.anomalous-mixer-block-toggle input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: #2dd4bf;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+}
+
+/* Category Pill */
+.anomalous-mixer-cat-badge {
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: filter 0.15s ease, transform 0.12s ease;
+}
+
+.anomalous-mixer-cat-badge:hover {
+    filter: brightness(1.2);
+    transform: scale(1.03);
+}
+
+.anomalous-mixer-block-title-input {
+    flex: 1;
+    min-width: 60px;
+    max-width: 220px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #f1f5f9;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 2px 6px;
+    outline: none;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.anomalous-mixer-block-title-input:hover,
+.anomalous-mixer-block-title-input:focus {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.25);
+}
+
+/* Block Action Buttons */
+.anomalous-mixer-block-header-right {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.anomalous-mixer-block-btn {
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    color: #94a3b8;
+    font-size: 0.7rem;
+    cursor: pointer;
+    line-height: 1.2;
+    transition: all 0.15s ease;
+}
+
+.anomalous-mixer-block-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.anomalous-mixer-block-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.anomalous-mixer-block-btn.is-delete:hover {
+    background: rgba(239, 68, 68, 0.25);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Block Body */
+.anomalous-mixer-block-body {
+    padding: 6px 10px 8px;
+}
+
+.anomalous-mixer-block-textarea {
+    width: 100%;
+    min-height: 48px;
+    resize: vertical;
+    border: none;
+    outline: none;
+    background: rgba(0, 0, 0, 0.22);
+    color: #f1f5f9;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: background 0.15s ease;
+}
+
+.anomalous-mixer-block-textarea:focus {
+    background: rgba(0, 0, 0, 0.38);
+    box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.3);
+}
+
+/* 4. Assembled Output Deck & Whole-Deck Canvas Drag */
+.anomalous-mixer-deck-output {
+    position: relative;
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.85) 0%, rgba(10, 15, 28, 0.95) 100%);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: grab;
+    user-select: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.anomalous-mixer-deck-output:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
+}
+
+.anomalous-mixer-deck-output:active {
+    cursor: grabbing;
+}
+
+.anomalous-mixer-output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 6px;
+}
+
+.anomalous-mixer-output-title {
+    font-size: 0.82rem;
+    color: #e2e8f0;
+}
+
+.anomalous-mixer-output-stats {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    font-family: monospace;
+}
+
+.anomalous-mixer-output-body {
+    flex: 1;
+}
+
+.anomalous-mixer-output-textarea {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    color: #93c5fd;
+    font-size: 0.8rem;
+    font-family: inherit;
+    line-height: 1.45;
+    padding: 6px 8px;
+    outline: none;
+    box-sizing: border-box;
+    pointer-events: none; /* allows deck drag seamlessly */
+}
+
+.anomalous-mixer-output-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.72rem;
+}
+
+.anomalous-mixer-drag-hint {
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.anomalous-mixer-drag-hint strong {
+    color: #38bdf8;
+}
+
+.anomalous-mixer-output-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* 5. Floating Toast Feedback */
+.anomalous-mixer-toast {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.94);
+    border: 1px solid rgba(45, 212, 191, 0.5);
+    color: #f1f5f9;
+    font-size: 0.84rem;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    z-index: 1000000;
+    backdrop-filter: blur(12px);
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+}
+
+.anomalous-mixer-toast.is-show {
+    opacity: 1;
+    transform: translateY(0);
+}
