@@ -461,7 +461,7 @@ function startInlineTitleEdit(owner, material, titleRow, cardTitle, editBtn) {
 function showMixerToast(message) {
     const toast = document.createElement('div');
     toast.className = 'anomalous-mixer-toast';
-    toast.innerHTML = message;
+    toast.textContent = message;
     document.body.appendChild(toast);
     setTimeout(() => toast.classList.add('is-show'), 10);
     setTimeout(() => {
@@ -1144,7 +1144,7 @@ function showTransferCenter(owner) {
             if (source.size > 2 * 1024 * 1024) throw new Error('oversize');
             const plan = JSON.parse(await source.text());
             if (!dialog.open) return;
-            if (plan.format !== 'anomalous-prompt-plan-v1') throw new Error('format');
+            if (plan.format !== 'anomalous-prompt-plan-v1' && plan.format !== 'anomalous-prompt-mixer-v2') throw new Error('format');
             const response = await fetch('/anomalous/save_prompt_plan', { method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: plan.name, tags: plan.tags || [], plan: plan.plan }) });
             if (response.status === 409) { status.textContent = t('promptAlreadyImported'); return; }

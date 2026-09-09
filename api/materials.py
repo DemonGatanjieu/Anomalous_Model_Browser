@@ -1020,6 +1020,8 @@ def _normalise_prompt_plan(plan):
     if not isinstance(parts, list) or len(parts) > 100:
         raise ValueError("Invalid prompt parts")
     result = {"parts": []}
+    if "version" in plan and isinstance(plan["version"], int):
+        result["version"] = plan["version"]
     for key in ("positive", "negative"):
         if not isinstance(plan.get(key, ""), str):
             raise ValueError("Invalid prompt text")
@@ -1028,6 +1030,10 @@ def _normalise_prompt_plan(plan):
         if not isinstance(part, dict) or part.get("category") not in ("general", "specific", "base", "style", "subject", "trigger") or not isinstance(part.get("enabled", True), bool):
             raise ValueError("Invalid prompt part")
         item = {"category": part["category"], "enabled": part.get("enabled", True)}
+        if "role" in part and part["role"] in ("positive", "negative"):
+            item["role"] = part["role"]
+        if "id" in part and isinstance(part["id"], str) and len(part["id"]) <= 120:
+            item["id"] = part["id"]
         for key in ("name", "positive", "negative"):
             if not isinstance(part.get(key, ""), str):
                 raise ValueError("Invalid prompt part text")

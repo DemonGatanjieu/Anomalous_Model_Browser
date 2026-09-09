@@ -9347,10 +9347,9 @@ dialog.anomalous-gallery-viewer::backdrop {
     min-height: 0;
     height: 100%;
     border-radius: 12px;
-    background: rgba(18, 24, 38, 0.7);
+    background: rgba(18, 24, 38, 0.92);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-    backdrop-filter: blur(14px);
     padding: 14px 14px 12px;
     box-sizing: border-box;
     gap: 10px;
@@ -9637,6 +9636,58 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-source-action-btn.is-dock:hover {
     background: #2dd4bf;
     color: #0f172a;
+}
+
+.anomalous-source-action-btn.is-save-lib {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: rgba(56, 189, 248, 0.4);
+    color: #38bdf8;
+    font-weight: 500;
+}
+
+.anomalous-source-action-btn.is-save-lib:hover {
+    background: #38bdf8;
+    color: #0f172a;
+}
+
+.anomalous-form-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.anomalous-form-role-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.anomalous-role-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.76rem;
+    color: #cbd5e1;
+    cursor: pointer;
+    user-select: none;
+}
+
+.anomalous-role-label input[type="radio"] {
+    cursor: pointer;
+    accent-color: #38bdf8;
+    margin: 0;
+}
+
+.anomalous-unsaved-badge {
+    font-size: 0.65rem;
+    color: #fb923c;
+    background: rgba(251, 146, 60, 0.15);
+    border: 1px solid rgba(251, 146, 60, 0.35);
+    padding: 1px 4px;
+    border-radius: 4px;
+    font-weight: 500;
 }
 
 /* --------------------------------------------------------------------------

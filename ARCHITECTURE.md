@@ -121,19 +121,22 @@ DOM or live LiteGraph state.
   replaces the cramped 380px drawer with a dedicated full-width two-column workspace (`.anomalous-prompt-workbench`):
   the Left Column hosts the Ready-to-use Prompt Cards Library (成型提示词库), featuring non-wrapping title layout, a dedicated
   sub-action bar with one-click canvas node prompt extraction (`🎯 从节点提取`, reading selected ComfyUI text nodes like `CLIPTextEncode`
-  and auto-generating categorised cards) and one-click Material Library batch sync (`📥 从素材库导入`, auto-scanning and deduplicating
-  all saved material prompts), plus on-demand inline card creation (`➕ 新建词卡`), completely eliminating default empty textareas;
-  cards support native HTML5 drag-and-drop;
-  the Right Column hosts the expanded Assembler & Arranger Stage (顺序编排调音台, `minmax(460px, 1fr)`), featuring quick node suction
-  (`🎯 从节点吸入`), compact modular Lego block cards (~56px height, expandable on focus) allowing generous top-to-bottom sequence stacking,
-  a high-visibility dropzone (`.anomalous-assembly-dropzone`) that ingests dragged cards into positive/negative tracks, supports bidirectional
-  drag-and-drop reordering with ghost indicator lines, instant A/B bypass toggles (greyscale dimming without deleting), interactive
-  category pills, one-click Smart Sort (`🪄 智能理顺`, Base ➔ Style ➔ Subject ➔ Trigger), and a pinned live assembled output deck with
-  real-time word/token counts, whole-deck canvas dragging (`bindMaterialDrag` onto CLIPTextEncode nodes), direct target node injection
-  toolbar, and seamless return to Material Library;
-  `prompt_composition.js` provides `categorizePromptSnippet`, `smartSortPromptBlocks`, `assemblePromptBlocks`,
-  as well as backward-compatible text joining and fragment plan composition;
-  `api/materials.py` validates prompt plans with extended categories (`general`, `specific`, `base`, `style`, `subject`, `trigger`).
+  with downstream link connection traversal for accurate negative conditioning detection, auto-generating categorised cards) and one-click
+  Material Library batch sync (`📥 从素材库导入`, cancellable fetch scoped to `category=prompts`), plus on-demand persistent card creation
+  (`➕ 新建词卡`, with explicit positive/negative role radios and `/anomalous/save_prompt_plan` backend persistence; temporary cards
+  show `[未保存]` badge with one-click `💾 存入库`), completely eliminating default empty textareas; cards support native HTML5 drag-and-drop;
+  the Right Column hosts the expanded Assembler & Arranger Stage (顺序编排调音台, `minmax(460px, 1fr)`), featuring quick node reading
+  (`🎯 读取选中节点`), compact modular Lego block cards (~56px height, expandable on focus) allowing generous top-to-bottom sequence stacking,
+  a high-visibility dropzone (`.anomalous-assembly-dropzone`) that ingests dragged cards into positive/negative tracks with strict role isolation,
+  supports bidirectional drag-and-drop reordering with ghost indicator lines, role-aware up/down swapping, instant A/B bypass toggles (greyscale dimming without deleting),
+  interactive category pills, one-click Smart Sort (`🪄 按分类排序`, Base ➔ Style ➔ Subject ➔ Trigger), a target widget dropdown with sticky
+  selection cache (`targetWidgetIndexByNodeId`), and a pinned live assembled output deck with real-time word/token counts, single-mount
+  canvas dragging (`bindMaterialDrag` onto text nodes), direct target node injection toolbar, and seamless return to Material Library;
+  `prompt_composition.js` provides bidirectional schema mapping (`planToWorkbenchDraft` and `workbenchDraftToSavedPlan`) ensuring
+  100% roundtrip data integrity across `anomalous-prompt-plan-v1` and `version: 2`, lossless legacy dual-role splitting and trailing text retention,
+  `categorizePromptSnippet`, `smartSortPromptBlocks`, `assemblePromptBlocks`, as well as backward-compatible text joining;
+  `api/materials.py` validates prompt plans with extended categories (`general`, `specific`, `base`, `style`, `subject`, `trigger`)
+  while preserving schema version, part role, and card id.
 - `material_drag.js` owns temporary canvas drop listeners, target hit testing and
   window restoration. During active dragging, the main modal smoothly transitions to
   full transparency (`opacity: 0; pointer-events: none`) to fully reveal the underlying
