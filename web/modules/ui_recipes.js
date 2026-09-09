@@ -927,14 +927,15 @@ export async function refreshRecipes() {
         const response = await fetch('/anomalous/recipes');
         if (!response.ok) throw new Error('recipe list request failed');
         const payload = await response.json();
-         this.recipeRecords = payload.recipes || [];
-         updateRecipeFilterControls(this, this.recipeRecords);
-         this.renderRecipeList(this.recipeRecords);
+        this.recipeRecords = payload.recipes || [];
+        updateRecipeFilterControls(this, this.recipeRecords);
     } catch (error) {
-        console.error('Could not load Workflow Recipes:', error);
+        console.error('Could not load Workflow Recipes from server:', error);
         this.recipeListContainer.replaceChildren();
         appendText(this.recipeListContainer, 'p', t('recipeLoadError'), 'anomalous-recipe-empty');
+        return;
     }
+    this.renderRecipeList(this.recipeRecords);
 }
 
 function formatRecipeResolution(res) {
@@ -1182,7 +1183,11 @@ export function renderRecipeList(recipes) {
         return;
     }
     for (const recipe of filtered) {
-        this.recipeListContainer.appendChild(createRecipeCard(this, recipe));
+        try {
+            this.recipeListContainer.appendChild(createRecipeCard(this, recipe));
+        } catch (cardError) {
+            console.error('Could not render Workflow Recipe card:', recipe?.filename, cardError);
+        }
     }
 }
 
