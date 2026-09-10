@@ -165,6 +165,13 @@ DOM or live LiteGraph state.
   explicit graph-edit behavior.
 - `locales.js` is the canonical runtime string catalog; `safe_dom.js` is the
   trusted rich-text boundary.
+- `web/main.js` and `web/modules/ui_sidebar.js` own theme state management and interactive easter-egg domain toggles,
+  introducing the anime gothic "Abyssal Scarlet" (深海血族) custom mode (`.theme-abyssal-scarlet`).
+  Activatable via ComfyUI settings (`Anomalous.ModelBrowser.AbyssalScarletTheme`) or by tapping the
+  sidebar brand badge 5 times with domain expansion toasts; features deep abyssal palettes (`#0a0510`),
+  asymmetric gothic button chamfers (`border-radius: 4px 12px 4px 12px`), scarlet rune micro-cores (`btn_scarlet_core.webp`),
+  crimson halo card hovers, submerged scarlet mansion empty states (`abyssal_scarlet_mansion.webp`),
+  ambient ocean current textures (`abyssal_currents_bg.webp`), and pulsating corruption error animations (`abyssal-corruption`).
 - `hash_resolver.js` is optional workflow provenance integration. Failure there
   must not prevent the main browser from loading.
 

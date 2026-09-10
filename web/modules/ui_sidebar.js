@@ -44,6 +44,7 @@ export function createDOM() {
         brandBar.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
 
         const badge = document.createElement('div');
+        badge.className = 'anomalous-brand-badge';
         badge.style.background = 'linear-gradient(135deg, #444, #222)';
         badge.style.color = '#ccc';
         badge.style.fontSize = '0.7em';
@@ -54,7 +55,36 @@ export function createDOM() {
         badge.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
         badge.style.textTransform = 'uppercase';
         badge.style.fontWeight = 'bold';
+        badge.style.cursor = 'pointer';
+        badge.style.userSelect = 'none';
+        badge.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
         badge.innerHTML = 'Anomalous Browser';
+
+        let easterEggClicks = 0;
+        let easterEggResetTimer = null;
+        badge.addEventListener('click', (e) => {
+            e.stopPropagation();
+            easterEggClicks++;
+            clearTimeout(easterEggResetTimer);
+            easterEggResetTimer = setTimeout(() => {
+                easterEggClicks = 0;
+                badge.removeAttribute('title');
+            }, 2500);
+
+            badge.style.transform = 'scale(0.92)';
+            setTimeout(() => { badge.style.transform = ''; }, 120);
+
+            if (easterEggClicks >= 5) {
+                easterEggClicks = 0;
+                badge.removeAttribute('title');
+                const isCurrentlyActive = document.documentElement.classList.contains('theme-abyssal-scarlet');
+                if (typeof window.setAbyssalScarletTheme === 'function') {
+                    window.setAbyssalScarletTheme(!isCurrentlyActive, true);
+                }
+            } else if (easterEggClicks >= 2) {
+                badge.title = t('themeEasterEggHint', { count: easterEggClicks });
+            }
+        });
 
         const menuBtn = document.createElement('button');
         menuBtn.innerHTML = '☰';

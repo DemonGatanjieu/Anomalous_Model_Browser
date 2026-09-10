@@ -76,6 +76,7 @@ const ENTRY_MODE_SETTING_ID = 'Anomalous.ModelBrowser.EntryMode';
 const SHORTCUT_SETTING_ID = 'Anomalous.ModelBrowser.Shortcut';
 const FLOATING_TRIGGER_SIZE_SETTING_ID = 'Anomalous.ModelBrowser.FloatingTriggerSize';
 const FLOATING_TRIGGER_STYLE_SETTING_ID = 'Anomalous.ModelBrowser.FloatingTriggerStyle';
+const ABYSSAL_SCARLET_SETTING_ID = 'Anomalous.ModelBrowser.AbyssalScarletTheme';
 const OPEN_BROWSER_COMMAND_ID = 'Anomalous.ModelBrowser.Open';
 const RESET_TRIGGER_POSITION_COMMAND_ID = 'Anomalous.ModelBrowser.ResetFloatingTriggerPosition';
 let entryMode = 'floating';
@@ -147,6 +148,11 @@ function getInterfaceSettingTranslations() {
                 { value: 'zh', text: t('mainLanguageChinese') },
                 { value: 'en', text: t('mainLanguageEnglish') }
             ]
+        },
+        [ABYSSAL_SCARLET_SETTING_ID]: {
+            name: t('mainAbyssalScarletThemeSetting'),
+            category: ['Anomalous Model Browser', category, 'theme'],
+            tooltip: t('mainAbyssalScarletThemeTooltip')
         }
     };
 }
@@ -191,6 +197,58 @@ if (!localStorage.getItem('anomalous_lang')) {
     currentLang = resolveComfyLanguage();
     window.anomalous_browser_lang = currentLang;
 }
+
+function showThemeNoticeToast(isEnabled) {
+    const existing = document.getElementById('anomalous-theme-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'anomalous-theme-toast';
+    toast.className = 'anomalous-theme-toast' + (isEnabled ? ' is-abyssal' : '');
+    toast.textContent = isEnabled ? t('themeDomainActivated') : t('themeDomainDeactivated');
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.classList.add('is-show');
+    });
+
+    setTimeout(() => {
+        toast.classList.remove('is-show');
+        setTimeout(() => toast.remove(), 400);
+    }, 2400);
+}
+
+export function setAbyssalScarletTheme(enabled, notify = false) {
+    const isEnabled = Boolean(enabled);
+    localStorage.setItem('anomalous_theme_abyssal_scarlet', isEnabled ? 'true' : 'false');
+
+    document.documentElement.classList.toggle('theme-abyssal-scarlet', isEnabled);
+    const modal = document.getElementById('anomalous-modal');
+    if (modal) modal.classList.toggle('theme-abyssal-scarlet', isEnabled);
+    const container = document.getElementById('anomalous-container');
+    if (container) container.classList.toggle('theme-abyssal-scarlet', isEnabled);
+
+    try {
+        const settings = app.extensionManager?.setting;
+        if (settings && typeof settings.set === 'function') {
+            if (settings.get(ABYSSAL_SCARLET_SETTING_ID) !== isEnabled) {
+                settings.set(ABYSSAL_SCARLET_SETTING_ID, isEnabled);
+            }
+        }
+    } catch (_) {}
+
+    if (notify) {
+        showThemeNoticeToast(isEnabled);
+    }
+
+    window.dispatchEvent(new CustomEvent('anomalous-theme-change', {
+        detail: { theme: isEnabled ? 'abyssal-scarlet' : 'default', enabled: isEnabled }
+    }));
+}
+window.setAbyssalScarletTheme = setAbyssalScarletTheme;
+
+const initialTheme = localStorage.getItem('anomalous_theme_abyssal_scarlet') === 'true';
+setAbyssalScarletTheme(initialTheme, false);
 
 class AnomalousBrowser {
     constructor() {
@@ -777,6 +835,17 @@ app.registerExtension({
             ],
             onChange(value) {
                 applyLanguagePreference(value);
+            }
+        },
+        {
+            id: ABYSSAL_SCARLET_SETTING_ID,
+            name: t('mainAbyssalScarletThemeSetting'),
+            category: ['Anomalous Model Browser', t('mainInterfaceCategory'), 'theme'],
+            tooltip: t('mainAbyssalScarletThemeTooltip'),
+            type: 'boolean',
+            defaultValue: () => localStorage.getItem('anomalous_theme_abyssal_scarlet') === 'true',
+            onChange(value) {
+                setAbyssalScarletTheme(Boolean(value), true);
             }
         }
     ],
