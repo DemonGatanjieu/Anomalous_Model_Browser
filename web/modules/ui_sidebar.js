@@ -10,7 +10,15 @@ import { updateScanProgress, finishScanProgress, failScanProgress } from './scan
 
 const t = (key, params) => translate(key, params);
 
+const SCAN_RADAR_ICON_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="9"/><path d="M12 12 18.5 5.5"/><circle cx="12" cy="12" r="2"/><path d="M12 7a5 5 0 0 1 5 5"/></svg>`;
 
+function setScanButtonState(btn, isScanning) {
+    if (!btn) return;
+    btn.innerHTML = SCAN_RADAR_ICON_SVG;
+    btn.classList.toggle('anomalous-radar-spinning', Boolean(isScanning));
+    btn.style.opacity = isScanning ? '0.85' : '1';
+    btn.style.animation = '';
+}
 
 export function createDOM() {
         localStorage.removeItem('anomalous_api_key');
@@ -342,7 +350,8 @@ export function createDOM() {
         const scanBtn = document.createElement('button');
         scanBtn.id = 'anomalous-scan-btn';
         scanBtn.title = t('sidebarScanWizard');
-        scanBtn.innerHTML = `🔄`;
+        scanBtn.setAttribute('aria-label', t('sidebarScanWizard'));
+        setScanButtonState(scanBtn, false);
         scanBtn.style.background = 'transparent';
         scanBtn.style.color = '#ccc';
         scanBtn.style.border = 'none';
@@ -351,8 +360,8 @@ export function createDOM() {
         scanBtn.style.fontSize = '1.1em';
         scanBtn.style.cursor = 'pointer';
         scanBtn.style.transition = 'all 0.2s ease';
-        scanBtn.onmouseover = () => { scanBtn.style.background = 'rgba(255,255,255,0.1)'; scanBtn.style.color = '#fff'; };
-        scanBtn.onmouseout = () => { scanBtn.style.background = 'transparent'; scanBtn.style.color = '#ccc'; };
+        scanBtn.onmouseover = () => { scanBtn.style.background = 'rgba(255,255,255,0.1)'; scanBtn.style.color = '#38bdf8'; };
+        scanBtn.onmouseout = () => { scanBtn.style.background = 'transparent'; scanBtn.style.color = scanBtn.classList.contains('anomalous-radar-spinning') ? '#38bdf8' : '#ccc'; };
 
         let isCurrentlyScanning = false;
         setInterval(async () => {
@@ -383,12 +392,10 @@ export function createDOM() {
 
                 if (isScanning && !isCurrentlyScanning) {
                     isCurrentlyScanning = true;
-                    scanBtn.innerHTML = `⏳`;
-                    scanBtn.style.opacity = '0.7';
+                    setScanButtonState(scanBtn, true);
                 } else if (!isScanning && isCurrentlyScanning) {
                     isCurrentlyScanning = false;
-                    scanBtn.innerHTML = `🔄`;
-                    scanBtn.style.opacity = '1';
+                    setScanButtonState(scanBtn, false);
                     finishScanProgress();
                     this.loadModels();
                     if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();
@@ -892,8 +899,7 @@ export function createDOM() {
                         
                         document.body.removeChild(wizard);
                         if (typeof scanBtn !== 'undefined') {
-                            scanBtn.innerHTML = `⏳`;
-                            scanBtn.style.animation = 'anomalous-spin 2s linear infinite';
+                            setScanButtonState(scanBtn, true);
                         }
 
                         const customFolders = Array.from(selectedForScan.entries()).filter(([, files]) => files.size > 0);
@@ -957,8 +963,7 @@ export function createDOM() {
                         }
                         
                         if (typeof scanBtn !== 'undefined') {
-                            scanBtn.innerHTML = `🔄`;
-                            scanBtn.style.animation = '';
+                            setScanButtonState(scanBtn, false);
                         }
                         finishScanProgress();
                         if (enableAutoCheck && window.anomalous_resolve_all_missing_nodes) {
@@ -994,8 +999,7 @@ export function createDOM() {
                     if (data.status === 'ok') {
                         updateScanProgress({ scanning: true, phase: 'preparing', recovered: data.recovered });
                         if (typeof scanBtn !== 'undefined') {
-                            scanBtn.innerHTML = `⏳`;
-                            scanBtn.style.animation = 'anomalous-spin 2s linear infinite';
+                            setScanButtonState(scanBtn, true);
                         }
 
                         // Start polling
@@ -1014,8 +1018,7 @@ export function createDOM() {
                                     if (statusData.interrupted) failScanProgress(t('scanProgressInterrupted'));
                                     else finishScanProgress();
                                     if (typeof scanBtn !== 'undefined') {
-                                        scanBtn.innerHTML = `🔄`;
-                                        scanBtn.style.animation = '';
+                                        setScanButtonState(scanBtn, false);
                                     }
 
                                     if (enableAutoCheck && window.anomalous_resolve_all_missing_nodes) {
@@ -1026,8 +1029,7 @@ export function createDOM() {
                             } catch (err) {
                                 clearInterval(poll);
                                 if (typeof scanBtn !== 'undefined') {
-                                    scanBtn.innerHTML = `🔄`;
-                                    scanBtn.style.animation = '';
+                                    setScanButtonState(scanBtn, false);
                                 }
                             }
                         }, 2000);
@@ -1141,8 +1143,9 @@ export function createDOM() {
             updateLangClass();
             modelsBtn.innerHTML = `🏠 <span class="anomalous-btn-text">${t('models')}</span>`;
             galleryBtn.innerHTML = `🖼️ <span class="anomalous-btn-text">${t('gallery')}</span>`;
-            scanBtn.title = t('scanTitle');
-            scanBtn.innerHTML = `🔄`;
+            scanBtn.title = t('sidebarScanWizard');
+            scanBtn.setAttribute('aria-label', t('sidebarScanWizard'));
+            setScanButtonState(scanBtn, isCurrentlyScanning);
             helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
             nbBtn.title = t('recipeTitle');
             nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('recipeTitle')}</span>`;

@@ -10531,5 +10531,61 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     box-shadow: 0 25px 80px rgba(0, 0, 0, 0.88), 0 0 40px rgba(220, 20, 60, 0.18) !important;
 }
 
+/* 9. Model Scanner Radar Button & Spin Animation */
+#anomalous-scan-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 6px !important;
+    box-sizing: border-box !important;
+    vertical-align: middle !important;
+}
+
+#anomalous-scan-btn svg {
+    transition: transform 0.2s ease, filter 0.2s ease;
+    transform-origin: center center;
+}
+
+#anomalous-scan-btn:hover svg {
+    filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.6));
+}
+
+#anomalous-scan-btn.anomalous-radar-spinning {
+    color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.12) !important;
+    border: 1px solid rgba(56, 189, 248, 0.35) !important;
+}
+
+#anomalous-scan-btn.anomalous-radar-spinning svg {
+    animation: anomalous-radar-spin 1.4s linear infinite !important;
+    filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.75)) !important;
+}
+
+@keyframes anomalous-radar-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.theme-abyssal-scarlet #anomalous-scan-btn:hover svg {
+    filter: drop-shadow(0 0 5px rgba(255, 77, 109, 0.75));
+}
+
+.theme-abyssal-scarlet #anomalous-scan-btn.anomalous-radar-spinning {
+    color: #ff4d6d !important;
+    background: rgba(255, 77, 109, 0.14) !important;
+    border: 1px solid rgba(255, 77, 109, 0.4) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-scan-btn.anomalous-radar-spinning svg {
+    filter: drop-shadow(0 0 7px rgba(255, 77, 109, 0.85)) !important;
+}
+
+
 
 

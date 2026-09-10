@@ -79,7 +79,11 @@ DOM or live LiteGraph state.
   native command/keybinding integration.
 - `ui_sidebar.js`, `ui_grid.js`, `ui_detail.js`, and `ui_gallery.js` own the
   primary model-browser surfaces, including the frosted-glass capsule parameter inspection
-  button with lightweight vector SVG icons and GPU-accelerated micro-interactions.
+  button with lightweight vector SVG icons and GPU-accelerated micro-interactions;
+  the sidebar bottom-left scan action (`#anomalous-scan-btn`) features a dedicated high-precision
+  vector radar SVG (`SCAN_RADAR_ICON_SVG`) with GPU-accelerated continuous sweep animation (`.anomalous-radar-spinning`),
+  completely decoupling from the settings modal's default layout reset button (`sidebarResetLayout: '📐 恢复默认窗口布局'`)
+  to eliminate visual collision and disambiguate user mental models.
 - `ui_gallery_detail.js` owns the studio modal Image Detail Workbench,
   multi-dimensional image navigation (keyboard shortcuts, floating glass arrows,
   left vertical thumbnail rail), streamlined workflow/material action buttons,
