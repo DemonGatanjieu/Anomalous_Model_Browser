@@ -56,6 +56,9 @@ export function createDOM() {
         const savedBgOpacity = localStorage.getItem('anomalous_bg_opacity') || '0.2';
         container.style.setProperty('--anomalous-bg-opacity', savedBgOpacity);
 
+        const savedViewMode = localStorage.getItem('anomalous_view_mode') || 'standard';
+        container.classList.add(`view-mode-${savedViewMode}`);
+
         // Sidebar
         this.sidebarWrapper = document.createElement('div');
         this.sidebarWrapper.id = 'anomalous-sidebar-wrapper';
@@ -1222,6 +1225,14 @@ export function createDOM() {
             if (resetBtnRef) resetBtnRef.textContent = t('sidebarResetLayout');
             const scaleLabelRef = document.getElementById('anomalous-scale-label');
             if (scaleLabelRef) scaleLabelRef.textContent = t('sidebarUiScale');
+            const vmLabelRef = document.getElementById('anomalous-view-mode-label');
+            if (vmLabelRef) vmLabelRef.textContent = t('sidebarViewMode');
+            const stdBtnRef = document.getElementById('anomalous-view-mode-btn-standard');
+            if (stdBtnRef) stdBtnRef.textContent = t('sidebarViewModeStandard');
+            const cmpBtnRef = document.getElementById('anomalous-view-mode-btn-compact');
+            if (cmpBtnRef) cmpBtnRef.textContent = t('sidebarViewModeCompact');
+            const aesBtnRef = document.getElementById('anomalous-view-mode-btn-aesthetic');
+            if (aesBtnRef) aesBtnRef.textContent = t('sidebarViewModeAesthetic');
             const hashBtnRef = document.getElementById('anomalous-hash-toggle-btn');
             if (hashBtnRef) {
                 const isInject = localStorage.getItem('anomalous_inject_hash') !== 'false';
@@ -1513,21 +1524,106 @@ export function createDOM() {
             }
         };
 
+        // Display Mode Selector (标准模式 / 高密度 / 沉浸模式)
+        const viewModeContainer = document.createElement('div');
+        viewModeContainer.id = 'anomalous-view-mode-container';
+        viewModeContainer.style.display = 'flex';
+        viewModeContainer.style.flexDirection = 'column';
+        viewModeContainer.style.gap = '6px';
+        viewModeContainer.style.background = 'rgba(255, 255, 255, 0.03)';
+        viewModeContainer.style.padding = '8px 10px';
+        viewModeContainer.style.borderRadius = '8px';
+        viewModeContainer.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+        viewModeContainer.style.marginBottom = '4px';
+
+        const viewModeHeader = document.createElement('div');
+        viewModeHeader.style.display = 'flex';
+        viewModeHeader.style.justifyContent = 'space-between';
+        viewModeHeader.style.alignItems = 'center';
+
+        const viewModeLabel = document.createElement('span');
+        viewModeLabel.id = 'anomalous-view-mode-label';
+        viewModeLabel.textContent = t('sidebarViewMode');
+        viewModeLabel.style.color = '#ccc';
+        viewModeLabel.style.fontSize = '0.88em';
+        viewModeLabel.style.fontWeight = '500';
+        viewModeHeader.appendChild(viewModeLabel);
+
+        const viewModeGroup = document.createElement('div');
+        viewModeGroup.style.display = 'grid';
+        viewModeGroup.style.gridTemplateColumns = '1fr 1fr 1fr';
+        viewModeGroup.style.gap = '4px';
+        viewModeGroup.style.background = 'rgba(0, 0, 0, 0.35)';
+        viewModeGroup.style.padding = '3px';
+        viewModeGroup.style.borderRadius = '6px';
+        viewModeGroup.style.border = '1px solid rgba(255, 255, 255, 0.06)';
+
+        const modeDefinitions = [
+            { id: 'standard', key: 'sidebarViewModeStandard' },
+            { id: 'compact', key: 'sidebarViewModeCompact' },
+            { id: 'aesthetic', key: 'sidebarViewModeAesthetic' }
+        ];
+
+        let currentViewMode = localStorage.getItem('anomalous_view_mode') || 'standard';
+        if (!['standard', 'compact', 'aesthetic'].includes(currentViewMode)) {
+            currentViewMode = 'standard';
+        }
+
+        const modeBtnElements = [];
+
+        const applyViewMode = (mode) => {
+            currentViewMode = mode;
+            localStorage.setItem('anomalous_view_mode', mode);
+            container.classList.remove('view-mode-standard', 'view-mode-compact', 'view-mode-aesthetic');
+            container.classList.add(`view-mode-${mode}`);
+
+            modeBtnElements.forEach(({ btn, mId }) => {
+                const isActive = mId === mode;
+                btn.style.background = isActive ? 'rgba(255, 255, 255, 0.16)' : 'transparent';
+                btn.style.color = isActive ? '#ffffff' : '#94a3b8';
+                btn.style.fontWeight = isActive ? '600' : '400';
+                btn.style.boxShadow = isActive ? '0 1px 4px rgba(0, 0, 0, 0.4)' : 'none';
+            });
+
+            if (bgOpacityContainer) {
+                bgOpacityContainer.style.display = mode === 'aesthetic' ? 'flex' : 'none';
+            }
+        };
+
+        modeDefinitions.forEach(m => {
+            const btn = document.createElement('button');
+            btn.id = `anomalous-view-mode-btn-${m.id}`;
+            btn.textContent = t(m.key);
+            btn.style.border = 'none';
+            btn.style.borderRadius = '4px';
+            btn.style.padding = '5px 2px';
+            btn.style.fontSize = '0.78em';
+            btn.style.cursor = 'pointer';
+            btn.style.transition = 'all 0.18s ease';
+            btn.style.textAlign = 'center';
+            btn.onclick = () => applyViewMode(m.id);
+            viewModeGroup.appendChild(btn);
+            modeBtnElements.push({ btn, mId: m.id, key: m.key });
+        });
+
+        viewModeContainer.appendChild(viewModeHeader);
+        viewModeContainer.appendChild(viewModeGroup);
+
         const scaleContainer = document.createElement('div');
         scaleContainer.style.display = 'flex';
         scaleContainer.style.alignItems = 'center';
         scaleContainer.style.justifyContent = 'space-between';
-        scaleContainer.style.background = '#1a1a1a';
-        scaleContainer.style.padding = '8px 12px';
-        scaleContainer.style.borderRadius = '4px';
-        scaleContainer.style.border = '2px solid #555';
+        scaleContainer.style.background = 'rgba(255, 255, 255, 0.03)';
+        scaleContainer.style.padding = '8px 10px';
+        scaleContainer.style.borderRadius = '8px';
+        scaleContainer.style.border = '1px solid rgba(255, 255, 255, 0.08)';
         scaleContainer.style.marginBottom = '4px';
 
         const scaleLabel = document.createElement('span');
         scaleLabel.id = 'anomalous-scale-label';
         scaleLabel.textContent = t('sidebarUiScale');
         scaleLabel.style.color = '#ccc';
-        scaleLabel.style.fontSize = '0.9em';
+        scaleLabel.style.fontSize = '0.88em';
 
         let currentScale = parseFloat(savedScale);
 
@@ -1581,17 +1677,17 @@ export function createDOM() {
         bgOpacityContainer.style.display = 'flex';
         bgOpacityContainer.style.alignItems = 'center';
         bgOpacityContainer.style.justifyContent = 'space-between';
-        bgOpacityContainer.style.background = '#1a1a1a';
-        bgOpacityContainer.style.padding = '8px 12px';
-        bgOpacityContainer.style.borderRadius = '4px';
-        bgOpacityContainer.style.border = '2px solid #555';
+        bgOpacityContainer.style.background = 'rgba(255, 255, 255, 0.03)';
+        bgOpacityContainer.style.padding = '8px 10px';
+        bgOpacityContainer.style.borderRadius = '8px';
+        bgOpacityContainer.style.border = '1px solid rgba(255, 255, 255, 0.08)';
         bgOpacityContainer.style.marginBottom = '4px';
 
         const bgOpacityLabel = document.createElement('span');
         bgOpacityLabel.id = 'anomalous-bg-opacity-label';
         bgOpacityLabel.textContent = t('sidebarBgAtmosphere');
         bgOpacityLabel.style.color = '#ccc';
-        bgOpacityLabel.style.fontSize = '0.9em';
+        bgOpacityLabel.style.fontSize = '0.88em';
 
         let currentBgOpacity = parseFloat(savedBgOpacity);
 
@@ -1641,6 +1737,9 @@ export function createDOM() {
         bgOpacityContainer.appendChild(bgOpacityLabel);
         bgOpacityContainer.appendChild(bgControlsWrapper);
 
+        // Synchronize view mode active button & atmosphere visibility
+        applyViewMode(currentViewMode);
+
         const resetBtn = document.createElement('button');
         resetBtn.id = 'anomalous-reset-btn';
         resetBtn.textContent = t('sidebarResetLayout');
@@ -1654,6 +1753,8 @@ export function createDOM() {
                 localStorage.removeItem('anomalous_docked');
                 localStorage.removeItem('anomalous_ui_scale');
                 localStorage.removeItem('anomalous_bg_opacity');
+                localStorage.removeItem('anomalous_view_mode');
+                applyViewMode('standard');
                 container.style.left = '5%';
                 container.style.top = '5%';
                 container.style.width = '90%';
@@ -1712,6 +1813,7 @@ export function createDOM() {
         
         settingsHubModal.appendChild(folderManagerBtn);
         settingsHubModal.appendChild(modelSettingsBtn);
+        settingsHubModal.appendChild(viewModeContainer);
         settingsHubModal.appendChild(scaleContainer);
         settingsHubModal.appendChild(bgOpacityContainer);
         settingsHubModal.appendChild(langBtn);

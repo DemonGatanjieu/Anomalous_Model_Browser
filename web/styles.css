@@ -261,9 +261,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     width: 90%;
     height: 90%;
     background-color: var(--amb-bg-page, #0b0d13);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 4px;
-    clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
     display: flex;
     flex-direction: row;
     overflow: hidden;
@@ -277,19 +276,23 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 #anomalous-container::before {
-    display: block;
+    display: none;
     content: '';
     position: absolute;
     inset: 0;
     background-image: 
-        radial-gradient(ellipse 95% 85% at 50% 35%, rgba(11, 13, 19, 0.12) 0%, rgba(11, 13, 19, 0.55) 100%),
+        radial-gradient(ellipse 95% 85% at 50% 35%, rgba(11, 13, 19, 0.15) 0%, rgba(11, 13, 19, 0.65) 100%),
         url('assets/archive_library_bg.webp');
     background-size: cover;
     background-position: center 25%;
-    opacity: var(--anomalous-bg-opacity, 0.2);
+    opacity: var(--anomalous-bg-opacity, 0.12);
     transition: opacity 0.3s ease;
     pointer-events: none;
     z-index: 0;
+}
+
+#anomalous-container.view-mode-aesthetic::before {
+    display: block;
 }
 
 #anomalous-container > * {
@@ -451,23 +454,23 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-card {
     position: relative;
-    background: rgba(20, 20, 26, 0.85);
+    background: rgba(18, 20, 26, 0.95);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 6px 16px 6px 16px;
+    border-radius: 8px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    height: 380px;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+    height: 340px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
     will-change: transform, box-shadow;
     cursor: pointer;
 }
 
 .anomalous-card:hover {
-    transform: translateY(-5px);
-    border-color: rgba(255, 255, 255, 0.25);
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .theme-abyssal-scarlet .anomalous-card {
@@ -478,7 +481,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .theme-abyssal-scarlet .anomalous-card:hover {
     border-color: #dc143c;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.95), inset 0 0 12px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.9), inset 0 0 12px rgba(0, 0, 0, 0.7);
 }
 
 .anomalous-card img,
@@ -492,17 +495,96 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-card:hover img,
 .anomalous-card:hover video {
-    transform: scale(1.04);
+    transform: scale(1.02);
 }
 
 #anomalous-container.anomalous-sidebar-closed #anomalous-grid {
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 16px;
-    row-gap: 28px;
+    row-gap: 24px;
 }
 
 #anomalous-container.anomalous-sidebar-closed .anomalous-card {
+    height: 320px;
+}
+
+/* ==========================================================================
+   Display Modes: Standard, Compact, Aesthetic
+   ========================================================================== */
+
+/* Mode 1: Standard (Default) - Clean, balanced, 8px architectural geometry */
+#anomalous-container.view-mode-standard #anomalous-grid,
+#anomalous-container:not(.view-mode-compact):not(.view-mode-aesthetic) #anomalous-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    row-gap: 28px;
+    padding: 20px;
+}
+
+#anomalous-container.view-mode-standard .anomalous-card,
+#anomalous-container:not(.view-mode-compact):not(.view-mode-aesthetic) .anomalous-card {
     height: 340px;
+    border-radius: 8px;
+}
+
+/* Mode 2: Compact (Power User / High Density) */
+#anomalous-container.view-mode-compact #anomalous-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    gap: 10px !important;
+    row-gap: 14px !important;
+    padding: 12px !important;
+}
+
+#anomalous-container.view-mode-compact .anomalous-card {
+    height: 220px !important;
+    border-radius: 6px !important;
+}
+
+#anomalous-container.view-mode-compact .anomalous-card-labels {
+    padding: 6px 8px 6px !important;
+}
+
+#anomalous-container.view-mode-compact .anomalous-card-title {
+    font-size: 0.82em !important;
+    line-height: 1.2 !important;
+}
+
+#anomalous-container.view-mode-compact .anomalous-card-filename {
+    font-size: 0.72em !important;
+}
+
+#anomalous-container.view-mode-compact .anomalous-card-badge {
+    font-size: 0.65em !important;
+    padding: 1px 4px !important;
+}
+
+#anomalous-container.view-mode-compact .anomalous-card-action-btn {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 0.72em !important;
+}
+
+/* Mode 3: Aesthetic (Subtle Ambient Depth) */
+#anomalous-container.view-mode-aesthetic #anomalous-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px;
+    row-gap: 36px;
+    padding: 24px;
+}
+
+#anomalous-container.view-mode-aesthetic .anomalous-card {
+    height: 360px;
+    border-radius: 8px;
+    background: rgba(18, 20, 28, 0.78);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#anomalous-container.view-mode-aesthetic .anomalous-card:hover {
+    background: rgba(22, 25, 36, 0.88);
+    border-color: rgba(255, 255, 255, 0.28);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
 }
 
 /* Model Card Labels: Always visible at rest, crisp non-blurry gradient mask */

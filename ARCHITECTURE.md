@@ -85,15 +85,17 @@ DOM or live LiteGraph state.
   (2) Model Doctor (`#anomalous-doctor-btn`): Sleek diagnostic medical stethoscope, instantly conveying health check semantics;
   (3) AI Assistant (`#anomalous-assistant-btn`): Radiant AI copilot sparkles (`✦`), representing copilot intelligence;
   (4) Material Library (`#anomalous-materials-btn`): 3D layered preset stack, distinguishing from individual model boxes;
-  (5) Settings Hub (`#anomalous-global-settings-btn`): Precision 8-tooth mechanical engineering gear with elevated popover (`#anomalous-settings-hub-modal`) mounted directly to container with `z-index: 999999` and dynamic responsive offset;
+  (5) Settings Hub (`#anomalous-global-settings-btn`): Precision 8-tooth mechanical engineering gear with elevated popover (`#anomalous-settings-hub-modal`) mounted directly to container with `z-index: 999999` and dynamic responsive offset; hosts a clean 3-way Display Mode segmented controller (`#anomalous-view-mode-container` for Standard, Compact, and Aesthetic modes), UI scale controls, dynamic background atmosphere controls, folder manager, and language toggles;
   (6) Models & Floating Trigger: 4D Anomalous Hypercube Core SVG;
   adhering to a "low-stimulus idle, subtle-illumination on hover" philosophy where icons use calm `currentColor` in idle state and gently illuminate on interaction;
   critical tool workbenches (`#anomalous-doctor-panel`, `#anomalous-assistant-panel`) strictly enforce 100% opaque, solid backgrounds (`background: var(--amb-bg-page, #0b0d13) !important`) to eliminate background distraction during diagnostics;
-  the background atmosphere is fully user-controllable via a dedicated opacity slider in the settings hub (`--anomalous-bg-opacity`, defaulting to a subtle, unobtrusive 20% dark blueprint watermark, down to 0% for pure distraction-free dark mode);
-  coupled with dynamic theme inheritance, asymmetric chamfered model cards (`border-radius: 4px 14px 4px 14px;`),
-  spatial depth shadows (`0 4px 20px rgba(0,0,0,0.45)`), zero-cost micro-abrasive radial lighting gradients on `#anomalous-container`,
-  sharp geometric diagonal chamfering (`clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px)`),
-  seamless docking fallbacks, subtle vector watermarks on empty sidebar zones, and a micro-floating capsule tooltip system
+  the modal adopts a disciplined "workshop / archive" aesthetic: removing exaggerated `clip-path` chamfers in favor of clean 8px architectural engineering geometry (`border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1)`);
+  supports 3 unified Display Modes sharing identical DOM structure and UX logic:
+  - Standard Mode (标准模式, default): Balanced 200px cards, 340px height, pure solid obsidian canvas with zero wallpaper distraction;
+  - Compact Mode (高密度模式, power users): 140px min-width, 220px card height, 10px gaps, optimized for high-density scanning;
+  - Aesthetic Mode (沉浸模式): Subtle 12% ambient archive watermark with frosted glass borders;
+  cards feature unified 8px geometry (`border-radius: 8px`), restrained elevation (`translateY(-2px)`, `scale(1.02)`), spatial depth shadows (`0 4px 14px rgba(0,0,0,0.35)`),
+  seamless docking fallbacks, and a micro-floating capsule tooltip system
   (`.anomalous-tooltip-target`) providing unambiguous, bilingual action semantics across all vector tools.
 - `ui_gallery_detail.js` owns the studio modal Image Detail Workbench,
   multi-dimensional image navigation (keyboard shortcuts, floating glass arrows,
