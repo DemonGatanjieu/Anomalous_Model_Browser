@@ -133,6 +133,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     pointer-events: none;
     z-index: 10000;
     display: none;
+    filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.85));
 }
 
 #anomalous-modal.visible {
@@ -144,11 +145,11 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     height: 90%;
     background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.035) 0%, transparent 65%), var(--bg-color, #1e1e24);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
+    border-radius: 4px;
+    clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     pointer-events: auto;
     position: absolute;
     left: 5%;
@@ -163,6 +164,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     height: 100% !important;
     width: 660px !important;
     border-radius: 0 !important;
+    clip-path: none !important;
     transition: all 0.3s ease;
 }
 
@@ -447,10 +449,30 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 #anomalous-sidebar-wrapper {
     width: 250px;
     background: var(--comfy-menu-bg, #2a2a2a);
-    border-right: 1px solid var(--border-color, #444);
+    position: relative;
+    border-right: none;
     display: flex;
     flex-direction: column;
     transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+#anomalous-sidebar-wrapper::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(180deg, 
+        rgba(56, 189, 248, 0) 0%, 
+        rgba(56, 189, 248, 0.35) 20%, 
+        rgba(129, 140, 248, 0.55) 50%, 
+        rgba(192, 132, 252, 0.3) 80%, 
+        rgba(56, 189, 248, 0) 100%
+    );
+    pointer-events: none;
+    z-index: 5;
+    box-shadow: 0 0 6px rgba(56, 189, 248, 0.25);
 }
 
 .anomalous-sidebar-closed #anomalous-sidebar-wrapper {
@@ -10654,6 +10676,109 @@ button:hover .anomalous-btn-icon {
 .theme-abyssal-scarlet #anomalous-sidebar-actions button:hover svg {
     filter: drop-shadow(0 0 6px rgba(255, 51, 102, 0.8)) !important;
 }
+
+/* 11. Task 9: Master Container Geometric Details, Watermarks & Floating Tooltips */
+
+/* Empty space watermark on sidebar bottom */
+#anomalous-sidebar-actions {
+    position: relative;
+    overflow: hidden;
+}
+
+#anomalous-sidebar-actions::before {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    right: -15px;
+    width: 90px;
+    height: 90px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='white' stroke-width='1.5'%3E%3Ccircle cx='50' cy='50' r='45' stroke-dasharray='4 3'/%3E%3Ccircle cx='50' cy='50' r='30'/%3E%3Ccircle cx='50' cy='50' r='10'/%3E%3Cline x1='50' y1='5' x2='50' y2='95'/%3E%3Cline x1='5' y1='50' x2='95' y2='50'/%3E%3Cpolygon points='50,20 80,50 50,80 20,50'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 0;
+    transition: opacity 0.3s ease;
+}
+
+.theme-abyssal-scarlet #anomalous-sidebar-actions::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%23ff3366' stroke-width='1.5'%3E%3Ccircle cx='50' cy='50' r='45'/%3E%3Cpolygon points='50,5 95,50 50,95 5,50' stroke-dasharray='3 3'/%3E%3Cpolygon points='50,15 85,50 50,85 15,50'/%3E%3Ccircle cx='50' cy='50' r='12'/%3E%3C/svg%3E");
+    opacity: 0.055;
+}
+
+/* Abyssal Scarlet Mode override for energy divider */
+.theme-abyssal-scarlet #anomalous-sidebar-wrapper::after {
+    background: linear-gradient(180deg, 
+        rgba(220, 20, 60, 0) 0%, 
+        rgba(220, 20, 60, 0.45) 20%, 
+        rgba(255, 51, 102, 0.7) 50%, 
+        rgba(147, 51, 234, 0.45) 80%, 
+        rgba(220, 20, 60, 0) 100%
+    ) !important;
+    box-shadow: 0 0 8px rgba(255, 51, 102, 0.4) !important;
+}
+
+/* Micro-floating Capsule Tooltip System */
+.anomalous-tooltip-target {
+    position: relative;
+}
+
+.anomalous-tooltip-target::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    padding: 5px 9px;
+    background: rgba(15, 15, 20, 0.94);
+    color: #e2e8f0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    border-radius: 3px 8px 3px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.16s ease, transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 999999;
+}
+
+.anomalous-tooltip-target::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 3px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    border-width: 5px 4px 0 4px;
+    border-style: solid;
+    border-color: rgba(15, 15, 20, 0.94) transparent transparent transparent;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.16s ease, transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 999999;
+}
+
+.anomalous-tooltip-target:hover::after,
+.anomalous-tooltip-target:hover::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    transition-delay: 0.15s;
+}
+
+.theme-abyssal-scarlet .anomalous-tooltip-target::after {
+    background: rgba(16, 8, 24, 0.96);
+    border-color: rgba(220, 20, 60, 0.45);
+    color: #ffd1dc;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8), 0 0 8px rgba(220, 20, 60, 0.35);
+}
+
+.theme-abyssal-scarlet .anomalous-tooltip-target::before {
+    border-color: rgba(16, 8, 24, 0.96) transparent transparent transparent;
+}
+
 
 
 
