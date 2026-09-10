@@ -1147,21 +1147,10 @@ export function createDOM() {
         header.appendChild(rightGroup);
 
         const settingsHubModal = document.createElement('div');
-        settingsHubModal.style.position = 'absolute';
-        settingsHubModal.style.bottom = '15px';
-        settingsHubModal.style.left = '100%';
-        settingsHubModal.style.marginLeft = '10px';
-        settingsHubModal.style.width = '270px';
-        settingsHubModal.style.background = 'rgba(22, 25, 34, 0.95)';
-        settingsHubModal.style.backdropFilter = 'blur(20px)';
-        settingsHubModal.style.border = '1px solid rgba(255,255,255,0.12)';
-        settingsHubModal.style.borderRadius = '12px';
-        settingsHubModal.style.padding = '10px';
+        settingsHubModal.id = 'anomalous-settings-hub-modal';
         settingsHubModal.style.display = 'none';
         settingsHubModal.style.flexDirection = 'column';
         settingsHubModal.style.gap = '4px';
-        settingsHubModal.style.boxShadow = '0 12px 40px rgba(0,0,0,0.7)';
-        settingsHubModal.style.zIndex = '99999';
 
         const langBtn = document.createElement('button');
         langBtn.className = 'anomalous-lang-btn';
@@ -1730,7 +1719,7 @@ export function createDOM() {
         settingsHubModal.appendChild(feedbackBtn);
         settingsHubModal.appendChild(resetBtn);
 
-        this.sidebarWrapper.appendChild(settingsHubModal);
+        container.appendChild(settingsHubModal);
 
         const settingsBtn = document.createElement('button');
         settingsBtn.id = 'anomalous-global-settings-btn';

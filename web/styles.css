@@ -852,6 +852,29 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     overflow: hidden;
 }
 
+#anomalous-settings-hub-modal {
+    position: absolute;
+    bottom: 16px;
+    left: 266px;
+    width: 270px;
+    max-height: calc(100% - 32px);
+    overflow-y: auto;
+    box-sizing: border-box;
+    background: rgba(20, 22, 30, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    z-index: 999999 !important;
+    transition: left 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.anomalous-sidebar-closed #anomalous-settings-hub-modal {
+    left: 72px !important;
+}
+
 .anomalous-sidebar-closed #anomalous-sidebar-actions {
     flex-direction: column !important;
 }

@@ -85,7 +85,7 @@ DOM or live LiteGraph state.
   (2) Model Doctor (`#anomalous-doctor-btn`): Sleek diagnostic medical stethoscope, instantly conveying health check semantics;
   (3) AI Assistant (`#anomalous-assistant-btn`): Radiant AI copilot sparkles (`✦`), representing copilot intelligence;
   (4) Material Library (`#anomalous-materials-btn`): 3D layered preset stack, distinguishing from individual model boxes;
-  (5) Settings Hub (`#anomalous-global-settings-btn`): Precision 8-tooth mechanical engineering gear with elevated popover (`z-index: 99999`);
+  (5) Settings Hub (`#anomalous-global-settings-btn`): Precision 8-tooth mechanical engineering gear with elevated popover (`#anomalous-settings-hub-modal`) mounted directly to container with `z-index: 999999` and dynamic responsive offset;
   (6) Models & Floating Trigger: 4D Anomalous Hypercube Core SVG;
   adhering to a "low-stimulus idle, subtle-illumination on hover" philosophy where icons use calm `currentColor` in idle state and gently illuminate on interaction;
   critical tool workbenches (`#anomalous-doctor-panel`, `#anomalous-assistant-panel`) strictly enforce 100% opaque, solid backgrounds (`background: var(--amb-bg-page, #0b0d13) !important`) to eliminate background distraction during diagnostics;
