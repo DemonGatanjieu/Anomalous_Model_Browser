@@ -178,9 +178,9 @@ DOM or live LiteGraph state.
   `recipe_actions.js` own pure or transactional recipe behavior.
 - `ui_doctor.js`, `model_picker.js`, and `graph_splice.js` own assistant and
   explicit graph-edit behavior.
-- Dual-Mode Theme Architecture (双形态剥离与主题分层隔离):
-  - **Normal Mode (Default / 标准中性黑曜石模式)**: Restrained, clean, neutral dark obsidian (`#0d0d11` / `#0d0d0f`) styling; strictly eliminates global crimson/wine hues, concept art backdrops (`bg_concept.webp`, `abyssal_scarlet_mansion.webp`), and glowing red borders from default rules; neutral silver-slate (`#94a3b8`) active sidebar indicators and vector icons; neutral dark glass cards (`rgba(20, 20, 26, 0.85)`) and silver plate badges (`#cbd5e1`); neutral slate tooltips (`rgba(18, 20, 28, 0.95)`); cyber cyan/blue (`#38bdf8`) retained for Prompt Mixer/Workbench interactive states, dropzones, and radar animations.
-  - **Abyssal Scarlet Easter Egg Mode (`.theme-abyssal-scarlet` / 深海血族彩蛋领域)**: All aristocratic gothic vampire elements (Crimson `#dc143c`, Deep Wine `#722f37`, Abyssal Violet `#8b5cf6`, concept overlays `abyssal_scarlet_mansion.webp` and `bg_concept.webp`, radial crimson moon gradients, Gothic Sovereign badges, scarlet button rim glows) are strictly scoped under `.theme-abyssal-scarlet` or `html.theme-abyssal-scarlet`.
+- Dual-Mode Theme Architecture (双形态主题架构与材质光影精细化):
+  - **Normal Mode (Default / 标准中性黑曜石模式 - 暗物质材质水印底纹)**: Restrained, clean, neutral dark obsidian (`#0a0a0c` / `#0d0d11`) styling; overlaid with the "Dark Matter Material" AI Concept Art Watermark (`assets/normal_bg_concept.webp`) on `#anomalous-content::before` and gallery panels at ultra-low opacity (`0.04 ~ 0.05`) with `mix-blend-mode: luminosity`, banishing dead-black voids while ensuring zero interference with model thumbnails; neutral silver-slate (`#94a3b8`) active sidebar indicators and vector icons; neutral dark glass cards (`rgba(20, 20, 26, 0.85)`) and silver plate badges (`#cbd5e1`); neutral slate tooltips (`rgba(18, 20, 28, 0.95)`); cyber cyan/blue (`#38bdf8`) retained for Prompt Mixer/Workbench interactive states, dropzones, and radar animations.
+  - **Abyssal Scarlet Easter Egg Mode (`.theme-abyssal-scarlet` / 深海血族彩蛋领域 - 丝绒与暗血轻量质感)**: Strictly scoped under `.theme-abyssal-scarlet` or `html.theme-abyssal-scarlet`; eliminates all cheap neon outer glows and large-area diffused halos (`box-shadow: 0 0 xxpx`, `filter: drop-shadow`, text glows); embraces a light-absorption aristocratic gothic aesthetic with deep sunken inner shadows (`box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8)`), heavy velvet wine backgrounds (`rgba(50, 12, 22, 0.95)`), razor-sharp 1px crimson (`#dc143c`) and antique gold (`#b38728`) borders, and red-blushed silver text (`#e0d8db`); features concept art backdrops `assets/abyssal_scarlet_mansion.webp` and `assets/abyssal_bg_concept.webp`.
   - Swept legacy system emojis across all frontend modules and `locales.js`, replacing them with pure-code vector SVG icons (`3D Cube`, `Network`, `Magic Wand`, `Folder`, `Image Frame`, `Sliders`, `Trash`, etc.) with `stroke="currentColor"` dynamic theme inheritance;
   - Overhauled `#anomalous-header` into a centered symmetric three-column architecture (`leftGroup`, `centerGroup`, `rightGroup`), eliminating left-side visual voids/black holes;
   - Fixed tooltip overlap hazard by re-aligning bottom toolbar tooltip triggers to center-top (`data-tooltip-pos="top"`), completely preventing horizontal button occlusion.
@@ -190,8 +190,7 @@ DOM or live LiteGraph state.
   managing the anime gothic "Abyssal Scarlet" (深海血族) custom mode (`.theme-abyssal-scarlet`).
   Activatable via ComfyUI settings (`Anomalous.ModelBrowser.AbyssalScarletTheme`) or by tapping the
   sidebar brand badge 5 times with domain expansion toasts; features deep abyssal palettes (`#0a0510`),
-  asymmetric gothic button chamfers (`border-radius: 4px 12px 4px 12px`), scarlet rune micro-cores (`btn_scarlet_core.webp`),
-  crimson halo card hovers, submerged scarlet mansion empty states (`abyssal_scarlet_mansion.webp`),
+  asymmetric gothic button chamfers (`border-radius: 4px 12px 4px 12px`), submerged scarlet mansion empty states (`abyssal_scarlet_mansion.webp`),
   ambient ocean current textures (`abyssal_currents_bg.webp`), and pulsating corruption error animations (`abyssal-corruption`).
 - `hash_resolver.js` is optional workflow provenance integration. Failure there
   must not prevent the main browser from loading.

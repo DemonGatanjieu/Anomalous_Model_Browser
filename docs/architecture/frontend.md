@@ -150,19 +150,20 @@ browsing, editing, or already stored data.
 
 The extension enforces a strict **Dual-Mode Theme Architecture (双形态主题架构)** to guarantee default aesthetic restraint while enabling deep immersive customization:
 
-1. **Normal Mode (Default / 标准中性黑曜石模式)**:
-   - Base surfaces use clean, restrained dark obsidian tones (`#0d0d11` / `#0d0d0f`) with subtle, neutral glassmorphism borders (`rgba(255, 255, 255, 0.08)`).
-   - Concept art backgrounds (`assets/bg_concept.webp`, `assets/abyssal_scarlet_mansion.webp`) and ambient crimson radial gradients are completely disabled (`background-image: none; ::before { display: none; }`).
+1. **Normal Mode (Default / 标准中性黑曜石模式 - 暗物质材质与水印底纹)**:
+   - Base surfaces use clean, restrained dark obsidian tones (`#0a0a0c` / `#0d0d11`) with subtle, neutral glassmorphism borders (`rgba(255, 255, 255, 0.08)`).
+   - Introduces the "Dark Matter Material" AI Concept Art Watermark (`assets/normal_bg_concept.webp`) overlaid on `#anomalous-content::before` and `.anomalous-gallery-container::before` at ultra-low opacity (`0.04 ~ 0.05`) with `mix-blend-mode: luminosity`, banishing dead-black voids while strictly preserving foreground thumbnail readability.
    - Sidebar active folder indicators and icons use neutral silver-slate (`#94a3b8`); the radar scan sweep uses clean cyan/blue.
    - Model cards use neutral dark glass (`rgba(20, 20, 26, 0.85)`) with neutral silver plate badges (`#cbd5e1`).
    - Tooltips utilize neutral dark slate glass (`rgba(18, 20, 28, 0.95)`) with neutral borders and directional positioning (`data-tooltip-pos="top|right|bottom|left"`).
    - Prompt Mixer, Arranger, and Workbench controls utilize cyber cyan/blue (`#38bdf8`) accents for active pills, smart sort, dropzone highlights, and node extraction.
 
-2. **Abyssal Scarlet Easter Egg Mode (`.theme-abyssal-scarlet` / 深海血族彩蛋领域)**:
+2. **Abyssal Scarlet Easter Egg Mode (`.theme-abyssal-scarlet` / 深海血族彩蛋领域 - 丝绒与暗血轻量质感)**:
    - Strictly scoped under `.theme-abyssal-scarlet` or `html.theme-abyssal-scarlet`; never leaks into default rules.
-   - Activates deep abyssal palettes (`#0a0510` / `#0d080c`), submerged scarlet mansion concept overlays (`assets/abyssal_scarlet_mansion.webp`), lattice textures (`assets/bg_concept.webp`), and ambient crimson/purple radial gradient illumination.
-   - Model card badges shift to the Gothic Sovereign palette (Dark Gold, Amber, Abyssal Purple/Flux, Rose Crimson).
-   - Sidebar indicators, folder glows, action button rims, and tooltips adopt scarlet/wine halos (`#dc143c`, `rgba(220, 20, 60, ...)`).
+   - **Zero Outer Neon Glows**: Complete elimination of aggressive `box-shadow: 0 0 xxpx` outer halos, `filter: drop-shadow`, and text glows across buttons, cards, pills, and sidebar actions.
+   - **Light Absorption Aesthetic**: Replaced cheap neon effects with deep sunken inner shadows (`box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8)`), heavy velvet wine backgrounds (`rgba(50, 12, 22, 0.95)`), razor-sharp 1px crimson (`#dc143c`) or antique gold (`#b38728`) borders, and subtle red-blush silver text (`#e0d8db`).
+   - Activates deep abyssal palettes (`#0a0510` / `#0d080c`), submerged scarlet mansion concept overlays (`assets/abyssal_scarlet_mansion.webp`), gallery lattice backdrop (`assets/abyssal_bg_concept.webp`), and ambient crimson/purple radial gradient illumination.
+   - Model card badges shift to the Gothic Sovereign palette (Dark Gold, Amber, Abyssal Purple/Flux, Rose Crimson) with sunken inner shadows and sharp borders.
    - Header drag interaction safely guards `.closest('button')`, `.closest('input')`, etc., ensuring that button child SVG icons and label spans do not swallow clicks via `e.preventDefault()`.
 
 

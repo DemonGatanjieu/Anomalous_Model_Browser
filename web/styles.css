@@ -77,16 +77,17 @@
 }
 
 html.theme-abyssal-scarlet #anomalous-trigger-btn {
-    background: linear-gradient(135deg, #18080b 0%, #2a0c13 50%, #42101b 100%) !important;
-    border: 2px solid rgba(225, 29, 72, 0.7) !important;
-    color: #ffd6df !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.8), 0 0 6px 1px rgba(225, 29, 72, 0.5), inset 0 1px 2px rgba(255, 120, 150, 0.3) !important;
+    background: #1c0810 !important;
+    border: 1px solid #dc143c !important;
+    color: #e0d8db !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9), inset 0 2px 6px rgba(0, 0, 0, 0.8) !important;
 }
 
 html.theme-abyssal-scarlet #anomalous-trigger-btn:hover {
-    border-color: #ff3366 !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.9), 0 0 8px 1px rgba(225, 29, 72, 0.8), inset 0 0 6px rgba(255, 120, 150, 0.5) !important;
-    color: #fff !important;
+    border-color: #dc143c !important;
+    background: #2a0b16 !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.95), inset 0 2px 8px rgba(0, 0, 0, 0.9) !important;
+    color: #f1eaed !important;
 }
 
 #anomalous-trigger-btn[data-size="small"] {
@@ -397,12 +398,12 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .theme-abyssal-scarlet .anomalous-card {
     border-color: rgba(220, 20, 60, 0.22);
     background: linear-gradient(180deg, rgba(25, 12, 20, 0.9) 0%, rgba(14, 6, 14, 0.98) 100%);
-    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.6), 0 0 1px rgba(220, 20, 60, 0.2);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.6);
 }
 
 .theme-abyssal-scarlet .anomalous-card:hover {
-    border-color: rgba(220, 20, 60, 0.6);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 22px rgba(220, 20, 60, 0.35), inset 0 1px 0 rgba(255, 100, 130, 0.15);
+    border-color: #dc143c;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.95), inset 0 0 12px rgba(0, 0, 0, 0.7);
 }
 
 .anomalous-card img,
@@ -688,13 +689,22 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     flex-direction: column;
     flex: 1;
     overflow: hidden;
-    background-color: #0d0d11;
-    background-image: none;
+    background-color: #0a0a0d;
     position: relative;
 }
 
 #anomalous-content::before {
-    display: none;
+    display: block;
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('assets/normal_bg_concept.webp');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.04;
+    mix-blend-mode: luminosity;
+    pointer-events: none;
+    z-index: 0;
 }
 
 #anomalous-content > * {
@@ -813,14 +823,15 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .theme-abyssal-scarlet .anomalous-folder-item.active {
-    background: linear-gradient(90deg, rgba(220, 20, 60, 0.24) 0%, rgba(220, 20, 60, 0.05) 80%, transparent 100%);
+    background: rgba(55, 12, 22, 0.85);
     border-left: 2px solid #dc143c;
     border-left-color: var(--c-crimson, #dc143c);
-    box-shadow: inset 3px 0 10px rgba(220, 20, 60, 0.5);
+    box-shadow: inset 2px 0 6px rgba(0, 0, 0, 0.8);
 }
 
 .theme-abyssal-scarlet .anomalous-folder-item.active .anomalous-folder-name {
-    text-shadow: 0 0 8px rgba(220, 20, 60, 0.7);
+    color: #e0d8db;
+    text-shadow: none;
 }
 
 /* Sidebar Icons & Actions - Normal Mode (Neutral & Clean) */
@@ -832,8 +843,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .theme-abyssal-scarlet .anomalous-folder-item svg,
 .theme-abyssal-scarlet #anomalous-sidebar h3 svg {
-    color: var(--c-amber, #d97706) !important;
-    filter: drop-shadow(0 0 4px var(--c-amber-glow));
+    color: #d4af37 !important;
+    filter: none;
 }
 
 #anomalous-scan-btn,
@@ -857,7 +868,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .theme-abyssal-scarlet #anomalous-scan-btn:hover {
     color: #ff4d6d !important;
-    filter: drop-shadow(0 0 5px rgba(220, 20, 60, 0.6)) !important;
+    filter: none !important;
     background: rgba(220, 20, 60, 0.12) !important;
 }
 
@@ -867,7 +878,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .theme-abyssal-scarlet #anomalous-materials-btn:hover {
     color: #fbbf24 !important;
-    filter: drop-shadow(0 0 5px rgba(217, 119, 6, 0.5)) !important;
+    filter: none !important;
     background: rgba(217, 119, 6, 0.12) !important;
 }
 
@@ -877,7 +888,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .theme-abyssal-scarlet #anomalous-doctor-btn:hover {
     color: #ff4d6d !important;
-    filter: drop-shadow(0 0 5px rgba(220, 20, 60, 0.6)) !important;
+    filter: none !important;
     background: rgba(220, 20, 60, 0.12) !important;
 }
 
@@ -887,7 +898,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .theme-abyssal-scarlet #anomalous-assistant-btn:hover {
     color: #c4b5fd !important;
-    filter: drop-shadow(0 0 5px rgba(139, 92, 246, 0.6)) !important;
+    filter: none !important;
     background: rgba(139, 92, 246, 0.14) !important;
 }
 
@@ -897,7 +908,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .theme-abyssal-scarlet #anomalous-global-settings-btn:hover {
     color: #f8fafc !important;
-    filter: drop-shadow(0 0 5px rgba(148, 163, 184, 0.4)) !important;
+    filter: none !important;
     background: rgba(255, 255, 255, 0.08) !important;
 }
 
@@ -1607,7 +1618,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .theme-abyssal-scarlet .anomalous-gallery-card:hover {
     border-color: #dc143c;
-    box-shadow: 0 4px 14px rgba(220, 20, 60, 0.35);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85), inset 0 0 8px rgba(0, 0, 0, 0.7);
 }
 
 .anomalous-gallery-card img {
@@ -9800,7 +9811,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .theme-abyssal-scarlet .anomalous-mixer-block.is-drag-over-top::before {
     background: #dc143c;
-    box-shadow: 0 0 8px #dc143c;
+    box-shadow: none;
 }
 
 .anomalous-mixer-block.is-drag-over-bottom::after {
@@ -9818,7 +9829,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .theme-abyssal-scarlet .anomalous-mixer-block.is-drag-over-bottom::after {
     background: #dc143c;
-    box-shadow: 0 0 8px #dc143c;
+    box-shadow: none;
 }
 
 /* Block Header */
@@ -10016,7 +10027,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .theme-abyssal-scarlet .anomalous-mixer-deck-output:hover {
     border-color: #dc143c;
-    box-shadow: 0 0 8px rgba(220, 20, 60, 0.25);
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8);
 }
 
 .anomalous-mixer-deck-output:active {
@@ -10668,8 +10679,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .theme-abyssal-scarlet .anomalous-assembly-dropzone.is-drag-over {
     border-color: #dc143c;
-    background: rgba(220, 20, 60, 0.08);
-    box-shadow: inset 0 0 24px rgba(220, 20, 60, 0.2);
+    background: rgba(45, 10, 20, 0.85);
+    box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.9);
 }
 
 .anomalous-workbench-sub-actions {
@@ -10863,7 +10874,7 @@ html.theme-abyssal-scarlet,
     background: #0a0510 !important;
     color: #e0d0df !important;
     border-color: rgba(220, 20, 60, 0.35) !important;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(220, 20, 60, 0.15) !important;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95) !important;
     position: relative;
 }
 
@@ -10924,7 +10935,7 @@ html.theme-abyssal-scarlet,
     ) !important;
     pointer-events: none !important;
     z-index: 5 !important;
-    box-shadow: 0 0 8px rgba(255, 51, 102, 0.4) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet #anomalous-grid {
@@ -10932,11 +10943,10 @@ html.theme-abyssal-scarlet,
 }
 
 .theme-abyssal-scarlet .anomalous-brand-badge {
-    background: linear-gradient(135deg, rgba(220, 20, 60, 0.3) 0%, rgba(20, 5, 14, 0.95) 100%) !important;
-    border-color: rgba(220, 20, 60, 0.55) !important;
-    color: #ffb6c1 !important;
-    box-shadow: 0 0 12px rgba(220, 20, 60, 0.4), inset 0 0 8px rgba(220, 20, 60, 0.25) !important;
-    text-shadow: 0 0 5px rgba(220, 20, 60, 0.7);
+    background: rgba(45, 10, 18, 0.95) !important;
+    border: 1px solid #dc143c !important;
+    color: #e0d8db !important;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8) !important;
 }
 
 /* 3. Empty State Thematic Illustration (Submerged Scarlet Mansion) */
@@ -10952,148 +10962,136 @@ html.theme-abyssal-scarlet,
     opacity: 0.75 !important;
 }
 
-/* 4. Gothic Buttons with Asymmetric Chamfers & Scarlet Core */
+/* 4. Gothic Buttons with Asymmetric Chamfers & Velvet Inner Shadow */
 .theme-abyssal-scarlet .anomalous-btn-primary,
 .theme-abyssal-scarlet .anomalous-recipe-btn-primary-action {
-    background-color: rgba(28, 8, 18, 0.92) !important;
-    background-image: url('assets/btn_scarlet_core.webp') !important;
-    background-size: cover !important;
-    background-position: center !important;
-    background-repeat: no-repeat !important;
-    border: 1px solid rgba(220, 20, 60, 0.45) !important;
+    background-color: rgba(45, 10, 18, 0.95) !important;
+    background-image: none !important;
+    border: 1px solid rgba(220, 20, 60, 0.6) !important;
     border-radius: 4px 12px 4px 12px !important;
-    color: #ffe4e6 !important;
-    text-shadow: 0 0 6px rgba(220, 20, 60, 0.8), 0 1px 3px rgba(0, 0, 0, 0.9) !important;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(220, 20, 60, 0.22) !important;
+    color: #e0d8db !important;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8), 0 2px 6px rgba(0, 0, 0, 0.6) !important;
     transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-btn-primary:hover,
 .theme-abyssal-scarlet .anomalous-recipe-btn-primary-action:hover {
-    border-color: #ff3366 !important;
-    color: #ffffff !important;
-    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.8), inset 0 0 3px rgba(220, 20, 60, 0.45) !important;
+    background-color: rgba(65, 12, 24, 0.98) !important;
+    border-color: #dc143c !important;
+    color: #f1eaed !important;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9) !important;
     transform: translateY(-1px);
-    filter: brightness(1.15);
 }
 
 .theme-abyssal-scarlet .anomalous-btn-extract-node {
-    background-color: #240a15 !important;
-    background-image: url('assets/btn_scarlet_core.webp') !important;
-    background-size: cover !important;
-    background-position: center !important;
+    background-color: rgba(45, 10, 18, 0.95) !important;
+    background-image: none !important;
     border: 1px solid rgba(220, 20, 60, 0.6) !important;
     border-radius: 4px 12px 4px 12px !important;
-    color: #fff1f2 !important;
-    text-shadow: 0 0 6px rgba(220, 20, 60, 0.85) !important;
-    box-shadow: 0 2px 8px rgba(220, 20, 60, 0.35), inset 0 0 10px rgba(220, 20, 60, 0.28) !important;
+    color: #e0d8db !important;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-btn-extract-node:hover {
-    border-color: #ff3366 !important;
-    box-shadow: 0 0 4px 1px rgba(255, 51, 102, 0.85), inset 0 0 3px rgba(220, 20, 60, 0.45) !important;
+    background-color: rgba(65, 12, 24, 0.98) !important;
+    border-color: #dc143c !important;
+    color: #f1eaed !important;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9) !important;
     transform: translateY(-1px);
-    filter: brightness(1.18);
 }
 
 .theme-abyssal-scarlet .anomalous-btn-primary::before,
 .theme-abyssal-scarlet .anomalous-recipe-btn-primary-action::before,
 .theme-abyssal-scarlet .anomalous-btn-extract-node::before {
-    color: #ff3366 !important;
-    box-shadow: 0 0 4px #ff3366 !important;
+    color: #dc143c !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet .anomalous-btn-primary::after,
 .theme-abyssal-scarlet .anomalous-recipe-btn-primary-action::after,
 .theme-abyssal-scarlet .anomalous-btn-extract-node::after,
 .theme-abyssal-scarlet .anomalous-workbench-action-btn.is-primary::after {
-    background: linear-gradient(90deg, #dc143c, #ff3366, #ff758c) !important;
-    box-shadow: 0 0 4px 1px #ff3366 !important;
+    background: #dc143c !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet .anomalous-btn-ghost {
     background: rgba(30, 10, 20, 0.6) !important;
-    border-color: rgba(220, 20, 60, 0.35) !important;
-    color: #ffe4e6 !important;
+    border: 1px solid rgba(220, 20, 60, 0.35) !important;
+    color: #e0d8db !important;
     border-radius: 2px 8px 2px 8px !important;
-    box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.2), 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.7) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-btn-ghost:hover {
-    background: rgba(50, 12, 30, 0.8) !important;
-    border-color: #ff3366 !important;
-    box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.6), 0 0 4px 1px rgba(220, 20, 60, 0.5), inset 0 0 3px rgba(220, 20, 60, 0.3) !important;
-    color: #ffffff !important;
-    text-shadow: 0 0 4px rgba(255, 51, 102, 0.8) !important;
+    background: rgba(55, 12, 24, 0.85) !important;
+    border-color: #dc143c !important;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.85) !important;
+    color: #f1eaed !important;
 }
 
 .theme-abyssal-scarlet .anomalous-workbench-action-btn.is-primary {
-    background: linear-gradient(135deg, rgba(220, 20, 60, 0.32) 0%, rgba(147, 51, 234, 0.28) 100%) !important;
-    border-color: rgba(220, 20, 60, 0.55) !important;
+    background: rgba(50, 12, 22, 0.92) !important;
+    border: 1px solid rgba(220, 20, 60, 0.55) !important;
     border-radius: 2px 10px 2px 10px !important;
-    color: #ffe4e6 !important;
-    text-shadow: 0 0 6px rgba(220, 20, 60, 0.8) !important;
-    box-shadow: 0 4px 10px rgba(220, 20, 60, 0.25) !important;
+    color: #e0d8db !important;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-workbench-action-btn.is-primary:hover {
-    border-color: #ff3366 !important;
-    color: #ffffff !important;
-    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.75), inset 0 0 3px rgba(220, 20, 60, 0.35) !important;
+    background: rgba(70, 15, 28, 0.95) !important;
+    border-color: #dc143c !important;
+    color: #f1eaed !important;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-workbench-action-btn.is-save {
-    background: rgba(30, 10, 20, 0.5) !important;
-    border-color: rgba(220, 20, 60, 0.3) !important;
+    background: rgba(30, 10, 20, 0.6) !important;
+    border: 1px solid rgba(220, 20, 60, 0.35) !important;
     border-radius: 2px 8px 2px 8px !important;
-    color: #fecdd3 !important;
-    box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.15), 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+    color: #e0d8db !important;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.7) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-workbench-action-btn.is-save:hover {
-    border-color: #ff3366 !important;
-    box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.55), 0 0 4px 1px rgba(220, 20, 60, 0.5) !important;
-    color: #ffffff !important;
+    background: rgba(55, 12, 24, 0.85) !important;
+    border-color: #dc143c !important;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.85) !important;
+    color: #f1eaed !important;
 }
 
 .theme-abyssal-scarlet .anomalous-mixer-smart-sort-btn {
-    background-color: rgba(36, 10, 26, 0.95) !important;
-    background-image: url('assets/btn_scarlet_core.webp') !important;
-    background-size: cover !important;
-    background-position: center !important;
+    background-color: rgba(45, 10, 22, 0.95) !important;
     border: 1px solid rgba(220, 20, 60, 0.5) !important;
     border-radius: 3px 8px 3px 8px !important;
-    color: #fecdd3 !important;
-    text-shadow: 0 0 5px rgba(220, 20, 60, 0.7);
-    box-shadow: 0 2px 8px rgba(220, 20, 60, 0.25);
+    color: #e0d8db !important;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-mixer-smart-sort-btn:hover {
-    border-color: #ff3366 !important;
-    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.65), inset 0 0 3px rgba(220, 20, 60, 0.35) !important;
+    background-color: rgba(65, 14, 28, 0.98) !important;
+    border-color: #dc143c !important;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9) !important;
+    color: #f1eaed !important;
     transform: translateY(-1px);
-    filter: brightness(1.15);
 }
 
 .theme-abyssal-scarlet .anomalous-workbench-generation-btn {
     border-radius: 3px 10px 3px 10px !important;
-    background-color: rgba(28, 8, 18, 0.92) !important;
-    background-image: url('assets/btn_scarlet_core.webp') !important;
-    background-size: cover !important;
-    background-position: center !important;
-    border: 1px solid rgba(220, 20, 60, 0.45) !important;
-    color: #ffe4e6 !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 0 6px rgba(220, 20, 60, 0.22) !important;
+    background-color: rgba(45, 10, 20, 0.95) !important;
+    border: 1px solid rgba(220, 20, 60, 0.5) !important;
+    color: #e0d8db !important;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-workbench-generation-btn:hover:not(:disabled) {
-    border-color: #ff3366 !important;
-    color: #ffffff !important;
-    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.8), inset 0 0 3px rgba(220, 20, 60, 0.45) !important;
-    filter: brightness(1.15);
+    background-color: rgba(65, 14, 28, 0.98) !important;
+    border-color: #dc143c !important;
+    color: #f1eaed !important;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9) !important;
 }
 
-/* 5. Cards Crimson Halo & Gothic Sovereign Palette (Easter Egg) */
+/* 5. Cards & Gothic Sovereign Palette (Strictly scoped, Inner Shadows & Sharp Borders) */
 .theme-abyssal-scarlet .anomalous-card {
     border-color: rgba(220, 20, 60, 0.22) !important;
     background: linear-gradient(180deg, rgba(25, 12, 20, 0.9) 0%, rgba(14, 6, 14, 0.98) 100%) !important;
@@ -11104,8 +11102,8 @@ html.theme-abyssal-scarlet,
 .theme-abyssal-scarlet .anomalous-material-card:hover,
 .theme-abyssal-scarlet .anomalous-source-item:hover,
 .theme-abyssal-scarlet .anomalous-nb-note-item:hover {
-    border-color: rgba(220, 20, 60, 0.6) !important;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 22px rgba(220, 20, 60, 0.35) !important;
+    border-color: #dc143c !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.95), inset 0 0 12px rgba(0, 0, 0, 0.7) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-card-labels {
@@ -11116,59 +11114,60 @@ html.theme-abyssal-scarlet,
     background: linear-gradient(to top, rgba(20, 6, 16, 0.99) 0%, rgba(22, 7, 18, 0.94) 75%, transparent 100%) !important;
 }
 
-/* Card Base Model Badges - Gothic Sovereign Palette (Strictly scoped) */
+/* Card Base Model Badges - Gothic Sovereign Palette (Inner Shadow, No Outer Glows) */
 .theme-abyssal-scarlet .anomalous-card-badge {
-    background: rgba(18, 8, 14, 0.88) !important;
-    color: #f59e0b !important;
-    border: 1px solid rgba(245, 158, 11, 0.38) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 6px rgba(245, 158, 11, 0.12) !important;
+    background: rgba(18, 8, 14, 0.92) !important;
+    color: #d4af37 !important;
+    border: 1px solid rgba(179, 135, 40, 0.4) !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-card:hover .anomalous-card-badge {
-    border-color: rgba(245, 158, 11, 0.6) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), 0 0 10px rgba(245, 158, 11, 0.25) !important;
+    border-color: #d4af37 !important;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.9) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-card-badge.badge-gold {
-    color: #f59e0b !important;
-    background: rgba(22, 10, 14, 0.92) !important;
-    border-color: rgba(245, 158, 11, 0.45) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 8px rgba(245, 158, 11, 0.22) !important;
+    color: #d4af37 !important;
+    background: rgba(26, 16, 10, 0.94) !important;
+    border-color: #b38728 !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-card-badge.badge-amber {
-    color: #fbbf24 !important;
-    background: rgba(20, 10, 12, 0.92) !important;
-    border-color: rgba(251, 191, 36, 0.4) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 6px rgba(251, 191, 36, 0.16) !important;
+    color: #d97706 !important;
+    background: rgba(24, 12, 8, 0.94) !important;
+    border-color: #b45309 !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-card-badge.badge-flux {
-    color: #c084fc !important;
-    background: rgba(18, 9, 26, 0.92) !important;
-    border-color: rgba(168, 85, 247, 0.45) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 8px rgba(168, 85, 247, 0.25) !important;
+    color: #a855f7 !important;
+    background: rgba(20, 8, 30, 0.94) !important;
+    border-color: #7c3aed !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-card-badge.badge-rose,
 .theme-abyssal-scarlet .anomalous-model-tag {
-    color: #ff4d6d !important;
-    background: rgba(220, 20, 60, 0.2) !important;
-    border: 1px solid rgba(220, 20, 60, 0.5) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 8px rgba(255, 77, 109, 0.35) !important;
+    color: #e0a0ac !important;
+    background: rgba(36, 10, 18, 0.92) !important;
+    border: 1px solid #dc143c !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-card-action-btn {
-    background: rgba(18, 10, 16, 0.88) !important;
-    color: #f1f5f9 !important;
-    border: 1px solid rgba(220, 20, 60, 0.28) !important;
+    background: rgba(22, 8, 16, 0.92) !important;
+    color: #e0d8db !important;
+    border: 1px solid rgba(220, 20, 60, 0.35) !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-card-action-btn:hover {
-    background: rgba(220, 20, 60, 0.38) !important;
+    background: rgba(60, 12, 24, 0.9) !important;
     border-color: #dc143c !important;
-    color: #fff !important;
-    box-shadow: 0 0 10px 1px rgba(220, 20, 60, 0.55) !important;
+    color: #f1eaed !important;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.85) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-recipe-card {
@@ -11176,19 +11175,18 @@ html.theme-abyssal-scarlet,
     background: rgba(18, 10, 26, 0.88) !important;
 }
 
-/* 6. Active Pills in Scarlet & Eldritch Violet */
+/* 6. Active Pills in Deep Velvet Wine (Inner Shadow & Sharp Border) */
 .theme-abyssal-scarlet .anomalous-recipe-pill.is-active,
 .theme-abyssal-scarlet .anomalous-workbench-pill.is-active {
-    background-color: rgba(220, 20, 60, 0.3) !important;
-    border-color: rgba(220, 20, 60, 0.7) !important;
-    color: #ffe4e6 !important;
-    text-shadow: 0 0 6px rgba(220, 20, 60, 0.75) !important;
-    box-shadow: 0 1px 8px rgba(220, 20, 60, 0.45), inset 0 0 6px rgba(220, 20, 60, 0.28) !important;
+    background-color: rgba(60, 10, 20, 0.85) !important;
+    border-color: #dc143c !important;
+    color: #e0d8db !important;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-recipe-readiness-pill {
     border-color: rgba(220, 20, 60, 0.35) !important;
-    color: #fecdd3 !important;
+    color: #e0d8db !important;
 }
 
 /* 7. Error State Abyssal Corruption Animations */
@@ -11221,7 +11219,7 @@ html.theme-abyssal-scarlet,
 html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     background: #0a0510 !important;
     border-color: rgba(220, 20, 60, 0.38) !important;
-    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.88), 0 0 40px rgba(220, 20, 60, 0.18) !important;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.95), inset 0 0 0 1px rgba(220, 20, 60, 0.3) !important;
 }
 
 /* 9. Model Scanner Radar Button & Spin Animation */
@@ -11266,17 +11264,18 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
 }
 
 .theme-abyssal-scarlet #anomalous-scan-btn:hover svg {
-    filter: drop-shadow(0 0 5px rgba(255, 77, 109, 0.75));
+    filter: none;
 }
 
 .theme-abyssal-scarlet #anomalous-scan-btn.anomalous-radar-spinning {
     color: #ff4d6d !important;
-    background: rgba(255, 77, 109, 0.14) !important;
-    border: 1px solid rgba(255, 77, 109, 0.4) !important;
+    background: rgba(45, 10, 20, 0.85) !important;
+    border: 1px solid #dc143c !important;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-scan-btn.anomalous-radar-spinning svg {
-    filter: drop-shadow(0 0 7px rgba(255, 77, 109, 0.85)) !important;
+    filter: none !important;
 }
 
 /* 10. Task 8: Pure Vector Iconography & Micro-interactions Overhaul */
@@ -11329,53 +11328,42 @@ button:hover .anomalous-btn-icon {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
 }
 
-/* Abyssal Scarlet Mode overrides for Task 8 icon buttons */
+/* Abyssal Scarlet Mode overrides for Task 8 icon buttons (Sharp Borders & Inner Shadow) */
 .theme-abyssal-scarlet #anomalous-doctor-btn:hover {
     color: #f43f5e !important;
-    background: rgba(244, 63, 94, 0.12) !important;
-    border: 1px solid rgba(244, 63, 94, 0.3) !important;
-    box-shadow: 0 0 4px 1px rgba(244, 63, 94, 0.75) !important;
+    background: rgba(55, 12, 22, 0.85) !important;
+    border: 1px solid #f43f5e !important;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-assistant-btn:hover {
     color: #a855f7 !important;
-    background: rgba(168, 85, 247, 0.12) !important;
-    border: 1px solid rgba(168, 85, 247, 0.3) !important;
-    box-shadow: 0 0 4px 1px rgba(168, 85, 247, 0.75) !important;
+    background: rgba(36, 12, 45, 0.85) !important;
+    border: 1px solid #a855f7 !important;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-materials-btn:hover {
-    color: #f59e0b !important;
-    background: rgba(245, 158, 11, 0.12) !important;
-    border: 1px solid rgba(245, 158, 11, 0.3) !important;
-    box-shadow: 0 0 4px 1px rgba(245, 158, 11, 0.8) !important;
+    color: #d97706 !important;
+    background: rgba(45, 20, 10, 0.85) !important;
+    border: 1px solid #d97706 !important;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-global-settings-btn:hover {
     color: #dc143c !important;
-    background: rgba(220, 20, 60, 0.12) !important;
-    border: 1px solid rgba(220, 20, 60, 0.3) !important;
-    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.75) !important;
+    background: rgba(55, 12, 22, 0.85) !important;
+    border: 1px solid #dc143c !important;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8) !important;
 }
 
-/* Abyssal Scarlet Mode overrides for Task 8 icon buttons */
 .theme-abyssal-scarlet #anomalous-sidebar-actions button:hover {
-    border-color: #ff3366 !important;
-    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.8), inset 0 0 2px rgba(220, 20, 60, 0.4) !important;
+    border-color: #dc143c !important;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-sidebar-actions button:hover svg {
-    filter: drop-shadow(0 0 2px rgba(255, 51, 102, 0.85)) !important;
-}
-
-.theme-abyssal-scarlet #anomalous-materials-btn:hover {
-    color: #f59e0b !important;
-    border-color: #f59e0b !important;
-    box-shadow: 0 0 4px 1px rgba(245, 158, 11, 0.8), inset 0 0 2px rgba(245, 158, 11, 0.4) !important;
-}
-
-.theme-abyssal-scarlet #anomalous-materials-btn:hover svg {
-    filter: drop-shadow(0 0 2px rgba(245, 158, 11, 0.85)) !important;
+    filter: none !important;
 }
 
 /* 11. Task 9: Master Container Geometric Details, Watermarks & Floating Tooltips */
@@ -11416,7 +11404,7 @@ button:hover .anomalous-btn-icon {
         rgba(147, 51, 234, 0.45) 80%, 
         rgba(220, 20, 60, 0) 100%
     ) !important;
-    box-shadow: 0 0 8px rgba(255, 51, 102, 0.4) !important;
+    box-shadow: none !important;
 }
 
 /* ==========================================================================
@@ -11579,35 +11567,35 @@ button:hover .anomalous-btn-icon {
     transform: translateX(-50%) translateY(0);
 }
 
-/* Theme: Abyssal Scarlet Enhanced Glow */
+/* Theme: Abyssal Scarlet Tooltip (Inner Shadow, Sharp Border, No Outer Neon Glow) */
 .theme-abyssal-scarlet [data-tooltip]::after,
 .theme-abyssal-scarlet .anomalous-tooltip-target::after {
-    background: rgba(16, 7, 24, 0.96);
-    border-color: rgba(220, 20, 60, 0.55);
-    color: #ffe4e6;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.85), 0 0 12px rgba(220, 20, 60, 0.4);
+    background: rgba(22, 8, 16, 0.98);
+    border-color: #dc143c;
+    color: #e0d8db;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.95), inset 0 1px 3px rgba(0, 0, 0, 0.7);
 }
 
 .theme-abyssal-scarlet [data-tooltip]::before,
 .theme-abyssal-scarlet .anomalous-tooltip-target::before {
-    border-color: rgba(16, 7, 24, 0.96) transparent transparent transparent;
+    border-color: rgba(22, 8, 16, 0.98) transparent transparent transparent;
 }
 
 .theme-abyssal-scarlet [data-tooltip-pos="top"]::before,
 .theme-abyssal-scarlet .anomalous-tooltip-target[data-tooltip-pos="top"]::before {
-    border-color: rgba(16, 7, 24, 0.96) transparent transparent transparent;
+    border-color: rgba(22, 8, 16, 0.98) transparent transparent transparent;
 }
 
 .theme-abyssal-scarlet [data-tooltip-pos="right"]::before {
-    border-color: transparent rgba(16, 7, 24, 0.96) transparent transparent;
+    border-color: transparent rgba(22, 8, 16, 0.98) transparent transparent;
 }
 
 .theme-abyssal-scarlet [data-tooltip-pos="bottom"]::before {
-    border-color: transparent transparent rgba(16, 7, 24, 0.96) transparent;
+    border-color: transparent transparent rgba(22, 8, 16, 0.98) transparent;
 }
 
 .theme-abyssal-scarlet [data-tooltip-pos="left"]::before {
-    border-color: transparent transparent transparent rgba(16, 7, 24, 0.96);
+    border-color: transparent transparent transparent rgba(22, 8, 16, 0.98);
 }
 
 
@@ -11707,18 +11695,27 @@ button:hover .anomalous-btn-icon {
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.15) !important;
 }
 
-/* 2. Normal Mode Gallery Container (Pure Deep Dark, Zero Concept Watermarks) */
+/* 2. Normal Mode Gallery Container & Panels (Subtle Dark Matter Watermark Texture) */
 #anomalous-gallery-panel,
 .anomalous-gallery-grid,
 .anomalous-gallery-container {
-    background-color: #0d0d11 !important;
-    background-image: none !important;
+    background-color: #0a0a0c !important;
     position: relative;
 }
 
 .anomalous-gallery-container::before,
 #anomalous-gallery-panel::before {
-    display: none !important;
+    display: block !important;
+    content: '' !important;
+    position: absolute !important;
+    inset: 0 !important;
+    background-image: url('assets/normal_bg_concept.webp') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    opacity: 0.05 !important;
+    mix-blend-mode: luminosity !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
 }
 
 .anomalous-gallery-container > *,
@@ -11729,29 +11726,30 @@ button:hover .anomalous-btn-icon {
 
 /* 3. Abyssal Scarlet Mode Master Header & Gallery Domain Expansion (Easter Egg) */
 .theme-abyssal-scarlet #anomalous-header {
-    background: linear-gradient(180deg, rgba(26, 16, 24, 0.96) 0%, rgba(14, 8, 16, 0.98) 100%) !important;
-    border-bottom: 1px solid rgba(220, 20, 60, 0.28) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.65), inset 0 -1px 0 rgba(220, 20, 60, 0.15) !important;
+    background: #140812 !important;
+    border-bottom: 1px solid rgba(220, 20, 60, 0.35) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.85) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-header button {
-    background: rgba(30, 18, 28, 0.6) !important;
-    color: #e2e8f0 !important;
-    border: 1px solid rgba(220, 20, 60, 0.2) !important;
+    background: rgba(30, 10, 20, 0.6) !important;
+    color: #e0d8db !important;
+    border: 1px solid rgba(220, 20, 60, 0.3) !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-header button:hover {
-    background: rgba(220, 20, 60, 0.15) !important;
-    border-color: rgba(220, 20, 60, 0.45) !important;
-    color: #fff !important;
-    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.5) !important;
+    background: rgba(55, 12, 24, 0.85) !important;
+    border-color: #dc143c !important;
+    color: #f1eaed !important;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.85) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-header button.active {
-    background: linear-gradient(135deg, rgba(220, 20, 60, 0.3) 0%, rgba(114, 47, 55, 0.4) 100%) !important;
-    border-color: rgba(220, 20, 60, 0.65) !important;
-    color: #fff !important;
-    box-shadow: 0 0 10px rgba(220, 20, 60, 0.3) !important;
+    background: rgba(55, 12, 22, 0.9) !important;
+    border: 1px solid #dc143c !important;
+    color: #e0d8db !important;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.85) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-gallery-panel,
@@ -11767,7 +11765,7 @@ button:hover .anomalous-btn-icon {
     position: absolute !important;
     inset: 0 !important;
     background-color: #0d080c !important;
-    background-image: url('assets/bg_concept.webp'), radial-gradient(circle at 50% 50%, rgba(220, 20, 60, 0.03) 0%, transparent 60%) !important;
+    background-image: url('assets/abyssal_bg_concept.webp'), radial-gradient(circle at 50% 50%, rgba(220, 20, 60, 0.03) 0%, transparent 60%) !important;
     background-size: cover !important;
     background-position: center !important;
     mix-blend-mode: overlay !important;
