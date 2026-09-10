@@ -9,8 +9,11 @@ ComfyUI loads JavaScript in the extension `WEB_DIRECTORY` as ES modules.
 `web/main.js` registers `Anomalous.ModelBrowser`, creates the shared browser
 instance, and binds extracted modules to it. A syntax error or duplicate
 top-level declaration in any imported module can prevent registration and make
-the entire entry disappear. For affected modules, run `node --check` and verify
-the real ComfyUI runtime creates the configured entry.
+the entire entry disappear. For affected modules, validate syntax and module linking
+via Node's experimental VM modules (`vm.SourceTextModule`) and verify
+the real ComfyUI runtime creates the configured entry. Floating trigger styling in
+`web/styles.css` uses dynamic `1em` SVG scaling and flex centering to guarantee
+consistent visual presentation across all configured trigger sizes.
 
 Major UI panels live in `web/modules/ui_*.js`. Shared browser state remains on
 the `AnomalousBrowser` instance. Pure parsing, normalization, comparison, and
