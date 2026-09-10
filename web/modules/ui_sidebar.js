@@ -12,6 +12,20 @@ const t = (key, params) => translate(key, params);
 
 const SCAN_RADAR_ICON_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="9"/><path d="M12 12 18.5 5.5"/><circle cx="12" cy="12" r="2"/><path d="M12 7a5 5 0 0 1 5 5"/></svg>`;
 
+const SIDEBAR_ICONS = {
+    MODELS: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+    GALLERY: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`,
+    RECIPES: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>`,
+    DOCK: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>`,
+    HELP: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>`,
+    DOCTOR: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
+    ASSISTANT: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/><line x1="8" y1="19" x2="16" y2="19"/></svg>`,
+    SETTINGS: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`,
+    FOLDER: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px;margin-right:7px;"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>`,
+    CHEVRON_UP: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><polyline points="18 15 12 9 6 15"/></svg>`,
+    CHEVRON_DOWN: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><polyline points="6 9 12 15 18 9"/></svg>`
+};
+
 function setScanButtonState(btn, isScanning) {
     if (!btn) return;
     btn.innerHTML = SCAN_RADAR_ICON_SVG;
@@ -221,7 +235,7 @@ export function createDOM() {
 
         const modelsBtn = document.createElement('button');
         modelsBtn.id = 'anomalous-models-btn';
-        modelsBtn.innerHTML = `🏠 <span class="anomalous-btn-text">${t('models')}</span>`;
+        modelsBtn.innerHTML = `${SIDEBAR_ICONS.MODELS}<span class="anomalous-btn-text">${t('models')}</span>`;
         modelsBtn.onclick = () => {
             this.hideAllPanels();
             if (localStorage.getItem('anomalous_user_sidebar_closed') === 'true') {
@@ -241,7 +255,7 @@ export function createDOM() {
         };
 
         const galleryBtn = document.createElement('button');
-        galleryBtn.innerHTML = `🖼️ <span class="anomalous-btn-text">${t('gallery') || '图库'}</span>`;
+        galleryBtn.innerHTML = `${SIDEBAR_ICONS.GALLERY}<span class="anomalous-btn-text">${t('gallery') || '图库'}</span>`;
         galleryBtn.onclick = () => {
             this.hideAllPanels();
             this.gallerySelectModel = null;
@@ -257,7 +271,7 @@ export function createDOM() {
         };
 
         const dockBtn = document.createElement('button');
-        dockBtn.innerHTML = '◧';
+        dockBtn.innerHTML = SIDEBAR_ICONS.DOCK;
         dockBtn.title = t('dockTitle');
         dockBtn.onclick = () => {
             container.classList.toggle('anomalous-docked');
@@ -275,13 +289,13 @@ export function createDOM() {
         const helpBtn = document.createElement('button');
         helpBtn.id = 'anomalous-help-btn';
         helpBtn.title = t('helpTitle');
-        helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
+        helpBtn.innerHTML = `${SIDEBAR_ICONS.HELP}<span class="anomalous-btn-text">${t('help')}</span>`;
         helpBtn.onclick = () => this.showHelp();
 
         const nbBtn = document.createElement('button');
         nbBtn.id = 'anomalous-notebook-btn';
         nbBtn.title = t('recipeTitle');
-        nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('recipeTitle')}</span>`;
+        nbBtn.innerHTML = `${SIDEBAR_ICONS.RECIPES}<span class="anomalous-btn-text">${t('recipeTitle')}</span>`;
 
         const dBtn = document.getElementById('anomalous-doctor-btn');
         if (dBtn) dBtn.title = t('sidebarDoctor');
@@ -1141,14 +1155,14 @@ export function createDOM() {
         const refreshLanguageUi = () => {
             langBtn.textContent = t(window.anomalous_browser_lang === 'zh' ? 'sidebarSwitchToEnglish' : 'sidebarSwitchToChinese');
             updateLangClass();
-            modelsBtn.innerHTML = `🏠 <span class="anomalous-btn-text">${t('models')}</span>`;
-            galleryBtn.innerHTML = `🖼️ <span class="anomalous-btn-text">${t('gallery')}</span>`;
+            modelsBtn.innerHTML = `${SIDEBAR_ICONS.MODELS}<span class="anomalous-btn-text">${t('models')}</span>`;
+            galleryBtn.innerHTML = `${SIDEBAR_ICONS.GALLERY}<span class="anomalous-btn-text">${t('gallery')}</span>`;
             scanBtn.title = t('sidebarScanWizard');
             scanBtn.setAttribute('aria-label', t('sidebarScanWizard'));
             setScanButtonState(scanBtn, isCurrentlyScanning);
-            helpBtn.innerHTML = `❓ <span class="anomalous-btn-text">${t('help')}</span>`;
+            helpBtn.innerHTML = `${SIDEBAR_ICONS.HELP}<span class="anomalous-btn-text">${t('help')}</span>`;
             nbBtn.title = t('recipeTitle');
-            nbBtn.innerHTML = `📑 <span class="anomalous-btn-text">${t('recipeTitle')}</span>`;
+            nbBtn.innerHTML = `${SIDEBAR_ICONS.RECIPES}<span class="anomalous-btn-text">${t('recipeTitle')}</span>`;
 
             const dBtn = document.getElementById('anomalous-doctor-btn');
             if (dBtn) dBtn.title = t('sidebarDoctor');
@@ -1625,8 +1639,9 @@ export function createDOM() {
 
         const settingsBtn = document.createElement('button');
         settingsBtn.id = 'anomalous-global-settings-btn';
-        settingsBtn.innerHTML = `⚙️`;
+        settingsBtn.innerHTML = SIDEBAR_ICONS.SETTINGS;
         settingsBtn.title = t('sidebarSettings');
+        settingsBtn.setAttribute('aria-label', t('sidebarSettings'));
         settingsBtn.style.background = 'transparent';
         settingsBtn.style.color = '#ccc';
         settingsBtn.style.border = 'none';
@@ -1681,7 +1696,8 @@ export function createDOM() {
         const doctorBtn = document.createElement('button');
         doctorBtn.id = 'anomalous-doctor-btn';
         doctorBtn.title = t('sidebarDoctor');
-        doctorBtn.innerHTML = `🩺`;
+        doctorBtn.setAttribute('aria-label', t('sidebarDoctor'));
+        doctorBtn.innerHTML = SIDEBAR_ICONS.DOCTOR;
         doctorBtn.style.background = 'transparent';
         doctorBtn.style.color = '#ccc';
         doctorBtn.style.border = 'none';
@@ -1690,7 +1706,7 @@ export function createDOM() {
         doctorBtn.style.fontSize = '1.1em';
         doctorBtn.style.cursor = 'pointer';
         doctorBtn.style.transition = 'all 0.2s ease';
-        doctorBtn.onmouseover = () => { doctorBtn.style.background = 'rgba(255,255,255,0.1)'; doctorBtn.style.color = '#fff'; };
+        doctorBtn.onmouseover = () => { doctorBtn.style.background = 'rgba(255,255,255,0.1)'; doctorBtn.style.color = '#f43f5e'; };
         doctorBtn.onmouseout = () => { doctorBtn.style.background = 'transparent'; doctorBtn.style.color = '#ccc'; };
         doctorBtn.onclick = async () => {
             this.hideAllPanels();
@@ -1717,7 +1733,8 @@ export function createDOM() {
         const assistantBtn = document.createElement('button');
         assistantBtn.id = 'anomalous-assistant-btn';
         assistantBtn.title = t('sidebarAssistant');
-        assistantBtn.innerHTML = `🤖`;
+        assistantBtn.setAttribute('aria-label', t('sidebarAssistant'));
+        assistantBtn.innerHTML = SIDEBAR_ICONS.ASSISTANT;
         assistantBtn.style.background = 'transparent';
         assistantBtn.style.color = '#ccc';
         assistantBtn.style.border = 'none';
@@ -1878,19 +1895,29 @@ export function renderSidebar() {
         topBar.style.padding = '10px 15px 15px 15px';
 
         const title = document.createElement('h3');
-        title.innerHTML = t('folders');
+        title.innerHTML = `${SIDEBAR_ICONS.FOLDER}<span>${t('folders')}</span>`;
         title.style.color = '#fff';
         title.style.margin = '0';
+        title.style.display = 'inline-flex';
+        title.style.alignItems = 'center';
+        title.style.fontSize = '1.05em';
 
         const isAllCollapsed = this.expandedFolders.size === 0;
         const collapseAllBtn = document.createElement('button');
-        collapseAllBtn.textContent = t(isAllCollapsed ? 'sidebarExpandAll' : 'sidebarCollapseAll');
-        collapseAllBtn.style.padding = '4px 8px';
-        collapseAllBtn.style.background = '#444';
-        collapseAllBtn.style.color = '#fff';
-        collapseAllBtn.style.border = 'none';
-        collapseAllBtn.style.borderRadius = '4px';
+        const collapseIcon = isAllCollapsed ? SIDEBAR_ICONS.CHEVRON_DOWN : SIDEBAR_ICONS.CHEVRON_UP;
+        collapseAllBtn.innerHTML = `${collapseIcon}<span>${t(isAllCollapsed ? 'sidebarExpandAll' : 'sidebarCollapseAll')}</span>`;
+        collapseAllBtn.style.display = 'inline-flex';
+        collapseAllBtn.style.alignItems = 'center';
+        collapseAllBtn.style.padding = '4px 9px';
+        collapseAllBtn.style.background = 'rgba(255, 255, 255, 0.08)';
+        collapseAllBtn.style.color = '#e2e8f0';
+        collapseAllBtn.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+        collapseAllBtn.style.borderRadius = '3px 8px 3px 8px';
         collapseAllBtn.style.cursor = 'pointer';
+        collapseAllBtn.style.fontSize = '0.82em';
+        collapseAllBtn.style.transition = 'all 0.2s ease';
+        collapseAllBtn.onmouseover = () => { collapseAllBtn.style.background = 'rgba(255, 255, 255, 0.15)'; collapseAllBtn.style.borderColor = 'rgba(255, 255, 255, 0.25)'; };
+        collapseAllBtn.onmouseout = () => { collapseAllBtn.style.background = 'rgba(255, 255, 255, 0.08)'; collapseAllBtn.style.borderColor = 'rgba(255, 255, 255, 0.12)'; };
         collapseAllBtn.onclick = () => {
             if (isAllCollapsed) {
                 (this.foldersData || []).forEach(typeGroup => {

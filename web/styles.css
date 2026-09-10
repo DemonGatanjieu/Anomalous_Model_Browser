@@ -142,12 +142,13 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 #anomalous-container {
     width: 90%;
     height: 90%;
-    background: var(--bg-color, #222);
+    background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.035) 0%, transparent 65%), var(--bg-color, #1e1e24);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     pointer-events: auto;
     position: absolute;
     left: 5%;
@@ -281,22 +282,23 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-card {
     position: relative;
-    background: var(--comfy-menu-bg, #333);
-    border: 1px solid var(--border-color, #444);
-    border-radius: 8px;
+    background: var(--comfy-menu-bg, #2a2a30);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px 14px 4px 14px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     height: 420px;
-    height: 420px;
-    transition: all 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.3s ease;
+    will-change: transform, box-shadow;
 }
 
 .anomalous-card:hover {
     transform: translateY(-5px);
-    border-color: var(--fg-color, #fff);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-    transition-delay: 0.08s;
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 1px rgba(255, 255, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    transition-delay: 0.04s;
 }
 
 
@@ -10585,6 +10587,74 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
 .theme-abyssal-scarlet #anomalous-scan-btn.anomalous-radar-spinning svg {
     filter: drop-shadow(0 0 7px rgba(255, 77, 109, 0.85)) !important;
 }
+
+/* 10. Task 8: Pure Vector Iconography & Micro-interactions Overhaul */
+.anomalous-btn-icon {
+    display: inline-block;
+    vertical-align: -2px;
+    margin-right: 6px;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;
+}
+
+button:hover .anomalous-btn-icon {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 3px currentColor);
+}
+
+#anomalous-sidebar-actions button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 4px 8px 4px 8px !important;
+    box-sizing: border-box !important;
+    vertical-align: middle !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+#anomalous-sidebar-actions button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+#anomalous-sidebar-actions button svg {
+    transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+#anomalous-sidebar-actions button:hover svg {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 4px currentColor);
+}
+
+/* Specific button glow nuances */
+#anomalous-doctor-btn:hover {
+    color: #f43f5e !important;
+    background: rgba(244, 63, 94, 0.12) !important;
+    border: 1px solid rgba(244, 63, 94, 0.3) !important;
+}
+
+#anomalous-assistant-btn:hover {
+    color: #a855f7 !important;
+    background: rgba(168, 85, 247, 0.12) !important;
+    border: 1px solid rgba(168, 85, 247, 0.3) !important;
+}
+
+#anomalous-global-settings-btn:hover {
+    color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.12) !important;
+    border: 1px solid rgba(56, 189, 248, 0.3) !important;
+}
+
+/* Abyssal Scarlet Mode overrides for Task 8 icon buttons */
+.theme-abyssal-scarlet #anomalous-sidebar-actions button:hover {
+    box-shadow: 0 0 12px rgba(220, 20, 60, 0.5) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-sidebar-actions button:hover svg {
+    filter: drop-shadow(0 0 6px rgba(255, 51, 102, 0.8)) !important;
+}
+
 
 
 

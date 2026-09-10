@@ -83,7 +83,12 @@ DOM or live LiteGraph state.
   the sidebar bottom-left scan action (`#anomalous-scan-btn`) features a dedicated high-precision
   vector radar SVG (`SCAN_RADAR_ICON_SVG`) with GPU-accelerated continuous sweep animation (`.anomalous-radar-spinning`),
   completely decoupling from the settings modal's default layout reset button (`sidebarResetLayout: '📐 恢复默认窗口布局'`)
-  to eliminate visual collision and disambiguate user mental models.
+  to eliminate visual collision and disambiguate user mental models;
+  the default UI and iconography architecture (Task 8) is upgraded to a complete pure-code vector SVG system
+  (`SIDEBAR_ICONS`), replacing legacy native emojis across all navigation and action buttons (Assistant, Doctor,
+  Settings, Models, Gallery, Recipes, Dock, Help, Folders) with `stroke="currentColor"` dynamic theme inheritance,
+  while breaking square box layouts through asymmetric chamfered model cards (`border-radius: 4px 14px 4px 14px;`),
+  spatial depth shadows (`0 4px 20px rgba(0,0,0,0.45)`), and zero-cost micro-abrasive radial lighting gradients on `#anomalous-container`.
 - `ui_gallery_detail.js` owns the studio modal Image Detail Workbench,
   multi-dimensional image navigation (keyboard shortcuts, floating glass arrows,
   left vertical thumbnail rail), streamlined workflow/material action buttons,
