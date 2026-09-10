@@ -391,7 +391,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     gap: 25px;
     row-gap: 40px;
     align-content: flex-start;
-    background: #0d0d11;
+    background: transparent;
 }
 
 #anomalous-grid::-webkit-scrollbar {
@@ -724,7 +724,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     flex-direction: column;
     flex: 1;
     overflow: hidden;
-    background-color: var(--amb-bg-page, #141519);
+    background-color: var(--amb-bg-page, #0b0d13);
     position: relative;
 }
 
@@ -733,11 +733,12 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url('assets/archive_library_bg.webp');
+    background-image: 
+        radial-gradient(ellipse 90% 80% at 50% 50%, rgba(11, 13, 19, 0.15) 0%, rgba(11, 13, 19, 0.55) 100%),
+        url('assets/archive_library_bg.webp');
     background-size: cover;
-    background-position: center;
-    opacity: 0.08;
-    mix-blend-mode: luminosity;
+    background-position: center 25%;
+    opacity: 0.65;
     pointer-events: none;
     z-index: 0;
 }
@@ -11639,12 +11640,15 @@ button:hover .anomalous-btn-icon {
     box-shadow: none !important;
 }
 
-/* 2. Normal Mode Gallery Container & Panels (Subtle Dark Matter Watermark Texture) */
+/* 2. Normal Mode Gallery Container & Panels (Grand Anime Archive Watermark Texture) */
 #anomalous-gallery-panel,
-.anomalous-gallery-grid,
 .anomalous-gallery-container {
-    background-color: #0a0a0c !important;
+    background-color: transparent !important;
     position: relative;
+}
+
+.anomalous-gallery-grid {
+    background-color: transparent !important;
 }
 
 .anomalous-gallery-container::before,
@@ -11653,11 +11657,12 @@ button:hover .anomalous-btn-icon {
     content: '' !important;
     position: absolute !important;
     inset: 0 !important;
-    background-image: url('assets/normal_bg_concept.webp') !important;
+    background-image: 
+        radial-gradient(ellipse 90% 80% at 50% 50%, rgba(11, 13, 19, 0.15) 0%, rgba(11, 13, 19, 0.55) 100%),
+        url('assets/archive_library_bg.webp') !important;
     background-size: cover !important;
-    background-position: center !important;
-    opacity: 0.05 !important;
-    mix-blend-mode: luminosity !important;
+    background-position: center 25% !important;
+    opacity: 0.65 !important;
     pointer-events: none !important;
     z-index: 0 !important;
 }
