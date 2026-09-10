@@ -145,3 +145,13 @@ the visible browser entry.
 Network-backed enrichment is explicit and recoverable. An unavailable Civitai
 or translation service may produce a local error state; it must not block local
 browsing, editing, or already stored data.
+
+## Visual styling and theme unity
+
+Tooltips support directional positioning via `data-tooltip-pos="top|right|bottom|left"`
+with matching triangular pointer arrows and non-overlapping positioning.
+Interactive buttons follow global `.anomalous-btn-*` hierarchies (`primary`, `danger`,
+`ghost`) with signature asymmetric chamfers and condensed, tight rim glows rather
+than unbounded diffused shadows or ad-hoc inline border radii. Major panels use
+low-opacity concept art backdrops with `overlay` blend mode rather than synthetic CSS
+checkered grids.

@@ -1286,18 +1286,12 @@ function openOriginEditDialog(owner, recipe, reference, finish) {
     const hash = reference.identity?.sha256;
     if (hash) {
         const fetchBtn = document.createElement('button');
+        fetchBtn.type = 'button';
+        fetchBtn.className = 'anomalous-btn-ghost';
         fetchBtn.textContent = t('recipeOriginFetchHash');
-        fetchBtn.style.background = 'rgba(255, 255, 255, 0.05)';
-        fetchBtn.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-        fetchBtn.style.color = '#fff';
-        fetchBtn.style.padding = '8px 12px';
-        fetchBtn.style.borderRadius = '8px';
-        fetchBtn.style.cursor = 'pointer';
+        fetchBtn.style.padding = '8px 14px';
         fetchBtn.style.fontSize = '13px';
-        fetchBtn.style.transition = 'all 0.2s';
         fetchBtn.style.marginTop = '4px';
-        fetchBtn.onmouseover = () => fetchBtn.style.background = 'rgba(255, 255, 255, 0.1)';
-        fetchBtn.onmouseout = () => fetchBtn.style.background = 'rgba(255, 255, 255, 0.05)';
         
         fetchBtn.onclick = async () => {
             fetchBtn.disabled = true;
@@ -1331,9 +1325,9 @@ function openOriginEditDialog(owner, recipe, reference, finish) {
                 fetchBtn.disabled = false;
                 fetchBtn.style.opacity = '1';
                 fetchBtn.style.cursor = 'pointer';
-                fetchBtn.style.background = 'rgba(255, 255, 255, 0.05)';
-                fetchBtn.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                fetchBtn.style.color = '#fff';
+                fetchBtn.style.background = '';
+                fetchBtn.style.borderColor = '';
+                fetchBtn.style.color = '';
             }, 2500);
         };
         dialog.appendChild(fetchBtn);
@@ -1346,31 +1340,19 @@ function openOriginEditDialog(owner, recipe, reference, finish) {
     actions.style.marginTop = '16px';
     
     const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
     cancelBtn.textContent = t('recipeCancel');
-    cancelBtn.style.background = 'transparent';
-    cancelBtn.style.border = 'none';
-    cancelBtn.style.color = 'rgba(255, 255, 255, 0.7)';
-    cancelBtn.style.cursor = 'pointer';
+    cancelBtn.className = 'anomalous-btn-danger';
     cancelBtn.style.padding = '8px 16px';
     cancelBtn.style.fontSize = '14px';
-    cancelBtn.style.borderRadius = '6px';
-    cancelBtn.onmouseover = () => cancelBtn.style.background = 'rgba(255, 255, 255, 0.05)';
-    cancelBtn.onmouseout = () => cancelBtn.style.background = 'transparent';
     cancelBtn.onclick = () => document.body.removeChild(overlay);
     
     const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
     saveBtn.textContent = t('recipeSave');
-    saveBtn.style.background = 'var(--anomalous-accent, #6366f1)';
-    saveBtn.style.border = 'none';
-    saveBtn.style.color = '#fff';
-    saveBtn.style.cursor = 'pointer';
+    saveBtn.className = 'anomalous-btn-primary';
     saveBtn.style.padding = '8px 16px';
     saveBtn.style.fontSize = '14px';
-    saveBtn.style.fontWeight = '500';
-    saveBtn.style.borderRadius = '6px';
-    saveBtn.style.boxShadow = '0 2px 8px rgba(99, 102, 241, 0.3)';
-    saveBtn.onmouseover = () => saveBtn.style.filter = 'brightness(1.1)';
-    saveBtn.onmouseout = () => saveBtn.style.filter = 'none';
     
     saveBtn.onclick = async () => {
         saveBtn.disabled = true;
