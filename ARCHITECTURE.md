@@ -174,6 +174,12 @@ DOM or live LiteGraph state.
   ambient ocean current textures (`abyssal_currents_bg.webp`), and pulsating corruption error animations (`abyssal-corruption`).
 - `hash_resolver.js` is optional workflow provenance integration. Failure there
   must not prevent the main browser from loading.
+- `web/styles.css` defines the overhauled button morphology across primary, ghost, and studio action
+  buttons (`.anomalous-btn-primary`, `.anomalous-btn-ghost`, `.anomalous-recipe-btn-primary-action`,
+  `.anomalous-btn-extract-node`, `.anomalous-workbench-action-btn`), featuring sharp asymmetric geometric
+  chamfers (`border-radius: 3px 11px 3px 11px`), pseudo-element micro-rune diamond glyphs (`::before`),
+  dynamic horizontal inflow hover lightbars (`::after` with `scaleX(1)`), and multi-layered satin glow
+  strokes replacing generic rounded-corner boxes.
 
 ## Cross-system invariants
 

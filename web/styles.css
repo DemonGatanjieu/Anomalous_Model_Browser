@@ -853,33 +853,118 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-btn-primary {
-    background: #007bff;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
+    position: relative;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    border: 1px solid rgba(147, 197, 253, 0.45);
+    padding: 6px 14px;
+    border-radius: 3px 11px 3px 11px;
     cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
     margin-left: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25), inset 0 0 8px rgba(255, 255, 255, 0.12);
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+
+.anomalous-btn-primary::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 4px;
+    background: currentColor;
+    transform: rotate(45deg);
+    margin-right: 6px;
+    opacity: 0.75;
+    flex-shrink: 0;
+    transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+.anomalous-btn-primary:hover::before {
+    transform: rotate(90deg) scale(1.3);
+    opacity: 1;
+}
+
+.anomalous-btn-primary::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 3;
+    pointer-events: none;
+}
+
+.anomalous-btn-primary:hover::after {
+    transform: scaleX(1);
+}
+
+.anomalous-btn-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+    border-color: #60a5fa;
+    box-shadow: 0 0 14px rgba(96, 165, 250, 0.45), inset 0 0 10px rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.anomalous-btn-primary:active {
+    transform: translateY(0);
+    filter: brightness(0.95);
 }
 
 .anomalous-btn-danger {
-    background: #dc3545;
+    position: relative;
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
     color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
+    border: 1px solid rgba(252, 165, 165, 0.4);
+    padding: 6px 14px;
+    border-radius: 3px 11px 3px 11px;
     cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
     margin-left: 5px;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+
+.anomalous-btn-danger:hover {
+    background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+    border-color: #f87171;
+    box-shadow: 0 0 14px rgba(248, 113, 113, 0.4);
+    transform: translateY(-1px);
 }
 
 .anomalous-btn-success {
-    background: #28a745;
+    position: relative;
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
     color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
+    border: 1px solid rgba(134, 239, 172, 0.4);
+    padding: 6px 14px;
+    border-radius: 3px 11px 3px 11px;
     cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
     margin-left: 5px;
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+
+.anomalous-btn-success:hover {
+    background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+    border-color: #4ade80;
+    box-shadow: 0 0 14px rgba(74, 222, 128, 0.4);
+    transform: translateY(-1px);
 }
 
 .anomalous-nb-section {
@@ -3520,20 +3605,33 @@ dialog.anomalous-gallery-viewer[open] {
 
 /* Ghost Button (secondary text button) */
 .anomalous-btn-ghost {
-    background: rgba(255, 255, 255, 0.08);
-    color: #e0e0e0;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    padding: 6px 12px;
-    border-radius: 4px;
+    position: relative;
+    background: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 2px 8px 2px 8px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    font-weight: 500;
     cursor: pointer;
     margin-left: 5px;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+    user-select: none;
 }
 
 .anomalous-btn-ghost:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.09);
+    color: #ffffff;
+    border-color: rgba(165, 180, 252, 0.45);
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.4), 0 0 12px rgba(99, 102, 241, 0.25), inset 0 0 8px rgba(99, 102, 241, 0.12);
     transform: translateY(-1px);
+}
+
+.anomalous-btn-ghost:active {
+    transform: translateY(0);
+    filter: brightness(0.92);
 }
 
 @keyframes anomalous-parameter-switch {
@@ -5471,7 +5569,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     flex: 1;
     height: 27px;
     padding: 0 10px;
-    border-radius: 6px;
+    border-radius: 3px 10px 3px 10px;
     background-color: rgba(28, 32, 54, 0.88);
     background-image: url('assets/btn_energy_core.webp');
     background-size: cover;
@@ -5492,6 +5590,43 @@ dialog.anomalous-gallery-viewer::backdrop {
     gap: 4px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 0 10px rgba(99, 102, 241, 0.15);
+}
+
+.anomalous-recipe-btn-primary-action::before {
+    content: '';
+    display: inline-block;
+    width: 3.5px;
+    height: 3.5px;
+    background: currentColor;
+    transform: rotate(45deg);
+    margin-right: 2px;
+    opacity: 0.75;
+    flex-shrink: 0;
+    transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+.anomalous-recipe-btn-primary-action:hover::before {
+    transform: rotate(90deg) scale(1.3);
+    opacity: 1;
+}
+
+.anomalous-recipe-btn-primary-action::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 3;
+    pointer-events: none;
+}
+
+.anomalous-recipe-btn-primary-action:hover::after {
+    transform: scaleX(1);
 }
 
 .anomalous-recipe-btn-primary-action:hover {
@@ -7569,17 +7704,19 @@ dialog.anomalous-gallery-viewer::backdrop {
     gap: 7px;
     height: 36px;
     padding: 0 14px;
-    border-radius: 8px;
+    border-radius: 3px 10px 3px 10px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(255, 255, 255, 0.05);
     color: #e2e8f0;
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     white-space: nowrap;
     user-select: none;
     box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
 }
 
 .anomalous-workbench-action-icon {
@@ -7606,6 +7743,25 @@ dialog.anomalous-gallery-viewer::backdrop {
     color: #e0f2fe;
 }
 
+.anomalous-workbench-action-btn.is-primary::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #38bdf8, #2dd4bf, #a7f3d0);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 3;
+    pointer-events: none;
+}
+
+.anomalous-workbench-action-btn.is-primary:hover::after {
+    transform: scaleX(1);
+}
+
 .anomalous-workbench-action-btn.is-primary:hover {
     background: linear-gradient(135deg, rgba(14, 165, 233, 0.36) 0%, rgba(45, 212, 191, 0.4) 100%);
     border-color: #2dd4bf;
@@ -7621,6 +7777,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-workbench-action-btn.is-save {
     background: rgba(255, 255, 255, 0.04);
     border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 2px 6px rgba(0, 0, 0, 0.25);
     color: #cbd5e1;
     flex: 0 0 auto;
 }
@@ -7628,7 +7785,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-workbench-action-btn.is-save:hover {
     background: rgba(255, 255, 255, 0.09);
     color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.24);
+    border-color: rgba(165, 180, 252, 0.4);
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.35), 0 0 12px rgba(99, 102, 241, 0.25);
     transform: translateY(-1px);
 }
 
@@ -9977,7 +10135,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-btn-sm {
     padding: 4px 9px !important;
     font-size: 0.74rem !important;
-    border-radius: 6px !important;
+    border-radius: 2px 7px 2px 7px !important;
     line-height: 1.3 !important;
 }
 
@@ -9988,12 +10146,50 @@ dialog.anomalous-gallery-viewer::backdrop {
     background-size: cover !important;
     background-position: center !important;
     border: 1px solid rgba(56, 189, 248, 0.55) !important;
+    border-radius: 3px 10px 3px 10px !important;
     color: #ffffff !important;
     font-weight: 600 !important;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85) !important;
     box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3), inset 0 0 10px rgba(56, 189, 248, 0.2) !important;
     transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
     overflow: hidden;
+}
+
+.anomalous-btn-extract-node::before {
+    content: '';
+    display: inline-block;
+    width: 3.5px;
+    height: 3.5px;
+    background: currentColor;
+    transform: rotate(45deg);
+    margin-right: 4px;
+    opacity: 0.8;
+    flex-shrink: 0;
+    transition: transform 0.22s ease, opacity 0.22s ease;
+}
+
+.anomalous-btn-extract-node:hover::before {
+    transform: rotate(90deg) scale(1.3);
+    opacity: 1;
+}
+
+.anomalous-btn-extract-node::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #38bdf8, #2dd4bf, #a7f3d0);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 3;
+    pointer-events: none;
+}
+
+.anomalous-btn-extract-node:hover::after {
+    transform: scaleX(1);
 }
 
 .anomalous-btn-extract-node:hover {
@@ -10013,13 +10209,32 @@ dialog.anomalous-gallery-viewer::backdrop {
     color: #f3e8ff !important;
     font-size: 0.74rem !important;
     padding: 4px 9px !important;
-    border-radius: 6px !important;
+    border-radius: 2px 8px 2px 8px !important;
     font-weight: 600 !important;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
     box-shadow: 0 2px 8px rgba(192, 132, 252, 0.25);
     cursor: pointer;
     transition: all 0.2s ease !important;
     overflow: hidden;
+}
+
+.anomalous-mixer-smart-sort-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #c084fc, #e879f9, #f472b6);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 3;
+    pointer-events: none;
+}
+
+.anomalous-mixer-smart-sort-btn:hover::after {
+    transform: scaleX(1);
 }
 
 .anomalous-mixer-smart-sort-btn:hover {
@@ -10172,6 +10387,66 @@ html.theme-abyssal-scarlet,
     box-shadow: 0 0 20px rgba(255, 51, 102, 0.7), inset 0 0 14px rgba(220, 20, 60, 0.45) !important;
     transform: translateY(-1px);
     filter: brightness(1.18);
+}
+
+.theme-abyssal-scarlet .anomalous-btn-primary::before,
+.theme-abyssal-scarlet .anomalous-recipe-btn-primary-action::before,
+.theme-abyssal-scarlet .anomalous-btn-extract-node::before {
+    color: #ff3366 !important;
+    box-shadow: 0 0 6px #ff3366 !important;
+}
+
+.theme-abyssal-scarlet .anomalous-btn-primary::after,
+.theme-abyssal-scarlet .anomalous-recipe-btn-primary-action::after,
+.theme-abyssal-scarlet .anomalous-btn-extract-node::after,
+.theme-abyssal-scarlet .anomalous-workbench-action-btn.is-primary::after {
+    background: linear-gradient(90deg, #dc143c, #ff3366, #ff758c) !important;
+    box-shadow: 0 0 10px #ff3366 !important;
+}
+
+.theme-abyssal-scarlet .anomalous-btn-ghost {
+    background: rgba(30, 10, 20, 0.6) !important;
+    border-color: rgba(220, 20, 60, 0.35) !important;
+    color: #ffe4e6 !important;
+    border-radius: 2px 8px 2px 8px !important;
+    box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.2), 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-btn-ghost:hover {
+    background: rgba(50, 12, 30, 0.8) !important;
+    border-color: #ff3366 !important;
+    box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.55), 0 0 14px rgba(220, 20, 60, 0.4), inset 0 0 8px rgba(220, 20, 60, 0.25) !important;
+    color: #ffffff !important;
+    text-shadow: 0 0 6px rgba(255, 51, 102, 0.8) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-workbench-action-btn.is-primary {
+    background: linear-gradient(135deg, rgba(220, 20, 60, 0.32) 0%, rgba(147, 51, 234, 0.28) 100%) !important;
+    border-color: rgba(220, 20, 60, 0.55) !important;
+    border-radius: 2px 10px 2px 10px !important;
+    color: #ffe4e6 !important;
+    text-shadow: 0 0 6px rgba(220, 20, 60, 0.8) !important;
+    box-shadow: 0 4px 16px rgba(220, 20, 60, 0.25) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-workbench-action-btn.is-primary:hover {
+    border-color: #ff3366 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 20px rgba(220, 20, 60, 0.6), inset 0 0 12px rgba(220, 20, 60, 0.35) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-workbench-action-btn.is-save {
+    background: rgba(30, 10, 20, 0.5) !important;
+    border-color: rgba(220, 20, 60, 0.3) !important;
+    border-radius: 2px 8px 2px 8px !important;
+    color: #fecdd3 !important;
+    box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.15), 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-workbench-action-btn.is-save:hover {
+    border-color: #ff3366 !important;
+    box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.45), 0 0 14px rgba(220, 20, 60, 0.35) !important;
+    color: #ffffff !important;
 }
 
 .theme-abyssal-scarlet .anomalous-mixer-smart-sort-btn {
