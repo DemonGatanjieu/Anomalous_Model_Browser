@@ -146,20 +146,23 @@ Network-backed enrichment is explicit and recoverable. An unavailable Civitai
 or translation service may produce a local error state; it must not block local
 browsing, editing, or already stored data.
 
-## Visual styling and theme unity
+## Visual styling and theme architecture
 
-Tooltips support directional positioning via `data-tooltip-pos="top|right|bottom|left"`
-with matching triangular pointer arrows and non-overlapping positioning.
-Header navigation maintains dedicated groupings: left branding, center view tabs,
-and right actions retaining both the docking toggle (`#anomalous-dock-btn`) and the close button (`#anomalous-close`).
-Interactive buttons follow global `.anomalous-btn-*` hierarchies (`primary`, `danger`,
-`ghost`) with signature asymmetric chamfers and condensed, razor-sharp 2px-4px rim glows (`box-shadow: 0 0 4px 1px ...`)
-rather than unbounded blurry halos or ad-hoc inline border radii.
-Major panels utilize dual fallback concept backdrops (`url(...)`, `radial-gradient(...)`) with `#0b050f` / `#0c0510`
-deep dark wine bases and ambient crimson/purple radial gradient illumination to eliminate flat dead-black voids.
-Header drag interaction safely guards `.closest('button')`, `.closest('input')`, etc., ensuring that button
-child SVG icons and label spans do not swallow clicks via `e.preventDefault()`.
-Model card badges follow the Gothic Sovereign palette (Dark Gold, Amber, Abyssal Purple, Rose Crimson),
-strictly eliminating clashing cold cyan tags (`#00ffcc`) and maintaining deep crimson frosted reveal overlays.
-Custom dark crimson scrollbars on `#anomalous-grid` ensure consistent theme immersion throughout.
+The extension enforces a strict **Dual-Mode Theme Architecture (双形态主题架构)** to guarantee default aesthetic restraint while enabling deep immersive customization:
+
+1. **Normal Mode (Default / 标准中性黑曜石模式)**:
+   - Base surfaces use clean, restrained dark obsidian tones (`#0d0d11` / `#0d0d0f`) with subtle, neutral glassmorphism borders (`rgba(255, 255, 255, 0.08)`).
+   - Concept art backgrounds (`assets/bg_concept.webp`, `assets/abyssal_scarlet_mansion.webp`) and ambient crimson radial gradients are completely disabled (`background-image: none; ::before { display: none; }`).
+   - Sidebar active folder indicators and icons use neutral silver-slate (`#94a3b8`); the radar scan sweep uses clean cyan/blue.
+   - Model cards use neutral dark glass (`rgba(20, 20, 26, 0.85)`) with neutral silver plate badges (`#cbd5e1`).
+   - Tooltips utilize neutral dark slate glass (`rgba(18, 20, 28, 0.95)`) with neutral borders and directional positioning (`data-tooltip-pos="top|right|bottom|left"`).
+   - Prompt Mixer, Arranger, and Workbench controls utilize cyber cyan/blue (`#38bdf8`) accents for active pills, smart sort, dropzone highlights, and node extraction.
+
+2. **Abyssal Scarlet Easter Egg Mode (`.theme-abyssal-scarlet` / 深海血族彩蛋领域)**:
+   - Strictly scoped under `.theme-abyssal-scarlet` or `html.theme-abyssal-scarlet`; never leaks into default rules.
+   - Activates deep abyssal palettes (`#0a0510` / `#0d080c`), submerged scarlet mansion concept overlays (`assets/abyssal_scarlet_mansion.webp`), lattice textures (`assets/bg_concept.webp`), and ambient crimson/purple radial gradient illumination.
+   - Model card badges shift to the Gothic Sovereign palette (Dark Gold, Amber, Abyssal Purple/Flux, Rose Crimson).
+   - Sidebar indicators, folder glows, action button rims, and tooltips adopt scarlet/wine halos (`#dc143c`, `rgba(220, 20, 60, ...)`).
+   - Header drag interaction safely guards `.closest('button')`, `.closest('input')`, etc., ensuring that button child SVG icons and label spans do not swallow clicks via `e.preventDefault()`.
+
 

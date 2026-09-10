@@ -178,17 +178,16 @@ DOM or live LiteGraph state.
   `recipe_actions.js` own pure or transactional recipe behavior.
 - `ui_doctor.js`, `model_picker.js`, and `graph_splice.js` own assistant and
   explicit graph-edit behavior.
-- Visual Correction Audit & Gothic Vampire Re-alignment (视觉纠偏与哥特美学回归):
-  - Purged all 83 high-saturation cyberpunk cyan/blue instances (`#38bdf8`, `#00ffcc`, `#2dd4bf`, `#5eead4`, `#007bff`, `#0ea5e9`, `#06b6d4`) and 140+ `rgba(...)` glow values, re-skinning to an aristocratic Crimson (`#dc143c`), Deep Wine (`#722f37`), and Abyssal Violet (`#8b5cf6`) palette;
-  - Restrained all oversized diffused glows (`box-shadow` / `filter: drop-shadow`) to tight 4~8px interior magic micro-auras, adhering to vampire gothic nobility;
-  - Swept legacy system emojis across all 13 frontend modules and `locales.js`, replacing them with pure-code vector SVG icons (`3D Cube`, `Network`, `Magic Wand`, `Folder`, `Image Frame`, `Sliders`, `Trash`, etc.);
+- Dual-Mode Theme Architecture (双形态剥离与主题分层隔离):
+  - **Normal Mode (Default / 标准中性黑曜石模式)**: Restrained, clean, neutral dark obsidian (`#0d0d11` / `#0d0d0f`) styling; strictly eliminates global crimson/wine hues, concept art backdrops (`bg_concept.webp`, `abyssal_scarlet_mansion.webp`), and glowing red borders from default rules; neutral silver-slate (`#94a3b8`) active sidebar indicators and vector icons; neutral dark glass cards (`rgba(20, 20, 26, 0.85)`) and silver plate badges (`#cbd5e1`); neutral slate tooltips (`rgba(18, 20, 28, 0.95)`); cyber cyan/blue (`#38bdf8`) retained for Prompt Mixer/Workbench interactive states, dropzones, and radar animations.
+  - **Abyssal Scarlet Easter Egg Mode (`.theme-abyssal-scarlet` / 深海血族彩蛋领域)**: All aristocratic gothic vampire elements (Crimson `#dc143c`, Deep Wine `#722f37`, Abyssal Violet `#8b5cf6`, concept overlays `abyssal_scarlet_mansion.webp` and `bg_concept.webp`, radial crimson moon gradients, Gothic Sovereign badges, scarlet button rim glows) are strictly scoped under `.theme-abyssal-scarlet` or `html.theme-abyssal-scarlet`.
+  - Swept legacy system emojis across all frontend modules and `locales.js`, replacing them with pure-code vector SVG icons (`3D Cube`, `Network`, `Magic Wand`, `Folder`, `Image Frame`, `Sliders`, `Trash`, etc.) with `stroke="currentColor"` dynamic theme inheritance;
   - Overhauled `#anomalous-header` into a centered symmetric three-column architecture (`leftGroup`, `centerGroup`, `rightGroup`), eliminating left-side visual voids/black holes;
-  - Injected gothic diamond lattice textures and dark crimson radial auras into `#anomalous-gallery-panel`, `.anomalous-gallery-grid`, `.anomalous-gallery-container`, and `#anomalous-content`;
   - Fixed tooltip overlap hazard by re-aligning bottom toolbar tooltip triggers to center-top (`data-tooltip-pos="top"`), completely preventing horizontal button occlusion.
 - `locales.js` is the canonical runtime string catalog; `safe_dom.js` is the
   trusted rich-text boundary.
 - `web/main.js` and `web/modules/ui_sidebar.js` own theme state management and interactive easter-egg domain toggles,
-  introducing the anime gothic "Abyssal Scarlet" (深海血族) custom mode (`.theme-abyssal-scarlet`).
+  managing the anime gothic "Abyssal Scarlet" (深海血族) custom mode (`.theme-abyssal-scarlet`).
   Activatable via ComfyUI settings (`Anomalous.ModelBrowser.AbyssalScarletTheme`) or by tapping the
   sidebar brand badge 5 times with domain expansion toasts; features deep abyssal palettes (`#0a0510`),
   asymmetric gothic button chamfers (`border-radius: 4px 12px 4px 12px`), scarlet rune micro-cores (`btn_scarlet_core.webp`),

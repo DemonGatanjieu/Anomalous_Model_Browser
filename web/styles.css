@@ -3,21 +3,21 @@
    ========================================================================== */
 :root {
     --c-amber: #d97706;
-    --c-amber-glow: rgba(217, 119, 6, 0.3);
-    --c-cyan: #e11d48;
-    --c-cyan-glow: rgba(225, 29, 72, 0.35);
+    --c-amber-glow: rgba(217, 119, 6, 0.25);
+    --c-cyan: #06b6d4;
+    --c-cyan-glow: rgba(6, 182, 212, 0.25);
     --c-purple: #8b5cf6;
-    --c-purple-glow: rgba(139, 92, 246, 0.3);
+    --c-purple-glow: rgba(139, 92, 246, 0.25);
     --c-silver: #94a3b8;
-    --c-silver-glow: rgba(148, 163, 184, 0.25);
-    --c-blue: #dc143c;
-    --c-blue-glow: rgba(220, 20, 60, 0.35);
-    --c-crimson: #dc143c;
-    --c-crimson-glow: rgba(220, 20, 60, 0.45);
-    --c-wine: #722f37;
-    --c-wine-glow: rgba(114, 47, 55, 0.4);
+    --c-silver-glow: rgba(148, 163, 184, 0.2);
+    --c-blue: #38bdf8;
+    --c-blue-glow: rgba(56, 189, 248, 0.25);
+    --c-crimson: #ef4444;
+    --c-crimson-glow: rgba(239, 68, 68, 0.25);
+    --c-wine: #475569;
+    --c-wine-glow: rgba(71, 85, 105, 0.2);
     --c-emerald: #10b981;
-    --c-emerald-glow: rgba(16, 185, 129, 0.3);
+    --c-emerald-glow: rgba(16, 185, 129, 0.25);
 }
 
 /* Skeleton Shimmer Loading Placeholder */
@@ -206,7 +206,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 #anomalous-container {
     width: 90%;
     height: 90%;
-    background: radial-gradient(circle at 50% 0%, rgba(220, 20, 60, 0.035) 0%, transparent 65%), var(--bg-color, #1e1e24);
+    background: var(--bg-color, #131318);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 4px;
     clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
@@ -351,7 +351,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     gap: 25px;
     row-gap: 40px;
     align-content: flex-start;
-    background: radial-gradient(ellipse 90% 55% at 50% 0%, rgba(220, 20, 60, 0.08) 0%, rgba(26, 9, 22, 0.03) 60%, transparent 100%);
+    background: #0d0d11;
 }
 
 #anomalous-grid::-webkit-scrollbar {
@@ -359,30 +359,30 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 #anomalous-grid::-webkit-scrollbar-track {
-    background: rgba(14, 6, 16, 0.75);
+    background: rgba(20, 20, 26, 0.8);
 }
 
 #anomalous-grid::-webkit-scrollbar-thumb {
-    background: rgba(220, 20, 60, 0.28);
+    background: rgba(255, 255, 255, 0.16);
     border-radius: 4px;
-    border: 1px solid rgba(220, 20, 60, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 #anomalous-grid::-webkit-scrollbar-thumb:hover {
-    background: rgba(220, 20, 60, 0.55);
-    box-shadow: 0 0 8px rgba(220, 20, 60, 0.4);
+    background: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.18);
 }
 
 .anomalous-card {
     position: relative;
-    background: linear-gradient(180deg, rgba(22, 11, 18, 0.88) 0%, rgba(14, 7, 13, 0.96) 100%);
-    border: 1px solid rgba(220, 20, 60, 0.18);
+    background: rgba(20, 20, 26, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px 16px 6px 16px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     height: 380px;
-    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55), 0 0 1px rgba(220, 20, 60, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
     will-change: transform, box-shadow;
     cursor: pointer;
@@ -390,18 +390,19 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-card:hover {
     transform: translateY(-5px);
-    border-color: rgba(220, 20, 60, 0.55);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(220, 20, 60, 0.3), inset 0 1px 0 rgba(255, 100, 130, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .theme-abyssal-scarlet .anomalous-card {
     border-color: rgba(220, 20, 60, 0.22);
     background: linear-gradient(180deg, rgba(25, 12, 20, 0.9) 0%, rgba(14, 6, 14, 0.98) 100%);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.6), 0 0 1px rgba(220, 20, 60, 0.2);
 }
 
 .theme-abyssal-scarlet .anomalous-card:hover {
     border-color: rgba(220, 20, 60, 0.6);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 22px rgba(220, 20, 60, 0.35);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 22px rgba(220, 20, 60, 0.35), inset 0 1px 0 rgba(255, 100, 130, 0.15);
 }
 
 .anomalous-card img,
@@ -434,8 +435,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 26px 12px 10px;
-    background: linear-gradient(to top, rgba(16, 5, 13, 0.97) 0%, rgba(16, 5, 13, 0.72) 65%, transparent 100%);
+    padding: 24px 12px 10px;
+    background: linear-gradient(to top, rgba(14, 14, 18, 0.96) 0%, rgba(14, 14, 18, 0.65) 60%, transparent 100%);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     display: flex;
@@ -451,7 +452,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-card:hover .anomalous-card-labels {
     transform: translateY(0);
-    background: linear-gradient(to top, rgba(18, 5, 14, 0.98) 0%, rgba(20, 6, 16, 0.92) 75%, transparent 100%);
+    background: linear-gradient(to top, rgba(16, 16, 22, 0.98) 0%, rgba(18, 18, 24, 0.9) 75%, transparent 100%);
 }
 
 .theme-abyssal-scarlet .anomalous-card-labels {
@@ -481,7 +482,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     opacity: 0.8;
 }
 
-/* Card Base Model Badges - Gothic Sovereign Palette (Dark Gold, Abyssal Purple, Rose Crimson) */
+/* Card Base Model Badges - Normal Mode (Neutral & Clean) */
 .anomalous-card-badge {
     position: absolute;
     top: 8px;
@@ -489,12 +490,12 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     padding: 3px 8px;
     border-radius: 5px;
     font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    background: rgba(18, 8, 14, 0.88);
-    color: #f59e0b;
-    border: 1px solid rgba(245, 158, 11, 0.38);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 6px rgba(245, 158, 11, 0.12);
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    background: rgba(18, 20, 26, 0.85);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     pointer-events: none;
@@ -504,38 +505,35 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-card:hover .anomalous-card-badge {
-    border-color: rgba(245, 158, 11, 0.6);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), 0 0 10px rgba(245, 158, 11, 0.25);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
 }
 
 .anomalous-card-badge.badge-gold {
-    color: #f59e0b;
-    background: rgba(22, 10, 14, 0.92);
-    border-color: rgba(245, 158, 11, 0.45);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 8px rgba(245, 158, 11, 0.22);
+    color: #e2e8f0;
+    background: rgba(30, 32, 40, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
 .anomalous-card-badge.badge-amber {
-    color: #fbbf24;
-    background: rgba(20, 10, 12, 0.92);
-    border-color: rgba(251, 191, 36, 0.4);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 6px rgba(251, 191, 36, 0.16);
+    color: #cbd5e1;
+    background: rgba(30, 32, 40, 0.9);
+    border-color: rgba(255, 255, 255, 0.18);
 }
 
 .anomalous-card-badge.badge-flux {
-    color: #c084fc;
-    background: rgba(18, 9, 26, 0.92);
-    border-color: rgba(168, 85, 247, 0.45);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 8px rgba(168, 85, 247, 0.25);
+    color: #cbd5e1;
+    background: rgba(30, 32, 40, 0.9);
+    border-color: rgba(255, 255, 255, 0.18);
 }
 
 .anomalous-card-badge.badge-rose {
-    color: #ff4d6d;
-    background: rgba(26, 8, 16, 0.92);
-    border-color: rgba(255, 77, 109, 0.45);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 8px rgba(255, 77, 109, 0.25);
+    color: #cbd5e1;
+    background: rgba(30, 32, 40, 0.9);
+    border-color: rgba(255, 255, 255, 0.18);
 }
 
+/* Card Action Buttons - Normal Mode (Neutral Glass) */
 .anomalous-card-action-btn {
     position: absolute;
     top: 8px;
@@ -546,9 +544,9 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: rgba(18, 10, 16, 0.88);
-    color: #f1f5f9;
-    border: 1px solid rgba(220, 20, 60, 0.28);
+    background: rgba(20, 22, 28, 0.85);
+    color: #e2e8f0;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 6px;
     cursor: pointer;
     font-size: 13px;
@@ -579,10 +577,10 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-card-action-btn:hover {
-    background: rgba(220, 20, 60, 0.38);
-    border-color: #dc143c;
-    color: #fff;
-    box-shadow: 0 0 10px 1px rgba(220, 20, 60, 0.55);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
 }
 
 .anomalous-scan-progress {
@@ -690,24 +688,13 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     flex-direction: column;
     flex: 1;
     overflow: hidden;
-    background-color: #0b050f;
-    background-image: 
-        radial-gradient(ellipse 75% 50% at 50% 0%, rgba(190, 20, 55, 0.12) 0%, rgba(35, 12, 28, 0.05) 55%, transparent 100%),
-        radial-gradient(ellipse 60% 45% at 85% 95%, rgba(139, 92, 246, 0.06) 0%, transparent 100%);
+    background-color: #0d0d11;
+    background-image: none;
     position: relative;
 }
 
 #anomalous-content::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url('assets/abyssal_scarlet_mansion.webp'), radial-gradient(circle at 50% 20%, rgba(220, 20, 60, 0.08) 0%, transparent 70%);
-    background-size: cover;
-    background-position: center;
-    mix-blend-mode: soft-light;
-    opacity: 0.18;
-    pointer-events: none;
-    z-index: 0;
+    display: none;
 }
 
 #anomalous-content > * {
@@ -724,37 +711,22 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     width: 250px;
     margin: 8px 0 8px 8px;
     height: calc(100% - 16px);
-    background: rgba(20, 18, 24, 0.82);
+    background: rgba(20, 20, 26, 0.82);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     position: relative;
-    border: 1px solid rgba(220, 20, 60, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.3s ease;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     overflow: hidden;
     box-sizing: border-box;
 }
 
 #anomalous-sidebar-wrapper::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 1px;
-    height: 100%;
-    background: linear-gradient(180deg, 
-        rgba(220, 20, 60, 0) 0%, 
-        rgba(220, 20, 60, 0.45) 20%, 
-        rgba(139, 92, 246, 0.5) 50%, 
-        rgba(220, 20, 60, 0.35) 80%, 
-        rgba(220, 20, 60, 0) 100%
-    );
-    pointer-events: none;
-    z-index: 5;
-    box-shadow: 0 0 6px rgba(220, 20, 60, 0.3);
+    display: none;
 }
 
 .anomalous-sidebar-closed #anomalous-sidebar-wrapper {
@@ -825,23 +797,24 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     color: #fff;
 }
 
-/* 2px Razor-thin Gothic Crimson Active Indicator on Selected Menu */
+/* Clean Neutral Active Indicator on Selected Menu (Normal Mode) */
 .anomalous-folder-item.active {
-    background: linear-gradient(90deg, rgba(220, 20, 60, 0.18) 0%, rgba(220, 20, 60, 0.03) 80%, transparent 100%);
+    background: rgba(255, 255, 255, 0.08);
     color: #fff;
     font-weight: 600;
-    border-left: 2px solid #dc143c;
-    box-shadow: inset 3px 0 8px rgba(220, 20, 60, 0.35);
+    border-left: 2px solid #94a3b8;
+    box-shadow: inset 3px 0 6px rgba(255, 255, 255, 0.05);
     border-radius: 0 6px 6px 0;
 }
 
 .anomalous-folder-item.active .anomalous-folder-name {
     color: #fff !important;
-    text-shadow: 0 0 6px rgba(220, 20, 60, 0.5);
+    text-shadow: none;
 }
 
 .theme-abyssal-scarlet .anomalous-folder-item.active {
     background: linear-gradient(90deg, rgba(220, 20, 60, 0.24) 0%, rgba(220, 20, 60, 0.05) 80%, transparent 100%);
+    border-left: 2px solid #dc143c;
     border-left-color: var(--c-crimson, #dc143c);
     box-shadow: inset 3px 0 10px rgba(220, 20, 60, 0.5);
 }
@@ -850,58 +823,79 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     text-shadow: 0 0 8px rgba(220, 20, 60, 0.7);
 }
 
-/* Semantic Icon Colors Injection (Gothic Vampire Tone) */
+/* Sidebar Icons & Actions - Normal Mode (Neutral & Clean) */
 .anomalous-folder-item svg,
 #anomalous-sidebar h3 svg {
+    color: #94a3b8 !important;
+    filter: none;
+}
+
+.theme-abyssal-scarlet .anomalous-folder-item svg,
+.theme-abyssal-scarlet #anomalous-sidebar h3 svg {
     color: var(--c-amber, #d97706) !important;
     filter: drop-shadow(0 0 4px var(--c-amber-glow));
 }
 
-#anomalous-scan-btn {
-    color: #cbd5e1 !important;
+#anomalous-scan-btn,
+#anomalous-materials-btn,
+#anomalous-doctor-btn,
+#anomalous-assistant-btn,
+#anomalous-global-settings-btn {
+    color: #94a3b8 !important;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
-#anomalous-scan-btn:hover {
+
+#anomalous-scan-btn:hover,
+#anomalous-materials-btn:hover,
+#anomalous-doctor-btn:hover,
+#anomalous-assistant-btn:hover,
+#anomalous-global-settings-btn:hover {
+    color: #f8fafc !important;
+    filter: none !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-scan-btn:hover {
     color: #ff4d6d !important;
     filter: drop-shadow(0 0 5px rgba(220, 20, 60, 0.6)) !important;
     background: rgba(220, 20, 60, 0.12) !important;
 }
 
-#anomalous-materials-btn {
+.theme-abyssal-scarlet #anomalous-materials-btn {
     color: var(--c-amber, #d97706) !important;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
-#anomalous-materials-btn:hover {
+
+.theme-abyssal-scarlet #anomalous-materials-btn:hover {
     color: #fbbf24 !important;
     filter: drop-shadow(0 0 5px rgba(217, 119, 6, 0.5)) !important;
     background: rgba(217, 119, 6, 0.12) !important;
 }
 
-#anomalous-doctor-btn {
+.theme-abyssal-scarlet #anomalous-doctor-btn {
     color: var(--c-crimson, #dc143c) !important;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
-#anomalous-doctor-btn:hover {
+
+.theme-abyssal-scarlet #anomalous-doctor-btn:hover {
     color: #ff4d6d !important;
     filter: drop-shadow(0 0 5px rgba(220, 20, 60, 0.6)) !important;
     background: rgba(220, 20, 60, 0.12) !important;
 }
 
-#anomalous-assistant-btn {
+.theme-abyssal-scarlet #anomalous-assistant-btn {
     color: var(--c-purple, #8b5cf6) !important;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
-#anomalous-assistant-btn:hover {
+
+.theme-abyssal-scarlet #anomalous-assistant-btn:hover {
     color: #c4b5fd !important;
     filter: drop-shadow(0 0 5px rgba(139, 92, 246, 0.6)) !important;
     background: rgba(139, 92, 246, 0.14) !important;
 }
 
-#anomalous-global-settings-btn {
+.theme-abyssal-scarlet #anomalous-global-settings-btn {
     color: var(--c-silver, #94a3b8) !important;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
-#anomalous-global-settings-btn:hover {
+
+.theme-abyssal-scarlet #anomalous-global-settings-btn:hover {
     color: #f8fafc !important;
     filter: drop-shadow(0 0 5px rgba(148, 163, 184, 0.4)) !important;
     background: rgba(255, 255, 255, 0.08) !important;
@@ -940,6 +934,10 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-resizer:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.theme-abyssal-scarlet .anomalous-resizer:hover {
     background: #dc143c;
 }
 
@@ -1059,9 +1057,13 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-compatible-item:hover {
-    border-color: #dc143c;
+    border-color: rgba(255, 255, 255, 0.3);
     background: var(--bg-color, #444);
     transform: translateY(-2px);
+}
+
+.theme-abyssal-scarlet .anomalous-compatible-item:hover {
+    border-color: #dc143c;
 }
 
 .anomalous-compatible-item img,
@@ -1203,9 +1205,13 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-nb-item.active {
-    background: #dc143c;
+    background: rgba(255, 255, 255, 0.12);
     color: #fff;
     font-weight: bold;
+}
+
+.theme-abyssal-scarlet .anomalous-nb-item.active {
+    background: #dc143c;
 }
 
 .anomalous-nb-editor {
@@ -1280,7 +1286,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, #dc143c, #8b5cf6, #722f37);
+    background: linear-gradient(90deg, #38bdf8, #8b5cf6, #c084fc);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1594,9 +1600,14 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-gallery-card:hover {
     transform: translateY(-3px);
-    border-color: #dc143c;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
     transition-delay: 0.08s;
+}
+
+.theme-abyssal-scarlet .anomalous-gallery-card:hover {
+    border-color: #dc143c;
+    box-shadow: 0 4px 14px rgba(220, 20, 60, 0.35);
 }
 
 .anomalous-gallery-card img {
@@ -1800,8 +1811,12 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-nb-section-tab.active {
-    background: #dc143c;
+    background: rgba(255, 255, 255, 0.15);
     color: #fff;
+}
+
+.theme-abyssal-scarlet .anomalous-nb-section-tab.active {
+    background: #dc143c;
 }
 
 /* Workflow Recipes: Studio Topbar and Modern Layout System */
@@ -2248,6 +2263,12 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-cover-choice.selected {
+    border-color: #38bdf8;
+    color: #38bdf8;
+    box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.35);
+}
+
+.theme-abyssal-scarlet .anomalous-recipe-cover-choice.selected {
     border-color: #dc143c;
     color: #dc143c;
     box-shadow: inset 0 0 0 1px rgba(220, 20, 60, 0.35);
@@ -2299,8 +2320,13 @@ dialog.anomalous-gallery-viewer[open] {
     flex-direction: column;
     gap: 3px;
     padding: 8px;
-    border: 1px solid rgba(220, 20, 60, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 7px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.theme-abyssal-scarlet .anomalous-recipe-pinned {
+    border: 1px solid rgba(220, 20, 60, 0.3);
     background: rgba(220, 20, 60, 0.05);
 }
 
@@ -2381,6 +2407,12 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-detail-tab.active {
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.theme-abyssal-scarlet .anomalous-recipe-detail-tab.active {
     border-color: rgba(220, 20, 60, 0.45);
     color: #dc143c;
     background: rgba(220, 20, 60, 0.08);
@@ -3664,7 +3696,11 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-version-row.current {
-    border-color: rgba(220, 20, 60, 0.45);
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+.theme-abyssal-scarlet .anomalous-recipe-version-row.current {
+    border-color: rgba(220, 20, 60, 0.55);
 }
 
 @media (max-width: 680px) {
@@ -4948,8 +4984,8 @@ dialog.anomalous-gallery-viewer[open] {
     top: 8px;
     left: 38px;
     z-index: 5;
-    color: #dc143c;
-    border-color: rgba(220, 20, 60, 0.3);
+    color: #cbd5e1;
+    border-color: rgba(255, 255, 255, 0.2);
     opacity: 0;
 }
 
@@ -4958,9 +4994,20 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-material-card-send-studio:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #ffffff;
+}
+
+.theme-abyssal-scarlet .anomalous-material-card-send-studio {
+    color: #ff4d6d;
+    border-color: rgba(220, 20, 60, 0.35);
+}
+
+.theme-abyssal-scarlet .anomalous-material-card-send-studio:hover {
     background: rgba(220, 20, 60, 0.28);
     border-color: rgba(220, 20, 60, 0.6);
-    color: #7dd3fc;
+    color: #ffffff;
 }
 
 /* 徽标、标签与来源标记通用定义 */
@@ -5416,6 +5463,11 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-material-film-thumb.is-selected {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4);
+}
+
+.theme-abyssal-scarlet .anomalous-material-film-thumb.is-selected {
     border-color: rgba(220, 20, 60, 0.7);
     box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.35);
 }
@@ -6018,7 +6070,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, #dc143c, #8b5cf6, #722f37);
+    background: linear-gradient(90deg, #38bdf8, #8b5cf6, #c084fc);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
@@ -6031,9 +6083,9 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-btn-primary-action:hover {
-    border-color: #dc143c;
+    border-color: #38bdf8;
     color: #ffffff;
-    box-shadow: 0 0 14px rgba(220, 20, 60, 0.4), inset 0 0 14px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.4), inset 0 0 14px rgba(99, 102, 241, 0.3);
     transform: translateY(-1px);
     filter: brightness(1.15);
 }
@@ -7090,6 +7142,11 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-material-model-card-item.is-primary {
     padding: 9px 11px;
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.theme-abyssal-scarlet .anomalous-material-model-card-item.is-primary {
     border-color: rgba(220, 20, 60, 0.22);
     background: rgba(220, 20, 60, 0.06);
 }
@@ -7528,6 +7585,11 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-material-model-card-item.is-active {
+    border-color: rgba(56, 189, 248, 0.45);
+    background: rgba(56, 189, 248, 0.08);
+}
+
+.theme-abyssal-scarlet .anomalous-material-model-card-item.is-active {
     border-color: rgba(220, 20, 60, 0.45);
     background: rgba(220, 20, 60, 0.08);
 }
@@ -7602,9 +7664,15 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-tag-base {
-    background: rgba(220, 20, 60, 0.12);
-    color: #dc143c;
-    border: 1px solid rgba(220, 20, 60, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.theme-abyssal-scarlet .anomalous-tag-base {
+    background: rgba(220, 20, 60, 0.18);
+    color: #ff3366;
+    border: 1px solid rgba(220, 20, 60, 0.45);
 }
 
 .anomalous-tag-lora {
@@ -7748,10 +7816,16 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-tag.is-ext {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: #cbd5e1;
+    font-weight: 700;
+}
+
+.theme-abyssal-scarlet .anomalous-workbench-tag.is-ext {
     background: rgba(220, 20, 60, 0.1);
     border-color: rgba(220, 20, 60, 0.25);
     color: #dc143c;
-    font-weight: 700;
 }
 
 /* Center switcher counter */
@@ -8151,7 +8225,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, #dc143c, #8b5cf6, #fca5a5);
+    background: linear-gradient(90deg, #38bdf8, #8b5cf6, #c084fc);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
@@ -8291,6 +8365,11 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-spec-card.is-res {
+    border-color: rgba(56, 189, 248, 0.25);
+    background: rgba(56, 189, 248, 0.035);
+}
+
+.theme-abyssal-scarlet .anomalous-workbench-spec-card.is-res {
     border-color: rgba(220, 20, 60, 0.25);
     background: rgba(220, 20, 60, 0.035);
 }
@@ -8409,14 +8488,14 @@ dialog.anomalous-gallery-viewer::backdrop {
     gap: 12px;
     padding: 10px 14px;
     border-radius: 10px;
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(220, 20, 60, 0.03) 100%);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.06) 0%, rgba(56, 189, 248, 0.04) 100%);
     border: 1px solid rgba(139, 92, 246, 0.2);
     margin-top: 4px;
     transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .anomalous-workbench-generation-save:hover {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(220, 20, 60, 0.05) 100%);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(56, 189, 248, 0.08) 100%);
     border-color: rgba(139, 92, 246, 0.35);
     box-shadow: 0 3px 12px rgba(139, 92, 246, 0.08);
 }
@@ -8455,7 +8534,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     flex-shrink: 0;
     padding: 6px 13px;
     border-radius: 7px;
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.22), rgba(220, 20, 60, 0.22));
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.22), rgba(56, 189, 248, 0.22));
     border: 1px solid rgba(139, 92, 246, 0.45);
     color: #e0f2fe;
     font-size: 0.74rem;
@@ -8467,7 +8546,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-generation-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.36), rgba(220, 20, 60, 0.36));
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.36), rgba(56, 189, 248, 0.36));
     border-color: #8b5cf6;
     color: #ffffff;
     box-shadow: 0 3px 12px rgba(139, 92, 246, 0.28);
@@ -8691,9 +8770,15 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-model-tag.is-base {
-    background: rgba(220, 20, 60, 0.12);
-    color: #dc143c;
-    border: 1px solid rgba(220, 20, 60, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.theme-abyssal-scarlet .anomalous-workbench-model-tag.is-base {
+    background: rgba(220, 20, 60, 0.18);
+    color: #ff3366;
+    border: 1px solid rgba(220, 20, 60, 0.45);
 }
 
 .anomalous-workbench-model-tag.is-lora {
@@ -9568,10 +9653,16 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-mixer-tab-btn.is-active {
-    background: linear-gradient(135deg, rgba(220, 20, 60, 0.2), rgba(139, 92, 246, 0.25));
-    color: #dc143c;
+    background: rgba(255, 255, 255, 0.12);
+    color: #f1f5f9;
     font-weight: 600;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.theme-abyssal-scarlet .anomalous-mixer-tab-btn.is-active {
+    background: linear-gradient(135deg, rgba(220, 20, 60, 0.2), rgba(139, 92, 246, 0.25));
+    color: #dc143c;
     border: 1px solid rgba(220, 20, 60, 0.35);
 }
 
@@ -9591,8 +9682,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-mixer-smart-sort-btn {
     padding: 5px 12px;
     border-radius: 6px;
-    border: 1px solid rgba(192, 132, 252, 0.5);
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(220, 20, 60, 0.25) 100%);
+    border: 1px solid rgba(192, 132, 252, 0.45);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(56, 189, 248, 0.2) 100%);
     color: #e9d5ff;
     font-size: 0.78rem;
     font-weight: 600;
@@ -9605,7 +9696,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-mixer-smart-sort-btn:hover {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.4) 0%, rgba(220, 20, 60, 0.4) 100%);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.35) 0%, rgba(56, 189, 248, 0.35) 100%);
     border-color: #c084fc;
     color: #ffffff;
     box-shadow: 0 0 14px rgba(192, 132, 252, 0.45);
@@ -9665,6 +9756,10 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-mixer-block.is-role-positive {
+    border-left: 3px solid #38bdf8;
+}
+
+.theme-abyssal-scarlet .anomalous-mixer-block.is-role-positive {
     border-left: 3px solid #dc143c;
 }
 
@@ -9698,9 +9793,14 @@ dialog.anomalous-gallery-viewer::backdrop {
     right: 0;
     height: 4px;
     border-radius: 2px;
+    background: #38bdf8;
+    box-shadow: 0 0 8px #38bdf8;
+    z-index: 10;
+}
+
+.theme-abyssal-scarlet .anomalous-mixer-block.is-drag-over-top::before {
     background: #dc143c;
     box-shadow: 0 0 8px #dc143c;
-    z-index: 10;
 }
 
 .anomalous-mixer-block.is-drag-over-bottom::after {
@@ -9711,9 +9811,14 @@ dialog.anomalous-gallery-viewer::backdrop {
     right: 0;
     height: 4px;
     border-radius: 2px;
+    background: #38bdf8;
+    box-shadow: 0 0 8px #38bdf8;
+    z-index: 10;
+}
+
+.theme-abyssal-scarlet .anomalous-mixer-block.is-drag-over-bottom::after {
     background: #dc143c;
     box-shadow: 0 0 8px #dc143c;
-    z-index: 10;
 }
 
 /* Block Header */
@@ -9744,6 +9849,10 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-mixer-drag-handle:hover {
+    color: #38bdf8;
+}
+
+.theme-abyssal-scarlet .anomalous-mixer-drag-handle:hover {
     color: #dc143c;
 }
 
@@ -9866,9 +9975,13 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-mixer-block-textarea:focus {
     background: rgba(0, 0, 0, 0.38);
-    box-shadow: inset 0 0 0 1px rgba(220, 20, 60, 0.3);
+    box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.3);
     min-height: 52px;
     height: 52px;
+}
+
+.theme-abyssal-scarlet .anomalous-mixer-block-textarea:focus {
+    box-shadow: inset 0 0 0 1px rgba(220, 20, 60, 0.3);
 }
 
 /* 4. Assembled Output Deck & Whole-Deck Canvas Drag (Sticky Floating Glass Deck) */
@@ -9880,7 +9993,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: rgba(22, 28, 42, 0.88);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(220, 20, 60, 0.28);
+    border: 1px solid rgba(56, 189, 248, 0.28);
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45);
     padding: 8px 10px;
     display: flex;
@@ -9893,6 +10006,15 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-mixer-deck-output:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+}
+
+.theme-abyssal-scarlet .anomalous-mixer-deck-output {
+    border-color: rgba(220, 20, 60, 0.28);
+}
+
+.theme-abyssal-scarlet .anomalous-mixer-deck-output:hover {
     border-color: #dc143c;
     box-shadow: 0 0 8px rgba(220, 20, 60, 0.25);
 }
@@ -9958,6 +10080,10 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-mixer-drag-hint strong {
+    color: #38bdf8;
+}
+
+.theme-abyssal-scarlet .anomalous-mixer-drag-hint strong {
     color: #dc143c;
 }
 
@@ -10119,8 +10245,12 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-search-input:focus {
-    border-color: #dc143c;
+    border-color: #38bdf8;
     background: rgba(0, 0, 0, 0.45);
+}
+
+.theme-abyssal-scarlet .anomalous-workbench-search-input:focus {
+    border-color: #dc143c;
 }
 
 .anomalous-workbench-category-pills {
@@ -10149,15 +10279,15 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-pill.is-active {
-    background-color: rgba(220, 20, 60, 0.22);
+    background-color: rgba(56, 189, 248, 0.18);
     background-image: url('assets/pill_active_glow.webp');
     background-size: cover;
     background-position: center;
-    border-color: rgba(220, 20, 60, 0.55);
+    border-color: rgba(56, 189, 248, 0.5);
     color: #f0fdf4;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
     font-weight: 600;
-    box-shadow: 0 1px 6px rgba(220, 20, 60, 0.25);
+    box-shadow: 0 1px 6px rgba(56, 189, 248, 0.25);
 }
 
 /* Inline New Card Creation Form */
@@ -10243,9 +10373,15 @@ dialog.anomalous-gallery-viewer::backdrop {
     -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.75) 75%, rgba(0, 0, 0, 0.3) 100%);
     mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.75) 75%, rgba(0, 0, 0, 0.3) 100%);
     border-radius: 10px;
-    border: 1px dashed rgba(220, 20, 60, 0.25);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
     overflow: hidden;
     isolation: isolate;
+}
+
+.theme-abyssal-scarlet .anomalous-empty-state-container,
+.theme-abyssal-scarlet .anomalous-source-empty,
+.theme-abyssal-scarlet .anomalous-recipe-empty {
+    border-color: rgba(220, 20, 60, 0.35);
 }
 
 .anomalous-empty-state-container::before,
@@ -10282,6 +10418,10 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-source-prompt-card.is-cat-base {
+    border-left-color: #38bdf8;
+}
+
+.theme-abyssal-scarlet .anomalous-source-prompt-card.is-cat-base {
     border-left-color: #dc143c;
 }
 
@@ -10399,13 +10539,24 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-source-action-btn.is-save-lib {
-    background: rgba(220, 20, 60, 0.15);
-    border-color: rgba(220, 20, 60, 0.4);
-    color: #dc143c;
+    background: rgba(56, 189, 248, 0.12);
+    border-color: rgba(56, 189, 248, 0.35);
+    color: #38bdf8;
     font-weight: 500;
 }
 
 .anomalous-source-action-btn.is-save-lib:hover {
+    background: #38bdf8;
+    color: #0b1523;
+}
+
+.theme-abyssal-scarlet .anomalous-source-action-btn.is-save-lib {
+    background: rgba(220, 20, 60, 0.15);
+    border-color: rgba(220, 20, 60, 0.4);
+    color: #dc143c;
+}
+
+.theme-abyssal-scarlet .anomalous-source-action-btn.is-save-lib:hover {
     background: #dc143c;
     color: #1a050d;
 }
@@ -10436,8 +10587,12 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-role-label input[type="radio"] {
     cursor: pointer;
-    accent-color: #dc143c;
+    accent-color: #38bdf8;
     margin: 0;
+}
+
+.theme-abyssal-scarlet .anomalous-role-label input[type="radio"] {
+    accent-color: #dc143c;
 }
 
 .anomalous-unsaved-badge {
@@ -10505,10 +10660,16 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-assembly-dropzone.is-drag-over {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.08);
+    box-shadow: inset 0 0 24px rgba(56, 189, 248, 0.2);
+    transform: scale(0.995);
+}
+
+.theme-abyssal-scarlet .anomalous-assembly-dropzone.is-drag-over {
     border-color: #dc143c;
     background: rgba(220, 20, 60, 0.08);
     box-shadow: inset 0 0 24px rgba(220, 20, 60, 0.2);
-    transform: scale(0.995);
 }
 
 .anomalous-workbench-sub-actions {
@@ -10546,12 +10707,12 @@ dialog.anomalous-gallery-viewer::backdrop {
     background-image: url('assets/btn_cyber_grid.webp') !important;
     background-size: cover !important;
     background-position: center !important;
-    border: 1px solid rgba(220, 20, 60, 0.55) !important;
+    border: 1px solid rgba(56, 189, 248, 0.55) !important;
     border-radius: 3px 10px 3px 10px !important;
     color: #ffffff !important;
     font-weight: 600 !important;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85) !important;
-    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3), inset 0 0 10px rgba(220, 20, 60, 0.2) !important;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3), inset 0 0 10px rgba(56, 189, 248, 0.2) !important;
     transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
     overflow: hidden;
 }
@@ -10581,7 +10742,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, #dc143c, #8b5cf6, #fca5a5);
+    background: linear-gradient(90deg, #38bdf8, #8b5cf6, #c084fc);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
@@ -10594,8 +10755,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-btn-extract-node:hover {
-    border-color: #dc143c !important;
-    box-shadow: 0 0 16px rgba(220, 20, 60, 0.55), inset 0 0 14px rgba(139, 92, 246, 0.35) !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.55), inset 0 0 14px rgba(139, 92, 246, 0.35) !important;
     transform: translateY(-1px);
     filter: brightness(1.18);
 }
@@ -10730,6 +10891,40 @@ html.theme-abyssal-scarlet,
     background-image: 
         radial-gradient(ellipse 75% 55% at 50% -5%, rgba(220, 20, 60, 0.14) 0%, rgba(38, 12, 30, 0.06) 55%, transparent 100%),
         radial-gradient(ellipse 55% 45% at 85% 95%, rgba(139, 92, 246, 0.08) 0%, transparent 100%) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-content::before {
+    display: block !important;
+    content: '' !important;
+    position: absolute !important;
+    inset: 0 !important;
+    background-image: url('assets/abyssal_scarlet_mansion.webp'), radial-gradient(circle at 50% 20%, rgba(220, 20, 60, 0.08) 0%, transparent 70%) !important;
+    background-size: cover !important;
+    background-position: center !important;
+    mix-blend-mode: soft-light !important;
+    opacity: 0.18 !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
+}
+
+.theme-abyssal-scarlet #anomalous-sidebar-wrapper::after {
+    display: block !important;
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 1px !important;
+    height: 100% !important;
+    background: linear-gradient(180deg, 
+        rgba(220, 20, 60, 0) 0%, 
+        rgba(220, 20, 60, 0.45) 20%, 
+        rgba(255, 51, 102, 0.7) 50%, 
+        rgba(147, 51, 234, 0.45) 80%, 
+        rgba(220, 20, 60, 0) 100%
+    ) !important;
+    pointer-events: none !important;
+    z-index: 5 !important;
+    box-shadow: 0 0 8px rgba(255, 51, 102, 0.4) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-grid {
@@ -10898,14 +11093,82 @@ html.theme-abyssal-scarlet,
     filter: brightness(1.15);
 }
 
-/* 5. Cards Crimson Halo Hover Effect */
+/* 5. Cards Crimson Halo & Gothic Sovereign Palette (Easter Egg) */
+.theme-abyssal-scarlet .anomalous-card {
+    border-color: rgba(220, 20, 60, 0.22) !important;
+    background: linear-gradient(180deg, rgba(25, 12, 20, 0.9) 0%, rgba(14, 6, 14, 0.98) 100%) !important;
+}
+
 .theme-abyssal-scarlet .anomalous-card:hover,
 .theme-abyssal-scarlet .anomalous-recipe-card:hover,
 .theme-abyssal-scarlet .anomalous-material-card:hover,
 .theme-abyssal-scarlet .anomalous-source-item:hover,
 .theme-abyssal-scarlet .anomalous-nb-note-item:hover {
-    border-color: rgba(220, 20, 60, 0.55) !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7), 0 0 8px 1px rgba(220, 20, 60, 0.5) !important;
+    border-color: rgba(220, 20, 60, 0.6) !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 22px rgba(220, 20, 60, 0.35) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card-labels {
+    background: linear-gradient(to top, rgba(18, 5, 14, 0.97) 0%, rgba(18, 5, 14, 0.75) 65%, transparent 100%) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card:hover .anomalous-card-labels {
+    background: linear-gradient(to top, rgba(20, 6, 16, 0.99) 0%, rgba(22, 7, 18, 0.94) 75%, transparent 100%) !important;
+}
+
+/* Card Base Model Badges - Gothic Sovereign Palette (Strictly scoped) */
+.theme-abyssal-scarlet .anomalous-card-badge {
+    background: rgba(18, 8, 14, 0.88) !important;
+    color: #f59e0b !important;
+    border: 1px solid rgba(245, 158, 11, 0.38) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 6px rgba(245, 158, 11, 0.12) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card:hover .anomalous-card-badge {
+    border-color: rgba(245, 158, 11, 0.6) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), 0 0 10px rgba(245, 158, 11, 0.25) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card-badge.badge-gold {
+    color: #f59e0b !important;
+    background: rgba(22, 10, 14, 0.92) !important;
+    border-color: rgba(245, 158, 11, 0.45) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 8px rgba(245, 158, 11, 0.22) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card-badge.badge-amber {
+    color: #fbbf24 !important;
+    background: rgba(20, 10, 12, 0.92) !important;
+    border-color: rgba(251, 191, 36, 0.4) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 6px rgba(251, 191, 36, 0.16) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card-badge.badge-flux {
+    color: #c084fc !important;
+    background: rgba(18, 9, 26, 0.92) !important;
+    border-color: rgba(168, 85, 247, 0.45) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 8px rgba(168, 85, 247, 0.25) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card-badge.badge-rose,
+.theme-abyssal-scarlet .anomalous-model-tag {
+    color: #ff4d6d !important;
+    background: rgba(220, 20, 60, 0.2) !important;
+    border: 1px solid rgba(220, 20, 60, 0.5) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 8px rgba(255, 77, 109, 0.35) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card-action-btn {
+    background: rgba(18, 10, 16, 0.88) !important;
+    color: #f1f5f9 !important;
+    border: 1px solid rgba(220, 20, 60, 0.28) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card-action-btn:hover {
+    background: rgba(220, 20, 60, 0.38) !important;
+    border-color: #dc143c !important;
+    color: #fff !important;
+    box-shadow: 0 0 10px 1px rgba(220, 20, 60, 0.55) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-recipe-card {
@@ -10979,18 +11242,18 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
 }
 
 #anomalous-scan-btn:hover svg {
-    filter: drop-shadow(0 0 4px rgba(220, 20, 60, 0.6));
+    filter: none;
 }
 
 #anomalous-scan-btn.anomalous-radar-spinning {
-    color: #dc143c !important;
-    background: rgba(220, 20, 60, 0.12) !important;
-    border: 1px solid rgba(220, 20, 60, 0.35) !important;
+    color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.12) !important;
+    border: 1px solid rgba(56, 189, 248, 0.35) !important;
 }
 
 #anomalous-scan-btn.anomalous-radar-spinning svg {
     animation: anomalous-radar-spin 1.4s linear infinite !important;
-    filter: drop-shadow(0 0 6px rgba(220, 20, 60, 0.75)) !important;
+    filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.75)) !important;
 }
 
 @keyframes anomalous-radar-spin {
@@ -11055,29 +11318,40 @@ button:hover .anomalous-btn-icon {
     filter: drop-shadow(0 0 4px currentColor);
 }
 
-/* Specific button glow nuances */
-#anomalous-doctor-btn:hover {
+/* Specific button glow nuances - Normal Mode (Neutral Clean) */
+#anomalous-doctor-btn:hover,
+#anomalous-assistant-btn:hover,
+#anomalous-materials-btn:hover,
+#anomalous-global-settings-btn:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Abyssal Scarlet Mode overrides for Task 8 icon buttons */
+.theme-abyssal-scarlet #anomalous-doctor-btn:hover {
     color: #f43f5e !important;
     background: rgba(244, 63, 94, 0.12) !important;
     border: 1px solid rgba(244, 63, 94, 0.3) !important;
     box-shadow: 0 0 4px 1px rgba(244, 63, 94, 0.75) !important;
 }
 
-#anomalous-assistant-btn:hover {
+.theme-abyssal-scarlet #anomalous-assistant-btn:hover {
     color: #a855f7 !important;
     background: rgba(168, 85, 247, 0.12) !important;
     border: 1px solid rgba(168, 85, 247, 0.3) !important;
     box-shadow: 0 0 4px 1px rgba(168, 85, 247, 0.75) !important;
 }
 
-#anomalous-materials-btn:hover {
+.theme-abyssal-scarlet #anomalous-materials-btn:hover {
     color: #f59e0b !important;
     background: rgba(245, 158, 11, 0.12) !important;
     border: 1px solid rgba(245, 158, 11, 0.3) !important;
     box-shadow: 0 0 4px 1px rgba(245, 158, 11, 0.8) !important;
 }
 
-#anomalous-global-settings-btn:hover {
+.theme-abyssal-scarlet #anomalous-global-settings-btn:hover {
     color: #dc143c !important;
     background: rgba(220, 20, 60, 0.12) !important;
     border: 1px solid rgba(220, 20, 60, 0.3) !important;
@@ -11154,7 +11428,7 @@ button:hover .anomalous-btn-icon {
     position: relative;
 }
 
-/* Base Tooltip Bubble (Default: Top) */
+/* Base Tooltip Bubble (Default: Top) - Normal Mode (Neutral Clean Glass) */
 [data-tooltip]::after,
 .anomalous-tooltip-target::after {
     content: attr(data-tooltip);
@@ -11163,15 +11437,15 @@ button:hover .anomalous-btn-icon {
     left: 50%;
     transform: translateX(-50%) translateY(4px);
     padding: 6px 12px;
-    background: rgba(10, 6, 18, 0.94);
+    background: rgba(18, 20, 28, 0.95);
     color: #f1f5f9;
     font-size: 12px;
     font-weight: 500;
     line-height: 1.35;
     white-space: nowrap;
     border-radius: 4px 8px 4px 8px;
-    border: 1px solid rgba(220, 20, 60, 0.38);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.75), 0 0 10px rgba(220, 20, 60, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     opacity: 0;
@@ -11190,7 +11464,7 @@ button:hover .anomalous-btn-icon {
     transform: translateX(-50%) translateY(4px);
     border-width: 5px 5px 0 5px;
     border-style: solid;
-    border-color: rgba(10, 6, 18, 0.94) transparent transparent transparent;
+    border-color: rgba(18, 20, 28, 0.95) transparent transparent transparent;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
@@ -11221,7 +11495,7 @@ button:hover .anomalous-btn-icon {
     left: calc(100% + 5px);
     transform: translateY(-50%) translateX(-6px);
     border-width: 5px 5px 5px 0;
-    border-color: transparent rgba(10, 6, 18, 0.94) transparent transparent;
+    border-color: transparent rgba(18, 20, 28, 0.95) transparent transparent;
 }
 
 [data-tooltip-pos="right"]:hover::after,
@@ -11243,7 +11517,7 @@ button:hover .anomalous-btn-icon {
     left: 50%;
     transform: translateX(-50%) translateY(-6px);
     border-width: 0 5px 5px 5px;
-    border-color: transparent transparent rgba(10, 6, 18, 0.94) transparent;
+    border-color: transparent transparent rgba(18, 20, 28, 0.95) transparent;
 }
 
 [data-tooltip-pos="bottom"]:hover::after,
@@ -11267,7 +11541,7 @@ button:hover .anomalous-btn-icon {
     right: calc(100% + 5px);
     transform: translateY(-50%) translateX(6px);
     border-width: 5px 0 5px 5px;
-    border-color: transparent transparent transparent rgba(10, 6, 18, 0.94);
+    border-color: transparent transparent transparent rgba(18, 20, 28, 0.95);
 }
 
 [data-tooltip-pos="left"]:hover::after,
@@ -11294,7 +11568,7 @@ button:hover .anomalous-btn-icon {
     transform: translateX(-50%) translateY(4px);
     border-width: 5px 5px 0 5px;
     border-style: solid;
-    border-color: rgba(10, 6, 18, 0.94) transparent transparent transparent;
+    border-color: rgba(18, 20, 28, 0.95) transparent transparent transparent;
 }
 
 [data-tooltip-pos="top"]:hover::after,
@@ -11344,18 +11618,21 @@ button:hover .anomalous-btn-icon {
 
 
 /* ==========================================================================
-   GOTHIC VAMPIRE MASTER HEADER & GALLERY LATTICE ENHANCEMENTS
+   MASTER HEADER & GALLERY CONTAINER DUAL-MODE ARCHITECTURE
+   Normal Mode: Restrained Dark Neutral Studio
+   Easter Egg Mode: Gothic Vampire Abyssal Scarlet Expansion
    ========================================================================== */
 
+/* 1. Normal Mode Master Header (Clean Neutral Dark Studio) */
 #anomalous-header {
     height: 60px;
-    background: linear-gradient(180deg, rgba(26, 16, 24, 0.96) 0%, rgba(14, 8, 16, 0.98) 100%) !important;
+    background: #131318 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
     padding: 0 20px !important;
-    border-bottom: 1px solid rgba(220, 20, 60, 0.28) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.65), inset 0 -1px 0 rgba(220, 20, 60, 0.15) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
     cursor: move;
     position: relative;
     z-index: 10;
@@ -11394,9 +11671,9 @@ button:hover .anomalous-btn-icon {
 #anomalous-header button {
     margin-right: 0;
     padding: 9px 18px;
-    background: rgba(30, 18, 28, 0.6);
+    background: rgba(255, 255, 255, 0.05);
     color: #e2e8f0;
-    border: 1px solid rgba(220, 20, 60, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 6px;
     cursor: pointer;
     white-space: nowrap;
@@ -11409,11 +11686,11 @@ button:hover .anomalous-btn-icon {
 }
 
 #anomalous-header button:hover {
-    background: rgba(220, 20, 60, 0.15) !important;
-    border-color: rgba(220, 20, 60, 0.45) !important;
-    color: #fff !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
     transform: translateY(-1px);
-    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.5) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
 }
 
 #anomalous-dock-btn {
@@ -11424,37 +11701,77 @@ button:hover .anomalous-btn-icon {
 }
 
 #anomalous-header button.active {
-    background: linear-gradient(135deg, rgba(220, 20, 60, 0.3) 0%, rgba(114, 47, 55, 0.4) 100%) !important;
-    border-color: rgba(220, 20, 60, 0.65) !important;
-    color: #fff !important;
-    box-shadow: 0 0 8px rgba(220, 20, 60, 0.3) !important;
+    background: rgba(255, 255, 255, 0.16) !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.15) !important;
 }
 
+/* 2. Normal Mode Gallery Container (Pure Deep Dark, Zero Concept Watermarks) */
 #anomalous-gallery-panel,
 .anomalous-gallery-grid,
 .anomalous-gallery-container {
-    background-color: #0d080c !important;
+    background-color: #0d0d11 !important;
+    background-image: none !important;
     position: relative;
 }
 
 .anomalous-gallery-container::before,
 #anomalous-gallery-panel::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-color: #0d080c;
-    background-image: url('assets/bg_concept.webp'), radial-gradient(circle at 50% 50%, rgba(220, 20, 60, 0.03) 0%, transparent 60%);
-    background-size: cover;
-    background-position: center;
-    /* 最关键的一步：使用 overlay 过滤高光，透明度压低，绝对不影响前方文字阅读 */
-    mix-blend-mode: overlay;
-    opacity: 0.15;
-    pointer-events: none;
-    z-index: 0;
+    display: none !important;
 }
 
 .anomalous-gallery-container > *,
 #anomalous-gallery-panel > * {
     position: relative;
     z-index: 1;
+}
+
+/* 3. Abyssal Scarlet Mode Master Header & Gallery Domain Expansion (Easter Egg) */
+.theme-abyssal-scarlet #anomalous-header {
+    background: linear-gradient(180deg, rgba(26, 16, 24, 0.96) 0%, rgba(14, 8, 16, 0.98) 100%) !important;
+    border-bottom: 1px solid rgba(220, 20, 60, 0.28) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.65), inset 0 -1px 0 rgba(220, 20, 60, 0.15) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-header button {
+    background: rgba(30, 18, 28, 0.6) !important;
+    color: #e2e8f0 !important;
+    border: 1px solid rgba(220, 20, 60, 0.2) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-header button:hover {
+    background: rgba(220, 20, 60, 0.15) !important;
+    border-color: rgba(220, 20, 60, 0.45) !important;
+    color: #fff !important;
+    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.5) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-header button.active {
+    background: linear-gradient(135deg, rgba(220, 20, 60, 0.3) 0%, rgba(114, 47, 55, 0.4) 100%) !important;
+    border-color: rgba(220, 20, 60, 0.65) !important;
+    color: #fff !important;
+    box-shadow: 0 0 10px rgba(220, 20, 60, 0.3) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-gallery-panel,
+.theme-abyssal-scarlet .anomalous-gallery-grid,
+.theme-abyssal-scarlet .anomalous-gallery-container {
+    background-color: #0c0812 !important;
+}
+
+.theme-abyssal-scarlet .anomalous-gallery-container::before,
+.theme-abyssal-scarlet #anomalous-gallery-panel::before {
+    display: block !important;
+    content: '' !important;
+    position: absolute !important;
+    inset: 0 !important;
+    background-color: #0d080c !important;
+    background-image: url('assets/bg_concept.webp'), radial-gradient(circle at 50% 50%, rgba(220, 20, 60, 0.03) 0%, transparent 60%) !important;
+    background-size: cover !important;
+    background-position: center !important;
+    mix-blend-mode: overlay !important;
+    opacity: 0.15 !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
 }
