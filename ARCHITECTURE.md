@@ -195,6 +195,12 @@ DOM or live LiteGraph state.
   chamfers (`border-radius: 3px 11px 3px 11px`), pseudo-element micro-rune diamond glyphs (`::before`),
   dynamic horizontal inflow hover lightbars (`::after` with `scaleX(1)`), and multi-layered satin glow
   strokes replacing generic rounded-corner boxes.
+- **Global UI Design System**:
+  - **Design Tokens & Semantic Colors**: Establishes global palette tokens (`--c-amber: #f59e0b`, `--c-cyan: #06b6d4`, `--c-purple: #c084fc`, `--c-silver: #94a3b8`, `--c-blue: #38bdf8`, `--c-crimson: #e11d48`) with `currentColor` SVGs and directional diffuse drop-shadows on hover.
+  - **Custom Tooltip System (`[data-tooltip]`)**: Replaces native OS `title` attributes with frosted dark glass capsules (`rgba(10, 6, 18, 0.94)`, `backdrop-filter: blur(8px)`, crimson/neon micro-borders), supporting directional positions (`data-tooltip-pos="right"|"top"|"bottom"`).
+  - **Island UI Sidebar**: Floating console panel with 8px peripheral margins, rounded chamfers, glassmorphism backdrop, and a 2px razor-thin neon active glow indicator on selected navigation items.
+  - **Hover Reveal Gallery**: Borderless immersive cards with smooth gradient metadata reveal (`transform: translateY(0)` on hover) and breathing skeleton shimmer placeholders (`.anomalous-skeleton-shimmer`).
+  - **Workflow Recipes Bento Grid**: Supports Bento Wide featured cards (`is-featured` spanning 2 columns) with glowing circuit track metaphor backgrounds.
 
 ## Cross-system invariants
 

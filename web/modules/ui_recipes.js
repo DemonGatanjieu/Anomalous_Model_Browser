@@ -1101,10 +1101,12 @@ function createRecipeCard(owner, recipe) {
         footer,
         'button',
         `${isPartial ? '🧩' : '🚀'} ${t(isPartial ? 'recipeAppendCanvas' : 'recipeOpenCanvas')}`,
-        'anomalous-recipe-btn-primary-action',
+        'anomalous-recipe-btn-primary-action anomalous-tooltip-target',
     );
     appendBtn.type = 'button';
-    appendBtn.title = isPartial ? t('recipeAppendCanvas') : t('recipeOpenCanvas');
+    appendBtn.removeAttribute('title');
+    appendBtn.setAttribute('data-tooltip', isPartial ? t('recipeAppendCanvas') : t('recipeOpenCanvas'));
+    appendBtn.setAttribute('data-tooltip-pos', 'top');
     appendBtn.onclick = (e) => {
         e.stopPropagation();
         runRecipeCardAction(appendBtn, async () => {
@@ -1117,25 +1119,31 @@ function createRecipeCard(owner, recipe) {
     const miniActions = document.createElement('div');
     miniActions.className = 'anomalous-recipe-card-mini-actions';
 
-    const editBtn = appendText(miniActions, 'button', '✏️', 'anomalous-recipe-card-mini-btn');
+    const editBtn = appendText(miniActions, 'button', '✏️', 'anomalous-recipe-card-mini-btn anomalous-tooltip-target');
     editBtn.type = 'button';
-    editBtn.title = t('recipeEdit');
+    editBtn.removeAttribute('title');
+    editBtn.setAttribute('data-tooltip', t('recipeEdit'));
+    editBtn.setAttribute('data-tooltip-pos', 'top');
     editBtn.onclick = (e) => {
         e.stopPropagation();
         runRecipeCardAction(editBtn, () => editRecipe(owner, recipe?.data || {}, recipe.filename), 'recipeUpdateError');
     };
 
-    const exportBtn = appendText(miniActions, 'button', '📥', 'anomalous-recipe-card-mini-btn');
+    const exportBtn = appendText(miniActions, 'button', '📥', 'anomalous-recipe-card-mini-btn anomalous-tooltip-target');
     exportBtn.type = 'button';
-    exportBtn.title = t('recipeExport');
+    exportBtn.removeAttribute('title');
+    exportBtn.setAttribute('data-tooltip', t('recipeExport'));
+    exportBtn.setAttribute('data-tooltip-pos', 'top');
     exportBtn.onclick = (e) => {
         e.stopPropagation();
         runRecipeCardAction(exportBtn, () => exportRecipePackage(recipe.filename), 'recipeExportError');
     };
 
-    const removeBtn = appendText(miniActions, 'button', '🗑️', 'anomalous-recipe-card-mini-btn is-delete');
+    const removeBtn = appendText(miniActions, 'button', '🗑️', 'anomalous-recipe-card-mini-btn is-delete anomalous-tooltip-target');
     removeBtn.type = 'button';
-    removeBtn.title = t('recipeDelete');
+    removeBtn.removeAttribute('title');
+    removeBtn.setAttribute('data-tooltip', t('recipeDelete'));
+    removeBtn.setAttribute('data-tooltip-pos', 'top');
     removeBtn.onclick = (e) => {
         e.stopPropagation();
         runRecipeCardAction(removeBtn, async () => {

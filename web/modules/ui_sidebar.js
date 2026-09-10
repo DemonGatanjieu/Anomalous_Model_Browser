@@ -364,20 +364,17 @@ export function createDOM() {
         const scanBtn = document.createElement('button');
         scanBtn.id = 'anomalous-scan-btn';
         scanBtn.className = 'anomalous-tooltip-target';
-        scanBtn.title = t('sidebarScanWizard');
+        scanBtn.removeAttribute('title');
         scanBtn.setAttribute('aria-label', t('sidebarScanWizard'));
         scanBtn.setAttribute('data-tooltip', t('sidebarScanWizard'));
+        scanBtn.setAttribute('data-tooltip-pos', 'right');
         setScanButtonState(scanBtn, false);
         scanBtn.style.background = 'transparent';
-        scanBtn.style.color = '#ccc';
         scanBtn.style.border = 'none';
         scanBtn.style.borderRadius = '6px';
         scanBtn.style.padding = '6px';
         scanBtn.style.fontSize = '1.1em';
         scanBtn.style.cursor = 'pointer';
-        scanBtn.style.transition = 'all 0.2s ease';
-        scanBtn.onmouseover = () => { scanBtn.style.background = 'rgba(255,255,255,0.1)'; scanBtn.style.color = '#38bdf8'; };
-        scanBtn.onmouseout = () => { scanBtn.style.background = 'transparent'; scanBtn.style.color = scanBtn.classList.contains('anomalous-radar-spinning') ? '#38bdf8' : '#ccc'; };
 
         let isCurrentlyScanning = false;
         setInterval(async () => {
@@ -1159,22 +1156,25 @@ export function createDOM() {
             updateLangClass();
             modelsBtn.innerHTML = `${SIDEBAR_ICONS.MODELS}<span class="anomalous-btn-text">${t('models')}</span>`;
             galleryBtn.innerHTML = `${SIDEBAR_ICONS.GALLERY}<span class="anomalous-btn-text">${t('gallery')}</span>`;
-            scanBtn.title = t('sidebarScanWizard');
+            scanBtn.removeAttribute('title');
             scanBtn.setAttribute('aria-label', t('sidebarScanWizard'));
             scanBtn.setAttribute('data-tooltip', t('sidebarScanWizard'));
+            scanBtn.setAttribute('data-tooltip-pos', 'right');
             setScanButtonState(scanBtn, isCurrentlyScanning);
             helpBtn.innerHTML = `${SIDEBAR_ICONS.HELP}<span class="anomalous-btn-text">${t('help')}</span>`;
-            nbBtn.title = t('recipeTitle');
+            nbBtn.removeAttribute('title');
+            nbBtn.setAttribute('data-tooltip', t('recipeTitle'));
+            nbBtn.setAttribute('data-tooltip-pos', 'bottom');
             nbBtn.innerHTML = `${SIDEBAR_ICONS.RECIPES}<span class="anomalous-btn-text">${t('recipeTitle')}</span>`;
 
             const dBtn = document.getElementById('anomalous-doctor-btn');
-            if (dBtn) { dBtn.title = t('sidebarDoctor'); dBtn.setAttribute('data-tooltip', t('sidebarDoctor')); }
+            if (dBtn) { dBtn.removeAttribute('title'); dBtn.setAttribute('data-tooltip', t('sidebarDoctor')); dBtn.setAttribute('data-tooltip-pos', 'right'); }
             const aBtn = document.getElementById('anomalous-assistant-btn');
-            if (aBtn) { aBtn.title = t('sidebarAssistant'); aBtn.setAttribute('data-tooltip', t('sidebarAssistant')); }
+            if (aBtn) { aBtn.removeAttribute('title'); aBtn.setAttribute('data-tooltip', t('sidebarAssistant')); aBtn.setAttribute('data-tooltip-pos', 'right'); }
             const iBtn = document.getElementById('anomalous-materials-btn');
-            if (iBtn) { iBtn.title = t('materialLibrary'); iBtn.setAttribute('aria-label', t('materialLibrary')); iBtn.setAttribute('data-tooltip', t('materialLibrary')); }
+            if (iBtn) { iBtn.removeAttribute('title'); iBtn.setAttribute('aria-label', t('materialLibrary')); iBtn.setAttribute('data-tooltip', t('materialLibrary')); iBtn.setAttribute('data-tooltip-pos', 'right'); }
             const sBtn = document.getElementById('anomalous-global-settings-btn');
-            if (sBtn) { sBtn.title = t('sidebarSettings'); sBtn.setAttribute('data-tooltip', t('sidebarSettings')); }
+            if (sBtn) { sBtn.removeAttribute('title'); sBtn.setAttribute('data-tooltip', t('sidebarSettings')); sBtn.setAttribute('data-tooltip-pos', 'right'); }
 
             // Reset dynamic panels so they re-render in new language
             if (window.anomalousBrowserInstance) {
@@ -1644,24 +1644,20 @@ export function createDOM() {
         settingsBtn.id = 'anomalous-global-settings-btn';
         settingsBtn.className = 'anomalous-tooltip-target';
         settingsBtn.innerHTML = SIDEBAR_ICONS.SETTINGS;
-        settingsBtn.title = t('sidebarSettings');
+        settingsBtn.removeAttribute('title');
         settingsBtn.setAttribute('aria-label', t('sidebarSettings'));
         settingsBtn.setAttribute('data-tooltip', t('sidebarSettings'));
+        settingsBtn.setAttribute('data-tooltip-pos', 'right');
         settingsBtn.style.background = 'transparent';
-        settingsBtn.style.color = '#ccc';
         settingsBtn.style.border = 'none';
         settingsBtn.style.borderRadius = '6px';
         settingsBtn.style.padding = '6px';
         settingsBtn.style.fontSize = '1.1em';
         settingsBtn.style.marginLeft = 'auto';
         settingsBtn.style.cursor = 'pointer';
-        settingsBtn.style.transition = 'all 0.2s ease';
-        settingsBtn.onmouseover = () => { settingsBtn.style.background = 'rgba(255,255,255,0.1)'; settingsBtn.style.color = '#fff'; };
-        settingsBtn.onmouseout = () => { settingsBtn.style.background = 'transparent'; settingsBtn.style.color = '#ccc'; };
         const closeSettingsHub = (e) => {
             if (settingsHubModal.style.display !== 'none' && !settingsHubModal.contains(e.target) && !settingsBtn.contains(e.target)) {
                 settingsHubModal.style.display = 'none';
-                settingsBtn.style.color = '#ccc';
                 document.removeEventListener('mousedown', closeSettingsHub);
             }
         };
@@ -1669,12 +1665,10 @@ export function createDOM() {
         settingsBtn.onclick = () => {
             if (settingsHubModal.style.display === 'none') {
                 settingsHubModal.style.display = 'flex';
-                settingsBtn.style.color = '#fff';
                 // Delay adding the listener slightly to avoid triggering it on the same click
                 setTimeout(() => document.addEventListener('mousedown', closeSettingsHub), 10);
             } else {
                 settingsHubModal.style.display = 'none';
-                settingsBtn.style.color = '#ccc';
                 document.removeEventListener('mousedown', closeSettingsHub);
             }
         };
@@ -1682,20 +1676,17 @@ export function createDOM() {
         const importBtn = document.createElement('button');
         importBtn.id = 'anomalous-materials-btn';
         importBtn.className = 'anomalous-tooltip-target';
-        importBtn.title = t('materialLibrary');
+        importBtn.removeAttribute('title');
         importBtn.setAttribute('aria-label', t('materialLibrary'));
         importBtn.setAttribute('data-tooltip', t('materialLibrary'));
+        importBtn.setAttribute('data-tooltip-pos', 'right');
         importBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`;
         importBtn.style.background = 'transparent';
-        importBtn.style.color = '#ccc';
         importBtn.style.border = 'none';
         importBtn.style.borderRadius = '6px';
         importBtn.style.padding = '6px';
         importBtn.style.fontSize = '1.1em';
         importBtn.style.cursor = 'pointer';
-        importBtn.style.transition = 'all 0.2s ease';
-        importBtn.onmouseover = () => { importBtn.style.background = 'rgba(255,255,255,0.1)'; importBtn.style.color = '#2dd4bf'; };
-        importBtn.onmouseout = () => { importBtn.style.background = 'transparent'; importBtn.style.color = '#ccc'; };
         importBtn.onclick = () => this.openMaterialLibrary();
 
 
@@ -1703,20 +1694,17 @@ export function createDOM() {
         const doctorBtn = document.createElement('button');
         doctorBtn.id = 'anomalous-doctor-btn';
         doctorBtn.className = 'anomalous-tooltip-target';
-        doctorBtn.title = t('sidebarDoctor');
+        doctorBtn.removeAttribute('title');
         doctorBtn.setAttribute('aria-label', t('sidebarDoctor'));
         doctorBtn.setAttribute('data-tooltip', t('sidebarDoctor'));
+        doctorBtn.setAttribute('data-tooltip-pos', 'right');
         doctorBtn.innerHTML = SIDEBAR_ICONS.DOCTOR;
         doctorBtn.style.background = 'transparent';
-        doctorBtn.style.color = '#ccc';
         doctorBtn.style.border = 'none';
         doctorBtn.style.borderRadius = '6px';
         doctorBtn.style.padding = '6px';
         doctorBtn.style.fontSize = '1.1em';
         doctorBtn.style.cursor = 'pointer';
-        doctorBtn.style.transition = 'all 0.2s ease';
-        doctorBtn.onmouseover = () => { doctorBtn.style.background = 'rgba(255,255,255,0.1)'; doctorBtn.style.color = '#f43f5e'; };
-        doctorBtn.onmouseout = () => { doctorBtn.style.background = 'transparent'; doctorBtn.style.color = '#ccc'; };
         doctorBtn.onclick = async () => {
             this.hideAllPanels();
             if (localStorage.getItem('anomalous_user_sidebar_closed') === 'true') {
@@ -1742,20 +1730,17 @@ export function createDOM() {
         const assistantBtn = document.createElement('button');
         assistantBtn.id = 'anomalous-assistant-btn';
         assistantBtn.className = 'anomalous-tooltip-target';
-        assistantBtn.title = t('sidebarAssistant');
+        assistantBtn.removeAttribute('title');
         assistantBtn.setAttribute('aria-label', t('sidebarAssistant'));
         assistantBtn.setAttribute('data-tooltip', t('sidebarAssistant'));
+        assistantBtn.setAttribute('data-tooltip-pos', 'right');
         assistantBtn.innerHTML = SIDEBAR_ICONS.ASSISTANT;
         assistantBtn.style.background = 'transparent';
-        assistantBtn.style.color = '#ccc';
         assistantBtn.style.border = 'none';
         assistantBtn.style.borderRadius = '6px';
         assistantBtn.style.padding = '6px';
         assistantBtn.style.fontSize = '1.1em';
         assistantBtn.style.cursor = 'pointer';
-        assistantBtn.style.transition = 'all 0.2s ease';
-        assistantBtn.onmouseover = () => { assistantBtn.style.background = 'rgba(255,255,255,0.1)'; assistantBtn.style.color = '#fff'; };
-        assistantBtn.onmouseout = () => { assistantBtn.style.background = 'transparent'; assistantBtn.style.color = '#ccc'; };
         assistantBtn.onclick = async () => {
             this.hideAllPanels();
             if (localStorage.getItem('anomalous_user_sidebar_closed') === 'true') {

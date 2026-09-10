@@ -108,13 +108,16 @@ export async function loadModels() {
                         const img = document.createElement('img');
                         img.loading = 'lazy';
                         img.decoding = 'async';
+                        img.className = 'anomalous-skeleton-shimmer';
+                        img.onload = () => { img.classList.remove('anomalous-skeleton-shimmer'); };
+                        img.onerror = () => { img.classList.remove('anomalous-skeleton-shimmer'); };
                         img.src = cardPreviewUrl(model.preview_url, this.cardThumbnailMode);
                         card.appendChild(img);
                     }
                 } else {
                     const ph = document.createElement('div');
-                    ph.className = 'anomalous-card-placeholder';
-                    ph.innerHTML = `<div style="text-align:center;color:#666;margin-top:80px;">${t('noPreview')}</div><div style="font-size:0.8em;text-align:center;opacity:0.5;margin-top:5px">${t('clickScan')}</div>`;
+                    ph.className = 'anomalous-card-placeholder anomalous-skeleton-shimmer';
+                    ph.innerHTML = `<div style="text-align:center;color:#888;margin-top:80px;font-weight:500;">${t('noPreview')}</div><div style="font-size:0.8em;text-align:center;opacity:0.6;margin-top:5px;color:#38bdf8;">${t('clickScan')}</div>`;
                     card.appendChild(ph);
                 }
                 if (model.metadata && model.metadata.baseModel) {
@@ -144,7 +147,7 @@ export async function loadModels() {
                 const physicalName = document.createElement('div');
                 physicalName.className = 'anomalous-card-filename';
                 physicalName.textContent = model.filename;
-                physicalName.title = model.file_path || model.filename;
+                physicalName.removeAttribute('title');
                 labels.appendChild(physicalName);
                 card.appendChild(labels);
 
@@ -157,14 +160,17 @@ export async function loadModels() {
 
                 const applyBtn = document.createElement('button');
                 applyBtn.innerHTML = '➕';
-                applyBtn.title = t('applyToCanvas');
+                applyBtn.className = 'anomalous-card-action-btn anomalous-tooltip-target';
+                applyBtn.removeAttribute('title');
+                applyBtn.setAttribute('data-tooltip', t('applyToCanvas'));
+                applyBtn.setAttribute('data-tooltip-pos', 'bottom');
                 applyBtn.style.position = 'absolute';
                 applyBtn.style.top = '6px';
                 applyBtn.style.right = '6px';
-                applyBtn.style.background = 'rgba(0,0,0,0.7)';
+                applyBtn.style.background = 'rgba(0,0,0,0.75)';
                 applyBtn.style.color = '#fff';
                 applyBtn.style.border = '1px solid rgba(255,255,255,0.2)';
-                applyBtn.style.borderRadius = '4px';
+                applyBtn.style.borderRadius = '6px';
                 applyBtn.style.cursor = 'pointer';
                 applyBtn.style.padding = '4px 6px';
                 applyBtn.style.zIndex = '20';
@@ -173,14 +179,17 @@ export async function loadModels() {
 
                 const singleScanBtn = document.createElement('button');
                 singleScanBtn.innerHTML = '🎯';
-                singleScanBtn.title = t('scanModelPrecisely');
+                singleScanBtn.className = 'anomalous-card-action-btn anomalous-tooltip-target';
+                singleScanBtn.removeAttribute('title');
+                singleScanBtn.setAttribute('data-tooltip', t('scanModelPrecisely'));
+                singleScanBtn.setAttribute('data-tooltip-pos', 'bottom');
                 singleScanBtn.style.position = 'absolute';
                 singleScanBtn.style.top = '6px';
                 singleScanBtn.style.right = '40px';
-                singleScanBtn.style.background = 'rgba(0,0,0,0.7)';
+                singleScanBtn.style.background = 'rgba(0,0,0,0.75)';
                 singleScanBtn.style.color = '#fff';
                 singleScanBtn.style.border = '1px solid rgba(255,255,255,0.2)';
-                singleScanBtn.style.borderRadius = '4px';
+                singleScanBtn.style.borderRadius = '6px';
                 singleScanBtn.style.cursor = 'pointer';
                 singleScanBtn.style.padding = '4px 6px';
                 singleScanBtn.style.zIndex = '20';
@@ -195,15 +204,18 @@ export async function loadModels() {
 
                 const editBtn = document.createElement('button');
                 editBtn.innerHTML = '⚙️';
-                editBtn.title = t('editModel');
+                editBtn.className = 'anomalous-card-action-btn anomalous-tooltip-target';
+                editBtn.removeAttribute('title');
+                editBtn.setAttribute('data-tooltip', t('editModel'));
+                editBtn.setAttribute('data-tooltip-pos', 'bottom');
                 editBtn.style.position = 'absolute';
                 editBtn.style.top = '6px';
                 editBtn.style.right = '74px'; // shifted left for new button
                 editBtn.style.width = '26px';
                 editBtn.style.height = '26px';
-                editBtn.style.borderRadius = '50%';
-                editBtn.style.border = 'none';
-                editBtn.style.background = 'rgba(0,0,0,0.7)';
+                editBtn.style.borderRadius = '6px';
+                editBtn.style.border = '1px solid rgba(255,255,255,0.2)';
+                editBtn.style.background = 'rgba(0,0,0,0.75)';
                 editBtn.style.color = '#fff';
                 editBtn.style.cursor = 'pointer';
                 editBtn.style.display = 'none';
