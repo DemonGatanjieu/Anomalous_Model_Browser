@@ -1051,7 +1051,8 @@ function createRecipeCard(owner, recipe) {
     if (baseModelStr) {
         const pill = document.createElement('span');
         pill.className = 'anomalous-recipe-cover-pill';
-        pill.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="m21 16-9 5-9-5V8l9-5 9 5v8z"/><path d="m3.27 6.96 8.73 4.84 8.73-4.84"/><path d="M12 22.08V11.8"/></svg><span>${escapeHtml(modelDisplayName(baseModelStr))}</span>`;
+        pill.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="m21 16-9 5-9-5V8l9-5 9 5v8z"/><path d="m3.27 6.96 8.73 4.84 8.73-4.84"/><path d="M12 22.08V11.8"/></svg>';
+        appendText(pill, 'span', modelDisplayName(baseModelStr));
         pill.title = String(baseModelStr);
         bottomChips.appendChild(pill);
     }
@@ -1238,6 +1239,8 @@ export function renderRecipeList(recipes) {
             this.recipeListContainer.appendChild(createRecipeCard(this, recipe));
         } catch (cardError) {
             console.error('Could not render Workflow Recipe card:', recipe?.filename, cardError);
+            const notice = appendText(this.recipeListContainer, 'p', `${recipe?.data?.name || t('recipeUntitled')} — ${t('recipeLoadError')}`, 'anomalous-recipe-empty');
+            notice.setAttribute('role', 'alert');
         }
     }
 }

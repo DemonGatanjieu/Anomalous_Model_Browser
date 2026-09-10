@@ -87,7 +87,7 @@ html.theme-abyssal-scarlet,
     font-size: var(--anomalous-trigger-font-size);
     cursor: pointer;
     z-index: 2147483000 !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.1);
+    box-shadow: none;
     display: flex !important;
     visibility: visible !important;
     opacity: 1 !important;
@@ -119,13 +119,13 @@ html.theme-abyssal-scarlet #anomalous-trigger-btn {
     background: #1c0810 !important;
     border: 1px solid #dc143c !important;
     color: #e0d8db !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9), inset 0 2px 6px rgba(0, 0, 0, 0.8) !important;
+    box-shadow: none !important;
 }
 
 html.theme-abyssal-scarlet #anomalous-trigger-btn:hover {
     border-color: #dc143c !important;
     background: #2a0b16 !important;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.95), inset 0 2px 8px rgba(0, 0, 0, 0.9) !important;
+    box-shadow: none !important;
     color: #f1eaed !important;
 }
 
@@ -161,7 +161,7 @@ html.theme-abyssal-scarlet #anomalous-trigger-btn:hover {
 
 #anomalous-trigger-btn:hover {
     transform: scale(1.15) translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), inset 0 2px 4px rgba(255, 255, 255, 0.2);
+    box-shadow: none;
     border-color: #888;
 }
 
@@ -174,7 +174,7 @@ html.theme-abyssal-scarlet #anomalous-trigger-btn:hover {
 
 #anomalous-trigger-btn.anomalous-trigger-error {
     border-color: #ff9f43;
-    box-shadow: 0 4px 15px rgba(255, 159, 67, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.1);
+    box-shadow: none;
 }
 
 .anomalous-topbar-entry {
@@ -353,7 +353,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 #anomalous-header button:hover {
     background: rgba(255, 255, 255, 0.15);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: none;
     border-color: rgba(255, 255, 255, 0.3);
 }
 
@@ -616,7 +616,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     background: rgba(255, 255, 255, 0.15);
     border-color: rgba(255, 255, 255, 0.35);
     color: #ffffff;
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+    box-shadow: none;
 }
 
 .anomalous-scan-progress {
@@ -1302,7 +1302,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     align-items: center;
     justify-content: center;
     gap: 6px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    box-shadow: none;
     transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
     overflow: hidden;
     user-select: none;
@@ -1312,7 +1312,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-btn-primary:hover {
     background: var(--amb-btn-primary-hover, #E5E7EB);
     border-color: rgba(255, 255, 255, 0.4);
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+    box-shadow: none;
 }
 
 .anomalous-btn-primary:active {
@@ -1335,7 +1335,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     align-items: center;
     justify-content: center;
     gap: 6px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    box-shadow: none;
     transition: background-color 0.16s ease, border-color 0.16s ease;
     user-select: none;
     box-sizing: border-box;
@@ -1352,7 +1352,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-btn-danger:hover {
     background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
     border-color: #f87171;
-    box-shadow: 0 0 14px rgba(248, 113, 113, 0.4);
+    box-shadow: none;
     transform: translateY(-1px);
 }
 
@@ -1367,7 +1367,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     font-size: 0.82rem;
     font-weight: 600;
     margin-left: 5px;
-    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+    box-shadow: none;
     transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     overflow: hidden;
 }
@@ -1375,7 +1375,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-btn-success:hover {
     background: linear-gradient(135deg, #15803d 0%, #166534 100%);
     border-color: #4ade80;
-    box-shadow: 0 0 14px rgba(74, 222, 128, 0.4);
+    box-shadow: none;
     transform: translateY(-1px);
 }
 
@@ -1913,15 +1913,13 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-pill.is-active {
-    background-color: rgba(99, 102, 241, 0.32);
-    background-image: url('assets/pill_active_glow.webp');
-    background-size: cover;
-    background-position: center;
-    color: #ffffff;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    color: var(--amb-text-main);
+    text-shadow: none;
     font-weight: 600;
-    box-shadow: 0 1px 8px rgba(99, 102, 241, 0.35), inset 0 0 4px rgba(255, 255, 255, 0.2);
+    box-shadow: none;
     border: 1px solid rgba(165, 180, 252, 0.35);
+    background: var(--amb-bg-card-hover);
+    border-color: var(--amb-border-hover);
 }
 
 .anomalous-recipe-topbar-center {
@@ -2047,15 +2045,15 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-topbar-btn.is-primary {
-    background: rgba(99, 102, 241, 0.18);
-    border-color: rgba(99, 102, 241, 0.4);
-    color: #c7d2fe;
+    background: var(--amb-btn-primary-bg);
+    border-color: var(--amb-border-hover);
+    color: var(--amb-btn-primary-text);
 }
 
 .anomalous-recipe-topbar-btn.is-primary:hover {
-    background: rgba(99, 102, 241, 0.3);
-    border-color: rgba(99, 102, 241, 0.6);
-    color: #ffffff;
+    background: var(--amb-btn-primary-hover);
+    border-color: var(--amb-border-hover);
+    color: var(--amb-btn-primary-text);
 }
 
 /* 列表容器 */
@@ -2500,7 +2498,7 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-gallery-card-actions button {
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.45);
+    box-shadow: none;
 }
 
 .anomalous-recipe-gallery-comparison {
@@ -4307,7 +4305,7 @@ dialog.anomalous-gallery-viewer[open] {
     cursor: pointer;
     backdrop-filter: blur(8px);
     transition: background 0.2s, transform 0.2s;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: none;
 }
 
 .anomalous-recipe-detail-hero-gallery-btn:hover {
@@ -4466,7 +4464,7 @@ dialog.anomalous-gallery-viewer[open] {
     background: rgba(139, 92, 246, 0.18);
     color: #8b5cf6;
     font-weight: 600;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: none;
 }
 
 .anomalous-material-topbar-center {
@@ -5866,7 +5864,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     font-weight: 500;
     color: #e2e8f0;
     white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    box-shadow: none;
 }
 
 .anomalous-recipe-readiness-text {
@@ -5890,7 +5888,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    box-shadow: none;
 }
 
 /* 封面右上角作用域徽章 */
@@ -6075,7 +6073,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     justify-content: center;
     gap: 5px;
     overflow: hidden;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    box-shadow: none;
     user-select: none;
     box-sizing: border-box;
 }
@@ -6083,7 +6081,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-recipe-btn-primary-action:hover {
     background: var(--amb-btn-primary-hover, #E5E7EB);
     border-color: rgba(255, 255, 255, 0.4);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+    box-shadow: none;
 }
 
 .anomalous-recipe-btn-primary-action:active {
@@ -6252,7 +6250,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-recipe-banner-btn.is-match-all {
     background: #f59e0b;
     color: #1a1a1a;
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    box-shadow: none;
 }
 
 .anomalous-recipe-banner-btn.is-match-all:hover {
@@ -8209,35 +8207,16 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-action-btn.is-primary {
-    background: linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(139, 92, 246, 0.26) 100%);
-    border-color: rgba(139, 92, 246, 0.42);
-    color: #e0f2fe;
-}
-
-.anomalous-workbench-action-btn.is-primary::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, #38bdf8, #8b5cf6, #c084fc);
-    transform: scaleX(0);
-    transform-origin: left;
-    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 3;
-    pointer-events: none;
-}
-
-.anomalous-workbench-action-btn.is-primary:hover::after {
-    transform: scaleX(1);
+    background: var(--amb-btn-primary-bg);
+    border-color: var(--amb-border-hover);
+    color: var(--amb-btn-primary-text);
 }
 
 .anomalous-workbench-action-btn.is-primary:hover {
-    background: linear-gradient(135deg, rgba(14, 165, 233, 0.36) 0%, rgba(139, 92, 246, 0.4) 100%);
-    border-color: #8b5cf6;
-    color: #ffffff;
-    box-shadow: 0 4px 18px rgba(139, 92, 246, 0.28);
+    background: var(--amb-btn-primary-hover);
+    border-color: var(--amb-border-hover);
+    color: var(--amb-btn-primary-text);
+    box-shadow: none;
     transform: translateY(-1px);
 }
 
@@ -8248,7 +8227,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-workbench-action-btn.is-save {
     background: rgba(255, 255, 255, 0.04);
     border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 2px 6px rgba(0, 0, 0, 0.25);
+    box-shadow: none;
     color: #cbd5e1;
     flex: 0 0 auto;
 }
@@ -8257,7 +8236,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: rgba(255, 255, 255, 0.09);
     color: #ffffff;
     border-color: rgba(165, 180, 252, 0.4);
-    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.35), 0 0 12px rgba(99, 102, 241, 0.25);
+    box-shadow: none;
     transform: translateY(-1px);
 }
 
@@ -8266,7 +8245,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: rgba(99, 102, 241, 0.2);
     border-color: rgba(129, 140, 248, 0.5);
     color: #c7d2fe;
-    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.25);
+    box-shadow: none;
 }
 
 .anomalous-workbench-action-btn.is-save:active {
@@ -8307,7 +8286,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-workbench-tab-btn.is-active {
     background: rgba(255, 255, 255, 0.09);
     color: #8b5cf6;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    box-shadow: none;
 }
 
 .anomalous-workbench-tab-btn:active {
@@ -8529,22 +8508,23 @@ dialog.anomalous-gallery-viewer::backdrop {
     flex-shrink: 0;
     padding: 6px 13px;
     border-radius: 7px;
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.22), rgba(56, 189, 248, 0.22));
+    background: var(--amb-btn-primary-bg);
     border: 1px solid rgba(139, 92, 246, 0.45);
-    color: #e0f2fe;
+    color: var(--amb-btn-primary-text);
     font-size: 0.74rem;
     font-weight: 600;
     cursor: pointer;
     transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, color 0.16s ease;
     white-space: nowrap;
     user-select: none;
+    border-color: var(--amb-border-hover);
 }
 
 .anomalous-workbench-generation-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.36), rgba(56, 189, 248, 0.36));
-    border-color: #8b5cf6;
-    color: #ffffff;
-    box-shadow: 0 3px 12px rgba(139, 92, 246, 0.28);
+    background: var(--amb-btn-primary-hover);
+    border-color: var(--amb-border-hover);
+    color: var(--amb-btn-primary-text);
+    box-shadow: none;
     transform: translateY(-1px);
 }
 
@@ -9666,7 +9646,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: rgba(255, 255, 255, 0.12);
     color: #f1f5f9;
     font-weight: 600;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    box-shadow: none;
     border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
@@ -9693,8 +9673,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 5px 12px;
     border-radius: 6px;
     border: 1px solid rgba(192, 132, 252, 0.45);
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(56, 189, 248, 0.2) 100%);
-    color: #e9d5ff;
+    background: var(--amb-bg-card);
+    color: var(--amb-text-main);
     font-size: 0.78rem;
     font-weight: 600;
     cursor: pointer;
@@ -9702,14 +9682,15 @@ dialog.anomalous-gallery-viewer::backdrop {
     align-items: center;
     gap: 5px;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.2);
+    box-shadow: none;
+    border-color: var(--amb-border);
 }
 
 .anomalous-mixer-smart-sort-btn:hover {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.35) 0%, rgba(56, 189, 248, 0.35) 100%);
-    border-color: #c084fc;
-    color: #ffffff;
-    box-shadow: 0 0 14px rgba(192, 132, 252, 0.45);
+    background: var(--amb-bg-card-hover);
+    border-color: var(--amb-border-hover);
+    color: var(--amb-text-main);
+    box-shadow: none;
     transform: translateY(-1px);
 }
 
@@ -10315,15 +10296,12 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-pill.is-active {
-    background-color: rgba(56, 189, 248, 0.18);
-    background-image: url('assets/pill_active_glow.webp');
-    background-size: cover;
-    background-position: center;
-    border-color: rgba(56, 189, 248, 0.5);
-    color: #f0fdf4;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+    border-color: var(--amb-border-hover);
+    color: var(--amb-text-main);
+    text-shadow: none;
     font-weight: 600;
-    box-shadow: 0 1px 6px rgba(56, 189, 248, 0.25);
+    box-shadow: none;
+    background: var(--amb-bg-card-hover);
 }
 
 /* Inline New Card Creation Form */
@@ -10766,7 +10744,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     background-color: rgba(192, 132, 252, 0.12) !important;
     border: 1px solid rgba(192, 132, 252, 0.35) !important;
     border-radius: var(--amb-radius-control, 6px) !important;
-    color: #e9d5ff !important;
+    color: var(--amb-text-main) !important;
     font-size: 0.76rem !important;
     font-weight: 500 !important;
     height: 28px !important;
@@ -10779,12 +10757,15 @@ dialog.anomalous-gallery-viewer::backdrop {
     transition: background-color 0.15s ease, border-color 0.15s ease !important;
     overflow: hidden;
     user-select: none;
+    background: var(--amb-bg-card);
+    border-color: var(--amb-border);
 }
 
 .anomalous-mixer-smart-sort-btn:hover {
     background-color: rgba(192, 132, 252, 0.22) !important;
-    border-color: rgba(192, 132, 252, 0.6) !important;
-    color: #ffffff !important;
+    border-color: var(--amb-border-hover) !important;
+    color: var(--amb-text-main) !important;
+    background: var(--amb-bg-card-hover);
 }
 
 /* ==========================================================================
@@ -10940,7 +10921,7 @@ html.theme-abyssal-scarlet,
     border: 1px solid rgba(220, 20, 60, 0.6) !important;
     border-radius: 4px 12px 4px 12px !important;
     color: #e0d8db !important;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8), 0 2px 6px rgba(0, 0, 0, 0.6) !important;
+    box-shadow: none !important;
     transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -10949,7 +10930,7 @@ html.theme-abyssal-scarlet,
     background-color: rgba(65, 12, 24, 0.98) !important;
     border-color: #dc143c !important;
     color: #f1eaed !important;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9) !important;
+    box-shadow: none !important;
     transform: translateY(-1px);
 }
 
@@ -10959,30 +10940,15 @@ html.theme-abyssal-scarlet,
     border: 1px solid rgba(220, 20, 60, 0.6) !important;
     border-radius: 4px 12px 4px 12px !important;
     color: #e0d8db !important;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet .anomalous-btn-extract-node:hover {
     background-color: rgba(65, 12, 24, 0.98) !important;
     border-color: #dc143c !important;
     color: #f1eaed !important;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9) !important;
+    box-shadow: none !important;
     transform: translateY(-1px);
-}
-
-.theme-abyssal-scarlet .anomalous-btn-primary::before,
-.theme-abyssal-scarlet .anomalous-recipe-btn-primary-action::before,
-.theme-abyssal-scarlet .anomalous-btn-extract-node::before {
-    color: #dc143c !important;
-    box-shadow: none !important;
-}
-
-.theme-abyssal-scarlet .anomalous-btn-primary::after,
-.theme-abyssal-scarlet .anomalous-recipe-btn-primary-action::after,
-.theme-abyssal-scarlet .anomalous-btn-extract-node::after,
-.theme-abyssal-scarlet .anomalous-workbench-action-btn.is-primary::after {
-    background: #dc143c !important;
-    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet .anomalous-btn-ghost {
@@ -10990,13 +10956,13 @@ html.theme-abyssal-scarlet,
     border: 1px solid rgba(220, 20, 60, 0.35) !important;
     color: #e0d8db !important;
     border-radius: 2px 8px 2px 8px !important;
-    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.7) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet .anomalous-btn-ghost:hover {
     background: rgba(55, 12, 24, 0.85) !important;
     border-color: #dc143c !important;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.85) !important;
+    box-shadow: none !important;
     color: #f1eaed !important;
 }
 
@@ -11005,14 +10971,14 @@ html.theme-abyssal-scarlet,
     border: 1px solid rgba(220, 20, 60, 0.55) !important;
     border-radius: 2px 10px 2px 10px !important;
     color: #e0d8db !important;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet .anomalous-workbench-action-btn.is-primary:hover {
     background: rgba(70, 15, 28, 0.95) !important;
     border-color: #dc143c !important;
     color: #f1eaed !important;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet .anomalous-workbench-action-btn.is-save {
@@ -11020,13 +10986,13 @@ html.theme-abyssal-scarlet,
     border: 1px solid rgba(220, 20, 60, 0.35) !important;
     border-radius: 2px 8px 2px 8px !important;
     color: #e0d8db !important;
-    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.7) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet .anomalous-workbench-action-btn.is-save:hover {
     background: rgba(55, 12, 24, 0.85) !important;
     border-color: #dc143c !important;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.85) !important;
+    box-shadow: none !important;
     color: #f1eaed !important;
 }
 
@@ -11035,13 +11001,13 @@ html.theme-abyssal-scarlet,
     border: 1px solid rgba(220, 20, 60, 0.5) !important;
     border-radius: 3px 8px 3px 8px !important;
     color: #e0d8db !important;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet .anomalous-mixer-smart-sort-btn:hover {
     background-color: rgba(65, 14, 28, 0.98) !important;
     border-color: #dc143c !important;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9) !important;
+    box-shadow: none !important;
     color: #f1eaed !important;
     transform: translateY(-1px);
 }
@@ -11051,14 +11017,14 @@ html.theme-abyssal-scarlet,
     background-color: rgba(45, 10, 20, 0.95) !important;
     border: 1px solid rgba(220, 20, 60, 0.5) !important;
     color: #e0d8db !important;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet .anomalous-workbench-generation-btn:hover:not(:disabled) {
     background-color: rgba(65, 14, 28, 0.98) !important;
     border-color: #dc143c !important;
     color: #f1eaed !important;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9) !important;
+    box-shadow: none !important;
 }
 
 /* 5. Cards & Gothic Sovereign Palette (Strictly scoped, Inner Shadows & Sharp Borders) */
@@ -11130,14 +11096,14 @@ html.theme-abyssal-scarlet,
     background: rgba(22, 8, 16, 0.92) !important;
     color: #e0d8db !important;
     border: 1px solid rgba(220, 20, 60, 0.35) !important;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet .anomalous-card-action-btn:hover {
     background: rgba(60, 12, 24, 0.9) !important;
     border-color: #dc143c !important;
     color: #f1eaed !important;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.85) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet .anomalous-recipe-card {
@@ -11151,7 +11117,7 @@ html.theme-abyssal-scarlet,
     background-color: rgba(60, 10, 20, 0.85) !important;
     border-color: #dc143c !important;
     color: #e0d8db !important;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.8) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet .anomalous-recipe-readiness-pill {
@@ -11221,7 +11187,7 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
 
 #anomalous-scan-btn.anomalous-radar-spinning svg {
     animation: anomalous-radar-spin 1.4s linear infinite !important;
-    filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.75)) !important;
+    filter: none !important;
 }
 
 @keyframes anomalous-radar-spin {
@@ -11241,7 +11207,7 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
     color: #ff4d6d !important;
     background: rgba(45, 10, 20, 0.85) !important;
     border: 1px solid #dc143c !important;
-    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet #anomalous-scan-btn.anomalous-radar-spinning svg {
@@ -11258,7 +11224,7 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
 
 button:hover .anomalous-btn-icon {
     transform: scale(1.08);
-    filter: drop-shadow(0 0 3px currentColor);
+    filter: none;
 }
 
 #anomalous-sidebar-actions button {
@@ -11275,7 +11241,7 @@ button:hover .anomalous-btn-icon {
 
 #anomalous-sidebar-actions button:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    box-shadow: none;
 }
 
 #anomalous-sidebar-actions button svg {
@@ -11284,7 +11250,7 @@ button:hover .anomalous-btn-icon {
 
 #anomalous-sidebar-actions button:hover svg {
     transform: scale(1.1);
-    filter: drop-shadow(0 0 4px currentColor);
+    filter: none;
 }
 
 /* Specific button glow nuances - Normal Mode (Neutral Clean) */
@@ -11295,7 +11261,7 @@ button:hover .anomalous-btn-icon {
     color: #ffffff !important;
     background: rgba(255, 255, 255, 0.08) !important;
     border: 1px solid rgba(255, 255, 255, 0.18) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+    box-shadow: none !important;
 }
 
 /* Abyssal Scarlet Mode overrides for Task 8 icon buttons (Sharp Borders & Inner Shadow) */
@@ -11303,33 +11269,33 @@ button:hover .anomalous-btn-icon {
     color: #f43f5e !important;
     background: rgba(55, 12, 22, 0.85) !important;
     border: 1px solid #f43f5e !important;
-    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet #anomalous-assistant-btn:hover {
     color: #a855f7 !important;
     background: rgba(36, 12, 45, 0.85) !important;
     border: 1px solid #a855f7 !important;
-    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet #anomalous-materials-btn:hover {
     color: #d97706 !important;
     background: rgba(45, 20, 10, 0.85) !important;
     border: 1px solid #d97706 !important;
-    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet #anomalous-global-settings-btn:hover {
     color: #dc143c !important;
     background: rgba(55, 12, 22, 0.85) !important;
     border: 1px solid #dc143c !important;
-    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet #anomalous-sidebar-actions button:hover {
     border-color: #dc143c !important;
-    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet #anomalous-sidebar-actions button:hover svg {
@@ -11656,7 +11622,7 @@ button:hover .anomalous-btn-icon {
     border-color: rgba(255, 255, 255, 0.25) !important;
     color: #ffffff !important;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+    box-shadow: none !important;
 }
 
 #anomalous-dock-btn {
@@ -11670,7 +11636,7 @@ button:hover .anomalous-btn-icon {
     background: rgba(255, 255, 255, 0.16) !important;
     border-color: rgba(255, 255, 255, 0.35) !important;
     color: #ffffff !important;
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.15) !important;
+    box-shadow: none !important;
 }
 
 /* 2. Normal Mode Gallery Container & Panels (Subtle Dark Matter Watermark Texture) */
@@ -11713,21 +11679,21 @@ button:hover .anomalous-btn-icon {
     background: rgba(30, 10, 20, 0.6) !important;
     color: #e0d8db !important;
     border: 1px solid rgba(220, 20, 60, 0.3) !important;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet #anomalous-header button:hover {
     background: rgba(55, 12, 24, 0.85) !important;
     border-color: #dc143c !important;
     color: #f1eaed !important;
-    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.85) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet #anomalous-header button.active {
     background: rgba(55, 12, 22, 0.9) !important;
     border: 1px solid #dc143c !important;
     color: #e0d8db !important;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.85) !important;
+    box-shadow: none !important;
 }
 
 .theme-abyssal-scarlet #anomalous-gallery-panel,
