@@ -81,20 +81,22 @@ html.theme-abyssal-scarlet,
     width: var(--anomalous-trigger-size);
     height: var(--anomalous-trigger-size);
     border-radius: 50%;
-    background: linear-gradient(135deg, #1e1e1e 0%, #333 100%);
-    color: var(--fg-color, #fff);
-    border: 2px solid #555;
+    background: rgba(18, 21, 30, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    color: var(--fg-color, #f1f5f9);
+    border: 1px solid rgba(255, 255, 255, 0.16);
     font-size: var(--anomalous-trigger-font-size);
     cursor: pointer;
     z-index: 2147483000 !important;
-    box-shadow: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
     display: flex !important;
     visibility: visible !important;
     opacity: 1 !important;
     align-items: center !important;
     justify-content: center !important;
     user-select: none;
-    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     gap: 8px;
     white-space: nowrap;
 }
@@ -106,6 +108,7 @@ html.theme-abyssal-scarlet,
     line-height: 1;
     font-size: var(--anomalous-trigger-font-size);
     flex-shrink: 0;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease;
 }
 
 #anomalous-trigger-btn .anomalous-trigger-icon svg {
@@ -116,17 +119,17 @@ html.theme-abyssal-scarlet,
 }
 
 html.theme-abyssal-scarlet #anomalous-trigger-btn {
-    background: #1c0810 !important;
-    border: 1px solid #dc143c !important;
-    color: #e0d8db !important;
-    box-shadow: none !important;
+    background: rgba(28, 10, 18, 0.88) !important;
+    border: 1px solid rgba(220, 20, 60, 0.45) !important;
+    color: #ffe4e6 !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(220, 20, 60, 0.2) !important;
 }
 
 html.theme-abyssal-scarlet #anomalous-trigger-btn:hover {
     border-color: #dc143c !important;
-    background: #2a0b16 !important;
-    box-shadow: none !important;
-    color: #f1eaed !important;
+    background: rgba(45, 12, 26, 0.95) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7), 0 0 20px rgba(220, 20, 60, 0.4) !important;
+    color: #ffffff !important;
 }
 
 #anomalous-trigger-btn[data-size="small"] {
@@ -160,9 +163,20 @@ html.theme-abyssal-scarlet #anomalous-trigger-btn:hover {
 }
 
 #anomalous-trigger-btn:hover {
-    transform: scale(1.15) translateY(-5px);
-    box-shadow: none;
-    border-color: #888;
+    transform: scale(1.08) translateY(-4px);
+    background: rgba(25, 29, 42, 0.94);
+    border-color: rgba(100, 200, 255, 0.45);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 18px rgba(80, 190, 255, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+#anomalous-trigger-btn:hover .anomalous-trigger-icon {
+    transform: rotate(12deg) scale(1.06);
+    filter: drop-shadow(0 0 6px rgba(100, 200, 255, 0.6));
+}
+
+html.theme-abyssal-scarlet #anomalous-trigger-btn:hover .anomalous-trigger-icon {
+    filter: drop-shadow(0 0 6px rgba(220, 20, 60, 0.7)) !important;
 }
 
 #anomalous-trigger-btn.anomalous-trigger-hidden {

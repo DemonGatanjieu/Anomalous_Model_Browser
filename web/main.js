@@ -705,7 +705,7 @@ function applyFloatingTriggerPresentation() {
     const icon = document.createElement('span');
     icon.className = 'anomalous-trigger-icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;display:block;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>';
+    icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;display:block;"><path d="M12 2.2L20.8 7.3V16.7L12 21.8L3.2 16.7V7.3L12 2.2Z" stroke-width="1.8"/><line x1="12" y1="2.2" x2="12" y2="7.2" stroke-width="1.2" stroke-opacity="0.6"/><line x1="20.8" y1="7.3" x2="16.4" y2="9.7" stroke-width="1.2" stroke-opacity="0.6"/><line x1="20.8" y1="16.7" x2="16.4" y2="14.7" stroke-width="1.2" stroke-opacity="0.6"/><line x1="12" y1="21.8" x2="12" y2="17.2" stroke-width="1.2" stroke-opacity="0.6"/><line x1="3.2" y1="16.7" x2="7.6" y2="14.7" stroke-width="1.2" stroke-opacity="0.6"/><line x1="3.2" y1="7.3" x2="7.6" y2="9.7" stroke-width="1.2" stroke-opacity="0.6"/><path d="M12 7.2L16.4 9.7V14.7L12 17.2L7.6 14.7V9.7L12 7.2Z" stroke="var(--amb-accent, #38bdf8)" stroke-width="1.5"/><path d="M12 10.2 C12 11.4 11.4 12.2 10.2 12.2 C11.4 12.2 12 13.0 12 14.2 C12 13.0 12.6 12.2 13.8 12.2 C12.6 12.2 12 11.4 12 10.2 Z" fill="currentColor"/></svg>';
 
     const label = document.createElement('span');
     label.className = 'anomalous-trigger-label';
