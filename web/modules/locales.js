@@ -210,7 +210,7 @@ export const i18n = {
         helpTitle: '📖 使用手册',
         helpContent: `
 <div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
-    <h3 style="color:#00ffcc; margin-top:0;">📖 标准操作说明</h3>
+    <h3 style="color:#f59e0b; margin-top:0;">📖 标准操作说明</h3>
     <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 测试功能与数据保护</strong><br>工作流配方及节点助手的“参数方案”联动目前属于测试功能；节点助手的“动作”页不属于测试范围。更新插件、导入他人配方、恢复版本、删除配方或应用参数前，请先保存当前画布并备份 ComfyUI 用户目录中 <code>workflows/anomalous_recipes</code> 与 <code>workflows/anomalous_parameters</code> 文件夹。模型预览快照不包含模型文件，不能代替模型备份。</div>
     <p><strong>1. 🔄 前置准备 (扫描向导)</strong><br>具体位置：界面左侧底部的 <strong>扫描向导 (🔄)</strong>。<br>这是最重要的前置操作！请先打开扫描向导执行扫描。切记保持网络畅通。部分 C站限制级模型信息需要在设置中填入 API-KEY。扫描完成后，插件的各项功能基本激活。</p>
     <p><strong>2. 🩺 拯救爆红 (模型医生)</strong><br>具体位置：左侧底部第二个 <strong>听诊器 (🩺)</strong> 按钮。<br>当导入别人使用该插件输出的工作流或者图片时，若模型路径爆红，点击模型医生就能智能识别当前所有节点实现正确路径的替换。</p>
@@ -1270,7 +1270,7 @@ export const i18n = {
         helpTitle: '📖 User Manual',
         helpContent: `
 <div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
-    <h3 style="color:#00ffcc; margin-top:0;">📖 Step-by-Step Guide</h3>
+    <h3 style="color:#f59e0b; margin-top:0;">📖 Step-by-Step Guide</h3>
     <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 Beta features and data protection</strong><br>Workflow Recipes and the Node Assistant's Parameter Presets integration are currently beta features; the Node Assistant's Actions tab is not part of this beta. Before updating the plugin, importing another person's recipe, restoring a version, deleting a recipe, or applying parameters, save the current canvas and back up the <code>workflows/anomalous_recipes</code> and <code>workflows/anomalous_parameters</code> folders in your ComfyUI user directory. Model preview snapshots do not contain model files and are not model backups.</div>
     <p><strong>1. 🔄 Prerequisites (Scan Wizard)</strong><br>Location: The <strong>Scan (🔄)</strong> icon at the bottom left.<br>This is the most crucial step! Open the Scan Wizard and execute a scan. Keep your network connected. (API-KEY may be needed in Settings for NSFW Civitai models). Scanning activates all core features.</p>
     <p><strong>2. 🩺 Fix Broken Nodes (Model Doctor)</strong><br>Location: The 2nd icon <strong>(Stethoscope 🩺)</strong> from the bottom left.<br>When importing a workflow/image exported by this plugin and nodes turn red, open the Model Doctor to intelligently identify and replace them with correct local paths.</p>

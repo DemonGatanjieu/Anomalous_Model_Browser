@@ -117,24 +117,24 @@ export async function loadModels() {
                 } else {
                     const ph = document.createElement('div');
                     ph.className = 'anomalous-card-placeholder anomalous-skeleton-shimmer';
-                    ph.innerHTML = `<div style="text-align:center;color:#888;margin-top:80px;font-weight:500;">${t('noPreview')}</div><div style="font-size:0.8em;text-align:center;opacity:0.6;margin-top:5px;color:#38bdf8;">${t('clickScan')}</div>`;
+                    ph.innerHTML = `<div style="text-align:center;color:#888;margin-top:80px;font-weight:500;">${t('noPreview')}</div><div style="font-size:0.8em;text-align:center;opacity:0.85;margin-top:5px;color:#f59e0b;font-weight:600;">${t('clickScan')}</div>`;
                     card.appendChild(ph);
                 }
                 if (model.metadata && model.metadata.baseModel) {
                     const badge = document.createElement('div');
-                    badge.innerText = model.metadata.baseModel;
-                    badge.style.position = 'absolute';
-                    badge.style.top = '6px';
-                    badge.style.left = '6px';
-                    badge.style.background = 'rgba(0,0,0,0.85)';
-                    badge.style.color = '#00ffcc';
-                    badge.style.padding = '3px 6px';
-                    badge.style.borderRadius = '4px';
-                    badge.style.fontSize = '0.75em';
-                    badge.style.fontWeight = 'bold';
-                    badge.style.border = '1px solid rgba(0,255,204,0.3)';
-                    badge.style.pointerEvents = 'none';
-                    badge.style.zIndex = '10';
+                    badge.className = 'anomalous-card-badge';
+                    const bm = String(model.metadata.baseModel);
+                    badge.textContent = bm;
+                    const bmLower = bm.toLowerCase();
+                    if (bmLower.includes('flux')) {
+                        badge.classList.add('badge-flux');
+                    } else if (bmLower.includes('pony') || bmLower.includes('illustrious') || bmLower.includes('anime')) {
+                        badge.classList.add('badge-rose');
+                    } else if (bmLower.includes('sdxl') || bmLower.includes('xl')) {
+                        badge.classList.add('badge-gold');
+                    } else {
+                        badge.classList.add('badge-amber');
+                    }
                     card.appendChild(badge);
                 }
                 const labels = document.createElement('div');
@@ -160,42 +160,22 @@ export async function loadModels() {
 
                 const applyBtn = document.createElement('button');
                 applyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
-                applyBtn.className = 'anomalous-card-action-btn anomalous-tooltip-target';
+                applyBtn.className = 'anomalous-card-action-btn action-apply anomalous-tooltip-target';
                 applyBtn.removeAttribute('title');
                 applyBtn.setAttribute('data-tooltip', t('applyToCanvas'));
                 applyBtn.setAttribute('data-tooltip-pos', 'bottom');
-                applyBtn.style.position = 'absolute';
-                applyBtn.style.top = '6px';
-                applyBtn.style.right = '6px';
-                applyBtn.style.background = 'rgba(0,0,0,0.75)';
-                applyBtn.style.color = '#fff';
-                applyBtn.style.border = '1px solid rgba(255,255,255,0.2)';
-                applyBtn.style.borderRadius = '6px';
-                applyBtn.style.cursor = 'pointer';
-                applyBtn.style.padding = '4px 6px';
-                applyBtn.style.zIndex = '20';
-                applyBtn.style.fontSize = '1em';
-                applyBtn.style.display = 'none';
+                applyBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.applyModelToCanvas(this.currentType, this.currentSubfolder, model);
+                };
+                card.appendChild(applyBtn);
 
                 const singleScanBtn = document.createElement('button');
                 singleScanBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>`;
-                singleScanBtn.className = 'anomalous-card-action-btn anomalous-tooltip-target';
+                singleScanBtn.className = 'anomalous-card-action-btn action-scan anomalous-tooltip-target';
                 singleScanBtn.removeAttribute('title');
                 singleScanBtn.setAttribute('data-tooltip', t('scanModelPrecisely'));
                 singleScanBtn.setAttribute('data-tooltip-pos', 'bottom');
-                singleScanBtn.style.position = 'absolute';
-                singleScanBtn.style.top = '6px';
-                singleScanBtn.style.right = '40px';
-                singleScanBtn.style.background = 'rgba(0,0,0,0.75)';
-                singleScanBtn.style.color = '#fff';
-                singleScanBtn.style.border = '1px solid rgba(255,255,255,0.2)';
-                singleScanBtn.style.borderRadius = '6px';
-                singleScanBtn.style.cursor = 'pointer';
-                singleScanBtn.style.padding = '4px 6px';
-                singleScanBtn.style.zIndex = '20';
-                singleScanBtn.style.fontSize = '1em';
-                singleScanBtn.style.display = 'none';
-
                 singleScanBtn.onclick = (e) => {
                     e.stopPropagation();
                     createWizardModal(false, model.filename);
@@ -204,40 +184,15 @@ export async function loadModels() {
 
                 const editBtn = document.createElement('button');
                 editBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`;
-                editBtn.className = 'anomalous-card-action-btn anomalous-tooltip-target';
+                editBtn.className = 'anomalous-card-action-btn action-edit anomalous-tooltip-target';
                 editBtn.removeAttribute('title');
                 editBtn.setAttribute('data-tooltip', t('editModel'));
                 editBtn.setAttribute('data-tooltip-pos', 'bottom');
-                editBtn.style.position = 'absolute';
-                editBtn.style.top = '6px';
-                editBtn.style.right = '74px'; // shifted left for new button
-                editBtn.style.width = '26px';
-                editBtn.style.height = '26px';
-                editBtn.style.borderRadius = '6px';
-                editBtn.style.border = '1px solid rgba(255,255,255,0.2)';
-                editBtn.style.background = 'rgba(0,0,0,0.75)';
-                editBtn.style.color = '#fff';
-                editBtn.style.cursor = 'pointer';
-                editBtn.style.display = 'none';
-                editBtn.style.alignItems = 'center';
-                editBtn.style.justifyContent = 'center';
-                editBtn.style.fontSize = '14px';
                 editBtn.onclick = (e) => {
                     e.stopPropagation();
                     this.showEditModal(model);
                 };
                 card.appendChild(editBtn);
-
-                card.addEventListener('mouseenter', () => {
-                    applyBtn.style.display = 'block';
-                    editBtn.style.display = 'flex';
-                    singleScanBtn.style.display = 'block';
-                });
-                card.addEventListener('mouseleave', () => {
-                    applyBtn.style.display = 'none';
-                    editBtn.style.display = 'none';
-                    singleScanBtn.style.display = 'none';
-                });
 
                 applyBtn.onclick = (e) => {
                     e.stopPropagation();

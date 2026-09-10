@@ -990,7 +990,7 @@ app.registerExtension({
 
         // Pre-create a lightweight, translucent, and aesthetic drag ghost image for huge Hires Fix images
         window.anomalousDragGhostImg = new Image();
-        window.anomalousDragGhostImg.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='76' height='76' x='2' y='2' fill='%231a1a1a' fill-opacity='0.6' rx='16' stroke='%2300ffcc' stroke-width='2'/><text x='40' y='50' font-family='sans-serif' font-size='32' font-weight='bold' fill='%2300ffcc' text-anchor='middle'>W</text></svg>";
+        window.anomalousDragGhostImg.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='76' height='76' x='2' y='2' fill='%23140812' fill-opacity='0.85' rx='16' stroke='%23f59e0b' stroke-width='2'/><text x='40' y='50' font-family='sans-serif' font-size='32' font-weight='bold' fill='%23f59e0b' text-anchor='middle'>W</text></svg>";
     }
 });
 

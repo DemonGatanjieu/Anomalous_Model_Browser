@@ -87,7 +87,7 @@ export function initDoctorPanel() {
         const renderAutoScanToggle = () => {
             let isAutoEnabled = localStorage.getItem('anomalous_auto_scan_enabled') === 'true';
             autoScanToggle.innerHTML = isAutoEnabled
-                ? `<span style="font-size:16px;">🛎️</span><span style="font-size:12px;color:#00ffcc;font-weight:500;">${t('doctorAutoScanOn')}</span>`
+                ? `<span style="font-size:16px;">🛎️</span><span style="font-size:12px;color:#f59e0b;font-weight:600;">${t('doctorAutoScanOn')}</span>`
                 : `<span style="font-size:16px;opacity:0.5;">🔕</span><span style="font-size:12px;color:#aaa;">${t('doctorAutoScanOff')}</span>`;
         };
         renderAutoScanToggle();
@@ -843,7 +843,7 @@ function openHashDetailDialog(node, widget, val) {
             hashBox.style.cssText = 'display:flex;align-items:center;gap:8px;background:#0d0e12;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.08);';
 
             const hashText = document.createElement('code');
-            hashText.style.cssText = 'font-size:11px;color:#00ffcc;word-break:break-all;flex:1;font-family:Consolas,monospace;letter-spacing:0.5px;';
+            hashText.style.cssText = 'font-size:11px;color:#f59e0b;word-break:break-all;flex:1;font-family:Consolas,monospace;letter-spacing:0.5px;';
             hashText.textContent = hash;
 
             const copyBtn = document.createElement('button');

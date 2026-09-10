@@ -155,8 +155,11 @@ and right actions retaining both the docking toggle (`#anomalous-dock-btn`) and 
 Interactive buttons follow global `.anomalous-btn-*` hierarchies (`primary`, `danger`,
 `ghost`) with signature asymmetric chamfers and condensed, razor-sharp 2px-4px rim glows (`box-shadow: 0 0 4px 1px ...`)
 rather than unbounded blurry halos or ad-hoc inline border radii.
-Major panels utilize dual fallback concept backdrops (`url(...)`, `radial-gradient(...)`) with `#0d080c`
-base fills to guarantee visual richness even when image assets are loading or missing.
-Card text masks and containers strictly eliminate cold blue/slate tones in favor of pure dark and deep crimson
-color schemes (`linear-gradient(to top, rgba(15, 5, 10, 0.95), transparent)`).
+Major panels utilize dual fallback concept backdrops (`url(...)`, `radial-gradient(...)`) with `#0b050f` / `#0c0510`
+deep dark wine bases and ambient crimson/purple radial gradient illumination to eliminate flat dead-black voids.
+Header drag interaction safely guards `.closest('button')`, `.closest('input')`, etc., ensuring that button
+child SVG icons and label spans do not swallow clicks via `e.preventDefault()`.
+Model card badges follow the Gothic Sovereign palette (Dark Gold, Amber, Abyssal Purple, Rose Crimson),
+strictly eliminating clashing cold cyan tags (`#00ffcc`) and maintaining deep crimson frosted reveal overlays.
+Custom dark crimson scrollbars on `#anomalous-grid` ensure consistent theme immersion throughout.
 

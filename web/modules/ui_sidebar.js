@@ -173,7 +173,7 @@ export function createDOM() {
         };
 
         header.addEventListener('mousedown', (e) => {
-            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.id === 'anomalous-close') return;
+            if (e.target.closest('button') || e.target.closest('input') || e.target.closest('select') || e.target.closest('textarea') || e.target.id === 'anomalous-close' || e.target.closest('.anomalous-header-close')) return;
             isDragging = true;
             const rect = container.getBoundingClientRect();
             dragOffsetX = e.clientX - rect.left;
@@ -349,8 +349,6 @@ export function createDOM() {
         centerGroup.appendChild(modelsBtn);
         centerGroup.appendChild(galleryBtn);
         centerGroup.appendChild(nbBtn);
-        leftGroup.appendChild(dockBtn);
-        leftGroup.appendChild(helpBtn);
 
         const apiKeyBtn = document.createElement('button');
         apiKeyBtn.id = 'anomalous-api-btn';

@@ -351,18 +351,38 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     gap: 25px;
     row-gap: 40px;
     align-content: flex-start;
+    background: radial-gradient(ellipse 90% 55% at 50% 0%, rgba(220, 20, 60, 0.08) 0%, rgba(26, 9, 22, 0.03) 60%, transparent 100%);
+}
+
+#anomalous-grid::-webkit-scrollbar {
+    width: 8px;
+}
+
+#anomalous-grid::-webkit-scrollbar-track {
+    background: rgba(14, 6, 16, 0.75);
+}
+
+#anomalous-grid::-webkit-scrollbar-thumb {
+    background: rgba(220, 20, 60, 0.28);
+    border-radius: 4px;
+    border: 1px solid rgba(220, 20, 60, 0.18);
+}
+
+#anomalous-grid::-webkit-scrollbar-thumb:hover {
+    background: rgba(220, 20, 60, 0.55);
+    box-shadow: 0 0 8px rgba(220, 20, 60, 0.4);
 }
 
 .anomalous-card {
     position: relative;
-    background: rgba(18, 18, 24, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: linear-gradient(180deg, rgba(22, 11, 18, 0.88) 0%, rgba(14, 7, 13, 0.96) 100%);
+    border: 1px solid rgba(220, 20, 60, 0.18);
     border-radius: 6px 16px 6px 16px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     height: 380px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.55), 0 0 1px rgba(220, 20, 60, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
     will-change: transform, box-shadow;
     cursor: pointer;
@@ -370,17 +390,18 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-card:hover {
     transform: translateY(-5px);
-    border-color: rgba(255, 255, 255, 0.22);
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 1px rgba(255, 255, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    border-color: rgba(220, 20, 60, 0.55);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(220, 20, 60, 0.3), inset 0 1px 0 rgba(255, 100, 130, 0.15);
 }
 
 .theme-abyssal-scarlet .anomalous-card {
-    border-color: rgba(220, 20, 60, 0.15);
+    border-color: rgba(220, 20, 60, 0.22);
+    background: linear-gradient(180deg, rgba(25, 12, 20, 0.9) 0%, rgba(14, 6, 14, 0.98) 100%);
 }
 
 .theme-abyssal-scarlet .anomalous-card:hover {
-    border-color: rgba(220, 20, 60, 0.45);
-    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.75), 0 0 16px rgba(220, 20, 60, 0.25);
+    border-color: rgba(220, 20, 60, 0.6);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 22px rgba(220, 20, 60, 0.35);
 }
 
 .anomalous-card img,
@@ -413,8 +434,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 24px 12px 10px;
-    background: linear-gradient(to top, rgba(15, 5, 10, 0.95), transparent);
+    padding: 26px 12px 10px;
+    background: linear-gradient(to top, rgba(16, 5, 13, 0.97) 0%, rgba(16, 5, 13, 0.72) 65%, transparent 100%);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     display: flex;
@@ -430,15 +451,15 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-card:hover .anomalous-card-labels {
     transform: translateY(0);
-    background: linear-gradient(to top, rgba(15, 5, 10, 0.98) 0%, rgba(15, 5, 10, 0.88) 75%, transparent 100%);
+    background: linear-gradient(to top, rgba(18, 5, 14, 0.98) 0%, rgba(20, 6, 16, 0.92) 75%, transparent 100%);
 }
 
 .theme-abyssal-scarlet .anomalous-card-labels {
-    background: linear-gradient(to top, rgba(15, 5, 10, 0.95), transparent);
+    background: linear-gradient(to top, rgba(18, 5, 14, 0.97) 0%, rgba(18, 5, 14, 0.75) 65%, transparent 100%);
 }
 
 .theme-abyssal-scarlet .anomalous-card:hover .anomalous-card-labels {
-    background: linear-gradient(to top, rgba(15, 5, 10, 0.98) 0%, rgba(15, 5, 10, 0.9) 75%, transparent 100%);
+    background: linear-gradient(to top, rgba(20, 6, 16, 0.99) 0%, rgba(22, 7, 18, 0.94) 75%, transparent 100%);
 }
 
 .anomalous-card-title {
@@ -460,6 +481,61 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     opacity: 0.8;
 }
 
+/* Card Base Model Badges - Gothic Sovereign Palette (Dark Gold, Abyssal Purple, Rose Crimson) */
+.anomalous-card-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background: rgba(18, 8, 14, 0.88);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.38);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 6px rgba(245, 158, 11, 0.12);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    pointer-events: none;
+    z-index: 10;
+    text-transform: uppercase;
+    transition: all 0.25s ease;
+}
+
+.anomalous-card:hover .anomalous-card-badge {
+    border-color: rgba(245, 158, 11, 0.6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), 0 0 10px rgba(245, 158, 11, 0.25);
+}
+
+.anomalous-card-badge.badge-gold {
+    color: #f59e0b;
+    background: rgba(22, 10, 14, 0.92);
+    border-color: rgba(245, 158, 11, 0.45);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 8px rgba(245, 158, 11, 0.22);
+}
+
+.anomalous-card-badge.badge-amber {
+    color: #fbbf24;
+    background: rgba(20, 10, 12, 0.92);
+    border-color: rgba(251, 191, 36, 0.4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 6px rgba(251, 191, 36, 0.16);
+}
+
+.anomalous-card-badge.badge-flux {
+    color: #c084fc;
+    background: rgba(18, 9, 26, 0.92);
+    border-color: rgba(168, 85, 247, 0.45);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 8px rgba(168, 85, 247, 0.25);
+}
+
+.anomalous-card-badge.badge-rose {
+    color: #ff4d6d;
+    background: rgba(26, 8, 16, 0.92);
+    border-color: rgba(255, 77, 109, 0.45);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.7), 0 0 8px rgba(255, 77, 109, 0.25);
+}
+
 .anomalous-card-action-btn {
     position: absolute;
     top: 8px;
@@ -470,29 +546,43 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: rgba(15, 15, 20, 0.85);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(18, 10, 16, 0.88);
+    color: #f1f5f9;
+    border: 1px solid rgba(220, 20, 60, 0.28);
     border-radius: 6px;
     cursor: pointer;
     font-size: 13px;
     opacity: 0;
     transform: scale(0.88);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 10;
+    z-index: 20;
     backdrop-filter: blur(8px);
+    pointer-events: none;
+}
+
+.anomalous-card-action-btn.action-apply {
+    right: 8px;
+}
+
+.anomalous-card-action-btn.action-scan {
+    right: 42px;
+}
+
+.anomalous-card-action-btn.action-edit {
+    right: 76px;
 }
 
 .anomalous-card:hover .anomalous-card-action-btn {
     opacity: 1;
     transform: scale(1);
+    pointer-events: auto;
 }
 
 .anomalous-card-action-btn:hover {
-    background: rgba(220, 20, 60, 0.25);
+    background: rgba(220, 20, 60, 0.38);
     border-color: #dc143c;
-    color: #ff4d6d;
-    box-shadow: 0 0 8px 0px rgba(220, 20, 60, 0.5);
+    color: #fff;
+    box-shadow: 0 0 10px 1px rgba(220, 20, 60, 0.55);
 }
 
 .anomalous-scan-progress {
@@ -600,7 +690,10 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     flex-direction: column;
     flex: 1;
     overflow: hidden;
-    background-color: #0d080c;
+    background-color: #0b050f;
+    background-image: 
+        radial-gradient(ellipse 75% 50% at 50% 0%, rgba(190, 20, 55, 0.12) 0%, rgba(35, 12, 28, 0.05) 55%, transparent 100%),
+        radial-gradient(ellipse 60% 45% at 85% 95%, rgba(139, 92, 246, 0.06) 0%, transparent 100%);
     position: relative;
 }
 
@@ -608,12 +701,11 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     content: '';
     position: absolute;
     inset: 0;
-    background-color: #0d080c;
-    background-image: url('assets/bg_concept.webp'), radial-gradient(circle at 50% 50%, rgba(220, 20, 60, 0.03) 0%, transparent 60%);
+    background-image: url('assets/abyssal_scarlet_mansion.webp'), radial-gradient(circle at 50% 20%, rgba(220, 20, 60, 0.08) 0%, transparent 70%);
     background-size: cover;
     background-position: center;
-    mix-blend-mode: overlay;
-    opacity: 0.12;
+    mix-blend-mode: soft-light;
+    opacity: 0.18;
     pointer-events: none;
     z-index: 0;
 }
@@ -10631,6 +10723,17 @@ html.theme-abyssal-scarlet,
 .theme-abyssal-scarlet #anomalous-sidebar-wrapper {
     background: #100818 !important;
     border-right: 1px solid rgba(220, 20, 60, 0.22) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-content {
+    background-color: #0c0510 !important;
+    background-image: 
+        radial-gradient(ellipse 75% 55% at 50% -5%, rgba(220, 20, 60, 0.14) 0%, rgba(38, 12, 30, 0.06) 55%, transparent 100%),
+        radial-gradient(ellipse 55% 45% at 85% 95%, rgba(139, 92, 246, 0.08) 0%, transparent 100%) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-grid {
+    background: radial-gradient(ellipse 90% 55% at 50% 0%, rgba(220, 20, 60, 0.09) 0%, rgba(28, 9, 22, 0.04) 60%, transparent 100%);
 }
 
 .theme-abyssal-scarlet .anomalous-brand-badge {
