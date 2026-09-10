@@ -286,7 +286,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
         url('assets/archive_library_bg.webp');
     background-size: cover;
     background-position: center 25%;
-    opacity: 0.65;
+    opacity: var(--anomalous-bg-opacity, 0.2);
+    transition: opacity 0.3s ease;
     pointer-events: none;
     z-index: 0;
 }
@@ -791,8 +792,15 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     flex-direction: column;
     transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.3s ease;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    overflow: hidden;
+    overflow: visible;
     box-sizing: border-box;
+}
+
+#anomalous-doctor-panel,
+#anomalous-assistant-panel {
+    background: var(--amb-bg-page, #0b0d13) !important;
+    position: relative;
+    z-index: 2;
 }
 
 .anomalous-brand-badge {
@@ -11288,35 +11296,30 @@ button:hover .anomalous-btn-icon {
     justify-content: center !important;
     width: 32px !important;
     height: 32px !important;
-    border-radius: 4px 8px 4px 8px !important;
+    border-radius: 6px !important;
     box-sizing: border-box !important;
     vertical-align: middle !important;
+    color: var(--amb-text-muted, #94a3b8) !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 #anomalous-sidebar-actions button:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
     transform: translateY(-1px);
     box-shadow: none;
 }
 
 #anomalous-sidebar-actions button svg {
-    transition: transform 0.2s ease, filter 0.2s ease;
+    transition: transform 0.2s ease, color 0.2s ease;
 }
 
 #anomalous-sidebar-actions button:hover svg {
-    transform: scale(1.1);
-    filter: none;
-}
-
-/* Specific button glow nuances - Normal Mode (Neutral Clean) */
-#anomalous-doctor-btn:hover,
-#anomalous-assistant-btn:hover,
-#anomalous-materials-btn:hover,
-#anomalous-global-settings-btn:hover {
-    color: #ffffff !important;
-    background: rgba(255, 255, 255, 0.08) !important;
-    border: 1px solid rgba(255, 255, 255, 0.18) !important;
-    box-shadow: none !important;
+    transform: scale(1.08);
+    color: var(--amb-accent, #38bdf8);
 }
 
 /* Abyssal Scarlet Mode overrides for Task 8 icon buttons (Sharp Borders & Inner Shadow) */

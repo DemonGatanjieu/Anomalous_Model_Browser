@@ -80,18 +80,20 @@ DOM or live LiteGraph state.
 - `ui_sidebar.js`, `ui_grid.js`, `ui_detail.js`, and `ui_gallery.js` own the
   primary model-browser surfaces, including the frosted-glass capsule parameter inspection
   button with lightweight vector SVG icons and GPU-accelerated micro-interactions;
-  the sidebar bottom action bar (`#anomalous-sidebar-actions`) features intuitive, highly vivid, and restrained vector SVG icons (`SIDEBAR_ICONS`):
-  (1) Scan Wizard (`#anomalous-scan-btn`): Precision circular radar scope with range ring, crosshairs, and cyan accent sweep beacon (`SCAN_RADAR_ICON_SVG`), paired with `.anomalous-radar-spinning` animation;
-  (2) Model Doctor (`#anomalous-doctor-btn`): Diagnostic medical stethoscope with cyan accent resonator bell, replacing abstract ECG waveforms;
-  (3) AI Assistant (`#anomalous-assistant-btn`): Radiant AI copilot sparkles (`✦`), replacing ambiguous wand/syringe shapes;
-  (4) Material Library (`#anomalous-materials-btn`): 3D layered preset stack, distinguishing from single cube boxes;
-  (5) Settings Hub (`#anomalous-global-settings-btn`): Precision 8-tooth mechanical engineering gear;
-  (6) Models & Floating Trigger: 4D Anomalous Hypercube Core SVG with concentric inner cube and central sparkle;
-  coupled with dynamic theme inheritance (`stroke="currentColor"`, `var(--amb-accent)`), asymmetric chamfered model cards (`border-radius: 4px 14px 4px 14px;`),
+  the sidebar bottom action bar (`#anomalous-sidebar-actions`) features intuitive, highly restrained glyphic vector SVG icons (`SIDEBAR_ICONS`):
+  (1) Scan Wizard (`#anomalous-scan-btn`): Clean circular radar scope with range ring, crosshairs, and sweep beacon (`SCAN_RADAR_ICON_SVG`), animated only during active scanning;
+  (2) Model Doctor (`#anomalous-doctor-btn`): Sleek diagnostic medical stethoscope, instantly conveying health check semantics;
+  (3) AI Assistant (`#anomalous-assistant-btn`): Radiant AI copilot sparkles (`✦`), representing copilot intelligence;
+  (4) Material Library (`#anomalous-materials-btn`): 3D layered preset stack, distinguishing from individual model boxes;
+  (5) Settings Hub (`#anomalous-global-settings-btn`): Precision 8-tooth mechanical engineering gear with elevated popover (`z-index: 99999`);
+  (6) Models & Floating Trigger: 4D Anomalous Hypercube Core SVG;
+  adhering to a "low-stimulus idle, subtle-illumination on hover" philosophy where icons use calm `currentColor` in idle state and gently illuminate on interaction;
+  critical tool workbenches (`#anomalous-doctor-panel`, `#anomalous-assistant-panel`) strictly enforce 100% opaque, solid backgrounds (`background: var(--amb-bg-page, #0b0d13) !important`) to eliminate background distraction during diagnostics;
+  the background atmosphere is fully user-controllable via a dedicated opacity slider in the settings hub (`--anomalous-bg-opacity`, defaulting to a subtle, unobtrusive 20% dark blueprint watermark, down to 0% for pure distraction-free dark mode);
+  coupled with dynamic theme inheritance, asymmetric chamfered model cards (`border-radius: 4px 14px 4px 14px;`),
   spatial depth shadows (`0 4px 20px rgba(0,0,0,0.45)`), zero-cost micro-abrasive radial lighting gradients on `#anomalous-container`,
   sharp geometric diagonal chamfering (`clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px)`),
-  seamless docking fallbacks, dynamic vertical energy breathing dividers on `#anomalous-sidebar-wrapper::after`, subtle vector watermarks
-  on empty sidebar zones (`#anomalous-sidebar-actions::before`), and a micro-floating capsule tooltip system
+  seamless docking fallbacks, subtle vector watermarks on empty sidebar zones, and a micro-floating capsule tooltip system
   (`.anomalous-tooltip-target`) providing unambiguous, bilingual action semantics across all vector tools.
 - `ui_gallery_detail.js` owns the studio modal Image Detail Workbench,
   multi-dimensional image navigation (keyboard shortcuts, floating glass arrows,

@@ -10,16 +10,16 @@ import { updateScanProgress, finishScanProgress, failScanProgress } from './scan
 
 const t = (key, params) => translate(key, params);
 
-const SCAN_RADAR_ICON_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="9.2"/><circle cx="12" cy="12" r="4.6" stroke-dasharray="2 2" stroke-opacity="0.6"/><line x1="12" y1="2.8" x2="12" y2="21.2" stroke-opacity="0.3"/><line x1="2.8" y1="12" x2="21.2" y2="12" stroke-opacity="0.3"/><line x1="12" y1="12" x2="19" y2="5" stroke="var(--amb-accent, #38bdf8)" stroke-width="2"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="16.5" cy="7.5" r="1.2" fill="var(--amb-accent, #38bdf8)"/></svg>`;
+const SCAN_RADAR_ICON_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="21" stroke-opacity="0.35"/><line x1="3" y1="12" x2="21" y2="12" stroke-opacity="0.35"/><line x1="12" y1="12" x2="18.5" y2="5.5" stroke-width="2"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>`;
 
 const SIDEBAR_ICONS = {
-    MODELS: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><path d="M12 2.2L20.8 7.3V16.7L12 21.8L3.2 16.7V7.3L12 2.2Z" stroke-width="1.8"/><line x1="12" y1="2.2" x2="12" y2="7.2" stroke-width="1.2" stroke-opacity="0.6"/><line x1="20.8" y1="7.3" x2="16.4" y2="9.7" stroke-width="1.2" stroke-opacity="0.6"/><line x1="20.8" y1="16.7" x2="16.4" y2="14.7" stroke-width="1.2" stroke-opacity="0.6"/><line x1="12" y1="21.8" x2="12" y2="17.2" stroke-width="1.2" stroke-opacity="0.6"/><line x1="3.2" y1="16.7" x2="7.6" y2="14.7" stroke-width="1.2" stroke-opacity="0.6"/><line x1="3.2" y1="7.3" x2="7.6" y2="9.7" stroke-width="1.2" stroke-opacity="0.6"/><path d="M12 7.2L16.4 9.7V14.7L12 17.2L7.6 14.7V9.7L12 7.2Z" stroke="var(--amb-accent, #38bdf8)" stroke-width="1.5"/><path d="M12 10.2 C12 11.4 11.4 12.2 10.2 12.2 C11.4 12.2 12 13.0 12 14.2 C12 13.0 12.6 12.2 13.8 12.2 C12.6 12.2 12 11.4 12 10.2 Z" fill="currentColor"/></svg>`,
+    MODELS: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><path d="M12 2.2L20.8 7.3V16.7L12 21.8L3.2 16.7V7.3L12 2.2Z" stroke-width="1.8"/><line x1="12" y1="2.2" x2="12" y2="7.2" stroke-width="1.2" stroke-opacity="0.5"/><line x1="20.8" y1="7.3" x2="16.4" y2="9.7" stroke-width="1.2" stroke-opacity="0.5"/><line x1="20.8" y1="16.7" x2="16.4" y2="14.7" stroke-width="1.2" stroke-opacity="0.5"/><line x1="12" y1="21.8" x2="12" y2="17.2" stroke-width="1.2" stroke-opacity="0.5"/><line x1="3.2" y1="16.7" x2="7.6" y2="14.7" stroke-width="1.2" stroke-opacity="0.5"/><line x1="3.2" y1="7.3" x2="7.6" y2="9.7" stroke-width="1.2" stroke-opacity="0.5"/><path d="M12 7.2L16.4 9.7V14.7L12 17.2L7.6 14.7V9.7L12 7.2Z" stroke-width="1.5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>`,
     GALLERY: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`,
     RECIPES: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v6"/><path d="M9 6h6"/><path d="M7.8 7.8l8.4 8.4"/></svg>`,
     DOCK: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>`,
     HELP: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>`,
-    DOCTOR: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M4.5 3v5a5.5 5.5 0 0 0 11 0V3"/><circle cx="4.5" cy="3" r="1.5" fill="currentColor"/><circle cx="15.5" cy="3" r="1.5" fill="currentColor"/><path d="M10 13.5v3a3.5 3.5 0 0 0 3.5 3.5h1"/><circle cx="18" cy="20" r="2.2" stroke="var(--amb-accent, #38bdf8)" stroke-width="1.8"/></svg>`,
-    ASSISTANT: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" stroke="var(--amb-accent, #38bdf8)"/><path d="M18 3v4m-2-2h4" stroke-opacity="0.8"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>`,
+    DOCTOR: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M4.5 3v5a5.5 5.5 0 0 0 11 0V3"/><circle cx="4.5" cy="3" r="1.5" fill="currentColor"/><circle cx="15.5" cy="3" r="1.5" fill="currentColor"/><path d="M10 13.5v3a3.5 3.5 0 0 0 3.5 3.5h1"/><circle cx="18" cy="20" r="2.2" stroke-width="1.8"/></svg>`,
+    ASSISTANT: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/><path d="M18.5 3.5v3m-1.5-1.5h3" stroke-opacity="0.7"/></svg>`,
     SETTINGS: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
     FOLDER: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px;margin-right:7px;"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>`,
     CHEVRON_UP: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><polyline points="18 15 12 9 6 15"/></svg>`,
@@ -52,6 +52,9 @@ export function createDOM() {
 
         const savedScale = localStorage.getItem('anomalous_ui_scale') || 1;
         container.style.setProperty('--anomalous-scale', savedScale);
+
+        const savedBgOpacity = localStorage.getItem('anomalous_bg_opacity') || '0.2';
+        container.style.setProperty('--anomalous-bg-opacity', savedBgOpacity);
 
         // Sidebar
         this.sidebarWrapper = document.createElement('div');
@@ -1148,16 +1151,17 @@ export function createDOM() {
         settingsHubModal.style.bottom = '15px';
         settingsHubModal.style.left = '100%';
         settingsHubModal.style.marginLeft = '10px';
-        settingsHubModal.style.width = '260px';
-        settingsHubModal.style.background = 'var(--comfy-menu-bg, #2a2a2a)';
-        settingsHubModal.style.border = '1px solid rgba(255,255,255,0.1)';
+        settingsHubModal.style.width = '270px';
+        settingsHubModal.style.background = 'rgba(22, 25, 34, 0.95)';
+        settingsHubModal.style.backdropFilter = 'blur(20px)';
+        settingsHubModal.style.border = '1px solid rgba(255,255,255,0.12)';
         settingsHubModal.style.borderRadius = '12px';
         settingsHubModal.style.padding = '10px';
         settingsHubModal.style.display = 'none';
         settingsHubModal.style.flexDirection = 'column';
         settingsHubModal.style.gap = '4px';
-        settingsHubModal.style.boxShadow = '0 10px 40px rgba(0,0,0,0.5)';
-        settingsHubModal.style.zIndex = '1000';
+        settingsHubModal.style.boxShadow = '0 12px 40px rgba(0,0,0,0.7)';
+        settingsHubModal.style.zIndex = '99999';
 
         const langBtn = document.createElement('button');
         langBtn.className = 'anomalous-lang-btn';
@@ -1186,6 +1190,8 @@ export function createDOM() {
             if (iBtn) { iBtn.removeAttribute('title'); iBtn.setAttribute('aria-label', t('materialLibrary')); iBtn.setAttribute('data-tooltip', t('materialLibrary')); iBtn.setAttribute('data-tooltip-pos', 'top'); }
             const sBtn = document.getElementById('anomalous-global-settings-btn');
             if (sBtn) { sBtn.removeAttribute('title'); sBtn.setAttribute('data-tooltip', t('sidebarSettings')); sBtn.setAttribute('data-tooltip-pos', 'top'); }
+            const bgLabel = document.getElementById('anomalous-bg-opacity-label');
+            if (bgLabel) bgLabel.textContent = t('sidebarBgAtmosphere');
             if (dockBtn) {
                 dockBtn.removeAttribute('title');
                 dockBtn.setAttribute('aria-label', t('dockTitle'));
@@ -1582,6 +1588,70 @@ export function createDOM() {
         scaleContainer.appendChild(scaleLabel);
         scaleContainer.appendChild(controlsWrapper);
 
+        const bgOpacityContainer = document.createElement('div');
+        bgOpacityContainer.style.display = 'flex';
+        bgOpacityContainer.style.alignItems = 'center';
+        bgOpacityContainer.style.justifyContent = 'space-between';
+        bgOpacityContainer.style.background = '#1a1a1a';
+        bgOpacityContainer.style.padding = '8px 12px';
+        bgOpacityContainer.style.borderRadius = '4px';
+        bgOpacityContainer.style.border = '2px solid #555';
+        bgOpacityContainer.style.marginBottom = '4px';
+
+        const bgOpacityLabel = document.createElement('span');
+        bgOpacityLabel.id = 'anomalous-bg-opacity-label';
+        bgOpacityLabel.textContent = t('sidebarBgAtmosphere');
+        bgOpacityLabel.style.color = '#ccc';
+        bgOpacityLabel.style.fontSize = '0.9em';
+
+        let currentBgOpacity = parseFloat(savedBgOpacity);
+
+        const bgControlsWrapper = document.createElement('div');
+        bgControlsWrapper.style.display = 'flex';
+        bgControlsWrapper.style.alignItems = 'center';
+        bgControlsWrapper.style.gap = '8px';
+
+        const bgOpacityVal = document.createElement('span');
+        bgOpacityVal.innerText = `${Math.round(currentBgOpacity * 100)}%`;
+        bgOpacityVal.style.color = '#fff';
+        bgOpacityVal.style.fontSize = '0.9em';
+        bgOpacityVal.style.minWidth = '45px';
+        bgOpacityVal.style.textAlign = 'center';
+
+        const createBgBtn = (text, delta) => {
+            const btn = document.createElement('button');
+            btn.innerText = text;
+            btn.style.background = '#333';
+            btn.style.color = '#fff';
+            btn.style.border = '1px solid #555';
+            btn.style.borderRadius = '4px';
+            btn.style.width = '24px';
+            btn.style.height = '24px';
+            btn.style.cursor = 'pointer';
+            btn.style.display = 'flex';
+            btn.style.alignItems = 'center';
+            btn.style.justifyContent = 'center';
+            btn.onmouseover = () => btn.style.background = '#444';
+            btn.onmouseout = () => btn.style.background = '#333';
+            btn.onclick = () => {
+                currentBgOpacity = Math.max(0, Math.min(1, Math.round((currentBgOpacity + delta) * 100) / 100));
+                bgOpacityVal.innerText = `${Math.round(currentBgOpacity * 100)}%`;
+                container.style.setProperty('--anomalous-bg-opacity', currentBgOpacity);
+                localStorage.setItem('anomalous_bg_opacity', currentBgOpacity);
+            };
+            return btn;
+        };
+
+        const minusBgBtn = createBgBtn('-', -0.1);
+        const plusBgBtn = createBgBtn('+', 0.1);
+
+        bgControlsWrapper.appendChild(minusBgBtn);
+        bgControlsWrapper.appendChild(bgOpacityVal);
+        bgControlsWrapper.appendChild(plusBgBtn);
+
+        bgOpacityContainer.appendChild(bgOpacityLabel);
+        bgOpacityContainer.appendChild(bgControlsWrapper);
+
         const resetBtn = document.createElement('button');
         resetBtn.id = 'anomalous-reset-btn';
         resetBtn.textContent = t('sidebarResetLayout');
@@ -1594,13 +1664,17 @@ export function createDOM() {
                 localStorage.removeItem('anomalous_height');
                 localStorage.removeItem('anomalous_docked');
                 localStorage.removeItem('anomalous_ui_scale');
+                localStorage.removeItem('anomalous_bg_opacity');
                 container.style.left = '5%';
                 container.style.top = '5%';
                 container.style.width = '90%';
                 container.style.height = '90%';
                 container.style.setProperty('--anomalous-scale', '1');
+                container.style.setProperty('--anomalous-bg-opacity', '0.2');
                 currentScale = 1;
                 scaleVal.innerText = '100%';
+                currentBgOpacity = 0.2;
+                bgOpacityVal.innerText = '20%';
                 if (container.classList.contains('anomalous-docked')) {
                     container.classList.remove('anomalous-docked');
                 }
@@ -1650,6 +1724,7 @@ export function createDOM() {
         settingsHubModal.appendChild(folderManagerBtn);
         settingsHubModal.appendChild(modelSettingsBtn);
         settingsHubModal.appendChild(scaleContainer);
+        settingsHubModal.appendChild(bgOpacityContainer);
         settingsHubModal.appendChild(langBtn);
         settingsHubModal.appendChild(helpBtn);
         settingsHubModal.appendChild(feedbackBtn);
@@ -1679,7 +1754,8 @@ export function createDOM() {
             }
         };
 
-        settingsBtn.onclick = () => {
+        settingsBtn.onclick = (e) => {
+            e.stopPropagation();
             if (settingsHubModal.style.display === 'none') {
                 settingsHubModal.style.display = 'flex';
                 // Delay adding the listener slightly to avoid triggering it on the same click
@@ -1697,7 +1773,7 @@ export function createDOM() {
         importBtn.setAttribute('aria-label', t('materialLibrary'));
         importBtn.setAttribute('data-tooltip', t('materialLibrary'));
         importBtn.setAttribute('data-tooltip-pos', 'top');
-        importBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 2L2 7l10 5 10-5-10-5Z" stroke="var(--amb-accent, #38bdf8)"/><path d="M2 12l10 5 10-5"/><path d="M2 17l10 5 10-5"/></svg>`;
+        importBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 2L2 7l10 5 10-5-10-5Z"/><path d="M2 12l10 5 10-5"/><path d="M2 17l10 5 10-5"/></svg>`;
         importBtn.style.background = 'transparent';
         importBtn.style.border = 'none';
         importBtn.style.borderRadius = '6px';
