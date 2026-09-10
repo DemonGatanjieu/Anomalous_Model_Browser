@@ -179,33 +179,17 @@ DOM or live LiteGraph state.
 - `ui_doctor.js`, `model_picker.js`, and `graph_splice.js` own assistant and
   explicit graph-edit behavior.
 - Dual-Mode Theme Architecture (双形态主题架构与材质光影精细化):
-  - **Normal Mode (Default / 标准中性黑曜石模式 - 暗物质材质水印底纹)**: Restrained, clean, neutral dark obsidian (`#0a0a0c` / `#0d0d11`) styling; overlaid with the "Dark Matter Material" AI Concept Art Watermark (`assets/normal_bg_concept.webp`) on `#anomalous-content::before` and gallery panels at ultra-low opacity (`0.04 ~ 0.05`) with `mix-blend-mode: luminosity`, banishing dead-black voids while ensuring zero interference with model thumbnails; neutral silver-slate (`#94a3b8`) active sidebar indicators and vector icons; neutral dark glass cards (`rgba(20, 20, 26, 0.85)`) and silver plate badges (`#cbd5e1`); neutral slate tooltips (`rgba(18, 20, 28, 0.95)`); cyber cyan/blue (`#38bdf8`) retained for Prompt Mixer/Workbench interactive states, dropzones, and radar animations.
-  - **Abyssal Scarlet Easter Egg Mode (`.theme-abyssal-scarlet` / 深海血族彩蛋领域 - 丝绒与暗血轻量质感)**: Strictly scoped under `.theme-abyssal-scarlet` or `html.theme-abyssal-scarlet`; eliminates all cheap neon outer glows and large-area diffused halos (`box-shadow: 0 0 xxpx`, `filter: drop-shadow`, text glows); embraces a light-absorption aristocratic gothic aesthetic with deep sunken inner shadows (`box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8)`), heavy velvet wine backgrounds (`rgba(50, 12, 22, 0.95)`), razor-sharp 1px crimson (`#dc143c`) and antique gold (`#b38728`) borders, and red-blushed silver text (`#e0d8db`); features concept art backdrops `assets/abyssal_scarlet_mansion.webp` and `assets/abyssal_bg_concept.webp`.
-  - Swept legacy system emojis across all frontend modules and `locales.js`, replacing them with pure-code vector SVG icons (`3D Cube`, `Network`, `Magic Wand`, `Folder`, `Image Frame`, `Sliders`, `Trash`, etc.) with `stroke="currentColor"` dynamic theme inheritance;
-  - Overhauled `#anomalous-header` into a centered symmetric three-column architecture (`leftGroup`, `centerGroup`, `rightGroup`), eliminating left-side visual voids/black holes;
-  - Fixed tooltip overlap hazard by re-aligning bottom toolbar tooltip triggers to center-top (`data-tooltip-pos="top"`), completely preventing horizontal button occlusion.
-- `locales.js` is the canonical runtime string catalog; `safe_dom.js` is the
-  trusted rich-text boundary.
-- `web/main.js` and `web/modules/ui_sidebar.js` own theme state management and interactive easter-egg domain toggles,
-  managing the anime gothic "Abyssal Scarlet" (深海血族) custom mode (`.theme-abyssal-scarlet`).
-  Activatable via ComfyUI settings (`Anomalous.ModelBrowser.AbyssalScarletTheme`) or by tapping the
-  sidebar brand badge 5 times with domain expansion toasts; features deep abyssal palettes (`#0a0510`),
-  asymmetric gothic button chamfers (`border-radius: 4px 12px 4px 12px`), submerged scarlet mansion empty states (`abyssal_scarlet_mansion.webp`),
-  ambient ocean current textures (`abyssal_currents_bg.webp`), and pulsating corruption error animations (`abyssal-corruption`).
-- `hash_resolver.js` is optional workflow provenance integration. Failure there
-  must not prevent the main browser from loading.
-- `web/styles.css` defines the overhauled button morphology across primary, ghost, and studio action
-  buttons (`.anomalous-btn-primary`, `.anomalous-btn-ghost`, `.anomalous-recipe-btn-primary-action`,
-  `.anomalous-btn-extract-node`, `.anomalous-workbench-action-btn`), featuring sharp asymmetric geometric
-  chamfers (`border-radius: 3px 11px 3px 11px`), pseudo-element micro-rune diamond glyphs (`::before`),
-  dynamic horizontal inflow hover lightbars (`::after` with `scaleX(1)`), and multi-layered satin glow
-  strokes replacing generic rounded-corner boxes.
-- **Global UI Design System**:
-  - **Design Tokens & Semantic Colors**: Establishes global palette tokens (`--c-amber: #f59e0b`, `--c-cyan: #06b6d4`, `--c-purple: #c084fc`, `--c-silver: #94a3b8`, `--c-blue: #38bdf8`, `--c-crimson: #e11d48`) with `currentColor` SVGs and directional diffuse drop-shadows on hover.
-  - **Custom Tooltip System (`[data-tooltip]`)**: Replaces native OS `title` attributes with frosted dark glass capsules (`rgba(10, 6, 18, 0.94)`, `backdrop-filter: blur(8px)`, crimson/neon micro-borders), supporting directional positions (`data-tooltip-pos="right"|"top"|"bottom"`).
-  - **Island UI Sidebar**: Floating console panel with 8px peripheral margins, rounded chamfers, glassmorphism backdrop, and a 2px razor-thin neon active glow indicator on selected navigation items.
-  - **Hover Reveal Gallery**: Borderless immersive cards with smooth gradient metadata reveal (`transform: translateY(0)` on hover) and breathing skeleton shimmer placeholders (`.anomalous-skeleton-shimmer`).
-  - **Workflow Recipes Bento Grid**: Supports Bento Wide featured cards (`is-featured` spanning 2 columns) with glowing circuit track metaphor backgrounds.
+  - **Base Design System Tokens (`--amb-*`)**: Scoped on `:root` and overridden under `.theme-abyssal-scarlet`. Defines unified background, panel, card, text, border, and control radii tokens (`--amb-radius-control: 6px`, `--amb-radius-card: 10px`, `--amb-radius-panel: 12px`).
+  - **Normal Mode (Default / 标准中性黑曜石图书档案馆模式)**: Restrained, clean, neutral dark obsidian (`#141519` / `#1c1e24` / `#24262e`) styling; overlaid with the "Anime Celestial Library Archive" AI Concept Art Watermark (`assets/archive_library_bg.webp`) on `#anomalous-content::before` at `0.08` opacity with `mix-blend-mode: luminosity`, creating a grand, atmospheric anime archival hall ambiance while ensuring zero interference with model covers; silver-white primary button (`#D7D9E0` with `#15171C` text); neutral card borders and restrained left-accent category lines.
+  - **Abyssal Scarlet Easter Egg Mode (`.theme-abyssal-scarlet` / 深海血族彩蛋领域 - 丝绒与暗血轻量质感)**: Strictly scoped under `.theme-abyssal-scarlet`; eliminates all cheap neon outer glows; deep gothic velvet backgrounds (`#161014` / `#21171d` / `#2b1e26`), razor-sharp crimson (`#dc143c`) and antique gold (`#b38728`) borders, crimson primary buttons (`#87384E` with `#FFF5F7` text), and concept art backdrops `assets/abyssal_scarlet_mansion.webp` and `assets/abyssal_bg_concept.webp`.
+  - **Three-Tier Button Architecture**: Unifies button morphology across primary, secondary/ghost, and auxiliary actions. Primary buttons (`.anomalous-btn-primary`, `.anomalous-recipe-btn-primary-action`) feature solid fills, 32px height, 6px border-radius, clean SVG icons, and zero pseudo-element clutter (purged legacy `::before` diamonds, `::after` gradient lightbars, text-shadows, and heavy glows); secondary ghost buttons (`.anomalous-btn-ghost`) feature subtle borders and panel backgrounds; auxiliary action buttons provide clear, non-distracting tool semantics.
+  - **Prompt Studio Dual-Column Workbench (提示词工坊两行顶栏与容器自适应)**:
+    - Topbar restructured into two clean rows: Row 1 hosts Back, shortened title ("提示词组合"), New, "更多 ▾" dropdown (containing Export), and primary Save Plan; Row 2 hosts expanded preset name and tag inputs.
+    - Insert position ("添加到前面/后面") relocated into the target node write bar, adjacent to widget selection and write triggers where execution actually happens.
+    - Left Column ("词卡库"): 280-320px width, clean cards with explicit text role badges (`[正向]` / `[负向]`), 2-line preview, single top drag hint, and secondary node/material extract buttons.
+    - Responsive Container Query: Uses `@container prompt-workbench (max-width: 850px)` to smoothly stack panels vertically in narrow dock/floating windows without clipping or forced 100% heights.
+  - **Uniform Card Skeletons**: Recipe and material cards enforce "Preview -> 2-Line Clamped Title -> Key Specs -> Footer Action Bar" order, preventing Chinese title clipping; Model cards display titles and filenames at rest without `translateY` collapse and without `backdrop-filter: blur`, fading in action buttons on hover.
+  - **Custom Tooltip System (`[data-tooltip]`)**: Solid dark capsules (`rgba(18, 20, 26, 0.98)`), 350ms standard hover delay, and keyboard focus-visible support.
 
 ## Cross-system invariants
 

@@ -276,28 +276,59 @@ function buildPromptComposer(owner, container, options = {}) {
     const topbar = text(view, 'header', '', 'anomalous-prompt-topbar');
     const topLeft = text(topbar, 'div', '', 'anomalous-prompt-topbar-left');
     if (!isSide) {
-        const backBtn = text(topLeft, 'button', `← ${t('materialBackToLibrary')}`, 'anomalous-btn-ghost');
+        const backBtn = text(topLeft, 'button', `← ${t('materialBackToLibrary')}`, 'anomalous-btn-ghost anomalous-btn-sm');
         backBtn.onclick = () => owner.showMaterials();
-        text(topLeft, 'h3', window.anomalous_browser_lang === 'zh' ? '🎛️ 提示词双栏调音工作台' : '🎛️ Prompt Studio Workbench');
+        text(topLeft, 'h3', window.anomalous_browser_lang === 'zh' ? '提示词组合' : 'Prompt Studio');
     } else {
-        text(topLeft, 'h3', `🎛️ ${window.anomalous_browser_lang === 'zh' ? '提示词调音台' : 'Prompt Mixer'}`);
+        text(topLeft, 'h3', window.anomalous_browser_lang === 'zh' ? '提示词组合' : 'Prompt Studio');
     }
 
     const topActions = text(topbar, 'div', '', 'anomalous-prompt-topbar-actions');
-    const newBtn = text(topActions, 'button', `✨ ${t('promptNewDraft')}`, 'anomalous-btn-ghost');
-    const saveBtn = text(topActions, 'button', `💾 ${t('promptSavePlan')}`, 'anomalous-btn-primary');
-    const exportBtn = text(topActions, 'button', `📤 ${t('promptExportPlan')}`, 'anomalous-btn-ghost');
+    const newBtn = text(topActions, 'button', `✨ ${t('promptNewDraft')}`, 'anomalous-btn-ghost anomalous-btn-sm');
+
+    // "More" Dropdown Menu (Secondary container holding Export)
+    const moreWrap = text(topActions, 'div', '', 'anomalous-prompt-more-wrap');
+    moreWrap.style.position = 'relative';
+    moreWrap.style.display = 'inline-flex';
+    const moreBtn = text(moreWrap, 'button', window.anomalous_browser_lang === 'zh' ? '更多 ▾' : 'More ▾', 'anomalous-btn-ghost anomalous-btn-sm');
+    const moreMenu = text(moreWrap, 'div', '', 'anomalous-prompt-more-menu');
+    moreMenu.style.display = 'none';
+    moreMenu.style.position = 'absolute';
+    moreMenu.style.top = 'calc(100% + 4px)';
+    moreMenu.style.right = '0';
+    moreMenu.style.zIndex = '100';
+    moreMenu.style.minWidth = '130px';
+    moreMenu.style.background = 'var(--amb-bg-panel, #1C1E24)';
+    moreMenu.style.border = '1px solid var(--amb-border, rgba(255, 255, 255, 0.14))';
+    moreMenu.style.borderRadius = 'var(--amb-radius-control, 6px)';
+    moreMenu.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.5)';
+    moreMenu.style.padding = '4px';
+
+    const exportBtn = text(moreMenu, 'button', `📤 ${t('promptExportPlan')}`, 'anomalous-btn-ghost anomalous-btn-sm');
+    exportBtn.style.width = '100%';
+    exportBtn.style.justifyContent = 'flex-start';
+    exportBtn.style.border = 'none';
+
+    moreBtn.onclick = (e) => {
+        e.stopPropagation();
+        const isHidden = moreMenu.style.display === 'none';
+        moreMenu.style.display = isHidden ? 'block' : 'none';
+    };
+    const closeMoreMenu = () => { moreMenu.style.display = 'none'; };
+    document.addEventListener('click', closeMoreMenu);
+
+    const saveBtn = text(topActions, 'button', `💾 ${t('promptSavePlan')}`, 'anomalous-btn-primary anomalous-btn-sm');
 
     if (isSide && options.onClose) {
-        const closeBtn = text(topActions, 'button', '✕', 'anomalous-btn-ghost');
+        const closeBtn = text(topActions, 'button', '✕', 'anomalous-btn-ghost anomalous-btn-sm');
         closeBtn.title = t('materialCollapseStudio') || '收起工坊';
         closeBtn.onclick = () => options.onClose();
     }
 
-    // 2. Metadata Strip (Preset Name, Tags, Target Insert Position)
+    // 2. Metadata Strip (Preset Name, Tags)
     const metaStrip = text(view, 'div', '', 'anomalous-prompt-meta-strip');
     const nameInput = text(metaStrip, 'input', '', 'anomalous-prompt-name-input');
-    nameInput.placeholder = window.anomalous_browser_lang === 'zh' ? '方案名称（如：赛博朋克光影组合）...' : 'Mixer preset name...';
+    nameInput.placeholder = window.anomalous_browser_lang === 'zh' ? '组合名称（如：赛博朋克光影组合）...' : 'Mixer preset name...';
     nameInput.maxLength = 120;
     nameInput.value = draft.name || '';
     nameInput.oninput = () => { draft.name = nameInput.value; };
@@ -310,7 +341,9 @@ function buildPromptComposer(owner, container, options = {}) {
         draft.tags = tagsInput.value.split(/[\s,，\n\r]+/).map(val => val.trim()).filter(Boolean);
     };
 
-    const posWrap = text(metaStrip, 'label', '', 'anomalous-prompt-insert-pos');
+    // Dedicated Insert Position control (relocated to Target Write Bar)
+    const posWrap = document.createElement('label');
+    posWrap.className = 'anomalous-prompt-insert-pos';
     text(posWrap, 'span', `${t('promptInsertPosition')}:`);
     const posSelect = text(posWrap, 'select', '');
     for (const value of ['after', 'before']) {
@@ -326,12 +359,12 @@ function buildPromptComposer(owner, container, options = {}) {
     const workbenchGrid = text(view, 'div', '', 'anomalous-prompt-workbench-grid');
 
     // =========================================================================
-    // LEFT COLUMN: Ready-to-use Prompt Cards (成型提示词库)
+    // LEFT COLUMN: Ready-to-use Prompt Cards (词卡库)
     // =========================================================================
     const leftPanel = text(workbenchGrid, 'section', '', 'anomalous-workbench-left-panel');
     const leftHeader = text(leftPanel, 'div', '', 'anomalous-workbench-col-header');
     const leftTitleWrap = text(leftHeader, 'div', '', 'anomalous-workbench-col-title');
-    leftTitleWrap.innerHTML = `<strong>${window.anomalous_browser_lang === 'zh' ? '成型提示词库' : 'Prompt Library'}</strong> <span class="anomalous-sub-counter"></span>`;
+    leftTitleWrap.innerHTML = `<strong>${window.anomalous_browser_lang === 'zh' ? '词卡库' : 'Prompt Library'}</strong> <span class="anomalous-sub-counter"></span><span style="font-size:11px;color:var(--amb-text-muted,#94a3b8);font-weight:normal;margin-left:6px;">${window.anomalous_browser_lang === 'zh' ? '· 拖拽卡片至右侧' : '· Drag to mixer'}</span>`;
 
     // Button: Create New Custom Card (placed in header right, never wraps)
     const newCardTriggerBtn = text(leftHeader, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm');
@@ -342,7 +375,7 @@ function buildPromptComposer(owner, container, options = {}) {
     const leftSubActions = text(leftPanel, 'div', '', 'anomalous-workbench-sub-actions');
 
     // Button 1: Extract Prompts from Selected Canvas Node
-    const extractNodeBtn = text(leftSubActions, 'button', '', 'anomalous-btn-primary anomalous-btn-sm anomalous-btn-extract-node');
+    const extractNodeBtn = text(leftSubActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-extract-node');
     extractNodeBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>${window.anomalous_browser_lang === 'zh' ? '从节点提取' : 'From Node'}`;
     extractNodeBtn.title = window.anomalous_browser_lang === 'zh' ? '读取 ComfyUI 画布当前选中节点的提示词文本并生成词卡' : 'Extract prompt text from selected canvas node into cards';
 
@@ -868,6 +901,11 @@ function buildPromptComposer(owner, container, options = {}) {
             badge.style.backgroundColor = meta.bg;
             badge.style.borderColor = meta.border;
 
+            // Explicit Role Badge (Positive / Negative)
+            const isNeg = card.role === 'negative';
+            const roleBadge = text(header, 'span', isNeg ? (window.anomalous_browser_lang === 'zh' ? '负向' : 'Neg') : (window.anomalous_browser_lang === 'zh' ? '正向' : 'Pos'), 'anomalous-source-role-badge');
+            roleBadge.style.cssText = `font-size:10px;padding:1px 5px;border-radius:3px;font-weight:600;background:${isNeg ? 'rgba(244,63,94,0.15)' : 'rgba(56,189,248,0.15)'};color:${isNeg ? '#fb7185' : '#38bdf8'};border:1px solid ${isNeg ? 'rgba(244,63,94,0.3)' : 'rgba(56,189,248,0.3)'};flex-shrink:0;`;
+
             if (card.persisted === false || (card.id.startsWith('node_') && !card.persisted)) {
                 const unsavedBadge = text(header, 'span', `[${t('promptCardUnsaved')}]`, 'anomalous-unsaved-badge');
                 unsavedBadge.title = window.anomalous_browser_lang === 'zh' ? '临时提取词卡，尚未持久化到素材库' : 'Unsaved temporary card';
@@ -876,15 +914,15 @@ function buildPromptComposer(owner, container, options = {}) {
             const title = text(header, 'strong', card.title, 'anomalous-source-card-title');
             title.title = card.title;
 
-            // Card Body snippet
+            // Card Body snippet (max 2 lines, legible font size)
             const snippet = text(cardEl, 'div', card.content, 'anomalous-source-card-snippet');
             snippet.title = card.content;
 
             // Card Footer Actions
             const footer = text(cardEl, 'div', '', 'anomalous-source-card-footer');
-            text(footer, 'span', '🖐️ 抓取拖入右侧', 'anomalous-source-card-drag-hint');
-
             const actions = text(footer, 'div', '', 'anomalous-source-card-actions');
+            actions.style.marginLeft = 'auto';
+
             const copyBtn = text(actions, 'button', '📋', 'anomalous-source-action-btn');
             copyBtn.title = t('copy');
             copyBtn.onclick = async (e) => {
@@ -909,7 +947,7 @@ function buildPromptComposer(owner, container, options = {}) {
             }
 
             const dockBtn = text(actions, 'button', '', 'anomalous-source-action-btn is-dock');
-            dockBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${t('promptAddToPlan')}`;
+            dockBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${window.anomalous_browser_lang === 'zh' ? '加入组合' : 'Add to Plan'}`;
             dockBtn.title = window.anomalous_browser_lang === 'zh' ? '加入当前拼装组合' : 'Add into mixer track';
             dockBtn.onclick = (e) => {
                 e.stopPropagation();
@@ -1279,6 +1317,7 @@ function buildPromptComposer(owner, container, options = {}) {
         info.textContent = t('materialApplyingTo', { name: materialNodeHeading(node), id: node.id });
 
         const actions = text(targetBar, 'div', '', 'anomalous-prompt-target-actions');
+        actions.appendChild(posWrap);
         const widgetSelect = text(actions, 'select', '');
         widgetSelect.setAttribute('aria-label', t('promptTargetWidget'));
         for (const target of targets) {
