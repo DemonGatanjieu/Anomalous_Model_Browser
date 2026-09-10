@@ -150,8 +150,13 @@ browsing, editing, or already stored data.
 
 Tooltips support directional positioning via `data-tooltip-pos="top|right|bottom|left"`
 with matching triangular pointer arrows and non-overlapping positioning.
+Header navigation maintains dedicated groupings: left branding, center view tabs,
+and right actions retaining both the docking toggle (`#anomalous-dock-btn`) and the close button (`#anomalous-close`).
 Interactive buttons follow global `.anomalous-btn-*` hierarchies (`primary`, `danger`,
-`ghost`) with signature asymmetric chamfers and condensed, tight rim glows rather
-than unbounded diffused shadows or ad-hoc inline border radii. Major panels use
-low-opacity concept art backdrops with `overlay` blend mode rather than synthetic CSS
-checkered grids.
+`ghost`) with signature asymmetric chamfers and condensed, razor-sharp 2px-4px rim glows (`box-shadow: 0 0 4px 1px ...`)
+rather than unbounded blurry halos or ad-hoc inline border radii.
+Major panels utilize dual fallback concept backdrops (`url(...)`, `radial-gradient(...)`) with `#0d080c`
+base fills to guarantee visual richness even when image assets are loading or missing.
+Card text masks and containers strictly eliminate cold blue/slate tones in favor of pure dark and deep crimson
+color schemes (`linear-gradient(to top, rgba(15, 5, 10, 0.95), transparent)`).
+

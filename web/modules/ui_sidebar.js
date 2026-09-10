@@ -271,8 +271,13 @@ export function createDOM() {
         };
 
         const dockBtn = document.createElement('button');
+        dockBtn.id = 'anomalous-dock-btn';
+        dockBtn.className = 'anomalous-tooltip-target';
         dockBtn.innerHTML = SIDEBAR_ICONS.DOCK;
-        dockBtn.title = t('dockTitle');
+        dockBtn.removeAttribute('title');
+        dockBtn.setAttribute('aria-label', t('dockTitle'));
+        dockBtn.setAttribute('data-tooltip', t('dockTitle'));
+        dockBtn.setAttribute('data-tooltip-pos', 'bottom');
         dockBtn.onclick = () => {
             container.classList.toggle('anomalous-docked');
             if (container.classList.contains('anomalous-docked')) {
@@ -1133,8 +1138,7 @@ export function createDOM() {
         closeBtn.innerHTML = '&times;';
         closeBtn.onclick = () => this.close();
 
-
-
+        rightGroup.appendChild(dockBtn);
         rightGroup.appendChild(closeBtn);
 
         header.appendChild(leftGroup);
@@ -1184,6 +1188,12 @@ export function createDOM() {
             if (iBtn) { iBtn.removeAttribute('title'); iBtn.setAttribute('aria-label', t('materialLibrary')); iBtn.setAttribute('data-tooltip', t('materialLibrary')); iBtn.setAttribute('data-tooltip-pos', 'top'); }
             const sBtn = document.getElementById('anomalous-global-settings-btn');
             if (sBtn) { sBtn.removeAttribute('title'); sBtn.setAttribute('data-tooltip', t('sidebarSettings')); sBtn.setAttribute('data-tooltip-pos', 'top'); }
+            if (dockBtn) {
+                dockBtn.removeAttribute('title');
+                dockBtn.setAttribute('aria-label', t('dockTitle'));
+                dockBtn.setAttribute('data-tooltip', t('dockTitle'));
+                dockBtn.setAttribute('data-tooltip-pos', 'bottom');
+            }
 
             // Reset dynamic panels so they re-render in new language
             if (window.anomalousBrowserInstance) {

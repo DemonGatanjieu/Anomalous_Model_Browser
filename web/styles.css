@@ -329,9 +329,17 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     font-size: 2em;
     cursor: pointer;
     color: var(--error-text, #ff4444);
-    position: absolute;
-    right: 20px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+#anomalous-close:hover {
+    color: #ff6b6b;
+    transform: scale(1.15);
 }
 
 #anomalous-grid {
@@ -406,7 +414,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     left: 0;
     right: 0;
     padding: 24px 12px 10px;
-    background: linear-gradient(to top, rgba(10, 6, 18, 0.95) 0%, rgba(10, 6, 18, 0.78) 55%, transparent 100%);
+    background: linear-gradient(to top, rgba(15, 5, 10, 0.95), transparent);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     display: flex;
@@ -422,15 +430,15 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-card:hover .anomalous-card-labels {
     transform: translateY(0);
-    background: linear-gradient(to top, rgba(10, 6, 18, 0.98) 0%, rgba(10, 6, 18, 0.88) 75%, transparent 100%);
+    background: linear-gradient(to top, rgba(15, 5, 10, 0.98) 0%, rgba(15, 5, 10, 0.88) 75%, transparent 100%);
 }
 
 .theme-abyssal-scarlet .anomalous-card-labels {
-    background: linear-gradient(to top, rgba(16, 7, 24, 0.96) 0%, rgba(16, 7, 24, 0.8) 55%, transparent 100%);
+    background: linear-gradient(to top, rgba(15, 5, 10, 0.95), transparent);
 }
 
 .theme-abyssal-scarlet .anomalous-card:hover .anomalous-card-labels {
-    background: linear-gradient(to top, rgba(16, 7, 24, 0.98) 0%, rgba(16, 7, 24, 0.9) 75%, transparent 100%);
+    background: linear-gradient(to top, rgba(15, 5, 10, 0.98) 0%, rgba(15, 5, 10, 0.9) 75%, transparent 100%);
 }
 
 .anomalous-card-title {
@@ -592,7 +600,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     flex-direction: column;
     flex: 1;
     overflow: hidden;
-    background-color: #0e0c13;
+    background-color: #0d080c;
     position: relative;
 }
 
@@ -600,7 +608,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url('assets/bg_concept.webp');
+    background-color: #0d080c;
+    background-image: url('assets/bg_concept.webp'), radial-gradient(circle at 50% 50%, rgba(220, 20, 60, 0.03) 0%, transparent 60%);
     background-size: cover;
     background-position: center;
     mix-blend-mode: overlay;
@@ -4026,7 +4035,7 @@ dialog.anomalous-gallery-viewer[open] {
     margin: 0;
     border-radius: 4px;
     border: 1.5px solid rgba(255, 255, 255, 0.22);
-    background-color: rgba(15, 23, 42, 0.5);
+    background-color: rgba(20, 10, 16, 0.6);
     cursor: pointer;
     position: relative;
     outline: none;
@@ -7117,7 +7126,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     margin: 0;
     border-radius: 4px;
     border: 1.5px solid rgba(255, 255, 255, 0.22);
-    background-color: rgba(15, 23, 42, 0.5);
+    background-color: rgba(20, 10, 16, 0.6);
     cursor: pointer;
     position: relative;
     outline: none;
@@ -9002,7 +9011,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     gap: 8px;
     padding: 7px 14px;
     border-radius: 20px;
-    background: rgba(15, 23, 42, 0.9);
+    background: rgba(20, 10, 16, 0.92);
     border: 1.5px solid rgba(139, 92, 246, 0.55);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 16px rgba(139, 92, 246, 0.2);
     color: #f1f5f9;
@@ -9015,7 +9024,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-material-drag-hint.is-target-valid {
     border-color: #8b5cf6;
-    background: rgba(13, 37, 42, 0.94);
+    background: rgba(30, 10, 20, 0.94);
     box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75), 0 0 24px rgba(139, 92, 246, 0.45);
     color: #fca5a5;
 }
@@ -9074,7 +9083,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-prompt-meta-strip input {
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(20, 10, 16, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 6px;
     padding: 6px 10px;
@@ -9105,7 +9114,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-prompt-insert-pos select {
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(20, 10, 16, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 6px;
     padding: 5px 8px;
@@ -9272,7 +9281,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     gap: 10px;
     padding: 10px 14px;
     border-radius: 10px;
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(22, 10, 18, 0.65);
     border: 1px solid rgba(139, 92, 246, 0.2);
 }
 
@@ -9298,7 +9307,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     width: 440px;
     max-width: 90vw;
     height: 100vh;
-    background: rgba(18, 22, 30, 0.96);
+    background: rgba(20, 10, 16, 0.96);
     border-left: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: -10px 0 40px rgba(0, 0, 0, 0.75);
     z-index: 10005;
@@ -9338,7 +9347,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     box-sizing: border-box;
     padding: 7px 12px;
     border-radius: 6px;
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(22, 10, 18, 0.65);
     border: 1px solid rgba(255, 255, 255, 0.12);
     color: #f1f5f9;
     font-size: 0.82rem;
@@ -9414,7 +9423,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-drawer-item-btn:hover {
     background: #8b5cf6;
-    color: #0f172a;
+    color: #1a050d;
     border-color: #8b5cf6;
     font-weight: 600;
 }
@@ -9431,7 +9440,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     justify-content: space-between;
     gap: 8px;
     padding: 8px 12px;
-    background: rgba(15, 23, 42, 0.55);
+    background: rgba(22, 10, 18, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 10px;
     flex-wrap: wrap;
@@ -9541,7 +9550,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-mixer-empty-notice {
     padding: 32px 16px;
     text-align: center;
-    background: rgba(15, 23, 42, 0.35);
+    background: rgba(22, 10, 18, 0.45);
     border: 1px dashed rgba(255, 255, 255, 0.12);
     border-radius: 12px;
 }
@@ -9550,7 +9559,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-mixer-block {
     position: relative;
     border-radius: 8px;
-    background: rgba(22, 27, 38, 0.75);
+    background: rgba(24, 12, 18, 0.8);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     backdrop-filter: blur(10px);
@@ -9575,7 +9584,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-mixer-block.is-bypassed {
     opacity: 0.42;
     filter: grayscale(0.85);
-    background: rgba(15, 23, 42, 0.4);
+    background: rgba(20, 8, 14, 0.5);
     border-left-color: #64748b !important;
 }
 
@@ -9873,7 +9882,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     right: 24px;
     padding: 10px 16px;
     border-radius: 8px;
-    background: rgba(15, 23, 42, 0.94);
+    background: rgba(22, 10, 18, 0.95);
     border: 1px solid rgba(139, 92, 246, 0.5);
     color: #f1f5f9;
     font-size: 0.84rem;
@@ -9905,7 +9914,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     width: 100%;
     height: 100%;
     box-sizing: border-box;
-    background: radial-gradient(circle at 15% 15%, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.85) 100%);
+    background: radial-gradient(circle at 15% 15%, rgba(30, 12, 20, 0.4) 0%, rgba(15, 5, 10, 0.92) 100%);
     overflow: hidden;
 }
 
@@ -9955,7 +9964,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     min-height: 0;
     height: 100%;
     border-radius: 12px;
-    background: rgba(18, 24, 38, 0.92);
+    background: rgba(20, 10, 16, 0.92);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
     padding: 14px 14px 12px;
@@ -10066,7 +10075,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     gap: 8px;
     padding: 10px 12px;
     border-radius: 8px;
-    background: rgba(15, 23, 42, 0.85);
+    background: rgba(22, 10, 16, 0.9);
     border: 1px solid rgba(139, 92, 246, 0.35);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     animation: fadeInSlideDown 0.2s ease;
@@ -10134,7 +10143,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     text-align: center;
     color: #94a3b8;
     font-size: 0.82rem;
-    background-color: rgba(15, 23, 42, 0.45);
+    background-color: rgba(20, 8, 14, 0.55);
     background-image: url('assets/empty_library_concept.webp');
     background-size: cover;
     background-repeat: no-repeat;
@@ -10153,7 +10162,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at center, rgba(15, 23, 42, 0.55) 0%, rgba(10, 15, 26, 0.88) 100%);
+    background: radial-gradient(circle at center, rgba(20, 8, 14, 0.6) 0%, rgba(12, 5, 10, 0.92) 100%);
     pointer-events: none;
     z-index: -1;
 }
@@ -10168,7 +10177,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 /* Individual Source Prompt Card (Restrained Dark Grey Base with Category Left Border) */
 .anomalous-source-prompt-card {
     border-radius: 8px;
-    background: #222630;
+    background: #1c141a;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-left: 3.5px solid #64748b;
     padding: 8px 10px;
@@ -10197,7 +10206,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-source-prompt-card:hover {
-    background: #2a303e;
+    background: #261822;
     border-color: rgba(255, 255, 255, 0.16);
     transform: translateY(-1px);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
@@ -10294,7 +10303,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-source-action-btn.is-dock:hover {
     background: #8b5cf6;
-    color: #0f172a;
+    color: #1a050d;
 }
 
 .anomalous-source-action-btn.is-save-lib {
@@ -10306,7 +10315,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-source-action-btn.is-save-lib:hover {
     background: #dc143c;
-    color: #0f172a;
+    color: #1a050d;
 }
 
 .anomalous-form-meta-row {
@@ -10399,7 +10408,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 24px 16px;
     border-radius: 10px;
     border: 2px dashed rgba(255, 255, 255, 0.14);
-    background: rgba(15, 23, 42, 0.35);
+    background: rgba(20, 8, 14, 0.45);
     transition: all 0.2s ease;
 }
 
@@ -10665,7 +10674,7 @@ html.theme-abyssal-scarlet,
 .theme-abyssal-scarlet .anomalous-recipe-btn-primary-action:hover {
     border-color: #ff3366 !important;
     color: #ffffff !important;
-    box-shadow: 0 0 6px 1px rgba(220, 20, 60, 0.8), inset 0 0 5px rgba(220, 20, 60, 0.45) !important;
+    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.8), inset 0 0 3px rgba(220, 20, 60, 0.45) !important;
     transform: translateY(-1px);
     filter: brightness(1.15);
 }
@@ -10684,7 +10693,7 @@ html.theme-abyssal-scarlet,
 
 .theme-abyssal-scarlet .anomalous-btn-extract-node:hover {
     border-color: #ff3366 !important;
-    box-shadow: 0 0 6px 1px rgba(255, 51, 102, 0.85), inset 0 0 5px rgba(220, 20, 60, 0.45) !important;
+    box-shadow: 0 0 4px 1px rgba(255, 51, 102, 0.85), inset 0 0 3px rgba(220, 20, 60, 0.45) !important;
     transform: translateY(-1px);
     filter: brightness(1.18);
 }
@@ -10701,7 +10710,7 @@ html.theme-abyssal-scarlet,
 .theme-abyssal-scarlet .anomalous-btn-extract-node::after,
 .theme-abyssal-scarlet .anomalous-workbench-action-btn.is-primary::after {
     background: linear-gradient(90deg, #dc143c, #ff3366, #ff758c) !important;
-    box-shadow: 0 0 6px 1px #ff3366 !important;
+    box-shadow: 0 0 4px 1px #ff3366 !important;
 }
 
 .theme-abyssal-scarlet .anomalous-btn-ghost {
@@ -10715,7 +10724,7 @@ html.theme-abyssal-scarlet,
 .theme-abyssal-scarlet .anomalous-btn-ghost:hover {
     background: rgba(50, 12, 30, 0.8) !important;
     border-color: #ff3366 !important;
-    box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.6), 0 0 5px 1px rgba(220, 20, 60, 0.5), inset 0 0 4px rgba(220, 20, 60, 0.3) !important;
+    box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.6), 0 0 4px 1px rgba(220, 20, 60, 0.5), inset 0 0 3px rgba(220, 20, 60, 0.3) !important;
     color: #ffffff !important;
     text-shadow: 0 0 4px rgba(255, 51, 102, 0.8) !important;
 }
@@ -10732,7 +10741,7 @@ html.theme-abyssal-scarlet,
 .theme-abyssal-scarlet .anomalous-workbench-action-btn.is-primary:hover {
     border-color: #ff3366 !important;
     color: #ffffff !important;
-    box-shadow: 0 0 6px 1px rgba(220, 20, 60, 0.75), inset 0 0 5px rgba(220, 20, 60, 0.35) !important;
+    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.75), inset 0 0 3px rgba(220, 20, 60, 0.35) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-workbench-action-btn.is-save {
@@ -10745,7 +10754,7 @@ html.theme-abyssal-scarlet,
 
 .theme-abyssal-scarlet .anomalous-workbench-action-btn.is-save:hover {
     border-color: #ff3366 !important;
-    box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.55), 0 0 5px 1px rgba(220, 20, 60, 0.5) !important;
+    box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.55), 0 0 4px 1px rgba(220, 20, 60, 0.5) !important;
     color: #ffffff !important;
 }
 
@@ -10763,7 +10772,7 @@ html.theme-abyssal-scarlet,
 
 .theme-abyssal-scarlet .anomalous-mixer-smart-sort-btn:hover {
     border-color: #ff3366 !important;
-    box-shadow: 0 0 5px 1px rgba(220, 20, 60, 0.65), inset 0 0 4px rgba(220, 20, 60, 0.35) !important;
+    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.65), inset 0 0 3px rgba(220, 20, 60, 0.35) !important;
     transform: translateY(-1px);
     filter: brightness(1.15);
 }
@@ -10782,7 +10791,7 @@ html.theme-abyssal-scarlet,
 .theme-abyssal-scarlet .anomalous-workbench-generation-btn:hover:not(:disabled) {
     border-color: #ff3366 !important;
     color: #ffffff !important;
-    box-shadow: 0 0 6px 1px rgba(220, 20, 60, 0.8), inset 0 0 5px rgba(220, 20, 60, 0.45) !important;
+    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.8), inset 0 0 3px rgba(220, 20, 60, 0.45) !important;
     filter: brightness(1.15);
 }
 
@@ -10948,28 +10957,48 @@ button:hover .anomalous-btn-icon {
     color: #f43f5e !important;
     background: rgba(244, 63, 94, 0.12) !important;
     border: 1px solid rgba(244, 63, 94, 0.3) !important;
+    box-shadow: 0 0 4px 1px rgba(244, 63, 94, 0.75) !important;
 }
 
 #anomalous-assistant-btn:hover {
     color: #a855f7 !important;
     background: rgba(168, 85, 247, 0.12) !important;
     border: 1px solid rgba(168, 85, 247, 0.3) !important;
+    box-shadow: 0 0 4px 1px rgba(168, 85, 247, 0.75) !important;
+}
+
+#anomalous-materials-btn:hover {
+    color: #f59e0b !important;
+    background: rgba(245, 158, 11, 0.12) !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+    box-shadow: 0 0 4px 1px rgba(245, 158, 11, 0.8) !important;
 }
 
 #anomalous-global-settings-btn:hover {
     color: #dc143c !important;
     background: rgba(220, 20, 60, 0.12) !important;
     border: 1px solid rgba(220, 20, 60, 0.3) !important;
+    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.75) !important;
 }
 
 /* Abyssal Scarlet Mode overrides for Task 8 icon buttons */
 .theme-abyssal-scarlet #anomalous-sidebar-actions button:hover {
     border-color: #ff3366 !important;
-    box-shadow: 0 0 5px 1px rgba(220, 20, 60, 0.75), inset 0 0 3px rgba(220, 20, 60, 0.4) !important;
+    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.8), inset 0 0 2px rgba(220, 20, 60, 0.4) !important;
 }
 
 .theme-abyssal-scarlet #anomalous-sidebar-actions button:hover svg {
     filter: drop-shadow(0 0 2px rgba(255, 51, 102, 0.85)) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-materials-btn:hover {
+    color: #f59e0b !important;
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 4px 1px rgba(245, 158, 11, 0.8), inset 0 0 2px rgba(245, 158, 11, 0.4) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-materials-btn:hover svg {
+    filter: drop-shadow(0 0 2px rgba(245, 158, 11, 0.85)) !important;
 }
 
 /* 11. Task 9: Master Container Geometric Details, Watermarks & Floating Tooltips */
@@ -11281,20 +11310,27 @@ button:hover .anomalous-btn-icon {
     border-color: rgba(220, 20, 60, 0.45) !important;
     color: #fff !important;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(220, 20, 60, 0.25) !important;
+    box-shadow: 0 0 4px 1px rgba(220, 20, 60, 0.5) !important;
+}
+
+#anomalous-dock-btn {
+    padding: 8px 12px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
 }
 
 #anomalous-header button.active {
     background: linear-gradient(135deg, rgba(220, 20, 60, 0.3) 0%, rgba(114, 47, 55, 0.4) 100%) !important;
     border-color: rgba(220, 20, 60, 0.65) !important;
     color: #fff !important;
-    box-shadow: 0 0 10px rgba(220, 20, 60, 0.3) !important;
+    box-shadow: 0 0 8px rgba(220, 20, 60, 0.3) !important;
 }
 
 #anomalous-gallery-panel,
 .anomalous-gallery-grid,
 .anomalous-gallery-container {
-    background-color: #0c0812 !important;
+    background-color: #0d080c !important;
     position: relative;
 }
 
@@ -11303,7 +11339,8 @@ button:hover .anomalous-btn-icon {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url('assets/bg_concept.webp');
+    background-color: #0d080c;
+    background-image: url('assets/bg_concept.webp'), radial-gradient(circle at 50% 50%, rgba(220, 20, 60, 0.03) 0%, transparent 60%);
     background-size: cover;
     background-position: center;
     /* 最关键的一步：使用 overlay 过滤高光，透明度压低，绝对不影响前方文字阅读 */
