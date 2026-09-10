@@ -246,12 +246,12 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 #anomalous-container {
     width: 90%;
     height: 90%;
-    background: var(--bg-color, #131318);
+    background-color: var(--amb-bg-page, #0b0d13);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 4px;
     clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     overflow: hidden;
     pointer-events: auto;
     position: absolute;
@@ -259,6 +259,27 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     top: 5%;
     container-type: inline-size;
     font-size: calc(16px * var(--anomalous-scale, 1));
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65);
+}
+
+#anomalous-container::before {
+    display: block;
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: 
+        radial-gradient(ellipse 95% 85% at 50% 35%, rgba(11, 13, 19, 0.12) 0%, rgba(11, 13, 19, 0.55) 100%),
+        url('assets/archive_library_bg.webp');
+    background-size: cover;
+    background-position: center 25%;
+    opacity: 0.65;
+    pointer-events: none;
+    z-index: 0;
+}
+
+#anomalous-container > * {
+    position: relative;
+    z-index: 1;
 }
 
 .anomalous-docked {
@@ -724,23 +745,12 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     flex-direction: column;
     flex: 1;
     overflow: hidden;
-    background-color: var(--amb-bg-page, #0b0d13);
+    background: transparent;
     position: relative;
 }
 
 #anomalous-content::before {
-    display: block;
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: 
-        radial-gradient(ellipse 90% 80% at 50% 50%, rgba(11, 13, 19, 0.15) 0%, rgba(11, 13, 19, 0.55) 100%),
-        url('assets/archive_library_bg.webp');
-    background-size: cover;
-    background-position: center 25%;
-    opacity: 0.65;
-    pointer-events: none;
-    z-index: 0;
+    display: none;
 }
 
 #anomalous-content > * {
@@ -752,23 +762,53 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     flex-direction: row;
 }
 
-/* Island UI: Floating Sidebar Navigation Console */
+/* Island UI: Floating Sidebar Navigation Console (Unified Frosted Glass Blend) */
 #anomalous-sidebar-wrapper {
     width: 250px;
     margin: 8px 0 8px 8px;
     height: calc(100% - 16px);
-    background: rgba(20, 20, 26, 0.82);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(12, 14, 20, 0.52);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     position: relative;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.3s ease;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     overflow: hidden;
     box-sizing: border-box;
+}
+
+.anomalous-brand-badge {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #e2e8f0 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+    backdrop-filter: blur(8px) !important;
+    letter-spacing: 1px !important;
+}
+
+#anomalous-sidebar input[type="text"] {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(8px) !important;
+    color: #fff !important;
+    transition: all 0.2s ease !important;
+}
+
+#anomalous-sidebar input[type="text"]:focus {
+    border-color: rgba(255, 255, 255, 0.35) !important;
+    background: rgba(255, 255, 255, 0.09) !important;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.08) !important;
+}
+
+#anomalous-sidebar-actions {
+    background: rgba(12, 14, 20, 0.35) !important;
+    backdrop-filter: blur(12px) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
 #anomalous-sidebar-wrapper::after {
@@ -11556,16 +11596,18 @@ button:hover .anomalous-btn-icon {
    Easter Egg Mode: Gothic Vampire Abyssal Scarlet Expansion
    ========================================================================== */
 
-/* 1. Normal Mode Master Header (Clean Neutral Dark Studio) */
+/* 1. Normal Mode Master Header (Unified Frosted Glass Blend) */
 #anomalous-header {
     height: 60px;
-    background: #131318 !important;
+    background: rgba(12, 14, 20, 0.48) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
     padding: 0 20px !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
     cursor: move;
     position: relative;
     z-index: 10;
@@ -11603,8 +11645,8 @@ button:hover .anomalous-btn-icon {
 
 #anomalous-header button {
     margin-right: 0;
-    padding: 9px 18px;
-    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 18px;
+    background: rgba(255, 255, 255, 0.06);
     color: #e2e8f0;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 6px;
@@ -11613,8 +11655,9 @@ button:hover .anomalous-btn-icon {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 1.02em;
+    font-size: 0.98em;
     font-weight: 500;
+    backdrop-filter: blur(8px);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
