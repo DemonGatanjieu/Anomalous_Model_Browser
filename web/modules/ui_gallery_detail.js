@@ -673,11 +673,11 @@ function buildModelsSection(orderedRefs, groups, onOpenModel) {
         wrap.appendChild(groupEl);
     };
 
-    renderGroup(t('materialModelBase') || '🎯 主模型 / UNet', groups.base, 'is-base');
-    renderGroup(t('materialModelLora') || '🎨 LoRA 微调层', groups.lora, 'is-lora');
-    renderGroup(t('materialModelClip') || '👁️ 文本编码器 (CLIP)', groups.clip, 'is-clip');
-    renderGroup(t('materialModelVae') || '🖼️ VAE 编码器', groups.vae, 'is-vae');
-    renderGroup(t('materialModelOther') || '⚡ 其它模型组件', groups.other, 'is-other');
+    renderGroup(t('materialModelBase') || '主模型 / UNet', groups.base, 'is-base');
+    renderGroup(t('materialModelLora') || 'LoRA 微调层', groups.lora, 'is-lora');
+    renderGroup(t('materialModelClip') || '文本编码器 (CLIP)', groups.clip, 'is-clip');
+    renderGroup(t('materialModelVae') || 'VAE 编码器', groups.vae, 'is-vae');
+    renderGroup(t('materialModelOther') || '其它模型组件', groups.other, 'is-other');
 
     return wrap;
 }
@@ -1075,10 +1075,10 @@ async function renderInspectorContent(data, item) {
     tabsBar.className = 'anomalous-workbench-tabs-bar';
 
     const tabs = [
-        { id: 'specs', label: `📊 ${t('workbenchTabOverview') || '核心参数'}` },
-        { id: 'prompts', label: `💬 ${t('workbenchTabPrompts') || '提示词'}` },
-        { id: 'models', label: `🧩 ${t('workbenchTabModels') || '模型与LoRA'}` },
-        { id: 'nodes', label: `⚙️ ${t('workbenchTabNodes') || '工作流节点'}` },
+        { id: 'specs', label: t('workbenchTabOverview') || '核心参数', icon: '<svg style="width:13px;height:13px;margin-right:5px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>' },
+        { id: 'prompts', label: t('workbenchTabPrompts') || '提示词', icon: '<svg style="width:13px;height:13px;margin-right:5px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' },
+        { id: 'models', label: t('workbenchTabModels') || '模型与LoRA', icon: '<svg style="width:13px;height:13px;margin-right:5px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>' },
+        { id: 'nodes', label: t('workbenchTabNodes') || '工作流节点', icon: '<svg style="width:13px;height:13px;margin-right:5px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>' },
     ];
 
     const tabPanels = {};
@@ -1090,7 +1090,7 @@ async function renderInspectorContent(data, item) {
         tabBtn.className = (wb.activeTab === tDef.id)
             ? 'anomalous-workbench-tab-btn is-active'
             : 'anomalous-workbench-tab-btn';
-        tabBtn.textContent = tDef.label;
+        tabBtn.innerHTML = `${tDef.icon}<span>${tDef.label}</span>`;
 
         tabBtn.onclick = () => {
             wb.activeTab = tDef.id;

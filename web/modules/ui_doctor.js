@@ -1394,8 +1394,11 @@ export function _openGalleryReplacer(node, w, options = {}) {
             folders.forEach(folderPath => {
                 const button = document.createElement('button');
                 const depth = folderPath ? folderPath.split('/').length - 1 : 0;
-            const label = folderPath ? folderPath.split('/').pop() : t('pickerAllModels');
-                button.textContent = `${folderPath ? '📂' : '📦'} ${label} (${folderCounts.get(folderPath) || 0})`;
+                const label = folderPath ? folderPath.split('/').pop() : t('pickerAllModels');
+                const folderIcon = folderPath
+                    ? '<svg style="width:13px;height:13px;vertical-align:-2px;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'
+                    : '<svg style="width:13px;height:13px;vertical-align:-2px;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>';
+                button.innerHTML = `${folderIcon}${escapeHtml(label)} (${folderCounts.get(folderPath) || 0})`;
                 button.title = folderPath || label;
                 button.style.cssText = `text-align:left;padding:7px 8px 7px ${8 + depth * 14}px;border-radius:6px;border:none;cursor:pointer;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${selectedFolder === folderPath ? '#fff' : '#aaa'};background:${selectedFolder === folderPath ? 'rgba(25,118,210,0.45)' : 'transparent'};`;
                 button.onclick = () => {
@@ -1460,7 +1463,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
                         image.style.cssText = 'width:100%;height:100%;object-fit:cover;';
                         previewBox.appendChild(image);
                     } else {
-                        previewBox.textContent = '🖼️';
+                        previewBox.innerHTML = '<span style="display:inline-block;opacity:0.25;"><svg style="width:28px;height:28px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span>';
                     }
                     if (isCurrent) {
                         const badge = document.createElement('span');
@@ -1698,6 +1701,23 @@ function renderMaterialPresets(node, container, forceRefresh) {
             const empty = document.createElement('div');
             empty.style.cssText = 'font-size:11px;color:#666;text-align:center;padding:10px;background:rgba(0,0,0,.2);border-radius:8px;border:1px dashed rgba(255,255,255,.1);';
             empty.textContent = t('materialNoNodePresets');
+    const loader = document.createElement('div');
+    loader.style.cssText = 'font-size:12px;color:#555;text-align:center;padding:10px;';
+    loader.textContent = t('loading');
+    section.append(header, loader);
+    container.appendChild(section);
+
+    const url = `/anomalous/materials/by_node_type?type=${encodeURIComponent(node.type)}${forceRefresh ? '&refresh=1' : ''}`;
+    fetch(url, { cache: 'no-store' }).then(response => {
+        if (!response.ok) throw new Error('material preset request failed');
+        return response.json();
+    }).then(payload => {
+        loader.remove();
+        const materials = Array.isArray(payload.materials) ? payload.materials : [];
+        if (!materials.length) {
+            const empty = document.createElement('div');
+            empty.style.cssText = 'font-size:11px;color:#666;text-align:center;padding:10px;background:rgba(0,0,0,.2);border-radius:8px;border:1px dashed rgba(255,255,255,.1);';
+            empty.textContent = t('materialNoNodePresets');
             section.appendChild(empty);
             return;
         }
@@ -1705,26 +1725,19 @@ function renderMaterialPresets(node, container, forceRefresh) {
             const group = document.createElement('div');
             group.style.cssText = 'display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid rgba(92,202,180,.16);border-radius:9px;background:rgba(92,202,180,.045);';
             const name = document.createElement('strong');
-            name.textContent = `🖼️ ${material.name || t('materialUntitled')}`;
+            name.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>${escapeHtml(material.name || t('materialUntitled'))}`;
             name.style.cssText = 'font-size:12px;color:#bcebe1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
             group.appendChild(name);
             for (const block of (Array.isArray(material.blocks) ? material.blocks : [])) {
                 const apply = document.createElement('button');
                 const suffix = material.blocks.length > 1 ? ` #${block.occurrence}` : '';
-                const label = `✨ ${block.title || block.type}${suffix}`;
+                const label = `${block.title || block.type}${suffix}`;
                 apply.textContent = label;
                 apply.style.cssText = 'padding:8px 10px;border:1px solid rgba(255,255,255,.1);border-radius:6px;background:rgba(255,255,255,.05);color:#fff;text-align:left;cursor:pointer;';
                 apply.onclick = () => {
                     apply.disabled = true;
                     try {
                         applyMaterialToSelectedNode(node, block, material.workflow_hashes, group);
-                        apply.textContent = `✅ ${t('materialNodeApplied')}`;
-                        apply.style.background = 'rgba(46,139,87,.6)';
-
-                    } catch (error) {
-                        console.error('[Anomalous] Failed to apply material node parameters:', error);
-                        apply.textContent = `⚠️ ${t('recipeParameterApplyError')}`;
-                        apply.style.background = 'rgba(180,60,60,.55)';
                     }
                     window.setTimeout(() => {
                         apply.disabled = false;

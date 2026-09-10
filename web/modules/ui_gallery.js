@@ -152,7 +152,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
 
                     const delBtn = document.createElement('button');
                     delBtn.className = 'anomalous-gallery-delete';
-                    delBtn.innerHTML = '🗑️';
+                    delBtn.innerHTML = '<svg style="width:14px;height:14px;vertical-align:middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>';
                     delBtn.title = t('galleryDelete');
 
                     delBtn.onclick = (e) => {
@@ -189,7 +189,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
                         btnRow.style.gap = '12px';
 
                         const confirmBtn = document.createElement('button');
-                        confirmBtn.textContent = `🗑️ ${t('galleryDelete')}`;
+                        confirmBtn.innerHTML = `<svg style="width:14px;height:14px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>${t('galleryDelete')}`;
                         confirmBtn.style.background = '#dc3545';
                         confirmBtn.style.color = '#fff';
                         confirmBtn.style.border = 'none';

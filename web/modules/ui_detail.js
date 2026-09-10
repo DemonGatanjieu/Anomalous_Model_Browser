@@ -485,7 +485,7 @@ export function showDetail(model) {
             notesTitle.style.letterSpacing = '0.5px';
 
             const notesEditBtn = document.createElement('button');
-            notesEditBtn.innerHTML = '✏️';
+            notesEditBtn.innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
             notesEditBtn.title = t('detailEditNotes');
             notesEditBtn.style.background = 'transparent';
             notesEditBtn.style.border = 'none';
@@ -858,7 +858,7 @@ export function showEditModal(model) {
         coverRow.style.gap = '8px';
 
         const galleryBtn = document.createElement('button');
-        galleryBtn.textContent = `🖼️ ${t('detailPickGallery')}`;
+        galleryBtn.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>${t('detailPickGallery')}`;
         galleryBtn.style.padding = '8px';
         galleryBtn.style.background = '#303134';
         galleryBtn.style.color = '#8ab4f8';
@@ -875,7 +875,7 @@ export function showEditModal(model) {
         };
 
         const localBtn = document.createElement('button');
-        localBtn.textContent = `📁 ${t('detailUploadLocal')}`;
+        localBtn.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${t('detailUploadLocal')}`;
         localBtn.style.padding = '8px';
         localBtn.style.background = '#303134';
         localBtn.style.color = '#8ab4f8';
@@ -1641,7 +1641,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
 
                 
                 } else {
-                    imgContainer.innerHTML = '<span style="font-size:40px;opacity:0.2;">📄</span>';
+                    imgContainer.innerHTML = '<span style="display:inline-block;opacity:0.25;"><svg style="width:40px;height:40px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>';
                 }
                 card.appendChild(imgContainer);
                 
@@ -1882,7 +1882,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                     leftPart.style.display = 'flex';
                     leftPart.style.alignItems = 'center';
                     leftPart.style.gap = '8px';
-                    leftPart.innerHTML = `<span style="color:#9aa0a6">📁</span> <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">${escapeHtml(fData.name)}</span> <span style="color:#5f6368;font-size:12px">(${escapeHtml(fData.model_count)})</span>`;
+                    leftPart.innerHTML = `<span style="display:inline-flex;align-items:center;color:#9aa0a6"><svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span> <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">${escapeHtml(fData.name)}</span> <span style="color:#5f6368;font-size:12px">(${escapeHtml(fData.model_count)})</span>`;
                     
                     const badge = document.createElement('div');
                     badge.className = 'selection-badge';

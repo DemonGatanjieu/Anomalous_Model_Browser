@@ -1082,11 +1082,15 @@ function renderOverview(content, owner, recipe, references, finish) {
     overviewActions.style.alignItems = 'center';
     overviewActions.style.gap = '8px';
 
+    const heroAppendIcon = recipe?.workflow_scope === 'partial'
+        ? `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`
+        : `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
     const heroAppend = button(
         overviewActions,
-        `${recipe?.workflow_scope === 'partial' ? '🧩' : '🚀'} ${recipeCanvasActionLabel(recipe)}`,
+        '',
         'anomalous-recipe-btn-primary-action',
     );
+    heroAppend.innerHTML = `${heroAppendIcon}${recipeCanvasActionLabel(recipe)}`;
     heroAppend.style.padding = '8px 16px';
     heroAppend.style.fontSize = '0.88rem';
     heroAppend.onclick = () => {
@@ -1100,11 +1104,13 @@ function renderOverview(content, owner, recipe, references, finish) {
     appendText(more, 'summary', t('notebookMore'));
     overviewActions.appendChild(more);
 
-    const heroEdit = button(more, '✏️ ' + t('recipeEdit'), 'anomalous-btn-ghost');
+    const heroEdit = button(more, '', 'anomalous-btn-ghost');
+    heroEdit.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>${t('recipeEdit')}`;
     heroEdit.title = t('recipeEdit');
     heroEdit.onclick = () => finish('edit');
 
-    const heroExport = button(more, '📥 ' + t('recipeExport'), 'anomalous-btn-ghost');
+    const heroExport = button(more, '', 'anomalous-btn-ghost');
+    heroExport.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${t('recipeExport')}`;
     heroExport.title = t('recipeExport');
     heroExport.onclick = async () => {
         try {
@@ -1164,7 +1170,7 @@ function renderOverview(content, owner, recipe, references, finish) {
     const advanced = document.createElement('details');
     advanced.className = 'anomalous-recipe-advanced-info';
     advanced.style.marginBottom = '14px';
-    appendText(advanced, 'summary', `⚙️ ${t('recipeAdvancedInfo')}`);
+    appendText(advanced, 'summary', t('recipeAdvancedInfo'));
     const fingerprint = document.createElement('div');
     fingerprint.className = 'anomalous-recipe-advanced-row';
     appendText(fingerprint, 'span', `${t('recipeDetailFingerprint')}:`);
@@ -2031,7 +2037,7 @@ function renderRawNodesLazy(parent, source, options = {}) {
 
     const summary = document.createElement('summary');
     summary.className = 'anomalous-recipe-raw-nodes-summary';
-    summary.textContent = `⚙️ ${t('recipeRawNodesToggle')} (${ordered.length} ${t('recipeRawNodesCount')}) ▾`;
+    summary.textContent = `${t('recipeRawNodesToggle')} (${ordered.length} ${t('recipeRawNodesCount')}) ▾`;
     details.appendChild(summary);
 
     let selecting = false;
@@ -2436,14 +2442,16 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         } finally {
             readCurrent.disabled = false;
             readCurrent.classList.remove('is-busy');
-            readCurrent.textContent = originalLabel;
+            readCurrent.innerHTML = originalLabel;
         }
     };
 
-    const readCurrent = button(sidebarActions, '💾 ' + t('recipeParameterReadCurrent'), 'anomalous-preset-btn-primary');
+    const readCurrent = button(sidebarActions, '', 'anomalous-preset-btn-primary');
+    readCurrent.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>${t('recipeParameterReadCurrent')}`;
     readCurrent.onclick = readCurrentHandler;
 
-    const newSnapshot = button(sidebarActions, '➕ ' + t('recipeParameterNew'), 'anomalous-preset-btn-secondary');
+    const newSnapshot = button(sidebarActions, '', 'anomalous-preset-btn-secondary');
+    newSnapshot.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${t('recipeParameterNew')}`;
     newSnapshot.onclick = () => {
         const draft = cloneJson({
             workflow: baseSource.workflow,
@@ -2532,7 +2540,8 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 );
             };
 
-            const rename = button(actions, '✏️', 'anomalous-preset-item-btn');
+            const rename = button(actions, '', 'anomalous-preset-item-btn');
+            rename.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
             rename.title = t('recipeParameterRename');
             rename.onclick = async (e) => {
                 e.stopPropagation();
@@ -2559,7 +2568,8 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 }
             };
 
-            const remove = button(actions, '🗑️', 'anomalous-preset-item-btn is-delete');
+            const remove = button(actions, '', 'anomalous-preset-item-btn is-delete');
+            remove.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
             remove.title = t('recipeParameterDelete');
             remove.onclick = async (e) => {
                 e.stopPropagation();
@@ -2625,7 +2635,8 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     const consoleActions = document.createElement('div');
     consoleActions.className = 'anomalous-preset-console-actions';
 
-    const applyButton = button(consoleActions, '🚀 ' + t('recipeParameterApply'), 'anomalous-preset-btn-primary');
+    const applyButton = button(consoleActions, '', 'anomalous-preset-btn-primary');
+    applyButton.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>${t('recipeParameterApply')}`;
     applyButton.style.padding = '8px 16px';
     applyButton.style.fontSize = '0.88rem';
     const applyStatus = appendText(consoleActions, 'small', '', 'anomalous-recipe-header-status');
@@ -2665,7 +2676,8 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     );
 
     if (parameterState?.selectedFilename) {
-        const renameHeadingBtn = button(consoleActions, '✏️ ' + t('recipeParameterRename'), 'anomalous-btn-ghost');
+        const renameHeadingBtn = button(consoleActions, '', 'anomalous-btn-ghost');
+        renameHeadingBtn.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>${t('recipeParameterRename')}`;
         renameHeadingBtn.onclick = async () => {
             const newName = await anomalousPrompt(t('recipeParameterRenamePrompt'), currentName);
             if (newName === null || !newName.trim() || newName.trim() === currentName) return;
@@ -2698,7 +2710,8 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         const thumb = document.createElement('img');
         thumb.src = outputImageUrl(gallery.images[0]);
         compactGallery.appendChild(thumb);
-        appendText(compactGallery, 'span', `🖼️ ${gallery.images.length}`, 'anomalous-preset-compact-gallery-badge');
+        const galleryBadge = appendText(compactGallery, 'span', '', 'anomalous-preset-compact-gallery-badge');
+        galleryBadge.innerHTML = `<svg style="width:11px;height:11px;margin-right:3px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>${gallery.images.length}`;
         compactGallery.onclick = () => {
             const dialog = document.createElement('dialog');
             dialog.className = 'anomalous-recipe-gallery-dialog';
@@ -2724,7 +2737,8 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 card.appendChild(image);
                 const actions = document.createElement('div');
                 actions.className = 'anomalous-recipe-gallery-card-actions';
-                const details = button(actions, `🔎 ${t('materialViewDetails')}`, 'anomalous-btn-primary');
+                const details = button(actions, '', 'anomalous-btn-primary');
+                details.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>${t('materialViewDetails')}`;
                 details.onclick = event => {
                     event.stopPropagation();
                     const images = gallery.images;
@@ -2761,13 +2775,13 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     bentoGrid.className = 'anomalous-recipe-bento-grid';
 
     const bentoItems = [
-        { label: t('recipeDetailSteps') || '步数', val: params.steps, icon: '⚡' },
-        { label: t('recipeDetailCFG') || 'CFG Scale', val: params.cfg, icon: '🎯' },
-        { label: t('recipeDetailSampler') || '采样器', val: params.sampler_name || params.samplers, icon: '🎲' },
-        { label: t('recipeDetailScheduler') || '调度器', val: params.scheduler, icon: '📈' },
-        { label: t('recipeDetailResolution') || '分辨率', val: resDisplay || params.resolution, icon: '📐' },
-        { label: t('recipeDetailDenoise') || '降噪比', val: params.denoise, icon: '🌊' },
-        { label: t('recipeDetailSeed') || '随机种子', val: params.seed, icon: '🌱', isSeed: true },
+        { label: t('recipeDetailSteps') || '步数', val: params.steps, icon: '<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' },
+        { label: t('recipeDetailCFG') || 'CFG Scale', val: params.cfg, icon: '<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>' },
+        { label: t('recipeDetailSampler') || '采样器', val: params.sampler_name || params.samplers, icon: '<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="8" cy="8" r="1.5"/><circle cx="16" cy="16" r="1.5"/><circle cx="12" cy="12" r="1.5"/></svg>' },
+        { label: t('recipeDetailScheduler') || '调度器', val: params.scheduler, icon: '<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' },
+        { label: t('recipeDetailResolution') || '分辨率', val: resDisplay || params.resolution, icon: '<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>' },
+        { label: t('recipeDetailDenoise') || '降噪比', val: params.denoise, icon: '<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>' },
+        { label: t('recipeDetailSeed') || '随机种子', val: params.seed, icon: '<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>', isSeed: true },
     ].filter(item => item.val !== undefined && item.val !== null && item.val !== '');
 
     if (bentoItems.length > 0) {
@@ -2781,7 +2795,10 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
             labelRow.style.justifyContent = 'space-between';
             labelRow.style.alignItems = 'center';
 
-            appendText(labelRow, 'span', `${item.icon} ${item.label}`, 'anomalous-recipe-bento-label');
+            const bentoLabel = document.createElement('span');
+            bentoLabel.className = 'anomalous-recipe-bento-label';
+            bentoLabel.innerHTML = `${item.icon}${item.label}`;
+            labelRow.appendChild(bentoLabel);
 
             if (item.isSeed) {
                 const copySeedBtn = document.createElement('button');
@@ -2818,14 +2835,15 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
         if (baseModelVal) {
             const modelCard = document.createElement('div');
             modelCard.className = 'anomalous-recipe-model-highlight-card';
-            modelCard.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:1.1rem;">🧠</span><span style="font-size:0.75rem;color:#94a3b8;text-transform:uppercase;font-weight:600;">${t('recipeDetailBaseModel') || '底模'}</span></div><div style="font-size:0.9rem;font-weight:600;color:#f8fafc;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(String(baseModelVal))}">${escapeHtml(String(baseModelVal))}</div>`;
+            modelCard.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><span style="display:inline-flex;align-items:center;color:#dc143c;"><svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span style="font-size:0.75rem;color:#94a3b8;text-transform:uppercase;font-weight:600;">${t('recipeDetailBaseModel') || '底模'}</span></div><div style="font-size:0.9rem;font-weight:600;color:#f8fafc;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(String(baseModelVal))}">${escapeHtml(String(baseModelVal))}</div>`;
             modelsDeck.appendChild(modelCard);
         }
 
         if (Array.isArray(params.loras) && params.loras.length > 0) {
             const loraSection = document.createElement('div');
             loraSection.className = 'anomalous-recipe-lora-stack';
-            appendText(loraSection, 'div', `⚡ ${t('recipeDetailLoraSummary') || 'LoRA 阵容'} (${params.loras.length})`, 'anomalous-recipe-bento-label');
+            const loraHeader = appendText(loraSection, 'div', '', 'anomalous-recipe-bento-label');
+            loraHeader.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>${t('recipeDetailLoraSummary') || 'LoRA 阵容'} (${params.loras.length})`;
 
             const loraGrid = document.createElement('div');
             loraGrid.style.display = 'grid';

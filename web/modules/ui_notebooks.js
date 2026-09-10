@@ -139,7 +139,8 @@ export async function showNotebooks() {
         btnRow.style.gap = '5px';
 
         const createBtn = document.createElement('button');
-        createBtn.innerHTML = `➕ <span class="anomalous-nb-create-text">${t('createNotebook')}</span>`;
+        const createBtnHtml = `<svg style="width:13px;height:13px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span class="anomalous-nb-create-text">${t('createNotebook')}</span>`;
+        createBtn.innerHTML = createBtnHtml;
         createBtn.className = 'anomalous-btn-primary';
 
         const createInput = document.createElement('input');
@@ -168,7 +169,7 @@ export async function showNotebooks() {
                     createInput.value = '';
                 }
                 createInput.style.display = 'none';
-                createBtn.innerHTML = `➕ <span class="anomalous-nb-create-text">${t('createNotebook')}</span>`;
+                createBtn.innerHTML = createBtnHtml;
             }
         };
 
@@ -217,7 +218,7 @@ export async function refreshNotebooks(autoOpenFirst = false) {
                     if (this.currentNotebook && this.currentNotebook.filename === nb.filename) {
                         item.classList.add('active');
                     }
-                    item.innerHTML = `<span class="anomalous-nb-item-icon">📄&nbsp;</span><span class="anomalous-nb-item-text">${escapeHtml(nb.name)}</span>`;
+                    item.innerHTML = `<span class="anomalous-nb-item-icon"><svg style="width:13px;height:13px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span><span class="anomalous-nb-item-text">${escapeHtml(nb.name)}</span>`;
                     item.onclick = () => {
                         this.currentNotebook = nb;
                         this.renderNotebookEditor();

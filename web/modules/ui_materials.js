@@ -266,8 +266,9 @@ function buildMaterialDetailHeader(owner, material) {
     const headerActions = document.createElement('div');
     headerActions.className = 'anomalous-library-detail-actions';
     if ((material.capabilities || []).includes('open_workflow')) {
-        const open = text(headerActions, 'button', `🚀 ${t('materialOpenWorkflow')}`, 'anomalous-btn-primary');
+        const open = text(headerActions, 'button', '', 'anomalous-btn-primary');
         open.type = 'button';
+        open.innerHTML = `<svg style="width:14px;height:14px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>${t('materialOpenWorkflow')}`;
         open.onclick = async () => {
             open.disabled = true;
             try {
@@ -282,8 +283,9 @@ function buildMaterialDetailHeader(owner, material) {
     const edit = text(headerActions, 'button', t('materialEditDetails'), 'anomalous-btn-ghost');
     edit.type = 'button';
     edit.onclick = () => toggleMaterialEditor(owner, material, header);
-    const remove = text(headerActions, 'button', `🗑️ ${t('materialDelete')}`, 'anomalous-btn-ghost');
+    const remove = text(headerActions, 'button', '', 'anomalous-btn-ghost');
     remove.type = 'button';
+    remove.innerHTML = `<svg style="width:14px;height:14px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>${t('materialDelete')}`;
     remove.onclick = () => deleteMaterial(owner, material);
     header.appendChild(headerActions);
 
@@ -515,7 +517,7 @@ function renderMaterialCard(owner, material) {
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'anomalous-material-card-action-btn anomalous-material-card-delete';
-    remove.innerHTML = '🗑️';
+    remove.innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>';
     remove.title = t('materialDelete');
     remove.onclick = (e) => {
         e.stopPropagation();
@@ -529,7 +531,7 @@ function renderMaterialCard(owner, material) {
         const quickOpen = document.createElement('button');
         quickOpen.type = 'button';
         quickOpen.className = 'anomalous-material-card-action-btn anomalous-material-card-quick-load';
-        quickOpen.innerHTML = '🚀';
+        quickOpen.innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
         quickOpen.title = t('materialOpenWorkflow');
         quickOpen.onclick = async (e) => {
             e.stopPropagation();

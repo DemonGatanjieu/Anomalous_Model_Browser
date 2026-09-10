@@ -331,21 +331,24 @@ function buildPromptComposer(owner, container, options = {}) {
     const leftPanel = text(workbenchGrid, 'section', '', 'anomalous-workbench-left-panel');
     const leftHeader = text(leftPanel, 'div', '', 'anomalous-workbench-col-header');
     const leftTitleWrap = text(leftHeader, 'div', '', 'anomalous-workbench-col-title');
-    leftTitleWrap.innerHTML = `📚 <strong>${window.anomalous_browser_lang === 'zh' ? '成型提示词库' : 'Prompt Library'}</strong> <span class="anomalous-sub-counter"></span>`;
+    leftTitleWrap.innerHTML = `<strong>${window.anomalous_browser_lang === 'zh' ? '成型提示词库' : 'Prompt Library'}</strong> <span class="anomalous-sub-counter"></span>`;
 
     // Button: Create New Custom Card (placed in header right, never wraps)
-    const newCardTriggerBtn = text(leftHeader, 'button', `➕ ${window.anomalous_browser_lang === 'zh' ? '新建词卡' : 'New Card'}`, 'anomalous-btn-ghost anomalous-btn-sm');
+    const newCardTriggerBtn = text(leftHeader, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm');
+    newCardTriggerBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${window.anomalous_browser_lang === 'zh' ? '新建词卡' : 'New Card'}`;
     newCardTriggerBtn.title = window.anomalous_browser_lang === 'zh' ? '新建并保存一张提示词卡片' : 'Create a new prompt card';
 
     // Sub-action bar: Node extract and Material Library import (full-width, balanced)
     const leftSubActions = text(leftPanel, 'div', '', 'anomalous-workbench-sub-actions');
 
     // Button 1: Extract Prompts from Selected Canvas Node
-    const extractNodeBtn = text(leftSubActions, 'button', `🎯 ${window.anomalous_browser_lang === 'zh' ? '从节点提取' : 'From Node'}`, 'anomalous-btn-primary anomalous-btn-sm anomalous-btn-extract-node');
+    const extractNodeBtn = text(leftSubActions, 'button', '', 'anomalous-btn-primary anomalous-btn-sm anomalous-btn-extract-node');
+    extractNodeBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>${window.anomalous_browser_lang === 'zh' ? '从节点提取' : 'From Node'}`;
     extractNodeBtn.title = window.anomalous_browser_lang === 'zh' ? '读取 ComfyUI 画布当前选中节点的提示词文本并生成词卡' : 'Extract prompt text from selected canvas node into cards';
 
     // Button 2: One-click Sync / Import from Material Library
-    const importMaterialsBtn = text(leftSubActions, 'button', `📥 ${window.anomalous_browser_lang === 'zh' ? '从素材库导入' : 'Import from Library'}`, 'anomalous-btn-ghost anomalous-btn-sm');
+    const importMaterialsBtn = text(leftSubActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm');
+    importMaterialsBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${window.anomalous_browser_lang === 'zh' ? '从素材库导入' : 'Import from Library'}`;
     importMaterialsBtn.title = window.anomalous_browser_lang === 'zh' ? '读取素材库，一键把素材库里沉淀的提示词捞入当前工坊词库' : 'Read and import all prompts from Material Library into workbench';
 
     // Search and category filters bar
@@ -360,10 +363,10 @@ function buildPromptComposer(owner, container, options = {}) {
     const leftCategoryPills = text(leftPanel, 'div', '', 'anomalous-workbench-category-pills');
     const filterCats = [
         { id: 'all', label: window.anomalous_browser_lang === 'zh' ? '全部' : 'All' },
-        { id: 'base', label: window.anomalous_browser_lang === 'zh' ? '💎 通用' : '💎 Base' },
-        { id: 'style', label: window.anomalous_browser_lang === 'zh' ? '🎨 风格' : '🎨 Style' },
-        { id: 'subject', label: window.anomalous_browser_lang === 'zh' ? '🧍 主体' : '🧍 Subject' },
-        { id: 'trigger', label: window.anomalous_browser_lang === 'zh' ? '⚡ 触发' : '⚡ LoRA' },
+        { id: 'base', label: window.anomalous_browser_lang === 'zh' ? '通用底模' : 'Base' },
+        { id: 'style', label: window.anomalous_browser_lang === 'zh' ? '风格氛围' : 'Style' },
+        { id: 'subject', label: window.anomalous_browser_lang === 'zh' ? '主体内容' : 'Subject' },
+        { id: 'trigger', label: window.anomalous_browser_lang === 'zh' ? '触发词' : 'Trigger' },
     ];
     filterCats.forEach(cat => {
         const pill = text(leftCategoryPills, 'button', cat.label, `anomalous-workbench-pill${sourceFilterCategory === cat.id ? ' is-active' : ''}`);
@@ -394,13 +397,16 @@ function buildPromptComposer(owner, container, options = {}) {
     const rightActions = text(rightHeader, 'div', '', 'anomalous-mixer-actions');
 
     // Right quick extract: suck into right mixer directly
-    const rightSuckNodeBtn = text(rightActions, 'button', `🎯 ${t('promptReadSelectedNode')}`, 'anomalous-btn-ghost anomalous-btn-sm');
+    const rightSuckNodeBtn = text(rightActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm');
+    rightSuckNodeBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>${t('promptReadSelectedNode')}`;
     rightSuckNodeBtn.title = window.anomalous_browser_lang === 'zh' ? '直接将画布选中节点的提示词作为积木吸入当前拼装台' : 'Extract node prompt directly into current mixer track';
 
-    const smartSortBtn = text(rightActions, 'button', `🪄 ${t('promptSortByCategory')}`, 'anomalous-mixer-smart-sort-btn');
+    const smartSortBtn = text(rightActions, 'button', '', 'anomalous-mixer-smart-sort-btn');
+    smartSortBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>${t('promptSortByCategory')}`;
     smartSortBtn.title = window.anomalous_browser_lang === 'zh' ? '按 [通用底模 ➔ 风格氛围 ➔ 主体内容 ➔ LoRA/触发词] 自动排序' : 'Auto sort: [Base ➔ Style ➔ Subject ➔ Trigger]';
 
-    const clearRightBtn = text(rightActions, 'button', '🧹', 'anomalous-btn-ghost');
+    const clearRightBtn = text(rightActions, 'button', '', 'anomalous-btn-ghost');
+    clearRightBtn.innerHTML = '<svg style="width:13px;height:13px;vertical-align:middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
     clearRightBtn.title = window.anomalous_browser_lang === 'zh' ? '清空当前拼装池' : 'Clear current track';
 
     // Blocks Container & Dropzone
@@ -541,13 +547,13 @@ function buildPromptComposer(owner, container, options = {}) {
 
         if (extractedCount > 0) {
             renderSourceCardsList();
-            showWorkbenchToast(`🎯 ${window.anomalous_browser_lang === 'zh'
+            showWorkbenchToast(window.anomalous_browser_lang === 'zh'
                 ? `已成功从节点【${heading}】提取 ${extractedCount} 段提示词${intoRightMixer ? '并加入组合' : '并加入左侧词库'}！`
-                : `Successfully extracted ${extractedCount} prompts from [${heading}]!`}`);
+                : `Successfully extracted ${extractedCount} prompts from [${heading}]!`);
         } else {
             anomalousAlert(window.anomalous_browser_lang === 'zh'
-                ? `⚠️ 选中的节点【${heading}】文本内容为空！`
-                : `⚠️ The text fields in node [${heading}] are empty!`);
+                ? `选中的节点【${heading}】文本内容为空！`
+                : `The text fields in node [${heading}] are empty!`);
         }
     }
 
@@ -557,12 +563,14 @@ function buildPromptComposer(owner, container, options = {}) {
     let materialSyncController = null;
     async function syncMaterialsIntoSourceDeck() {
         materialSyncController?.abort();
+        if (materialSyncController) {
+            materialSyncController.abort();
+        }
         const controller = new AbortController();
         materialSyncController = controller;
 
         importMaterialsBtn.disabled = true;
-        importMaterialsBtn.textContent = `⏳ ${window.anomalous_browser_lang === 'zh' ? '同步中...' : 'Syncing...'}`;
-        let addedCount = 0;
+        importMaterialsBtn.textContent = window.anomalous_browser_lang === 'zh' ? '正在同步素材...' : 'Syncing...';
 
         try {
             const res = await fetch('/anomalous/materials?category=prompts&limit=150', { signal: controller.signal });
@@ -583,7 +591,6 @@ function buildPromptComposer(owner, container, options = {}) {
                                 persisted: true,
                                 filename: item.filename,
                             });
-                            addedCount++;
                         }
                         if (prompts.negative && !sourceCards.some(c => c.content === prompts.negative.trim())) {
                             sourceCards.push({
@@ -595,7 +602,6 @@ function buildPromptComposer(owner, container, options = {}) {
                                 persisted: true,
                                 filename: item.filename,
                             });
-                            addedCount++;
                         }
                     } catch (err) {}
                 }
@@ -603,9 +609,9 @@ function buildPromptComposer(owner, container, options = {}) {
 
             if (controller.signal.aborted || !view.isConnected) return;
             renderSourceCardsList();
-            showWorkbenchToast(`📥 ${window.anomalous_browser_lang === 'zh'
+            showWorkbenchToast(window.anomalous_browser_lang === 'zh'
                 ? (addedCount > 0 ? `已从素材库成功同步并导入 ${addedCount} 条提示词卡片！` : '素材库提示词已是最新状态，未发现新词条。')
-                : `Synced from Material Library: ${addedCount} new prompts added!`}`);
+                : `Synced from Material Library: ${addedCount} new prompts added!`);
         } catch (error) {
             if (error.name !== 'AbortError') {
                 await anomalousAlert(t('materialLoadError'));
@@ -614,7 +620,7 @@ function buildPromptComposer(owner, container, options = {}) {
             if (materialSyncController === controller) {
                 materialSyncController = null;
                 importMaterialsBtn.disabled = false;
-                importMaterialsBtn.textContent = `📥 ${window.anomalous_browser_lang === 'zh' ? '从素材库导入' : 'Import from Library'}`;
+                importMaterialsBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${window.anomalous_browser_lang === 'zh' ? '从素材库导入' : 'Import from Library'}`;
             }
         }
     }
@@ -893,7 +899,8 @@ function buildPromptComposer(owner, container, options = {}) {
             };
 
             if (card.persisted === false || (card.id.startsWith('node_') && !card.persisted)) {
-                const saveCardBtn = text(actions, 'button', `💾 ${t('promptSaveCard')}`, 'anomalous-source-action-btn is-save-lib');
+                const saveCardBtn = text(actions, 'button', '', 'anomalous-source-action-btn is-save-lib');
+                saveCardBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>${t('promptSaveCard')}`;
                 saveCardBtn.title = window.anomalous_browser_lang === 'zh' ? '将此卡片存入素材库' : 'Save this card to Material Library';
                 saveCardBtn.onclick = async (e) => {
                     e.stopPropagation();
@@ -901,7 +908,8 @@ function buildPromptComposer(owner, container, options = {}) {
                 };
             }
 
-            const dockBtn = text(actions, 'button', `➕ ${t('promptAddToPlan')}`, 'anomalous-source-action-btn is-dock');
+            const dockBtn = text(actions, 'button', '', 'anomalous-source-action-btn is-dock');
+            dockBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${t('promptAddToPlan')}`;
             dockBtn.title = window.anomalous_browser_lang === 'zh' ? '加入当前拼装组合' : 'Add into mixer track';
             dockBtn.onclick = (e) => {
                 e.stopPropagation();
@@ -919,8 +927,8 @@ function buildPromptComposer(owner, container, options = {}) {
         const negCount = draft.plan.parts.filter(p => p.role === 'negative').length;
 
         const tabs = [
-            { key: 'positive', label: `✨ ${window.anomalous_browser_lang === 'zh' ? '正向拼装台' : 'Positive'} (${posCount})` },
-            { key: 'negative', label: `🚫 ${window.anomalous_browser_lang === 'zh' ? '负向拼装台' : 'Negative'} (${negCount})` },
+            { key: 'positive', label: `${window.anomalous_browser_lang === 'zh' ? '正向拼装台' : 'Positive'} (${posCount})` },
+            { key: 'negative', label: `${window.anomalous_browser_lang === 'zh' ? '负向拼装台' : 'Negative'} (${negCount})` },
         ];
 
         for (const tab of tabs) {
@@ -968,7 +976,13 @@ function buildPromptComposer(owner, container, options = {}) {
         if (!currentRoleParts.length) {
             const dropzoneNotice = text(blocksContainer, 'div', '', 'anomalous-assembly-dropzone');
             dropzoneNotice.innerHTML = `
-                <div style="font-size: 30px; margin-bottom: 8px;">📥</div>
+                <div style="margin-bottom: 12px; opacity: 0.7;">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                </div>
                 <div style="font-size: 0.92rem; font-weight: 600; color: #e2e8f0;">${window.anomalous_browser_lang === 'zh' ? '将左侧的成型提示词拖放到这里摆放与拼装' : 'Drop prompt cards from the left panel here'}</div>
                 <div style="font-size: 0.76rem; color: #64748b; margin-top: 4px;">${window.anomalous_browser_lang === 'zh' ? '支持自由调换次序，点击【智能理顺】自动按画质底模➔风格➔主体➔LoRA排序' : 'Drag to reorder anytime, or click Smart Sort to auto-align.'}</div>
             `;
@@ -1257,12 +1271,12 @@ function buildPromptComposer(owner, container, options = {}) {
         const targets = promptWidgetTargets(node);
 
         if (!node || !targets.length) {
-            text(targetBar, 'span', `💡 ${t('promptSelectTextNode')}`, 'anomalous-prompt-target-info');
+            text(targetBar, 'span', t('promptSelectTextNode'), 'anomalous-prompt-target-info');
             return;
         }
 
         const info = text(targetBar, 'div', '', 'anomalous-prompt-target-info');
-        info.textContent = `🎯 ${t('materialApplyingTo', { name: materialNodeHeading(node), id: node.id })}`;
+        info.textContent = t('materialApplyingTo', { name: materialNodeHeading(node), id: node.id });
 
         const actions = text(targetBar, 'div', '', 'anomalous-prompt-target-actions');
         const widgetSelect = text(actions, 'select', '');

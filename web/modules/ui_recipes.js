@@ -851,13 +851,15 @@ function buildRecipeStudioTopbar(owner) {
     viewSwitch.append(gridBtn, listBtn);
     right.appendChild(viewSwitch);
 
-    const saveBtn = appendText(right, 'button', `💾 ${t('recipeSaveCurrent')}`, 'anomalous-recipe-topbar-btn is-primary');
+    const saveBtn = appendText(right, 'button', '', 'anomalous-recipe-topbar-btn is-primary');
     saveBtn.dataset.recipeSaveCurrent = 'true';
     saveBtn.type = 'button';
+    saveBtn.innerHTML = `<svg style="width:14px;height:14px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>${t('recipeSaveCurrent')}`;
     saveBtn.onclick = () => owner.handleSaveRecipe();
 
-    const importBtn = appendText(right, 'button', `📥 ${t('recipeImport')}`, 'anomalous-recipe-topbar-btn');
+    const importBtn = appendText(right, 'button', '', 'anomalous-recipe-topbar-btn');
     importBtn.type = 'button';
+    importBtn.innerHTML = `<svg style="width:14px;height:14px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${t('recipeImport')}`;
     importBtn.onclick = () => {
         const input = document.createElement('input');
         input.type = 'file';
@@ -974,19 +976,22 @@ function createRecipeQuickSpecs(params) {
 
     const loras = Array.isArray(params.loras) ? params.loras : [];
     if (loras.length > 0) {
-        const loraTag = appendText(strip, 'span', `🧩 ${loras.length} ${t('recipeCardSpecsLoras')}`, 'anomalous-recipe-spec-tag is-lora');
+        const loraTag = appendText(strip, 'span', '', 'anomalous-recipe-spec-tag is-lora');
+        loraTag.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>${loras.length} ${t('recipeCardSpecsLoras')}`;
         loraTag.title = loras.map((l) => (typeof l === 'object' && l?.name ? l.name : String(l))).join(', ');
     }
 
     if (params.steps) {
         const samplerName = params.sampler_name ? ` · ${params.sampler_name}` : '';
-        const stepTag = appendText(strip, 'span', `⏱️ ${params.steps} ${t('recipeCardSpecsSteps')}${samplerName}`, 'anomalous-recipe-spec-tag is-step');
+        const stepTag = appendText(strip, 'span', '', 'anomalous-recipe-spec-tag is-step');
+        stepTag.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${params.steps} ${t('recipeCardSpecsSteps')}${samplerName}`;
         stepTag.title = `${params.steps} ${t('recipeCardSpecsSteps')}${samplerName}`;
     }
 
     const formattedRes = formatRecipeResolution(params.resolution);
     if (formattedRes) {
-        const resTag = appendText(strip, 'span', `📐 ${formattedRes}`, 'anomalous-recipe-spec-tag');
+        const resTag = appendText(strip, 'span', '', 'anomalous-recipe-spec-tag');
+        resTag.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>${formattedRes}`;
         resTag.title = `${t('recipeCardSpecsResolution')}: ${formattedRes}`;
     }
 
@@ -1044,19 +1049,23 @@ function createRecipeCard(owner, recipe) {
 
     const baseModelStr = data.params?.baseModel || data.params?.baseModels;
     if (baseModelStr) {
-        const pill = appendText(bottomChips, 'span', `📦 ${modelDisplayName(baseModelStr)}`, 'anomalous-recipe-cover-pill');
+        const pill = document.createElement('span');
+        pill.className = 'anomalous-recipe-cover-pill';
+        pill.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><path d="m21 16-9 5-9-5V8l9-5 9 5v8z"/><path d="m3.27 6.96 8.73 4.84 8.73-4.84"/><path d="M12 22.08V11.8"/></svg><span>${escapeHtml(modelDisplayName(baseModelStr))}</span>`;
         pill.title = String(baseModelStr);
+        bottomChips.appendChild(pill);
     }
     mediaWrap.appendChild(bottomChips);
 
     // Scope Pill (Top-right of cover)
     const isPartial = data.workflow_scope === 'partial';
-    appendText(
-        mediaWrap,
-        'span',
-        isPartial ? '🧩 ' + t('recipeScopePill_partial') : '⚡ ' + t('recipeScopePill_complete'),
-        `anomalous-recipe-scope-pill ${isPartial ? 'is-partial' : 'is-complete'}`,
-    );
+    const scopePill = document.createElement('span');
+    scopePill.className = `anomalous-recipe-scope-pill ${isPartial ? 'is-partial' : 'is-complete'}`;
+    const scopeSvg = isPartial
+        ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:-1px;margin-right:3px;"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v6"/><path d="M9 6h6"/></svg>`
+        : `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:-1px;margin-right:3px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
+    scopePill.innerHTML = `${scopeSvg}<span>${t(isPartial ? 'recipeScopePill_partial' : 'recipeScopePill_complete')}</span>`;
+    mediaWrap.appendChild(scopePill);
     card.appendChild(mediaWrap);
 
     // 2. Card Body
@@ -1093,17 +1102,15 @@ function createRecipeCard(owner, recipe) {
         body.appendChild(tags);
     }
 
-    // Footer: Primary Action Button ("🚀 载入画布" / "🧩 追加画布") + Mini Actions
+    // Footer: Primary Action Button + Mini Actions
     const footer = document.createElement('div');
     footer.className = 'anomalous-recipe-card-footer';
 
-    const appendBtn = appendText(
-        footer,
-        'button',
-        `${isPartial ? '🧩' : '🚀'} ${t(isPartial ? 'recipeAppendCanvas' : 'recipeOpenCanvas')}`,
-        'anomalous-recipe-btn-primary-action anomalous-tooltip-target',
-    );
+    const appendBtn = document.createElement('button');
     appendBtn.type = 'button';
+    appendBtn.className = 'anomalous-recipe-btn-primary-action anomalous-tooltip-target';
+    const actionSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+    appendBtn.innerHTML = `${actionSvg}<span>${t(isPartial ? 'recipeAppendCanvas' : 'recipeOpenCanvas')}</span>`;
     appendBtn.removeAttribute('title');
     appendBtn.setAttribute('data-tooltip', isPartial ? t('recipeAppendCanvas') : t('recipeOpenCanvas'));
     appendBtn.setAttribute('data-tooltip-pos', 'top');
@@ -1115,12 +1122,15 @@ function createRecipeCard(owner, recipe) {
             await applyRecipeToCanvas(owner, fullRecipe);
         }, isPartial ? 'recipeAppendError' : 'recipeOpenError');
     };
+    footer.appendChild(appendBtn);
 
     const miniActions = document.createElement('div');
     miniActions.className = 'anomalous-recipe-card-mini-actions';
 
-    const editBtn = appendText(miniActions, 'button', '✏️', 'anomalous-recipe-card-mini-btn anomalous-tooltip-target');
+    const editBtn = document.createElement('button');
     editBtn.type = 'button';
+    editBtn.className = 'anomalous-recipe-card-mini-btn anomalous-tooltip-target';
+    editBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>`;
     editBtn.removeAttribute('title');
     editBtn.setAttribute('data-tooltip', t('recipeEdit'));
     editBtn.setAttribute('data-tooltip-pos', 'top');
@@ -1129,8 +1139,10 @@ function createRecipeCard(owner, recipe) {
         runRecipeCardAction(editBtn, () => editRecipe(owner, recipe?.data || {}, recipe.filename), 'recipeUpdateError');
     };
 
-    const exportBtn = appendText(miniActions, 'button', '📥', 'anomalous-recipe-card-mini-btn anomalous-tooltip-target');
+    const exportBtn = document.createElement('button');
     exportBtn.type = 'button';
+    exportBtn.className = 'anomalous-recipe-card-mini-btn anomalous-tooltip-target';
+    exportBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
     exportBtn.removeAttribute('title');
     exportBtn.setAttribute('data-tooltip', t('recipeExport'));
     exportBtn.setAttribute('data-tooltip-pos', 'top');
@@ -1139,8 +1151,10 @@ function createRecipeCard(owner, recipe) {
         runRecipeCardAction(exportBtn, () => exportRecipePackage(recipe.filename), 'recipeExportError');
     };
 
-    const removeBtn = appendText(miniActions, 'button', '🗑️', 'anomalous-recipe-card-mini-btn is-delete anomalous-tooltip-target');
+    const removeBtn = document.createElement('button');
     removeBtn.type = 'button';
+    removeBtn.className = 'anomalous-recipe-card-mini-btn is-delete anomalous-tooltip-target';
+    removeBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`;
     removeBtn.removeAttribute('title');
     removeBtn.setAttribute('data-tooltip', t('recipeDelete'));
     removeBtn.setAttribute('data-tooltip-pos', 'top');

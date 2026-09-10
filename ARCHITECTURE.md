@@ -178,6 +178,13 @@ DOM or live LiteGraph state.
   `recipe_actions.js` own pure or transactional recipe behavior.
 - `ui_doctor.js`, `model_picker.js`, and `graph_splice.js` own assistant and
   explicit graph-edit behavior.
+- Visual Correction Audit & Gothic Vampire Re-alignment (视觉纠偏与哥特美学回归):
+  - Purged all 83 high-saturation cyberpunk cyan/blue instances (`#38bdf8`, `#00ffcc`, `#2dd4bf`, `#5eead4`, `#007bff`, `#0ea5e9`, `#06b6d4`) and 140+ `rgba(...)` glow values, re-skinning to an aristocratic Crimson (`#dc143c`), Deep Wine (`#722f37`), and Abyssal Violet (`#8b5cf6`) palette;
+  - Restrained all oversized diffused glows (`box-shadow` / `filter: drop-shadow`) to tight 4~8px interior magic micro-auras, adhering to vampire gothic nobility;
+  - Swept legacy system emojis across all 13 frontend modules and `locales.js`, replacing them with pure-code vector SVG icons (`3D Cube`, `Network`, `Magic Wand`, `Folder`, `Image Frame`, `Sliders`, `Trash`, etc.);
+  - Overhauled `#anomalous-header` into a centered symmetric three-column architecture (`leftGroup`, `centerGroup`, `rightGroup`), eliminating left-side visual voids/black holes;
+  - Injected gothic diamond lattice textures and dark crimson radial auras into `#anomalous-gallery-panel`, `.anomalous-gallery-grid`, `.anomalous-gallery-container`, and `#anomalous-content`;
+  - Fixed tooltip overlap hazard by re-aligning bottom toolbar tooltip triggers to center-top (`data-tooltip-pos="top"`), completely preventing horizontal button occlusion.
 - `locales.js` is the canonical runtime string catalog; `safe_dom.js` is the
   trusted rich-text boundary.
 - `web/main.js` and `web/modules/ui_sidebar.js` own theme state management and interactive easter-egg domain toggles,

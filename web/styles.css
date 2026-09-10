@@ -2,20 +2,22 @@
    ANOMALOUS UI GLOBAL DESIGN SYSTEM (Design Tokens & Semantic Colors)
    ========================================================================== */
 :root {
-    --c-amber: #f59e0b;
-    --c-amber-glow: rgba(245, 158, 11, 0.45);
-    --c-cyan: #06b6d4;
-    --c-cyan-glow: rgba(6, 182, 212, 0.45);
-    --c-purple: #c084fc;
-    --c-purple-glow: rgba(192, 132, 252, 0.45);
+    --c-amber: #d97706;
+    --c-amber-glow: rgba(217, 119, 6, 0.3);
+    --c-cyan: #e11d48;
+    --c-cyan-glow: rgba(225, 29, 72, 0.35);
+    --c-purple: #8b5cf6;
+    --c-purple-glow: rgba(139, 92, 246, 0.3);
     --c-silver: #94a3b8;
-    --c-silver-glow: rgba(148, 163, 184, 0.35);
-    --c-blue: #38bdf8;
-    --c-blue-glow: rgba(56, 189, 248, 0.45);
-    --c-crimson: #e11d48;
-    --c-crimson-glow: rgba(225, 29, 72, 0.5);
+    --c-silver-glow: rgba(148, 163, 184, 0.25);
+    --c-blue: #dc143c;
+    --c-blue-glow: rgba(220, 20, 60, 0.35);
+    --c-crimson: #dc143c;
+    --c-crimson-glow: rgba(220, 20, 60, 0.45);
+    --c-wine: #722f37;
+    --c-wine-glow: rgba(114, 47, 55, 0.4);
     --c-emerald: #10b981;
-    --c-emerald-glow: rgba(16, 185, 129, 0.4);
+    --c-emerald-glow: rgba(16, 185, 129, 0.3);
 }
 
 /* Skeleton Shimmer Loading Placeholder */
@@ -175,7 +177,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 #anomalous-container {
     width: 90%;
     height: 90%;
-    background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.035) 0%, transparent 65%), var(--bg-color, #1e1e24);
+    background: radial-gradient(circle at 50% 0%, rgba(220, 20, 60, 0.035) 0%, transparent 65%), var(--bg-color, #1e1e24);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 4px;
     clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
@@ -450,10 +452,10 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-card-action-btn:hover {
-    background: rgba(56, 189, 248, 0.25);
-    border-color: #38bdf8;
-    color: #38bdf8;
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    background: rgba(220, 20, 60, 0.25);
+    border-color: #dc143c;
+    color: #ff4d6d;
+    box-shadow: 0 0 8px 0px rgba(220, 20, 60, 0.5);
 }
 
 .anomalous-scan-progress {
@@ -561,6 +563,15 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     flex-direction: column;
     flex: 1;
     overflow: hidden;
+    background-color: #0e0c13;
+    background-image: 
+        radial-gradient(ellipse at 50% 12%, rgba(220, 20, 60, 0.04) 0%, transparent 65%),
+        linear-gradient(45deg, rgba(255, 255, 255, 0.012) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255, 255, 255, 0.012) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.012) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.012) 75%);
+    background-size: 100% 100%, 36px 36px, 36px 36px, 36px 36px, 36px 36px;
+    background-position: 0 0, 0 0, 0 18px, 18px -18px, -18px 0px;
 }
 
 #anomalous-container {
@@ -572,16 +583,16 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     width: 250px;
     margin: 8px 0 8px 8px;
     height: calc(100% - 16px);
-    background: rgba(22, 22, 28, 0.78);
+    background: rgba(20, 18, 24, 0.82);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(220, 20, 60, 0.15);
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.3s ease;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     overflow: hidden;
     box-sizing: border-box;
 }
@@ -594,15 +605,15 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     width: 1px;
     height: 100%;
     background: linear-gradient(180deg, 
-        rgba(56, 189, 248, 0) 0%, 
-        rgba(56, 189, 248, 0.35) 20%, 
-        rgba(129, 140, 248, 0.55) 50%, 
-        rgba(192, 132, 252, 0.3) 80%, 
-        rgba(56, 189, 248, 0) 100%
+        rgba(220, 20, 60, 0) 0%, 
+        rgba(220, 20, 60, 0.45) 20%, 
+        rgba(139, 92, 246, 0.5) 50%, 
+        rgba(220, 20, 60, 0.35) 80%, 
+        rgba(220, 20, 60, 0) 100%
     );
     pointer-events: none;
     z-index: 5;
-    box-shadow: 0 0 6px rgba(56, 189, 248, 0.25);
+    box-shadow: 0 0 6px rgba(220, 20, 60, 0.3);
 }
 
 .anomalous-sidebar-closed #anomalous-sidebar-wrapper {
@@ -673,86 +684,86 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     color: #fff;
 }
 
-/* 2px Neon Active Glow Indicator on Selected Menu */
+/* 2px Razor-thin Gothic Crimson Active Indicator on Selected Menu */
 .anomalous-folder-item.active {
-    background: linear-gradient(90deg, rgba(56, 189, 248, 0.16) 0%, rgba(56, 189, 248, 0.02) 80%, transparent 100%);
+    background: linear-gradient(90deg, rgba(220, 20, 60, 0.18) 0%, rgba(220, 20, 60, 0.03) 80%, transparent 100%);
     color: #fff;
     font-weight: 600;
-    border-left: 2px solid var(--c-blue, #38bdf8);
-    box-shadow: inset 2px 0 10px rgba(56, 189, 248, 0.3);
+    border-left: 2px solid #dc143c;
+    box-shadow: inset 3px 0 8px rgba(220, 20, 60, 0.35);
     border-radius: 0 6px 6px 0;
 }
 
 .anomalous-folder-item.active .anomalous-folder-name {
     color: #fff !important;
-    text-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+    text-shadow: 0 0 6px rgba(220, 20, 60, 0.5);
 }
 
 .theme-abyssal-scarlet .anomalous-folder-item.active {
-    background: linear-gradient(90deg, rgba(220, 20, 60, 0.22) 0%, rgba(220, 20, 60, 0.04) 80%, transparent 100%);
-    border-left-color: var(--c-crimson, #e11d48);
-    box-shadow: inset 2px 0 12px rgba(220, 20, 60, 0.45);
+    background: linear-gradient(90deg, rgba(220, 20, 60, 0.24) 0%, rgba(220, 20, 60, 0.05) 80%, transparent 100%);
+    border-left-color: var(--c-crimson, #dc143c);
+    box-shadow: inset 3px 0 10px rgba(220, 20, 60, 0.5);
 }
 
 .theme-abyssal-scarlet .anomalous-folder-item.active .anomalous-folder-name {
-    text-shadow: 0 0 8px rgba(220, 20, 60, 0.6);
+    text-shadow: 0 0 8px rgba(220, 20, 60, 0.7);
 }
 
-/* Semantic Icon Colors Injection */
+/* Semantic Icon Colors Injection (Gothic Vampire Tone) */
 .anomalous-folder-item svg,
 #anomalous-sidebar h3 svg {
-    color: var(--c-amber) !important;
+    color: var(--c-amber, #d97706) !important;
     filter: drop-shadow(0 0 4px var(--c-amber-glow));
 }
 
 #anomalous-scan-btn {
-    color: var(--c-blue) !important;
+    color: #cbd5e1 !important;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 #anomalous-scan-btn:hover {
-    color: #7dd3fc !important;
-    filter: drop-shadow(0 0 8px var(--c-blue-glow)) !important;
-    background: rgba(56, 189, 248, 0.12) !important;
+    color: #ff4d6d !important;
+    filter: drop-shadow(0 0 5px rgba(220, 20, 60, 0.6)) !important;
+    background: rgba(220, 20, 60, 0.12) !important;
 }
 
 #anomalous-materials-btn {
-    color: var(--c-amber) !important;
+    color: var(--c-amber, #d97706) !important;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 #anomalous-materials-btn:hover {
-    color: #fde047 !important;
-    filter: drop-shadow(0 0 8px var(--c-amber-glow)) !important;
-    background: rgba(245, 158, 11, 0.12) !important;
+    color: #fbbf24 !important;
+    filter: drop-shadow(0 0 5px rgba(217, 119, 6, 0.5)) !important;
+    background: rgba(217, 119, 6, 0.12) !important;
 }
 
 #anomalous-doctor-btn {
-    color: var(--c-cyan) !important;
+    color: var(--c-crimson, #dc143c) !important;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 #anomalous-doctor-btn:hover {
-    color: #67e8f9 !important;
-    filter: drop-shadow(0 0 8px var(--c-cyan-glow)) !important;
-    background: rgba(6, 182, 212, 0.12) !important;
+    color: #ff4d6d !important;
+    filter: drop-shadow(0 0 5px rgba(220, 20, 60, 0.6)) !important;
+    background: rgba(220, 20, 60, 0.12) !important;
 }
 
 #anomalous-assistant-btn {
-    color: var(--c-purple) !important;
+    color: var(--c-purple, #8b5cf6) !important;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 #anomalous-assistant-btn:hover {
-    color: #e9d5ff !important;
-    filter: drop-shadow(0 0 8px var(--c-purple-glow)) !important;
-    background: rgba(192, 132, 252, 0.12) !important;
+    color: #c4b5fd !important;
+    filter: drop-shadow(0 0 5px rgba(139, 92, 246, 0.6)) !important;
+    background: rgba(139, 92, 246, 0.14) !important;
 }
 
 #anomalous-global-settings-btn {
-    color: var(--c-silver) !important;
+    color: var(--c-silver, #94a3b8) !important;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 #anomalous-global-settings-btn:hover {
     color: #f8fafc !important;
-    filter: drop-shadow(0 0 8px var(--c-silver-glow)) !important;
-    background: rgba(148, 163, 184, 0.15) !important;
+    filter: drop-shadow(0 0 5px rgba(148, 163, 184, 0.4)) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
 }
 
 
@@ -788,7 +799,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-resizer:hover {
-    background: #007bff;
+    background: #dc143c;
 }
 
 .anomalous-split-right {
@@ -907,7 +918,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-compatible-item:hover {
-    border-color: #007bff;
+    border-color: #dc143c;
     background: var(--bg-color, #444);
     transform: translateY(-2px);
 }
@@ -1051,7 +1062,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-nb-item.active {
-    background: #007bff;
+    background: #dc143c;
     color: #fff;
     font-weight: bold;
 }
@@ -1128,7 +1139,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+    background: linear-gradient(90deg, #dc143c, #8b5cf6, #722f37);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1262,9 +1273,9 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-nb-minicheck.selected,
 .anomalous-nb-minilora.selected {
-    border-color: #2dd4bf;
-    background: rgba(45, 212, 191, 0.15);
-    box-shadow: 0 0 12px rgba(45, 212, 191, 0.25);
+    border-color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.15);
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.25);
 }
 
 .anomalous-nb-minicheck img,
@@ -1294,7 +1305,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-nb-minicheck.selected .anomalous-nb-minicheck-name,
 .anomalous-nb-minilora.selected .anomalous-nb-minilora-name {
-    color: #2dd4bf;
+    color: #8b5cf6;
     font-weight: bold;
 }
 
@@ -1358,7 +1369,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-nb-visual-tag.hover {
     background: #2a3140;
-    border-color: rgba(45, 212, 191, 0.5);
+    border-color: rgba(139, 92, 246, 0.5);
     color: #ffffff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
@@ -1387,7 +1398,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-nb-tag-edit {
     background: #111827;
     color: #f1f5f9;
-    border: 1px solid rgba(45, 212, 191, 0.6);
+    border: 1px solid rgba(139, 92, 246, 0.6);
     border-radius: 4px;
     padding: 6px;
     width: 100%;
@@ -1442,7 +1453,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-gallery-card:hover {
     transform: translateY(-3px);
-    border-color: #007bff;
+    border-color: #dc143c;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     transition-delay: 0.08s;
 }
@@ -1519,9 +1530,9 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-gallery-details:hover {
     background: rgba(20, 29, 44, 0.94);
-    border-color: rgba(45, 212, 191, 0.55);
-    color: #5eead4;
-    box-shadow: 0 4px 16px rgba(45, 212, 191, 0.25);
+    border-color: rgba(139, 92, 246, 0.55);
+    color: #fca5a5;
+    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.25);
     transform: translateY(-1px);
 }
 
@@ -1648,7 +1659,7 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-nb-section-tab.active {
-    background: #007bff;
+    background: #dc143c;
     color: #fff;
 }
 
@@ -2096,9 +2107,9 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-cover-choice.selected {
-    border-color: #00ffcc;
-    color: #00ffcc;
-    box-shadow: inset 0 0 0 1px rgba(0, 255, 204, 0.35);
+    border-color: #dc143c;
+    color: #dc143c;
+    box-shadow: inset 0 0 0 1px rgba(220, 20, 60, 0.35);
 }
 
 .anomalous-recipe-pin-picker {
@@ -2147,9 +2158,9 @@ dialog.anomalous-gallery-viewer[open] {
     flex-direction: column;
     gap: 3px;
     padding: 8px;
-    border: 1px solid rgba(0, 255, 204, 0.3);
+    border: 1px solid rgba(220, 20, 60, 0.3);
     border-radius: 7px;
-    background: rgba(0, 255, 204, 0.05);
+    background: rgba(220, 20, 60, 0.05);
 }
 
 .anomalous-recipe-history-list {
@@ -2229,9 +2240,9 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-detail-tab.active {
-    border-color: rgba(0, 255, 204, 0.45);
-    color: #00ffcc;
-    background: rgba(0, 255, 204, 0.08);
+    border-color: rgba(220, 20, 60, 0.45);
+    color: #dc143c;
+    background: rgba(220, 20, 60, 0.08);
 }
 
 .anomalous-recipe-detail-content {
@@ -3512,7 +3523,7 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-version-row.current {
-    border-color: rgba(0, 255, 204, 0.45);
+    border-color: rgba(220, 20, 60, 0.45);
 }
 
 @media (max-width: 680px) {
@@ -3940,9 +3951,9 @@ dialog.anomalous-gallery-viewer[open] {
     gap: 8px;
     margin-top: 10px;
     padding: 9px 10px;
-    border: 1px solid rgba(45, 212, 191, 0.16);
+    border: 1px solid rgba(139, 92, 246, 0.16);
     border-radius: 8px;
-    background: rgba(45, 212, 191, 0.045);
+    background: rgba(139, 92, 246, 0.045);
 }
 
 .anomalous-recipe-material-selection .anomalous-workbench-node-selection-count {
@@ -3986,22 +3997,22 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-material-node-select:hover {
-    border-color: rgba(45, 212, 191, 0.6);
-    background-color: rgba(45, 212, 191, 0.08);
+    border-color: rgba(139, 92, 246, 0.6);
+    background-color: rgba(139, 92, 246, 0.08);
 }
 
 .anomalous-recipe-material-node-select:checked {
-    background-color: #2dd4bf;
-    border-color: #2dd4bf;
+    background-color: #8b5cf6;
+    border-color: #8b5cf6;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230b0f17' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-6'/%3E%3C/svg%3E");
     background-size: 11px 11px;
     background-position: center;
     background-repeat: no-repeat;
-    box-shadow: 0 0 8px rgba(45, 212, 191, 0.35);
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.35);
 }
 
 .anomalous-recipe-material-node-select:focus-visible {
-    outline: 2px solid #2dd4bf;
+    outline: 2px solid #8b5cf6;
     outline-offset: 2px;
 }
 
@@ -4243,8 +4254,8 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-material-pill.is-active {
-    background: rgba(45, 212, 191, 0.18);
-    color: #2dd4bf;
+    background: rgba(139, 92, 246, 0.18);
+    color: #8b5cf6;
     font-weight: 600;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
@@ -4288,7 +4299,7 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-material-search-input:focus {
-    border-color: rgba(45, 212, 191, 0.45);
+    border-color: rgba(139, 92, 246, 0.45);
     background: rgba(0, 0, 0, 0.4);
 }
 
@@ -4345,7 +4356,7 @@ dialog.anomalous-gallery-viewer[open] {
 
 .anomalous-material-view-btn.is-active {
     background: rgba(255, 255, 255, 0.09);
-    color: #2dd4bf;
+    color: #8b5cf6;
 }
 
 .anomalous-material-topbar-btn {
@@ -4370,22 +4381,22 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-material-studio-toggle {
-    border-color: rgba(45, 212, 191, 0.3);
-    color: #2dd4bf;
-    background: rgba(45, 212, 191, 0.08);
+    border-color: rgba(139, 92, 246, 0.3);
+    color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.08);
 }
 
 .anomalous-material-studio-toggle:hover {
-    background: rgba(45, 212, 191, 0.16);
-    border-color: rgba(45, 212, 191, 0.5);
-    color: #5eead4;
+    background: rgba(139, 92, 246, 0.16);
+    border-color: rgba(139, 92, 246, 0.5);
+    color: #fca5a5;
 }
 
 .anomalous-material-studio-toggle.is-active {
     background: linear-gradient(135deg, rgba(20, 184, 166, 0.35), rgba(13, 148, 136, 0.45));
-    border-color: rgba(45, 212, 191, 0.6);
+    border-color: rgba(139, 92, 246, 0.6);
     color: #ffffff;
-    box-shadow: 0 0 12px rgba(45, 212, 191, 0.25);
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.25);
 }
 
 /* 2. 主区域分屏容器 */
@@ -4503,12 +4514,12 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-material-card:hover {
-    border-color: rgba(45, 212, 191, 0.4);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 12px rgba(45, 212, 191, 0.12);
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 12px rgba(139, 92, 246, 0.12);
 }
 
 .anomalous-material-card:focus-visible {
-    outline: 2px solid #2dd4bf;
+    outline: 2px solid #8b5cf6;
     outline-offset: 2px;
 }
 
@@ -4776,8 +4787,8 @@ dialog.anomalous-gallery-viewer[open] {
     top: 8px;
     left: 8px;
     z-index: 5;
-    color: #2dd4bf;
-    border-color: rgba(45, 212, 191, 0.3);
+    color: #8b5cf6;
+    border-color: rgba(139, 92, 246, 0.3);
     opacity: 0;
 }
 
@@ -4786,9 +4797,9 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-material-card-quick-load:hover {
-    background: rgba(45, 212, 191, 0.28);
-    border-color: rgba(45, 212, 191, 0.6);
-    color: #5eead4;
+    background: rgba(139, 92, 246, 0.28);
+    border-color: rgba(139, 92, 246, 0.6);
+    color: #fca5a5;
 }
 
 .anomalous-material-card-send-studio {
@@ -4796,8 +4807,8 @@ dialog.anomalous-gallery-viewer[open] {
     top: 8px;
     left: 38px;
     z-index: 5;
-    color: #38bdf8;
-    border-color: rgba(56, 189, 248, 0.3);
+    color: #dc143c;
+    border-color: rgba(220, 20, 60, 0.3);
     opacity: 0;
 }
 
@@ -4806,8 +4817,8 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-material-card-send-studio:hover {
-    background: rgba(56, 189, 248, 0.28);
-    border-color: rgba(56, 189, 248, 0.6);
+    background: rgba(220, 20, 60, 0.28);
+    border-color: rgba(220, 20, 60, 0.6);
     color: #7dd3fc;
 }
 
@@ -4826,8 +4837,8 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-material-source-mark.is-current {
-    border-color: rgba(45, 212, 191, 0.25);
-    color: #5eead4;
+    border-color: rgba(139, 92, 246, 0.25);
+    color: #fca5a5;
 }
 
 .anomalous-material-source-mark.is-modified,
@@ -4989,8 +5000,8 @@ dialog.anomalous-gallery-viewer[open] {
 
 .anomalous-library-detail-layout.is-parameter .anomalous-library-detail-image-stage {
     flex: 0 0 180px;
-    border-color: rgba(45, 212, 191, 0.18);
-    background: radial-gradient(circle at 50% 45%, rgba(45, 212, 191, 0.12), rgba(13, 15, 20, 0.9) 72%);
+    border-color: rgba(139, 92, 246, 0.18);
+    background: radial-gradient(circle at 50% 45%, rgba(139, 92, 246, 0.12), rgba(13, 15, 20, 0.9) 72%);
     cursor: default;
 }
 
@@ -5264,8 +5275,8 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-material-film-thumb.is-selected {
-    border-color: rgba(56, 189, 248, 0.7);
-    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+    border-color: rgba(220, 20, 60, 0.7);
+    box-shadow: 0 0 0 1px rgba(220, 20, 60, 0.35);
 }
 
 .anomalous-material-film-thumb img,
@@ -5866,7 +5877,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+    background: linear-gradient(90deg, #dc143c, #8b5cf6, #722f37);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
@@ -5879,9 +5890,9 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-btn-primary-action:hover {
-    border-color: #38bdf8;
+    border-color: #dc143c;
     color: #ffffff;
-    box-shadow: 0 0 14px rgba(56, 189, 248, 0.4), inset 0 0 14px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 0 14px rgba(220, 20, 60, 0.4), inset 0 0 14px rgba(99, 102, 241, 0.3);
     transform: translateY(-1px);
     filter: brightness(1.15);
 }
@@ -6021,7 +6032,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-recipe-readiness-banner.is-ready {
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.08));
     border: 1px solid rgba(16, 185, 129, 0.35);
-    color: #a7f3d0;
+    color: #fda4af;
 }
 
 .anomalous-recipe-readiness-banner.is-warning {
@@ -6873,7 +6884,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-material-prompt-card.is-positive {
-    border-left-color: #2dd4bf;
+    border-left-color: #8b5cf6;
 }
 
 .anomalous-material-prompt-card.is-negative {
@@ -6938,8 +6949,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-material-model-card-item.is-primary {
     padding: 9px 11px;
-    border-color: rgba(56, 189, 248, 0.22);
-    background: rgba(56, 189, 248, 0.06);
+    border-color: rgba(220, 20, 60, 0.22);
+    background: rgba(220, 20, 60, 0.06);
 }
 
 .anomalous-material-model-peek-counts {
@@ -7053,8 +7064,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-material-node-detail.is-selected {
-    border-color: rgba(45, 212, 191, 0.34);
-    background: rgba(45, 212, 191, 0.045);
+    border-color: rgba(139, 92, 246, 0.34);
+    background: rgba(139, 92, 246, 0.045);
 }
 
 .anomalous-material-node-select {
@@ -7077,22 +7088,22 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-material-node-select:hover {
-    border-color: rgba(45, 212, 191, 0.6);
-    background-color: rgba(45, 212, 191, 0.08);
+    border-color: rgba(139, 92, 246, 0.6);
+    background-color: rgba(139, 92, 246, 0.08);
 }
 
 .anomalous-material-node-select:checked {
-    background-color: #2dd4bf;
-    border-color: #2dd4bf;
+    background-color: #8b5cf6;
+    border-color: #8b5cf6;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230b0f17' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-6'/%3E%3C/svg%3E");
     background-size: 11px 11px;
     background-position: center;
     background-repeat: no-repeat;
-    box-shadow: 0 0 8px rgba(45, 212, 191, 0.35);
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.35);
 }
 
 .anomalous-material-node-select:focus-visible {
-    outline: 2px solid #2dd4bf;
+    outline: 2px solid #8b5cf6;
     outline-offset: 2px;
 }
 
@@ -7147,9 +7158,9 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-workbench-save-selected-btn {
     flex: 0 0 auto;
     padding: 5px 9px;
-    border: 1px solid rgba(45, 212, 191, 0.24);
+    border: 1px solid rgba(139, 92, 246, 0.24);
     border-radius: 6px;
-    background: rgba(45, 212, 191, 0.08);
+    background: rgba(139, 92, 246, 0.08);
     color: #8fe1d4;
     font-size: 0.66rem;
     cursor: pointer;
@@ -7157,8 +7168,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-material-node-save:hover,
 .anomalous-workbench-save-selected-btn:hover:not(:disabled) {
-    border-color: rgba(45, 212, 191, 0.42);
-    background: rgba(45, 212, 191, 0.14);
+    border-color: rgba(139, 92, 246, 0.42);
+    background: rgba(139, 92, 246, 0.14);
     color: #d8fff8;
 }
 
@@ -7376,8 +7387,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-material-model-card-item.is-active {
-    border-color: rgba(56, 189, 248, 0.45);
-    background: rgba(56, 189, 248, 0.08);
+    border-color: rgba(220, 20, 60, 0.45);
+    background: rgba(220, 20, 60, 0.08);
 }
 
 .anomalous-material-model-thumb {
@@ -7450,9 +7461,9 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-tag-base {
-    background: rgba(56, 189, 248, 0.12);
-    color: #38bdf8;
-    border: 1px solid rgba(56, 189, 248, 0.25);
+    background: rgba(220, 20, 60, 0.12);
+    color: #dc143c;
+    border: 1px solid rgba(220, 20, 60, 0.25);
 }
 
 .anomalous-tag-lora {
@@ -7468,9 +7479,9 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-tag-clip {
-    background: rgba(45, 212, 191, 0.12);
-    color: #2dd4bf;
-    border: 1px solid rgba(45, 212, 191, 0.25);
+    background: rgba(139, 92, 246, 0.12);
+    color: #8b5cf6;
+    border: 1px solid rgba(139, 92, 246, 0.25);
 }
 
 .anomalous-tag-other {
@@ -7596,9 +7607,9 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-tag.is-ext {
-    background: rgba(56, 189, 248, 0.1);
-    border-color: rgba(56, 189, 248, 0.25);
-    color: #38bdf8;
+    background: rgba(220, 20, 60, 0.1);
+    border-color: rgba(220, 20, 60, 0.25);
+    color: #dc143c;
     font-weight: 700;
 }
 
@@ -7673,9 +7684,9 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-workbench-tool-btn:hover,
 .anomalous-workbench-tool-btn.is-active {
-    background: rgba(45, 212, 191, 0.15);
-    border-color: rgba(45, 212, 191, 0.35);
-    color: #2dd4bf;
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.35);
+    color: #8b5cf6;
 }
 
 .anomalous-workbench-close-btn {
@@ -7770,11 +7781,11 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-workbench-float-nav:hover {
     opacity: 1;
-    background: rgba(45, 212, 191, 0.2);
-    border-color: rgba(45, 212, 191, 0.45);
+    background: rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.45);
     color: #fff;
     transform: translateY(-50%) scale(1.08);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(45, 212, 191, 0.25);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(139, 92, 246, 0.25);
 }
 
 /* Floating Zoom Bar */
@@ -7851,7 +7862,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-filmstrip::-webkit-scrollbar-thumb:hover {
-    background: rgba(45, 212, 191, 0.45);
+    background: rgba(139, 92, 246, 0.45);
 }
 
 .anomalous-workbench-filmstrip-track {
@@ -7889,8 +7900,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-filmstrip-thumb.is-active {
-    border-color: #2dd4bf;
-    box-shadow: 0 0 16px rgba(45, 212, 191, 0.55), inset 0 0 0 1px #2dd4bf;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.35), inset 0 0 0 1px #8b5cf6;
     transform: scale(1.04);
 }
 
@@ -7911,7 +7922,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-filmstrip-thumb.is-active .anomalous-workbench-thumb-index {
-    color: #2dd4bf;
+    color: #8b5cf6;
     background: rgba(13, 23, 27, 0.92);
     font-weight: 800;
 }
@@ -7987,8 +7998,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-action-btn.is-primary {
-    background: linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(45, 212, 191, 0.26) 100%);
-    border-color: rgba(45, 212, 191, 0.42);
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(139, 92, 246, 0.26) 100%);
+    border-color: rgba(139, 92, 246, 0.42);
     color: #e0f2fe;
 }
 
@@ -7999,7 +8010,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, #38bdf8, #2dd4bf, #a7f3d0);
+    background: linear-gradient(90deg, #dc143c, #8b5cf6, #fca5a5);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
@@ -8012,10 +8023,10 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-action-btn.is-primary:hover {
-    background: linear-gradient(135deg, rgba(14, 165, 233, 0.36) 0%, rgba(45, 212, 191, 0.4) 100%);
-    border-color: #2dd4bf;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.36) 0%, rgba(139, 92, 246, 0.4) 100%);
+    border-color: #8b5cf6;
     color: #ffffff;
-    box-shadow: 0 4px 18px rgba(45, 212, 191, 0.28);
+    box-shadow: 0 4px 18px rgba(139, 92, 246, 0.28);
     transform: translateY(-1px);
 }
 
@@ -8084,7 +8095,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-workbench-tab-btn.is-active {
     background: rgba(255, 255, 255, 0.09);
-    color: #2dd4bf;
+    color: #8b5cf6;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
@@ -8139,8 +8150,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-spec-card.is-res {
-    border-color: rgba(56, 189, 248, 0.25);
-    background: rgba(56, 189, 248, 0.035);
+    border-color: rgba(220, 20, 60, 0.25);
+    background: rgba(220, 20, 60, 0.035);
 }
 
 /* Card Click-to-copy interaction */
@@ -8158,9 +8169,9 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-spec-card.is-copied {
-    border-color: rgba(45, 212, 191, 0.6) !important;
-    background: rgba(45, 212, 191, 0.08) !important;
-    box-shadow: 0 0 14px rgba(45, 212, 191, 0.25) !important;
+    border-color: rgba(139, 92, 246, 0.6) !important;
+    background: rgba(139, 92, 246, 0.08) !important;
+    box-shadow: 0 0 14px rgba(139, 92, 246, 0.25) !important;
 }
 
 .anomalous-workbench-spec-header {
@@ -8196,7 +8207,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-spec-card.is-copyable:focus-visible {
-    outline: 2px solid rgba(45, 212, 191, 0.55);
+    outline: 2px solid rgba(139, 92, 246, 0.55);
     outline-offset: 1px;
 }
 
@@ -8207,7 +8218,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-spec-copy-icon.is-success {
-    stroke: #2dd4bf;
+    stroke: #8b5cf6;
 }
 
 .anomalous-workbench-spec-copy-icon.is-error {
@@ -8217,7 +8228,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-workbench-copy-badge {
     font-size: 10px;
     font-weight: 600;
-    color: #2dd4bf;
+    color: #8b5cf6;
     animation: anomalous-fade-in 0.15s ease forwards;
 }
 
@@ -8257,16 +8268,16 @@ dialog.anomalous-gallery-viewer::backdrop {
     gap: 12px;
     padding: 10px 14px;
     border-radius: 10px;
-    background: linear-gradient(135deg, rgba(45, 212, 191, 0.05) 0%, rgba(56, 189, 248, 0.03) 100%);
-    border: 1px solid rgba(45, 212, 191, 0.2);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(220, 20, 60, 0.03) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.2);
     margin-top: 4px;
     transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .anomalous-workbench-generation-save:hover {
-    background: linear-gradient(135deg, rgba(45, 212, 191, 0.08) 0%, rgba(56, 189, 248, 0.05) 100%);
-    border-color: rgba(45, 212, 191, 0.35);
-    box-shadow: 0 3px 12px rgba(45, 212, 191, 0.08);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(220, 20, 60, 0.05) 100%);
+    border-color: rgba(139, 92, 246, 0.35);
+    box-shadow: 0 3px 12px rgba(139, 92, 246, 0.08);
 }
 
 .anomalous-workbench-generation-info {
@@ -8289,7 +8300,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-workbench-generation-icon {
     width: 13px;
     height: 13px;
-    stroke: #2dd4bf;
+    stroke: #8b5cf6;
     flex-shrink: 0;
 }
 
@@ -8303,8 +8314,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     flex-shrink: 0;
     padding: 6px 13px;
     border-radius: 7px;
-    background: linear-gradient(135deg, rgba(45, 212, 191, 0.22), rgba(56, 189, 248, 0.22));
-    border: 1px solid rgba(45, 212, 191, 0.45);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.22), rgba(220, 20, 60, 0.22));
+    border: 1px solid rgba(139, 92, 246, 0.45);
     color: #e0f2fe;
     font-size: 0.74rem;
     font-weight: 600;
@@ -8315,10 +8326,10 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-generation-btn:hover:not(:disabled) {
-    background: linear-gradient(135deg, rgba(45, 212, 191, 0.36), rgba(56, 189, 248, 0.36));
-    border-color: #2dd4bf;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.36), rgba(220, 20, 60, 0.36));
+    border-color: #8b5cf6;
     color: #ffffff;
-    box-shadow: 0 3px 12px rgba(45, 212, 191, 0.28);
+    box-shadow: 0 3px 12px rgba(139, 92, 246, 0.28);
     transform: translateY(-1px);
 }
 
@@ -8350,8 +8361,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-prompt-card.is-positive {
-    border-left-color: #2dd4bf;
-    background: linear-gradient(90deg, rgba(45, 212, 191, 0.04) 0%, rgba(255, 255, 255, 0.02) 40%);
+    border-left-color: #8b5cf6;
+    background: linear-gradient(90deg, rgba(139, 92, 246, 0.04) 0%, rgba(255, 255, 255, 0.02) 40%);
 }
 
 .anomalous-workbench-prompt-card.is-negative {
@@ -8410,9 +8421,9 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-mini-action-btn.is-copied {
-    background: rgba(45, 212, 191, 0.2);
-    color: #2dd4bf;
-    border-color: #2dd4bf;
+    background: rgba(139, 92, 246, 0.2);
+    color: #8b5cf6;
+    border-color: #8b5cf6;
 }
 
 .anomalous-workbench-prompt-content {
@@ -8539,9 +8550,9 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-model-tag.is-base {
-    background: rgba(56, 189, 248, 0.12);
-    color: #38bdf8;
-    border: 1px solid rgba(56, 189, 248, 0.25);
+    background: rgba(220, 20, 60, 0.12);
+    color: #dc143c;
+    border: 1px solid rgba(220, 20, 60, 0.25);
 }
 
 .anomalous-workbench-model-tag.is-lora {
@@ -8551,9 +8562,9 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-model-tag.is-clip {
-    background: rgba(45, 212, 191, 0.12);
-    color: #2dd4bf;
-    border: 1px solid rgba(45, 212, 191, 0.25);
+    background: rgba(139, 92, 246, 0.12);
+    color: #8b5cf6;
+    border: 1px solid rgba(139, 92, 246, 0.25);
 }
 
 .anomalous-workbench-model-tag.is-vae {
@@ -8592,9 +8603,9 @@ dialog.anomalous-gallery-viewer::backdrop {
     flex-wrap: wrap;
     gap: 7px;
     padding: 8px 10px;
-    border: 1px solid rgba(45, 212, 191, 0.14);
+    border: 1px solid rgba(139, 92, 246, 0.14);
     border-radius: 8px;
-    background: rgba(45, 212, 191, 0.035);
+    background: rgba(139, 92, 246, 0.035);
 }
 
 .anomalous-workbench-node-selection-count {
@@ -8722,11 +8733,11 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 4px 8px;
     font-size: 0.88rem;
     background: rgba(10, 12, 18, 0.92);
-    border: 1px solid rgba(45, 212, 191, 0.55);
+    border: 1px solid rgba(139, 92, 246, 0.55);
     border-radius: 6px;
     color: #ffffff;
     outline: none;
-    box-shadow: 0 0 10px rgba(45, 212, 191, 0.2);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
 }
 
 .anomalous-material-card-subinfo {
@@ -8764,8 +8775,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-save-input-wrap input:focus {
-    border-color: #2dd4bf;
-    box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.2);
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
 }
 
 /* Loading & Error Box */
@@ -8785,8 +8796,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    border: 3px solid rgba(45, 212, 191, 0.15);
-    border-top-color: #2dd4bf;
+    border: 3px solid rgba(139, 92, 246, 0.15);
+    border-top-color: #8b5cf6;
     animation: anomalous-spin 0.8s linear infinite;
 }
 
@@ -8952,8 +8963,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 7px 14px;
     border-radius: 20px;
     background: rgba(15, 23, 42, 0.9);
-    border: 1.5px solid rgba(45, 212, 191, 0.55);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 16px rgba(45, 212, 191, 0.2);
+    border: 1.5px solid rgba(139, 92, 246, 0.55);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 16px rgba(139, 92, 246, 0.2);
     color: #f1f5f9;
     font-size: 0.8rem;
     font-weight: 500;
@@ -8963,10 +8974,10 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-material-drag-hint.is-target-valid {
-    border-color: #2dd4bf;
+    border-color: #8b5cf6;
     background: rgba(13, 37, 42, 0.94);
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75), 0 0 24px rgba(45, 212, 191, 0.45);
-    color: #5eead4;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75), 0 0 24px rgba(139, 92, 246, 0.45);
+    color: #fca5a5;
 }
 
 /* 4. Prompt Composer Layout (Warm Paper Studio) */
@@ -9034,7 +9045,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-prompt-meta-strip input:focus {
-    border-color: #2dd4bf;
+    border-color: #8b5cf6;
 }
 
 .anomalous-prompt-name-input {
@@ -9098,8 +9109,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-paper-note.is-positive .anomalous-paper-note-tape {
-    background: linear-gradient(90deg, #2dd4bf 0%, #0d9488 100%);
-    box-shadow: 0 0 10px rgba(45, 212, 191, 0.35);
+    background: linear-gradient(90deg, #8b5cf6 0%, #722f37 100%);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.35);
 }
 
 .anomalous-paper-note.is-negative .anomalous-paper-note-tape {
@@ -9126,7 +9137,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-paper-note.is-positive .anomalous-paper-note-title {
-    color: #5eead4;
+    color: #fca5a5;
 }
 
 .anomalous-paper-note.is-negative .anomalous-paper-note-title {
@@ -9222,7 +9233,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 10px 14px;
     border-radius: 10px;
     background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(45, 212, 191, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.2);
 }
 
 .anomalous-prompt-target-info {
@@ -9295,7 +9306,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-drawer-search input:focus {
-    border-color: #2dd4bf;
+    border-color: #8b5cf6;
 }
 
 .anomalous-drawer-list {
@@ -9320,7 +9331,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-drawer-item:hover {
     background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(45, 212, 191, 0.3);
+    border-color: rgba(139, 92, 246, 0.3);
 }
 
 .anomalous-drawer-item-title {
@@ -9362,9 +9373,9 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-drawer-item-btn:hover {
-    background: #2dd4bf;
+    background: #8b5cf6;
     color: #0f172a;
-    border-color: #2dd4bf;
+    border-color: #8b5cf6;
     font-weight: 600;
 }
 
@@ -9416,11 +9427,11 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-mixer-tab-btn.is-active {
-    background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(45, 212, 191, 0.25));
-    color: #38bdf8;
+    background: linear-gradient(135deg, rgba(220, 20, 60, 0.2), rgba(139, 92, 246, 0.25));
+    color: #dc143c;
     font-weight: 600;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(56, 189, 248, 0.35);
+    border: 1px solid rgba(220, 20, 60, 0.35);
 }
 
 .anomalous-mixer-actions {
@@ -9440,7 +9451,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 5px 12px;
     border-radius: 6px;
     border: 1px solid rgba(192, 132, 252, 0.5);
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(56, 189, 248, 0.25) 100%);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(220, 20, 60, 0.25) 100%);
     color: #e9d5ff;
     font-size: 0.78rem;
     font-weight: 600;
@@ -9453,7 +9464,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-mixer-smart-sort-btn:hover {
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.4) 0%, rgba(56, 189, 248, 0.4) 100%);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.4) 0%, rgba(220, 20, 60, 0.4) 100%);
     border-color: #c084fc;
     color: #ffffff;
     box-shadow: 0 0 14px rgba(192, 132, 252, 0.45);
@@ -9513,7 +9524,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-mixer-block.is-role-positive {
-    border-left: 3px solid #38bdf8;
+    border-left: 3px solid #dc143c;
 }
 
 .anomalous-mixer-block.is-role-negative {
@@ -9546,8 +9557,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     right: 0;
     height: 4px;
     border-radius: 2px;
-    background: #38bdf8;
-    box-shadow: 0 0 8px #38bdf8;
+    background: #dc143c;
+    box-shadow: 0 0 8px #dc143c;
     z-index: 10;
 }
 
@@ -9559,8 +9570,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     right: 0;
     height: 4px;
     border-radius: 2px;
-    background: #38bdf8;
-    box-shadow: 0 0 8px #38bdf8;
+    background: #dc143c;
+    box-shadow: 0 0 8px #dc143c;
     z-index: 10;
 }
 
@@ -9592,7 +9603,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-mixer-drag-handle:hover {
-    color: #38bdf8;
+    color: #dc143c;
 }
 
 .anomalous-mixer-drag-handle:active {
@@ -9608,7 +9619,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-mixer-block-toggle input[type="checkbox"] {
     cursor: pointer;
-    accent-color: #2dd4bf;
+    accent-color: #8b5cf6;
     width: 14px;
     height: 14px;
     margin: 0;
@@ -9714,7 +9725,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-mixer-block-textarea:focus {
     background: rgba(0, 0, 0, 0.38);
-    box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.3);
+    box-shadow: inset 0 0 0 1px rgba(220, 20, 60, 0.3);
     min-height: 52px;
     height: 52px;
 }
@@ -9728,7 +9739,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: rgba(22, 28, 42, 0.88);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(56, 189, 248, 0.28);
+    border: 1px solid rgba(220, 20, 60, 0.28);
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45);
     padding: 8px 10px;
     display: flex;
@@ -9741,8 +9752,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-mixer-deck-output:hover {
-    border-color: #38bdf8;
-    box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
+    border-color: #dc143c;
+    box-shadow: 0 0 8px rgba(220, 20, 60, 0.25);
 }
 
 .anomalous-mixer-deck-output:active {
@@ -9806,7 +9817,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-mixer-drag-hint strong {
-    color: #38bdf8;
+    color: #dc143c;
 }
 
 .anomalous-mixer-output-actions {
@@ -9823,7 +9834,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 10px 16px;
     border-radius: 8px;
     background: rgba(15, 23, 42, 0.94);
-    border: 1px solid rgba(45, 212, 191, 0.5);
+    border: 1px solid rgba(139, 92, 246, 0.5);
     color: #f1f5f9;
     font-size: 0.84rem;
     font-weight: 500;
@@ -9967,7 +9978,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-search-input:focus {
-    border-color: #38bdf8;
+    border-color: #dc143c;
     background: rgba(0, 0, 0, 0.45);
 }
 
@@ -9997,15 +10008,15 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-workbench-pill.is-active {
-    background-color: rgba(56, 189, 248, 0.22);
+    background-color: rgba(220, 20, 60, 0.22);
     background-image: url('assets/pill_active_glow.webp');
     background-size: cover;
     background-position: center;
-    border-color: rgba(56, 189, 248, 0.55);
+    border-color: rgba(220, 20, 60, 0.55);
     color: #f0fdf4;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
     font-weight: 600;
-    box-shadow: 0 1px 6px rgba(56, 189, 248, 0.25);
+    box-shadow: 0 1px 6px rgba(220, 20, 60, 0.25);
 }
 
 /* Inline New Card Creation Form */
@@ -10016,7 +10027,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 10px 12px;
     border-radius: 8px;
     background: rgba(15, 23, 42, 0.85);
-    border: 1px solid rgba(45, 212, 191, 0.35);
+    border: 1px solid rgba(139, 92, 246, 0.35);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     animation: fadeInSlideDown 0.2s ease;
     flex-shrink: 0;
@@ -10030,7 +10041,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-form-title {
     font-size: 0.82rem;
     font-weight: 600;
-    color: #2dd4bf;
+    color: #8b5cf6;
 }
 
 .anomalous-form-input,
@@ -10091,7 +10102,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.75) 75%, rgba(0, 0, 0, 0.3) 100%);
     mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.75) 75%, rgba(0, 0, 0, 0.3) 100%);
     border-radius: 10px;
-    border: 1px dashed rgba(56, 189, 248, 0.25);
+    border: 1px dashed rgba(220, 20, 60, 0.25);
     overflow: hidden;
     isolation: isolate;
 }
@@ -10130,7 +10141,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-source-prompt-card.is-cat-base {
-    border-left-color: #38bdf8;
+    border-left-color: #dc143c;
 }
 
 .anomalous-source-prompt-card.is-cat-style {
@@ -10235,26 +10246,26 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-source-action-btn.is-dock {
-    background: rgba(45, 212, 191, 0.15);
-    border-color: rgba(45, 212, 191, 0.4);
-    color: #2dd4bf;
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.4);
+    color: #8b5cf6;
     font-weight: 600;
 }
 
 .anomalous-source-action-btn.is-dock:hover {
-    background: #2dd4bf;
+    background: #8b5cf6;
     color: #0f172a;
 }
 
 .anomalous-source-action-btn.is-save-lib {
-    background: rgba(56, 189, 248, 0.15);
-    border-color: rgba(56, 189, 248, 0.4);
-    color: #38bdf8;
+    background: rgba(220, 20, 60, 0.15);
+    border-color: rgba(220, 20, 60, 0.4);
+    color: #dc143c;
     font-weight: 500;
 }
 
 .anomalous-source-action-btn.is-save-lib:hover {
-    background: #38bdf8;
+    background: #dc143c;
     color: #0f172a;
 }
 
@@ -10284,7 +10295,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-role-label input[type="radio"] {
     cursor: pointer;
-    accent-color: #38bdf8;
+    accent-color: #dc143c;
     margin: 0;
 }
 
@@ -10318,22 +10329,22 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 @keyframes anomalousTrackPulse {
     0% {
-        border-color: rgba(45, 212, 191, 0.45);
-        box-shadow: inset 0 0 14px rgba(45, 212, 191, 0.12), 0 0 8px rgba(45, 212, 191, 0.15);
+        border-color: rgba(139, 92, 246, 0.45);
+        box-shadow: inset 0 0 14px rgba(139, 92, 246, 0.12), 0 0 8px rgba(139, 92, 246, 0.15);
     }
     50% {
-        border-color: rgba(45, 212, 191, 0.95);
-        box-shadow: inset 0 0 26px rgba(45, 212, 191, 0.28), 0 0 16px rgba(45, 212, 191, 0.38);
+        border-color: rgba(139, 92, 246, 0.95);
+        box-shadow: inset 0 0 26px rgba(139, 92, 246, 0.28), 0 0 16px rgba(139, 92, 246, 0.38);
     }
     100% {
-        border-color: rgba(45, 212, 191, 0.45);
-        box-shadow: inset 0 0 14px rgba(45, 212, 191, 0.12), 0 0 8px rgba(45, 212, 191, 0.15);
+        border-color: rgba(139, 92, 246, 0.45);
+        box-shadow: inset 0 0 14px rgba(139, 92, 246, 0.12), 0 0 8px rgba(139, 92, 246, 0.15);
     }
 }
 
 .anomalous-prompt-workbench:has(.is-dragging-source) .anomalous-assembly-track,
 .is-source-dragging .anomalous-assembly-track {
-    border: 2px dashed #2dd4bf !important;
+    border: 2px dashed #8b5cf6 !important;
     animation: anomalousTrackPulse 1.8s ease-in-out infinite;
 }
 
@@ -10353,9 +10364,9 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-assembly-dropzone.is-drag-over {
-    border-color: #38bdf8;
-    background: rgba(56, 189, 248, 0.08);
-    box-shadow: inset 0 0 24px rgba(56, 189, 248, 0.2);
+    border-color: #dc143c;
+    background: rgba(220, 20, 60, 0.08);
+    box-shadow: inset 0 0 24px rgba(220, 20, 60, 0.2);
     transform: scale(0.995);
 }
 
@@ -10394,12 +10405,12 @@ dialog.anomalous-gallery-viewer::backdrop {
     background-image: url('assets/btn_cyber_grid.webp') !important;
     background-size: cover !important;
     background-position: center !important;
-    border: 1px solid rgba(56, 189, 248, 0.55) !important;
+    border: 1px solid rgba(220, 20, 60, 0.55) !important;
     border-radius: 3px 10px 3px 10px !important;
     color: #ffffff !important;
     font-weight: 600 !important;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85) !important;
-    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3), inset 0 0 10px rgba(56, 189, 248, 0.2) !important;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3), inset 0 0 10px rgba(220, 20, 60, 0.2) !important;
     transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
     overflow: hidden;
 }
@@ -10429,7 +10440,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, #38bdf8, #2dd4bf, #a7f3d0);
+    background: linear-gradient(90deg, #dc143c, #8b5cf6, #fca5a5);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
@@ -10442,8 +10453,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-btn-extract-node:hover {
-    border-color: #38bdf8 !important;
-    box-shadow: 0 0 16px rgba(56, 189, 248, 0.55), inset 0 0 14px rgba(45, 212, 191, 0.35) !important;
+    border-color: #dc143c !important;
+    box-shadow: 0 0 16px rgba(220, 20, 60, 0.55), inset 0 0 14px rgba(139, 92, 246, 0.35) !important;
     transform: translateY(-1px);
     filter: brightness(1.18);
 }
@@ -10675,7 +10686,7 @@ html.theme-abyssal-scarlet,
     border-radius: 2px 10px 2px 10px !important;
     color: #ffe4e6 !important;
     text-shadow: 0 0 6px rgba(220, 20, 60, 0.8) !important;
-    box-shadow: 0 4px 16px rgba(220, 20, 60, 0.25) !important;
+    box-shadow: 0 4px 10px rgba(220, 20, 60, 0.25) !important;
 }
 
 .theme-abyssal-scarlet .anomalous-workbench-action-btn.is-primary:hover {
@@ -10712,7 +10723,7 @@ html.theme-abyssal-scarlet,
 
 .theme-abyssal-scarlet .anomalous-mixer-smart-sort-btn:hover {
     border-color: #ff3366 !important;
-    box-shadow: 0 0 16px rgba(220, 20, 60, 0.65) !important;
+    box-shadow: 0 0 8px rgba(220, 20, 60, 0.45) !important;
     transform: translateY(-1px);
     filter: brightness(1.15);
 }
@@ -10798,18 +10809,18 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
 }
 
 #anomalous-scan-btn:hover svg {
-    filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.6));
+    filter: drop-shadow(0 0 4px rgba(220, 20, 60, 0.6));
 }
 
 #anomalous-scan-btn.anomalous-radar-spinning {
-    color: #38bdf8 !important;
-    background: rgba(56, 189, 248, 0.12) !important;
-    border: 1px solid rgba(56, 189, 248, 0.35) !important;
+    color: #dc143c !important;
+    background: rgba(220, 20, 60, 0.12) !important;
+    border: 1px solid rgba(220, 20, 60, 0.35) !important;
 }
 
 #anomalous-scan-btn.anomalous-radar-spinning svg {
     animation: anomalous-radar-spin 1.4s linear infinite !important;
-    filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.75)) !important;
+    filter: drop-shadow(0 0 6px rgba(220, 20, 60, 0.75)) !important;
 }
 
 @keyframes anomalous-radar-spin {
@@ -10888,9 +10899,9 @@ button:hover .anomalous-btn-icon {
 }
 
 #anomalous-global-settings-btn:hover {
-    color: #38bdf8 !important;
-    background: rgba(56, 189, 248, 0.12) !important;
-    border: 1px solid rgba(56, 189, 248, 0.3) !important;
+    color: #dc143c !important;
+    background: rgba(220, 20, 60, 0.12) !important;
+    border: 1px solid rgba(220, 20, 60, 0.3) !important;
 }
 
 /* Abyssal Scarlet Mode overrides for Task 8 icon buttons */
@@ -11104,3 +11115,98 @@ button:hover .anomalous-btn-icon {
 
 
 
+
+
+/* ==========================================================================
+   GOTHIC VAMPIRE MASTER HEADER & GALLERY LATTICE ENHANCEMENTS
+   ========================================================================== */
+
+#anomalous-header {
+    height: 60px;
+    background: linear-gradient(180deg, rgba(26, 16, 24, 0.96) 0%, rgba(14, 8, 16, 0.98) 100%) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 20px !important;
+    border-bottom: 1px solid rgba(220, 20, 60, 0.28) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.65), inset 0 -1px 0 rgba(220, 20, 60, 0.15) !important;
+    cursor: move;
+    position: relative;
+    z-index: 10;
+}
+
+.anomalous-header-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.anomalous-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 0 0 auto;
+}
+
+.anomalous-header-center {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    flex: 1 1 auto !important;
+    margin: 0 auto !important;
+}
+
+.anomalous-header-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    flex: 0 0 auto;
+}
+
+#anomalous-header button {
+    margin-right: 0;
+    padding: 9px 18px;
+    background: rgba(30, 18, 28, 0.6);
+    color: #e2e8f0;
+    border: 1px solid rgba(220, 20, 60, 0.2);
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.02em;
+    font-weight: 500;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#anomalous-header button:hover {
+    background: rgba(220, 20, 60, 0.15) !important;
+    border-color: rgba(220, 20, 60, 0.45) !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 20, 60, 0.25) !important;
+}
+
+#anomalous-header button.active {
+    background: linear-gradient(135deg, rgba(220, 20, 60, 0.3) 0%, rgba(114, 47, 55, 0.4) 100%) !important;
+    border-color: rgba(220, 20, 60, 0.65) !important;
+    color: #fff !important;
+    box-shadow: 0 0 10px rgba(220, 20, 60, 0.3) !important;
+}
+
+#anomalous-gallery-panel,
+.anomalous-gallery-grid,
+.anomalous-gallery-container {
+    background-color: #0c0812 !important;
+    background-image: 
+        radial-gradient(ellipse at 50% 15%, rgba(220, 20, 60, 0.08) 0%, transparent 65%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.015) 25%, transparent 25%),
+        linear-gradient(225deg, rgba(255, 255, 255, 0.015) 25%, transparent 25%),
+        linear-gradient(315deg, rgba(255, 255, 255, 0.015) 25%, transparent 25%),
+        linear-gradient(45deg, rgba(255, 255, 255, 0.015) 25%, transparent 25%) !important;
+    background-size: 100% 100%, 28px 28px, 28px 28px, 28px 28px, 28px 28px !important;
+    background-position: 0 0, 0 0, 14px 0, 14px -14px, 0 14px !important;
+}

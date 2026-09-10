@@ -13,13 +13,13 @@ const t = (key, params) => translate(key, params);
 const SCAN_RADAR_ICON_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="9"/><path d="M12 12 18.5 5.5"/><circle cx="12" cy="12" r="2"/><path d="M12 7a5 5 0 0 1 5 5"/></svg>`;
 
 const SIDEBAR_ICONS = {
-    MODELS: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+    MODELS: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><path d="m21 16-9 5-9-5V8l9-5 9 5v8z"/><path d="m3.27 6.96 8.73 4.84 8.73-4.84"/><path d="M12 22.08V11.8"/></svg>`,
     GALLERY: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`,
-    RECIPES: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>`,
+    RECIPES: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v6"/><path d="M9 6h6"/><path d="M7.8 7.8l8.4 8.4"/></svg>`,
     DOCK: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>`,
     HELP: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>`,
     DOCTOR: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>`,
-    ASSISTANT: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/><line x1="8" y1="19" x2="16" y2="19"/></svg>`,
+    ASSISTANT: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="m15 4 5 5"/><path d="m18 7-8.5 8.5a2.12 2.12 0 1 1-3-3L15 4Z"/><path d="m2 22 5-5"/><path d="M19 13v2"/><path d="M21 15h-2"/><path d="M7 2v2"/><path d="M9 4H7"/></svg>`,
     SETTINGS: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`,
     FOLDER: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px;margin-right:7px;"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>`,
     CHEVRON_UP: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><polyline points="18 15 12 9 6 15"/></svg>`,
@@ -218,14 +218,14 @@ export function createDOM() {
             }
         }, 1000);
 
-        const spacer = document.createElement('div');
-        spacer.style.flex = '1 1 auto';
-
         const leftGroup = document.createElement('div');
-        leftGroup.className = 'anomalous-header-group';
+        leftGroup.className = 'anomalous-header-group anomalous-header-left';
+
+        const centerGroup = document.createElement('div');
+        centerGroup.className = 'anomalous-header-group anomalous-header-center';
 
         const rightGroup = document.createElement('div');
-        rightGroup.className = 'anomalous-header-group';
+        rightGroup.className = 'anomalous-header-group anomalous-header-right';
 
         // We will define hideAllPanels as a class method instead of a local closure to make it globally accessible.
 
@@ -341,9 +341,11 @@ export function createDOM() {
             this.showRecipes();
         };
 
-        rightGroup.appendChild(modelsBtn);
-        rightGroup.appendChild(galleryBtn);
-        rightGroup.appendChild(nbBtn);
+        centerGroup.appendChild(modelsBtn);
+        centerGroup.appendChild(galleryBtn);
+        centerGroup.appendChild(nbBtn);
+        leftGroup.appendChild(dockBtn);
+        leftGroup.appendChild(helpBtn);
 
         const apiKeyBtn = document.createElement('button');
         apiKeyBtn.id = 'anomalous-api-btn';
@@ -367,7 +369,7 @@ export function createDOM() {
         scanBtn.removeAttribute('title');
         scanBtn.setAttribute('aria-label', t('sidebarScanWizard'));
         scanBtn.setAttribute('data-tooltip', t('sidebarScanWizard'));
-        scanBtn.setAttribute('data-tooltip-pos', 'right');
+        scanBtn.setAttribute('data-tooltip-pos', 'top');
         setScanButtonState(scanBtn, false);
         scanBtn.style.background = 'transparent';
         scanBtn.style.border = 'none';
@@ -728,7 +730,11 @@ export function createDOM() {
                 left.style.gap = '16px';
 
                 const iconEl = document.createElement('div');
-                iconEl.innerText = icon;
+                if (typeof icon === 'string' && icon.startsWith('<')) {
+                    iconEl.innerHTML = icon;
+                } else {
+                    iconEl.innerText = icon;
+                }
                 iconEl.style.fontSize = '1.4em';
                 iconEl.style.lineHeight = '1.2';
                 iconEl.style.width = '24px';
@@ -819,7 +825,7 @@ export function createDOM() {
             pRow.style.display = 'flex';
             pRow.style.alignItems = 'center';
             pRow.style.gap = '8px';
-            pRow.innerHTML = `<span style="font-size:0.9em; color:#ddd;">💾 ${t('sidebarPhysicalRename')}</span>`;
+            pRow.innerHTML = `<span style="font-size:0.9em; color:#ddd; display:inline-flex; align-items:center; gap:6px;"><svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>${t('sidebarPhysicalRename')}</span>`;
             pRow.appendChild(physicalSwitch);
 
             const pDesc = document.createElement('div');
@@ -846,7 +852,8 @@ export function createDOM() {
             dualChannelRow.appendChild(vContainer);
             dualChannelRow.appendChild(pContainer);
 
-            s2List.appendChild(createListRow('📝', 'sidebarNormalize', 'sidebarNormalizeDesc', createMaterialSwitch(enableRename, (s) => { enableRename = s; updateDualChannelUI(); })));
+            const editSvg = '<svg style="width:20px;height:20px;vertical-align:middle;stroke:#dc143c;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+            s2List.appendChild(createListRow(editSvg, 'sidebarNormalize', 'sidebarNormalizeDesc', createMaterialSwitch(enableRename, (s) => { enableRename = s; updateDualChannelUI(); })));
             s2List.lastChild.style.borderBottom = 'none';
             s2List.appendChild(dualChannelRow);
             updateDualChannelUI();
@@ -865,9 +872,12 @@ export function createDOM() {
 
             const s3List = document.createElement('div');
             const isInject = localStorage.getItem('anomalous_inject_hash') !== 'false';
-            s3List.appendChild(createListRow('📦', 'sidebarProvenance', 'sidebarProvenanceDesc', createMaterialSwitch(isInject, (s) => localStorage.setItem('anomalous_inject_hash', s ? 'true' : 'false'))));
-            s3List.appendChild(createListRow('⚠️', 'sidebarOverwrite', 'sidebarOverwriteDesc', createMaterialSwitch(enableForceOverwrite, (s) => enableForceOverwrite = s)));
-            s3List.appendChild(createListRow('🪄', 'sidebarSmartFix', 'sidebarSmartFixDesc', createMaterialSwitch(enableAutoCheck, (s) => enableAutoCheck = s)));
+            const cubeSvg = '<svg style="width:20px;height:20px;vertical-align:middle;stroke:#dc143c;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>';
+            const warnSvg = '<svg style="width:20px;height:20px;vertical-align:middle;stroke:#f59e0b;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+            const wandSvg = '<svg style="width:20px;height:20px;vertical-align:middle;stroke:#8b5cf6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+            s3List.appendChild(createListRow(cubeSvg, 'sidebarProvenance', 'sidebarProvenanceDesc', createMaterialSwitch(isInject, (s) => localStorage.setItem('anomalous_inject_hash', s ? 'true' : 'false'))));
+            s3List.appendChild(createListRow(warnSvg, 'sidebarOverwrite', 'sidebarOverwriteDesc', createMaterialSwitch(enableForceOverwrite, (s) => enableForceOverwrite = s)));
+            s3List.appendChild(createListRow(wandSvg, 'sidebarSmartFix', 'sidebarSmartFixDesc', createMaterialSwitch(enableAutoCheck, (s) => enableAutoCheck = s)));
             s3List.lastChild.style.borderBottom = 'none';
 
             section3.appendChild(s3List);
@@ -1125,11 +1135,10 @@ export function createDOM() {
 
 
 
-        rightGroup.appendChild(dockBtn);
         rightGroup.appendChild(closeBtn);
 
         header.appendChild(leftGroup);
-        header.appendChild(spacer);
+        header.appendChild(centerGroup);
         header.appendChild(rightGroup);
 
         const settingsHubModal = document.createElement('div');
@@ -1159,7 +1168,7 @@ export function createDOM() {
             scanBtn.removeAttribute('title');
             scanBtn.setAttribute('aria-label', t('sidebarScanWizard'));
             scanBtn.setAttribute('data-tooltip', t('sidebarScanWizard'));
-            scanBtn.setAttribute('data-tooltip-pos', 'right');
+            scanBtn.setAttribute('data-tooltip-pos', 'top');
             setScanButtonState(scanBtn, isCurrentlyScanning);
             helpBtn.innerHTML = `${SIDEBAR_ICONS.HELP}<span class="anomalous-btn-text">${t('help')}</span>`;
             nbBtn.removeAttribute('title');
@@ -1168,13 +1177,13 @@ export function createDOM() {
             nbBtn.innerHTML = `${SIDEBAR_ICONS.RECIPES}<span class="anomalous-btn-text">${t('recipeTitle')}</span>`;
 
             const dBtn = document.getElementById('anomalous-doctor-btn');
-            if (dBtn) { dBtn.removeAttribute('title'); dBtn.setAttribute('data-tooltip', t('sidebarDoctor')); dBtn.setAttribute('data-tooltip-pos', 'right'); }
+            if (dBtn) { dBtn.removeAttribute('title'); dBtn.setAttribute('data-tooltip', t('sidebarDoctor')); dBtn.setAttribute('data-tooltip-pos', 'top'); }
             const aBtn = document.getElementById('anomalous-assistant-btn');
-            if (aBtn) { aBtn.removeAttribute('title'); aBtn.setAttribute('data-tooltip', t('sidebarAssistant')); aBtn.setAttribute('data-tooltip-pos', 'right'); }
+            if (aBtn) { aBtn.removeAttribute('title'); aBtn.setAttribute('data-tooltip', t('sidebarAssistant')); aBtn.setAttribute('data-tooltip-pos', 'top'); }
             const iBtn = document.getElementById('anomalous-materials-btn');
-            if (iBtn) { iBtn.removeAttribute('title'); iBtn.setAttribute('aria-label', t('materialLibrary')); iBtn.setAttribute('data-tooltip', t('materialLibrary')); iBtn.setAttribute('data-tooltip-pos', 'right'); }
+            if (iBtn) { iBtn.removeAttribute('title'); iBtn.setAttribute('aria-label', t('materialLibrary')); iBtn.setAttribute('data-tooltip', t('materialLibrary')); iBtn.setAttribute('data-tooltip-pos', 'top'); }
             const sBtn = document.getElementById('anomalous-global-settings-btn');
-            if (sBtn) { sBtn.removeAttribute('title'); sBtn.setAttribute('data-tooltip', t('sidebarSettings')); sBtn.setAttribute('data-tooltip-pos', 'right'); }
+            if (sBtn) { sBtn.removeAttribute('title'); sBtn.setAttribute('data-tooltip', t('sidebarSettings')); sBtn.setAttribute('data-tooltip-pos', 'top'); }
 
             // Reset dynamic panels so they re-render in new language
             if (window.anomalousBrowserInstance) {
@@ -1647,7 +1656,7 @@ export function createDOM() {
         settingsBtn.removeAttribute('title');
         settingsBtn.setAttribute('aria-label', t('sidebarSettings'));
         settingsBtn.setAttribute('data-tooltip', t('sidebarSettings'));
-        settingsBtn.setAttribute('data-tooltip-pos', 'right');
+        settingsBtn.setAttribute('data-tooltip-pos', 'top');
         settingsBtn.style.background = 'transparent';
         settingsBtn.style.border = 'none';
         settingsBtn.style.borderRadius = '6px';
@@ -1679,7 +1688,7 @@ export function createDOM() {
         importBtn.removeAttribute('title');
         importBtn.setAttribute('aria-label', t('materialLibrary'));
         importBtn.setAttribute('data-tooltip', t('materialLibrary'));
-        importBtn.setAttribute('data-tooltip-pos', 'right');
+        importBtn.setAttribute('data-tooltip-pos', 'top');
         importBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`;
         importBtn.style.background = 'transparent';
         importBtn.style.border = 'none';
@@ -1697,7 +1706,7 @@ export function createDOM() {
         doctorBtn.removeAttribute('title');
         doctorBtn.setAttribute('aria-label', t('sidebarDoctor'));
         doctorBtn.setAttribute('data-tooltip', t('sidebarDoctor'));
-        doctorBtn.setAttribute('data-tooltip-pos', 'right');
+        doctorBtn.setAttribute('data-tooltip-pos', 'top');
         doctorBtn.innerHTML = SIDEBAR_ICONS.DOCTOR;
         doctorBtn.style.background = 'transparent';
         doctorBtn.style.border = 'none';
@@ -1733,7 +1742,7 @@ export function createDOM() {
         assistantBtn.removeAttribute('title');
         assistantBtn.setAttribute('aria-label', t('sidebarAssistant'));
         assistantBtn.setAttribute('data-tooltip', t('sidebarAssistant'));
-        assistantBtn.setAttribute('data-tooltip-pos', 'right');
+        assistantBtn.setAttribute('data-tooltip-pos', 'top');
         assistantBtn.innerHTML = SIDEBAR_ICONS.ASSISTANT;
         assistantBtn.style.background = 'transparent';
         assistantBtn.style.border = 'none';
