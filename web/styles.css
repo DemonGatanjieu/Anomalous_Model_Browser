@@ -8,35 +8,36 @@
     --c-cyan-glow: rgba(6, 182, 212, 0.25);
     --c-purple: #8b5cf6;
     --c-purple-glow: rgba(139, 92, 246, 0.25);
-    --c-silver: #94a3b8;
-    --c-silver-glow: rgba(148, 163, 184, 0.2);
-    --c-blue: #38bdf8;
-    --c-blue-glow: rgba(56, 189, 248, 0.25);
+    --c-silver: #9ca3af;
+    --c-silver-glow: rgba(156, 163, 175, 0.2);
+    --c-blue: #9ca3af;
+    --c-blue-glow: rgba(156, 163, 175, 0.2);
     --c-crimson: #ef4444;
     --c-crimson-glow: rgba(239, 68, 68, 0.25);
-    --c-wine: #475569;
-    --c-wine-glow: rgba(71, 85, 105, 0.2);
+    --c-wine: #4b5563;
+    --c-wine-glow: rgba(75, 85, 99, 0.2);
     --c-emerald: #10b981;
     --c-emerald-glow: rgba(16, 185, 129, 0.25);
 
-    /* AMB Base Design System Tokens - Normal Mode (Dark Neutral Obsidian Studio) */
-    --amb-bg-page: #141519;
-    --amb-bg-panel: #1C1E24;
-    --amb-bg-card: #24262E;
-    --amb-bg-card-hover: #2d303a;
-    --amb-bg-input: #181a22;
-    --amb-text-main: #E7E8ED;
-    --amb-text-muted: #A7AAB5;
-    --amb-border: rgba(255, 255, 255, 0.09);
-    --amb-border-hover: rgba(255, 255, 255, 0.18);
-    --amb-btn-primary-bg: #D7D9E0;
-    --amb-btn-primary-hover: #E5E7EB;
-    --amb-btn-primary-text: #15171C;
+    /* AMB Base Design System Tokens - Normal Mode (Neutral Dark Charcoal & Obsidian Studio) */
+    --amb-bg-page: #131315;
+    --amb-bg-panel: #1a1a1d;
+    --amb-bg-card: #202024;
+    --amb-bg-card-hover: #28282d;
+    --amb-bg-input: #151517;
+    --amb-text-main: #f3f4f6;
+    --amb-text-muted: #9ca3af;
+    --amb-border: rgba(255, 255, 255, 0.08);
+    --amb-border-hover: rgba(255, 255, 255, 0.16);
+    --amb-btn-primary-bg: #e5e7eb;
+    --amb-btn-primary-hover: #ffffff;
+    --amb-btn-primary-text: #111827;
     --amb-accent-gold: rgba(234, 179, 8, 0.65);
-    --amb-accent-line: rgba(215, 217, 224, 0.4);
+    --amb-accent-line: rgba(229, 231, 235, 0.35);
+    --amb-accent: #f59e0b;
     --amb-radius-control: 6px;
-    --amb-radius-card: 10px;
-    --amb-radius-panel: 12px;
+    --amb-radius-card: 8px;
+    --amb-radius-panel: 10px;
 }
 
 /* Abyssal Scarlet Gothic Theme Overrides */
@@ -260,8 +261,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 #anomalous-container {
     width: 90%;
     height: 90%;
-    background-color: var(--amb-bg-page, #0b0d13);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: var(--amb-bg-page, #131315);
+    border: 1px solid rgba(255, 255, 255, 0.09);
     border-radius: 8px;
     display: flex;
     flex-direction: row;
@@ -272,7 +273,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     top: 5%;
     container-type: inline-size;
     font-size: calc(16px * var(--anomalous-scale, 1));
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7);
 }
 
 #anomalous-container::before {
@@ -281,11 +282,12 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     position: absolute;
     inset: 0;
     background-image: 
-        radial-gradient(ellipse 95% 85% at 50% 35%, rgba(11, 13, 19, 0.15) 0%, rgba(11, 13, 19, 0.65) 100%),
+        radial-gradient(ellipse 95% 85% at 50% 35%, rgba(19, 19, 21, 0.2) 0%, rgba(19, 19, 21, 0.75) 100%),
         url('assets/archive_library_bg.webp');
     background-size: cover;
     background-position: center 25%;
-    opacity: var(--anomalous-bg-opacity, 0.12);
+    filter: grayscale(100%) brightness(0.55) contrast(1.15);
+    opacity: var(--anomalous-bg-opacity, 0.08);
     transition: opacity 0.3s ease;
     pointer-events: none;
     z-index: 0;
@@ -454,14 +456,14 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-card {
     position: relative;
-    background: rgba(18, 20, 26, 0.95);
+    background: var(--amb-bg-card, #202024);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     height: 340px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
     will-change: transform, box-shadow;
     cursor: pointer;
@@ -469,8 +471,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-card:hover {
     transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.22);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .theme-abyssal-scarlet .anomalous-card {
@@ -575,16 +577,16 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 #anomalous-container.view-mode-aesthetic .anomalous-card {
     height: 360px;
     border-radius: 8px;
-    background: rgba(18, 20, 28, 0.78);
+    background: rgba(28, 28, 32, 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.09);
 }
 
 #anomalous-container.view-mode-aesthetic .anomalous-card:hover {
-    background: rgba(22, 25, 36, 0.88);
-    border-color: rgba(255, 255, 255, 0.28);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+    background: rgba(34, 34, 38, 0.92);
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
 }
 
 /* Model Card Labels: Always visible at rest, crisp non-blurry gradient mask */
@@ -594,7 +596,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     left: 0;
     right: 0;
     padding: 26px 10px 8px;
-    background: linear-gradient(to top, rgba(14, 15, 20, 0.96) 0%, rgba(14, 15, 20, 0.72) 65%, transparent 100%);
+    background: linear-gradient(to top, rgba(16, 16, 18, 0.96) 0%, rgba(16, 16, 18, 0.7) 65%, transparent 100%);
     display: flex;
     flex-direction: column;
     gap: 3px;
@@ -606,7 +608,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-card:hover .anomalous-card-labels {
-    background: linear-gradient(to top, rgba(14, 15, 20, 0.98) 0%, rgba(14, 15, 20, 0.85) 75%, transparent 100%);
+    background: linear-gradient(to top, rgba(16, 16, 18, 0.98) 0%, rgba(16, 16, 18, 0.82) 75%, transparent 100%);
 }
 
 .theme-abyssal-scarlet .anomalous-card-labels {
@@ -620,7 +622,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-card-title {
     font-size: 0.88rem;
     font-weight: 600;
-    color: #f8fafc;
+    color: #f3f4f6;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -629,7 +631,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-card-filename {
     font-size: 0.72rem;
-    color: #94a3b8;
+    color: #9ca3af;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -778,7 +780,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-scan-progress-fill {
     height: 100%;
     border-radius: inherit;
-    background: #8ab4f8;
+    background: #10b981;
     transition: width 180ms ease;
 }
 
@@ -859,36 +861,36 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     flex-direction: row;
 }
 
-/* Island UI: Floating Sidebar Navigation Console (Unified Frosted Glass Blend) */
+/* Island UI: Floating Sidebar Navigation Console (Neutral Charcoal Frosted Glass) */
 #anomalous-sidebar-wrapper {
     width: 250px;
     margin: 8px 0 8px 8px;
     height: calc(100% - 16px);
-    background: rgba(12, 14, 20, 0.52);
+    background: rgba(22, 22, 25, 0.85);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     position: relative;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
+    border-radius: 10px;
     display: flex;
     flex-direction: column;
     transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.3s ease;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     overflow: visible;
     box-sizing: border-box;
 }
 
 #anomalous-doctor-panel,
 #anomalous-assistant-panel {
-    background: var(--amb-bg-page, #0b0d13) !important;
+    background: var(--amb-bg-page, #131315) !important;
     position: relative;
     z-index: 2;
 }
 
 .anomalous-brand-badge {
     background: rgba(255, 255, 255, 0.06) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    color: #e2e8f0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #e5e7eb !important;
     border-radius: 6px !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
     backdrop-filter: blur(8px) !important;
@@ -897,20 +899,20 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 #anomalous-sidebar input[type="text"] {
     background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
     backdrop-filter: blur(8px) !important;
-    color: #fff !important;
+    color: #f3f4f6 !important;
     transition: all 0.2s ease !important;
 }
 
 #anomalous-sidebar input[type="text"]:focus {
-    border-color: rgba(255, 255, 255, 0.35) !important;
-    background: rgba(255, 255, 255, 0.09) !important;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.06) !important;
 }
 
 #anomalous-sidebar-actions {
-    background: rgba(12, 14, 20, 0.35) !important;
+    background: rgba(20, 20, 23, 0.6) !important;
     backdrop-filter: blur(12px) !important;
     border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
@@ -942,13 +944,13 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     max-height: calc(100% - 32px);
     overflow-y: auto;
     box-sizing: border-box;
-    background: rgba(20, 22, 30, 0.96);
+    background: rgba(24, 24, 28, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
     padding: 12px;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
     z-index: 999999 !important;
     transition: left 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -1015,8 +1017,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     background: rgba(255, 255, 255, 0.08);
     color: #fff;
     font-weight: 600;
-    border-left: 2px solid #94a3b8;
-    box-shadow: inset 3px 0 6px rgba(255, 255, 255, 0.05);
+    border-left: 2px solid #e5e7eb;
+    box-shadow: inset 3px 0 6px rgba(255, 255, 255, 0.03);
     border-radius: 0 6px 6px 0;
 }
 
@@ -2452,9 +2454,9 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-cover-choice.selected {
-    border-color: #38bdf8;
-    color: #38bdf8;
-    box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.35);
+    border-color: #e5e7eb;
+    color: #e5e7eb;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
 }
 
 .theme-abyssal-scarlet .anomalous-recipe-cover-choice.selected {
@@ -3199,10 +3201,10 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-model-location-copy {
     justify-self: start;
     padding: 4px 9px;
-    border: 1px solid rgba(138, 180, 248, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 5px;
-    background: rgba(138, 180, 248, 0.08);
-    color: #8ab4f8;
+    background: rgba(255, 255, 255, 0.06);
+    color: #e5e7eb;
     cursor: pointer;
     font-size: 0.75em;
 }
@@ -5664,8 +5666,8 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-material-film-thumb.is-selected {
-    border-color: #38bdf8;
-    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4);
+    border-color: #ffffff;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4);
 }
 
 .theme-abyssal-scarlet .anomalous-material-film-thumb.is-selected {
@@ -11348,9 +11350,9 @@ html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
 }
 
 #anomalous-scan-btn.anomalous-radar-spinning {
-    color: #38bdf8 !important;
-    background: rgba(56, 189, 248, 0.12) !important;
-    border: 1px solid rgba(56, 189, 248, 0.35) !important;
+    color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.12) !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
 }
 
 #anomalous-scan-btn.anomalous-radar-spinning svg {
@@ -11395,6 +11397,15 @@ button:hover .anomalous-btn-icon {
     filter: none;
 }
 
+#anomalous-sidebar-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 10px 8px;
+    gap: 4px;
+    box-sizing: border-box;
+}
+
 #anomalous-sidebar-actions button {
     display: inline-flex !important;
     align-items: center !important;
@@ -11404,7 +11415,7 @@ button:hover .anomalous-btn-icon {
     border-radius: 6px !important;
     box-sizing: border-box !important;
     vertical-align: middle !important;
-    color: var(--amb-text-muted, #94a3b8) !important;
+    color: var(--amb-text-muted, #9ca3af) !important;
     background: transparent !important;
     border: 1px solid transparent !important;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -11424,7 +11435,7 @@ button:hover .anomalous-btn-icon {
 
 #anomalous-sidebar-actions button:hover svg {
     transform: scale(1.08);
-    color: var(--amb-accent, #38bdf8);
+    color: #ffffff !important;
 }
 
 /* Abyssal Scarlet Mode overrides for Task 8 icon buttons (Sharp Borders & Inner Shadow) */
@@ -11474,19 +11485,7 @@ button:hover .anomalous-btn-icon {
 }
 
 #anomalous-sidebar-actions::before {
-    content: '';
-    position: absolute;
-    bottom: -15px;
-    right: -15px;
-    width: 90px;
-    height: 90px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='white' stroke-width='1.5'%3E%3Ccircle cx='50' cy='50' r='45' stroke-dasharray='4 3'/%3E%3Ccircle cx='50' cy='50' r='30'/%3E%3Ccircle cx='50' cy='50' r='10'/%3E%3Cline x1='50' y1='5' x2='50' y2='95'/%3E%3Cline x1='5' y1='50' x2='95' y2='50'/%3E%3Cpolygon points='50,20 80,50 50,80 20,50'/%3E%3C/svg%3E");
-    background-size: contain;
-    background-repeat: no-repeat;
-    opacity: 0.04;
-    pointer-events: none;
-    z-index: 0;
-    transition: opacity 0.3s ease;
+    display: none !important;
 }
 
 .theme-abyssal-scarlet #anomalous-sidebar-actions::before {
@@ -11718,10 +11717,10 @@ button:hover .anomalous-btn-icon {
    Easter Egg Mode: Gothic Vampire Abyssal Scarlet Expansion
    ========================================================================== */
 
-/* 1. Normal Mode Master Header (Unified Frosted Glass Blend) */
+/* 1. Normal Mode Master Header (Neutral Charcoal Frosted Glass) */
 #anomalous-header {
     height: 60px;
-    background: rgba(12, 14, 20, 0.48) !important;
+    background: rgba(20, 20, 23, 0.85) !important;
     backdrop-filter: blur(20px) !important;
     -webkit-backdrop-filter: blur(20px) !important;
     display: flex !important;
@@ -11729,7 +11728,7 @@ button:hover .anomalous-btn-icon {
     justify-content: space-between !important;
     padding: 0 20px !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
     cursor: move;
     position: relative;
     z-index: 10;
@@ -11768,24 +11767,24 @@ button:hover .anomalous-btn-icon {
 #anomalous-header button {
     margin-right: 0;
     padding: 8px 18px;
-    background: rgba(255, 255, 255, 0.06);
-    color: #e2e8f0;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: #d1d5db;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 6px;
     cursor: pointer;
     white-space: nowrap;
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.98em;
+    font-size: 0.96em;
     font-weight: 500;
     backdrop-filter: blur(8px);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 #anomalous-header button:hover {
-    background: rgba(255, 255, 255, 0.12) !important;
-    border-color: rgba(255, 255, 255, 0.25) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.22) !important;
     color: #ffffff !important;
     transform: translateY(-1px);
     box-shadow: none !important;
@@ -11799,13 +11798,13 @@ button:hover .anomalous-btn-icon {
 }
 
 #anomalous-header button.active {
-    background: rgba(255, 255, 255, 0.16) !important;
-    border-color: rgba(255, 255, 255, 0.35) !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
     color: #ffffff !important;
-    box-shadow: none !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
 }
 
-/* 2. Normal Mode Gallery Container & Panels (Grand Anime Archive Watermark Texture) */
+/* 2. Normal Mode Gallery Container & Panels (Clean Neutral Dark Canvas) */
 #anomalous-gallery-panel,
 .anomalous-gallery-container {
     background-color: transparent !important;
@@ -11818,18 +11817,7 @@ button:hover .anomalous-btn-icon {
 
 .anomalous-gallery-container::before,
 #anomalous-gallery-panel::before {
-    display: block !important;
-    content: '' !important;
-    position: absolute !important;
-    inset: 0 !important;
-    background-image: 
-        radial-gradient(ellipse 90% 80% at 50% 50%, rgba(11, 13, 19, 0.15) 0%, rgba(11, 13, 19, 0.55) 100%),
-        url('assets/archive_library_bg.webp') !important;
-    background-size: cover !important;
-    background-position: center 25% !important;
-    opacity: 0.65 !important;
-    pointer-events: none !important;
-    z-index: 0 !important;
+    display: none !important;
 }
 
 .anomalous-gallery-container > *,

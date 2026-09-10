@@ -88,12 +88,15 @@ DOM or live LiteGraph state.
   (5) Settings Hub (`#anomalous-global-settings-btn`): Precision 8-tooth mechanical engineering gear with elevated popover (`#anomalous-settings-hub-modal`) mounted directly to container with `z-index: 999999` and dynamic responsive offset; hosts a clean 3-way Display Mode segmented controller (`#anomalous-view-mode-container` for Standard, Compact, and Aesthetic modes), UI scale controls, dynamic background atmosphere controls, folder manager, and language toggles;
   (6) Models & Floating Trigger: 4D Anomalous Hypercube Core SVG;
   adhering to a "low-stimulus idle, subtle-illumination on hover" philosophy where icons use calm `currentColor` in idle state and gently illuminate on interaction;
-  critical tool workbenches (`#anomalous-doctor-panel`, `#anomalous-assistant-panel`) strictly enforce 100% opaque, solid backgrounds (`background: var(--amb-bg-page, #0b0d13) !important`) to eliminate background distraction during diagnostics;
+  critical tool workbenches (`#anomalous-doctor-panel`, `#anomalous-assistant-panel`) strictly enforce 100% opaque, solid backgrounds (`background: var(--amb-bg-page, #131315) !important`) to eliminate background distraction during diagnostics;
+  the UI palette strictly adheres to a true neutral dark charcoal / obsidian studio aesthetic (`#131315`, `#1a1a1d`, `#202024`, `#28282d`) with zero cool-blue/navy cast, matching ComfyUI, Blender, and DaVinci Resolve workstation standards;
+  the sidebar action bar's circular astrological runic compass watermark (`#anomalous-sidebar-actions::before`) is completely disabled (`display: none !important`), and any backdrop textures are desaturated with `grayscale(100%)` to prevent blue color bleeding;
+  all primary action highlights, scan wizard controls, and switches use titanium white (`#e5e7eb` / `#ffffff`) with warm studio amber (`#f59e0b`) accents instead of cold blue/cyan;
   the modal adopts a disciplined "workshop / archive" aesthetic: removing exaggerated `clip-path` chamfers in favor of clean 8px architectural engineering geometry (`border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1)`);
   supports 3 unified Display Modes sharing identical DOM structure and UX logic:
   - Standard Mode (标准模式, default): Balanced 200px cards, 340px height, pure solid obsidian canvas with zero wallpaper distraction;
   - Compact Mode (高密度模式, power users): 140px min-width, 220px card height, 10px gaps, optimized for high-density scanning;
-  - Aesthetic Mode (沉浸模式): Subtle 12% ambient archive watermark with frosted glass borders;
+  - Aesthetic Mode (沉浸模式): Subtle 8% grayscale ambient archive watermark with frosted glass borders;
   cards feature unified 8px geometry (`border-radius: 8px`), restrained elevation (`translateY(-2px)`, `scale(1.02)`), spatial depth shadows (`0 4px 14px rgba(0,0,0,0.35)`),
   seamless docking fallbacks, and a micro-floating capsule tooltip system
   (`.anomalous-tooltip-target`) providing unambiguous, bilingual action semantics across all vector tools.

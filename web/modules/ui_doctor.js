@@ -102,10 +102,10 @@ export function initDoctorPanel() {
 
         const refreshBtn = document.createElement('button');
         refreshBtn.textContent = t('doctorRefresh');
-        refreshBtn.style.cssText = 'background:rgba(138,180,248,0.1);border:1px solid rgba(138,180,248,0.3);color:#8AB4F8;font-size:12px;cursor:pointer;padding:6px 12px;border-radius:6px;transition:all 0.2s; font-weight:600;';
+        refreshBtn.style.cssText = 'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:#e5e7eb;font-size:12px;cursor:pointer;padding:6px 12px;border-radius:6px;transition:all 0.2s; font-weight:600;';
         refreshBtn.title = t('doctorRefreshTitle');
-        refreshBtn.onmouseover = () => { refreshBtn.style.background = 'rgba(138,180,248,0.2)'; };
-        refreshBtn.onmouseout = () => { refreshBtn.style.background = 'rgba(138,180,248,0.1)'; };
+        refreshBtn.onmouseover = () => { refreshBtn.style.background = 'rgba(255,255,255,0.12)'; };
+        refreshBtn.onmouseout = () => { refreshBtn.style.background = 'rgba(255,255,255,0.06)'; };
         refreshBtn.onclick = async () => {
             refreshBtn.disabled = true;
             refreshBtn.style.opacity = '0.5';
@@ -268,8 +268,8 @@ for (const w of node.widgets) {
         nodeContent.innerHTML = '';
 
         const titleBar = document.createElement('div');
-        titleBar.style.cssText = 'margin:14px 16px 0;padding:16px;border:1px solid rgba(138,180,248,0.16);border-radius:14px;background:linear-gradient(135deg,rgba(48,58,86,0.72),rgba(20,22,31,0.92));display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 12px 30px rgba(0,0,0,0.18);';
-        titleBar.innerHTML = `<span style="width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;background:linear-gradient(135deg,#8ab4f8,#7c4dff);box-shadow:0 6px 16px rgba(66,133,244,0.3);">🤖</span><span style="display:flex;flex-direction:column;min-width:0;gap:3px;"><span style="font-size:10px;letter-spacing:0.11em;text-transform:uppercase;color:#8ab4f8;">${t('assistantSelectedNode')}</span><span class="ast-title" style="font-weight:750;color:#fff;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span></span><span class="ast-type" style="font-size:10px;color:#c9d6ff;margin-left:auto;padding:5px 8px;border-radius:999px;border:1px solid rgba(138,180,248,0.24);background:rgba(138,180,248,0.08);max-width:38%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>`;
+        titleBar.style.cssText = 'margin:14px 16px 0;padding:16px;border:1px solid rgba(255,255,255,0.1);border-radius:12px;background:rgba(255,255,255,0.04);display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 8px 24px rgba(0,0,0,0.25);';
+        titleBar.innerHTML = `<span style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);">🤖</span><span style="display:flex;flex-direction:column;min-width:0;gap:3px;"><span style="font-size:10px;letter-spacing:0.11em;text-transform:uppercase;color:#9ca3af;">${t('assistantSelectedNode')}</span><span class="ast-title" style="font-weight:700;color:#f3f4f6;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span></span><span class="ast-type" style="font-size:10px;color:#d1d5db;margin-left:auto;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);max-width:38%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>`;
         titleBar.querySelector('.ast-title').textContent = node.title || node.type || 'Node';
         titleBar.querySelector('.ast-type').textContent = node.type || '';
 
@@ -639,9 +639,9 @@ for (const data of missingNodesData) {
             if (!isHealthy) {
                 const deepScanBtn = document.createElement('button');
                 deepScanBtn.textContent = t('doctorDeepHashScan');
-                deepScanBtn.style.cssText = 'padding:8px 16px; background:#1a73e8; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:12px; transition:background 0.2s;';
-                deepScanBtn.onmouseover = () => deepScanBtn.style.background = '#1557b0';
-                deepScanBtn.onmouseout = () => deepScanBtn.style.background = '#1a73e8';
+                deepScanBtn.style.cssText = 'padding:8px 16px; background:#e5e7eb; color:#111827; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:12px; transition:background 0.2s;';
+                deepScanBtn.onmouseover = () => deepScanBtn.style.background = '#ffffff';
+                deepScanBtn.onmouseout = () => deepScanBtn.style.background = '#e5e7eb';
                 deepScanBtn.onclick = async () => {
                     deepScanBtn.textContent = t('doctorScanStarting');
                     deepScanBtn.disabled = true;
@@ -817,7 +817,7 @@ function openHashDetailDialog(node, widget, val) {
     const metaSection = document.createElement('div');
     metaSection.style.cssText = 'display:flex;flex-direction:column;gap:6px;background:rgba(255,255,255,0.03);padding:12px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);';
     metaSection.innerHTML = `
-        <div style="font-size:11px;color:#8ab4f8;font-weight:600;">#${escapeHtml(String(node.id))} · ${escapeHtml(node.title || node.type || 'Node')} · ${escapeHtml(widget?.name || '')}</div>
+        <div style="font-size:11px;color:#e5e7eb;font-weight:600;">#${escapeHtml(String(node.id))} · ${escapeHtml(node.title || node.type || 'Node')} · ${escapeHtml(widget?.name || '')}</div>
         <div style="font-size:13px;font-weight:600;word-break:break-all;color:#e8eaed;">${escapeHtml(val)}</div>
     `;
     modal.appendChild(metaSection);
@@ -869,14 +869,14 @@ function openHashDetailDialog(node, widget, val) {
         return card;
     };
 
-    modal.appendChild(renderHashCard(t('doctorWorkflowHash'), workflowHash, workflowSize, '#8ab4f8', true));
+    modal.appendChild(renderHashCard(t('doctorWorkflowHash'), workflowHash, workflowSize, '#e5e7eb', true));
     modal.appendChild(renderHashCard(t('doctorLocalHash'), localHash, localSize, '#81c995', false));
 
     const footer = document.createElement('div');
     footer.style.cssText = 'display:flex;justify-content:flex-end;margin-top:4px;';
     const okBtn = document.createElement('button');
     okBtn.textContent = 'OK';
-    okBtn.style.cssText = 'padding:8px 24px;background:#1a73e8;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;';
+    okBtn.style.cssText = 'padding:8px 24px;background:#e5e7eb;color:#111827;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:12px;';
     okBtn.onclick = () => overlay.remove();
     footer.appendChild(okBtn);
     modal.appendChild(footer);
@@ -1113,8 +1113,8 @@ export function _loadAssistantHistory(filename, container, model) {
 if (model) {
                     const viewAllBtn = document.createElement('button');
                     viewAllBtn.textContent = t('assistantViewAll');
-                    viewAllBtn.style.cssText = 'background:transparent;border:1px solid rgba(138,180,248,0.3);color:#8AB4F8;font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;transition:all 0.2s;';
-                    viewAllBtn.onmouseover = () => { viewAllBtn.style.background = 'rgba(138,180,248,0.1)'; };
+                    viewAllBtn.style.cssText = 'background:transparent;border:1px solid rgba(255,255,255,0.2);color:#e5e7eb;font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;transition:all 0.2s;';
+                    viewAllBtn.onmouseover = () => { viewAllBtn.style.background = 'rgba(255,255,255,0.1)'; };
                     viewAllBtn.onmouseout = () => { viewAllBtn.style.background = 'transparent'; };
                     viewAllBtn.onclick = () => this.showGeneratedGallery(model);
                     sectionHeader.appendChild(viewAllBtn);
@@ -1643,7 +1643,7 @@ if (!isHealthy) {
                             missingNodes++;
                             const nodeTitle = document.createElement('div');
                             nodeTitle.textContent = `${t('doctorNodeLabel')}: ${node.title || node.type}`;
-                            nodeTitle.style.color = '#8AB4F8';
+                            nodeTitle.style.color = '#e5e7eb';
                             nodeTitle.style.fontWeight = 'bold';
                             nodeTitle.style.marginTop = '10px';
                             content.appendChild(nodeTitle);

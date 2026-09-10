@@ -149,12 +149,12 @@ export function showDetail(model) {
 
         if (isFromDoctor) {
             backBtn.textContent = t('detailBackDoctor');
-            backBtn.style.background = '#8AB4F8';
-            backBtn.style.color = '#000';
+            backBtn.style.background = '#e5e7eb';
+            backBtn.style.color = '#111827';
         } else if (isFromAssistant) {
             backBtn.textContent = t('detailBackAssistant');
-            backBtn.style.background = '#8AB4F8';
-            backBtn.style.color = '#000';
+            backBtn.style.background = '#e5e7eb';
+            backBtn.style.color = '#111827';
         } else {
             backBtn.innerHTML = this.historyStack.length > 0 ? t('backToPrev') : t('back');
             backBtn.style.background = '#444';
@@ -425,7 +425,8 @@ export function showDetail(model) {
             cBtn.innerHTML = '🌐 Civitai';
             cBtn.style.marginLeft = 'auto';
             cBtn.style.padding = '4px 8px';
-            cBtn.style.background = '#1a73e8';
+            cBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+            cBtn.style.border = '1px solid rgba(255, 255, 255, 0.15)';
             cBtn.style.color = '#fff';
             cBtn.style.textDecoration = 'none';
             cBtn.style.borderRadius = '4px';
@@ -538,7 +539,7 @@ export function showDetail(model) {
         galleryBtn.style.background = '#2a2b2f';
         galleryBtn.style.border = '1px solid #3c4043';
         galleryBtn.textContent = t('detailGeneratedGallery');
-        galleryBtn.onmouseover = () => { galleryBtn.style.background = '#3c4043'; galleryBtn.style.borderColor = '#8ab4f8'; };
+        galleryBtn.onmouseover = () => { galleryBtn.style.background = '#3c4043'; galleryBtn.style.borderColor = 'rgba(255, 255, 255, 0.3)'; };
         galleryBtn.onmouseout = () => { galleryBtn.style.background = '#2a2b2f'; galleryBtn.style.borderColor = '#3c4043'; };
 
         galleryBtn.onclick = () => {
@@ -861,7 +862,7 @@ export function showEditModal(model) {
         galleryBtn.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>${t('detailPickGallery')}`;
         galleryBtn.style.padding = '8px';
         galleryBtn.style.background = '#303134';
-        galleryBtn.style.color = '#8ab4f8';
+        galleryBtn.style.color = '#e5e7eb';
         galleryBtn.style.border = '1px solid #5f6368';
         galleryBtn.style.borderRadius = '6px';
         galleryBtn.style.cursor = 'pointer';
@@ -878,7 +879,7 @@ export function showEditModal(model) {
         localBtn.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${t('detailUploadLocal')}`;
         localBtn.style.padding = '8px';
         localBtn.style.background = '#303134';
-        localBtn.style.color = '#8ab4f8';
+        localBtn.style.color = '#e5e7eb';
         localBtn.style.border = '1px solid #5f6368';
         localBtn.style.borderRadius = '6px';
         localBtn.style.cursor = 'pointer';
@@ -966,7 +967,7 @@ export function showEditModal(model) {
         nameInput.placeholder = t('detailCustomNamePlaceholder');
         nameInput.value = (model.metadata && model.metadata.custom_name) ? model.metadata.custom_name : '';
         nameInput.style.cssText = inputStyle;
-        nameInput.onfocus = () => nameInput.style.borderColor = '#8ab4f8';
+        nameInput.onfocus = () => nameInput.style.borderColor = 'rgba(255, 255, 255, 0.4)';
         nameInput.onblur = () => nameInput.style.borderColor = '#5f6368';
 
         const notesInput = document.createElement('textarea');
@@ -1099,7 +1100,7 @@ export function showEditModal(model) {
         cancelBtn.textContent = t('detailCancel');
         cancelBtn.style.padding = '8px 16px';
         cancelBtn.style.background = 'transparent';
-        cancelBtn.style.color = '#8ab4f8';
+        cancelBtn.style.color = '#9ca3af';
         cancelBtn.style.border = 'none';
         cancelBtn.style.borderRadius = '4px';
         cancelBtn.style.cursor = 'pointer';
@@ -1112,8 +1113,8 @@ export function showEditModal(model) {
         const saveBtn = document.createElement('button');
         saveBtn.textContent = t('detailSaveChanges');
         saveBtn.style.padding = '8px 24px';
-        saveBtn.style.background = '#8ab4f8';
-        saveBtn.style.color = '#202124';
+        saveBtn.style.background = '#e5e7eb';
+        saveBtn.style.color = '#111827';
         saveBtn.style.border = 'none';
         saveBtn.style.borderRadius = '4px';
         saveBtn.style.cursor = 'pointer';
@@ -1299,9 +1300,9 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
             const b = document.createElement('button');
             b.innerText = text;
             b.style.padding = '6px 16px';
-            b.style.background = primary ? 'rgba(138,180,248,0.15)' : 'rgba(255,255,255,0.04)';
-            b.style.color = primary ? '#8ab4f8' : '#e8eaed';
-            b.style.border = primary ? '1px solid rgba(138,180,248,0.2)' : '1px solid #5f6368';
+            b.style.background = primary ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255,255,255,0.04)';
+            b.style.color = primary ? '#ffffff' : '#e8eaed';
+            b.style.border = primary ? '1px solid rgba(255, 255, 255, 0.25)' : '1px solid #5f6368';
             b.style.borderRadius = '4px';
             b.style.cursor = 'pointer';
             b.style.fontSize = '14px';
@@ -1331,7 +1332,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
             if (total > 0) {
                 const countLabel = document.createElement('span');
                 countLabel.textContent = total;
-                countLabel.style.color = '#8ab4f8';
+                countLabel.style.color = '#e5e7eb';
                 countLabel.style.fontSize = '16px';
                 countLabel.style.fontWeight = '500';
                 summaryText.replaceChildren(
@@ -1382,16 +1383,16 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                 if (isChecked) {
 
                 
-                    card.style.border = '2px solid #8ab4f8';
+                    card.style.border = '2px solid #ffffff';
 
                 
-                    card.style.background = 'rgba(138,180,248,0.2)';
+                    card.style.background = 'rgba(255, 255, 255, 0.1)';
 
                 
-                    cbWrapper.style.background = '#8ab4f8';
+                    cbWrapper.style.background = '#ffffff';
 
                 
-                    cbWrapper.style.border = '2px solid #8ab4f8';
+                    cbWrapper.style.border = '2px solid #ffffff';
 
                 
                     cbWrapper.querySelector('span').style.color = '#202124';
@@ -1508,29 +1509,29 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
         cancelBtn.textContent = t('detailCancel');
         cancelBtn.style.padding = '8px 24px';
         cancelBtn.style.background = 'transparent';
-        cancelBtn.style.color = '#8ab4f8';
+        cancelBtn.style.color = '#9ca3af';
         cancelBtn.style.border = 'none';
         cancelBtn.style.borderRadius = '4px';
         cancelBtn.style.cursor = 'pointer';
         cancelBtn.style.fontWeight = '500';
         cancelBtn.style.fontSize = '14px';
-        cancelBtn.onmouseover = () => cancelBtn.style.background = 'rgba(138,180,248,0.1)';
+        cancelBtn.onmouseover = () => cancelBtn.style.background = 'rgba(255, 255, 255, 0.08)';
         cancelBtn.onmouseout = () => cancelBtn.style.background = 'transparent';
         cancelBtn.onclick = () => document.body.removeChild(modal);
 
         const confirmBtn = document.createElement('button');
         confirmBtn.textContent = t('detailConfirm');
         confirmBtn.style.padding = '8px 24px';
-        confirmBtn.style.background = '#8ab4f8';
-        confirmBtn.style.color = '#202124'; // dark text on bright accent button
+        confirmBtn.style.background = '#e5e7eb';
+        confirmBtn.style.color = '#111827'; // dark text on bright accent button
         confirmBtn.style.border = 'none';
         confirmBtn.style.borderRadius = '4px';
         confirmBtn.style.cursor = 'pointer';
         confirmBtn.style.fontWeight = '600';
         confirmBtn.style.fontSize = '14px';
         confirmBtn.style.boxShadow = '0 1px 2px 0 rgba(0,0,0,.3), 0 1px 3px 1px rgba(0,0,0,.15)';
-        confirmBtn.onmouseover = () => { confirmBtn.style.background = '#aecbfa'; confirmBtn.style.boxShadow = '0 1px 3px 0 rgba(0,0,0,.3), 0 4px 8px 3px rgba(0,0,0,.15)'; };
-        confirmBtn.onmouseout = () => { confirmBtn.style.background = '#8ab4f8'; confirmBtn.style.boxShadow = '0 1px 2px 0 rgba(0,0,0,.3), 0 1px 3px 1px rgba(0,0,0,.15)'; };
+        confirmBtn.onmouseover = () => { confirmBtn.style.background = '#ffffff'; confirmBtn.style.boxShadow = '0 1px 3px 0 rgba(0,0,0,.3), 0 4px 8px 3px rgba(0,0,0,.15)'; };
+        confirmBtn.onmouseout = () => { confirmBtn.style.background = '#e5e7eb'; confirmBtn.style.boxShadow = '0 1px 2px 0 rgba(0,0,0,.3), 0 1px 3px 1px rgba(0,0,0,.15)'; };
         confirmBtn.onclick = () => {
             onConfirm(localSelection);
             document.body.removeChild(modal);
@@ -1825,8 +1826,8 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                     d.style.color = '#9aa0a6';
                     d.style.fontWeight = '400';
                 });
-                fBtn.style.background = 'rgba(138,180,248,0.15)';
-                fBtn.style.color = '#8ab4f8';
+                fBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+                fBtn.style.color = '#ffffff';
                 fBtn.style.fontWeight = '500';
                 
                 currentFolderKey = folderKey;
@@ -1886,8 +1887,8 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                     
                     const badge = document.createElement('div');
                     badge.className = 'selection-badge';
-                    badge.style.background = '#8ab4f8';
-                    badge.style.color = '#202124';
+                    badge.style.background = '#e5e7eb';
+                    badge.style.color = '#111827';
                     badge.style.fontSize = '11px';
                     badge.style.fontWeight = '500';
                     badge.style.padding = '1px 6px';

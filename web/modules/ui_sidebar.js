@@ -531,8 +531,8 @@ export function createDOM() {
             const createChoiceCard = (id, icon, titleKey, descKey, isSelected) => {
                 const card = document.createElement('div');
                 card.style.flex = '1';
-                card.style.background = isSelected ? 'rgba(138, 180, 248, 0.15)' : 'rgba(255, 255, 255, 0.05)';
-                card.style.border = `2px solid ${isSelected ? '#8AB4F8' : 'transparent'}`;
+                card.style.background = isSelected ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.04)';
+                card.style.border = `2px solid ${isSelected ? '#e5e7eb' : 'transparent'}`;
                 card.style.borderRadius = '8px';
                 card.style.padding = '16px';
                 card.style.cursor = 'pointer';
@@ -546,7 +546,7 @@ export function createDOM() {
                     if (!isSelected) card.style.background = 'rgba(255, 255, 255, 0.08)';
                 };
                 card.onmouseout = () => {
-                    if (!isSelected) card.style.background = 'rgba(255, 255, 255, 0.05)';
+                    if (!isSelected) card.style.background = 'rgba(255, 255, 255, 0.04)';
                 };
 
                 const topRow = document.createElement('div');
@@ -562,7 +562,7 @@ export function createDOM() {
                 tTitle.textContent = t(titleKey);
                 tTitle.style.fontWeight = '500';
                 tTitle.style.fontSize = '1.05em';
-                tTitle.style.color = isSelected ? '#8AB4F8' : '#fff';
+                tTitle.style.color = isSelected ? '#ffffff' : '#e5e7eb';
 
                 topRow.appendChild(iconDiv);
                 topRow.appendChild(tTitle);
@@ -570,7 +570,7 @@ export function createDOM() {
                 const tDesc = document.createElement('div');
                 tDesc.textContent = t(descKey);
                 tDesc.style.fontSize = '0.85em';
-                tDesc.style.color = '#bbb';
+                tDesc.style.color = '#9ca3af';
                 tDesc.style.lineHeight = '1.5';
 
                 card.appendChild(topRow);
@@ -586,7 +586,7 @@ export function createDOM() {
                 const sec0Title = document.createElement('div');
                 sec0Title.textContent = t('sidebarStep0');
                 sec0Title.style.fontWeight = '500';
-                sec0Title.style.color = '#8AB4F8';
+                sec0Title.style.color = '#e5e7eb';
                 sec0Title.style.marginBottom = '12px';
                 sec0Title.style.fontSize = '0.95em';
                 section0.appendChild(sec0Title);
@@ -603,10 +603,10 @@ export function createDOM() {
                 
                 const openSelectorBtn = document.createElement('button');
                 openSelectorBtn.textContent = t('sidebarOpenSelector');
-                openSelectorBtn.style.cssText = 'width:100%;padding:12px;background:#8AB4F8;color:#1E1E1E;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:1.05em;box-shadow:0 2px 4px rgba(0,0,0,0.2);';
+                openSelectorBtn.style.cssText = 'width:100%;padding:12px;background:#e5e7eb;color:#111;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:1.05em;box-shadow:0 2px 4px rgba(0,0,0,0.2);';
                 
                 const selectedCountSpan = document.createElement('div');
-                selectedCountSpan.style.cssText = 'text-align:center;color:#8AB4F8;margin-top:8px;font-size:0.9em;';
+                selectedCountSpan.style.cssText = 'text-align:center;color:#e5e7eb;margin-top:8px;font-size:0.9em;';
                 selectedCountSpan.textContent = t('sidebarSelectedZero');
                 
                 const updateSelectedCount = () => {
@@ -659,7 +659,7 @@ export function createDOM() {
             const sec1Title = document.createElement('div');
             sec1Title.textContent = t('sidebarStep1');
             sec1Title.style.fontWeight = '500';
-            sec1Title.style.color = '#8AB4F8';
+            sec1Title.style.color = '#e5e7eb';
             sec1Title.style.marginBottom = '12px';
             sec1Title.style.fontSize = '0.95em';
             section1.appendChild(sec1Title);
@@ -696,7 +696,7 @@ export function createDOM() {
                 track.style.width = '36px';
                 track.style.height = '14px';
                 track.style.borderRadius = '7px';
-                track.style.background = initialState ? 'rgba(138, 180, 248, 0.5)' : 'rgba(255,255,255,0.3)';
+                track.style.background = initialState ? 'rgba(255, 255, 255, 0.45)' : 'rgba(255,255,255,0.15)';
                 track.style.position = 'relative';
                 track.style.cursor = 'pointer';
                 track.style.transition = 'background 0.3s';
@@ -707,7 +707,7 @@ export function createDOM() {
                 thumb.style.width = '20px';
                 thumb.style.height = '20px';
                 thumb.style.borderRadius = '50%';
-                thumb.style.background = initialState ? '#8AB4F8' : '#bdbdbd';
+                thumb.style.background = initialState ? '#ffffff' : '#888888';
                 thumb.style.position = 'absolute';
                 thumb.style.left = initialState ? '16px' : '0px';
                 thumb.style.transition = 'left 0.3s, background 0.3s';
@@ -716,8 +716,8 @@ export function createDOM() {
                 let state = initialState;
                 track.onclick = () => {
                     state = !state;
-                    track.style.background = state ? 'rgba(138, 180, 248, 0.5)' : 'rgba(255,255,255,0.3)';
-                    thumb.style.background = state ? '#8AB4F8' : '#bdbdbd';
+                    track.style.background = state ? 'rgba(255, 255, 255, 0.45)' : 'rgba(255,255,255,0.15)';
+                    thumb.style.background = state ? '#ffffff' : '#888888';
                     thumb.style.left = state ? '16px' : '0px';
                     onChange(state);
                 };
@@ -777,7 +777,7 @@ export function createDOM() {
             const sec2Title = document.createElement('div');
             sec2Title.textContent = t('sidebarStep2');
             sec2Title.style.fontWeight = '500';
-            sec2Title.style.color = '#8AB4F8';
+            sec2Title.style.color = '#e5e7eb';
             sec2Title.style.marginBottom = '8px';
             sec2Title.style.fontSize = '0.95em';
             section2.appendChild(sec2Title);
@@ -874,7 +874,7 @@ export function createDOM() {
             const sec3Title = document.createElement('div');
             sec3Title.textContent = t('sidebarStep3');
             sec3Title.style.fontWeight = '500';
-            sec3Title.style.color = '#8AB4F8';
+            sec3Title.style.color = '#e5e7eb';
             sec3Title.style.marginBottom = '8px';
             sec3Title.style.fontSize = '0.95em';
             section3.appendChild(sec3Title);
@@ -1089,7 +1089,7 @@ export function createDOM() {
         closeBtn.textContent = t('sidebarCancel');
             closeBtn.style.padding = '8px 16px';
             closeBtn.style.background = 'transparent';
-            closeBtn.style.color = '#8AB4F8';
+            closeBtn.style.color = '#9ca3af';
             closeBtn.style.border = 'none';
             closeBtn.style.borderRadius = '4px';
             closeBtn.style.cursor = 'pointer';
@@ -1097,30 +1097,30 @@ export function createDOM() {
             closeBtn.style.fontWeight = '500';
             closeBtn.style.textTransform = 'uppercase';
             closeBtn.style.transition = 'background 0.2s';
-            closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(138, 180, 248, 0.08)';
+            closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(255, 255, 255, 0.08)';
             closeBtn.onmouseout = () => closeBtn.style.background = 'transparent';
             closeBtn.onclick = () => document.body.removeChild(wizard);
 
             const startBtn = document.createElement('button');
         startBtn.textContent = t('sidebarExecute');
             startBtn.style.padding = '8px 24px';
-            startBtn.style.background = '#8AB4F8'; // Material Primary
-            startBtn.style.color = '#1E1E1E';
+            startBtn.style.background = '#e5e7eb';
+            startBtn.style.color = '#111827';
             startBtn.style.border = 'none';
             startBtn.style.borderRadius = '4px';
             startBtn.style.cursor = 'pointer';
             startBtn.style.fontSize = '0.95em';
-            startBtn.style.fontWeight = '500';
+            startBtn.style.fontWeight = '600';
             startBtn.style.textTransform = 'uppercase';
             startBtn.style.transition = 'background 0.2s, box-shadow 0.2s';
-            startBtn.style.boxShadow = '0 3px 1px -2px rgba(0,0,0,0.2), 0 2px 2px 0 rgba(0,0,0,0.14), 0 1px 5px 0 rgba(0,0,0,0.12)';
+            startBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
             startBtn.onmouseover = () => {
-                startBtn.style.background = '#aecbf9';
-                startBtn.style.boxShadow = '0 2px 4px -1px rgba(0,0,0,0.2), 0 4px 5px 0 rgba(0,0,0,0.14), 0 1px 10px 0 rgba(0,0,0,0.12)';
+                startBtn.style.background = '#ffffff';
+                startBtn.style.boxShadow = '0 3px 8px rgba(0,0,0,0.4)';
             };
             startBtn.onmouseout = () => {
-                startBtn.style.background = '#8AB4F8';
-                startBtn.style.boxShadow = '0 3px 1px -2px rgba(0,0,0,0.2), 0 2px 2px 0 rgba(0,0,0,0.14), 0 1px 5px 0 rgba(0,0,0,0.12)';
+                startBtn.style.background = '#e5e7eb';
+                startBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
             };
             startBtn.onclick = doScan;
 
@@ -2588,7 +2588,7 @@ export async function openFolderManager() {
             });
 
             row.addEventListener('dragenter', function(e) {
-                this.style.border = '1px dashed #8AB4F8';
+                this.style.border = '1px dashed #e5e7eb';
             });
 
             row.addEventListener('dragleave', function(e) {
@@ -2675,8 +2675,8 @@ export async function openFolderManager() {
     const saveBtn = document.createElement('button');
     saveBtn.textContent = t('sidebarSaveReload');
     saveBtn.style.padding = '8px 16px';
-    saveBtn.style.background = '#8AB4F8';
-    saveBtn.style.color = '#1e1e1e';
+    saveBtn.style.background = '#e5e7eb';
+    saveBtn.style.color = '#111827';
     saveBtn.style.border = 'none';
     saveBtn.style.borderRadius = '6px';
     saveBtn.style.cursor = 'pointer';
