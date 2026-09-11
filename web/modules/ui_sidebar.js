@@ -56,7 +56,7 @@ export function createDOM() {
         const savedBgOpacity = localStorage.getItem('anomalous_bg_opacity') || '0.2';
         container.style.setProperty('--anomalous-bg-opacity', savedBgOpacity);
 
-        const savedViewMode = localStorage.getItem('anomalous_view_mode') || 'standard';
+        const savedViewMode = localStorage.getItem('anomalous_view_mode') || 'compact';
         container.classList.add(`view-mode-${savedViewMode}`);
 
         // Sidebar
@@ -65,7 +65,10 @@ export function createDOM() {
         this.sidebarWrapper.style.position = 'relative';
 
         const brandBar = document.createElement('div');
-        brandBar.style.padding = '15px 15px 10px 15px';
+        brandBar.id = 'anomalous-brand-bar';
+        brandBar.style.padding = '0 14px';
+        brandBar.style.height = '48px';
+        brandBar.style.boxSizing = 'border-box';
         brandBar.style.display = 'flex';
         brandBar.style.alignItems = 'center';
         brandBar.style.justifyContent = 'space-between';
@@ -1559,14 +1562,14 @@ export function createDOM() {
         viewModeGroup.style.border = '1px solid rgba(255, 255, 255, 0.06)';
 
         const modeDefinitions = [
-            { id: 'standard', key: 'sidebarViewModeStandard' },
             { id: 'compact', key: 'sidebarViewModeCompact' },
+            { id: 'standard', key: 'sidebarViewModeStandard' },
             { id: 'aesthetic', key: 'sidebarViewModeAesthetic' }
         ];
 
-        let currentViewMode = localStorage.getItem('anomalous_view_mode') || 'standard';
-        if (!['standard', 'compact', 'aesthetic'].includes(currentViewMode)) {
-            currentViewMode = 'standard';
+        let currentViewMode = localStorage.getItem('anomalous_view_mode') || 'compact';
+        if (!['compact', 'standard', 'aesthetic'].includes(currentViewMode)) {
+            currentViewMode = 'compact';
         }
 
         const modeBtnElements = [];
@@ -1754,7 +1757,7 @@ export function createDOM() {
                 localStorage.removeItem('anomalous_ui_scale');
                 localStorage.removeItem('anomalous_bg_opacity');
                 localStorage.removeItem('anomalous_view_mode');
-                applyViewMode('standard');
+                applyViewMode('compact');
                 container.style.left = '5%';
                 container.style.top = '5%';
                 container.style.width = '90%';

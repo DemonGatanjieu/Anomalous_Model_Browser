@@ -93,11 +93,12 @@ DOM or live LiteGraph state.
   the sidebar action bar's circular astrological runic compass watermark (`#anomalous-sidebar-actions::before`) is completely disabled (`display: none !important`), and any backdrop textures are desaturated with `grayscale(100%)` to prevent blue color bleeding;
   all primary action highlights, scan wizard controls, and switches use titanium white (`#e5e7eb` / `#ffffff`) with warm studio amber (`#f59e0b`) accents instead of cold blue/cyan;
   the modal adopts a disciplined "workshop / archive" aesthetic: removing exaggerated `clip-path` chamfers in favor of clean 8px architectural engineering geometry (`border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1)`);
+  the master header (`#anomalous-header`) and sidebar brand bar (`#anomalous-brand-bar`) are tightly calibrated to a 48px slim industrial profile with 32px compact controls, maximizing vertical canvas real estate for model thumbnails;
   supports 3 unified Display Modes sharing identical DOM structure and UX logic:
-  - Standard Mode (标准模式, default): Balanced 200px cards, 340px height, pure solid obsidian canvas with zero wallpaper distraction;
-  - Compact Mode (高密度模式, power users): 140px min-width, 220px card height, 10px gaps, optimized for high-density scanning;
+  - Compact Mode (紧凑模式, primary default): 140px min-width, 220px card height, tight 10px gaps/14px rows, 5px sidebar folder rows, optimized for high-density scanning and instant visual discovery (Blender Asset Browser inspired);
+  - Standard Mode (标准模式, comfortable): Balanced 200px cards, 340px height, comfortable whitespace rhythm;
   - Aesthetic Mode (沉浸模式): Subtle 8% grayscale ambient archive watermark with frosted glass borders;
-  cards feature unified 8px geometry (`border-radius: 8px`), restrained elevation (`translateY(-2px)`, `scale(1.02)`), spatial depth shadows (`0 4px 14px rgba(0,0,0,0.35)`),
+  cards feature unified 6px/8px geometry, restrained elevation (`translateY(-2px)`, `scale(1.02)`), spatial depth shadows (`0 4px 14px rgba(0,0,0,0.35)`),
   seamless docking fallbacks, and a micro-floating capsule tooltip system
   (`.anomalous-tooltip-target`) providing unambiguous, bilingual action semantics across all vector tools.
 - `ui_gallery_detail.js` owns the studio modal Image Detail Workbench,

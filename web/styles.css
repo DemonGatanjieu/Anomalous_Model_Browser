@@ -313,7 +313,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 #anomalous-header {
-    height: 60px;
+    height: 48px;
     background: var(--comfy-menu-bg, #333);
     display: flex;
     align-items: center;
@@ -514,56 +514,96 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
    Display Modes: Standard, Compact, Aesthetic
    ========================================================================== */
 
-/* Mode 1: Standard (Default) - Clean, balanced, 8px architectural geometry */
-#anomalous-container.view-mode-standard #anomalous-grid,
-#anomalous-container:not(.view-mode-compact):not(.view-mode-aesthetic) #anomalous-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 20px;
-    row-gap: 28px;
-    padding: 20px;
-}
-
-#anomalous-container.view-mode-standard .anomalous-card,
-#anomalous-container:not(.view-mode-compact):not(.view-mode-aesthetic) .anomalous-card {
-    height: 340px;
-    border-radius: 8px;
-}
-
-/* Mode 2: Compact (Power User / High Density) */
-#anomalous-container.view-mode-compact #anomalous-grid {
+/* Mode 2: Compact (Primary / Default / High Density) */
+#anomalous-container.view-mode-compact #anomalous-grid,
+#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) #anomalous-grid {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
     gap: 10px !important;
     row-gap: 14px !important;
     padding: 12px !important;
 }
 
-#anomalous-container.view-mode-compact .anomalous-card {
+#anomalous-container.view-mode-compact .anomalous-card,
+#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-card {
     height: 220px !important;
     border-radius: 6px !important;
 }
 
-#anomalous-container.view-mode-compact .anomalous-card-labels {
-    padding: 6px 8px 6px !important;
+#anomalous-container.view-mode-compact .anomalous-card-labels,
+#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-card-labels {
+    padding: 18px 8px 6px !important;
 }
 
-#anomalous-container.view-mode-compact .anomalous-card-title {
+#anomalous-container.view-mode-compact .anomalous-card-title,
+#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-card-title {
     font-size: 0.82em !important;
-    line-height: 1.2 !important;
+    line-height: 1.25 !important;
+    margin-bottom: 2px !important;
 }
 
-#anomalous-container.view-mode-compact .anomalous-card-filename {
+#anomalous-container.view-mode-compact .anomalous-card-filename,
+#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-card-filename {
     font-size: 0.72em !important;
+    opacity: 0.85 !important;
 }
 
-#anomalous-container.view-mode-compact .anomalous-card-badge {
+#anomalous-container.view-mode-compact .anomalous-card-badge,
+#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-card-badge {
+    top: 6px !important;
+    left: 6px !important;
+    max-width: 65px !important;
     font-size: 0.65em !important;
     padding: 1px 4px !important;
+    border-radius: 3px !important;
 }
 
-#anomalous-container.view-mode-compact .anomalous-card-action-btn {
+#anomalous-container.view-mode-compact .anomalous-card-action-btn,
+#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-card-action-btn {
     width: 22px !important;
     height: 22px !important;
-    font-size: 0.72em !important;
+    top: 6px !important;
+    font-size: 11px !important;
+    border-radius: 4px !important;
+}
+
+#anomalous-container.view-mode-compact .anomalous-card-action-btn.action-apply,
+#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-card-action-btn.action-apply {
+    right: 6px !important;
+}
+
+#anomalous-container.view-mode-compact .anomalous-card-action-btn.action-scan,
+#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-card-action-btn.action-scan {
+    right: 32px !important;
+}
+
+#anomalous-container.view-mode-compact .anomalous-card-action-btn.action-edit,
+#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-card-action-btn.action-edit {
+    right: 58px !important;
+}
+
+#anomalous-container.view-mode-compact .anomalous-folder-item,
+#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-folder-item {
+    padding: 5px 12px !important;
+    font-size: 0.86em !important;
+}
+
+#anomalous-container.view-mode-compact .anomalous-type-header,
+#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-type-header {
+    padding: 6px 12px !important;
+    font-size: 0.85em !important;
+}
+
+/* Mode 1: Standard - Clean, balanced, 8px architectural geometry */
+#anomalous-container.view-mode-standard #anomalous-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    row-gap: 28px;
+    padding: 20px;
+}
+
+#anomalous-container.view-mode-standard .anomalous-card {
+    height: 340px;
+    border-radius: 8px;
 }
 
 /* Mode 3: Aesthetic (Subtle Ambient Depth) */
@@ -11718,15 +11758,25 @@ button:hover .anomalous-btn-icon {
    ========================================================================== */
 
 /* 1. Normal Mode Master Header (Neutral Charcoal Frosted Glass) */
+#anomalous-brand-bar {
+    height: 48px !important;
+    padding: 0 14px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
 #anomalous-header {
-    height: 60px;
+    height: 48px !important;
     background: rgba(20, 20, 23, 0.85) !important;
     backdrop-filter: blur(20px) !important;
     -webkit-backdrop-filter: blur(20px) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    padding: 0 20px !important;
+    padding: 0 16px !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
     cursor: move;
@@ -11766,7 +11816,9 @@ button:hover .anomalous-btn-icon {
 
 #anomalous-header button {
     margin-right: 0;
-    padding: 8px 18px;
+    padding: 6px 14px;
+    height: 32px;
+    box-sizing: border-box;
     background: rgba(255, 255, 255, 0.05);
     color: #d1d5db;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -11776,7 +11828,7 @@ button:hover .anomalous-btn-icon {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.96em;
+    font-size: 0.9em;
     font-weight: 500;
     backdrop-filter: blur(8px);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -11791,7 +11843,9 @@ button:hover .anomalous-btn-icon {
 }
 
 #anomalous-dock-btn {
-    padding: 8px 12px !important;
+    padding: 6px 10px !important;
+    height: 32px !important;
+    box-sizing: border-box !important;
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
