@@ -1007,6 +1007,18 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     transition: left 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+#anomalous-settings-hub-modal button {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    text-align: left !important;
+    box-sizing: border-box !important;
+}
+
+#anomalous-settings-hub-modal button svg {
+    flex-shrink: 0 !important;
+}
+
 .anomalous-sidebar-closed #anomalous-settings-hub-modal {
     left: 72px !important;
 }
