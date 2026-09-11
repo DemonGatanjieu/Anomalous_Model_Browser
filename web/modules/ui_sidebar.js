@@ -2047,6 +2047,10 @@ export function createDOM() {
             hintFooter.style.textAlign = 'center';
             hintFooter.style.padding = '4px 2px 0';
             hintFooter.style.borderTop = '1px solid rgba(255, 255, 255, 0.05)';
+            hintFooter.style.whiteSpace = 'nowrap';
+            hintFooter.style.overflow = 'hidden';
+            hintFooter.style.textOverflow = 'ellipsis';
+            hintFooter.style.flexShrink = '0';
 
             toolboxModal.appendChild(hintFooter);
         };

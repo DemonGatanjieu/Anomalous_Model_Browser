@@ -1033,22 +1033,29 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     position: absolute;
     bottom: 50px;
     left: 10px;
-    width: 232px;
-    max-height: calc(100% - 64px);
-    overflow-y: auto;
+    width: 236px;
     box-sizing: border-box;
     background: rgba(22, 22, 26, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 10px;
-    padding: 10px;
+    padding: 10px 10px 8px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
     z-index: 999999 !important;
     transition: left 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), bottom 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
     display: none;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
+    overflow: hidden !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+#anomalous-toolbox-modal::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
 .anomalous-sidebar-closed #anomalous-toolbox-modal {
@@ -1060,7 +1067,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
-    margin: 2px 0 4px;
+    margin: 2px 0 2px;
 }
 
 .anomalous-toolbox-tile {
@@ -1069,8 +1076,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 9px 4px 7px;
-    min-height: 58px;
+    padding: 8px 3px 6px;
+    min-height: 54px;
     box-sizing: border-box;
     background: rgba(255, 255, 255, 0.035);
     border: 1px solid rgba(255, 255, 255, 0.06);
