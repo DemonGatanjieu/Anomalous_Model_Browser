@@ -1023,6 +1023,32 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     left: 72px !important;
 }
 
+#anomalous-toolbox-modal {
+    position: absolute;
+    bottom: 16px;
+    left: 266px;
+    width: 310px;
+    max-height: calc(100% - 32px);
+    overflow-y: auto;
+    box-sizing: border-box;
+    background: rgba(24, 24, 28, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    z-index: 999999 !important;
+    transition: left 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anomalous-sidebar-closed #anomalous-toolbox-modal {
+    left: 72px !important;
+}
+
 .anomalous-sidebar-closed #anomalous-sidebar-actions {
     flex-direction: column !important;
 }

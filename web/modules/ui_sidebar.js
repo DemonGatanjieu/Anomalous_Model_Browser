@@ -18,6 +18,7 @@ const SIDEBAR_ICONS = {
     RECIPES: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v6"/><path d="M9 6h6"/><path d="M7.8 7.8l8.4 8.4"/></svg>`,
     DOCK: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>`,
     HELP: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:7px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+    TOOLBOX: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><rect width="20" height="14" x="2" y="6" rx="2"/><path d="M2 12h20"/><path d="M10 12v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2"/></svg>`,
     DOCTOR: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M4.5 3v5a5.5 5.5 0 0 0 11 0V3"/><circle cx="4.5" cy="3" r="1.5" fill="currentColor"/><circle cx="15.5" cy="3" r="1.5" fill="currentColor"/><path d="M10 13.5v3a3.5 3.5 0 0 0 3.5 3.5h1"/><circle cx="18" cy="20" r="2.2" stroke-width="1.8"/></svg>`,
     ASSISTANT: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/><path d="M18.5 3.5v3m-1.5-1.5h3" stroke-opacity="0.7"/></svg>`,
     SETTINGS: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
@@ -1150,6 +1151,23 @@ export function createDOM() {
         };
 
         scanBtn.onclick = () => createWizardModal(true);
+
+        const toolboxBtn = document.createElement('button');
+        toolboxBtn.id = 'anomalous-toolbox-btn';
+        toolboxBtn.className = 'anomalous-tooltip-target';
+        toolboxBtn.removeAttribute('title');
+        toolboxBtn.setAttribute('aria-label', t('sidebarToolbox'));
+        toolboxBtn.setAttribute('data-tooltip', t('sidebarToolbox'));
+        toolboxBtn.setAttribute('data-tooltip-pos', 'top');
+        toolboxBtn.innerHTML = SIDEBAR_ICONS.TOOLBOX;
+        toolboxBtn.style.background = 'transparent';
+        toolboxBtn.style.border = 'none';
+        toolboxBtn.style.borderRadius = '6px';
+        toolboxBtn.style.padding = '6px';
+        toolboxBtn.style.fontSize = '1.1em';
+        toolboxBtn.style.cursor = 'pointer';
+
+        this.sidebarActions.appendChild(toolboxBtn);
         this.sidebarActions.appendChild(scanBtn);
 
 
@@ -1181,12 +1199,17 @@ export function createDOM() {
             updateLangClass();
             modelsBtn.innerHTML = `${SIDEBAR_ICONS.MODELS}<span class="anomalous-btn-text">${t('models')}</span>`;
             galleryBtn.innerHTML = `${SIDEBAR_ICONS.GALLERY}<span class="anomalous-btn-text">${t('gallery')}</span>`;
+            toolboxBtn.removeAttribute('title');
+            toolboxBtn.setAttribute('aria-label', t('sidebarToolbox'));
+            toolboxBtn.setAttribute('data-tooltip', t('sidebarToolbox'));
+            toolboxBtn.setAttribute('data-tooltip-pos', 'top');
             scanBtn.removeAttribute('title');
             scanBtn.setAttribute('aria-label', t('sidebarScanWizard'));
             scanBtn.setAttribute('data-tooltip', t('sidebarScanWizard'));
             scanBtn.setAttribute('data-tooltip-pos', 'top');
             setScanButtonState(scanBtn, isCurrentlyScanning);
             helpBtn.innerHTML = `${SIDEBAR_ICONS.HELP}<span class="anomalous-btn-text">${t('help')}</span>`;
+            if (this.renderToolboxModal) this.renderToolboxModal();
             nbBtn.removeAttribute('title');
             nbBtn.setAttribute('data-tooltip', t('recipeTitle'));
             nbBtn.setAttribute('data-tooltip-pos', 'bottom');
@@ -1843,6 +1866,234 @@ export function createDOM() {
 
         container.appendChild(settingsHubModal);
 
+        const toolboxModal = document.createElement('div');
+        toolboxModal.id = 'anomalous-toolbox-modal';
+        toolboxModal.style.display = 'none';
+
+        const closeToolbox = (e) => {
+            if (toolboxModal.style.display !== 'none' && !toolboxModal.contains(e.target) && !toolboxBtn.contains(e.target)) {
+                toolboxModal.style.display = 'none';
+                document.removeEventListener('mousedown', closeToolbox);
+            }
+        };
+
+        toolboxBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (settingsHubModal.style.display !== 'none') {
+                settingsHubModal.style.display = 'none';
+            }
+            if (toolboxModal.style.display === 'none') {
+                toolboxModal.style.display = 'flex';
+                setTimeout(() => document.addEventListener('mousedown', closeToolbox), 10);
+            } else {
+                toolboxModal.style.display = 'none';
+                document.removeEventListener('mousedown', closeToolbox);
+            }
+        };
+
+        const renderToolboxModal = () => {
+            toolboxModal.replaceChildren();
+
+            const headerRow = document.createElement('div');
+            headerRow.style.display = 'flex';
+            headerRow.style.alignItems = 'center';
+            headerRow.style.justifyContent = 'space-between';
+            headerRow.style.marginBottom = '2px';
+
+            const titleBox = document.createElement('div');
+            titleBox.style.display = 'flex';
+            titleBox.style.alignItems = 'center';
+            titleBox.style.gap = '6px';
+
+            const titleText = document.createElement('span');
+            titleText.textContent = t('toolboxTitle');
+            titleText.style.fontWeight = '600';
+            titleText.style.fontSize = '1.05em';
+            titleText.style.color = '#fff';
+
+            const betaBadge = document.createElement('span');
+            betaBadge.textContent = 'Hub';
+            betaBadge.style.fontSize = '10px';
+            betaBadge.style.padding = '1px 6px';
+            betaBadge.style.borderRadius = '4px';
+            betaBadge.style.background = 'rgba(255, 255, 255, 0.08)';
+            betaBadge.style.color = '#a1a1aa';
+            betaBadge.style.fontWeight = '500';
+
+            titleBox.appendChild(titleText);
+            titleBox.appendChild(betaBadge);
+
+            const closeModalBtn = document.createElement('div');
+            closeModalBtn.innerHTML = '&times;';
+            closeModalBtn.style.cursor = 'pointer';
+            closeModalBtn.style.color = '#888';
+            closeModalBtn.style.fontSize = '18px';
+            closeModalBtn.style.lineHeight = '1';
+            closeModalBtn.style.padding = '2px 6px';
+            closeModalBtn.style.borderRadius = '4px';
+            closeModalBtn.onmouseover = () => { closeModalBtn.style.color = '#fff'; closeModalBtn.style.background = 'rgba(255,255,255,0.08)'; };
+            closeModalBtn.onmouseout = () => { closeModalBtn.style.color = '#888'; closeModalBtn.style.background = 'transparent'; };
+            closeModalBtn.onclick = () => { toolboxModal.style.display = 'none'; };
+
+            headerRow.appendChild(titleBox);
+            headerRow.appendChild(closeModalBtn);
+
+            const subtitle = document.createElement('div');
+            subtitle.textContent = t('toolboxSubtitle');
+            subtitle.style.fontSize = '11px';
+            subtitle.style.color = '#8a8d98';
+            subtitle.style.marginBottom = '8px';
+
+            toolboxModal.appendChild(headerRow);
+            toolboxModal.appendChild(subtitle);
+
+            const itemsContainer = document.createElement('div');
+            itemsContainer.className = 'anomalous-toolbox-items';
+            itemsContainer.style.display = 'flex';
+            itemsContainer.style.flexDirection = 'column';
+            itemsContainer.style.gap = '8px';
+
+            const defaultTools = [
+                {
+                    id: 'orphan-cleaner',
+                    icon: '🧹',
+                    title: t('toolOrphanCleanerTitle'),
+                    desc: t('toolOrphanCleanerDesc'),
+                    badge: t('toolboxPlanned')
+                },
+                {
+                    id: 'batch-rename',
+                    icon: '🏷️',
+                    title: t('toolBatchRenameTitle'),
+                    desc: t('toolBatchRenameDesc'),
+                    badge: t('toolboxPlanned')
+                },
+                {
+                    id: 'civitai-jump',
+                    icon: '🌐',
+                    title: t('toolCivitaiJumpTitle'),
+                    desc: t('toolCivitaiJumpDesc'),
+                    badge: t('toolboxPlanned')
+                }
+            ];
+
+            const allTools = [...defaultTools, ...(this.customToolboxItems || [])];
+
+            allTools.forEach(tool => {
+                const card = document.createElement('div');
+                card.className = 'anomalous-toolbox-card';
+                card.style.display = 'flex';
+                card.style.alignItems = 'flex-start';
+                card.style.gap = '10px';
+                card.style.padding = '9px 11px';
+                card.style.background = 'rgba(255, 255, 255, 0.03)';
+                card.style.border = '1px solid rgba(255, 255, 255, 0.06)';
+                card.style.borderRadius = '8px';
+                card.style.cursor = 'pointer';
+                card.style.transition = 'all 0.15s ease';
+
+                card.onmouseover = () => {
+                    card.style.background = 'rgba(255, 255, 255, 0.07)';
+                    card.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                };
+                card.onmouseout = () => {
+                    card.style.background = 'rgba(255, 255, 255, 0.03)';
+                    card.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                };
+                if (tool.action) {
+                    card.onclick = (e) => {
+                        e.stopPropagation();
+                        tool.action();
+                    };
+                }
+
+                const iconBox = document.createElement('div');
+                iconBox.style.width = '26px';
+                iconBox.style.height = '26px';
+                iconBox.style.borderRadius = '6px';
+                iconBox.style.background = 'rgba(255, 255, 255, 0.05)';
+                iconBox.style.display = 'flex';
+                iconBox.style.alignItems = 'center';
+                iconBox.style.justifyContent = 'center';
+                iconBox.style.fontSize = '14px';
+                iconBox.style.flexShrink = '0';
+                iconBox.innerText = tool.icon;
+
+                const textCol = document.createElement('div');
+                textCol.style.flex = '1';
+                textCol.style.minWidth = '0';
+
+                const topRow = document.createElement('div');
+                topRow.style.display = 'flex';
+                topRow.style.alignItems = 'center';
+                topRow.style.justifyContent = 'space-between';
+                topRow.style.gap = '6px';
+
+                const cTitle = document.createElement('div');
+                cTitle.textContent = tool.title;
+                cTitle.style.fontWeight = '500';
+                cTitle.style.fontSize = '12px';
+                cTitle.style.color = '#e4e4e7';
+                cTitle.style.whiteSpace = 'nowrap';
+                cTitle.style.overflow = 'hidden';
+                cTitle.style.textOverflow = 'ellipsis';
+
+                topRow.appendChild(cTitle);
+
+                if (tool.badge) {
+                    const cBadge = document.createElement('span');
+                    cBadge.textContent = tool.badge;
+                    cBadge.style.fontSize = '10px';
+                    cBadge.style.padding = '0 5px';
+                    cBadge.style.borderRadius = '3px';
+                    cBadge.style.background = 'rgba(245, 158, 11, 0.12)';
+                    cBadge.style.color = '#f59e0b';
+                    cBadge.style.fontWeight = '500';
+                    cBadge.style.flexShrink = '0';
+                    topRow.appendChild(cBadge);
+                }
+
+                const cDesc = document.createElement('div');
+                cDesc.textContent = tool.desc;
+                cDesc.style.fontSize = '11px';
+                cDesc.style.color = '#8a8d98';
+                cDesc.style.lineHeight = '1.35';
+                cDesc.style.marginTop = '2px';
+
+                textCol.appendChild(topRow);
+                textCol.appendChild(cDesc);
+
+                card.appendChild(iconBox);
+                card.appendChild(textCol);
+                itemsContainer.appendChild(card);
+            });
+
+            toolboxModal.appendChild(itemsContainer);
+
+            const hintFooter = document.createElement('div');
+            hintFooter.textContent = t('toolboxHintFooter');
+            hintFooter.style.fontSize = '10.5px';
+            hintFooter.style.color = '#71717a';
+            hintFooter.style.lineHeight = '1.4';
+            hintFooter.style.background = 'rgba(255, 255, 255, 0.02)';
+            hintFooter.style.border = '1px dashed rgba(255, 255, 255, 0.08)';
+            hintFooter.style.padding = '7px 9px';
+            hintFooter.style.borderRadius = '6px';
+            hintFooter.style.marginTop = '4px';
+
+            toolboxModal.appendChild(hintFooter);
+        };
+
+        renderToolboxModal();
+        this.renderToolboxModal = renderToolboxModal;
+        this.registerToolboxItem = (item) => {
+            this.customToolboxItems = this.customToolboxItems || [];
+            this.customToolboxItems.push(item);
+            if (this.renderToolboxModal) this.renderToolboxModal();
+        };
+
+        container.appendChild(toolboxModal);
+
         const settingsBtn = document.createElement('button');
         settingsBtn.id = 'anomalous-global-settings-btn';
         settingsBtn.className = 'anomalous-tooltip-target';
@@ -1867,6 +2118,9 @@ export function createDOM() {
 
         settingsBtn.onclick = (e) => {
             e.stopPropagation();
+            if (toolboxModal.style.display !== 'none') {
+                toolboxModal.style.display = 'none';
+            }
             if (settingsHubModal.style.display === 'none') {
                 settingsHubModal.style.display = 'flex';
                 // Delay adding the listener slightly to avoid triggering it on the same click
@@ -2414,6 +2668,10 @@ export function hideAllPanels() {
             this.currentDetailObserver.disconnect();
             this.currentDetailObserver = null;
         }
+        const tbModal = document.getElementById('anomalous-toolbox-modal');
+        if (tbModal) tbModal.style.display = 'none';
+        const setModal = document.getElementById('anomalous-settings-hub-modal');
+        if (setModal) setModal.style.display = 'none';
     }
 
 export async function openFolderManager() {
