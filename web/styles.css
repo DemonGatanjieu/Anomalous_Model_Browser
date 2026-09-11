@@ -9522,8 +9522,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-prompt-composer {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 16px 20px 24px;
+    gap: 8px;
+    padding: 8px 12px 10px;
     overflow-y: auto;
     max-height: 100%;
     color: #e2e8f0;
@@ -9534,20 +9534,20 @@ dialog.anomalous-gallery-viewer::backdrop {
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 12px;
-    padding-bottom: 12px;
+    gap: 8px;
+    padding-bottom: 6px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .anomalous-prompt-topbar-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 
 .anomalous-prompt-topbar-left h3 {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: 0.98rem;
     font-weight: 600;
     color: #f8fafc;
     letter-spacing: 0.02em;
@@ -9556,16 +9556,16 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-prompt-topbar-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
 }
 
 .anomalous-prompt-meta-strip {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    margin: 8px 14px 0;
+    gap: 8px;
+    padding: 4px 8px;
+    margin: 2px 10px 0;
     border-radius: var(--amb-radius-control, 6px);
     background: var(--amb-bg-panel, #1C1E24);
     border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.08));
@@ -9577,9 +9577,10 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: var(--amb-bg-input, #181a22);
     border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.12));
     border-radius: var(--amb-radius-control, 6px);
-    padding: 6px 12px;
+    padding: 3px 8px;
+    height: 28px;
     color: var(--amb-text-main, #f1f5f9);
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     outline: none;
     transition: border-color 0.15s ease;
     box-sizing: border-box;
@@ -10299,7 +10300,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     box-shadow: inset 0 0 0 1px rgba(220, 20, 60, 0.3);
 }
 
-/* 4. Assembled Output Deck & Whole-Deck Canvas Drag (Sticky Floating Glass Deck) */
+/* 4. Assembled Output Deck & Whole-Deck Canvas Drag (Collapsible Glass Deck) */
 .anomalous-mixer-deck-output {
     position: sticky;
     bottom: 0;
@@ -10310,19 +10311,27 @@ dialog.anomalous-gallery-viewer::backdrop {
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.12));
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.35);
-    padding: 8px 10px;
+    padding: 6px 10px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     cursor: grab;
     user-select: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     flex-shrink: 0 !important;
+}
+
+.anomalous-mixer-deck-output.is-collapsed {
+    padding: 3px 8px;
+    background: rgba(22, 24, 30, 0.92);
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .anomalous-mixer-deck-output:hover {
     border-color: #38bdf8;
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
 }
 
 .theme-abyssal-scarlet .anomalous-mixer-deck-output {
@@ -10338,24 +10347,53 @@ dialog.anomalous-gallery-viewer::backdrop {
     cursor: grabbing;
 }
 
-.anomalous-mixer-output-header {
+.anomalous-mixer-output-summary {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    padding-bottom: 4px;
+    min-height: 26px;
+    cursor: pointer;
+}
+
+.anomalous-mixer-summary-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-mixer-summary-right {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
 }
 
 .anomalous-mixer-output-title {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: #e2e8f0;
+    white-space: nowrap;
 }
 
 .anomalous-mixer-output-stats {
     font-size: 0.7rem;
     color: #94a3b8;
     font-family: monospace;
+    white-space: nowrap;
+}
+
+.anomalous-mixer-output-drawer {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 6px;
+    margin-top: 2px;
 }
 
 .anomalous-mixer-output-body {
@@ -10374,7 +10412,6 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 4px 8px;
     outline: none;
     box-sizing: border-box;
-    pointer-events: none; /* allows deck drag seamlessly */
     min-height: 34px;
     max-height: 52px;
 }
@@ -10402,10 +10439,22 @@ dialog.anomalous-gallery-viewer::backdrop {
     color: #dc143c;
 }
 
-.anomalous-mixer-output-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.anomalous-mixer-final-btn.is-active {
+    background: var(--amb-bg-card-hover, rgba(255, 255, 255, 0.15)) !important;
+    border-color: #38bdf8 !important;
+    color: #38bdf8 !important;
+}
+
+.anomalous-btn-toggle-output {
+    font-size: 0.72rem !important;
+    padding: 2px 7px !important;
+    color: #38bdf8 !important;
+    border-color: rgba(56, 189, 248, 0.25) !important;
+}
+
+.anomalous-btn-quick-copy {
+    font-size: 0.72rem !important;
+    padding: 2px 7px !important;
 }
 
 /* 5. Floating Toast Feedback */
@@ -10466,10 +10515,10 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-prompt-workbench-grid {
     display: grid;
     grid-template-columns: minmax(280px, 320px) minmax(460px, 1fr);
-    gap: 14px;
+    gap: 10px;
     flex: 1;
     min-height: 0;
-    padding: 10px 14px 14px;
+    padding: 6px 10px 8px;
     overflow: hidden;
     box-sizing: border-box;
 }
@@ -10599,9 +10648,9 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: var(--amb-bg-panel, #1C1E24);
     border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.08));
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    padding: 14px 14px 12px;
+    padding: 10px 10px 8px;
     box-sizing: border-box;
-    gap: 10px;
+    gap: 8px;
 }
 
 .anomalous-workbench-right-panel {
@@ -10613,8 +10662,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    padding-bottom: 8px;
+    gap: 6px;
+    padding-bottom: 6px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     flex-shrink: 0;
 }
@@ -11005,7 +11054,8 @@ dialog.anomalous-gallery-viewer::backdrop {
    -------------------------------------------------------------------------- */
 .anomalous-assembly-track {
     flex: 1 1 0 !important;
-    min-height: 120px;
+    min-height: 200px;
+    height: 100%;
     max-height: none !important;
     overflow-y: auto;
     overflow-x: hidden;
@@ -11026,7 +11076,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-assembly-dropzone {
     flex: 1;
-    min-height: 160px;
+    min-height: 240px;
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;

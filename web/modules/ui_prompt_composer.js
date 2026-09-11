@@ -267,6 +267,7 @@ function buildPromptComposer(owner, container, options = {}) {
     let sourceFilterCategory = 'all';
     let sourceFilterKeyword = '';
     let draggedBlockId = null;
+    let isOutputExpanded = false;
 
     // Local in-memory source prompt cards (merged starters + materials + user custom)
     let sourceCards = [...STARTER_SOURCE_PROMPTS];
@@ -387,25 +388,25 @@ function buildPromptComposer(owner, container, options = {}) {
     const leftPanel = text(workbenchGrid, 'section', '', 'anomalous-workbench-left-panel');
     const leftHeader = text(leftPanel, 'div', '', 'anomalous-workbench-col-header');
     const leftTitleWrap = text(leftHeader, 'div', '', 'anomalous-workbench-col-title');
-    leftTitleWrap.innerHTML = `<strong>${window.anomalous_browser_lang === 'zh' ? '词卡库' : 'Prompt Library'}</strong> <span class="anomalous-sub-counter"></span><span style="font-size:11px;color:var(--amb-text-muted,#94a3b8);font-weight:normal;margin-left:6px;">${window.anomalous_browser_lang === 'zh' ? '· 拖拽卡片至右侧' : '· Drag to mixer'}</span>`;
+    leftTitleWrap.innerHTML = `<strong>${window.anomalous_browser_lang === 'zh' ? '词卡库' : 'Prompt Library'}</strong> <span class="anomalous-sub-counter"></span>`;
 
-    // Button: Create New Custom Card (placed in header right, never wraps)
-    const newCardTriggerBtn = text(leftHeader, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm');
-    newCardTriggerBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${window.anomalous_browser_lang === 'zh' ? '新建词卡' : 'New Card'}`;
-    newCardTriggerBtn.title = window.anomalous_browser_lang === 'zh' ? '新建并保存一张提示词卡片' : 'Create a new prompt card';
-
-    // Sub-action bar: Node extract and Material Library import (full-width, balanced)
-    const leftSubActions = text(leftPanel, 'div', '', 'anomalous-workbench-sub-actions');
+    // Action button group in leftHeader
+    const leftHeaderActions = text(leftHeader, 'div', '', 'anomalous-workbench-header-actions');
 
     // Button 1: Extract Prompts from Selected Canvas Node
-    const extractNodeBtn = text(leftSubActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-extract-node');
-    extractNodeBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>${window.anomalous_browser_lang === 'zh' ? '从节点提取' : 'From Node'}`;
-    extractNodeBtn.title = window.anomalous_browser_lang === 'zh' ? '读取 ComfyUI 画布当前选中节点的提示词文本并生成词卡' : 'Extract prompt text from selected canvas node into cards';
+    const extractNodeBtn = text(leftHeaderActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-extract-node');
+    extractNodeBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:3px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>${window.anomalous_browser_lang === 'zh' ? '提取' : 'Extract'}`;
+    extractNodeBtn.title = window.anomalous_browser_lang === 'zh' ? '从画布当前选中节点提取提示词并生成词卡' : 'Extract prompt text from selected canvas node into cards';
 
     // Button 2: One-click Sync / Import from Material Library
-    const importMaterialsBtn = text(leftSubActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm');
-    importMaterialsBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${window.anomalous_browser_lang === 'zh' ? '从素材库导入' : 'Import from Library'}`;
+    const importMaterialsBtn = text(leftHeaderActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm');
+    importMaterialsBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:3px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${window.anomalous_browser_lang === 'zh' ? '导入' : 'Import'}`;
     importMaterialsBtn.title = window.anomalous_browser_lang === 'zh' ? '读取素材库，一键把素材库里沉淀的提示词捞入当前工坊词库' : 'Read and import all prompts from Material Library into workbench';
+
+    // Button 3: Create New Custom Card (placed in header right, never wraps)
+    const newCardTriggerBtn = text(leftHeaderActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm');
+    newCardTriggerBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:3px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${window.anomalous_browser_lang === 'zh' ? '新建' : 'New'}`;
+    newCardTriggerBtn.title = window.anomalous_browser_lang === 'zh' ? '新建并保存一张提示词卡片' : 'Create a new prompt card';
 
     // Search and category filters bar
     const leftFilterBar = text(leftPanel, 'div', '', 'anomalous-workbench-filter-bar');
@@ -452,6 +453,11 @@ function buildPromptComposer(owner, container, options = {}) {
 
     const rightActions = text(rightHeader, 'div', '', 'anomalous-mixer-actions');
 
+    // Right quick view final assembled text
+    const viewFinalBtn = text(rightActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm anomalous-mixer-final-btn');
+    viewFinalBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>${window.anomalous_browser_lang === 'zh' ? '最终文本' : 'Final Text'}`;
+    viewFinalBtn.title = window.anomalous_browser_lang === 'zh' ? '查看/展开最终合成的提示词文本' : 'View / Expand final assembled prompt text';
+
     // Right quick extract: suck into right mixer directly
     const rightSuckNodeBtn = text(rightActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm');
     rightSuckNodeBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>${t('promptReadSelectedNode')}`;
@@ -468,27 +474,82 @@ function buildPromptComposer(owner, container, options = {}) {
     // Blocks Container & Dropzone
     const blocksContainer = text(rightPanel, 'div', '', 'anomalous-mixer-blocks-container anomalous-assembly-track');
 
-    // Bottom Live Assembled Output Deck
-    const outputDeck = text(rightPanel, 'div', '', 'anomalous-mixer-deck-output');
-    const outputHeader = text(outputDeck, 'div', '', 'anomalous-mixer-output-header');
-    const outputTitle = text(outputHeader, 'div', '', 'anomalous-mixer-output-title');
-    const outputStats = text(outputHeader, 'div', '', 'anomalous-mixer-output-stats');
+    // Bottom Live Assembled Output Deck (Collapsible on-demand)
+    const outputDeck = text(rightPanel, 'div', '', 'anomalous-mixer-deck-output is-collapsed');
 
-    const outputBody = text(outputDeck, 'div', '', 'anomalous-mixer-output-body');
+    // 1. Slim Dock Summary Bar (32px high, always visible when blocks exist)
+    const outputSummary = text(outputDeck, 'div', '', 'anomalous-mixer-output-summary');
+    const summaryLeft = text(outputSummary, 'div', '', 'anomalous-mixer-summary-left');
+    const outputTitle = text(summaryLeft, 'div', '', 'anomalous-mixer-output-title');
+    const outputStats = text(summaryLeft, 'div', '', 'anomalous-mixer-output-stats');
+
+    const summaryRight = text(outputSummary, 'div', '', 'anomalous-mixer-summary-right');
+    const copyOutputBtn = text(summaryRight, 'button', `📋 ${t('copy')}`, 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-quick-copy');
+    copyOutputBtn.title = window.anomalous_browser_lang === 'zh' ? '复制当前合成的提示词' : 'Copy assembled prompt text';
+
+    const expandOutputBtn = text(summaryRight, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-toggle-output');
+    expandOutputBtn.title = window.anomalous_browser_lang === 'zh' ? '展开/收起最终文本' : 'Expand/collapse full text';
+
+    // 2. Expandable Drawer (reveals full textarea, canvas drag dock, and target node write bar)
+    const outputDrawer = text(outputDeck, 'div', '', 'anomalous-mixer-output-drawer');
+    outputDrawer.style.display = 'none';
+
+    const outputBody = text(outputDrawer, 'div', '', 'anomalous-mixer-output-body');
     const outputTextarea = text(outputBody, 'textarea', '', 'anomalous-mixer-output-textarea');
     outputTextarea.readOnly = true;
     outputTextarea.rows = 2;
 
-    const outputFooter = text(outputDeck, 'div', '', 'anomalous-mixer-output-footer');
+    const outputFooter = text(outputDrawer, 'div', '', 'anomalous-mixer-output-footer');
     const dragHint = text(outputFooter, 'div', '', 'anomalous-mixer-drag-hint');
     dragHint.innerHTML = `🖐️ <strong>${window.anomalous_browser_lang === 'zh' ? '按住此预览坞' : 'Drag this deck'}</strong> ${window.anomalous_browser_lang === 'zh' ? '直接丢入 ComfyUI 画布节点' : 'onto canvas node'}`;
 
-    const outputActions = text(outputFooter, 'div', '', 'anomalous-mixer-output-actions');
-    const copyOutputBtn = text(outputActions, 'button', `📋 ${t('copy')}`, 'anomalous-btn-ghost');
-
-    // Target Node Direct Write Bar
-    const targetBar = text(rightPanel, 'div', '', 'anomalous-prompt-target-bar');
+    // Target Node Direct Write Bar placed INSIDE outputDrawer so it collapses cleanly
+    const targetBar = text(outputDrawer, 'div', '', 'anomalous-prompt-target-bar');
     const targetWidgetIndexByNodeId = {};
+
+    function updateOutputDeckState() {
+        const currentRoleParts = draft?.plan?.parts ? draft.plan.parts.filter(p => (p.role || 'positive') === activeTab) : [];
+        const compiledText = (draft?.plan?.[activeTab] || '').trim();
+        const hasContent = currentRoleParts.length > 0 && compiledText.length > 0;
+
+        if (!hasContent) {
+            outputDeck.style.display = 'none';
+            viewFinalBtn.style.display = 'none';
+            return;
+        }
+
+        outputDeck.style.display = 'flex';
+        viewFinalBtn.style.display = 'inline-flex';
+
+        if (isOutputExpanded) {
+            outputDeck.classList.remove('is-collapsed');
+            outputDrawer.style.display = 'flex';
+            expandOutputBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '收起 ▲' : 'Collapse ▲';
+            viewFinalBtn.classList.add('is-active');
+        } else {
+            outputDeck.classList.add('is-collapsed');
+            outputDrawer.style.display = 'none';
+            expandOutputBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '查看最终文本 ▾' : 'View Text ▾';
+            viewFinalBtn.classList.remove('is-active');
+        }
+    }
+
+    expandOutputBtn.onclick = (e) => {
+        e.stopPropagation();
+        isOutputExpanded = !isOutputExpanded;
+        updateOutputDeckState();
+    };
+
+    outputSummary.onclick = (e) => {
+        if (e.target.closest('button')) return;
+        isOutputExpanded = !isOutputExpanded;
+        updateOutputDeckState();
+    };
+
+    viewFinalBtn.onclick = () => {
+        isOutputExpanded = !isOutputExpanded;
+        updateOutputDeckState();
+    };
 
     // Bind output deck drag once on mount
     bindMaterialDrag(outputDeck, owner, {
@@ -676,7 +737,7 @@ function buildPromptComposer(owner, container, options = {}) {
             if (materialSyncController === controller) {
                 materialSyncController = null;
                 importMaterialsBtn.disabled = false;
-                importMaterialsBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${window.anomalous_browser_lang === 'zh' ? '从素材库导入' : 'Import from Library'}`;
+                importMaterialsBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:3px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${window.anomalous_browser_lang === 'zh' ? '导入' : 'Import'}`;
             }
         }
     }
@@ -1275,15 +1336,16 @@ function buildPromptComposer(owner, container, options = {}) {
         const compiledText = draft.plan[activeTab] || '';
 
         outputTitle.innerHTML = activeTab === 'negative'
-            ? `🚫 <strong>${window.anomalous_browser_lang === 'zh' ? '实时合成负向文本' : 'Assembled Negative'}</strong>`
-            : `✨ <strong>${window.anomalous_browser_lang === 'zh' ? '实时合成正向文本' : 'Assembled Positive'}</strong>`;
+            ? `🚫 <strong>${window.anomalous_browser_lang === 'zh' ? '最终负向文本' : 'Assembled Negative'}</strong>`
+            : `✨ <strong>${window.anomalous_browser_lang === 'zh' ? '最终正向文本' : 'Assembled Positive'}</strong>`;
 
         const words = compiledText.trim() ? compiledText.split(/[\s,，\n\r]+/).filter(Boolean).length : 0;
         outputStats.textContent = window.anomalous_browser_lang === 'zh'
-            ? `${compiledText.length} 字符 · 约 ${words} 个词组`
-            : `${compiledText.length} chars · ~${words} tags`;
+            ? `(${compiledText.length} 字符 · 约 ${words} 词组)`
+            : `(${compiledText.length} chars · ~${words} tags)`;
 
         outputTextarea.value = compiledText;
+        updateOutputDeckState();
     }
 
     // Smart Sort
@@ -1317,8 +1379,9 @@ function buildPromptComposer(owner, container, options = {}) {
     };
 
     // Copy preview text
-    copyOutputBtn.onclick = async () => {
-        const textToCopy = outputTextarea.value;
+    copyOutputBtn.onclick = async (e) => {
+        e?.stopPropagation?.();
+        const textToCopy = (draft.plan[activeTab] || outputTextarea.value || '').trim();
         if (!textToCopy) return;
         try {
             await navigator.clipboard.writeText(textToCopy);

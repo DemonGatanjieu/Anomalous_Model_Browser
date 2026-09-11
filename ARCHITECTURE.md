@@ -150,22 +150,22 @@ DOM or live LiteGraph state.
   the library and Node Assistant use `ui_material_application.js` for the same receipt.
 - `ui_prompt_composer.js` owns the Prompt Studio Dual-Column Workbench (提示词工坊左右双分栏工作台);
   provides a clean, professional studio workspace (`.anomalous-prompt-workbench`) stripped of gaudy neon effects, cyberpunk backgrounds, and pulsing glow animations;
+  features compact vertical spacing (tightened paddings, 28px single-line metadata inputs, and 6px grid gaps) maximizing functional workspace;
   features responsive docked / sidebar adaptation with dedicated single-column collapse, generous vertical scrolling without arbitrary height clipping, and an inline responsive view switcher (`.anomalous-prompt-view-switcher`: `[🗃️ 词卡库 | 🎛️ 拼装台 | 📑 全部]`) for seamless navigation when docked as a sidebar (`#anomalous-container.anomalous-docked`) or on narrow screens;
   the Left Column hosts the Ready-to-use Prompt Cards Library (成型提示词库), featuring restrained dark slate card backgrounds (`#24262E`)
   with category-specific left accent borders (`border-left: 3.5px solid ...`, Base/Style/Subject/Trigger) eliminating color-palette clutter,
   minimalist empty state container (`.anomalous-source-empty`) with subtle dashed borders,
-  non-wrapping title layout, a dedicated sub-action bar with one-click canvas node prompt extraction (`🎯 从节点提取`,
-  reading selected ComfyUI text nodes like `CLIPTextEncode` with downstream link connection traversal for accurate negative conditioning detection, auto-generating categorised cards) and one-click
-  Material Library batch sync (`📥 从素材库导入`, cancellable fetch scoped to `category=prompts`), plus on-demand persistent card creation
-  (`➕ 新建词卡`, with explicit positive/negative role radios and `/anomalous/save_prompt_plan` backend persistence; temporary cards
+  a streamlined col-header holding a unified action button group (`[🎯 提取]`, `[📥 导入]`, `[➕ 新建]`) that reclaims ~36px vertical height for the card list,
+  one-click canvas node prompt extraction (`🎯 提取`, reading selected ComfyUI text nodes like `CLIPTextEncode` with downstream link connection traversal for accurate negative conditioning detection, auto-generating categorised cards) and one-click
+  Material Library batch sync (`📥 导入`, cancellable fetch scoped to `category=prompts`), plus on-demand persistent card creation
+  (`➕ 新建`, with explicit positive/negative role radios and `/anomalous/save_prompt_plan` backend persistence; temporary cards
   show `[未保存]` badge with one-click `💾 存入库`), completely eliminating default empty textareas; cards support native HTML5 drag-and-drop;
   the Right Column hosts the expanded Assembler & Arranger Stage (顺序编排调音台, `minmax(460px, 1fr)`), featuring quick node reading
-  (`🎯 读取选中节点`), compact modular Lego block cards (~56px height, expandable on focus) allowing generous top-to-bottom sequence stacking,
-  a clean dropzone (`.anomalous-assembly-dropzone`) that ingests dragged cards into positive/negative tracks with strict role isolation,
+  (`🎯 读取选中节点`), quick final text toggle (`[📄 最终文本]`), compact modular Lego block cards (~56px height, expandable on focus) allowing generous top-to-bottom sequence stacking,
+  a large, high-clearance dropzone (`.anomalous-assembly-dropzone`, min-height 240px) that ingests dragged cards into positive/negative tracks with strict role isolation,
   supports bidirectional drag-and-drop reordering with ghost indicator lines, role-aware up/down swapping, instant A/B bypass toggles (greyscale dimming without deleting),
   interactive category pills, one-click Smart Sort (`🪄 按分类排序`, Base ➔ Style ➔ Subject ➔ Trigger), a target widget dropdown with sticky
-  selection cache (`targetWidgetIndexByNodeId`), and a sticky floating frosted-glass output deck (`.anomalous-mixer-deck-output`, `position: sticky; bottom: 0; backdrop-filter: blur(12px)`)
-  with real-time word/token counts, single-mount canvas dragging (`bindMaterialDrag` onto text nodes), direct target node injection toolbar, and seamless return to Material Library;
+  selection cache (`targetWidgetIndexByNodeId`), and an on-demand collapsible output deck (`.anomalous-mixer-deck-output`): completely hidden when 0 blocks, defaulting to a slim 32px pill summary bar (`✨ 最终正向文本 (X字符 · Y词组) [📋复制] [👁️查看最终文本 ▾]`) when cards exist to prevent premature clutter and screen squashing, and smoothly expandable into a full drawer containing the compiled textarea, whole-deck canvas drag dock (`bindMaterialDrag`), and target node direct write bar;
   `prompt_composition.js` provides bidirectional schema mapping (`planToWorkbenchDraft` and `workbenchDraftToSavedPlan`) ensuring
   100% roundtrip data integrity across `anomalous-prompt-plan-v1` and `version: 2`, lossless legacy dual-role splitting and trailing text retention,
   `categorizePromptSnippet`, `smartSortPromptBlocks`, `assemblePromptBlocks`, as well as backward-compatible text joining;
