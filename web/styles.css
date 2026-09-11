@@ -566,10 +566,13 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 #anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-card-badge {
     top: 6px !important;
     left: 6px !important;
-    max-width: 65px !important;
+    max-width: 55px !important;
     font-size: 0.65em !important;
     padding: 1px 4px !important;
     border-radius: 3px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 
 #anomalous-container.view-mode-compact .anomalous-card-action-btn,
@@ -586,13 +589,13 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     right: 6px !important;
 }
 
-#anomalous-container.view-mode-compact .anomalous-card-action-btn.action-scan,
-#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-card-action-btn.action-scan {
+#anomalous-container.view-mode-compact .anomalous-card-action-btn.action-edit,
+#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-card-action-btn.action-edit {
     right: 32px !important;
 }
 
-#anomalous-container.view-mode-compact .anomalous-card-action-btn.action-edit,
-#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-card-action-btn.action-edit {
+#anomalous-container.view-mode-compact .anomalous-card-action-btn.action-scan,
+#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-card-action-btn.action-scan {
     right: 58px !important;
 }
 
@@ -773,11 +776,11 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     right: 8px;
 }
 
-.anomalous-card-action-btn.action-scan {
+.anomalous-card-action-btn.action-edit {
     right: 42px;
 }
 
-.anomalous-card-action-btn.action-edit {
+.anomalous-card-action-btn.action-scan {
     right: 76px;
 }
 
@@ -1028,28 +1031,96 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 #anomalous-toolbox-modal {
     position: absolute;
-    bottom: 16px;
-    left: 266px;
-    width: 310px;
-    max-height: calc(100% - 32px);
+    bottom: 50px;
+    left: 10px;
+    width: 232px;
+    max-height: calc(100% - 64px);
     overflow-y: auto;
     box-sizing: border-box;
-    background: rgba(24, 24, 28, 0.98);
+    background: rgba(22, 22, 26, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 10px;
-    padding: 14px;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    padding: 10px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
     z-index: 999999 !important;
-    transition: left 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: left 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), bottom 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
     display: none;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .anomalous-sidebar-closed #anomalous-toolbox-modal {
-    left: 72px !important;
+    left: 68px !important;
+    bottom: 12px !important;
+}
+
+.anomalous-toolbox-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin: 2px 0 4px;
+}
+
+.anomalous-toolbox-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 9px 4px 7px;
+    min-height: 58px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.anomalous-toolbox-tile:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.anomalous-toolbox-tile:active {
+    transform: scale(0.96);
+}
+
+.anomalous-toolbox-tile-icon {
+    font-size: 18px;
+    line-height: 1;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.anomalous-toolbox-tile-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #d4d4d8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    line-height: 1.2;
+}
+
+.anomalous-toolbox-tile-dot {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #f59e0b;
+    box-shadow: 0 0 4px rgba(245, 158, 11, 0.6);
 }
 
 .anomalous-sidebar-closed #anomalous-sidebar-actions {

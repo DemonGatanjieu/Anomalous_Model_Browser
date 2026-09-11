@@ -1898,7 +1898,8 @@ export function createDOM() {
             headerRow.style.display = 'flex';
             headerRow.style.alignItems = 'center';
             headerRow.style.justifyContent = 'space-between';
-            headerRow.style.marginBottom = '2px';
+            headerRow.style.padding = '2px 4px 6px';
+            headerRow.style.borderBottom = '1px solid rgba(255, 255, 255, 0.06)';
 
             const titleBox = document.createElement('div');
             titleBox.style.display = 'flex';
@@ -1908,14 +1909,14 @@ export function createDOM() {
             const titleText = document.createElement('span');
             titleText.textContent = t('toolboxTitle');
             titleText.style.fontWeight = '600';
-            titleText.style.fontSize = '1.05em';
+            titleText.style.fontSize = '12px';
             titleText.style.color = '#fff';
 
             const betaBadge = document.createElement('span');
             betaBadge.textContent = 'Hub';
-            betaBadge.style.fontSize = '10px';
-            betaBadge.style.padding = '1px 6px';
-            betaBadge.style.borderRadius = '4px';
+            betaBadge.style.fontSize = '9px';
+            betaBadge.style.padding = '1px 5px';
+            betaBadge.style.borderRadius = '3px';
             betaBadge.style.background = 'rgba(255, 255, 255, 0.08)';
             betaBadge.style.color = '#a1a1aa';
             betaBadge.style.fontWeight = '500';
@@ -1927,9 +1928,9 @@ export function createDOM() {
             closeModalBtn.innerHTML = '&times;';
             closeModalBtn.style.cursor = 'pointer';
             closeModalBtn.style.color = '#888';
-            closeModalBtn.style.fontSize = '18px';
+            closeModalBtn.style.fontSize = '16px';
             closeModalBtn.style.lineHeight = '1';
-            closeModalBtn.style.padding = '2px 6px';
+            closeModalBtn.style.padding = '2px 4px';
             closeModalBtn.style.borderRadius = '4px';
             closeModalBtn.onmouseover = () => { closeModalBtn.style.color = '#fff'; closeModalBtn.style.background = 'rgba(255,255,255,0.08)'; };
             closeModalBtn.onmouseout = () => { closeModalBtn.style.color = '#888'; closeModalBtn.style.background = 'transparent'; };
@@ -1938,25 +1939,16 @@ export function createDOM() {
             headerRow.appendChild(titleBox);
             headerRow.appendChild(closeModalBtn);
 
-            const subtitle = document.createElement('div');
-            subtitle.textContent = t('toolboxSubtitle');
-            subtitle.style.fontSize = '11px';
-            subtitle.style.color = '#8a8d98';
-            subtitle.style.marginBottom = '8px';
-
             toolboxModal.appendChild(headerRow);
-            toolboxModal.appendChild(subtitle);
 
-            const itemsContainer = document.createElement('div');
-            itemsContainer.className = 'anomalous-toolbox-items';
-            itemsContainer.style.display = 'flex';
-            itemsContainer.style.flexDirection = 'column';
-            itemsContainer.style.gap = '8px';
+            const gridContainer = document.createElement('div');
+            gridContainer.className = 'anomalous-toolbox-grid';
 
             const defaultTools = [
                 {
                     id: 'orphan-cleaner',
                     icon: '🧹',
+                    shortTitle: t('toolOrphanCleanerShort'),
                     title: t('toolOrphanCleanerTitle'),
                     desc: t('toolOrphanCleanerDesc'),
                     badge: t('toolboxPlanned')
@@ -1964,6 +1956,7 @@ export function createDOM() {
                 {
                     id: 'batch-rename',
                     icon: '🏷️',
+                    shortTitle: t('toolBatchRenameShort'),
                     title: t('toolBatchRenameTitle'),
                     desc: t('toolBatchRenameDesc'),
                     badge: t('toolboxPlanned')
@@ -1971,8 +1964,33 @@ export function createDOM() {
                 {
                     id: 'civitai-jump',
                     icon: '🌐',
+                    shortTitle: t('toolCivitaiJumpShort'),
                     title: t('toolCivitaiJumpTitle'),
                     desc: t('toolCivitaiJumpDesc'),
+                    badge: t('toolboxPlanned')
+                },
+                {
+                    id: 'hash-recalc',
+                    icon: '⚡',
+                    shortTitle: t('toolHashRecalcShort'),
+                    title: t('toolHashRecalcTitle'),
+                    desc: t('toolHashRecalcDesc'),
+                    badge: t('toolboxPlanned')
+                },
+                {
+                    id: 'format-convert',
+                    icon: '📦',
+                    shortTitle: t('toolFormatConvertShort'),
+                    title: t('toolFormatConvertTitle'),
+                    desc: t('toolFormatConvertDesc'),
+                    badge: t('toolboxPlanned')
+                },
+                {
+                    id: 'custom-scripts',
+                    icon: '🧩',
+                    shortTitle: t('toolCustomScriptsShort'),
+                    title: t('toolCustomScriptsTitle'),
+                    desc: t('toolCustomScriptsDesc'),
                     badge: t('toolboxPlanned')
                 }
             ];
@@ -1980,106 +1998,55 @@ export function createDOM() {
             const allTools = [...defaultTools, ...(this.customToolboxItems || [])];
 
             allTools.forEach(tool => {
-                const card = document.createElement('div');
-                card.className = 'anomalous-toolbox-card';
-                card.style.display = 'flex';
-                card.style.alignItems = 'flex-start';
-                card.style.gap = '10px';
-                card.style.padding = '9px 11px';
-                card.style.background = 'rgba(255, 255, 255, 0.03)';
-                card.style.border = '1px solid rgba(255, 255, 255, 0.06)';
-                card.style.borderRadius = '8px';
-                card.style.cursor = 'pointer';
-                card.style.transition = 'all 0.15s ease';
-
-                card.onmouseover = () => {
-                    card.style.background = 'rgba(255, 255, 255, 0.07)';
-                    card.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                };
-                card.onmouseout = () => {
-                    card.style.background = 'rgba(255, 255, 255, 0.03)';
-                    card.style.borderColor = 'rgba(255, 255, 255, 0.06)';
-                };
-                if (tool.action) {
-                    card.onclick = (e) => {
-                        e.stopPropagation();
-                        tool.action();
-                    };
-                }
-
-                const iconBox = document.createElement('div');
-                iconBox.style.width = '26px';
-                iconBox.style.height = '26px';
-                iconBox.style.borderRadius = '6px';
-                iconBox.style.background = 'rgba(255, 255, 255, 0.05)';
-                iconBox.style.display = 'flex';
-                iconBox.style.alignItems = 'center';
-                iconBox.style.justifyContent = 'center';
-                iconBox.style.fontSize = '14px';
-                iconBox.style.flexShrink = '0';
-                iconBox.innerText = tool.icon;
-
-                const textCol = document.createElement('div');
-                textCol.style.flex = '1';
-                textCol.style.minWidth = '0';
-
-                const topRow = document.createElement('div');
-                topRow.style.display = 'flex';
-                topRow.style.alignItems = 'center';
-                topRow.style.justifyContent = 'space-between';
-                topRow.style.gap = '6px';
-
-                const cTitle = document.createElement('div');
-                cTitle.textContent = tool.title;
-                cTitle.style.fontWeight = '500';
-                cTitle.style.fontSize = '12px';
-                cTitle.style.color = '#e4e4e7';
-                cTitle.style.whiteSpace = 'nowrap';
-                cTitle.style.overflow = 'hidden';
-                cTitle.style.textOverflow = 'ellipsis';
-
-                topRow.appendChild(cTitle);
+                const tile = document.createElement('div');
+                tile.className = 'anomalous-toolbox-tile anomalous-tooltip-target';
+                tile.setAttribute('data-tooltip', `${tool.title}\n${tool.desc || ''}`);
+                tile.setAttribute('data-tooltip-pos', 'top');
 
                 if (tool.badge) {
-                    const cBadge = document.createElement('span');
-                    cBadge.textContent = tool.badge;
-                    cBadge.style.fontSize = '10px';
-                    cBadge.style.padding = '0 5px';
-                    cBadge.style.borderRadius = '3px';
-                    cBadge.style.background = 'rgba(245, 158, 11, 0.12)';
-                    cBadge.style.color = '#f59e0b';
-                    cBadge.style.fontWeight = '500';
-                    cBadge.style.flexShrink = '0';
-                    topRow.appendChild(cBadge);
+                    const dot = document.createElement('span');
+                    dot.className = 'anomalous-toolbox-tile-dot';
+                    tile.appendChild(dot);
                 }
 
-                const cDesc = document.createElement('div');
-                cDesc.textContent = tool.desc;
-                cDesc.style.fontSize = '11px';
-                cDesc.style.color = '#8a8d98';
-                cDesc.style.lineHeight = '1.35';
-                cDesc.style.marginTop = '2px';
+                const iconEl = document.createElement('div');
+                iconEl.className = 'anomalous-toolbox-tile-icon';
+                iconEl.innerText = tool.icon || '🔧';
+                tile.appendChild(iconEl);
 
-                textCol.appendChild(topRow);
-                textCol.appendChild(cDesc);
+                const labelEl = document.createElement('div');
+                labelEl.className = 'anomalous-toolbox-tile-label';
+                labelEl.textContent = tool.shortTitle || tool.title;
+                tile.appendChild(labelEl);
 
-                card.appendChild(iconBox);
-                card.appendChild(textCol);
-                itemsContainer.appendChild(card);
+                tile.onclick = (e) => {
+                    e.stopPropagation();
+                    if (typeof tool.action === 'function') {
+                        tool.action();
+                    } else {
+                        const alertMsg = window.anomalous_browser_lang === 'zh'
+                            ? `【${tool.title}】功能正在规划整合中，敬请期待！`
+                            : `[${tool.title}] is currently in development!`;
+                        if (typeof window.anomalous_notify === 'function') {
+                            window.anomalous_notify(alertMsg, 'info');
+                        } else {
+                            alert(alertMsg);
+                        }
+                    }
+                };
+
+                gridContainer.appendChild(tile);
             });
 
-            toolboxModal.appendChild(itemsContainer);
+            toolboxModal.appendChild(gridContainer);
 
             const hintFooter = document.createElement('div');
-            hintFooter.textContent = t('toolboxHintFooter');
-            hintFooter.style.fontSize = '10.5px';
+            hintFooter.textContent = window.anomalous_browser_lang === 'zh' ? '💡 实用运维工具持续扩充中' : '💡 Utility toolset expanding...';
+            hintFooter.style.fontSize = '10px';
             hintFooter.style.color = '#71717a';
-            hintFooter.style.lineHeight = '1.4';
-            hintFooter.style.background = 'rgba(255, 255, 255, 0.02)';
-            hintFooter.style.border = '1px dashed rgba(255, 255, 255, 0.08)';
-            hintFooter.style.padding = '7px 9px';
-            hintFooter.style.borderRadius = '6px';
-            hintFooter.style.marginTop = '4px';
+            hintFooter.style.textAlign = 'center';
+            hintFooter.style.padding = '4px 2px 0';
+            hintFooter.style.borderTop = '1px solid rgba(255, 255, 255, 0.05)';
 
             toolboxModal.appendChild(hintFooter);
         };

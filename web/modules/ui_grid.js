@@ -159,7 +159,7 @@ export async function loadModels() {
                 };
 
                 const applyBtn = document.createElement('button');
-                applyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+                applyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
                 applyBtn.className = 'anomalous-card-action-btn action-apply anomalous-tooltip-target';
                 applyBtn.removeAttribute('title');
                 applyBtn.setAttribute('data-tooltip', t('applyToCanvas'));
@@ -170,20 +170,8 @@ export async function loadModels() {
                 };
                 card.appendChild(applyBtn);
 
-                const singleScanBtn = document.createElement('button');
-                singleScanBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>`;
-                singleScanBtn.className = 'anomalous-card-action-btn action-scan anomalous-tooltip-target';
-                singleScanBtn.removeAttribute('title');
-                singleScanBtn.setAttribute('data-tooltip', t('scanModelPrecisely'));
-                singleScanBtn.setAttribute('data-tooltip-pos', 'bottom');
-                singleScanBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    createWizardModal(false, model.filename);
-                };
-                card.appendChild(singleScanBtn);
-
                 const editBtn = document.createElement('button');
-                editBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`;
+                editBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
                 editBtn.className = 'anomalous-card-action-btn action-edit anomalous-tooltip-target';
                 editBtn.removeAttribute('title');
                 editBtn.setAttribute('data-tooltip', t('editModel'));
@@ -194,11 +182,17 @@ export async function loadModels() {
                 };
                 card.appendChild(editBtn);
 
-                applyBtn.onclick = (e) => {
+                const singleScanBtn = document.createElement('button');
+                singleScanBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>`;
+                singleScanBtn.className = 'anomalous-card-action-btn action-scan anomalous-tooltip-target';
+                singleScanBtn.removeAttribute('title');
+                singleScanBtn.setAttribute('data-tooltip', t('scanModelPrecisely'));
+                singleScanBtn.setAttribute('data-tooltip-pos', 'bottom');
+                singleScanBtn.onclick = (e) => {
                     e.stopPropagation();
-                    this.applyModelToCanvas(this.currentType, this.currentSubfolder, model);
+                    createWizardModal(false, model.filename);
                 };
-                card.appendChild(applyBtn);
+                card.appendChild(singleScanBtn);
 
 
                 fragment.appendChild(card);
