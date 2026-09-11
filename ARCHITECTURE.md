@@ -149,22 +149,21 @@ DOM or live LiteGraph state.
   `node_material_actions.js` owns shared transactional node application and guarded undo;
   the library and Node Assistant use `ui_material_application.js` for the same receipt.
 - `ui_prompt_composer.js` owns the Prompt Studio Dual-Column Workbench (提示词工坊左右双分栏工作台);
-  replaces the cramped 380px drawer with a dedicated full-width two-column workspace (`.anomalous-prompt-workbench`),
-  immersed with an ultra-subtle cybernetic circuit board overlay (`web/assets/cyber_deck_bg.webp`, `mix-blend-mode: overlay; opacity: 0.15; pointer-events: none`):
-  the Left Column hosts the Ready-to-use Prompt Cards Library (成型提示词库), featuring restrained dark grey card backgrounds (`#222630`)
+  provides a clean, professional studio workspace (`.anomalous-prompt-workbench`) stripped of gaudy neon effects, cyberpunk backgrounds, and pulsing glow animations;
+  features responsive docked / sidebar adaptation with dedicated single-column collapse, generous vertical scrolling without arbitrary height clipping, and an inline responsive view switcher (`.anomalous-prompt-view-switcher`: `[🗃️ 词卡库 | 🎛️ 拼装台 | 📑 全部]`) for seamless navigation when docked as a sidebar (`#anomalous-container.anomalous-docked`) or on narrow screens;
+  the Left Column hosts the Ready-to-use Prompt Cards Library (成型提示词库), featuring restrained dark slate card backgrounds (`#24262E`)
   with category-specific left accent borders (`border-left: 3.5px solid ...`, Base/Style/Subject/Trigger) eliminating color-palette clutter,
-  empty state container (`.anomalous-source-empty`) featuring an atmospheric holographic library backdrop (`empty_library_concept.webp`),
-  non-wrapping title layout, a dedicated sub-action bar with one-click canvas node prompt extraction (`🎯 从节点提取`, powered by subtle cybernetic matrix micro-textures `btn_cyber_grid.webp`,
+  minimalist empty state container (`.anomalous-source-empty`) with subtle dashed borders,
+  non-wrapping title layout, a dedicated sub-action bar with one-click canvas node prompt extraction (`🎯 从节点提取`,
   reading selected ComfyUI text nodes like `CLIPTextEncode` with downstream link connection traversal for accurate negative conditioning detection, auto-generating categorised cards) and one-click
   Material Library batch sync (`📥 从素材库导入`, cancellable fetch scoped to `category=prompts`), plus on-demand persistent card creation
   (`➕ 新建词卡`, with explicit positive/negative role radios and `/anomalous/save_prompt_plan` backend persistence; temporary cards
   show `[未保存]` badge with one-click `💾 存入库`), completely eliminating default empty textareas; cards support native HTML5 drag-and-drop;
-  dragging cards activates a pulsing dashed accent summon border (`@keyframes anomalousTrackPulse`, `border: 2px dashed #2dd4bf`) on the Assembler Stage;
   the Right Column hosts the expanded Assembler & Arranger Stage (顺序编排调音台, `minmax(460px, 1fr)`), featuring quick node reading
   (`🎯 读取选中节点`), compact modular Lego block cards (~56px height, expandable on focus) allowing generous top-to-bottom sequence stacking,
-  a high-visibility dropzone (`.anomalous-assembly-dropzone`) that ingests dragged cards into positive/negative tracks with strict role isolation,
+  a clean dropzone (`.anomalous-assembly-dropzone`) that ingests dragged cards into positive/negative tracks with strict role isolation,
   supports bidirectional drag-and-drop reordering with ghost indicator lines, role-aware up/down swapping, instant A/B bypass toggles (greyscale dimming without deleting),
-  interactive category pills, one-click Smart Sort (`🪄 按分类排序`, Base ➔ Style ➔ Subject ➔ Trigger, enhanced with cyber micro-texture `btn_cyber_grid.webp`), a target widget dropdown with sticky
+  interactive category pills, one-click Smart Sort (`🪄 按分类排序`, Base ➔ Style ➔ Subject ➔ Trigger), a target widget dropdown with sticky
   selection cache (`targetWidgetIndexByNodeId`), and a sticky floating frosted-glass output deck (`.anomalous-mixer-deck-output`, `position: sticky; bottom: 0; backdrop-filter: blur(12px)`)
   with real-time word/token counts, single-mount canvas dragging (`bindMaterialDrag` onto text nodes), direct target node injection toolbar, and seamless return to Material Library;
   `prompt_composition.js` provides bidirectional schema mapping (`planToWorkbenchDraft` and `workbenchDraftToSavedPlan`) ensuring

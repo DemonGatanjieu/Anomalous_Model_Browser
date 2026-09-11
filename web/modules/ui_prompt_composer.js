@@ -355,7 +355,30 @@ function buildPromptComposer(owner, container, options = {}) {
         renderTargetBar();
     };
 
-    // 3. Two-Column Split Grid
+    // 3. Responsive View Switcher (for docked and narrow sidebar modes)
+    const viewSwitcher = text(view, 'div', '', 'anomalous-prompt-view-switcher');
+    let currentViewMode = 'both';
+
+    const viewOptions = [
+        { id: 'left', icon: '🗃️', zh: '词卡库', en: 'Cards' },
+        { id: 'right', icon: '🎛️', zh: '拼装台', en: 'Mixer' },
+        { id: 'both', icon: '📑', zh: '全部', en: 'All' },
+    ];
+
+    const viewButtons = {};
+    viewOptions.forEach(opt => {
+        const btn = text(viewSwitcher, 'button', `${opt.icon} ${window.anomalous_browser_lang === 'zh' ? opt.zh : opt.en}`, `anomalous-view-switcher-btn${currentViewMode === opt.id ? ' is-active' : ''}`);
+        viewButtons[opt.id] = btn;
+        btn.onclick = () => {
+            currentViewMode = opt.id;
+            Object.values(viewButtons).forEach(b => b.classList.remove('is-active'));
+            btn.classList.add('is-active');
+            workbenchGrid.classList.remove('is-view-left', 'is-view-right', 'is-view-both');
+            workbenchGrid.classList.add(`is-view-${opt.id}`);
+        };
+    });
+
+    // 4. Two-Column Split Grid
     const workbenchGrid = text(view, 'div', '', 'anomalous-prompt-workbench-grid');
 
     // =========================================================================
@@ -1005,6 +1028,13 @@ function buildPromptComposer(owner, container, options = {}) {
         updateRightTabsUI();
         renderBlocksList();
         updateOutputPreview();
+
+        if (currentViewMode === 'left') {
+            const count = draft.plan.parts.filter(p => p.role === activeTab).length;
+            showWorkbenchToast(window.anomalous_browser_lang === 'zh'
+                ? `已加入拼装台（当前共 ${count} 块积木）`
+                : `Added to mixer (${count} blocks)`);
+        }
     }
 
     function renderBlocksList() {
