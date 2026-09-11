@@ -128,6 +128,41 @@ export function addPromptToDraft(owner, name, positive, negative = '') {
     showPromptComposer(owner);
 }
 
+export async function openPromptStudio(owner = this) {
+    owner.closePromptImportDrawer?.();
+    owner.recipeDetailFinish?.('closed');
+    owner.modal?.classList.add('visible');
+    if (owner.nbPanel?.style.display !== 'flex' && !owner.workspaceReturnState) {
+        owner.workspaceReturnState = Object.fromEntries([
+            ['grid', owner.grid], ['detail', owner.detailPanel], ['gallery', owner.galleryPanel],
+            ['doctor', owner.doctorPanel], ['assistant', owner.assistantPanel],
+        ].filter(([, panel]) => panel).map(([key, panel]) => [key, panel.style.display]));
+    }
+    if (owner.nbPanel) owner.nbPanel.style.display = 'flex';
+    for (const panel of [owner.grid, owner.detailPanel, owner.galleryPanel, owner.doctorPanel, owner.assistantPanel, owner.paramPanel]) {
+        if (panel) panel.style.display = 'none';
+    }
+    if (owner.notebookContainer) owner.notebookContainer.style.display = 'none';
+    if (owner.notebookBody) owner.notebookBody.style.display = 'none';
+    if (owner.recipeView) owner.recipeView.style.display = 'none';
+    if (owner.materialContainer) owner.materialContainer.style.display = 'none';
+    if (owner.materialView) owner.materialView.style.display = 'none';
+
+    if (!owner.promptStudioContainer) {
+        owner.promptStudioContainer = text(owner.nbPanel, 'div', '', 'anomalous-nb-container anomalous-prompt-studio-container');
+    }
+    owner.promptStudioContainer.style.display = 'flex';
+    owner.promptStudioContainer.replaceChildren();
+
+    owner.promptComposerView?.remove();
+    owner.promptComposerView = null;
+
+    buildPromptComposer(owner, owner.promptStudioContainer, {
+        isSideStudio: false,
+        onClose: () => owner.closeWorkspace?.(),
+    });
+}
+
 export async function showPromptComposer(owner, material) {
     owner.closePromptImportDrawer?.();
     owner.materialDetailController?.abort();
@@ -139,7 +174,7 @@ export async function showPromptComposer(owner, material) {
             if (controller.signal.aborted) return;
             const response = await fetch(`/anomalous/material_full?include_workflow=0&filename=${encodeURIComponent(material.filename)}`, { signal: controller.signal });
             const payload = await jsonResponse(response, 'material load failed');
-            if (controller.signal.aborted || owner.materialView.style.display !== 'flex') return;
+            if (controller.signal.aborted) return;
             if (payload.data?.kind !== 'prompt_plan') throw new Error('invalid plan');
             const draft = planToWorkbenchDraft(payload.data.plan || {}, payload.data.name || '');
             draft.tags = payload.data.tags || [];
@@ -153,19 +188,7 @@ export async function showPromptComposer(owner, material) {
     }
 
     owner.promptPlanDraft ||= newDraft();
-    clearTimeout(owner.materialSearchTimer);
-    owner.materialListController?.abort();
-    owner.materialListController = null;
-    owner.materialDetailController?.abort();
-    owner.materialDetailView?.remove();
-    owner.materialDetailView = null;
-
-    for (const panel of [owner.materialTopbar, owner.materialMainArea, owner.materialIntro, owner.materialList, owner.materialToolbar, owner.materialPager, owner.materialContext]) {
-        if (panel) panel.style.display = 'none';
-    }
-    owner.promptComposerView?.remove();
-
-    buildPromptComposer(owner, owner.materialView, { isSideStudio: false });
+    await openPromptStudio(owner);
 }
 
 export function renderSidePromptComposer(owner, container, onClose) {
@@ -276,13 +299,7 @@ function buildPromptComposer(owner, container, options = {}) {
     // 1. Studio Topbar
     const topbar = text(view, 'header', '', 'anomalous-prompt-topbar');
     const topLeft = text(topbar, 'div', '', 'anomalous-prompt-topbar-left');
-    if (!isSide) {
-        const backBtn = text(topLeft, 'button', `← ${t('materialBackToLibrary')}`, 'anomalous-btn-ghost anomalous-btn-sm');
-        backBtn.onclick = () => owner.showMaterials();
-        text(topLeft, 'h3', window.anomalous_browser_lang === 'zh' ? '提示词组合' : 'Prompt Studio');
-    } else {
-        text(topLeft, 'h3', window.anomalous_browser_lang === 'zh' ? '提示词组合' : 'Prompt Studio');
-    }
+    text(topLeft, 'h3', window.anomalous_browser_lang === 'zh' ? '🎛️ 提示词工坊' : '🎛️ Prompt Studio');
 
     const topActions = text(topbar, 'div', '', 'anomalous-prompt-topbar-actions');
     const newBtn = text(topActions, 'button', `✨ ${t('promptNewDraft')}`, 'anomalous-btn-ghost anomalous-btn-sm');
@@ -320,11 +337,12 @@ function buildPromptComposer(owner, container, options = {}) {
 
     const saveBtn = text(topActions, 'button', `💾 ${t('promptSavePlan')}`, 'anomalous-btn-primary anomalous-btn-sm');
 
-    if (isSide && options.onClose) {
-        const closeBtn = text(topActions, 'button', '✕', 'anomalous-btn-ghost anomalous-btn-sm');
-        closeBtn.title = t('materialCollapseStudio') || '收起工坊';
-        closeBtn.onclick = () => options.onClose();
-    }
+    const closeBtn = text(topActions, 'button', '✕', 'anomalous-btn-ghost anomalous-btn-sm anomalous-prompt-close-btn');
+    closeBtn.title = t('close') || '关闭';
+    closeBtn.onclick = () => {
+        if (typeof options.onClose === 'function') options.onClose();
+        else owner.closeWorkspace?.();
+    };
 
     // 2. Metadata Strip (Preset Name, Tags)
     const metaStrip = text(view, 'div', '', 'anomalous-prompt-meta-strip');

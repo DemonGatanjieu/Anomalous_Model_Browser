@@ -139,16 +139,16 @@ DOM or live LiteGraph state.
   `DocumentFragment` batch mounting in `updateVisualTags`, and modern CSS Grid layout (`.anomalous-nb-tag-row`)
   with hover-revealed copy buttons (`.anomalous-nb-copy-btn`); LoRA gallery performance is hardened via
   `content-visibility: auto`, `contain-intrinsic-size: 70px`, and fixed `aspect-ratio: 1/1` preventing Layout Shift.
-- `ui_materials.js` owns the Workspace Material Library and material CRUD presentation;
-  features an integrated single-row Studio topbar with category micro-pills (`all`, `workflow`, `params`, `prompts`),
-  unified search with tag filtering, grid/list view mode toggle (persisted to localStorage),
-  and a seamless split-screen side studio panel (`.anomalous-material-side-studio`);
-  cards feature strict uniform height (248px) with rich micro-skeuomorphic fallbacks for non-image assets (prompt code snippets
-  and 3D asset parameter previews) eliminating visual bumpiness, direct inline title editing, one-click dock to Prompt Mixer (`🎛️`),
-  floating quick actions, floating status toast feedback, and lazy DOM rendering; delegates image inspection to `ui_gallery_detail.js`;
+- `ui_materials.js` owns the unified Material Library (素材库) view and its lifecycle;
+  features a top-level unified toolbar with capsule category filter tabs (`[全部 | 工作流 | 参数方案 | 提示词]`),
+  integrated search bar with live tag filter dropdown, dedicated view switcher (`[网格 | 列表]`),
+  refresh and transfer center; cards feature strict uniform height (248px) with rich micro-skeuomorphic fallbacks for non-image assets (prompt code snippets
+  and 3D asset parameter previews) eliminating visual bumpiness, direct inline title editing,
+  floating quick actions, and lazy DOM rendering; completely decoupled from Prompt Studio (no studio toggle, no docked side panel, and no card-level mixer buttons); delegates image inspection to `ui_gallery_detail.js`;
   `node_material_actions.js` owns shared transactional node application and guarded undo;
   the library and Node Assistant use `ui_material_application.js` for the same receipt.
-- `ui_prompt_composer.js` owns the Prompt Studio Dual-Column Workbench (提示词工坊左右双分栏工作台);
+- `ui_prompt_composer.js` owns the Prompt Studio Dual-Column Workbench (提示词工坊左右双分栏工作台), an independent tool accessed exclusively from the Toolbox Hub (`openPromptStudio`);
+  rendered in its dedicated container (`owner.promptStudioContainer`) with its own header title and close button (`[✕]`), completely decoupled from the Material Library;
   provides a clean, professional studio workspace (`.anomalous-prompt-workbench`) stripped of gaudy neon effects, cyberpunk backgrounds, and pulsing glow animations;
   features compact vertical spacing (tightened paddings, 28px single-line metadata inputs, and 6px grid gaps) maximizing functional workspace;
   features responsive docked / sidebar adaptation with dedicated single-column collapse, generous vertical scrolling without arbitrary height clipping, and an inline responsive view switcher (`.anomalous-prompt-view-switcher`: `[🗃️ 词卡库 | 🎛️ 拼装台 | 📑 全部]`) for seamless navigation when docked as a sidebar (`#anomalous-container.anomalous-docked`) or on narrow screens;

@@ -4,7 +4,8 @@ import { createDOM, renderSidebar, loadFolders, showHelp, hideAllPanels, openFol
 import { loadGalleryImages, refreshGalleryImages, showGeneratedGallery, showGallerySelectMode, showGalleryViewer } from './modules/ui_gallery.js';
 import { showNotebooks, closeWorkspace, refreshNotebooks, saveCurrentNotebook, deleteCurrentNotebook, renderNotebookEditor, fillNotebookGalleries, sendNotebookToCanvas } from './modules/ui_notebooks.js';
 import { showRecipes, refreshRecipes, renderRecipeList, handleSaveRecipe } from './modules/ui_recipes.js';
-import { showMaterials, refreshMaterials, openSavedMaterial, openMaterialLibrary, openPromptStudio } from './modules/ui_materials.js';
+import { showMaterials, refreshMaterials, openSavedMaterial, openMaterialLibrary } from './modules/ui_materials.js';
+import { openPromptStudio } from './modules/ui_prompt_composer.js';
 import { showImageWorkbench } from './modules/ui_gallery_detail.js';
 import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, _openGalleryReplacer, openLoraInsertionPicker, runGlobalDoctorScan } from './modules/ui_doctor.js';
 import { app } from "../../scripts/app.js";

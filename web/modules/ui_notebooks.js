@@ -58,6 +58,7 @@ export function closeWorkspace() {
     if (this.materialView) this.materialView.style.display = 'none';
     if (this.notebookBody) this.notebookBody.style.display = 'none';
     if (this.materialContainer) this.materialContainer.style.display = 'none';
+    if (this.promptStudioContainer) this.promptStudioContainer.style.display = 'none';
     if (this.nbPanel) this.nbPanel.style.display = 'none';
     restoreWorkspaceReturnPanel(this);
 }
@@ -67,6 +68,7 @@ export function closeWorkspace() {
 export async function showNotebooks() {
         this.closePromptImportDrawer?.();
         if (this.materialContainer) this.materialContainer.style.display = 'none';
+        if (this.promptStudioContainer) this.promptStudioContainer.style.display = 'none';
         if (this.notebookContainer) this.notebookContainer.style.display = 'flex';
         if (this.nbInitialized) {
             this.nbPanel.style.display = 'flex';

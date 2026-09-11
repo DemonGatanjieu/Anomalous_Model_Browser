@@ -1,8 +1,6 @@
-import { loadMaterialPrompts } from './material_prompt_data.js';
 import { bindMaterialDrag } from './material_drag.js';
 import { selectedMaterialNode } from './node_material_actions.js';
 import { applyMaterialToSelectedNode, applyMaterialToNode } from './ui_material_application.js';
-import { showPromptComposer, addPromptToDraft, renderSidePromptComposer, appendPromptToStudio } from './ui_prompt_composer.js';
 /** Curated image/workflow and Recipe parameter materials. */
 
 import { app } from '../../../scripts/app.js';
@@ -34,6 +32,7 @@ function hideSiblingWorkspaceViews(owner) {
     if (owner.notebookContainer) owner.notebookContainer.style.display = 'none';
     if (owner.notebookBody) owner.notebookBody.style.display = 'none';
     if (owner.recipeView) owner.recipeView.style.display = 'none';
+    if (owner.promptStudioContainer) owner.promptStudioContainer.style.display = 'none';
     owner.notebookNotesTab?.classList.remove('active');
     owner.notebookRecipesTab?.classList.remove('active');
 }
@@ -84,6 +83,30 @@ async function updateMaterialPromptRole(owner, material, payload, block, selecte
 }
 
 function renderMaterialInspector(content, payload, owner, material) {
+    if (material?.kind === 'prompt_plan') {
+        const plan = payload.data?.plan || {};
+        if (plan.positive) {
+            sectionLabel(content, window.anomalous_browser_lang === 'zh' ? '正向提示词' : 'Positive Prompt');
+            text(content, 'pre', plan.positive, 'anomalous-material-note-text');
+            const copy = text(content, 'button', t('materialCopyPrompt'), 'anomalous-btn-ghost');
+            copy.type = 'button';
+            copy.onclick = async () => {
+                try { await navigator.clipboard.writeText(plan.positive); copy.textContent = t('materialCopied'); }
+                catch (error) { await anomalousAlert(t('materialCopyError')); }
+            };
+        }
+        if (plan.negative) {
+            sectionLabel(content, window.anomalous_browser_lang === 'zh' ? '负向提示词' : 'Negative Prompt');
+            text(content, 'pre', plan.negative, 'anomalous-material-note-text');
+            const copyNeg = text(content, 'button', t('materialCopyPrompt'), 'anomalous-btn-ghost');
+            copyNeg.type = 'button';
+            copyNeg.onclick = async () => {
+                try { await navigator.clipboard.writeText(plan.negative); copyNeg.textContent = t('materialCopied'); }
+                catch (error) { await anomalousAlert(t('materialCopyError')); }
+            };
+        }
+        return;
+    }
     if (isPromptMaterial(material)) {
         const note = payload.data?.note || {};
         sectionLabel(content, t('notebookPromptTitle'));
@@ -95,8 +118,6 @@ function renderMaterialInspector(content, payload, owner, material) {
             try { await navigator.clipboard.writeText(prompt.textContent); copy.textContent = t('materialCopied'); }
             catch (error) { await anomalousAlert(t('materialCopyError')); }
         };
-        const add = text(content, 'button', t('promptAddToDraft'), 'anomalous-btn-ghost');
-        add.onclick = () => addPromptToDraft(owner, material.name, note.promptEn || '');
         const models = [note.mainModel, ...(note.loras || [])].filter(Boolean);
         if (models.length) {
             sectionLabel(content, t('notebookCompanionModels'));
@@ -142,11 +163,7 @@ function renderMaterialInspector(content, payload, owner, material) {
         text(content, 'p', t('materialUseFromNodeAssistant'), 'anomalous-material-muted');
     }
 
-    if (renderMaterialPromptGroups(content, payload.prompt_groups, { manual: hasManualRole })) {
-        const add = text(content, 'button', t('promptAddToDraft'), 'anomalous-btn-ghost');
-        add.onclick = () => addPromptToDraft(owner, material.name,
-            (payload.prompt_groups.positive || []).join('\n'), (payload.prompt_groups.negative || []).join('\n'));
-    }
+    renderMaterialPromptGroups(content, payload.prompt_groups, { manual: hasManualRole });
 
     if (references.length) {
         sectionLabel(content, t('materialModelReferences'));
@@ -338,7 +355,6 @@ function buildMaterialMediaStage(owner, material, sourceNameElement) {
 }
 
 async function showMaterialDetail(owner, material) {
-    if (material.kind === 'prompt_plan') return showPromptComposer(owner, material);
     owner.materialOpenedDetail = material;
     owner.materialDetailController?.abort();
     owner.materialDetailView?.remove();
@@ -460,28 +476,6 @@ function startInlineTitleEdit(owner, material, titleRow, cardTitle, editBtn) {
     input.onblur = () => finish(true);
 }
 
-function showMixerToast(message) {
-    const toast = document.createElement('div');
-    toast.className = 'anomalous-mixer-toast';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.classList.add('is-show'), 10);
-    setTimeout(() => {
-        toast.classList.remove('is-show');
-        setTimeout(() => toast.remove(), 300);
-    }, 2200);
-}
-
-async function sendMaterialToStudio(owner, material) {
-    try {
-        const { positive, negative } = await loadMaterialPrompts(material.filename);
-        if (!positive && !negative) { await anomalousAlert(t('materialNoPromptContent')); return; }
-        if (positive) appendPromptToStudio(owner, positive, true, material.name);
-        if (negative) appendPromptToStudio(owner, negative, false, `${material.name || ''} (Neg)`);
-        showMixerToast(`🎛️ ${window.anomalous_browser_lang === 'zh' ? `已将【${material.name || '素材'}】送入调音台` : `Added "${material.name || 'Material'}" to Prompt Mixer`}`);
-    } catch (error) { await anomalousAlert(t('materialDetailLoadError')); }
-}
-
 function renderMaterialCard(owner, material) {
     const card = document.createElement('article');
     card.className = 'anomalous-material-card';
@@ -544,22 +538,6 @@ function renderMaterialCard(owner, material) {
         card.appendChild(quickOpen);
         actionsWrapper.appendChild(quickOpen.cloneNode(true));
         actionsWrapper.lastChild.onclick = quickOpen.onclick;
-    }
-
-    const hasPromptTrait = isPromptMaterial(material) || material.kind === 'prompt_plan' || (Array.isArray(material.node_types) && material.node_types.some(tp => /cliptextencode/i.test(tp)));
-    if (hasPromptTrait) {
-        const sendToStudioBtn = document.createElement('button');
-        sendToStudioBtn.type = 'button';
-        sendToStudioBtn.className = 'anomalous-material-card-action-btn anomalous-material-card-send-studio';
-        sendToStudioBtn.innerHTML = '🎛️';
-        sendToStudioBtn.title = window.anomalous_browser_lang === 'zh' ? '送入提示词调音台拼装' : 'Dock to Prompt Mixer';
-        sendToStudioBtn.onclick = async (e) => {
-            e.stopPropagation();
-            await sendMaterialToStudio(owner, material);
-        };
-        card.appendChild(sendToStudioBtn);
-        actionsWrapper.appendChild(sendToStudioBtn.cloneNode(true));
-        actionsWrapper.lastChild.onclick = sendToStudioBtn.onclick;
     }
 
     const preview = document.createElement('div');
@@ -721,7 +699,7 @@ function toggleMaterialEditor(owner, material, header) {
     name.focus();
 }
 
-function buildStudioTopbar(owner) {
+function buildMaterialTopbar(owner) {
     const topbar = text(owner.materialView, 'header', '', 'anomalous-material-topbar');
     owner.materialTopbar = topbar;
 
@@ -822,12 +800,6 @@ function buildStudioTopbar(owner) {
     more.title = t('notebookMore') || '更多';
     const transfer = text(more, 'button', t('materialTransferCenter'), 'anomalous-btn-ghost');
     transfer.onclick = () => showTransferCenter(owner);
-
-    // 提示词工坊：单开全幅左右双分栏工作台
-    const studioToggle = text(right, 'button', `🎛️ ${t('materialPromptStudio') || '提示词工坊'}`, 'anomalous-material-topbar-btn anomalous-material-studio-toggle');
-    studioToggle.type = 'button';
-    owner.materialStudioToggle = studioToggle;
-    studioToggle.onclick = () => showPromptComposer(owner);
 }
 
 function renderMaterialPagination(owner, payload) {
@@ -898,6 +870,7 @@ export async function refreshMaterials(page = this.materialPage || 1) {
 export async function showMaterials() {
     this.closePromptImportDrawer?.();
     this.nbPanel.style.display = 'flex';
+    if (this.promptStudioContainer) this.promptStudioContainer.style.display = 'none';
     if (!this.materialContainer) {
         this.materialContainer = text(this.nbPanel, 'div', '', 'anomalous-nb-container anomalous-material-container');
         const header = text(this.materialContainer, 'div', '', 'anomalous-nb-header');
@@ -909,9 +882,6 @@ export async function showMaterials() {
     this.materialHeading.textContent = t('materialLibrary');
     this.materialContainer.style.display = 'flex';
     watchMaterialSelection(this);
-    this.promptComposerView?.remove();
-    this.promptComposerView = null;
-    this.refreshPromptTarget = null;
     hideSiblingWorkspaceViews(this);
     leaveMaterialDetail(this);
     if (this.materialView && this.materialViewLocale !== resolveLocale()) {
@@ -919,20 +889,15 @@ export async function showMaterials() {
         this.materialView = null;
     }
     if (!this.materialView) {
-        this.sideStudioInitialized = false;
-        this.sidePromptComposerControl = null;
         this.materialViewLocale = resolveLocale();
         this.materialView = document.createElement('div');
         this.materialView.className = 'anomalous-material-body';
 
-        // 1. 一体化 Studio 顶栏
-        buildStudioTopbar(this);
+        buildMaterialTopbar(this);
 
-        // 2. 主区域分屏容器
         const mainArea = text(this.materialView, 'div', '', 'anomalous-material-main-area');
         this.materialMainArea = mainArea;
 
-        // 2.1 左侧主内容区
         const contentArea = text(mainArea, 'div', '', 'anomalous-material-content');
         this.materialContentArea = contentArea;
 
@@ -946,47 +911,9 @@ export async function showMaterials() {
         this.materialPager = text(contentArea, 'nav', '', 'anomalous-material-pager');
         this.materialPager.setAttribute('aria-label', t('materialPagination'));
 
-        // 2.2 右侧并排便签工坊
-        const sideStudio = text(mainArea, 'aside', '', 'anomalous-material-side-studio');
-        this.materialSideStudio = sideStudio;
-
-        this.openSideStudio = () => {
-            this.materialSideStudio.classList.add('is-open');
-            this.materialStudioToggle?.classList.add('is-active');
-            localStorage.setItem('anomalous_side_studio_open', '1');
-            if (!this.sideStudioInitialized) {
-                renderSidePromptComposer(this, this.materialSideStudio, () => this.closeSideStudio());
-                this.sideStudioInitialized = true;
-            }
-        };
-
-        this.closeSideStudio = () => {
-            this.closePromptImportDrawer?.();
-            this.materialSideStudio.classList.remove('is-open');
-            this.materialStudioToggle?.classList.remove('is-active');
-            localStorage.setItem('anomalous_side_studio_open', '0');
-        };
-
-        this.toggleSideStudio = () => {
-            if (this.materialSideStudio.classList.contains('is-open')) {
-                this.closeSideStudio();
-            } else {
-                this.openSideStudio();
-            }
-        };
-
         this.materialContainer.appendChild(this.materialView);
-
-        // 如果用户上次打开了工坊，自动保持状态
-        if (localStorage.getItem('anomalous_side_studio_open') === '1') {
-            this.openSideStudio();
-        }
     }
     this.materialView.style.display = 'flex';
-    if (this.materialSideStudio?.classList.contains('is-open')) {
-        renderSidePromptComposer(this, this.materialSideStudio, () => this.closeSideStudio());
-        this.sideStudioInitialized = true;
-    }
     updateMaterialContext(this);
     await this.refreshMaterials();
 }
@@ -1024,14 +951,6 @@ export async function openMaterialLibrary() {
     await openSavedMaterial.call(this, null);
 }
 
-export async function openPromptStudio() {
-    this.hideAllPanels?.();
-    const tbModal = document.getElementById('anomalous-toolbox-modal');
-    if (tbModal) tbModal.style.display = 'none';
-    await openSavedMaterial.call(this, null);
-    await showPromptComposer(this);
-}
-
 function updateMaterialContext(owner) {
     const node = selectedMaterialNode(app);
     owner.materialTarget = node;
@@ -1063,10 +982,8 @@ function watchMaterialSelection(owner) {
     window.addEventListener('anomalous-language-change', async () => {
         if (owner.nbPanel?.style.display !== 'flex' || owner.materialView?.style.display !== 'flex') return;
         const detail = owner.materialOpenedDetail;
-        const composing = !!owner.promptComposerView;
         await owner.showMaterials();
-        if (composing) await showPromptComposer(owner);
-        else if (detail) await showMaterialDetail(owner, detail);
+        if (detail) await showMaterialDetail(owner, detail);
     });
     let scheduled = false;
     for (const key of ['onNodeSelected', 'onNodeDeselected']) {
@@ -1083,9 +1000,7 @@ function watchMaterialSelection(owner) {
                         owner.materialTarget = target;
                         owner.materialApplyMode = !!target && !(owner.materialKindCategory === 'prompts' || ['prompt_plan', 'prompt_text', 'prompt_note_bundle'].includes(owner.materialKind));
                         updateMaterialContext(owner);
-                        owner.refreshPromptTarget?.();
-                        owner.refreshSidePromptTarget?.();
-                        if (!owner.promptComposerView && !owner.materialDetailView) owner.refreshMaterials(1);
+                        if (!owner.materialDetailView) owner.refreshMaterials(1);
                     }
                 });
             }

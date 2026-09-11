@@ -888,6 +888,7 @@ export async function showRecipes() {
         await this.showNotebooks();
     }
     if (this.materialContainer) this.materialContainer.style.display = 'none';
+    if (this.promptStudioContainer) this.promptStudioContainer.style.display = 'none';
     this.notebookContainer.style.display = 'flex';
     if (typeof this.recipeModelReturn === 'function') {
         const returnToRecipe = this.recipeModelReturn;
