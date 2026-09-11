@@ -1024,6 +1024,14 @@ export async function openMaterialLibrary() {
     await openSavedMaterial.call(this, null);
 }
 
+export async function openPromptStudio() {
+    this.hideAllPanels?.();
+    const tbModal = document.getElementById('anomalous-toolbox-modal');
+    if (tbModal) tbModal.style.display = 'none';
+    await openSavedMaterial.call(this, null);
+    await showPromptComposer(this);
+}
+
 function updateMaterialContext(owner) {
     const node = selectedMaterialNode(app);
     owner.materialTarget = node;

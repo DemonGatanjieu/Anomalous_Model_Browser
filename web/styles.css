@@ -1130,6 +1130,11 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     box-shadow: 0 0 4px rgba(245, 158, 11, 0.6);
 }
 
+.anomalous-toolbox-tile-dot.is-ready {
+    background: #10b981;
+    box-shadow: 0 0 5px rgba(16, 185, 129, 0.75);
+}
+
 .anomalous-sidebar-closed #anomalous-sidebar-actions {
     flex-direction: column !important;
 }

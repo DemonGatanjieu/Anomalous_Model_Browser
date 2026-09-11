@@ -1946,6 +1946,23 @@ export function createDOM() {
 
             const defaultTools = [
                 {
+                    id: 'prompt-studio',
+                    icon: '🎛️',
+                    shortTitle: t('toolPromptStudioShort'),
+                    title: t('toolPromptStudioTitle'),
+                    desc: t('toolPromptStudioDesc'),
+                    badge: null,
+                    isReady: true,
+                    action: () => {
+                        toolboxModal.style.display = 'none';
+                        if (typeof this.openPromptStudio === 'function') {
+                            this.openPromptStudio();
+                        } else if (typeof this.openMaterialLibrary === 'function') {
+                            this.openMaterialLibrary();
+                        }
+                    }
+                },
+                {
                     id: 'orphan-cleaner',
                     icon: '🧹',
                     shortTitle: t('toolOrphanCleanerShort'),
@@ -1984,14 +2001,6 @@ export function createDOM() {
                     title: t('toolFormatConvertTitle'),
                     desc: t('toolFormatConvertDesc'),
                     badge: t('toolboxPlanned')
-                },
-                {
-                    id: 'custom-scripts',
-                    icon: '🧩',
-                    shortTitle: t('toolCustomScriptsShort'),
-                    title: t('toolCustomScriptsTitle'),
-                    desc: t('toolCustomScriptsDesc'),
-                    badge: t('toolboxPlanned')
                 }
             ];
 
@@ -2006,6 +2015,10 @@ export function createDOM() {
                 if (tool.badge) {
                     const dot = document.createElement('span');
                     dot.className = 'anomalous-toolbox-tile-dot';
+                    tile.appendChild(dot);
+                } else if (tool.isReady) {
+                    const dot = document.createElement('span');
+                    dot.className = 'anomalous-toolbox-tile-dot is-ready';
                     tile.appendChild(dot);
                 }
 
