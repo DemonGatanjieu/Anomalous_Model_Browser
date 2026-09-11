@@ -372,55 +372,67 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-header-group {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 6px;
 }
 
 #anomalous-header button {
     margin-right: 0;
-    padding: 10px 18px;
-    background: rgba(255, 255, 255, 0.05);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    padding: 0 10px;
+    height: 28px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.04);
+    color: #c0c4cc;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
     cursor: pointer;
     white-space: nowrap;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    font-size: 1.05em;
-    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    justify-content: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 #anomalous-header button:hover {
-    background: rgba(255, 255, 255, 0.15);
-    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    transform: translateY(-1px);
     box-shadow: none;
-    border-color: rgba(255, 255, 255, 0.3);
 }
 
-/* Sidebar toggle logic for top buttons ONLY in narrow mode */
-@container (max-width: 900px) {
-
-    #anomalous-notebook-btn .anomalous-btn-text {
-        display: none;
-    }
+#anomalous-header button.active {
+    background: rgba(255, 255, 255, 0.14) !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35) !important;
 }
 
 #anomalous-close {
-    font-size: 2em;
+    width: 28px;
+    height: 28px;
+    box-sizing: border-box;
+    font-size: 18px;
     cursor: pointer;
-    color: var(--error-text, #ff4444);
+    color: var(--error-text, #ff5555);
     line-height: 1;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: transform 0.2s ease, color 0.2s ease;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
 }
 
 #anomalous-close:hover {
     color: #ff6b6b;
-    transform: scale(1.15);
+    background: rgba(255, 85, 85, 0.12);
+    border-color: rgba(255, 85, 85, 0.25);
+    transform: scale(1.05);
 }
 
 #anomalous-grid {
@@ -1228,10 +1240,6 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 @container (max-width: 750px) {
-    #anomalous-header button .anomalous-btn-text {
-        display: none;
-    }
-
     .anomalous-split-left,
     .anomalous-resizer {
         display: none !important;
@@ -1262,11 +1270,6 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 /* English Layout Specific Scaling */
 .anomalous-lang-en {
     font-size: 0.9em;
-}
-
-.anomalous-lang-en #anomalous-header button {
-    padding: 10px 16px;
-    font-size: 1.05em;
 }
 
 .anomalous-lang-en .anomalous-card-title {
@@ -11787,13 +11790,13 @@ button:hover .anomalous-btn-icon {
 .anomalous-header-group {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 6px;
 }
 
 .anomalous-header-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 6px;
     flex: 0 0 auto;
 }
 
@@ -11801,7 +11804,7 @@ button:hover .anomalous-btn-icon {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 12px !important;
+    gap: 6px !important;
     flex: 1 1 auto !important;
     margin: 0 auto !important;
 }
@@ -11810,52 +11813,85 @@ button:hover .anomalous-btn-icon {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 12px;
+    gap: 8px;
     flex: 0 0 auto;
 }
 
 #anomalous-header button {
     margin-right: 0;
-    padding: 6px 14px;
-    height: 32px;
-    box-sizing: border-box;
-    background: rgba(255, 255, 255, 0.05);
-    color: #d1d5db;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
+    padding: 0 10px !important;
+    height: 28px !important;
+    box-sizing: border-box !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: #c0c4cc !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 6px !important;
     cursor: pointer;
     white-space: nowrap;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9em;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    font-size: 11.5px !important;
     font-weight: 500;
+    letter-spacing: 0.2px;
     backdrop-filter: blur(8px);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 #anomalous-header button:hover {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border-color: rgba(255, 255, 255, 0.22) !important;
+    background: rgba(255, 255, 255, 0.09) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
     color: #ffffff !important;
     transform: translateY(-1px);
     box-shadow: none !important;
 }
 
-#anomalous-dock-btn {
-    padding: 6px 10px !important;
-    height: 32px !important;
-    box-sizing: border-box !important;
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
+#anomalous-header button.active {
+    background: rgba(255, 255, 255, 0.14) !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35) !important;
 }
 
-#anomalous-header button.active {
-    background: rgba(255, 255, 255, 0.15) !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
+#anomalous-header button .anomalous-btn-text {
+    display: inline !important;
+    font-size: 11.5px !important;
+    font-weight: 500 !important;
+    line-height: 1 !important;
+    color: inherit !important;
+}
+
+#anomalous-header button svg,
+#anomalous-header button .anomalous-btn-icon {
+    width: 13px !important;
+    height: 13px !important;
+    flex-shrink: 0 !important;
+    vertical-align: -1px !important;
+}
+
+#anomalous-dock-btn {
+    padding: 0 !important;
+    width: 28px !important;
+    height: 28px !important;
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+#anomalous-dock-btn:hover {
+    background: rgba(255, 255, 255, 0.09) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
     color: #ffffff !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+#anomalous-dock-btn svg {
+    width: 13px !important;
+    height: 13px !important;
 }
 
 /* 2. Normal Mode Gallery Container & Panels (Clean Neutral Dark Canvas) */
