@@ -10836,49 +10836,86 @@ dialog.anomalous-gallery-viewer::backdrop {
     z-index: 1;
 }
 
-/* Individual Source Prompt Card (Restrained Dark Grey Base with Category Left Border) */
-.anomalous-source-prompt-card {
+/* Tip Banner for Prompt Studio Usage Guidance */
+.anomalous-workbench-tip-banner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    margin: 2px 0 8px;
+    background: rgba(56, 189, 248, 0.07);
+    border: 1px solid rgba(56, 189, 248, 0.2);
     border-radius: var(--amb-radius-control, 6px);
-    background: var(--amb-bg-card, #24262E);
-    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.08));
-    border-left: 3.5px solid #64748b;
+    font-size: 0.72rem;
+    color: #93c5fd;
+    line-height: 1.35;
+    user-select: none;
+}
+
+.anomalous-workbench-tip-banner .anomalous-tip-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: #38bdf8;
+}
+
+/* Individual Source Prompt Card (Tactile Skewed Glassmorphic Card Aesthetics) */
+.anomalous-source-prompt-card {
+    border-radius: 8px;
+    background: linear-gradient(180deg, #262935 0%, #1e2029 100%);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-left: 4px solid #64748b;
     padding: 8px 10px;
     display: flex;
     flex-direction: column;
     gap: 6px;
     cursor: grab;
     user-select: none;
-    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .anomalous-source-prompt-card.is-cat-base {
     border-left-color: #38bdf8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), -2px 0 8px -3px rgba(56, 189, 248, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .theme-abyssal-scarlet .anomalous-source-prompt-card.is-cat-base {
     border-left-color: #dc143c;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), -2px 0 8px -3px rgba(220, 20, 60, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .anomalous-source-prompt-card.is-cat-style {
     border-left-color: #c084fc;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), -2px 0 8px -3px rgba(192, 132, 252, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .anomalous-source-prompt-card.is-cat-subject {
     border-left-color: #4ade80;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), -2px 0 8px -3px rgba(74, 222, 128, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .anomalous-source-prompt-card.is-cat-trigger {
     border-left-color: #fb923c;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), -2px 0 8px -3px rgba(251, 146, 60, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .anomalous-source-prompt-card:hover {
-    background: var(--amb-bg-card-hover, #2d303a);
-    border-color: var(--amb-border-hover, rgba(255, 255, 255, 0.16));
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    background: linear-gradient(180deg, #2e3242 0%, #232633 100%);
+    border-color: rgba(255, 255, 255, 0.22);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .anomalous-source-prompt-card:active {
     cursor: grabbing;
+    transform: translateY(0);
+}
+
+.anomalous-source-prompt-card.is-clicked {
+    transform: scale(0.97);
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.45) !important;
 }
 
 .anomalous-source-prompt-card.is-dragging-source {
@@ -10892,9 +10929,25 @@ dialog.anomalous-gallery-viewer::backdrop {
     gap: 6px;
 }
 
+.anomalous-source-card-grip {
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1;
+    margin-right: 1px;
+    letter-spacing: -1px;
+    cursor: grab;
+    opacity: 0.5;
+    transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.anomalous-source-prompt-card:hover .anomalous-source-card-grip {
+    opacity: 0.95;
+    color: #94a3b8;
+}
+
 .anomalous-source-card-badge {
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: 2px 7px;
+    border-radius: 9999px;
     font-size: 0.66rem;
     font-weight: 600;
     border: 1px solid transparent;
@@ -10902,8 +10955,9 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-source-card-title {
-    font-size: 0.8rem;
-    color: #e2e8f0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #f1f5f9;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -10911,16 +10965,18 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-source-card-snippet {
-    font-size: 0.74rem;
-    color: #94a3b8;
-    line-height: 1.4;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.72rem;
+    color: #cbd5e1;
+    line-height: 1.45;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.2);
-    padding: 4px 6px;
-    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 5px 8px;
+    border-radius: 5px;
 }
 
 .anomalous-source-card-footer {
@@ -10934,7 +10990,10 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-source-card-drag-hint {
     color: #64748b;
-    font-size: 0.68rem;
+    font-size: 0.66rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
 }
 
 .anomalous-source-card-actions {
@@ -10960,16 +11019,31 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-source-action-btn.is-dock {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.14);
-    color: var(--amb-text-main, #f1f5f9);
-    font-weight: 500;
+    background: rgba(56, 189, 248, 0.12);
+    border-color: rgba(56, 189, 248, 0.35);
+    color: #38bdf8;
+    font-weight: 600;
+    border-radius: 5px;
+    padding: 3px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.7rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 .anomalous-source-action-btn.is-dock:hover {
-    background: var(--amb-bg-card-hover, rgba(255, 255, 255, 0.14));
-    border-color: var(--amb-border-hover, rgba(255, 255, 255, 0.25));
-    color: #ffffff;
+    background: #38bdf8;
+    color: #0b1329;
+    border-color: #38bdf8;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+}
+
+.anomalous-source-action-btn.is-dock.is-success {
+    background: #22c55e !important;
+    border-color: #22c55e !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.5) !important;
 }
 
 .anomalous-source-action-btn.is-save-lib {
@@ -11088,6 +11162,66 @@ dialog.anomalous-gallery-viewer::backdrop {
 .theme-abyssal-scarlet .anomalous-assembly-dropzone.is-drag-over {
     border-color: #dc143c;
     background: rgba(45, 10, 20, 0.6);
+}
+
+/* Interactive Auto-snap Dock at the bottom of Assembler blocks */
+.anomalous-assembly-snap-dock {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 1.5px dashed rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-top: 6px;
+    color: #94a3b8;
+    font-size: 0.74rem;
+}
+
+.anomalous-assembly-snap-dock:hover {
+    border-color: rgba(255, 255, 255, 0.28);
+    background: rgba(255, 255, 255, 0.04);
+    color: #e2e8f0;
+}
+
+.anomalous-assembly-snap-dock.is-drag-over,
+.anomalous-assembly-track.is-drag-over-end .anomalous-assembly-snap-dock {
+    border-color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.12) !important;
+    box-shadow: 0 0 18px rgba(56, 189, 248, 0.25), inset 0 0 10px rgba(56, 189, 248, 0.05) !important;
+    color: #38bdf8 !important;
+    transform: scale(1.01);
+}
+
+.theme-abyssal-scarlet .anomalous-assembly-snap-dock.is-drag-over,
+.theme-abyssal-scarlet .anomalous-assembly-track.is-drag-over-end .anomalous-assembly-snap-dock {
+    border-color: #dc143c !important;
+    background: rgba(220, 20, 60, 0.15) !important;
+    box-shadow: 0 0 18px rgba(220, 20, 60, 0.3) !important;
+    color: #ff6b81 !important;
+}
+
+.anomalous-snap-dock-content {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+    pointer-events: none;
+}
+
+.anomalous-snap-icon {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.2s ease;
+}
+
+.anomalous-assembly-snap-dock.is-drag-over .anomalous-snap-icon,
+.anomalous-assembly-track.is-drag-over-end .anomalous-assembly-snap-dock .anomalous-snap-icon {
+    transform: rotate(90deg) scale(1.15);
 }
 
 .anomalous-workbench-sub-actions {
@@ -12289,4 +12423,11 @@ button:hover .anomalous-btn-icon {
     height: 22px !important;
     padding: 1px 4px !important;
     font-size: 0.68rem !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-assembly-snap-dock {
+    min-height: 32px !important;
+    padding: 4px 8px !important;
+    font-size: 0.68rem !important;
+    margin-top: 3px !important;
 }

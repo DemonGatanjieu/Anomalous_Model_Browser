@@ -444,6 +444,15 @@ function buildPromptComposer(owner, container, options = {}) {
     const newCardForm = text(leftPanel, 'div', '', 'anomalous-workbench-new-card-form');
     newCardForm.style.display = 'none';
 
+    // Usage Tip Banner
+    const tipBanner = text(leftPanel, 'div', '', 'anomalous-workbench-tip-banner');
+    tipBanner.innerHTML = `
+        <svg class="anomalous-tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+        </svg>
+        <span>${window.anomalous_browser_lang === 'zh' ? '点击词卡或拖拽至右侧拼装台，自由调换顺序' : 'Click card or drag to right stage to assemble'}</span>
+    `;
+
     // Source Cards List
     const sourceCardsList = text(leftPanel, 'div', '', 'anomalous-source-cards-list');
 
@@ -473,6 +482,47 @@ function buildPromptComposer(owner, container, options = {}) {
 
     // Blocks Container & Dropzone
     const blocksContainer = text(rightPanel, 'div', '', 'anomalous-mixer-blocks-container anomalous-assembly-track');
+
+    blocksContainer.ondragover = (e) => {
+        e.preventDefault();
+        const snapDock = blocksContainer.querySelector('.anomalous-assembly-snap-dock');
+        if (snapDock && (e.target === blocksContainer || e.target.closest('.anomalous-assembly-snap-dock'))) {
+            snapDock.classList.add('is-drag-over');
+            blocksContainer.classList.add('is-drag-over-end');
+        }
+    };
+    blocksContainer.ondragleave = (e) => {
+        if (!blocksContainer.contains(e.relatedTarget)) {
+            const snapDock = blocksContainer.querySelector('.anomalous-assembly-snap-dock');
+            snapDock?.classList.remove('is-drag-over');
+            blocksContainer.classList.remove('is-drag-over-end');
+        }
+    };
+    blocksContainer.ondrop = (e) => {
+        if (e.target === blocksContainer || e.target.closest('.anomalous-assembly-snap-dock')) {
+            e.preventDefault();
+            const snapDock = blocksContainer.querySelector('.anomalous-assembly-snap-dock');
+            snapDock?.classList.remove('is-drag-over');
+            blocksContainer.classList.remove('is-drag-over-end');
+            const jsonStr = e.dataTransfer.getData('application/json');
+            if (jsonStr) {
+                try {
+                    addSourceCardToMixer(JSON.parse(jsonStr));
+                    return;
+                } catch (err) {}
+            }
+            if (draggedBlockId) {
+                const fromIndex = draft.plan.parts.findIndex(p => p.id === draggedBlockId);
+                if (fromIndex >= 0) {
+                    const [moved] = draft.plan.parts.splice(fromIndex, 1);
+                    draft.plan.parts.push(moved);
+                    syncDraftSynthesizedText(draft);
+                    renderBlocksList();
+                    updateOutputPreview();
+                }
+            }
+        }
+    };
 
     // Bottom Live Assembled Action Dock (Always visible sticky bar at bottom of assembler)
     const outputDeck = text(rightPanel, 'div', '', 'anomalous-mixer-deck-output anomalous-prompt-action-dock is-collapsed');
@@ -938,13 +988,7 @@ function buildPromptComposer(owner, container, options = {}) {
         filtered.forEach(card => {
             const cardEl = text(sourceCardsList, 'article', '', `anomalous-source-prompt-card is-cat-${card.category}`);
             cardEl.setAttribute('draggable', 'true');
-            cardEl.title = window.anomalous_browser_lang === 'zh' ? '点击直接加入上方拼装台（也可拖拽）' : 'Click to add to mixer above (or drag)';
-
-            // Instant tap to add card to mixer
-            cardEl.onclick = (e) => {
-                if (e.target.closest('button') || e.target.closest('input')) return;
-                addSourceCardToMixer(card);
-            };
+            cardEl.title = window.anomalous_browser_lang === 'zh' ? '点击直接加入右侧拼装台（也可按住拖拽）' : 'Click to add to stage (or drag)';
 
             // Drag Start -> transfer prompt card payload
             cardEl.ondragstart = (e) => {
@@ -970,6 +1014,9 @@ function buildPromptComposer(owner, container, options = {}) {
             const header = text(cardEl, 'div', '', 'anomalous-source-card-header');
             const meta = CATEGORY_META[card.category] || CATEGORY_META.subject;
 
+            const grip = text(header, 'span', '⠿', 'anomalous-source-card-grip');
+            grip.title = window.anomalous_browser_lang === 'zh' ? '按住拖拽至拼装台' : 'Drag to assemble';
+
             const badge = text(header, 'span', window.anomalous_browser_lang === 'zh' ? meta.zh : meta.en, 'anomalous-source-card-badge');
             badge.style.color = meta.color;
             badge.style.backgroundColor = meta.bg;
@@ -994,6 +1041,9 @@ function buildPromptComposer(owner, container, options = {}) {
 
             // Card Footer Actions
             const footer = text(cardEl, 'div', '', 'anomalous-source-card-footer');
+            const hint = text(footer, 'span', '', 'anomalous-source-card-drag-hint');
+            hint.innerHTML = `<svg style="width:10px;height:10px;vertical-align:-1px;margin-right:3px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>${window.anomalous_browser_lang === 'zh' ? '点击或拖拽' : 'Click or Drag'}`;
+
             const actions = text(footer, 'div', '', 'anomalous-source-card-actions');
             actions.style.marginLeft = 'auto';
 
@@ -1021,11 +1071,32 @@ function buildPromptComposer(owner, container, options = {}) {
             }
 
             const dockBtn = text(actions, 'button', '', 'anomalous-source-action-btn is-dock');
-            dockBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${window.anomalous_browser_lang === 'zh' ? '加入组合' : 'Add to Plan'}`;
-            dockBtn.title = window.anomalous_browser_lang === 'zh' ? '加入当前拼装组合' : 'Add into mixer track';
+            dockBtn.innerHTML = `<svg style="width:11px;height:11px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${window.anomalous_browser_lang === 'zh' ? '加入拼装台' : 'Add to Stage'}`;
+            dockBtn.title = window.anomalous_browser_lang === 'zh' ? '点击加入当前拼装台（也可直接点击卡片）' : 'Add into mixer track';
+
+            const handleCardAdd = () => {
+                cardEl.classList.add('is-clicked');
+                setTimeout(() => cardEl.classList.remove('is-clicked'), 500);
+                const originalHtml = dockBtn.innerHTML;
+                dockBtn.innerHTML = `✓ ${window.anomalous_browser_lang === 'zh' ? '已加入' : 'Added'}`;
+                dockBtn.classList.add('is-success');
+                setTimeout(() => {
+                    if (dockBtn.isConnected) {
+                        dockBtn.innerHTML = originalHtml;
+                        dockBtn.classList.remove('is-success');
+                    }
+                }, 700);
+                addSourceCardToMixer(card);
+            };
+
+            cardEl.onclick = (e) => {
+                if (e.target.closest('button') || e.target.closest('input')) return;
+                handleCardAdd();
+            };
+
             dockBtn.onclick = (e) => {
                 e.stopPropagation();
-                addSourceCardToMixer(card);
+                handleCardAdd();
             };
         });
     }
@@ -1310,6 +1381,22 @@ function buildPromptComposer(owner, container, options = {}) {
                 updateOutputPreview();
             };
         });
+
+        // Interactive Auto-snap Dock at end of track
+        const snapDock = text(blocksContainer, 'div', '', 'anomalous-assembly-snap-dock');
+        snapDock.innerHTML = `
+            <div class="anomalous-snap-dock-content">
+                <svg class="anomalous-snap-icon" style="width:14px;height:14px;vertical-align:-2px;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span class="anomalous-snap-dock-text">${window.anomalous_browser_lang === 'zh' ? '拖拽卡片至此自动贴合至末尾' : 'Drop card here to snap to bottom'}</span>
+            </div>
+        `;
+        setupDropzoneListeners(snapDock);
+        snapDock.onclick = () => {
+            leftSearch?.focus?.();
+            showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '点击左侧词卡即可直接加入此处' : 'Click any card on left to add here');
+        };
     }
 
     function setupDropzoneListeners(el) {
@@ -1327,7 +1414,18 @@ function buildPromptComposer(owner, container, options = {}) {
             if (jsonStr) {
                 try {
                     addSourceCardToMixer(JSON.parse(jsonStr));
+                    return;
                 } catch (err) {}
+            }
+            if (draggedBlockId) {
+                const fromIndex = draft.plan.parts.findIndex(p => p.id === draggedBlockId);
+                if (fromIndex >= 0) {
+                    const [moved] = draft.plan.parts.splice(fromIndex, 1);
+                    draft.plan.parts.push(moved);
+                    syncDraftSynthesizedText(draft);
+                    renderBlocksList();
+                    updateOutputPreview();
+                }
             }
         };
     }
