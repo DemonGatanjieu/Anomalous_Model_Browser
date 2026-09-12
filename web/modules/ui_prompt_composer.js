@@ -296,31 +296,59 @@ function buildPromptComposer(owner, container, options = {}) {
     let sourceCards = [...STARTER_SOURCE_PROMPTS];
     let isCreatingNewCard = false;
 
-    // 1. Studio Topbar
+    // 1. Studio Topbar (Streamlined with inline preset name input)
     const topbar = text(view, 'header', '', 'anomalous-prompt-topbar');
     const topLeft = text(topbar, 'div', '', 'anomalous-prompt-topbar-left');
     text(topLeft, 'h3', window.anomalous_browser_lang === 'zh' ? '🎛️ 提示词工坊' : '🎛️ Prompt Studio');
 
-    const topActions = text(topbar, 'div', '', 'anomalous-prompt-topbar-actions');
-    const newBtn = text(topActions, 'button', `✨ ${t('promptNewDraft')}`, 'anomalous-btn-ghost anomalous-btn-sm');
+    // Inline Preset Name Input
+    const nameInput = text(topLeft, 'input', '', 'anomalous-prompt-name-input');
+    nameInput.placeholder = window.anomalous_browser_lang === 'zh' ? '方案名称...' : 'Preset name...';
+    nameInput.title = window.anomalous_browser_lang === 'zh' ? '输入组合方案名称' : 'Enter preset name';
+    nameInput.maxLength = 120;
+    nameInput.value = draft.name || '';
+    nameInput.oninput = () => { draft.name = nameInput.value; };
 
-    // "More" Dropdown Menu (Secondary container holding Export)
+    const topActions = text(topbar, 'div', '', 'anomalous-prompt-topbar-actions');
+    const saveBtn = text(topActions, 'button', `💾 ${t('promptSavePlan')}`, 'anomalous-btn-primary anomalous-btn-sm');
+    saveBtn.title = t('promptSavePlan') || '保存方案至素材库';
+
+    // "More" Dropdown Menu (holds New Draft, Tags, Export)
     const moreWrap = text(topActions, 'div', '', 'anomalous-prompt-more-wrap');
     moreWrap.style.position = 'relative';
     moreWrap.style.display = 'inline-flex';
-    const moreBtn = text(moreWrap, 'button', window.anomalous_browser_lang === 'zh' ? '更多 ▾' : 'More ▾', 'anomalous-btn-ghost anomalous-btn-sm');
+    const moreBtn = text(moreWrap, 'button', window.anomalous_browser_lang === 'zh' ? '··· 更多' : '··· More', 'anomalous-btn-ghost anomalous-btn-sm');
     const moreMenu = text(moreWrap, 'div', '', 'anomalous-prompt-more-menu');
     moreMenu.style.display = 'none';
     moreMenu.style.position = 'absolute';
     moreMenu.style.top = 'calc(100% + 4px)';
     moreMenu.style.right = '0';
-    moreMenu.style.zIndex = '100';
-    moreMenu.style.minWidth = '130px';
+    moreMenu.style.zIndex = '1000';
+    moreMenu.style.minWidth = '150px';
     moreMenu.style.background = 'var(--amb-bg-panel, #1C1E24)';
     moreMenu.style.border = '1px solid var(--amb-border, rgba(255, 255, 255, 0.14))';
     moreMenu.style.borderRadius = 'var(--amb-radius-control, 6px)';
-    moreMenu.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.5)';
+    moreMenu.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.6)';
     moreMenu.style.padding = '4px';
+
+    const newBtn = text(moreMenu, 'button', `✨ ${t('promptNewDraft')}`, 'anomalous-btn-ghost anomalous-btn-sm');
+    newBtn.style.width = '100%';
+    newBtn.style.justifyContent = 'flex-start';
+    newBtn.style.border = 'none';
+
+    const tagsBtn = text(moreMenu, 'button', `🏷️ ${window.anomalous_browser_lang === 'zh' ? '设置标签' : 'Edit Tags'}`, 'anomalous-btn-ghost anomalous-btn-sm');
+    tagsBtn.style.width = '100%';
+    tagsBtn.style.justifyContent = 'flex-start';
+    tagsBtn.style.border = 'none';
+    tagsBtn.onclick = () => {
+        closeMoreMenu();
+        const current = (draft.tags || []).join(', ');
+        const val = prompt(window.anomalous_browser_lang === 'zh' ? '输入方案标签（用逗号或空格分隔）：' : 'Enter preset tags (comma separated):', current);
+        if (val !== null) {
+            draft.tags = val.split(/[\s,，\n\r]+/).map(v => v.trim()).filter(Boolean);
+            showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? `已更新标签 (${draft.tags.length})` : `Tags updated (${draft.tags.length})`);
+        }
+    };
 
     const exportBtn = text(moreMenu, 'button', `📤 ${t('promptExportPlan')}`, 'anomalous-btn-ghost anomalous-btn-sm');
     exportBtn.style.width = '100%';
@@ -333,9 +361,7 @@ function buildPromptComposer(owner, container, options = {}) {
         moreMenu.style.display = isHidden ? 'block' : 'none';
     };
     const closeMoreMenu = () => { moreMenu.style.display = 'none'; };
-    document.addEventListener('click', closeMoreMenu);
-
-    const saveBtn = text(topActions, 'button', `💾 ${t('promptSavePlan')}`, 'anomalous-btn-primary anomalous-btn-sm');
+    document.addEventListener?.('click', closeMoreMenu);
 
     const closeBtn = text(topActions, 'button', '✕', 'anomalous-btn-ghost anomalous-btn-sm anomalous-prompt-close-btn');
     closeBtn.title = t('close') || '关闭';
@@ -344,27 +370,10 @@ function buildPromptComposer(owner, container, options = {}) {
         else owner.closeWorkspace?.();
     };
 
-    // 2. Metadata Strip (Preset Name, Tags)
-    const metaStrip = text(view, 'div', '', 'anomalous-prompt-meta-strip');
-    const nameInput = text(metaStrip, 'input', '', 'anomalous-prompt-name-input');
-    nameInput.placeholder = window.anomalous_browser_lang === 'zh' ? '组合名称（如：赛博朋克光影组合）...' : 'Mixer preset name...';
-    nameInput.maxLength = 120;
-    nameInput.value = draft.name || '';
-    nameInput.oninput = () => { draft.name = nameInput.value; };
-
-    const tagsInput = text(metaStrip, 'input', '', 'anomalous-prompt-tags-input');
-    tagsInput.placeholder = t('materialTagsHint') || '标签，用逗号分隔';
-    tagsInput.value = (draft.tags || []).join(', ');
-    tagsInput.maxLength = 1200;
-    tagsInput.oninput = () => {
-        draft.tags = tagsInput.value.split(/[\s,，\n\r]+/).map(val => val.trim()).filter(Boolean);
-    };
-
-    // Dedicated Insert Position control (relocated to Target Write Bar)
+    // Dedicated Insert Position control (placed in sticky Action Dock)
     const posWrap = document.createElement('label');
     posWrap.className = 'anomalous-prompt-insert-pos';
-    text(posWrap, 'span', `${t('promptInsertPosition')}:`);
-    const posSelect = text(posWrap, 'select', '');
+    const posSelect = text(posWrap, 'select', '', 'anomalous-prompt-pos-select');
     for (const value of ['after', 'before']) {
         text(posSelect, 'option', t(`promptInsert_${value}`)).value = value;
     }
@@ -374,30 +383,7 @@ function buildPromptComposer(owner, container, options = {}) {
         renderTargetBar();
     };
 
-    // 3. Responsive View Switcher (for docked and narrow sidebar modes)
-    const viewSwitcher = text(view, 'div', '', 'anomalous-prompt-view-switcher');
-    let currentViewMode = 'both';
-
-    const viewOptions = [
-        { id: 'left', icon: '🗃️', zh: '词卡库', en: 'Cards' },
-        { id: 'right', icon: '🎛️', zh: '拼装台', en: 'Mixer' },
-        { id: 'both', icon: '📑', zh: '全部', en: 'All' },
-    ];
-
-    const viewButtons = {};
-    viewOptions.forEach(opt => {
-        const btn = text(viewSwitcher, 'button', `${opt.icon} ${window.anomalous_browser_lang === 'zh' ? opt.zh : opt.en}`, `anomalous-view-switcher-btn${currentViewMode === opt.id ? ' is-active' : ''}`);
-        viewButtons[opt.id] = btn;
-        btn.onclick = () => {
-            currentViewMode = opt.id;
-            Object.values(viewButtons).forEach(b => b.classList.remove('is-active'));
-            btn.classList.add('is-active');
-            workbenchGrid.classList.remove('is-view-left', 'is-view-right', 'is-view-both');
-            workbenchGrid.classList.add(`is-view-${opt.id}`);
-        };
-    });
-
-    // 4. Two-Column Split Grid
+    // Two-Column Split Grid (Adapts to vertical dual-zone in sidebar mode)
     const workbenchGrid = text(view, 'div', '', 'anomalous-prompt-workbench-grid');
 
     // =========================================================================
@@ -406,7 +392,8 @@ function buildPromptComposer(owner, container, options = {}) {
     const leftPanel = text(workbenchGrid, 'section', '', 'anomalous-workbench-left-panel');
     const leftHeader = text(leftPanel, 'div', '', 'anomalous-workbench-col-header');
     const leftTitleWrap = text(leftHeader, 'div', '', 'anomalous-workbench-col-title');
-    leftTitleWrap.innerHTML = `<strong>${window.anomalous_browser_lang === 'zh' ? '词卡库' : 'Prompt Library'}</strong> <span class="anomalous-sub-counter"></span>`;
+    text(leftTitleWrap, 'strong', window.anomalous_browser_lang === 'zh' ? '词卡库' : 'Prompt Library');
+    const leftCounter = text(leftTitleWrap, 'span', '', 'anomalous-sub-counter');
 
     // Action button group in leftHeader
     const leftHeaderActions = text(leftHeader, 'div', '', 'anomalous-workbench-header-actions');
@@ -471,11 +458,6 @@ function buildPromptComposer(owner, container, options = {}) {
 
     const rightActions = text(rightHeader, 'div', '', 'anomalous-mixer-actions');
 
-    // Right quick view final assembled text
-    const viewFinalBtn = text(rightActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm anomalous-mixer-final-btn');
-    viewFinalBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>${window.anomalous_browser_lang === 'zh' ? '最终文本' : 'Final Text'}`;
-    viewFinalBtn.title = window.anomalous_browser_lang === 'zh' ? '查看/展开最终合成的提示词文本' : 'View / Expand final assembled prompt text';
-
     // Right quick extract: suck into right mixer directly
     const rightSuckNodeBtn = text(rightActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm');
     rightSuckNodeBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>${t('promptReadSelectedNode')}`;
@@ -492,23 +474,25 @@ function buildPromptComposer(owner, container, options = {}) {
     // Blocks Container & Dropzone
     const blocksContainer = text(rightPanel, 'div', '', 'anomalous-mixer-blocks-container anomalous-assembly-track');
 
-    // Bottom Live Assembled Output Deck (Collapsible on-demand)
-    const outputDeck = text(rightPanel, 'div', '', 'anomalous-mixer-deck-output is-collapsed');
+    // Bottom Live Assembled Action Dock (Always visible sticky bar at bottom of assembler)
+    const outputDeck = text(rightPanel, 'div', '', 'anomalous-mixer-deck-output anomalous-prompt-action-dock is-collapsed');
 
-    // 1. Slim Dock Summary Bar (32px high, always visible when blocks exist)
+    // 1. Slim Dock Summary & Target Injection Bar (Always visible)
     const outputSummary = text(outputDeck, 'div', '', 'anomalous-mixer-output-summary');
     const summaryLeft = text(outputSummary, 'div', '', 'anomalous-mixer-summary-left');
-    const outputTitle = text(summaryLeft, 'div', '', 'anomalous-mixer-output-title');
     const outputStats = text(summaryLeft, 'div', '', 'anomalous-mixer-output-stats');
 
-    const summaryRight = text(outputSummary, 'div', '', 'anomalous-mixer-summary-right');
-    const copyOutputBtn = text(summaryRight, 'button', `📋 ${t('copy')}`, 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-quick-copy');
+    const expandOutputBtn = text(summaryLeft, 'button', window.anomalous_browser_lang === 'zh' ? '📄 最终文本 ▾' : '📄 View Text ▾', 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-toggle-output');
+    expandOutputBtn.title = window.anomalous_browser_lang === 'zh' ? '展开/收起最终合成提示词文本' : 'Expand/collapse assembled text';
+
+    const copyOutputBtn = text(summaryLeft, 'button', `📋`, 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-quick-copy');
     copyOutputBtn.title = window.anomalous_browser_lang === 'zh' ? '复制当前合成的提示词' : 'Copy assembled prompt text';
 
-    const expandOutputBtn = text(summaryRight, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-toggle-output');
-    expandOutputBtn.title = window.anomalous_browser_lang === 'zh' ? '展开/收起最终文本' : 'Expand/collapse full text';
+    // Target Node Direct Write Bar placed INSIDE outputSummary on the right side
+    const targetBar = text(outputSummary, 'div', '', 'anomalous-prompt-target-bar');
+    const targetWidgetIndexByNodeId = {};
 
-    // 2. Expandable Drawer (reveals full textarea, canvas drag dock, and target node write bar)
+    // 2. Expandable Drawer (reveals full textarea and canvas drag dock)
     const outputDrawer = text(outputDeck, 'div', '', 'anomalous-mixer-output-drawer');
     outputDrawer.style.display = 'none';
 
@@ -516,39 +500,25 @@ function buildPromptComposer(owner, container, options = {}) {
     const outputTextarea = text(outputBody, 'textarea', '', 'anomalous-mixer-output-textarea');
     outputTextarea.readOnly = true;
     outputTextarea.rows = 2;
+    outputTextarea.oninput = () => {};
 
     const outputFooter = text(outputDrawer, 'div', '', 'anomalous-mixer-output-footer');
     const dragHint = text(outputFooter, 'div', '', 'anomalous-mixer-drag-hint');
     dragHint.innerHTML = `🖐️ <strong>${window.anomalous_browser_lang === 'zh' ? '按住此预览坞' : 'Drag this deck'}</strong> ${window.anomalous_browser_lang === 'zh' ? '直接丢入 ComfyUI 画布节点' : 'onto canvas node'}`;
 
-    // Target Node Direct Write Bar placed INSIDE outputDrawer so it collapses cleanly
-    const targetBar = text(outputDrawer, 'div', '', 'anomalous-prompt-target-bar');
-    const targetWidgetIndexByNodeId = {};
-
     function updateOutputDeckState() {
-        const currentRoleParts = draft?.plan?.parts ? draft.plan.parts.filter(p => (p.role || 'positive') === activeTab) : [];
-        const compiledText = (draft?.plan?.[activeTab] || '').trim();
-        const hasContent = currentRoleParts.length > 0 && compiledText.length > 0;
-
-        if (!hasContent) {
-            outputDeck.style.display = 'none';
-            viewFinalBtn.style.display = 'none';
-            return;
-        }
-
         outputDeck.style.display = 'flex';
-        viewFinalBtn.style.display = 'inline-flex';
 
         if (isOutputExpanded) {
             outputDeck.classList.remove('is-collapsed');
             outputDrawer.style.display = 'flex';
-            expandOutputBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '收起 ▲' : 'Collapse ▲';
-            viewFinalBtn.classList.add('is-active');
+            expandOutputBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '收起预览 ▲' : 'Collapse ▲';
+            expandOutputBtn.classList.add('is-active');
         } else {
             outputDeck.classList.add('is-collapsed');
             outputDrawer.style.display = 'none';
-            expandOutputBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '查看最终文本 ▾' : 'View Text ▾';
-            viewFinalBtn.classList.remove('is-active');
+            expandOutputBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '📄 最终文本 ▾' : '📄 View Text ▾';
+            expandOutputBtn.classList.remove('is-active');
         }
     }
 
@@ -559,12 +529,7 @@ function buildPromptComposer(owner, container, options = {}) {
     };
 
     outputSummary.onclick = (e) => {
-        if (e.target.closest('button')) return;
-        isOutputExpanded = !isOutputExpanded;
-        updateOutputDeckState();
-    };
-
-    viewFinalBtn.onclick = () => {
+        if (e.target.closest('button') || e.target.closest('select') || e.target.closest('.anomalous-prompt-target-bar')) return;
         isOutputExpanded = !isOutputExpanded;
         updateOutputDeckState();
     };
@@ -959,7 +924,7 @@ function buildPromptComposer(owner, container, options = {}) {
             return true;
         });
 
-        leftTitleWrap.querySelector('.anomalous-sub-counter').textContent = `(${filtered.length})`;
+        leftCounter.textContent = `(${filtered.length})`;
 
         if (!filtered.length) {
             const empty = text(sourceCardsList, 'div', '', 'anomalous-source-empty');
@@ -973,6 +938,13 @@ function buildPromptComposer(owner, container, options = {}) {
         filtered.forEach(card => {
             const cardEl = text(sourceCardsList, 'article', '', `anomalous-source-prompt-card is-cat-${card.category}`);
             cardEl.setAttribute('draggable', 'true');
+            cardEl.title = window.anomalous_browser_lang === 'zh' ? '点击直接加入上方拼装台（也可拖拽）' : 'Click to add to mixer above (or drag)';
+
+            // Instant tap to add card to mixer
+            cardEl.onclick = (e) => {
+                if (e.target.closest('button') || e.target.closest('input')) return;
+                addSourceCardToMixer(card);
+            };
 
             // Drag Start -> transfer prompt card payload
             cardEl.ondragstart = (e) => {
@@ -1078,6 +1050,7 @@ function buildPromptComposer(owner, container, options = {}) {
                 updateRightTabsUI();
                 renderBlocksList();
                 updateOutputPreview();
+                renderTargetBar();
             };
         }
     }
@@ -1096,6 +1069,7 @@ function buildPromptComposer(owner, container, options = {}) {
             category: cardData.category,
             enabled: true,
         }, draft.plan.parts.length);
+        newBlock._justAdded = true;
 
         if (targetIndex !== null && targetIndex >= 0) {
             draft.plan.parts.splice(targetIndex, 0, newBlock);
@@ -1107,13 +1081,12 @@ function buildPromptComposer(owner, container, options = {}) {
         updateRightTabsUI();
         renderBlocksList();
         updateOutputPreview();
+        renderTargetBar();
 
-        if (currentViewMode === 'left') {
-            const count = draft.plan.parts.filter(p => p.role === activeTab).length;
-            showWorkbenchToast(window.anomalous_browser_lang === 'zh'
-                ? `已加入拼装台（当前共 ${count} 块积木）`
-                : `Added to mixer (${count} blocks)`);
-        }
+        const count = draft.plan.parts.filter(p => p.role === activeTab).length;
+        showWorkbenchToast(window.anomalous_browser_lang === 'zh'
+            ? `已加入【${activeTab === 'positive' ? '正向' : '负向'}】拼装台（共 ${count} 块）`
+            : `Added to ${activeTab} track (${count} blocks)`);
     }
 
     function renderBlocksList() {
@@ -1130,8 +1103,8 @@ function buildPromptComposer(owner, container, options = {}) {
                         <line x1="12" y1="15" x2="12" y2="3"/>
                     </svg>
                 </div>
-                <div style="font-size: 0.92rem; font-weight: 600; color: #e2e8f0;">${window.anomalous_browser_lang === 'zh' ? '将左侧的成型提示词拖放到这里摆放与拼装' : 'Drop prompt cards from the left panel here'}</div>
-                <div style="font-size: 0.76rem; color: #64748b; margin-top: 4px;">${window.anomalous_browser_lang === 'zh' ? '支持自由调换次序，点击【智能理顺】自动按画质底模➔风格➔主体➔LoRA排序' : 'Drag to reorder anytime, or click Smart Sort to auto-align.'}</div>
+                <div style="font-size: 0.92rem; font-weight: 600; color: #e2e8f0;">${window.anomalous_browser_lang === 'zh' ? '点击下方词卡或拖拽到这里拼装' : 'Click cards below or drop here to assemble'}</div>
+                <div style="font-size: 0.76rem; color: #64748b; margin-top: 4px;">${window.anomalous_browser_lang === 'zh' ? '支持自由调换次序，点击【智能排序】自动理顺' : 'Drag to reorder anytime, or click Smart Sort.'}</div>
             `;
             // Accept drops on empty dropzone
             setupDropzoneListeners(dropzoneNotice);
@@ -1139,9 +1112,19 @@ function buildPromptComposer(owner, container, options = {}) {
         }
 
         currentRoleParts.forEach((block, index) => {
-            const blockEl = text(blocksContainer, 'article', '', `anomalous-mixer-block${!block.enabled ? ' is-bypassed' : ''} is-role-${block.role}`);
+            const isJustAdded = !!block._justAdded;
+            if (isJustAdded) delete block._justAdded;
+
+            const blockEl = text(blocksContainer, 'article', '', `anomalous-mixer-block${!block.enabled ? ' is-bypassed' : ''} is-role-${block.role}${isJustAdded ? ' is-just-added' : ''}`);
             blockEl.setAttribute('draggable', 'true');
+            blockEl.dataset ||= {};
             blockEl.dataset.blockId = block.id;
+
+            if (isJustAdded) {
+                requestAnimationFrame(() => {
+                    blockEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+            }
 
             // Reorder Drag Listeners
             blockEl.ondragstart = (e) => {
@@ -1352,15 +1335,12 @@ function buildPromptComposer(owner, container, options = {}) {
     function updateOutputPreview() {
         syncDraftSynthesizedText(draft);
         const compiledText = draft.plan[activeTab] || '';
+        const currentRoleParts = draft.plan.parts.filter(p => p.role === activeTab);
 
-        outputTitle.innerHTML = activeTab === 'negative'
-            ? `🚫 <strong>${window.anomalous_browser_lang === 'zh' ? '最终负向文本' : 'Assembled Negative'}</strong>`
-            : `✨ <strong>${window.anomalous_browser_lang === 'zh' ? '最终正向文本' : 'Assembled Positive'}</strong>`;
-
-        const words = compiledText.trim() ? compiledText.split(/[\s,，\n\r]+/).filter(Boolean).length : 0;
-        outputStats.textContent = window.anomalous_browser_lang === 'zh'
-            ? `(${compiledText.length} 字符 · 约 ${words} 词组)`
-            : `(${compiledText.length} chars · ~${words} tags)`;
+        outputStats.innerHTML = `${activeTab === 'negative' ? '🚫' : '✨'} <strong>${compiledText.length}</strong>${window.anomalous_browser_lang === 'zh' ? '字' : 'c'} · <strong>${currentRoleParts.length}</strong>${window.anomalous_browser_lang === 'zh' ? '块' : 'b'}`;
+        outputStats.title = activeTab === 'negative'
+            ? `${window.anomalous_browser_lang === 'zh' ? '负向' : 'Negative'}: ${compiledText.length} ${window.anomalous_browser_lang === 'zh' ? '字符' : 'chars'}, ${currentRoleParts.length} ${window.anomalous_browser_lang === 'zh' ? '块积木' : 'blocks'}`
+            : `${window.anomalous_browser_lang === 'zh' ? '正向' : 'Positive'}: ${compiledText.length} ${window.anomalous_browser_lang === 'zh' ? '字符' : 'chars'}, ${currentRoleParts.length} ${window.anomalous_browser_lang === 'zh' ? '块积木' : 'blocks'}`;
 
         outputTextarea.value = compiledText;
         updateOutputDeckState();
@@ -1403,15 +1383,15 @@ function buildPromptComposer(owner, container, options = {}) {
         if (!textToCopy) return;
         try {
             await navigator.clipboard.writeText(textToCopy);
-            copyOutputBtn.textContent = '✅ 已复制';
-            setTimeout(() => { if (copyOutputBtn.isConnected) copyOutputBtn.textContent = `📋 ${t('copy')}`; }, 1500);
+            copyOutputBtn.textContent = '✅';
+            setTimeout(() => { if (copyOutputBtn.isConnected) copyOutputBtn.textContent = `📋`; }, 1500);
         } catch (err) {
             await anomalousAlert(t('materialCopyError'));
         }
     };
 
     // -------------------------------------------------------------------------
-    // Target Node Direct Injection Toolbar
+    // Target Node Direct Injection Toolbar (Compact sticky bar integrated into Action Dock)
     // -------------------------------------------------------------------------
     const renderTargetBar = () => {
         if (!view.isConnected) return;
@@ -1419,53 +1399,72 @@ function buildPromptComposer(owner, container, options = {}) {
         const node = selectedMaterialNode(app);
         const targets = promptWidgetTargets(node);
 
+        const actions = text(targetBar, 'div', '', 'anomalous-prompt-target-actions');
+
         if (!node || !targets.length) {
-            text(targetBar, 'span', t('promptSelectTextNode'), 'anomalous-prompt-target-info');
+            actions.appendChild(posWrap);
+            const emptyBtn = text(actions, 'button', `⬇️ ${window.anomalous_browser_lang === 'zh' ? '写入节点' : 'Write Node'}`, 'anomalous-btn-ghost anomalous-btn-sm');
+            emptyBtn.title = t('promptSelectTextNode');
+            emptyBtn.onclick = () => {
+                anomalousAlert(window.anomalous_browser_lang === 'zh'
+                    ? '💡 请先在 ComfyUI 画布上点击选中一个提示词节点（例如 CLIPTextEncode）！'
+                    : '💡 Please select a prompt node (e.g. CLIPTextEncode) on the ComfyUI canvas first!');
+            };
             return;
         }
 
-        const info = text(targetBar, 'div', '', 'anomalous-prompt-target-info');
-        info.textContent = t('materialApplyingTo', { name: materialNodeHeading(node), id: node.id });
+        // Compact target node tag
+        const nodeHeading = materialNodeHeading(node) || node.title || node.type || `Node #${node.id}`;
+        const nodeBadge = text(actions, 'span', `#${node.id} ${nodeHeading}`.slice(0, 14), 'anomalous-target-node-badge');
+        nodeBadge.title = t('materialApplyingTo', { name: nodeHeading, id: node.id });
 
-        const actions = text(targetBar, 'div', '', 'anomalous-prompt-target-actions');
+        if (targets.length > 1) {
+            const widgetSelect = text(actions, 'select', '', 'anomalous-target-widget-select');
+            widgetSelect.setAttribute('aria-label', t('promptTargetWidget'));
+            for (const target of targets) {
+                text(widgetSelect, 'option', target.name).value = String(target.index);
+            }
+            const savedIndex = targetWidgetIndexByNodeId[node.id];
+            if (savedIndex !== undefined && targets.some(t => t.index === savedIndex)) {
+                widgetSelect.value = String(savedIndex);
+            } else {
+                targetWidgetIndexByNodeId[node.id] = Number(widgetSelect.value);
+            }
+            widgetSelect.onchange = () => {
+                targetWidgetIndexByNodeId[node.id] = Number(widgetSelect.value);
+            };
+        }
+
         actions.appendChild(posWrap);
-        const widgetSelect = text(actions, 'select', '');
-        widgetSelect.setAttribute('aria-label', t('promptTargetWidget'));
-        for (const target of targets) {
-            text(widgetSelect, 'option', target.name).value = String(target.index);
-        }
 
-        const savedIndex = targetWidgetIndexByNodeId[node.id];
-        if (savedIndex !== undefined && targets.some(t => t.index === savedIndex)) {
-            widgetSelect.value = String(savedIndex);
-        } else {
-            targetWidgetIndexByNodeId[node.id] = Number(widgetSelect.value);
-        }
-
-        widgetSelect.onchange = () => {
-            targetWidgetIndexByNodeId[node.id] = Number(widgetSelect.value);
-        };
-
-        const applyRole = (role, label) => {
-            const btn = text(actions, 'button', label, 'anomalous-btn-primary');
+        const applyRole = (role, label, isPrimary = false) => {
+            const btn = text(actions, 'button', label, isPrimary ? 'anomalous-btn-primary anomalous-btn-sm' : 'anomalous-btn-ghost anomalous-btn-sm');
             btn.type = 'button';
             btn.onclick = async () => {
                 try {
                     if (selectedMaterialNode(app) !== node) throw new Error('materialTargetChanged');
-                    const index = Number(widgetSelect.value);
+                    const widgetSelectEl = actions.querySelector('select:not(.anomalous-prompt-pos-select)');
+                    const index = widgetSelectEl ? Number(widgetSelectEl.value) : targets[0].index;
                     if (!promptWidgetTargets(node).some(t => t.index === index)) throw new Error('materialTargetChanged');
                     const content = draft.plan[role];
-                    if (!content || !content.trim()) return;
+                    if (!content || !content.trim()) {
+                        showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '当前拼装台暂无内容可写入' : 'No prompt content in current track');
+                        return;
+                    }
                     const value = joinPromptText(node.widgets[index].value, content, posSelect.value);
                     showMaterialApplication(targetBar, applyNodeMaterialValues(app, node, [{ index, value }]), node);
+                    btn.textContent = '✅ ' + (window.anomalous_browser_lang === 'zh' ? '已写入' : 'Written');
+                    setTimeout(() => { if (btn.isConnected) btn.textContent = label; }, 1200);
                 } catch (error) {
                     await anomalousAlert(t(error.message) === error.message ? t('materialApplyFailed') : t(error.message));
                 }
             };
         };
 
-        applyRole('positive', `${window.anomalous_browser_lang === 'zh' ? '写入正面' : 'Write Pos'} (${t(`promptInsert_${posSelect.value}`)})`);
-        applyRole('negative', `${window.anomalous_browser_lang === 'zh' ? '写入负面' : 'Write Neg'} (${t(`promptInsert_${posSelect.value}`)})`);
+        const activeLabel = activeTab === 'positive'
+            ? `⬇️ ${window.anomalous_browser_lang === 'zh' ? '写入正向' : 'Write Pos'}`
+            : `⬇️ ${window.anomalous_browser_lang === 'zh' ? '写入负向' : 'Write Neg'}`;
+        applyRole(activeTab, activeLabel, true);
     };
 
     if (isSide) owner.refreshSidePromptTarget = renderTargetBar;
@@ -1473,16 +1472,20 @@ function buildPromptComposer(owner, container, options = {}) {
 
     // Save Plan to Material Library
     saveBtn.onclick = async () => {
-        if (!draft.name.trim()) {
+        if (!draft.name?.trim()) {
             nameInput.focus();
+            nameInput.classList.add('is-invalid');
+            setTimeout(() => nameInput.classList.remove('is-invalid'), 1200);
+            showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '请先在顶栏输入方案名称！' : 'Please enter preset name first!');
             return;
         }
         saveBtn.disabled = true;
         syncDraftSynthesizedText(draft);
+        const saved = workbenchDraftToSavedPlan(draft);
         const body = {
             name: draft.name.trim(),
             tags: draft.tags || [],
-            plan: workbenchDraftToSavedPlan(draft),
+            plan: saved.plan,
         };
 
         const send = () => fetch('/anomalous/save_prompt_plan', {
@@ -1511,17 +1514,21 @@ function buildPromptComposer(owner, container, options = {}) {
 
     // Export Plan JSON
     exportBtn.onclick = () => {
-        if (!draft.name.trim()) {
+        if (!draft.name?.trim()) {
             nameInput.focus();
+            nameInput.classList.add('is-invalid');
+            setTimeout(() => nameInput.classList.remove('is-invalid'), 1200);
+            showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '请先在顶栏输入方案名称！' : 'Please enter preset name first!');
             return;
         }
         syncDraftSynthesizedText(draft);
+        const saved = workbenchDraftToSavedPlan(draft);
         const exportData = {
             format: 'anomalous-prompt-plan-v1',
             version: 2,
             name: draft.name,
             tags: draft.tags,
-            plan: workbenchDraftToSavedPlan(draft),
+            plan: saved.plan,
         };
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
         if (blob.size > 2 * 1024 * 1024 || draft.tags.length > 20 || draft.tags.some(tag => tag.length > 60)) {
@@ -1539,6 +1546,13 @@ function buildPromptComposer(owner, container, options = {}) {
     newBtn.onclick = async () => {
         if (await anomalousConfirm(t('promptReplaceDraft'))) {
             owner.promptPlanDraft = draft = newDraft();
+            draft.plan.parts.push(normalizeBlock({
+                title: window.anomalous_browser_lang === 'zh' ? '正向提示词' : 'Positive Prompt',
+                content: '',
+                role: 'positive',
+                category: 'base',
+            }, 0));
+            syncDraftSynthesizedText(draft);
             if (!isSide) {
                 showPromptComposer(owner);
             } else {
@@ -1547,7 +1561,7 @@ function buildPromptComposer(owner, container, options = {}) {
                 updateOutputPreview();
                 renderTargetBar();
                 nameInput.value = '';
-                tagsInput.value = '';
+                draft.tags = [];
             }
         }
     };
@@ -1647,3 +1661,41 @@ function applyPromptDrop(node, data, graph, parent) {
     dialog.onclose = () => dialog.remove();
     dialog.showModal();
 }
+
+async function openMaterialImportDrawer(owner, draft, onUpdated) {
+    owner.closePromptImportDrawer?.();
+    const drawer = text(document.body, 'aside', '', 'anomalous-prompt-import-drawer');
+    owner.promptImportDrawer = drawer;
+
+    const onKeydown = e => {
+        if (e.key === 'Escape') {
+            owner.closePromptImportDrawer?.();
+        }
+    };
+    window.addEventListener('keydown', onKeydown);
+    owner.closePromptImportDrawer = () => {
+        window.removeEventListener('keydown', onKeydown);
+        drawer.remove();
+        owner.promptImportDrawer = null;
+    };
+
+    const res = await fetch('/anomalous/materials?category=prompts&limit=48');
+    const data = await jsonResponse(res, 'drawer materials');
+    const list = text(drawer, 'div', '', 'anomalous-drawer-list');
+
+    for (const item of data.materials || []) {
+        const card = text(list, 'div', '', 'anomalous-drawer-item');
+        text(card, 'div', item.name || 'Prompt Item', 'anomalous-drawer-item-title');
+        const inspect = text(card, 'button', t('materialViewDetails'), 'anomalous-btn-ghost');
+        inspect.onclick = async () => {
+            const prompts = await loadMaterialPrompts(item.filename);
+            const loadAll = text(card, 'button', t('promptDrawerLoadAll'), 'anomalous-btn-primary');
+            loadAll.onclick = () => {
+                if (prompts.positive) draft.plan.positive = prompts.positive;
+                if (prompts.negative) draft.plan.negative = prompts.negative;
+                onUpdated?.();
+            };
+        };
+    }
+}
+

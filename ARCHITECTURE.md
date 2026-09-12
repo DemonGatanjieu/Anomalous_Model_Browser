@@ -150,22 +150,19 @@ DOM or live LiteGraph state.
 - `ui_prompt_composer.js` owns the Prompt Studio Dual-Column Workbench (提示词工坊左右双分栏工作台), an independent tool accessed exclusively from the Toolbox Hub (`openPromptStudio`);
   rendered in its dedicated container (`owner.promptStudioContainer`) with its own header title and close button (`[✕]`), completely decoupled from the Material Library;
   provides a clean, professional studio workspace (`.anomalous-prompt-workbench`) stripped of gaudy neon effects, cyberpunk backgrounds, and pulsing glow animations;
-  features compact vertical spacing (tightened paddings, 28px single-line metadata inputs, and 6px grid gaps) maximizing functional workspace;
-  features responsive docked / sidebar adaptation with dedicated single-column collapse, generous vertical scrolling without arbitrary height clipping, and an inline responsive view switcher (`.anomalous-prompt-view-switcher`: `[🗃️ 词卡库 | 🎛️ 拼装台 | 📑 全部]`) for seamless navigation when docked as a sidebar (`#anomalous-container.anomalous-docked`) or on narrow screens;
-  the Left Column hosts the Ready-to-use Prompt Cards Library (成型提示词库), featuring restrained dark slate card backgrounds (`#24262E`)
-  with category-specific left accent borders (`border-left: 3.5px solid ...`, Base/Style/Subject/Trigger) eliminating color-palette clutter,
-  minimalist empty state container (`.anomalous-source-empty`) with subtle dashed borders,
-  a streamlined col-header holding a unified action button group (`[🎯 提取]`, `[📥 导入]`, `[➕ 新建]`) that reclaims ~36px vertical height for the card list,
+  features compact vertical spacing with an inline topbar hosting the preset name input (`.anomalous-prompt-name-input`), direct `[💾 保存方案]` button, secondary action dropdown (`[··· 更多]` for new draft, preset tags, and JSON export), and window close button (`[✕]`), completely eliminating bulky standalone metadata strips;
+  in docked sidebar mode (`#anomalous-container.anomalous-docked`) and narrow screen layouts (<860px), adopts a Unified Dual-Zone Flow (上下联动一体流): completely eliminates clumsy tab switching (`[词卡库 | 拼装台 | 全部]`), arranging the Assembler Stage on top (`order: 1`, max-height 54%) and Candidate Cards Deck on bottom (`order: 2`, max-height 50%), both with independent scroll containers to ensure candidate cards and assembled Lego blocks remain simultaneously visible;
+  the Cards Deck hosts candidate prompt cards in a compact 2-column chip grid (`repeat(auto-fill, minmax(130px, 1fr))`) with 1-tap instant assembly (`cardEl.onclick` adds card to the active track with `@keyframes anomalous-just-added` animated feedback) alongside native HTML5 drag-and-drop,
+  features restrained dark slate backgrounds (`#24262E`) with category-specific left accent borders (Base/Style/Subject/Trigger),
+  minimalist empty state container (`.anomalous-source-empty`), a streamlined col-header holding a unified action button group (`[🎯 提取]`, `[📥 导入]`, `[➕ 新建]`),
   one-click canvas node prompt extraction (`🎯 提取`, reading selected ComfyUI text nodes like `CLIPTextEncode` with downstream link connection traversal for accurate negative conditioning detection, auto-generating categorised cards) and one-click
   Material Library batch sync (`📥 导入`, cancellable fetch scoped to `category=prompts`), plus on-demand persistent card creation
   (`➕ 新建`, with explicit positive/negative role radios and `/anomalous/save_prompt_plan` backend persistence; temporary cards
-  show `[未保存]` badge with one-click `💾 存入库`), completely eliminating default empty textareas; cards support native HTML5 drag-and-drop;
-  the Right Column hosts the expanded Assembler & Arranger Stage (顺序编排调音台, `minmax(460px, 1fr)`), featuring quick node reading
-  (`🎯 读取选中节点`), quick final text toggle (`[📄 最终文本]`), compact modular Lego block cards (~56px height, expandable on focus) allowing generous top-to-bottom sequence stacking,
-  a large, high-clearance dropzone (`.anomalous-assembly-dropzone`, min-height 240px) that ingests dragged cards into positive/negative tracks with strict role isolation,
+  show `[未保存]` badge with one-click `💾 存入库`);
+  the Assembler Stage hosts the sequential Lego block track (`anomalous-assembly-track`), compact modular blocks (~52px height) allowing generous top-to-bottom sequence stacking,
   supports bidirectional drag-and-drop reordering with ghost indicator lines, role-aware up/down swapping, instant A/B bypass toggles (greyscale dimming without deleting),
-  interactive category pills, one-click Smart Sort (`🪄 按分类排序`, Base ➔ Style ➔ Subject ➔ Trigger), a target widget dropdown with sticky
-  selection cache (`targetWidgetIndexByNodeId`), and an on-demand collapsible output deck (`.anomalous-mixer-deck-output`): completely hidden when 0 blocks, defaulting to a slim 32px pill summary bar (`✨ 最终正向文本 (X字符 · Y词组) [📋复制] [👁️查看最终文本 ▾]`) when cards exist to prevent premature clutter and screen squashing, and smoothly expandable into a full drawer containing the compiled textarea, whole-deck canvas drag dock (`bindMaterialDrag`), and target node direct write bar;
+  interactive category pills, one-click Smart Sort (`🪄 按分类排序`, Base ➔ Style ➔ Subject ➔ Trigger),
+  and a permanently visible sticky Action Dock (`.anomalous-prompt-action-dock`) at the bottom of the assembler stage: displays live synthesis statistics (`✨ X字 · Y块`), quick copy button (`[📋]`), expandable compiled text preview drawer (`[📄 最终文本 ▾]`), insertion position selector (`[在后 ▾] / [在前 ▾]`), and the ComfyUI canvas node direct injection bar (`[#ID 节点名称] [⬇️ 写入正向/负向]`), ensuring canvas node injection is always 1-click away and never buried inside collapsed drawers;
   `prompt_composition.js` provides bidirectional schema mapping (`planToWorkbenchDraft` and `workbenchDraftToSavedPlan`) ensuring
   100% roundtrip data integrity across `anomalous-prompt-plan-v1` and `version: 2`, lossless legacy dual-role splitting and trailing text retention,
   `categorizePromptSnippet`, `smartSortPromptBlocks`, `assemblePromptBlocks`, as well as backward-compatible text joining;

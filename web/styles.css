@@ -9581,51 +9581,37 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: rgba(239, 68, 68, 0.12);
 }
 
-.anomalous-prompt-meta-strip {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 8px;
-    margin: 2px 10px 0;
-    border-radius: var(--amb-radius-control, 6px);
-    background: var(--amb-bg-panel, #1C1E24);
-    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.08));
-    flex-wrap: wrap;
-    box-sizing: border-box;
-}
-
-.anomalous-prompt-meta-strip input {
-    background: var(--amb-bg-input, #181a22);
-    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.12));
+.anomalous-prompt-name-input {
+    background: var(--amb-bg-input, rgba(0, 0, 0, 0.35));
+    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.14));
     border-radius: var(--amb-radius-control, 6px);
     padding: 3px 8px;
-    height: 28px;
+    height: 26px;
     color: var(--amb-text-main, #f1f5f9);
     font-size: 0.78rem;
     outline: none;
-    transition: border-color 0.15s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
     box-sizing: border-box;
+    flex: 1 1 160px;
+    min-width: 100px;
+    max-width: 240px;
 }
 
-.anomalous-prompt-meta-strip input:focus {
-    border-color: var(--amb-border-hover, rgba(255, 255, 255, 0.25));
+.anomalous-prompt-name-input:focus {
+    border-color: #38bdf8;
+    background: rgba(0, 0, 0, 0.55);
 }
 
-.anomalous-prompt-name-input {
-    flex: 2 1 200px;
-    min-width: 140px;
-}
-
-.anomalous-prompt-tags-input {
-    flex: 1 1 140px;
-    min-width: 110px;
+.anomalous-prompt-name-input.is-invalid {
+    border-color: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
 }
 
 .anomalous-prompt-insert-pos {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.8rem;
+    gap: 4px;
+    font-size: 0.76rem;
     color: var(--amb-text-muted, #94a3b8);
 }
 
@@ -9786,43 +9772,48 @@ dialog.anomalous-gallery-viewer::backdrop {
     color: #94a3b8;
 }
 
-/* 6. Active Target Status & Injection Bar */
+/* 6. Active Target Status & Injection Bar (Unified Action Dock Element) */
 .anomalous-prompt-target-bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 8px 12px;
-    border-radius: var(--amb-radius-control, 6px);
-    background: var(--amb-bg-card, #24262E);
-    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.08));
+    gap: 6px;
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    padding: 0;
 }
 
-.anomalous-prompt-target-info {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.82rem;
-    color: var(--amb-text-muted, #cbd5e1);
+.anomalous-target-node-badge {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .anomalous-prompt-target-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    gap: 5px;
+    flex-wrap: nowrap;
 }
 
 .anomalous-prompt-target-actions select {
     background: var(--amb-bg-input, #181a22);
-    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.12));
-    border-radius: var(--amb-radius-control, 6px);
-    padding: 4px 8px;
+    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.14));
+    border-radius: var(--amb-radius-control, 4px);
+    padding: 2px 6px;
     color: var(--amb-text-main, #f1f5f9);
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     outline: none;
     cursor: pointer;
+    height: 24px;
 }
 
 /* 7. Slide-out Material Import Drawer */
@@ -10544,117 +10535,95 @@ dialog.anomalous-gallery-viewer::backdrop {
     box-sizing: border-box;
 }
 
-/* Responsive View Switcher Bar */
-.anomalous-prompt-view-switcher {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 4px 8px;
-    background: var(--amb-bg-panel, #18191e);
-    border-radius: var(--amb-radius-control, 6px);
-    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.08));
-    margin: 6px 14px 0;
-    flex-shrink: 0;
-    box-sizing: border-box;
+/* Responsive Unified Dual-Zone Stream (for small container and narrow viewports) */
+@keyframes anomalous-just-added {
+    0% {
+        transform: scale(0.96);
+        box-shadow: 0 0 0 2px #38bdf8, 0 0 16px rgba(56, 189, 248, 0.4);
+    }
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 0 0 2px #4ade80, 0 0 20px rgba(74, 222, 128, 0.5);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
 }
 
-.anomalous-view-switcher-btn {
-    flex: 1;
-    padding: 4px 8px;
-    border-radius: 4px;
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--amb-text-muted, #94a3b8);
-    font-size: 0.74rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    text-align: center;
-    white-space: nowrap;
-}
-
-.anomalous-view-switcher-btn:hover {
-    color: var(--amb-text-main, #f1f5f9);
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.anomalous-view-switcher-btn.is-active {
-    background: var(--amb-bg-card-hover, rgba(255, 255, 255, 0.1));
-    border-color: var(--amb-border-hover, rgba(255, 255, 255, 0.16));
-    color: #ffffff;
-    font-weight: 600;
-}
-
-/* View Mode Toggles for Single-Column / Docked Mode */
-.anomalous-prompt-workbench-grid.is-view-left .anomalous-workbench-right-panel {
-    display: none !important;
-}
-.anomalous-prompt-workbench-grid.is-view-left .anomalous-workbench-left-panel {
-    display: flex !important;
-    height: 100% !important;
-    max-height: none !important;
-    flex: 1 !important;
-}
-
-.anomalous-prompt-workbench-grid.is-view-right .anomalous-workbench-left-panel {
-    display: none !important;
-}
-.anomalous-prompt-workbench-grid.is-view-right .anomalous-workbench-right-panel {
-    display: flex !important;
-    height: 100% !important;
-    max-height: none !important;
-    flex: 1 !important;
+.anomalous-mixer-block.is-just-added {
+    animation: anomalous-just-added 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @container prompt-workbench (max-width: 850px) {
-    .anomalous-prompt-view-switcher {
-        display: flex !important;
-    }
     .anomalous-prompt-workbench-grid {
-        grid-template-columns: 1fr !important;
-        overflow-y: auto !important;
-        gap: 12px !important;
-        padding: 8px 10px 12px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        gap: 8px !important;
+        padding: 4px 6px 8px !important;
     }
-    .anomalous-prompt-meta-strip {
-        flex-wrap: wrap !important;
-        gap: 6px !important;
-        margin: 4px 10px 0 !important;
-        padding: 6px 10px !important;
-    }
-    .anomalous-prompt-name-input,
-    .anomalous-prompt-tags-input {
-        flex: 1 1 100% !important;
-    }
-    .anomalous-workbench-left-panel {
-        height: auto !important;
-        min-height: 320px !important;
-        max-height: 480px !important;
-    }
+    /* Upper Zone: 顺序拼装台 (Mixer Stage) */
     .anomalous-workbench-right-panel {
-        height: auto !important;
-        min-height: 420px !important;
+        order: 1 !important;
+        flex: 1 1 50% !important;
+        min-height: 160px !important;
+        max-height: 55% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        padding: 8px 8px 6px !important;
+    }
+    /* Lower Zone: 候选词卡库 (Cards Deck) */
+    .anomalous-workbench-left-panel {
+        order: 2 !important;
+        flex: 1 1 50% !important;
+        min-height: 160px !important;
+        max-height: 50% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        padding: 8px 8px 6px !important;
+    }
+    /* Compact 2-column cards grid in narrow mode */
+    .anomalous-source-cards-list {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+        gap: 6px !important;
+        align-content: start !important;
+    }
+    .anomalous-source-prompt-card {
+        padding: 6px 8px !important;
+        gap: 4px !important;
+        cursor: pointer !important;
+    }
+    .anomalous-source-card-snippet {
+        -webkit-line-clamp: 1 !important;
+        font-size: 0.7rem !important;
     }
 }
 
 @media (max-width: 860px) {
-    .anomalous-prompt-view-switcher {
-        display: flex;
-    }
     .anomalous-prompt-workbench-grid {
-        grid-template-columns: 1fr;
-        overflow-y: auto;
-        gap: 12px;
-    }
-    .anomalous-workbench-left-panel {
-        height: auto;
-        min-height: 320px;
-        max-height: 480px;
+        display: flex !important;
+        flex-direction: column !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        gap: 8px !important;
+        padding: 4px 6px 8px !important;
     }
     .anomalous-workbench-right-panel {
-        height: auto;
-        min-height: 420px;
+        order: 1 !important;
+        flex: 1 1 50% !important;
+        min-height: 160px !important;
+        max-height: 55% !important;
+    }
+    .anomalous-workbench-left-panel {
+        order: 2 !important;
+        flex: 1 1 50% !important;
+        min-height: 160px !important;
+        max-height: 50% !important;
     }
 }
 
@@ -12165,64 +12134,159 @@ button:hover .anomalous-btn-icon {
 
 /* Sidebar / Docked Mode Dedicated Adapters for Prompt Studio */
 #anomalous-container.anomalous-docked .anomalous-prompt-workbench {
-    padding: 8px 10px 12px;
-    gap: 8px;
+    padding: 6px 8px 8px;
+    gap: 6px;
 }
 
 #anomalous-container.anomalous-docked .anomalous-prompt-topbar {
-    padding-bottom: 8px;
-    gap: 8px;
-    flex-wrap: wrap;
+    padding: 4px 6px 6px;
+    gap: 6px;
+    flex-wrap: nowrap;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 #anomalous-container.anomalous-docked .anomalous-prompt-topbar-left {
-    gap: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
 }
 
 #anomalous-container.anomalous-docked .anomalous-prompt-topbar-left h3 {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+    margin: 0;
+    white-space: nowrap;
+}
+
+#anomalous-container.anomalous-docked .anomalous-prompt-name-input {
+    flex: 1 1 100px;
+    min-width: 60px;
+    max-width: 200px;
+    height: 26px;
+    padding: 2px 6px;
+    font-size: 0.76rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: #f1f5f9;
+}
+
+#anomalous-container.anomalous-docked .anomalous-prompt-name-input:focus {
+    border-color: #38bdf8;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+#anomalous-container.anomalous-docked .anomalous-prompt-name-input.is-invalid {
+    border-color: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
 }
 
 #anomalous-container.anomalous-docked .anomalous-prompt-topbar-actions {
-    gap: 6px;
-}
-
-#anomalous-container.anomalous-docked .anomalous-prompt-meta-strip {
-    margin: 4px 4px 0;
-    padding: 6px 8px;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-#anomalous-container.anomalous-docked .anomalous-prompt-name-input,
-#anomalous-container.anomalous-docked .anomalous-prompt-tags-input {
-    flex: 1 1 100%;
-    min-width: 0;
-    width: 100%;
-}
-
-#anomalous-container.anomalous-docked .anomalous-prompt-view-switcher {
-    display: flex !important;
-    margin: 4px 4px 0;
+    gap: 4px;
+    flex-shrink: 0;
 }
 
 #anomalous-container.anomalous-docked .anomalous-prompt-workbench-grid {
-    grid-template-columns: 1fr !important;
-    padding: 8px 4px 10px;
-    gap: 10px;
-    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    gap: 6px !important;
+    padding: 4px 6px 6px !important;
 }
 
-#anomalous-container.anomalous-docked .anomalous-workbench-left-panel,
 #anomalous-container.anomalous-docked .anomalous-workbench-right-panel {
-    padding: 10px;
-    gap: 8px;
+    order: 1 !important;
+    flex: 1 1 50% !important;
+    min-height: 150px !important;
+    max-height: 54% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    padding: 8px 8px 4px !important;
+    gap: 6px !important;
 }
 
 #anomalous-container.anomalous-docked .anomalous-workbench-left-panel {
-    min-height: 280px;
+    order: 2 !important;
+    flex: 1 1 50% !important;
+    min-height: 150px !important;
+    max-height: 50% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    padding: 8px 8px 6px !important;
+    gap: 6px !important;
 }
 
-#anomalous-container.anomalous-docked .anomalous-workbench-right-panel {
-    min-height: 380px;
+#anomalous-container.anomalous-docked .anomalous-source-cards-list {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+    gap: 6px !important;
+    overflow-y: auto !important;
+    align-content: start !important;
+    padding-right: 2px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-source-prompt-card {
+    padding: 5px 7px !important;
+    gap: 3px !important;
+    border-radius: 5px !important;
+    cursor: pointer !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-source-card-snippet {
+    -webkit-line-clamp: 1 !important;
+    font-size: 0.68rem !important;
+    padding: 2px 4px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-mixer-blocks-container {
+    gap: 5px !important;
+    padding: 2px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-mixer-block {
+    border-radius: 5px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-mixer-block-header {
+    padding: 3px 6px !important;
+    gap: 4px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-mixer-block-body {
+    padding: 2px 6px 3px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-mixer-block-textarea {
+    min-height: 24px !important;
+    height: 24px !important;
+    font-size: 0.72rem !important;
+    padding: 2px 4px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-mixer-deck-output.anomalous-prompt-action-dock {
+    padding: 3px 6px !important;
+    gap: 3px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-mixer-output-summary {
+    min-height: 26px !important;
+    gap: 4px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-mixer-output-stats {
+    font-size: 0.68rem !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-prompt-target-actions {
+    gap: 4px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-prompt-target-actions select {
+    height: 22px !important;
+    padding: 1px 4px !important;
+    font-size: 0.68rem !important;
 }
