@@ -1963,6 +1963,21 @@ export function createDOM() {
                     }
                 },
                 {
+                    id: 'prompt-translator',
+                    icon: '🌐',
+                    shortTitle: t('toolPromptTranslatorShort'),
+                    title: t('toolPromptTranslatorTitle'),
+                    desc: t('toolPromptTranslatorDesc'),
+                    badge: null,
+                    isReady: true,
+                    action: () => {
+                        toolboxModal.style.display = 'none';
+                        if (typeof this.openPromptTranslator === 'function') {
+                            this.openPromptTranslator();
+                        }
+                    }
+                },
+                {
                     id: 'orphan-cleaner',
                     icon: '🧹',
                     shortTitle: t('toolOrphanCleanerShort'),

@@ -6,6 +6,7 @@ import { showNotebooks, closeWorkspace, refreshNotebooks, saveCurrentNotebook, d
 import { showRecipes, refreshRecipes, renderRecipeList, handleSaveRecipe } from './modules/ui_recipes.js';
 import { showMaterials, refreshMaterials, openSavedMaterial, openMaterialLibrary } from './modules/ui_materials.js';
 import { openPromptStudio } from './modules/ui_prompt_composer.js';
+import { openPromptTranslator } from './modules/ui_prompt_translator.js';
 import { showImageWorkbench } from './modules/ui_gallery_detail.js';
 import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, _openGalleryReplacer, openLoraInsertionPicker, runGlobalDoctorScan } from './modules/ui_doctor.js';
 import { app } from "../../scripts/app.js";
@@ -666,6 +667,7 @@ AnomalousBrowser.prototype.showMaterials = showMaterials;
 AnomalousBrowser.prototype.openSavedMaterial = openSavedMaterial;
 AnomalousBrowser.prototype.openMaterialLibrary = openMaterialLibrary;
 AnomalousBrowser.prototype.openPromptStudio = openPromptStudio;
+AnomalousBrowser.prototype.openPromptTranslator = function() { openPromptTranslator(this); };
 AnomalousBrowser.prototype.refreshMaterials = refreshMaterials;
 
 AnomalousBrowser.prototype.loadGalleryImages = loadGalleryImages;

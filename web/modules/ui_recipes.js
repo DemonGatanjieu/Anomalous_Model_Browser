@@ -877,19 +877,30 @@ function buildRecipeStudioTopbar(owner) {
         input.click();
     };
 
+    const closeBtn = appendText(right, 'button', '✕', 'anomalous-recipe-topbar-btn anomalous-recipe-topbar-close');
+    closeBtn.type = 'button';
+    closeBtn.title = t('workspaceClose') || (window.anomalous_browser_lang === 'zh' ? '关闭' : 'Close');
+    closeBtn.onclick = () => owner.closeWorkspace();
+
     topbar.appendChild(right);
     return topbar;
 }
 
 export async function showRecipes() {
     this.closePromptImportDrawer?.();
-    if (!this.notebookContainer) {
-        this.nbPanel.style.display = 'flex';
-        await this.showNotebooks();
-    }
     if (this.materialContainer) this.materialContainer.style.display = 'none';
     if (this.promptStudioContainer) this.promptStudioContainer.style.display = 'none';
-    this.notebookContainer.style.display = 'flex';
+    if (this.notebookContainer) this.notebookContainer.style.display = 'none';
+
+    if (this.nbPanel) this.nbPanel.style.display = 'flex';
+
+    if (!this.recipeContainer) {
+        this.recipeContainer = document.createElement('div');
+        this.recipeContainer.className = 'anomalous-nb-container anomalous-recipe-container';
+        this.nbPanel.appendChild(this.recipeContainer);
+    }
+    this.recipeContainer.style.display = 'flex';
+
     if (typeof this.recipeModelReturn === 'function') {
         const returnToRecipe = this.recipeModelReturn;
         this.recipeModelReturn = null;
@@ -897,10 +908,11 @@ export async function showRecipes() {
         return;
     }
     this.recipeDetailFinish?.('closed');
-    this.notebookBody.style.display = 'none';
+    if (this.notebookBody) this.notebookBody.style.display = 'none';
     if (this.materialView) this.materialView.style.display = 'none';
     this.notebookNotesTab?.classList.remove('active');
     this.notebookRecipesTab?.classList.add('active');
+
     if (this.recipeDetailView) {
         this.recipeDetailView.remove();
         this.recipeDetailView = null;
@@ -937,7 +949,7 @@ export async function showRecipes() {
     this.recipeListContainer = document.createElement('div');
     this.recipeListContainer.className = `anomalous-recipe-list ${this.recipeViewMode === 'list' ? 'is-list' : 'is-grid'}`;
     this.recipeView.appendChild(this.recipeListContainer);
-    this.notebookContainer.appendChild(this.recipeView);
+    this.recipeContainer.appendChild(this.recipeView);
     await this.refreshRecipes();
 }
 

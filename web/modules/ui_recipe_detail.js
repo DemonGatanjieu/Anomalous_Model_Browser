@@ -1479,6 +1479,7 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
                     owner.modal?.classList.add('visible');
                     if (owner.nbPanel) owner.nbPanel.style.display = 'flex';
                     if (owner.notebookBody) owner.notebookBody.style.display = 'none';
+                    if (owner.recipeContainer) owner.recipeContainer.style.display = 'flex';
                     owner.notebookNotesTab?.classList.remove('active');
                     owner.notebookRecipesTab?.classList.add('active');
                     if (owner.detailPanel) {

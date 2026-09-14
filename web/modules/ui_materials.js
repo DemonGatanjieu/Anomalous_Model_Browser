@@ -33,6 +33,7 @@ function hideSiblingWorkspaceViews(owner) {
     if (owner.notebookBody) owner.notebookBody.style.display = 'none';
     if (owner.recipeView) owner.recipeView.style.display = 'none';
     if (owner.promptStudioContainer) owner.promptStudioContainer.style.display = 'none';
+    if (owner.recipeContainer) owner.recipeContainer.style.display = 'none';
     owner.notebookNotesTab?.classList.remove('active');
     owner.notebookRecipesTab?.classList.remove('active');
 }
@@ -518,8 +519,9 @@ function renderMaterialCard(owner, material) {
         deleteMaterial(owner, material);
     };
     card.appendChild(remove);
-    actionsWrapper.appendChild(remove.cloneNode(true));
-    actionsWrapper.lastChild.onclick = remove.onclick;
+    const removeClone = typeof remove.cloneNode === 'function' ? remove.cloneNode(true) : document.createElement('button');
+    actionsWrapper.appendChild(removeClone);
+    removeClone.onclick = remove.onclick;
 
     if (!owner.materialApplyMode && (material.capabilities || []).includes('open_workflow')) {
         const quickOpen = document.createElement('button');
@@ -536,8 +538,9 @@ function renderMaterialCard(owner, material) {
             }
         };
         card.appendChild(quickOpen);
-        actionsWrapper.appendChild(quickOpen.cloneNode(true));
-        actionsWrapper.lastChild.onclick = quickOpen.onclick;
+        const quickOpenClone = typeof quickOpen.cloneNode === 'function' ? quickOpen.cloneNode(true) : document.createElement('button');
+        actionsWrapper.appendChild(quickOpenClone);
+        quickOpenClone.onclick = quickOpen.onclick;
     }
 
     const preview = document.createElement('div');
@@ -757,7 +760,7 @@ function buildMaterialTopbar(owner) {
 
     // 视图切换 (网格 / 列表)
     const viewSwitch = text(right, 'div', '', 'anomalous-material-view-switch');
-    const currentMode = owner.materialViewMode || localStorage.getItem('anomalous_material_view_mode') || 'grid';
+    const currentMode = owner.materialViewMode || (typeof localStorage !== 'undefined' ? localStorage.getItem('anomalous_material_view_mode') : null) || 'grid';
     owner.materialViewMode = currentMode;
 
     const gridBtn = text(viewSwitch, 'button', '', `anomalous-material-view-btn${currentMode === 'grid' ? ' is-active' : ''}`);
@@ -772,7 +775,7 @@ function buildMaterialTopbar(owner) {
 
     gridBtn.onclick = () => {
         owner.materialViewMode = 'grid';
-        localStorage.setItem('anomalous_material_view_mode', 'grid');
+        if (typeof localStorage !== 'undefined') localStorage.setItem('anomalous_material_view_mode', 'grid');
         gridBtn.classList.add('is-active');
         listBtn.classList.remove('is-active');
         owner.materialList?.classList.remove('is-list');
@@ -781,7 +784,7 @@ function buildMaterialTopbar(owner) {
 
     listBtn.onclick = () => {
         owner.materialViewMode = 'list';
-        localStorage.setItem('anomalous_material_view_mode', 'list');
+        if (typeof localStorage !== 'undefined') localStorage.setItem('anomalous_material_view_mode', 'list');
         listBtn.classList.add('is-active');
         gridBtn.classList.remove('is-active');
         owner.materialList?.classList.remove('is-grid');
@@ -961,6 +964,7 @@ function updateMaterialContext(owner) {
         ? t(owner.materialApplyMode ? 'materialApplyingTo' : 'materialSelectedTarget', { name: materialNodeHeading(node), id: node.id })
         : t('materialSelectOneNode'));
     if (node) {
+        const toggle = text(owner.materialContext, 'button', t(owner.materialApplyMode ? 'materialBrowseAll' : 'materialShowCompatible'), 'anomalous-btn-ghost');
         toggle.onclick = () => {
             owner.materialApplyMode = !owner.materialApplyMode;
             owner.materialKind = '';

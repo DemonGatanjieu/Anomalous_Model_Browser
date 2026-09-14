@@ -109,10 +109,11 @@ DOM or live LiteGraph state.
   seamless non-shifting click-to-copy Bento spec tiles with error retry state,
   keyboard accessible focus indicators, full-width generation parameter saving to Material Library,
   and segmented Bento parameter inspection with ComfyUI canvas injection (`app.loadGraphData`).
-- `ui_notebooks.js`, `ui_recipes.js`, and `ui_recipe_detail.js` own Workspace
-  presentation, featuring an integrated Studio topbar (`.anomalous-recipe-topbar`) with responsive `flex-wrap: wrap`,
+- `ui_recipes.js` and `ui_recipe_detail.js` own Workflow Recipes (工作流配方)
+  presentation, completely decoupled from the legacy dual-tab Workspace container (`owner.recipeContainer`),
+  eliminating the redundant outer "工作区 / 提示词笔记 / 工作流配方" tabs; features an integrated Studio topbar (`.anomalous-recipe-topbar`) with responsive `flex-wrap: wrap`,
   a subtle 1px border-bottom (`rgba(255,255,255,0.05)`), scope filter micro-pills (`all`, `complete`, `partial`) with high-transparency default backgrounds,
-  unified search & tag dropdown, and dual view modes (uniform 264px Bento grid & compact list view);
+  unified search & tag dropdown, dual view modes (uniform 264px Bento grid & compact list view), and an inline topbar close button (`[✕]`);
   cards feature 136px golden-ratio top covers, clean titles without badge clutter (relocating isolated readiness dots into a sleek frosted-glass
   `anomalous-recipe-readiness-pill` chip at the bottom-left of the cover alongside base model pills), single-row ellipsis text tags (`white-space: nowrap; text-overflow: ellipsis`),
   top-right scope pills, and one-click canvas load (`🚀 载入画布` / `🧩 追加画布`, powered by quantum energy fluid micro-textures `btn_energy_core.webp` with sharp text drop-shadows);
@@ -135,7 +136,8 @@ DOM or live LiteGraph state.
   replaces legacy `<details>` and vertical text badges with smooth hover-reveal micro-actions and a glowing
   green active pulse dot (`.anomalous-preset-active-dot`); enforces 48px bottom safety padding to eliminate
   clipping and overlap.
-  `ui_notebooks.js` resolves the long-text input bottleneck through 300ms Debounce on `rawArea.oninput`,
+- `ui_notebooks.js` owns Prompt Notes (提示词笔记) presentation; eliminated intermediate dual tabs
+  (`.anomalous-nb-section-tabs`); resolves the long-text input bottleneck through 300ms Debounce on `rawArea.oninput`,
   `DocumentFragment` batch mounting in `updateVisualTags`, and modern CSS Grid layout (`.anomalous-nb-tag-row`)
   with hover-revealed copy buttons (`.anomalous-nb-copy-btn`); LoRA gallery performance is hardened via
   `content-visibility: auto`, `contain-intrinsic-size: 70px`, and fixed `aspect-ratio: 1/1` preventing Layout Shift.
@@ -147,6 +149,15 @@ DOM or live LiteGraph state.
   floating quick actions, and lazy DOM rendering; completely decoupled from Prompt Studio (no studio toggle, no docked side panel, and no card-level mixer buttons); delegates image inspection to `ui_gallery_detail.js`;
   `node_material_actions.js` owns shared transactional node application and guarded undo;
   the library and Node Assistant use `ui_material_application.js` for the same receipt.
+- `translation_service.js` owns atomic prompt translation logic and language intelligence;
+  bridges directly to the ComfyUI backend `POST /anomalous/translate` with DeepL API support and Google Translate fallback;
+  features `hasChinese` heuristic detection, automatic target language deduction (Chinese ➔ English, English ➔ Simplified Chinese),
+  in-memory LRU caching (500 entries) preventing redundant network roundtrips, robust error-resilient fallbacks, and multi-separator prompt tag splitting (`splitPromptTags`).
+- `ui_prompt_translator.js` owns the standalone Quick Prompt Translator (提示词翻译助手);
+  mounted directly to `document.body` with high z-index (999999) glassmorphism styling; registered in the Toolbox Hub (`openPromptTranslator`);
+  features live language selection, one-click ComfyUI canvas node prompt reading (`readSelectedNodePrompt`),
+  instant bilingual translation, interactive tag breakdown pill chips (`.anomalous-translator-chip`),
+  one-click copy, direct write to selected canvas text node (`writeToSelectedNode` via `applyNodeMaterialValues`), and one-click dispatch into Prompt Studio.
 - `ui_prompt_composer.js` owns the Prompt Studio Dual-Column Workbench (提示词工坊左右双分栏工作台), an independent tool accessed exclusively from the Toolbox Hub (`openPromptStudio`);
   rendered in its dedicated container (`owner.promptStudioContainer`) with its own header title and close button (`[✕]`), completely decoupled from the Material Library;
   provides a clean, professional studio workspace (`.anomalous-prompt-workbench`) stripped of gaudy neon effects, cyberpunk backgrounds, and pulsing glow animations;
@@ -157,13 +168,13 @@ DOM or live LiteGraph state.
   minimalist empty state container (`.anomalous-source-empty`), a streamlined col-header holding a unified action button group (`[🎯 提取]`, `[📥 导入]`, `[➕ 新建]`),
   one-click canvas node prompt extraction (`🎯 提取`, reading selected ComfyUI text nodes like `CLIPTextEncode` with downstream link connection traversal for accurate negative conditioning detection, auto-generating categorised cards) and one-click
   Material Library batch sync (`📥 导入`, cancellable fetch scoped to `category=prompts`), plus on-demand persistent card creation
-  (`➕ 新建`, with explicit positive/negative role radios and `/anomalous/save_prompt_plan` backend persistence; temporary cards
+  (`➕ 新建`, with explicit positive/negative role radios, built-in one-click `[🌐 翻译]` bilingual bridge, and `/anomalous/save_prompt_plan` backend persistence; temporary cards
   show `[未保存]` badge with one-click `💾 存入库`);
   the Assembler Stage hosts the sequential Lego block track (`anomalous-assembly-track`), compact modular blocks (~52px height) allowing generous top-to-bottom sequence stacking,
   supports bidirectional drag-and-drop reordering with ghost indicator lines, role-aware up/down swapping, instant A/B bypass toggles (greyscale dimming without deleting),
-  interactive category pills, one-click Smart Sort (`🪄 按分类排序`, Base ➔ Style ➔ Subject ➔ Trigger),
+  interactive category pills, dedicated block-level one-click `[🌐]` translation micro-buttons, one-click Smart Sort (`🪄 按分类排序`, Base ➔ Style ➔ Subject ➔ Trigger),
   an interactive Auto-snap Dock (`.anomalous-assembly-snap-dock`) positioned at the bottom of the track that magnetically detects dragover across the empty lower track area to auto-snap dragged cards or blocks to the end with animated visual guidance,
-  and a permanently visible sticky Action Dock (`.anomalous-prompt-action-dock`) at the bottom of the assembler stage: displays live synthesis statistics (`✨ X字 · Y块`), quick copy button (`[📋]`), expandable compiled text preview drawer (`[📄 最终文本 ▾]`), insertion position selector (`[在后 ▾] / [在前 ▾]`), and the ComfyUI canvas node direct injection bar (`[#ID 节点名称] [⬇️ 写入正向/负向]`), ensuring canvas node injection is always 1-click away and never buried inside collapsed drawers;
+  and a permanently visible sticky Action Dock (`.anomalous-prompt-action-dock`) at the bottom of the assembler stage: displays live synthesis statistics (`✨ X字 · Y块`), quick copy button (`[📋]`), one-click assembled prompt translation button (`[🌐]`), expandable compiled text preview drawer (`[📄 最终文本 ▾]`), insertion position selector (`[在后 ▾] / [在前 ▾]`), and the ComfyUI canvas node direct injection bar (`[#ID 节点名称] [⬇️ 写入正向/负向]`), ensuring canvas node injection is always 1-click away and never buried inside collapsed drawers;
   `prompt_composition.js` provides bidirectional schema mapping (`planToWorkbenchDraft` and `workbenchDraftToSavedPlan`) ensuring
   100% roundtrip data integrity across `anomalous-prompt-plan-v1` and `version: 2`, lossless legacy dual-role splitting and trailing text retention,
   `categorizePromptSnippet`, `smartSortPromptBlocks`, `assemblePromptBlocks`, as well as backward-compatible text joining;

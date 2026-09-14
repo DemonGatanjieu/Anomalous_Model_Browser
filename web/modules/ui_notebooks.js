@@ -59,6 +59,7 @@ export function closeWorkspace() {
     if (this.notebookBody) this.notebookBody.style.display = 'none';
     if (this.materialContainer) this.materialContainer.style.display = 'none';
     if (this.promptStudioContainer) this.promptStudioContainer.style.display = 'none';
+    if (this.recipeContainer) this.recipeContainer.style.display = 'none';
     if (this.nbPanel) this.nbPanel.style.display = 'none';
     restoreWorkspaceReturnPanel(this);
 }
@@ -69,6 +70,7 @@ export async function showNotebooks() {
         this.closePromptImportDrawer?.();
         if (this.materialContainer) this.materialContainer.style.display = 'none';
         if (this.promptStudioContainer) this.promptStudioContainer.style.display = 'none';
+        if (this.recipeContainer) this.recipeContainer.style.display = 'none';
         if (this.notebookContainer) this.notebookContainer.style.display = 'flex';
         if (this.nbInitialized) {
             this.nbPanel.style.display = 'flex';
@@ -90,19 +92,8 @@ export async function showNotebooks() {
         const headerMain = document.createElement('div');
         headerMain.className = 'anomalous-nb-header-main';
         const heading = document.createElement('h2');
-        heading.textContent = t('workspaceTitle');
-        const sectionTabs = document.createElement('div');
-        sectionTabs.className = 'anomalous-nb-section-tabs';
-        const notesTab = document.createElement('button');
-        notesTab.type = 'button';
-        notesTab.className = 'anomalous-nb-section-tab active';
-        notesTab.textContent = t('promptNotes');
-        const recipesTab = document.createElement('button');
-        recipesTab.type = 'button';
-        recipesTab.className = 'anomalous-nb-section-tab';
-        recipesTab.textContent = t('recipeTitle');
-        sectionTabs.append(notesTab, recipesTab);
-        headerMain.append(heading, sectionTabs);
+        heading.textContent = t('promptNotes') || (window.anomalous_browser_lang === 'zh' ? '提示词笔记' : 'Prompt Notes');
+        headerMain.append(heading);
         nbHeader.appendChild(headerMain);
         const closeNb = document.createElement('span');
         closeNb.className = 'anomalous-nb-close';
@@ -114,18 +105,6 @@ export async function showNotebooks() {
         body.className = 'anomalous-nb-body';
         this.notebookBody = body;
         this.notebookContainer = nbContainer;
-        this.notebookNotesTab = notesTab;
-        this.notebookRecipesTab = recipesTab;
-
-        notesTab.onclick = () => {
-            this.notebookBody.style.display = 'flex';
-            if (this.recipeView) this.recipeView.style.display = 'none';
-            if (this.materialView) this.materialView.style.display = 'none';
-            notesTab.classList.add('active');
-            recipesTab.classList.remove('active');
-            this.refreshNotebooks(true);
-        };
-        recipesTab.onclick = () => this.showRecipes();
 
         // Sidebar for notebooks list
         const sidebar = document.createElement('div');

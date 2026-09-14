@@ -8,6 +8,7 @@ import { composePromptPlan, joinPromptText, categorizePromptSnippet, smartSortPr
 import { applyNodeMaterialValues, promptWidgetTargets, selectedMaterialNode } from './node_material_actions.js';
 import { showMaterialApplication } from './ui_material_application.js';
 import { showMaterialSaved } from './material_feedback.js';
+import { translatePromptText } from './translation_service.js';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 const newDraft = () => ({
@@ -145,6 +146,7 @@ export async function openPromptStudio(owner = this) {
     if (owner.notebookContainer) owner.notebookContainer.style.display = 'none';
     if (owner.notebookBody) owner.notebookBody.style.display = 'none';
     if (owner.recipeView) owner.recipeView.style.display = 'none';
+    if (owner.recipeContainer) owner.recipeContainer.style.display = 'none';
     if (owner.materialContainer) owner.materialContainer.style.display = 'none';
     if (owner.materialView) owner.materialView.style.display = 'none';
 
@@ -538,6 +540,29 @@ function buildPromptComposer(owner, container, options = {}) {
     const copyOutputBtn = text(summaryLeft, 'button', `📋`, 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-quick-copy');
     copyOutputBtn.title = window.anomalous_browser_lang === 'zh' ? '复制当前合成的提示词' : 'Copy assembled prompt text';
 
+    const translateOutputBtn = text(summaryLeft, 'button', `🌐`, 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-quick-translate');
+    translateOutputBtn.title = window.anomalous_browser_lang === 'zh' ? '一键翻译当前合成词并复制到剪贴板' : 'Translate assembled prompt & copy';
+    translateOutputBtn.onclick = async (e) => {
+        e.stopPropagation();
+        const currentText = (draft?.plan?.[activeTab] || '').trim();
+        if (!currentText) return;
+        const origIcon = translateOutputBtn.textContent;
+        translateOutputBtn.textContent = '⏳';
+        try {
+            const res = await translatePromptText(currentText);
+            if (res.ok && res.translated) {
+                await navigator.clipboard.writeText(res.translated);
+                showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? `✓ 译文已复制至剪贴板: ${res.translated.slice(0, 30)}...` : `✓ Translated & copied: ${res.translated.slice(0, 30)}...`);
+            } else {
+                showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? `翻译失败: ${res.error || '网络错误'}` : `Translation failed: ${res.error || 'Network error'}`);
+            }
+        } catch (err) {
+            console.warn(err);
+        } finally {
+            translateOutputBtn.textContent = origIcon;
+        }
+    };
+
     // Target Node Direct Write Bar placed INSIDE outputSummary on the right side
     const targetBar = text(outputSummary, 'div', '', 'anomalous-prompt-target-bar');
     const targetWidgetIndexByNodeId = {};
@@ -887,6 +912,27 @@ function buildPromptComposer(owner, container, options = {}) {
 
         const formBtnRow = text(newCardForm, 'div', '', 'anomalous-form-btn-row');
         const submitBtn = text(formBtnRow, 'button', window.anomalous_browser_lang === 'zh' ? '✓ 保存并加入库' : '✓ Save to Library', 'anomalous-btn-primary anomalous-btn-sm');
+
+        const translateBtn = text(formBtnRow, 'button', window.anomalous_browser_lang === 'zh' ? '🌐 翻译' : '🌐 Translate', 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-card-translate');
+        translateBtn.type = 'button';
+        translateBtn.title = window.anomalous_browser_lang === 'zh' ? '一键双向翻译 (中/英互译)' : 'One-click bilingual translation';
+        translateBtn.onclick = async () => {
+            const raw = contentInput.value.trim();
+            if (!raw) return;
+            const originalText = translateBtn.textContent;
+            translateBtn.disabled = true;
+            translateBtn.textContent = '⏳ ...';
+            try {
+                const res = await translatePromptText(raw);
+                if (res.ok && res.translated) {
+                    contentInput.value = res.translated;
+                }
+            } finally {
+                translateBtn.disabled = false;
+                translateBtn.textContent = originalText;
+            }
+        };
+
         const cancelBtn = text(formBtnRow, 'button', t('cancel'), 'anomalous-btn-ghost anomalous-btn-sm');
 
         submitBtn.onclick = async () => {
@@ -1308,6 +1354,26 @@ function buildPromptComposer(owner, container, options = {}) {
 
             // Right Action micro buttons
             const headerRight = text(blockHeader, 'div', '', 'anomalous-mixer-block-header-right');
+
+            const transBtn = text(headerRight, 'button', '🌐', 'anomalous-mixer-block-btn is-translate');
+            transBtn.title = window.anomalous_browser_lang === 'zh' ? '一键翻译此块提示词' : 'Translate this block';
+            transBtn.onclick = async () => {
+                const raw = block.content || '';
+                if (!raw.trim()) return;
+                const orig = transBtn.textContent;
+                transBtn.textContent = '⏳';
+                try {
+                    const res = await translatePromptText(raw);
+                    if (res.ok && res.translated) {
+                        block.content = res.translated;
+                        textarea.value = res.translated;
+                        syncDraftSynthesizedText(draft);
+                        updateOutputPreview();
+                    }
+                } finally {
+                    transBtn.textContent = orig;
+                }
+            };
 
             const upBtn = text(headerRight, 'button', '▲', 'anomalous-mixer-block-btn');
             upBtn.title = window.anomalous_browser_lang === 'zh' ? '上移' : 'Move up';
