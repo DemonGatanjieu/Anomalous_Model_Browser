@@ -150,9 +150,9 @@ DOM or live LiteGraph state.
   `node_material_actions.js` owns shared transactional node application and guarded undo;
   the library and Node Assistant use `ui_material_application.js` for the same receipt.
 - `translation_service.js` owns atomic prompt translation logic and language intelligence;
-  bridges directly to the ComfyUI backend `POST /anomalous/translate` with DeepL API support and Google Translate fallback;
+  bridges directly to the ComfyUI backend `POST /anomalous/translate` with multi-engine fallback (DeepL API Key ➔ Google Chrome Dictionary Client (`dict-chrome-ex`, bypasses 429 rate limits) ➔ MyMemory Translation Engine);
   features `hasChinese` heuristic detection, automatic target language deduction (Chinese ➔ English, English ➔ Simplified Chinese),
-  in-memory LRU caching (500 entries) preventing redundant network roundtrips, robust error-resilient fallbacks, and multi-separator prompt tag splitting (`splitPromptTags`).
+  in-memory LRU caching (500 entries) preventing redundant network roundtrips, strict error propagation, and multi-separator prompt tag splitting (`splitPromptTags`).
 - `ui_prompt_translator.js` owns the standalone Quick Prompt Translator (提示词翻译助手);
   mounted directly to `document.body` with high z-index (999999) glassmorphism styling; registered in the Toolbox Hub (`openPromptTranslator`);
   features live language selection, one-click ComfyUI canvas node prompt reading (`readSelectedNodePrompt`),

@@ -71,10 +71,13 @@ export async function translatePromptText(text, options = {}) {
         }
 
         const data = await response.json();
-        const translated = String(data.translated ?? raw).trim();
+        if (data.status === 'error' || data.error) {
+            throw new Error(data.error || 'Translation service failed');
+        }
 
-        if (data.error && !translated) {
-            throw new Error(data.error);
+        const translated = String(data.translated ?? '').trim();
+        if (!translated) {
+            throw new Error('Empty translation response');
         }
 
         // Cache the successful result (limit cache to 500 items)
@@ -84,7 +87,7 @@ export async function translatePromptText(text, options = {}) {
         }
         translationCache.set(cacheKey, translated);
 
-        return { ok: true, translated, targetLang };
+        return { ok: true, translated, targetLang, engine: data.engine };
     } catch (err) {
         console.warn('[Anomalous Translation] Translate failed:', err);
         return {
@@ -94,4 +97,11 @@ export async function translatePromptText(text, options = {}) {
             error: err.message || 'Translation request failed',
         };
     }
+}
+
+/**
+ * Clears the in-memory translation cache.
+ */
+export function clearTranslationCache() {
+    translationCache.clear();
 }

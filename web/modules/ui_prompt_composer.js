@@ -926,6 +926,9 @@ function buildPromptComposer(owner, container, options = {}) {
                 const res = await translatePromptText(raw);
                 if (res.ok && res.translated) {
                     contentInput.value = res.translated;
+                    showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? `✓ 已翻译为${res.targetLang === 'en' ? '英文' : '中文'}` : `✓ Translated to ${res.targetLang}`);
+                } else {
+                    showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? `翻译失败: ${res.error || '网络错误'}` : `Translation failed: ${res.error || 'Network error'}`);
                 }
             } finally {
                 translateBtn.disabled = false;
@@ -1369,6 +1372,9 @@ function buildPromptComposer(owner, container, options = {}) {
                         textarea.value = res.translated;
                         syncDraftSynthesizedText(draft);
                         updateOutputPreview();
+                        showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? `✓ 词块已翻译为${res.targetLang === 'en' ? '英文' : '中文'}` : `✓ Block translated to ${res.targetLang}`);
+                    } else {
+                        showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? `翻译失败: ${res.error || '网络错误'}` : `Translation failed: ${res.error || 'Network error'}`);
                     }
                 } finally {
                     transBtn.textContent = orig;
