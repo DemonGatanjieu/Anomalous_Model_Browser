@@ -6,7 +6,7 @@
  */
 
 import { app } from '../../../scripts/app.js';
-import { translatePromptText, splitPromptTags, hasChinese } from './translation_service.js';
+import { translatePromptText, splitPromptTags, normalizePromptFormatting, hasChinese } from './translation_service.js';
 import { selectedMaterialNode, promptWidgetTargets, applyNodeMaterialValues } from './node_material_actions.js';
 import { appendPromptToStudio } from './ui_prompt_composer.js';
 
@@ -260,6 +260,20 @@ export function openPromptTranslator(owner) {
     const targetActions = document.createElement('div');
     targetActions.className = 'anomalous-translator-action-bar';
 
+    const cleanBtn = document.createElement('button');
+    cleanBtn.type = 'button';
+    cleanBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
+    cleanBtn.innerHTML = `🧹 ${t('规范化标签', 'Normalize Tags')}`;
+    cleanBtn.title = t('将顿号、中文全角逗号等标点统一规范化为标准的英文逗号与空格 (tag, tag)', 'Normalize commas, Chinese enumeration marks, and semicolons to standard tags');
+    cleanBtn.onclick = () => {
+        const raw = targetTextarea.value.trim();
+        if (!raw) return;
+        const cleaned = normalizePromptFormatting(raw);
+        targetTextarea.value = cleaned;
+        updateTagChips(cleaned);
+        showTranslatorToast(modal, t('✓ 已规范化为标准标签格式 (, )', '✓ Normalized to standard tags (, )'));
+    };
+
     const copyBtn = document.createElement('button');
     copyBtn.type = 'button';
     copyBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
@@ -277,10 +291,15 @@ export function openPromptTranslator(owner) {
     writeNodeBtn.innerHTML = `✏️ ${t('写入当前选中节点', 'Write to Canvas Node')}`;
     writeNodeBtn.title = t('将译文写入 ComfyUI 画布当前选中的文本节点', 'Write translated text to active ComfyUI node');
     writeNodeBtn.onclick = () => {
-        const out = targetTextarea.value.trim();
+        let out = targetTextarea.value.trim();
         if (!out) {
             showTranslatorToast(modal, t('请先翻译或输入文本', 'No text to write'), true);
             return;
+        }
+        if (/[，、;；|｜]/.test(out) && !hasChinese(out)) {
+            out = normalizePromptFormatting(out);
+            targetTextarea.value = out;
+            updateTagChips(out);
         }
         const res = writeToSelectedNode(out);
         showTranslatorToast(modal, res.message, !res.success);
@@ -292,8 +311,11 @@ export function openPromptTranslator(owner) {
     sendToStudioBtn.innerHTML = `🎛️ ${t('发送到提示词工坊', 'Send to Studio')}`;
     sendToStudioBtn.title = t('将译文发送到提示词工坊拼装组装', 'Send translated text as block to Prompt Studio');
     sendToStudioBtn.onclick = () => {
-        const out = targetTextarea.value.trim();
+        let out = targetTextarea.value.trim();
         if (!out) return;
+        if (/[，、;；|｜]/.test(out) && !hasChinese(out)) {
+            out = normalizePromptFormatting(out);
+        }
         overlay.remove();
         activeTranslatorModal = null;
         if (typeof owner?.openPromptStudio === 'function') {
@@ -302,7 +324,7 @@ export function openPromptTranslator(owner) {
         appendPromptToStudio(owner, out, true, t('翻译结果', 'Translated Prompt'));
     };
 
-    targetActions.append(copyBtn, sendToStudioBtn, writeNodeBtn);
+    targetActions.append(cleanBtn, copyBtn, sendToStudioBtn, writeNodeBtn);
     targetPane.appendChild(targetActions);
     body.appendChild(targetPane);
 

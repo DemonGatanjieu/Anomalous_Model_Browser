@@ -19,16 +19,28 @@ export function hasChinese(text) {
 
 /**
  * Splits a prompt string into trimmed comma-separated tags or phrases.
- * Supports both English and Chinese commas, plus newlines.
+ * Supports English/Chinese commas, enumeration marks (顿号 、), semicolons, pipes, and newlines.
  * @param {string} text 
  * @returns {string[]}
  */
 export function splitPromptTags(text) {
     if (!text || typeof text !== 'string') return [];
     return text
-        .split(/[,，\n\r]+/)
+        .split(/[,，、;；|｜\n\r]+/)
         .map(t => t.trim())
         .filter(Boolean);
+}
+
+/**
+ * Normalizes punctuation and formatting of a prompt text into standard comma-separated tags.
+ * Converts Chinese commas, enumeration marks (顿号), semicolons, pipes, and newlines into clean `, `.
+ * @param {string} text 
+ * @param {string} [delimiter=', ']
+ * @returns {string}
+ */
+export function normalizePromptFormatting(text, delimiter = ', ') {
+    const tags = splitPromptTags(text);
+    return tags.join(delimiter);
 }
 
 /**
