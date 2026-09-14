@@ -129,40 +129,310 @@ export function addPromptToDraft(owner, name, positive, negative = '') {
     showPromptComposer(owner);
 }
 
+export function openPromptInspectorModal(owner, draft, defaultRole = 'positive', onApplyToNode = null) {
+    const existing = document.querySelector('.anomalous-prompt-inspector-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'anomalous-prompt-inspector-overlay';
+
+    const modal = document.createElement('div');
+    modal.className = 'anomalous-prompt-inspector-modal';
+    overlay.appendChild(modal);
+
+    let currentRole = defaultRole || 'positive';
+
+    // Header
+    const header = document.createElement('header');
+    header.className = 'anomalous-inspector-header';
+    const h3 = document.createElement('h3');
+    h3.textContent = window.anomalous_browser_lang === 'zh' ? '🔍 提示词深度全览与精修' : '🔍 Prompt Inspector & Editor';
+    h3.style.margin = '0';
+    h3.style.fontSize = '0.92rem';
+    h3.style.color = '#e2e8f0';
+    header.appendChild(h3);
+
+    // Role Tabs
+    const tabsWrap = document.createElement('div');
+    tabsWrap.style.display = 'flex';
+    tabsWrap.style.gap = '6px';
+
+    const posTab = document.createElement('button');
+    posTab.className = `anomalous-btn-ghost anomalous-btn-sm${currentRole === 'positive' ? ' is-active' : ''}`;
+    posTab.textContent = `🔆 ${window.anomalous_browser_lang === 'zh' ? '正向提示词' : 'Positive'}`;
+
+    const negTab = document.createElement('button');
+    negTab.className = `anomalous-btn-ghost anomalous-btn-sm${currentRole === 'negative' ? ' is-active' : ''}`;
+    negTab.textContent = `🌙 ${window.anomalous_browser_lang === 'zh' ? '负向提示词' : 'Negative'}`;
+
+    tabsWrap.appendChild(posTab);
+    tabsWrap.appendChild(negTab);
+    header.appendChild(tabsWrap);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
+    closeBtn.textContent = '✕';
+    closeBtn.title = window.anomalous_browser_lang === 'zh' ? '关闭 (Esc)' : 'Close (Esc)';
+    closeBtn.onclick = () => overlay.remove();
+    header.appendChild(closeBtn);
+
+    // Body
+    const body = document.createElement('div');
+    body.className = 'anomalous-inspector-body';
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'anomalous-inspector-textarea';
+    textarea.spellcheck = false;
+
+    syncDraftSynthesizedText(draft);
+    textarea.value = draft?.plan?.[currentRole] || '';
+
+    const updateStats = () => {
+        const val = textarea.value;
+        const words = val.split(/[,，\s\n]+/).filter(Boolean).length;
+        statsEl.textContent = `${val.length} ${window.anomalous_browser_lang === 'zh' ? '字符' : 'chars'} · ~${words} ${window.anomalous_browser_lang === 'zh' ? '词' : 'words'}`;
+    };
+
+    const updateTabStyles = () => {
+        posTab.classList.toggle('is-active', currentRole === 'positive');
+        negTab.classList.toggle('is-active', currentRole === 'negative');
+        textarea.value = draft?.plan?.[currentRole] || '';
+        updateStats();
+    };
+
+    posTab.onclick = () => { currentRole = 'positive'; updateTabStyles(); };
+    negTab.onclick = () => { currentRole = 'negative'; updateTabStyles(); };
+
+    body.appendChild(textarea);
+
+    // Footer
+    const footer = document.createElement('footer');
+    footer.className = 'anomalous-inspector-footer';
+
+    const statsEl = document.createElement('div');
+    statsEl.style.fontSize = '0.75rem';
+    statsEl.style.color = '#94a3b8';
+    statsEl.style.fontFamily = 'monospace';
+
+    textarea.oninput = () => {
+        if (draft?.plan) draft.plan[currentRole] = textarea.value;
+        updateStats();
+    };
+    updateStats();
+
+    footer.appendChild(statsEl);
+
+    const actions = document.createElement('div');
+    actions.style.display = 'flex';
+    actions.style.gap = '6px';
+
+    // Normalize formatting
+    const normBtn = document.createElement('button');
+    normBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
+    normBtn.textContent = `🧹 ${window.anomalous_browser_lang === 'zh' ? '规范化' : 'Normalize'}`;
+    normBtn.title = window.anomalous_browser_lang === 'zh' ? '清理多余顿号、分号与重复逗号' : 'Clean formatting and punctuation';
+    normBtn.onclick = () => {
+        const cleaned = textarea.value
+            .replace(/[,，、;；|｜\n\r]+/g, ', ')
+            .replace(/\s+,/g, ',')
+            .replace(/,\s*,/g, ', ')
+            .replace(/^\s*,\s*|\s*,\s*$/g, '')
+            .trim();
+        textarea.value = cleaned;
+        if (draft?.plan) draft.plan[currentRole] = cleaned;
+        updateStats();
+    };
+    actions.appendChild(normBtn);
+
+    // Translate
+    const transBtn = document.createElement('button');
+    transBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
+    transBtn.textContent = `🌐 ${window.anomalous_browser_lang === 'zh' ? '翻译' : 'Translate'}`;
+    transBtn.onclick = async () => {
+        const raw = textarea.value.trim();
+        if (!raw) return;
+        const orig = transBtn.textContent;
+        transBtn.textContent = '⏳';
+        try {
+            const res = await translatePromptText(raw);
+            if (res.ok && res.translated) {
+                textarea.value = res.translated;
+                if (draft?.plan) draft.plan[currentRole] = res.translated;
+                updateStats();
+            }
+        } finally {
+            transBtn.textContent = orig;
+        }
+    };
+    actions.appendChild(transBtn);
+
+    // Copy
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
+    copyBtn.textContent = `📋 ${window.anomalous_browser_lang === 'zh' ? '复制' : 'Copy'}`;
+    copyBtn.onclick = async () => {
+        await navigator.clipboard.writeText(textarea.value);
+        copyBtn.textContent = '✓';
+        setTimeout(() => { if (copyBtn.isConnected) copyBtn.textContent = `📋 ${window.anomalous_browser_lang === 'zh' ? '复制' : 'Copy'}`; }, 1200);
+    };
+    actions.appendChild(copyBtn);
+
+    // Apply to node & close
+    if (typeof onApplyToNode === 'function') {
+        const applyBtn = document.createElement('button');
+        applyBtn.className = 'anomalous-btn-primary anomalous-btn-sm';
+        applyBtn.textContent = `🚀 ${window.anomalous_browser_lang === 'zh' ? '写入节点并关闭' : 'Write Node & Close'}`;
+        applyBtn.onclick = async () => {
+            if (draft?.plan) draft.plan[currentRole] = textarea.value;
+            await onApplyToNode(currentRole, textarea.value);
+            overlay.remove();
+        };
+        actions.appendChild(applyBtn);
+    }
+
+    footer.appendChild(actions);
+
+    modal.appendChild(header);
+    modal.appendChild(body);
+    modal.appendChild(footer);
+
+    overlay.onclick = (e) => {
+        if (e.target === overlay) overlay.remove();
+    };
+
+    const onKey = (e) => {
+        if (e.key === 'Escape') {
+            window.removeEventListener('keydown', onKey);
+            overlay.remove();
+        }
+    };
+    window.addEventListener('keydown', onKey);
+
+    document.body.appendChild(overlay);
+}
+
+let activeStudioOverlay = null;
+let activeStudioDrawer = null;
+
+export function closePromptStudio(owner) {
+    if (activeStudioOverlay) {
+        activeStudioOverlay.remove();
+        activeStudioOverlay = null;
+        activeStudioDrawer = null;
+    }
+    if (owner?.sidePromptComposerControl) {
+        owner.sidePromptComposerControl = null;
+    }
+}
+
 export async function openPromptStudio(owner = this) {
+    closePromptStudio(owner);
     owner.closePromptImportDrawer?.();
-    owner.recipeDetailFinish?.('closed');
-    owner.modal?.classList.add('visible');
-    if (owner.nbPanel?.style.display !== 'flex' && !owner.workspaceReturnState) {
-        owner.workspaceReturnState = Object.fromEntries([
-            ['grid', owner.grid], ['detail', owner.detailPanel], ['gallery', owner.galleryPanel],
-            ['doctor', owner.doctorPanel], ['assistant', owner.assistantPanel],
-        ].filter(([, panel]) => panel).map(([key, panel]) => [key, panel.style.display]));
-    }
-    if (owner.nbPanel) owner.nbPanel.style.display = 'flex';
-    for (const panel of [owner.grid, owner.detailPanel, owner.galleryPanel, owner.doctorPanel, owner.assistantPanel, owner.paramPanel]) {
-        if (panel) panel.style.display = 'none';
-    }
-    if (owner.notebookContainer) owner.notebookContainer.style.display = 'none';
-    if (owner.notebookBody) owner.notebookBody.style.display = 'none';
-    if (owner.recipeView) owner.recipeView.style.display = 'none';
-    if (owner.recipeContainer) owner.recipeContainer.style.display = 'none';
-    if (owner.materialContainer) owner.materialContainer.style.display = 'none';
-    if (owner.materialView) owner.materialView.style.display = 'none';
 
-    if (!owner.promptStudioContainer) {
-        owner.promptStudioContainer = text(owner.nbPanel, 'div', '', 'anomalous-nb-container anomalous-prompt-studio-container');
+    // Canvas Focus Mode: If left master browser is visible, auto-collapse it so canvas has 80%+ space
+    if (owner?.modal?.classList.contains('visible')) {
+        if (typeof owner.close === 'function') {
+            owner.close();
+        }
     }
-    owner.promptStudioContainer.style.display = 'flex';
-    owner.promptStudioContainer.replaceChildren();
 
-    owner.promptComposerView?.remove();
-    owner.promptComposerView = null;
+    const overlay = document.createElement('div');
+    overlay.className = 'anomalous-prompt-studio-overlay';
+    activeStudioOverlay = overlay;
 
-    buildPromptComposer(owner, owner.promptStudioContainer, {
-        isSideStudio: false,
-        onClose: () => owner.closeWorkspace?.(),
+    const drawer = document.createElement('aside');
+    drawer.className = 'anomalous-prompt-studio-drawer';
+    activeStudioDrawer = drawer;
+    overlay.appendChild(drawer);
+
+    // Dock side persistence
+    const savedSide = localStorage.getItem('anomalous_studio_dock_side') || 'right';
+    if (savedSide === 'left') {
+        drawer.classList.add('is-dock-left');
+    }
+
+    // Sidebar width persistence & resize handle
+    const savedWidth = localStorage.getItem('anomalous_studio_sidebar_width') || '520';
+    drawer.style.width = `${Math.max(400, Math.min(window.innerWidth * 0.85, parseInt(savedWidth, 10)))}px`;
+
+    const resizeHandle = document.createElement('div');
+    resizeHandle.className = 'anomalous-studio-resize-handle';
+    resizeHandle.title = window.anomalous_browser_lang === 'zh'
+        ? '拖动调整侧边栏宽度，双击恢复默认'
+        : 'Drag to resize sidebar, double-click to reset';
+    drawer.appendChild(resizeHandle);
+
+    let isResizing = false;
+    let startX = 0;
+    let startWidth = 520;
+    resizeHandle.onmousedown = (e) => {
+        isResizing = true;
+        startX = e.clientX;
+        startWidth = drawer.getBoundingClientRect().width;
+        resizeHandle.classList.add('is-resizing');
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'ew-resize';
+
+        const onMouseMove = (moveEvt) => {
+            if (!isResizing) return;
+            const currentSide = drawer.classList.contains('is-dock-left') ? 'left' : 'right';
+            let newWidth;
+            if (currentSide === 'left') {
+                const deltaX = moveEvt.clientX - startX;
+                newWidth = Math.max(380, Math.min(window.innerWidth * 0.85, startWidth + deltaX));
+            } else {
+                const deltaX = startX - moveEvt.clientX;
+                newWidth = Math.max(380, Math.min(window.innerWidth * 0.85, startWidth + deltaX));
+            }
+            drawer.style.width = `${newWidth}px`;
+        };
+
+        const onMouseUp = () => {
+            if (!isResizing) return;
+            isResizing = false;
+            resizeHandle.classList.remove('is-resizing');
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            localStorage.setItem('anomalous_studio_sidebar_width', String(Math.round(drawer.getBoundingClientRect().width)));
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+    };
+
+    resizeHandle.ondblclick = () => {
+        drawer.style.width = '520px';
+        localStorage.setItem('anomalous_studio_sidebar_width', '520');
+    };
+
+    const onKeydown = (e) => {
+        if (e.key === 'Escape') {
+            const inspector = document.querySelector('.anomalous-prompt-inspector-overlay');
+            if (inspector) return;
+            closePromptStudio(owner);
+        }
+    };
+    window.addEventListener('keydown', onKeydown);
+    const origClose = () => {
+        window.removeEventListener('keydown', onKeydown);
+        closePromptStudio(owner);
+    };
+
+    const composer = buildPromptComposer(owner, drawer, {
+        isSideStudio: true,
+        isDrawerMode: true,
+        onClose: origClose,
+        onToggleDockSide: () => {
+            const isLeft = drawer.classList.toggle('is-dock-left');
+            localStorage.setItem('anomalous_studio_dock_side', isLeft ? 'left' : 'right');
+            return isLeft;
+        },
     });
+    owner.sidePromptComposerControl = composer;
+
+    document.body.appendChild(overlay);
 }
 
 export async function showPromptComposer(owner, material) {
@@ -312,10 +582,33 @@ function buildPromptComposer(owner, container, options = {}) {
     nameInput.oninput = () => { draft.name = nameInput.value; };
 
     const topActions = text(topbar, 'div', '', 'anomalous-prompt-topbar-actions');
-    const saveBtn = text(topActions, 'button', `💾 ${t('promptSavePlan')}`, 'anomalous-btn-primary anomalous-btn-sm');
-    saveBtn.title = t('promptSavePlan') || '保存方案至素材库';
 
-    // "More" Dropdown Menu (holds New Draft, Tags, Export)
+    // Quick Extract from Selected Canvas Node
+    const extractQuickBtn = text(topActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm');
+    extractQuickBtn.innerHTML = '🎯';
+    extractQuickBtn.title = window.anomalous_browser_lang === 'zh'
+        ? '从画布选中节点一键吸取提示词'
+        : 'Extract prompt from selected node';
+    extractQuickBtn.onclick = () => extractPromptsFromSelectedNode(true);
+
+    // Dock Side Switch (Left / Right)
+    if (options.isDrawerMode && typeof options.onToggleDockSide === 'function') {
+        const dockSideBtn = text(topActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm');
+        const isLeft = () => activeStudioDrawer?.classList.contains('is-dock-left');
+        const updateDockBtn = () => {
+            dockSideBtn.innerHTML = isLeft() ? '⇥' : '⇤';
+            dockSideBtn.title = isLeft()
+                ? (window.anomalous_browser_lang === 'zh' ? '停靠至右侧' : 'Dock Right')
+                : (window.anomalous_browser_lang === 'zh' ? '停靠至左侧' : 'Dock Left');
+        };
+        updateDockBtn();
+        dockSideBtn.onclick = () => {
+            options.onToggleDockSide();
+            updateDockBtn();
+        };
+    }
+
+    // "More" Dropdown Menu (holds Save, New Draft, Tags, Export, Material Sync)
     const moreWrap = text(topActions, 'div', '', 'anomalous-prompt-more-wrap');
     moreWrap.style.position = 'relative';
     moreWrap.style.display = 'inline-flex';
@@ -332,6 +625,12 @@ function buildPromptComposer(owner, container, options = {}) {
     moreMenu.style.borderRadius = 'var(--amb-radius-control, 6px)';
     moreMenu.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.6)';
     moreMenu.style.padding = '4px';
+
+    const saveBtn = text(moreMenu, 'button', `💾 ${t('promptSavePlan')}`, 'anomalous-btn-ghost anomalous-btn-sm');
+    saveBtn.style.width = '100%';
+    saveBtn.style.justifyContent = 'flex-start';
+    saveBtn.style.border = 'none';
+    saveBtn.title = t('promptSavePlan') || '保存方案至素材库';
 
     const newBtn = text(moreMenu, 'button', `✨ ${t('promptNewDraft')}`, 'anomalous-btn-ghost anomalous-btn-sm');
     newBtn.style.width = '100%';
@@ -356,6 +655,15 @@ function buildPromptComposer(owner, container, options = {}) {
     exportBtn.style.width = '100%';
     exportBtn.style.justifyContent = 'flex-start';
     exportBtn.style.border = 'none';
+
+    const syncLibBtn = text(moreMenu, 'button', `📥 ${window.anomalous_browser_lang === 'zh' ? '同步素材库' : 'Sync Library'}`, 'anomalous-btn-ghost anomalous-btn-sm');
+    syncLibBtn.style.width = '100%';
+    syncLibBtn.style.justifyContent = 'flex-start';
+    syncLibBtn.style.border = 'none';
+    syncLibBtn.onclick = () => {
+        closeMoreMenu();
+        syncMaterialsIntoSourceDeck();
+    };
 
     moreBtn.onclick = (e) => {
         e.stopPropagation();
@@ -526,104 +834,85 @@ function buildPromptComposer(owner, container, options = {}) {
         }
     };
 
-    // Bottom Live Assembled Action Dock (Always visible sticky bar at bottom of assembler)
-    const outputDeck = text(rightPanel, 'div', '', 'anomalous-mixer-deck-output anomalous-prompt-action-dock is-collapsed');
-
-    // 1. Slim Dock Summary & Target Injection Bar (Always visible)
-    const outputSummary = text(outputDeck, 'div', '', 'anomalous-mixer-output-summary');
-    const summaryLeft = text(outputSummary, 'div', '', 'anomalous-mixer-summary-left');
-    const outputStats = text(summaryLeft, 'div', '', 'anomalous-mixer-output-stats');
-
-    const expandOutputBtn = text(summaryLeft, 'button', window.anomalous_browser_lang === 'zh' ? '📄 最终文本 ▾' : '📄 View Text ▾', 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-toggle-output');
-    expandOutputBtn.title = window.anomalous_browser_lang === 'zh' ? '展开/收起最终合成提示词文本' : 'Expand/collapse assembled text';
-
-    const copyOutputBtn = text(summaryLeft, 'button', `📋`, 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-quick-copy');
-    copyOutputBtn.title = window.anomalous_browser_lang === 'zh' ? '复制当前合成的提示词' : 'Copy assembled prompt text';
-
-    const translateOutputBtn = text(summaryLeft, 'button', `🌐`, 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-quick-translate');
-    translateOutputBtn.title = window.anomalous_browser_lang === 'zh' ? '一键翻译当前合成词并复制到剪贴板' : 'Translate assembled prompt & copy';
-    translateOutputBtn.onclick = async (e) => {
-        e.stopPropagation();
-        const currentText = (draft?.plan?.[activeTab] || '').trim();
-        if (!currentText) return;
-        const origIcon = translateOutputBtn.textContent;
-        translateOutputBtn.textContent = '⏳';
-        try {
-            const res = await translatePromptText(currentText);
-            if (res.ok && res.translated) {
-                await navigator.clipboard.writeText(res.translated);
-                showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? `✓ 译文已复制至剪贴板: ${res.translated.slice(0, 30)}...` : `✓ Translated & copied: ${res.translated.slice(0, 30)}...`);
-            } else {
-                showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? `翻译失败: ${res.error || '网络错误'}` : `Translation failed: ${res.error || 'Network error'}`);
-            }
-        } catch (err) {
-            console.warn(err);
-        } finally {
-            translateOutputBtn.textContent = origIcon;
-        }
-    };
-
-    // Target Node Direct Write Bar placed INSIDE outputSummary on the right side
-    const targetBar = text(outputSummary, 'div', '', 'anomalous-prompt-target-bar');
+    // -------------------------------------------------------------------------
+    // Node Direct Write Handler
+    // -------------------------------------------------------------------------
     const targetWidgetIndexByNodeId = {};
-
-    // 2. Expandable Drawer (reveals full textarea and canvas drag dock)
-    const outputDrawer = text(outputDeck, 'div', '', 'anomalous-mixer-output-drawer');
-    outputDrawer.style.display = 'none';
-
-    const outputBody = text(outputDrawer, 'div', '', 'anomalous-mixer-output-body');
-    const outputTextarea = text(outputBody, 'textarea', '', 'anomalous-mixer-output-textarea');
-    outputTextarea.readOnly = true;
-    outputTextarea.rows = 2;
-    outputTextarea.oninput = () => {};
-
-    const outputFooter = text(outputDrawer, 'div', '', 'anomalous-mixer-output-footer');
-    const dragHint = text(outputFooter, 'div', '', 'anomalous-mixer-drag-hint');
-    dragHint.innerHTML = `🖐️ <strong>${window.anomalous_browser_lang === 'zh' ? '按住此预览坞' : 'Drag this deck'}</strong> ${window.anomalous_browser_lang === 'zh' ? '直接丢入 ComfyUI 画布节点' : 'onto canvas node'}`;
-
-    function updateOutputDeckState() {
-        outputDeck.style.display = 'flex';
-
-        if (isOutputExpanded) {
-            outputDeck.classList.remove('is-collapsed');
-            outputDrawer.style.display = 'flex';
-            expandOutputBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '收起预览 ▲' : 'Collapse ▲';
-            expandOutputBtn.classList.add('is-active');
-        } else {
-            outputDeck.classList.add('is-collapsed');
-            outputDrawer.style.display = 'none';
-            expandOutputBtn.innerHTML = window.anomalous_browser_lang === 'zh' ? '📄 最终文本 ▾' : '📄 View Text ▾';
-            expandOutputBtn.classList.remove('is-active');
+    const applyPromptToCurrentNode = async (role, promptContent, triggerBtn = null) => {
+        const node = selectedMaterialNode(app);
+        if (!node) {
+            anomalousAlert(window.anomalous_browser_lang === 'zh'
+                ? '💡 请先在 ComfyUI 画布上点击选中一个提示词节点（例如 CLIPTextEncode）！'
+                : '💡 Please select a prompt node (e.g. CLIPTextEncode) on the ComfyUI canvas first!');
+            return;
         }
-    }
+        const targets = promptWidgetTargets(node);
+        if (!targets.length) {
+            anomalousAlert(window.anomalous_browser_lang === 'zh'
+                ? '⚠️ 选中的节点中未找到可写入的提示词文本输入！'
+                : '⚠️ No writable prompt text widget found in selected node!');
+            return;
+        }
+        const widgetIndex = targetWidgetIndexByNodeId[node.id] !== undefined ? targetWidgetIndexByNodeId[node.id] : targets[0].index;
+        try {
+            const value = joinPromptText(node.widgets[widgetIndex].value, promptContent, posSelect.value);
+            showMaterialApplication(view, applyNodeMaterialValues(app, node, [{ index: widgetIndex, value }]), node);
+            if (triggerBtn) {
+                const orig = triggerBtn.textContent;
+                triggerBtn.textContent = '✅ ' + (window.anomalous_browser_lang === 'zh' ? '已写入' : 'Written');
+                setTimeout(() => { if (triggerBtn.isConnected) triggerBtn.textContent = orig; }, 1200);
+            } else {
+                showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '✅ 提示词已成功写入节点！' : '✅ Prompt written to node!');
+            }
+        } catch (error) {
+            await anomalousAlert(t(error.message) === error.message ? t('materialApplyFailed') : t(error.message));
+        }
+    };
 
-    expandOutputBtn.onclick = (e) => {
+    // -------------------------------------------------------------------------
+    // Floating Action Dock (Minimalist & Slides Up Only When Content Exists)
+    // -------------------------------------------------------------------------
+    const floatingDock = text(rightPanel, 'div', '', 'anomalous-floating-action-dock');
+    floatingDock.style.display = 'none'; // Initially zero-height, hidden until content is added
+
+    const dockLeft = text(floatingDock, 'div', '', 'anomalous-floating-dock-left');
+    const dockStats = text(dockLeft, 'span', '', 'anomalous-dock-stats-text');
+
+    const dockRight = text(floatingDock, 'div', '', 'anomalous-floating-dock-right');
+
+    // 1. Write Node Button
+    const writeNodeBtn = text(dockRight, 'button', `🚀 ${window.anomalous_browser_lang === 'zh' ? '写入节点' : 'Write Node'}`, 'anomalous-btn-primary anomalous-btn-sm');
+    writeNodeBtn.title = window.anomalous_browser_lang === 'zh' ? '将当前合成提示词写入选中的 ComfyUI 节点' : 'Write assembled prompt to selected node';
+    writeNodeBtn.onclick = async () => {
+        syncDraftSynthesizedText(draft);
+        const compiledText = (draft.plan[activeTab] || '').trim();
+        if (!compiledText) return;
+        await applyPromptToCurrentNode(activeTab, compiledText, writeNodeBtn);
+    };
+
+    // 2. Quick Copy Button
+    const copyOutputBtn = text(dockRight, 'button', '📋', 'anomalous-btn-ghost anomalous-btn-sm');
+    copyOutputBtn.title = window.anomalous_browser_lang === 'zh' ? '复制当前合成的提示词' : 'Copy assembled prompt text';
+    copyOutputBtn.onclick = async (e) => {
         e.stopPropagation();
-        isOutputExpanded = !isOutputExpanded;
-        updateOutputDeckState();
+        syncDraftSynthesizedText(draft);
+        const compiledText = (draft.plan[activeTab] || '').trim();
+        if (!compiledText) return;
+        await navigator.clipboard.writeText(compiledText);
+        copyOutputBtn.textContent = '✓';
+        setTimeout(() => { if (copyOutputBtn.isConnected) copyOutputBtn.textContent = '📋'; }, 1200);
+        showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '已复制至剪贴板' : 'Copied to clipboard');
     };
 
-    outputSummary.onclick = (e) => {
-        if (e.target.closest('button') || e.target.closest('select') || e.target.closest('.anomalous-prompt-target-bar')) return;
-        isOutputExpanded = !isOutputExpanded;
-        updateOutputDeckState();
+    // 3. Popout Full Inspector Modal Button
+    const popoutBtn = text(dockRight, 'button', '⛶', 'anomalous-btn-ghost anomalous-btn-sm');
+    popoutBtn.title = window.anomalous_browser_lang === 'zh' ? '弹出独立大弹窗全览与精修' : 'Pop out full inspector modal';
+    popoutBtn.onclick = () => {
+        openPromptInspectorModal(owner, draft, activeTab, async (role, textVal) => {
+            await applyPromptToCurrentNode(role, textVal);
+        });
     };
 
-    // Bind output deck drag once on mount
-    bindMaterialDrag(outputDeck, owner, {
-        payload: () => {
-            const compiledText = (draft?.plan?.[activeTab] || '').trim();
-            return compiledText ? {
-                content: compiledText,
-                position: posSelect.value,
-                dragHint: activeTab === 'positive'
-                    ? (window.anomalous_browser_lang === 'zh' ? '✨ 拖拽合成正面词至画布节点' : '✨ Drag Assembled Positive onto Node')
-                    : (window.anomalous_browser_lang === 'zh' ? '🚫 拖拽合成负面词至画布节点' : '🚫 Drag Assembled Negative onto Node'),
-            } : null;
-        },
-        accepts: node => promptWidgetTargets(node).length > 0,
-        drop: (node, data, graph) => applyPromptDrop(node, data, graph, targetBar),
-    });
 
     // -------------------------------------------------------------------------
     // FEATURE IMPLEMENTATIONS: Node Extraction & Material Sync
@@ -1035,11 +1324,12 @@ function buildPromptComposer(owner, container, options = {}) {
         }
 
         filtered.forEach(card => {
-            const cardEl = text(sourceCardsList, 'article', '', `anomalous-source-prompt-card is-cat-${card.category}`);
+            const catMeta = CATEGORY_META[card.category] || CATEGORY_META.subject;
+            const cardEl = text(sourceCardsList, 'div', '', `anomalous-source-card-compact is-cat-${card.category}`);
             cardEl.setAttribute('draggable', 'true');
-            cardEl.title = window.anomalous_browser_lang === 'zh' ? '点击直接加入右侧拼装台（也可按住拖拽）' : 'Click to add to stage (or drag)';
+            cardEl.title = `[${window.anomalous_browser_lang === 'zh' ? catMeta.zh : catMeta.en}] ${card.title}\n${card.content}`;
 
-            // Drag Start -> transfer prompt card payload
+            // Drag Start
             cardEl.ondragstart = (e) => {
                 const payload = {
                     title: card.title,
@@ -1059,93 +1349,15 @@ function buildPromptComposer(owner, container, options = {}) {
                 workbenchGrid.classList.remove('is-source-dragging');
             };
 
-            // Card Header
-            const header = text(cardEl, 'div', '', 'anomalous-source-card-header');
-            const meta = CATEGORY_META[card.category] || CATEGORY_META.subject;
+            const dot = text(cardEl, 'span', '', 'anomalous-source-card-dot');
+            dot.style.backgroundColor = catMeta.color;
 
-            const grip = text(header, 'span', '⠿', 'anomalous-source-card-grip');
-            grip.title = window.anomalous_browser_lang === 'zh' ? '按住拖拽至拼装台' : 'Drag to assemble';
+            const nameEl = text(cardEl, 'span', card.title, 'anomalous-source-card-name');
 
-            const badge = text(header, 'span', window.anomalous_browser_lang === 'zh' ? meta.zh : meta.en, 'anomalous-source-card-badge');
-            badge.style.color = meta.color;
-            badge.style.backgroundColor = meta.bg;
-            badge.style.borderColor = meta.border;
+            const addIcon = text(cardEl, 'span', '+', 'anomalous-source-card-add-icon');
 
-            // Explicit Role Badge (Positive / Negative)
-            const isNeg = card.role === 'negative';
-            const roleBadge = text(header, 'span', isNeg ? (window.anomalous_browser_lang === 'zh' ? '负向' : 'Neg') : (window.anomalous_browser_lang === 'zh' ? '正向' : 'Pos'), 'anomalous-source-role-badge');
-            roleBadge.style.cssText = `font-size:10px;padding:1px 5px;border-radius:3px;font-weight:600;background:${isNeg ? 'rgba(244,63,94,0.15)' : 'rgba(56,189,248,0.15)'};color:${isNeg ? '#fb7185' : '#38bdf8'};border:1px solid ${isNeg ? 'rgba(244,63,94,0.3)' : 'rgba(56,189,248,0.3)'};flex-shrink:0;`;
-
-            if (card.persisted === false || (card.id.startsWith('node_') && !card.persisted)) {
-                const unsavedBadge = text(header, 'span', `[${t('promptCardUnsaved')}]`, 'anomalous-unsaved-badge');
-                unsavedBadge.title = window.anomalous_browser_lang === 'zh' ? '临时提取词卡，尚未持久化到素材库' : 'Unsaved temporary card';
-            }
-
-            const title = text(header, 'strong', card.title, 'anomalous-source-card-title');
-            title.title = card.title;
-
-            // Card Body snippet (max 2 lines, legible font size)
-            const snippet = text(cardEl, 'div', card.content, 'anomalous-source-card-snippet');
-            snippet.title = card.content;
-
-            // Card Footer Actions
-            const footer = text(cardEl, 'div', '', 'anomalous-source-card-footer');
-            const hint = text(footer, 'span', '', 'anomalous-source-card-drag-hint');
-            hint.innerHTML = `<svg style="width:10px;height:10px;vertical-align:-1px;margin-right:3px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>${window.anomalous_browser_lang === 'zh' ? '点击或拖拽' : 'Click or Drag'}`;
-
-            const actions = text(footer, 'div', '', 'anomalous-source-card-actions');
-            actions.style.marginLeft = 'auto';
-
-            const copyBtn = text(actions, 'button', '📋', 'anomalous-source-action-btn');
-            copyBtn.title = t('copy');
-            copyBtn.onclick = async (e) => {
-                e.stopPropagation();
-                try {
-                    await navigator.clipboard.writeText(card.content);
-                    copyBtn.textContent = '✅';
-                    setTimeout(() => { if (copyBtn.isConnected) copyBtn.textContent = '📋'; }, 1200);
-                } catch (err) {
-                    await anomalousAlert(t('materialCopyError'));
-                }
-            };
-
-            if (card.persisted === false || (card.id.startsWith('node_') && !card.persisted)) {
-                const saveCardBtn = text(actions, 'button', '', 'anomalous-source-action-btn is-save-lib');
-                saveCardBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>${t('promptSaveCard')}`;
-                saveCardBtn.title = window.anomalous_browser_lang === 'zh' ? '将此卡片存入素材库' : 'Save this card to Material Library';
-                saveCardBtn.onclick = async (e) => {
-                    e.stopPropagation();
-                    await saveCardToLibrary(card, saveCardBtn);
-                };
-            }
-
-            const dockBtn = text(actions, 'button', '', 'anomalous-source-action-btn is-dock');
-            dockBtn.innerHTML = `<svg style="width:11px;height:11px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${window.anomalous_browser_lang === 'zh' ? '加入拼装台' : 'Add to Stage'}`;
-            dockBtn.title = window.anomalous_browser_lang === 'zh' ? '点击加入当前拼装台（也可直接点击卡片）' : 'Add into mixer track';
-
-            const handleCardAdd = () => {
-                cardEl.classList.add('is-clicked');
-                setTimeout(() => cardEl.classList.remove('is-clicked'), 500);
-                const originalHtml = dockBtn.innerHTML;
-                dockBtn.innerHTML = `✓ ${window.anomalous_browser_lang === 'zh' ? '已加入' : 'Added'}`;
-                dockBtn.classList.add('is-success');
-                setTimeout(() => {
-                    if (dockBtn.isConnected) {
-                        dockBtn.innerHTML = originalHtml;
-                        dockBtn.classList.remove('is-success');
-                    }
-                }, 700);
+            cardEl.onclick = () => {
                 addSourceCardToMixer(card);
-            };
-
-            cardEl.onclick = (e) => {
-                if (e.target.closest('button') || e.target.closest('input')) return;
-                handleCardAdd();
-            };
-
-            dockBtn.onclick = (e) => {
-                e.stopPropagation();
-                handleCardAdd();
             };
         });
     }
@@ -1355,6 +1567,44 @@ function buildPromptComposer(owner, container, options = {}) {
             titleInput.value = block.title || '';
             titleInput.oninput = () => { block.title = titleInput.value; };
 
+            // Weight Adjustment Pill with Mouse Wheel & Click
+            let currentWeight = block.weight !== undefined ? block.weight : 1.0;
+            const weightPill = text(headerLeft, 'span', '', 'anomalous-block-weight-pill');
+            weightPill.title = window.anomalous_browser_lang === 'zh'
+                ? '滚轮上下滑动调节权重，或点击加减'
+                : 'Scroll wheel or click +/- to adjust weight';
+
+            const decBtn = text(weightPill, 'button', '-', 'anomalous-block-weight-btn');
+            const weightVal = text(weightPill, 'span', currentWeight.toFixed(2));
+            const incBtn = text(weightPill, 'button', '+', 'anomalous-block-weight-btn');
+
+            const applyBlockWeight = (newW) => {
+                newW = Math.round(Math.max(0.1, Math.min(3.0, newW)) * 100) / 100;
+                currentWeight = newW;
+                block.weight = newW;
+                weightVal.textContent = newW.toFixed(2);
+                let clean = block.content.replace(/^\((.+):[0-9.]+\)$/, '$1').replace(/^\((.+)\)$/, '$1').trim();
+                if (newW !== 1.0) {
+                    block.content = `(${clean}:${newW.toFixed(2)})`;
+                } else {
+                    block.content = clean;
+                }
+                const txtArea = blockEl.querySelector('.anomalous-mixer-block-textarea');
+                if (txtArea) txtArea.value = block.content;
+                syncDraftSynthesizedText(draft);
+                updateOutputPreview();
+            };
+
+            decBtn.onclick = (e) => { e.stopPropagation(); applyBlockWeight(currentWeight - 0.05); };
+            incBtn.onclick = (e) => { e.stopPropagation(); applyBlockWeight(currentWeight + 0.05); };
+
+            weightPill.onwheel = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const delta = e.deltaY < 0 ? 0.05 : -0.05;
+                applyBlockWeight(currentWeight + delta);
+            };
+
             // Right Action micro buttons
             const headerRight = text(blockHeader, 'div', '', 'anomalous-mixer-block-header-right');
 
@@ -1504,16 +1754,19 @@ function buildPromptComposer(owner, container, options = {}) {
 
     function updateOutputPreview() {
         syncDraftSynthesizedText(draft);
-        const compiledText = draft.plan[activeTab] || '';
+        const compiledText = (draft.plan[activeTab] || '').trim();
         const currentRoleParts = draft.plan.parts.filter(p => p.role === activeTab);
 
-        outputStats.innerHTML = `${activeTab === 'negative' ? '🚫' : '✨'} <strong>${compiledText.length}</strong>${window.anomalous_browser_lang === 'zh' ? '字' : 'c'} · <strong>${currentRoleParts.length}</strong>${window.anomalous_browser_lang === 'zh' ? '块' : 'b'}`;
-        outputStats.title = activeTab === 'negative'
-            ? `${window.anomalous_browser_lang === 'zh' ? '负向' : 'Negative'}: ${compiledText.length} ${window.anomalous_browser_lang === 'zh' ? '字符' : 'chars'}, ${currentRoleParts.length} ${window.anomalous_browser_lang === 'zh' ? '块积木' : 'blocks'}`
-            : `${window.anomalous_browser_lang === 'zh' ? '正向' : 'Positive'}: ${compiledText.length} ${window.anomalous_browser_lang === 'zh' ? '字符' : 'chars'}, ${currentRoleParts.length} ${window.anomalous_browser_lang === 'zh' ? '块积木' : 'blocks'}`;
-
-        outputTextarea.value = compiledText;
-        updateOutputDeckState();
+        if (!currentRoleParts.length && !compiledText) {
+            floatingDock.style.display = 'none';
+        } else {
+            floatingDock.style.display = 'flex';
+            const words = compiledText.split(/[,，\s\n]+/).filter(Boolean).length;
+            dockStats.innerHTML = `${activeTab === 'negative' ? '🌙' : '🔆'} <strong>${currentRoleParts.length}</strong> ${window.anomalous_browser_lang === 'zh' ? '块' : 'blocks'} · ~<strong>${words}</strong> ${window.anomalous_browser_lang === 'zh' ? '词' : 'words'}`;
+            dockStats.title = activeTab === 'negative'
+                ? `${window.anomalous_browser_lang === 'zh' ? '负向' : 'Negative'}: ${compiledText.length} ${window.anomalous_browser_lang === 'zh' ? '字符' : 'chars'}, ${currentRoleParts.length} ${window.anomalous_browser_lang === 'zh' ? '块积木' : 'blocks'}`
+                : `${window.anomalous_browser_lang === 'zh' ? '正向' : 'Positive'}: ${compiledText.length} ${window.anomalous_browser_lang === 'zh' ? '字符' : 'chars'}, ${currentRoleParts.length} ${window.anomalous_browser_lang === 'zh' ? '块积木' : 'blocks'}`;
+        }
     }
 
     // Smart Sort

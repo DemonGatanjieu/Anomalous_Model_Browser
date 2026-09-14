@@ -10555,77 +10555,30 @@ dialog.anomalous-gallery-viewer::backdrop {
     animation: anomalous-just-added 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Resilient Responsive Layout for Prompt Workbench & Sidebar Drawer */
 @container prompt-workbench (max-width: 850px) {
     .anomalous-prompt-workbench-grid {
-        display: flex !important;
-        flex-direction: column !important;
-        min-height: 0 !important;
-        overflow: hidden !important;
-        gap: 8px !important;
-        padding: 4px 6px 8px !important;
-    }
-    /* Upper Zone: 顺序拼装台 (Mixer Stage) */
-    .anomalous-workbench-right-panel {
-        order: 1 !important;
-        flex: 1 1 50% !important;
-        min-height: 160px !important;
-        max-height: 55% !important;
-        display: flex !important;
-        flex-direction: column !important;
-        overflow: hidden !important;
-        padding: 8px 8px 6px !important;
-    }
-    /* Lower Zone: 候选词卡库 (Cards Deck) */
-    .anomalous-workbench-left-panel {
-        order: 2 !important;
-        flex: 1 1 50% !important;
-        min-height: 160px !important;
-        max-height: 50% !important;
-        display: flex !important;
-        flex-direction: column !important;
-        overflow: hidden !important;
-        padding: 8px 8px 6px !important;
-    }
-    /* Compact 2-column cards grid in narrow mode */
-    .anomalous-source-cards-list {
-        display: grid !important;
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+        grid-template-columns: 145px minmax(0, 1fr) !important;
         gap: 6px !important;
-        align-content: start !important;
+        padding: 4px 6px 6px !important;
     }
-    .anomalous-source-prompt-card {
-        padding: 6px 8px !important;
-        gap: 4px !important;
-        cursor: pointer !important;
+    .anomalous-workbench-left-panel {
+        width: 145px !important;
+        padding: 6px 6px 6px !important;
     }
-    .anomalous-source-card-snippet {
-        -webkit-line-clamp: 1 !important;
-        font-size: 0.7rem !important;
+    .anomalous-workbench-right-panel {
+        padding: 6px 6px 6px !important;
     }
 }
 
 @media (max-width: 860px) {
     .anomalous-prompt-workbench-grid {
-        display: flex !important;
-        flex-direction: column !important;
-        min-height: 0 !important;
-        overflow: hidden !important;
-        gap: 8px !important;
-        padding: 4px 6px 8px !important;
-    }
-    .anomalous-workbench-right-panel {
-        order: 1 !important;
-        flex: 1 1 50% !important;
-        min-height: 160px !important;
-        max-height: 55% !important;
-    }
-    .anomalous-workbench-left-panel {
-        order: 2 !important;
-        flex: 1 1 50% !important;
-        min-height: 160px !important;
-        max-height: 50% !important;
+        grid-template-columns: 145px minmax(0, 1fr) !important;
+        gap: 6px !important;
+        padding: 4px 6px 6px !important;
     }
 }
+
 
 /* Left & Right Panels Common */
 .anomalous-workbench-left-panel,
@@ -12858,3 +12811,315 @@ button:hover .anomalous-btn-icon {
     color: #38bdf8;
     background: rgba(56, 189, 248, 0.18);
 }
+
+/* ==========================================================================
+   PROMPT STUDIO: Minimalist Sidebar Drawer & Floating Action Dock
+   ========================================================================== */
+.anomalous-prompt-studio-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999990;
+    pointer-events: none; /* Canvas passthrough: pan/zoom canvas freely */
+    overflow: hidden;
+}
+
+.anomalous-prompt-studio-drawer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 520px;
+    max-width: 90vw;
+    height: 100vh;
+    background: var(--amb-bg-page, #121316);
+    border-left: 1px solid var(--amb-border, rgba(255, 255, 255, 0.12));
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.6);
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    z-index: 999991;
+    box-sizing: border-box;
+}
+
+.anomalous-prompt-studio-drawer.is-dock-left {
+    right: auto;
+    left: 0;
+    border-left: none;
+    border-right: 1px solid var(--amb-border, rgba(255, 255, 255, 0.12));
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.6);
+}
+
+/* Edge Resize Handle */
+.anomalous-studio-resize-handle {
+    position: absolute;
+    top: 0;
+    left: -4px;
+    width: 8px;
+    height: 100%;
+    cursor: ew-resize;
+    z-index: 100;
+    transition: background 0.15s ease;
+}
+
+.anomalous-prompt-studio-drawer.is-dock-left .anomalous-studio-resize-handle {
+    left: auto;
+    right: -4px;
+}
+
+.anomalous-studio-resize-handle:hover,
+.anomalous-studio-resize-handle.is-resizing {
+    background: #38bdf8;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+}
+
+/* Drawer Workbench Grid */
+.anomalous-prompt-studio-drawer .anomalous-prompt-workbench {
+    background: transparent;
+    padding: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.anomalous-prompt-studio-drawer .anomalous-prompt-workbench-grid {
+    display: grid !important;
+    grid-template-columns: 145px minmax(0, 1fr) !important;
+    flex-direction: row !important;
+    gap: 8px !important;
+    padding: 6px 8px 8px !important;
+    flex: 1;
+    min-height: 0;
+}
+
+.anomalous-prompt-studio-drawer .anomalous-workbench-left-panel {
+    order: 1 !important;
+    flex: none !important;
+    width: 145px !important;
+    max-height: 100% !important;
+    padding: 6px 6px 8px !important;
+}
+
+.anomalous-prompt-studio-drawer .anomalous-workbench-right-panel {
+    order: 2 !important;
+    flex: 1 !important;
+    max-height: 100% !important;
+    padding: 6px 8px 48px !important; /* reserve bottom space for floating dock */
+    position: relative;
+}
+
+/* Compact Source Cards */
+.anomalous-source-card-compact {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.anomalous-source-card-compact:hover {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: rgba(56, 189, 248, 0.4);
+    transform: translateX(2px);
+}
+
+.anomalous-source-card-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.anomalous-source-card-name {
+    font-size: 0.74rem;
+    color: #e2e8f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+.anomalous-source-card-add-icon {
+    font-size: 0.72rem;
+    color: #64748b;
+    opacity: 0;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+
+.anomalous-source-card-compact:hover .anomalous-source-card-add-icon {
+    opacity: 1;
+    color: #38bdf8;
+}
+
+/* Weight Wheel Pill in Assembled Blocks */
+.anomalous-block-weight-pill {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 0 4px;
+    font-size: 0.72rem;
+    font-family: monospace, sans-serif;
+    color: #38bdf8;
+    cursor: ns-resize;
+    user-select: none;
+    gap: 2px;
+    transition: all 0.15s;
+}
+
+.anomalous-block-weight-pill:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
+
+.anomalous-block-weight-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.7rem;
+    padding: 0 2px;
+    line-height: 1;
+    transition: color 0.15s;
+}
+
+.anomalous-block-weight-btn:hover {
+    color: #fff;
+}
+
+/* Floating Action Dock (Slides up only when blocks exist) */
+.anomalous-floating-action-dock {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    height: 38px;
+    background: rgba(22, 25, 32, 0.94);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65), 0 0 12px rgba(56, 189, 248, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    z-index: 20;
+    animation: anmSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+}
+
+.anomalous-floating-dock-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+.anomalous-floating-dock-right {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Independent Popout Prompt Inspector Modal */
+.anomalous-prompt-inspector-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: anmFadeIn 0.2s ease;
+}
+
+.anomalous-prompt-inspector-modal {
+    width: 780px;
+    max-width: 92vw;
+    height: 520px;
+    max-height: 88vh;
+    background: var(--amb-bg-panel, #181a20);
+    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.16));
+    border-radius: 14px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 1px rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: anmScaleUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.anomalous-inspector-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.anomalous-inspector-body {
+    flex: 1;
+    min-height: 0;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.anomalous-inspector-textarea {
+    flex: 1;
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #e2e8f0;
+    font-family: Consolas, Monaco, "Courier New", monospace;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    padding: 12px;
+    resize: none;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.anomalous-inspector-textarea:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+}
+
+.anomalous-inspector-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@keyframes anmScaleUp {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes anmSlideUp {
+    from { transform: translateY(12px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
