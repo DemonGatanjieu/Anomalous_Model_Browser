@@ -12616,9 +12616,59 @@ button:hover .anomalous-btn-icon {
 .anomalous-translator-action-bar {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     gap: 8px;
     flex-wrap: wrap;
+}
+
+.anomalous-translator-action-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.anomalous-translator-mid-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin: -2px 0;
+}
+
+.anomalous-translator-mid-bar::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    z-index: 1;
+}
+
+.anomalous-translator-swap-btn {
+    position: relative;
+    z-index: 2;
+    background: #111827;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    color: #38bdf8;
+    border-radius: 14px;
+    padding: 3px 14px;
+    font-size: 0.76rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.anomalous-translator-swap-btn:hover {
+    background: #0284c7;
+    color: #ffffff;
+    border-color: #38bdf8;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
 }
 
 .anomalous-translator-chips-wrap {

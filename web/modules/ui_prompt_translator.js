@@ -183,6 +183,9 @@ export function openPromptTranslator(owner) {
     const sourceActions = document.createElement('div');
     sourceActions.className = 'anomalous-translator-action-bar';
 
+    const sourceLeftGroup = document.createElement('div');
+    sourceLeftGroup.className = 'anomalous-translator-action-group';
+
     const readNodeBtn = document.createElement('button');
     readNodeBtn.type = 'button';
     readNodeBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
@@ -198,6 +201,40 @@ export function openPromptTranslator(owner) {
         }
     };
 
+    const sourceCleanBtn = document.createElement('button');
+    sourceCleanBtn.type = 'button';
+    sourceCleanBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
+    sourceCleanBtn.innerHTML = `🧹 ${t('规范化', 'Normalize')}`;
+    sourceCleanBtn.title = t('将源提示词中的顿号、中文标点清洗为标准英文逗号 (, )', 'Normalize source prompt punctuation to standard commas');
+    sourceCleanBtn.onclick = () => {
+        const raw = sourceTextarea.value.trim();
+        if (!raw) return;
+        sourceTextarea.value = normalizePromptFormatting(raw);
+        showTranslatorToast(modal, t('✓ 源文本已规范化为标准逗号格式', '✓ Normalized source prompt'));
+    };
+
+    const sourceWriteBtn = document.createElement('button');
+    sourceWriteBtn.type = 'button';
+    sourceWriteBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
+    sourceWriteBtn.innerHTML = `✏️ ${t('规范并写回节点', 'Format & Write Back')}`;
+    sourceWriteBtn.title = t('将源文本直接清洗规范后写回选中节点（无需翻译，一键替换节点格式）', 'Normalize source text and write directly back to canvas node');
+    sourceWriteBtn.onclick = () => {
+        let raw = sourceTextarea.value.trim();
+        if (!raw) {
+            showTranslatorToast(modal, t('源提示词为空', 'Source prompt is empty'), true);
+            return;
+        }
+        raw = normalizePromptFormatting(raw);
+        sourceTextarea.value = raw;
+        const res = writeToSelectedNode(raw);
+        showTranslatorToast(modal, res.message, !res.success);
+    };
+
+    sourceLeftGroup.append(readNodeBtn, sourceCleanBtn, sourceWriteBtn);
+
+    const sourceRightGroup = document.createElement('div');
+    sourceRightGroup.className = 'anomalous-translator-action-group';
+
     const clearBtn = document.createElement('button');
     clearBtn.type = 'button';
     clearBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
@@ -212,9 +249,35 @@ export function openPromptTranslator(owner) {
     translateBtn.className = 'anomalous-btn-primary anomalous-btn-sm anomalous-translator-btn-run';
     translateBtn.innerHTML = `🌐 ${t('一键翻译', 'Translate')}`;
 
-    sourceActions.append(readNodeBtn, clearBtn, translateBtn);
+    sourceRightGroup.append(clearBtn, translateBtn);
+    sourceActions.append(sourceLeftGroup, sourceRightGroup);
     sourcePane.appendChild(sourceActions);
     body.appendChild(sourcePane);
+
+    // --- Middle Bar: Swap Content & Direction ---
+    const midBar = document.createElement('div');
+    midBar.className = 'anomalous-translator-mid-bar';
+
+    const swapBtn = document.createElement('button');
+    swapBtn.type = 'button';
+    swapBtn.className = 'anomalous-translator-swap-btn';
+    swapBtn.innerHTML = `⇅ ${t('互换内容与语言', 'Swap Content & Language')}`;
+    swapBtn.title = t('对调上下两框文本，并反转翻译目标语言', 'Swap source and target text, and invert translation direction');
+    swapBtn.onclick = () => {
+        const tempText = sourceTextarea.value;
+        sourceTextarea.value = targetTextarea.value;
+        targetTextarea.value = tempText;
+        updateTagChips(targetTextarea.value);
+
+        if (langSelect.value === 'en') {
+            langSelect.value = 'zh-CN';
+        } else if (langSelect.value === 'zh-CN') {
+            langSelect.value = 'en';
+        }
+        showTranslatorToast(modal, t('✓ 已互换源文本与译文', '✓ Swapped source and target'));
+    };
+    midBar.appendChild(swapBtn);
+    body.appendChild(midBar);
 
     // --- Right / Bottom Pane: Translated Output ---
     const targetPane = document.createElement('div');
@@ -260,6 +323,9 @@ export function openPromptTranslator(owner) {
     const targetActions = document.createElement('div');
     targetActions.className = 'anomalous-translator-action-bar';
 
+    const targetLeftGroup = document.createElement('div');
+    targetLeftGroup.className = 'anomalous-translator-action-group';
+
     const cleanBtn = document.createElement('button');
     cleanBtn.type = 'button';
     cleanBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
@@ -285,26 +351,6 @@ export function openPromptTranslator(owner) {
         showTranslatorToast(modal, t('✓ 译文已复制到剪贴板', '✓ Translation copied to clipboard'));
     };
 
-    const writeNodeBtn = document.createElement('button');
-    writeNodeBtn.type = 'button';
-    writeNodeBtn.className = 'anomalous-btn-primary anomalous-btn-sm';
-    writeNodeBtn.innerHTML = `✏️ ${t('写入当前选中节点', 'Write to Canvas Node')}`;
-    writeNodeBtn.title = t('将译文写入 ComfyUI 画布当前选中的文本节点', 'Write translated text to active ComfyUI node');
-    writeNodeBtn.onclick = () => {
-        let out = targetTextarea.value.trim();
-        if (!out) {
-            showTranslatorToast(modal, t('请先翻译或输入文本', 'No text to write'), true);
-            return;
-        }
-        if (/[，、;；|｜]/.test(out) && !hasChinese(out)) {
-            out = normalizePromptFormatting(out);
-            targetTextarea.value = out;
-            updateTagChips(out);
-        }
-        const res = writeToSelectedNode(out);
-        showTranslatorToast(modal, res.message, !res.success);
-    };
-
     const sendToStudioBtn = document.createElement('button');
     sendToStudioBtn.type = 'button';
     sendToStudioBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
@@ -324,7 +370,94 @@ export function openPromptTranslator(owner) {
         appendPromptToStudio(owner, out, true, t('翻译结果', 'Translated Prompt'));
     };
 
-    targetActions.append(cleanBtn, copyBtn, sendToStudioBtn, writeNodeBtn);
+    targetLeftGroup.append(cleanBtn, copyBtn, sendToStudioBtn);
+
+    const targetRightGroup = document.createElement('div');
+    targetRightGroup.className = 'anomalous-translator-action-group';
+
+    // Direct Write to Node button
+    const writeNodeBtn = document.createElement('button');
+    writeNodeBtn.type = 'button';
+    writeNodeBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
+    writeNodeBtn.innerHTML = `✏️ ${t('直接写入节点', 'Write Directly')}`;
+    writeNodeBtn.title = t('将当前文本原样写入选中的画布节点', 'Write current text directly to active ComfyUI node');
+
+    // Translate to EN & Write button (The ultimate shortcut for prompt workflows!)
+    const translateAndWriteBtn = document.createElement('button');
+    translateAndWriteBtn.type = 'button';
+    translateAndWriteBtn.className = 'anomalous-btn-primary anomalous-btn-sm';
+    translateAndWriteBtn.innerHTML = `🌐 ${t('译为英文并写入节点', 'Translate to EN & Write')}`;
+    translateAndWriteBtn.title = t('一键将当前内容反向翻译为规范英文，并直接替换写入选中的画布节点', 'Translate current content into clean English tags and write to canvas node');
+    translateAndWriteBtn.onclick = async () => {
+        let out = targetTextarea.value.trim();
+        if (!out) {
+            showTranslatorToast(modal, t('请先输入或翻译文本', 'No text to translate and write'), true);
+            return;
+        }
+
+        if (!hasChinese(out)) {
+            out = normalizePromptFormatting(out);
+            targetTextarea.value = out;
+            updateTagChips(out);
+            const res = writeToSelectedNode(out);
+            showTranslatorToast(modal, res.message, !res.success);
+            return;
+        }
+
+        translateAndWriteBtn.disabled = true;
+        translateAndWriteBtn.innerHTML = `⏳ ${t('反译写入中...', 'Translating & Writing...')}`;
+
+        try {
+            const res = await translatePromptText(out, { targetLang: 'en' });
+            if (res.ok && res.translated) {
+                const enTags = normalizePromptFormatting(res.translated);
+                const writeRes = writeToSelectedNode(enTags);
+                if (writeRes.success) {
+                    showTranslatorToast(modal, t('✓ 已反译为英文并成功写入节点！', '✓ Translated to EN & written to node!'));
+                    sourceTextarea.value = enTags;
+                } else {
+                    showTranslatorToast(modal, writeRes.message, true);
+                }
+            } else {
+                showTranslatorToast(modal, t(`反译失败: ${res.error || '网络错误'}`, `Translation failed`), true);
+            }
+        } catch (err) {
+            showTranslatorToast(modal, t(`反译异常: ${err.message}`, `Error: ${err.message}`), true);
+        } finally {
+            translateAndWriteBtn.disabled = false;
+            translateAndWriteBtn.innerHTML = `🌐 ${t('译为英文并写入节点', 'Translate to EN & Write')}`;
+        }
+    };
+
+    writeNodeBtn.onclick = () => {
+        let out = targetTextarea.value.trim();
+        if (!out) {
+            showTranslatorToast(modal, t('请先翻译或输入文本', 'No text to write'), true);
+            return;
+        }
+
+        if (hasChinese(out)) {
+            const confirmEn = confirm(t(
+                '检测到当前文本包含中文。ComfyUI 生图模型通常需要英文提示词。\n\n点击【确定】：自动翻译为英文并规范写入\n点击【取消】：仍直接写入当前中文内容',
+                'Current text contains Chinese. ComfyUI models usually require English prompts.\n\nClick [OK] to translate to English and write.\nClick [Cancel] to write Chinese directly.'
+            ));
+            if (confirmEn) {
+                translateAndWriteBtn.click();
+                return;
+            }
+        }
+
+        if (/[，、;；|｜]/.test(out) && !hasChinese(out)) {
+            out = normalizePromptFormatting(out);
+            targetTextarea.value = out;
+            updateTagChips(out);
+        }
+        const res = writeToSelectedNode(out);
+        showTranslatorToast(modal, res.message, !res.success);
+    };
+
+    targetRightGroup.append(writeNodeBtn, translateAndWriteBtn);
+    targetActions.append(targetLeftGroup, targetRightGroup);
     targetPane.appendChild(targetActions);
     body.appendChild(targetPane);
 
