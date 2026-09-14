@@ -345,15 +345,15 @@ export async function openPromptStudio(owner = this) {
     activeStudioDrawer = drawer;
     overlay.appendChild(drawer);
 
-    // Dock side persistence
-    const savedSide = localStorage.getItem('anomalous_studio_dock_side') || 'right';
+    // Dock side persistence (default to left)
+    const savedSide = localStorage.getItem('anomalous_studio_dock_side') || 'left';
     if (savedSide === 'left') {
         drawer.classList.add('is-dock-left');
     }
 
-    // Sidebar width persistence & resize handle
-    const savedWidth = localStorage.getItem('anomalous_studio_sidebar_width') || '520';
-    drawer.style.width = `${Math.max(400, Math.min(window.innerWidth * 0.85, parseInt(savedWidth, 10)))}px`;
+    // Sidebar width persistence & resize handle (default to 580px)
+    const savedWidth = localStorage.getItem('anomalous_studio_sidebar_width') || '580';
+    drawer.style.width = `${Math.max(420, Math.min(window.innerWidth * 0.85, parseInt(savedWidth, 10)))}px`;
 
     const resizeHandle = document.createElement('div');
     resizeHandle.className = 'anomalous-studio-resize-handle';
@@ -403,8 +403,8 @@ export async function openPromptStudio(owner = this) {
     };
 
     resizeHandle.ondblclick = () => {
-        drawer.style.width = '520px';
-        localStorage.setItem('anomalous_studio_sidebar_width', '520');
+        drawer.style.width = '580px';
+        localStorage.setItem('anomalous_studio_sidebar_width', '580');
     };
 
     const onKeydown = (e) => {
@@ -596,10 +596,12 @@ function buildPromptComposer(owner, container, options = {}) {
         const dockSideBtn = text(topActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm');
         const isLeft = () => activeStudioDrawer?.classList.contains('is-dock-left');
         const updateDockBtn = () => {
-            dockSideBtn.innerHTML = isLeft() ? '⇥' : '⇤';
+            dockSideBtn.innerHTML = isLeft()
+                ? `<svg style="width:13px;height:13px;vertical-align:middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`
+                : `<svg style="width:13px;height:13px;vertical-align:middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>`;
             dockSideBtn.title = isLeft()
-                ? (window.anomalous_browser_lang === 'zh' ? '停靠至右侧' : 'Dock Right')
-                : (window.anomalous_browser_lang === 'zh' ? '停靠至左侧' : 'Dock Left');
+                ? (window.anomalous_browser_lang === 'zh' ? '停靠至右侧' : 'Dock to Right')
+                : (window.anomalous_browser_lang === 'zh' ? '停靠至左侧' : 'Dock to Left');
         };
         updateDockBtn();
         dockSideBtn.onclick = () => {
@@ -708,25 +710,20 @@ function buildPromptComposer(owner, container, options = {}) {
     // Action button group in leftHeader
     const leftHeaderActions = text(leftHeader, 'div', '', 'anomalous-workbench-header-actions');
 
-    // Button 1: Extract Prompts from Selected Canvas Node
-    const extractNodeBtn = text(leftHeaderActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-extract-node');
-    extractNodeBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:3px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>${window.anomalous_browser_lang === 'zh' ? '提取' : 'Extract'}`;
-    extractNodeBtn.title = window.anomalous_browser_lang === 'zh' ? '从画布当前选中节点提取提示词并生成词卡' : 'Extract prompt text from selected canvas node into cards';
+    // Button 1: One-click Sync / Import from Material Library
+    const importMaterialsBtn = text(leftHeaderActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm anomalous-icon-btn');
+    importMaterialsBtn.innerHTML = `<svg style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
+    importMaterialsBtn.title = window.anomalous_browser_lang === 'zh' ? '从素材库同步提示词' : 'Sync prompts from Material Library';
 
-    // Button 2: One-click Sync / Import from Material Library
-    const importMaterialsBtn = text(leftHeaderActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm');
-    importMaterialsBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:3px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${window.anomalous_browser_lang === 'zh' ? '导入' : 'Import'}`;
-    importMaterialsBtn.title = window.anomalous_browser_lang === 'zh' ? '读取素材库，一键把素材库里沉淀的提示词捞入当前工坊词库' : 'Read and import all prompts from Material Library into workbench';
-
-    // Button 3: Create New Custom Card (placed in header right, never wraps)
-    const newCardTriggerBtn = text(leftHeaderActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm');
-    newCardTriggerBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:3px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>${window.anomalous_browser_lang === 'zh' ? '新建' : 'New'}`;
-    newCardTriggerBtn.title = window.anomalous_browser_lang === 'zh' ? '新建并保存一张提示词卡片' : 'Create a new prompt card';
+    // Button 2: Create New Custom Card
+    const newCardTriggerBtn = text(leftHeaderActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm anomalous-icon-btn');
+    newCardTriggerBtn.innerHTML = `<svg style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+    newCardTriggerBtn.title = window.anomalous_browser_lang === 'zh' ? '新建词卡' : 'Create new prompt card';
 
     // Search and category filters bar
     const leftFilterBar = text(leftPanel, 'div', '', 'anomalous-workbench-filter-bar');
     const leftSearch = text(leftFilterBar, 'input', '', 'anomalous-workbench-search-input');
-    leftSearch.placeholder = window.anomalous_browser_lang === 'zh' ? '搜索提示词或分类...' : 'Search prompt snippet...';
+    leftSearch.placeholder = window.anomalous_browser_lang === 'zh' ? '搜索词卡...' : 'Search cards...';
     leftSearch.oninput = () => {
         sourceFilterKeyword = leftSearch.value.trim().toLowerCase();
         renderSourceCardsList();
@@ -735,10 +732,10 @@ function buildPromptComposer(owner, container, options = {}) {
     const leftCategoryPills = text(leftPanel, 'div', '', 'anomalous-workbench-category-pills');
     const filterCats = [
         { id: 'all', label: window.anomalous_browser_lang === 'zh' ? '全部' : 'All' },
-        { id: 'base', label: window.anomalous_browser_lang === 'zh' ? '通用底模' : 'Base' },
-        { id: 'style', label: window.anomalous_browser_lang === 'zh' ? '风格氛围' : 'Style' },
-        { id: 'subject', label: window.anomalous_browser_lang === 'zh' ? '主体内容' : 'Subject' },
-        { id: 'trigger', label: window.anomalous_browser_lang === 'zh' ? '触发词' : 'Trigger' },
+        { id: 'base', label: window.anomalous_browser_lang === 'zh' ? '底模' : 'Base' },
+        { id: 'style', label: window.anomalous_browser_lang === 'zh' ? '风格' : 'Style' },
+        { id: 'subject', label: window.anomalous_browser_lang === 'zh' ? '主体' : 'Subject' },
+        { id: 'trigger', label: window.anomalous_browser_lang === 'zh' ? '触发' : 'Trigger' },
     ];
     filterCats.forEach(cat => {
         const pill = text(leftCategoryPills, 'button', cat.label, `anomalous-workbench-pill${sourceFilterCategory === cat.id ? ' is-active' : ''}`);
@@ -753,15 +750,6 @@ function buildPromptComposer(owner, container, options = {}) {
     // Inline New Card Form (Hidden by default, shown on demand)
     const newCardForm = text(leftPanel, 'div', '', 'anomalous-workbench-new-card-form');
     newCardForm.style.display = 'none';
-
-    // Usage Tip Banner
-    const tipBanner = text(leftPanel, 'div', '', 'anomalous-workbench-tip-banner');
-    tipBanner.innerHTML = `
-        <svg class="anomalous-tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-        </svg>
-        <span>${window.anomalous_browser_lang === 'zh' ? '点击词卡或拖拽至右侧拼装台，自由调换顺序' : 'Click card or drag to right stage to assemble'}</span>
-    `;
 
     // Source Cards List
     const sourceCardsList = text(leftPanel, 'div', '', 'anomalous-source-cards-list');
@@ -1021,7 +1009,6 @@ function buildPromptComposer(owner, container, options = {}) {
         }
     }
 
-    extractNodeBtn.onclick = () => extractPromptsFromSelectedNode(false);
     rightSuckNodeBtn.onclick = () => extractPromptsFromSelectedNode(true);
 
     let materialSyncController = null;
@@ -1034,7 +1021,7 @@ function buildPromptComposer(owner, container, options = {}) {
         materialSyncController = controller;
 
         importMaterialsBtn.disabled = true;
-        importMaterialsBtn.textContent = window.anomalous_browser_lang === 'zh' ? '正在同步素材...' : 'Syncing...';
+        importMaterialsBtn.innerHTML = `<span style="font-size:11px;">⏳</span>`;
 
         try {
             const res = await fetch('/anomalous/materials?category=prompts&limit=150', { signal: controller.signal });
@@ -1084,7 +1071,7 @@ function buildPromptComposer(owner, container, options = {}) {
             if (materialSyncController === controller) {
                 materialSyncController = null;
                 importMaterialsBtn.disabled = false;
-                importMaterialsBtn.innerHTML = `<svg style="width:12px;height:12px;margin-right:3px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${window.anomalous_browser_lang === 'zh' ? '导入' : 'Import'}`;
+                importMaterialsBtn.innerHTML = `<svg style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
             }
         }
     }
@@ -1428,15 +1415,13 @@ function buildPromptComposer(owner, container, options = {}) {
         if (!currentRoleParts.length) {
             const dropzoneNotice = text(blocksContainer, 'div', '', 'anomalous-assembly-dropzone');
             dropzoneNotice.innerHTML = `
-                <div style="margin-bottom: 12px; opacity: 0.7;">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="7 10 12 15 17 10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
+                <div style="margin-bottom: 12px; opacity: 0.65;">
+                    <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
                     </svg>
                 </div>
-                <div style="font-size: 0.92rem; font-weight: 600; color: #e2e8f0;">${window.anomalous_browser_lang === 'zh' ? '点击下方词卡或拖拽到这里拼装' : 'Click cards below or drop here to assemble'}</div>
-                <div style="font-size: 0.76rem; color: #64748b; margin-top: 4px;">${window.anomalous_browser_lang === 'zh' ? '支持自由调换次序，点击【智能排序】自动理顺' : 'Drag to reorder anytime, or click Smart Sort.'}</div>
+                <div style="font-size: 0.88rem; font-weight: 600; color: #f1f5f9;">${window.anomalous_browser_lang === 'zh' ? '点击词卡或拖拽到这里拼装' : 'Click cards or drag here to assemble'}</div>
+                <div style="font-size: 0.74rem; color: #64748b; margin-top: 5px;">${window.anomalous_browser_lang === 'zh' ? '支持自由拖拽调换次序，点击【智能排序】一键理顺' : 'Reorder freely anytime, or click Smart Sort.'}</div>
             `;
             // Accept drops on empty dropzone
             setupDropzoneListeners(dropzoneNotice);

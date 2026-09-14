@@ -9541,31 +9541,40 @@ dialog.anomalous-gallery-viewer::backdrop {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
+    flex-wrap: nowrap !important;
     gap: 8px;
-    padding-bottom: 6px;
+    height: 44px;
+    padding: 0 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(20, 22, 27, 0.95);
+    box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 .anomalous-prompt-topbar-left {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
+    flex: 1 1 auto;
 }
 
 .anomalous-prompt-topbar-left h3 {
     margin: 0;
-    font-size: 0.98rem;
-    font-weight: 600;
+    font-size: 0.92rem;
+    font-weight: 700;
     color: #f8fafc;
     letter-spacing: 0.02em;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .anomalous-prompt-topbar-actions {
     display: flex;
     align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
+    gap: 4px;
+    flex-shrink: 0;
+    flex-wrap: nowrap !important;
 }
 
 .anomalous-prompt-close-btn {
@@ -9585,16 +9594,16 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: var(--amb-bg-input, rgba(0, 0, 0, 0.35));
     border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.14));
     border-radius: var(--amb-radius-control, 6px);
-    padding: 3px 8px;
+    padding: 2px 8px;
     height: 26px;
     color: var(--amb-text-main, #f1f5f9);
     font-size: 0.78rem;
     outline: none;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
     box-sizing: border-box;
-    flex: 1 1 160px;
-    min-width: 100px;
-    max-width: 240px;
+    flex: 0 1 130px;
+    min-width: 60px;
+    max-width: 140px;
 }
 
 .anomalous-prompt-name-input:focus {
@@ -12830,7 +12839,7 @@ button:hover .anomalous-btn-icon {
     position: absolute;
     top: 0;
     right: 0;
-    width: 520px;
+    width: 580px;
     max-width: 90vw;
     height: 100vh;
     background: var(--amb-bg-page, #121316);
@@ -12874,7 +12883,7 @@ button:hover .anomalous-btn-icon {
     box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
 }
 
-/* Drawer Workbench Grid */
+/* Drawer Workbench Base */
 .anomalous-prompt-studio-drawer .anomalous-prompt-workbench {
     background: transparent;
     padding: 0;
@@ -12883,40 +12892,190 @@ button:hover .anomalous-btn-icon {
     flex-direction: column;
 }
 
-.anomalous-prompt-studio-drawer .anomalous-prompt-workbench-grid {
+/* Left Dock Mode (Default): Left Column = Cards (190px), Right Column = Assembly Track (faces canvas on right) */
+.anomalous-prompt-studio-drawer.is-dock-left .anomalous-prompt-workbench-grid {
     display: grid !important;
-    grid-template-columns: 145px minmax(0, 1fr) !important;
+    grid-template-columns: 190px minmax(0, 1fr) !important;
     flex-direction: row !important;
-    gap: 8px !important;
-    padding: 6px 8px 8px !important;
+    gap: 0 !important;
+    padding: 0 !important;
     flex: 1;
     min-height: 0;
 }
 
-.anomalous-prompt-studio-drawer .anomalous-workbench-left-panel {
+.anomalous-prompt-studio-drawer.is-dock-left .anomalous-workbench-left-panel {
     order: 1 !important;
     flex: none !important;
-    width: 145px !important;
+    width: 190px !important;
     max-height: 100% !important;
-    padding: 6px 6px 8px !important;
+    padding: 8px 10px !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-left: none !important;
+    background: rgba(18, 20, 24, 0.7) !important;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
-.anomalous-prompt-studio-drawer .anomalous-workbench-right-panel {
+.anomalous-prompt-studio-drawer.is-dock-left .anomalous-workbench-right-panel {
     order: 2 !important;
     flex: 1 !important;
     max-height: 100% !important;
-    padding: 6px 8px 48px !important; /* reserve bottom space for floating dock */
+    padding: 8px 12px 52px !important; /* reserve bottom space for floating dock */
     position: relative;
+    box-sizing: border-box;
+    background: rgba(14, 15, 18, 0.5) !important;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Compact Source Cards */
+/* Right Dock Mode: Right Column = Cards (190px), Left Column = Assembly Track (faces canvas on left) */
+.anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-prompt-workbench-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 190px !important;
+    flex-direction: row !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    flex: 1;
+    min-height: 0;
+}
+
+.anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-workbench-right-panel {
+    order: 1 !important;
+    flex: 1 !important;
+    max-height: 100% !important;
+    padding: 8px 12px 52px !important;
+    position: relative;
+    box-sizing: border-box;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-left: none !important;
+    background: rgba(14, 15, 18, 0.5) !important;
+    display: flex;
+    flex-direction: column;
+}
+
+.anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-workbench-left-panel {
+    order: 2 !important;
+    flex: none !important;
+    width: 190px !important;
+    max-height: 100% !important;
+    padding: 8px 10px !important;
+    border-left: none !important;
+    border-right: none !important;
+    background: rgba(18, 20, 24, 0.7) !important;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Column Headers & Action Buttons */
+.anomalous-workbench-col-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 30px;
+    padding: 0 2px;
+    margin-bottom: 6px;
+    flex-shrink: 0;
+}
+
+.anomalous-workbench-col-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    white-space: nowrap;
+}
+
+.anomalous-workbench-col-title .anomalous-sub-counter {
+    font-size: 0.72rem;
+    color: #64748b;
+    font-weight: normal;
+}
+
+.anomalous-workbench-header-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.anomalous-workbench-header-actions button.anomalous-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border-radius: 5px;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.anomalous-workbench-header-actions button.anomalous-icon-btn:hover {
+    color: #ffffff;
+    background: rgba(56, 189, 248, 0.18);
+    border-color: rgba(56, 189, 248, 0.4);
+}
+
+/* Category Pills: 5 equal 2-char chips */
+.anomalous-workbench-category-pills {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-wrap: nowrap;
+    margin: 4px 0 8px;
+}
+
+.anomalous-workbench-pill {
+    flex: 1 1 0;
+    text-align: center;
+    padding: 3px 0;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    color: #94a3b8;
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+.anomalous-workbench-pill:hover {
+    color: #f1f5f9;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.anomalous-workbench-pill.is-active {
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.15);
+    border-color: rgba(56, 189, 248, 0.4);
+    font-weight: 600;
+}
+
+/* Compact Source Cards in 190px */
+.anomalous-source-cards-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 2px;
+}
+
 .anomalous-source-card-compact {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 8px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 5px 8px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -12926,25 +13085,29 @@ button:hover .anomalous-btn-icon {
 }
 
 .anomalous-source-card-compact:hover {
-    background: rgba(56, 189, 248, 0.15);
-    border-color: rgba(56, 189, 248, 0.4);
+    background: rgba(56, 189, 248, 0.12);
+    border-color: rgba(56, 189, 248, 0.35);
     transform: translateX(2px);
 }
 
 .anomalous-source-card-dot {
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     flex-shrink: 0;
 }
 
 .anomalous-source-card-name {
-    font-size: 0.74rem;
-    color: #e2e8f0;
+    font-size: 0.75rem;
+    color: #cbd5e1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     flex: 1;
+}
+
+.anomalous-source-card-compact:hover .anomalous-source-card-name {
+    color: #ffffff;
 }
 
 .anomalous-source-card-add-icon {
@@ -12958,6 +13121,30 @@ button:hover .anomalous-btn-icon {
 .anomalous-source-card-compact:hover .anomalous-source-card-add-icon {
     opacity: 1;
     color: #38bdf8;
+}
+
+/* Assembly Dropzone Notice */
+.anomalous-assembly-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 260px;
+    padding: 40px 20px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.015);
+    color: #64748b;
+    text-align: center;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+.anomalous-assembly-dropzone:hover,
+.anomalous-assembly-dropzone.is-drag-over {
+    border-color: rgba(56, 189, 248, 0.4);
+    background: rgba(56, 189, 248, 0.04);
 }
 
 /* Weight Wheel Pill in Assembled Blocks */

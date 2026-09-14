@@ -193,11 +193,12 @@ DOM or live LiteGraph state.
   - **Floating Trigger Button & Anomalous Hypercube Core (悬浮入口魔晶重构)**:
     - 重绘旧版扁平纸箱立方体为 **「异象超维魔方核 (Anomalous Hypercube Core)」**：外层等轴测立体超维立方体轮廓，内嵌悬浮发光微晶棱镜（`--amb-accent` 随主题自适应为天青/猩红），核心凝聚一枚四芒星辉奇点（`✦`），兼具 3D 模型容器特征与魔法档案馆星辰意象。
     - 悬浮球体容器 (`#anomalous-trigger-btn`) 升级为亚克力磨砂深色毛玻璃材质 (`backdrop-filter: blur(16px)`)，悬停微移提亮，图标伴随 12° 优雅微旋与天青/猩红柔和微光，保持高度克制的同时极具辨识度与高级质感。
-  - **Prompt Studio Dual-Column Workbench (提示词工坊两行顶栏与容器自适应)**:
-    - Topbar restructured into two clean rows: Row 1 hosts Back, shortened title ("提示词组合"), New, "更多 ▾" dropdown (containing Export), and primary Save Plan; Row 2 hosts expanded preset name and tag inputs.
-    - Insert position ("添加到前面/后面") relocated into the target node write bar, adjacent to widget selection and write triggers where execution actually happens.
-    - Left Column ("词卡库"): 280-320px width, clean cards with explicit text role badges (`[正向]` / `[负向]`), 2-line preview, single top drag hint, and secondary node/material extract buttons.
-    - Responsive Container Query: Uses `@container prompt-workbench (max-width: 850px)` to smoothly stack panels vertically in narrow dock/floating windows without clipping or forced 100% heights.
+  - **Prompt Studio Dual-Column Workbench (提示词工坊侧边抽屉与双向自适应停靠)**:
+    - **Default Left Docking & Canvas-Facing Flow**: Defaults to left dock (`is-dock-left`), with Source Cards (190px) on the outer screen edge and Assembly Track on the inner side directly facing the ComfyUI canvas.
+    - **Bidirectional Column Flipping**: When toggled to right dock, the layout seamlessly swaps column visual order (`order: 1` for Assembly Track facing canvas on left, `order: 2` for Source Cards along right screen edge) so that the Assembly Track is ALWAYS adjacent to the ComfyUI canvas regardless of docking side.
+    - **Single-Line Unbroken Topbar**: Topbar strictly enforces `flex-wrap: nowrap`, keeping Title, Preset Name input (constrained max-width 140px), Node Extraction (`🎯`), Dock Toggle (`→`/`←`), More dropdown (`··· 更多`), and Close (`✕`) in a unified single row under any drawer width.
+    - **De-cluttered Left Panel**: Expanded left column from 145px to 190px, purged redundant text buttons into compact 24x24 icon buttons (`[📥]` and `[+]`), shortened category filter pills to clean 2-character chips (`[全部]`, `[底模]`, `[风格]`, `[主体]`, `[触发]`) fitting into a single row, and removed bulky instructional tip banners.
+    - **Dynamic Floating Action Dock & Popout Modal**: Floating Action Dock slides up only when blocks exist; provides single-click Node Direct Write and popout full-screen Prompt Inspector (`openPromptInspectorModal`) for deep multi-line tuning.
   - **Uniform Card Skeletons**: Recipe and material cards enforce "Preview -> 2-Line Clamped Title -> Key Specs -> Footer Action Bar" order, preventing Chinese title clipping; Model cards display titles and filenames at rest without `translateY` collapse and without `backdrop-filter: blur`, fading in action buttons on hover.
   - **Custom Tooltip System (`[data-tooltip]`)**: Solid dark capsules (`rgba(18, 20, 26, 0.98)`), 350ms standard hover delay, and keyboard focus-visible support.
 
