@@ -13075,10 +13075,11 @@ button:hover .anomalous-btn-icon {
 .anomalous-source-card-compact {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 5px 8px;
-    background: rgba(255, 255, 255, 0.035);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    gap: 7px;
+    padding: 6px 9px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 3px solid #64748b;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -13087,10 +13088,47 @@ button:hover .anomalous-btn-icon {
     box-sizing: border-box;
 }
 
+.anomalous-source-card-compact.is-cat-base {
+    border-left-color: #38bdf8 !important;
+}
+
+.anomalous-source-card-compact.is-cat-style {
+    border-left-color: #c084fc !important;
+}
+
+.anomalous-source-card-compact.is-cat-subject {
+    border-left-color: #4ade80 !important;
+}
+
+.anomalous-source-card-compact.is-cat-trigger {
+    border-left-color: #fb923c !important;
+}
+
 .anomalous-source-card-compact:hover {
-    background: rgba(56, 189, 248, 0.12);
-    border-color: rgba(56, 189, 248, 0.35);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
     transform: translateX(2px);
+}
+
+.anomalous-source-card-compact.is-cat-base:hover {
+    border-color: rgba(56, 189, 248, 0.4);
+    background: rgba(56, 189, 248, 0.12);
+}
+
+.anomalous-source-card-compact.is-cat-style:hover {
+    border-color: rgba(192, 132, 252, 0.4);
+    background: rgba(192, 132, 252, 0.12);
+}
+
+.anomalous-source-card-compact.is-cat-subject:hover {
+    border-color: rgba(74, 222, 128, 0.4);
+    background: rgba(74, 222, 128, 0.12);
+}
+
+.anomalous-source-card-compact.is-cat-trigger:hover {
+    border-color: rgba(251, 146, 60, 0.4);
+    background: rgba(251, 146, 60, 0.12);
 }
 
 .anomalous-source-card-dot {
@@ -13101,8 +13139,9 @@ button:hover .anomalous-btn-icon {
 }
 
 .anomalous-source-card-name {
-    font-size: 0.75rem;
-    color: #cbd5e1;
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: #f1f5f9;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -13119,11 +13158,120 @@ button:hover .anomalous-btn-icon {
     opacity: 0;
     transition: opacity 0.15s;
     flex-shrink: 0;
+    padding: 0 4px;
+    border-radius: 3px;
 }
 
 .anomalous-source-card-compact:hover .anomalous-source-card-add-icon {
     opacity: 1;
     color: #38bdf8;
+    background: rgba(56, 189, 248, 0.18);
+}
+
+/* Eye-Catching Prompt Card Hover Preview Popover (Replaces unstyled browser tooltip) */
+.anomalous-card-preview-popover {
+    position: fixed;
+    z-index: 1000005;
+    width: 310px;
+    max-width: calc(100vw - 32px);
+    background: rgba(18, 20, 26, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 10px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.18);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    pointer-events: none;
+    animation: anmPopoverIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes anmPopoverIn {
+    from { opacity: 0; transform: scale(0.96) translateX(-4px); }
+    to { opacity: 1; transform: scale(1) translateX(0); }
+}
+
+.anomalous-popover-header {
+    padding: 10px 12px 6px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.anomalous-popover-tags {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.anomalous-popover-cat {
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1.2;
+    border: 1px solid transparent;
+}
+
+.anomalous-popover-role {
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.anomalous-popover-role.is-positive {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.anomalous-popover-role.is-negative {
+    background: rgba(251, 113, 133, 0.15);
+    color: #fb7185;
+    border: 1px solid rgba(251, 113, 133, 0.35);
+}
+
+.anomalous-popover-title {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: #f8fafc;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.anomalous-popover-body {
+    padding: 8px 12px;
+}
+
+.anomalous-popover-snippet {
+    margin: 0;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: #38bdf8;
+    font-family: Consolas, Monaco, "Courier New", monospace;
+    font-size: 0.76rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 140px;
+    overflow-y: auto;
+}
+
+.anomalous-popover-footer {
+    padding: 6px 12px 7px;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.25);
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 /* Assembly Dropzone Notice */

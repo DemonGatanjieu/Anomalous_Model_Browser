@@ -313,8 +313,17 @@ export function openPromptInspectorModal(owner, draft, defaultRole = 'positive',
 
 let activeStudioOverlay = null;
 let activeStudioDrawer = null;
+let activeCardPreviewPopover = null;
+
+export function hideCardPreviewPopover() {
+    if (activeCardPreviewPopover) {
+        activeCardPreviewPopover.remove();
+        activeCardPreviewPopover = null;
+    }
+}
 
 export function closePromptStudio(owner) {
+    hideCardPreviewPopover();
     if (activeStudioOverlay) {
         activeStudioOverlay.remove();
         activeStudioOverlay = null;
@@ -1295,8 +1304,80 @@ function buildPromptComposer(owner, container, options = {}) {
         renderNewCardFormUI();
     };
 
+    function showCardPreviewPopover(card, anchorEl) {
+        hideCardPreviewPopover();
+        if (!anchorEl?.isConnected) return;
+
+        const catMeta = CATEGORY_META[card.category] || CATEGORY_META.subject;
+        const popover = document.createElement('div');
+        popover.className = 'anomalous-card-preview-popover';
+
+        const header = document.createElement('div');
+        header.className = 'anomalous-popover-header';
+
+        const tags = document.createElement('div');
+        tags.className = 'anomalous-popover-tags';
+
+        const catBadge = document.createElement('span');
+        catBadge.className = 'anomalous-popover-cat';
+        catBadge.style.color = catMeta.color;
+        catBadge.style.background = catMeta.bg;
+        catBadge.style.borderColor = catMeta.border;
+        catBadge.textContent = window.anomalous_browser_lang === 'zh' ? catMeta.zh : catMeta.en;
+        tags.appendChild(catBadge);
+
+        const roleBadge = document.createElement('span');
+        roleBadge.className = `anomalous-popover-role is-${card.role}`;
+        roleBadge.textContent = card.role === 'negative'
+            ? (window.anomalous_browser_lang === 'zh' ? '负向' : 'Negative')
+            : (window.anomalous_browser_lang === 'zh' ? '正向' : 'Positive');
+        tags.appendChild(roleBadge);
+        header.appendChild(tags);
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'anomalous-popover-title';
+        titleEl.textContent = card.title;
+        header.appendChild(titleEl);
+
+        popover.appendChild(header);
+
+        const body = document.createElement('div');
+        body.className = 'anomalous-popover-body';
+        const snippet = document.createElement('pre');
+        snippet.className = 'anomalous-popover-snippet';
+        snippet.textContent = card.content;
+        body.appendChild(snippet);
+        popover.appendChild(body);
+
+        const footer = document.createElement('div');
+        footer.className = 'anomalous-popover-footer';
+        footer.textContent = window.anomalous_browser_lang === 'zh'
+            ? '💡 点击直接添加 · 拖拽自由调序'
+            : '💡 Click to add · Drag to assemble';
+        popover.appendChild(footer);
+
+        document.body.appendChild(popover);
+        activeCardPreviewPopover = popover;
+
+        // Smart Positioning
+        const rect = anchorEl.getBoundingClientRect();
+        const isDockLeft = activeStudioDrawer?.classList.contains('is-dock-left') ?? true;
+        const popoverHeight = popover.offsetHeight || 160;
+        const top = Math.max(12, Math.min(window.innerHeight - popoverHeight - 12, rect.top - 6));
+        popover.style.top = `${top}px`;
+
+        if (isDockLeft) {
+            popover.style.left = `${rect.right + 10}px`;
+        } else {
+            popover.style.left = `${Math.max(12, rect.left - 320)}px`;
+        }
+    }
+
     function renderSourceCardsList() {
+        hideCardPreviewPopover();
         sourceCardsList.replaceChildren();
+        sourceCardsList.onscroll = () => hideCardPreviewPopover();
+
         const filtered = sourceCards.filter(card => {
             if (sourceFilterCategory !== 'all' && card.category !== sourceFilterCategory) return false;
             if (sourceFilterKeyword) {
@@ -1322,10 +1403,18 @@ function buildPromptComposer(owner, container, options = {}) {
             const catMeta = CATEGORY_META[card.category] || CATEGORY_META.subject;
             const cardEl = text(sourceCardsList, 'div', '', `anomalous-source-card-compact is-cat-${card.category}`);
             cardEl.setAttribute('draggable', 'true');
-            cardEl.title = `[${window.anomalous_browser_lang === 'zh' ? catMeta.zh : catMeta.en}] ${card.title}\n${card.content}`;
+
+            // Custom Eye-Catching Hover Preview Popover (replaces native OS browser title tooltip)
+            cardEl.onmouseenter = () => {
+                showCardPreviewPopover(card, cardEl);
+            };
+            cardEl.onmouseleave = () => {
+                hideCardPreviewPopover();
+            };
 
             // Drag Start
             cardEl.ondragstart = (e) => {
+                hideCardPreviewPopover();
                 const payload = {
                     title: card.title,
                     content: card.content,
@@ -1352,6 +1441,7 @@ function buildPromptComposer(owner, container, options = {}) {
             const addIcon = text(cardEl, 'span', '+', 'anomalous-source-card-add-icon');
 
             cardEl.onclick = () => {
+                hideCardPreviewPopover();
                 addSourceCardToMixer(card);
             };
         });
