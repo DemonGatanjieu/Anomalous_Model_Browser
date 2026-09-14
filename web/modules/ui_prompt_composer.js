@@ -323,6 +323,10 @@ export function closePromptStudio(owner) {
     if (owner?.sidePromptComposerControl) {
         owner.sidePromptComposerControl = null;
     }
+    document.body.classList.remove('anomalous-prompt-studio-open');
+    if (!owner?.modal?.classList.contains('visible')) {
+        owner?.setTriggerVisible?.(true);
+    }
 }
 
 export async function openPromptStudio(owner = this) {
@@ -335,6 +339,10 @@ export async function openPromptStudio(owner = this) {
             owner.close();
         }
     }
+
+    // Hide global floating trigger button while Studio Drawer is open
+    owner?.setTriggerVisible?.(false);
+    document.body.classList.add('anomalous-prompt-studio-open');
 
     const overlay = document.createElement('div');
     overlay.className = 'anomalous-prompt-studio-overlay';

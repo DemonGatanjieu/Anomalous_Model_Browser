@@ -180,10 +180,13 @@ html.theme-abyssal-scarlet #anomalous-trigger-btn:hover .anomalous-trigger-icon 
     filter: drop-shadow(0 0 6px rgba(220, 20, 60, 0.7)) !important;
 }
 
-#anomalous-trigger-btn.anomalous-trigger-hidden {
+#anomalous-trigger-btn.anomalous-trigger-hidden,
+body.anomalous-prompt-studio-open #anomalous-trigger-btn,
+body:has(.anomalous-prompt-studio-drawer) #anomalous-trigger-btn {
     visibility: hidden !important;
     opacity: 0 !important;
     pointer-events: none !important;
+    display: none !important;
     transform: scale(0.7);
 }
 
