@@ -111,6 +111,61 @@ export function openPromptTranslator(owner) {
     modal.className = 'anomalous-translator-modal';
     overlay.appendChild(modal);
 
+    // Left edge resize handle for sidebar mode
+    const resizeHandle = document.createElement('div');
+    resizeHandle.className = 'anomalous-translator-resize-handle';
+    resizeHandle.title = t('拖动调整侧边栏宽度，双击恢复默认', 'Drag to resize sidebar, double-click to reset');
+
+    let isResizing = false;
+    let startX = 0;
+    let startWidth = 420;
+
+    resizeHandle.onmousedown = (e) => {
+        if (!modal.classList.contains('is-sidebar')) return;
+        isResizing = true;
+        startX = e.clientX;
+        startWidth = modal.getBoundingClientRect().width;
+        resizeHandle.classList.add('is-resizing');
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'ew-resize';
+
+        const onMouseMove = (moveEvt) => {
+            if (!isResizing) return;
+            const deltaX = startX - moveEvt.clientX;
+            const newWidth = Math.max(340, Math.min(window.innerWidth * 0.85, startWidth + deltaX));
+            modal.style.setProperty('--amb-translator-width', `${newWidth}px`);
+        };
+
+        const onMouseUp = () => {
+            if (!isResizing) return;
+            isResizing = false;
+            resizeHandle.classList.remove('is-resizing');
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            const finalWidth = modal.getBoundingClientRect().width;
+            localStorage.setItem('anomalous_translator_width', Math.round(finalWidth));
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    };
+
+    resizeHandle.ondblclick = () => {
+        if (!modal.classList.contains('is-sidebar')) return;
+        modal.style.removeProperty('--amb-translator-width');
+        localStorage.removeItem('anomalous_translator_width');
+        showTranslatorToast(modal, t('✓ 已恢复默认侧边栏宽度', '✓ Reset to default width'));
+    };
+
+    modal.appendChild(resizeHandle);
+
+    const savedWidth = localStorage.getItem('anomalous_translator_width');
+    if (savedWidth) {
+        modal.style.setProperty('--amb-translator-width', `${savedWidth}px`);
+    }
+
     // 1. Header
     const header = document.createElement('div');
     header.className = 'anomalous-translator-header';
@@ -148,11 +203,39 @@ export function openPromptTranslator(owner) {
     langSelectWrap.appendChild(langSelect);
     headerRight.appendChild(langSelectWrap);
 
+    // Mode Toggle Button (Sidebar / Modal)
+    let currentMode = localStorage.getItem('anomalous_translator_mode') || 'sidebar'; // Default to sidebar
+    const modeToggleBtn = document.createElement('button');
+    modeToggleBtn.type = 'button';
+    modeToggleBtn.className = 'anomalous-translator-mode-btn';
+
+    function applyMode(mode) {
+        currentMode = mode;
+        localStorage.setItem('anomalous_translator_mode', mode);
+        if (mode === 'sidebar') {
+            overlay.classList.add('is-sidebar');
+            modal.classList.add('is-sidebar');
+            modeToggleBtn.innerHTML = `🔲 ${t('居中浮窗', 'Modal')}`;
+            modeToggleBtn.title = t('切换为居中弹窗模式', 'Switch to centered modal');
+        } else {
+            overlay.classList.remove('is-sidebar');
+            modal.classList.remove('is-sidebar');
+            modeToggleBtn.innerHTML = `📌 ${t('贴边侧栏', 'Sidebar')}`;
+            modeToggleBtn.title = t('切换为贴边侧边栏模式（不遮挡画布，可边点节点边操作）', 'Switch to side drawer mode (no canvas overlay)');
+        }
+    }
+
+    modeToggleBtn.onclick = () => {
+        applyMode(currentMode === 'sidebar' ? 'modal' : 'sidebar');
+    };
+    headerRight.appendChild(modeToggleBtn);
+
     // Close Button
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
     closeBtn.className = 'anomalous-translator-close';
     closeBtn.innerHTML = '&times;';
+    closeBtn.title = t('关闭 (Esc)', 'Close (Esc)');
     closeBtn.onclick = () => {
         overlay.remove();
         activeTranslatorModal = null;
@@ -160,6 +243,7 @@ export function openPromptTranslator(owner) {
     headerRight.appendChild(closeBtn);
     header.appendChild(headerRight);
     modal.appendChild(header);
+    applyMode(currentMode);
 
     // 2. Body Area (Split pane: Source Input / Translated Output)
     const body = document.createElement('div');
@@ -514,9 +598,9 @@ export function openPromptTranslator(owner) {
         sourceTextarea.value = initialNode.text;
     }
 
-    // Close on clicking backdrop
+    // Close on clicking backdrop (only active in centered modal mode)
     overlay.onclick = (e) => {
-        if (e.target === overlay) {
+        if (e.target === overlay && !overlay.classList.contains('is-sidebar')) {
             overlay.remove();
             activeTranslatorModal = null;
         }

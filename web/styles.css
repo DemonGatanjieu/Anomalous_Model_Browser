@@ -12489,6 +12489,84 @@ button:hover .anomalous-btn-icon {
     flex-direction: column;
     overflow: hidden;
     position: relative;
+    transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+/* Sidebar Docked Mode for Prompt Translator */
+.anomalous-translator-overlay.is-sidebar {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    pointer-events: none !important;
+    padding: 0 !important;
+    justify-content: flex-end !important;
+    align-items: stretch !important;
+}
+
+.anomalous-translator-modal.is-sidebar {
+    pointer-events: auto !important;
+    width: var(--amb-translator-width, 420px) !important;
+    min-width: 340px !important;
+    max-width: 92vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    border-right: none !important;
+    border-left: 1px solid rgba(56, 189, 248, 0.3) !important;
+    background: rgba(13, 17, 26, 0.95) !important;
+    backdrop-filter: blur(24px) !important;
+    box-shadow: -10px 0 36px rgba(0, 0, 0, 0.65), 0 0 24px rgba(56, 189, 248, 0.08) !important;
+    animation: anmSlideInRight 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.anomalous-translator-resize-handle {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: ew-resize;
+    z-index: 50;
+    transition: background 0.15s ease;
+}
+
+.anomalous-translator-modal.is-sidebar .anomalous-translator-resize-handle {
+    display: block;
+}
+
+.anomalous-translator-resize-handle:hover,
+.anomalous-translator-resize-handle.is-resizing {
+    background: rgba(56, 189, 248, 0.5);
+}
+
+.anomalous-translator-mode-btn {
+    border: 1px solid rgba(56, 189, 248, 0.25) !important;
+    color: #7dd3fc !important;
+    font-size: 0.78rem !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    cursor: pointer;
+    background: rgba(15, 23, 42, 0.6);
+    transition: all 0.15s ease;
+}
+
+.anomalous-translator-mode-btn:hover {
+    background: rgba(56, 189, 248, 0.2) !important;
+    color: #ffffff !important;
+    border-color: #38bdf8 !important;
+}
+
+@keyframes anmSlideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0.4;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 .anomalous-translator-header {
