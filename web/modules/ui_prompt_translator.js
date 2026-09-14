@@ -111,14 +111,24 @@ export function openPromptTranslator(owner) {
     modal.className = 'anomalous-translator-modal';
     overlay.appendChild(modal);
 
-    // Left edge resize handle for sidebar mode
+    // Canvas Focus Mode: If left master browser is open, auto-collapse it so canvas has 80%+ full space
+    let masterWasVisible = false;
+    if (owner && owner.modal && owner.modal.classList.contains('visible')) {
+        masterWasVisible = true;
+        if (typeof owner.close === 'function') {
+            owner.close();
+        }
+    }
+
+    // Left/Right edge resize handle for sidebar mode
     const resizeHandle = document.createElement('div');
     resizeHandle.className = 'anomalous-translator-resize-handle';
     resizeHandle.title = t('拖动调整侧边栏宽度，双击恢复默认', 'Drag to resize sidebar, double-click to reset');
 
     let isResizing = false;
     let startX = 0;
-    let startWidth = 420;
+    let startWidth = 380;
+    let currentSide = localStorage.getItem('anomalous_translator_dock_side') || 'right';
 
     resizeHandle.onmousedown = (e) => {
         if (!modal.classList.contains('is-sidebar')) return;
@@ -131,8 +141,14 @@ export function openPromptTranslator(owner) {
 
         const onMouseMove = (moveEvt) => {
             if (!isResizing) return;
-            const deltaX = startX - moveEvt.clientX;
-            const newWidth = Math.max(340, Math.min(window.innerWidth * 0.85, startWidth + deltaX));
+            let newWidth;
+            if (currentSide === 'left') {
+                const deltaX = moveEvt.clientX - startX;
+                newWidth = Math.max(320, Math.min(window.innerWidth * 0.85, startWidth + deltaX));
+            } else {
+                const deltaX = startX - moveEvt.clientX;
+                newWidth = Math.max(320, Math.min(window.innerWidth * 0.85, startWidth + deltaX));
+            }
             modal.style.setProperty('--amb-translator-width', `${newWidth}px`);
         };
 
@@ -184,7 +200,7 @@ export function openPromptTranslator(owner) {
     // Target Language Selector
     const langSelectWrap = document.createElement('label');
     langSelectWrap.className = 'anomalous-translator-lang-wrap';
-    langSelectWrap.innerHTML = `<span>${t('目标语言', 'Target')}:</span>`;
+    langSelectWrap.innerHTML = `<span>${t('目标', 'To')}:</span>`;
 
     const langSelect = document.createElement('select');
     langSelect.className = 'anomalous-translator-select';
@@ -203,6 +219,32 @@ export function openPromptTranslator(owner) {
     langSelectWrap.appendChild(langSelect);
     headerRight.appendChild(langSelectWrap);
 
+    // Dock Side Button (Left / Right)
+    const dockSideBtn = document.createElement('button');
+    dockSideBtn.type = 'button';
+    dockSideBtn.className = 'anomalous-translator-mode-btn';
+
+    function applyDockSide(side) {
+        currentSide = side;
+        localStorage.setItem('anomalous_translator_dock_side', side);
+        if (side === 'left') {
+            overlay.classList.add('is-dock-left');
+            modal.classList.add('is-dock-left');
+            dockSideBtn.innerHTML = `⇥ ${t('靠右', 'Right')}`;
+            dockSideBtn.title = t('切换停靠在屏幕右侧', 'Dock to right side');
+        } else {
+            overlay.classList.remove('is-dock-left');
+            modal.classList.remove('is-dock-left');
+            dockSideBtn.innerHTML = `⇤ ${t('靠左', 'Left')}`;
+            dockSideBtn.title = t('切换停靠在屏幕左侧', 'Dock to left side');
+        }
+    }
+
+    dockSideBtn.onclick = () => {
+        applyDockSide(currentSide === 'left' ? 'right' : 'left');
+    };
+    headerRight.appendChild(dockSideBtn);
+
     // Mode Toggle Button (Sidebar / Modal)
     let currentMode = localStorage.getItem('anomalous_translator_mode') || 'sidebar'; // Default to sidebar
     const modeToggleBtn = document.createElement('button');
@@ -215,11 +257,13 @@ export function openPromptTranslator(owner) {
         if (mode === 'sidebar') {
             overlay.classList.add('is-sidebar');
             modal.classList.add('is-sidebar');
+            dockSideBtn.style.display = 'inline-flex';
             modeToggleBtn.innerHTML = `🔲 ${t('居中浮窗', 'Modal')}`;
             modeToggleBtn.title = t('切换为居中弹窗模式', 'Switch to centered modal');
         } else {
             overlay.classList.remove('is-sidebar');
             modal.classList.remove('is-sidebar');
+            dockSideBtn.style.display = 'none';
             modeToggleBtn.innerHTML = `📌 ${t('贴边侧栏', 'Sidebar')}`;
             modeToggleBtn.title = t('切换为贴边侧边栏模式（不遮挡画布，可边点节点边操作）', 'Switch to side drawer mode (no canvas overlay)');
         }
@@ -243,7 +287,12 @@ export function openPromptTranslator(owner) {
     headerRight.appendChild(closeBtn);
     header.appendChild(headerRight);
     modal.appendChild(header);
+    applyDockSide(currentSide);
     applyMode(currentMode);
+
+    if (masterWasVisible && currentMode === 'sidebar') {
+        showTranslatorToast(modal, t('💡 已自动折叠主浏览器，让出全屏画布空间', '💡 Collapsed master browser for canvas space'));
+    }
 
     // 2. Body Area (Split pane: Source Input / Translated Output)
     const body = document.createElement('div');

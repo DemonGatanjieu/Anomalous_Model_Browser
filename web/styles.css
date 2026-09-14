@@ -12504,8 +12504,8 @@ button:hover .anomalous-btn-icon {
 
 .anomalous-translator-modal.is-sidebar {
     pointer-events: auto !important;
-    width: var(--amb-translator-width, 420px) !important;
-    min-width: 340px !important;
+    width: var(--amb-translator-width, 380px) !important;
+    min-width: 320px !important;
     max-width: 92vw !important;
     height: 100vh !important;
     max-height: 100vh !important;
@@ -12544,11 +12544,12 @@ button:hover .anomalous-btn-icon {
 .anomalous-translator-mode-btn {
     border: 1px solid rgba(56, 189, 248, 0.25) !important;
     color: #7dd3fc !important;
-    font-size: 0.78rem !important;
-    padding: 3px 8px !important;
+    font-size: 0.76rem !important;
+    padding: 3px 6px !important;
     border-radius: 6px !important;
     cursor: pointer;
     background: rgba(15, 23, 42, 0.6);
+    white-space: nowrap;
     transition: all 0.15s ease;
 }
 
@@ -12569,53 +12570,92 @@ button:hover .anomalous-btn-icon {
     }
 }
 
+/* Sidebar Dock Left Mode */
+.anomalous-translator-overlay.is-sidebar.is-dock-left {
+    justify-content: flex-start !important;
+}
+
+.anomalous-translator-modal.is-sidebar.is-dock-left {
+    border-left: none !important;
+    border-right: 1px solid rgba(56, 189, 248, 0.3) !important;
+    box-shadow: 10px 0 36px rgba(0, 0, 0, 0.65), 0 0 24px rgba(56, 189, 248, 0.08) !important;
+    animation: anmSlideInLeft 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.anomalous-translator-modal.is-sidebar.is-dock-left .anomalous-translator-resize-handle {
+    left: auto;
+    right: 0;
+}
+
+@keyframes anmSlideInLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0.4;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
 .anomalous-translator-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 18px;
+    padding: 10px 14px;
     background: rgba(15, 23, 42, 0.95);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    gap: 8px;
 }
 
 .anomalous-translator-title-group {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .anomalous-translator-icon {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
 }
 
 .anomalous-translator-title {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: #f1f5f9;
+    white-space: nowrap;
 }
 
 .anomalous-translator-header-right {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 .anomalous-translator-lang-wrap {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.8rem;
+    gap: 4px;
+    font-size: 0.78rem;
     color: #94a3b8;
+    white-space: nowrap;
+}
+
+.anomalous-translator-lang-wrap span {
+    white-space: nowrap;
 }
 
 .anomalous-translator-select {
     background: #1e293b;
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: #e2e8f0;
-    font-size: 0.8rem;
+    font-size: 0.76rem;
     border-radius: 6px;
-    padding: 4px 8px;
+    padding: 3px 6px;
+    max-width: 120px;
     cursor: pointer;
 }
 
