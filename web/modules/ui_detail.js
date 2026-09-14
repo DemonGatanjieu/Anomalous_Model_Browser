@@ -187,6 +187,8 @@ export function showDetail(model) {
                     this.detailPanel.style.display = 'none';
                     this.stopMediaInContainer(this.detailPanel); this.detailPanel.innerHTML = '';
                     this.assistantPanel.style.display = 'flex';
+                    const container = document.getElementById('anomalous-container');
+                    if (container) container.classList.add('anomalous-sidebar-closed');
                     return;
                 }
                 this.currentType = prev.type;

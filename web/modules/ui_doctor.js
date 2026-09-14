@@ -370,10 +370,10 @@ for (const w of node.widgets) {
         nodeContent.appendChild(tabsRow);
 
         const actionsContainer = document.createElement('div');
-        actionsContainer.style.cssText = 'display:flex; flex-direction:column; flex:1; overflow-y:auto;';
+        actionsContainer.style.cssText = 'display:flex; flex-direction:column; flex:1; overflow-y:auto; min-height:0;';
 
         const presetsContainer = document.createElement('div');
-        presetsContainer.style.cssText = 'display:none; flex-direction:column; flex:1; overflow-y:auto;';
+        presetsContainer.style.cssText = 'display:none; flex-direction:column; flex:1; overflow-y:auto; min-height:0;';
 
         nodeContent.append(actionsContainer, presetsContainer);
 
@@ -920,7 +920,7 @@ if (!this._assistantPanelHooked) {
 
         const nodeContent = document.createElement('div');
         nodeContent.id = 'anomalous-assistant-node-content';
-        nodeContent.style.cssText = 'display:none;flex-direction:column;flex:1;overflow-y:auto;';
+        nodeContent.style.cssText = 'display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;';
         this.assistantPanel.appendChild(nodeContent);
     }
 

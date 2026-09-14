@@ -127,12 +127,14 @@ export function createDOM() {
         menuBtn.style.fontSize = '1.2em';
         menuBtn.style.cursor = 'pointer';
         menuBtn.onclick = () => {
-            if (container.classList.contains('anomalous-sidebar-closed')) {
+            const isClosed = container.classList.contains('anomalous-sidebar-closed');
+            if (isClosed) {
                 container.classList.remove('anomalous-sidebar-closed');
-                localStorage.setItem('anomalous_user_sidebar_closed', 'false');
             } else {
                 container.classList.add('anomalous-sidebar-closed');
-                localStorage.setItem('anomalous_user_sidebar_closed', 'true');
+            }
+            if (this.grid && this.grid.style.display !== 'none') {
+                localStorage.setItem('anomalous_user_sidebar_closed', isClosed ? 'false' : 'true');
             }
         };
 
@@ -2200,11 +2202,8 @@ export function createDOM() {
         assistantBtn.style.cursor = 'pointer';
         assistantBtn.onclick = async () => {
             this.hideAllPanels();
-            if (localStorage.getItem('anomalous_user_sidebar_closed') === 'true') {
-                container.classList.add('anomalous-sidebar-closed');
-            } else {
-                container.classList.remove('anomalous-sidebar-closed');
-            }
+            if (this.setActiveHeaderTab) this.setActiveHeaderTab(null);
+            container.classList.add('anomalous-sidebar-closed');
             menuBtn.disabled = false;
             menuBtn.style.opacity = '1';
             menuBtn.style.cursor = 'pointer';
