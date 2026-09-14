@@ -190,17 +190,17 @@ export function openPromptTranslator(owner) {
     titleGroup.className = 'anomalous-translator-title-group';
     titleGroup.innerHTML = `
         <span class="anomalous-translator-icon">🌐</span>
-        <h3 class="anomalous-translator-title">${t('提示词翻译助手', 'Prompt Translation Assistant')}</h3>
+        <h3 class="anomalous-translator-title">${t('翻译助手', 'Translator')}</h3>
     `;
     header.appendChild(titleGroup);
 
     const headerRight = document.createElement('div');
     headerRight.className = 'anomalous-translator-header-right';
 
-    // Target Language Selector
+    // Target Language Selector (will be attached to midBar)
     const langSelectWrap = document.createElement('label');
     langSelectWrap.className = 'anomalous-translator-lang-wrap';
-    langSelectWrap.innerHTML = `<span>${t('目标', 'To')}:</span>`;
+    langSelectWrap.innerHTML = `<span>${t('目标语言', 'Target')}:</span>`;
 
     const langSelect = document.createElement('select');
     langSelect.className = 'anomalous-translator-select';
@@ -217,7 +217,6 @@ export function openPromptTranslator(owner) {
         langSelect.appendChild(opt);
     });
     langSelectWrap.appendChild(langSelect);
-    headerRight.appendChild(langSelectWrap);
 
     // Dock Side Button (Left / Right)
     const dockSideBtn = document.createElement('button');
@@ -258,13 +257,13 @@ export function openPromptTranslator(owner) {
             overlay.classList.add('is-sidebar');
             modal.classList.add('is-sidebar');
             dockSideBtn.style.display = 'inline-flex';
-            modeToggleBtn.innerHTML = `🔲 ${t('居中浮窗', 'Modal')}`;
+            modeToggleBtn.innerHTML = `🔲 ${t('浮窗', 'Modal')}`;
             modeToggleBtn.title = t('切换为居中弹窗模式', 'Switch to centered modal');
         } else {
             overlay.classList.remove('is-sidebar');
             modal.classList.remove('is-sidebar');
             dockSideBtn.style.display = 'none';
-            modeToggleBtn.innerHTML = `📌 ${t('贴边侧栏', 'Sidebar')}`;
+            modeToggleBtn.innerHTML = `📌 ${t('侧栏', 'Sidebar')}`;
             modeToggleBtn.title = t('切换为贴边侧边栏模式（不遮挡画布，可边点节点边操作）', 'Switch to side drawer mode (no canvas overlay)');
         }
     }
@@ -409,7 +408,7 @@ export function openPromptTranslator(owner) {
         }
         showTranslatorToast(modal, t('✓ 已互换源文本与译文', '✓ Swapped source and target'));
     };
-    midBar.appendChild(swapBtn);
+    midBar.append(langSelectWrap, swapBtn);
     body.appendChild(midBar);
 
     // --- Right / Bottom Pane: Translated Output ---

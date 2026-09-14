@@ -12633,6 +12633,7 @@ button:hover .anomalous-btn-icon {
     align-items: center;
     gap: 6px;
     flex-shrink: 0;
+    margin-left: auto;
 }
 
 .anomalous-translator-lang-wrap {
@@ -12660,20 +12661,24 @@ button:hover .anomalous-btn-icon {
 }
 
 .anomalous-translator-close {
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    font-size: 1.4rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #e2e8f0;
+    font-size: 1.25rem;
     line-height: 1;
     cursor: pointer;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
     transition: all 0.15s ease;
+    flex-shrink: 0;
+    margin-left: 2px;
 }
 
 .anomalous-translator-close:hover {
-    color: #f87171;
-    background: rgba(248, 113, 113, 0.15);
+    color: #ffffff;
+    background: #ef4444 !important;
+    border-color: #ef4444 !important;
+    transform: scale(1.08);
 }
 
 .anomalous-translator-body {
@@ -12749,29 +12754,22 @@ button:hover .anomalous-btn-icon {
 .anomalous-translator-mid-bar {
     display: flex;
     align-items: center;
-    justify-content: center;
-    position: relative;
-    margin: -2px 0;
-}
-
-.anomalous-translator-mid-bar::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.08);
-    z-index: 1;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    border-radius: 8px;
+    margin: 2px 0;
+    gap: 8px;
+    box-sizing: border-box;
 }
 
 .anomalous-translator-swap-btn {
-    position: relative;
-    z-index: 2;
-    background: #111827;
+    background: #1e293b;
     border: 1px solid rgba(56, 189, 248, 0.35);
     color: #38bdf8;
-    border-radius: 14px;
-    padding: 3px 14px;
+    border-radius: 12px;
+    padding: 3px 12px;
     font-size: 0.76rem;
     font-weight: 500;
     cursor: pointer;
@@ -12779,6 +12777,8 @@ button:hover .anomalous-btn-icon {
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .anomalous-translator-swap-btn:hover {
