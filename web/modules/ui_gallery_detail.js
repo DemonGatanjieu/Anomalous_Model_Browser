@@ -137,10 +137,11 @@ async function saveImageMaterial(item, name, selectedNodeIds = null, tags = []) 
 
 function selectedMaterialName(baseName, blocks) {
     const base = String(baseName || '').trim();
+    const cleanBase = base.replace(/ · (?:快照|Snapshot)$/i, '').trim();
     const suffix = blocks.length === 1
         ? materialNodeHeading(blocks[0])
         : t('materialSelectedNodesName', { count: blocks.length });
-    return `${base ? `${base} · ` : ''}${suffix}`.slice(0, 120);
+    return `${cleanBase ? `${cleanBase} · ` : ''}${suffix}`.slice(0, 120);
 }
 
 async function saveSelectedBlocks(item, suggestedName, blocks, button) {

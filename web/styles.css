@@ -5391,6 +5391,51 @@ dialog.anomalous-gallery-viewer[open] {
     color: #ffffff;
 }
 
+/* 素材库卡片与详情头部中的明确应用替换按钮 */
+.anomalous-material-card-apply-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px 10px;
+    margin-top: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #ffffff;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.9) 0%, rgba(79, 70, 229, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    transition: all 0.15s ease;
+    z-index: 2;
+}
+
+.anomalous-material-card-apply-btn:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 1) 0%, rgba(67, 56, 202, 1) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.4);
+}
+
+.anomalous-material-card-apply-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.anomalous-material-list.is-list .anomalous-material-card-apply-btn {
+    width: auto;
+    margin-top: 0;
+    padding: 4px 12px;
+}
+
+.anomalous-material-header-apply-btn {
+    font-weight: 600 !important;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
 /* 徽标、标签与来源标记通用定义 */
 .anomalous-material-source-mark {
     max-width: 100%;
@@ -9469,6 +9514,35 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: #202428;
     color: #eee;
 }
+
+/* ==========================================================================
+   Node Assistant Hover Parameter Popover Card
+   ========================================================================== */
+.anomalous-param-popover {
+    position: fixed;
+    z-index: 1000002;
+    width: 330px;
+    max-height: 480px;
+    display: flex;
+    flex-direction: column;
+    background: rgba(22, 22, 27, 0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 12px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    color: #f3f4f6;
+    padding: 14px;
+    box-sizing: border-box;
+    pointer-events: auto;
+    animation: anomalous-popover-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes anomalous-popover-in {
+    from { opacity: 0; transform: translateY(4px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 /* ==========================================================================
    Prompt Composer & Paper Note Studio / Material Drag System
    ========================================================================== */

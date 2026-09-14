@@ -420,13 +420,14 @@ def _display_model_name(reference):
 
 
 def _suggested_name(workflow, source_path, references=None):
+    stem = os.path.splitext(os.path.basename(source_path))[0] if source_path else ""
+    if stem:
+        return f"{stem} · 快照"[:MAX_MATERIAL_NAME_LENGTH]
     if references is None:
         references = _build_model_references({"workflow": workflow, "params": {}}, verify_identities=False)
     references.sort(key=lambda item: MODEL_PRIORITY.get(item.get("category"), 99))
     model_name = _display_model_name(references[0]) if references else "工作流快照"
-    excerpt = _prompt_excerpt(workflow)
-    date = time.strftime("%Y-%m-%d", time.localtime(os.path.getmtime(source_path)))
-    return " · ".join(part for part in (model_name, excerpt, date) if part)[:MAX_MATERIAL_NAME_LENGTH]
+    return f"{model_name} · 快照"[:MAX_MATERIAL_NAME_LENGTH]
 
 
 def _inspect_source_image(source_image):

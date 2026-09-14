@@ -283,6 +283,35 @@ function buildMaterialDetailHeader(owner, material) {
 
     const headerActions = document.createElement('div');
     headerActions.className = 'anomalous-library-detail-actions';
+    const targetNode = owner.materialTarget || selectedMaterialNode(app);
+    if (targetNode) {
+        const applyBtn = text(headerActions, 'button', '', 'anomalous-btn-primary anomalous-material-header-apply-btn');
+        applyBtn.type = 'button';
+        const targetTitle = materialNodeHeading(targetNode);
+        const normalLabel = `⚡ ${window.anomalous_browser_lang === 'zh' ? `应用到节点 (${targetTitle})` : `Apply to Node (${targetTitle})`}`;
+        applyBtn.textContent = normalLabel;
+        applyBtn.title = window.anomalous_browser_lang === 'zh'
+            ? `将本素材的参数或提示词应用替换到当前选中的节点 #${targetNode.id}`
+            : `Apply parameters or prompts of this material to selected node #${targetNode.id}`;
+        applyBtn.onclick = async () => {
+            applyBtn.disabled = true;
+            applyBtn.textContent = `⏳ ${t('assistantApplying') || '应用中...'}`;
+            try {
+                await applyLibraryMaterial(owner, material, targetNode);
+                applyBtn.textContent = `✅ ${t('assistantApplied') || '已应用'}`;
+                setTimeout(() => {
+                    if (applyBtn) {
+                        applyBtn.disabled = false;
+                        applyBtn.textContent = normalLabel;
+                    }
+                }, 2000);
+            } catch (err) {
+                console.error('Error applying material to node:', err);
+                applyBtn.disabled = false;
+                applyBtn.textContent = normalLabel;
+            }
+        };
+    }
     if ((material.capabilities || []).includes('open_workflow')) {
         const open = text(headerActions, 'button', '', 'anomalous-btn-primary');
         open.type = 'button';
@@ -481,7 +510,7 @@ function renderMaterialCard(owner, material) {
     const card = document.createElement('article');
     card.className = 'anomalous-material-card';
     card.title = t('materialViewDetails') || '点击查看详细参数';
-    const activate = () => owner.materialApplyMode ? applyLibraryMaterial(owner, material) : showMaterialDetail(owner, material);
+    const activate = () => showMaterialDetail(owner, material);
     card.onclick = activate;
     if (material.node_types?.length) {
         bindMaterialDrag(card, owner, {
@@ -498,13 +527,6 @@ function renderMaterialCard(owner, material) {
             activate();
         }
     };
-
-    if (owner.materialApplyMode) {
-        card.title = t('materialApplyCard');
-        card.setAttribute('aria-label', `${material.name} — ${t('materialApplyCard')}`);
-        const inspect = text(card, 'button', t('materialViewDetails'), 'anomalous-material-inspect-action');
-        inspect.onclick = event => { event.stopPropagation(); showMaterialDetail(owner, material); };
-    }
 
     const actionsWrapper = document.createElement('div');
     actionsWrapper.className = 'anomalous-material-card-actions-wrapper';
@@ -651,6 +673,37 @@ function renderMaterialCard(owner, material) {
     if (material.tags?.length) {
         const tags = text(body, 'div', '', 'anomalous-material-tags');
         material.tags.forEach(tag => text(tags, 'span', tag, 'anomalous-material-tag'));
+    }
+    if (owner.materialApplyMode) {
+        const applyBtn = document.createElement('button');
+        applyBtn.type = 'button';
+        applyBtn.className = 'anomalous-material-card-apply-btn';
+        applyBtn.innerHTML = `<span>⚡</span> <span>${t('assistantApplyScheme') || (window.anomalous_browser_lang === 'zh' ? '应用到节点' : 'Apply to Node')}</span>`;
+        applyBtn.title = t('materialApplyCard') || (window.anomalous_browser_lang === 'zh' ? '点击将本方案参数应用替换到当前节点' : 'Click to apply parameters to current node');
+        applyBtn.onclick = async (e) => {
+            e.stopPropagation();
+            applyBtn.disabled = true;
+            applyBtn.innerHTML = `<span>⏳</span> <span>${t('assistantApplying') || '应用中...'}</span>`;
+            try {
+                await applyLibraryMaterial(owner, material);
+                applyBtn.innerHTML = `<span>✅</span> <span>${t('assistantApplied') || '已应用'}</span>`;
+                setTimeout(() => {
+                    if (applyBtn) {
+                        applyBtn.disabled = false;
+                        applyBtn.innerHTML = `<span>⚡</span> <span>${t('assistantApplyScheme') || (window.anomalous_browser_lang === 'zh' ? '应用到节点' : 'Apply to Node')}</span>`;
+                    }
+                }, 2000);
+            } catch (err) {
+                console.error(err);
+                applyBtn.disabled = false;
+                applyBtn.innerHTML = `<span>⚡</span> <span>${t('assistantApplyScheme') || (window.anomalous_browser_lang === 'zh' ? '应用到节点' : 'Apply to Node')}</span>`;
+            }
+        };
+        body.appendChild(applyBtn);
+
+        const applyBtnClone = applyBtn.cloneNode(true);
+        applyBtnClone.onclick = applyBtn.onclick;
+        actionsWrapper.insertBefore(applyBtnClone, actionsWrapper.firstChild);
     }
     card.appendChild(body);
     card.appendChild(actionsWrapper);
@@ -1034,19 +1087,104 @@ async function applyLibraryMaterial(owner, material, droppedNode = null, graph =
             owner.materialBlockDialog = dialog;
             text(dialog, 'h3', t('materialChooseBlock'));
             const status = text(dialog, 'p', ''); status.setAttribute('role', 'alert');
+
+            const list = document.createElement('div');
+            list.className = 'anomalous-material-choice-list';
+            list.style.cssText = 'display:flex;flex-direction:column;gap:12px;margin:14px 0;max-height:60vh;overflow-y:auto;padding-right:4px;';
+            dialog.appendChild(list);
+
             for (const block of blocks) {
-                const choose = text(dialog, 'button', `${materialNodeHeading(block)} #${block.node_id}`, 'anomalous-btn-primary');
+                const itemCard = document.createElement('div');
+                itemCard.className = 'anomalous-material-choice-card';
+                itemCard.style.cssText = 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;transition:border-color 0.2s;';
+
+                const headerRow = document.createElement('div');
+                headerRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;';
+
+                const roleBadge = {
+                    positive: `[🟢 ${t('recipePromptRolePositive') || '正向'}] `,
+                    negative: `[🔴 ${t('recipePromptRoleNegative') || '负向'}] `,
+                    both: `[🟣 ${t('recipePromptRoleBoth') || '混合'}] `,
+                }[block.role] || '';
+
+                const heading = document.createElement('div');
+                heading.style.cssText = 'font-weight:700;font-size:13px;color:#f3f4f6;display:flex;align-items:center;gap:6px;';
+                heading.innerHTML = `${roleBadge}<span>${escapeHtml(materialNodeHeading(block))} <small style="color:#9ca3af;font-size:11px;">#${block.node_id}</small></span>`;
+                headerRow.appendChild(heading);
+                itemCard.appendChild(headerRow);
+
+                // Find text snippet or parameter summary
+                let textContent = '';
+                if (Array.isArray(block.widgets_values)) {
+                    for (const val of block.widgets_values) {
+                        if (typeof val === 'string' && val.trim().length > 0) {
+                            textContent = val.trim();
+                            break;
+                        }
+                    }
+                }
+
+                if (textContent) {
+                    const previewBox = document.createElement('div');
+                    previewBox.className = 'anomalous-material-snippet-box';
+                    previewBox.style.cssText = 'background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:8px 10px;font-size:11px;color:#d1d5db;line-height:1.5;white-space:pre-wrap;word-break:break-word;max-height:80px;overflow:hidden;position:relative;transition:max-height 0.25s ease;';
+
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = textContent;
+                    previewBox.appendChild(textSpan);
+                    itemCard.appendChild(previewBox);
+
+                    if (textContent.length > 80 || textContent.includes('\n')) {
+                        const toggleBtn = document.createElement('button');
+                        toggleBtn.type = 'button';
+                        toggleBtn.style.cssText = 'background:none;border:none;color:#60a5fa;cursor:pointer;font-size:11px;padding:2px 0;align-self:flex-start;text-decoration:underline;';
+                        toggleBtn.textContent = t('expandText') || '展开全部 ▾';
+                        let expanded = false;
+                        toggleBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            expanded = !expanded;
+                            if (expanded) {
+                                previewBox.style.maxHeight = '240px';
+                                previewBox.style.overflowY = 'auto';
+                                toggleBtn.textContent = t('collapseText') || '收起 ▴';
+                            } else {
+                                previewBox.style.maxHeight = '80px';
+                                previewBox.style.overflow = 'hidden';
+                                toggleBtn.textContent = t('expandText') || '展开全部 ▾';
+                            }
+                        };
+                        itemCard.appendChild(toggleBtn);
+                    }
+                } else if (Array.isArray(block.widgets_values) && block.widgets_values.length > 0) {
+                    const paramsSummary = document.createElement('div');
+                    paramsSummary.style.cssText = 'font-size:11px;color:#9ca3af;background:rgba(0,0,0,0.2);padding:6px 8px;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+                    paramsSummary.textContent = block.widgets_values.slice(0, 5).join(' · ');
+                    itemCard.appendChild(paramsSummary);
+                }
+
+                const choose = document.createElement('button');
+                choose.className = 'anomalous-btn-primary';
+                choose.style.cssText = 'align-self:flex-end;padding:7px 14px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;border-radius:6px;';
+                choose.textContent = t('materialUseBlock') || (textContent ? '选用此段文本 ➔' : '应用此组参数 ➔');
                 choose.onclick = async () => {
                     try {
                         if (app.graph !== graph) throw new Error('materialTargetChanged');
-                        apply(node, block, payload.workflow_hashes, owner.materialContext); dialog.close();
+                        apply(node, block, payload.workflow_hashes, owner.materialContext);
+                        dialog.close();
+                    } catch (error) {
+                        status.textContent = t(error.message) === error.message ? t('materialApplyFailed') : t(error.message);
                     }
-                    catch (error) { status.textContent = t(error.message) === error.message ? t('materialApplyFailed') : t(error.message); }
                 };
+                itemCard.appendChild(choose);
+                list.appendChild(itemCard);
             }
-            const close = text(dialog, 'button', t('close'), 'anomalous-btn-ghost'); close.onclick = () => dialog.close();
+
+            const close = text(dialog, 'button', t('close'), 'anomalous-btn-ghost');
+            close.style.cssText = 'margin-top:10px;align-self:flex-end;';
+            close.onclick = () => dialog.close();
             dialog.onclose = () => { dialog.remove(); if (owner.materialBlockDialog === dialog) owner.materialBlockDialog = null; };
-            document.body.appendChild(dialog); dialog.showModal();
+            document.body.appendChild(dialog);
+            dialog.showModal();
         }
     } catch (error) { await anomalousAlert(t(error.message) === error.message ? t('materialApplyFailed') : t(error.message)); }
     finally { owner.materialApplying = false; }

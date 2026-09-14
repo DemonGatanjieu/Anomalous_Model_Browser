@@ -146,7 +146,11 @@ DOM or live LiteGraph state.
   integrated search bar with live tag filter dropdown, dedicated view switcher (`[网格 | 列表]`),
   refresh and transfer center; cards feature strict uniform height (248px) with rich micro-skeuomorphic fallbacks for non-image assets (prompt code snippets
   and 3D asset parameter previews) eliminating visual bumpiness, direct inline title editing,
-  floating quick actions, and lazy DOM rendering; completely decoupled from Prompt Studio (no studio toggle, no docked side panel, and no card-level mixer buttons); delegates image inspection to `ui_gallery_detail.js`;
+  floating quick actions, and lazy DOM rendering; clicking any material card safely opens the detail inspection view;
+  in node apply mode or when a canvas node is selected, cards and the detail header expose explicit `[⚡ 应用到节点]` action buttons (`.anomalous-material-card-apply-btn`)
+  to prevent accidental node parameter overwriting; multi-text drag-and-drop onto nodes presents an interactive selection dialog with role badges,
+  truncated text snippets, and `[展开全部 ▾]` toggles; default naming for gallery saves is streamlined to `[原图名] · 快照` (or `[原图名] · [节点名]`);
+  completely decoupled from Prompt Studio (no studio toggle, no docked side panel, and no card-level mixer buttons); delegates image inspection to `ui_gallery_detail.js`;
   `node_material_actions.js` owns shared transactional node application and guarded undo;
   the library and Node Assistant use `ui_material_application.js` for the same receipt.
 - `translation_service.js` owns atomic prompt translation logic and language intelligence;
@@ -184,7 +188,12 @@ DOM or live LiteGraph state.
 - `recipe_parser.js`, `recipe_identity.js`, `recipe_diff.js`, and
   `recipe_actions.js` own pure or transactional recipe behavior.
 - `ui_doctor.js`, `model_picker.js`, and `graph_splice.js` own assistant and
-  explicit graph-edit behavior.
+  explicit graph-edit behavior. Node Assistant parameter schemes are structured into distinct
+  scheme cards with parameter pills (steps, cfg, sampler, scheduler, denoise, prompt roles);
+  hovering over any parameter scheme card triggers a glassmorphic floating popover (`.anomalous-param-popover`)
+  displaying the complete key-value parameter table, prompt text box, one-click copy, and apply action;
+  parameter application requires an explicit `[⚡ 应用方案]` button click with async feedback (`⏳ 应用中...` -> `✅ 已应用`),
+  preventing unintentional canvas graph overwrites.
 - Dual-Mode Theme Architecture (双形态主题架构与材质光影精细化):
   - **Base Design System Tokens (`--amb-*`)**: Scoped on `:root` and overridden under `.theme-abyssal-scarlet`. Defines unified background, panel, card, text, border, and control radii tokens (`--amb-radius-control: 6px`, `--amb-radius-card: 10px`, `--amb-radius-panel: 12px`).
   - **Normal Mode (Default / 标准中性黑曜石图书档案馆模式)**: Restrained, clean, neutral dark obsidian (`#0b0d13` / `#141519` / `#1c1e24`) styling; overlaid with the "Anime Celestial Library Archive" AI Concept Art with glowing holographic magic circles, golden blueprint wireframes, and constellation starmap textures (`assets/archive_library_bg.webp`) across `#anomalous-container::before` at `0.65` opacity with radial dark vignette; **全界面毛玻璃一体化融合 (Unified Frosted Glass Architecture)**: 侧边栏 (`#anomalous-sidebar-wrapper`, 24px 模糊，52% 透光) 与顶部导航栏 (`#anomalous-header`, 20px 模糊，48% 透光) 全面采用磨砂毛玻璃透光，品牌徽章与搜索框微晶质感化，底图星轨、宏大书阁与发光符文在全窗口贯通流淌，与透明网格主视图形成高度沉浸式二次元魔法图书馆终端界面；银白高对比主操作按钮 (`#D7D9E0` 搭配 `#15171C` 字色)。
