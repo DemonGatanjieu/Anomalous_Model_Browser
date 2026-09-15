@@ -37,7 +37,7 @@
 - **Native Configurable Shortcut (原生可配置快捷键)**: Added `Ctrl + Shift + M` as the default shortcut for opening the browser. The plugin's Interface settings show the currently active binding and open ComfyUI's native key recorder for customization. Conflict detection, overwrite confirmation, removal, reserved-key guidance, and modal guards therefore remain centralized without a separate global keyboard listener.
 
 ### 🐛 Bug Fixes
-- **Prompt Studio Preview Popover Bridge (提示词悬浮预览悬停交互桥)**: 修复了在提示词工坊词卡库中鼠标从词卡移动至右侧浮窗预览框时浮窗意外关闭的问题。增加了 220ms 延时关闭防抖、14px 透明触控过渡桥与 `pointer-events: auto` 交互支持，并在浮窗内提供了快捷复制与一键加入拼装台操作。
+- **Prompt Studio Preview Popover Robust Bridge (提示词预览浮窗防断触与固定支持)**: 彻底解决鼠标从词卡划向右侧浮窗时“有时消失有时不消失”的问题。引入 100ms 打开防抖（杜绝斜向滑动掠过相邻卡片时被误顶替）、380ms 宽裕关闭缓冲、28px 宽透明空间过渡桥，卡片激活态（`.is-preview-active`）杜绝位移抖动；浮窗顶部新增 `[📌 固定]` 钉住与点击遮罩关闭功能。
 - **Live Language Switching (语言即时切换)**: Changing the plugin language now immediately re-translates the open native Interface settings—including labels, tooltips, and combo choices—as well as the browser UI, without refreshing ComfyUI.
 
 ## v1.56.1 Beta (Interface Preferences & Scan Reliability) — 2026-08-26

@@ -13080,29 +13080,34 @@ button:hover .anomalous-btn-icon {
     border-left-color: #fb923c !important;
 }
 
-.anomalous-source-card-compact:hover {
+.anomalous-source-card-compact:hover,
+.anomalous-source-card-compact.is-preview-active {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.22);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
     transform: translateX(2px);
 }
 
-.anomalous-source-card-compact.is-cat-base:hover {
+.anomalous-source-card-compact.is-cat-base:hover,
+.anomalous-source-card-compact.is-cat-base.is-preview-active {
     border-color: rgba(56, 189, 248, 0.4);
     background: rgba(56, 189, 248, 0.12);
 }
 
-.anomalous-source-card-compact.is-cat-style:hover {
+.anomalous-source-card-compact.is-cat-style:hover,
+.anomalous-source-card-compact.is-cat-style.is-preview-active {
     border-color: rgba(192, 132, 252, 0.4);
     background: rgba(192, 132, 252, 0.12);
 }
 
-.anomalous-source-card-compact.is-cat-subject:hover {
+.anomalous-source-card-compact.is-cat-subject:hover,
+.anomalous-source-card-compact.is-cat-subject.is-preview-active {
     border-color: rgba(74, 222, 128, 0.4);
     background: rgba(74, 222, 128, 0.12);
 }
 
-.anomalous-source-card-compact.is-cat-trigger:hover {
+.anomalous-source-card-compact.is-cat-trigger:hover,
+.anomalous-source-card-compact.is-cat-trigger.is-preview-active {
     border-color: rgba(251, 146, 60, 0.4);
     background: rgba(251, 146, 60, 0.12);
 }
@@ -13124,7 +13129,8 @@ button:hover .anomalous-btn-icon {
     flex: 1;
 }
 
-.anomalous-source-card-compact:hover .anomalous-source-card-name {
+.anomalous-source-card-compact:hover .anomalous-source-card-name,
+.anomalous-source-card-compact.is-preview-active .anomalous-source-card-name {
     color: #ffffff;
 }
 
@@ -13138,7 +13144,8 @@ button:hover .anomalous-btn-icon {
     border-radius: 3px;
 }
 
-.anomalous-source-card-compact:hover .anomalous-source-card-add-icon {
+.anomalous-source-card-compact:hover .anomalous-source-card-add-icon,
+.anomalous-source-card-compact.is-preview-active .anomalous-source-card-add-icon {
     opacity: 1;
     color: #38bdf8;
     background: rgba(56, 189, 248, 0.18);
@@ -13166,24 +13173,30 @@ button:hover .anomalous-btn-icon {
 .anomalous-card-preview-popover.is-dock-left::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: -14px;
-    width: 14px;
-    height: 100%;
+    top: -24px;
+    bottom: -24px;
+    left: -28px;
+    width: 28px;
     background: transparent;
 }
 
 .anomalous-card-preview-popover.is-dock-right::before {
     content: '';
     position: absolute;
-    top: 0;
-    right: -14px;
-    width: 14px;
-    height: 100%;
+    top: -24px;
+    bottom: -24px;
+    right: -28px;
+    width: 28px;
     background: transparent;
 }
 
+.anomalous-card-preview-popover.is-pinned {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 24px rgba(56, 189, 248, 0.35) !important;
+}
+
 .anomalous-popover-copy-btn,
+.anomalous-popover-pin-btn,
 .anomalous-popover-add-btn {
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.12);
@@ -13197,10 +13210,36 @@ button:hover .anomalous-btn-icon {
     white-space: nowrap;
 }
 
-.anomalous-popover-copy-btn:hover {
+.anomalous-popover-copy-btn:hover,
+.anomalous-popover-pin-btn:hover {
     background: rgba(56, 189, 248, 0.15);
     border-color: rgba(56, 189, 248, 0.4);
     color: #38bdf8;
+}
+
+.anomalous-popover-pin-btn.is-active {
+    background: rgba(56, 189, 248, 0.25) !important;
+    border-color: #38bdf8 !important;
+    color: #38bdf8 !important;
+    font-weight: 600;
+}
+
+.anomalous-popover-close-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #94a3b8;
+    font-size: 0.75rem;
+    padding: 1px 6px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+    line-height: 1.2;
+}
+
+.anomalous-popover-close-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #f87171;
 }
 
 .anomalous-popover-add-btn {

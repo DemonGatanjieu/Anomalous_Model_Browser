@@ -16,25 +16,43 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
     let sourceFilterKeyword = '';
     let isCreatingNewCard = false;
     let activeCardPreviewPopover = null;
+    let activeCardAnchorEl = null;
     let hidePopoverTimer = null;
+    let openPopoverTimer = null;
+    let isPopoverPinned = false;
 
     function scheduleHidePopover() {
+        if (isPopoverPinned) return;
         clearTimeout(hidePopoverTimer);
         hidePopoverTimer = setTimeout(() => {
             hideCardPreviewPopover();
-        }, 220);
+        }, 380);
     }
 
     function cancelHidePopover() {
         clearTimeout(hidePopoverTimer);
     }
 
-    function hideCardPreviewPopover() {
+    function hideCardPreviewPopover(force = false) {
+        if (isPopoverPinned && !force) return;
         clearTimeout(hidePopoverTimer);
+        clearTimeout(openPopoverTimer);
+        activeCardAnchorEl?.classList.remove('is-preview-active');
+        activeCardAnchorEl = null;
         activeCardPreviewPopover?.remove();
         activeCardPreviewPopover = null;
+        isPopoverPinned = false;
     }
-    scope.onDispose(hideCardPreviewPopover);
+    scope.onDispose(() => hideCardPreviewPopover(true));
+
+    const onDocPointerDown = (e) => {
+        if (isPopoverPinned && activeCardPreviewPopover) {
+            if (!activeCardPreviewPopover.contains(e.target) && !activeCardAnchorEl?.contains(e.target)) {
+                hideCardPreviewPopover(true);
+            }
+        }
+    };
+    scope.listen(document, 'pointerdown', onDocPointerDown);
     const leftPanel = text(workbenchGrid, 'section', '', 'anomalous-workbench-left-panel');
     const leftHeader = text(leftPanel, 'div', '', 'anomalous-workbench-col-header');
     const leftTitleWrap = text(leftHeader, 'div', '', 'anomalous-workbench-col-title');
@@ -382,7 +400,16 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
 
     function showCardPreviewPopover(card, anchorEl) {
         cancelHidePopover();
+        clearTimeout(openPopoverTimer);
         if (!anchorEl?.isConnected) return;
+        if (isPopoverPinned) return;
+
+        if (activeCardAnchorEl && activeCardAnchorEl !== anchorEl) {
+            activeCardAnchorEl.classList.remove('is-preview-active');
+        }
+        activeCardAnchorEl = anchorEl;
+        anchorEl.classList.add('is-preview-active');
+
         if (activeCardPreviewPopover) {
             activeCardPreviewPopover.remove();
             activeCardPreviewPopover = null;
@@ -391,9 +418,12 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
         const catMeta = CATEGORY_META[card.category] || CATEGORY_META.subject;
         const popover = document.createElement('div');
         popover.className = 'anomalous-card-preview-popover';
+        popover.__card = card;
+        popover.__anchorEl = anchorEl;
 
         popover.onmouseenter = () => {
             cancelHidePopover();
+            clearTimeout(openPopoverTimer);
         };
         popover.onmouseleave = () => {
             scheduleHidePopover();
@@ -424,6 +454,9 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
         tags.appendChild(roleBadge);
         topRow.appendChild(tags);
 
+        const topActions = document.createElement('div');
+        topActions.style.cssText = 'display:flex;align-items:center;gap:4px;';
+
         const copyBtn = document.createElement('button');
         copyBtn.type = 'button';
         copyBtn.className = 'anomalous-popover-copy-btn';
@@ -438,7 +471,38 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
                 }, 1200);
             });
         };
-        topRow.appendChild(copyBtn);
+        topActions.appendChild(copyBtn);
+
+        const pinBtn = document.createElement('button');
+        pinBtn.type = 'button';
+        pinBtn.className = 'anomalous-popover-pin-btn';
+        pinBtn.innerHTML = '📌 ' + (window.anomalous_browser_lang === 'zh' ? '固定' : 'Pin');
+        pinBtn.title = window.anomalous_browser_lang === 'zh' ? '固定浮窗防止移动时自动关闭' : 'Pin preview to keep open';
+        pinBtn.onclick = (e) => {
+            e.stopPropagation();
+            isPopoverPinned = !isPopoverPinned;
+            popover.classList.toggle('is-pinned', isPopoverPinned);
+            pinBtn.classList.toggle('is-active', isPopoverPinned);
+            pinBtn.innerHTML = isPopoverPinned
+                ? '📌 ' + (window.anomalous_browser_lang === 'zh' ? '已固定' : 'Pinned')
+                : '📌 ' + (window.anomalous_browser_lang === 'zh' ? '固定' : 'Pin');
+            closeBtn.style.display = isPopoverPinned ? 'inline-flex' : 'none';
+        };
+        topActions.appendChild(pinBtn);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'anomalous-popover-close-btn';
+        closeBtn.innerHTML = '✕';
+        closeBtn.title = window.anomalous_browser_lang === 'zh' ? '关闭浮窗' : 'Close popover';
+        closeBtn.style.display = 'none';
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            hideCardPreviewPopover(true);
+        };
+        topActions.appendChild(closeBtn);
+
+        topRow.appendChild(topActions);
         header.appendChild(topRow);
 
         const titleEl = document.createElement('div');
@@ -474,7 +538,7 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
         addBtn.onclick = (e) => {
             e.stopPropagation();
             addSourceCardToMixer(card);
-            hideCardPreviewPopover();
+            hideCardPreviewPopover(true);
         };
         footer.appendChild(addBtn);
 
@@ -500,9 +564,13 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
     }
 
     function renderSourceCardsList() {
-        hideCardPreviewPopover();
+        hideCardPreviewPopover(true);
         sourceCardsList.replaceChildren();
-        sourceCardsList.onscroll = () => hideCardPreviewPopover();
+        sourceCardsList.onscroll = () => {
+            if (!isPopoverPinned) {
+                hideCardPreviewPopover(true);
+            }
+        };
 
         const filtered = sourceCards.filter(card => {
             if (sourceFilterCategory !== 'all' && card.category !== sourceFilterCategory) return false;
@@ -533,15 +601,24 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
             // Custom Eye-Catching Hover Preview Popover (replaces native OS browser title tooltip)
             cardEl.onmouseenter = () => {
                 cancelHidePopover();
-                showCardPreviewPopover(card, cardEl);
+                clearTimeout(openPopoverTimer);
+                if (activeCardPreviewPopover && activeCardPreviewPopover.__card === card) {
+                    return;
+                }
+                if (isPopoverPinned) return;
+
+                openPopoverTimer = setTimeout(() => {
+                    showCardPreviewPopover(card, cardEl);
+                }, 100);
             };
             cardEl.onmouseleave = () => {
+                clearTimeout(openPopoverTimer);
                 scheduleHidePopover();
             };
 
             // Drag Start
             cardEl.ondragstart = (e) => {
-                hideCardPreviewPopover();
+                hideCardPreviewPopover(true);
                 const payload = {
                     title: card.title,
                     content: card.content,
@@ -568,7 +645,7 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
             const addIcon = text(cardEl, 'span', '+', 'anomalous-source-card-add-icon');
 
             cardEl.onclick = () => {
-                hideCardPreviewPopover();
+                hideCardPreviewPopover(true);
                 addSourceCardToMixer(card);
             };
         });
