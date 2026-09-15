@@ -16,7 +16,21 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
     let sourceFilterKeyword = '';
     let isCreatingNewCard = false;
     let activeCardPreviewPopover = null;
+    let hidePopoverTimer = null;
+
+    function scheduleHidePopover() {
+        clearTimeout(hidePopoverTimer);
+        hidePopoverTimer = setTimeout(() => {
+            hideCardPreviewPopover();
+        }, 220);
+    }
+
+    function cancelHidePopover() {
+        clearTimeout(hidePopoverTimer);
+    }
+
     function hideCardPreviewPopover() {
+        clearTimeout(hidePopoverTimer);
         activeCardPreviewPopover?.remove();
         activeCardPreviewPopover = null;
     }
@@ -367,15 +381,29 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
     };
 
     function showCardPreviewPopover(card, anchorEl) {
-        hideCardPreviewPopover();
+        cancelHidePopover();
         if (!anchorEl?.isConnected) return;
+        if (activeCardPreviewPopover) {
+            activeCardPreviewPopover.remove();
+            activeCardPreviewPopover = null;
+        }
 
         const catMeta = CATEGORY_META[card.category] || CATEGORY_META.subject;
         const popover = document.createElement('div');
         popover.className = 'anomalous-card-preview-popover';
 
+        popover.onmouseenter = () => {
+            cancelHidePopover();
+        };
+        popover.onmouseleave = () => {
+            scheduleHidePopover();
+        };
+
         const header = document.createElement('div');
         header.className = 'anomalous-popover-header';
+
+        const topRow = document.createElement('div');
+        topRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:6px;';
 
         const tags = document.createElement('div');
         tags.className = 'anomalous-popover-tags';
@@ -394,7 +422,24 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
             ? (window.anomalous_browser_lang === 'zh' ? '负向' : 'Negative')
             : (window.anomalous_browser_lang === 'zh' ? '正向' : 'Positive');
         tags.appendChild(roleBadge);
-        header.appendChild(tags);
+        topRow.appendChild(tags);
+
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'anomalous-popover-copy-btn';
+        copyBtn.innerHTML = '📋 ' + (window.anomalous_browser_lang === 'zh' ? '复制' : 'Copy');
+        copyBtn.title = window.anomalous_browser_lang === 'zh' ? '复制提示词到剪贴板' : 'Copy prompt text';
+        copyBtn.onclick = (e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(card.content).then(() => {
+                copyBtn.innerHTML = '✅ ' + (window.anomalous_browser_lang === 'zh' ? '已复制' : 'Copied');
+                setTimeout(() => {
+                    if (copyBtn.isConnected) copyBtn.innerHTML = '📋 ' + (window.anomalous_browser_lang === 'zh' ? '复制' : 'Copy');
+                }, 1200);
+            });
+        };
+        topRow.appendChild(copyBtn);
+        header.appendChild(topRow);
 
         const titleEl = document.createElement('div');
         titleEl.className = 'anomalous-popover-title';
@@ -413,9 +458,26 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
 
         const footer = document.createElement('div');
         footer.className = 'anomalous-popover-footer';
-        footer.textContent = window.anomalous_browser_lang === 'zh'
-            ? '💡 点击直接添加 · 拖拽自由调序'
-            : '💡 Click to add · Drag to assemble';
+        footer.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;';
+
+        const hint = document.createElement('span');
+        hint.textContent = window.anomalous_browser_lang === 'zh'
+            ? '💡 点击卡片直接添加'
+            : '💡 Click card to add';
+        footer.appendChild(hint);
+
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'anomalous-popover-add-btn';
+        addBtn.innerHTML = '＋ ' + (window.anomalous_browser_lang === 'zh' ? '加入台' : 'Add');
+        addBtn.title = window.anomalous_browser_lang === 'zh' ? '将词卡加入右侧拼装台' : 'Add card to track';
+        addBtn.onclick = (e) => {
+            e.stopPropagation();
+            addSourceCardToMixer(card);
+            hideCardPreviewPopover();
+        };
+        footer.appendChild(addBtn);
+
         popover.appendChild(footer);
 
         document.body.appendChild(popover);
@@ -429,9 +491,11 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
         popover.style.top = `${top}px`;
 
         if (isDockLeft) {
-            popover.style.left = `${rect.right + 10}px`;
+            popover.classList.add('is-dock-left');
+            popover.style.left = `${rect.right + 6}px`;
         } else {
-            popover.style.left = `${Math.max(12, rect.left - 320)}px`;
+            popover.classList.add('is-dock-right');
+            popover.style.left = `${Math.max(12, rect.left - 326)}px`;
         }
     }
 
@@ -468,10 +532,11 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
 
             // Custom Eye-Catching Hover Preview Popover (replaces native OS browser title tooltip)
             cardEl.onmouseenter = () => {
+                cancelHidePopover();
                 showCardPreviewPopover(card, cardEl);
             };
             cardEl.onmouseleave = () => {
-                hideCardPreviewPopover();
+                scheduleHidePopover();
             };
 
             // Drag Start

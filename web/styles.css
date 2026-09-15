@@ -13148,19 +13148,71 @@ button:hover .anomalous-btn-icon {
 .anomalous-card-preview-popover {
     position: fixed;
     z-index: 1000005;
-    width: 310px;
+    width: 320px;
     max-width: calc(100vw - 32px);
-    background: rgba(18, 20, 26, 0.96);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: rgba(18, 20, 26, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(56, 189, 248, 0.35);
     border-radius: 10px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.18);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    pointer-events: none;
+    overflow: visible;
+    pointer-events: auto;
     animation: anmPopoverIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.anomalous-card-preview-popover.is-dock-left::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -14px;
+    width: 14px;
+    height: 100%;
+    background: transparent;
+}
+
+.anomalous-card-preview-popover.is-dock-right::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -14px;
+    width: 14px;
+    height: 100%;
+    background: transparent;
+}
+
+.anomalous-popover-copy-btn,
+.anomalous-popover-add-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    color: #cbd5e1;
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 2px 7px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.anomalous-popover-copy-btn:hover {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: rgba(56, 189, 248, 0.4);
+    color: #38bdf8;
+}
+
+.anomalous-popover-add-btn {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: rgba(56, 189, 248, 0.35);
+    color: #38bdf8;
+}
+
+.anomalous-popover-add-btn:hover {
+    background: rgba(56, 189, 248, 0.28);
+    border-color: rgba(56, 189, 248, 0.6);
+    color: #ffffff;
 }
 
 @keyframes anmPopoverIn {
