@@ -21,12 +21,55 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
     let openPopoverTimer = null;
     let isPopoverPinned = false;
 
+    let lastPointerX = 0;
+    let lastPointerY = 0;
+
+    function isPointInSafeZone(clientX, clientY) {
+        if (!activeCardPreviewPopover?.isConnected || !activeCardAnchorEl?.isConnected) return false;
+        const popRect = activeCardPreviewPopover.getBoundingClientRect();
+        const cardRect = activeCardAnchorEl.getBoundingClientRect();
+
+        // 1. Inside card with 12px buffer
+        if (
+            clientX >= cardRect.left - 12 &&
+            clientX <= cardRect.right + 12 &&
+            clientY >= cardRect.top - 12 &&
+            clientY <= cardRect.bottom + 12
+        ) {
+            return true;
+        }
+
+        // 2. Inside popover with generous 40px buffer on all sides
+        if (
+            clientX >= popRect.left - 40 &&
+            clientX <= popRect.right + 40 &&
+            clientY >= popRect.top - 40 &&
+            clientY <= popRect.bottom + 40
+        ) {
+            return true;
+        }
+
+        // 3. Bridging corridor between card and popover
+        const minX = Math.min(cardRect.left, popRect.left) - 12;
+        const maxX = Math.max(cardRect.right, popRect.right) + 12;
+        const minY = Math.min(cardRect.top, popRect.top) - 30;
+        const maxY = Math.max(cardRect.bottom, popRect.bottom) + 30;
+        if (clientX >= minX && clientX <= maxX && clientY >= minY && clientY <= maxY) {
+            return true;
+        }
+
+        return false;
+    }
+
     function scheduleHidePopover() {
         if (isPopoverPinned) return;
         clearTimeout(hidePopoverTimer);
         hidePopoverTimer = setTimeout(() => {
+            if (isPointInSafeZone(lastPointerX, lastPointerY)) {
+                return;
+            }
             hideCardPreviewPopover();
-        }, 380);
+        }, 400);
     }
 
     function cancelHidePopover() {
@@ -44,6 +87,19 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
         isPopoverPinned = false;
     }
     scope.onDispose(() => hideCardPreviewPopover(true));
+
+    const onPointerMove = (e) => {
+        lastPointerX = e.clientX;
+        lastPointerY = e.clientY;
+        if (!activeCardPreviewPopover || isPopoverPinned) return;
+
+        if (isPointInSafeZone(e.clientX, e.clientY)) {
+            cancelHidePopover();
+        } else {
+            scheduleHidePopover();
+        }
+    };
+    scope.listen(window, 'pointermove', onPointerMove, { passive: true });
 
     const onDocPointerDown = (e) => {
         if (isPopoverPinned && activeCardPreviewPopover) {
@@ -421,11 +477,15 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
         popover.__card = card;
         popover.__anchorEl = anchorEl;
 
-        popover.onmouseenter = () => {
+        popover.onmouseenter = (e) => {
+            lastPointerX = e.clientX;
+            lastPointerY = e.clientY;
             cancelHidePopover();
             clearTimeout(openPopoverTimer);
         };
-        popover.onmouseleave = () => {
+        popover.onmouseleave = (e) => {
+            lastPointerX = e.clientX;
+            lastPointerY = e.clientY;
             scheduleHidePopover();
         };
 
@@ -599,7 +659,9 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
             cardEl.setAttribute('draggable', 'true');
 
             // Custom Eye-Catching Hover Preview Popover (replaces native OS browser title tooltip)
-            cardEl.onmouseenter = () => {
+            cardEl.onmouseenter = (e) => {
+                lastPointerX = e.clientX;
+                lastPointerY = e.clientY;
                 cancelHidePopover();
                 clearTimeout(openPopoverTimer);
                 if (activeCardPreviewPopover && activeCardPreviewPopover.__card === card) {
@@ -611,7 +673,9 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
                     showCardPreviewPopover(card, cardEl);
                 }, 100);
             };
-            cardEl.onmouseleave = () => {
+            cardEl.onmouseleave = (e) => {
+                lastPointerX = e.clientX;
+                lastPointerY = e.clientY;
                 clearTimeout(openPopoverTimer);
                 scheduleHidePopover();
             };
