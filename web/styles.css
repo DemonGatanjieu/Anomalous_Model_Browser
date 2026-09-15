@@ -9615,6 +9615,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-prompt-topbar {
+    position: relative !important;
+    z-index: 1000 !important;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -9623,9 +9625,83 @@ dialog.anomalous-gallery-viewer::backdrop {
     height: 44px;
     padding: 0 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(20, 22, 27, 0.95);
+    background: rgba(20, 22, 27, 0.98);
     box-sizing: border-box;
     flex-shrink: 0;
+}
+
+.anomalous-prompt-more-wrap {
+    position: relative !important;
+    display: inline-flex !important;
+}
+
+.anomalous-prompt-more-menu {
+    position: absolute !important;
+    top: calc(100% + 6px) !important;
+    right: 0 !important;
+    z-index: 1000005 !important;
+    min-width: 165px !important;
+    background: #181a20 !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+    padding: 6px !important;
+    backdrop-filter: blur(20px) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    animation: anmMoreMenuIn 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes anmMoreMenuIn {
+    from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.anomalous-prompt-more-item {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 7px 10px !important;
+    border-radius: 6px !important;
+    border: none !important;
+    background: transparent !important;
+    color: #cbd5e1 !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+    transition: background 0.12s ease, color 0.12s ease !important;
+}
+
+.anomalous-prompt-more-item:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+}
+
+.anomalous-prompt-more-pos {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding: 8px 10px 4px !important;
+    margin-top: 4px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    font-size: 0.76rem !important;
+    color: #94a3b8 !important;
+}
+
+.anomalous-prompt-more-pos select {
+    background: rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    border-radius: 5px !important;
+    color: #f1f5f9 !important;
+    padding: 3px 6px !important;
+    font-size: 0.74rem !important;
+    cursor: pointer !important;
+    outline: none !important;
 }
 
 .anomalous-prompt-topbar-left {

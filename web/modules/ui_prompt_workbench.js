@@ -89,37 +89,29 @@ export function createPromptWorkbench(owner, container, scope, options) {
 
     // "More" Dropdown Menu (holds Save, New Draft, Tags, Export, Material Sync)
     const moreWrap = text(topActions, 'div', '', 'anomalous-prompt-more-wrap');
-    moreWrap.style.position = 'relative';
-    moreWrap.style.display = 'inline-flex';
-    const moreBtn = text(moreWrap, 'button', window.anomalous_browser_lang === 'zh' ? '··· 更多' : '··· More', 'anomalous-btn-ghost anomalous-btn-sm');
+    const moreBtn = text(moreWrap, 'button', window.anomalous_browser_lang === 'zh' ? '··· 更多' : '··· More', 'anomalous-btn-ghost anomalous-btn-sm anomalous-prompt-more-btn');
     const moreMenu = text(moreWrap, 'div', '', 'anomalous-prompt-more-menu');
     moreMenu.style.display = 'none';
-    moreMenu.style.position = 'absolute';
-    moreMenu.style.top = 'calc(100% + 4px)';
-    moreMenu.style.right = '0';
-    moreMenu.style.zIndex = '1000';
-    moreMenu.style.minWidth = '150px';
-    moreMenu.style.background = 'var(--amb-bg-panel, #1C1E24)';
-    moreMenu.style.border = '1px solid var(--amb-border, rgba(255, 255, 255, 0.14))';
-    moreMenu.style.borderRadius = 'var(--amb-radius-control, 6px)';
-    moreMenu.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.6)';
-    moreMenu.style.padding = '4px';
 
-    const saveBtn = text(moreMenu, 'button', `💾 ${t('promptSavePlan')}`, 'anomalous-btn-ghost anomalous-btn-sm');
-    saveBtn.style.width = '100%';
-    saveBtn.style.justifyContent = 'flex-start';
-    saveBtn.style.border = 'none';
+    const closeMoreMenu = () => {
+        moreMenu.style.display = 'none';
+        moreBtn.classList.remove('is-active');
+    };
+    scope.listen(document, 'click', closeMoreMenu);
+
+    moreBtn.onclick = (e) => {
+        e.stopPropagation();
+        const isHidden = moreMenu.style.display === 'none';
+        moreMenu.style.display = isHidden ? 'flex' : 'none';
+        moreBtn.classList.toggle('is-active', isHidden);
+    };
+
+    const saveBtn = text(moreMenu, 'button', `💾 ${t('promptSavePlan')}`, 'anomalous-prompt-more-item');
     saveBtn.title = t('promptSavePlan') || '保存方案至素材库';
 
-    const newBtn = text(moreMenu, 'button', `✨ ${t('promptNewDraft')}`, 'anomalous-btn-ghost anomalous-btn-sm');
-    newBtn.style.width = '100%';
-    newBtn.style.justifyContent = 'flex-start';
-    newBtn.style.border = 'none';
+    const newBtn = text(moreMenu, 'button', `✨ ${t('promptNewDraft')}`, 'anomalous-prompt-more-item');
 
-    const tagsBtn = text(moreMenu, 'button', `🏷️ ${window.anomalous_browser_lang === 'zh' ? '设置标签' : 'Edit Tags'}`, 'anomalous-btn-ghost anomalous-btn-sm');
-    tagsBtn.style.width = '100%';
-    tagsBtn.style.justifyContent = 'flex-start';
-    tagsBtn.style.border = 'none';
+    const tagsBtn = text(moreMenu, 'button', `🏷️ ${window.anomalous_browser_lang === 'zh' ? '设置标签' : 'Edit Tags'}`, 'anomalous-prompt-more-item');
     tagsBtn.onclick = () => {
         closeMoreMenu();
         const current = (draft.tags || []).join(', ');
@@ -130,27 +122,13 @@ export function createPromptWorkbench(owner, container, scope, options) {
         }
     };
 
-    const exportBtn = text(moreMenu, 'button', `📤 ${t('promptExportPlan')}`, 'anomalous-btn-ghost anomalous-btn-sm');
-    exportBtn.style.width = '100%';
-    exportBtn.style.justifyContent = 'flex-start';
-    exportBtn.style.border = 'none';
+    const exportBtn = text(moreMenu, 'button', `📤 ${t('promptExportPlan')}`, 'anomalous-prompt-more-item');
 
-    const syncLibBtn = text(moreMenu, 'button', `📥 ${window.anomalous_browser_lang === 'zh' ? '同步素材库' : 'Sync Library'}`, 'anomalous-btn-ghost anomalous-btn-sm');
-    syncLibBtn.style.width = '100%';
-    syncLibBtn.style.justifyContent = 'flex-start';
-    syncLibBtn.style.border = 'none';
+    const syncLibBtn = text(moreMenu, 'button', `📥 ${window.anomalous_browser_lang === 'zh' ? '同步素材库' : 'Sync Library'}`, 'anomalous-prompt-more-item');
     syncLibBtn.onclick = () => {
         closeMoreMenu();
         return sourceDeck.sync();
     };
-
-    moreBtn.onclick = (e) => {
-        e.stopPropagation();
-        const isHidden = moreMenu.style.display === 'none';
-        moreMenu.style.display = isHidden ? 'block' : 'none';
-    };
-    const closeMoreMenu = () => { moreMenu.style.display = 'none'; };
-    scope.listen(document, 'click', closeMoreMenu);
 
     const closeBtn = text(topActions, 'button', '✕', 'anomalous-btn-ghost anomalous-btn-sm anomalous-prompt-close-btn');
     closeBtn.title = t('close') || '关闭';
@@ -160,7 +138,7 @@ export function createPromptWorkbench(owner, container, scope, options) {
 
     // Insertion preference lives with the other secondary actions.
     const posWrap = document.createElement('label');
-    posWrap.className = 'anomalous-prompt-insert-pos';
+    posWrap.className = 'anomalous-prompt-insert-pos anomalous-prompt-more-pos';
     const posSelect = text(posWrap, 'select', '', 'anomalous-prompt-pos-select');
     for (const value of ['after', 'before']) {
         text(posSelect, 'option', t(`promptInsert_${value}`)).value = value;
@@ -170,7 +148,7 @@ export function createPromptWorkbench(owner, container, scope, options) {
     moreMenu.appendChild(posWrap);
     posSelect.onchange = () => {
         owner.promptInsertPosition = posSelect.value;
-
+        closeMoreMenu();
     };
 
     // Two-Column Split Grid (Adapts to vertical dual-zone in sidebar mode)
@@ -783,6 +761,7 @@ export function createPromptWorkbench(owner, container, scope, options) {
     // -------------------------------------------------------------------------
     // Save Plan to Material Library
     saveBtn.onclick = async () => {
+        closeMoreMenu();
         if (!draft.name?.trim()) {
             nameInput.focus();
             nameInput.classList.add('is-invalid');
@@ -825,6 +804,7 @@ export function createPromptWorkbench(owner, container, scope, options) {
 
     // Export Plan JSON
     exportBtn.onclick = () => {
+        closeMoreMenu();
         if (!draft.name?.trim()) {
             nameInput.focus();
             nameInput.classList.add('is-invalid');
@@ -855,6 +835,7 @@ export function createPromptWorkbench(owner, container, scope, options) {
 
     // New Draft
     newBtn.onclick = async () => {
+        closeMoreMenu();
         if (await anomalousConfirm(t('promptReplaceDraft')) && !scope.signal.aborted) {
             owner.promptPlanDraft = draft = newDraft();
             draft.plan.parts.push(normalizeBlock({
