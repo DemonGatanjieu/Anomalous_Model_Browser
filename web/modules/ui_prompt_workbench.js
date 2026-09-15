@@ -87,7 +87,7 @@ export function createPromptWorkbench(owner, container, scope, options) {
         };
     }
 
-    // "More" Dropdown Menu (holds Save, New Draft, Tags, Material Sync)
+    // "More" Dropdown Menu (holds Save, New Draft, Tags)
     const moreWrap = text(topActions, 'div', '', 'anomalous-prompt-more-wrap');
     const moreBtn = text(moreWrap, 'button', window.anomalous_browser_lang === 'zh' ? '··· 更多' : '··· More', 'anomalous-btn-ghost anomalous-btn-sm anomalous-prompt-more-btn');
     const moreMenu = text(moreWrap, 'div', '', 'anomalous-prompt-more-menu');
@@ -123,12 +123,6 @@ export function createPromptWorkbench(owner, container, scope, options) {
         }
     };
 
-    const syncLibBtn = text(moreMenu, 'button', `📥 ${window.anomalous_browser_lang === 'zh' ? '同步素材库' : 'Sync Library'}`, 'anomalous-prompt-more-item');
-    syncLibBtn.onclick = () => {
-        closeMoreMenu();
-        return sourceDeck.sync();
-    };
-
     const closeBtn = text(topActions, 'button', '✕', 'anomalous-btn-ghost anomalous-btn-sm anomalous-prompt-close-btn');
     closeBtn.title = t('close') || '关闭';
     closeBtn.onclick = () => {
@@ -156,7 +150,7 @@ export function createPromptWorkbench(owner, container, scope, options) {
     // =========================================================================
     // LEFT COLUMN: Ready-to-use Prompt Cards (词卡库)
     // =========================================================================
-    const sourceDeck = createPromptSourceDeck(workbenchGrid, container, scope, addSourceCardToMixer);
+    const sourceDeck = createPromptSourceDeck(workbenchGrid, container, scope, addSourceCardToMixer, () => activeTab);
 
     // =========================================================================
     // RIGHT COLUMN: Assembler & Arranger Stage (顺序拼装调音台)
@@ -845,7 +839,10 @@ export function createPromptWorkbench(owner, container, scope, options) {
             }
             const payload = await jsonResponse(response, 'prompt save failed');
             if (payload.status !== 'success') throw new Error('prompt save failed');
-            if (!scope.signal.aborted) showMaterialSaved(owner, payload.material);
+            if (!scope.signal.aborted) {
+                showMaterialSaved(owner, payload.material);
+                void sourceDeck.sync();
+            }
         } catch (error) {
             if (!scope.signal.aborted) await anomalousAlert(t('materialSaveError'));
         } finally {

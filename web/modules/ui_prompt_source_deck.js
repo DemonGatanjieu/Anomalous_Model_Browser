@@ -10,7 +10,7 @@ import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { loadPromptSourceCards, mergePromptSourceCards } from './prompt_material_source.js';
 import { translatePromptText } from './translation_service.js';
 
-export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCardToMixer) {
+export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCardToMixer, getActiveRole = () => 'positive') {
     const sourceCards = [...STARTER_SOURCE_PROMPTS];
     let sourceFilterCategory = 'all';
     let sourceFilterKeyword = '';
@@ -132,10 +132,8 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
     // Action button group in leftHeader
     const leftHeaderActions = text(leftHeader, 'div', '', 'anomalous-workbench-header-actions');
 
-    // Button 1: One-click Sync / Import from Material Library
-    const importMaterialsBtn = text(leftHeaderActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm anomalous-icon-btn');
-    importMaterialsBtn.innerHTML = `<svg style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
-    importMaterialsBtn.title = window.anomalous_browser_lang === 'zh' ? '从素材库同步提示词' : 'Sync prompts from Material Library';
+    const syncStatus = text(leftPanel, 'div', t('promptLibraryAutoSync'), 'anomalous-source-sync-status');
+    syncStatus.setAttribute('role', 'status');
 
     // Button 2: Create New Custom Card
     const newCardTriggerBtn = text(leftHeaderActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm anomalous-icon-btn');
@@ -301,30 +299,47 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
     }
 
     let materialSyncController = null;
-    scope.onDispose(() => materialSyncController?.abort());
-    async function syncMaterialsIntoSourceDeck(notify = true) {
+    let materialSyncTimer = null;
+    scope.onDispose(() => {
+        clearTimeout(materialSyncTimer);
+        materialSyncController?.abort();
+    });
+    function scheduleMaterialSync() {
+        clearTimeout(materialSyncTimer);
+        if (scope.signal.aborted) return;
+        materialSyncTimer = setTimeout(() => {
+            if (document.hidden) scheduleMaterialSync();
+            else void syncMaterialsIntoSourceDeck();
+        }, 30000);
+    }
+    async function syncMaterialsIntoSourceDeck() {
+        if (scope.signal.aborted) return;
+        clearTimeout(materialSyncTimer);
         materialSyncController?.abort();
         const controller = new AbortController();
         materialSyncController = controller;
-        const icon = importMaterialsBtn.innerHTML;
-        importMaterialsBtn.disabled = true;
         try {
             const cards = await loadPromptSourceCards(controller.signal);
             if (scope.signal.aborted || controller.signal.aborted) return;
-            const addedCount = mergePromptSourceCards(sourceCards, cards);
-            renderSourceCardsList();
-            if (notify) showWorkbenchToast(t('promptSourceSynced', { count: addedCount }));
+            const previous = JSON.stringify(sourceCards);
+            mergePromptSourceCards(sourceCards, cards);
+            if (previous !== JSON.stringify(sourceCards)) renderSourceCardsList();
+            syncStatus.textContent = t('promptLibraryAutoSync');
         } catch (error) {
-            if (!scope.signal.aborted && !controller.signal.aborted && notify) await anomalousAlert(t('materialLoadError'));
+            if (!scope.signal.aborted && !controller.signal.aborted) {
+                syncStatus.textContent = t('promptLibrarySyncFailed');
+            }
         } finally {
             if (materialSyncController === controller) {
                 materialSyncController = null;
-                importMaterialsBtn.disabled = false;
-                importMaterialsBtn.innerHTML = icon;
+                scheduleMaterialSync();
             }
         }
     }
-    importMaterialsBtn.onclick = () => syncMaterialsIntoSourceDeck();
+    scope.listen(window, 'focus', () => { void syncMaterialsIntoSourceDeck(); });
+    scope.listen(document, 'visibilitychange', () => {
+        if (!document.hidden) void syncMaterialsIntoSourceDeck();
+    });
     // -------------------------------------------------------------------------
     // RENDER: Left Panel Cards & Form
     // -------------------------------------------------------------------------
@@ -347,7 +362,7 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
 
         // Role radio group
         const roleGroup = text(metaRow, 'div', '', 'anomalous-form-role-group');
-        let selectedRole = activeTab || 'positive';
+        let selectedRole = getActiveRole();
 
         const posLabel = text(roleGroup, 'label', '', 'anomalous-role-label');
         const posRadio = text(posLabel, 'input', '');
@@ -463,6 +478,8 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
                 if (payload.status === 'success') {
                     newCard.persisted = true;
                     newCard.filename = payload.filename;
+                    newCard.sourceKind = 'material';
+                    newCard.id = `mat_${selectedRole}_${payload.filename}`;
                     showWorkbenchToast(t('promptSaveCardSuccess'));
                 }
             } catch (err) {
@@ -607,6 +624,11 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
 
         popover.appendChild(header);
 
+        if (card.sourceKind === 'material') {
+            text(header, 'div', t('promptLibrarySource', { name: card.title, filename: card.filename }), 'anomalous-source-origin');
+            text(header, 'div', t('promptLibraryReadOnly'), 'anomalous-source-origin');
+        }
+
         const body = document.createElement('div');
         body.className = 'anomalous-popover-body';
         const snippet = document.createElement('pre');
@@ -742,7 +764,13 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
             const roleTag = text(cardEl, 'span', card.role === 'negative' ? (window.anomalous_browser_lang === 'zh' ? '⊖ 负' : '⊖ Neg') : (window.anomalous_browser_lang === 'zh' ? '⊕ 正' : '⊕ Pos'), `anomalous-card-role-tag is-${card.role}`);
             roleTag.title = card.role === 'negative' ? (window.anomalous_browser_lang === 'zh' ? '负向词卡' : 'Negative card') : (window.anomalous_browser_lang === 'zh' ? '正向词卡' : 'Positive card');
 
-            const nameEl = text(cardEl, 'span', card.title, 'anomalous-source-card-name');
+            const nameWrap = text(cardEl, 'div', '', 'anomalous-source-card-label');
+            text(nameWrap, 'span', card.title, 'anomalous-source-card-name');
+            if (card.sourceKind === 'material') {
+                cardEl.dataset.sourceFilename = card.filename;
+                const origin = text(nameWrap, 'span', t('promptLibraryBadge'), 'anomalous-source-origin');
+                origin.title = t('promptLibrarySource', { name: card.title, filename: card.filename }) + '\n' + t('promptLibraryReadOnly');
+            }
 
             const addIcon = text(cardEl, 'span', '+', 'anomalous-source-card-add-icon');
 
@@ -755,7 +783,7 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
 
     renderNewCardFormUI();
     renderSourceCardsList();
-    void syncMaterialsIntoSourceDeck(false);
+    void syncMaterialsIntoSourceDeck();
     return {
         extractSelected: extractPromptsFromSelectedNode,
         refresh: renderSourceCardsList,

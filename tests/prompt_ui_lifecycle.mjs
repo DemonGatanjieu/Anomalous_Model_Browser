@@ -52,6 +52,7 @@ clean();
 // Full-text edits remain authoritative after recomposition, save and reopening.
 await studio.openPromptStudio(owner);
 owner.sidePromptComposerControl.addBlock({ content: 'scene', role: 'positive' });
+await f.button(f.document.body, 'Negative (').click();
 owner.sidePromptComposerControl.addBlock({ content: 'bad anatomy', role: 'negative' });
 await f.button(f.document.body, 'Positive (').click();
 await f.button(f.document.body, '⛶').click();
@@ -73,7 +74,8 @@ const saved = JSON.parse(savedRequest[1].body);
 assert.equal(saved.name, 'round trip');
 assert.equal(saved.plan.positive, 'edited whole prompt');
 assert.equal(saved.plan.negative, 'bad anatomy');
-await f.button(f.document.body, 'Sync Library').click();
+f.window.dispatch('focus');
+await f.flush();
 assert.ok(f.requests.at(-1)[0].includes('category=prompts'));
 studio.closePromptStudio(owner);
 await studio.openPromptStudio(owner);

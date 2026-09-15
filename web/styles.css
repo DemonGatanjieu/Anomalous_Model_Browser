@@ -13119,6 +13119,24 @@ button:hover .anomalous-btn-icon {
     flex-shrink: 0;
 }
 
+.anomalous-source-card-label {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.anomalous-source-origin,
+.anomalous-source-sync-status {
+    color: var(--amb-text-muted, #94a3b8);
+    font-size: 0.68rem;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-source-sync-status {
+    padding: 4px 12px;
+}
+
 .anomalous-source-card-name {
     font-size: 0.76rem;
     font-weight: 500;

@@ -17,7 +17,7 @@ compatibility tests; existing imports and local saves are unaffected.
 Reopening requires an explicit release decision, package round-trip and failure
 validation, then restoring the frontend export action and enabling the backend
 gate together. Do not reopen exports as a side effect of UX work. Workflow
-share-code export is also paused; importing existing codes remains available.
+share-code import/export is a separate, verified feature available from Toolbox.
 
 ## Product and data model
 

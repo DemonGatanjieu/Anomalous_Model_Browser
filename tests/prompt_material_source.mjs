@@ -19,6 +19,14 @@ assert.equal(requests.every(([, options]) => options.signal === controller.signa
 const deck = [];
 assert.equal(mergePromptSourceCards(deck, cards), 2);
 assert.equal(mergePromptSourceCards(deck, cards), 0);
+const local = { id: 'local', role: 'positive', content: 'local draft' };
+deck.unshift(local);
+const updated = { ...cards[0], title: 'Renamed source', content: 'Updated prompt' };
+const otherSource = { ...updated, id: 'mat_positive_other.json', filename: 'other.json' };
+mergePromptSourceCards(deck, [updated, otherSource]);
+assert.deepEqual(deck, [local, updated, otherSource], 'refresh edits/removes by source identity, preserving equal text from different materials');
+mergePromptSourceCards(deck, []);
+assert.deepEqual(deck, [local], 'deleted library sources disappear without clearing local cards');
 controller.abort();
 await assert.rejects(loadPromptSourceCards(controller.signal), { name: 'AbortError' });
 assert.equal(requests.length, 4);

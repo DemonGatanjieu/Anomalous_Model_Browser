@@ -851,12 +851,7 @@ function buildMaterialTopbar(owner) {
     refreshBtn.title = t('refresh');
     refreshBtn.onclick = () => owner.refreshMaterials();
 
-    // 更多/转移中心
-    const more = text(right, 'details', '', 'anomalous-secondary-actions');
-    text(more, 'summary', '···');
-    more.title = t('notebookMore') || '更多';
-    const transfer = text(more, 'button', t('materialTransferCenter'), 'anomalous-btn-ghost');
-    transfer.onclick = () => showTransferCenter(owner);
+
 }
 
 function renderMaterialPagination(owner, payload) {
@@ -1188,40 +1183,4 @@ async function applyLibraryMaterial(owner, material, droppedNode = null, graph =
         }
     } catch (error) { await anomalousAlert(t(error.message) === error.message ? t('materialApplyFailed') : t(error.message)); }
     finally { owner.materialApplying = false; }
-}
-
-function showTransferCenter(owner) {
-    const dialog = document.createElement('dialog'); dialog.className = 'anomalous-material-choice';
-    text(dialog, 'h3', t('materialTransferCenter'));
-    const status = text(dialog, 'p', ''); status.setAttribute('role', 'alert');
-    const workflow = text(dialog, 'button', t('materialTransferWorkflow'), 'anomalous-btn-primary');
-    workflow.onclick = async () => {
-        if (!window.AMB_WorkflowShare) { status.textContent = t('sidebarModuleNotLoaded'); return; }
-        dialog.close(); window.AMB_WorkflowShare.showUnifiedModal();
-    };
-    const recipe = text(dialog, 'button', t('materialTransferRecipes'), 'anomalous-btn-ghost');
-    recipe.onclick = () => { dialog.close(); owner.showRecipes?.(); };
-    const importPlan = text(dialog, 'button', t('promptImportPlan'), 'anomalous-btn-ghost');
-    const file = text(dialog, 'input', ''); file.type = 'file'; file.accept = '.json'; file.hidden = true;
-    importPlan.onclick = () => file.click();
-    file.onchange = async () => {
-        const source = file.files?.[0]; if (!source) return;
-        importPlan.disabled = true;
-        try {
-            if (source.size > 2 * 1024 * 1024) throw new Error('oversize');
-            const plan = JSON.parse(await source.text());
-            if (!dialog.open) return;
-            if (plan.format !== 'anomalous-prompt-plan-v1' && plan.format !== 'anomalous-prompt-mixer-v2') throw new Error('format');
-            const response = await fetch('/anomalous/save_prompt_plan', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: plan.name, tags: plan.tags || [], plan: plan.plan }) });
-            if (response.status === 409) { status.textContent = t('promptAlreadyImported'); return; }
-            const result = await jsonResponse(response, 'plan import failed');
-            if (result.status !== 'success') throw new Error('import failed');
-            if (!dialog.open) return;
-            dialog.close(); owner.materialApplyMode = false; owner.materialKind = 'prompt_plan'; owner.materialKindCategory = 'prompts'; await owner.showMaterials();
-        } catch (error) { status.textContent = t('promptImportError'); }
-        finally { file.value = ''; importPlan.disabled = false; }
-    };
-    const close = text(dialog, 'button', t('close'), 'anomalous-btn-ghost'); close.onclick = () => dialog.close();
-    dialog.onclose = () => dialog.remove(); document.body.appendChild(dialog); dialog.showModal();
 }

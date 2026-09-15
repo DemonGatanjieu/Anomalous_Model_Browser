@@ -5,12 +5,11 @@ localization, media, or explicit canvas mutations.
 
 ## Bootstrap and module ownership
 
-Workflow share-code export is temporarily closed. `WORKFLOW_SHARE_EXPORT_ENABLED`
-in `web/main.js` gates both the export modal and encoder, including calls through
-`window.AMB_WorkflowShare`. The unified dialog disables export and keeps import.
-Reopening requires explicit validation and restoring the UI action and gate
-together; UX changes must not reopen it. Image/workflow hash injection, host
-workflow saving, and ordinary image downloads are outside this restriction.
+The verified AMB0/AMB1 workflow share-code Import / Export Center is available
+from Toolbox through `window.AMB_WorkflowShare.showUnifiedModal()`. Both directions
+are enabled by explicit product decision. It is independent of the paused Recipe
+package export and closed Material Library file import. Image/workflow hash
+injection, host saving, and ordinary image downloads remain unchanged.
 
 ComfyUI loads JavaScript in the extension `WEB_DIRECTORY` as ES modules.
 `web/main.js` registers `Anomalous.ModelBrowser`, creates the shared browser
@@ -157,8 +156,20 @@ browsing, editing, or already stored data.
 ## Prompt Studio ownership
 
 The studio supports copying prompt text and saving combinations to the local
-Material Library. Standalone prompt-plan JSON export has been removed; importing
-existing plan files remains supported by the Material Library transfer center.
+Material Library. Standalone prompt-plan JSON export has been removed and the
+Material Library file-import entry is closed.
+
+Source cards automatically refresh on studio open, browser focus/visibility, and
+every 30 seconds while the page is visible (scheduled after the previous request).
+Saving a studio combination also refreshes immediately. `sourceKind: 'material'`
+cards are reconciled by filename and role from a complete paginated snapshot;
+renames/content edits replace them and deleted sources disappear. Failed or
+cancelled reads retain existing cards. Equal text from different sources retains
+each source identity. Built-in and unsaved local cards remain independent.
+Library cards show their origin and have no delete action in the studio. Mixer
+blocks are editable copies; refreshing sources must not modify existing drafts.
+The deck owns its refresh timer, listeners and AbortController and releases all
+of them when its view closes. New-card role is supplied by the workbench callback.
 
 The studio has one standalone drawer; the former embedded side/full composer
 and material import drawer are removed. Existing browser integration continues
@@ -173,7 +184,7 @@ to call `openPromptStudio(owner)`, and external prompt dispatch uses
 | `ui_prompt_inspector.js` | Full-text inspection window, role tab and its translation lifetime |
 | `prompt_studio_data.js` | Starter cards, display categories, draft/block initialization and synthesis |
 | `prompt_composition.js` | Pure plan conversion, sorting and composition; no DOM ownership |
-| `prompt_material_source.js` | All-page prompt discovery, detail loading and source-card deduplication |
+| `prompt_material_source.js` | All-page prompt discovery, detail loading and reconciliation by source identity |
 | `ui_lifecycle.js` | View-scoped listeners, AbortSignal, cleanup callbacks and resizing |
 
 Child views receive their container and narrow callbacks. The workbench keeps

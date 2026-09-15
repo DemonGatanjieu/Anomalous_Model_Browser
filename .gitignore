@@ -74,6 +74,7 @@ tests/*
 !tests/ui_fixture.mjs
 !tests/prompt_ui_lifecycle.mjs
 !tests/prompt_material_source.mjs
+!tests/prompt_library_sync.mjs
 !tests/translation_service_contracts.mjs
 !tests/studio_contracts.mjs
 !tests/material_workspace_flow.mjs

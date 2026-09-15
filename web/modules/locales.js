@@ -1,6 +1,5 @@
 export const i18n = {
     zh: {
-        promptSourceSynced: '已同步 {count} 张新词卡',
         promptFullTextEditHint: '修改全文会将当前方向已启用的词块合并为一个词块。',
         materialNoPromptContent: '这份素材没有已明确分类的提示词，请先在详情中检查提示词角色。',
         promptDrawerReplace: '替换这组文字',
@@ -41,9 +40,6 @@ export const i18n = {
         assistantSchemeDetails: "方案参数详情",
         assistantSchemeSource: "来源",
         assistantHoverToInspect: "悬停可预览详细参数",
-        materialTransferCenter: "导入中心",
-        materialTransferWorkflow: "导入工作流分享码",
-        materialTransferRecipes: "管理配方与配方包",
         promptCombinations: "提示词搭配",
         promptPlan: "提示词方案",
         promptSavedPlans: "已存方案",
@@ -69,9 +65,6 @@ export const i18n = {
         promptAppend: "追加到节点",
         promptReplace: "替换节点文本",
         promptSavePlan: "保存组合",
-        promptImportPlan: "导入提示词方案",
-        promptAlreadyImported: "素材库中已有相同的提示词方案。",
-        promptImportError: "导入失败，请选择有效的提示词方案 JSON 文件（不超过 2 MiB）。",
         promptNewDraft: "新建",
         promptAddToPlan: "加入组合",
         promptReadSelectedNode: "读取选中节点",
@@ -229,7 +222,7 @@ export const i18n = {
     <p><strong>5. 个性化配置 (设置面板)</strong><br>具体位置：左侧底部的 <strong>齿轮 ()</strong> 按钮。<br>可以调节语言、主页面字体大小；进入“模型设置”可选择视频封面始终播放或悬停播放，以及卡片使用流畅缩略图或原始封面。详情页始终保留原图画质。</p>
     <p><strong>6. 📑 顶部导航与提示词笔记</strong><br>具体位置：右侧顶部的按钮分别为 <strong>模型 ()</strong>、<strong>图库 ()</strong>、<strong>创作工作台 (📑)</strong>、<strong>停靠侧边栏 (◧)</strong>。<br>进入创作工作台的“提示词笔记”，点击新建 <strong></strong>。选择基础模型、主模型和 LoRA 后，可通过 <strong>📝纯文本/粘贴</strong> 填入提示词并进行双语对照、分块、查找替换和标签编辑，最后点击 <strong>发送到画布</strong> 一键组装节点。</p>
     <p><strong>7. 文件夹管理 (Folder Manager)</strong><br>具体位置：设置 () 面板内的 <strong>文件夹管理</strong>。<br>可以用来隐藏不需要的内置文件夹。隐藏后的文件夹不仅从侧边栏消失，后端的静默扫描和本地读取也会完全跳过，实现真正的“零性能损耗”。并且可以在这里拖拽调整文件夹在侧边栏显示的顺序。</p>
-    <p><strong>8. 工作流导入 (分享码)</strong><br>打开素材库的“更多”菜单，进入<strong>导入中心</strong>，即可导入已有的 AMB0/AMB1 工作流分享码。生成新分享码暂未开放，图片和工作流附带的哈希信息保持现状。</p>
+    <p><strong>8. 工作流导入导出 (分享码)</strong><br>打开<strong>实用工具箱 → 导入导出</strong>，通过已有的 AMB0/AMB1 分享码导入或导出工作流。素材库的文件导入入口已关闭；图片和工作流附带的哈希信息保持现状。</p>
     <p><strong>9. 💬 提交反馈 / 报告问题</strong><br>具体位置：设置 () 面板内的 <strong>💬 提交反馈 / 报告问题</strong>。<br>当你遇到插件报错或有新功能建议时，点击该按钮可一键直达 GitHub Issues 页面提交反馈。</p>
 </div>`,
         notebooks: '笔记本',
@@ -638,8 +631,8 @@ export const i18n = {
         mainShareEmpty: '❌ 分享码为空',
         mainImportedNodes: '✅ 成功导入 {count} 个节点配置',
         mainDecodeFailed: '❌ 解析失败: ',
-        mainUnifiedTitle: '🔄 工作流导入',
-        mainExportUnavailable: '工作流分享码导出暂未开放',
+        mainUnifiedTitle: "🔄 工作流导入导出",
+        mainExportWorkflow: "📤 导出当前工作流为分享码",
         mainImportWorkflow: '从分享码导入工作流',
         sidebarToggle: '收起/展开侧边栏',
         sidebarDoctor: '模型医生',
@@ -728,6 +721,14 @@ export const i18n = {
         sidebarResetConfirm: '确认重置窗口位置、缩放和停靠状态吗？',
         sidebarToolbox: '实用工具箱',
         toolboxTitle: '实用工具箱',
+        promptLibraryAutoSync: "素材库词卡自动同步",
+        promptLibrarySyncFailed: "素材库同步失败，已保留现有词卡，将自动重试",
+        promptLibraryBadge: "🔒 来自素材库",
+        promptLibrarySource: "来自素材库：{name}（{filename}）",
+        promptLibraryReadOnly: "由源素材管理，不能在工坊删除；拼装台中的副本可自由编辑。",
+        toolWorkflowTransferShort: "导入导出",
+        toolWorkflowTransferTitle: "工作流导入导出中心",
+        toolWorkflowTransferDesc: "使用已验证的 AMB0/AMB1 分享码导入或导出工作流。",
         toolboxSubtitle: '模型维护与拓展辅助工具',
         toolboxPlanned: '规划中',
         toolboxReady: '就绪',
@@ -1129,7 +1130,6 @@ export const i18n = {
         recipeCardSpecsResolution: '尺寸',
     },
     en: {
-        promptSourceSynced: 'Synced {count} new prompt cards',
         promptFullTextEditHint: 'Editing the full text merges the enabled blocks in this direction into one block.',
         materialNoPromptContent: 'This material has no classified prompts. Check its prompt roles in details first.',
         promptDrawerReplace: 'Replace this text',
@@ -1170,9 +1170,6 @@ export const i18n = {
         assistantSchemeDetails: "Scheme Details",
         assistantSchemeSource: "Source",
         assistantHoverToInspect: "Hover to preview full parameters",
-        materialTransferCenter: "Import Center",
-        materialTransferWorkflow: "Import workflow share codes",
-        materialTransferRecipes: "Manage recipes and recipe packages",
         promptCombinations: "Prompt Combinations",
         promptPlan: "Prompt Plan",
         promptSavedPlans: "Saved plans",
@@ -1198,9 +1195,6 @@ export const i18n = {
         promptAppend: "Append to node",
         promptReplace: "Replace node text",
         promptSavePlan: "Save Plan",
-        promptImportPlan: "Import prompt plan",
-        promptAlreadyImported: "An identical prompt plan is already in the library.",
-        promptImportError: "Import failed. Choose a valid prompt plan JSON file (up to 2 MiB).",
         promptNewDraft: "New",
         promptAddToPlan: "Add to Plan",
         promptReadSelectedNode: "Read Selected Node",
@@ -1358,7 +1352,7 @@ export const i18n = {
     <p><strong>5. Settings Panel</strong><br>Location: The <strong>Gear ()</strong> icon at the bottom left.<br>Adjust language and UI scale. Open “Model Settings” to choose always-play or hover-play video covers and optimized thumbnails or original covers. Detail pages always retain original image quality.</p>
     <p><strong>6. 📑 Top Navigation & Prompt Notes</strong><br>Location: Top-right tabs <strong>Models ()</strong>, <strong>Gallery ()</strong>, <strong>Creative Workspace (📑)</strong>, and <strong>Dock (◧)</strong>.<br>Open Prompt Notes in the Creative Workspace and click <strong></strong>. Select a Base Model, Main Model, and LoRAs; use <strong>📝 Edit Raw/Paste</strong> for bilingual prompts, chunking, find/replace, and tag editing; then click <strong>Send to Canvas</strong> to assemble the nodes.</p>
     <p><strong>7. Folder Manager</strong><br>Location: Inside the Settings () panel, click <strong>Manage Folders</strong>.<br>Use this to hide unneeded built-in folders. Hidden folders will be completely skipped by background scans and I/O reads, achieving true "zero performance cost". You can also drag and drop to reorder how folders appear in the sidebar.</p>
-    <p><strong>8. Workflow Import (Share Code)</strong><br>Open the Material Library More menu and choose <strong>Import Center</strong> to import existing AMB0/AMB1 workflow share codes. Generating new share codes is temporarily unavailable. Image and workflow hash metadata is unchanged.</p>
+    <p><strong>8. Workflow Import / Export (Share Code)</strong><br>Open <strong>Toolbox → Import / Export</strong> to import or export AMB0/AMB1 workflow share codes. File import from the Material Library is closed; image/workflow hash metadata is unchanged.</p>
     <p><strong>9. 💬 Submit Feedback / Report Bug</strong><br>Location: Inside the Settings () panel, click <strong>💬 Submit Feedback / Report Bug</strong>.<br>If you encounter bugs or have feature requests, click this to go directly to our GitHub Issues page.</p>
 </div>`,
         notebooks: 'Notebooks',
@@ -1767,8 +1761,8 @@ export const i18n = {
         mainShareEmpty: '❌ Share code is empty',
         mainImportedNodes: '✅ Successfully imported {count} nodes',
         mainDecodeFailed: '❌ Decode Failed: ',
-        mainUnifiedTitle: '🔄 Workflow Import',
-        mainExportUnavailable: 'Workflow share-code export is temporarily unavailable',
+        mainUnifiedTitle: "🔄 Workflow Import / Export",
+        mainExportWorkflow: "📤 Export Workflow to Share Code",
         mainImportWorkflow: 'Import Workflow from Share Code',
         sidebarToggle: 'Toggle Sidebar',
         sidebarDoctor: 'Model Doctor',
@@ -1857,6 +1851,14 @@ export const i18n = {
         sidebarResetConfirm: 'Reset window position, scale and dock state?',
         sidebarToolbox: 'Toolbox Hub',
         toolboxTitle: 'Toolbox Hub',
+        promptLibraryAutoSync: "Material Library cards sync automatically",
+        promptLibrarySyncFailed: "Library sync failed. Existing cards are kept; retrying automatically.",
+        promptLibraryBadge: "🔒 From Material Library",
+        promptLibrarySource: "Material Library: {name} ({filename})",
+        promptLibraryReadOnly: "Managed by the source material; cannot be deleted here. Mixer copies remain editable.",
+        toolWorkflowTransferShort: "Import / Export",
+        toolWorkflowTransferTitle: "Workflow Import / Export Center",
+        toolWorkflowTransferDesc: "Import or export workflows using the verified AMB0/AMB1 share-code tools.",
         toolboxSubtitle: 'Model Maintenance & Utility Tools',
         toolboxPlanned: 'Planned',
         toolboxReady: 'Ready',

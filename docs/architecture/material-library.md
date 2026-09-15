@@ -224,11 +224,11 @@ The lower-left control opens a standalone Material Library container, with no
 workspace tabs and no initial Prompt Note fetch. The upper-right control opens
 Workflow Recipes; that workspace retains its Recipes and Prompt Notes tabs.
 Both containers share the browser's panel area but have separate headers and
-lifecycle state; switching restores the appropriate container. The Import Center
-is secondary under the library's More menu, linking workflow share-code imports,
-recipe management/package imports, and prompt-plan JSON imports. It has no
-independent image-material bundle exporter. Recipe package and workflow share-code
-exports are temporarily closed; prompt-plan JSON export has been removed.
+lifecycle state; switching restores the appropriate container. Material Library
+file import and its transfer-center entry are closed. It has no independent
+image-material bundle exporter. The verified workflow share-code Import / Export
+Center lives in Toolbox. Recipe package export remains paused, while prompt-plan
+JSON export has been removed. Local capture/save actions remain available.
 
 Opening the library with exactly one live selected node enables apply mode.
 Summary requests filter by exact `node_type`; activating a card fetches only that
@@ -277,12 +277,13 @@ string whitespace. A Prompt Note's `promptZh` translation is never inferred as
 negative text. Captured notes and classified workflow prompt groups can populate
 the fields; unknown workflow roles are not silently assigned a role.
 
-Saving creates an independent new snapshot. There is no automatic source sync or
+Saving creates an independent new snapshot. Studio source cards automatically
+follow library changes; assembled draft blocks remain independent copies without
 model binding. A page-session draft survives library navigation and is replaced
 by an existing saved plan only after confirmation; it must be saved before page
 reload. Stale detail requests cannot replace the current draft. Standalone JSON
-export has been removed. Existing prompt JSON imports are bounded to 2 MiB and validated
-by the same save endpoint. The panel also exposes role and target-widget selection,
+export has been removed, and the file-import entry is closed. The shared save
+endpoint still supports local combination saves. The panel also exposes role and target-widget selection,
 beginning/end buttons for a selected node, copy controls and guarded undo.
 
 ## Canvas drag and drop

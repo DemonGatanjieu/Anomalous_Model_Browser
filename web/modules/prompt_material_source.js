@@ -2,7 +2,7 @@ import { loadMaterialPrompts } from './material_prompt_data.js';
 import { categorizePromptSnippet } from './prompt_composition.js';
 import { jsonResponse } from './ui_dom.js';
 
-// Load every page through the same path for initial and explicit synchronization.
+// A complete snapshot is required before replacing library-owned cards.
 export async function loadPromptSourceCards(signal) {
     const cards = [];
     const filenames = new Set();
@@ -26,7 +26,7 @@ export async function loadPromptSourceCards(signal) {
                     id: `mat_${role}_${item.filename}`, filename: item.filename,
                     title: item.name || item.filename, content, role,
                     category: role === 'negative' ? 'base' : categorizePromptSnippet(content),
-                    persisted: true,
+                    persisted: true, sourceKind: 'material',
                 });
             }
         }
@@ -37,14 +37,10 @@ export async function loadPromptSourceCards(signal) {
 }
 
 export function mergePromptSourceCards(existing, incoming) {
-    const keys = new Set(existing.map(card => `${card.role}\0${card.content.trim()}`));
-    let added = 0;
-    for (const card of incoming) {
-        const key = `${card.role}\0${card.content.trim()}`;
-        if (keys.has(key)) continue;
-        existing.push(card);
-        keys.add(key);
-        added++;
-    }
+    const oldIds = new Set(existing.filter(card => card.sourceKind === 'material').map(card => card.id));
+    const local = existing.filter(card => card.sourceKind !== 'material');
+    const unique = [...new Map(incoming.map(card => [card.id, card])).values()];
+    const added = unique.filter(card => !oldIds.has(card.id)).length;
+    existing.splice(0, existing.length, ...local, ...unique);
     return added;
 }

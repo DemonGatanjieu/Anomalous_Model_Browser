@@ -12,6 +12,8 @@ owner.nbPanel.style.display = 'flex';
 f.document.body.appendChild(owner.nbPanel);
 for (const key of ['showMaterials', 'refreshMaterials', 'openSavedMaterial', 'openMaterialLibrary']) owner[key] = materials[key].bind(owner);
 await owner.openMaterialLibrary();
+assert.equal(all(owner.materialContainer).some(el => el.tagName === 'input' && el.type === 'file'), false);
+assert.equal(all(owner.materialContainer).some(el => el.tagName === 'button' && /import|export/i.test(el.textContent)), false);
 assert.equal(owner.notebookContainer, undefined);
 assert.equal(owner.materialApplyMode, true);
 assert.equal(new URL(f.requests.at(-1)[0], 'http://test').searchParams.get('node_type'), 'CLIPTextEncode');
