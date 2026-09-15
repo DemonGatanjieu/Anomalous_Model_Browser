@@ -13578,7 +13578,7 @@ button:hover .anomalous-btn-icon {
 }
 
 .anomalous-mixer-role-badge {
-    padding: 1px 6px;
+    padding: 2px 6px;
     border-radius: 4px;
     font-size: 0.68rem;
     font-weight: 700;
@@ -13588,8 +13588,22 @@ button:hover .anomalous-btn-icon {
     gap: 3px;
     cursor: pointer;
     user-select: none;
+    white-space: nowrap;
+    flex-shrink: 0;
     transition: all 0.15s ease;
     border: 1px solid transparent;
+}
+
+.anomalous-mixer-cat-badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: pointer;
+    user-select: none;
 }
 
 .anomalous-mixer-role-badge.is-positive {
