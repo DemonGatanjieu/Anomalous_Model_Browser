@@ -13528,3 +13528,94 @@ button:hover .anomalous-btn-icon {
     to { transform: translateY(0); opacity: 1; }
 }
 
+/* Unified Positive / Negative Role Badges & Cross-Role Tail Indicators */
+.anomalous-card-role-tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 1px 4px;
+    border-radius: 3px;
+    letter-spacing: 0.2px;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.anomalous-card-role-tag.is-positive {
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.14);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+}
+
+.anomalous-card-role-tag.is-negative {
+    color: #fb7185;
+    background: rgba(244, 63, 94, 0.14);
+    border: 1px solid rgba(244, 63, 94, 0.28);
+}
+
+.anomalous-mixer-tab-btn.is-role-positive.is-active {
+    background: rgba(56, 189, 248, 0.16) !important;
+    color: #38bdf8 !important;
+    border: 1px solid rgba(56, 189, 248, 0.35) !important;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.15) !important;
+}
+
+.anomalous-mixer-tab-btn.is-role-negative.is-active {
+    background: rgba(244, 63, 94, 0.16) !important;
+    color: #fb7185 !important;
+    border: 1px solid rgba(244, 63, 94, 0.35) !important;
+    box-shadow: 0 0 10px rgba(244, 63, 94, 0.15) !important;
+}
+
+.anomalous-mixer-block.is-cross-role {
+    border-style: dashed;
+    border-color: rgba(251, 113, 133, 0.45);
+    background: rgba(251, 113, 133, 0.05);
+}
+
+.anomalous-mixer-block.is-role-positive.is-cross-role {
+    border-color: rgba(56, 189, 248, 0.45);
+    background: rgba(56, 189, 248, 0.05);
+}
+
+.anomalous-mixer-role-badge {
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.3;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.anomalous-mixer-role-badge.is-positive {
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.14);
+    border-color: rgba(56, 189, 248, 0.28);
+}
+
+.anomalous-mixer-role-badge.is-negative {
+    color: #fb7185;
+    background: rgba(244, 63, 94, 0.14);
+    border-color: rgba(244, 63, 94, 0.28);
+}
+
+.anomalous-mixer-role-badge.is-cross-role {
+    border-style: dashed;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
+}
+
+.anomalous-mixer-role-badge:hover {
+    transform: scale(1.04);
+    filter: brightness(1.15);
+}
+
+.anomalous-mixer-block-btn.is-transfer:hover {
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.15);
+}
+

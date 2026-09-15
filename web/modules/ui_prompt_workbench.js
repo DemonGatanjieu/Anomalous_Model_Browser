@@ -312,37 +312,42 @@ export function createPromptWorkbench(owner, container, scope, options) {
 
     function updateRightTabsUI() {
         rightTabs.replaceChildren();
-        const posCount = draft.plan.parts.filter(p => p.role === 'positive').length;
-        const negCount = draft.plan.parts.filter(p => p.role === 'negative').length;
+        const posCount = draft.plan.parts.filter(p => (p.track || p.role) === 'positive').length;
+        const negCount = draft.plan.parts.filter(p => (p.track || p.role) === 'negative').length;
 
         const tabs = [
-            { key: 'positive', label: `${window.anomalous_browser_lang === 'zh' ? '正向拼装台' : 'Positive'} (${posCount})` },
-            { key: 'negative', label: `${window.anomalous_browser_lang === 'zh' ? '负向拼装台' : 'Negative'} (${negCount})` },
+            {
+                key: 'positive',
+                label: `⊕ ${window.anomalous_browser_lang === 'zh' ? '正向拼装台' : 'Positive'} (${posCount})`,
+                cls: 'is-role-positive',
+            },
+            {
+                key: 'negative',
+                label: `⊖ ${window.anomalous_browser_lang === 'zh' ? '负向拼装台' : 'Negative'} (${negCount})`,
+                cls: 'is-role-negative',
+            },
         ];
 
         for (const tab of tabs) {
-            const btn = text(rightTabs, 'button', tab.label, `anomalous-mixer-tab-btn${activeTab === tab.key ? ' is-active' : ''}`);
+            const btn = text(rightTabs, 'button', tab.label, `anomalous-mixer-tab-btn ${tab.cls}${activeTab === tab.key ? ' is-active' : ''}`);
             btn.onclick = () => {
                 activeTab = tab.key;
                 updateRightTabsUI();
                 renderBlocksList();
                 updateOutputPreview();
-
             };
         }
     }
 
     function addSourceCardToMixer(cardData, targetIndex = null) {
         const cardRole = cardData.role || 'positive';
-        if (activeTab !== cardRole) {
-            activeTab = cardRole;
-            updateRightTabsUI();
-        }
+        const isCrossRole = cardRole !== activeTab;
 
         const newBlock = normalizeBlock({
             title: cardData.title,
             content: cardData.content,
             role: cardRole,
+            track: activeTab,
             category: cardData.category,
             enabled: true,
         }, draft.plan.parts.length);
@@ -350,8 +355,17 @@ export function createPromptWorkbench(owner, container, scope, options) {
 
         if (targetIndex !== null && targetIndex >= 0) {
             draft.plan.parts.splice(targetIndex, 0, newBlock);
-        } else {
+        } else if (isCrossRole) {
+            // Cross-role cards (e.g. negative prompt on positive track) default to the tail ("扔到后面")
             draft.plan.parts.push(newBlock);
+        } else {
+            // Same-role cards: insert before any tail cross-role blocks on this track, or at the end
+            const firstCrossIdx = draft.plan.parts.findIndex(p => (p.track || p.role) === activeTab && (p.role || 'positive') !== activeTab);
+            if (firstCrossIdx >= 0) {
+                draft.plan.parts.splice(firstCrossIdx, 0, newBlock);
+            } else {
+                draft.plan.parts.push(newBlock);
+            }
         }
 
         syncDraftSynthesizedText(draft);
@@ -359,16 +373,20 @@ export function createPromptWorkbench(owner, container, scope, options) {
         renderBlocksList();
         updateOutputPreview();
 
-
-        const count = draft.plan.parts.filter(p => p.role === activeTab).length;
+        const count = draft.plan.parts.filter(p => (p.track || p.role) === activeTab).length;
+        const crossNotice = isCrossRole
+            ? (window.anomalous_browser_lang === 'zh'
+                ? `（${cardRole === 'negative' ? '负向' : '正向'}词已默认置于末尾）`
+                : ` (${cardRole} prompt placed at tail)`)
+            : '';
         showWorkbenchToast(window.anomalous_browser_lang === 'zh'
-            ? `已加入【${activeTab === 'positive' ? '正向' : '负向'}】拼装台（共 ${count} 块）`
-            : `Added to ${activeTab} track (${count} blocks)`);
+            ? `已加入【${activeTab === 'positive' ? '正向' : '负向'}】拼装台${crossNotice}（共 ${count} 块）`
+            : `Added to ${activeTab} track${crossNotice} (${count} blocks)`);
     }
 
     function renderBlocksList() {
         blocksContainer.replaceChildren();
-        const currentRoleParts = draft.plan.parts.filter(p => p.role === activeTab);
+        const currentRoleParts = draft.plan.parts.filter(p => (p.track || p.role) === activeTab);
 
         if (!currentRoleParts.length) {
             const dropzoneNotice = text(blocksContainer, 'div', '', 'anomalous-assembly-dropzone');
@@ -389,8 +407,9 @@ export function createPromptWorkbench(owner, container, scope, options) {
         currentRoleParts.forEach((block, index) => {
             const isJustAdded = !!block._justAdded;
             if (isJustAdded) delete block._justAdded;
+            const isCrossRole = (block.role || 'positive') !== activeTab;
 
-            const blockEl = text(blocksContainer, 'article', '', `anomalous-mixer-block${!block.enabled ? ' is-bypassed' : ''} is-role-${block.role}${isJustAdded ? ' is-just-added' : ''}`);
+            const blockEl = text(blocksContainer, 'article', '', `anomalous-mixer-block${!block.enabled ? ' is-bypassed' : ''} is-role-${block.role}${isCrossRole ? ' is-cross-role' : ''}${isJustAdded ? ' is-just-added' : ''}`);
             blockEl.setAttribute('draggable', 'true');
             blockEl.dataset ||= {};
             blockEl.dataset.blockId = block.id;
@@ -491,6 +510,29 @@ export function createPromptWorkbench(owner, container, scope, options) {
                 updateOutputPreview();
             };
 
+            // Unified Role Badge with Prominent Indicator and Click-to-toggle
+            const roleBadge = text(headerLeft, 'span', '', `anomalous-mixer-role-badge is-${block.role}${isCrossRole ? ' is-cross-role' : ''}`);
+            const roleText = block.role === 'negative'
+                ? (isCrossRole
+                    ? (window.anomalous_browser_lang === 'zh' ? '⊖ 负向 (末尾)' : '⊖ Neg (Tail)')
+                    : (window.anomalous_browser_lang === 'zh' ? '⊖ 负向' : '⊖ Negative'))
+                : (isCrossRole
+                    ? (window.anomalous_browser_lang === 'zh' ? '⊕ 正向 (末尾)' : '⊕ Pos (Tail)')
+                    : (window.anomalous_browser_lang === 'zh' ? '⊕ 正向' : '⊕ Positive'));
+            roleBadge.textContent = roleText;
+            roleBadge.title = window.anomalous_browser_lang === 'zh'
+                ? `当前属性：${block.role === 'negative' ? '负向' : '正向'}${isCrossRole ? '（跨角色默认置于末尾）' : ''}。点击切换正负属性。`
+                : `Role: ${block.role}${isCrossRole ? ' (Cross-role at tail)' : ''}. Click to toggle.`;
+            roleBadge.onclick = () => {
+                block.role = block.role === 'negative' ? 'positive' : 'negative';
+                syncDraftSynthesizedText(draft);
+                renderBlocksList();
+                updateOutputPreview();
+                showWorkbenchToast(window.anomalous_browser_lang === 'zh'
+                    ? `已将词块属性切换为【${block.role === 'positive' ? '正向' : '负向'}】`
+                    : `Role changed to ${block.role}`);
+            };
+
             // Category Badge
             const catMeta = CATEGORY_META[block.category] || CATEGORY_META.subject;
             const catBadge = text(headerLeft, 'span', window.anomalous_browser_lang === 'zh' ? catMeta.zh : catMeta.en, 'anomalous-mixer-cat-badge');
@@ -551,6 +593,22 @@ export function createPromptWorkbench(owner, container, scope, options) {
             // Right Action micro buttons
             const headerRight = text(blockHeader, 'div', '', 'anomalous-mixer-block-header-right');
 
+            const transferBtn = text(headerRight, 'button', '⇄', 'anomalous-mixer-block-btn is-transfer');
+            const targetTrack = activeTab === 'positive' ? 'negative' : 'positive';
+            transferBtn.title = window.anomalous_browser_lang === 'zh'
+                ? `移至${targetTrack === 'positive' ? '正向' : '负向'}拼装台`
+                : `Move to ${targetTrack} track`;
+            transferBtn.onclick = () => {
+                block.track = targetTrack;
+                syncDraftSynthesizedText(draft);
+                updateRightTabsUI();
+                renderBlocksList();
+                updateOutputPreview();
+                showWorkbenchToast(window.anomalous_browser_lang === 'zh'
+                    ? `已将词块移至【${targetTrack === 'positive' ? '正向' : '负向'}】拼装台`
+                    : `Moved block to ${targetTrack} track`);
+            };
+
             const transBtn = text(headerRight, 'button', '🌐', 'anomalous-mixer-block-btn is-translate');
             transBtn.title = window.anomalous_browser_lang === 'zh' ? '一键翻译此块提示词' : 'Translate this block';
             transBtn.onclick = async () => {
@@ -579,23 +637,20 @@ export function createPromptWorkbench(owner, container, scope, options) {
             upBtn.title = window.anomalous_browser_lang === 'zh' ? '上移' : 'Move up';
             upBtn.disabled = index === 0;
             upBtn.onclick = () => {
-                const realIdx = draft.plan.parts.findIndex(p => p.id === block.id);
-                if (realIdx < 0) return;
-                const myRole = block.role || activeTab;
-                let prevIdx = -1;
-                for (let i = realIdx - 1; i >= 0; i--) {
-                    if ((draft.plan.parts[i].role || 'positive') === myRole) {
-                        prevIdx = i;
-                        break;
+                const trackBlocks = draft.plan.parts.filter(p => (p.track || p.role) === activeTab);
+                const myTrackIdx = trackBlocks.findIndex(p => p.id === block.id);
+                if (myTrackIdx > 0) {
+                    const prevBlock = trackBlocks[myTrackIdx - 1];
+                    const realIdx = draft.plan.parts.findIndex(p => p.id === block.id);
+                    const prevRealIdx = draft.plan.parts.findIndex(p => p.id === prevBlock.id);
+                    if (realIdx >= 0 && prevRealIdx >= 0) {
+                        const temp = draft.plan.parts[realIdx];
+                        draft.plan.parts[realIdx] = draft.plan.parts[prevRealIdx];
+                        draft.plan.parts[prevRealIdx] = temp;
+                        syncDraftSynthesizedText(draft);
+                        renderBlocksList();
+                        updateOutputPreview();
                     }
-                }
-                if (prevIdx >= 0) {
-                    const temp = draft.plan.parts[realIdx];
-                    draft.plan.parts[realIdx] = draft.plan.parts[prevIdx];
-                    draft.plan.parts[prevIdx] = temp;
-                    syncDraftSynthesizedText(draft);
-                    renderBlocksList();
-                    updateOutputPreview();
                 }
             };
 
@@ -603,23 +658,20 @@ export function createPromptWorkbench(owner, container, scope, options) {
             downBtn.title = window.anomalous_browser_lang === 'zh' ? '下移' : 'Move down';
             downBtn.disabled = index === currentRoleParts.length - 1;
             downBtn.onclick = () => {
-                const realIdx = draft.plan.parts.findIndex(p => p.id === block.id);
-                if (realIdx < 0) return;
-                const myRole = block.role || activeTab;
-                let nextIdx = -1;
-                for (let i = realIdx + 1; i < draft.plan.parts.length; i++) {
-                    if ((draft.plan.parts[i].role || 'positive') === myRole) {
-                        nextIdx = i;
-                        break;
+                const trackBlocks = draft.plan.parts.filter(p => (p.track || p.role) === activeTab);
+                const myTrackIdx = trackBlocks.findIndex(p => p.id === block.id);
+                if (myTrackIdx >= 0 && myTrackIdx < trackBlocks.length - 1) {
+                    const nextBlock = trackBlocks[myTrackIdx + 1];
+                    const realIdx = draft.plan.parts.findIndex(p => p.id === block.id);
+                    const nextRealIdx = draft.plan.parts.findIndex(p => p.id === nextBlock.id);
+                    if (realIdx >= 0 && nextRealIdx >= 0) {
+                        const temp = draft.plan.parts[realIdx];
+                        draft.plan.parts[realIdx] = draft.plan.parts[nextRealIdx];
+                        draft.plan.parts[nextRealIdx] = temp;
+                        syncDraftSynthesizedText(draft);
+                        renderBlocksList();
+                        updateOutputPreview();
                     }
-                }
-                if (nextIdx >= 0) {
-                    const temp = draft.plan.parts[realIdx];
-                    draft.plan.parts[realIdx] = draft.plan.parts[nextIdx];
-                    draft.plan.parts[nextIdx] = temp;
-                    syncDraftSynthesizedText(draft);
-                    renderBlocksList();
-                    updateOutputPreview();
                 }
             };
 
@@ -699,26 +751,26 @@ export function createPromptWorkbench(owner, container, scope, options) {
     function updateOutputPreview() {
         syncDraftSynthesizedText(draft);
         const compiledText = (draft.plan[activeTab] || '').trim();
-        const currentRoleParts = draft.plan.parts.filter(p => p.role === activeTab);
+        const currentRoleParts = draft.plan.parts.filter(p => (p.track || p.role) === activeTab);
 
         if (!currentRoleParts.length && !compiledText) {
             floatingDock.style.display = 'none';
         } else {
             floatingDock.style.display = 'flex';
             const words = compiledText.split(/[,，\s\n]+/).filter(Boolean).length;
-            dockStats.innerHTML = `${activeTab === 'negative' ? '🌙' : '🔆'} <strong>${currentRoleParts.length}</strong> ${window.anomalous_browser_lang === 'zh' ? '块' : 'blocks'} · ~<strong>${words}</strong> ${window.anomalous_browser_lang === 'zh' ? '词' : 'words'}`;
-            dockStats.title = activeTab === 'negative'
-                ? `${window.anomalous_browser_lang === 'zh' ? '负向' : 'Negative'}: ${compiledText.length} ${window.anomalous_browser_lang === 'zh' ? '字符' : 'chars'}, ${currentRoleParts.length} ${window.anomalous_browser_lang === 'zh' ? '块积木' : 'blocks'}`
-                : `${window.anomalous_browser_lang === 'zh' ? '正向' : 'Positive'}: ${compiledText.length} ${window.anomalous_browser_lang === 'zh' ? '字符' : 'chars'}, ${currentRoleParts.length} ${window.anomalous_browser_lang === 'zh' ? '块积木' : 'blocks'}`;
+            const roleIcon = activeTab === 'negative' ? '⊖' : '⊕';
+            const roleName = activeTab === 'negative' ? (window.anomalous_browser_lang === 'zh' ? '负向' : 'Negative') : (window.anomalous_browser_lang === 'zh' ? '正向' : 'Positive');
+            dockStats.innerHTML = `${roleIcon} <strong>${currentRoleParts.length}</strong> ${window.anomalous_browser_lang === 'zh' ? '块' : 'blocks'} · ~<strong>${words}</strong> ${window.anomalous_browser_lang === 'zh' ? '词' : 'words'}`;
+            dockStats.title = `${roleIcon} ${roleName}: ${compiledText.length} ${window.anomalous_browser_lang === 'zh' ? '字符' : 'chars'}, ${currentRoleParts.length} ${window.anomalous_browser_lang === 'zh' ? '块积木' : 'blocks'}`;
         }
     }
 
     // Smart Sort
     smartSortBtn.onclick = () => {
         if (!draft.plan.parts.length) return;
-        const roleParts = draft.plan.parts.filter(p => p.role === activeTab);
-        const otherParts = draft.plan.parts.filter(p => p.role !== activeTab);
-        const sorted = smartSortPromptBlocks(roleParts, activeTab);
+        const trackParts = draft.plan.parts.filter(p => (p.track || p.role) === activeTab);
+        const otherParts = draft.plan.parts.filter(p => (p.track || p.role) !== activeTab);
+        const sorted = smartSortPromptBlocks(trackParts, activeTab);
         draft.plan.parts = [...sorted, ...otherParts];
 
         syncDraftSynthesizedText(draft);
@@ -732,10 +784,10 @@ export function createPromptWorkbench(owner, container, scope, options) {
     // Clear track
     clearRightBtn.onclick = async () => {
         const msg = window.anomalous_browser_lang === 'zh'
-            ? `确定清空当前【${activeTab === 'positive' ? '正向' : '负向'}】拼装池吗？`
+            ? `确定清空当前【${activeTab === 'positive' ? '⊕ 正向' : '⊖ 负向'}】拼装池吗？`
             : `Clear ${activeTab} mixer track?`;
         if (await anomalousConfirm(msg) && !scope.signal.aborted) {
-            draft.plan.parts = draft.plan.parts.filter(p => p.role !== activeTab);
+            draft.plan.parts = draft.plan.parts.filter(p => (p.track || p.role) !== activeTab);
             syncDraftSynthesizedText(draft);
             updateRightTabsUI();
             renderBlocksList();

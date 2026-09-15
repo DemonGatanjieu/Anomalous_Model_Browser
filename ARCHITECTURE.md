@@ -87,7 +87,8 @@ DOM or live LiteGraph state.
   own their respective workspace surfaces and persistence flows.
 - `ui_prompt_composer.js` owns the standalone Prompt Studio drawer. Its child
   views are `ui_prompt_source_deck.js`, `ui_prompt_workbench.js`, and
-  `ui_prompt_inspector.js`; see the frontend topic for state ownership.
+  `ui_prompt_inspector.js`. Assembly plan data, track-vs-role separation, and
+  cross-role tail smart-sorting are owned by `prompt_composition.js` and `prompt_studio_data.js`.
 - `ui_prompt_translator.js` owns the standalone translator. Both translator and
   studio use `ui_lifecycle.js` for global listeners, request cancellation and
   resize cleanup. Translation requests go through `translation_service.js`.

@@ -509,8 +509,8 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
         const roleBadge = document.createElement('span');
         roleBadge.className = `anomalous-popover-role is-${card.role}`;
         roleBadge.textContent = card.role === 'negative'
-            ? (window.anomalous_browser_lang === 'zh' ? '负向' : 'Negative')
-            : (window.anomalous_browser_lang === 'zh' ? '正向' : 'Positive');
+            ? (window.anomalous_browser_lang === 'zh' ? '⊖ 负向' : '⊖ Negative')
+            : (window.anomalous_browser_lang === 'zh' ? '⊕ 正向' : '⊕ Positive');
         tags.appendChild(roleBadge);
         topRow.appendChild(tags);
 
@@ -655,7 +655,7 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
 
         filtered.forEach(card => {
             const catMeta = CATEGORY_META[card.category] || CATEGORY_META.subject;
-            const cardEl = text(sourceCardsList, 'div', '', `anomalous-source-card-compact is-cat-${card.category}`);
+            const cardEl = text(sourceCardsList, 'div', '', `anomalous-source-card-compact is-cat-${card.category} is-role-${card.role}`);
             cardEl.setAttribute('draggable', 'true');
 
             // Custom Eye-Catching Hover Preview Popover (replaces native OS browser title tooltip)
@@ -703,6 +703,9 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
 
             const dot = text(cardEl, 'span', '', 'anomalous-source-card-dot');
             dot.style.backgroundColor = catMeta.color;
+
+            const roleTag = text(cardEl, 'span', card.role === 'negative' ? (window.anomalous_browser_lang === 'zh' ? '⊖ 负' : '⊖ Neg') : (window.anomalous_browser_lang === 'zh' ? '⊕ 正' : '⊕ Pos'), `anomalous-card-role-tag is-${card.role}`);
+            roleTag.title = card.role === 'negative' ? (window.anomalous_browser_lang === 'zh' ? '负向词卡' : 'Negative card') : (window.anomalous_browser_lang === 'zh' ? '正向词卡' : 'Positive card');
 
             const nameEl = text(cardEl, 'span', card.title, 'anomalous-source-card-name');
 

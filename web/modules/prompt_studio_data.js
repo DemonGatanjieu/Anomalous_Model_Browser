@@ -66,6 +66,7 @@ export const STARTER_SOURCE_PROMPTS = [
 export function normalizeBlock(part, index = 0) {
     const id = part.id || `blk_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 6)}`;
     const role = part.role || (part.negative && !part.positive ? 'negative' : 'positive');
+    const track = part.track || role;
     const content = String(part.content ?? (role === 'positive' ? part.positive : part.negative) ?? '').trim();
     let category = part.category;
     if (!CATEGORY_META[category]) {
@@ -78,6 +79,7 @@ export function normalizeBlock(part, index = 0) {
         title: part.name || part.title || defaultTitle,
         content,
         role,
+        track,
         category,
         enabled: part.enabled !== false,
     };
@@ -86,8 +88,8 @@ export function normalizeBlock(part, index = 0) {
 export function syncDraftSynthesizedText(draft) {
     if (!draft || !draft.plan) return;
     draft.plan.parts ||= [];
-    const posParts = draft.plan.parts.filter(p => p.role === 'positive');
-    const negParts = draft.plan.parts.filter(p => p.role === 'negative');
+    const posParts = draft.plan.parts.filter(p => (p.track || p.role) === 'positive');
+    const negParts = draft.plan.parts.filter(p => (p.track || p.role) === 'negative');
     draft.plan.positive = assemblePromptBlocks(posParts, 'positive');
     draft.plan.negative = assemblePromptBlocks(negParts, 'negative');
 }
@@ -96,12 +98,12 @@ export function syncDraftSynthesizedText(draft) {
 // and the other role intact; synthesized fields are always derived from parts.
 export function replaceDraftRoleText(draft, role, content) {
     const parts = draft.plan.parts || [];
-    const first = parts.findIndex(part => part.role === role && part.enabled !== false);
-    const replacement = content.trim() ? normalizeBlock({ content, role }) : null;
+    const first = parts.findIndex(part => (part.track || part.role) === role && part.enabled !== false);
+    const replacement = content.trim() ? normalizeBlock({ content, role, track: role }) : null;
     const next = [];
     parts.forEach((part, index) => {
         if (index === first && replacement) next.push(replacement);
-        if (part.role !== role || part.enabled === false) next.push(part);
+        if ((part.track || part.role) !== role || part.enabled === false) next.push(part);
     });
     if (first < 0 && replacement) next.push(replacement);
     draft.plan.parts = next;

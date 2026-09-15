@@ -11,7 +11,7 @@ export function composePromptPlan(plan) {
     const active = parts.filter(part => part && part.enabled !== false);
 
     return Object.fromEntries(['positive', 'negative'].map(role => {
-        const activeParts = active.filter(p => p.role === role || (!p.role && (role === 'positive' ? p.positive : p.negative)));
+        const activeParts = active.filter(p => (p.track || p.role) === role || (!p.track && !p.role && (role === 'positive' ? p.positive : p.negative)));
         const activeAssembled = assemblePromptBlocks(activeParts, role);
         const rawFieldText = String(plan[role] || '').trim();
 
@@ -58,8 +58,8 @@ export function categorizePromptSnippet(text = '') {
     return 'subject';
 }
 
-/** Smart sort prompt blocks: Universal/Base first, Style in middle, Details/LoRA/Trigger last */
-export function smartSortPromptBlocks(blocks = [], role = 'positive') {
+/** Smart sort prompt blocks: Same-role blocks first, cross-role blocks at the tail */
+export function smartSortPromptBlocks(blocks = [], trackRole = 'positive') {
     const priority = {
         base: 0,
         style: 1,
@@ -67,8 +67,14 @@ export function smartSortPromptBlocks(blocks = [], role = 'positive') {
         trigger: 3,
     };
     return [...blocks].sort((a, b) => {
-        const catA = a.category || categorizePromptSnippet(a.content || a[role] || '');
-        const catB = b.category || categorizePromptSnippet(b.content || b[role] || '');
+        const aCross = (a.role && a.role !== trackRole) ? 1 : 0;
+        const bCross = (b.role && b.role !== trackRole) ? 1 : 0;
+        if (aCross !== bCross) {
+            return aCross - bCross;
+        }
+
+        const catA = a.category || categorizePromptSnippet(a.content || a[trackRole] || '');
+        const catB = b.category || categorizePromptSnippet(b.content || b[trackRole] || '');
         const scoreA = priority[catA] ?? 2;
         const scoreB = priority[catB] ?? 2;
         return scoreA - scoreB;
