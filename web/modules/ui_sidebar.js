@@ -1981,6 +1981,22 @@ export function createDOM() {
                     }
                 },
                 {
+                    id: 'orphan-cleaner',
+                    icon: '🧹',
+                    shortTitle: t('toolOrphanCleanerShort'),
+                    title: t('toolOrphanCleanerTitle'),
+                    desc: t('toolOrphanCleanerDesc'),
+                    badge: t('toolboxPlanned')
+                },
+                {
+                    id: 'batch-rename',
+                    icon: '🏷️',
+                    shortTitle: t('toolBatchRenameShort'),
+                    title: t('toolBatchRenameTitle'),
+                    desc: t('toolBatchRenameDesc'),
+                    badge: t('toolboxPlanned')
+                },
+                {
                     id: 'model-sources',
                     icon: '🔗',
                     shortTitle: t('toolModelSourcesShort'),
@@ -1992,6 +2008,22 @@ export function createDOM() {
                         toolboxModal.style.display = 'none';
                         openModelSourcesModal('workflow');
                     }
+                },
+                {
+                    id: 'hash-recalc',
+                    icon: '⚡',
+                    shortTitle: t('toolHashRecalcShort'),
+                    title: t('toolHashRecalcTitle'),
+                    desc: t('toolHashRecalcDesc'),
+                    badge: t('toolboxPlanned')
+                },
+                {
+                    id: 'format-convert',
+                    icon: '📦',
+                    shortTitle: t('toolFormatConvertShort'),
+                    title: t('toolFormatConvertTitle'),
+                    desc: t('toolFormatConvertDesc'),
+                    badge: t('toolboxPlanned')
                 }
             ];
 
