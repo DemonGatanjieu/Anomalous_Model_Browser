@@ -7,6 +7,9 @@ by default.
 
 ## Reading map
 
+Before implementation, follow [AGENTS.md](AGENTS.md), the canonical development
+and maintenance rules. [GEMINI.md](GEMINI.md) is the Gemini reading entry point.
+
 The prompt studio reads material prompt payloads through `web/modules/material_prompt_data.js`;
 list summaries do not contain prompt bodies. See the Material Library contract below.
 
