@@ -13170,24 +13170,9 @@ button:hover .anomalous-btn-icon {
     animation: anmPopoverIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.anomalous-card-preview-popover.is-dock-left::before {
-    content: '';
-    position: absolute;
-    top: -24px;
-    bottom: -24px;
-    left: -28px;
-    width: 28px;
-    background: transparent;
-}
-
+.anomalous-card-preview-popover.is-dock-left::before,
 .anomalous-card-preview-popover.is-dock-right::before {
-    content: '';
-    position: absolute;
-    top: -24px;
-    bottom: -24px;
-    right: -28px;
-    width: 28px;
-    background: transparent;
+    display: none;
 }
 
 .anomalous-card-preview-popover.is-pinned {

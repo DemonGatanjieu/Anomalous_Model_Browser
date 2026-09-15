@@ -29,47 +29,62 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
         const popRect = activeCardPreviewPopover.getBoundingClientRect();
         const cardRect = activeCardAnchorEl.getBoundingClientRect();
 
-        // 1. Inside card with 12px buffer
+        // 1. Inside anchor card with 4px buffer
         if (
-            clientX >= cardRect.left - 12 &&
-            clientX <= cardRect.right + 12 &&
-            clientY >= cardRect.top - 12 &&
-            clientY <= cardRect.bottom + 12
+            clientX >= cardRect.left - 4 &&
+            clientX <= cardRect.right + 4 &&
+            clientY >= cardRect.top - 4 &&
+            clientY <= cardRect.bottom + 4
         ) {
             return true;
         }
 
-        // 2. Inside popover with generous 40px buffer on all sides
+        // 2. Inside popover with 6px buffer
         if (
-            clientX >= popRect.left - 40 &&
-            clientX <= popRect.right + 40 &&
-            clientY >= popRect.top - 40 &&
-            clientY <= popRect.bottom + 40
+            clientX >= popRect.left - 6 &&
+            clientX <= popRect.right + 6 &&
+            clientY >= popRect.top - 6 &&
+            clientY <= popRect.bottom + 6
         ) {
             return true;
         }
 
-        // 3. Bridging corridor between card and popover
-        const minX = Math.min(cardRect.left, popRect.left) - 12;
-        const maxX = Math.max(cardRect.right, popRect.right) + 12;
-        const minY = Math.min(cardRect.top, popRect.top) - 30;
-        const maxY = Math.max(cardRect.bottom, popRect.bottom) + 30;
-        if (clientX >= minX && clientX <= maxX && clientY >= minY && clientY <= maxY) {
-            return true;
+        // 3. Narrow bridging corridor strictly between card and popover
+        const isDockLeft = drawer?.classList.contains('is-dock-left') ?? true;
+        let inBridgeX = false;
+        if (isDockLeft) {
+            // Card is on the left, Popover is on the right
+            const bridgeLeft = cardRect.right - 6;
+            const bridgeRight = popRect.left + 6;
+            inBridgeX = clientX >= bridgeLeft && clientX <= bridgeRight;
+        } else {
+            // Card is on the right, Popover is on the left
+            const bridgeLeft = popRect.right - 6;
+            const bridgeRight = cardRect.left + 6;
+            inBridgeX = clientX >= bridgeLeft && clientX <= bridgeRight;
+        }
+
+        if (inBridgeX) {
+            const minY = Math.min(cardRect.top, popRect.top) - 10;
+            const maxY = Math.max(cardRect.bottom, popRect.bottom) + 10;
+            if (clientY >= minY && clientY <= maxY) {
+                return true;
+            }
         }
 
         return false;
     }
 
-    function scheduleHidePopover() {
+    function scheduleHidePopover(fast = false) {
         if (isPopoverPinned) return;
         clearTimeout(hidePopoverTimer);
+        const delay = fast ? 90 : 200;
         hidePopoverTimer = setTimeout(() => {
             if (isPointInSafeZone(lastPointerX, lastPointerY)) {
                 return;
             }
             hideCardPreviewPopover();
-        }, 400);
+        }, delay);
     }
 
     function cancelHidePopover() {
@@ -96,16 +111,15 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
         if (isPointInSafeZone(e.clientX, e.clientY)) {
             cancelHidePopover();
         } else {
-            scheduleHidePopover();
+            scheduleHidePopover(true);
         }
     };
     scope.listen(window, 'pointermove', onPointerMove, { passive: true });
 
     const onDocPointerDown = (e) => {
-        if (isPopoverPinned && activeCardPreviewPopover) {
-            if (!activeCardPreviewPopover.contains(e.target) && !activeCardAnchorEl?.contains(e.target)) {
-                hideCardPreviewPopover(true);
-            }
+        if (!activeCardPreviewPopover) return;
+        if (!activeCardPreviewPopover.contains(e.target) && !activeCardAnchorEl?.contains(e.target)) {
+            hideCardPreviewPopover(true);
         }
     };
     scope.listen(document, 'pointerdown', onDocPointerDown);
@@ -161,6 +175,27 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
 
     // Source Cards List
     const sourceCardsList = text(leftPanel, 'div', '', 'anomalous-source-cards-list');
+
+    // Dismiss preview popover when pointer is on blank space of the list or panel
+    sourceCardsList.addEventListener('pointermove', (e) => {
+        if (isPopoverPinned || !activeCardPreviewPopover) return;
+        if (e.target === sourceCardsList) {
+            scheduleHidePopover(true);
+        }
+    }, { passive: true });
+
+    sourceCardsList.addEventListener('pointerdown', (e) => {
+        if (e.target === sourceCardsList) {
+            hideCardPreviewPopover(true);
+        }
+    });
+
+    leftPanel.addEventListener('pointermove', (e) => {
+        if (isPopoverPinned || !activeCardPreviewPopover) return;
+        if (e.target === leftPanel || e.target === leftFilterBar || e.target === leftCategoryPills) {
+            scheduleHidePopover(true);
+        }
+    }, { passive: true });
 
     function detectNodePromptRole(node, widgetName = '') {
         if (/neg|negative|反向|负向/i.test(widgetName)) return 'negative';
@@ -721,5 +756,10 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
     renderNewCardFormUI();
     renderSourceCardsList();
     void syncMaterialsIntoSourceDeck(false);
-    return { extractSelected: extractPromptsFromSelectedNode, refresh: renderSourceCardsList, sync: syncMaterialsIntoSourceDeck };
+    return {
+        extractSelected: extractPromptsFromSelectedNode,
+        refresh: renderSourceCardsList,
+        sync: syncMaterialsIntoSourceDeck,
+        hidePreview: (force = false) => hideCardPreviewPopover(force),
+    };
 }

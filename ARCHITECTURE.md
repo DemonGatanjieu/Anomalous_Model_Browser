@@ -89,6 +89,8 @@ DOM or live LiteGraph state.
   views are `ui_prompt_source_deck.js`, `ui_prompt_workbench.js`, and
   `ui_prompt_inspector.js`. Assembly plan data, track-vs-role separation, and
   cross-role tail smart-sorting are owned by `prompt_composition.js` and `prompt_studio_data.js`.
+  `ui_prompt_source_deck.js` owns the card preview popover with narrow bridging corridors,
+  differentiated hide timers, and fast dismissal when hovering or clicking library blank space.
 - `ui_prompt_translator.js` owns the standalone translator. Both translator and
   studio use `ui_lifecycle.js` for global listeners, request cancellation and
   resize cleanup. Translation requests go through `translation_service.js`.
