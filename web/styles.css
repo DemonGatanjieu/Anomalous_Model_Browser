@@ -9636,6 +9636,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-prompt-more-menu {
+    display: none !important;
     position: absolute !important;
     top: calc(100% + 6px) !important;
     right: 0 !important;
@@ -9647,9 +9648,12 @@ dialog.anomalous-gallery-viewer::backdrop {
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 4px 12px rgba(0, 0, 0, 0.5) !important;
     padding: 6px !important;
     backdrop-filter: blur(20px) !important;
-    display: flex !important;
     flex-direction: column !important;
     gap: 3px !important;
+}
+
+.anomalous-prompt-more-menu.is-open {
+    display: flex !important;
     animation: anmMoreMenuIn 0.12s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

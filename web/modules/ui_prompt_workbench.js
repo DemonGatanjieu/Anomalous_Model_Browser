@@ -91,19 +91,20 @@ export function createPromptWorkbench(owner, container, scope, options) {
     const moreWrap = text(topActions, 'div', '', 'anomalous-prompt-more-wrap');
     const moreBtn = text(moreWrap, 'button', window.anomalous_browser_lang === 'zh' ? '··· 更多' : '··· More', 'anomalous-btn-ghost anomalous-btn-sm anomalous-prompt-more-btn');
     const moreMenu = text(moreWrap, 'div', '', 'anomalous-prompt-more-menu');
-    moreMenu.style.display = 'none';
 
     const closeMoreMenu = () => {
-        moreMenu.style.display = 'none';
+        moreMenu.classList.remove('is-open');
         moreBtn.classList.remove('is-active');
     };
     scope.listen(document, 'click', closeMoreMenu);
 
+    moreWrap.onclick = (e) => e.stopPropagation();
+
     moreBtn.onclick = (e) => {
         e.stopPropagation();
-        const isHidden = moreMenu.style.display === 'none';
-        moreMenu.style.display = isHidden ? 'flex' : 'none';
-        moreBtn.classList.toggle('is-active', isHidden);
+        const willOpen = !moreMenu.classList.contains('is-open');
+        moreMenu.classList.toggle('is-open', willOpen);
+        moreBtn.classList.toggle('is-active', willOpen);
     };
 
     const saveBtn = text(moreMenu, 'button', `💾 ${t('promptSavePlan')}`, 'anomalous-prompt-more-item');
