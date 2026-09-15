@@ -1037,6 +1037,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     bottom: 50px;
     left: 10px;
     width: 236px;
+    min-height: 246px;
     box-sizing: border-box;
     background: rgba(22, 22, 26, 0.98);
     backdrop-filter: blur(20px);
@@ -1071,6 +1072,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
     margin: 2px 0 2px;
+    align-content: start;
+    flex: 1;
 }
 
 .anomalous-toolbox-tile {
