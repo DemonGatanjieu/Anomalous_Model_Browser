@@ -7,7 +7,9 @@ import { app } from '../../../scripts/app.js';
 import { translate, resolveLocale } from './locales.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
-import { text, sectionLabel, fileBaseName, jsonResponse, renderDetailedNodeCards, applyPromptRolesToBlocks, renderMaterialPromptGroups, materialNodeHeading } from './material_inspector.js';
+import { text, jsonResponse } from './ui_dom.js';
+import { escapeHtml } from './safe_dom.js';
+import { sectionLabel, fileBaseName, renderDetailedNodeCards, applyPromptRolesToBlocks, renderMaterialPromptGroups, materialNodeHeading } from './material_inspector.js';
 
 const t = (key, params) => translate(key, params);
 const isPromptMaterial = material => ['prompt_note_bundle', 'prompt_text'].includes(material.kind);
@@ -32,7 +34,6 @@ function hideSiblingWorkspaceViews(owner) {
     if (owner.notebookContainer) owner.notebookContainer.style.display = 'none';
     if (owner.notebookBody) owner.notebookBody.style.display = 'none';
     if (owner.recipeView) owner.recipeView.style.display = 'none';
-    if (owner.promptStudioContainer) owner.promptStudioContainer.style.display = 'none';
     if (owner.recipeContainer) owner.recipeContainer.style.display = 'none';
     owner.notebookNotesTab?.classList.remove('active');
     owner.notebookRecipesTab?.classList.remove('active');
@@ -924,9 +925,8 @@ export async function refreshMaterials(page = this.materialPage || 1) {
 }
 
 export async function showMaterials() {
-    this.closePromptImportDrawer?.();
+
     this.nbPanel.style.display = 'flex';
-    if (this.promptStudioContainer) this.promptStudioContainer.style.display = 'none';
     if (!this.materialContainer) {
         this.materialContainer = text(this.nbPanel, 'div', '', 'anomalous-nb-container anomalous-material-container');
         const header = text(this.materialContainer, 'div', '', 'anomalous-nb-header');

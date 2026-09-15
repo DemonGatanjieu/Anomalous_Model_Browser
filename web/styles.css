@@ -12305,172 +12305,6 @@ button:hover .anomalous-btn-icon {
     z-index: 0 !important;
 }
 
-/* Sidebar / Docked Mode Dedicated Adapters for Prompt Studio */
-#anomalous-container.anomalous-docked .anomalous-prompt-workbench {
-    padding: 6px 8px 8px;
-    gap: 6px;
-}
-
-#anomalous-container.anomalous-docked .anomalous-prompt-topbar {
-    padding: 4px 6px 6px;
-    gap: 6px;
-    flex-wrap: nowrap;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-#anomalous-container.anomalous-docked .anomalous-prompt-topbar-left {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex: 1;
-    min-width: 0;
-}
-
-#anomalous-container.anomalous-docked .anomalous-prompt-topbar-left h3 {
-    font-size: 0.9rem;
-    margin: 0;
-    white-space: nowrap;
-}
-
-#anomalous-container.anomalous-docked .anomalous-prompt-name-input {
-    flex: 1 1 100px;
-    min-width: 60px;
-    max-width: 200px;
-    height: 26px;
-    padding: 2px 6px;
-    font-size: 0.76rem;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    color: #f1f5f9;
-}
-
-#anomalous-container.anomalous-docked .anomalous-prompt-name-input:focus {
-    border-color: #38bdf8;
-    background: rgba(0, 0, 0, 0.5);
-}
-
-#anomalous-container.anomalous-docked .anomalous-prompt-name-input.is-invalid {
-    border-color: #ef4444;
-    box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
-}
-
-#anomalous-container.anomalous-docked .anomalous-prompt-topbar-actions {
-    gap: 4px;
-    flex-shrink: 0;
-}
-
-#anomalous-container.anomalous-docked .anomalous-prompt-workbench-grid {
-    display: flex !important;
-    flex-direction: column !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    gap: 6px !important;
-    padding: 4px 6px 6px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-workbench-right-panel {
-    order: 1 !important;
-    flex: 1 1 50% !important;
-    min-height: 150px !important;
-    max-height: 54% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    padding: 8px 8px 4px !important;
-    gap: 6px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-workbench-left-panel {
-    order: 2 !important;
-    flex: 1 1 50% !important;
-    min-height: 150px !important;
-    max-height: 50% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    padding: 8px 8px 6px !important;
-    gap: 6px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-source-cards-list {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
-    gap: 6px !important;
-    overflow-y: auto !important;
-    align-content: start !important;
-    padding-right: 2px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-source-prompt-card {
-    padding: 5px 7px !important;
-    gap: 3px !important;
-    border-radius: 5px !important;
-    cursor: pointer !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-source-card-snippet {
-    -webkit-line-clamp: 1 !important;
-    font-size: 0.68rem !important;
-    padding: 2px 4px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-mixer-blocks-container {
-    gap: 5px !important;
-    padding: 2px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-mixer-block {
-    border-radius: 5px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-mixer-block-header {
-    padding: 3px 6px !important;
-    gap: 4px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-mixer-block-body {
-    padding: 2px 6px 3px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-mixer-block-textarea {
-    min-height: 24px !important;
-    height: 24px !important;
-    font-size: 0.72rem !important;
-    padding: 2px 4px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-mixer-deck-output.anomalous-prompt-action-dock {
-    padding: 3px 6px !important;
-    gap: 3px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-mixer-output-summary {
-    min-height: 26px !important;
-    gap: 4px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-mixer-output-stats {
-    font-size: 0.68rem !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-prompt-target-actions {
-    gap: 4px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-prompt-target-actions select {
-    height: 22px !important;
-    padding: 1px 4px !important;
-    font-size: 0.68rem !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-assembly-snap-dock {
-    min-height: 32px !important;
-    padding: 4px 8px !important;
-    font-size: 0.68rem !important;
-    margin-top: 3px !important;
-}
-
 /* ==========================================================================
    Recipe Studio Dedicated Container & Topbar Close Button
    ========================================================================== */
@@ -12969,10 +12803,10 @@ button:hover .anomalous-btn-icon {
     flex-direction: column;
 }
 
-/* Left Dock Mode (Default): Left Column = Cards (190px), Right Column = Assembly Track (faces canvas on right) */
-.anomalous-prompt-studio-drawer.is-dock-left .anomalous-prompt-workbench-grid {
+/* Shared drawer geometry. Dock direction only changes column order and separators. */
+.anomalous-prompt-studio-drawer.is-dock-left .anomalous-prompt-workbench-grid,
+.anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-prompt-workbench-grid {
     display: grid !important;
-    grid-template-columns: 190px minmax(0, 1fr) !important;
     flex-direction: row !important;
     gap: 0 !important;
     padding: 0 !important;
@@ -12980,69 +12814,57 @@ button:hover .anomalous-btn-icon {
     min-height: 0;
 }
 
-.anomalous-prompt-studio-drawer.is-dock-left .anomalous-workbench-left-panel {
-    order: 1 !important;
+.anomalous-prompt-studio-drawer.is-dock-left .anomalous-prompt-workbench-grid {
+    grid-template-columns: 190px minmax(0, 1fr) !important;
+}
+
+.anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-prompt-workbench-grid {
+    grid-template-columns: minmax(0, 1fr) 190px !important;
+}
+
+.anomalous-prompt-studio-drawer.is-dock-left .anomalous-workbench-left-panel,
+.anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-workbench-left-panel {
     flex: none !important;
     width: 190px !important;
     max-height: 100% !important;
     padding: 8px 10px !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-left: none !important;
     background: rgba(18, 20, 24, 0.7) !important;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.anomalous-prompt-studio-drawer.is-dock-left .anomalous-workbench-left-panel {
+    order: 1 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-workbench-left-panel {
+    order: 2 !important;
+    border-right: none !important;
+}
+
+.anomalous-prompt-studio-drawer.is-dock-left .anomalous-workbench-right-panel,
+.anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-workbench-right-panel {
+    flex: 1 !important;
+    max-height: 100% !important;
+    padding: 8px 12px 52px !important;
+    position: relative;
+    box-sizing: border-box;
+    background: rgba(14, 15, 18, 0.5) !important;
     display: flex;
     flex-direction: column;
 }
 
 .anomalous-prompt-studio-drawer.is-dock-left .anomalous-workbench-right-panel {
     order: 2 !important;
-    flex: 1 !important;
-    max-height: 100% !important;
-    padding: 8px 12px 52px !important; /* reserve bottom space for floating dock */
-    position: relative;
-    box-sizing: border-box;
-    background: rgba(14, 15, 18, 0.5) !important;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Right Dock Mode: Right Column = Cards (190px), Left Column = Assembly Track (faces canvas on left) */
-.anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-prompt-workbench-grid {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) 190px !important;
-    flex-direction: row !important;
-    gap: 0 !important;
-    padding: 0 !important;
-    flex: 1;
-    min-height: 0;
 }
 
 .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-workbench-right-panel {
     order: 1 !important;
-    flex: 1 !important;
-    max-height: 100% !important;
-    padding: 8px 12px 52px !important;
-    position: relative;
-    box-sizing: border-box;
     border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-left: none !important;
-    background: rgba(14, 15, 18, 0.5) !important;
-    display: flex;
-    flex-direction: column;
-}
-
-.anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-workbench-left-panel {
-    order: 2 !important;
-    flex: none !important;
-    width: 190px !important;
-    max-height: 100% !important;
-    padding: 8px 10px !important;
-    border-left: none !important;
-    border-right: none !important;
-    background: rgba(18, 20, 24, 0.7) !important;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
 }
 
 /* Column Headers & Action Buttons */

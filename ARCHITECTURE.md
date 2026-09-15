@@ -74,144 +74,28 @@ DOM or live LiteGraph state.
 
 ### Frontend
 
-- `web/main.js` is the extension entry and shared browser-instance owner.
-- `web/modules/entry_controls.js` and `shortcut_controls.js` own entry modes and
-  native command/keybinding integration.
-- `ui_sidebar.js`, `ui_grid.js`, `ui_detail.js`, and `ui_gallery.js` own the
-  primary model-browser surfaces, including the frosted-glass capsule parameter inspection
-  button with lightweight vector SVG icons and GPU-accelerated micro-interactions;
-  the sidebar bottom action bar (`#anomalous-sidebar-actions`) features intuitive, highly restrained glyphic vector SVG icons (`SIDEBAR_ICONS`):
-   (1) Toolbox Hub (`#anomalous-toolbox-btn`): Precision 18px vector toolbox icon (`TOOLBOX`) anchoring the leftmost action slot, triggering an elevated 236px zero-scrollbar micro-utility drawer popover (`#anomalous-toolbox-modal`, z-index 999999, `overflow: hidden`) anchored directly above the action bar in the bottom-left corner (`bottom: 50px; left: 10px;`, collapsed `left: 68px`), presenting a high-density 3-column app/utility icon grid palette (`.anomalous-toolbox-grid`, `.anomalous-toolbox-tile`) hosting the Prompt Studio (`🎛️ 提示词工坊`, `openPromptStudio`) as the primary active online tool alongside utility helpers, with instant tooltips, emerald ready indicator dots (`.is-ready`), amber planned status dots, extensible tool registry (`this.registerToolboxItem`), zero obstruction to the central model grid, and mutual exclusivity against Settings Hub;
-   (2) Scan Wizard (`#anomalous-scan-btn`): Clean circular radar scope with range ring, crosshairs, and sweep beacon (`SCAN_RADAR_ICON_SVG`), animated only during active scanning;
-   (3) Model Doctor (`#anomalous-doctor-btn`): Sleek diagnostic medical stethoscope, instantly conveying health check semantics;
-   (4) AI Assistant (`#anomalous-assistant-btn`): Radiant AI copilot sparkles (`✦`), representing copilot intelligence;
-   (5) Material Library (`#anomalous-materials-btn`): 3D layered preset stack, distinguishing from individual model boxes;
-   (6) Settings Hub (`#anomalous-global-settings-btn`): Precision 8-tooth mechanical engineering gear with elevated popover (`#anomalous-settings-hub-modal`) mounted directly to container with `z-index: 999999` and dynamic responsive offset; hosts a clean 3-way Display Mode segmented controller (`#anomalous-view-mode-container` for Standard, Compact, and Aesthetic modes), UI scale controls, dynamic background atmosphere controls, folder manager, language toggles, a restrained inline 13px glyph question icon for Help (decoupling from `.anomalous-btn-icon` 32px box trap), and an intuitive reload arrow (`↺`) for window layout reset replacing esoteric drafting ruler emojis;
-   (7) Models & Floating Trigger: Precision 3D Isometric Asset Model Cube SVG (`box`), universally conveying 3D model, mesh, and asset package semantics with zero visual ambiguity;
-   adhering to a "low-stimulus idle, subtle-illumination on hover" philosophy where icons use calm `currentColor` in idle state and gently illuminate on interaction;
-   critical tool workbenches (`#anomalous-doctor-panel`, `#anomalous-assistant-panel`): Node Assistant automatically collapses the left folder tree sidebar (`.anomalous-sidebar-closed`) upon entry to expand the available horizontal workspace for node diagnostics, model replacements, and parameter notebooks, while preserving and cleanly restoring the user's preferred sidebar open/closed state when switching back to model browsing; strictly enforce 100% opaque, solid backgrounds (`background: var(--amb-bg-page, #131315) !important`) to eliminate background distraction during diagnostics;
-   the UI palette strictly adheres to a true neutral dark charcoal / obsidian studio aesthetic (`#131315`, `#1a1a1d`, `#202024`, `#28282d`) with zero cool-blue/navy cast, matching ComfyUI, Blender, and DaVinci Resolve workstation standards;
-   the sidebar action bar's circular astrological runic compass watermark (`#anomalous-sidebar-actions::before`) is completely disabled (`display: none !important`), and any backdrop textures are desaturated with `grayscale(100%)` to prevent blue color bleeding;
-   all primary action highlights, scan wizard controls, and switches use titanium white (`#e5e7eb` / `#ffffff`) with warm studio amber (`#f59e0b`) accents instead of cold blue/cyan;
-   the modal adopts a disciplined "workshop / archive" aesthetic: removing exaggerated `clip-path` chamfers in favor of clean 8px architectural engineering geometry (`border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1)`);
-   the master header (`#anomalous-header`) and sidebar brand bar (`#anomalous-brand-bar`) are tightly calibrated to a 48px slim industrial profile; header navigation tabs (`#anomalous-models-btn`, `#anomalous-gallery-btn`, `#anomalous-notebook-btn`) and window control buttons (`#anomalous-dock-btn`, `#anomalous-close`) are unified to a compact 28px height, 6px border radius, 13px vector icons, active tab tracking, and persistent bilingual text labels (`[ 📦 模型 ]`, `[ 🖼️ 图库 ]`, `[ 🔗 工作流 ]` - simplified from "工作流配方" to balance width and match ComfyUI workflow mental model), perfectly harmonizing with adjacent dock and close controls;
-   cards feature restored and refined top-right micro-action buttons (`.anomalous-card-action-btn`: Apply ➕, Edit ✏️, Scan 🎯) with 22px frosted glass styling, smooth hover fade-in, and auto-clipping avoidance against the base model badge (`.anomalous-card-badge`);
-   supports 3 unified Display Modes sharing identical DOM structure and UX logic:
-  - Compact Mode (紧凑模式, primary default): 140px min-width, 220px card height, tight 10px gaps/14px rows, 5px sidebar folder rows, optimized for high-density scanning and instant visual discovery (Blender Asset Browser inspired);
-  - Standard Mode (标准模式, comfortable): Balanced 200px cards, 340px height, comfortable whitespace rhythm;
-  - Aesthetic Mode (沉浸模式): Subtle 8% grayscale ambient archive watermark with frosted glass borders;
-  cards feature unified 6px/8px geometry, restrained elevation (`translateY(-2px)`, `scale(1.02)`), spatial depth shadows (`0 4px 14px rgba(0,0,0,0.35)`),
-  seamless docking fallbacks, and a micro-floating capsule tooltip system
-  (`.anomalous-tooltip-target`) providing unambiguous, bilingual action semantics across all vector tools.
-- `ui_gallery_detail.js` owns the studio modal Image Detail Workbench,
-  multi-dimensional image navigation (keyboard shortcuts, floating glass arrows,
-  left vertical thumbnail rail), streamlined workflow/material action buttons,
-  seamless non-shifting click-to-copy Bento spec tiles with error retry state,
-  keyboard accessible focus indicators, full-width generation parameter saving to Material Library,
-  and segmented Bento parameter inspection with ComfyUI canvas injection (`app.loadGraphData`).
-- `ui_recipes.js` and `ui_recipe_detail.js` own Workflow Recipes (工作流配方)
-  presentation, completely decoupled from the legacy dual-tab Workspace container (`owner.recipeContainer`),
-  eliminating the redundant outer "工作区 / 提示词笔记 / 工作流配方" tabs; features an integrated Studio topbar (`.anomalous-recipe-topbar`) with responsive `flex-wrap: wrap`,
-  a subtle 1px border-bottom (`rgba(255,255,255,0.05)`), scope filter micro-pills (`all`, `complete`, `partial`) with high-transparency default backgrounds,
-  unified search & tag dropdown, dual view modes (uniform 264px Bento grid & compact list view), and an inline topbar close button (`[✕]`);
-  cards feature 136px golden-ratio top covers, clean titles without badge clutter (relocating isolated readiness dots into a sleek frosted-glass
-  `anomalous-recipe-readiness-pill` chip at the bottom-left of the cover alongside base model pills), single-row ellipsis text tags (`white-space: nowrap; text-overflow: ellipsis`),
-  top-right scope pills, and one-click canvas load (`🚀 载入画布` / `🧩 追加画布`, powered by quantum energy fluid micro-textures `btn_energy_core.webp` with sharp text drop-shadows);
-  filter pills (`.anomalous-recipe-pill.is-active`, `.anomalous-workbench-pill.is-active`) feature micro-crystalline quantum glow underlays (`pill_active_glow.webp`);
-  cards without custom thumbnails automatically receive deterministic AI-generated abstract material blind-box artwork (`web/assets/default_cover_1.webp` ~ `default_cover_6.webp`),
-  eliminating dry grey placeholder boxes. Empty state displays (`.anomalous-recipe-empty`) seamlessly blend with the futuristic cyber library concept art (`empty_library_concept.webp`)
-  using vertical gradient alpha masks (`mask-image: linear-gradient(...)`).
-  Direct canvas drag-drop ("一拖直达画布") allows dragging any recipe card across the translucent
-  modal directly onto the ComfyUI canvas to immediately load the workflow into a fresh canvas
-  (or append subgraphs), mimicking native ComfyUI image-drop behavior.
-  Recipe Detail Studio View (`showRecipeDetail`) is completely overhauled: dynamically hides
-  outer `.anomalous-recipe-topbar` on entry and cleanly restores it on exit to reclaim 100% of the
-  vertical workspace; replaces clumsy text copy buttons with sleek SVG micro-copy icons with instant
-  green checkmark feedback; rebuilds the Parameters Tab (`renderRecipeParameters`) into a modern
-  Bento Matrix (`.anomalous-recipe-bento-grid`, steps/CFG/sampler/resolution/denoise/seed tiles,
-  independent base model card, and structured LoRA pill stacks); prompts section (`renderPromptSection`)
-  is upgraded into full-width streamlined cards eliminating the cramped two-column split, clumsy
-  "调整用途" buttons, and isolated square copy boxes, moving actions into a top-right action tray
-  (save to material + micro copy) and making the role badge interactively clickable; snapshot rail
-  replaces legacy `<details>` and vertical text badges with smooth hover-reveal micro-actions and a glowing
-  green active pulse dot (`.anomalous-preset-active-dot`); enforces 48px bottom safety padding to eliminate
-  clipping and overlap.
-- `ui_notebooks.js` owns Prompt Notes (提示词笔记) presentation; eliminated intermediate dual tabs
-  (`.anomalous-nb-section-tabs`); resolves the long-text input bottleneck through 300ms Debounce on `rawArea.oninput`,
-  `DocumentFragment` batch mounting in `updateVisualTags`, and modern CSS Grid layout (`.anomalous-nb-tag-row`)
-  with hover-revealed copy buttons (`.anomalous-nb-copy-btn`); LoRA gallery performance is hardened via
-  `content-visibility: auto`, `contain-intrinsic-size: 70px`, and fixed `aspect-ratio: 1/1` preventing Layout Shift.
-- `ui_materials.js` owns the unified Material Library (素材库) view and its lifecycle;
-  features a top-level unified toolbar with capsule category filter tabs (`[全部 | 工作流 | 参数方案 | 提示词]`),
-  integrated search bar with live tag filter dropdown, dedicated view switcher (`[网格 | 列表]`),
-  refresh and transfer center; cards feature strict uniform height (248px) with rich micro-skeuomorphic fallbacks for non-image assets (prompt code snippets
-  and 3D asset parameter previews) eliminating visual bumpiness, direct inline title editing,
-  floating quick actions, and lazy DOM rendering; clicking any material card safely opens the detail inspection view;
-  in node apply mode or when a canvas node is selected, cards and the detail header expose explicit `[⚡ 应用到节点]` action buttons (`.anomalous-material-card-apply-btn`)
-  to prevent accidental node parameter overwriting; multi-text drag-and-drop onto nodes presents an interactive selection dialog with role badges,
-  truncated text snippets, and `[展开全部 ▾]` toggles; default naming for gallery saves is streamlined to `[原图名] · 快照` (or `[原图名] · [节点名]`);
-  completely decoupled from Prompt Studio (no studio toggle, no docked side panel, and no card-level mixer buttons); delegates image inspection to `ui_gallery_detail.js`;
-  `node_material_actions.js` owns shared transactional node application and guarded undo;
-  the library and Node Assistant use `ui_material_application.js` for the same receipt.
-- `translation_service.js` owns atomic prompt translation logic and language intelligence;
-  bridges directly to the ComfyUI backend `POST /anomalous/translate` with multi-engine fallback (DeepL API Key ➔ Google Chrome Dictionary Client (`dict-chrome-ex`, bypasses 429 rate limits) ➔ MyMemory Translation Engine);
-  features `hasChinese` heuristic detection, automatic target language deduction (Chinese ➔ English, English ➔ Simplified Chinese),
-- `ui_prompt_translator.js` owns the standalone Quick Prompt Translator (提示词翻译助手);
-  mounted directly to `document.body` as an elevated sidebar drawer (`.anomalous-translator-modal.is-sidebar`, z-index 999999); registered in the Toolbox Hub (`openPromptTranslator`);
-  features live language selection, one-click ComfyUI canvas node prompt reading (`readSelectedNodePrompt`),
-  instant bilingual translation, interactive tag breakdown pill chips (`.anomalous-translator-chip`),
-  one-click copy, direct write to selected canvas text node (`writeToSelectedNode` via `applyNodeMaterialValues`), dock-side toggling (`[⇤ / ⇥]`), width resizing, and one-click dispatch into Prompt Studio.
-- `ui_prompt_composer.js` owns the Prompt Studio Minimalist Workbench (提示词工坊极简侧边栏抽屉与拼装台):
-  an independent, high-efficiency companion tool launched from the Toolbox Hub (`openPromptStudio`);
-  rendered directly into `document.body` as an elevated sidebar drawer (`.anomalous-prompt-studio-drawer`, z-index 999991) with canvas passthrough (`pointer-events: none` backdrop, allowing uninterrupted graph navigation);
-  features Canvas Focus Mode: opening the studio drawer automatically collapses the heavy master browser to preserve 80%+ canvas workspace;
-  features dock-side switching (`[⇤ / ⇥]`, persisted to `localStorage.anomalous_studio_dock_side`), width resize handle (400px~800px, persisted to `localStorage.anomalous_studio_sidebar_width`), and ESC key dismissal;
-  features a resilient Minimalist Dual-Column Layout: Left Column (145px~155px) hosts high-density compact prompt pills (`.anomalous-source-card-compact`) with category dot accents and instant 1-tap track injection; Right Column expands to take all remaining width as the primary Assembly Stage (`.anomalous-assembly-track`);
-  each assembled block card features category pills, title editing, a quick translate button, and an interactive **Weight Wheel Pill** (`.anomalous-block-weight-pill`) supporting instant mouse wheel scrolling (+/- 0.05 step) and +/- click adjustments;
-  eliminates cumbersome static textareas: Assembled output uses a zero-footprint **Floating Action Dock** (`.anomalous-floating-action-dock`) that is hidden (0px height) when empty and smoothly slides up (38px height) when blocks exist, offering real-time token/block stats, `[🚀 写入节点]`, `[📋 复制]`, and `[⛶ 展开大窗]`;
-  clicking `[⛶]` launches an independent centered **Prompt Inspector Modal** (`.anomalous-prompt-inspector-modal`, 780x520px, z-index 999999) for deep full-text inspection, bilingual translation, tag normalization (`[🧹 规范化]`), and direct write-back to canvas text nodes;
-  `prompt_composition.js` provides bidirectional schema mapping (`planToWorkbenchDraft` and `workbenchDraftToSavedPlan`) ensuring
-  100% roundtrip data integrity across `anomalous-prompt-plan-v1` and `version: 2`, lossless legacy dual-role splitting and trailing text retention,
-  `categorizePromptSnippet`, `smartSortPromptBlocks`, `assemblePromptBlocks`, as well as backward-compatible text joining;
-  `api/materials.py` validates prompt plans with extended categories (`general`, `specific`, `base`, `style`, `subject`, `trigger`)
-  while preserving schema version, part role, and card id.
-- `material_drag.js` owns temporary canvas drop listeners, target hit testing and
-  window restoration. During active dragging, the main modal smoothly transitions to
-  full transparency (`opacity: 0; pointer-events: none`) to fully reveal the underlying
-  ComfyUI canvas, restoring on drop/cancel. Supports both node-targeted drops (materials replace,
-  prompt notes insert text) and whole-canvas drops via `dropOnCanvas` (recipes load new workflows
-  or append subgraphs).
-- `material_inspector.js` owns shared image-metadata parsing and node-parameter
-  rendering used by the library and Image Detail Workbench. Node cards feature leading
-  aligned frosted-glass checkboxes with cyan micro-interactions for batch selection.
-  The workbench does not import the library UI.
-- `recipe_parser.js`, `recipe_identity.js`, `recipe_diff.js`, and
-  `recipe_actions.js` own pure or transactional recipe behavior.
-- `ui_doctor.js`, `model_picker.js`, and `graph_splice.js` own assistant and
-  explicit graph-edit behavior. Node Assistant parameter schemes are structured into distinct
-  scheme cards with parameter pills (steps, cfg, sampler, scheduler, denoise, prompt roles);
-  hovering over any parameter scheme card triggers a glassmorphic floating popover (`.anomalous-param-popover`)
-  displaying the complete key-value parameter table, prompt text box, one-click copy, and apply action;
-  parameter application requires an explicit `[⚡ 应用方案]` button click with async feedback (`⏳ 应用中...` -> `✅ 已应用`),
-  preventing unintentional canvas graph overwrites.
-- Dual-Mode Theme Architecture (双形态主题架构与材质光影精细化):
-  - **Base Design System Tokens (`--amb-*`)**: Scoped on `:root` and overridden under `.theme-abyssal-scarlet`. Defines unified background, panel, card, text, border, and control radii tokens (`--amb-radius-control: 6px`, `--amb-radius-card: 10px`, `--amb-radius-panel: 12px`).
-  - **Normal Mode (Default / 标准中性黑曜石图书档案馆模式)**: Restrained, clean, neutral dark obsidian (`#0b0d13` / `#141519` / `#1c1e24`) styling; overlaid with the "Anime Celestial Library Archive" AI Concept Art with glowing holographic magic circles, golden blueprint wireframes, and constellation starmap textures (`assets/archive_library_bg.webp`) across `#anomalous-container::before` at `0.65` opacity with radial dark vignette; **全界面毛玻璃一体化融合 (Unified Frosted Glass Architecture)**: 侧边栏 (`#anomalous-sidebar-wrapper`, 24px 模糊，52% 透光) 与顶部导航栏 (`#anomalous-header`, 20px 模糊，48% 透光) 全面采用磨砂毛玻璃透光，品牌徽章与搜索框微晶质感化，底图星轨、宏大书阁与发光符文在全窗口贯通流淌，与透明网格主视图形成高度沉浸式二次元魔法图书馆终端界面；银白高对比主操作按钮 (`#D7D9E0` 搭配 `#15171C` 字色)。
-  - **Abyssal Scarlet Easter Egg Mode (`.theme-abyssal-scarlet` / 深海血族彩蛋领域 - 丝绒与暗血轻量质感)**: Strictly scoped under `.theme-abyssal-scarlet`; eliminates all cheap neon outer glows; deep gothic velvet backgrounds (`#161014` / `#21171d` / `#2b1e26`), razor-sharp crimson (`#dc143c`) and antique gold (`#b38728`) borders, crimson primary buttons (`#87384E` with `#FFF5F7` text), and concept art backdrops `assets/abyssal_scarlet_mansion.webp` and `assets/abyssal_bg_concept.webp`.
-  - **Three-Tier Button Architecture**: Unifies button morphology across primary, secondary/ghost, and auxiliary actions. Primary buttons (`.anomalous-btn-primary`, `.anomalous-recipe-btn-primary-action`) feature solid fills, 32px height, 6px border-radius, clean SVG icons, and zero pseudo-element clutter (purged legacy `::before` diamonds, `::after` gradient lightbars, text-shadows, and heavy glows); secondary ghost buttons (`.anomalous-btn-ghost`) feature subtle borders and panel backgrounds; auxiliary action buttons provide clear, non-distracting tool semantics.
-  - **Floating Trigger Button & Anomalous Hypercube Core (悬浮入口魔晶重构)**:
-    - 重绘旧版扁平纸箱立方体为 **「异象超维魔方核 (Anomalous Hypercube Core)」**：外层等轴测立体超维立方体轮廓，内嵌悬浮发光微晶棱镜（`--amb-accent` 随主题自适应为天青/猩红），核心凝聚一枚四芒星辉奇点（`✦`），兼具 3D 模型容器特征与魔法档案馆星辰意象。
-    - 悬浮球体容器 (`#anomalous-trigger-btn`) 升级为亚克力磨砂深色毛玻璃材质 (`backdrop-filter: blur(16px)`)，悬停微移提亮，图标伴随 12° 优雅微旋与天青/猩红柔和微光，保持高度克制的同时极具辨识度与高级质感。
-  - **Prompt Studio Dual-Column Workbench (提示词工坊侧边抽屉与双向自适应停靠)**:
-    - **Default Left Docking & Canvas-Facing Flow**: Defaults to left dock (`is-dock-left`), with Source Cards (190px) on the outer screen edge and Assembly Track on the inner side directly facing the ComfyUI canvas.
-    - **Bidirectional Column Flipping**: When toggled to right dock, the layout seamlessly swaps column visual order (`order: 1` for Assembly Track facing canvas on left, `order: 2` for Source Cards along right screen edge) so that the Assembly Track is ALWAYS adjacent to the ComfyUI canvas regardless of docking side.
-    - **Single-Line Unbroken Topbar**: Topbar strictly enforces `flex-wrap: nowrap`, keeping Title, Preset Name input (constrained max-width 140px), Node Extraction (`🎯`), Dock Toggle (`→`/`←`), More dropdown (`··· 更多`), and Close (`✕`) in a unified single row under any drawer width.
-    - **De-cluttered Left Panel**: Expanded left column from 145px to 190px, purged redundant text buttons into compact 24x24 icon buttons (`[📥]` and `[+]`), shortened category filter pills to clean 2-character chips (`[全部]`, `[底模]`, `[风格]`, `[主体]`, `[触发]`) fitting into a single row, and removed bulky instructional tip banners.
-    - **Dynamic Floating Action Dock & Popout Modal**: Floating Action Dock slides up only when blocks exist; provides single-click Node Direct Write and popout full-screen Prompt Inspector (`openPromptInspectorModal`) for deep multi-line tuning.
-    - **Trigger Button Lifecycle Suppression**: When Prompt Studio opens, the global floating trigger button (`#anomalous-trigger-btn`, z-index 2147483000) is automatically suppressed via `owner.setTriggerVisible(false)` and `body.anomalous-prompt-studio-open` (`display: none !important;`), preventing it from overlaying the workbench track, and cleanly restores when the studio drawer is closed.
-    - **Eye-Catching Card Preview Popover (词卡专属悬浮预览浮框)**: Completely eliminated unstyled native OS `title` tooltips. Implemented `.anomalous-card-preview-popover` (fixed positioning, dark obsidian glass, z-index 1000005, neon accent borders, category/role badges, monospace formatted prompt snippet container, and action hints). Compact source cards feature category-color left accent borders (`border-left: 3px solid`) for instant visual scanning.
-  - **Uniform Card Skeletons**: Recipe and material cards enforce "Preview -> 2-Line Clamped Title -> Key Specs -> Footer Action Bar" order, preventing Chinese title clipping; Model cards display titles and filenames at rest without `translateY` collapse and without `backdrop-filter: blur`, fading in action buttons on hover.
-  - **Custom Tooltip System (`[data-tooltip]`)**: Solid dark capsules (`rgba(18, 20, 26, 0.98)`), 350ms standard hover delay, and keyboard focus-visible support.
+- `web/main.js` registers the extension and owns the shared browser instance.
+- `ui_sidebar.js` creates the browser shell, navigation and settings. Its large
+  `createDOM` method remains a maintenance hotspot; new tool implementations
+  should live in their own modules rather than expanding that method.
+- `ui_grid.js` and model-detail modules own model presentation; `ui_gallery.js`
+  and `ui_gallery_detail.js` own generated-image browsing and inspection.
+- `ui_recipes.js` / `ui_recipe_detail.js`, `ui_notebooks.js`, and `ui_materials.js`
+  own their respective workspace surfaces and persistence flows.
+- `ui_prompt_composer.js` owns the standalone Prompt Studio drawer. Its child
+  views are `ui_prompt_source_deck.js`, `ui_prompt_workbench.js`, and
+  `ui_prompt_inspector.js`; see the frontend topic for state ownership.
+- `ui_prompt_translator.js` owns the standalone translator. Both translator and
+  studio use `ui_lifecycle.js` for global listeners, request cancellation and
+  resize cleanup. Translation requests go through `translation_service.js`.
+- `ui_dom.js` provides small DOM/JSON helpers; `material_inspector.js` owns
+  material-specific metadata and parameter rendering.
+- `ui_doctor.js`, `model_picker.js`, `node_material_actions.js`, and
+  `graph_splice.js` own diagnostics and explicit graph changes.
+- `locales.js` is the shared runtime string catalog. Existing inline bilingual
+  UI strings remain migration debt; new strings belong in the catalog.
+- `styles.css` owns presentation and theme overrides. Color values, dimensions
+  and visual design descriptions are not duplicated as architectural contracts.
 
 ## Cross-system invariants
 

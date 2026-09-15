@@ -1,5 +1,7 @@
 export const i18n = {
     zh: {
+        promptSourceSynced: '已同步 {count} 张新词卡',
+        promptFullTextEditHint: '修改全文会将当前方向已启用的词块合并为一个词块。',
         materialNoPromptContent: '这份素材没有已明确分类的提示词，请先在详情中检查提示词角色。',
         promptDrawerReplace: '替换这组文字',
         promptDrawerAppend: '加入这组文字',
@@ -1106,6 +1108,8 @@ export const i18n = {
         recipeCardSpecsResolution: '尺寸',
     },
     en: {
+        promptSourceSynced: 'Synced {count} new prompt cards',
+        promptFullTextEditHint: 'Editing the full text merges the enabled blocks in this direction into one block.',
         materialNoPromptContent: 'This material has no classified prompts. Check its prompt roles in details first.',
         promptDrawerReplace: 'Replace this text',
         promptDrawerAppend: 'Add this text',

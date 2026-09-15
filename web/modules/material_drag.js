@@ -1,6 +1,7 @@
 import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
-import { materialNodeHeading, text } from './material_inspector.js';
+import { text } from './ui_dom.js';
+import { materialNodeHeading } from './material_inspector.js';
 import { anomalousAlert } from './ui_dialog.js';
 
 let activeDrag = null;

@@ -1,14 +1,7 @@
+import { text } from './ui_dom.js';
 /** Shared image metadata and node-parameter inspection for the library and workbench. */
 import { translate } from './locales.js';
 const t = (key, params) => translate(key, params);
-
-export function text(parent, tag, value, className = '') {
-    const element = document.createElement(tag);
-    if (className) element.className = className;
-    element.textContent = value == null ? '' : String(value);
-    parent.appendChild(element);
-    return element;
-}
 
 export function sectionLabel(parent, value) {
     return text(parent, 'div', value, 'anomalous-material-section-label');
@@ -73,13 +66,6 @@ export async function resolveLocalModels(paths) {
 export function lookupLocalModel(localModels, path) {
     if (!path || !localModels) return null;
     return localModels[path] || localModels[fileBaseName(path)] || null;
-}
-
-export async function jsonResponse(response, fallbackMessage) {
-    let payload = {};
-    try { payload = await response.json(); } catch (error) { /* non-JSON server failure */ }
-    if (!response.ok) throw new Error(payload.message || fallbackMessage);
-    return payload;
 }
 
 export async function parsePngMetadataFromUrl(url, options = {}) {

@@ -69,7 +69,14 @@ AI_SYSTEM_TEMPLATE.md
 # Test files
 test_*.js
 test*.mjs
-tests/
+tests/*
+!tests/package.json
+!tests/ui_fixture.mjs
+!tests/prompt_ui_lifecycle.mjs
+!tests/prompt_material_source.mjs
+!tests/translation_service_contracts.mjs
+!tests/studio_contracts.mjs
+!tests/material_workspace_flow.mjs
 
 # Local diagnostic/test artifacts
 grep_doctor.txt

@@ -15,13 +15,12 @@ import { showMaterialSaved } from './material_feedback.js';
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
+import { text, jsonResponse } from './ui_dom.js';
 import {
-    text,
     sectionLabel,
     fileBaseName,
     appendLocalPreview,
     modelCustomNotes,
-    jsonResponse,
     parsePngMetadataFromUrl,
     extractWorkflowDetails,
     resolveLocalModels,

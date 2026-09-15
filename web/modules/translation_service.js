@@ -52,10 +52,12 @@ export function normalizePromptFormatting(text, delimiter = ', ') {
  * @param {string} text - Raw prompt text to translate
  * @param {Object} [options]
  * @param {string} [options.targetLang] - Target language ('en' | 'zh-CN' | 'ja' | etc.)
+ * @param {AbortSignal} [options.signal] - Cancels requests when their owning view closes
  * @param {boolean} [options.bypassCache=false] - If true, ignores in-memory cache
  * @returns {Promise<{ ok: boolean, translated: string, targetLang: string, error?: string }>}
  */
 export async function translatePromptText(text, options = {}) {
+    if (options.signal?.aborted) return { ok: false, cancelled: true, translated: '', targetLang: options.targetLang || 'en' };
     const raw = String(text || '').trim();
     if (!raw) {
         return { ok: true, translated: '', targetLang: options.targetLang || 'en' };
@@ -71,6 +73,7 @@ export async function translatePromptText(text, options = {}) {
     try {
         const response = await fetch('/anomalous/translate', {
             method: 'POST',
+            signal: options.signal,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 text: raw,
@@ -83,6 +86,7 @@ export async function translatePromptText(text, options = {}) {
         }
 
         const data = await response.json();
+        options.signal?.throwIfAborted();
         if (data.status === 'error' || data.error) {
             throw new Error(data.error || 'Translation service failed');
         }
@@ -93,7 +97,7 @@ export async function translatePromptText(text, options = {}) {
         }
 
         // Cache the successful result (limit cache to 500 items)
-        if (translationCache.size > 500) {
+        if (translationCache.size >= 500 && !translationCache.has(cacheKey)) {
             const oldestKey = translationCache.keys().next().value;
             translationCache.delete(oldestKey);
         }
@@ -101,6 +105,7 @@ export async function translatePromptText(text, options = {}) {
 
         return { ok: true, translated, targetLang, engine: data.engine };
     } catch (err) {
+        if (options.signal?.aborted || err.name === 'AbortError') return { ok: false, cancelled: true, translated: raw, targetLang };
         console.warn('[Anomalous Translation] Translate failed:', err);
         return {
             ok: false,

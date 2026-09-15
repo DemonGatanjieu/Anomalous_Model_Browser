@@ -887,9 +887,7 @@ function buildRecipeStudioTopbar(owner) {
 }
 
 export async function showRecipes() {
-    this.closePromptImportDrawer?.();
     if (this.materialContainer) this.materialContainer.style.display = 'none';
-    if (this.promptStudioContainer) this.promptStudioContainer.style.display = 'none';
     if (this.notebookContainer) this.notebookContainer.style.display = 'none';
 
     if (this.nbPanel) this.nbPanel.style.display = 'flex';

@@ -269,14 +269,6 @@ class AnomalousBrowser {
             : 'balanced';
         this.createDOM();
     }
-    // [EXTRACTED] createDOM
-    // [EXTRACTED] showHelp
-    // [EXTRACTED] loadFolders
-    // [EXTRACTED] renderSidebar
-    // [EXTRACTED] loadModels
-    // [EXTRACTED] applyModelToCanvas
-    // [EXTRACTED] stopMediaInContainer
-    // [EXTRACTED] showDetail
 
     show() {
         if (this._idleReleaseTimer) {
@@ -314,33 +306,7 @@ class AnomalousBrowser {
         const trigger = this.triggerButton || document.getElementById('anomalous-trigger-btn');
         trigger?.classList.toggle('anomalous-trigger-hidden', !visible || entryMode !== 'floating');
     }
-    // [EXTRACTED] showNotebooks
 
-    async translateText(text) {
-        if (!text || !text.trim()) return "";
-        try {
-            const res = await fetch('/anomalous/translate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text, target_lang: window.anomalous_browser_lang === 'zh' ? 'zh-CN' : 'en' })
-            });
-            const data = await res.json();
-            return data.translated || text;
-        } catch (e) { return text; }
-    }
-    // [EXTRACTED] loadGalleryImages
-    // [EXTRACTED] showEditModal
-    // [EXTRACTED] showGeneratedGallery
-    // [EXTRACTED] showGallerySelectMode
-    // [EXTRACTED] showGalleryViewer
-    // [EXTRACTED] refreshNotebooks
-    // [EXTRACTED] saveCurrentNotebook
-    // [EXTRACTED] deleteCurrentNotebook
-    // [EXTRACTED] renderNotebookEditor
-    // [EXTRACTED] fillNotebookGalleries
-    // [EXTRACTED] sendNotebookToCanvas
-    // [EXTRACTED] setWidgetValuePath
-    // [EXTRACTED] hideAllPanels
 
     // [Doctor & Assistant Panel methods extracted to ui_doctor.js]
 
@@ -634,7 +600,6 @@ class AnomalousBrowser {
 
         overlay.style.display = 'flex';
     }
-    // [EXTRACTED] _openAdvancedModelSelector
 
 }
 

@@ -1,5 +1,6 @@
 import { composePromptPlan } from './prompt_composition.js';
-import { jsonResponse } from './material_inspector.js';
+import { jsonResponse } from './ui_dom.js';
+
 
 export function materialPromptText(payload) {
     const data = payload.data || {};

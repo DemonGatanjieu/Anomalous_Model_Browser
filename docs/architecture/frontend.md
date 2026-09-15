@@ -28,6 +28,7 @@ The main surfaces are:
 - Node Assistant/Model Doctor: selected-node actions, diagnostics, parameter
   presets, and missing-model recovery.
 
+`ui_dom.js` owns generic `text` and `jsonResponse` helpers.
 `material_inspector.js` shares image metadata helpers and node-parameter rendering
 between `ui_materials.js` and `ui_gallery_detail.js`. The workbench does not import
 the library UI, keeping this dependency chain acyclic. Library discovery uses
@@ -146,24 +147,73 @@ Network-backed enrichment is explicit and recoverable. An unavailable Civitai
 or translation service may produce a local error state; it must not block local
 browsing, editing, or already stored data.
 
+## Prompt Studio ownership
+
+The studio has one standalone drawer; the former embedded side/full composer
+and material import drawer are removed. Existing browser integration continues
+to call `openPromptStudio(owner)`, and external prompt dispatch uses
+`appendPromptToStudio(owner, text, isPositive, title)`.
+
+| Module | Owned state and responsibilities |
+| --- | --- |
+| `ui_prompt_composer.js` | Active drawer, docking width/side, trigger visibility and plan-loading request |
+| `ui_prompt_workbench.js` | Owner-backed draft, active role, block editing, ordering, write/copy/save/export |
+| `ui_prompt_source_deck.js` | Source cards, filters, new-card form, preview popover and current sync request |
+| `ui_prompt_inspector.js` | Full-text inspection window, role tab and its translation lifetime |
+| `prompt_studio_data.js` | Starter cards, display categories, draft/block initialization and synthesis |
+| `prompt_composition.js` | Pure plan conversion, sorting and composition; no DOM ownership |
+| `prompt_material_source.js` | All-page prompt discovery, detail loading and source-card deduplication |
+| `ui_lifecycle.js` | View-scoped listeners, AbortSignal, cleanup callbacks and resizing |
+
+Child views receive their container and narrow callbacks. The workbench keeps
+`owner.promptPlanDraft` for reopening and exposes only `updateAll` / `addBlock`
+through `owner.sidePromptComposerControl`. The source deck keeps its state local
+and returns extraction/refresh/sync actions instead of assigning new owner fields.
+
+Draft `plan.parts` is the authoritative editable representation. Full-text
+inspector edits merge the enabled blocks in the edited role into one block,
+preserving disabled blocks and the opposite role. The inspector explains this
+behavior before editing. Copy, save and reopen derive text from the same parts.
+
+Every close route (button, Escape, backdrop, replacement and parent close) must
+dispose the same view scope. Parent close also closes its inspector. An Escape
+handled by an inspector must not close its parent in the same event dispatch.
+Closing during resize releases move/up listeners and restores body cursor and
+selection styles. UI reads are cancelled on close; a save already sent to the
+server may still complete, but must not reopen or repaint a disposed view.
+
+Initial and explicit source synchronization share a paginated loader. List
+summaries are identifiers, not prompt bodies: each unique filename is resolved
+through `material_prompt_data.js`. Deduplication uses prompt role and text, so
+the same text can still appear once in each role. A newer sync cancels the old
+one and only the current result updates the deck.
+
+The translator captures graph, node, widget and widget value before an async
+write. It revalidates that destination and the input after translation; close,
+selection changes and intervening widget edits invalidate the pending write.
+Explicit English translation applies to all input languages, including kana
+and Korean. Transport errors and rejected bridge responses remain local errors;
+provider-specific validation belongs to the backend translation route.
+
 ## Visual styling and theme architecture
 
-The extension enforces a strict **Dual-Mode Theme Architecture (双形态主题架构)** to guarantee default aesthetic restraint while enabling deep immersive customization:
+`styles.css` is the source of truth for current visual values. Shared `--amb-*`
+tokens express surfaces, text, borders and control shapes; theme overrides must
+be scoped to `.theme-abyssal-scarlet` rather than changing unrelated surfaces.
 
-1. **Normal Mode (Default / 标准中性黑曜石模式 - 暗物质材质与水印底纹)**:
-   - Base surfaces use clean, restrained dark obsidian tones (`#0a0a0c` / `#0d0d11`) with subtle, neutral glassmorphism borders (`rgba(255, 255, 255, 0.08)`).
-   - Introduces the "Dark Matter Material" AI Concept Art Watermark (`assets/normal_bg_concept.webp`) overlaid on `#anomalous-content::before` and `.anomalous-gallery-container::before` at ultra-low opacity (`0.04 ~ 0.05`) with `mix-blend-mode: luminosity`, banishing dead-black voids while strictly preserving foreground thumbnail readability.
-   - Sidebar active folder indicators and icons use neutral silver-slate (`#94a3b8`); the radar scan sweep uses clean cyan/blue.
-   - Model cards use neutral dark glass (`rgba(20, 20, 26, 0.85)`) with neutral silver plate badges (`#cbd5e1`).
-   - Tooltips utilize neutral dark slate glass (`rgba(18, 20, 28, 0.95)`) with neutral borders and directional positioning (`data-tooltip-pos="top|right|bottom|left"`).
-   - Prompt Mixer, Arranger, and Workbench controls utilize cyber cyan/blue (`#38bdf8`) accents for active pills, smart sort, dropzone highlights, and node extraction.
+Studio drawer rules keep the source deck at the screen edge and the assembly
+track next to the canvas. Common geometry is shared between dock directions;
+direction-specific rules set column order and separators. The removed embedded
+composer's `#anomalous-container.anomalous-docked` overrides must not return.
+Before adding an override or `!important`, locate and edit the owning rule.
+Older component and theme overrides elsewhere in this file still need a
+separate, visually verified consolidation.
 
-2. **Abyssal Scarlet Easter Egg Mode (`.theme-abyssal-scarlet` / 深海血族彩蛋领域 - 丝绒与暗血轻量质感)**:
-   - Strictly scoped under `.theme-abyssal-scarlet` or `html.theme-abyssal-scarlet`; never leaks into default rules.
-   - **Zero Outer Neon Glows**: Complete elimination of aggressive `box-shadow: 0 0 xxpx` outer halos, `filter: drop-shadow`, and text glows across buttons, cards, pills, and sidebar actions.
-   - **Light Absorption Aesthetic**: Replaced cheap neon effects with deep sunken inner shadows (`box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8)`), heavy velvet wine backgrounds (`rgba(50, 12, 22, 0.95)`), razor-sharp 1px crimson (`#dc143c`) or antique gold (`#b38728`) borders, and subtle red-blush silver text (`#e0d8db`).
-   - Activates deep abyssal palettes (`#0a0510` / `#0d080c`), submerged scarlet mansion concept overlays (`assets/abyssal_scarlet_mansion.webp`), gallery lattice backdrop (`assets/abyssal_bg_concept.webp`), and ambient crimson/purple radial gradient illumination.
-   - Model card badges shift to the Gothic Sovereign palette (Dark Gold, Amber, Abyssal Purple/Flux, Rose Crimson) with sunken inner shadows and sharp borders.
-   - Header drag interaction safely guards `.closest('button')`, `.closest('input')`, etc., ensuring that button child SVG icons and label spans do not swallow clicks via `e.preventDefault()`.
+## Verification
 
-
+Use `node --experimental-vm-modules tests/prompt_ui_lifecycle.mjs` for actual
+module open/close, nested Escape, resize cleanup, block insertion and delayed
+node writes. `tests/prompt_material_source.mjs` covers pagination, deduplication
+and cancellation; `tests/translation_service_contracts.mjs` covers the HTTP
+bridge. The UI fixture simulates DOM and ComfyUI APIs and does not replace
+checking the real host, layout, focus, drag gestures and theme rendering.

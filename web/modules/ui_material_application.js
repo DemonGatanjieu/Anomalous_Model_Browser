@@ -1,6 +1,7 @@
 import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
-import { text, materialNodeHeading } from './material_inspector.js';
+import { text } from './ui_dom.js';
+import { materialNodeHeading } from './material_inspector.js';
 import { applyMaterialBlock, selectedMaterialNode } from './node_material_actions.js';
 
 export function showMaterialApplication(parent, result, node) {

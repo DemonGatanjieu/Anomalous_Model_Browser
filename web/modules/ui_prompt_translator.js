@@ -8,9 +8,10 @@
 import { app } from '../../../scripts/app.js';
 import { translatePromptText, splitPromptTags, normalizePromptFormatting, hasChinese } from './translation_service.js';
 import { selectedMaterialNode, promptWidgetTargets, applyNodeMaterialValues } from './node_material_actions.js';
+import { createViewScope, bindDrawerResize } from './ui_lifecycle.js';
 import { appendPromptToStudio } from './ui_prompt_composer.js';
 
-let activeTranslatorModal = null;
+let activeTranslator = null;
 
 function t(zh, en) {
     return window.anomalous_browser_lang === 'zh' ? zh : en;
@@ -96,15 +97,17 @@ function writeToSelectedNode(text) {
  * @param {Object} owner - AnomalousBrowser instance
  */
 export function openPromptTranslator(owner) {
-    if (activeTranslatorModal) {
-        activeTranslatorModal.remove();
-        activeTranslatorModal = null;
-    }
+    activeTranslator?.dispose();
+    const scope = createViewScope();
+    activeTranslator = scope;
 
     // Modal Overlay
     const overlay = document.createElement('div');
     overlay.className = 'anomalous-translator-overlay';
-    activeTranslatorModal = overlay;
+    scope.onDispose(() => {
+        overlay.remove();
+        if (activeTranslator === scope) activeTranslator = null;
+    });
 
     // Modal Window
     const modal = document.createElement('div');
@@ -125,48 +128,14 @@ export function openPromptTranslator(owner) {
     resizeHandle.className = 'anomalous-translator-resize-handle';
     resizeHandle.title = t('拖动调整侧边栏宽度，双击恢复默认', 'Drag to resize sidebar, double-click to reset');
 
-    let isResizing = false;
-    let startX = 0;
-    let startWidth = 380;
     let currentSide = localStorage.getItem('anomalous_translator_dock_side') || 'right';
-
-    resizeHandle.onmousedown = (e) => {
-        if (!modal.classList.contains('is-sidebar')) return;
-        isResizing = true;
-        startX = e.clientX;
-        startWidth = modal.getBoundingClientRect().width;
-        resizeHandle.classList.add('is-resizing');
-        document.body.style.userSelect = 'none';
-        document.body.style.cursor = 'ew-resize';
-
-        const onMouseMove = (moveEvt) => {
-            if (!isResizing) return;
-            let newWidth;
-            if (currentSide === 'left') {
-                const deltaX = moveEvt.clientX - startX;
-                newWidth = Math.max(320, Math.min(window.innerWidth * 0.85, startWidth + deltaX));
-            } else {
-                const deltaX = startX - moveEvt.clientX;
-                newWidth = Math.max(320, Math.min(window.innerWidth * 0.85, startWidth + deltaX));
-            }
-            modal.style.setProperty('--amb-translator-width', `${newWidth}px`);
-        };
-
-        const onMouseUp = () => {
-            if (!isResizing) return;
-            isResizing = false;
-            resizeHandle.classList.remove('is-resizing');
-            document.body.style.userSelect = '';
-            document.body.style.cursor = '';
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-            const finalWidth = modal.getBoundingClientRect().width;
-            localStorage.setItem('anomalous_translator_width', Math.round(finalWidth));
-        };
-
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-    };
+    bindDrawerResize(resizeHandle, modal, scope, {
+        side: () => currentSide,
+        enabled: () => modal.classList.contains('is-sidebar'),
+        minWidth: 320,
+        setWidth: width => modal.style.setProperty('--amb-translator-width', `${width}px`),
+        saveWidth: width => localStorage.setItem('anomalous_translator_width', String(Math.round(width))),
+    });
 
     resizeHandle.ondblclick = () => {
         if (!modal.classList.contains('is-sidebar')) return;
@@ -280,8 +249,7 @@ export function openPromptTranslator(owner) {
     closeBtn.innerHTML = '&times;';
     closeBtn.title = t('关闭 (Esc)', 'Close (Esc)');
     closeBtn.onclick = () => {
-        overlay.remove();
-        activeTranslatorModal = null;
+        scope.dispose();
     };
     headerRight.appendChild(closeBtn);
     header.appendChild(headerRight);
@@ -494,8 +462,7 @@ export function openPromptTranslator(owner) {
         if (/[，、;；|｜]/.test(out) && !hasChinese(out)) {
             out = normalizePromptFormatting(out);
         }
-        overlay.remove();
-        activeTranslatorModal = null;
+        scope.dispose();
         if (typeof owner?.openPromptStudio === 'function') {
             owner.openPromptStudio();
         }
@@ -527,33 +494,40 @@ export function openPromptTranslator(owner) {
             return;
         }
 
-        if (!hasChinese(out)) {
-            out = normalizePromptFormatting(out);
-            targetTextarea.value = out;
-            updateTagChips(out);
-            const res = writeToSelectedNode(out);
-            showTranslatorToast(modal, res.message, !res.success);
+        if (translateAndWriteBtn.disabled || scope.signal.aborted) return;
+        // Capture the exact destination before awaiting a translation.
+        const graph = app.graph;
+        const node = selectedMaterialNode(app);
+        const target = node && promptWidgetTargets(node)[0];
+        if (!target) {
+            showTranslatorToast(modal, t('请先选中可写入的提示词节点', 'Select a writable prompt node first'), true);
             return;
         }
+        const widget = node.widgets[target.index];
+        const previousValue = widget.value;
 
         translateAndWriteBtn.disabled = true;
         translateAndWriteBtn.innerHTML = `⏳ ${t('反译写入中...', 'Translating & Writing...')}`;
 
         try {
-            const res = await translatePromptText(out, { targetLang: 'en' });
+            const res = await translatePromptText(out, { targetLang: 'en', signal: scope.signal });
+            if (scope.signal.aborted) return;
             if (res.ok && res.translated) {
                 const enTags = normalizePromptFormatting(res.translated);
-                const writeRes = writeToSelectedNode(enTags);
-                if (writeRes.success) {
-                    showTranslatorToast(modal, t('✓ 已反译为英文并成功写入节点！', '✓ Translated to EN & written to node!'));
-                    sourceTextarea.value = enTags;
-                } else {
-                    showTranslatorToast(modal, writeRes.message, true);
+                if (app.graph !== graph || selectedMaterialNode(app) !== node ||
+                    graph.getNodeById(node.id) !== node || node.widgets[target.index] !== widget ||
+                    widget.value !== previousValue || targetTextarea.value.trim() !== out) {
+                    showTranslatorToast(modal, t('目标或文本已改变，请重新点击翻译写入', 'Target or text changed. Translate and write again.'), true);
+                    return;
                 }
+                applyNodeMaterialValues(app, node, [{ index: target.index, value: enTags }]);
+                showTranslatorToast(modal, t('✓ 已反译为英文并成功写入节点！', '✓ Translated to EN & written to node!'));
+                sourceTextarea.value = enTags;
             } else {
                 showTranslatorToast(modal, t(`反译失败: ${res.error || '网络错误'}`, `Translation failed`), true);
             }
         } catch (err) {
+            if (scope.signal.aborted) return;
             showTranslatorToast(modal, t(`反译异常: ${err.message}`, `Error: ${err.message}`), true);
         } finally {
             translateAndWriteBtn.disabled = false;
@@ -597,6 +571,7 @@ export function openPromptTranslator(owner) {
 
     // Translation Handler
     async function doTranslate() {
+        if (translateBtn.disabled || scope.signal.aborted) return;
         const raw = sourceTextarea.value.trim();
         if (!raw) {
             sourceTextarea.focus();
@@ -604,7 +579,8 @@ export function openPromptTranslator(owner) {
         }
 
         const selectedLang = langSelect.value;
-        const options = {};
+        const previousOutput = targetTextarea.value;
+        const options = { signal: scope.signal };
         if (selectedLang !== 'auto') {
             options.targetLang = selectedLang;
         }
@@ -614,6 +590,8 @@ export function openPromptTranslator(owner) {
 
         try {
             const res = await translatePromptText(raw, options);
+            if (scope.signal.aborted || sourceTextarea.value.trim() !== raw ||
+                langSelect.value !== selectedLang || targetTextarea.value !== previousOutput) return;
             if (res.ok && res.translated) {
                 targetTextarea.value = res.translated;
                 updateTagChips(res.translated);
@@ -622,6 +600,7 @@ export function openPromptTranslator(owner) {
                 showTranslatorToast(modal, t(`翻译失败: ${res.error || '网络错误'}`, `Failed: ${res.error || 'Network error'}`), true);
             }
         } catch (err) {
+            if (scope.signal.aborted) return;
             showTranslatorToast(modal, t(`翻译异常: ${err.message}`, `Error: ${err.message}`), true);
         } finally {
             translateBtn.disabled = false;
@@ -649,20 +628,17 @@ export function openPromptTranslator(owner) {
     // Close on clicking backdrop (only active in centered modal mode)
     overlay.onclick = (e) => {
         if (e.target === overlay && !overlay.classList.contains('is-sidebar')) {
-            overlay.remove();
-            activeTranslatorModal = null;
+            scope.dispose();
         }
     };
 
     // Close on Escape key
     const onKeyDown = (e) => {
         if (e.key === 'Escape') {
-            overlay.remove();
-            activeTranslatorModal = null;
-            document.removeEventListener('keydown', onKeyDown);
+            scope.dispose();
         }
     };
-    document.addEventListener('keydown', onKeyDown);
+    scope.listen(document, 'keydown', onKeyDown);
 
     document.body.appendChild(overlay);
     sourceTextarea.focus();
