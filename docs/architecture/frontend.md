@@ -5,6 +5,13 @@ localization, media, or explicit canvas mutations.
 
 ## Bootstrap and module ownership
 
+Workflow share-code export is temporarily closed. `WORKFLOW_SHARE_EXPORT_ENABLED`
+in `web/main.js` gates both the export modal and encoder, including calls through
+`window.AMB_WorkflowShare`. The unified dialog disables export and keeps import.
+Reopening requires explicit validation and restoring the UI action and gate
+together; UX changes must not reopen it. Image/workflow hash injection, host
+workflow saving, and ordinary image downloads are outside this restriction.
+
 ComfyUI loads JavaScript in the extension `WEB_DIRECTORY` as ES modules.
 `web/main.js` registers `Anomalous.ModelBrowser`, creates the shared browser
 instance, and binds extracted modules to it. A syntax error or duplicate

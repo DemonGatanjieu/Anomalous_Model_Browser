@@ -224,9 +224,11 @@ The lower-left control opens a standalone Material Library container, with no
 workspace tabs and no initial Prompt Note fetch. The upper-right control opens
 Workflow Recipes; that workspace retains its Recipes and Prompt Notes tabs.
 Both containers share the browser's panel area but have separate headers and
-lifecycle state; switching restores the appropriate container. Import/export is secondary under the library's More
-menu, linking existing workflow tools and recipe packages, plus prompt-plan JSON
-import. It does not claim to import/export arbitrary image material bundles.
+lifecycle state; switching restores the appropriate container. The Import Center
+is secondary under the library's More menu, linking workflow share-code imports,
+recipe management/package imports, and prompt-plan JSON imports. It has no
+independent image-material bundle exporter. Recipe package and workflow share-code
+exports are temporarily closed; prompt-plan JSON export has been removed.
 
 Opening the library with exactly one live selected node enables apply mode.
 Summary requests filter by exact `node_type`; activating a card fetches only that

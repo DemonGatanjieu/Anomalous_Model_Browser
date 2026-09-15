@@ -967,6 +967,8 @@ app.registerExtension({
 // --- INJECTED WORKFLOW SHARE MODULE ---
 // Workflow Share and Preview Modal for Anomalous_Model_Browser
 
+// Release gate; reopening share-code export requires explicit validation.
+const WORKFLOW_SHARE_EXPORT_ENABLED = false;
 const AMB_WorkflowShare = {
     // ----------------------------------------------------------------------
     // 1. Data Compression & Base64 Utils
@@ -1143,6 +1145,7 @@ const AMB_WorkflowShare = {
     // 4. Encode / Decode
     // ----------------------------------------------------------------------
     async encodeShareCode(workflowJson, isSkeleton) {
+        if (!WORKFLOW_SHARE_EXPORT_ENABLED) throw new Error(t('mainExportUnavailable'));
         let targetJson = workflowJson;
         if (isSkeleton) {
             targetJson = this.skeletonize(workflowJson);
@@ -1197,6 +1200,10 @@ const AMB_WorkflowShare = {
     },
 
     showExportModal() {
+        if (!WORKFLOW_SHARE_EXPORT_ENABLED) {
+            this.showToast(t('mainExportUnavailable'));
+            return;
+        }
         const overlay = document.createElement('div');
         overlay.id = 'amb-export-modal';
         overlay.style.cssText = `
@@ -1384,9 +1391,9 @@ const AMB_WorkflowShare = {
         title.textContent = t('mainUnifiedTitle');
         
         const exportBtn = document.createElement('button');
-        exportBtn.textContent = t('mainExportWorkflow');
-        exportBtn.style.cssText = `padding: 12px; background: #4a90e2; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;`;
-        exportBtn.onclick = () => { overlay.remove(); this.showExportModal(); };
+        exportBtn.textContent = t('mainExportUnavailable');
+        exportBtn.disabled = true;
+        exportBtn.style.cssText = `padding: 12px; background: #555; color: #ccc; border: none; border-radius: 6px; cursor: not-allowed; font-size: 14px;`;
         
         const importBtn = document.createElement('button');
         importBtn.textContent = t('mainImportWorkflow');

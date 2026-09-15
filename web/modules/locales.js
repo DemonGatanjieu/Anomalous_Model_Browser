@@ -41,8 +41,8 @@ export const i18n = {
         assistantSchemeDetails: "方案参数详情",
         assistantSchemeSource: "来源",
         assistantHoverToInspect: "悬停可预览详细参数",
-        materialTransferCenter: "导入导出中心",
-        materialTransferWorkflow: "工作流导入与导出",
+        materialTransferCenter: "导入中心",
+        materialTransferWorkflow: "导入工作流分享码",
         materialTransferRecipes: "管理配方与配方包",
         promptCombinations: "提示词搭配",
         promptPlan: "提示词方案",
@@ -229,7 +229,7 @@ export const i18n = {
     <p><strong>5. 个性化配置 (设置面板)</strong><br>具体位置：左侧底部的 <strong>齿轮 ()</strong> 按钮。<br>可以调节语言、主页面字体大小；进入“模型设置”可选择视频封面始终播放或悬停播放，以及卡片使用流畅缩略图或原始封面。详情页始终保留原图画质。</p>
     <p><strong>6. 📑 顶部导航与提示词笔记</strong><br>具体位置：右侧顶部的按钮分别为 <strong>模型 ()</strong>、<strong>图库 ()</strong>、<strong>创作工作台 (📑)</strong>、<strong>停靠侧边栏 (◧)</strong>。<br>进入创作工作台的“提示词笔记”，点击新建 <strong></strong>。选择基础模型、主模型和 LoRA 后，可通过 <strong>📝纯文本/粘贴</strong> 填入提示词并进行双语对照、分块、查找替换和标签编辑，最后点击 <strong>发送到画布</strong> 一键组装节点。</p>
     <p><strong>7. 文件夹管理 (Folder Manager)</strong><br>具体位置：设置 () 面板内的 <strong>文件夹管理</strong>。<br>可以用来隐藏不需要的内置文件夹。隐藏后的文件夹不仅从侧边栏消失，后端的静默扫描和本地读取也会完全跳过，实现真正的“零性能损耗”。并且可以在这里拖拽调整文件夹在侧边栏显示的顺序。</p>
-    <p><strong>8. 工作流导出与导入 (分享码)</strong><br>具体位置：设置 () 按钮左侧的 <strong>导入/导出 ()</strong> 按钮。<br>该功能可以将当前的工作流一键编码导出为一段专属分享码，方便发到社交平台。别人只需复制这串分享码，在此界面粘贴即可直接还原导入完整的工作流，并且在导入前系统会自动校验模型是否在本地存在。</p>
+    <p><strong>8. 工作流导入 (分享码)</strong><br>打开素材库的“更多”菜单，进入<strong>导入中心</strong>，即可导入已有的 AMB0/AMB1 工作流分享码。生成新分享码暂未开放，图片和工作流附带的哈希信息保持现状。</p>
     <p><strong>9. 💬 提交反馈 / 报告问题</strong><br>具体位置：设置 () 面板内的 <strong>💬 提交反馈 / 报告问题</strong>。<br>当你遇到插件报错或有新功能建议时，点击该按钮可一键直达 GitHub Issues 页面提交反馈。</p>
 </div>`,
         notebooks: '笔记本',
@@ -638,8 +638,8 @@ export const i18n = {
         mainShareEmpty: '❌ 分享码为空',
         mainImportedNodes: '✅ 成功导入 {count} 个节点配置',
         mainDecodeFailed: '❌ 解析失败: ',
-        mainUnifiedTitle: '🔄 工作流分享与导入',
-        mainExportWorkflow: '📤 导出当前工作流为分享码',
+        mainUnifiedTitle: '🔄 工作流导入',
+        mainExportUnavailable: '工作流分享码导出暂未开放',
         mainImportWorkflow: '从分享码导入工作流',
         sidebarToggle: '收起/展开侧边栏',
         sidebarDoctor: '模型医生',
@@ -690,7 +690,7 @@ export const i18n = {
         sidebarExecute: '执行扫描',
         sidebarSwitchToEnglish: '🌐 Language: EN',
         sidebarSwitchToChinese: '🌐 语言: 中文',
-        sidebarImportExport: '导入 / 导出工作流 (分享码)',
+        sidebarImportExport: '导入工作流 (分享码)',
         sidebarGlobalQuickScan: '🌍 一键全盘极速扫描 (不下载封面/不改名)',
         sidebarGlobalQuickScanShort: '🌍 一键全盘扫描 (不下载封面/不改名)',
         sidebarGlobalQuickConfirm: '即将执行极速全盘扫描并同步Hash，此操作不改名也不下载封面，是否继续？',
@@ -829,7 +829,7 @@ export const i18n = {
         settingsBtn: '设置',
         closeSettings: '✖ 关闭设置面板',
         doctorBtn: '节点助手',
-        importBtn: '导入 / 导出工作流 (分享码)',
+        importBtn: '导入工作流 (分享码)',
         recipeTitle: '工作流',
         recipeBetaNotice: '工作流配方仍在测试。更新插件以及导入、恢复、删除或应用参数前，请保存当前画布并备份用户 workflows 目录中的 anomalous_recipes 与 anomalous_parameters。',
         recipeClose: '关闭工作流配方',
@@ -1170,8 +1170,8 @@ export const i18n = {
         assistantSchemeDetails: "Scheme Details",
         assistantSchemeSource: "Source",
         assistantHoverToInspect: "Hover to preview full parameters",
-        materialTransferCenter: "Import / Export Center",
-        materialTransferWorkflow: "Workflow import and export",
+        materialTransferCenter: "Import Center",
+        materialTransferWorkflow: "Import workflow share codes",
         materialTransferRecipes: "Manage recipes and recipe packages",
         promptCombinations: "Prompt Combinations",
         promptPlan: "Prompt Plan",
@@ -1358,7 +1358,7 @@ export const i18n = {
     <p><strong>5. Settings Panel</strong><br>Location: The <strong>Gear ()</strong> icon at the bottom left.<br>Adjust language and UI scale. Open “Model Settings” to choose always-play or hover-play video covers and optimized thumbnails or original covers. Detail pages always retain original image quality.</p>
     <p><strong>6. 📑 Top Navigation & Prompt Notes</strong><br>Location: Top-right tabs <strong>Models ()</strong>, <strong>Gallery ()</strong>, <strong>Creative Workspace (📑)</strong>, and <strong>Dock (◧)</strong>.<br>Open Prompt Notes in the Creative Workspace and click <strong></strong>. Select a Base Model, Main Model, and LoRAs; use <strong>📝 Edit Raw/Paste</strong> for bilingual prompts, chunking, find/replace, and tag editing; then click <strong>Send to Canvas</strong> to assemble the nodes.</p>
     <p><strong>7. Folder Manager</strong><br>Location: Inside the Settings () panel, click <strong>Manage Folders</strong>.<br>Use this to hide unneeded built-in folders. Hidden folders will be completely skipped by background scans and I/O reads, achieving true "zero performance cost". You can also drag and drop to reorder how folders appear in the sidebar.</p>
-    <p><strong>8. Workflow Export & Import (Share Code)</strong><br>Location: The <strong>Import/Export ()</strong> icon to the left of the Settings gear.<br>You can encode your current workflow into a single share code for easy sharing on social platforms. Others can simply copy this code and paste it here to instantly import the workflow. The system will also automatically pre-check if the required models exist locally.</p>
+    <p><strong>8. Workflow Import (Share Code)</strong><br>Open the Material Library More menu and choose <strong>Import Center</strong> to import existing AMB0/AMB1 workflow share codes. Generating new share codes is temporarily unavailable. Image and workflow hash metadata is unchanged.</p>
     <p><strong>9. 💬 Submit Feedback / Report Bug</strong><br>Location: Inside the Settings () panel, click <strong>💬 Submit Feedback / Report Bug</strong>.<br>If you encounter bugs or have feature requests, click this to go directly to our GitHub Issues page.</p>
 </div>`,
         notebooks: 'Notebooks',
@@ -1767,8 +1767,8 @@ export const i18n = {
         mainShareEmpty: '❌ Share code is empty',
         mainImportedNodes: '✅ Successfully imported {count} nodes',
         mainDecodeFailed: '❌ Decode Failed: ',
-        mainUnifiedTitle: '🔄 Workflow Share & Import',
-        mainExportWorkflow: '📤 Export Workflow to Share Code',
+        mainUnifiedTitle: '🔄 Workflow Import',
+        mainExportUnavailable: 'Workflow share-code export is temporarily unavailable',
         mainImportWorkflow: 'Import Workflow from Share Code',
         sidebarToggle: 'Toggle Sidebar',
         sidebarDoctor: 'Model Doctor',
@@ -1819,7 +1819,7 @@ export const i18n = {
         sidebarExecute: 'Execute Scan',
         sidebarSwitchToEnglish: '🌐 Language: EN',
         sidebarSwitchToChinese: '🌐 语言: 中文',
-        sidebarImportExport: 'Import / Export Workflow (Share Code)',
+        sidebarImportExport: 'Import Workflow (Share Code)',
         sidebarGlobalQuickScan: '🌍 Global Quick Scan (No rename/No media)',
         sidebarGlobalQuickScanShort: '🌍 Global Quick Scan (No rename/No media)',
         sidebarGlobalQuickConfirm: 'Start global quick scan to sync all hashes?',
@@ -1958,7 +1958,7 @@ export const i18n = {
         settingsBtn: 'Settings',
         closeSettings: '✖ Close Settings',
         doctorBtn: 'Node Assistant',
-        importBtn: 'Import / Export Workflow (Share Code)',
+        importBtn: 'Import Workflow (Share Code)',
         recipeTitle: 'Workflows',
         recipeBetaNotice: 'Workflow Recipes are still in beta. Before updating the plugin or importing, restoring, deleting, or applying parameters, save the canvas and back up anomalous_recipes and anomalous_parameters under your user workflows directory.',
         recipeClose: 'Close Workflow Recipes',

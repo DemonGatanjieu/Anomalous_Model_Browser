@@ -73,7 +73,7 @@ Open it with **Ctrl + Shift + M**, the floating **📦** button, or **Extensions
 
 #### 4. Workflow Recipes & Parameter Notebooks 🧰
 * **Location**: Open **Creative Workspace (📑)** and switch to **Workflow Recipes**.
-* **Features**: Save graphs with covers, notes, and model hashes. Append recipes to current canvas, inspect parameter differences against outputs, compare versions, and import portable packages. Package export is temporarily unavailable.
+* **Features**: Save graphs with covers, notes, and model hashes. Append recipes to current canvas, inspect parameter differences against outputs, compare versions, and import portable packages. Package and workflow share-code exports are temporarily unavailable.
 
 #### 5. Settings Panel ⚙️
 * **Location**: The Gear icon (**⚙️**) at the bottom-left.
@@ -147,7 +147,7 @@ Open it with **Ctrl + Shift + M**, the floating **📦** button, or **Extensions
 
 #### 4. 工作流配方与参数笔记本 🧰
 * **入口位置**：顶部 **创作工作台 (📑)** ➔ 切换至 **工作流配方**。
-* **主要功能**：保存当前节点图、封面、标签与参数快照；未闭合的局部配方追加到当前画布，可独立运行的整体配方在新画布打开，并支持出图参数差异对比、版本回滚与便携包分享。
+* **主要功能**：保存当前节点图、封面、标签与参数快照；未闭合的局部配方追加到当前画布，可独立运行的整体配方在新画布打开，并支持出图参数差异对比、版本回滚与配方包导入。配方包及工作流分享码导出暂未开放。
 
 #### 5. 个性化配置 (设置面板) ⚙️
 * **入口位置**：侧边栏左下角 **齿轮图标 (⚙️)**。
