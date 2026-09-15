@@ -80,6 +80,7 @@ def _read_metadata(file_path):
         "trainedWords": [],
         "baseModel": "",
         "civitai_url": "",
+        "source_url": "",
         "hash": "",
         "hash_algorithm": "sha256",
         "hash_scope": "file",
@@ -139,6 +140,7 @@ def _read_metadata(file_path):
                     if hash_val: metadata["hash"] = hash_val
                     if "anomalous_custom_name" in data and data["anomalous_custom_name"]: metadata["custom_name"] = data["anomalous_custom_name"]
                     if "anomalous_custom_notes" in data and data["anomalous_custom_notes"]: metadata["custom_notes"] = data["anomalous_custom_notes"]
+                    if "anomalous_source_url" in data and data["anomalous_source_url"]: metadata["source_url"] = data["anomalous_source_url"]
             except Exception:
                 pass
     

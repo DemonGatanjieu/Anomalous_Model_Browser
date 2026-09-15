@@ -410,6 +410,12 @@ app.registerExtension({
                 },
             };
             extraObj.anomalous_hashes = {};
+            const liveSources = (this.extra && this.extra.anomalous_model_sources) ||
+                                (app.graph?.extra && app.graph.extra.anomalous_model_sources) ||
+                                extraObj.anomalous_model_sources || null;
+            if (liveSources && typeof liveSources === 'object') {
+                extraObj.anomalous_model_sources = JSON.parse(JSON.stringify(liveSources));
+            }
             let unscanned_models = [];
 
             if (data.nodes) {

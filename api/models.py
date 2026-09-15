@@ -858,6 +858,7 @@ async def api_update_metadata(request):
         filename = data.get('filename', '')
         custom_name = data.get('custom_name', '')
         custom_notes = data.get('custom_notes', '')
+        custom_source_url = data.get('custom_source_url', None)
         physical_rename_requested = data.get('physical_rename', False)
         try: path_idx = int(data.get('path_idx', 0))
         except: path_idx = 0
@@ -896,8 +897,12 @@ async def api_update_metadata(request):
             if not parsed:
                 return web.json_response({"status": "error", "message": "Failed to parse existing .civitai.info file due to encoding or corruption. Rename aborted to prevent data loss."})
                 
-        info_data["anomalous_custom_name"] = custom_name
-        info_data["anomalous_custom_notes"] = custom_notes
+        if 'custom_name' in data:
+            info_data["anomalous_custom_name"] = custom_name
+        if 'custom_notes' in data:
+            info_data["anomalous_custom_notes"] = custom_notes
+        if custom_source_url is not None:
+            info_data["anomalous_source_url"] = str(custom_source_url).strip()
         
         reset_cover = data.get('reset_cover', False)
         cover_reset = None

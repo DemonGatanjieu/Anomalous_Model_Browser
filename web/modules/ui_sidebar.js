@@ -7,6 +7,7 @@ import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
 import { updateScanProgress, finishScanProgress, failScanProgress } from './scan_progress.js';
+import { openModelSourcesModal } from './ui_model_sources.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -1996,12 +1997,17 @@ export function createDOM() {
                     badge: t('toolboxPlanned')
                 },
                 {
-                    id: 'civitai-jump',
+                    id: 'model-sources',
                     icon: '🌐',
-                    shortTitle: t('toolCivitaiJumpShort'),
-                    title: t('toolCivitaiJumpTitle'),
-                    desc: t('toolCivitaiJumpDesc'),
-                    badge: t('toolboxPlanned')
+                    shortTitle: t('toolModelSourcesShort'),
+                    title: t('toolModelSourcesTitle'),
+                    desc: t('toolModelSourcesDesc'),
+                    badge: null,
+                    isReady: true,
+                    action: () => {
+                        toolboxModal.style.display = 'none';
+                        openModelSourcesModal('workflow');
+                    }
                 },
                 {
                     id: 'hash-recalc',
@@ -2092,6 +2098,7 @@ export function createDOM() {
             this.customToolboxItems.push(item);
             if (this.renderToolboxModal) this.renderToolboxModal();
         };
+        this.openModelSources = (scope = 'workflow') => openModelSourcesModal(scope);
 
         container.appendChild(toolboxModal);
 

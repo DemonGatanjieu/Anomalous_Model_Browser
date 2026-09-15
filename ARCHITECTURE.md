@@ -98,6 +98,9 @@ DOM or live LiteGraph state.
   material-specific metadata and parameter rendering.
 - `ui_doctor.js`, `model_picker.js`, `node_material_actions.js`, and
   `graph_splice.js` own diagnostics and explicit graph changes.
+- `ui_model_sources.js` owns the Model Source Hub (模型来源统一中控中心), providing dual-scope
+  (Workflow and Library) source inspection, external platform jumping, canvas `Note` node generation,
+  and `workflow.extra.anomalous_model_sources` metadata synchronization.
 - `locales.js` is the shared runtime string catalog. Existing inline bilingual
   UI strings remain migration debt; new strings belong in the catalog.
 - `styles.css` owns presentation and theme overrides. Color values, dimensions
