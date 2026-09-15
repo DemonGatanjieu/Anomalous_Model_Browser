@@ -149,6 +149,10 @@ browsing, editing, or already stored data.
 
 ## Prompt Studio ownership
 
+The studio supports copying prompt text and saving combinations to the local
+Material Library. Standalone prompt-plan JSON export has been removed; importing
+existing plan files remains supported by the Material Library transfer center.
+
 The studio has one standalone drawer; the former embedded side/full composer
 and material import drawer are removed. Existing browser integration continues
 to call `openPromptStudio(owner)`, and external prompt dispatch uses
@@ -157,7 +161,7 @@ to call `openPromptStudio(owner)`, and external prompt dispatch uses
 | Module | Owned state and responsibilities |
 | --- | --- |
 | `ui_prompt_composer.js` | Active drawer, docking width/side, trigger visibility and plan-loading request |
-| `ui_prompt_workbench.js` | Owner-backed draft, active role, block editing, ordering, write/copy/save/export |
+| `ui_prompt_workbench.js` | Owner-backed draft, active role, block editing, ordering, write/copy/save |
 | `ui_prompt_source_deck.js` | Source cards, filters, new-card form, preview popover and current sync request |
 | `ui_prompt_inspector.js` | Full-text inspection window, role tab and its translation lifetime |
 | `prompt_studio_data.js` | Starter cards, display categories, draft/block initialization and synthesis |

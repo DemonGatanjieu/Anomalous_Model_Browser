@@ -87,7 +87,7 @@ export function createPromptWorkbench(owner, container, scope, options) {
         };
     }
 
-    // "More" Dropdown Menu (holds Save, New Draft, Tags, Export, Material Sync)
+    // "More" Dropdown Menu (holds Save, New Draft, Tags, Material Sync)
     const moreWrap = text(topActions, 'div', '', 'anomalous-prompt-more-wrap');
     const moreBtn = text(moreWrap, 'button', window.anomalous_browser_lang === 'zh' ? '··· 更多' : '··· More', 'anomalous-btn-ghost anomalous-btn-sm anomalous-prompt-more-btn');
     const moreMenu = text(moreWrap, 'div', '', 'anomalous-prompt-more-menu');
@@ -122,8 +122,6 @@ export function createPromptWorkbench(owner, container, scope, options) {
             showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? `已更新标签 (${draft.tags.length})` : `Tags updated (${draft.tags.length})`);
         }
     };
-
-    const exportBtn = text(moreMenu, 'button', `📤 ${t('promptExportPlan')}`, 'anomalous-prompt-more-item');
 
     const syncLibBtn = text(moreMenu, 'button', `📥 ${window.anomalous_browser_lang === 'zh' ? '同步素材库' : 'Sync Library'}`, 'anomalous-prompt-more-item');
     syncLibBtn.onclick = () => {
@@ -853,37 +851,6 @@ export function createPromptWorkbench(owner, container, scope, options) {
         } finally {
             saveBtn.disabled = false;
         }
-    };
-
-    // Export Plan JSON
-    exportBtn.onclick = () => {
-        closeMoreMenu();
-        if (!draft.name?.trim()) {
-            nameInput.focus();
-            nameInput.classList.add('is-invalid');
-            setTimeout(() => nameInput.classList.remove('is-invalid'), 1200);
-            showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '请先在顶栏输入方案名称！' : 'Please enter preset name first!');
-            return;
-        }
-        syncDraftSynthesizedText(draft);
-        const saved = workbenchDraftToSavedPlan(draft);
-        const exportData = {
-            format: 'anomalous-prompt-plan-v1',
-            version: 2,
-            name: draft.name,
-            tags: draft.tags,
-            plan: saved.plan,
-        };
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        if (blob.size > 2 * 1024 * 1024 || draft.tags.length > 20 || draft.tags.some(tag => tag.length > 60)) {
-            return anomalousAlert(t('promptExportError'));
-        }
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${draft.name || 'prompt-mixer-preset'}.json`;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
     };
 
     // New Draft

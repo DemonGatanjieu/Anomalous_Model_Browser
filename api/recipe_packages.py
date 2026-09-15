@@ -19,6 +19,9 @@ from .recipes import get_recipes_dir
 from .utils import require_filename, resolve_within
 
 
+# Release gate: export stays closed until package validation is complete.
+# Keep the format implementation for existing package/import compatibility.
+RECIPE_PACKAGE_EXPORT_ENABLED = False
 PACKAGE_VERSION = 1
 MAX_UPLOAD_BYTES = 32 * 1024 * 1024
 MAX_ENTRY_COUNT = 256
@@ -457,6 +460,12 @@ def _commit_import(record, payload):
 
 
 async def api_export_recipe_package(request):
+    if not RECIPE_PACKAGE_EXPORT_ENABLED:
+        return web.json_response({
+            "status": "error",
+            "code": "recipe_export_disabled",
+            "message": "Recipe package export is temporarily unavailable",
+        }, status=503)
     try:
         payload = await request.json()
         filename = require_filename(payload.get("filename", ""))

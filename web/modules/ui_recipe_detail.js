@@ -1111,15 +1111,9 @@ function renderOverview(content, owner, recipe, references, finish) {
 
     const heroExport = button(more, '', 'anomalous-btn-ghost');
     heroExport.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${t('recipeExport')}`;
-    heroExport.title = t('recipeExport');
-    heroExport.onclick = async () => {
-        try {
-            await exportRecipePackage(owner.recipeDetailFilename, recipe);
-        } catch (error) {
-            console.error('Could not export recipe package:', error);
-            await anomalousAlert(t('recipeExportError'));
-        }
-    };
+    heroExport.title = t('recipeExportUnavailable');
+    heroExport.setAttribute('aria-label', t('recipeExportUnavailable'));
+    heroExport.disabled = true;
 
     copy.appendChild(overviewActions);
 

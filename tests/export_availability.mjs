@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import { fixture, Element, all } from './ui_fixture.mjs';
+
+const f = fixture();
+const studio = await f.module('ui_prompt_composer.js');
+const owner = {};
+await studio.openPromptStudio(owner);
+await f.flush();
+const workbench = f.document.querySelector('.anomalous-prompt-workbench');
+assert.equal(all(workbench).some(el => el.tagName === 'button' && /export|导出/i.test(el.textContent)), false);
+owner.sidePromptComposerControl.addBlock({ content: 'cinematic light', role: 'positive' });
+await f.button(workbench, '📋').click();
+assert.equal(f.clipboard.at(-1), 'cinematic light');
+const name = workbench.querySelector('.anomalous-prompt-name-input');
+name.value = 'Local combination'; name.oninput();
+f.fetch = async () => ({ ok: true, json: async () => ({ status: 'success', material: { filename: 'local.json' } }) });
+await f.button(workbench, '💾').click();
+const save = f.requests.findLast(([url]) => url.includes('/save_prompt_plan'));
+assert.equal(JSON.parse(save[1].body).plan.positive, 'cinematic light');
+studio.closePromptStudio(owner);
+
+const recipes = await f.module('ui_recipes.js');
+const recipeOwner = { recipeListContainer: new Element('div') };
+recipes.renderRecipeList.call(recipeOwner, [{ filename: 'example.json', data: { name: 'Example', params: {} } }]);
+const exportButton = all(recipeOwner.recipeListContainer).find(el => el.attrs?.['aria-label'] === 'Recipe package export is temporarily unavailable');
+assert.ok(exportButton);
+assert.equal(exportButton.disabled, true);
+await exportButton.click();
+assert.equal(f.requests.some(([url]) => url.includes('/export_recipe_package')), false);
+assert.deepEqual(f.errors, []);
+console.log('Export availability: prompt export absent; copy/local save work; recipe export cannot issue a request.');

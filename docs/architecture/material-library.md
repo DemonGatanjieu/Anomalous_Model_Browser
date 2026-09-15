@@ -278,8 +278,8 @@ the fields; unknown workflow roles are not silently assigned a role.
 Saving creates an independent new snapshot. There is no automatic source sync or
 model binding. A page-session draft survives library navigation and is replaced
 by an existing saved plan only after confirmation; it must be saved before page
-reload. Stale detail requests cannot replace the current draft. Export/import use
-JSON format `anomalous-prompt-plan-v1`; imports are bounded to 2 MiB and validated
+reload. Stale detail requests cannot replace the current draft. Standalone JSON
+export has been removed. Existing prompt JSON imports are bounded to 2 MiB and validated
 by the same save endpoint. The panel also exposes role and target-widget selection,
 beginning/end buttons for a selected node, copy controls and guarded undo.
 

@@ -183,40 +183,6 @@ function appendRecipeCover(parent, url, alt, seed = '') {
     parent.appendChild(image);
 }
 
-async function exportRecipePackage(filename) {
-    const choice = { noLabel: t('recipeDialogNo') };
-    const includeSnapshots = await anomalousConfirm(t('recipeExportSnapshotsConfirm'), 'Anomalous', choice);
-    if (includeSnapshots === null) return;
-    const includeHistory = await anomalousConfirm(t('recipeExportHistoryConfirm'), 'Anomalous', choice);
-    if (includeHistory === null) return;
-    const includeModelNotes = await anomalousConfirm(t('recipeExportModelNotesConfirm'), 'Anomalous', choice);
-    if (includeModelNotes === null) return;
-    const redactIdentity = await anomalousConfirm(t('recipeExportRedactIdentityConfirm'), 'Anomalous', choice);
-    if (redactIdentity === null) return;
-    const includeIdentity = !redactIdentity;
-    const response = await fetch('/anomalous/export_recipe_package', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            filename,
-            include_snapshots: includeSnapshots,
-            include_history: includeHistory,
-            include_identity: includeIdentity,
-            include_model_notes: includeModelNotes,
-        }),
-    });
-    if (!response.ok) throw new Error('recipe export failed');
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${filename.replace(/\.json$/i, '')}.anomalous-recipe.zip`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-}
-
 async function importRecipePackage(owner, file) {
     const inspectResponse = await fetch('/anomalous/import_recipe_package_inspect', {
         method: 'POST',
@@ -1156,12 +1122,10 @@ function createRecipeCard(owner, recipe) {
     exportBtn.className = 'anomalous-recipe-card-mini-btn anomalous-tooltip-target';
     exportBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
     exportBtn.removeAttribute('title');
-    exportBtn.setAttribute('data-tooltip', t('recipeExport'));
+    exportBtn.setAttribute('data-tooltip', t('recipeExportUnavailable'));
+    exportBtn.setAttribute('aria-label', t('recipeExportUnavailable'));
+    exportBtn.disabled = true;
     exportBtn.setAttribute('data-tooltip-pos', 'top');
-    exportBtn.onclick = (e) => {
-        e.stopPropagation();
-        runRecipeCardAction(exportBtn, () => exportRecipePackage(recipe.filename), 'recipeExportError');
-    };
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';

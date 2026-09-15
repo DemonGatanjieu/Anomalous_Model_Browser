@@ -1222,7 +1222,6 @@ function showTransferCenter(owner) {
         } catch (error) { status.textContent = t('promptImportError'); }
         finally { file.value = ''; importPlan.disabled = false; }
     };
-    text(dialog, 'p', t('promptExportLocation'));
     const close = text(dialog, 'button', t('close'), 'anomalous-btn-ghost'); close.onclick = () => dialog.close();
     dialog.onclose = () => dialog.remove(); document.body.appendChild(dialog); dialog.showModal();
 }

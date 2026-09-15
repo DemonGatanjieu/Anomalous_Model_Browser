@@ -77,6 +77,8 @@ tests/*
 !tests/translation_service_contracts.mjs
 !tests/studio_contracts.mjs
 !tests/material_workspace_flow.mjs
+!tests/export_availability.mjs
+!tests/test_export_availability.py
 !tests/model_sources_hub.mjs
 
 # Local diagnostic/test artifacts

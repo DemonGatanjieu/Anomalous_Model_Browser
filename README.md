@@ -73,7 +73,7 @@ Open it with **Ctrl + Shift + M**, the floating **📦** button, or **Extensions
 
 #### 4. Workflow Recipes & Parameter Notebooks 🧰
 * **Location**: Open **Creative Workspace (📑)** and switch to **Workflow Recipes**.
-* **Features**: Save graphs with covers, notes, and model hashes. Append recipes to current canvas, inspect parameter differences against outputs, compare versions, and import/export portable packages.
+* **Features**: Save graphs with covers, notes, and model hashes. Append recipes to current canvas, inspect parameter differences against outputs, compare versions, and import portable packages. Package export is temporarily unavailable.
 
 #### 5. Settings Panel ⚙️
 * **Location**: The Gear icon (**⚙️**) at the bottom-left.

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const all = node => [node, ...node.children.flatMap(all)];
 export class Events {
@@ -95,11 +95,11 @@ export function fixture() {
         if (modules.has(filename)) return modules.get(filename);
         let source;
         if (filename.endsWith('/scripts/app.js')) source = 'export const app = globalThis.app;';
-        else if (filename.endsWith('/ui_dialog.js')) source = 'export async function anomalousAlert(message) { errors.push(message); } export async function anomalousConfirm() { return true; }';
+        else if (filename.endsWith('/ui_dialog.js')) source = 'export async function anomalousAlert(message) { errors.push(message); } export async function anomalousConfirm() { return true; } export async function anomalousPrompt() { return null; }';
         else if (filename.endsWith('/material_feedback.js')) source = 'export function showMaterialSaved() {}';
         else if (filename.endsWith('/ui_gallery_detail.js')) source = 'export function showImageWorkbench() {}';
         else source = fs.readFileSync(filename, 'utf8');
-        const mod = new vm.SourceTextModule(source, { context, identifier: filename });
+        const mod = new vm.SourceTextModule(source, { context, identifier: filename, initializeImportMeta: meta => { meta.url = pathToFileURL(filename).href; } });
         modules.set(filename, mod); return mod;
     };
     state.module = async name => {

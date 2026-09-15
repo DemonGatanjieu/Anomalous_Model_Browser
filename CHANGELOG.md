@@ -2,11 +2,15 @@
 
 ## Unreleased
 
+### Export availability
+- Removed Prompt Studio's JSON export action; copying prompts and saving combinations to the Material Library remain available. Existing prompt JSON files can still be imported.
+- Temporarily disabled Recipe package export in both the UI and API pending further validation. Package imports, workflow share codes, and ordinary image downloads remain available.
+
 ### Material Library
 - Fixed grouped material filters, Recipe scope/tag filters, and prompt studio imports using actual detail payloads. Fixed side-studio draft reset/return state and guarded recipe drops against canvas changes. Recipe model status no longer treats saved hash verification as current availability.
 - Separated the lower-left Material Library from the Recipes/Prompt Notes workspace. Added canvas drag-and-drop: parameter materials replace matching node values, while the simplified prompt panel inserts text at the beginning or end, with undo.
 - Material Library now opens from the lower-left control; Workflow Recipes stays at the upper right. Import/export tools are available from the library's More menu.
-- Added Prompt Combinations: ordered general/specific fragments, enable switches, separate positive/negative content, saved snapshots, and JSON import/export.
+- Added Prompt Combinations: ordered general/specific fragments, enable switches, separate positive/negative content, saved snapshots, and JSON import.
 - Library cards can apply matching parameters to one selected node through the same transaction as Node Assistant, with seed preservation, native-option validation and guarded undo. Prompt combinations support explicit text replacement or append.
 - Material details initially expand prompt cards only; other node parameters render on first expansion. Details omit the complete source workflow, which loads separately when opening a full snapshot. Selected-node materials never return their hidden source graph.
 - Material capture supports PNG workflows, Recipe parameters and Prompt Notes. Applying reference images to LoadImage remains future work.

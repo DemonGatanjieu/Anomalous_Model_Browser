@@ -4,6 +4,21 @@ Read this document for recipe schemas, cards/detail behavior, package handling,
 result galleries, Parameter Notebooks, prompt roles, and the recipe-powered Node
 Assistant.
 
+## Export availability
+
+Recipe package export is temporarily closed pending validation. Card/detail
+buttons are disabled with a localized explanation. The registered
+`POST /anomalous/export_recipe_package` route returns HTTP 503 with code
+`recipe_export_disabled` before reading request JSON or recipe files.
+`RECIPE_PACKAGE_EXPORT_ENABLED` in `api/recipe_packages.py` is a release gate,
+not a user setting. Package format helpers remain available for import and
+compatibility tests; existing imports and local saves are unaffected.
+
+Reopening requires an explicit release decision, package round-trip and failure
+validation, then restoring the frontend export action and enabling the backend
+gate together. Do not reopen exports as a side effect of UX work. Workflow
+share codes are a separate feature and remain available.
+
 ## Product and data model
 
 Workspace contains Prompt Notes, Workflow Recipes, and the Material Library.
