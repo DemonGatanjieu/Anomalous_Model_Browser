@@ -84,17 +84,20 @@ DOM or live LiteGraph state.
   should live in their own modules rather than expanding that method.
 - `ui_update_guide.js` owns the non-intrusive update guide modal (accessible via header icon).
 - `sidebar_actions.js` owns the sidebar bottom action hover-reveal short labels (100ms), singleton dynamic DOM tooltip bubbles (`#anomalous-sidebar-tooltip-bubble`, 600ms), click/pointerdown instant text/tooltip suppression guards, `isBottomModalOpen` tooltip occlusion guards, and anti-flicker pointer stability.
-- `tool_registry.js` centralizes metadata, SVG icons (enlarged 20px crisp vector outlines with 2px stroke, #cbd5e1 contrast), and stable IDs for the 8 catalog tools and 2 fixed anchors (Toolbox and Settings).
+- `tool_registry.js` centralizes metadata, SVG icons (enlarged 20px crisp vector outlines with 2px stroke, #cbd5e1 contrast), and stable IDs for the 9 catalog tools (including Prompt Notes / 提示词笔记) and 2 fixed anchors (Toolbox and Settings).
 - `shortcut_layout.js` provides tool layout utilities and fallbacks. The bottom shortcut bar maintains the clean fixed 4-tool setup (`scan`, `doctor`, `assistant`, `materials`) plus two anchors (`toolbox`, `settings`) housed in prominent 36px buttons with full click/active text suppression and `.is-active` toggled styling.
 - `ui_sidebar.js`'s Toolbox modal strictly filters out all tools already present on the bottom bar, presenting a sleek 216px auto-height utility catalog with compact, frameless 40px tiles, downward anchor caret pointing to the toolbox trigger button, 0.18s smooth spring pop-in animation, clean click action execution, and zero obstructive text or beta footers.
 - `ui_grid.js` and model-detail modules own model presentation; `ui_gallery.js`
   and `ui_gallery_detail.js` own generated-image browsing and inspection.
 - `ui_recipes.js` / `ui_recipe_detail.js`, `ui_notebooks.js`, and `ui_materials.js`
-  own their respective workspace surfaces and persistence flows. `ui_recipe_detail.js`
+  own their respective workspace surfaces and persistence flows. `ui_notebooks.js`
+  owns structured Prompt Notes (提示词笔记), integrated as a standard tool in the Toolbox
+  with defensive workspace return state restoration. `ui_recipe_detail.js`
   owns the Workflow Recipe detail workspace, including Overview prompt showcase (with `entry.text` fallback),
-  the responsive Parameter Presets workspace (featuring a `clamp(230px, 24vw, 290px)` sidebar with guarded card actions,
-  uncluttered console action bars with deferred status feedback, `minmax(130px, 1fr)` Bento Grid with universal click-to-copy,
-  LoRA cards with flexbox truncation guards, and sticky editor headers), as well as Versions timeline and Recipe Gallery.
+  the responsive Parameter Presets workspace (featuring default-expanded raw node parameter inspection,
+  a `clamp(230px, 24vw, 290px)` sidebar with guarded card actions, uncluttered console action bars with deferred status feedback,
+  `minmax(130px, 1fr)` Bento Grid with universal click-to-copy, LoRA cards with flexbox truncation guards,
+  and sticky editor headers), as well as Versions timeline and Recipe Gallery.
 - `ui_prompt_composer.js` owns the standalone Prompt Studio drawer. Its child
   views are `ui_prompt_source_deck.js`, `ui_prompt_workbench.js`, and
   `ui_prompt_inspector.js`. Assembly plan data, track-vs-role separation, and

@@ -2009,6 +2009,11 @@ export function createDOM() {
                 case 'model-sources':
                     openModelSourcesModal('workflow');
                     break;
+                case 'prompt-notes':
+                    if (typeof this.showNotebooks === 'function') {
+                        this.showNotebooks();
+                    }
+                    break;
                 default: {
                     const custom = (this.customToolboxItems || []).find(it => it.id === toolId);
                     if (custom && typeof custom.action === 'function') {
@@ -2132,6 +2137,7 @@ export function createDOM() {
                 'prompt-studio': '🎛️',
                 'prompt-translator': '🌐',
                 'model-sources': '🔗',
+                'prompt-notes': '📝',
             };
 
             toolboxTools.forEach(tool => {

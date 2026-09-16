@@ -2012,10 +2012,15 @@ function renderRawNodesLazy(parent, source, options = {}) {
 
     const details = document.createElement('details');
     details.className = 'anomalous-recipe-advanced-info anomalous-recipe-raw-nodes-details';
+    details.open = true;
 
     const summary = document.createElement('summary');
     summary.className = 'anomalous-recipe-raw-nodes-summary';
-    summary.textContent = `${t('recipeRawNodesToggle')} (${ordered.length} ${t('recipeRawNodesCount')}) ▾`;
+    const updateSummary = () => {
+        const arrow = details.open ? '▾' : '▸';
+        summary.textContent = `${arrow} ${t('recipeRawNodesToggle')} (${ordered.length} ${t('recipeRawNodesCount')})`;
+    };
+    updateSummary();
     details.appendChild(summary);
 
     let selecting = false;
@@ -2070,7 +2075,7 @@ function renderRawNodesLazy(parent, source, options = {}) {
     nodeList.style.marginTop = '12px';
 
     let renderedCount = 0;
-    const PAGE_SIZE = 10;
+    const PAGE_SIZE = 15;
 
     const renderNextBatch = () => {
         const batch = ordered.slice(renderedCount, renderedCount + PAGE_SIZE);
@@ -2153,6 +2158,7 @@ function renderRawNodesLazy(parent, source, options = {}) {
     };
 
     details.ontoggle = () => {
+        updateSummary();
         if (details.open && renderedCount === 0) {
             renderNextBatch();
         }
@@ -2160,6 +2166,9 @@ function renderRawNodesLazy(parent, source, options = {}) {
 
     details.appendChild(nodeList);
     parent.appendChild(details);
+    if (details.open && renderedCount === 0) {
+        renderNextBatch();
+    }
 }
 
 function renderPromptSection(parent, owner, recipe, source, rerender, onSaveNodes) {

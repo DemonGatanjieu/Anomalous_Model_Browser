@@ -65,9 +65,22 @@ export function closeWorkspace() {
 
 
 export async function showNotebooks() {
+        this.recipeDetailFinish?.('closed');
+        this.modal?.classList.add('visible');
+        if (typeof this.setActiveHeaderTab === 'function') this.setActiveHeaderTab(null);
+        if (this.nbPanel && this.nbPanel.style.display !== 'flex' && !this.workspaceReturnState) {
+            this.workspaceReturnState = Object.fromEntries([
+                ['grid', this.grid], ['detail', this.detailPanel], ['gallery', this.galleryPanel],
+                ['doctor', this.doctorPanel], ['assistant', this.assistantPanel],
+            ].filter(([, panel]) => panel).map(([key, panel]) => [key, panel.style.display]));
+        }
+        for (const panel of [this.grid, this.detailPanel, this.galleryPanel, this.doctorPanel, this.assistantPanel, this.paramPanel]) {
+            if (panel) panel.style.display = 'none';
+        }
         if (this.materialContainer) this.materialContainer.style.display = 'none';
         if (this.recipeContainer) this.recipeContainer.style.display = 'none';
         if (this.notebookContainer) this.notebookContainer.style.display = 'flex';
+        if (this.nbPanel) this.nbPanel.style.display = 'flex';
         if (this.nbInitialized) {
             this.nbPanel.style.display = 'flex';
             if (this.notebookBody) this.notebookBody.style.display = 'flex';

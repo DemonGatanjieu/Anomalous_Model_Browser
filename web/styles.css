@@ -6809,13 +6809,14 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: #cbd5e1;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    white-space: nowrap;
-    border: 1px solid transparent;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.anomalous-recipe-lazy-expand-btn:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.18);
 }
 
 .anomalous-recipe-readiness-pill.is-ready {
