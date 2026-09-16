@@ -92,7 +92,9 @@ DOM or live LiteGraph state.
 - `ui_recipes.js` / `ui_recipe_detail.js`, `ui_notebooks.js`, and `ui_materials.js`
   own their respective workspace surfaces and persistence flows. `ui_notebooks.js`
   owns structured Prompt Notes (提示词笔记), integrated as a standard tool in the Toolbox
-  with defensive workspace return state restoration. `ui_recipe_detail.js`
+  with defensive workspace return state restoration, and redesigned with companion models
+  (Base architecture, Main checkpoint, and LoRA stack) prominently positioned at the top of the editor,
+  followed by the core prompt composer and material library archiving. `ui_recipe_detail.js`
   owns the Workflow Recipe detail workspace, including Overview prompt showcase (with `entry.text` fallback),
   the responsive Parameter Presets workspace (featuring default-expanded raw node parameter inspection,
   a `clamp(230px, 24vw, 290px)` sidebar with guarded card actions, uncluttered console action bars with deferred status feedback,

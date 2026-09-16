@@ -1844,6 +1844,8 @@ body:has(#anomalous-settings-hub-modal[style*="display: flex"]) #anomalous-sideb
     gap: 10px;
     flex-wrap: wrap;
     padding: 10px 0;
+    max-height: 240px;
+    overflow-y: auto;
     content-visibility: auto;
     contain-intrinsic-size: 70px;
 }
@@ -1952,6 +1954,132 @@ body:has(#anomalous-settings-hub-modal[style*="display: flex"]) #anomalous-sideb
     border-radius: 8px;
     padding: 12px;
     margin-bottom: 15px;
+}
+
+/* Notebook Model Fold & Sections Enhancement */
+.anomalous-nb-models-fold {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 0;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+}
+
+.anomalous-nb-models-fold[open] {
+    border-color: rgba(139, 92, 246, 0.35);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.anomalous-nb-fold-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    user-select: none;
+    list-style: none;
+    transition: background 0.18s;
+}
+
+.anomalous-nb-fold-summary::-webkit-details-marker {
+    display: none;
+}
+
+.anomalous-nb-fold-summary:hover {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.anomalous-nb-models-badge {
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.anomalous-nb-fold-arrow {
+    color: #94a3b8;
+    font-size: 0.88rem;
+}
+
+.anomalous-nb-models-fold .anomalous-nb-section {
+    background: transparent;
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0;
+    padding: 16px;
+    margin-bottom: 0;
+}
+
+.anomalous-nb-prompt-section {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.anomalous-nb-capture-fold {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 0;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+.anomalous-nb-capture-fold > summary {
+    padding: 11px 16px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: #94a3b8;
+    list-style: none;
+    transition: background 0.18s, color 0.18s;
+}
+
+.anomalous-nb-capture-fold > summary:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #f1f5f9;
+}
+
+.anomalous-nb-capture-content {
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.anomalous-nb-tools-fold {
+    margin-top: 12px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.anomalous-nb-tools-fold > summary {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.anomalous-nb-tools-fold > summary:hover {
+    color: #cbd5e1;
+}
+
+.anomalous-nb-selected-badge {
+    font-size: 0.78rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .anomalous-nb-visual-tag {

@@ -280,9 +280,19 @@ export function renderNotebookEditor() {
         const tb = document.createElement('div');
         tb.className = 'anomalous-nb-toolbar';
 
+        const titleBox = document.createElement('div');
+        titleBox.style.display = 'flex';
+        titleBox.style.alignItems = 'center';
+        titleBox.style.gap = '8px';
+        const titleIcon = document.createElement('span');
+        titleIcon.textContent = '📝';
+        titleIcon.style.fontSize = '1.2rem';
         const titleArea = document.createElement('h3');
         titleArea.textContent = this.currentNotebook.name;
         titleArea.style.margin = '0';
+        titleArea.style.fontSize = '1.2rem';
+        titleArea.style.fontWeight = '700';
+        titleBox.append(titleIcon, titleArea);
 
         const rightBtns = document.createElement('div');
         rightBtns.className = 'anomalous-notebook-actions';
@@ -358,22 +368,54 @@ export function renderNotebookEditor() {
         moreActions.append(moreSummary, delContainer);
         rightBtns.appendChild(moreActions);
 
-        tb.appendChild(titleArea);
+        tb.appendChild(titleBox);
         tb.appendChild(rightBtns);
 
         // Settings / Models
         const modelSection = document.createElement('div');
         modelSection.className = 'anomalous-nb-section';
         const modelsFold = document.createElement('details');
-        modelsFold.className = 'anomalous-notebook-fold';
+        modelsFold.className = 'anomalous-notebook-fold anomalous-nb-models-fold';
+        modelsFold.open = true;
+
         const modelsLabel = document.createElement('summary');
-        modelsLabel.textContent = t('notebookCompanionModels');
+        modelsLabel.className = 'anomalous-nb-fold-summary';
+
+        const modelsTitleLeft = document.createElement('div');
+        modelsTitleLeft.style.display = 'flex';
+        modelsTitleLeft.style.alignItems = 'center';
+        modelsTitleLeft.style.gap = '8px';
+
+        const modelsTitleText = document.createElement('span');
+        modelsTitleText.textContent = `📦 ${t('notebookCompanionModels')}`;
+        modelsTitleText.style.fontWeight = '600';
+
+        const modelsBadge = document.createElement('span');
+        modelsBadge.className = 'anomalous-nb-models-badge';
+
+        modelsTitleLeft.append(modelsTitleText, modelsBadge);
+
+        const arrowIcon = document.createElement('span');
+        arrowIcon.className = 'anomalous-nb-fold-arrow';
+
+        modelsLabel.append(modelsTitleLeft, arrowIcon);
         modelsFold.append(modelsLabel, modelSection);
 
         // Base Model
         const baseRow = document.createElement('div');
-        baseRow.className = 'anomalous-nb-row';
-        baseRow.innerHTML = `<strong>${t('baseModel')}</strong>`;
+        baseRow.className = 'anomalous-nb-row anomalous-nb-base-row';
+        baseRow.style.display = 'flex';
+        baseRow.style.alignItems = 'center';
+        baseRow.style.gap = '10px';
+        baseRow.style.marginBottom = '12px';
+
+        const baseTitle = document.createElement('span');
+        baseTitle.style.fontWeight = '600';
+        baseTitle.style.fontSize = '0.88rem';
+        baseTitle.style.color = '#cbd5e1';
+        baseTitle.textContent = `${t('baseModel')}:`;
+        baseRow.appendChild(baseTitle);
+
         const baseSelect = document.createElement('select');
         baseSelect.className = 'anomalous-nb-select';
         const buildSelect = (bases) => {
@@ -385,6 +427,7 @@ export function renderNotebookEditor() {
                 baseSelect.appendChild(opt);
             });
             if (!data.baseModel && bases.length > 0) data.baseModel = bases[0];
+            updateModelsSummary();
         };
 
         if (this.baseModelsCache) {
@@ -414,7 +457,18 @@ export function renderNotebookEditor() {
         mainBox.className = 'anomalous-nb-gallery-box';
         const mainRow = document.createElement('div');
         mainRow.className = 'anomalous-nb-row';
-        mainRow.innerHTML = `<strong>${t('mainModel')}</strong>`;
+        mainRow.style.display = 'flex';
+        mainRow.style.alignItems = 'center';
+        mainRow.style.justifyContent = 'space-between';
+        mainRow.style.marginBottom = '8px';
+
+        const mainLabel = document.createElement('strong');
+        mainLabel.textContent = `🎨 ${t('mainModel')}`;
+        const mainSelectedBadge = document.createElement('span');
+        mainSelectedBadge.className = 'anomalous-nb-selected-badge';
+        mainSelectedBadge.style.fontSize = '0.8rem';
+        mainSelectedBadge.style.color = '#c084fc';
+        mainRow.append(mainLabel, mainSelectedBadge);
 
         const mainGallery = document.createElement('div');
         mainGallery.className = 'anomalous-nb-gallery-wrap';
@@ -427,7 +481,18 @@ export function renderNotebookEditor() {
         loraBox.className = 'anomalous-nb-gallery-box';
         const loraRow = document.createElement('div');
         loraRow.className = 'anomalous-nb-row';
-        loraRow.innerHTML = `<strong>Loras</strong>`;
+        loraRow.style.display = 'flex';
+        loraRow.style.alignItems = 'center';
+        loraRow.style.justifyContent = 'space-between';
+        loraRow.style.marginBottom = '8px';
+
+        const loraLabel = document.createElement('strong');
+        loraLabel.textContent = `⚡ LoRA ${t('loras') || '模型'}`;
+        const loraSelectedBadge = document.createElement('span');
+        loraSelectedBadge.className = 'anomalous-nb-selected-badge';
+        loraSelectedBadge.style.fontSize = '0.8rem';
+        loraSelectedBadge.style.color = '#fbbf24';
+        loraRow.append(loraLabel, loraSelectedBadge);
 
         const loraGallery = document.createElement('div');
         loraGallery.className = 'anomalous-nb-gallery-wrap';
@@ -439,9 +504,26 @@ export function renderNotebookEditor() {
         modelSection.appendChild(mainBox);
         modelSection.appendChild(loraBox);
 
+        const updateModelsSummary = () => {
+            const arrow = modelsFold.open ? '▾' : '▸';
+            arrowIcon.textContent = arrow;
+            const baseInfo = data.baseModel || 'SDXL';
+            const mainInfo = data.mainModel?.filename ? ` · ${data.mainModel.filename}` : '';
+            const loraCount = data.loras?.length ? ` · ${data.loras.length} LoRA` : '';
+            modelsBadge.textContent = `${baseInfo}${mainInfo}${loraCount}`;
+            if (mainSelectedBadge) {
+                mainSelectedBadge.textContent = data.mainModel?.filename ? `✓ ${data.mainModel.filename}` : (t('recipeDiffNone') || '未选择');
+            }
+            if (loraSelectedBadge) {
+                loraSelectedBadge.textContent = data.loras?.length ? `✓ ${data.loras.length} LoRA` : (t('recipeDiffNone') || '未选择');
+            }
+        };
+        this.updateNotebookModelsSummary = updateModelsSummary;
+        updateModelsSummary();
+
         // Prompt Section
         const promptSec = document.createElement('div');
-        promptSec.className = 'anomalous-nb-section';
+        promptSec.className = 'anomalous-nb-section anomalous-nb-prompt-section';
 
         // Toolbar
         const pToolbar = document.createElement('div');
@@ -649,18 +731,23 @@ export function renderNotebookEditor() {
         };
 
         const promptTools = document.createElement('details');
-        promptTools.className = 'anomalous-notebook-fold';
+        promptTools.className = 'anomalous-notebook-fold anomalous-nb-tools-fold';
         const toolsLabel = document.createElement('summary');
-        toolsLabel.textContent = t('notebookMore');
+        toolsLabel.textContent = `🔍 ${t('recipeSearchAndReplace') || (window.anomalous_browser_lang === 'zh' ? '词条替换与目标语言' : 'Find, Replace & Language')} ▾`;
         promptTools.append(toolsLabel, pToolbar);
 
         const capture = document.createElement('details');
-        capture.className = 'anomalous-notebook-fold';
+        capture.className = 'anomalous-notebook-fold anomalous-nb-capture-fold';
         const captureLabel = document.createElement('summary');
-        captureLabel.textContent = t('materialSaveSnapshotShort');
+        captureLabel.textContent = `💾 ${t('materialSaveSnapshotShort')} ▾`;
+        const captureContent = document.createElement('div');
+        captureContent.className = 'anomalous-nb-capture-content';
         const captureHint = document.createElement('p');
+        captureHint.style.margin = '0 0 10px 0';
+        captureHint.style.color = '#94a3b8';
+        captureHint.style.fontSize = '0.82rem';
         captureHint.textContent = t('materialNoteScopeHint');
-        capture.append(captureLabel, captureHint);
+        captureContent.append(captureHint);
         const sourceFilename = this.currentNotebook.filename;
         const sourceName = this.currentNotebook.name;
         for (const [scope, key] of [['note', 'materialSaveNoteBundle'], ['prompt', 'materialSavePromptText']]) {
@@ -693,26 +780,32 @@ export function renderNotebookEditor() {
                     await anomalousAlert(t('materialSaveError'));
                 } finally { saveMaterial.disabled = false; }
             };
-            capture.appendChild(saveMaterial);
+            captureContent.appendChild(saveMaterial);
         }
+        capture.append(captureLabel, captureContent);
 
         promptSec.appendChild(toggleRow);
         promptSec.appendChild(rawArea);
         promptSec.appendChild(dualPane);
         promptSec.appendChild(promptTools);
 
-        this.nbEditor.appendChild(tb);
-        this.nbEditor.appendChild(promptSec);
-        this.nbEditor.appendChild(capture);
-        this.nbEditor.appendChild(modelsFold);
+        // Put companion models at the very top under the toolbar
+        this.nbEditor.replaceChildren(tb, modelsFold, promptSec, capture);
 
         // Fetch compatible models and fill galleries
         let modelsLoaded = false;
-        modelsFold.ontoggle = () => {
-            if (!modelsFold.open || modelsLoaded) return;
+        const loadModels = () => {
+            if (modelsLoaded) return;
             modelsLoaded = true;
             this.fillNotebookGalleries(data.baseModel, mainGallery, loraGallery, data);
         };
+        modelsFold.ontoggle = () => {
+            if (this.updateNotebookModelsSummary) this.updateNotebookModelsSummary();
+            if (modelsFold.open) loadModels();
+        };
+        if (modelsFold.open) {
+            loadModels();
+        }
     }
 
 
@@ -751,8 +844,9 @@ export function fillNotebookGalleries(baseModel, mainGallery, loraGallery, data)
                             }
 
                             card.onclick = () => {
-                                data.mainModel = m;
+                                data.mainModel = (data.mainModel && data.mainModel.filename === m.filename) ? null : m;
                                 this.saveCurrentNotebook();
+                                this.updateNotebookModelsSummary?.();
                                 buildMainDOM(models); // re-render just the main gallery
                             };
                             mainGallery.appendChild(card);
@@ -795,6 +889,7 @@ export function fillNotebookGalleries(baseModel, mainGallery, loraGallery, data)
                                     data.loras.push(m);
                                 }
                                 this.saveCurrentNotebook();
+                                this.updateNotebookModelsSummary?.();
                                 buildLoraDOM(models); // re-render just the lora gallery
                             };
                             loraGallery.appendChild(card);
