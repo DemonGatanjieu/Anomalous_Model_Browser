@@ -2084,17 +2084,7 @@ export function createDOM() {
             titleText.style.fontSize = '10.5px';
             titleText.style.color = '#fff';
 
-            const betaBadge = document.createElement('span');
-            betaBadge.textContent = 'Hub';
-            betaBadge.style.fontSize = '8px';
-            betaBadge.style.padding = '0.5px 3.5px';
-            betaBadge.style.borderRadius = '3px';
-            betaBadge.style.background = 'rgba(255, 255, 255, 0.08)';
-            betaBadge.style.color = '#a1a1aa';
-            betaBadge.style.fontWeight = '500';
-
             titleBox.appendChild(titleText);
-            titleBox.appendChild(betaBadge);
 
             const closeModalBtn = document.createElement('div');
             closeModalBtn.innerHTML = '&times;';
@@ -2171,21 +2161,6 @@ export function createDOM() {
             });
 
             toolboxModal.appendChild(gridContainer);
-
-            const footerRow = document.createElement('div');
-            footerRow.className = 'anomalous-toolbox-footer-row';
-            footerRow.style.justifyContent = 'center';
-
-            const hintFooter = document.createElement('span');
-            hintFooter.textContent = window.anomalous_browser_lang === 'zh' ? '💡 实用运维工具持续扩充中' : '💡 Utility toolset expanding...';
-            hintFooter.style.fontSize = '9px';
-            hintFooter.style.color = '#71717a';
-            hintFooter.style.whiteSpace = 'nowrap';
-            hintFooter.style.overflow = 'hidden';
-            hintFooter.style.textOverflow = 'ellipsis';
-
-            footerRow.appendChild(hintFooter);
-            toolboxModal.appendChild(footerRow);
         };
         this.renderToolboxModal = renderToolboxModal;
         this.registerToolboxItem = (item) => {

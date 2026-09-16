@@ -1032,10 +1032,21 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     left: 72px !important;
 }
 
+@keyframes anomalous-popover-in {
+    0% {
+        opacity: 0;
+        transform: translateY(6px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 #anomalous-toolbox-modal {
     position: absolute;
-    bottom: 52px;
-    left: 10px;
+    bottom: 58px;
+    left: 8px;
     width: 216px;
     min-height: auto;
     box-sizing: border-box;
@@ -1044,16 +1055,32 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 9px;
-    padding: 7px 7px 5px;
+    padding: 7px 7px 6px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
     z-index: 999999 !important;
-    transition: left 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), bottom 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
     display: none;
     flex-direction: column;
     gap: 3px;
-    overflow: hidden !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
+    overflow: visible !important;
+}
+
+#anomalous-toolbox-modal[style*="display: flex"] {
+    animation: anomalous-popover-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: 16px bottom;
+}
+
+#anomalous-toolbox-modal::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 16px;
+    width: 8px;
+    height: 8px;
+    background: rgba(22, 22, 26, 0.98);
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    transform: translateX(-50%) rotate(45deg);
+    pointer-events: none;
 }
 
 #anomalous-toolbox-modal::-webkit-scrollbar {
@@ -1067,11 +1094,15 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     bottom: 12px !important;
 }
 
+.anomalous-sidebar-closed #anomalous-toolbox-modal::after {
+    display: none !important;
+}
+
 .anomalous-toolbox-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 4px;
-    margin: 3px 0 2px;
+    margin: 3px 0 1px;
     align-content: start;
     flex: 1;
 }
@@ -1141,36 +1172,6 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-toolbox-tile-dot.is-ready {
     background: #10b981;
     box-shadow: 0 0 5px rgba(16, 185, 129, 0.75);
-}
-
-.anomalous-toolbox-tile.is-placeholder {
-    background: transparent !important;
-    border: 1px solid transparent !important;
-    opacity: 0.25 !important;
-    cursor: default !important;
-    pointer-events: none !important;
-    transform: none !important;
-    box-shadow: none !important;
-}
-
-.anomalous-toolbox-tile.is-placeholder .anomalous-toolbox-tile-icon {
-    font-size: 11px !important;
-    color: #94a3b8 !important;
-    margin-bottom: 2px !important;
-}
-
-.anomalous-toolbox-tile.is-placeholder .anomalous-toolbox-tile-label {
-    color: #64748b !important;
-    font-size: 8.5px !important;
-}
-
-.anomalous-toolbox-footer-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 4px 2px 1px;
-    margin-top: auto;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* Suppress all tooltips and action labels on clicked/active elements so they never block vision or interaction */
