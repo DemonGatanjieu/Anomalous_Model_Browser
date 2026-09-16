@@ -12,8 +12,10 @@ package import/export and closed Material Library file import. Image/workflow ha
 injection, host saving, and ordinary image downloads remain unchanged.
 
 ComfyUI loads JavaScript in the extension `WEB_DIRECTORY` as ES modules.
-`web/main.js` registers `Anomalous.ModelBrowser`, creates the shared browser
-instance, and binds extracted modules to it. A syntax error or duplicate
+`web/main.js` registers `Anomalous.ModelBrowser` and coordinates host hooks.
+`browser.js` defines the browser class and binds extracted feature methods;
+`browser_entry.js` owns the single browser instance and all entry presentation;
+`interface_settings.js` owns locale and theme preferences. A syntax error or duplicate
 top-level declaration in any imported module can prevent registration and make
 the entire entry disappear. For affected modules, validate syntax and module linking
 via Node's experimental VM modules (`vm.SourceTextModule`) and verify
@@ -28,8 +30,8 @@ transaction helpers remain in focused modules rather than acquiring DOM state.
 `ui_sidebar.js` assembles the browser shell and folder navigation.
 `ui_settings_hub.js` owns settings and model-card preferences, while
 `ui_toolbox.js` owns the catalog, fixed shortcut actions, and tool dispatch.
-`ui_browser_navigation.js` owns shared panel hiding and recoverable detail
-cleanup. `ui_scan_wizard.js` owns scan configuration and scan-launch polling,
+`ui_browser_navigation.js` owns shared panel hiding, recoverable detail cleanup,
+and workspace return. `ui_scan_wizard.js` owns scan configuration and scan-launch polling,
 `ui_folder_manager.js` owns folder visibility/order and presentation-mode
 changes, and `ui_help.js` owns the help dialog. Public entry functions remain
 browser-instance methods so existing actions share current browser state.

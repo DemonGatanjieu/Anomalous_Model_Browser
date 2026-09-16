@@ -78,11 +78,15 @@ DOM or live LiteGraph state.
 
 ### Frontend
 
-- `web/main.js` registers the extension and owns the shared browser instance.
+- `web/main.js` coordinates extension registration. `browser.js` owns the shared
+  browser class and extracted-method wiring; `browser_entry.js` owns the single
+  browser instance plus floating/topbar/menu entry behavior; and
+  `interface_settings.js` owns language and theme preferences.
 - `ui_sidebar.js` creates the browser shell and folder navigation.
   `ui_settings_hub.js` owns settings and model-card preferences;
   `ui_toolbox.js` owns the tool catalog, fixed shortcut bar, and tool dispatch;
-  `ui_browser_navigation.js` owns shared panel hiding/cleanup. Scan-wizard launch
+  `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return.
+  Scan-wizard launch
   and polling live in `ui_scan_wizard.js`; folder visibility/order lives in
   `ui_folder_manager.js`; and help content lives in `ui_help.js`.
 - `ui_update_guide.js` owns the non-intrusive update guide modal (accessible via header icon).
