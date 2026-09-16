@@ -191,4 +191,18 @@
 
 ## 执行记录
 
-- 阶段 0–7：待执行。本文作者仅完成静态结构调查；没有修改运行代码，没有声称任何阶段测试通过。
+- 阶段 0（完成）：以 `c39701773` 为本轮起点，开工时工作区干净。基线通过
+  `shortcut_layout.mjs`、`shortcut_organizer.mjs`、`update_guide.mjs`；未建立真实
+  ComfyUI 点击截图基线，因此后续不能把 DOM 模拟检查称为宿主视觉验收。
+- 阶段 1（完成，`2a53e3edf`）：扫描向导归 `ui_scan_wizard.js`，文件夹管理归
+  `ui_folder_manager.js`，帮助弹窗归 `ui_help.js`。单模型卡片与全局扫描入口共用
+  `openScanWizard()`；新增行为检查覆盖帮助关闭、文件夹取消/保存刷新、单模型扫描请求
+  与向导关闭不取消后台扫描。
+- 阶段 2（进行中，`1e42033ac`）：设置中心与模型卡显示设置归
+  `ui_settings_hub.js`，工具目录、固定快捷栏和工具分派归 `ui_toolbox.js`，公共面板
+  隐藏/配方详情清理归 `ui_browser_navigation.js`。`ui_sidebar.js` 已从约 2,963 行降至
+  约 780 行，`createDOM()` 现在主要保留外壳、顶部导航、窗口交互和子模块装配。
+  已验证设置/工具箱互斥、固定工具过滤、语言刷新及既有快捷栏测试。尚未拆
+  `main.js` 的 `browser.js` / `browser_entry.js` / `interface_settings.js`，也尚未把
+  笔记模块的公共返回协调迁入导航模块；真实 ComfyUI 拖动、停靠与窗口缩放待宿主验收。
+- 阶段 3–7：待执行。
