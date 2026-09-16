@@ -359,12 +359,8 @@ function renderFilterAndSearch(filterBarEl, state, onFilterChange, onSearch) {
     searchInput.oninput = () => onSearch(searchInput.value.trim().toLowerCase());
 }
 
-function renderModelRow(listEl, m, state, onUpdateUrl, onAutoDetect, onSaveLocal) {
-    const card = text(listEl, 'div', '', `anomalous-source-row-item${m.url ? ' has-url' : ' is-missing-url'}`);
-
-    const infoCol = text(card, 'div', '', 'anomalous-source-col-info');
+function renderModelTitle(infoCol, m) {
     const titleRow = text(infoCol, 'div', '', 'anomalous-source-row-title');
-
     text(titleRow, 'span', m.nodeTitle || m.type || 'Model', 'anomalous-source-node-tag');
     text(titleRow, 'strong', m.basename || m.filename, 'anomalous-source-model-name');
 
@@ -373,33 +369,83 @@ function renderModelRow(listEl, m, state, onUpdateUrl, onAutoDetect, onSaveLocal
         missingBadge.title = '当前本地尚未下载安装此模型';
     }
 
+    if (m.isEditing) {
+        const editBadge = text(titleRow, 'span', window.anomalous_browser_lang === 'zh' ? '✏️ 正在编辑' : '✏️ Editing', 'anomalous-source-edit-badge');
+        editBadge.title = window.anomalous_browser_lang === 'zh' ? '当前处于来源链接修改状态' : 'In editing mode';
+    }
+
     if (m.hash) {
         text(titleRow, 'code', `SHA: ${m.hash.slice(0, 10)}...`, 'anomalous-source-hash-chip');
     }
+}
 
-    // Input row with URL and actions
-    const inputRow = text(card, 'div', '', 'anomalous-source-col-input-row');
-
-    const inputWrap = text(inputRow, 'div', '', 'anomalous-source-input-wrap');
-    const urlInput = text(inputWrap, 'input', '', 'anomalous-source-url-input');
+function renderModelUrlInput(inputWrap, m, onRefresh, getActions) {
+    const isLocked = Boolean(m.url && !m.isEditing);
+    const inputClass = `anomalous-source-url-input${isLocked ? ' is-locked' : ''}${m.isEditing ? ' is-editing' : ''}`;
+    const urlInput = text(inputWrap, 'input', '', inputClass);
     urlInput.placeholder = t('modelSourcesUrlPlaceholder');
     urlInput.value = m.url || '';
+    urlInput.readOnly = isLocked;
 
+    const platBadge = text(inputWrap, 'span', m.platform?.name || '', 'anomalous-source-plat-badge');
     if (m.platform) {
-        const platBadge = text(inputWrap, 'span', m.platform.name, 'anomalous-source-plat-badge');
         platBadge.style.color = m.platform.color;
         platBadge.style.borderColor = m.platform.border;
         platBadge.style.backgroundColor = m.platform.bg;
+    } else {
+        platBadge.style.display = 'none';
     }
 
-    urlInput.oninput = () => {
-        m.url = urlInput.value.trim();
-        m.platform = detectPlatform(m.url);
-        onUpdateUrl(m);
-    };
+    if (isLocked) {
+        urlInput.title = window.anomalous_browser_lang === 'zh'
+            ? '当前为展示锁定态。双击或点击右侧【✏️ 修改】可解锁编辑'
+            : 'Protected link. Double-click or click [✏️ Edit] to modify';
+        urlInput.ondblclick = () => {
+            m.isEditing = true;
+            onRefresh();
+        };
+    } else {
+        urlInput.oninput = () => {
+            m.url = urlInput.value.trim();
+            m.platform = detectPlatform(m.url);
+            if (m.platform) {
+                platBadge.style.display = '';
+                platBadge.textContent = m.platform.name;
+                platBadge.style.color = m.platform.color;
+                platBadge.style.borderColor = m.platform.border;
+                platBadge.style.backgroundColor = m.platform.bg;
+            } else {
+                platBadge.style.display = 'none';
+            }
+            const { localBtn, jumpBtn } = getActions();
+            const isDirty = Boolean(m.url && m.url.trim() !== (m.initialUrl || '').trim());
+            if (localBtn) localBtn.style.display = (isDirty && !m.isMissing) ? '' : 'none';
+            if (jumpBtn) jumpBtn.disabled = !m.url;
+        };
+        urlInput.onkeydown = (e) => {
+            if (e.key === 'Escape') {
+                m.url = m.initialUrl;
+                m.platform = detectPlatform(m.url);
+                m.isEditing = false;
+                onRefresh();
+            } else if (e.key === 'Enter') {
+                m.isEditing = false;
+                onRefresh();
+            }
+        };
+        if (m.isEditing) {
+            setTimeout(() => {
+                urlInput.focus();
+                urlInput.select();
+            }, 0);
+        }
+    }
 
-    // Action buttons group
-    const actionsRow = text(inputRow, 'div', '', 'anomalous-source-row-actions');
+    return urlInput;
+}
+
+function renderModelRowActions(actionsRow, m, state, urlInput, onRefresh, onAutoDetect, onSaveLocal) {
+    const isDirty = Boolean(m.url && m.url.trim() !== (m.initialUrl || '').trim());
 
     const jumpBtn = text(actionsRow, 'button', t('modelSourcesJump'), 'anomalous-btn-primary anomalous-btn-sm anomalous-btn-jump');
     jumpBtn.disabled = !m.url;
@@ -410,11 +456,51 @@ function renderModelRow(listEl, m, state, onUpdateUrl, onAutoDetect, onSaveLocal
     detectBtn.title = window.anomalous_browser_lang === 'zh' ? '从本地元数据或 SHA256 自动解析来源' : 'Auto detect from hash or metadata';
     detectBtn.onclick = () => onAutoDetect(m, urlInput);
 
-    if (state.scope === 'workflow' && !m.isMissing) {
-        const localBtn = text(actionsRow, 'button', t('modelSourcesSaveLocal'), 'anomalous-btn-ghost anomalous-btn-sm');
-        localBtn.title = window.anomalous_browser_lang === 'zh' ? '把该链接同时记入本地该模型的 .civitai.info 侧边信息中' : 'Save to local model sidecar info';
+    let editBtn = null;
+    let cancelBtn = null;
+
+    if (m.isEditing) {
+        cancelBtn = text(actionsRow, 'button', window.anomalous_browser_lang === 'zh' ? '✕ 取消' : '✕ Cancel', 'anomalous-btn-ghost anomalous-btn-sm');
+        cancelBtn.title = window.anomalous_browser_lang === 'zh' ? '放弃本次修改并还原' : 'Cancel edits and revert';
+        cancelBtn.onclick = () => {
+            m.url = m.initialUrl;
+            m.platform = detectPlatform(m.url);
+            m.isEditing = false;
+            onRefresh();
+        };
+    } else if (m.url) {
+        editBtn = text(actionsRow, 'button', window.anomalous_browser_lang === 'zh' ? '✏️ 修改' : '✏️ Edit', 'anomalous-btn-ghost anomalous-btn-sm');
+        editBtn.title = window.anomalous_browser_lang === 'zh' ? '解锁输入框以修改来源网址' : 'Unlock to edit URL';
+        editBtn.onclick = () => {
+            m.isEditing = true;
+            onRefresh();
+        };
+    }
+
+    let localBtn = null;
+    if (!m.isMissing) {
+        localBtn = text(actionsRow, 'button', t('modelSourcesSaveLocal'), 'anomalous-btn-primary anomalous-btn-sm anomalous-btn-save-local');
+        localBtn.title = window.anomalous_browser_lang === 'zh' ? '检测到链接已修改，点击记入本地模型的 .civitai.info' : 'Modified link detected. Save to local .civitai.info';
+        localBtn.style.display = isDirty ? '' : 'none';
         localBtn.onclick = () => onSaveLocal(m);
     }
+
+    return { jumpBtn, detectBtn, editBtn, cancelBtn, localBtn };
+}
+
+function renderModelRow(listEl, m, state, onRefresh, onAutoDetect, onSaveLocal) {
+    const card = text(listEl, 'div', '', `anomalous-source-row-item${m.url ? ' has-url' : ' is-missing-url'}`);
+
+    const infoCol = text(card, 'div', '', 'anomalous-source-col-info');
+    renderModelTitle(infoCol, m);
+
+    const inputRow = text(card, 'div', '', 'anomalous-source-col-input-row');
+    const inputWrap = text(inputRow, 'div', '', 'anomalous-source-input-wrap');
+    const actionsRow = text(inputRow, 'div', '', 'anomalous-source-row-actions');
+
+    let actionRefs = {};
+    const urlInput = renderModelUrlInput(inputWrap, m, onRefresh, () => actionRefs);
+    actionRefs = renderModelRowActions(actionsRow, m, state, urlInput, onRefresh, onAutoDetect, onSaveLocal);
 }
 
 function renderFooterBar(footerEl, state, activeModels, onSaveWorkflow, onGenerateNote, onCopySummary) {
@@ -553,6 +639,8 @@ export function openModelSourcesModal(initialScope = 'workflow') {
                         try {
                             await saveSingleModelToLocalSidecar(item, item.url);
                             item.initialUrl = item.url;
+                            item.isEditing = false;
+                            refreshUi();
                             showWorkbenchToast(t('modelSourcesSavedLocal'));
                         } catch (e) {
                             showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '保存至本地失败' : 'Failed to save local');

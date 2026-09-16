@@ -119,9 +119,10 @@ DOM or live LiteGraph state.
   `graph_splice.js` own diagnostics and explicit graph changes.
 - `ui_model_sources.js` owns the Model Source Hub (模型来源统一中控中心), providing dual-scope
   (Workflow and Library) source inspection, external platform jumping, canvas `Note` node generation,
-  `workflow.extra.anomalous_model_sources` metadata synchronization, and automated asynchronous model
+  `workflow.extra.anomalous_model_sources` metadata synchronization, automated asynchronous model
   metadata resolution (`resolveWorkflowModelsMetadata`) via `/anomalous/resolve_paths_to_previews` with
-  local sidecar priority detection.
+  local sidecar priority detection, and protected read-only link display with deliberate edit-mode
+  unlocking and dirty-state dynamic local persistence (hiding redundant `[Save Local]` buttons until links are modified).
 - `locales.js` is the shared runtime string catalog. Existing inline bilingual
   UI strings remain migration debt; new strings belong in the catalog.
 - `styles.css` owns presentation and theme overrides. Color values, dimensions
