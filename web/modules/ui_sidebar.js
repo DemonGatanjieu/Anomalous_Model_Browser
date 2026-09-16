@@ -1949,6 +1949,19 @@ export function createDOM() {
 
             const defaultTools = [
                 {
+                    id: 'workflow-transfer',
+                    icon: '🔄',
+                    shortTitle: t('toolWorkflowTransferShort'),
+                    title: t('toolWorkflowTransferTitle'),
+                    desc: t('toolWorkflowTransferDesc'),
+                    badge: null,
+                    isReady: true,
+                    action: () => {
+                        toolboxModal.style.display = 'none';
+                        window.AMB_WorkflowShare.showUnifiedModal();
+                    }
+                },
+                {
                     id: 'prompt-studio',
                     icon: '🎛️',
                     shortTitle: t('toolPromptStudioShort'),

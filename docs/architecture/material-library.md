@@ -227,7 +227,7 @@ Both containers share the browser's panel area but have separate headers and
 lifecycle state; switching restores the appropriate container. Material Library
 file import and its transfer-center entry are closed. It has no independent
 image-material bundle exporter. The verified workflow share-code Import / Export
-Center lives in Toolbox. Recipe package export remains paused, while prompt-plan
+Center lives in Toolbox. Recipe package import/export remains paused, while prompt-plan
 JSON export has been removed. Local capture/save actions remain available.
 
 Opening the library with exactly one live selected node enables apply mode.

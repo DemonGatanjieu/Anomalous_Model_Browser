@@ -8,7 +8,7 @@ localization, media, or explicit canvas mutations.
 The verified AMB0/AMB1 workflow share-code Import / Export Center is available
 from Toolbox through `window.AMB_WorkflowShare.showUnifiedModal()`. Both directions
 are enabled by explicit product decision. It is independent of the paused Recipe
-package export and closed Material Library file import. Image/workflow hash
+package import/export and closed Material Library file import. Image/workflow hash
 injection, host saving, and ordinary image downloads remain unchanged.
 
 ComfyUI loads JavaScript in the extension `WEB_DIRECTORY` as ES modules.
@@ -204,10 +204,10 @@ Closing during resize releases move/up listeners and restores body cursor and
 selection styles. UI reads are cancelled on close; a save already sent to the
 server may still complete, but must not reopen or repaint a disposed view.
 
-Initial and explicit source synchronization share a paginated loader. List
+Initial and automatic source synchronization share a paginated loader. List
 summaries are identifiers, not prompt bodies: each unique filename is resolved
-through `material_prompt_data.js`. Deduplication uses prompt role and text, so
-the same text can still appear once in each role. A newer sync cancels the old
+through `material_prompt_data.js`. Reconciliation uses source filename and role,
+so equal text from different materials retains each origin. A newer sync cancels the old
 one and only the current result updates the deck.
 
 The translator captures graph, node, widget and widget value before an async

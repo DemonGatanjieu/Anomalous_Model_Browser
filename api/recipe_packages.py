@@ -19,9 +19,10 @@ from .recipes import get_recipes_dir
 from .utils import require_filename, resolve_within
 
 
-# Release gate: export stays closed until package validation is complete.
-# Keep the format implementation for existing package/import compatibility.
+# Release gates: package transfers stay closed until validation is complete.
+# Keep the format implementation for compatibility testing.
 RECIPE_PACKAGE_EXPORT_ENABLED = False
+RECIPE_PACKAGE_IMPORT_ENABLED = False
 PACKAGE_VERSION = 1
 MAX_UPLOAD_BYTES = 32 * 1024 * 1024
 MAX_ENTRY_COUNT = 256
@@ -488,6 +489,11 @@ async def api_export_recipe_package(request):
 
 
 async def api_import_recipe_package_inspect(request):
+    if not RECIPE_PACKAGE_IMPORT_ENABLED:
+        return web.json_response({
+            "status": "error", "code": "recipe_import_disabled",
+            "message": "Recipe package import is temporarily unavailable",
+        }, status=503)
     try:
         raw = await request.content.read(MAX_UPLOAD_BYTES + 1)
         report = await asyncio.to_thread(_inspect_package, raw)
@@ -507,6 +513,11 @@ async def api_import_recipe_package_inspect(request):
 
 
 async def api_import_recipe_package_commit(request):
+    if not RECIPE_PACKAGE_IMPORT_ENABLED:
+        return web.json_response({
+            "status": "error", "code": "recipe_import_disabled",
+            "message": "Recipe package import is temporarily unavailable",
+        }, status=503)
     try:
         payload = await request.json()
         token = payload.get("token")

@@ -4,19 +4,23 @@ Read this document for recipe schemas, cards/detail behavior, package handling,
 result galleries, Parameter Notebooks, prompt roles, and the recipe-powered Node
 Assistant.
 
-## Export availability
+## Package import/export availability
 
-Recipe package export is temporarily closed pending validation. Card/detail
-buttons are disabled with a localized explanation. The registered
+Recipe package import and export are temporarily closed pending validation.
+Topbar/card/detail buttons are disabled with a localized explanation. The registered
 `POST /anomalous/export_recipe_package` route returns HTTP 503 with code
 `recipe_export_disabled` before reading request JSON or recipe files.
 `RECIPE_PACKAGE_EXPORT_ENABLED` in `api/recipe_packages.py` is a release gate,
-not a user setting. Package format helpers remain available for import and
-compatibility tests; existing imports and local saves are unaffected.
+not a user setting. `RECIPE_PACKAGE_IMPORT_ENABLED` likewise gates both
+`POST /anomalous/import_recipe_package_inspect` and
+`POST /anomalous/import_recipe_package_commit`: each returns HTTP 503 with code
+`recipe_import_disabled` before reading uploaded bytes, request JSON, inspection
+tokens or writing files. Package format helpers remain for compatibility tests;
+local saves are unaffected.
 
 Reopening requires an explicit release decision, package round-trip and failure
 validation, then restoring the frontend export action and enabling the backend
-gate together. Do not reopen exports as a side effect of UX work. Workflow
+gates together. Do not reopen package transfers as a side effect of UX work. Workflow
 share-code import/export is a separate, verified feature available from Toolbox.
 
 ## Product and data model

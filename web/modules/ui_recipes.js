@@ -183,32 +183,6 @@ function appendRecipeCover(parent, url, alt, seed = '') {
     parent.appendChild(image);
 }
 
-async function importRecipePackage(owner, file) {
-    const inspectResponse = await fetch('/anomalous/import_recipe_package_inspect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/zip' },
-        body: file,
-    });
-    const inspectPayload = await inspectResponse.json();
-    if (!inspectResponse.ok || inspectPayload.status !== 'success') throw new Error('recipe import inspection failed');
-    const recipeName = inspectPayload.recipe?.name || t('recipeUntitled');
-    const summary = `${t('recipeImportSummary')}\n\n${recipeName}\n${t('recipeImportAssets')}: ${inspectPayload.asset_count || 0}\n${t('recipeImportHistory')}: ${inspectPayload.history_count || 0}`;
-    if (!await anomalousConfirm(summary)) return;
-    let name = recipeName;
-    if ((inspectPayload.existing_names || []).includes(name)) {
-        name = prompt(t('recipeImportRenamePrompt'), `${name} (Imported)`);
-        if (!name?.trim()) return;
-    }
-    const commitResponse = await fetch('/anomalous/import_recipe_package_commit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: inspectPayload.token, collision: 'rename', name: name.trim() }),
-    });
-    const commitPayload = await commitResponse.json();
-    if (!commitResponse.ok || commitPayload.status !== 'success') throw new Error('recipe import commit failed');
-    await owner.refreshRecipes();
-}
-
 async function captureOutputThumbnail(image) {
     const url = outputImageUrl(image);
     if (!url) return null;
@@ -826,22 +800,9 @@ function buildRecipeStudioTopbar(owner) {
     const importBtn = appendText(right, 'button', '', 'anomalous-recipe-topbar-btn');
     importBtn.type = 'button';
     importBtn.innerHTML = `<svg style="width:14px;height:14px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${t('recipeImport')}`;
-    importBtn.onclick = () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.zip,.anomalous-recipe.zip,application/zip';
-        input.onchange = async () => {
-            const file = input.files?.[0];
-            if (!file) return;
-            try {
-                await importRecipePackage(owner, file);
-            } catch (error) {
-                console.error('Could not import Workflow Recipe package:', error);
-                await anomalousAlert(t('recipeImportError'));
-            }
-        };
-        input.click();
-    };
+    importBtn.disabled = true;
+    importBtn.title = t('recipeImportUnavailable');
+    importBtn.setAttribute('aria-label', t('recipeImportUnavailable'));
 
     const closeBtn = appendText(right, 'button', '✕', 'anomalous-recipe-topbar-btn anomalous-recipe-topbar-close');
     closeBtn.type = 'button';

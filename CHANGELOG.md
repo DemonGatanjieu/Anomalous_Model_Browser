@@ -4,7 +4,7 @@
 
 ### Export availability
 - Removed Prompt Studio's JSON export action and closed the Material Library file-import entry; copying prompts and local saves remain available.
-- Recipe package export remains disabled in the UI and API. The verified AMB0/AMB1 workflow Import / Export Center is restored and moved to Toolbox. Recipe package import, ordinary downloads, and image/workflow hash metadata are unchanged.
+- Recipe package import/export is disabled in the UI and API, including both upload inspection and import commit. The verified AMB0/AMB1 workflow Import / Export Center is restored in Toolbox as the only active import/export center. Ordinary downloads and image/workflow hash metadata are unchanged.
 - Studio source cards automatically follow library additions, edits and deletions, display their origin, and cannot be deleted from the studio. Failed synchronization preserves existing cards; mixer copies remain editable.
 
 ### Material Library

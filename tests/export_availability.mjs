@@ -30,8 +30,15 @@ assert.ok(exportButton);
 assert.equal(exportButton.disabled, true);
 await exportButton.click();
 assert.equal(f.requests.some(([url]) => url.includes('/export_recipe_package')), false);
+const recipeWorkspace = { nbPanel: new Element('div'), refreshRecipes: async () => {} };
+await recipes.showRecipes.call(recipeWorkspace);
+const importPackage = all(recipeWorkspace.recipeContainer).find(el => el.attrs?.['aria-label'] === 'Recipe package import is temporarily unavailable');
+assert.ok(importPackage);
+assert.equal(importPackage.disabled, true);
+await importPackage.click();
+assert.equal(f.requests.some(([url]) => url.includes('/import_recipe_package')), false);
 assert.deepEqual(f.errors, []);
-console.log('Export availability: prompt export absent; copy/local save work; recipe export cannot issue a request.');
+console.log('Transfer availability: prompt export absent; copy/local save work; recipe import/export cannot issue a request.');
 
 // Evaluate the existing share object independently of unrelated host bootstrap.
 const main = fs.readFileSync(new URL('../web/main.js', import.meta.url), 'utf8');
