@@ -21,14 +21,11 @@ export function closeUpdateGuide(owner, acknowledge = false) {
         acknowledgedThisSession.add(current.id);
         try { localStorage.setItem(storageKey(current.id), '1'); }
         catch (error) { console.warn('[AMB] Update guide dismissal is saved for this session only.', error); }
-        if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
-            window.dispatchEvent(new CustomEvent('anomalous-update-guide-acknowledged', { detail: { id: current.id } }));
-        }
     }
     current.scope.dispose();
 }
 
-/** Automatic on browser open; force replays from Help. No graph or file writes. */
+/** Opened only by explicit user action in the header or Help. No graph or file writes. */
 export function showUpdateGuide(owner, { force = false, guide = CURRENT_UPDATE_GUIDE } = {}) {
     if (!owner.modal?.classList.contains('visible')) return false;
     if (!validateUpdateGuide(guide, i18n)) {

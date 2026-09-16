@@ -11863,6 +11863,8 @@ button:hover .anomalous-btn-icon {
 }
 
 #anomalous-sidebar-actions {
+    position: relative;
+    overflow: visible;
     display: flex;
     align-items: center;
     justify-content: space-around;
@@ -11872,6 +11874,7 @@ button:hover .anomalous-btn-icon {
 }
 
 #anomalous-sidebar-actions button {
+    position: relative;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -11883,24 +11886,19 @@ button:hover .anomalous-btn-icon {
     color: var(--amb-text-muted, #9ca3af) !important;
     background: transparent !important;
     border: 1px solid transparent !important;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
 
 #anomalous-sidebar-actions button:hover {
     color: #ffffff !important;
     background: rgba(255, 255, 255, 0.08) !important;
     border: 1px solid rgba(255, 255, 255, 0.16) !important;
-    transform: translateY(-1px);
+    transform: none;
     box-shadow: none;
 }
 
 #anomalous-sidebar-actions button svg {
-    transition: transform 0.2s ease, color 0.2s ease;
-}
-
-#anomalous-sidebar-actions button:hover svg {
-    transform: scale(1.08);
-    color: #ffffff !important;
+    transition: opacity 0.15s ease;
 }
 
 /* Abyssal Scarlet Mode overrides for Task 8 icon buttons (Sharp Borders & Inner Shadow) */
@@ -11942,12 +11940,6 @@ button:hover .anomalous-btn-icon {
 }
 
 /* 11. Task 9: Master Container Geometric Details, Watermarks & Floating Tooltips */
-
-/* Empty space watermark on sidebar bottom */
-#anomalous-sidebar-actions {
-    position: relative;
-    overflow: hidden;
-}
 
 #anomalous-sidebar-actions::before {
     display: none !important;
@@ -13957,295 +13949,101 @@ button:hover .anomalous-btn-icon {
 }
 
 /* =============================================================================
-   UPDATE GUIDE NOTICE INDICATOR (RESTRAINED AMBER BREATH)
-   ============================================================================= */
-#anomalous-header button.anomalous-update-notice-btn {
-    background: rgba(245, 158, 11, 0.12) !important;
-    border-color: rgba(245, 158, 11, 0.38) !important;
-    color: #fbbf24 !important;
-    padding: 0 9px 0 6px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.3px !important;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, transform 0.3s ease;
-    animation: anomalous-amber-breath 3.2s ease-in-out infinite;
-}
-
-#anomalous-header button.anomalous-update-notice-btn:hover {
-    background: rgba(245, 158, 11, 0.22) !important;
-    border-color: rgba(245, 158, 11, 0.65) !important;
-    color: #ffffff !important;
-    transform: translateY(-1px);
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.35) !important;
-    animation: none;
-}
-
-.anomalous-update-notice-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: #f59e0b;
-    color: #18181b;
-    font-size: 10px;
-    transition: border-color 0.15s ease;
-}
-
-.anomalous-sources-search-input:focus {
-    border-color: #38bdf8;
-}
-
-.anomalous-sources-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 14px 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.anomalous-source-row-item {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 8px;
-    padding: 10px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.anomalous-source-row-item.has-url {
-    border-left: 3px solid #10b981;
-}
-
-.anomalous-source-row-item.is-missing-url {
-    border-left: 3px solid #f59e0b;
-}
-
-.anomalous-source-row-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.anomalous-source-node-tag {
-    font-size: 0.72rem;
-    padding: 1px 6px;
-    border-radius: 4px;
-    background: rgba(244, 63, 94, 0.15);
-    border: 1px solid rgba(244, 63, 94, 0.3);
-    color: #fb7185;
-    font-family: monospace;
-}
-
-.anomalous-source-model-name {
-    font-size: 0.88rem;
-    color: #f1f5f9;
-    word-break: break-all;
-}
-
-.anomalous-source-badge-danger {
-    font-size: 0.7rem;
-    padding: 1px 5px;
-    border-radius: 4px;
-    background: rgba(239, 68, 68, 0.2);
-    border: 1px solid rgba(239, 68, 68, 0.4);
-    color: #f87171;
-}
-
-.anomalous-source-hash-chip {
-    font-size: 0.72rem;
-    color: #64748b;
-    margin-left: auto;
-    font-family: monospace;
-}
-
-.anomalous-source-col-input-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.anomalous-source-input-wrap {
-    flex: 1;
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.anomalous-source-url-input {
-    width: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    color: #e2e8f0;
-    font-size: 0.82rem;
-    padding: 6px 10px;
-    padding-right: 96px;
-    outline: none;
-    box-sizing: border-box;
-    font-family: monospace;
-}
-
-.anomalous-source-url-input:focus {
-    border-color: #38bdf8;
-    background: rgba(0, 0, 0, 0.6);
-}
-
-.anomalous-source-plat-badge {
-    position: absolute;
-    right: 6px;
-    font-size: 0.7rem;
-    font-weight: 500;
-    padding: 2px 7px;
-    border-radius: 4px;
-    border: 1px solid;
-    pointer-events: none;
-}
-
-.anomalous-source-row-actions {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.anomalous-btn-jump {
-    background: linear-gradient(135deg, #0284c7, #0369a1);
-    border: 1px solid rgba(56, 189, 248, 0.4);
-    color: #fff;
-}
-
-.anomalous-btn-jump:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-.anomalous-sources-footer {
-    padding: 10px 18px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(18, 20, 28, 0.95);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-shrink: 0;
-}
-
-.anomalous-sources-footer-stats {
-    font-size: 0.82rem;
-    color: #94a3b8;
-}
-
-.anomalous-sources-footer-actions {
-    display: flex;
-    gap: 8px;
-}
-
-.anomalous-sources-empty {
-    padding: 40px 20px;
-    text-align: center;
-    color: #94a3b8;
-    font-size: 0.9rem;
-}
-
-/* =============================================================================
    UPDATE GUIDE NOTICE INDICATOR (CLEAN MONOCHROME TECH)
    ============================================================================= */
+/* Header skin uses important padding/colors; keep this control square within that skin. */
 #anomalous-header button.anomalous-update-notice-btn {
-    background: rgba(255, 255, 255, 0.06) !important;
+    width: 32px;
+    min-width: 32px;
+    padding: 0 !important;
+    background: transparent !important;
     border-color: rgba(255, 255, 255, 0.15) !important;
-    color: #e2e8f0 !important;
-    padding: 0 10px 0 7px !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.2px !important;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, transform 0.3s ease;
+    color: var(--amb-text-primary, #e2e8f0) !important;
 }
-
 #anomalous-header button.anomalous-update-notice-btn:hover {
-    background: rgba(255, 255, 255, 0.12) !important;
-    border-color: rgba(255, 255, 255, 0.28) !important;
-    color: #ffffff !important;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
 }
-
 .anomalous-update-notice-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
+    border: 1px solid currentColor;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.16);
-    color: #f1f5f9;
-    font-size: 10px;
-    font-weight: 700;
-    line-height: 1;
-    margin-right: 4px;
+    font: 700 12px/1 system-ui, sans-serif;
+}
+#anomalous-help-replay-guide-btn {
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+}
+#anomalous-help-replay-guide-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #fff;
+}
+#anomalous-update-notice-btn:focus-visible,
+#anomalous-help-replay-guide-btn:focus-visible,
+.anomalous-update-guide button:focus-visible {
+    outline: 2px solid var(--amb-accent, #38bdf8);
+    outline-offset: 2px;
 }
 
 /* =============================================================================
    SIDEBAR ACTIONS HOVER REVEAL & TOOLTIPS
    ============================================================================= */
-#anomalous-sidebar-actions {
-    overflow: visible !important;
-}
-
-#anomalous-sidebar-actions button {
-    position: relative !important;
-}
-
-#anomalous-sidebar-actions button .anomalous-action-label {
-    display: none;
-    font-size: 11px;
-    font-weight: 600;
-    line-height: 1;
-    letter-spacing: -0.2px;
+#anomalous-sidebar-actions .anomalous-action-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 600 10px/1.2 system-ui, sans-serif;
     color: inherit;
     pointer-events: none;
     white-space: nowrap;
-    text-align: center;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
-#anomalous-sidebar-actions button:hover svg,
-#anomalous-sidebar-actions button:focus-visible svg {
-    display: none !important;
+#anomalous-sidebar-actions button:is(:hover, :focus-visible) > svg { opacity: 0; }
+#anomalous-sidebar-actions button:is(:hover, :focus-visible) .anomalous-action-label {
+    opacity: 1;
+    transform: translateY(0);
 }
-
-#anomalous-sidebar-actions button:hover .anomalous-action-label,
-#anomalous-sidebar-actions button:focus-visible .anomalous-action-label {
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-    color: #ffffff !important;
-    animation: anomalous-action-label-in 0.15s ease;
+#anomalous-sidebar-actions button:focus-visible {
+    outline: 2px solid var(--amb-accent, #38bdf8);
+    outline-offset: 2px;
 }
-
-@keyframes anomalous-action-label-in {
-    from { opacity: 0; transform: scale(0.92); }
-    to { opacity: 1; transform: scale(1); }
+@media (hover: none) {
+    #anomalous-sidebar-actions button > svg { opacity: 0; }
+    #anomalous-sidebar-actions .anomalous-action-label { opacity: 1; transform: none; }
 }
 
 /* Sidebar action tooltips: wide horizontal layout with boundary safety */
 #anomalous-sidebar-actions [data-tooltip]::after,
 #anomalous-sidebar-actions .anomalous-tooltip-target::after {
-    width: max-content !important;
-    min-width: 100px !important;
-    max-width: 220px !important;
-    white-space: pre-line !important;
-    text-align: center !important;
-    line-height: 1.45 !important;
-    font-size: 11.5px !important;
-    padding: 7px 11px !important;
-    border-radius: 6px !important;
-    word-break: normal !important;
-    overflow-wrap: break-word !important;
-    box-sizing: border-box !important;
-    pointer-events: none !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+    width: max-content;
+    min-width: 100px;
+    max-width: 220px;
+    white-space: pre-line;
+    text-align: center;
+    line-height: 1.45;
+    font-size: 11.5px;
+    padding: 7px 11px;
+    border-radius: 6px;
+    word-break: normal;
+    overflow-wrap: break-word;
+    box-sizing: border-box;
+    pointer-events: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
 /* Align edge buttons so tooltips stay cleanly within the sidebar */
@@ -14253,56 +14051,56 @@ button:hover .anomalous-btn-icon {
 #anomalous-sidebar-actions button:first-child.anomalous-tooltip-target::after,
 #anomalous-sidebar-actions button:nth-child(2)[data-tooltip]::after,
 #anomalous-sidebar-actions button:nth-child(2).anomalous-tooltip-target::after {
-    left: 0 !important;
-    right: auto !important;
-    transform: translateY(4px) !important;
+    left: 0;
+    right: auto;
+    transform: translateY(4px);
 }
 
-#anomalous-sidebar-actions button:first-child[data-tooltip]:hover::after,
-#anomalous-sidebar-actions button:first-child.anomalous-tooltip-target:hover::after,
-#anomalous-sidebar-actions button:nth-child(2)[data-tooltip]:hover::after,
-#anomalous-sidebar-actions button:nth-child(2).anomalous-tooltip-target:hover::after {
-    transform: translateY(0) !important;
+#anomalous-sidebar-actions button:first-child[data-tooltip]:is(:hover, :focus-visible)::after,
+#anomalous-sidebar-actions button:first-child.anomalous-tooltip-target:is(:hover, :focus-visible)::after,
+#anomalous-sidebar-actions button:nth-child(2)[data-tooltip]:is(:hover, :focus-visible)::after,
+#anomalous-sidebar-actions button:nth-child(2).anomalous-tooltip-target:is(:hover, :focus-visible)::after {
+    transform: translateY(0);
 }
 
 #anomalous-sidebar-actions button:first-child[data-tooltip]::before,
 #anomalous-sidebar-actions button:first-child.anomalous-tooltip-target::before,
 #anomalous-sidebar-actions button:nth-child(2)[data-tooltip]::before,
 #anomalous-sidebar-actions button:nth-child(2).anomalous-tooltip-target::before {
-    left: 14px !important;
-    right: auto !important;
-    transform: translateY(4px) !important;
+    left: 14px;
+    right: auto;
+    transform: translateY(4px);
 }
 
-#anomalous-sidebar-actions button:first-child[data-tooltip]:hover::before,
-#anomalous-sidebar-actions button:first-child.anomalous-tooltip-target:hover::before,
-#anomalous-sidebar-actions button:nth-child(2)[data-tooltip]:hover::before,
-#anomalous-sidebar-actions button:nth-child(2).anomalous-tooltip-target:hover::before {
-    transform: translateY(0) !important;
+#anomalous-sidebar-actions button:first-child[data-tooltip]:is(:hover, :focus-visible)::before,
+#anomalous-sidebar-actions button:first-child.anomalous-tooltip-target:is(:hover, :focus-visible)::before,
+#anomalous-sidebar-actions button:nth-child(2)[data-tooltip]:is(:hover, :focus-visible)::before,
+#anomalous-sidebar-actions button:nth-child(2).anomalous-tooltip-target:is(:hover, :focus-visible)::before {
+    transform: translateY(0);
 }
 
 #anomalous-sidebar-actions button:last-child[data-tooltip]::after,
 #anomalous-sidebar-actions button:last-child.anomalous-tooltip-target::after {
-    left: auto !important;
-    right: 0 !important;
-    transform: translateY(4px) !important;
+    left: auto;
+    right: 0;
+    transform: translateY(4px);
 }
 
-#anomalous-sidebar-actions button:last-child[data-tooltip]:hover::after,
-#anomalous-sidebar-actions button:last-child.anomalous-tooltip-target:hover::after {
-    transform: translateY(0) !important;
+#anomalous-sidebar-actions button:last-child[data-tooltip]:is(:hover, :focus-visible)::after,
+#anomalous-sidebar-actions button:last-child.anomalous-tooltip-target:is(:hover, :focus-visible)::after {
+    transform: translateY(0);
 }
 
 #anomalous-sidebar-actions button:last-child[data-tooltip]::before,
 #anomalous-sidebar-actions button:last-child.anomalous-tooltip-target::before {
-    left: auto !important;
-    right: 14px !important;
-    transform: translateY(4px) !important;
+    left: auto;
+    right: 14px;
+    transform: translateY(4px);
 }
 
-#anomalous-sidebar-actions button:last-child[data-tooltip]:hover::before,
-#anomalous-sidebar-actions button:last-child.anomalous-tooltip-target:hover::before {
-    transform: translateY(0) !important;
+#anomalous-sidebar-actions button:last-child[data-tooltip]:is(:hover, :focus-visible)::before,
+#anomalous-sidebar-actions button:last-child.anomalous-tooltip-target:is(:hover, :focus-visible)::before {
+    transform: translateY(0);
 }
 
 /* =============================================================================
@@ -14334,11 +14132,13 @@ dialog.anomalous-update-guide {
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(255, 255, 255, 0.12);
     color: #f1f5f9;
     outline: none;
-    overflow: hidden;
+    overflow-y: auto;
     box-sizing: border-box;
     z-index: 1000000;
     animation: anomalous-guide-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+dialog.anomalous-update-guide > * { flex-shrink: 0; }
 
 @keyframes anomalous-guide-pop {
     from {
@@ -14441,6 +14241,7 @@ dialog.anomalous-update-guide::backdrop {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
     padding: 14px 20px;
     background: rgba(0, 0, 0, 0.28);
     border-top: 1px solid rgba(255, 255, 255, 0.06);

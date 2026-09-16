@@ -25,8 +25,8 @@ Major UI panels live in `web/modules/ui_*.js`. Shared browser state remains on
 the `AnomalousBrowser` instance. Pure parsing, normalization, comparison, and
 transaction helpers remain in focused modules rather than acquiring DOM state.
 
-Update-guide content and UI lifecycle are separate modules; the browser show/close
-methods only wire them in. Help provides an explicit replay entry. Read
+Update-guide content and UI lifecycle are separate modules. The header and Help
+open it only on explicit user action; browser close disposes it. Read
 [update-guide.md](update-guide.md) before changing guide IDs, steps, persistence,
 or sidebar icon/label transitions. Do not embed guide logic in the main/sidebar
 bootstrap or reuse its content version as a feature flag.

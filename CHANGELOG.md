@@ -4,7 +4,7 @@
 
 ### Navigation and update guide
 - Sidebar icons reveal compact text labels on hover or keyboard focus while keeping their existing button size and actions. Detailed hints explain each tool; scan-state and language changes retain labels. Unclipped tooltips ensure explanations are fully readable.
-- Added a non-intrusive update guide system: instead of an automatic popup on startup, an amber breathing badge (`!` + '新指引' / 'Guide') appears in the top-right header when a new guide version is unacknowledged. Clicking opens the polished obsidian-glass guide modal with step indicator, and dismissing smoothly hides the badge and stores persistent acknowledgment. The guide can also be replayed from the Help panel footer; see `docs/architecture/update-guide.md`.
+- Update guide opens only from the persistent top-right exclamation button or Help. Dismissing never removes the entry. Sidebar labels slide upward on hover/focus; duplicate source-panel and obsolete notice styles were removed. See `docs/architecture/update-guide.md`.
 
 ### Model Source Hub (模型来源中控中心)
 - Added a unified Model Source Hub under Toolbox for dual-scope (current workflow and full library) model source URL inspection, one-click browser navigation to Civitai/HuggingFace/Liblib/ModelScope, custom source editing, workflow metadata synchronization (`extra.anomalous_model_sources`), and instant canvas `Note` node generation for non-intrusive workflow documentation.

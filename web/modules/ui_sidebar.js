@@ -8,8 +8,7 @@ import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
 import { updateScanProgress, finishScanProgress, failScanProgress } from './scan_progress.js';
 import { openModelSourcesModal } from './ui_model_sources.js';
-import { showUpdateGuide, hasAcknowledged } from './ui_update_guide.js';
-import { CURRENT_UPDATE_GUIDE } from './update_guide_data.js';
+import { showUpdateGuide } from './ui_update_guide.js';
 import { configureSidebarAction, configureSidebarActions } from './sidebar_actions.js';
 
 const t = (key, params) => translate(key, params);
@@ -1191,33 +1190,13 @@ export function createDOM() {
         updateNoticeBtn.setAttribute('data-tooltip', t('updateGuideNoticeTooltip'));
         updateNoticeBtn.setAttribute('data-tooltip-pos', 'bottom');
         updateNoticeBtn.setAttribute('aria-label', t('updateGuideNoticeTooltip'));
-        updateNoticeBtn.innerHTML = `<span class="anomalous-update-notice-icon">!</span><span class="anomalous-btn-text">${t('updateGuideNoticeLabel')}</span>`;
-        updateNoticeBtn.onclick = () => {
-            showUpdateGuide(this, { force: true });
-        };
-
-        const updateNoticeState = () => {
-            const isSeen = hasAcknowledged(CURRENT_UPDATE_GUIDE.id);
-            if (isSeen) {
-                updateNoticeBtn.style.display = 'none';
-            } else {
-                updateNoticeBtn.style.display = 'inline-flex';
-                updateNoticeBtn.style.opacity = '1';
-                updateNoticeBtn.style.transform = 'none';
-            }
-        };
-        updateNoticeState();
-        this.refreshUpdateNotice = updateNoticeState;
-
-        window.addEventListener('anomalous-update-guide-acknowledged', (e) => {
-            if (e.detail?.id === CURRENT_UPDATE_GUIDE.id) {
-                updateNoticeBtn.style.opacity = '0';
-                updateNoticeBtn.style.transform = 'scale(0.8)';
-                setTimeout(() => {
-                    updateNoticeBtn.style.display = 'none';
-                }, 300);
-            }
-        });
+        updateNoticeBtn.type = 'button';
+        const updateNoticeIcon = document.createElement('span');
+        updateNoticeIcon.className = 'anomalous-update-notice-icon';
+        updateNoticeIcon.setAttribute('aria-hidden', 'true');
+        updateNoticeIcon.textContent = '!';
+        updateNoticeBtn.appendChild(updateNoticeIcon);
+        updateNoticeBtn.onclick = () => showUpdateGuide(this, { force: true });
 
         rightGroup.appendChild(updateNoticeBtn);
         rightGroup.appendChild(dockBtn);
@@ -1277,7 +1256,6 @@ export function createDOM() {
             if (updateNoticeBtn) {
                 updateNoticeBtn.setAttribute('data-tooltip', t('updateGuideNoticeTooltip'));
                 updateNoticeBtn.setAttribute('aria-label', t('updateGuideNoticeTooltip'));
-                updateNoticeBtn.innerHTML = `<span class="anomalous-update-notice-icon">!</span><span class="anomalous-btn-text">${t('updateGuideNoticeLabel')}</span>`;
             }
 
             // Reset dynamic panels so they re-render in new language
@@ -2656,25 +2634,7 @@ export function showHelp() {
         const replayGuideBtn = document.createElement('button');
         replayGuideBtn.id = 'anomalous-help-replay-guide-btn';
         replayGuideBtn.textContent = t('updateGuideReplay');
-        replayGuideBtn.style.padding = '8px 14px';
-        replayGuideBtn.style.background = 'rgba(255, 255, 255, 0.05)';
-        replayGuideBtn.style.color = '#cbd5e1';
-        replayGuideBtn.style.border = '1px solid rgba(255, 255, 255, 0.16)';
-        replayGuideBtn.style.borderRadius = '4px';
-        replayGuideBtn.style.cursor = 'pointer';
-        replayGuideBtn.style.fontSize = '12px';
-        replayGuideBtn.style.fontWeight = '500';
-        replayGuideBtn.style.transition = 'all 0.15s ease';
-        replayGuideBtn.onmouseover = () => {
-            replayGuideBtn.style.background = 'rgba(255, 255, 255, 0.1)';
-            replayGuideBtn.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-            replayGuideBtn.style.color = '#ffffff';
-        };
-        replayGuideBtn.onmouseout = () => {
-            replayGuideBtn.style.background = 'rgba(255, 255, 255, 0.05)';
-            replayGuideBtn.style.borderColor = 'rgba(255, 255, 255, 0.16)';
-            replayGuideBtn.style.color = '#cbd5e1';
-        };
+        replayGuideBtn.type = 'button';
         replayGuideBtn.onclick = () => {
             this.helpModal?.remove();
             showUpdateGuide(this, { force: true });
