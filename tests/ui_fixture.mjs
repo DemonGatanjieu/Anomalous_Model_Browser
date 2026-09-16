@@ -48,7 +48,7 @@ export class Element extends Events {
     setAttribute(name, value) { this.attrs[name] = value; }
     removeAttribute(name) { delete this.attrs[name]; }
     getAttribute(name) { return this.attrs[name] ?? null; }
-    matches(selector) { return selector.startsWith('.') ? this.classList.contains(selector.slice(1)) : this.tagName === selector; }
+    matches(selector) { return selector.startsWith('#') ? this.id === selector.slice(1) : selector.startsWith('.') ? this.classList.contains(selector.slice(1)) : this.tagName === selector; }
     querySelectorAll(selector) { return all(this).slice(1).filter(child => selector.split(',').some(part => child.matches(part.trim()))); }
     querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
     closest(selector) { return this.matches(selector) ? this : this.parentNode?.closest(selector) || null; }
@@ -62,7 +62,7 @@ export class Element extends Events {
     scrollIntoView() {}
 }
 
-export function fixture() {
+export function fixture({ storage = new Map(), storageOverride } = {}) {
     const document = new Events();
     document.body = new Element('body');
     document.createElement = tag => new Element(tag);
@@ -71,7 +71,6 @@ export function fixture() {
     document.querySelectorAll = selector => document.body.querySelectorAll(selector);
     const window = new Events();
     Object.assign(window, { innerWidth: 1440, innerHeight: 900, anomalous_browser_lang: 'en' });
-    const storage = new Map();
     const timers = new Map();
     let timerId = 0;
     const errors = [], requests = [], clipboard = [];
@@ -85,7 +84,7 @@ export function fixture() {
         document, window, app, errors, anomalous_browser_lang: 'en',
         setTimeout: callback => { timers.set(++timerId, callback); return timerId; }, clearTimeout: id => timers.delete(id),
         requestAnimationFrame: callback => callback(), queueMicrotask,
-        localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, String(value)), removeItem: key => storage.delete(key) },
+        localStorage: storageOverride || { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, String(value)), removeItem: key => storage.delete(key) },
         navigator: { clipboard: { async writeText(text) { clipboard.push(text); } } }, confirm: () => true,
         fetch: async (url, options = {}) => { requests.push([url, options]); return state.fetch(url, options); },
     });

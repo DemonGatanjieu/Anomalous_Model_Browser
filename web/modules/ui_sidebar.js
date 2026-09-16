@@ -8,6 +8,8 @@ import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
 import { updateScanProgress, finishScanProgress, failScanProgress } from './scan_progress.js';
 import { openModelSourcesModal } from './ui_model_sources.js';
+import { showUpdateGuide, hasAcknowledged } from './ui_update_guide.js';
+import { CURRENT_UPDATE_GUIDE } from './update_guide_data.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -1181,6 +1183,41 @@ export function createDOM() {
         closeBtn.innerHTML = '&times;';
         closeBtn.onclick = () => this.close();
 
+        const updateNoticeBtn = document.createElement('button');
+        updateNoticeBtn.id = 'anomalous-update-notice-btn';
+        updateNoticeBtn.className = 'anomalous-update-notice-btn anomalous-tooltip-target';
+        updateNoticeBtn.setAttribute('data-tooltip', t('updateGuideNoticeTooltip'));
+        updateNoticeBtn.setAttribute('data-tooltip-pos', 'bottom');
+        updateNoticeBtn.setAttribute('aria-label', t('updateGuideNoticeTooltip'));
+        updateNoticeBtn.innerHTML = `<span class="anomalous-update-notice-icon">!</span><span class="anomalous-btn-text">${t('updateGuideNoticeLabel')}</span>`;
+        updateNoticeBtn.onclick = () => {
+            showUpdateGuide(this, { force: true });
+        };
+
+        const updateNoticeState = () => {
+            const isSeen = hasAcknowledged(CURRENT_UPDATE_GUIDE.id);
+            if (isSeen) {
+                updateNoticeBtn.style.display = 'none';
+            } else {
+                updateNoticeBtn.style.display = 'inline-flex';
+                updateNoticeBtn.style.opacity = '1';
+                updateNoticeBtn.style.transform = 'none';
+            }
+        };
+        updateNoticeState();
+        this.refreshUpdateNotice = updateNoticeState;
+
+        window.addEventListener('anomalous-update-guide-acknowledged', (e) => {
+            if (e.detail?.id === CURRENT_UPDATE_GUIDE.id) {
+                updateNoticeBtn.style.opacity = '0';
+                updateNoticeBtn.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    updateNoticeBtn.style.display = 'none';
+                }, 300);
+            }
+        });
+
+        rightGroup.appendChild(updateNoticeBtn);
         rightGroup.appendChild(dockBtn);
         rightGroup.appendChild(closeBtn);
 
@@ -1233,6 +1270,11 @@ export function createDOM() {
                 dockBtn.setAttribute('aria-label', t('dockTitle'));
                 dockBtn.setAttribute('data-tooltip', t('dockTitle'));
                 dockBtn.setAttribute('data-tooltip-pos', 'bottom');
+            }
+            if (updateNoticeBtn) {
+                updateNoticeBtn.setAttribute('data-tooltip', t('updateGuideNoticeTooltip'));
+                updateNoticeBtn.setAttribute('aria-label', t('updateGuideNoticeTooltip'));
+                updateNoticeBtn.innerHTML = `<span class="anomalous-update-notice-icon">!</span><span class="anomalous-btn-text">${t('updateGuideNoticeLabel')}</span>`;
             }
 
             // Reset dynamic panels so they re-render in new language

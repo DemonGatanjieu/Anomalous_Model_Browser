@@ -1,0 +1,74 @@
+import assert from 'node:assert/strict';
+import { fixture, Element } from './ui_fixture.mjs';
+
+const storage = new Map();
+const f = fixture({ storage });
+const data = await f.module('update_guide_data.js');
+const { i18n } = await f.module('locales.js');
+assert.equal(data.validateUpdateGuide(data.CURRENT_UPDATE_GUIDE, i18n), true);
+assert.equal(data.validateUpdateGuide({ ...data.CURRENT_UPDATE_GUIDE, steps: [] }, i18n), false);
+assert.equal(data.validateUpdateGuide({ ...data.CURRENT_UPDATE_GUIDE, steps: [data.CURRENT_UPDATE_GUIDE.steps[0], data.CURRENT_UPDATE_GUIDE.steps[0]] }, i18n), false);
+assert.equal(data.validateUpdateGuide(data.CURRENT_UPDATE_GUIDE, { zh: i18n.zh, en: {} }), false);
+const guide = await f.module('ui_update_guide.js');
+const owner = { modal: new Element('div') };
+assert.equal(guide.showUpdateGuide(owner), false, 'never show over a closed browser');
+owner.modal.classList.add('visible');
+assert.equal(guide.showUpdateGuide(owner), true);
+assert.equal(guide.showUpdateGuide(owner), false, 'no duplicate dialog');
+let dialog = f.document.querySelector('dialog');
+assert.equal(f.button(dialog, 'Back').disabled, true);
+await f.button(dialog, 'Next').click();
+assert.match(dialog.textContent, /Workflow sharing/);
+await f.button(dialog, 'Back').click();
+assert.match(dialog.textContent, /Hover to identify/);
+await f.button(dialog, 'Next').click();
+await f.button(dialog, 'Next').click();
+await f.button(dialog, 'Got it').click();
+assert.equal(dialog.isConnected, false);
+assert.equal(dialog.listenerCount(), 0);
+assert.equal(guide.showUpdateGuide(owner), false);
+assert.equal(guide.hasAcknowledged(data.CURRENT_UPDATE_GUIDE.id), true);
+const fresh = fixture({ storage });
+assert.equal((await fresh.module('ui_update_guide.js')).showUpdateGuide(owner), false, 'dismissal persists across page sessions');
+
+assert.equal(guide.showUpdateGuide(owner, { force: true }), true);
+dialog = f.document.querySelector('dialog');
+let stopped = false, prevented = false;
+dialog.dispatch('keydown', { key: 'Escape', stopPropagation() { stopped = true; }, preventDefault() { prevented = true; } });
+assert.ok(stopped && prevented);
+assert.equal(dialog.listenerCount(), 0);
+assert.ok(owner.modal.classList.contains('visible'), 'Escape belongs only to the guide');
+
+const nextGuide = { ...data.CURRENT_UPDATE_GUIDE, id: 'next-release' };
+assert.equal(guide.showUpdateGuide(owner, { guide: nextGuide }), true);
+guide.closeUpdateGuide(owner);
+guide.closeUpdateGuide(owner);
+assert.equal(guide.showUpdateGuide(owner, { guide: nextGuide }), true, 'parent close must not acknowledge unread content');
+await f.button(f.document.querySelector('dialog'), 'Skip').click();
+assert.equal(guide.showUpdateGuide(owner, { guide: nextGuide }), false);
+assert.equal(guide.showUpdateGuide(owner, { guide: { ...nextGuide, steps: [] } }), false);
+
+const unavailable = fixture({ storageOverride: { getItem() { throw new Error('Storage blocked'); }, setItem() { throw new Error('Storage blocked'); } } });
+const unavailableGuide = await unavailable.module('ui_update_guide.js');
+assert.equal(unavailableGuide.showUpdateGuide(owner), true);
+unavailable.document.querySelector('dialog').dispatch('cancel', { preventDefault() {} });
+assert.equal(unavailableGuide.showUpdateGuide(owner), false, 'blocked storage still prevents repeated prompts in this session');
+console.log('Update guide: configuration, steps, persistence, replay, Escape, parent close and blocked storage passed.');
+
+const actions = await f.module('sidebar_actions.js');
+const root = new Element('div');
+const scan = new Element('button'); scan.id = 'anomalous-scan-btn';
+let clicks = 0; scan.onclick = () => clicks++;
+root.append(scan);
+actions.configureSidebarActions(root);
+actions.configureSidebarActions(root);
+assert.equal(scan.querySelectorAll('.anomalous-action-label').length, 1);
+assert.equal(scan.querySelector('.anomalous-action-label').textContent, 'Scan');
+await scan.click(); assert.equal(clicks, 1);
+scan.innerHTML = '<svg></svg>'; // Scanner status refresh replaces its icon.
+scan.classList.add('anomalous-radar-spinning');
+actions.configureSidebarAction(scan);
+assert.ok(scan.querySelector('.anomalous-action-label'));
+assert.ok(scan.classList.contains('anomalous-radar-spinning'));
+assert.match(scan.getAttribute('data-tooltip'), /metadata and previews/);
+console.log('Sidebar labels: repeated setup, scanner icon replacement and click behavior passed.');

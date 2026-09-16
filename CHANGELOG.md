@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Navigation and update guide
+- Sidebar icons reveal compact text labels on hover or keyboard focus while keeping their existing button size and actions. Detailed hints explain each tool; scan-state and language changes retain labels.
+- Added a non-intrusive update guide system: instead of an automatic popup on startup, an amber breathing badge (`!` + '新指引' / 'Guide') appears in the top-right header when a new guide version is unacknowledged. Clicking opens the three-step guide modal, and dismissing smoothly hides the badge and stores persistent acknowledgment; see `docs/architecture/update-guide.md`.
+
 ### Export availability
 - Removed Prompt Studio's JSON export action and closed the Material Library file-import entry; copying prompts and local saves remain available.
 - Recipe package import/export is disabled in the UI and API, including both upload inspection and import commit. The verified AMB0/AMB1 workflow Import / Export Center is restored in Toolbox as the only active import/export center. Ordinary downloads and image/workflow hash metadata are unchanged.

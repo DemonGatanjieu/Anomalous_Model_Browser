@@ -7,6 +7,7 @@ import { showRecipes, refreshRecipes, renderRecipeList, handleSaveRecipe } from 
 import { showMaterials, refreshMaterials, openSavedMaterial, openMaterialLibrary } from './modules/ui_materials.js';
 import { openPromptStudio } from './modules/ui_prompt_composer.js';
 import { openPromptTranslator } from './modules/ui_prompt_translator.js';
+import { showUpdateGuide, closeUpdateGuide } from './modules/ui_update_guide.js';
 import { showImageWorkbench } from './modules/ui_gallery_detail.js';
 import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, _openGalleryReplacer, openLoraInsertionPicker, runGlobalDoctorScan } from './modules/ui_doctor.js';
 import { app } from "../../scripts/app.js";
@@ -282,9 +283,11 @@ class AnomalousBrowser {
         } else {
             this.loadModels();
         }
+        this.refreshUpdateNotice?.();
     }
 
     close() {
+        closeUpdateGuide(this);
         this.modal.classList.remove('visible');
         this.setTriggerVisible(true);
         const canvas = document.getElementById('graph-canvas');

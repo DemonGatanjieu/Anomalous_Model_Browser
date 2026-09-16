@@ -13956,4 +13956,51 @@ button:hover .anomalous-btn-icon {
     font-size: 0.9rem;
 }
 
+/* =============================================================================
+   UPDATE GUIDE NOTICE INDICATOR (RESTRAINED AMBER BREATH)
+   ============================================================================= */
+#anomalous-header button.anomalous-update-notice-btn {
+    background: rgba(245, 158, 11, 0.12) !important;
+    border-color: rgba(245, 158, 11, 0.38) !important;
+    color: #fbbf24 !important;
+    padding: 0 9px 0 6px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px !important;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, transform 0.3s ease;
+    animation: anomalous-amber-breath 3.2s ease-in-out infinite;
+}
 
+#anomalous-header button.anomalous-update-notice-btn:hover {
+    background: rgba(245, 158, 11, 0.22) !important;
+    border-color: rgba(245, 158, 11, 0.65) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.35) !important;
+    animation: none;
+}
+
+.anomalous-update-notice-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #f59e0b;
+    color: #18181b;
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+    margin-right: 2px;
+}
+
+@keyframes anomalous-amber-breath {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+        border-color: rgba(245, 158, 11, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 8px 1px rgba(245, 158, 11, 0.28);
+        border-color: rgba(245, 158, 11, 0.55);
+    }
+}

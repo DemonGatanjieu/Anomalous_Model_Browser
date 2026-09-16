@@ -17,6 +17,7 @@ list summaries do not contain prompt bodies. See the Material Library contract b
 | --- | --- |
 | Python routes, storage, paths, metadata, covers, or scan state | [`docs/architecture/backend.md`](docs/architecture/backend.md) |
 | Browser lifecycle, UI state, localization, media, or graph edits | [`docs/architecture/frontend.md`](docs/architecture/frontend.md) |
+| Update-guide content/versioning or sidebar hover labels | [`docs/architecture/update-guide.md`](docs/architecture/update-guide.md) |
 | Workflow Recipes, packages, galleries, Parameter Notebooks, or prompt roles | [`docs/architecture/recipes.md`](docs/architecture/recipes.md) |
 | Material Library snapshots, image parameter details, or reusable node blocks | [`docs/architecture/material-library.md`](docs/architecture/material-library.md) |
 | Model Doctor, provenance hashes, missing-model recovery, or deep scanning | [`docs/architecture/model-resolution.md`](docs/architecture/model-resolution.md) |
