@@ -127,12 +127,21 @@ export function showSharedTooltip(button, title, desc) {
     tooltip.style.opacity = '1';
 }
 
-function suppressButtonText(button) {
+export function suppressButtonText(button) {
     clearTimers();
     hideTooltipImmediately();
+    if (typeof document !== 'undefined') {
+        const btns = document.querySelectorAll('#anomalous-sidebar-actions button');
+        for (const b of btns) {
+            b.classList.remove('anomalous-action-label-active');
+        }
+    }
     if (button) {
         button.classList.remove('anomalous-action-label-active');
         button.__suppress_text_until_leave = true;
+        if (typeof button.blur === 'function') {
+            button.blur();
+        }
     }
 }
 

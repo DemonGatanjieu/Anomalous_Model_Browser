@@ -336,13 +336,13 @@ export function createDOM() {
         nbBtn.innerHTML = `${SIDEBAR_ICONS.RECIPES}<span class="anomalous-btn-text">${t('recipeTitle')}</span>`;
 
         const dBtn = document.getElementById('anomalous-doctor-btn');
-        if (dBtn) dBtn.title = t('sidebarDoctor');
+        if (dBtn) { dBtn.removeAttribute('title'); dBtn.setAttribute('aria-label', t('sidebarDoctor')); }
         const aBtn = document.getElementById('anomalous-assistant-btn');
-        if (aBtn) aBtn.title = t('sidebarAssistant');
+        if (aBtn) { aBtn.removeAttribute('title'); aBtn.setAttribute('aria-label', t('sidebarAssistant')); }
         const iBtn = document.getElementById('anomalous-materials-btn');
-        if (iBtn) iBtn.title = t('materialLibrary');
+        if (iBtn) { iBtn.removeAttribute('title'); iBtn.setAttribute('aria-label', t('materialLibrary')); }
         const sBtn = document.getElementById('anomalous-settings-btn');
-        if (sBtn) sBtn.title = t('sidebarSettings');
+        if (sBtn) { sBtn.removeAttribute('title'); sBtn.setAttribute('aria-label', t('sidebarSettings')); }
 
         // Reset dynamic panels so they re-render in new language
         if (window.anomalousBrowserInstance) {

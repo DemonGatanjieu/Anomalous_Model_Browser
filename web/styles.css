@@ -1034,23 +1034,23 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 #anomalous-toolbox-modal {
     position: absolute;
-    bottom: 48px;
+    bottom: 52px;
     left: 10px;
     width: 236px;
-    min-height: 194px;
+    min-height: auto;
     box-sizing: border-box;
     background: rgba(22, 22, 26, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 11px;
-    padding: 10px 10px 8px;
+    border-radius: 10px;
+    padding: 9px 9px 7px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
     z-index: 999999 !important;
     transition: left 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), bottom 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
     display: none;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
     overflow: hidden !important;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
@@ -1070,8 +1070,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-toolbox-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    margin: 4px 0 4px;
+    gap: 5px;
+    margin: 4px 0 3px;
     align-content: start;
     flex: 1;
 }
@@ -1082,12 +1082,12 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 8px 4px 6px;
-    min-height: 56px;
+    padding: 6px 3px 5px;
+    min-height: 48px;
     box-sizing: border-box;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 7px;
+    border-radius: 6px;
     cursor: pointer;
     position: relative;
     user-select: none;
@@ -1106,9 +1106,9 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-toolbox-tile-icon {
-    font-size: 18px;
-    line-height: 1;
-    margin-bottom: 4px;
+    font-size: 14.5px;
+    line-height: 1.1;
+    margin-bottom: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1116,14 +1116,14 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-toolbox-tile-label {
-    font-size: 10.5px;
+    font-size: 10px;
     font-weight: 500;
-    color: #e2e8f0;
+    color: #cbd5e1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
-    line-height: 1.2;
+    line-height: 1.15;
 }
 
 .anomalous-toolbox-tile-dot {
@@ -1145,7 +1145,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-toolbox-tile.is-placeholder {
     background: rgba(255, 255, 255, 0.015) !important;
     border: 1px dashed rgba(255, 255, 255, 0.08) !important;
-    opacity: 0.35 !important;
+    opacity: 0.32 !important;
     cursor: default !important;
     pointer-events: none !important;
     transform: none !important;
@@ -1153,14 +1153,14 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-toolbox-tile.is-placeholder .anomalous-toolbox-tile-icon {
-    font-size: 14px !important;
+    font-size: 12px !important;
     color: #94a3b8 !important;
-    margin-bottom: 3px !important;
+    margin-bottom: 2px !important;
 }
 
 .anomalous-toolbox-tile.is-placeholder .anomalous-toolbox-tile-label {
     color: #64748b !important;
-    font-size: 9.5px !important;
+    font-size: 9px !important;
 }
 
 .anomalous-toolbox-footer-row {
@@ -1172,7 +1172,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* Suppress all tooltips on clicked/active elements so they never block vision or interaction */
+/* Suppress all tooltips and action labels on clicked/active elements so they never block vision or interaction */
 button:active::before,
 button:active::after,
 .anomalous-tooltip-target:active::before,
@@ -1180,11 +1180,18 @@ button:active::after,
 .anomalous-toolbox-tile:active::before,
 .anomalous-toolbox-tile:active::after,
 #anomalous-sidebar-actions button:active::before,
-#anomalous-sidebar-actions button:active::after {
+#anomalous-sidebar-actions button:active::after,
+#anomalous-sidebar-actions button:active .anomalous-action-label,
+#anomalous-sidebar-actions button:focus:not(:focus-visible) .anomalous-action-label {
     display: none !important;
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
+}
+
+#anomalous-sidebar-actions button:active > svg,
+#anomalous-sidebar-actions button:focus:not(:focus-visible) > svg {
+    opacity: 1 !important;
 }
 
 .anomalous-sidebar-closed #anomalous-sidebar-actions {
@@ -11914,8 +11921,8 @@ button:hover .anomalous-btn-icon {
     display: flex;
     align-items: center;
     justify-content: space-around;
-    padding: 10px 8px;
-    gap: 4px;
+    padding: 8px 6px;
+    gap: 2px;
     box-sizing: border-box;
 }
 
@@ -11924,12 +11931,12 @@ button:hover .anomalous-btn-icon {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 32px !important;
-    height: 32px !important;
-    border-radius: 6px !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 7px !important;
     box-sizing: border-box !important;
     vertical-align: middle !important;
-    color: var(--amb-text-muted, #9ca3af) !important;
+    color: #cbd5e1 !important;
     background: transparent !important;
     border: 1px solid transparent !important;
     cursor: pointer !important;
@@ -11940,13 +11947,16 @@ button:hover .anomalous-btn-icon {
 
 #anomalous-sidebar-actions button:hover {
     color: #ffffff !important;
-    background: rgba(255, 255, 255, 0.08) !important;
-    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    background: rgba(255, 255, 255, 0.09) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
     transform: none;
     box-shadow: none;
 }
 
 #anomalous-sidebar-actions button svg {
+    width: 20px !important;
+    height: 20px !important;
+    stroke-width: 2px !important;
     pointer-events: none !important;
     transition: opacity 0.15s ease;
 }
