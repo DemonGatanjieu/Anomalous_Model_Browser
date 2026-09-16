@@ -1036,15 +1036,15 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     position: absolute;
     bottom: 50px;
     left: 10px;
-    width: 248px;
-    min-height: auto;
+    width: 256px;
+    min-height: 280px;
     box-sizing: border-box;
     background: rgba(22, 22, 26, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 12px;
-    padding: 12px 12px 10px;
+    padding: 12px 10px 10px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
     z-index: 999999 !important;
     transition: left 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), bottom 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -1069,8 +1069,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-toolbox-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
     margin: 4px 0 6px;
     align-content: start;
     flex: 1;
@@ -1082,12 +1082,12 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 14px 6px 12px;
-    min-height: 72px;
+    padding: 10px 4px 8px;
+    min-height: 62px;
     box-sizing: border-box;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 10px;
+    border-radius: 8px;
     cursor: pointer;
     position: relative;
     user-select: none;
@@ -1106,9 +1106,9 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-toolbox-tile-icon {
-    font-size: 26px;
+    font-size: 20px;
     line-height: 1;
-    margin-bottom: 7px;
+    margin-bottom: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1116,7 +1116,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-toolbox-tile-label {
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 500;
     color: #e2e8f0;
     white-space: nowrap;
@@ -1147,7 +1147,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     align-items: center;
     justify-content: space-between;
     padding: 6px 4px 2px;
-    margin-top: 4px;
+    margin-top: auto;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 

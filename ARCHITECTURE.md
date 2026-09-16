@@ -86,7 +86,7 @@ DOM or live LiteGraph state.
 - `sidebar_actions.js` owns the sidebar bottom action hover-reveal short labels (100ms), singleton dynamic DOM tooltip bubbles (`#anomalous-sidebar-tooltip-bubble`, 600ms), and anti-flicker pointer stability guards (opacity-based icon transitions, pointer-events isolation, fixed box model).
 - `tool_registry.js` centralizes metadata, SVG icons, and stable IDs for the 8 catalog tools and 2 fixed anchors (Toolbox and Settings).
 - `shortcut_layout.js` provides tool layout utilities and fallbacks. The bottom shortcut bar maintains the clean fixed 4-tool setup (`scan`, `doctor`, `assistant`, `materials`) plus two anchors (`toolbox`, `settings`), directly executable via click without drag complexity.
-- `ui_sidebar.js`'s Toolbox modal strictly filters out all tools already present on the bottom bar, presenting a dedicated spacious 2x2 utility catalog (`workflow-transfer`, `prompt-studio`, `prompt-translator`, `model-sources`) with recognizable color emoji icons and direct execution.
+- `ui_sidebar.js`'s Toolbox modal strictly filters out all tools already present on the bottom bar, presenting a spacious 3-column utility catalog with 9-item capacity (currently holding 4: `workflow-transfer`, `prompt-studio`, `prompt-translator`, `model-sources`) with moderate recognizable color emoji icons and direct execution.
 - `ui_grid.js` and model-detail modules own model presentation; `ui_gallery.js`
   and `ui_gallery_detail.js` own generated-image browsing and inspection.
 - `ui_recipes.js` / `ui_recipe_detail.js`, `ui_notebooks.js`, and `ui_materials.js`
