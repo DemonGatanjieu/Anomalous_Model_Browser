@@ -84,6 +84,8 @@ tests/*
 !tests/model_sources_hub.mjs
 !tests/shortcut_layout.mjs
 !tests/shortcut_organizer.mjs
+!tests/notebook_render_test.mjs
+!tests/notebook_save_roundtrip.mjs
 
 # Local diagnostic/test artifacts
 grep_doctor.txt

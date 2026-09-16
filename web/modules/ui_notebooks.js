@@ -216,8 +216,18 @@ export async function refreshNotebooks(autoOpenFirst = false) {
                     };
                     this.nbListEl.appendChild(item);
                 });
+            } else if (this.nbEditor && (!this.currentNotebook || !data.notebooks?.length)) {
+                this.nbEditor.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#94a3b8; text-align:center; gap:14px; padding:40px;">
+                        <span style="font-size:3.2rem;">📝</span>
+                        <h3 style="margin:0; color:#f1f5f9; font-size:1.1rem;">${t('promptNotes') || '提示词笔记'}</h3>
+                        <p style="margin:0; font-size:0.88rem; max-width:320px; line-height:1.5;">${window.anomalous_browser_lang === 'zh' ? '暂无笔记。点击左侧「+」按钮即可创建新的提示词笔记，支持模型绑定与提示词整理。' : 'No notebooks found. Click "+" on the left sidebar to create your first prompt note.'}</p>
+                    </div>
+                `;
             }
-        } catch (e) { }
+        } catch (e) {
+            console.error('[AMB] Error refreshing notebooks:', e);
+        }
     }
 
 
@@ -270,6 +280,7 @@ export async function deleteCurrentNotebook(skipConfirm = false) {
 
 
 export function renderNotebookEditor() {
+    try {
         this.nbEditor.innerHTML = '';
         if (!this.currentNotebook) return;
 
@@ -401,6 +412,33 @@ export function renderNotebookEditor() {
         modelsLabel.append(modelsTitleLeft, arrowIcon);
         modelsFold.append(modelsLabel, modelSection);
 
+        // Badges for main model and loras
+        const mainSelectedBadge = document.createElement('span');
+        mainSelectedBadge.className = 'anomalous-nb-selected-badge';
+        mainSelectedBadge.style.fontSize = '0.8rem';
+        mainSelectedBadge.style.color = '#c084fc';
+
+        const loraSelectedBadge = document.createElement('span');
+        loraSelectedBadge.className = 'anomalous-nb-selected-badge';
+        loraSelectedBadge.style.fontSize = '0.8rem';
+        loraSelectedBadge.style.color = '#fbbf24';
+
+        const updateModelsSummary = () => {
+            const arrow = modelsFold.open ? '▾' : '▸';
+            arrowIcon.textContent = arrow;
+            const baseInfo = data.baseModel || 'SDXL';
+            const mainInfo = data.mainModel?.filename ? ` · ${data.mainModel.filename}` : '';
+            const loraCount = data.loras?.length ? ` · ${data.loras.length} LoRA` : '';
+            modelsBadge.textContent = `${baseInfo}${mainInfo}${loraCount}`;
+            if (mainSelectedBadge) {
+                mainSelectedBadge.textContent = data.mainModel?.filename ? `✓ ${data.mainModel.filename}` : (t('recipeDiffNone') || '未选择');
+            }
+            if (loraSelectedBadge) {
+                loraSelectedBadge.textContent = data.loras?.length ? `✓ ${data.loras.length} LoRA` : (t('recipeDiffNone') || '未选择');
+            }
+        };
+        this.updateNotebookModelsSummary = updateModelsSummary;
+
         // Base Model
         const baseRow = document.createElement('div');
         baseRow.className = 'anomalous-nb-row anomalous-nb-base-row';
@@ -464,10 +502,6 @@ export function renderNotebookEditor() {
 
         const mainLabel = document.createElement('strong');
         mainLabel.textContent = `🎨 ${t('mainModel')}`;
-        const mainSelectedBadge = document.createElement('span');
-        mainSelectedBadge.className = 'anomalous-nb-selected-badge';
-        mainSelectedBadge.style.fontSize = '0.8rem';
-        mainSelectedBadge.style.color = '#c084fc';
         mainRow.append(mainLabel, mainSelectedBadge);
 
         const mainGallery = document.createElement('div');
@@ -488,10 +522,6 @@ export function renderNotebookEditor() {
 
         const loraLabel = document.createElement('strong');
         loraLabel.textContent = `⚡ LoRA ${t('loras') || '模型'}`;
-        const loraSelectedBadge = document.createElement('span');
-        loraSelectedBadge.className = 'anomalous-nb-selected-badge';
-        loraSelectedBadge.style.fontSize = '0.8rem';
-        loraSelectedBadge.style.color = '#fbbf24';
         loraRow.append(loraLabel, loraSelectedBadge);
 
         const loraGallery = document.createElement('div');
@@ -504,21 +534,6 @@ export function renderNotebookEditor() {
         modelSection.appendChild(mainBox);
         modelSection.appendChild(loraBox);
 
-        const updateModelsSummary = () => {
-            const arrow = modelsFold.open ? '▾' : '▸';
-            arrowIcon.textContent = arrow;
-            const baseInfo = data.baseModel || 'SDXL';
-            const mainInfo = data.mainModel?.filename ? ` · ${data.mainModel.filename}` : '';
-            const loraCount = data.loras?.length ? ` · ${data.loras.length} LoRA` : '';
-            modelsBadge.textContent = `${baseInfo}${mainInfo}${loraCount}`;
-            if (mainSelectedBadge) {
-                mainSelectedBadge.textContent = data.mainModel?.filename ? `✓ ${data.mainModel.filename}` : (t('recipeDiffNone') || '未选择');
-            }
-            if (loraSelectedBadge) {
-                loraSelectedBadge.textContent = data.loras?.length ? `✓ ${data.loras.length} LoRA` : (t('recipeDiffNone') || '未选择');
-            }
-        };
-        this.updateNotebookModelsSummary = updateModelsSummary;
         updateModelsSummary();
 
         // Prompt Section
@@ -806,7 +821,13 @@ export function renderNotebookEditor() {
         if (modelsFold.open) {
             loadModels();
         }
+    } catch (err) {
+        console.error('[AMB] Error rendering notebook editor:', err);
+        if (this.nbEditor) {
+            this.nbEditor.innerHTML = `<div style="padding:20px; color:#ef4444;">Render error: ${escapeHtml(err?.message || String(err))}</div>`;
+        }
     }
+}
 
 
 

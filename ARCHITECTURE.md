@@ -94,7 +94,8 @@ DOM or live LiteGraph state.
   owns structured Prompt Notes (提示词笔记), integrated as a standard tool in the Toolbox
   with defensive workspace return state restoration, and redesigned with companion models
   (Base architecture, Main checkpoint, and LoRA stack) prominently positioned at the top of the editor,
-  followed by the core prompt composer and material library archiving. `ui_recipe_detail.js`
+  followed by the core prompt composer and material library archiving, guarded by Temporal Dead Zone (TDZ)
+  safe summary initialization and responsive empty-state fallback rendering. `ui_recipe_detail.js`
   owns the Workflow Recipe detail workspace, including Overview prompt showcase (with `entry.text` fallback),
   the responsive Parameter Presets workspace (featuring default-expanded raw node parameter inspection,
   a `clamp(230px, 24vw, 290px)` sidebar with guarded card actions, uncluttered console action bars with deferred status feedback,

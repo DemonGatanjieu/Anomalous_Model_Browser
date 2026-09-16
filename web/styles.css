@@ -2741,7 +2741,7 @@ dialog.anomalous-gallery-viewer[open] {
     }
 
     .anomalous-nb-header-main h2 {
-        display: none;
+        font-size: 1.05rem;
     }
 }
 
