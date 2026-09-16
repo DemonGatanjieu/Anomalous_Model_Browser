@@ -47,7 +47,7 @@ export async function copyTextWithFeedback(buttonElement, value) {
     const original = buttonElement.textContent;
     const isIcon = original.length <= 2;
     const copied = await copyText(value);
-    
+
     if (isIcon) {
         buttonElement.textContent = copied ? '✓' : '!';
     } else {
@@ -55,11 +55,11 @@ export async function copyTextWithFeedback(buttonElement, value) {
             ? `✓ ${t('recipeCopied')}`
             : `! ${t('recipeCopyFailed')}`;
     }
-    
+
     buttonElement.style.color = copied ? '#6ee7b7' : '#fca5a5';
     buttonElement.style.borderColor = copied ? 'rgba(110, 231, 183, 0.7)' : 'rgba(252, 165, 165, 0.7)';
     buttonElement.style.transition = 'all 0.2s ease';
-    
+
     window.setTimeout(() => {
         buttonElement.textContent = original;
         buttonElement.style.color = '';
@@ -67,7 +67,6 @@ export async function copyTextWithFeedback(buttonElement, value) {
     }, 1200);
     return copied;
 }
-
 export function appendCopyButton(parent, value, label = t('recipeCopyParameter')) {
     const copy = button(parent, '', 'anomalous-recipe-copy-param anomalous-recipe-detail-copy');
     copy.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
@@ -102,4 +101,3 @@ export function appendValueViewer(parent, value, className = '', options = {}) {
 
 const PROMPT_ROLES = new Set(['positive', 'negative', 'both', 'ignored', 'unknown']);
 const PROMPT_WIDGET_NAME = /^(?:text|prompt|text_[gl]|positive|negative)$/i;
-
