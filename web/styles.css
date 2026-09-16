@@ -1194,6 +1194,33 @@ button:active::after,
     opacity: 1 !important;
 }
 
+#anomalous-sidebar-actions button.is-active {
+    color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.14) !important;
+    border: 1px solid rgba(56, 189, 248, 0.35) !important;
+}
+
+#anomalous-sidebar-actions button.is-active .anomalous-action-label {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+#anomalous-sidebar-actions button.is-active > svg {
+    opacity: 1 !important;
+    color: #38bdf8 !important;
+}
+
+/* When toolbox or settings hub modal is open, completely suppress floating tooltip bubble */
+body:has(#anomalous-toolbox-modal[style*="display: flex"]) #anomalous-sidebar-tooltip-bubble,
+body:has(#anomalous-settings-hub-modal[style*="display: flex"]) #anomalous-sidebar-tooltip-bubble {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
 .anomalous-sidebar-closed #anomalous-sidebar-actions {
     flex-direction: column !important;
 }

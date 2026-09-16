@@ -79,8 +79,18 @@ if (typeof window !== 'undefined') {
     window.AMB_hideTooltipImmediately = hideTooltipImmediately;
 }
 
+export function isBottomModalOpen() {
+    if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return false;
+    const toolboxModal = document.getElementById('anomalous-toolbox-modal');
+    if (toolboxModal && toolboxModal.style && toolboxModal.style.display !== 'none') return true;
+    const settingsModal = document.getElementById('anomalous-settings-hub-modal');
+    if (settingsModal && settingsModal.style && settingsModal.style.display !== 'none') return true;
+    return false;
+}
+
 export function showSharedTooltip(button, title, desc) {
     if (isDraggingActive || typeof document === 'undefined') return;
+    if (isBottomModalOpen()) return;
     const tooltip = getOrCreateSharedTooltip();
     if (!tooltip || !button || !button.isConnected) return;
 
@@ -147,19 +157,20 @@ export function suppressButtonText(button) {
 
 function onButtonEnter(button, spec) {
     if (isDraggingActive || button.__suppress_text_until_leave) return;
+    if (isBottomModalOpen()) return;
     clearTimers();
     activeTargetButton = button;
 
     // 100ms short label reveal
     labelTimer = setTimeout(() => {
-        if (activeTargetButton === button && !isDraggingActive && !button.__suppress_text_until_leave) {
+        if (activeTargetButton === button && !isDraggingActive && !button.__suppress_text_until_leave && !isBottomModalOpen()) {
             button.classList.add('anomalous-action-label-active');
         }
     }, 100);
 
     // 600ms rich tooltip reveal
     tooltipTimer = setTimeout(() => {
-        if (activeTargetButton === button && !isDraggingActive && !button.__suppress_text_until_leave) {
+        if (activeTargetButton === button && !isDraggingActive && !button.__suppress_text_until_leave && !isBottomModalOpen()) {
             showSharedTooltip(button, t(spec.nameKey), t(spec.hintKey));
         }
     }, 600);
@@ -213,13 +224,14 @@ export function configureSidebarAction(button, customSpec = null) {
         button.addEventListener('click', handleActionClick);
 
         button.addEventListener('focus', (e) => {
+            if (isBottomModalOpen()) return;
             if (button.matches(':focus-visible') && !button.__suppress_text_until_leave) {
                 button.classList.add('anomalous-action-label-active');
                 const curSpec = getToolDefinition(button.getAttribute('data-tool-id')) || spec;
                 clearTimers();
                 activeTargetButton = button;
                 tooltipTimer = setTimeout(() => {
-                    if (activeTargetButton === button && !isDraggingActive && !button.__suppress_text_until_leave) {
+                    if (activeTargetButton === button && !isDraggingActive && !button.__suppress_text_until_leave && !isBottomModalOpen()) {
                         showSharedTooltip(button, t(curSpec.nameKey), t(curSpec.hintKey));
                     }
                 }, 600);

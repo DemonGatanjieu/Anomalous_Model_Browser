@@ -1870,10 +1870,14 @@ export function createDOM() {
         const toolboxModal = document.createElement('div');
         toolboxModal.id = 'anomalous-toolbox-modal';
         toolboxModal.style.display = 'none';
+        toolboxModal.addEventListener('mouseenter', () => {
+            if (window.AMB_hideTooltipImmediately) window.AMB_hideTooltipImmediately();
+        });
 
         const closeToolbox = (e) => {
             if (toolboxModal.style.display !== 'none' && !toolboxModal.contains(e.target) && !toolboxBtn.contains(e.target)) {
                 toolboxModal.style.display = 'none';
+                toolboxBtn.classList.remove('is-active');
                 document.removeEventListener('mousedown', closeToolbox);
             }
         };
@@ -1885,12 +1889,15 @@ export function createDOM() {
             toolboxBtn.__suppress_text_until_leave = true;
             if (settingsHubModal.style.display !== 'none') {
                 settingsHubModal.style.display = 'none';
+                settingsBtn.classList.remove('is-active');
             }
             if (toolboxModal.style.display === 'none') {
                 toolboxModal.style.display = 'flex';
+                toolboxBtn.classList.add('is-active');
                 setTimeout(() => document.addEventListener('mousedown', closeToolbox), 10);
             } else {
                 toolboxModal.style.display = 'none';
+                toolboxBtn.classList.remove('is-active');
                 document.removeEventListener('mousedown', closeToolbox);
             }
         };
@@ -1913,20 +1920,25 @@ export function createDOM() {
         const closeSettingsHub = (e) => {
             if (settingsHubModal.style.display !== 'none' && !settingsHubModal.contains(e.target) && !settingsBtn.contains(e.target)) {
                 settingsHubModal.style.display = 'none';
+                settingsBtn.classList.remove('is-active');
                 document.removeEventListener('mousedown', closeSettingsHub);
             }
         };
 
         settingsBtn.onclick = (e) => {
             e.stopPropagation();
+            if (window.AMB_hideTooltipImmediately) window.AMB_hideTooltipImmediately();
             if (toolboxModal.style.display !== 'none') {
                 toolboxModal.style.display = 'none';
+                toolboxBtn.classList.remove('is-active');
             }
             if (settingsHubModal.style.display === 'none') {
                 settingsHubModal.style.display = 'flex';
+                settingsBtn.classList.add('is-active');
                 setTimeout(() => document.addEventListener('mousedown', closeSettingsHub), 10);
             } else {
                 settingsHubModal.style.display = 'none';
+                settingsBtn.classList.remove('is-active');
                 document.removeEventListener('mousedown', closeSettingsHub);
             }
         };
@@ -2094,7 +2106,10 @@ export function createDOM() {
             closeModalBtn.style.borderRadius = '3px';
             closeModalBtn.onmouseover = () => { closeModalBtn.style.color = '#fff'; closeModalBtn.style.background = 'rgba(255,255,255,0.08)'; };
             closeModalBtn.onmouseout = () => { closeModalBtn.style.color = '#888'; closeModalBtn.style.background = 'transparent'; };
-            closeModalBtn.onclick = () => { toolboxModal.style.display = 'none'; };
+            closeModalBtn.onclick = () => {
+                toolboxModal.style.display = 'none';
+                toolboxBtn.classList.remove('is-active');
+            };
 
             headerRow.appendChild(titleBox);
             headerRow.appendChild(closeModalBtn);
@@ -2110,6 +2125,9 @@ export function createDOM() {
                     id: 'workflow-transfer',
                     action: () => {
                         toolboxModal.style.display = 'none';
+                        if (typeof toolboxBtn !== 'undefined' && toolboxBtn) {
+                            toolboxBtn.classList.remove('is-active');
+                        }
                         if (window.AMB_WorkflowShare && typeof window.AMB_WorkflowShare.showUnifiedModal === 'function') {
                             window.AMB_WorkflowShare.showUnifiedModal();
                         }
@@ -2145,6 +2163,7 @@ export function createDOM() {
                     e.stopPropagation();
                     if (window.AMB_hideTooltipImmediately) window.AMB_hideTooltipImmediately();
                     toolboxModal.style.display = 'none';
+                    toolboxBtn.classList.remove('is-active');
                     executeToolAction(tool.id);
                 };
 
