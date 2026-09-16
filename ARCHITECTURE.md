@@ -90,7 +90,11 @@ DOM or live LiteGraph state.
 - `ui_grid.js` and model-detail modules own model presentation; `ui_gallery.js`
   and `ui_gallery_detail.js` own generated-image browsing and inspection.
 - `ui_recipes.js` / `ui_recipe_detail.js`, `ui_notebooks.js`, and `ui_materials.js`
-  own their respective workspace surfaces and persistence flows.
+  own their respective workspace surfaces and persistence flows. `ui_recipe_detail.js`
+  owns the Workflow Recipe detail workspace, including Overview prompt showcase (with `entry.text` fallback),
+  the responsive Parameter Presets workspace (featuring a `clamp(230px, 24vw, 290px)` sidebar with guarded card actions,
+  uncluttered console action bars with deferred status feedback, `minmax(130px, 1fr)` Bento Grid with universal click-to-copy,
+  LoRA cards with flexbox truncation guards, and sticky editor headers), as well as Versions timeline and Recipe Gallery.
 - `ui_prompt_composer.js` owns the standalone Prompt Studio drawer. Its child
   views are `ui_prompt_source_deck.js`, `ui_prompt_workbench.js`, and
   `ui_prompt_inspector.js`. Assembly plan data, track-vs-role separation, and

@@ -981,7 +981,8 @@ function renderPromptOverviewSection(parent, recipe) {
     wrap.style.marginBottom = '16px';
 
     for (const entry of prompts.entries) {
-        if (!entry?.value || typeof entry.value !== 'string' || !entry.value.trim()) continue;
+        const promptText = entry?.text || entry?.value;
+        if (!promptText || typeof promptText !== 'string' || !promptText.trim()) continue;
         const isNegative = entry.role === 'negative';
         const box = document.createElement('div');
         box.className = `anomalous-recipe-prompt-box ${isNegative ? 'is-negative' : 'is-positive'}`;
@@ -1006,13 +1007,13 @@ function renderPromptOverviewSection(parent, recipe) {
         copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
         copyBtn.onclick = (e) => {
             e.stopPropagation();
-            navigator.clipboard.writeText(entry.value).then(() => {
+            navigator.clipboard.writeText(promptText).then(() => {
                 copyBtn.classList.add('is-copied');
                 copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
                 copyBtn.title = copiedTitle;
                 setTimeout(() => {
                     copyBtn.classList.remove('is-copied');
-                    copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+                    copyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
                     copyBtn.title = copyTitle;
                 }, 1500);
             });
@@ -1020,7 +1021,7 @@ function renderPromptOverviewSection(parent, recipe) {
         header.appendChild(copyBtn);
 
         box.appendChild(header);
-        const text = appendText(box, 'div', entry.value);
+        const text = appendText(box, 'div', promptText);
         text.style.whiteSpace = 'pre-wrap';
         text.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
         text.style.fontSize = '0.82rem';
@@ -1862,7 +1863,7 @@ function renderParameterNotebookEditor(wrapper, owner, recipe, parameterState, s
     const editor = document.createElement('section');
     editor.className = 'anomalous-recipe-detail-section anomalous-recipe-parameter-editor';
     const heading = document.createElement('div');
-    heading.className = 'anomalous-recipe-detail-section-heading';
+    heading.className = 'anomalous-recipe-detail-section-heading anomalous-recipe-parameter-editor-sticky-header';
     appendText(heading, 'h4', t('recipeParameterNew'));
     const actions = document.createElement('div');
     const cancel = button(actions, t('recipeParameterCancel'), 'anomalous-btn-ghost');
@@ -2616,31 +2617,6 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     applyButton.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>${t('recipeParameterApply')}`;
     applyButton.style.padding = '8px 16px';
     applyButton.style.fontSize = '0.88rem';
-    const applyStatus = appendText(consoleActions, 'small', '', 'anomalous-recipe-header-status');
-    applyButton.onclick = async () => {
-        applyButton.disabled = true;
-        applyButton.classList.add('is-busy');
-        applyStatus.textContent = t('recipeParameterApplying');
-        try {
-            const result = applyRecipeParametersToCanvas(source);
-            applyStatus.textContent = t('recipeParameterApplied').replace('{count}', String(result.widgets));
-        } catch (error) {
-            console.error('Could not apply recipe parameter notebook:', error);
-            const detailKey = {
-                recipe_parameter_skeleton_mismatch: 'recipeParameterSkeletonMismatch',
-                recipe_parameter_widget_mismatch: 'recipeParameterWidgetMismatch',
-                recipe_parameter_node_unavailable: 'recipeParameterNodeUnavailable',
-            }[error.code];
-            const errorMessage = error.message || String(error);
-            applyStatus.textContent = detailKey
-                ? `${t(detailKey)} ${errorMessage}`.trim()
-                : `${t('recipeParameterApplyError')} ${errorMessage}`.trim();
-            applyStatus.title = errorMessage;
-        } finally {
-            applyButton.disabled = false;
-            applyButton.classList.remove('is-busy');
-        }
-    };
 
     const saveAllMaterial = button(consoleActions, t('materialSaveAllParameters'), 'anomalous-preset-btn-secondary');
     saveAllMaterial.onclick = () => saveParameterMaterial(
@@ -2676,6 +2652,37 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
             }
         };
     }
+
+    const applyStatus = appendText(consoleActions, 'small', '', 'anomalous-recipe-header-status');
+    applyButton.onclick = async () => {
+        applyButton.disabled = true;
+        applyButton.classList.add('is-busy');
+        applyStatus.textContent = t('recipeParameterApplying');
+        try {
+            const result = applyRecipeParametersToCanvas(source);
+            applyStatus.textContent = t('recipeParameterApplied').replace('{count}', String(result.widgets));
+            setTimeout(() => {
+                if (applyStatus.textContent.includes(String(result.widgets))) {
+                    applyStatus.textContent = '';
+                }
+            }, 4000);
+        } catch (error) {
+            console.error('Could not apply recipe parameter notebook:', error);
+            const detailKey = {
+                recipe_parameter_skeleton_mismatch: 'recipeParameterSkeletonMismatch',
+                recipe_parameter_widget_mismatch: 'recipeParameterWidgetMismatch',
+                recipe_parameter_node_unavailable: 'recipeParameterNodeUnavailable',
+            }[error.code];
+            const errorMessage = error.message || String(error);
+            applyStatus.textContent = detailKey
+                ? `${t(detailKey)} ${errorMessage}`.trim()
+                : `${t('recipeParameterApplyError')} ${errorMessage}`.trim();
+            applyStatus.title = errorMessage;
+        } finally {
+            applyButton.disabled = false;
+            applyButton.classList.remove('is-busy');
+        }
+    };
     consoleInfo.appendChild(consoleActions);
     intro.appendChild(consoleInfo);
 
@@ -2764,7 +2771,7 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     if (bentoItems.length > 0) {
         for (const item of bentoItems) {
             const tile = document.createElement('div');
-            tile.className = 'anomalous-recipe-bento-tile';
+            tile.className = 'anomalous-recipe-bento-tile is-interactive';
 
             const labelRow = document.createElement('div');
             labelRow.className = 'anomalous-recipe-bento-label-row';
@@ -2777,24 +2784,30 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
             bentoLabel.innerHTML = `${item.icon}${item.label}`;
             labelRow.appendChild(bentoLabel);
 
-            if (item.isSeed) {
-                const copySeedBtn = document.createElement('button');
-                copySeedBtn.className = 'anomalous-recipe-prompt-micro-copy';
-                copySeedBtn.title = t('recipeCopyParameter') || '复制参数';
-                copySeedBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
-                copySeedBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    navigator.clipboard.writeText(String(item.val)).then(() => {
-                        copySeedBtn.classList.add('is-copied');
-                        setTimeout(() => copySeedBtn.classList.remove('is-copied'), 1200);
-                    });
-                };
-                labelRow.appendChild(copySeedBtn);
-            }
+            const copyBtn = document.createElement('button');
+            copyBtn.type = 'button';
+            copyBtn.className = 'anomalous-recipe-prompt-micro-copy';
+            copyBtn.title = t('recipeCopyParameter') || '复制参数';
+            copyBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+            
+            const doCopy = (e) => {
+                if (e) e.stopPropagation();
+                navigator.clipboard.writeText(String(item.val)).then(() => {
+                    copyBtn.classList.add('is-copied');
+                    copyBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+                    setTimeout(() => {
+                        copyBtn.classList.remove('is-copied');
+                        copyBtn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+                    }, 1200);
+                });
+            };
+            copyBtn.onclick = doCopy;
+            labelRow.appendChild(copyBtn);
 
             tile.appendChild(labelRow);
             const valEl = appendText(tile, 'span', String(item.val), 'anomalous-recipe-bento-val');
             valEl.title = String(item.val);
+            tile.onclick = doCopy;
             bentoGrid.appendChild(tile);
         }
         summary.appendChild(bentoGrid);
@@ -2823,8 +2836,9 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
             loraHeader.innerHTML = `<svg style="width:12px;height:12px;margin-right:4px;vertical-align:-1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>${t('recipeDetailLoraSummary') || 'LoRA 阵容'} (${params.loras.length})`;
 
             const loraGrid = document.createElement('div');
+            loraGrid.className = 'anomalous-recipe-lora-grid';
             loraGrid.style.display = 'grid';
-            loraGrid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(220px, 1fr))';
+            loraGrid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(240px, 1fr))';
             loraGrid.style.gap = '8px';
             loraGrid.style.marginTop = '6px';
 
@@ -2835,7 +2849,25 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
                 const modelWeight = typeof lora === 'object' && lora !== null && lora.strength_model !== undefined ? lora.strength_model : 1;
                 const clipWeight = typeof lora === 'object' && lora !== null && lora.strength_clip !== undefined ? lora.strength_clip : 1;
 
-                loraPill.innerHTML = `<div class="anomalous-recipe-lora-name" title="${escapeHtml(String(loraName))}">🎭 ${escapeHtml(String(loraName))}</div><div class="anomalous-recipe-lora-weights"><span title="Model Strength">M:${escapeHtml(String(modelWeight))}</span><span title="CLIP Strength">C:${escapeHtml(String(clipWeight))}</span></div>`;
+                const nameEl = document.createElement('div');
+                nameEl.className = 'anomalous-recipe-lora-name';
+                nameEl.title = String(loraName);
+                nameEl.textContent = `🎭 ${loraName}`;
+
+                const weightsEl = document.createElement('div');
+                weightsEl.className = 'anomalous-recipe-lora-weights';
+                weightsEl.innerHTML = `<span title="Model Strength">M:${escapeHtml(String(modelWeight))}</span><span title="CLIP Strength">C:${escapeHtml(String(clipWeight))}</span>`;
+
+                loraPill.append(nameEl, weightsEl);
+                loraPill.title = window.anomalous_browser_lang === 'zh' ? '点击复制 LoRA 名称' : 'Click to copy LoRA name';
+                loraPill.style.cursor = 'pointer';
+                loraPill.onclick = (e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(String(loraName)).then(() => {
+                        nameEl.textContent = `✓ ${loraName}`;
+                        setTimeout(() => { nameEl.textContent = `🎭 ${loraName}`; }, 1200);
+                    });
+                };
                 loraGrid.appendChild(loraPill);
             }
             loraSection.appendChild(loraGrid);
