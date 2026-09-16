@@ -90,7 +90,10 @@ DOM or live LiteGraph state.
 - `ui_grid.js` and model-detail modules own model presentation; `ui_gallery.js`
   and `ui_gallery_detail.js` own generated-image browsing and inspection.
 - `ui_recipes.js` / `ui_recipe_detail.js`, `ui_notebooks.js`, and `ui_materials.js`
-  own their respective workspace surfaces and persistence flows. `ui_notebooks.js`
+  own their respective workspace surfaces and persistence flows. `ui_recipes.js` owns
+  the Workflow Recipe studio catalog workspace with search/filter tags, grid/list layout toggle,
+  streamlined action header (preserving active workflow saving and closing while pruning unfinished package
+  import entrypoints), and card browsing. `ui_notebooks.js`
   owns structured Prompt Notes (提示词笔记), integrated as a standard tool in the Toolbox
   with defensive workspace return state restoration, and redesigned with companion models
   (Base architecture, Main checkpoint, and LoRA stack) prominently positioned at the top of the editor,
