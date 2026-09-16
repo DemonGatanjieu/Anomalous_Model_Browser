@@ -20,8 +20,18 @@ f.document.body.append(container);
 const sidebar = await f.module('ui_sidebar.js');
 const grid = await f.module('ui_grid.js');
 const navigation = await f.module('ui_browser_navigation.js');
+const browser = await f.module('browser.js');
 assert.equal(typeof sidebar.createDOM, 'function');
 assert.equal(typeof grid.loadModels, 'function');
+assert.equal(typeof browser.AnomalousBrowser, 'function');
+const browserShell = Object.create(browser.AnomalousBrowser.prototype);
+browserShell.triggerButton = new Element('button');
+browserShell.entryMode = 'floating';
+browserShell.setTriggerVisible(true);
+assert.equal(browserShell.triggerButton.classList.contains('anomalous-trigger-hidden'), false);
+browserShell.entryMode = 'menu';
+browserShell.setTriggerVisible(true);
+assert.equal(browserShell.triggerButton.classList.contains('anomalous-trigger-hidden'), true, 'non-floating entry modes keep the trigger hidden');
 const navigationOwner = {
     grid: new Element('div'),
     detailPanel: new Element('div'),
