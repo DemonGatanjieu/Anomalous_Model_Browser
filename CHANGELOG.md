@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Customizable Tool Shortcuts and Toolbox Reorganization (自定义工具箱快捷栏)
+- **Customizable Bottom Shortcut Bar (自定义底部快捷栏)**:
+  - Transformed the lower-left navigation bar into a user-customizable tool dock. Left anchor (`Toolbox`) and right anchor (`Settings`) remain fixed; intermediate slots support up to 4 user-customized tools (default: Scan, Doctor, Assistant, Materials).
+  - Tools can be dragged between the Toolbox catalog and the shortcut bar with a 6px deadzone, live ghost preview, and precision drop indicators.
+  - Pinned shortcuts can be dragged back to the Toolbox modal (or its dedicated drop zone) to unpin them, or reordered directly inside the bar.
+  - Reaching the 4-shortcut capacity limit provides clear, non-intrusive feedback.
+  - Added an accessible "•••" context menu on toolbox cards and right-click menus on shortcut buttons, allowing full organization (pin, unpin, reorder) without pointer drag.
+  - Fully localized bilingual strings and persistent layout storage under `anomalous_shortcut_layout_v1` with graceful memory fallback.
+- **Enhanced Sidebar Tooltips & Reveal Timing (侧边栏操作提示与动画优化)**:
+  - 100ms quick hover text replacement on shortcut buttons and 600ms rich singleton floating tooltip bubble (`#anomalous-sidebar-tooltip-bubble`) with bold title and muted explanation, cleanly avoiding CSS pseudo-element clipping issues.
+  - Hovering over a closed Toolbox button while dragging auto-expands the Toolbox after 350ms for frictionless tool extraction.
+  - Maintained elegant obsidian glass / dark monochromatic aesthetics without harsh or distracting bright colors.
+
 ### Navigation and update guide
 - Sidebar icons reveal compact text labels on hover or keyboard focus while keeping their existing button size and actions. Detailed hints explain each tool; scan-state and language changes retain labels. Unclipped tooltips ensure explanations are fully readable.
 - Update guide opens only from the persistent top-right exclamation button or Help. Dismissing never removes the entry. Sidebar labels slide upward on hover/focus; duplicate source-panel and obsolete notice styles were removed. See `docs/architecture/update-guide.md`.

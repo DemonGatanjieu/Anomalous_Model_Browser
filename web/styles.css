@@ -14001,106 +14001,205 @@ button:hover .anomalous-btn-icon {
 #anomalous-sidebar-actions .anomalous-action-label {
     position: absolute;
     inset: 0;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
-    font: 600 10px/1.2 system-ui, sans-serif;
-    color: inherit;
+    font: 600 11px/1 system-ui, sans-serif;
+    color: #ffffff;
     pointer-events: none;
     white-space: nowrap;
-    opacity: 0;
-    transform: translateY(5px);
-    transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
-#anomalous-sidebar-actions button:is(:hover, :focus-visible) > svg { opacity: 0; }
-#anomalous-sidebar-actions button:is(:hover, :focus-visible) .anomalous-action-label {
-    opacity: 1;
-    transform: translateY(0);
+#anomalous-sidebar-actions button.anomalous-action-label-active > svg {
+    display: none !important;
 }
+
+#anomalous-sidebar-actions button.anomalous-action-label-active .anomalous-action-label {
+    display: inline-flex !important;
+    animation: anomalous-action-label-in 0.12s ease;
+}
+
 #anomalous-sidebar-actions button:focus-visible {
     outline: 2px solid var(--amb-accent, #38bdf8);
     outline-offset: 2px;
 }
-@media (hover: none) {
-    #anomalous-sidebar-actions button > svg { opacity: 0; }
-    #anomalous-sidebar-actions .anomalous-action-label { opacity: 1; transform: none; }
+
+@keyframes anomalous-action-label-in {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* Sidebar action tooltips: wide horizontal layout with boundary safety */
-#anomalous-sidebar-actions [data-tooltip]::after,
-#anomalous-sidebar-actions .anomalous-tooltip-target::after {
-    width: max-content;
-    min-width: 100px;
-    max-width: 220px;
-    white-space: pre-line;
-    text-align: center;
-    line-height: 1.45;
-    font-size: 11.5px;
+@media (hover: none) {
+    #anomalous-sidebar-actions button > svg { display: none !important; }
+    #anomalous-sidebar-actions .anomalous-action-label { display: inline-flex !important; }
+}
+
+/* Suppress CSS pseudo-element tooltips on sidebar action buttons */
+#anomalous-sidebar-actions button::after,
+#anomalous-sidebar-actions button::before {
+    display: none !important;
+}
+
+/* =============================================================================
+   SHARED SIDEBAR FLOATING TOOLTIP BUBBLE (SINGLETON DOM)
+   ============================================================================= */
+#anomalous-sidebar-tooltip-bubble {
+    position: fixed;
+    z-index: 1000001;
+    pointer-events: none;
+    display: none;
+    flex-direction: column;
+    align-items: center;
     padding: 7px 11px;
+    max-width: 220px;
+    background: rgba(18, 20, 26, 0.98);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 1px 1px rgba(255, 255, 255, 0.08);
+    box-sizing: border-box;
+    transition: opacity 0.15s ease;
+}
+
+#anomalous-sidebar-tooltip-bubble .anomalous-tooltip-title {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 2px;
+    text-align: center;
+    line-height: 1.3;
+}
+
+#anomalous-sidebar-tooltip-bubble .anomalous-tooltip-body {
+    font-size: 10.5px;
+    font-weight: 400;
+    color: #94a3b8;
+    line-height: 1.4;
+    text-align: center;
+    white-space: normal;
     word-break: normal;
     overflow-wrap: break-word;
+}
+
+#anomalous-sidebar-tooltip-bubble .anomalous-tooltip-arrow {
+    position: absolute;
+    bottom: -5px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid rgba(18, 20, 26, 0.98);
+    transform: translateX(-50%);
+}
+
+/* =============================================================================
+   TOOLBOX CATALOG & SHORTCUT ORGANIZER
+   ============================================================================= */
+.anomalous-toolbox-tile {
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: grab;
+}
+
+.anomalous-toolbox-tile:active {
+    cursor: grabbing;
+}
+
+.anomalous-toolbox-tile-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+.anomalous-pinned-badge {
+    font-size: 9px;
+    font-weight: 600;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 1px 5px;
+    border-radius: 3px;
+    line-height: 1.2;
+}
+
+.anomalous-tool-more-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+}
+
+.anomalous-tool-more-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.anomalous-toolbox-dropzone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 10px;
+    margin-top: 6px;
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+    border-radius: 6px;
+    font-size: 11px;
+    color: #64748b;
+    background: rgba(255, 255, 255, 0.02);
+    transition: all 0.18s ease;
+    text-align: center;
     box-sizing: border-box;
-    pointer-events: none;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
-/* Align edge buttons so tooltips stay cleanly within the sidebar */
-#anomalous-sidebar-actions button:first-child[data-tooltip]::after,
-#anomalous-sidebar-actions button:first-child.anomalous-tooltip-target::after,
-#anomalous-sidebar-actions button:nth-child(2)[data-tooltip]::after,
-#anomalous-sidebar-actions button:nth-child(2).anomalous-tooltip-target::after {
-    left: 0;
-    right: auto;
-    transform: translateY(4px);
+.anomalous-toolbox-dropzone.is-drag-over {
+    border-color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f1f5f9;
+    box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.05);
 }
 
-#anomalous-sidebar-actions button:first-child[data-tooltip]:is(:hover, :focus-visible)::after,
-#anomalous-sidebar-actions button:first-child.anomalous-tooltip-target:is(:hover, :focus-visible)::after,
-#anomalous-sidebar-actions button:nth-child(2)[data-tooltip]:is(:hover, :focus-visible)::after,
-#anomalous-sidebar-actions button:nth-child(2).anomalous-tooltip-target:is(:hover, :focus-visible)::after {
-    transform: translateY(0);
+.anomalous-toolbox-footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 4px 2px;
+    margin-top: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-#anomalous-sidebar-actions button:first-child[data-tooltip]::before,
-#anomalous-sidebar-actions button:first-child.anomalous-tooltip-target::before,
-#anomalous-sidebar-actions button:nth-child(2)[data-tooltip]::before,
-#anomalous-sidebar-actions button:nth-child(2).anomalous-tooltip-target::before {
-    left: 14px;
-    right: auto;
-    transform: translateY(4px);
+.anomalous-toolbox-reset-shortcuts {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
 }
 
-#anomalous-sidebar-actions button:first-child[data-tooltip]:is(:hover, :focus-visible)::before,
-#anomalous-sidebar-actions button:first-child.anomalous-tooltip-target:is(:hover, :focus-visible)::before,
-#anomalous-sidebar-actions button:nth-child(2)[data-tooltip]:is(:hover, :focus-visible)::before,
-#anomalous-sidebar-actions button:nth-child(2).anomalous-tooltip-target:is(:hover, :focus-visible)::before {
-    transform: translateY(0);
+.anomalous-toolbox-reset-shortcuts:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.25);
 }
 
-#anomalous-sidebar-actions button:last-child[data-tooltip]::after,
-#anomalous-sidebar-actions button:last-child.anomalous-tooltip-target::after {
-    left: auto;
-    right: 0;
-    transform: translateY(4px);
-}
-
-#anomalous-sidebar-actions button:last-child[data-tooltip]:is(:hover, :focus-visible)::after,
-#anomalous-sidebar-actions button:last-child.anomalous-tooltip-target:is(:hover, :focus-visible)::after {
-    transform: translateY(0);
-}
-
-#anomalous-sidebar-actions button:last-child[data-tooltip]::before,
-#anomalous-sidebar-actions button:last-child.anomalous-tooltip-target::before {
-    left: auto;
-    right: 14px;
-    transform: translateY(4px);
-}
-
-#anomalous-sidebar-actions button:last-child[data-tooltip]:is(:hover, :focus-visible)::before,
-#anomalous-sidebar-actions button:last-child.anomalous-tooltip-target:is(:hover, :focus-visible)::before {
-    transform: translateY(0);
+@media (prefers-reduced-motion: reduce) {
+    #anomalous-sidebar-actions button .anomalous-action-label {
+        animation: none !important;
+        transform: none !important;
+    }
+    #anomalous-sidebar-tooltip-bubble {
+        transition: none !important;
+    }
 }
 
 /* =============================================================================

@@ -82,6 +82,8 @@ tests/*
 !tests/update_guide.mjs
 !tests/test_export_availability.py
 !tests/model_sources_hub.mjs
+!tests/shortcut_layout.mjs
+!tests/shortcut_organizer.mjs
 
 # Local diagnostic/test artifacts
 grep_doctor.txt

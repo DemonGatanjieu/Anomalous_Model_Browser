@@ -10,6 +10,9 @@ import { updateScanProgress, finishScanProgress, failScanProgress } from './scan
 import { openModelSourcesModal } from './ui_model_sources.js';
 import { showUpdateGuide } from './ui_update_guide.js';
 import { configureSidebarAction, configureSidebarActions } from './sidebar_actions.js';
+import { CATALOG_TOOLS, FIXED_ANCHORS, getToolDefinition } from './tool_registry.js';
+import { loadShortcutLayout, resetShortcutLayout, isToolPinned } from './shortcut_layout.js';
+import { bindDraggableTool, openToolboxCardMenu } from './ui_shortcut_organizer.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -397,21 +400,6 @@ export function createDOM() {
             }
         };
 
-        const scanBtn = document.createElement('button');
-        scanBtn.id = 'anomalous-scan-btn';
-        scanBtn.className = 'anomalous-tooltip-target';
-        scanBtn.removeAttribute('title');
-        scanBtn.setAttribute('aria-label', t('sidebarScanWizard'));
-        scanBtn.setAttribute('data-tooltip', t('sidebarScanWizard'));
-        scanBtn.setAttribute('data-tooltip-pos', 'top');
-        setScanButtonState(scanBtn, false);
-        scanBtn.style.background = 'transparent';
-        scanBtn.style.border = 'none';
-        scanBtn.style.borderRadius = '6px';
-        scanBtn.style.padding = '6px';
-        scanBtn.style.fontSize = '1.1em';
-        scanBtn.style.cursor = 'pointer';
-
         let isCurrentlyScanning = false;
         setInterval(async () => {
             try {
@@ -439,12 +427,13 @@ export function createDOM() {
 
                 if (activeStatus) updateScanProgress(activeStatus);
 
+                const currentScanBtn = document.getElementById('anomalous-scan-btn');
                 if (isScanning && !isCurrentlyScanning) {
                     isCurrentlyScanning = true;
-                    setScanButtonState(scanBtn, true);
+                    if (currentScanBtn) setScanButtonState(currentScanBtn, true);
                 } else if (!isScanning && isCurrentlyScanning) {
                     isCurrentlyScanning = false;
-                    setScanButtonState(scanBtn, false);
+                    if (currentScanBtn) setScanButtonState(currentScanBtn, false);
                     finishScanProgress();
                     this.loadModels();
                     if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();
@@ -955,8 +944,9 @@ export function createDOM() {
                         }
                         
                         document.body.removeChild(wizard);
-                        if (typeof scanBtn !== 'undefined') {
-                            setScanButtonState(scanBtn, true);
+                        const activeScanBtn = document.getElementById('anomalous-scan-btn');
+                        if (activeScanBtn) {
+                            setScanButtonState(activeScanBtn, true);
                         }
 
                         const customFolders = Array.from(selectedForScan.entries()).filter(([, files]) => files.size > 0);
@@ -1156,8 +1146,6 @@ export function createDOM() {
             document.body.appendChild(wizard);
         };
 
-        scanBtn.onclick = () => createWizardModal(true);
-
         const toolboxBtn = document.createElement('button');
         toolboxBtn.id = 'anomalous-toolbox-btn';
         toolboxBtn.className = 'anomalous-tooltip-target';
@@ -1172,9 +1160,6 @@ export function createDOM() {
         toolboxBtn.style.padding = '6px';
         toolboxBtn.style.fontSize = '1.1em';
         toolboxBtn.style.cursor = 'pointer';
-
-        this.sidebarActions.appendChild(toolboxBtn);
-        this.sidebarActions.appendChild(scanBtn);
 
 
         let refreshModelSettingsText = () => {};
@@ -1224,24 +1209,14 @@ export function createDOM() {
             toolboxBtn.setAttribute('aria-label', t('sidebarToolbox'));
             toolboxBtn.setAttribute('data-tooltip', t('sidebarToolbox'));
             toolboxBtn.setAttribute('data-tooltip-pos', 'top');
-            scanBtn.removeAttribute('title');
-            scanBtn.setAttribute('aria-label', t('sidebarScanWizard'));
-            scanBtn.setAttribute('data-tooltip', t('sidebarScanWizard'));
-            scanBtn.setAttribute('data-tooltip-pos', 'top');
-            setScanButtonState(scanBtn, isCurrentlyScanning);
             helpBtn.innerHTML = `${SIDEBAR_ICONS.HELP}<span class="anomalous-btn-text">${t('help')}</span>`;
             if (this.renderToolboxModal) this.renderToolboxModal();
+            if (this.renderShortcutActions) this.renderShortcutActions();
             nbBtn.removeAttribute('title');
             nbBtn.setAttribute('data-tooltip', t('recipeTitle'));
             nbBtn.setAttribute('data-tooltip-pos', 'bottom');
             nbBtn.innerHTML = `${SIDEBAR_ICONS.RECIPES}<span class="anomalous-btn-text">${t('recipeTitle')}</span>`;
 
-            const dBtn = document.getElementById('anomalous-doctor-btn');
-            if (dBtn) { dBtn.removeAttribute('title'); dBtn.setAttribute('data-tooltip', t('sidebarDoctor')); dBtn.setAttribute('data-tooltip-pos', 'top'); }
-            const aBtn = document.getElementById('anomalous-assistant-btn');
-            if (aBtn) { aBtn.removeAttribute('title'); aBtn.setAttribute('data-tooltip', t('sidebarAssistant')); aBtn.setAttribute('data-tooltip-pos', 'top'); }
-            const iBtn = document.getElementById('anomalous-materials-btn');
-            if (iBtn) { iBtn.removeAttribute('title'); iBtn.setAttribute('aria-label', t('materialLibrary')); iBtn.setAttribute('data-tooltip', t('materialLibrary')); iBtn.setAttribute('data-tooltip-pos', 'top'); }
             const sBtn = document.getElementById('anomalous-global-settings-btn');
             if (sBtn) { sBtn.removeAttribute('title'); sBtn.setAttribute('data-tooltip', t('sidebarSettings')); sBtn.setAttribute('data-tooltip-pos', 'top'); }
             configureSidebarActions(this.sidebarWrapper);
@@ -1917,6 +1892,172 @@ export function createDOM() {
             }
         };
 
+        const settingsBtn = document.createElement('button');
+        settingsBtn.id = 'anomalous-global-settings-btn';
+        settingsBtn.className = 'anomalous-tooltip-target';
+        settingsBtn.innerHTML = SIDEBAR_ICONS.SETTINGS;
+        settingsBtn.removeAttribute('title');
+        settingsBtn.setAttribute('aria-label', t('sidebarSettings'));
+        settingsBtn.setAttribute('data-tooltip', t('sidebarSettings'));
+        settingsBtn.setAttribute('data-tooltip-pos', 'top');
+        settingsBtn.style.background = 'transparent';
+        settingsBtn.style.border = 'none';
+        settingsBtn.style.borderRadius = '6px';
+        settingsBtn.style.padding = '6px';
+        settingsBtn.style.fontSize = '1.1em';
+        settingsBtn.style.marginLeft = 'auto';
+        settingsBtn.style.cursor = 'pointer';
+        const closeSettingsHub = (e) => {
+            if (settingsHubModal.style.display !== 'none' && !settingsHubModal.contains(e.target) && !settingsBtn.contains(e.target)) {
+                settingsHubModal.style.display = 'none';
+                document.removeEventListener('mousedown', closeSettingsHub);
+            }
+        };
+
+        settingsBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (toolboxModal.style.display !== 'none') {
+                toolboxModal.style.display = 'none';
+            }
+            if (settingsHubModal.style.display === 'none') {
+                settingsHubModal.style.display = 'flex';
+                setTimeout(() => document.addEventListener('mousedown', closeSettingsHub), 10);
+            } else {
+                settingsHubModal.style.display = 'none';
+                document.removeEventListener('mousedown', closeSettingsHub);
+            }
+        };
+
+        const executeToolAction = async (toolId) => {
+            switch (toolId) {
+                case 'scan':
+                    createWizardModal(true);
+                    break;
+                case 'doctor':
+                    this.hideAllPanels();
+                    if (localStorage.getItem('anomalous_user_sidebar_closed') === 'true') {
+                        container.classList.add('anomalous-sidebar-closed');
+                    } else {
+                        container.classList.remove('anomalous-sidebar-closed');
+                    }
+                    menuBtn.disabled = false;
+                    menuBtn.style.opacity = '1';
+                    menuBtn.style.cursor = 'pointer';
+                    this.doctorPanel.style.display = 'flex';
+                    if (!this.doctorPanelInitialized) {
+                        this.initDoctorPanel();
+                    }
+                    if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();
+                    if (window.anomalous_resolve_all_missing_nodes) {
+                        await window.anomalous_resolve_all_missing_nodes(true, false);
+                    }
+                    this.renderGlobalDashboard();
+                    break;
+                case 'assistant':
+                    this.hideAllPanels();
+                    if (this.setActiveHeaderTab) this.setActiveHeaderTab(null);
+                    container.classList.add('anomalous-sidebar-closed');
+                    menuBtn.disabled = false;
+                    menuBtn.style.opacity = '1';
+                    menuBtn.style.cursor = 'pointer';
+                    this.assistantPanel.style.display = 'flex';
+                    if (!this.assistantPanelInitialized) {
+                        this.initAssistantPanel();
+                    }
+                    if (Object.keys(app.canvas?.selected_nodes || {}).length > 0) {
+                        const firstSelected = Object.values(app.canvas.selected_nodes)[0];
+                        this.diagnoseNode(firstSelected);
+                    } else {
+                        this.diagnoseNode(null);
+                    }
+                    break;
+                case 'materials':
+                    this.openMaterialLibrary();
+                    break;
+                case 'workflow-transfer':
+                    if (window.AMB_WorkflowShare && typeof window.AMB_WorkflowShare.showUnifiedModal === 'function') {
+                        window.AMB_WorkflowShare.showUnifiedModal();
+                    }
+                    break;
+                case 'prompt-studio':
+                    if (typeof this.openPromptStudio === 'function') {
+                        this.openPromptStudio();
+                    } else if (typeof this.openMaterialLibrary === 'function') {
+                        this.openMaterialLibrary();
+                    }
+                    break;
+                case 'prompt-translator':
+                    if (typeof this.openPromptTranslator === 'function') {
+                        this.openPromptTranslator();
+                    }
+                    break;
+                case 'model-sources':
+                    openModelSourcesModal('workflow');
+                    break;
+                default: {
+                    const custom = (this.customToolboxItems || []).find(it => it.id === toolId);
+                    if (custom && typeof custom.action === 'function') {
+                        custom.action();
+                    }
+                    break;
+                }
+            }
+        };
+        this.executeToolAction = executeToolAction;
+
+        const renderShortcutActions = () => {
+            this.sidebarActions.replaceChildren();
+            this.sidebarActions.appendChild(toolboxBtn);
+
+            const layout = loadShortcutLayout();
+            for (const toolId of layout) {
+                const def = getToolDefinition(toolId);
+                if (!def) continue;
+
+                const btn = document.createElement('button');
+                btn.id = def.domId;
+                btn.setAttribute('data-tool-id', toolId);
+                btn.className = 'anomalous-tooltip-target';
+                btn.removeAttribute('title');
+                btn.setAttribute('aria-label', t(def.nameKey));
+                btn.setAttribute('data-tooltip', t(def.nameKey));
+                btn.setAttribute('data-tooltip-pos', 'top');
+                btn.style.background = 'transparent';
+                btn.style.border = 'none';
+                btn.style.borderRadius = '6px';
+                btn.style.padding = '6px';
+                btn.style.fontSize = '1.1em';
+                btn.style.cursor = 'pointer';
+
+                if (toolId === 'scan') {
+                    setScanButtonState(btn, isCurrentlyScanning);
+                } else {
+                    btn.innerHTML = def.icon;
+                }
+
+                bindDraggableTool(btn, {
+                    toolId,
+                    source: 'shortcut',
+                    toolboxModal,
+                    toolboxBtn,
+                    sidebarActionsEl: this.sidebarActions,
+                    onLayoutChange: () => {
+                        renderShortcutActions();
+                        if (this.renderToolboxModal) this.renderToolboxModal();
+                    },
+                    onToolClick: () => {
+                        executeToolAction(toolId);
+                    }
+                });
+
+                this.sidebarActions.appendChild(btn);
+            }
+
+            this.sidebarActions.appendChild(settingsBtn);
+            configureSidebarActions(this.sidebarWrapper);
+        };
+        this.renderShortcutActions = renderShortcutActions;
+
         const renderToolboxModal = () => {
             toolboxModal.replaceChildren();
 
@@ -1964,7 +2105,6 @@ export function createDOM() {
 
             headerRow.appendChild(titleBox);
             headerRow.appendChild(closeModalBtn);
-
             toolboxModal.appendChild(headerRow);
 
             const gridContainer = document.createElement('div');
@@ -1973,130 +2113,127 @@ export function createDOM() {
             const defaultTools = [
                 {
                     id: 'workflow-transfer',
-                    icon: '🔄',
-                    shortTitle: t('toolWorkflowTransferShort'),
-                    title: t('toolWorkflowTransferTitle'),
-                    desc: t('toolWorkflowTransferDesc'),
-                    badge: null,
-                    isReady: true,
                     action: () => {
                         toolboxModal.style.display = 'none';
-                        window.AMB_WorkflowShare.showUnifiedModal();
-                    }
-                },
-                {
-                    id: 'prompt-studio',
-                    icon: '🎛️',
-                    shortTitle: t('toolPromptStudioShort'),
-                    title: t('toolPromptStudioTitle'),
-                    desc: t('toolPromptStudioDesc'),
-                    badge: null,
-                    isReady: true,
-                    action: () => {
-                        toolboxModal.style.display = 'none';
-                        if (typeof this.openPromptStudio === 'function') {
-                            this.openPromptStudio();
-                        } else if (typeof this.openMaterialLibrary === 'function') {
-                            this.openMaterialLibrary();
+                        if (window.AMB_WorkflowShare && typeof window.AMB_WorkflowShare.showUnifiedModal === 'function') {
+                            window.AMB_WorkflowShare.showUnifiedModal();
                         }
-                    }
-                },
-                {
-                    id: 'prompt-translator',
-                    icon: '🌐',
-                    shortTitle: t('toolPromptTranslatorShort'),
-                    title: t('toolPromptTranslatorTitle'),
-                    desc: t('toolPromptTranslatorDesc'),
-                    badge: null,
-                    isReady: true,
-                    action: () => {
-                        toolboxModal.style.display = 'none';
-                        if (typeof this.openPromptTranslator === 'function') {
-                            this.openPromptTranslator();
-                        }
-                    }
-                },
-                {
-                    id: 'model-sources',
-                    icon: '🔗',
-                    shortTitle: t('toolModelSourcesShort'),
-                    title: t('toolModelSourcesTitle'),
-                    desc: t('toolModelSourcesDesc'),
-                    badge: null,
-                    isReady: true,
-                    action: () => {
-                        toolboxModal.style.display = 'none';
-                        openModelSourcesModal('workflow');
                     }
                 }
             ];
-
-            const allTools = [...defaultTools, ...(this.customToolboxItems || [])];
+            const allTools = [...CATALOG_TOOLS, ...(this.customToolboxItems || [])];
 
             allTools.forEach(tool => {
+                const isPinned = isToolPinned(tool.id);
                 const tile = document.createElement('div');
                 tile.className = 'anomalous-toolbox-tile anomalous-tooltip-target';
-                tile.setAttribute('data-tooltip', `${tool.title}\n${tool.desc || ''}`);
+                tile.setAttribute('data-tool-id', tool.id);
+                tile.setAttribute('data-tooltip', `${t(tool.nameKey)}\n${t(tool.hintKey) || ''}`);
                 tile.setAttribute('data-tooltip-pos', 'top');
 
-                if (tool.badge) {
-                    const dot = document.createElement('span');
-                    dot.className = 'anomalous-toolbox-tile-dot';
-                    tile.appendChild(dot);
-                } else if (tool.isReady) {
-                    const dot = document.createElement('span');
-                    dot.className = 'anomalous-toolbox-tile-dot is-ready';
-                    tile.appendChild(dot);
+                const topBadgesRow = document.createElement('div');
+                topBadgesRow.style.position = 'absolute';
+                topBadgesRow.style.top = '3px';
+                topBadgesRow.style.left = '4px';
+                topBadgesRow.style.right = '4px';
+                topBadgesRow.style.display = 'flex';
+                topBadgesRow.style.alignItems = 'center';
+                topBadgesRow.style.justifyContent = 'space-between';
+                topBadgesRow.style.pointerEvents = 'none';
+
+                if (isPinned) {
+                    const pinnedBadge = document.createElement('span');
+                    pinnedBadge.className = 'anomalous-pinned-badge';
+                    pinnedBadge.textContent = t('shortcutBarPinned');
+                    topBadgesRow.appendChild(pinnedBadge);
+                } else {
+                    const emptySpacer = document.createElement('span');
+                    topBadgesRow.appendChild(emptySpacer);
                 }
+
+                const moreBtn = document.createElement('button');
+                moreBtn.type = 'button';
+                moreBtn.className = 'anomalous-tool-more-btn';
+                moreBtn.textContent = '•••';
+                moreBtn.style.pointerEvents = 'auto';
+                moreBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    openToolboxCardMenu(tool.id, moreBtn, () => {
+                        renderShortcutActions();
+                        renderToolboxModal();
+                    });
+                };
+                topBadgesRow.appendChild(moreBtn);
+                tile.appendChild(topBadgesRow);
 
                 const iconEl = document.createElement('div');
                 iconEl.className = 'anomalous-toolbox-tile-icon';
-                iconEl.innerText = tool.icon || '🔧';
+                iconEl.innerHTML = tool.icon || '🔧';
                 tile.appendChild(iconEl);
 
                 const labelEl = document.createElement('div');
                 labelEl.className = 'anomalous-toolbox-tile-label';
-                labelEl.textContent = tool.shortTitle || tool.title;
+                labelEl.textContent = t(tool.labelKey) || t(tool.nameKey);
                 tile.appendChild(labelEl);
 
-                tile.onclick = (e) => {
-                    e.stopPropagation();
-                    if (typeof tool.action === 'function') {
-                        tool.action();
-                    } else {
-                        const alertMsg = window.anomalous_browser_lang === 'zh'
-                            ? `【${tool.title}】功能正在规划整合中，敬请期待！`
-                            : `[${tool.title}] is currently in development!`;
-                        if (typeof window.anomalous_notify === 'function') {
-                            window.anomalous_notify(alertMsg, 'info');
-                        } else {
-                            alert(alertMsg);
-                        }
+                bindDraggableTool(tile, {
+                    toolId: tool.id,
+                    source: 'toolbox',
+                    toolboxModal,
+                    toolboxBtn,
+                    sidebarActionsEl: this.sidebarActions,
+                    onLayoutChange: () => {
+                        renderShortcutActions();
+                        renderToolboxModal();
+                    },
+                    onToolClick: () => {
+                        toolboxModal.style.display = 'none';
+                        executeToolAction(tool.id);
                     }
-                };
+                });
 
                 gridContainer.appendChild(tile);
             });
 
             toolboxModal.appendChild(gridContainer);
 
-            const hintFooter = document.createElement('div');
+            const dropzone = document.createElement('div');
+            dropzone.className = 'anomalous-toolbox-dropzone';
+            dropzone.innerHTML = `
+                <span class="anomalous-toolbox-dropzone-icon" style="margin-right: 4px;">📥</span>
+                <span class="anomalous-toolbox-dropzone-text">${t('shortcutDropHint')}</span>
+            `;
+            toolboxModal.appendChild(dropzone);
+
+            const footerRow = document.createElement('div');
+            footerRow.className = 'anomalous-toolbox-footer-row';
+
+            const resetShortcutsBtn = document.createElement('button');
+            resetShortcutsBtn.type = 'button';
+            resetShortcutsBtn.className = 'anomalous-toolbox-reset-shortcuts';
+            resetShortcutsBtn.textContent = t('shortcutBarReset');
+            resetShortcutsBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (confirm(t('shortcutBarResetConfirm'))) {
+                    resetShortcutLayout();
+                    renderShortcutActions();
+                    renderToolboxModal();
+                }
+            };
+
+            const hintFooter = document.createElement('span');
             hintFooter.textContent = window.anomalous_browser_lang === 'zh' ? '💡 实用运维工具持续扩充中' : '💡 Utility toolset expanding...';
             hintFooter.style.fontSize = '10px';
             hintFooter.style.color = '#71717a';
-            hintFooter.style.textAlign = 'center';
-            hintFooter.style.padding = '4px 2px 0';
-            hintFooter.style.borderTop = '1px solid rgba(255, 255, 255, 0.05)';
             hintFooter.style.whiteSpace = 'nowrap';
             hintFooter.style.overflow = 'hidden';
             hintFooter.style.textOverflow = 'ellipsis';
-            hintFooter.style.flexShrink = '0';
-            hintFooter.style.marginTop = 'auto';
+            hintFooter.style.maxWidth = '130px';
 
-            toolboxModal.appendChild(hintFooter);
+            footerRow.appendChild(hintFooter);
+            footerRow.appendChild(resetShortcutsBtn);
+            toolboxModal.appendChild(footerRow);
         };
-
-        renderToolboxModal();
         this.renderToolboxModal = renderToolboxModal;
         this.registerToolboxItem = (item) => {
             this.customToolboxItems = this.customToolboxItems || [];
@@ -2107,136 +2244,8 @@ export function createDOM() {
 
         container.appendChild(toolboxModal);
 
-        const settingsBtn = document.createElement('button');
-        settingsBtn.id = 'anomalous-global-settings-btn';
-        settingsBtn.className = 'anomalous-tooltip-target';
-        settingsBtn.innerHTML = SIDEBAR_ICONS.SETTINGS;
-        settingsBtn.removeAttribute('title');
-        settingsBtn.setAttribute('aria-label', t('sidebarSettings'));
-        settingsBtn.setAttribute('data-tooltip', t('sidebarSettings'));
-        settingsBtn.setAttribute('data-tooltip-pos', 'top');
-        settingsBtn.style.background = 'transparent';
-        settingsBtn.style.border = 'none';
-        settingsBtn.style.borderRadius = '6px';
-        settingsBtn.style.padding = '6px';
-        settingsBtn.style.fontSize = '1.1em';
-        settingsBtn.style.marginLeft = 'auto';
-        settingsBtn.style.cursor = 'pointer';
-        const closeSettingsHub = (e) => {
-            if (settingsHubModal.style.display !== 'none' && !settingsHubModal.contains(e.target) && !settingsBtn.contains(e.target)) {
-                settingsHubModal.style.display = 'none';
-                document.removeEventListener('mousedown', closeSettingsHub);
-            }
-        };
-
-        settingsBtn.onclick = (e) => {
-            e.stopPropagation();
-            if (toolboxModal.style.display !== 'none') {
-                toolboxModal.style.display = 'none';
-            }
-            if (settingsHubModal.style.display === 'none') {
-                settingsHubModal.style.display = 'flex';
-                // Delay adding the listener slightly to avoid triggering it on the same click
-                setTimeout(() => document.addEventListener('mousedown', closeSettingsHub), 10);
-            } else {
-                settingsHubModal.style.display = 'none';
-                document.removeEventListener('mousedown', closeSettingsHub);
-            }
-        };
-
-        const importBtn = document.createElement('button');
-        importBtn.id = 'anomalous-materials-btn';
-        importBtn.className = 'anomalous-tooltip-target';
-        importBtn.removeAttribute('title');
-        importBtn.setAttribute('aria-label', t('materialLibrary'));
-        importBtn.setAttribute('data-tooltip', t('materialLibrary'));
-        importBtn.setAttribute('data-tooltip-pos', 'top');
-        importBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M12 2L2 7l10 5 10-5-10-5Z"/><path d="M2 12l10 5 10-5"/><path d="M2 17l10 5 10-5"/></svg>`;
-        importBtn.style.background = 'transparent';
-        importBtn.style.border = 'none';
-        importBtn.style.borderRadius = '6px';
-        importBtn.style.padding = '6px';
-        importBtn.style.fontSize = '1.1em';
-        importBtn.style.cursor = 'pointer';
-        importBtn.onclick = () => this.openMaterialLibrary();
-
-
-
-        const doctorBtn = document.createElement('button');
-        doctorBtn.id = 'anomalous-doctor-btn';
-        doctorBtn.className = 'anomalous-tooltip-target';
-        doctorBtn.removeAttribute('title');
-        doctorBtn.setAttribute('aria-label', t('sidebarDoctor'));
-        doctorBtn.setAttribute('data-tooltip', t('sidebarDoctor'));
-        doctorBtn.setAttribute('data-tooltip-pos', 'top');
-        doctorBtn.innerHTML = SIDEBAR_ICONS.DOCTOR;
-        doctorBtn.style.background = 'transparent';
-        doctorBtn.style.border = 'none';
-        doctorBtn.style.borderRadius = '6px';
-        doctorBtn.style.padding = '6px';
-        doctorBtn.style.fontSize = '1.1em';
-        doctorBtn.style.cursor = 'pointer';
-        doctorBtn.onclick = async () => {
-            this.hideAllPanels();
-            if (localStorage.getItem('anomalous_user_sidebar_closed') === 'true') {
-                container.classList.add('anomalous-sidebar-closed');
-            } else {
-                container.classList.remove('anomalous-sidebar-closed');
-            }
-            menuBtn.disabled = false;
-            menuBtn.style.opacity = '1';
-            menuBtn.style.cursor = 'pointer';
-            this.doctorPanel.style.display = 'flex';
-            if (!this.doctorPanelInitialized) {
-                this.initDoctorPanel();
-            }
-            // Trigger auto hash-resolve when opening Doctor
-            if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();
-            if (window.anomalous_resolve_all_missing_nodes) {
-                await window.anomalous_resolve_all_missing_nodes(true, false);
-            }
-            this.renderGlobalDashboard();
-        };
-
-        const assistantBtn = document.createElement('button');
-        assistantBtn.id = 'anomalous-assistant-btn';
-        assistantBtn.className = 'anomalous-tooltip-target';
-        assistantBtn.removeAttribute('title');
-        assistantBtn.setAttribute('aria-label', t('sidebarAssistant'));
-        assistantBtn.setAttribute('data-tooltip', t('sidebarAssistant'));
-        assistantBtn.setAttribute('data-tooltip-pos', 'top');
-        assistantBtn.innerHTML = SIDEBAR_ICONS.ASSISTANT;
-        assistantBtn.style.background = 'transparent';
-        assistantBtn.style.border = 'none';
-        assistantBtn.style.borderRadius = '6px';
-        assistantBtn.style.padding = '6px';
-        assistantBtn.style.fontSize = '1.1em';
-        assistantBtn.style.cursor = 'pointer';
-        assistantBtn.onclick = async () => {
-            this.hideAllPanels();
-            if (this.setActiveHeaderTab) this.setActiveHeaderTab(null);
-            container.classList.add('anomalous-sidebar-closed');
-            menuBtn.disabled = false;
-            menuBtn.style.opacity = '1';
-            menuBtn.style.cursor = 'pointer';
-            this.assistantPanel.style.display = 'flex';
-            if (!this.assistantPanelInitialized) {
-                this.initAssistantPanel();
-            }
-            // Show current selected node immediately
-            if (Object.keys(app.canvas.selected_nodes || {}).length > 0) {
-                const firstSelected = Object.values(app.canvas.selected_nodes)[0];
-                this.diagnoseNode(firstSelected);
-            } else {
-                this.diagnoseNode(null);
-            }
-        };
-
-        this.sidebarActions.appendChild(doctorBtn);
-        this.sidebarActions.appendChild(assistantBtn);
-        this.sidebarActions.appendChild(importBtn);
-        this.sidebarActions.appendChild(settingsBtn);
-        configureSidebarActions(this.sidebarWrapper);
+        renderToolboxModal();
+        renderShortcutActions();
 
         this.grid = document.createElement('div');
         this.grid.id = 'anomalous-grid';
