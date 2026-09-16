@@ -2083,13 +2083,17 @@ export function createDOM() {
             titleBox.style.alignItems = 'center';
             titleBox.style.gap = '5px';
 
+            const titleIcon = document.createElement('span');
+            titleIcon.textContent = '🧰';
+            titleIcon.style.fontSize = '11px';
+
             const titleText = document.createElement('span');
             titleText.textContent = t('toolboxTitle');
             titleText.style.fontWeight = '600';
-            titleText.style.fontSize = '10.5px';
+            titleText.style.fontSize = '11px';
             titleText.style.color = '#fff';
 
-            titleBox.appendChild(titleText);
+            titleBox.append(titleIcon, titleText);
 
             const closeModalBtn = document.createElement('div');
             closeModalBtn.innerHTML = '&times;';
