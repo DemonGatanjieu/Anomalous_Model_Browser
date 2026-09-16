@@ -11,59 +11,6 @@ import { showMaterialSaved } from './material_feedback.js';
 
 const t = (key, params) => translate(key, params);
 
-function restoreWorkspaceReturnPanel(owner) {
-    const state = owner.workspaceReturnState;
-    owner.workspaceReturnState = null;
-    const panels = [
-        ['grid', owner.grid],
-        ['detail', owner.detailPanel],
-        ['gallery', owner.galleryPanel],
-        ['doctor', owner.doctorPanel],
-        ['assistant', owner.assistantPanel],
-    ];
-    if (state) {
-        for (const [key, panel] of panels) {
-            if (panel && Object.prototype.hasOwnProperty.call(state, key)) panel.style.display = state[key];
-        }
-    }
-    const hasVisiblePanel = panels.some(([, panel]) => panel && panel.style.display !== 'none');
-    if (!hasVisiblePanel && owner.grid) owner.grid.style.display = 'grid';
-}
-
-export function closeWorkspace() {
-    clearTimeout(this.materialSearchTimer);
-    this.materialListController?.abort();
-    this.materialListController = null;
-    this.materialDetailController?.abort();
-    this.recipeDetailFinish?.('closed');
-    const abandonedRecipeModel = typeof this.recipeModelReturn === 'function';
-    this.recipeModelReturn = null;
-    if (abandonedRecipeModel) {
-        this.recipeReturnState = null;
-        delete this.recipeDetailPayload;
-        if (this.recipeListContainer) this.recipeListContainer.style.display = '';
-        const actionbar = this.recipeView?.querySelector('.anomalous-recipe-actionbar');
-        if (actionbar) actionbar.style.display = '';
-        if (this.detailPanel) {
-            this.stopMediaInContainer?.(this.detailPanel);
-            this.detailPanel.replaceChildren();
-            this.detailPanel.style.display = 'none';
-        }
-        this.currentDetailModel = null;
-        this.historyStack = [];
-    }
-    if (this.paramPanel) this.paramPanel.style.display = 'none';
-    if (this.recipeView) this.recipeView.style.display = 'none';
-    if (this.materialView) this.materialView.style.display = 'none';
-    if (this.notebookBody) this.notebookBody.style.display = 'none';
-    if (this.materialContainer) this.materialContainer.style.display = 'none';
-    if (this.recipeContainer) this.recipeContainer.style.display = 'none';
-    if (this.nbPanel) this.nbPanel.style.display = 'none';
-    restoreWorkspaceReturnPanel(this);
-}
-
-
-
 export async function showNotebooks() {
         this.recipeDetailFinish?.('closed');
         this.modal?.classList.add('visible');

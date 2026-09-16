@@ -9,6 +9,7 @@ export class Events {
     addEventListener(type, fn) { if (!this.listeners.has(type)) this.listeners.set(type, new Set()); this.listeners.get(type).add(fn); }
     removeEventListener(type, fn) { this.listeners.get(type)?.delete(fn); }
     dispatch(type, event = {}) { for (const fn of [...(this.listeners.get(type) || [])]) fn(event); }
+    dispatchEvent(event) { this.dispatch(event.type, event); return true; }
     listenerCount() { return [...this.listeners.values()].reduce((sum, set) => sum + set.size, 0); }
 }
 export class Element extends Events {
@@ -65,6 +66,8 @@ export class Element extends Events {
 export function fixture({ storage = new Map(), storageOverride } = {}) {
     const document = new Events();
     document.body = new Element('body');
+    document.head = new Element('head');
+    document.documentElement = new Element('html');
     document.createElement = tag => new Element(tag);
     document.createDocumentFragment = () => new Element('fragment');
     document.querySelector = selector => document.body.querySelector(selector);
@@ -81,6 +84,7 @@ export function fixture({ storage = new Map(), storageOverride } = {}) {
         async fetch(url) { return { ok: true, json: async () => String(url).includes('/materials?') ? { status: 'success', materials: [], pages: 1 } : { status: 'success', translated: 'translated' } }; },
     };
     const context = vm.createContext({ console, URL, URLSearchParams, Blob, AbortController, DOMException, structuredClone,
+        CustomEvent: class CustomEvent { constructor(type, options = {}) { this.type = type; this.detail = options.detail; } },
         Option: class OptionElement extends Element { constructor(text = '', value = '') { super('option'); this.textContent = text; this.value = value; } },
         document, window, app, errors, anomalous_browser_lang: 'en',
         setTimeout: callback => { timers.set(++timerId, callback); return timerId; }, clearTimeout: id => timers.delete(id),

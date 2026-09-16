@@ -43,6 +43,22 @@ const navigationOwner = {
 navigation.hideAllPanels.call(navigationOwner);
 assert.ok(Object.values(navigationOwner).filter(value => value instanceof Element).every(panel => panel.style.display === 'none'));
 
+const restoredGrid = new Element('div');
+restoredGrid.style.display = 'none';
+const restoredDetail = new Element('div');
+restoredDetail.style.display = 'block';
+const workspaceOwner = {
+    grid: restoredGrid,
+    detailPanel: restoredDetail,
+    nbPanel: new Element('div'),
+    workspaceReturnState: { grid: 'grid', detail: 'none' },
+    recipeModelReturn: null,
+};
+navigation.closeWorkspace.call(workspaceOwner);
+assert.equal(workspaceOwner.nbPanel.style.display, 'none');
+assert.equal(restoredGrid.style.display, 'grid', 'workspace close restores the shared navigation state');
+assert.equal(restoredDetail.style.display, 'none');
+
 const utilityContainer = new Element('div');
 const sidebarActions = new Element('div');
 const sidebarWrapper = new Element('div');

@@ -1,12 +1,12 @@
 import { showDetail, showEditModal, _openAdvancedModelSelector, setWidgetValuePath } from './ui_detail.js';
 import { loadModels, applyModelToCanvas, stopMediaInContainer } from './ui_grid.js';
 import { createDOM, renderSidebar, loadFolders } from './ui_sidebar.js';
-import { hideAllPanels } from './ui_browser_navigation.js';
+import { closeWorkspace, hideAllPanels } from './ui_browser_navigation.js';
 import { openScanWizard } from './ui_scan_wizard.js';
 import { openFolderManager } from './ui_folder_manager.js';
 import { showHelp } from './ui_help.js';
 import { loadGalleryImages, refreshGalleryImages, showGeneratedGallery, showGallerySelectMode, showGalleryViewer } from './ui_gallery.js';
-import { showNotebooks, closeWorkspace, refreshNotebooks, saveCurrentNotebook, deleteCurrentNotebook, renderNotebookEditor, fillNotebookGalleries, sendNotebookToCanvas } from './ui_notebooks.js';
+import { showNotebooks, refreshNotebooks, saveCurrentNotebook, deleteCurrentNotebook, renderNotebookEditor, fillNotebookGalleries, sendNotebookToCanvas } from './ui_notebooks.js';
 import { showRecipes, refreshRecipes, renderRecipeList, handleSaveRecipe } from './ui_recipes.js';
 import { showMaterials, refreshMaterials, openSavedMaterial, openMaterialLibrary } from './ui_materials.js';
 import { openPromptStudio } from './ui_prompt_composer.js';
