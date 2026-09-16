@@ -25,6 +25,12 @@ Major UI panels live in `web/modules/ui_*.js`. Shared browser state remains on
 the `AnomalousBrowser` instance. Pure parsing, normalization, comparison, and
 transaction helpers remain in focused modules rather than acquiring DOM state.
 
+`ui_sidebar.js` assembles the browser shell. `ui_scan_wizard.js` owns scan
+configuration and scan-launch polling, `ui_folder_manager.js` owns folder
+visibility/order and presentation-mode changes, and `ui_help.js` owns the help
+dialog. Their public functions remain browser-instance methods so existing
+entry points share the same current folder and refresh callbacks.
+
 Update-guide content and UI lifecycle are separate modules. The header and Help
 open it only on explicit user action; browser close disposes it. Read
 [update-guide.md](update-guide.md) before changing guide IDs, steps, persistence,
@@ -33,7 +39,8 @@ bootstrap or reuse its content version as a feature flag.
 
 The main surfaces are:
 
-- Sidebar and folder manager: navigation, folder visibility, scan controls.
+- Sidebar shell: navigation and persistent scan controls; focused child modules
+  own the scan wizard, folder manager, and help dialog.
 - Grid and model detail: model browsing and metadata/media presentation.
 - Gallery: the user's generated outputs and the full-screen Image Detail Studio Workbench (`ui_gallery_detail.js`).
 - Workspace: Prompt Notes, Workflow Recipes, and the Material Library.

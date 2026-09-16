@@ -79,9 +79,10 @@ DOM or live LiteGraph state.
 ### Frontend
 
 - `web/main.js` registers the extension and owns the shared browser instance.
-- `ui_sidebar.js` creates the browser shell, navigation and settings. Its large
-  `createDOM` method remains a maintenance hotspot; new tool implementations
-  should live in their own modules rather than expanding that method.
+- `ui_sidebar.js` creates the browser shell, navigation and settings. Scan-wizard
+  launch and polling live in `ui_scan_wizard.js`; folder visibility/order lives
+  in `ui_folder_manager.js`; and help content lives in `ui_help.js`. New tool
+  implementations should continue to live outside the shell assembler.
 - `ui_update_guide.js` owns the non-intrusive update guide modal (accessible via header icon).
 - `sidebar_actions.js` owns the sidebar bottom action hover-reveal short labels (100ms), singleton dynamic DOM tooltip bubbles (`#anomalous-sidebar-tooltip-bubble`, 600ms), click/pointerdown instant text/tooltip suppression guards, `isBottomModalOpen` tooltip occlusion guards, and anti-flicker pointer stability.
 - `tool_registry.js` centralizes metadata, SVG icons (enlarged 20px crisp vector outlines with 2px stroke, #cbd5e1 contrast), and stable IDs for the 9 catalog tools (including Prompt Notes / 提示词笔记) and 2 fixed anchors (Toolbox and Settings).

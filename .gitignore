@@ -84,6 +84,7 @@ tests/*
 !tests/model_sources_hub.mjs
 !tests/shortcut_layout.mjs
 !tests/shortcut_organizer.mjs
+!tests/sidebar_feature_modules.mjs
 !tests/notebook_render_test.mjs
 !tests/notebook_save_roundtrip.mjs
 

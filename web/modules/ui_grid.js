@@ -190,7 +190,7 @@ export async function loadModels() {
                 singleScanBtn.setAttribute('data-tooltip-pos', 'bottom');
                 singleScanBtn.onclick = (e) => {
                     e.stopPropagation();
-                    createWizardModal(false, model.filename);
+                    this.openScanWizard({ targetFiles: model.filename });
                 };
                 card.appendChild(singleScanBtn);
 

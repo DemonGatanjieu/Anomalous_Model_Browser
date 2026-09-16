@@ -83,9 +83,11 @@ export function fixture({ storage = new Map(), storageOverride } = {}) {
     const context = vm.createContext({ console, URL, URLSearchParams, Blob, AbortController, DOMException, structuredClone,
         document, window, app, errors, anomalous_browser_lang: 'en',
         setTimeout: callback => { timers.set(++timerId, callback); return timerId; }, clearTimeout: id => timers.delete(id),
+        setInterval: callback => { timers.set(++timerId, callback); return timerId; }, clearInterval: id => timers.delete(id),
         requestAnimationFrame: callback => callback(), queueMicrotask,
         localStorage: storageOverride || { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, String(value)), removeItem: key => storage.delete(key) },
         navigator: { clipboard: { async writeText(text) { clipboard.push(text); } } }, confirm: () => true,
+        alert: message => errors.push(String(message)), prompt: () => null,
         fetch: async (url, options = {}) => { requests.push([url, options]); return state.fetch(url, options); },
     });
     const modules = new Map();
