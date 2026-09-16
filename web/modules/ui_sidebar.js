@@ -2657,21 +2657,23 @@ export function showHelp() {
         replayGuideBtn.id = 'anomalous-help-replay-guide-btn';
         replayGuideBtn.textContent = t('updateGuideReplay');
         replayGuideBtn.style.padding = '8px 14px';
-        replayGuideBtn.style.background = 'transparent';
-        replayGuideBtn.style.color = '#fbbf24';
-        replayGuideBtn.style.border = '1px solid rgba(245, 158, 11, 0.4)';
+        replayGuideBtn.style.background = 'rgba(255, 255, 255, 0.05)';
+        replayGuideBtn.style.color = '#cbd5e1';
+        replayGuideBtn.style.border = '1px solid rgba(255, 255, 255, 0.16)';
         replayGuideBtn.style.borderRadius = '4px';
         replayGuideBtn.style.cursor = 'pointer';
         replayGuideBtn.style.fontSize = '12px';
         replayGuideBtn.style.fontWeight = '500';
         replayGuideBtn.style.transition = 'all 0.15s ease';
         replayGuideBtn.onmouseover = () => {
-            replayGuideBtn.style.background = 'rgba(245, 158, 11, 0.15)';
-            replayGuideBtn.style.borderColor = 'rgba(245, 158, 11, 0.7)';
+            replayGuideBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+            replayGuideBtn.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+            replayGuideBtn.style.color = '#ffffff';
         };
         replayGuideBtn.onmouseout = () => {
-            replayGuideBtn.style.background = 'transparent';
-            replayGuideBtn.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+            replayGuideBtn.style.background = 'rgba(255, 255, 255, 0.05)';
+            replayGuideBtn.style.borderColor = 'rgba(255, 255, 255, 0.16)';
+            replayGuideBtn.style.color = '#cbd5e1';
         };
         replayGuideBtn.onclick = () => {
             this.helpModal?.remove();

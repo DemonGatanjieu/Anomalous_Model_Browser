@@ -14152,26 +14152,24 @@ button:hover .anomalous-btn-icon {
 }
 
 /* =============================================================================
-   UPDATE GUIDE NOTICE INDICATOR (RESTRAINED AMBER BREATH)
+   UPDATE GUIDE NOTICE INDICATOR (CLEAN MONOCHROME TECH)
    ============================================================================= */
 #anomalous-header button.anomalous-update-notice-btn {
-    background: rgba(245, 158, 11, 0.12) !important;
-    border-color: rgba(245, 158, 11, 0.38) !important;
-    color: #fbbf24 !important;
-    padding: 0 9px 0 6px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.3px !important;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, transform 0.3s ease;
-    animation: anomalous-amber-breath 3.2s ease-in-out infinite;
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: #e2e8f0 !important;
+    padding: 0 10px 0 7px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.2px !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, transform 0.3s ease;
 }
 
 #anomalous-header button.anomalous-update-notice-btn:hover {
-    background: rgba(245, 158, 11, 0.22) !important;
-    border-color: rgba(245, 158, 11, 0.65) !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
     color: #ffffff !important;
     transform: translateY(-1px);
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.35) !important;
-    animation: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
 }
 
 .anomalous-update-notice-icon {
@@ -14181,23 +14179,12 @@ button:hover .anomalous-btn-icon {
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: #f59e0b;
-    color: #18181b;
+    background: rgba(255, 255, 255, 0.16);
+    color: #f1f5f9;
     font-size: 10px;
-    font-weight: 900;
+    font-weight: 700;
     line-height: 1;
-    margin-right: 2px;
-}
-
-@keyframes anomalous-amber-breath {
-    0%, 100% {
-        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
-        border-color: rgba(245, 158, 11, 0.3);
-    }
-    50% {
-        box-shadow: 0 0 8px 1px rgba(245, 158, 11, 0.28);
-        border-color: rgba(245, 158, 11, 0.55);
-    }
+    margin-right: 4px;
 }
 
 /* =============================================================================
@@ -14242,14 +14229,84 @@ button:hover .anomalous-btn-icon {
     to { opacity: 1; transform: scale(1); }
 }
 
+/* Sidebar action tooltips: wide horizontal layout with boundary safety */
+#anomalous-sidebar-actions [data-tooltip]::after,
 #anomalous-sidebar-actions .anomalous-tooltip-target::after {
+    width: max-content !important;
+    min-width: 100px !important;
+    max-width: 220px !important;
     white-space: pre-line !important;
     text-align: center !important;
-    line-height: 1.4 !important;
+    line-height: 1.45 !important;
+    font-size: 11.5px !important;
+    padding: 7px 11px !important;
+    border-radius: 6px !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    box-sizing: border-box !important;
+    pointer-events: none !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Align edge buttons so tooltips stay cleanly within the sidebar */
+#anomalous-sidebar-actions button:first-child[data-tooltip]::after,
+#anomalous-sidebar-actions button:first-child.anomalous-tooltip-target::after,
+#anomalous-sidebar-actions button:nth-child(2)[data-tooltip]::after,
+#anomalous-sidebar-actions button:nth-child(2).anomalous-tooltip-target::after {
+    left: 0 !important;
+    right: auto !important;
+    transform: translateY(4px) !important;
+}
+
+#anomalous-sidebar-actions button:first-child[data-tooltip]:hover::after,
+#anomalous-sidebar-actions button:first-child.anomalous-tooltip-target:hover::after,
+#anomalous-sidebar-actions button:nth-child(2)[data-tooltip]:hover::after,
+#anomalous-sidebar-actions button:nth-child(2).anomalous-tooltip-target:hover::after {
+    transform: translateY(0) !important;
+}
+
+#anomalous-sidebar-actions button:first-child[data-tooltip]::before,
+#anomalous-sidebar-actions button:first-child.anomalous-tooltip-target::before,
+#anomalous-sidebar-actions button:nth-child(2)[data-tooltip]::before,
+#anomalous-sidebar-actions button:nth-child(2).anomalous-tooltip-target::before {
+    left: 14px !important;
+    right: auto !important;
+    transform: translateY(4px) !important;
+}
+
+#anomalous-sidebar-actions button:first-child[data-tooltip]:hover::before,
+#anomalous-sidebar-actions button:first-child.anomalous-tooltip-target:hover::before,
+#anomalous-sidebar-actions button:nth-child(2)[data-tooltip]:hover::before,
+#anomalous-sidebar-actions button:nth-child(2).anomalous-tooltip-target:hover::before {
+    transform: translateY(0) !important;
+}
+
+#anomalous-sidebar-actions button:last-child[data-tooltip]::after,
+#anomalous-sidebar-actions button:last-child.anomalous-tooltip-target::after {
+    left: auto !important;
+    right: 0 !important;
+    transform: translateY(4px) !important;
+}
+
+#anomalous-sidebar-actions button:last-child[data-tooltip]:hover::after,
+#anomalous-sidebar-actions button:last-child.anomalous-tooltip-target:hover::after {
+    transform: translateY(0) !important;
+}
+
+#anomalous-sidebar-actions button:last-child[data-tooltip]::before,
+#anomalous-sidebar-actions button:last-child.anomalous-tooltip-target::before {
+    left: auto !important;
+    right: 14px !important;
+    transform: translateY(4px) !important;
+}
+
+#anomalous-sidebar-actions button:last-child[data-tooltip]:hover::before,
+#anomalous-sidebar-actions button:last-child.anomalous-tooltip-target:hover::before {
+    transform: translateY(0) !important;
 }
 
 /* =============================================================================
-   UPDATE GUIDE MODAL (ELEGANT OBSIDIAN GLASS)
+   UPDATE GUIDE MODAL (ELEGANT MONOCHROME OBSIDIAN GLASS)
    ============================================================================= */
 dialog.anomalous-update-guide:not([open]) {
     display: none !important;
@@ -14311,12 +14368,12 @@ dialog.anomalous-update-guide::backdrop {
     align-items: center;
     justify-content: space-between;
     padding: 14px 20px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.02);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.5px;
-    color: #fbbf24;
+    color: #94a3b8;
 }
 
 .anomalous-update-guide-close {
@@ -14341,14 +14398,14 @@ dialog.anomalous-update-guide::backdrop {
     height: 58px;
     margin: 24px auto 14px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, rgba(245, 158, 11, 0.04) 75%);
-    border: 1px solid rgba(245, 158, 11, 0.45);
-    box-shadow: 0 0 24px rgba(245, 158, 11, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 26px;
-    color: #fbbf24;
+    font-size: 24px;
+    color: #f1f5f9;
     user-select: none;
     flex-shrink: 0;
 }
@@ -14417,16 +14474,16 @@ dialog.anomalous-update-guide::backdrop {
     font-size: 12px;
     font-weight: 600;
     border-radius: 6px;
-    color: #ffffff;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    border: 1px solid rgba(245, 158, 11, 0.6);
-    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3);
+    color: #0f172a;
+    background: #f1f5f9;
+    border: 1px solid #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .anomalous-update-guide-footer .anomalous-btn-primary:hover {
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
-    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.45);
+    background: #ffffff;
+    box-shadow: 0 4px 14px rgba(255, 255, 255, 0.25);
     transform: translateY(-1px);
 }
