@@ -1,6 +1,7 @@
 import { showDetail, showEditModal, _openAdvancedModelSelector, setWidgetValuePath } from './modules/ui_detail.js';
 import { loadModels, applyModelToCanvas, stopMediaInContainer } from './modules/ui_grid.js';
-import { createDOM, renderSidebar, loadFolders, hideAllPanels } from './modules/ui_sidebar.js';
+import { createDOM, renderSidebar, loadFolders } from './modules/ui_sidebar.js';
+import { hideAllPanels } from './modules/ui_browser_navigation.js';
 import { openScanWizard } from './modules/ui_scan_wizard.js';
 import { openFolderManager } from './modules/ui_folder_manager.js';
 import { showHelp } from './modules/ui_help.js';

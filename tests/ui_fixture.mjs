@@ -81,6 +81,7 @@ export function fixture({ storage = new Map(), storageOverride } = {}) {
         async fetch(url) { return { ok: true, json: async () => String(url).includes('/materials?') ? { status: 'success', materials: [], pages: 1 } : { status: 'success', translated: 'translated' } }; },
     };
     const context = vm.createContext({ console, URL, URLSearchParams, Blob, AbortController, DOMException, structuredClone,
+        Option: class OptionElement extends Element { constructor(text = '', value = '') { super('option'); this.textContent = text; this.value = value; } },
         document, window, app, errors, anomalous_browser_lang: 'en',
         setTimeout: callback => { timers.set(++timerId, callback); return timerId; }, clearTimeout: id => timers.delete(id),
         setInterval: callback => { timers.set(++timerId, callback); return timerId; }, clearInterval: id => timers.delete(id),
