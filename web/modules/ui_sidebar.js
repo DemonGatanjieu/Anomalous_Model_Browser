@@ -2009,8 +2009,8 @@ export function createDOM() {
             this.sidebarActions.replaceChildren();
             this.sidebarActions.appendChild(toolboxBtn);
 
-            const layout = loadShortcutLayout();
-            for (const toolId of layout) {
+            const defaultLayout = ['scan', 'doctor', 'assistant', 'materials'];
+            for (const toolId of defaultLayout) {
                 const def = getToolDefinition(toolId);
                 if (!def) continue;
 
@@ -2035,20 +2035,10 @@ export function createDOM() {
                     btn.innerHTML = def.icon;
                 }
 
-                bindDraggableTool(btn, {
-                    toolId,
-                    source: 'shortcut',
-                    toolboxModal,
-                    toolboxBtn,
-                    sidebarActionsEl: this.sidebarActions,
-                    onLayoutChange: () => {
-                        renderShortcutActions();
-                        if (this.renderToolboxModal) this.renderToolboxModal();
-                    },
-                    onToolClick: () => {
-                        executeToolAction(toolId);
-                    }
-                });
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    executeToolAction(toolId);
+                };
 
                 this.sidebarActions.appendChild(btn);
             }
@@ -2110,6 +2100,8 @@ export function createDOM() {
             const gridContainer = document.createElement('div');
             gridContainer.className = 'anomalous-toolbox-grid';
 
+            // 过滤掉已经常驻底栏的工具（scan, doctor, assistant, materials 及两端锚点）
+            const outsideToolIds = new Set(['scan', 'doctor', 'assistant', 'materials', 'toolbox', 'settings']);
             const defaultTools = [
                 {
                     id: 'workflow-transfer',
@@ -2122,49 +2114,14 @@ export function createDOM() {
                 }
             ];
             const allTools = [...CATALOG_TOOLS, ...(this.customToolboxItems || [])];
+            const toolboxTools = allTools.filter(tool => !outsideToolIds.has(tool.id));
 
-            allTools.forEach(tool => {
-                const isPinned = isToolPinned(tool.id);
+            toolboxTools.forEach(tool => {
                 const tile = document.createElement('div');
                 tile.className = 'anomalous-toolbox-tile anomalous-tooltip-target';
                 tile.setAttribute('data-tool-id', tool.id);
                 tile.setAttribute('data-tooltip', `${t(tool.nameKey)}\n${t(tool.hintKey) || ''}`);
                 tile.setAttribute('data-tooltip-pos', 'top');
-
-                const topBadgesRow = document.createElement('div');
-                topBadgesRow.style.position = 'absolute';
-                topBadgesRow.style.top = '3px';
-                topBadgesRow.style.left = '4px';
-                topBadgesRow.style.right = '4px';
-                topBadgesRow.style.display = 'flex';
-                topBadgesRow.style.alignItems = 'center';
-                topBadgesRow.style.justifyContent = 'space-between';
-                topBadgesRow.style.pointerEvents = 'none';
-
-                if (isPinned) {
-                    const pinnedBadge = document.createElement('span');
-                    pinnedBadge.className = 'anomalous-pinned-badge';
-                    pinnedBadge.textContent = t('shortcutBarPinned');
-                    topBadgesRow.appendChild(pinnedBadge);
-                } else {
-                    const emptySpacer = document.createElement('span');
-                    topBadgesRow.appendChild(emptySpacer);
-                }
-
-                const moreBtn = document.createElement('button');
-                moreBtn.type = 'button';
-                moreBtn.className = 'anomalous-tool-more-btn';
-                moreBtn.textContent = '•••';
-                moreBtn.style.pointerEvents = 'auto';
-                moreBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    openToolboxCardMenu(tool.id, moreBtn, () => {
-                        renderShortcutActions();
-                        renderToolboxModal();
-                    });
-                };
-                topBadgesRow.appendChild(moreBtn);
-                tile.appendChild(topBadgesRow);
 
                 const iconEl = document.createElement('div');
                 iconEl.className = 'anomalous-toolbox-tile-icon';
@@ -2176,50 +2133,20 @@ export function createDOM() {
                 labelEl.textContent = t(tool.labelKey) || t(tool.nameKey);
                 tile.appendChild(labelEl);
 
-                bindDraggableTool(tile, {
-                    toolId: tool.id,
-                    source: 'toolbox',
-                    toolboxModal,
-                    toolboxBtn,
-                    sidebarActionsEl: this.sidebarActions,
-                    onLayoutChange: () => {
-                        renderShortcutActions();
-                        renderToolboxModal();
-                    },
-                    onToolClick: () => {
-                        toolboxModal.style.display = 'none';
-                        executeToolAction(tool.id);
-                    }
-                });
+                tile.onclick = (e) => {
+                    e.stopPropagation();
+                    toolboxModal.style.display = 'none';
+                    executeToolAction(tool.id);
+                };
 
                 gridContainer.appendChild(tile);
             });
 
             toolboxModal.appendChild(gridContainer);
 
-            const dropzone = document.createElement('div');
-            dropzone.className = 'anomalous-toolbox-dropzone';
-            dropzone.innerHTML = `
-                <span class="anomalous-toolbox-dropzone-icon" style="margin-right: 4px;">📥</span>
-                <span class="anomalous-toolbox-dropzone-text">${t('shortcutDropHint')}</span>
-            `;
-            toolboxModal.appendChild(dropzone);
-
             const footerRow = document.createElement('div');
             footerRow.className = 'anomalous-toolbox-footer-row';
-
-            const resetShortcutsBtn = document.createElement('button');
-            resetShortcutsBtn.type = 'button';
-            resetShortcutsBtn.className = 'anomalous-toolbox-reset-shortcuts';
-            resetShortcutsBtn.textContent = t('shortcutBarReset');
-            resetShortcutsBtn.onclick = (e) => {
-                e.stopPropagation();
-                if (confirm(t('shortcutBarResetConfirm'))) {
-                    resetShortcutLayout();
-                    renderShortcutActions();
-                    renderToolboxModal();
-                }
-            };
+            footerRow.style.justifyContent = 'center';
 
             const hintFooter = document.createElement('span');
             hintFooter.textContent = window.anomalous_browser_lang === 'zh' ? '💡 实用运维工具持续扩充中' : '💡 Utility toolset expanding...';
@@ -2228,10 +2155,8 @@ export function createDOM() {
             hintFooter.style.whiteSpace = 'nowrap';
             hintFooter.style.overflow = 'hidden';
             hintFooter.style.textOverflow = 'ellipsis';
-            hintFooter.style.maxWidth = '130px';
 
             footerRow.appendChild(hintFooter);
-            footerRow.appendChild(resetShortcutsBtn);
             toolboxModal.appendChild(footerRow);
         };
         this.renderToolboxModal = renderToolboxModal;

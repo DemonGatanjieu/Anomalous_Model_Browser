@@ -1037,7 +1037,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     bottom: 50px;
     left: 10px;
     width: 236px;
-    min-height: 246px;
+    min-height: auto;
     box-sizing: border-box;
     background: rgba(22, 22, 26, 0.98);
     backdrop-filter: blur(20px);
@@ -1069,7 +1069,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-toolbox-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 6px;
     margin: 2px 0 2px;
     align-content: start;
@@ -14103,11 +14103,7 @@ button:hover .anomalous-btn-icon {
     position: relative;
     user-select: none;
     -webkit-user-select: none;
-    cursor: grab;
-}
-
-.anomalous-toolbox-tile:active {
-    cursor: grabbing;
+    cursor: pointer;
 }
 
 .anomalous-toolbox-tile-top {
