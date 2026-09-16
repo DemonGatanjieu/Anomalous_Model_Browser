@@ -65,7 +65,7 @@ DOM or live LiteGraph state.
 - `api/config.py` owns configured paths and active model-folder types.
 - `api/utils.py` owns containment and filename validation helpers.
 - `api/metadata.py` owns sidecar and safetensors metadata extraction.
-- `api/models.py` owns model listing, media serving, and model-facing routes.
+- `api/models.py` owns model listing, media serving, and model-facing routes (including `/anomalous/all_hashes` providing model URLs, `/anomalous/resolve_paths_to_previews` resolving models and metadata across folders, and `/anomalous/update_metadata` with cross-directory fallback resolution).
 - `api/scanner.py` and `scraper.py` own scan orchestration and enrichment.
 - `api/recipes.py` owns recipe validation, CRUD, history, and integrity receipts.
 - `api/recipe_packages.py` owns bounded inspect-stage-commit package handling.
@@ -116,7 +116,9 @@ DOM or live LiteGraph state.
   `graph_splice.js` own diagnostics and explicit graph changes.
 - `ui_model_sources.js` owns the Model Source Hub (模型来源统一中控中心), providing dual-scope
   (Workflow and Library) source inspection, external platform jumping, canvas `Note` node generation,
-  and `workflow.extra.anomalous_model_sources` metadata synchronization.
+  `workflow.extra.anomalous_model_sources` metadata synchronization, and automated asynchronous model
+  metadata resolution (`resolveWorkflowModelsMetadata`) via `/anomalous/resolve_paths_to_previews` with
+  local sidecar priority detection.
 - `locales.js` is the shared runtime string catalog. Existing inline bilingual
   UI strings remain migration debt; new strings belong in the catalog.
 - `styles.css` owns presentation and theme overrides. Color values, dimensions

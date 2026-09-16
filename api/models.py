@@ -833,6 +833,9 @@ async def api_get_all_hashes(request):
                                 hash_val = ""
                                 if meta and meta.get("hash"):
                                     hash_val = meta["hash"]
+                                model_url = ""
+                                if meta:
+                                    model_url = meta.get("source_url") or meta.get("civitai_url") or ""
                                 
                                 rel_path = os.path.relpath(file_path, base_dir)
                                 if rel_path.startswith('.\\') or rel_path.startswith('./'):
@@ -840,7 +843,7 @@ async def api_get_all_hashes(request):
                                 rel_path = rel_path.replace('\\', '/')
                                 basename = os.path.basename(file_path)
                                 
-                                val = {"hash": hash_val, "size": size_bytes}
+                                val = {"hash": hash_val, "size": size_bytes, "url": model_url}
                                 add_hash(rel_path, val)
                                 add_hash(basename, val)
             except Exception:
@@ -855,7 +858,7 @@ async def api_update_metadata(request):
         data = await request.json()
         folder_type = data.get('type', 'checkpoints')
         subfolder = data.get('subfolder', '/')
-        filename = data.get('filename', '')
+        raw_filename = data.get('filename', '')
         custom_name = data.get('custom_name', '')
         custom_notes = data.get('custom_notes', '')
         custom_source_url = data.get('custom_source_url', None)
@@ -863,14 +866,40 @@ async def api_update_metadata(request):
         try: path_idx = int(data.get('path_idx', 0))
         except: path_idx = 0
 
+        # Normalize filename and subfolder if directory separators are included
+        extracted_filename = raw_filename
+        if isinstance(raw_filename, str) and ('/' in raw_filename or '\\' in raw_filename):
+            if subfolder in (None, '', '/'):
+                extracted_sub = os.path.dirname(raw_filename).replace('\\', '/')
+                if extracted_sub:
+                    subfolder = '/' + extracted_sub.strip('/')
+            extracted_filename = os.path.basename(raw_filename)
+
+        file_path = None
+        target_dir = None
+        filename = extracted_filename
         try:
-            filename = require_filename(filename)
+            filename = require_filename(extracted_filename)
             _, target_dir = resolve_folder_subdir(folder_type, path_idx, subfolder)
             file_path = resolve_within(target_dir, filename)
         except (ValueError, KeyError):
-            return web.json_response({"status": "error", "message": "Invalid request parameters"}, status=400)
-        
-        if not os.path.exists(file_path):
+            pass
+
+        if not file_path or not os.path.exists(file_path):
+            # Fallback: attempt to locate model across known model directories
+            search_keys = [k for k in [raw_filename, extracted_filename] if k and isinstance(k, str)]
+            fallback_resolved = _resolve_paths_to_model_info_sync(search_keys)
+            resolved_info = fallback_resolved.get(raw_filename) or fallback_resolved.get(extracted_filename)
+            if resolved_info:
+                resolved_path = resolved_info.get("file_path")
+                if resolved_path and os.path.exists(resolved_path):
+                    file_path = resolved_path
+                    target_dir = os.path.dirname(file_path)
+                    folder_type = resolved_info.get("type", folder_type)
+                    path_idx = resolved_info.get("path_idx", path_idx)
+                    filename = resolved_info.get("filename", filename)
+
+        if not file_path or not os.path.exists(file_path):
             return web.json_response({"status": "error", "message": "Model not found"})
 
         physical_rename_skipped = physical_rename_requested and is_physical_rename_protected(

@@ -70,7 +70,7 @@ export function collectWorkflowModels() {
             const hash = typeof hashObj === 'string' ? hashObj : (hashObj.hash || '');
 
             const existingSource = savedSources[val] || savedSources[basename] || savedSources[dedupeKey];
-            let url = existingSource?.url || hashObj?.url || '';
+            let url = (typeof existingSource === 'string' ? existingSource : existingSource?.url) || hashObj?.url || hashObj?.civitai_url || '';
 
             models.push({
                 key: dedupeKey,
@@ -236,8 +236,9 @@ export async function copySourcesSummary(models) {
 /** 保存单个模型自定义链接到本地 .civitai.info */
 export async function saveSingleModelToLocalSidecar(item, url) {
     const cleanUrl = normalizeUrl(url);
+    const targetFilename = item.basename || (item.filename ? item.filename.split(/[/\\]/).pop() : '');
     const body = {
-        filename: item.filename,
+        filename: targetFilename,
         type: item.type || 'checkpoints',
         subfolder: item.subfolder || '/',
         path_idx: item.path_idx || 0,
@@ -256,6 +257,58 @@ export function openExternalUrl(rawUrl) {
     const normalized = normalizeUrl(rawUrl);
     if (!normalized) return;
     window.open(normalized, '_blank', 'noopener,noreferrer');
+}
+
+/** 异步解析工作流中模型的本地元数据与路径详情 */
+export async function resolveWorkflowModelsMetadata(models, signal = null) {
+    if (!Array.isArray(models) || !models.length) return false;
+    const requestedPaths = models.map(m => m.filename);
+    try {
+        const res = await fetch('/anomalous/resolve_paths_to_previews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paths: requestedPaths }),
+            signal,
+        });
+        const data = await jsonResponse(res, 'resolve workflow models');
+        const modelsMap = data?.models || {};
+        let hasChanges = false;
+
+        for (const m of models) {
+            const info = modelsMap[m.filename] || modelsMap[m.basename];
+            if (info) {
+                m.type = info.type;
+                m.subfolder = info.subfolder;
+                m.path_idx = info.path_idx;
+                m.file_path = info.file_path;
+                if (!m.hash && info.metadata?.hash) {
+                    m.hash = info.metadata.hash;
+                    hasChanges = true;
+                }
+                const resolvedUrl = info.metadata?.source_url || info.metadata?.civitai_url || '';
+                if (!m.url && resolvedUrl) {
+                    m.url = resolvedUrl;
+                    m.initialUrl = resolvedUrl;
+                    m.platform = detectPlatform(resolvedUrl);
+                    hasChanges = true;
+                }
+                if (typeof window !== 'undefined' && window.anomalous_hash_cache) {
+                    if (m.filename && info.metadata?.hash) {
+                        window.anomalous_hash_cache[m.filename] = {
+                            hash: info.metadata.hash,
+                            url: resolvedUrl,
+                        };
+                    }
+                }
+            }
+        }
+        return hasChanges;
+    } catch (e) {
+        if (!signal?.aborted) {
+            console.warn('[Model Source Hub] Failed to resolve workflow model info', e);
+        }
+        return false;
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -484,10 +537,11 @@ export function openModelSourcesModal(initialScope = 'workflow') {
                             const detected = await autoDetectModelSource(item);
                             if (detected) {
                                 item.url = detected;
+                                item.initialUrl = item.initialUrl || detected;
                                 item.platform = detectPlatform(detected);
                                 inputEl.value = detected;
                                 refreshUi();
-                                showWorkbenchToast(t('modelSourcesSavedLocal'));
+                                showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '✓ 已识别模型来源！' : '✓ Model source detected!');
                             } else {
                                 showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '未能在本地或云端匹配到官方页面' : 'No online source matched');
                             }
@@ -498,6 +552,7 @@ export function openModelSourcesModal(initialScope = 'workflow') {
                     async (item) => {
                         try {
                             await saveSingleModelToLocalSidecar(item, item.url);
+                            item.initialUrl = item.url;
                             showWorkbenchToast(t('modelSourcesSavedLocal'));
                         } catch (e) {
                             showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '保存至本地失败' : 'Failed to save local');
@@ -526,6 +581,12 @@ export function openModelSourcesModal(initialScope = 'workflow') {
 
     refreshUi();
 
+    resolveWorkflowModelsMetadata(state.workflowModels, scope.signal).then(hasChanges => {
+        if (hasChanges && !scope.signal.aborted) {
+            refreshUi();
+        }
+    });
+
     overlay.onclick = (e) => {
         if (e.target === overlay) scope.dispose();
     };
@@ -539,9 +600,32 @@ export function openModelSourcesModal(initialScope = 'workflow') {
 }
 
 /** 自动识别单条模型来源 */
-async function autoDetectModelSource(item) {
+export async function autoDetectModelSource(item) {
     if (item.url) return item.url;
-    // 1. Check local sidecar if hash exists
+
+    // 1. Priority: check local sidecar & metadata via backend resolver
+    try {
+        const queryPath = item.filename || item.basename;
+        const res = await fetch('/anomalous/resolve_paths_to_previews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paths: [queryPath, item.basename].filter(Boolean) }),
+        });
+        const data = await jsonResponse(res, 'detect model source local');
+        const resolved = data?.models?.[queryPath] || data?.models?.[item.basename];
+        if (resolved) {
+            item.type = resolved.type;
+            item.subfolder = resolved.subfolder;
+            item.path_idx = resolved.path_idx;
+            if (resolved.metadata?.hash) item.hash = resolved.metadata.hash;
+            const foundUrl = resolved.metadata?.source_url || resolved.metadata?.civitai_url;
+            if (foundUrl) return foundUrl;
+        }
+    } catch (e) {
+        // Backend lookup failed, proceed to cloud/search fallback
+    }
+
+    // 2. Cloud lookup if hash exists
     if (item.hash) {
         try {
             const res = await fetch(`https://civitai.com/api/v1/model-versions/by-hash/${item.hash}`);
@@ -556,7 +640,8 @@ async function autoDetectModelSource(item) {
             // Network fallback
         }
     }
-    // 2. Search fallback
+
+    // 3. Search fallback
     const query = encodeURIComponent((item.basename || item.filename).replace(/\.[^.]+$/, ''));
     return `https://civitai.com/search/models?query=${query}`;
 }

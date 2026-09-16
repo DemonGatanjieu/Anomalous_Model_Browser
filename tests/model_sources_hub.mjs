@@ -116,4 +116,95 @@ assert.equal(addedNodes.length, 1);
 assert.ok(note.widgets[0].value.includes('epicRealism_v5.safetensors'));
 assert.ok(note.widgets[0].value.includes('https://civitai.com/models/99999'));
 
+// 7. resolveWorkflowModelsMetadata test
+f.fetch = async (url, options) => {
+    if (url === '/anomalous/resolve_paths_to_previews') {
+        return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+                models: {
+                    'detail_tweaker.safetensors': {
+                        type: 'loras',
+                        subfolder: '/styles',
+                        path_idx: 0,
+                        file_path: 'E:/ComfyUI/models/loras/styles/detail_tweaker.safetensors',
+                        metadata: {
+                            hash: 'deadbeef999',
+                            civitai_url: 'https://civitai.com/models/77777',
+                        }
+                    }
+                }
+            })
+        };
+    }
+    if (url === '/anomalous/update_metadata') {
+        const body = JSON.parse(options.body);
+        return {
+            ok: true,
+            status: 200,
+            json: async () => ({ status: 'success', saved: body })
+        };
+    }
+    return { ok: true, status: 200, json: async () => ({ status: 'success' }) };
+};
+
+const unresolvedModel = { filename: 'detail_tweaker.safetensors', basename: 'detail_tweaker.safetensors', url: '' };
+const hasChanges = await hub.resolveWorkflowModelsMetadata([unresolvedModel]);
+assert.equal(hasChanges, true);
+assert.equal(unresolvedModel.url, 'https://civitai.com/models/77777');
+assert.equal(unresolvedModel.platform?.name, 'Civitai');
+assert.equal(unresolvedModel.type, 'loras');
+assert.equal(unresolvedModel.subfolder, '/styles');
+assert.equal(unresolvedModel.hash, 'deadbeef999');
+
+// 8. saveSingleModelToLocalSidecar test
+let postedBody = null;
+f.fetch = async (url, options) => {
+    if (url === '/anomalous/update_metadata') {
+        postedBody = JSON.parse(options.body);
+        return { ok: true, status: 200, json: async () => ({ status: 'success' }) };
+    }
+    return { ok: true, status: 200, json: async () => ({}) };
+};
+const modelToSave = {
+    filename: 'SDXL/styles/nested_lora.safetensors',
+    basename: 'nested_lora.safetensors',
+    type: 'loras',
+    subfolder: '/SDXL/styles',
+    path_idx: 0,
+};
+await hub.saveSingleModelToLocalSidecar(modelToSave, 'https://civitai.com/models/88888');
+assert.ok(postedBody);
+assert.equal(postedBody.filename, 'nested_lora.safetensors');
+assert.equal(postedBody.custom_source_url, 'https://civitai.com/models/88888');
+assert.equal(postedBody.type, 'loras');
+assert.equal(postedBody.subfolder, '/SDXL/styles');
+
+// 9. autoDetectModelSource test (local metadata priority)
+f.fetch = async (url, options) => {
+    if (url === '/anomalous/resolve_paths_to_previews') {
+        return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+                models: {
+                    'local_known.safetensors': {
+                        type: 'checkpoints',
+                        subfolder: '/',
+                        path_idx: 0,
+                        metadata: {
+                            source_url: 'https://huggingface.co/runwayml/stable-diffusion-v1-5'
+                        }
+                    }
+                }
+            })
+        };
+    }
+    return { ok: true, status: 200, json: async () => ({}) };
+};
+const detectTarget = { filename: 'local_known.safetensors', basename: 'local_known.safetensors', url: '' };
+const detectedUrl = await hub.autoDetectModelSource(detectTarget);
+assert.equal(detectedUrl, 'https://huggingface.co/runwayml/stable-diffusion-v1-5');
+
 console.log('model sources hub tests: all passed!');
