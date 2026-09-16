@@ -2055,24 +2055,24 @@ export function createDOM() {
             headerRow.style.display = 'flex';
             headerRow.style.alignItems = 'center';
             headerRow.style.justifyContent = 'space-between';
-            headerRow.style.padding = '2px 4px 6px';
+            headerRow.style.padding = '1px 2px 4px';
             headerRow.style.borderBottom = '1px solid rgba(255, 255, 255, 0.06)';
 
             const titleBox = document.createElement('div');
             titleBox.style.display = 'flex';
             titleBox.style.alignItems = 'center';
-            titleBox.style.gap = '6px';
+            titleBox.style.gap = '5px';
 
             const titleText = document.createElement('span');
             titleText.textContent = t('toolboxTitle');
             titleText.style.fontWeight = '600';
-            titleText.style.fontSize = '12px';
+            titleText.style.fontSize = '11px';
             titleText.style.color = '#fff';
 
             const betaBadge = document.createElement('span');
             betaBadge.textContent = 'Hub';
-            betaBadge.style.fontSize = '9px';
-            betaBadge.style.padding = '1px 5px';
+            betaBadge.style.fontSize = '8.5px';
+            betaBadge.style.padding = '1px 4px';
             betaBadge.style.borderRadius = '3px';
             betaBadge.style.background = 'rgba(255, 255, 255, 0.08)';
             betaBadge.style.color = '#a1a1aa';
@@ -2085,10 +2085,10 @@ export function createDOM() {
             closeModalBtn.innerHTML = '&times;';
             closeModalBtn.style.cursor = 'pointer';
             closeModalBtn.style.color = '#888';
-            closeModalBtn.style.fontSize = '16px';
+            closeModalBtn.style.fontSize = '14px';
             closeModalBtn.style.lineHeight = '1';
-            closeModalBtn.style.padding = '2px 4px';
-            closeModalBtn.style.borderRadius = '4px';
+            closeModalBtn.style.padding = '1px 3px';
+            closeModalBtn.style.borderRadius = '3px';
             closeModalBtn.onmouseover = () => { closeModalBtn.style.color = '#fff'; closeModalBtn.style.background = 'rgba(255,255,255,0.08)'; };
             closeModalBtn.onmouseout = () => { closeModalBtn.style.color = '#888'; closeModalBtn.style.background = 'transparent'; };
             closeModalBtn.onclick = () => { toolboxModal.style.display = 'none'; };
@@ -2157,7 +2157,7 @@ export function createDOM() {
 
             const hintFooter = document.createElement('span');
             hintFooter.textContent = window.anomalous_browser_lang === 'zh' ? '💡 实用运维工具持续扩充中' : '💡 Utility toolset expanding...';
-            hintFooter.style.fontSize = '10px';
+            hintFooter.style.fontSize = '9.5px';
             hintFooter.style.color = '#71717a';
             hintFooter.style.whiteSpace = 'nowrap';
             hintFooter.style.overflow = 'hidden';
