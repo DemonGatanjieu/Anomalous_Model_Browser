@@ -82,6 +82,8 @@ DOM or live LiteGraph state.
 - `ui_sidebar.js` creates the browser shell, navigation and settings. Its large
   `createDOM` method remains a maintenance hotspot; new tool implementations
   should live in their own modules rather than expanding that method.
+- `ui_update_guide.js` and `sidebar_actions.js` own the non-intrusive update guide
+  modal and the six sidebar bottom-action hover reveal labels / unclipped tooltips.
 - `ui_grid.js` and model-detail modules own model presentation; `ui_gallery.js`
   and `ui_gallery_detail.js` own generated-image browsing and inspection.
 - `ui_recipes.js` / `ui_recipe_detail.js`, `ui_notebooks.js`, and `ui_materials.js`

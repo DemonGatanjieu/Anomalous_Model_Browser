@@ -10,6 +10,7 @@ import { updateScanProgress, finishScanProgress, failScanProgress } from './scan
 import { openModelSourcesModal } from './ui_model_sources.js';
 import { showUpdateGuide, hasAcknowledged } from './ui_update_guide.js';
 import { CURRENT_UPDATE_GUIDE } from './update_guide_data.js';
+import { configureSidebarAction, configureSidebarActions } from './sidebar_actions.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -23,7 +24,7 @@ const SIDEBAR_ICONS = {
     HELP: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:7px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
     TOOLBOX: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><rect width="20" height="14" x="2" y="6" rx="2"/><path d="M2 12h20"/><path d="M10 12v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2"/></svg>`,
     DOCTOR: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M4.5 3v5a5.5 5.5 0 0 0 11 0V3"/><circle cx="4.5" cy="3" r="1.5" fill="currentColor"/><circle cx="15.5" cy="3" r="1.5" fill="currentColor"/><path d="M10 13.5v3a3.5 3.5 0 0 0 3.5 3.5h1"/><circle cx="18" cy="20" r="2.2" stroke-width="1.8"/></svg>`,
-    ASSISTANT: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/><path d="M18.5 3.5v3m-1.5-1.5h3" stroke-opacity="0.7"/></svg>`,
+    ASSISTANT: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"/><path d="M18 3v4m-2-2h4" stroke-opacity="0.8"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>`,
     SETTINGS: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
     FOLDER: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px;margin-right:7px;"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>`,
     CHEVRON_UP: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><polyline points="18 15 12 9 6 15"/></svg>`,
@@ -36,6 +37,7 @@ function setScanButtonState(btn, isScanning) {
     btn.classList.toggle('anomalous-radar-spinning', Boolean(isScanning));
     btn.style.opacity = isScanning ? '0.85' : '1';
     btn.style.animation = '';
+    configureSidebarAction(btn);
 }
 
 export function createDOM() {
@@ -1263,6 +1265,7 @@ export function createDOM() {
             if (iBtn) { iBtn.removeAttribute('title'); iBtn.setAttribute('aria-label', t('materialLibrary')); iBtn.setAttribute('data-tooltip', t('materialLibrary')); iBtn.setAttribute('data-tooltip-pos', 'top'); }
             const sBtn = document.getElementById('anomalous-global-settings-btn');
             if (sBtn) { sBtn.removeAttribute('title'); sBtn.setAttribute('data-tooltip', t('sidebarSettings')); sBtn.setAttribute('data-tooltip-pos', 'top'); }
+            configureSidebarActions(this.sidebarWrapper);
             const bgLabel = document.getElementById('anomalous-bg-opacity-label');
             if (bgLabel) bgLabel.textContent = t('sidebarBgAtmosphere');
             if (dockBtn) {
@@ -2255,6 +2258,7 @@ export function createDOM() {
         this.sidebarActions.appendChild(assistantBtn);
         this.sidebarActions.appendChild(importBtn);
         this.sidebarActions.appendChild(settingsBtn);
+        configureSidebarActions(this.sidebarWrapper);
 
         this.grid = document.createElement('div');
         this.grid.id = 'anomalous-grid';
@@ -2646,7 +2650,33 @@ export function showHelp() {
         footer.style.padding = '15px';
         footer.style.borderTop = '1px solid #444';
         footer.style.display = 'flex';
-        footer.style.justifyContent = 'flex-end';
+        footer.style.alignItems = 'center';
+        footer.style.justifyContent = 'space-between';
+
+        const replayGuideBtn = document.createElement('button');
+        replayGuideBtn.id = 'anomalous-help-replay-guide-btn';
+        replayGuideBtn.textContent = t('updateGuideReplay');
+        replayGuideBtn.style.padding = '8px 14px';
+        replayGuideBtn.style.background = 'transparent';
+        replayGuideBtn.style.color = '#fbbf24';
+        replayGuideBtn.style.border = '1px solid rgba(245, 158, 11, 0.4)';
+        replayGuideBtn.style.borderRadius = '4px';
+        replayGuideBtn.style.cursor = 'pointer';
+        replayGuideBtn.style.fontSize = '12px';
+        replayGuideBtn.style.fontWeight = '500';
+        replayGuideBtn.style.transition = 'all 0.15s ease';
+        replayGuideBtn.onmouseover = () => {
+            replayGuideBtn.style.background = 'rgba(245, 158, 11, 0.15)';
+            replayGuideBtn.style.borderColor = 'rgba(245, 158, 11, 0.7)';
+        };
+        replayGuideBtn.onmouseout = () => {
+            replayGuideBtn.style.background = 'transparent';
+            replayGuideBtn.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+        };
+        replayGuideBtn.onclick = () => {
+            this.helpModal?.remove();
+            showUpdateGuide(this, { force: true });
+        };
 
         const closeBtn = document.createElement('button');
         closeBtn.innerHTML = t('closeHelp');
@@ -2658,6 +2688,7 @@ export function showHelp() {
         closeBtn.style.cursor = 'pointer';
         closeBtn.onclick = () => this.helpModal.remove();
 
+        footer.appendChild(replayGuideBtn);
         footer.appendChild(closeBtn);
 
         box.appendChild(header);
