@@ -1036,21 +1036,21 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     position: absolute;
     bottom: 52px;
     left: 10px;
-    width: 236px;
+    width: 216px;
     min-height: auto;
     box-sizing: border-box;
     background: rgba(22, 22, 26, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
-    padding: 9px 9px 7px;
+    border-radius: 9px;
+    padding: 7px 7px 5px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
     z-index: 999999 !important;
     transition: left 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), bottom 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
     display: none;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
     overflow: hidden !important;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
@@ -1070,8 +1070,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-toolbox-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 5px;
-    margin: 4px 0 3px;
+    gap: 4px;
+    margin: 3px 0 2px;
     align-content: start;
     flex: 1;
 }
@@ -1082,31 +1082,32 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 6px 3px 5px;
-    min-height: 48px;
+    padding: 5px 2px 4px;
+    min-height: 40px;
     box-sizing: border-box;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: transparent;
+    border: 1px solid transparent;
     border-radius: 6px;
     cursor: pointer;
     position: relative;
     user-select: none;
-    transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .anomalous-toolbox-tile:hover {
-    background: rgba(255, 255, 255, 0.09);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
     transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .anomalous-toolbox-tile:active {
-    transform: scale(0.97);
+    transform: scale(0.96);
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .anomalous-toolbox-tile-icon {
-    font-size: 14.5px;
+    font-size: 13.5px;
     line-height: 1.1;
     margin-bottom: 2px;
     display: flex;
@@ -1116,7 +1117,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-toolbox-tile-label {
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: 500;
     color: #cbd5e1;
     white-space: nowrap;
@@ -1143,9 +1144,9 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-toolbox-tile.is-placeholder {
-    background: rgba(255, 255, 255, 0.015) !important;
-    border: 1px dashed rgba(255, 255, 255, 0.08) !important;
-    opacity: 0.32 !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    opacity: 0.25 !important;
     cursor: default !important;
     pointer-events: none !important;
     transform: none !important;
@@ -1153,23 +1154,23 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-toolbox-tile.is-placeholder .anomalous-toolbox-tile-icon {
-    font-size: 12px !important;
+    font-size: 11px !important;
     color: #94a3b8 !important;
     margin-bottom: 2px !important;
 }
 
 .anomalous-toolbox-tile.is-placeholder .anomalous-toolbox-tile-label {
     color: #64748b !important;
-    font-size: 9px !important;
+    font-size: 8.5px !important;
 }
 
 .anomalous-toolbox-footer-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 5px 2px 2px;
+    padding: 4px 2px 1px;
     margin-top: auto;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* Suppress all tooltips and action labels on clicked/active elements so they never block vision or interaction */

@@ -2070,7 +2070,7 @@ export function createDOM() {
             headerRow.style.display = 'flex';
             headerRow.style.alignItems = 'center';
             headerRow.style.justifyContent = 'space-between';
-            headerRow.style.padding = '1px 2px 4px';
+            headerRow.style.padding = '1px 2px 3px';
             headerRow.style.borderBottom = '1px solid rgba(255, 255, 255, 0.06)';
 
             const titleBox = document.createElement('div');
@@ -2081,13 +2081,13 @@ export function createDOM() {
             const titleText = document.createElement('span');
             titleText.textContent = t('toolboxTitle');
             titleText.style.fontWeight = '600';
-            titleText.style.fontSize = '11px';
+            titleText.style.fontSize = '10.5px';
             titleText.style.color = '#fff';
 
             const betaBadge = document.createElement('span');
             betaBadge.textContent = 'Hub';
-            betaBadge.style.fontSize = '8.5px';
-            betaBadge.style.padding = '1px 4px';
+            betaBadge.style.fontSize = '8px';
+            betaBadge.style.padding = '0.5px 3.5px';
             betaBadge.style.borderRadius = '3px';
             betaBadge.style.background = 'rgba(255, 255, 255, 0.08)';
             betaBadge.style.color = '#a1a1aa';
@@ -2170,29 +2170,6 @@ export function createDOM() {
                 gridContainer.appendChild(tile);
             });
 
-            // Add subtle placeholder expansion slots to complete the 3-column row
-            const totalActive = toolboxTools.length;
-            const remainder = totalActive % 3;
-            if (remainder > 0) {
-                const placeholdersNeeded = 3 - remainder;
-                for (let i = 0; i < placeholdersNeeded; i++) {
-                    const placeholder = document.createElement('div');
-                    placeholder.className = 'anomalous-toolbox-tile is-placeholder';
-
-                    const iconEl = document.createElement('div');
-                    iconEl.className = 'anomalous-toolbox-tile-icon';
-                    iconEl.textContent = '＋';
-                    placeholder.appendChild(iconEl);
-
-                    const labelEl = document.createElement('div');
-                    labelEl.className = 'anomalous-toolbox-tile-label';
-                    labelEl.textContent = window.anomalous_browser_lang === 'zh' ? '待扩充' : 'Soon';
-                    placeholder.appendChild(labelEl);
-
-                    gridContainer.appendChild(placeholder);
-                }
-            }
-
             toolboxModal.appendChild(gridContainer);
 
             const footerRow = document.createElement('div');
@@ -2201,7 +2178,7 @@ export function createDOM() {
 
             const hintFooter = document.createElement('span');
             hintFooter.textContent = window.anomalous_browser_lang === 'zh' ? '💡 实用运维工具持续扩充中' : '💡 Utility toolset expanding...';
-            hintFooter.style.fontSize = '9.5px';
+            hintFooter.style.fontSize = '9px';
             hintFooter.style.color = '#71717a';
             hintFooter.style.whiteSpace = 'nowrap';
             hintFooter.style.overflow = 'hidden';
