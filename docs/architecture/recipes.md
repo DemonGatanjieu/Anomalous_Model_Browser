@@ -82,6 +82,13 @@ applicable. Compact cards may ellipsize bounded values while preserving their
 full copy value. Detail rows provide visible expand/collapse and copy controls
 for long values and prompts; they do not silently truncate authoritative data.
 
+`ui_recipe_detail.js` coordinates the detail session and active tab.
+`ui_recipe_versions.js` owns version comparison and restore, while
+`ui_recipe_gallery.js` owns result rendering and opens `ui_gallery_detail.js`
+directly for image inspection. Shared detail DOM/copy primitives live in
+`ui_recipe_detail_dom.js`; the subviews return refresh/finish decisions through
+callbacks instead of redrawing one another.
+
 Model names in compact recipe presentation use a basename or official model
 name, never a full filesystem path. Saved paths and hashes belong behind advanced
 information. A preview or exact path can locate current-machine presentation

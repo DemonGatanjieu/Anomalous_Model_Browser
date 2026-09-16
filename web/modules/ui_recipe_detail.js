@@ -8,9 +8,7 @@ import {
     formatIdentitySize,
     normaliseIdentity,
     recipeReferenceKey,
-    shortHash,
 } from './recipe_identity.js';
-import { buildRecipeDiff, diffIsEmpty } from './recipe_diff.js';
 import {
     appendRecipeToCanvas,
     applyRecipeParametersToCanvas,
@@ -22,23 +20,18 @@ import {
     isSupportedPromptNodeType,
 } from './recipe_parser.js';
 import { replaceWorkflowModelHashRecord } from './recipe_provenance.js';
-import { showImageMaterialDetail } from './ui_materials.js';
+import {
+    appendCopyButton,
+    appendText,
+    appendValueViewer,
+    button,
+    dateText,
+    displayValue,
+} from './ui_recipe_detail_dom.js';
+import { fingerprintText, renderVersions } from './ui_recipe_versions.js';
+import { openGalleryImageDetail, outputImageUrl, renderRecipeGallery } from './ui_recipe_gallery.js';
 
 const t = (key, params) => translate(key, params);
-
-function appendText(parent, tagName, text, className = '') {
-    const element = document.createElement(tagName);
-    if (className) element.className = className;
-    element.textContent = text == null ? '' : String(text);
-    parent.appendChild(element);
-    return element;
-}
-
-function button(parent, label, className = '') {
-    const element = appendText(parent, 'button', label, className);
-    element.type = 'button';
-    return element;
-}
 
 function closeRecipeWorkspace(owner) {
     if (!owner) return;
@@ -86,66 +79,9 @@ function recipeCanvasActionLabel(recipe) {
     return t(recipe?.workflow_scope === 'partial' ? 'recipeAppendCanvas' : 'recipeOpenCanvas');
 }
 
-function displayValue(value) {
-    if (value === undefined) return '';
-    if (value === null) return 'null';
-    if (typeof value === 'string') return value;
-    try { return JSON.stringify(value) ?? String(value); } catch (error) { return String(value); }
-}
-
 function compact(value, limit = 180) {
     const text = String(value || '').replace(/\s+/g, ' ').trim();
     return text.length > limit ? `${text.slice(0, limit - 1)}...` : text;
-}
-
-function dateText(value) {
-    if (!value) return t('recipeDetailUnknownTime');
-    try { return new Date(Number(value)).toLocaleString(); } catch (error) { return t('recipeDetailUnknownTime'); }
-}
-
-async function copyText(value) {
-    if (value === null || value === undefined || value === '') return false;
-    try {
-        await navigator.clipboard.writeText(String(value));
-        return true;
-    } catch (error) {
-        console.warn('Could not copy recipe detail value:', error);
-        return false;
-    }
-}
-
-async function copyTextWithFeedback(buttonElement, value) {
-    const original = buttonElement.textContent;
-    const isIcon = original.length <= 2;
-    const copied = await copyText(value);
-    
-    if (isIcon) {
-        buttonElement.textContent = copied ? '✓' : '!';
-    } else {
-        buttonElement.textContent = copied
-            ? `✓ ${t('recipeCopied')}`
-            : `! ${t('recipeCopyFailed')}`;
-    }
-    
-    buttonElement.style.color = copied ? '#6ee7b7' : '#fca5a5';
-    buttonElement.style.borderColor = copied ? 'rgba(110, 231, 183, 0.7)' : 'rgba(252, 165, 165, 0.7)';
-    buttonElement.style.transition = 'all 0.2s ease';
-    
-    window.setTimeout(() => {
-        buttonElement.textContent = original;
-        buttonElement.style.color = '';
-        buttonElement.style.borderColor = '';
-    }, 1200);
-    return copied;
-}
-
-function appendCopyButton(parent, value, label = t('recipeCopyParameter')) {
-    const copy = button(parent, '', 'anomalous-recipe-copy-param anomalous-recipe-detail-copy');
-    copy.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-    copy.title = label;
-    copy.setAttribute('aria-label', label);
-    copy.onclick = () => { void copyTextWithFeedback(copy, value); };
-    return copy;
 }
 
 async function updateInlineRecipeMetadata(owner, recipe, changes) {
@@ -222,32 +158,6 @@ function beginInlineEdit(owner, recipe, container, field, renderValue, options =
     input.focus();
     input.setSelectionRange(input.value.length, input.value.length);
 }
-
-function needsExpansion(value) {
-    const text = String(value || '');
-    return text.length > 260 || text.split(/\r?\n/).length > 3;
-}
-
-function appendValueViewer(parent, value, className = '', options = {}) {
-    const text = displayValue(value);
-    const viewer = document.createElement('div');
-    viewer.className = `anomalous-recipe-detail-value-viewer${className ? ` ${className}` : ''}`;
-    const code = appendText(viewer, 'code', text, 'anomalous-recipe-detail-full-value');
-    if (options.collapse !== false && needsExpansion(text)) {
-        code.classList.add('is-collapsed');
-        const toggle = button(viewer, t('recipeDetailExpandValue'), 'anomalous-recipe-detail-value-toggle');
-        toggle.onclick = () => {
-            const expanded = code.classList.toggle('is-collapsed') === false;
-            toggle.textContent = expanded ? t('recipeDetailCollapseValue') : t('recipeDetailExpandValue');
-        };
-    }
-    if (options.copy !== false) appendCopyButton(viewer, text);
-    parent.appendChild(viewer);
-    return viewer;
-}
-
-const PROMPT_ROLES = new Set(['positive', 'negative', 'both', 'ignored', 'unknown']);
-const PROMPT_WIDGET_NAME = /^(?:text|prompt|text_[gl]|positive|negative)$/i;
 
 function promptTextForNode(source, node) {
     const values = [];
@@ -346,12 +256,6 @@ function fullWidgetValue(recipe, node, widget) {
     return widget?.value;
 }
 
-function fullDiffValue(value) {
-    if (value === null || value === undefined || value === '') return t('recipeDetailUnavailable');
-    if (typeof value === 'string') return value.trim();
-    try { return JSON.stringify(value, null, 2); } catch (error) { return String(value); }
-}
-
 function identityBadge(reference) {
     const identity = normaliseIdentity(reference?.identity);
     const wrapper = document.createElement('span');
@@ -386,10 +290,6 @@ function identityBadge(reference) {
     return wrapper;
 }
 
-function fingerprintText(recipe) {
-    return recipe?.workflow_fingerprint?.value || '';
-}
-
 function folderTypesForReference(reference) {
     const category = String(reference?.category || '').toLowerCase();
     return {
@@ -418,33 +318,6 @@ function modelDisplayName(value) {
 
 function previewIsVideo(url) {
     return /\.(?:mp4|webm)(?:$|\?|&|#)/i.test(url || '');
-}
-
-function outputImageUrl(image) {
-    if (!image || image.type !== 'output' || typeof image.filename !== 'string') return '';
-    const query = new URLSearchParams({ filename: image.filename, type: 'output' });
-    if (image.subfolder) query.set('subfolder', image.subfolder);
-    return `/view?${query.toString()}`;
-}
-
-function galleryWorkbenchItems(images) {
-    return (images || []).map(sourceImage => ({
-        filename: sourceImage.filename,
-        subfolder: sourceImage.subfolder || '',
-        url: outputImageUrl(sourceImage),
-        sourceImage,
-    })).filter(item => item.url);
-}
-
-function openGalleryImageDetail(owner, images, sourceImage, url) {
-    const items = galleryWorkbenchItems(images);
-    const currentIndex = items.findIndex(item =>
-        item.filename === sourceImage?.filename && (item.subfolder || '') === (sourceImage?.subfolder || '')
-    );
-    void showImageMaterialDetail(owner, sourceImage, url, {
-        items,
-        currentIndex: currentIndex >= 0 ? currentIndex : 0,
-    });
 }
 
 function appendRecipeCover(parent, owner, recipe) {
@@ -2910,244 +2783,6 @@ function renderRecipeParameters(content, owner, recipe, gallery, refreshGallery,
     content.appendChild(layout);
 }
 
-
-function diffCategoryLabel(category) {
-    return t({
-        pinned: 'recipeDiffPinned',
-        prompts: 'recipeDiffPrompts',
-        models: 'recipeDiffModels',
-        parameters: 'recipeDiffParameters',
-        workflow: 'recipeDiffWorkflow',
-        presentation: 'recipeDiffPresentation',
-    }[category] || 'recipeDiffOther');
-}
-
-function appendDiffValue(parent, label, value, kind) {
-    const item = document.createElement('div');
-    item.className = `anomalous-recipe-diff-value anomalous-recipe-diff-value-${kind}`;
-    appendText(item, 'small', label, 'anomalous-recipe-detail-muted');
-    appendValueViewer(item, fullDiffValue(value));
-    parent.appendChild(item);
-}
-
-function renderDiffPanel(parent, owner, recipe, version, trigger) {
-    const panel = document.createElement('div');
-    panel.className = 'anomalous-recipe-version-diff';
-    appendText(panel, 'strong', t('recipeDiffLoading'));
-    parent.appendChild(panel);
-    trigger.disabled = true;
-    fetch(`/anomalous/recipe_version?filename=${encodeURIComponent(owner.recipeDetailFilename)}&version=${encodeURIComponent(version.version)}`)
-        .then(async (response) => {
-            const payload = await response.json();
-            if (!response.ok || payload.status !== 'success' || !payload.data?.workflow) throw new Error('version diff request failed');
-            return payload.data;
-        })
-        .then((historical) => {
-            panel.replaceChildren();
-            const changes = buildRecipeDiff(historical, recipe);
-            if (diffIsEmpty(changes)) {
-                appendText(panel, 'p', t('recipeDiffNoChanges'), 'anomalous-recipe-detail-muted');
-                return;
-            }
-            appendText(panel, 'strong', `${t('recipeDiffSummary')} (${changes.length})`);
-            const groups = new Map();
-            for (const change of changes) {
-                if (!groups.has(change.category)) groups.set(change.category, []);
-                groups.get(change.category).push(change);
-            }
-            for (const [category, categoryChanges] of groups) {
-                const group = document.createElement('section');
-                group.className = 'anomalous-recipe-diff-group';
-                appendText(group, 'h5', diffCategoryLabel(category));
-                for (const change of categoryChanges) {
-                    const row = document.createElement('article');
-                    row.className = `anomalous-recipe-diff-row anomalous-recipe-diff-${change.kind}`;
-                    const values = document.createElement('div');
-                    values.className = 'anomalous-recipe-diff-values';
-                    const marker = change.kind === 'added' ? '+' : change.kind === 'removed' ? '−' : '→';
-                    appendText(row, 'span', marker, 'anomalous-recipe-diff-marker');
-                    appendText(row, 'strong', change.label || change.key, 'anomalous-recipe-diff-label');
-                    if (change.kind !== 'added') appendDiffValue(values, t('recipeDiffBefore'), change.before, 'before');
-                    if (change.kind === 'changed') appendText(row, 'span', '→', 'anomalous-recipe-diff-arrow');
-                    if (change.kind !== 'removed') appendDiffValue(values, t('recipeDiffAfter'), change.after, 'after');
-                    row.appendChild(values);
-                    group.appendChild(row);
-                }
-                panel.appendChild(group);
-            }
-        })
-        .catch((error) => {
-            console.error('Could not compare Workflow Recipe version:', error);
-            panel.replaceChildren();
-            appendText(panel, 'p', t('recipeDiffError'), 'anomalous-recipe-dialog-error');
-        })
-        .finally(() => {
-            trigger.disabled = false;
-            trigger.textContent = t('recipeCompareVersion');
-        });
-}
-
-function renderVersions(content, owner, recipe, history, finish) {
-    const section = document.createElement('section');
-    section.className = 'anomalous-recipe-detail-section';
-    appendText(section, 'h4', t('recipeHistory'));
-    const timeline = document.createElement('div');
-    timeline.className = 'anomalous-recipe-version-timeline';
-    const current = document.createElement('article');
-    current.className = 'anomalous-recipe-version-row current';
-    appendText(current, 'strong', t('recipeDetailCurrentVersion'));
-    appendText(current, 'span', dateText(recipe.updated_timestamp || recipe.timestamp));
-    const currentFingerprint = fingerprintText(recipe);
-    appendText(current, 'code', shortHash(currentFingerprint) || t('recipeDetailNotIndexed'));
-    if (currentFingerprint) appendCopyButton(current, currentFingerprint, t('recipeDetailCopyFingerprint'));
-    timeline.appendChild(current);
-    for (const version of history || []) {
-        const row = document.createElement('article');
-        row.className = 'anomalous-recipe-version-row';
-        const copy = document.createElement('div');
-        appendText(copy, 'strong', version.name || t('recipeUnknownVersion'));
-        appendText(copy, 'span', dateText(version.timestamp));
-        row.appendChild(copy);
-        const versionFingerprint = version.workflow_fingerprint?.value || '';
-        appendText(row, 'code', shortHash(versionFingerprint) || t('recipeDetailNotIndexed'));
-        if (versionFingerprint) appendCopyButton(row, versionFingerprint, t('recipeDetailCopyFingerprint'));
-        const compare = button(row, t('recipeCompareVersion'), 'anomalous-btn-primary');
-        compare.onclick = () => {
-            const existing = row.querySelector('.anomalous-recipe-version-diff');
-            if (existing) {
-                existing.remove();
-                compare.textContent = t('recipeCompareVersion');
-                return;
-            }
-            compare.textContent = t('recipeDiffLoading');
-            renderDiffPanel(row, owner, recipe, version, compare);
-        };
-        const restore = button(row, t('recipeRestoreVersion'), 'anomalous-btn-danger');
-        restore.onclick = async () => {
-            if (!await anomalousConfirm(t('recipeRestoreVersionConfirm'))) return;
-            try {
-                const response = await fetch('/anomalous/restore_recipe_version', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ filename: owner.recipeDetailFilename, version: version.version }),
-                });
-                if (!response.ok) throw new Error('restore failed');
-                await owner.refreshRecipes();
-                finish('restored');
-            } catch (error) {
-                console.error('Could not restore recipe version:', error);
-                await anomalousAlert(t('recipeUpdateError'));
-            }
-        };
-        timeline.appendChild(row);
-    }
-    if (!(history || []).length) appendText(timeline, 'p', t('recipeHistoryEmpty'), 'anomalous-recipe-detail-muted');
-    section.appendChild(timeline);
-    content.appendChild(section);
-}
-
-function renderRecipeGallery(content, owner, recipe, gallery, refresh) {
-    const section = document.createElement('section');
-    section.className = 'anomalous-recipe-detail-section anomalous-recipe-gallery';
-    const heading = document.createElement('div');
-    heading.className = 'anomalous-recipe-detail-section-heading';
-    appendText(heading, 'h4', t('recipeGallery'));
-    const refreshButton = button(heading, t('recipeGalleryRefresh'), 'anomalous-btn-ghost anomalous-recipe-gallery-refresh');
-    refreshButton.onclick = () => { void refresh(true); };
-    section.appendChild(heading);
-
-    if (gallery.status === 'loading') {
-        appendText(section, 'p', t('recipeGalleryLoading'), 'anomalous-recipe-detail-muted');
-        content.appendChild(section);
-        return;
-    }
-    if (gallery.status === 'error') {
-        appendText(section, 'p', t('recipeGalleryLoadError'), 'anomalous-recipe-detail-muted');
-        content.appendChild(section);
-        return;
-    }
-
-    if (gallery.status === 'ready') {
-        appendText(section, 'small', t('recipeGalleryScanHint').replace('{count}', String(gallery.scanned || 0)), 'anomalous-recipe-detail-muted');
-    }
-    if (!gallery.images.length) {
-        appendText(section, 'p', t('recipeGalleryEmpty'), 'anomalous-recipe-detail-muted');
-        content.appendChild(section);
-        return;
-    }
-
-    const grid = document.createElement('div');
-    grid.className = 'anomalous-recipe-gallery-grid';
-    for (const sourceImage of gallery.images) {
-        const card = document.createElement('article');
-        card.className = 'anomalous-recipe-gallery-card';
-        const url = outputImageUrl(sourceImage);
-        const image = document.createElement('img');
-        image.src = url;
-        image.alt = t('recipeGalleryOpenImage');
-        image.loading = 'lazy';
-        image.onclick = () => owner.showGalleryViewer?.(url);
-        card.appendChild(image);
-        const actions = document.createElement('div');
-        actions.className = 'anomalous-recipe-gallery-card-actions';
-        const details = button(actions, `🔎 ${t('materialViewDetails')}`, 'anomalous-btn-primary');
-        details.onclick = event => {
-            event.stopPropagation();
-            openGalleryImageDetail(owner, gallery.images, sourceImage, url);
-        };
-        card.appendChild(actions);
-        grid.appendChild(card);
-    }
-    section.appendChild(grid);
-    content.appendChild(section);
-}
-
-async function showGalleryComparison(card, owner, sourceImage) {
-    const existing = card.querySelector('.anomalous-recipe-gallery-comparison');
-    if (existing) {
-        existing.remove();
-        return;
-    }
-    const panel = document.createElement('div');
-    panel.className = 'anomalous-recipe-gallery-comparison';
-    appendText(panel, 'strong', t('recipeGalleryComparison'));
-    appendText(panel, 'p', t('recipeGalleryComparisonLoading'), 'anomalous-recipe-detail-muted');
-    card.appendChild(panel);
-    try {
-        const query = new URLSearchParams({
-            filename: owner.recipeDetailFilename,
-            image_filename: sourceImage.filename,
-            image_subfolder: sourceImage.subfolder || '',
-        });
-        const response = await fetch(`/anomalous/recipe_gallery_compare?${query.toString()}`, { cache: 'no-store' });
-        if (!response.ok) throw new Error('gallery comparison failed');
-        const payload = await response.json();
-        const comparison = payload.comparison || {};
-        panel.replaceChildren();
-        appendText(panel, 'strong', t('recipeGalleryComparison'));
-        if (!comparison.changes?.length) {
-            appendText(panel, 'p', t('recipeGalleryNoDifferences'), 'anomalous-recipe-detail-muted');
-            return;
-        }
-        appendText(panel, 'small', t('recipeGalleryDifferenceHint'), 'anomalous-recipe-detail-muted');
-        for (const change of comparison.changes) {
-            const row = document.createElement('div');
-            row.className = 'anomalous-recipe-gallery-diff-row';
-            appendText(row, 'strong', `${change.type} #${change.index}`);
-            const values = document.createElement('div');
-            values.className = 'anomalous-recipe-gallery-diff-values';
-            appendText(values, 'span', `${t('recipeGalleryRecipeValue')}: ${displayValue(change.recipe)}`);
-            appendText(values, 'span', `${t('recipeGalleryImageValue')}: ${displayValue(change.image)}`);
-            row.appendChild(values);
-            panel.appendChild(row);
-        }
-    } catch (error) {
-        console.error('Could not compare recipe gallery image:', error);
-        panel.replaceChildren();
-        appendText(panel, 'strong', t('recipeGalleryComparison'));
-        appendText(panel, 'p', t('recipeGalleryComparisonError'), 'anomalous-recipe-detail-muted');
-    }
-}
 
 export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     const returnState = owner.recipeReturnState || null;

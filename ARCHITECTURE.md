@@ -107,6 +107,9 @@ DOM or live LiteGraph state.
   a `clamp(230px, 24vw, 290px)` sidebar with guarded card actions, uncluttered console action bars with deferred status feedback,
   `minmax(130px, 1fr)` Bento Grid with universal click-to-copy, LoRA cards with flexbox truncation guards,
   and sticky editor headers), as well as Versions timeline and Recipe Gallery.
+  Within recipe detail, `ui_recipe_versions.js` owns history comparison/restore,
+  `ui_recipe_gallery.js` owns result cards and direct Image Detail Workbench handoff,
+  and `ui_recipe_detail_dom.js` owns the DOM/copy helpers shared by detail subviews.
 - `ui_prompt_composer.js` owns the standalone Prompt Studio drawer. Its child
   views are `ui_prompt_source_deck.js`, `ui_prompt_workbench.js`, and
   `ui_prompt_inspector.js`. Assembly plan data, track-vs-role separation, and

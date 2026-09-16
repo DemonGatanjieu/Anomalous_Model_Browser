@@ -99,7 +99,7 @@ export function fixture({ storage = new Map(), storageOverride } = {}) {
         if (filename.endsWith('/scripts/app.js')) source = 'export const app = globalThis.app;';
         else if (filename.endsWith('/ui_dialog.js')) source = 'export async function anomalousAlert(message) { errors.push(message); } export async function anomalousConfirm() { return true; } export async function anomalousPrompt() { return null; }';
         else if (filename.endsWith('/material_feedback.js')) source = 'export function showMaterialSaved() {}';
-        else if (filename.endsWith('/ui_gallery_detail.js')) source = 'export function showImageWorkbench() {}';
+        else if (filename.endsWith('/ui_gallery_detail.js')) source = 'export function showImageWorkbench(owner, sourceImage, imageUrl, options) { return owner?.showImageWorkbench?.(sourceImage, imageUrl, options); }';
         else source = fs.readFileSync(filename, 'utf8');
         const mod = new vm.SourceTextModule(source, { context, identifier: filename, initializeImportMeta: meta => { meta.url = pathToFileURL(filename).href; } });
         modules.set(filename, mod); return mod;
