@@ -75,6 +75,9 @@ export function hideTooltipImmediately() {
         sharedTooltipEl.style.opacity = '0';
     }
 }
+if (typeof window !== 'undefined') {
+    window.AMB_hideTooltipImmediately = hideTooltipImmediately;
+}
 
 export function showSharedTooltip(button, title, desc) {
     if (isDraggingActive || typeof document === 'undefined') return;
@@ -124,21 +127,30 @@ export function showSharedTooltip(button, title, desc) {
     tooltip.style.opacity = '1';
 }
 
+function suppressButtonText(button) {
+    clearTimers();
+    hideTooltipImmediately();
+    if (button) {
+        button.classList.remove('anomalous-action-label-active');
+        button.__suppress_text_until_leave = true;
+    }
+}
+
 function onButtonEnter(button, spec) {
-    if (isDraggingActive) return;
+    if (isDraggingActive || button.__suppress_text_until_leave) return;
     clearTimers();
     activeTargetButton = button;
 
     // 100ms short label reveal
     labelTimer = setTimeout(() => {
-        if (activeTargetButton === button && !isDraggingActive) {
+        if (activeTargetButton === button && !isDraggingActive && !button.__suppress_text_until_leave) {
             button.classList.add('anomalous-action-label-active');
         }
     }, 100);
 
     // 600ms rich tooltip reveal
     tooltipTimer = setTimeout(() => {
-        if (activeTargetButton === button && !isDraggingActive) {
+        if (activeTargetButton === button && !isDraggingActive && !button.__suppress_text_until_leave) {
             showSharedTooltip(button, t(spec.nameKey), t(spec.hintKey));
         }
     }, 600);
@@ -149,6 +161,7 @@ function onButtonLeave(button) {
     if (activeTargetButton === button) {
         activeTargetButton = null;
     }
+    button.__suppress_text_until_leave = false;
     button.classList.remove('anomalous-action-label-active');
     hideTooltipImmediately();
 }
@@ -185,14 +198,19 @@ export function configureSidebarAction(button, customSpec = null) {
             onButtonLeave(button);
         });
 
+        // Immediately dismiss text and tooltip on click/press
+        const handleActionClick = () => suppressButtonText(button);
+        button.addEventListener('pointerdown', handleActionClick);
+        button.addEventListener('click', handleActionClick);
+
         button.addEventListener('focus', (e) => {
-            if (button.matches(':focus-visible')) {
+            if (button.matches(':focus-visible') && !button.__suppress_text_until_leave) {
                 button.classList.add('anomalous-action-label-active');
                 const curSpec = getToolDefinition(button.getAttribute('data-tool-id')) || spec;
                 clearTimers();
                 activeTargetButton = button;
                 tooltipTimer = setTimeout(() => {
-                    if (activeTargetButton === button && !isDraggingActive) {
+                    if (activeTargetButton === button && !isDraggingActive && !button.__suppress_text_until_leave) {
                         showSharedTooltip(button, t(curSpec.nameKey), t(curSpec.hintKey));
                     }
                 }, 600);
@@ -220,4 +238,10 @@ export function configureSidebarActions(root) {
     for (const btn of candidates) {
         configureSidebarAction(btn);
     }
+}
+
+if (typeof document !== 'undefined') {
+    document.addEventListener('pointerdown', () => {
+        hideTooltipImmediately();
+    }, { passive: true });
 }

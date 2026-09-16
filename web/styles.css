@@ -1036,21 +1036,21 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     position: absolute;
     bottom: 48px;
     left: 10px;
-    width: 226px;
-    min-height: auto;
+    width: 236px;
+    min-height: 194px;
     box-sizing: border-box;
     background: rgba(22, 22, 26, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
-    padding: 8px 8px 6px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    border-radius: 11px;
+    padding: 10px 10px 8px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
     z-index: 999999 !important;
     transition: left 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), bottom 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
     display: none;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
     overflow: hidden !important;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
@@ -1070,10 +1070,10 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-toolbox-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 5px;
-    margin: 3px 0 4px;
+    gap: 6px;
+    margin: 4px 0 4px;
     align-content: start;
-    flex: none;
+    flex: 1;
 }
 
 .anomalous-toolbox-tile {
@@ -1082,23 +1082,23 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 6px 2px 5px;
-    min-height: 46px;
+    padding: 8px 4px 6px;
+    min-height: 56px;
     box-sizing: border-box;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 6px;
+    border-radius: 7px;
     cursor: pointer;
     position: relative;
     user-select: none;
-    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .anomalous-toolbox-tile:hover {
     background: rgba(255, 255, 255, 0.09);
     border-color: rgba(255, 255, 255, 0.2);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 .anomalous-toolbox-tile:active {
@@ -1106,9 +1106,9 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-toolbox-tile-icon {
-    font-size: 16px;
+    font-size: 18px;
     line-height: 1;
-    margin-bottom: 3px;
+    margin-bottom: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1116,14 +1116,14 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-toolbox-tile-label {
-    font-size: 10px;
+    font-size: 10.5px;
     font-weight: 500;
-    color: #cbd5e1;
+    color: #e2e8f0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
-    line-height: 1.15;
+    line-height: 1.2;
 }
 
 .anomalous-toolbox-tile-dot {
@@ -1142,13 +1142,49 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     box-shadow: 0 0 5px rgba(16, 185, 129, 0.75);
 }
 
+.anomalous-toolbox-tile.is-placeholder {
+    background: rgba(255, 255, 255, 0.015) !important;
+    border: 1px dashed rgba(255, 255, 255, 0.08) !important;
+    opacity: 0.35 !important;
+    cursor: default !important;
+    pointer-events: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.anomalous-toolbox-tile.is-placeholder .anomalous-toolbox-tile-icon {
+    font-size: 14px !important;
+    color: #94a3b8 !important;
+    margin-bottom: 3px !important;
+}
+
+.anomalous-toolbox-tile.is-placeholder .anomalous-toolbox-tile-label {
+    color: #64748b !important;
+    font-size: 9.5px !important;
+}
+
 .anomalous-toolbox-footer-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 4px 2px 1px;
-    margin-top: 2px;
+    padding: 5px 2px 2px;
+    margin-top: auto;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Suppress all tooltips on clicked/active elements so they never block vision or interaction */
+button:active::before,
+button:active::after,
+.anomalous-tooltip-target:active::before,
+.anomalous-tooltip-target:active::after,
+.anomalous-toolbox-tile:active::before,
+.anomalous-toolbox-tile:active::after,
+#anomalous-sidebar-actions button:active::before,
+#anomalous-sidebar-actions button:active::after {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
 }
 
 .anomalous-sidebar-closed #anomalous-sidebar-actions {

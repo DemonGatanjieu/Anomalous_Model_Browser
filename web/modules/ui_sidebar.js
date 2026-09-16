@@ -1880,6 +1880,9 @@ export function createDOM() {
 
         toolboxBtn.onclick = (e) => {
             e.stopPropagation();
+            if (window.AMB_hideTooltipImmediately) window.AMB_hideTooltipImmediately();
+            toolboxBtn.classList.remove('anomalous-action-label-active');
+            toolboxBtn.__suppress_text_until_leave = true;
             if (settingsHubModal.style.display !== 'none') {
                 settingsHubModal.style.display = 'none';
             }
@@ -2125,10 +2128,8 @@ export function createDOM() {
 
             toolboxTools.forEach(tool => {
                 const tile = document.createElement('div');
-                tile.className = 'anomalous-toolbox-tile anomalous-tooltip-target';
+                tile.className = 'anomalous-toolbox-tile';
                 tile.setAttribute('data-tool-id', tool.id);
-                tile.setAttribute('data-tooltip', `${t(tool.nameKey)}\n${t(tool.hintKey) || ''}`);
-                tile.setAttribute('data-tooltip-pos', 'top');
 
                 const iconEl = document.createElement('div');
                 iconEl.className = 'anomalous-toolbox-tile-icon';
@@ -2142,12 +2143,36 @@ export function createDOM() {
 
                 tile.onclick = (e) => {
                     e.stopPropagation();
+                    if (window.AMB_hideTooltipImmediately) window.AMB_hideTooltipImmediately();
                     toolboxModal.style.display = 'none';
                     executeToolAction(tool.id);
                 };
 
                 gridContainer.appendChild(tile);
             });
+
+            // Add subtle placeholder expansion slots to complete the 3-column row
+            const totalActive = toolboxTools.length;
+            const remainder = totalActive % 3;
+            if (remainder > 0) {
+                const placeholdersNeeded = 3 - remainder;
+                for (let i = 0; i < placeholdersNeeded; i++) {
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'anomalous-toolbox-tile is-placeholder';
+
+                    const iconEl = document.createElement('div');
+                    iconEl.className = 'anomalous-toolbox-tile-icon';
+                    iconEl.textContent = '＋';
+                    placeholder.appendChild(iconEl);
+
+                    const labelEl = document.createElement('div');
+                    labelEl.className = 'anomalous-toolbox-tile-label';
+                    labelEl.textContent = window.anomalous_browser_lang === 'zh' ? '待扩充' : 'Soon';
+                    placeholder.appendChild(labelEl);
+
+                    gridContainer.appendChild(placeholder);
+                }
+            }
 
             toolboxModal.appendChild(gridContainer);
 
