@@ -1036,21 +1036,21 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     position: absolute;
     bottom: 50px;
     left: 10px;
-    width: 236px;
+    width: 248px;
     min-height: auto;
     box-sizing: border-box;
     background: rgba(22, 22, 26, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
-    padding: 10px 10px 8px;
+    border-radius: 12px;
+    padding: 12px 12px 10px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
     z-index: 999999 !important;
     transition: left 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), bottom 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
     display: none;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     overflow: hidden !important;
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
@@ -1070,8 +1070,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-toolbox-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-    margin: 2px 0 2px;
+    gap: 10px;
+    margin: 4px 0 6px;
     align-content: start;
     flex: 1;
 }
@@ -1082,23 +1082,23 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 8px 3px 6px;
-    min-height: 54px;
+    padding: 14px 6px 12px;
+    min-height: 72px;
     box-sizing: border-box;
-    background: rgba(255, 255, 255, 0.035);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
     cursor: pointer;
     position: relative;
     user-select: none;
-    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .anomalous-toolbox-tile:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.18);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
 .anomalous-toolbox-tile:active {
@@ -1106,18 +1106,19 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-toolbox-tile-icon {
-    font-size: 18px;
+    font-size: 26px;
     line-height: 1;
-    margin-bottom: 5px;
+    margin-bottom: 7px;
     display: flex;
     align-items: center;
     justify-content: center;
+    user-select: none;
 }
 
 .anomalous-toolbox-tile-label {
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 500;
-    color: #d4d4d8;
+    color: #e2e8f0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1139,6 +1140,15 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-toolbox-tile-dot.is-ready {
     background: #10b981;
     box-shadow: 0 0 5px rgba(16, 185, 129, 0.75);
+}
+
+.anomalous-toolbox-footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 4px 2px;
+    margin-top: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .anomalous-sidebar-closed #anomalous-sidebar-actions {
@@ -14094,101 +14104,6 @@ button:hover .anomalous-btn-icon {
     border-right: 5px solid transparent;
     border-top: 5px solid rgba(18, 20, 26, 0.98);
     transform: translateX(-50%);
-}
-
-/* =============================================================================
-   TOOLBOX CATALOG & SHORTCUT ORGANIZER
-   ============================================================================= */
-.anomalous-toolbox-tile {
-    position: relative;
-    user-select: none;
-    -webkit-user-select: none;
-    cursor: pointer;
-}
-
-.anomalous-toolbox-tile-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    margin-bottom: 4px;
-}
-
-.anomalous-pinned-badge {
-    font-size: 9px;
-    font-weight: 600;
-    color: #94a3b8;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    padding: 1px 5px;
-    border-radius: 3px;
-    line-height: 1.2;
-}
-
-.anomalous-tool-more-btn {
-    background: transparent;
-    border: none;
-    color: #64748b;
-    font-size: 14px;
-    line-height: 1;
-    cursor: pointer;
-    padding: 2px 4px;
-    border-radius: 4px;
-    transition: all 0.15s ease;
-}
-
-.anomalous-tool-more-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-}
-
-.anomalous-toolbox-dropzone {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 7px 10px;
-    margin-top: 6px;
-    border: 1px dashed rgba(255, 255, 255, 0.14);
-    border-radius: 6px;
-    font-size: 11px;
-    color: #64748b;
-    background: rgba(255, 255, 255, 0.02);
-    transition: all 0.18s ease;
-    text-align: center;
-    box-sizing: border-box;
-}
-
-.anomalous-toolbox-dropzone.is-drag-over {
-    border-color: rgba(255, 255, 255, 0.45);
-    background: rgba(255, 255, 255, 0.08);
-    color: #f1f5f9;
-    box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.05);
-}
-
-.anomalous-toolbox-footer-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 4px 2px;
-    margin-top: 4px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.anomalous-toolbox-reset-shortcuts {
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #94a3b8;
-    font-size: 11px;
-    padding: 3px 8px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-}
-
-.anomalous-toolbox-reset-shortcuts:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.25);
 }
 
 @media (prefers-reduced-motion: reduce) {

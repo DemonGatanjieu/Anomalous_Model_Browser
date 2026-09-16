@@ -2116,6 +2116,13 @@ export function createDOM() {
             const allTools = [...CATALOG_TOOLS, ...(this.customToolboxItems || [])];
             const toolboxTools = allTools.filter(tool => !outsideToolIds.has(tool.id));
 
+            const COLOR_ICONS = {
+                'workflow-transfer': '🔄',
+                'prompt-studio': '🎛️',
+                'prompt-translator': '🌐',
+                'model-sources': '🔗',
+            };
+
             toolboxTools.forEach(tool => {
                 const tile = document.createElement('div');
                 tile.className = 'anomalous-toolbox-tile anomalous-tooltip-target';
@@ -2125,7 +2132,7 @@ export function createDOM() {
 
                 const iconEl = document.createElement('div');
                 iconEl.className = 'anomalous-toolbox-tile-icon';
-                iconEl.innerHTML = tool.icon || '🔧';
+                iconEl.innerHTML = COLOR_ICONS[tool.id] || tool.icon || '🔧';
                 tile.appendChild(iconEl);
 
                 const labelEl = document.createElement('div');
