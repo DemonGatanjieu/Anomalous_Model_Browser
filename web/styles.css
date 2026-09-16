@@ -11886,6 +11886,9 @@ button:hover .anomalous-btn-icon {
     color: var(--amb-text-muted, #9ca3af) !important;
     background: transparent !important;
     border: 1px solid transparent !important;
+    cursor: pointer !important;
+    overflow: hidden !important;
+    pointer-events: auto !important;
     transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
 
@@ -11898,6 +11901,7 @@ button:hover .anomalous-btn-icon {
 }
 
 #anomalous-sidebar-actions button svg {
+    pointer-events: none !important;
     transition: opacity 0.15s ease;
 }
 
@@ -14001,22 +14005,26 @@ button:hover .anomalous-btn-icon {
 #anomalous-sidebar-actions .anomalous-action-label {
     position: absolute;
     inset: 0;
-    display: none;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     font: 600 11px/1 system-ui, sans-serif;
     color: #ffffff;
-    pointer-events: none;
+    pointer-events: none !important;
     white-space: nowrap;
+    opacity: 0;
+    transform: translateY(3px);
+    transition: opacity 0.12s ease, transform 0.12s ease;
 }
 
 #anomalous-sidebar-actions button.anomalous-action-label-active > svg {
-    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
 #anomalous-sidebar-actions button.anomalous-action-label-active .anomalous-action-label {
-    display: inline-flex !important;
-    animation: anomalous-action-label-in 0.12s ease;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
 }
 
 #anomalous-sidebar-actions button:focus-visible {
@@ -14024,14 +14032,9 @@ button:hover .anomalous-btn-icon {
     outline-offset: 2px;
 }
 
-@keyframes anomalous-action-label-in {
-    from { opacity: 0; transform: translateY(3px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
 @media (hover: none) {
-    #anomalous-sidebar-actions button > svg { display: none !important; }
-    #anomalous-sidebar-actions .anomalous-action-label { display: inline-flex !important; }
+    #anomalous-sidebar-actions button > svg { opacity: 0 !important; }
+    #anomalous-sidebar-actions .anomalous-action-label { opacity: 1 !important; transform: none !important; }
 }
 
 /* Suppress CSS pseudo-element tooltips on sidebar action buttons */

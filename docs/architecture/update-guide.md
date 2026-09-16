@@ -41,6 +41,7 @@
 不能占用已用于详细提示的 `::before`/`::after`。扫描状态替换 SVG 后重新配置标签。
 语言切换须更新六个标签、完整 accessible name 和用途提示。
 悬停与键盘焦点使用相同文字切换；无悬停设备直接显示短文字；减少动态效果偏好禁用位移动画。
+**防闪烁与稳定性铁律**：底栏按钮必须显式声明 `cursor: pointer !important; overflow: hidden;`，内部 SVG 与 Label 必须设置 `pointer-events: none !important;`。图标切换文本时**严禁使用 `display: none`**（必须使用 `opacity: 0` 保持物理文档流支撑），以避免浏览器 Hit-testing 丢失目标导致高频触发 `mouseleave` -> `mouseenter` 乒乓震荡闪烁。
 
 ## 验证
 
