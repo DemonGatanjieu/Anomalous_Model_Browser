@@ -130,8 +130,11 @@ DOM or live LiteGraph state.
   resize cleanup. Translation requests go through `translation_service.js`.
 - `ui_dom.js` provides small DOM/JSON helpers; `material_inspector.js` owns
   material-specific metadata and parameter rendering.
-- `ui_doctor.js`, `model_picker.js`, `node_material_actions.js`, and
-  `graph_splice.js` own diagnostics and explicit graph changes.
+- `ui_doctor.js` owns diagnostics and global scans; `ui_node_assistant.js` owns
+  selected-node assistant history, `ui_node_model_picker.js` owns native combo
+  replacement, and `ui_node_presets.js` owns parameter preset rendering and
+  application. `model_picker.js`, `node_material_actions.js`, and `graph_splice.js`
+  own the remaining explicit graph changes.
 - `ui_model_sources.js` owns the Model Source Hub (模型来源统一中控中心), providing dual-scope
   (Workflow and Library) source inspection, external platform jumping, canvas `Note` node generation,
   `workflow.extra.anomalous_model_sources` metadata synchronization, automated asynchronous model

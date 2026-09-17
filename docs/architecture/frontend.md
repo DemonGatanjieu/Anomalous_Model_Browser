@@ -50,7 +50,10 @@ The main surfaces are:
 - Gallery: the user's generated outputs and the full-screen Image Detail Studio Workbench (`ui_gallery_detail.js`).
 - Workspace: Prompt Notes, Workflow Recipes, and the Material Library.
 - Node Assistant/Model Doctor: selected-node actions, diagnostics, parameter
-  presets, and missing-model recovery.
+  presets, and missing-model recovery. `ui_doctor.js` coordinates diagnosis and
+  global scans, `ui_node_assistant.js` owns assistant history, `ui_node_model_picker.js`
+  owns the native-widget model replacer, and `ui_node_presets.js` owns parameter
+  preset previews and application.
 
 `ui_dom.js` owns generic `text` and `jsonResponse` helpers.
 `material_inspector.js` shares image metadata helpers and node-parameter rendering
