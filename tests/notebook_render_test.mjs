@@ -18,6 +18,7 @@ f.fetch = async (url) => {
 };
 
 const notes = await f.module('ui_notebooks.js');
+const editor = await f.module('ui_notebook_editor.js');
 
 const owner = {
     currentNotebook: null,
@@ -28,7 +29,7 @@ const owner = {
     sendNotebookToCanvas: () => {},
     fillNotebookGalleries: () => {},
 };
-owner.renderNotebookEditor = notes.renderNotebookEditor.bind(owner);
+owner.renderNotebookEditor = editor.renderNotebookEditor.bind(owner);
 owner.refreshNotebooks = notes.refreshNotebooks.bind(owner);
 
 // 1. Test refreshNotebooks with autoOpenFirst=true
