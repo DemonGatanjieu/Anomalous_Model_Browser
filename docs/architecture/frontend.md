@@ -46,9 +46,18 @@ The main surfaces are:
 
 - Sidebar shell: navigation and persistent scan controls; focused child modules
   own the scan wizard, folder manager, and help dialog.
-- Grid and model detail: model browsing and metadata/media presentation.
-- Gallery: the user's generated outputs and the full-screen Image Detail Studio Workbench (`ui_gallery_detail.js`).
-- Workspace: Prompt Notes, Workflow Recipes, and the Material Library.
+- Grid and model detail: model browsing plus coordinated detail display in
+  `ui_detail.js`, metadata editing in `ui_model_editor.js`, and advanced selection
+  in `ui_model_selector.js`.
+- Gallery: generated outputs and the full-screen Image Detail Studio Workbench.
+  `ui_gallery_detail.js` owns its singleton lifecycle and cache, `ui_image_stage.js`
+  owns header/zoom/filmstrip interaction, and `ui_image_inspector.js` owns metadata tabs.
+- Workspace: Prompt Notes, Workflow Recipes, and the Material Library. Prompt Note
+  catalog/persistence, editing, and canvas creation are separated across
+  `ui_notebooks.js`, `ui_notebook_editor.js`, and `notebook_canvas.js`. Material
+  discovery/pagination, cards, detail, and node application are separated across
+  `ui_materials.js`, `ui_material_cards.js`, `ui_material_detail.js`, and
+  `ui_material_application.js`.
 - Node Assistant/Model Doctor: selected-node actions, diagnostics, parameter
   presets, and missing-model recovery. `ui_doctor.js` coordinates diagnosis and
   global scans, `ui_node_assistant.js` owns assistant history, `ui_node_model_picker.js`
@@ -57,7 +66,7 @@ The main surfaces are:
 
 `ui_dom.js` owns generic `text` and `jsonResponse` helpers.
 `material_inspector.js` shares image metadata helpers and node-parameter rendering
-between `ui_materials.js` and `ui_gallery_detail.js`. The workbench does not import
+between the material and image-inspector modules. The workbench does not import
 the library UI, keeping this dependency chain acyclic. Library discovery uses
 server-side filters and pages with cancellable requests. Detail entry fetches
 metadata and scoped node blocks; the complete workflow loads only on the explicit

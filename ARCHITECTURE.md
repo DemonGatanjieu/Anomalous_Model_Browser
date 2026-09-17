@@ -94,14 +94,19 @@ DOM or live LiteGraph state.
 - `tool_registry.js` centralizes metadata, SVG icons (enlarged 20px crisp vector outlines with 2px stroke, #cbd5e1 contrast), and stable IDs for the 9 catalog tools (including Prompt Notes / 提示词笔记) and 2 fixed anchors (Toolbox and Settings).
 - `shortcut_layout.js` provides tool layout utilities and fallbacks. The bottom shortcut bar maintains the clean fixed 4-tool setup (`scan`, `doctor`, `assistant`, `materials`) plus two anchors (`toolbox`, `settings`) housed in prominent 36px buttons with full click/active text suppression and `.is-active` toggled styling.
 - `ui_sidebar.js`'s Toolbox modal strictly filters out all tools already present on the bottom bar, presenting a sleek 216px 3-row utility catalog with compact, frameless 44px tiles (providing an elevated silhouette with breathing room for catalog discovery), downward anchor caret pointing to the toolbox trigger button, 0.18s smooth spring pop-in animation, clean click action execution, and zero obstructive text or beta footers.
-- `ui_grid.js` and model-detail modules own model presentation; `ui_gallery.js`
-  and `ui_gallery_detail.js` own generated-image browsing and inspection.
+- `ui_grid.js` and model-detail modules own model presentation: `ui_detail.js`
+  coordinates detail display, `ui_model_editor.js` owns metadata editing, and
+  `ui_model_selector.js` owns advanced selection. `ui_gallery.js` and
+  `ui_gallery_detail.js` own generated-image browsing and workbench lifecycle,
+  with stage interaction in `ui_image_stage.js` and metadata tabs in
+  `ui_image_inspector.js`.
 - `ui_recipes.js` / `ui_recipe_detail.js`, `ui_notebooks.js`, and `ui_materials.js`
   own their respective workspace surfaces and persistence flows. `ui_recipes.js` owns
   the Workflow Recipe studio catalog workspace with search/filter tags, grid/list layout toggle,
   streamlined action header (preserving active workflow saving and closing while pruning unfinished package
-  import entrypoints), and card browsing. `ui_notebooks.js`
-  owns structured Prompt Notes (提示词笔记), integrated as a standard tool in the Toolbox
+  import entrypoints), and card browsing. `ui_notebooks.js` owns Prompt Note catalog and
+  persistence, `ui_notebook_editor.js` owns editing/model galleries, and
+  `notebook_canvas.js` owns LiteGraph creation. Prompt Notes are integrated as a standard tool in the Toolbox
   with defensive workspace return state restoration, and redesigned with companion models
   (Base architecture, Main checkpoint, and LoRA stack) prominently positioned at the top of the editor,
   followed by the core prompt composer and material library archiving, guarded by Temporal Dead Zone (TDZ)
@@ -112,6 +117,10 @@ DOM or live LiteGraph state.
   a `clamp(230px, 24vw, 290px)` sidebar with guarded card actions, uncluttered console action bars with deferred status feedback,
   `minmax(130px, 1fr)` Bento Grid with universal click-to-copy, LoRA cards with flexbox truncation guards,
   and sticky editor headers).
+  `ui_materials.js` owns Material Library discovery and pagination,
+  `ui_material_cards.js` owns catalog cards, `ui_material_detail.js` owns the
+  full detail surface, and `ui_material_application.js` owns selected-node
+  tracking and explicit material application.
   Within recipe detail, `ui_recipe_versions.js` owns history comparison/restore,
   `ui_recipe_gallery.js` owns result cards and direct Image Detail Workbench handoff,
   `ui_recipe_model_matching.js` owns preview resolution and explicit local replacement,

@@ -218,8 +218,13 @@
   `ui_recipe_detail.js` 从约 2,983 行降至约 760 行，`ui_recipes.js` 从约 1,297 行降至约
   690 行。新增检查覆盖版本恢复、图库交接、目录卡片隔离、模型替换持久化、参数拓扑/解析、
   总览和提示词提取；真实 ComfyUI 视觉与交互仍待宿主验收。
-- 阶段 4（进行中，`e6217bb557`）：模型诊断已完成首项拆分。`ui_doctor.js` 仅保留诊断面板、
-  全局扫描、哈希对话框和诊断协调；节点助手归 `ui_node_assistant.js`，原生控件模型替换归
-  `ui_node_model_picker.js`，参数方案预览与应用归 `ui_node_presets.js`。新增模块边界测试覆盖
-  助手生命周期、原生组合控件查找/赋值和参数方案导出；模型详情、图库详情、素材和笔记仍待拆分。
+- 阶段 4（完成，`e6217bb557`、`12875f9053`、`3e3e26d2b2`、`2951d610c5`、`7afa7518bc`）：
+  模型诊断保留诊断、全局扫描和哈希协调，助手、原生控件选择器、参数方案分别归
+  `ui_node_assistant.js`、`ui_node_model_picker.js`、`ui_node_presets.js`。模型详情保留展示协调，
+  编辑器与高级选择器归 `ui_model_editor.js`、`ui_model_selector.js`。图片工作台仍唯一持有 `wb`
+  和元数据缓存，舞台/缩放/胶片条归 `ui_image_stage.js`，检查器标签归 `ui_image_inspector.js`。
+  素材目录、卡片、详情与节点应用/监听分别归 `ui_materials.js`、`ui_material_cards.js`、
+  `ui_material_detail.js`、`ui_material_application.js`。笔记目录与保存留在 `ui_notebooks.js`，
+  编辑器归 `ui_notebook_editor.js`，画布节点创建归 `notebook_canvas.js`。新增边界与行为检查覆盖
+  以上接线、监听器清理、控件路径、素材应用和笔记保存队列；真实 ComfyUI 视觉仍待宿主验收。
 - 阶段 5–7：待执行。
