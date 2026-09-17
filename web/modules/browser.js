@@ -14,7 +14,9 @@ import { openPromptStudio } from './ui_prompt_composer.js';
 import { openPromptTranslator } from './ui_prompt_translator.js';
 import { closeUpdateGuide } from './ui_update_guide.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
-import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, _openGalleryReplacer, openLoraInsertionPicker, runGlobalDoctorScan } from './ui_doctor.js';
+import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, openLoraInsertionPicker, runGlobalDoctorScan } from './ui_doctor.js';
+import { initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory } from './ui_node_assistant.js';
+import { _openGalleryReplacer } from './ui_node_model_picker.js';
 
 export class AnomalousBrowser {
     constructor() {

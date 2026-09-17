@@ -90,6 +90,7 @@ tests/*
 !tests/recipe_card_render.mjs
 !tests/recipe_model_matching.mjs
 !tests/recipe_parameter_utils.mjs
+!tests/node_feature_modules.mjs
 !tests/notebook_render_test.mjs
 !tests/notebook_save_roundtrip.mjs
 
