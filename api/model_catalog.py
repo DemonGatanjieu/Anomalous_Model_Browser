@@ -11,10 +11,10 @@ import folder_paths
 from .metadata import get_metadata
 from .model_constants import MEDIA_EXTENSIONS, MODEL_EXTENSIONS, PREVIEW_SUFFIXES
 from .model_media import _cache_token, _preview_url_for_model
-from .utils import (
+from .folder_types import (
     get_active_folder_types, get_active_physical_basenames, get_folder_view_mode,
-    resolve_folder_subdir,
 )
+from .path_utils import resolve_folder_subdir
 
 def _collect_folder_models(target_dir, folder_type, path_idx, rel_subfolder, page, limit):
     """Collect one folder in a worker thread with a single directory listing."""

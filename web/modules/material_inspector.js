@@ -1,4 +1,4 @@
-import { text } from './ui_dom.js';
+import { text, jsonResponse } from './ui_dom.js';
 /** Shared image metadata and node-parameter inspection for the library and workbench. */
 import { translate } from './locales.js';
 const t = (key, params) => translate(key, params);

@@ -13,7 +13,8 @@ import uuid
 from aiohttp import web
 import folder_paths
 import struct
-from .utils import get_active_folder_types, get_active_scan_paths, resolve_folder_subdir
+from .folder_types import get_active_folder_types, get_active_scan_paths
+from .path_utils import resolve_folder_subdir
 try:
     from ..model_policies import is_physical_rename_protected
 except ImportError:
