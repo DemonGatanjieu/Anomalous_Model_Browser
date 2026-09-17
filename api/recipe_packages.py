@@ -14,8 +14,8 @@ import zipfile
 
 from aiohttp import web
 
-from . import recipes as recipe_store
-from .recipes import get_recipes_dir
+from . import recipe_images, recipe_schema, recipe_store
+from .recipe_store import get_recipes_dir
 from .utils import require_filename, resolve_within
 
 
@@ -242,7 +242,7 @@ def _build_export(raw_recipe, recipes_dir, filename, options):
         _add_zip_entry(archive, entries, "recipe.json", recipe_bytes, "application/json")
 
         if asset_ids:
-            assets_dir = recipe_store._recipe_assets_dir(recipes_dir, filename)
+            assets_dir = recipe_images._recipe_assets_dir(recipes_dir, filename)
             for asset_id in sorted(asset_ids):
                 asset_path = resolve_within(assets_dir, asset_id)
                 if not os.path.isfile(asset_path):
@@ -297,14 +297,14 @@ def _inspect_package(raw):
         manifest = _parse_json(_read_zip_entry(archive, "manifest.json"), "manifest")
         _validate_manifest(manifest, archive, names)
         recipe = _parse_json(_read_zip_entry(archive, "recipe.json"), "recipe")
-        recipe_store._normalise_recipe(recipe)
+        recipe_schema._normalise_recipe(recipe)
         history_names = [name for name in names if name.startswith("history/")]
         if len(history_names) > MAX_HISTORY_ENTRIES:
             raise ValueError("Too many history entries")
         history_recipes = []
         for name in history_names:
             history = _parse_json(_read_zip_entry(archive, name), "historical recipe")
-            recipe_store._normalise_recipe(history)
+            recipe_schema._normalise_recipe(history)
             history_recipes.append(history)
         _validate_recipe_assets(archive, [recipe, *history_recipes], names)
         return {
@@ -394,14 +394,14 @@ def _commit_import(record, payload):
     else:
         package_recipe["name"] = _unique_name(package_recipe.get("name", ""), existing_names)
 
-    normalized = recipe_store._normalise_recipe(package_recipe)
+    normalized = recipe_schema._normalise_recipe(package_recipe)
     normalized["presentation"]["imported"] = True
     filename = target_filename or f"recipe_{int(time.time())}_{uuid.uuid4().hex[:8]}.json"
-    normalized = recipe_store._enrich_recipe(normalized)
+    normalized = recipe_schema._enrich_recipe(normalized)
 
     staging = tempfile.mkdtemp(prefix=".recipe-import-", dir=recipes_dir)
     final_path = resolve_within(recipes_dir, filename)
-    final_assets = recipe_store._recipe_assets_dir(recipes_dir, filename)
+    final_assets = recipe_images._recipe_assets_dir(recipes_dir, filename)
     final_history = recipe_store._history_dir(recipes_dir, filename)
     backup_recipe = None
     backup_assets = None
