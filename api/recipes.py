@@ -24,7 +24,8 @@ from .recipe_schema import (
     _build_model_references,
     _computed_identity_for_reference as _schema_computed_identity_for_reference,
     _enrich_recipe as _schema_enrich_recipe, _normalise_recipe, _normalise_source_image,
-    _identity_for_reference, _model_reference_key, _model_reference_specs,
+    _identity_for_reference as _schema_identity_for_reference,
+    _model_reference_key, _model_reference_specs,
     _model_roots, _preserve_model_reference_fields,
     _resolve_exact_model_reference, _updated_recipe, _workflow_identity_for_reference,
 )
@@ -48,6 +49,16 @@ def _computed_identity_for_reference(saved_value):
     _recipe_schema_module._resolve_exact_model_reference = _resolve_exact_model_reference
     try:
         return _schema_computed_identity_for_reference(saved_value)
+    finally:
+        _recipe_schema_module._resolve_exact_model_reference = previous
+
+
+def _identity_for_reference(saved_value):
+    """Compatibility facade for the former monolithic recipes module."""
+    previous = _recipe_schema_module._resolve_exact_model_reference
+    _recipe_schema_module._resolve_exact_model_reference = _resolve_exact_model_reference
+    try:
+        return _schema_identity_for_reference(saved_value)
     finally:
         _recipe_schema_module._resolve_exact_model_reference = previous
 
