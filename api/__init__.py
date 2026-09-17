@@ -1,11 +1,8 @@
-from . import model_catalog, model_media, model_metadata, model_resolution
+from . import materials, model_catalog, model_media, model_metadata, model_resolution, recipe_packages, recipes
 from .scanner import *
 from .config import *
 from .notebooks import *
 from .parameters import *
-from .recipes import *
-from .recipe_packages import *
-from .materials import *
 from .utils import *
 
 def setup_routes(app):
@@ -36,36 +33,36 @@ def setup_routes(app):
     app.router.add_get('/anomalous/parameter_gallery', api_get_parameter_gallery)
 
     # Recipe Routes
-    app.router.add_get('/anomalous/recipes', api_get_recipes)
-    app.router.add_get('/anomalous/recipe_full', api_get_recipe_full)
-    app.router.add_get('/anomalous/recipe_asset', api_get_recipe_asset)
-    app.router.add_get('/anomalous/recipe_gallery', api_get_recipe_gallery)
-    app.router.add_get('/anomalous/recipe_parameter_gallery', api_get_recipe_parameter_gallery)
-    app.router.add_get('/anomalous/recipe_gallery_compare', api_get_recipe_gallery_compare)
-    app.router.add_post('/anomalous/save_recipe', api_save_recipe)
-    app.router.add_post('/anomalous/update_recipe', api_update_recipe)
-    app.router.add_post('/anomalous/set_recipe_gallery_cover', api_set_recipe_gallery_cover)
-    app.router.add_post('/anomalous/delete_recipe', api_delete_recipe)
-    app.router.add_get('/anomalous/recipe_history', api_get_recipe_history)
-    app.router.add_get('/anomalous/recipe_version', api_get_recipe_version)
-    app.router.add_post('/anomalous/restore_recipe_version', api_restore_recipe_version)
-    app.router.add_post('/anomalous/refresh_recipe_identity', api_refresh_recipe_identity)
-    app.router.add_post('/anomalous/export_recipe_package', api_export_recipe_package)
-    app.router.add_post('/anomalous/import_recipe_package_inspect', api_import_recipe_package_inspect)
-    app.router.add_post('/anomalous/import_recipe_package_commit', api_import_recipe_package_commit)
+    app.router.add_get('/anomalous/recipes', recipes.api_get_recipes)
+    app.router.add_get('/anomalous/recipe_full', recipes.api_get_recipe_full)
+    app.router.add_get('/anomalous/recipe_asset', recipes.api_get_recipe_asset)
+    app.router.add_get('/anomalous/recipe_gallery', recipes.api_get_recipe_gallery)
+    app.router.add_get('/anomalous/recipe_parameter_gallery', recipes.api_get_recipe_parameter_gallery)
+    app.router.add_get('/anomalous/recipe_gallery_compare', recipes.api_get_recipe_gallery_compare)
+    app.router.add_post('/anomalous/save_recipe', recipes.api_save_recipe)
+    app.router.add_post('/anomalous/update_recipe', recipes.api_update_recipe)
+    app.router.add_post('/anomalous/set_recipe_gallery_cover', recipes.api_set_recipe_gallery_cover)
+    app.router.add_post('/anomalous/delete_recipe', recipes.api_delete_recipe)
+    app.router.add_get('/anomalous/recipe_history', recipes.api_get_recipe_history)
+    app.router.add_get('/anomalous/recipe_version', recipes.api_get_recipe_version)
+    app.router.add_post('/anomalous/restore_recipe_version', recipes.api_restore_recipe_version)
+    app.router.add_post('/anomalous/refresh_recipe_identity', recipes.api_refresh_recipe_identity)
+    app.router.add_post('/anomalous/export_recipe_package', recipe_packages.api_export_recipe_package)
+    app.router.add_post('/anomalous/import_recipe_package_inspect', recipe_packages.api_import_recipe_package_inspect)
+    app.router.add_post('/anomalous/import_recipe_package_commit', recipe_packages.api_import_recipe_package_commit)
 
     # Curated Material Library Routes
-    app.router.add_get('/anomalous/materials', api_get_materials)
-    app.router.add_get('/anomalous/material_full', api_get_material_full)
-    app.router.add_get('/anomalous/material_asset', api_get_material_asset)
-    app.router.add_get('/anomalous/materials/by_node_type', api_get_materials_by_node_type)
-    app.router.add_post('/anomalous/inspect_image_material', api_inspect_image_material)
-    app.router.add_post('/anomalous/save_image_material', api_save_image_material)
-    app.router.add_post('/anomalous/save_parameter_material', api_save_parameter_material)
-    app.router.add_post('/anomalous/save_prompt_note_material', api_save_prompt_note_material)
-    app.router.add_post('/anomalous/save_prompt_plan', api_save_prompt_plan)
-    app.router.add_post('/anomalous/delete_material', api_delete_material)
-    app.router.add_post('/anomalous/update_material', api_update_material)
+    app.router.add_get('/anomalous/materials', materials.api_get_materials)
+    app.router.add_get('/anomalous/material_full', materials.api_get_material_full)
+    app.router.add_get('/anomalous/material_asset', materials.api_get_material_asset)
+    app.router.add_get('/anomalous/materials/by_node_type', materials.api_get_materials_by_node_type)
+    app.router.add_post('/anomalous/inspect_image_material', materials.api_inspect_image_material)
+    app.router.add_post('/anomalous/save_image_material', materials.api_save_image_material)
+    app.router.add_post('/anomalous/save_parameter_material', materials.api_save_parameter_material)
+    app.router.add_post('/anomalous/save_prompt_note_material', materials.api_save_prompt_note_material)
+    app.router.add_post('/anomalous/save_prompt_plan', materials.api_save_prompt_plan)
+    app.router.add_post('/anomalous/delete_material', materials.api_delete_material)
+    app.router.add_post('/anomalous/update_material', materials.api_update_material)
 
     app.router.add_post('/anomalous/translate', api_translate)
     app.router.add_get('/anomalous/base_models', model_catalog.api_base_models)
