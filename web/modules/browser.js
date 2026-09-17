@@ -1,4 +1,6 @@
-import { showDetail, showEditModal, _openAdvancedModelSelector, setWidgetValuePath } from './ui_detail.js';
+import { showDetail } from './ui_detail.js';
+import { showEditModal } from './ui_model_editor.js';
+import { _openAdvancedModelSelector, setWidgetValuePath } from './ui_model_selector.js';
 import { loadModels, applyModelToCanvas, stopMediaInContainer } from './ui_grid.js';
 import { createDOM, renderSidebar, loadFolders } from './ui_sidebar.js';
 import { closeWorkspace, hideAllPanels } from './ui_browser_navigation.js';
