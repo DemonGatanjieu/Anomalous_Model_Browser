@@ -106,14 +106,18 @@ DOM or live LiteGraph state.
   (Base architecture, Main checkpoint, and LoRA stack) prominently positioned at the top of the editor,
   followed by the core prompt composer and material library archiving, guarded by Temporal Dead Zone (TDZ)
   safe summary initialization and responsive empty-state fallback rendering. `ui_recipe_detail.js`
-  owns the Workflow Recipe detail workspace, including Overview prompt showcase (with `entry.text` fallback),
-  the responsive Parameter Presets workspace (featuring default-expanded raw node parameter inspection,
+  coordinates the Workflow Recipe detail session and model composition. `ui_recipe_overview.js`
+  owns the Overview prompt showcase (with `entry.text` fallback), and `ui_recipe_parameters.js`
+  owns the responsive Parameter Presets workspace (featuring default-expanded raw node parameter inspection,
   a `clamp(230px, 24vw, 290px)` sidebar with guarded card actions, uncluttered console action bars with deferred status feedback,
   `minmax(130px, 1fr)` Bento Grid with universal click-to-copy, LoRA cards with flexbox truncation guards,
-  and sticky editor headers), as well as Versions timeline and Recipe Gallery.
+  and sticky editor headers).
   Within recipe detail, `ui_recipe_versions.js` owns history comparison/restore,
   `ui_recipe_gallery.js` owns result cards and direct Image Detail Workbench handoff,
-  and `ui_recipe_detail_dom.js` owns the DOM/copy helpers shared by detail subviews.
+  `ui_recipe_model_matching.js` owns preview resolution and explicit local replacement,
+  `ui_recipe_metadata.js` owns inline persistence, and `ui_recipe_detail_dom.js` owns
+  the DOM/copy helpers shared by detail subviews. `ui_recipe_catalog.js` owns recipe
+  filters, cards, and navigation while `ui_recipe_media.js` owns shared cover helpers.
 - `ui_prompt_composer.js` owns the standalone Prompt Studio drawer. Its child
   views are `ui_prompt_source_deck.js`, `ui_prompt_workbench.js`, and
   `ui_prompt_inspector.js`. Assembly plan data, track-vs-role separation, and

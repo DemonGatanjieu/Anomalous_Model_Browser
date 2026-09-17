@@ -82,7 +82,13 @@ applicable. Compact cards may ellipsize bounded values while preserving their
 full copy value. Detail rows provide visible expand/collapse and copy controls
 for long values and prompts; they do not silently truncate authoritative data.
 
-`ui_recipe_detail.js` coordinates the detail session and active tab.
+`ui_recipe_detail.js` coordinates the detail session, active tab, and model composition.
+`ui_recipe_overview.js` owns the overview; `ui_recipe_parameters.js` owns prompt roles,
+parameter editing, raw nodes, and preset saving; and `ui_recipe_model_matching.js`
+owns preview resolution plus explicit local matching. Inline persistence is centralized
+in `ui_recipe_metadata.js`, with pure ordering/value helpers in
+`ui_recipe_parameter_utils.js`. The catalog shell and cards live in
+`ui_recipe_catalog.js`, with shared cover helpers in `ui_recipe_media.js`.
 `ui_recipe_versions.js` owns version comparison and restore, while
 `ui_recipe_gallery.js` owns result rendering and opens `ui_gallery_detail.js`
 directly for image inspection. Shared detail DOM/copy primitives live in
