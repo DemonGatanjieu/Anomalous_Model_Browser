@@ -29,7 +29,7 @@ const text = (parent, tag, value, cls = '') => { const el = document.createEleme
 const all = parent => [parent, ...parent.children.flatMap(all)];
 const events = {};
 let sent;
-const context = vm.createContext({ console, document, app: {}, translate, t: translate, text, composePromptPlan, joinPromptText,
+const context = vm.createContext({ console, document, app: {}, translate, t: translate, text, appendText: text, composePromptPlan, joinPromptText,
     categorizePromptSnippet, smartSortPromptBlocks, assemblePromptBlocks, planToWorkbenchDraft, workbenchDraftToSavedPlan,
     window: { addEventListener: (key, fn) => events[key] = fn, removeEventListener: (key, fn) => { if (events[key] === fn) delete events[key]; } },
     selectedMaterialNode: () => null, promptWidgetTargets: () => [], bindMaterialDrag() {},
@@ -49,15 +49,15 @@ async function moduleFor(file, extra) {
         initializeImportMeta(meta, module) { meta.url = module.identifier; }
     }); await mod.link(() => { throw new Error('unexpected import'); }); await mod.evaluate(); return mod.namespace;
 }
-const recipes = await moduleFor('ui_recipes.js', 'recipeMatchesFilter, updateRecipeFilterControls, getRecipeReadiness');
-assert.equal(recipes.recipeMatchesFilter({ name: 'cat', workflow_scope: 'partial', tags: ['A'] }, 'cat', new Set(['a']), 'complete'), false);
-assert.equal(recipes.recipeMatchesFilter({ name: 'cat', workflow_scope: 'partial', tags: ['A'] }, 'cat', new Set(['a']), 'partial'), true);
-assert.equal(recipes.recipeMatchesFilter({ name: 'old' }, '', new Set(), 'complete'), true);
+const recipeCatalog = await moduleFor('ui_recipe_catalog.js', '');
+assert.equal(recipeCatalog.recipeMatchesFilter({ name: 'cat', workflow_scope: 'partial', tags: ['A'] }, 'cat', new Set(['a']), 'complete'), false);
+assert.equal(recipeCatalog.recipeMatchesFilter({ name: 'cat', workflow_scope: 'partial', tags: ['A'] }, 'cat', new Set(['a']), 'partial'), true);
+assert.equal(recipeCatalog.recipeMatchesFilter({ name: 'old' }, '', new Set(), 'complete'), true);
 const recipeOwner = { recipeTagSelect: new Element('select'), recipeSelectedTags: new Set(['B']) };
-recipes.updateRecipeFilterControls(recipeOwner, [{ data: { tags: ['A', 'B'] } }]);
+recipeCatalog.updateRecipeFilterControls(recipeOwner, [{ data: { tags: ['A', 'B'] } }]);
 assert.equal(recipeOwner.recipeTagSelect.children.length, 3); assert.equal(recipeOwner.recipeTagSelect.value, 'B');
-assert.equal(recipes.getRecipeReadiness({ params: { model_references: [{ identity: { status: 'verified' }, currentAvailability: 'missing' }] } }).status, 'missing');
-assert.equal(recipes.getRecipeReadiness({ params: { model_references: [{ identity: { status: 'verified' } }] } }).status, 'warning');
+assert.equal(recipeCatalog.getRecipeReadiness({ params: { model_references: [{ identity: { status: 'verified' }, currentAvailability: 'missing' }] } }).status, 'missing');
+assert.equal(recipeCatalog.getRecipeReadiness({ params: { model_references: [{ identity: { status: 'verified' } }] } }).status, 'warning');
 
 const drags = await moduleFor('material_drag.js', '');
 const graph = { getNodeOnPos: () => null };

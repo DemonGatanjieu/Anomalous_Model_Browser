@@ -57,16 +57,24 @@ vm.runInNewContext(main.slice(shareStart), {
     Blob, Response, CompressionStream, DecompressionStream, TextEncoder, TextDecoder,
 });
 const share = f.window.AMB_WorkflowShare;
-const sidebar = fs.readFileSync(new URL('../web/modules/ui_sidebar.js', import.meta.url), 'utf8');
-const toolsStart = sidebar.indexOf('const defaultTools = [');
-const toolsEnd = sidebar.indexOf('const allTools =', toolsStart);
-assert.ok(toolsStart >= 0 && toolsEnd > toolsStart);
-const toolboxModal = new Element('div');
-const toolboxTools = vm.runInNewContext(`(function() { ${sidebar.slice(toolsStart, toolsEnd)} return defaultTools; }).call({})`, {
-    window: f.window, t: locales.createTranslator('en'), toolboxModal,
+const toolboxModule = await f.module('ui_toolbox.js');
+const toolboxContainer = new Element('div');
+const toolboxOwner = { sidebarActions: new Element('div') };
+toolboxContainer.appendChild(toolboxOwner.sidebarActions);
+const settingsButton = new Element('button');
+const toolboxControl = toolboxModule.createToolbox(toolboxOwner, {
+    container: toolboxContainer,
+    menuBtn: new Element('button'),
+    toolboxIcon: 'tools',
+    isScanning: () => false,
+    getSettingsButton: () => settingsButton,
+    onBeforeOpen() {},
 });
-toolboxTools.find(tool => tool.id === 'workflow-transfer').action();
-assert.equal(toolboxModal.style.display, 'none');
+toolboxControl.mount();
+await toolboxControl.button.click();
+const workflowTransfer = all(toolboxControl.modal).find(el => el.attrs?.['data-tool-id'] === 'workflow-transfer');
+await workflowTransfer.click();
+assert.equal(toolboxControl.modal.style.display, 'none');
 const exportShare = f.button(f.document.body, 'Export Workflow to Share Code');
 assert.ok(exportShare);
 assert.equal(exportShare.disabled, false);
