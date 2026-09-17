@@ -1,8 +1,8 @@
 # 代码结构拆分计划（交给 GPT-5.6-sol）
 
-日期：2026-09-17。代码基线：`29b14d2c7`。**状态：仅完成静态调查与计划，尚未实施拆分或运行本计划的验收。**
+日期：2026-09-17。代码基线：`29b14d2c7`。**状态：阶段 0–7 已完成；自动化验收通过，真实 ComfyUI 宿主视觉/交互验收仍需在运行中的宿主完成。**
 
-用户当前优先级是整理代码结构，暂停其他 UI 美化与功能扩展。本文是实施任务单，不代表已经完成的新架构。开工时重新检查 Git 差异，以最新代码为准，不回退后续工作。
+用户当前优先级是整理代码结构，暂停其他 UI 美化与功能扩展。本文保留原实施任务单，并在末尾记录实际完成结果；当前架构以专题文档和代码为准。
 
 ## 1. 要达到的结果
 
@@ -227,4 +227,22 @@
   `ui_material_detail.js`、`ui_material_application.js`。笔记目录与保存留在 `ui_notebooks.js`，
   编辑器归 `ui_notebook_editor.js`，画布节点创建归 `notebook_canvas.js`。新增边界与行为检查覆盖
   以上接线、监听器清理、控件路径、素材应用和笔记保存队列；真实 ComfyUI 视觉仍待宿主验收。
-- 阶段 5–7：待执行。
+- 阶段 5（完成，`e8b50ecaf5`）：`web/styles.css` 保留为唯一外部入口，并按原始字节顺序有序导入
+  `web/styles/00-foundation-models.css` 至 `10-model-sources.css`。所有子样式带同一缓存版本；
+  `css_bundle_order.mjs` 校验导入唯一/有序，且子文件拼接 SHA-256 与拆分前完全一致
+  (`d014a9d1826e2c48a46ac72389fe4e5bdd0b2ba85618f653d13852cd93812bc1`)。
+  未引入 cascade layer、动态加载或视觉改版；真实主题、停靠和浮层对比仍需宿主验收。
+- 阶段 6（完成，`6ad975c1cd`、`9cebdbd994`、`a0c6849878`）：配方的工作流规则、配方规范化、
+  图片和存储分别归 `workflow_schema.py`、`recipe_schema.py`、`recipe_images.py`、`recipe_store.py`；
+  模型目录、身份解析、元数据写入和媒体归 `model_catalog.py`、`model_resolution.py`、
+  `model_metadata.py`、`model_media.py`；素材规范化、资产和单一锁/缓存存储归
+  `material_schema.py`、`material_assets.py`、`material_store.py`。路由入口改为显式模块注册，
+  `test_route_manifest.py` 固定 68 个 method/path 对。兼容门面仅保留历史内部测试/调用点，不复制状态。
+- 阶段 7（完成，`a63a615514`）：复核后保留 `ui_prompt_workbench.js` 与
+  `ui_prompt_source_deck.js` 的单工厂闭包边界，避免拆出大量可变状态参数；`ui_model_sources.js`
+  仍是模型来源这一项功能的查询/编辑/持久化协调器；`material_inspector.js` 仍聚焦共享元数据与
+  节点参数检查。发现 `api/utils.py` 确有五类独立职责，已拆为 `path_utils.py`、
+  `media_routes.py`、`translation_routes.py`、`gallery_routes.py`、`folder_types.py`，原文件仅作兼容导出。
+  Python/JavaScript 相对导入图均无环，未发现 `EXTRACTED`/待提取占位或旧模型/配方/素材星号路由导入。
+  最终通过全部 29 个 `.mjs` 检查、89 个 Python `unittest`、全量 `api/*.py` 编译和路由清单检查。
+  本轮未连接运行中的 ComfyUI，因此不声称已完成真实拖放、停靠、主题、媒体释放和点击路径视觉验收。

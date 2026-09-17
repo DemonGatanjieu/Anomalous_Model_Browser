@@ -7,8 +7,11 @@ contains a complete ComfyUI UI workflow.
 
 ## Persistence and API ownership
 
-`api/materials.py` owns material validation, persistence, asset serving, and
-node-type lookup. Records live under
+`api/material_schema.py` owns record shaping, prompt-role rules and bounded
+normalization; `api/material_assets.py` owns source inspection and private image
+copies; `api/material_store.py` is the sole owner of persistence locking, the
+summary cache, query/update/delete, and recipe-source resolution. `api/materials.py`
+owns HTTP request/response mapping and narrow compatibility entry points. Records live under
 `user/<profile>/workflows/anomalous_materials`; source PNG copies and bounded
 WebP previews live in a private `.assets/<material-stem>/` directory.
 
@@ -79,17 +82,20 @@ The route family is:
 
 ## Frontend ownership
 
-`ui_materials.js` owns the Workspace library, filters, pagination, editable
-names/tags, full-workflow handoff, and library CRUD presentation.
-`ui_gallery_detail.js` owns image inspection and image/node saving.
-Both use `material_inspector.js` for shared metadata helpers and exact node
+`ui_materials.js` owns Workspace discovery, filters, pagination and CRUD
+coordination; `ui_material_cards.js` owns summary cards; `ui_material_detail.js`
+owns names/tags and full-workflow detail/handoff; `ui_material_application.js`
+owns selected-node tracking and explicit application. `ui_gallery_detail.js`
+owns the single image-workbench lifecycle/cache, while `ui_image_stage.js` owns
+media/zoom/filmstrip interaction and `ui_image_inspector.js` owns image/node
+inspection and saving. These views use `material_inspector.js` for shared metadata helpers and exact node
 parameter rendering; the workbench does not import the library UI.
 `ui_gallery.js` and
 `ui_recipe_detail.js` only supply non-invasive gallery entry points. Main
 Gallery retains click-to-view, drag, delete, and cover-selection behavior; the
 material action appears only on hover and is hidden during cover selection.
-`ui_doctor.js` presents Node Assistant presets; it shares node application with
-the library through `ui_material_application.js` and `node_material_actions.js`.
+`ui_node_presets.js` presents Node Assistant presets; it shares node application
+with the library through `ui_material_application.js` and `node_material_actions.js`.
 
 `ui_recipe_detail.js` can publish the active Recipe parameters or the selected
 Parameter Notebook as `recipe_parameter_selection`. The primary panel saves all

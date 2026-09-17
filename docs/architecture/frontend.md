@@ -20,7 +20,8 @@ top-level declaration in any imported module can prevent registration and make
 the entire entry disappear. For affected modules, validate syntax and module linking
 via Node's experimental VM modules (`vm.SourceTextModule`) and verify
 the real ComfyUI runtime creates the configured entry. Floating trigger styling in
-`web/styles.css` uses dynamic `1em` SVG scaling and flex centering to guarantee
+the ordered stylesheet bundle rooted at `web/styles.css` uses dynamic `1em` SVG
+scaling and flex centering to guarantee
 consistent visual presentation across all configured trigger sizes.
 
 Major UI panels live in `web/modules/ui_*.js`. Shared browser state remains on
@@ -249,7 +250,11 @@ provider-specific validation belongs to the backend translation route.
 
 ## Visual styling and theme architecture
 
-`styles.css` is the source of truth for current visual values. Shared `--amb-*`
+`styles.css` is the single external entry and ordered import manifest for current
+visual values. Its `web/styles/00-*.css` through `10-*.css` children preserve the
+original cascade order; every child import carries the same cache version so an
+entry-cache hit cannot leave stale child rules. `tests/css_bundle_order.mjs`
+guards the unique ordered list and byte-for-byte reconstructed bundle. Shared `--amb-*`
 tokens express surfaces, text, borders and control shapes; theme overrides must
 be scoped to `.theme-abyssal-scarlet` rather than changing unrelated surfaces.
 
@@ -258,7 +263,7 @@ track next to the canvas. Common geometry is shared between dock directions;
 direction-specific rules set column order and separators. The removed embedded
 composer's `#anomalous-container.anomalous-docked` overrides must not return.
 Before adding an override or `!important`, locate and edit the owning rule.
-Older component and theme overrides elsewhere in this file still need a
+Older component and theme overrides elsewhere in the ordered bundle still need a
 separate, visually verified consolidation.
 
 ## Verification

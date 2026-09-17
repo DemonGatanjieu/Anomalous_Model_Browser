@@ -63,16 +63,24 @@ DOM or live LiteGraph state.
 ### Backend
 
 - `api/config.py` owns configured paths and active model-folder types.
-- `api/utils.py` owns containment and filename validation helpers.
+- `api/path_utils.py` owns containment, filename validation, and atomic JSON writes;
+  `api/utils.py` is a compatibility export surface.
 - `api/metadata.py` owns sidecar and safetensors metadata extraction.
-- `api/models.py` owns model listing, media serving, and model-facing routes (including `/anomalous/all_hashes` providing model URLs, `/anomalous/resolve_paths_to_previews` resolving models and metadata across folders, and `/anomalous/update_metadata` with cross-directory fallback resolution).
+- `api/model_catalog.py`, `api/model_resolution.py`, `api/model_metadata.py`, and
+  `api/model_media.py` own model listing, identity recovery, mutation, and covers;
+  `api/models.py` is a compatibility facade.
 - `api/scanner.py` and `scraper.py` own scan orchestration and enrichment.
-- `api/recipes.py` owns recipe validation, CRUD, history, and integrity receipts.
+- `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
+  `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
+  integrity receipts; `api/recipes.py` is the HTTP facade.
 - `api/recipe_packages.py` owns bounded inspect-stage-commit package handling.
 - `api/parameters.py` owns Parameter Notebook persistence and lookup.
 - `api/notebooks.py` owns Prompt Note persistence and recoverable legacy copying.
-- `api/materials.py` owns curated material persistence, private image assets,
-  summary search/pagination, editable names/tags, and node-type lookup.
+- `api/material_schema.py`, `api/material_assets.py`, and `api/material_store.py`
+  own curated material shaping, private assets, persistence/cache, search and
+  lifecycle; `api/materials.py` owns HTTP mapping and compatibility entry points.
+- `api/media_routes.py`, `api/gallery_routes.py`, `api/translation_routes.py`, and
+  `api/folder_types.py` own the formerly mixed utility route families.
 - `model_policies.py` owns shared backend rename and protected-category policy.
 - `model_identity.py` owns file SHA-256 evidence shared with the standalone scanner.
 
@@ -152,7 +160,8 @@ DOM or live LiteGraph state.
   unlocking and dirty-state dynamic local persistence (hiding redundant `[Save Local]` buttons until links are modified).
 - `locales.js` is the shared runtime string catalog. Existing inline bilingual
   UI strings remain migration debt; new strings belong in the catalog.
-- `styles.css` owns presentation and theme overrides. Color values, dimensions
+- `styles.css` is the ordered import manifest for `web/styles/*.css`, which own
+  presentation and theme overrides. Color values, dimensions
   and visual design descriptions are not duplicated as architectural contracts.
 
 ## Cross-system invariants

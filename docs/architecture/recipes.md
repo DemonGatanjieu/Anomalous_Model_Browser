@@ -42,6 +42,14 @@ demand. Every update archives the previous full recipe locally, bounded to 20
 versions. The structural fingerprint (`sha256-structural-v1`) is an integrity
 and version-comparison value, not model identity evidence.
 
+Backend ownership is split by responsibility: `workflow_schema.py` owns graph
+validation, fingerprints, signatures and integrity receipts; `recipe_schema.py`
+owns recipe/model-reference normalization; `recipe_images.py` owns source images,
+covers and output-gallery inspection; `recipe_store.py` owns directory, record and
+history I/O. `recipes.py` maps HTTP requests and errors and retains narrow
+compatibility exports only. `recipe_packages.py`, `parameters.py`, and materials
+import those owners directly rather than reaching through the route facade.
+
 The current persisted recipe schema is v7. Earlier schema steps introduced the
 structural fingerprint, explicit model-reference identity records, and optional
 recipe-owned preview descriptors; v5 separates model identity from editable
