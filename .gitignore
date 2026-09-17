@@ -95,6 +95,7 @@ tests/*
 !tests/image_workbench_modules.mjs
 !tests/material_feature_modules.mjs
 !tests/notebook_feature_modules.mjs
+!tests/css_bundle_order.mjs
 !tests/notebook_render_test.mjs
 !tests/notebook_save_roundtrip.mjs
 
