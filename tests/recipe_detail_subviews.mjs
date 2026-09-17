@@ -5,6 +5,7 @@ const f = fixture();
 const versions = await f.module('ui_recipe_versions.js');
 const gallery = await f.module('ui_recipe_gallery.js');
 const overview = await f.module('ui_recipe_overview.js');
+const parameters = await f.module('ui_recipe_parameters.js');
 
 let refreshed = 0;
 let finishReason = '';
@@ -59,5 +60,13 @@ overview.renderOverview(overviewContent, { recipeDetailFilename: 'example.json' 
 });
 assert.ok(all(overviewContent).some(element => element.classList.contains('anomalous-recipe-detail-hero')));
 assert.ok(overviewContent.textContent.includes('Overview recipe'));
+
+const promptSource = {
+    params: { nodes: [{ id: 1, type: 'CLIPTextEncode', widgets: [{ name: 'text', index: 0, value: 'cinematic portrait' }] }] },
+    workflow: { nodes: [{ id: 1, type: 'CLIPTextEncode', widgets_values: ['cinematic portrait'] }] },
+};
+const promptSummary = parameters.promptValues(promptSource, promptSource);
+assert.equal(promptSummary.entries.length, 1);
+assert.equal(promptSummary.entries[0].text, 'cinematic portrait');
 
 console.log('Recipe detail subviews: version restore and gallery workbench handoff passed.');

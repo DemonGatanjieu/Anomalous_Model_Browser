@@ -99,5 +99,5 @@ export function appendValueViewer(parent, value, className = '', options = {}) {
     return viewer;
 }
 
-const PROMPT_ROLES = new Set(['positive', 'negative', 'both', 'ignored', 'unknown']);
+export const PROMPT_ROLES = new Set(['positive', 'negative', 'both', 'ignored', 'unknown']);
 const PROMPT_WIDGET_NAME = /^(?:text|prompt|text_[gl]|positive|negative)$/i;
