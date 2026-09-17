@@ -50,14 +50,15 @@ async function moduleFor(file, extra) {
     }); await mod.link(() => { throw new Error('unexpected import'); }); await mod.evaluate(); return mod.namespace;
 }
 const recipeCatalog = await moduleFor('ui_recipe_catalog.js', '');
+const recipeCards = await moduleFor('ui_recipe_cards.js', '');
 assert.equal(recipeCatalog.recipeMatchesFilter({ name: 'cat', workflow_scope: 'partial', tags: ['A'] }, 'cat', new Set(['a']), 'complete'), false);
 assert.equal(recipeCatalog.recipeMatchesFilter({ name: 'cat', workflow_scope: 'partial', tags: ['A'] }, 'cat', new Set(['a']), 'partial'), true);
 assert.equal(recipeCatalog.recipeMatchesFilter({ name: 'old' }, '', new Set(), 'complete'), true);
 const recipeOwner = { recipeTagSelect: new Element('select'), recipeSelectedTags: new Set(['B']) };
 recipeCatalog.updateRecipeFilterControls(recipeOwner, [{ data: { tags: ['A', 'B'] } }]);
 assert.equal(recipeOwner.recipeTagSelect.children.length, 3); assert.equal(recipeOwner.recipeTagSelect.value, 'B');
-assert.equal(recipeCatalog.getRecipeReadiness({ params: { model_references: [{ identity: { status: 'verified' }, currentAvailability: 'missing' }] } }).status, 'missing');
-assert.equal(recipeCatalog.getRecipeReadiness({ params: { model_references: [{ identity: { status: 'verified' } }] } }).status, 'warning');
+assert.equal(recipeCards.getRecipeReadiness({ params: { model_references: [{ identity: { status: 'verified' }, currentAvailability: 'missing' }] } }).status, 'missing');
+assert.equal(recipeCards.getRecipeReadiness({ params: { model_references: [{ identity: { status: 'verified' } }] } }).status, 'warning');
 
 const drags = await moduleFor('material_drag.js', '');
 const graph = { getNodeOnPos: () => null };

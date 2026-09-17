@@ -117,7 +117,8 @@ DOM or live LiteGraph state.
   `ui_recipe_model_matching.js` owns preview resolution and explicit local replacement,
   `ui_recipe_metadata.js` owns inline persistence, and `ui_recipe_detail_dom.js` owns
   the DOM/copy helpers shared by detail subviews. `ui_recipe_catalog.js` owns recipe
-  filters, cards, and navigation while `ui_recipe_media.js` owns shared cover helpers.
+  filters and navigation, `ui_recipe_cards.js` owns cards and card actions,
+  `ui_recipe_dialogs.js` owns save/edit dialogs, and `ui_recipe_media.js` owns shared cover helpers.
 - `ui_prompt_composer.js` owns the standalone Prompt Studio drawer. Its child
   views are `ui_prompt_source_deck.js`, `ui_prompt_workbench.js`, and
   `ui_prompt_inspector.js`. Assembly plan data, track-vs-role separation, and

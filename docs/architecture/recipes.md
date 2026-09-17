@@ -87,8 +87,9 @@ for long values and prompts; they do not silently truncate authoritative data.
 parameter editing, raw nodes, and preset saving; and `ui_recipe_model_matching.js`
 owns preview resolution plus explicit local matching. Inline persistence is centralized
 in `ui_recipe_metadata.js`, with pure ordering/value helpers in
-`ui_recipe_parameter_utils.js`. The catalog shell and cards live in
-`ui_recipe_catalog.js`, with shared cover helpers in `ui_recipe_media.js`.
+`ui_recipe_parameter_utils.js`. The catalog shell lives in `ui_recipe_catalog.js`,
+cards and card actions in `ui_recipe_cards.js`, save/edit dialogs in
+`ui_recipe_dialogs.js`, and shared cover helpers in `ui_recipe_media.js`.
 `ui_recipe_versions.js` owns version comparison and restore, while
 `ui_recipe_gallery.js` owns result rendering and opens `ui_gallery_detail.js`
 directly for image inspection. Shared detail DOM/copy primitives live in

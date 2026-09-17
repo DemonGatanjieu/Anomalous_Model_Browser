@@ -210,8 +210,9 @@
 - 阶段 3（代码拆分完成，`d8691d881`、`413b876dfe`、`56774a2d99`、`881570e887`、`e5f3301971`）：配方版本历史/差异/恢复归
   `ui_recipe_versions.js`，结果图库与图片工作台跳转归 `ui_recipe_gallery.js`，跨子页
   共用的 DOM、长值展示和复制控件归 `ui_recipe_detail_dom.js`。删除了无人调用的旧图库
-  对比实现；图库不再借道素材目录模块打开图片工作台。目录筛选、卡片、拖拽与封面归
-  `ui_recipe_catalog.js` / `ui_recipe_media.js`，模型预览、匹配与显式替换归
+  对比实现；图库不再借道素材目录模块打开图片工作台。目录筛选归
+  `ui_recipe_catalog.js`，卡片与拖拽归 `ui_recipe_cards.js`，保存/编辑对话框归
+  `ui_recipe_dialogs.js`，封面媒体归 `ui_recipe_media.js`；模型预览、匹配与显式替换归
   `ui_recipe_model_matching.js`，总览归 `ui_recipe_overview.js`，提示词角色、参数编辑、原始节点与
   参数预设归 `ui_recipe_parameters.js`，内联持久化归 `ui_recipe_metadata.js`。协调器
   `ui_recipe_detail.js` 从约 2,983 行降至约 760 行，`ui_recipes.js` 从约 1,297 行降至约
