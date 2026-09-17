@@ -4,6 +4,7 @@ import { all, fixture, Element } from './ui_fixture.mjs';
 const f = fixture();
 const versions = await f.module('ui_recipe_versions.js');
 const gallery = await f.module('ui_recipe_gallery.js');
+const overview = await f.module('ui_recipe_overview.js');
 
 let refreshed = 0;
 let finishReason = '';
@@ -43,5 +44,20 @@ await details.click();
 assert.equal(openedDetail.options.items.length, 1);
 assert.equal(openedDetail.options.items[0].sourceImage.filename, 'image.png');
 assert.match(openedDetail.imageUrl, /^\/view\?/);
+
+const overviewContent = new Element('div');
+overview.renderOverview(overviewContent, { recipeDetailFilename: 'example.json' }, {
+    name: 'Overview recipe',
+    workflow_scope: 'complete',
+    workflow: { nodes: [] },
+    params: { steps: 24, cfg: 7 },
+    tags: ['portrait'],
+}, [], () => {}, {
+    async applyRecipeToCanvas() { return true; },
+    promptValues() { return { entries: [] }; },
+    renderModelComposition(container) { container.appendChild(new Element('div')); },
+});
+assert.ok(all(overviewContent).some(element => element.classList.contains('anomalous-recipe-detail-hero')));
+assert.ok(overviewContent.textContent.includes('Overview recipe'));
 
 console.log('Recipe detail subviews: version restore and gallery workbench handoff passed.');
