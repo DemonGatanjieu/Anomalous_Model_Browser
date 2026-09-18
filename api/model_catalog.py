@@ -12,7 +12,8 @@ from .metadata import get_metadata
 from .model_constants import MEDIA_EXTENSIONS, MODEL_EXTENSIONS, PREVIEW_SUFFIXES
 from .model_media import _cache_token, _preview_url_for_model
 from .folder_types import (
-    get_active_folder_types, get_active_physical_basenames, get_folder_view_mode,
+    get_active_folder_types, get_active_model_roots,
+    get_active_physical_basenames, get_folder_view_mode,
 )
 from .path_utils import resolve_folder_subdir
 
@@ -551,23 +552,16 @@ async def api_resolve_paths_to_previews(request):
 
 
 def _collect_all_scan_models(page, limit):
-    target_types = get_active_folder_types()
+    source_library_extensions = {'.safetensors', '.ckpt', '.pt', '.pth', '.bin', '.sft', '.gguf'}
     all_tuples = []
-    seen_dirs = set()
-    for t in target_types:
-        try:
-            paths = folder_paths.get_folder_paths(t)
-        except Exception:
-            continue
-        if not paths: continue
-        for path_idx, base_dir in enumerate(paths):
-            if base_dir in seen_dirs: continue
-            seen_dirs.add(base_dir)
-            if not os.path.exists(base_dir): continue
-            for root, dirs, files in os.walk(base_dir):
-                for f in files:
-                    if f.endswith(('.safetensors', '.ckpt', '.pt', '.bin', '.sft')):
-                        all_tuples.append((t, path_idx, root, base_dir, f))
+    for model_root in get_active_model_roots():
+        t = model_root["type"]
+        path_idx = model_root["path_idx"]
+        base_dir = model_root["base_dir"]
+        for root, dirs, files in os.walk(base_dir):
+            for f in files:
+                if os.path.splitext(f)[1].lower() in source_library_extensions:
+                    all_tuples.append((t, path_idx, root, base_dir, f))
                         
     all_tuples.sort(key=lambda x: (x[0], x[4].lower()))
     total = len(all_tuples)

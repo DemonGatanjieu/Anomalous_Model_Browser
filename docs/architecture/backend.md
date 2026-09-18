@@ -26,9 +26,19 @@ Never rely only on `..` rejection. Absolute Windows paths, UNC paths, alternate
 separators, device paths, and symlinks can bypass naïve string checks. Media
 routes also enforce an explicit extension allowlist.
 
-Active model categories come from `api.folder_types.get_active_folder_types()`. Do not
-hardcode a scan across `checkpoints`, `loras`, or another category. A folder
+Configured model scope belongs to `api.folder_types`. Category mode uses
+`get_active_folder_types()`; folder-manager-facing library enumeration uses
+`get_active_model_roots()` so physical mode can retain the exact registered
+`type`, `path_idx`, and real root for every enabled directory. Real roots are
+deduplicated without merging same-named files from different roots. Do not
+hardcode a walk across `checkpoints`, `loras`, or another category. A directory
 disabled in `config.json` must cause no walk or metadata I/O.
+
+`/anomalous/all_scan_models` follows that current folder-manager mode and keeps
+its paginated response plus `limit=0` full-list behavior. Its local source-link
+inventory recognizes GGUF and PTH case-insensitively in addition to the existing
+list formats. This route-level inventory does not expand global model-format,
+scanner, metadata-parser, recovery, or cloud-identification support.
 
 ## Storage ownership
 

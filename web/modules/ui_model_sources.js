@@ -17,6 +17,7 @@ import { text, jsonResponse } from './ui_dom.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { inferModelFolderTypes, isPhysicalRenameProtectedType } from './model_policies.js';
+import { foundationModelType, partitionSourceModels, shapeLibrarySourceModels } from './model_source_data.js';
 
 let activeSourcesModalScope = null;
 
@@ -48,7 +49,7 @@ export function normalizeUrl(url) {
 }
 
 function foundationType(model) {
-    return (model.folderTypes || [model.type]).find(isPhysicalRenameProtectedType);
+    return foundationModelType(model);
 }
 
 function canSaveLocalSource(model) {
@@ -109,38 +110,9 @@ export function collectWorkflowModels() {
 
 /** 异步盘点本地全部模型库 */
 export async function fetchAllLibraryModels(signal = null) {
-    try {
-        const res = await fetch('/anomalous/all_scan_models?limit=0', { signal });
-        const payload = await jsonResponse(res, 'load library models');
-        const rawList = Array.isArray(payload.models) ? payload.models : [];
-
-        return rawList.map(m => {
-            const meta = m.metadata || {};
-            const url = meta.source_url || meta.civitai_url || '';
-            const relPath = m.subfolder ? `${m.subfolder}/${m.filename}` : m.filename;
-            return {
-                key: `lib_${m.type}_${m.path_idx}_${relPath}`,
-                type: m.type,
-                path_idx: m.path_idx,
-                subfolder: m.subfolder || '',
-                filename: m.filename,
-                basename: m.filename,
-                relPath,
-                size_mb: m.size_mb || 0,
-                hash: meta.hash || '',
-                civitai_url: meta.civitai_url || '',
-                source_url: meta.source_url || '',
-                url,
-                initialUrl: url,
-                platform: detectPlatform(url),
-                hasResolved: Boolean(url.trim()),
-            };
-        });
-    } catch (e) {
-        if (signal?.aborted) return [];
-        console.error('[Model Source Hub] Failed to fetch library models', e);
-        return [];
-    }
+    const res = await fetch('/anomalous/all_scan_models?limit=0', { signal });
+    const payload = await jsonResponse(res, 'load library models');
+    return shapeLibrarySourceModels(payload.models, detectPlatform);
 }
 
 /** 在 ComfyUI 画布生成原生 Note 便签节点 */
@@ -167,6 +139,8 @@ export function createCanvasNoteNode(models) {
         textContent += `    文件: ${m.filename}\n`;
         if (m.url) {
             textContent += `    来源: ${m.url}\n`;
+        } else if (foundationType(m)) {
+            textContent += `    来源: ${t('modelSourcesStatusUnfilledOptional')}\n`;
         } else {
             textContent += `    来源: ⚠️ 未配置来源发布页\n`;
         }
@@ -243,6 +217,8 @@ export async function copySourcesSummary(models) {
         md += `${idx + 1}. **${m.nodeTitle || m.nodeType}** \`${m.basename || m.filename}\`\n`;
         if (m.url) {
             md += `   - 来源链接: ${plat} ${m.url}\n`;
+        } else if (foundationType(m)) {
+            md += `   - 来源链接: ${t('modelSourcesStatusUnfilledOptional')}\n`;
         } else {
             md += `   - 来源链接: ⚠️ 未指定\n`;
         }
@@ -367,7 +343,8 @@ function renderModalHeader(headerEl, scope, state, onScopeChange, onClose) {
     wfTab.onclick = () => onScopeChange('workflow');
 
     const libTab = text(tabsRow, 'button', '', `anomalous-sources-scope-tab${state.scope === 'library' ? ' is-active' : ''}`);
-    libTab.innerHTML = `📚 ${t('modelSourcesScopeLibrary')} <span class="anomalous-sources-badge-num">${state.libraryModels.length || '...'}</span>`;
+    const libraryCount = state.libraryStatus === 'ready' ? state.libraryModels.length : '...';
+    libTab.innerHTML = `📚 ${t('modelSourcesScopeLibrary')} <span class="anomalous-sources-badge-num">${libraryCount}</span>`;
     libTab.onclick = () => onScopeChange('library');
 }
 
@@ -403,7 +380,7 @@ function renderModelTitle(infoCol, m) {
             vae: 'modelSourcesTypeVae', vae_approx: 'modelSourcesTypeVaeApprox', clip_vision: 'modelSourcesTypeVisionEncoder' }[component];
         text(titleRow, 'span', t(label), 'anomalous-source-badge-neutral');
     }
-    const sourceBadge = text(titleRow, 'span', t('modelSourcesStatusUnfilled'), 'anomalous-source-badge-neutral');
+    const sourceBadge = text(titleRow, 'span', t(component ? 'modelSourcesStatusUnfilledOptional' : 'modelSourcesStatusUnfilled'), 'anomalous-source-badge-neutral');
     sourceBadge.hidden = Boolean(m.url?.trim());
 
     if (m.isMissing) {
@@ -547,13 +524,35 @@ function renderModelRow(listEl, m, state, onRefresh, onAutoDetect, onSaveLocal) 
     actionRefs = renderModelRowActions(actionsRow, m, state, urlInput, onRefresh, onAutoDetect, onSaveLocal);
 }
 
-function renderFooterBar(footerEl, state, activeModels, onSaveWorkflow, onGenerateNote, onCopySummary) {
+function renderComponentDisclosure(listEl, state, group, renderRow) {
+    const button = text(listEl, 'button', '', 'anomalous-sources-components-toggle');
+    button.setAttribute('aria-expanded', String(state.componentsExpanded));
+    const marker = state.componentsExpanded ? '▾' : '▸';
+    const label = text(button, 'span', '', 'anomalous-sources-components-label');
+    text(label, 'span', `${marker} ${t('modelSourcesComponentsAdvanced', { count: group.componentModels.length })}`);
+    text(label, 'small', t('modelSourcesComponentsOptionalHint'));
+    if (group.componentMissingCount) {
+        text(button, 'span', t('modelSourcesComponentsMissing', { count: group.componentMissingCount }), 'anomalous-source-badge-danger');
+    }
+    button.onclick = () => {
+        state.componentsExpanded = !state.componentsExpanded;
+        state.refresh();
+    };
+    if (!state.componentsExpanded) return;
+    const rows = text(listEl, 'div', '', 'anomalous-sources-components-list');
+    group.componentModels.forEach(model => renderRow(rows, model));
+    if (!group.componentModels.length) {
+        text(rows, 'div', t('modelSourcesComponentsNoSearchMatch'), 'anomalous-sources-components-empty');
+    }
+}
+
+function renderFooterBar(footerEl, state, activeMainModels, onSaveWorkflow, onGenerateNote, onCopySummary) {
     footerEl.className = 'anomalous-sources-footer';
     footerEl.replaceChildren();
 
     const statsEl = text(footerEl, 'div', '', 'anomalous-sources-footer-stats');
-    const withUrlCount = activeModels.filter(m => Boolean(m.url?.trim())).length;
-    statsEl.innerHTML = `${window.anomalous_browser_lang === 'zh' ? '已配置' : 'Configured'}: <strong>${withUrlCount} / ${activeModels.length}</strong>`;
+    const withUrlCount = activeMainModels.filter(m => Boolean(m.url?.trim())).length;
+    statsEl.innerHTML = `${t('modelSourcesMainStats')}: <strong>${withUrlCount} / ${activeMainModels.length}</strong>`;
 
     const btnsWrap = text(footerEl, 'div', '', 'anomalous-sources-footer-actions');
 
@@ -599,13 +598,33 @@ export function openModelSourcesModal(initialScope = 'workflow') {
         searchKeyword: '',
         workflowModels: collectWorkflowModels(),
         libraryModels: [],
-        isLoadingLibrary: false,
+        libraryStatus: 'idle',
+        componentsExpanded: false,
+        libraryRequestId: 0,
     };
 
     const headerEl = text(modal, 'header', '', '');
     const filterBarEl = text(modal, 'div', '', '');
     const bodyEl = text(modal, 'div', '', 'anomalous-sources-body');
     const footerEl = text(modal, 'footer', '', '');
+
+    const ensureLibraryLoaded = async () => {
+        if (state.libraryStatus === 'loading' || state.libraryStatus === 'ready') return;
+        const requestId = ++state.libraryRequestId;
+        state.libraryStatus = 'loading';
+        refreshUi();
+        try {
+            const items = await fetchAllLibraryModels(scope.signal);
+            if (scope.signal.aborted || requestId !== state.libraryRequestId) return;
+            state.libraryModels = items;
+            state.libraryStatus = 'ready';
+        } catch (error) {
+            if (scope.signal.aborted || requestId !== state.libraryRequestId) return;
+            console.error('[Model Source Hub] Failed to fetch library models', error);
+            state.libraryStatus = 'error';
+        }
+        if (!scope.signal.aborted && requestId === state.libraryRequestId) refreshUi();
+    };
 
     const refreshUi = () => {
         headerEl.replaceChildren();
@@ -614,15 +633,8 @@ export function openModelSourcesModal(initialScope = 'workflow') {
 
         renderModalHeader(headerEl, scope, state, (newScope) => {
             state.scope = newScope;
-            if (newScope === 'library' && !state.libraryModels.length && !state.isLoadingLibrary) {
-                state.isLoadingLibrary = true;
-                refreshUi();
-                fetchAllLibraryModels(scope.signal).then(items => {
-                    if (scope.signal.aborted) return;
-                    state.libraryModels = items;
-                    state.isLoadingLibrary = false;
-                    refreshUi();
-                });
+            if (newScope === 'library') {
+                ensureLibraryLoaded();
                 return;
             }
             refreshUi();
@@ -636,65 +648,75 @@ export function openModelSourcesModal(initialScope = 'workflow') {
             refreshUi();
         });
 
-        // Filter models
         const rawList = state.scope === 'workflow' ? state.workflowModels : state.libraryModels;
-        const filtered = rawList.filter(m => {
-            if (state.filter === 'resolved' && !m.url) return false;
-            if (state.filter === 'unresolved' && m.url) return false;
-            if (state.searchKeyword) {
-                const title = `${m.nodeTitle || ''} ${m.filename || ''} ${m.basename || ''}`.toLowerCase();
-                if (!title.includes(state.searchKeyword)) return false;
-            }
-            return true;
-        });
+        const group = partitionSourceModels(rawList, state.filter, state.searchKeyword);
+        const renderRow = (parent, model) => renderModelRow(parent, model, state,
+            () => refreshUi(),
+            async (item, inputEl) => {
+                inputEl.disabled = true;
+                try {
+                    const detected = await autoDetectModelSource(item);
+                    if (detected) {
+                        item.url = detected;
+                        item.initialUrl = item.initialUrl || detected;
+                        item.platform = detectPlatform(detected);
+                        inputEl.value = detected;
+                        refreshUi();
+                        showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '✓ 已识别模型来源！' : '✓ Model source detected!');
+                    } else {
+                        showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '未能在本地或云端匹配到官方页面' : 'No online source matched');
+                    }
+                } finally {
+                    inputEl.disabled = false;
+                }
+            },
+            async (item) => {
+                try {
+                    await saveSingleModelToLocalSidecar(item, item.url);
+                    item.initialUrl = item.url;
+                    item.isEditing = false;
+                    refreshUi();
+                    showWorkbenchToast(t('modelSourcesSavedLocal'));
+                } catch (e) {
+                    showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '保存至本地失败' : 'Failed to save local');
+                }
+            });
 
-        if (state.isLoadingLibrary) {
+        if (state.scope === 'library' && state.libraryStatus === 'loading') {
             const loadingBox = text(bodyEl, 'div', '', 'anomalous-sources-empty');
-            loadingBox.innerHTML = `<div>⏳ 正在全量盘点本地模型库...</div>`;
-        } else if (!filtered.length) {
+            text(loadingBox, 'div', `⏳ ${t('modelSourcesLibraryLoading')}`);
+        } else if (state.scope === 'library' && state.libraryStatus === 'error') {
+            const errorBox = text(bodyEl, 'div', '', 'anomalous-sources-empty');
+            text(errorBox, 'div', t('modelSourcesLibraryLoadFailed'));
+            const retry = text(errorBox, 'button', t('modelSourcesRetry'), 'anomalous-btn-ghost anomalous-btn-sm');
+            retry.onclick = () => {
+                state.libraryStatus = 'idle';
+                ensureLibraryLoaded();
+            };
+        } else {
+            if (state.scope === 'library') {
+                text(bodyEl, 'div', t('modelSourcesLibraryRangeHint'), 'anomalous-sources-library-hint');
+            }
+            group.mainModels.forEach(model => renderRow(bodyEl, model));
+            if (group.allComponentCount) {
+                state.refresh = refreshUi;
+                renderComponentDisclosure(bodyEl, state, group, renderRow);
+            }
+        }
+
+        const libraryUnavailable = state.scope === 'library'
+            && (state.libraryStatus === 'loading' || state.libraryStatus === 'error');
+        if (!libraryUnavailable
+            && !group.mainModels.length && !group.allComponentCount) {
             const emptyBox = text(bodyEl, 'div', '', 'anomalous-sources-empty');
             emptyBox.innerHTML = `
                 <div style="font-size:24px;margin-bottom:6px;">🔍</div>
                 <div>${t('modelSourcesNoModelsFound')}</div>
             `;
-        } else {
-            filtered.forEach(m => {
-                renderModelRow(bodyEl, m, state,
-                    () => refreshUi(),
-                    async (item, inputEl) => {
-                        inputEl.disabled = true;
-                        try {
-                            const detected = await autoDetectModelSource(item);
-                            if (detected) {
-                                item.url = detected;
-                                item.initialUrl = item.initialUrl || detected;
-                                item.platform = detectPlatform(detected);
-                                inputEl.value = detected;
-                                refreshUi();
-                                showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '✓ 已识别模型来源！' : '✓ Model source detected!');
-                            } else {
-                                showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '未能在本地或云端匹配到官方页面' : 'No online source matched');
-                            }
-                        } finally {
-                            inputEl.disabled = false;
-                        }
-                    },
-                    async (item) => {
-                        try {
-                            await saveSingleModelToLocalSidecar(item, item.url);
-                            item.initialUrl = item.url;
-                            item.isEditing = false;
-                            refreshUi();
-                            showWorkbenchToast(t('modelSourcesSavedLocal'));
-                        } catch (e) {
-                            showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '保存至本地失败' : 'Failed to save local');
-                        }
-                    }
-                );
-            });
         }
 
-        renderFooterBar(footerEl, state, filtered,
+        const visibleModels = [...group.mainModels, ...(state.componentsExpanded ? group.componentModels : [])];
+        renderFooterBar(footerEl, state, group.mainModels,
             () => {
                 const res = syncWorkflowSources(state.workflowModels);
                 showWorkbenchToast(res.isUpdate ? t('modelSourcesSyncedToWorkflow') : t('modelSourcesSavedToWorkflow'));
@@ -705,7 +727,7 @@ export function openModelSourcesModal(initialScope = 'workflow') {
                 if (ok) showWorkbenchToast(t('modelSourcesNoteCreated'));
             },
             async () => {
-                await copySourcesSummary(filtered);
+                await copySourcesSummary(visibleModels);
                 showWorkbenchToast(t('modelSourcesCopied'));
             }
         );
@@ -728,6 +750,7 @@ export function openModelSourcesModal(initialScope = 'workflow') {
     });
 
     document.body.appendChild(overlay);
+    if (initialScope === 'library') ensureLibraryLoaded();
     return () => scope.dispose();
 }
 

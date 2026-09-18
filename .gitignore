@@ -82,6 +82,7 @@ tests/*
 !tests/update_guide.mjs
 !tests/test_export_availability.py
 !tests/test_route_manifest.py
+!tests/test_model_source_catalog.py
 !tests/model_sources_hub.mjs
 !tests/model_source_components.mjs
 !tests/shortcut_layout.mjs

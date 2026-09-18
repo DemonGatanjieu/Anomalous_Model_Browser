@@ -7,6 +7,11 @@ from aiohttp import web
 import folder_paths
 
 
+DEFAULT_PHYSICAL_FOLDER_NAMES = {
+    'checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae'
+}
+
+
 def get_folder_view_mode():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(script_dir, "config.json")
@@ -56,13 +61,55 @@ def get_active_physical_basenames():
                                 active.append(bn)
                     
                     for bn in all_bns:
-                        if bn not in configured:
+                        if bn not in configured and bn in DEFAULT_PHYSICAL_FOLDER_NAMES:
                             active.append(bn)
                     return active
     except:
         pass
         
-    return all_bns
+    return [bn for bn in all_bns if bn in DEFAULT_PHYSICAL_FOLDER_NAMES]
+
+
+def get_active_model_roots():
+    """Return the folder-manager-visible roots with stable model locators.
+
+    This is intentionally separate from the scanner scope.  The source hub only
+    needs directory discovery and must preserve ``type``/``path_idx`` so later
+    metadata writes resolve back to the exact ComfyUI root.
+    """
+    mode = get_folder_view_mode()
+    active_types = set(get_active_folder_types()) if mode != "physical" else None
+    active_basenames = (
+        set(get_active_physical_basenames()) if mode == "physical" else None
+    )
+    roots = []
+    seen_realpaths = set()
+
+    for folder_type in folder_paths.folder_names_and_paths.keys():
+        if active_types is not None and folder_type not in active_types:
+            continue
+        try:
+            paths = folder_paths.get_folder_paths(folder_type) or []
+        except Exception:
+            continue
+        for path_idx, base_dir in enumerate(paths):
+            if active_basenames is not None:
+                basename = os.path.basename(os.path.normpath(base_dir))
+                if basename not in active_basenames:
+                    continue
+            if not os.path.isdir(base_dir):
+                continue
+            real_dir = os.path.realpath(base_dir)
+            real_key = os.path.normcase(real_dir)
+            if real_key in seen_realpaths:
+                continue
+            seen_realpaths.add(real_key)
+            roots.append({
+                "type": folder_type,
+                "path_idx": path_idx,
+                "base_dir": real_dir,
+            })
+    return roots
 
 
 def get_active_scan_paths():
@@ -159,12 +206,11 @@ async def api_get_all_folder_types(request):
         except:
             pass
             
-        default_physical_types = ['checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae']
         for bn in all_bns:
             if bn not in configured:
                 result.append({
                     "type": bn,
-                    "visible": bn in default_physical_types
+                    "visible": bn in DEFAULT_PHYSICAL_FOLDER_NAMES
                 })
     else:
         # Abstract mode

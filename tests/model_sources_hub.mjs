@@ -207,4 +207,45 @@ const detectTarget = { filename: 'local_known.safetensors', basename: 'local_kno
 const detectedUrl = await hub.autoDetectModelSource(detectTarget);
 assert.equal(detectedUrl, 'https://huggingface.co/runwayml/stable-diffusion-v1-5');
 
+// 10. Opening directly into the local library starts its load and distinguishes a successful empty result.
+const libraryFixture = fixture();
+libraryFixture.app.graph._nodes = [];
+libraryFixture.app.graph.extra = {};
+let finishLibrary;
+libraryFixture.fetch = (url) => {
+    assert.equal(url, '/anomalous/all_scan_models?limit=0');
+    return new Promise(resolve => { finishLibrary = resolve; });
+};
+const libraryHub = await libraryFixture.module('ui_model_sources.js');
+const closeLibrary = libraryHub.openModelSourcesModal('library');
+assert.ok(libraryFixture.document.body.textContent.includes('Loading the current Folder Manager scope'));
+finishLibrary({ ok: true, status: 200, json: async () => ({ models: [] }) });
+await libraryFixture.flush();
+assert.ok(libraryFixture.document.body.textContent.includes('Local library scope follows Settings → Folder Manager'));
+assert.ok(libraryFixture.document.body.textContent.includes('No models detected'));
+closeLibrary();
+
+// Closing aborts ownership of a late library response and must not recreate the modal.
+let finishLate;
+libraryFixture.fetch = () => new Promise(resolve => { finishLate = resolve; });
+const closeLate = libraryHub.openModelSourcesModal('library');
+closeLate();
+finishLate({ ok: true, status: 200, json: async () => ({ models: [{ type: 'clip', path_idx: 0, filename: 'late.GGUF' }] }) });
+await libraryFixture.flush();
+assert.equal(libraryFixture.document.body.querySelector('.anomalous-model-sources-overlay'), null);
+
+const errorFixture = fixture();
+errorFixture.app.graph._nodes = [];
+errorFixture.app.graph.extra = {};
+errorFixture.fetch = async () => ({ ok: false, status: 500, json: async () => ({}) });
+const errorHub = await errorFixture.module('ui_model_sources.js');
+const originalConsoleError = console.error;
+console.error = () => {};
+const closeError = errorHub.openModelSourcesModal('library');
+await errorFixture.flush();
+console.error = originalConsoleError;
+assert.ok(errorFixture.document.body.textContent.includes('Failed to load the local model library'));
+assert.ok(errorFixture.button(errorFixture.document.body, 'Retry'));
+closeError();
+
 console.log('model sources hub tests: all passed!');

@@ -133,9 +133,20 @@ to respect the endpoint's 16-item limit. Missing source links and unavailable
 native model choices are independent states; dynamic choices are not treated
 as evidence of absence. Native extensionless component choices and PTH/GGUF
 references remain visible even when the backend cannot locate an individual file.
-Such links may be saved to the workflow, but component sidecar writes require
-a resolved local target. This does not expand library folder discovery, initiate
-cloud scans, or change graph/model identity recovery rules.
+
+`model_source_data.js` owns library-result shaping and the source hub's pure
+main/component grouping and filtering. CLIP, text encoder, CLIP Vision, VAE, and
+preview-VAE entries live in a session-local, default-collapsed disclosure; the
+source-status pills affect main models only, while search affects both groups.
+Collapsed component rows are not constructed. Main-model completion statistics
+exclude optional component links, while a missing-local component count remains
+visible on the disclosure independently of search.
+
+Workflow save and Note generation always receive the complete workflow model
+set; summary copy receives only the visible rows. Such links may be saved to the
+workflow, but component sidecar writes require a resolved local target. Opening,
+filtering, and expanding the hub do not initiate cloud scans, hash calculation,
+or sidecar writes, and do not change graph/model identity recovery rules.
 
 ## Localization and DOM safety
 
