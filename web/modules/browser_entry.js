@@ -10,6 +10,7 @@ import {
     createShortcutSettingControl,
     DEFAULT_BROWSER_SHORTCUT,
     DEFAULT_MATERIALS_SHORTCUT,
+    installDeferredShortcutFallback,
 } from './shortcut_controls.js';
 
 export const ENTRY_MODE_SETTING_ID = 'Anomalous.ModelBrowser.EntryMode';
@@ -28,6 +29,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
     let browserInstance = null;
     let triggerButton = null;
     let triggerBoundsUpdater = null;
+    let disposeMaterialsShortcutFallback = null;
     const t = translate;
 
     function getSettingTranslationPatches() {
@@ -151,8 +153,32 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
     async function openMaterials() {
         const browser = ensureBrowser();
         if (!browser) return;
-        browser.show();
         await browser.openMaterialLibrary();
+    }
+
+    function getMaterialsShortcutCombo() {
+        const commands = app.extensionManager?.command?.commands;
+        const command = Array.isArray(commands)
+            ? commands.find(item => item.id === OPEN_MATERIALS_COMMAND_ID)
+            : null;
+        return command ? command.keybinding?.combo || null : DEFAULT_MATERIALS_SHORTCUT;
+    }
+
+    function materialLibraryIsOpen() {
+        return browserInstance?.modal?.classList.contains('visible') === true
+            && browserInstance?.nbPanel?.style.display === 'flex'
+            && browserInstance?.materialContainer?.style.display === 'flex';
+    }
+
+    function installMaterialsShortcutFallback() {
+        disposeMaterialsShortcutFallback?.();
+        disposeMaterialsShortcutFallback = installDeferredShortcutFallback({
+            target: window,
+            getCombo: getMaterialsShortcutCombo,
+            isHandled: materialLibraryIsOpen,
+            onFallback: openMaterials,
+            onError: error => console.error('[Anomalous Model Browser] Material shortcut failed:', error),
+        });
     }
 
     const translationPatches = getSettingTranslationPatches();
@@ -315,6 +341,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         applyPresentation();
         syncVisibility();
         ensureBrowser();
+        installMaterialsShortcutFallback();
 
         window.anomalousDragGhostImg = new Image();
         window.anomalousDragGhostImg.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='76' height='76' x='2' y='2' fill='%23140812' fill-opacity='0.85' rx='16' stroke='%23f59e0b' stroke-width='2'/><text x='40' y='50' font-family='sans-serif' font-size='32' font-weight='bold' fill='%23f59e0b' text-anchor='middle'>W</text></svg>";

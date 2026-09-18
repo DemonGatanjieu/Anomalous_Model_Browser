@@ -31,6 +31,9 @@ transaction helpers remain in focused modules rather than acquiring DOM state.
 `ui_sidebar.js` assembles the browser shell and folder navigation.
 `ui_settings_hub.js` owns settings and model-card preferences, while
 `ui_toolbox.js` owns the catalog, fixed shortcut actions, and tool dispatch.
+The Material Library shortcut remains a native ComfyUI command/keybinding; a
+deferred window-key fallback invokes the same command path only when the host
+did not bring the library forward, so handled shortcuts are not executed twice.
 `ui_browser_navigation.js` owns shared panel hiding, recoverable detail cleanup,
 and workspace return. `ui_scan_wizard.js` owns scan configuration and scan-launch polling,
 `ui_folder_manager.js` owns folder visibility/order and presentation-mode

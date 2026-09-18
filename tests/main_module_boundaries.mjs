@@ -19,6 +19,7 @@ f.app.extensionManager = {
 
 const interfaceModule = await f.module('interface_settings.js');
 const entryModule = await f.module('browser_entry.js');
+const shortcutModule = await f.module('shortcut_controls.js');
 const entry = entryModule.createBrowserEntry({
     translate: interfaceModule.t,
     getCurrentLanguage: interfaceModule.getCurrentLanguage,
@@ -58,5 +59,22 @@ assert.equal(materialsBinding?.key, 'l');
 assert.equal(materialsBinding?.ctrl, true);
 assert.equal(materialsBinding?.shift, true);
 assert.equal(typeof registeredExtension.setup, 'function');
+
+let fallbackCalls = 0;
+let handled = false;
+const disposeFallback = shortcutModule.installDeferredShortcutFallback({
+    target: f.window,
+    getCombo: () => shortcutModule.DEFAULT_MATERIALS_SHORTCUT,
+    isHandled: () => handled,
+    onFallback: () => { fallbackCalls += 1; },
+});
+f.window.dispatch('keydown', { key: 'L', ctrlKey: true, shiftKey: true, altKey: false, metaKey: false });
+await f.flush();
+assert.equal(fallbackCalls, 1, 'material shortcut falls back when the host command misses the event');
+f.window.dispatch('keydown', { key: 'L', ctrlKey: true, shiftKey: true, altKey: false, metaKey: false });
+handled = true;
+await f.flush();
+assert.equal(fallbackCalls, 1, 'material shortcut does not duplicate a handled native command');
+disposeFallback();
 
 console.log('Main module boundaries: entry settings, language, and theme behavior passed.');

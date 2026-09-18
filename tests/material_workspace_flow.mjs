@@ -22,6 +22,21 @@ assert.equal(owner.notebookContainer, undefined);
 assert.equal(owner.materialApplyMode, true);
 assert.equal(new URL(f.requests.at(-1)[0], 'http://test').searchParams.get('node_type'), 'CLIPTextEncode');
 assert.deepEqual(f.errors, []);
+
+f.app.canvas.selected_nodes = {};
+await owner.openMaterialLibrary();
+assert.equal(owner.materialApplyMode, false, 'opening without a selection uses browse mode');
+assert.equal(owner.materialTarget, null, 'opening without a selection clears the application target');
+assert.equal(new URL(f.requests.at(-1)[0], 'http://test').searchParams.has('node_type'), false);
+assert.ok(owner.materialContext.textContent.includes((await f.module('locales.js')).translate('materialSelectOneNode')), 'browse mode explains that selection is optional');
+const browseCard = owner.materialList.querySelector('article');
+await browseCard.click();
+assert.ok(owner.materialDetailView, 'material details open without a selected node');
+assert.deepEqual(f.errors, []);
+
+f.app.canvas.selected_nodes = { 1: f.node };
+await owner.openMaterialLibrary();
+
 const card = owner.materialList.querySelector('article');
 assert.ok(card, 'current material card renders');
 await card.click();

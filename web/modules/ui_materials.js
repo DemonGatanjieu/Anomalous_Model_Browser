@@ -260,8 +260,10 @@ export async function openSavedMaterial(material) {
 
 
 export async function openMaterialLibrary() {
-    this.materialApplyMode = !!selectedMaterialNode(app);
-    this.materialTarget = selectedMaterialNode(app);
+    this.show?.();
+    const target = selectedMaterialNode(app);
+    this.materialApplyMode = !!target;
+    this.materialTarget = target;
     if (this.materialApplyMode) { this.materialKind = ''; this.materialKindCategory = 'all'; }
     await openSavedMaterial.call(this, null);
 }

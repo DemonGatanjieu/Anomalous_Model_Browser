@@ -10,6 +10,32 @@ export const DEFAULT_MATERIALS_SHORTCUT = Object.freeze({
     shift: true
 });
 
+function normalizedShortcutKey(value) {
+    const key = String(value || '').toLowerCase();
+    return key.startsWith('key') && key.length === 4 ? key.slice(3) : key;
+}
+
+export function shortcutEventMatches(event, combo) {
+    if (!event || !combo || event.isComposing) return false;
+    return normalizedShortcutKey(event.key || event.code) === normalizedShortcutKey(combo.key)
+        && !!event.ctrlKey === !!combo.ctrl
+        && !!event.shiftKey === !!combo.shift
+        && !!event.altKey === !!combo.alt
+        && !!event.metaKey === !!combo.meta;
+}
+
+export function installDeferredShortcutFallback({ target, getCombo, isHandled, onFallback, onError = console.error }) {
+    const handler = event => {
+        if (event.repeat || !shortcutEventMatches(event, getCombo?.())) return;
+        queueMicrotask(() => {
+            if (isHandled?.()) return;
+            Promise.resolve(onFallback?.()).catch(onError);
+        });
+    };
+    target.addEventListener('keydown', handler, true);
+    return () => target.removeEventListener('keydown', handler, true);
+}
+
 export function formatKeyCombo(combo) {
     if (!combo) return '';
     if (typeof combo.getKeySequences === 'function') {
