@@ -262,7 +262,7 @@ export function openPromptTranslator(owner) {
     bindDrawerResize(resizeHandle, modal, scope, {
         side: () => currentSide,
         enabled: () => modal.classList.contains('is-sidebar'),
-        minWidth: 320,
+        minWidth: 350,
         setWidth: width => modal.style.setProperty('--amb-translator-width', `${width}px`),
         saveWidth: width => localStorage.setItem('anomalous_translator_width', String(Math.round(width))),
     });
@@ -278,7 +278,12 @@ export function openPromptTranslator(owner) {
 
     const savedWidth = localStorage.getItem('anomalous_translator_width');
     if (savedWidth) {
-        modal.style.setProperty('--amb-translator-width', `${savedWidth}px`);
+        const parsed = parseFloat(savedWidth);
+        const appliedWidth = (!isNaN(parsed) && parsed < 440) ? 460 : parsed;
+        modal.style.setProperty('--amb-translator-width', `${appliedWidth}px`);
+        if (appliedWidth !== parsed) {
+            localStorage.setItem('anomalous_translator_width', String(appliedWidth));
+        }
     }
 
     // 1. Header
@@ -419,7 +424,7 @@ export function openPromptTranslator(owner) {
     const readNodeBtn = document.createElement('button');
     readNodeBtn.type = 'button';
     readNodeBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
-    readNodeBtn.innerHTML = `📥 ${t('读取选中节点', 'Read Node')}`;
+    readNodeBtn.innerHTML = `📥 ${t('读取节点', 'Read Node')}`;
     readNodeBtn.title = t('从 ComfyUI 画布当前选中的节点读取提示词', 'Read prompt from selected canvas node');
     readNodeBtn.onclick = () => {
         if (typeof autoSyncFromNode === 'function') {
@@ -450,7 +455,7 @@ export function openPromptTranslator(owner) {
     const sourceWriteBtn = document.createElement('button');
     sourceWriteBtn.type = 'button';
     sourceWriteBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
-    sourceWriteBtn.innerHTML = `✏️ ${t('规范并写回节点', 'Format & Write Back')}`;
+    sourceWriteBtn.innerHTML = `✏️ ${t('规范写回', 'Format & Write Back')}`;
     sourceWriteBtn.title = t('将源文本直接清洗规范后写回选中节点（无需翻译，一键替换节点格式）', 'Normalize source text and write directly back to canvas node');
     sourceWriteBtn.onclick = () => {
         let raw = sourceTextarea.value.trim();
@@ -481,7 +486,7 @@ export function openPromptTranslator(owner) {
     const translateBtn = document.createElement('button');
     translateBtn.type = 'button';
     translateBtn.className = 'anomalous-btn-primary anomalous-btn-sm anomalous-translator-btn-run';
-    translateBtn.innerHTML = `🌐 ${t('一键翻译', 'Translate')}`;
+    translateBtn.innerHTML = `🌐 ${t('翻译', 'Translate')}`;
 
     sourceRightGroup.append(clearBtn, translateBtn);
     sourceActions.append(sourceLeftGroup, sourceRightGroup);
@@ -495,7 +500,7 @@ export function openPromptTranslator(owner) {
     const swapBtn = document.createElement('button');
     swapBtn.type = 'button';
     swapBtn.className = 'anomalous-translator-swap-btn';
-    swapBtn.innerHTML = `⇅ ${t('互换内容与语言', 'Swap Content & Language')}`;
+    swapBtn.innerHTML = `⇅ ${t('互换', 'Swap')}`;
     swapBtn.title = t('对调上下两框文本，并反转翻译目标语言', 'Swap source and target text, and invert translation direction');
     swapBtn.onclick = () => {
         const tempText = sourceTextarea.value;
@@ -563,7 +568,7 @@ export function openPromptTranslator(owner) {
     const cleanBtn = document.createElement('button');
     cleanBtn.type = 'button';
     cleanBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
-    cleanBtn.innerHTML = `🧹 ${t('规范化标签', 'Normalize Tags')}`;
+    cleanBtn.innerHTML = `🧹 ${t('规范化', 'Normalize')}`;
     cleanBtn.title = t('将顿号、中文全角逗号等标点统一规范化为标准的英文逗号与空格 (tag, tag)', 'Normalize commas, Chinese enumeration marks, and semicolons to standard tags');
     cleanBtn.onclick = () => {
         const raw = targetTextarea.value.trim();
@@ -577,7 +582,7 @@ export function openPromptTranslator(owner) {
     const copyBtn = document.createElement('button');
     copyBtn.type = 'button';
     copyBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
-    copyBtn.innerHTML = `📋 ${t('复制译文', 'Copy')}`;
+    copyBtn.innerHTML = `📋 ${t('复制', 'Copy')}`;
     copyBtn.onclick = async () => {
         const out = targetTextarea.value.trim();
         if (!out) return;
@@ -588,7 +593,7 @@ export function openPromptTranslator(owner) {
     const sendToStudioBtn = document.createElement('button');
     sendToStudioBtn.type = 'button';
     sendToStudioBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
-    sendToStudioBtn.innerHTML = `🎛️ ${t('发送到提示词工坊', 'Send to Studio')}`;
+    sendToStudioBtn.innerHTML = `🎛️ ${t('工坊', 'Send to Studio')}`;
     sendToStudioBtn.title = t('将译文发送到提示词工坊拼装组装', 'Send translated text as block to Prompt Studio');
     sendToStudioBtn.onclick = () => {
         let out = targetTextarea.value.trim();
@@ -612,14 +617,14 @@ export function openPromptTranslator(owner) {
     const writeNodeBtn = document.createElement('button');
     writeNodeBtn.type = 'button';
     writeNodeBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
-    writeNodeBtn.innerHTML = `✏️ ${t('直接写入节点', 'Write Directly')}`;
+    writeNodeBtn.innerHTML = `✏️ ${t('写入节点', 'Write Directly')}`;
     writeNodeBtn.title = t('将当前文本原样写入选中的画布节点', 'Write current text directly to active ComfyUI node');
 
     // Translate to EN & Write button (The ultimate shortcut for prompt workflows!)
     const translateAndWriteBtn = document.createElement('button');
     translateAndWriteBtn.type = 'button';
     translateAndWriteBtn.className = 'anomalous-btn-primary anomalous-btn-sm';
-    translateAndWriteBtn.innerHTML = `🌐 ${t('译为英文并写入节点', 'Translate to EN & Write')}`;
+    translateAndWriteBtn.innerHTML = `🌐 ${t('反译写入', 'Translate to EN & Write')}`;
     translateAndWriteBtn.title = t('一键将当前内容反向翻译为规范英文，并直接替换写入选中的画布节点', 'Translate current content into clean English tags and write to canvas node');
     translateAndWriteBtn.onclick = async () => {
         let out = targetTextarea.value.trim();
@@ -665,7 +670,7 @@ export function openPromptTranslator(owner) {
             showTranslatorToast(modal, t(`反译异常: ${err.message}`, `Error: ${err.message}`), true);
         } finally {
             translateAndWriteBtn.disabled = false;
-            translateAndWriteBtn.innerHTML = `🌐 ${t('译为英文并写入节点', 'Translate to EN & Write')}`;
+            translateAndWriteBtn.innerHTML = `🌐 ${t('反译写入', 'Translate to EN & Write')}`;
         }
     };
 
@@ -738,7 +743,7 @@ export function openPromptTranslator(owner) {
             showTranslatorToast(modal, t(`翻译异常: ${err.message}`, `Error: ${err.message}`), true);
         } finally {
             translateBtn.disabled = false;
-            translateBtn.innerHTML = `🌐 ${t('一键翻译', 'Translate')}`;
+            translateBtn.innerHTML = `🌐 ${t('翻译', 'Translate')}`;
         }
     }
 

@@ -10,8 +10,8 @@
 
 .anomalous-translator-modal.is-sidebar {
     pointer-events: auto !important;
-    width: var(--amb-translator-width, 380px) !important;
-    min-width: 320px !important;
+    width: var(--amb-translator-width, 460px) !important;
+    min-width: 350px !important;
     max-width: 92vw !important;
     height: 100vh !important;
     max-height: 100vh !important;
@@ -190,8 +190,8 @@
 .anomalous-translator-body {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    padding: 16px 18px;
+    gap: 10px;
+    padding: 12px 14px;
     overflow-y: auto;
     flex: 1;
 }
@@ -199,11 +199,18 @@
 .anomalous-translator-pane {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     background: rgba(30, 41, 59, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 10px;
-    padding: 12px;
+    padding: 10px 12px;
+}
+
+.anomalous-translator-modal.is-sidebar .anomalous-translator-pane {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .anomalous-translator-pane-label {
@@ -217,7 +224,7 @@
 
 .anomalous-translator-textarea {
     width: 100%;
-    min-height: 84px;
+    min-height: 80px;
     background: #090d16;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
@@ -225,10 +232,16 @@
     font-family: inherit;
     font-size: 0.88rem;
     line-height: 1.5;
-    padding: 10px 12px;
+    padding: 8px 10px;
     resize: vertical;
     box-sizing: border-box;
     transition: border-color 0.2s;
+}
+
+.anomalous-translator-modal.is-sidebar .anomalous-translator-textarea {
+    flex: 1;
+    min-height: 72px;
+    resize: none;
 }
 
 .anomalous-translator-textarea:focus {
@@ -246,27 +259,34 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
+    margin-top: 2px;
 }
 
 .anomalous-translator-action-group {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     flex-wrap: wrap;
+}
+
+.anomalous-translator-modal.is-sidebar .anomalous-btn-sm {
+    padding: 3px 7px !important;
+    font-size: 0.76rem !important;
+    white-space: nowrap !important;
 }
 
 .anomalous-translator-mid-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 10px;
+    padding: 4px 8px;
     background: rgba(15, 23, 42, 0.75);
     border: 1px solid rgba(56, 189, 248, 0.2);
     border-radius: 8px;
-    margin: 2px 0;
-    gap: 8px;
+    margin: 1px 0;
+    gap: 6px;
     box-sizing: border-box;
 }
 
@@ -274,15 +294,15 @@
     background: #1e293b;
     border: 1px solid rgba(56, 189, 248, 0.35);
     color: #38bdf8;
-    border-radius: 12px;
-    padding: 3px 12px;
-    font-size: 0.76rem;
+    border-radius: 10px;
+    padding: 2px 10px;
+    font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     white-space: nowrap;
     flex-shrink: 0;
 }
@@ -298,21 +318,21 @@
 .anomalous-translator-chips-wrap {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    max-height: 120px;
+    gap: 4px;
+    max-height: 56px;
     overflow-y: auto;
-    padding: 6px 4px;
+    padding: 4px 2px;
 }
 
 .anomalous-translator-chip {
     display: inline-flex;
     align-items: center;
-    padding: 3px 8px;
+    padding: 2px 7px;
     background: rgba(56, 189, 248, 0.1);
     border: 1px solid rgba(56, 189, 248, 0.28);
-    border-radius: 12px;
+    border-radius: 10px;
     color: #7dd3fc;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     cursor: pointer;
     transition: all 0.15s ease;
     user-select: none;

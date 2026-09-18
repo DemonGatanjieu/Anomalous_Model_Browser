@@ -145,7 +145,7 @@ DOM or live LiteGraph state.
   cross-role tail smart-sorting are owned by `prompt_composition.js` and `prompt_studio_data.js`.
   `ui_prompt_source_deck.js` owns the card preview popover with narrow bridging corridors,
   differentiated hide timers, and fast dismissal when hovering or clicking library blank space.
-- `ui_prompt_translator.js` owns the standalone Prompt Translator, featuring robust multilingual/Chinese node prompt extraction (`extractPromptFromNode`), real-time canvas selection synchronization (`app.canvas.onNodeSelected`), automatic prompt injection on open/docked mode, on-demand read/sync controls, and guarded selection writeback across single and multi-tab workflows. Both translator and
+- `ui_prompt_translator.js` owns the standalone Prompt Translator, featuring robust multilingual/Chinese node prompt extraction (`extractPromptFromNode`), real-time canvas selection synchronization (`app.canvas.onNodeSelected`), automatic prompt injection on open/docked mode, on-demand read/sync controls, guarded selection writeback across single and multi-tab workflows, compact streamlined button ergonomics preventing multi-row wrapping, elastic vertical flex textareas maximizing canvas-side vertical space, and an expanded 460px default sidebar width with automatic backward-compatible width migration. Both translator and
   studio use `ui_lifecycle.js` for global listeners, request cancellation and
   resize cleanup. Translation requests go through `translation_service.js`.
 - `ui_dom.js` provides small DOM/JSON helpers; `material_inspector.js` owns
