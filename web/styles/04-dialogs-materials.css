@@ -1818,8 +1818,6 @@ dialog.anomalous-gallery-viewer::backdrop {
     transform: translateY(1px);
     filter: brightness(0.95);
 }
-    filter: brightness(0.95);
-}
 
 .anomalous-recipe-card-mini-actions {
     display: flex;

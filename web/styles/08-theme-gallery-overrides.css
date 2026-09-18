@@ -954,6 +954,34 @@ button:hover .anomalous-btn-icon {
     height: 100%;
     overflow: hidden;
     background: #0d1117;
+    position: relative;
+}
+
+.anomalous-recipe-modal-close {
+    position: absolute;
+    top: 8px;
+    right: 14px;
+    z-index: 100;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: #ff4444;
+    font-size: 1.8rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.18s ease;
+    user-select: none;
+}
+
+.anomalous-recipe-modal-close:hover {
+    background: rgba(239, 68, 68, 0.16);
+    color: #ff6666;
+    transform: scale(1.08);
 }
 
 .anomalous-recipe-topbar-close {

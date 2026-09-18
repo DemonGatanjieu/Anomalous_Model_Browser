@@ -111,7 +111,8 @@ DOM or live LiteGraph state.
 - `ui_recipes.js` / `ui_recipe_detail.js`, `ui_notebooks.js`, and `ui_materials.js`
   own their respective workspace surfaces and persistence flows. `ui_recipes.js` owns
   the Workflow Recipe studio catalog workspace with search/filter tags, grid/list layout toggle,
-  streamlined action header (preserving active workflow saving and closing while pruning unfinished package
+  dedicated top-right modal close anchor (permanently decoupled from the tool button row to prevent wrapping displacement),
+  streamlined action header (preserving active workflow saving while pruning unfinished package
   import entrypoints), and card browsing. `ui_notebooks.js` owns Prompt Note catalog,
   sidebar dual-group management (note list + floor quick jump anchor navigation with scrollspy active tracking and tooltip hints),
   and persistence; `ui_notebook_editor.js` owns unfolded card editing (modularized into single-responsibility
@@ -122,7 +123,7 @@ DOM or live LiteGraph state.
   `notebook_canvas.js` owns LiteGraph creation. Prompt Notes are integrated as a standard tool in the Toolbox
   with defensive workspace return state restoration, TDZ-safe summary initialization, and responsive empty-state fallback rendering. `ui_recipe_detail.js`
   coordinates the Workflow Recipe detail session and model composition. `ui_recipe_overview.js`
-  owns the Overview prompt showcase (with `entry.text` fallback), and `ui_recipe_parameters.js`
+  owns the Overview prompt showcase (with `entry.text` fallback, guarded non-shrinking primary action CTA, and floating Popover More dropdown menu), and `ui_recipe_parameters.js`
   owns the responsive Parameter Presets workspace (featuring default-expanded raw node parameter inspection,
   a `clamp(230px, 24vw, 290px)` sidebar with guarded card actions, uncluttered console action bars with deferred status feedback,
   `minmax(130px, 1fr)` Bento Grid with universal click-to-copy, LoRA cards with flexbox truncation guards,

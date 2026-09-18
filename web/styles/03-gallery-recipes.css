@@ -288,7 +288,7 @@ dialog.anomalous-gallery-viewer[open] {
     gap: 12px;
     min-height: 48px;
     height: auto;
-    padding: 8px 16px;
+    padding: 8px 52px 8px 16px;
     background: rgba(18, 22, 32, 0.65);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -833,7 +833,7 @@ dialog.anomalous-gallery-viewer[open] {
     flex: 0 0 auto;
     gap: 4px;
     overflow-x: auto;
-    padding: 8px 18px;
+    padding: 8px 52px 8px 18px;
     border-bottom: 1px solid #3d3d3d;
     background: #252525;
 }
@@ -2422,9 +2422,111 @@ dialog.anomalous-gallery-viewer[open] {
 /* Primary Actions Group */
 .anomalous-recipe-actions-primary {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     align-items: center;
-    margin-left: auto;
+    position: relative;
+}
+
+.anomalous-recipe-actions-primary .anomalous-recipe-btn-primary-action {
+    flex: 0 0 auto;
+    min-width: 140px;
+    white-space: nowrap;
+}
+
+/* Floating More Dropdown in Recipe Overview */
+.anomalous-recipe-dropdown-wrapper {
+    position: relative;
+    display: inline-flex;
+}
+
+.anomalous-recipe-more-btn {
+    position: relative;
+    background: rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    height: 32px;
+    padding: 0 12px;
+    border-radius: var(--amb-radius-control, 6px);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.16s ease;
+    user-select: none;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+.anomalous-recipe-more-btn:hover,
+.anomalous-recipe-more-btn.active {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+}
+
+.anomalous-recipe-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 100;
+    min-width: 140px;
+    background: rgba(24, 24, 28, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.35);
+    padding: 4px;
+    flex-direction: column;
+    gap: 2px;
+    animation: anomalous-recipe-dropdown-fadein 0.15s ease-out;
+}
+
+.anomalous-recipe-dropdown-menu.show {
+    display: flex;
+}
+
+@keyframes anomalous-recipe-dropdown-fadein {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.anomalous-recipe-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: #e2e8f0;
+    font-size: 0.82rem;
+    font-weight: 500;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+.anomalous-recipe-dropdown-item:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.anomalous-recipe-dropdown-item:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 .anomalous-recipe-header-status {

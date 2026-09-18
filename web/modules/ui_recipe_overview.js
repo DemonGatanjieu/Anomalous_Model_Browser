@@ -285,6 +285,82 @@ function renderPromptOverviewSection(parent, recipe, services) {
     }
 }
 
+function createRecipeOverviewActionBar(recipe, owner, finish, services) {
+    const overviewActions = document.createElement('div');
+    overviewActions.className = 'anomalous-recipe-actions-primary';
+    overviewActions.style.margin = '8px 0';
+    overviewActions.style.display = 'flex';
+    overviewActions.style.alignItems = 'center';
+    overviewActions.style.gap = '8px';
+
+    const heroAppendIcon = recipe?.workflow_scope === 'partial'
+        ? `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`
+        : `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+    const heroAppend = button(
+        overviewActions,
+        '',
+        'anomalous-recipe-btn-primary-action',
+    );
+    heroAppend.innerHTML = `${heroAppendIcon}${recipeCanvasActionLabel(recipe)}`;
+    heroAppend.style.padding = '8px 16px';
+    heroAppend.style.fontSize = '0.88rem';
+    heroAppend.style.flexShrink = '0';
+    heroAppend.style.whiteSpace = 'nowrap';
+    heroAppend.onclick = () => {
+        void runRecipeAction(heroAppend, async () => {
+            if (await services.applyRecipeToCanvas(owner, recipe)) finish('canvas');
+        });
+    };
+
+    // Floating More Dropdown Menu
+    const moreWrapper = document.createElement('div');
+    moreWrapper.className = 'anomalous-recipe-dropdown-wrapper';
+
+    const moreBtn = document.createElement('button');
+    moreBtn.type = 'button';
+    moreBtn.className = 'anomalous-recipe-more-btn';
+    moreBtn.innerHTML = `<span>··· ${t('notebookMore') || (window.anomalous_browser_lang === 'zh' ? '更多' : 'More')}</span> <span style="font-size:0.7rem;margin-left:2px;">▾</span>`;
+
+    const dropdownMenu = document.createElement('div');
+    dropdownMenu.className = 'anomalous-recipe-dropdown-menu';
+
+    const heroEdit = button(dropdownMenu, '', 'anomalous-recipe-dropdown-item');
+    heroEdit.type = 'button';
+    heroEdit.innerHTML = `<svg style="width:14px;height:14px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>${t('recipeEdit')}</span>`;
+    heroEdit.title = t('recipeEdit');
+    heroEdit.onclick = (e) => {
+        e.stopPropagation();
+        dropdownMenu.classList.remove('show');
+        moreBtn.classList.remove('active');
+        finish('edit');
+    };
+
+    const heroExport = button(dropdownMenu, '', 'anomalous-recipe-dropdown-item');
+    heroExport.type = 'button';
+    heroExport.innerHTML = `<svg style="width:14px;height:14px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>${t('recipeExport')}</span>`;
+    heroExport.title = t('recipeExportUnavailable');
+    heroExport.setAttribute('aria-label', t('recipeExportUnavailable'));
+    heroExport.disabled = true;
+
+    moreBtn.onclick = (e) => {
+        e.stopPropagation();
+        const isOpen = dropdownMenu.classList.toggle('show');
+        moreBtn.classList.toggle('active', isOpen);
+    };
+
+    const onDocClick = (e) => {
+        if (!moreWrapper.contains(e.target)) {
+            dropdownMenu.classList.remove('show');
+            moreBtn.classList.remove('active');
+        }
+    };
+    document.addEventListener('click', onDocClick);
+
+    moreWrapper.append(moreBtn, dropdownMenu);
+    overviewActions.appendChild(moreWrapper);
+    return overviewActions;
+}
+
 export function renderOverview(content, owner, recipe, references, finish, services) {
     const overview = document.createElement('div');
     overview.className = 'anomalous-recipe-detail-overview';
@@ -325,47 +401,7 @@ export function renderOverview(content, owner, recipe, references, finish, servi
     });
 
     // Primary action bar
-    const overviewActions = document.createElement('div');
-    overviewActions.className = 'anomalous-recipe-actions-primary';
-    overviewActions.style.margin = '8px 0';
-    overviewActions.style.display = 'flex';
-    overviewActions.style.alignItems = 'center';
-    overviewActions.style.gap = '8px';
-
-    const heroAppendIcon = recipe?.workflow_scope === 'partial'
-        ? `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`
-        : `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
-    const heroAppend = button(
-        overviewActions,
-        '',
-        'anomalous-recipe-btn-primary-action',
-    );
-    heroAppend.innerHTML = `${heroAppendIcon}${recipeCanvasActionLabel(recipe)}`;
-    heroAppend.style.padding = '8px 16px';
-    heroAppend.style.fontSize = '0.88rem';
-    heroAppend.onclick = () => {
-        void runRecipeAction(heroAppend, async () => {
-            if (await services.applyRecipeToCanvas(owner, recipe)) finish('canvas');
-        });
-    };
-
-    const more = document.createElement('details');
-    more.className = 'anomalous-secondary-actions';
-    appendText(more, 'summary', t('notebookMore'));
-    overviewActions.appendChild(more);
-
-    const heroEdit = button(more, '', 'anomalous-btn-ghost');
-    heroEdit.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>${t('recipeEdit')}`;
-    heroEdit.title = t('recipeEdit');
-    heroEdit.onclick = () => finish('edit');
-
-    const heroExport = button(more, '', 'anomalous-btn-ghost');
-    heroExport.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>${t('recipeExport')}`;
-    heroExport.title = t('recipeExportUnavailable');
-    heroExport.setAttribute('aria-label', t('recipeExportUnavailable'));
-    heroExport.disabled = true;
-
-    copy.appendChild(overviewActions);
+    copy.appendChild(createRecipeOverviewActionBar(recipe, owner, finish, services));
 
     // Studio Metrics Grid
     const params = recipe?.params || {};
