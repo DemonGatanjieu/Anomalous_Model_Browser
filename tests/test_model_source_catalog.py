@@ -59,6 +59,25 @@ def load_model_catalog(fake_folder_paths, metadata_reader):
     return module
 
 
+def load_metadata():
+    package = types.ModuleType("amb_metadata_test")
+    package.__path__ = [str(ROOT)]
+    api_package = types.ModuleType("amb_metadata_test.api")
+    api_package.__path__ = [str(ROOT / "api")]
+    identity = types.ModuleType("amb_metadata_test.model_identity")
+    identity.sidecar_file_hash = lambda data, file_path, selected_file: ("", "")
+    sys.modules[package.__name__] = package
+    sys.modules[api_package.__name__] = api_package
+    sys.modules[identity.__name__] = identity
+    sys.modules.setdefault("folder_paths", types.SimpleNamespace())
+    spec = importlib.util.spec_from_file_location(
+        "amb_metadata_test.api.metadata", ROOT / "api" / "metadata.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 class ModelSourceRootTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -159,6 +178,30 @@ class ModelSourceCatalogTests(unittest.TestCase):
             payload = catalog._collect_all_scan_models(1, 0)
             self.assertEqual(payload["total"], 2)
             self.assertEqual([item["path_idx"] for item in payload["models"]], [0, 1])
+
+
+class ModelSourceMetadataTests(unittest.TestCase):
+    def test_offline_sentinel_ids_do_not_become_civitai_sources(self):
+        metadata = load_metadata()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory, "offline.safetensors")
+            path.write_bytes(b"payload")
+            path.with_suffix(".info").write_text(json.dumps({"id": -1, "modelId": -1}))
+            result = metadata.get_metadata(str(path))
+        self.assertEqual(result["civitai_url"], "")
+        self.assertNotIn("model_id", result)
+        self.assertNotIn("version_id", result)
+
+    def test_positive_civitai_ids_still_build_release_url(self):
+        metadata = load_metadata()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory, "online.safetensors")
+            path.write_bytes(b"payload")
+            path.with_suffix(".info").write_text(json.dumps({"id": "456", "modelId": "123"}))
+            result = metadata.get_metadata(str(path))
+        self.assertEqual(result["civitai_url"], "https://civitai.com/models/123?modelVersionId=456")
+        self.assertEqual(result["model_id"], 123)
+        self.assertEqual(result["version_id"], 456)
 
 
 if __name__ == "__main__":

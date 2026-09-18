@@ -71,6 +71,17 @@ def _select_info_hash(data, file_path):
     hashes = selected.get("hashes", {})
     return str(hashes.get("SHA256", "")) if isinstance(hashes, dict) else ""
 
+
+def _positive_civitai_id(value):
+    """Return a real Civitai identifier, excluding offline sentinel values."""
+    if isinstance(value, bool):
+        return None
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return parsed if parsed > 0 else None
+
 def _read_metadata(file_path):
     base_path = os.path.splitext(file_path)[0]
     metadata = {
@@ -108,10 +119,10 @@ def _read_metadata(file_path):
                     trained_words = data.get("trainedWords", [])
                     base_model = data.get("baseModel", "")
                     
-                    model_id = data.get("modelId", "")
-                    version_id = data.get("id", "")
+                    model_id = _positive_civitai_id(data.get("modelId"))
+                    version_id = _positive_civitai_id(data.get("id"))
                     civitai_url = ""
-                    if model_id:
+                    if model_id is not None:
                         # Handle Civitai's new mature content policy
                         nsfw_level = data.get("nsfwLevel", 1)
                         is_nsfw = False
@@ -120,7 +131,7 @@ def _read_metadata(file_path):
                         
                         domain = "civitai.red" if (nsfw_level > 1 or is_nsfw) else "civitai.com"
                         civitai_url = f"https://{domain}/models/{model_id}"
-                        if version_id:
+                        if version_id is not None:
                             civitai_url += f"?modelVersionId={version_id}"
                     
                     
@@ -135,8 +146,8 @@ def _read_metadata(file_path):
                     if trained_words: metadata["trainedWords"] = trained_words
                     if base_model: metadata["baseModel"] = base_model
                     if civitai_url: metadata["civitai_url"] = civitai_url
-                    if model_id: metadata["model_id"] = model_id
-                    if version_id: metadata["version_id"] = version_id
+                    if model_id is not None: metadata["model_id"] = model_id
+                    if version_id is not None: metadata["version_id"] = version_id
                     if hash_val: metadata["hash"] = hash_val
                     if "anomalous_custom_name" in data and data["anomalous_custom_name"]: metadata["custom_name"] = data["anomalous_custom_name"]
                     if "anomalous_custom_notes" in data and data["anomalous_custom_notes"]: metadata["custom_notes"] = data["anomalous_custom_notes"]

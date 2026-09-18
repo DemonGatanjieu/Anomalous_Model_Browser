@@ -1,5 +1,13 @@
 import { isPhysicalRenameProtectedType } from './model_policies.js';
 
+export function usableSourceUrl(value) {
+    const url = typeof value === 'string' ? value.trim() : '';
+    if (!url) return '';
+    const civitaiModel = url.match(/^https?:\/\/(?:www\.)?civitai\.(?:com|red)\/models\/(-?\d+)(?:[/?#]|$)/i);
+    if (civitaiModel && Number(civitaiModel[1]) <= 0) return '';
+    return url;
+}
+
 export function foundationModelType(model) {
     const candidates = Array.isArray(model?.folderTypes) ? [...model.folderTypes] : [];
     if (model?.type) candidates.push(model.type);
@@ -9,7 +17,9 @@ export function foundationModelType(model) {
 export function shapeLibrarySourceModels(rawList, detectPlatform) {
     return (Array.isArray(rawList) ? rawList : []).map(m => {
         const meta = m.metadata || {};
-        const url = meta.source_url || meta.civitai_url || '';
+        const sourceUrl = usableSourceUrl(meta.source_url);
+        const civitaiUrl = usableSourceUrl(meta.civitai_url);
+        const url = sourceUrl || civitaiUrl;
         const relPath = m.subfolder ? `${m.subfolder}/${m.filename}` : m.filename;
         return {
             key: `lib_${m.type}_${m.path_idx}_${relPath}`,
@@ -21,8 +31,8 @@ export function shapeLibrarySourceModels(rawList, detectPlatform) {
             relPath,
             size_mb: m.size_mb || 0,
             hash: meta.hash || '',
-            civitai_url: meta.civitai_url || '',
-            source_url: meta.source_url || '',
+            civitai_url: civitaiUrl,
+            source_url: sourceUrl,
             url,
             initialUrl: url,
             platform: detectPlatform(url),

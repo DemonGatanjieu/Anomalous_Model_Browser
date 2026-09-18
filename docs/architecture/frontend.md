@@ -141,6 +141,9 @@ source-status pills affect main models only, while search affects both groups.
 Collapsed component rows are not constructed. Main-model completion statistics
 exclude optional component links, while a missing-local component count remains
 visible on the disclosure independently of search.
+Legacy Civitai placeholder links with non-positive model IDs are normalized to
+an unfilled source before grouping, so offline inference records remain visible
+under the source-needed filter.
 
 Workflow save and Note generation always receive the complete workflow model
 set; summary copy receives only the visible rows. Such links may be saved to the

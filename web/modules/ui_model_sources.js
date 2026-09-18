@@ -17,7 +17,7 @@ import { text, jsonResponse } from './ui_dom.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { inferModelFolderTypes, isPhysicalRenameProtectedType } from './model_policies.js';
-import { foundationModelType, partitionSourceModels, shapeLibrarySourceModels } from './model_source_data.js';
+import { foundationModelType, partitionSourceModels, shapeLibrarySourceModels, usableSourceUrl } from './model_source_data.js';
 
 let activeSourcesModalScope = null;
 
@@ -87,7 +87,8 @@ export function collectWorkflowModels() {
             const hash = typeof hashObj === 'string' ? hashObj : (hashObj.hash || '');
 
             const existingSource = savedSources[val] || savedSources[basename] || savedSources[dedupeKey];
-            let url = (typeof existingSource === 'string' ? existingSource : existingSource?.url) || hashObj?.url || hashObj?.civitai_url || '';
+            let url = usableSourceUrl(typeof existingSource === 'string' ? existingSource : existingSource?.url)
+                || usableSourceUrl(hashObj?.url) || usableSourceUrl(hashObj?.civitai_url);
 
             models.push({
                 key: dedupeKey,
@@ -294,7 +295,8 @@ export async function resolveWorkflowModelsMetadata(models, signal = null) {
                     m.hash = info.metadata.hash;
                     hasChanges = true;
                 }
-                const resolvedUrl = info.metadata?.source_url || info.metadata?.civitai_url || '';
+                const resolvedUrl = usableSourceUrl(info.metadata?.source_url)
+                    || usableSourceUrl(info.metadata?.civitai_url);
                 if (!m.url && resolvedUrl) {
                     m.url = resolvedUrl;
                     m.initialUrl = resolvedUrl;
@@ -777,7 +779,8 @@ export async function autoDetectModelSource(item) {
             item.subfolder = resolved.subfolder;
             item.path_idx = resolved.path_idx;
             if (resolved.metadata?.hash) item.hash = resolved.metadata.hash;
-            const foundUrl = resolved.metadata?.source_url || resolved.metadata?.civitai_url;
+            const foundUrl = usableSourceUrl(resolved.metadata?.source_url)
+                || usableSourceUrl(resolved.metadata?.civitai_url);
             if (foundUrl) return foundUrl;
         }
     } catch (e) {

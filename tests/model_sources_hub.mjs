@@ -60,6 +60,19 @@ f.app.canvas = {
 
 // Load ui_model_sources module
 const hub = await f.module('ui_model_sources.js');
+const sourceData = await f.module('model_source_data.js');
+
+const offlinePlaceholder = sourceData.shapeLibrarySourceModels([{
+    type: 'diffusion_models', path_idx: 0, filename: 'offline.safetensors',
+    metadata: { civitai_url: 'https://civitai.com/models/-1?modelVersionId=-1' },
+}], hub.detectPlatform);
+assert.equal(offlinePlaceholder[0].url, '');
+assert.equal(sourceData.partitionSourceModels(offlinePlaceholder, 'unresolved').mainModels.length, 1);
+assert.equal(sourceData.partitionSourceModels(offlinePlaceholder, 'resolved').mainModels.length, 0);
+assert.equal(
+    sourceData.usableSourceUrl('https://civitai.com/models/123?modelVersionId=456'),
+    'https://civitai.com/models/123?modelVersionId=456',
+);
 
 // 1. detectPlatform test
 assert.equal(hub.detectPlatform('https://civitai.com/models/12345')?.name, 'Civitai');

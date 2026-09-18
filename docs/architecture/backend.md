@@ -66,6 +66,10 @@ thumbnails and model/output media lookups, `gallery_routes.py` owns the bounded
 output snapshot and deletion, `translation_routes.py` owns provider fallback,
 and `folder_types.py` owns configured visibility and scan scope.
 
+Offline inference sidecars use non-positive Civitai IDs as sentinels. Metadata
+normalization must not expose those values as release-page URLs or resolved
+model/version identities; only positive IDs may form a Civitai source link.
+
 Prompt Notes use `workflows/anomalous_notebooks`. First access copies legacy
 `api/notebooks` records without deleting originals or overwriting current notes.
 Conflicts receive a deterministic recovered filename. A completion marker makes
