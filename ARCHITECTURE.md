@@ -112,13 +112,14 @@ DOM or live LiteGraph state.
   own their respective workspace surfaces and persistence flows. `ui_recipes.js` owns
   the Workflow Recipe studio catalog workspace with search/filter tags, grid/list layout toggle,
   streamlined action header (preserving active workflow saving and closing while pruning unfinished package
-  import entrypoints), and card browsing. `ui_notebooks.js` owns Prompt Note catalog and
-  persistence, `ui_notebook_editor.js` owns editing/model galleries, and
+  import entrypoints), and card browsing. `ui_notebooks.js` owns Prompt Note catalog,
+  sidebar dual-group management (note list + floor quick jump anchor navigation with scrollspy active tracking),
+  and persistence; `ui_notebook_editor.js` owns unfolded card editing (modularized into single-responsibility
+  sub-functions adhering to the 50-line rule: sticky top action toolbar, unfolded companion models card,
+  prompt composer with compact inline find & replace toolbar, and flat material library archiving card with
+  clean single-icon feedback and complete bilingual dictionary coverage in `locales.js`), and
   `notebook_canvas.js` owns LiteGraph creation. Prompt Notes are integrated as a standard tool in the Toolbox
-  with defensive workspace return state restoration, and redesigned with companion models
-  (Base architecture, Main checkpoint, and LoRA stack) prominently positioned at the top of the editor,
-  followed by the core prompt composer and material library archiving, guarded by Temporal Dead Zone (TDZ)
-  safe summary initialization and responsive empty-state fallback rendering. `ui_recipe_detail.js`
+  with defensive workspace return state restoration, TDZ-safe summary initialization, and responsive empty-state fallback rendering. `ui_recipe_detail.js`
   coordinates the Workflow Recipe detail session and model composition. `ui_recipe_overview.js`
   owns the Overview prompt showcase (with `entry.text` fallback), and `ui_recipe_parameters.js`
   owns the responsive Parameter Presets workspace (featuring default-expanded raw node parameter inspection,
