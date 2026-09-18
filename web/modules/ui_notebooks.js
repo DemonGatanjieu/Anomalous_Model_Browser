@@ -96,7 +96,10 @@ function createNotebookSidebar(ctx) {
         navItem.type = 'button';
         navItem.className = 'anomalous-nb-nav-item';
         navItem.dataset.targetId = sec.id;
-        navItem.innerHTML = `<span class="anomalous-nb-nav-icon">${sec.icon}</span><span class="anomalous-nb-nav-text">${t(sec.key) || (window.anomalous_browser_lang === 'zh' ? sec.zh : sec.en)}</span>`;
+        const labelText = t(sec.key) || (window.anomalous_browser_lang === 'zh' ? sec.zh : sec.en);
+        navItem.title = `${sec.icon} ${labelText}`;
+        navItem.setAttribute('aria-label', labelText);
+        navItem.innerHTML = `<span class="anomalous-nb-nav-icon">${sec.icon}</span><span class="anomalous-nb-nav-text">${labelText}</span>`;
         navItem.onclick = () => {
             const target = ctx.nbEditor?.querySelector(sec.id);
             if (target) {

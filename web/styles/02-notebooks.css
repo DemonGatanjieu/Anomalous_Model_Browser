@@ -63,6 +63,7 @@
     display: flex;
     flex-direction: column;
     transition: width 0.3s;
+    container-type: inline-size;
 }
 
 .anomalous-nb-create-row {
@@ -82,14 +83,71 @@
     min-width: 0;
 }
 
-@container (max-width: 600px) {
-    .anomalous-nb-sidebar {
-        width: 140px;
+@container (max-width: 150px) {
+    .anomalous-nb-create-text,
+    .anomalous-nb-nav-header,
+    .anomalous-nb-nav-text {
+        display: none !important;
     }
 
-    .anomalous-nb-create-text {
-        display: none;
+    .anomalous-nb-sidebar-nav-group {
+        padding: 8px 4px !important;
     }
+
+    .anomalous-nb-nav-item {
+        justify-content: center !important;
+        padding: 8px 0 !important;
+    }
+
+    .anomalous-nb-nav-icon {
+        font-size: 1.15rem !important;
+        margin: 0 !important;
+    }
+
+    .anomalous-nb-item {
+        justify-content: center !important;
+        padding: 8px 4px !important;
+    }
+
+    .anomalous-nb-create-row {
+        justify-content: center !important;
+        padding: 8px 4px !important;
+    }
+}
+
+#anomalous-container.anomalous-docked .anomalous-nb-sidebar {
+    width: 64px !important;
+    min-width: 64px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-nb-create-text,
+#anomalous-container.anomalous-docked .anomalous-nb-nav-header,
+#anomalous-container.anomalous-docked .anomalous-nb-nav-text {
+    display: none !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-nb-sidebar-nav-group {
+    padding: 8px 4px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-nb-nav-item {
+    justify-content: center !important;
+    padding: 8px 0 !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-nb-nav-icon {
+    font-size: 1.15rem !important;
+    margin: 0 !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-nb-item {
+    justify-content: center !important;
+    padding: 8px 4px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-nb-create-row {
+    justify-content: center !important;
+    padding: 8px 4px !important;
 }
 
 .anomalous-nb-sidebar-group {

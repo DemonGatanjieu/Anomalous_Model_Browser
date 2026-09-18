@@ -234,7 +234,7 @@ function createCompanionModelsCard(ctx, data) {
     loraRow.style.justifyContent = 'space-between';
     loraRow.style.marginBottom = '8px';
     const loraLabel = document.createElement('strong');
-    loraLabel.textContent = `⚡ LoRA ${t('loras') || (window.anomalous_browser_lang === 'zh' ? '模型' : 'Models')}`;
+    loraLabel.textContent = `⚡ ${t('loras') || (window.anomalous_browser_lang === 'zh' ? 'LoRA 模型' : 'LoRA Models')}`;
     loraRow.append(loraLabel, loraSelectedBadge);
     const loraGallery = document.createElement('div');
     loraGallery.className = 'anomalous-nb-gallery-wrap';
