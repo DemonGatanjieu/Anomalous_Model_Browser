@@ -32,24 +32,59 @@ function showTranslatorToast(container, message, isError = false) {
     }, 2000);
 }
 
+function getCurrentlySelectedNode() {
+    try {
+        const materialNode = selectedMaterialNode(app);
+        if (materialNode) return materialNode;
+
+        const selectedNodes = Object.values(app.canvas?.selected_nodes || {});
+        if (selectedNodes.length) {
+            for (const n of selectedNodes) {
+                if (n && promptWidgetTargets(n).length) return n;
+            }
+            return selectedNodes[0];
+        }
+        if (app.canvas?.current_node) {
+            return app.canvas.current_node;
+        }
+    } catch {
+        // ignore
+    }
+    return null;
+}
+
 /**
  * Reads prompt text from the currently selected canvas node.
  * @returns {{ text: string, nodeTitle: string } | null}
  */
 function readSelectedNodePrompt() {
     try {
-        const node = selectedMaterialNode(app);
+        const node = getCurrentlySelectedNode();
         if (!node) return null;
 
         const targets = promptWidgetTargets(node);
-        if (!targets.length) return null;
+        if (targets.length) {
+            const widget = node.widgets[targets[0].index];
+            const val = typeof widget?.value === 'string' ? widget.value.trim() : '';
+            return {
+                text: val,
+                nodeTitle: node.title || node.type || 'Node',
+            };
+        }
 
-        const widget = node.widgets[targets[0].index];
-        const val = typeof widget?.value === 'string' ? widget.value.trim() : '';
-        return {
-            text: val,
-            nodeTitle: node.title || node.type || 'Node',
-        };
+        const textWidget = (node.widgets || []).find(w =>
+            typeof w.value === 'string' &&
+            (!w.options?.values || Array.isArray(w.options.values) === false) &&
+            (w.type === 'customtext' || /^(text|prompt|string|value|caption|positive|negative)/i.test(w.name || ''))
+        );
+        if (textWidget) {
+            return {
+                text: String(textWidget.value || '').trim(),
+                nodeTitle: node.title || node.type || 'Node',
+            };
+        }
+
+        return null;
     } catch {
         return null;
     }
@@ -62,7 +97,7 @@ function readSelectedNodePrompt() {
  */
 function writeToSelectedNode(text) {
     try {
-        const node = selectedMaterialNode(app);
+        const node = getCurrentlySelectedNode();
         if (!node) {
             return {
                 success: false,
@@ -71,18 +106,35 @@ function writeToSelectedNode(text) {
         }
 
         const targets = promptWidgetTargets(node);
-        if (!targets.length) {
+        let targetIndex = -1;
+        let targetName = 'text';
+
+        if (targets.length) {
+            targetIndex = targets[0].index;
+            targetName = targets[0].name;
+        } else {
+            const textWidgetIndex = (node.widgets || []).findIndex(w =>
+                typeof w.value === 'string' &&
+                (!w.options?.values || Array.isArray(w.options.values) === false) &&
+                (w.type === 'customtext' || /^(text|prompt|string|value|caption|positive|negative)/i.test(w.name || ''))
+            );
+            if (textWidgetIndex >= 0) {
+                targetIndex = textWidgetIndex;
+                targetName = node.widgets[textWidgetIndex].name || 'text';
+            }
+        }
+
+        if (targetIndex < 0) {
             return {
                 success: false,
                 message: t(`节点【${node.title || node.type}】没有可写入的提示词文本输入框`, `Node [${node.title || node.type}] has no text widget.`),
             };
         }
 
-        const targetWidget = targets[0];
-        applyNodeMaterialValues(app, node, [{ index: targetWidget.index, value: text }]);
+        applyNodeMaterialValues(app, node, [{ index: targetIndex, value: text }]);
         return {
             success: true,
-            message: t(`✓ 已成功写入节点【${node.title || node.type}】的 ${targetWidget.name} 框`, `✓ Written to [${node.title || node.type}] (${targetWidget.name})`),
+            message: t(`✓ 已成功写入节点【${node.title || node.type}】的 ${targetName} 框`, `✓ Written to [${node.title || node.type}] (${targetName})`),
         };
     } catch (err) {
         return {
@@ -286,21 +338,6 @@ export function openPromptTranslator(owner) {
     const sourceLeftGroup = document.createElement('div');
     sourceLeftGroup.className = 'anomalous-translator-action-group';
 
-    const readNodeBtn = document.createElement('button');
-    readNodeBtn.type = 'button';
-    readNodeBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
-    readNodeBtn.innerHTML = `📥 ${t('读取选中节点', 'Read Node')}`;
-    readNodeBtn.title = t('从 ComfyUI 画布当前选中的节点读取提示词', 'Read prompt from selected canvas node');
-    readNodeBtn.onclick = () => {
-        const res = readSelectedNodePrompt();
-        if (res && res.text) {
-            sourceTextarea.value = res.text;
-            showTranslatorToast(modal, t(`✓ 已读取【${res.nodeTitle}】提示词`, `✓ Read prompt from [${res.nodeTitle}]`));
-        } else {
-            showTranslatorToast(modal, t('未检测到包含文本的选中节点', 'No text found in selected node'), true);
-        }
-    };
-
     const sourceCleanBtn = document.createElement('button');
     sourceCleanBtn.type = 'button';
     sourceCleanBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
@@ -330,7 +367,7 @@ export function openPromptTranslator(owner) {
         showTranslatorToast(modal, res.message, !res.success);
     };
 
-    sourceLeftGroup.append(readNodeBtn, sourceCleanBtn, sourceWriteBtn);
+    sourceLeftGroup.append(sourceCleanBtn, sourceWriteBtn);
 
     const sourceRightGroup = document.createElement('div');
     sourceRightGroup.className = 'anomalous-translator-action-group';
@@ -623,6 +660,7 @@ export function openPromptTranslator(owner) {
     const initialNode = readSelectedNodePrompt();
     if (initialNode && initialNode.text) {
         sourceTextarea.value = initialNode.text;
+        showTranslatorToast(modal, t(`✓ 已自动读取选中节点【${initialNode.nodeTitle}】的内容`, `✓ Auto-loaded content from selected node [${initialNode.nodeTitle}]`));
     }
 
     // Close on clicking backdrop (only active in centered modal mode)
