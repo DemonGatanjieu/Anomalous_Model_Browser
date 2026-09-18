@@ -4,7 +4,11 @@ import { fixture, Element, all } from './ui_fixture.mjs';
 const f = fixture();
 const record = { filename: 'parameters.json', kind: 'image_node_selection', name: 'Parameters', node_types: ['CLIPTextEncode'], selection: { scope: 'nodes' } };
 f.fetch = async url => ({ ok: true, json: async () => String(url).includes('material_full')
-    ? { status: 'success', data: record, node_blocks: [2, 3].map(id => ({ node_id: id, type: 'CLIPTextEncode', widgets_values: [`text ${id}`] })) }
+    ? {
+        status: 'success', data: record,
+        node_blocks: [2, 3].map(id => ({ node_id: id, type: 'CLIPTextEncode', widgets_values: [`text ${id}`] })),
+        prompt_roles: { 2: { role: 'positive', source: 'topology' }, 3: { role: 'negative', source: 'topology' } },
+    }
     : { status: 'success', materials: [record], page: 1, pages: 1, total: 1, tags: [] } });
 const materials = await f.module('ui_materials.js');
 const owner = { nbPanel: new Element('div') };
@@ -27,6 +31,8 @@ await card.querySelector('.anomalous-material-card-apply-btn').click();
 assert.deepEqual(f.errors, []);
 assert.ok(owner.materialBlockDialog);
 let choices = owner.materialBlockDialog.querySelectorAll('.anomalous-material-choice-card');
+assert.ok(choices[0].textContent.includes('Positive'));
+assert.ok(choices[1].textContent.includes('Negative'));
 await choices[1].querySelector('button').click();
 assert.equal(f.node.widgets[0].value, 'text 3');
 await f.button(owner.materialContext, 'Undo').click();

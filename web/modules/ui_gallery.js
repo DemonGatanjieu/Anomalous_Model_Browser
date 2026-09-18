@@ -75,6 +75,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
                     img.src = imgUrl;
                     img.loading = 'lazy';
                     img.draggable = true;
+                    img.title = t('materialViewOriginal');
 
                     // Drag and drop support for ComfyUI
                     img.addEventListener('dragstart', (e) => {
@@ -147,7 +148,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
                             });
                             return;
                         }
-                        openDetail();
+                        showGalleryViewer(imgUrl);
                     };
 
                     const delBtn = document.createElement('button');

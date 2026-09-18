@@ -663,6 +663,7 @@ export function openModelSourcesModal(initialScope = 'workflow') {
                         item.initialUrl = item.initialUrl || detected;
                         item.platform = detectPlatform(detected);
                         inputEl.value = detected;
+                        if (state.filter === 'unresolved') state.filter = 'resolved';
                         refreshUi();
                         showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '✓ 已识别模型来源！' : '✓ Model source detected!');
                     } else {
@@ -803,7 +804,7 @@ export async function autoDetectModelSource(item) {
         }
     }
 
-    // 3. Search fallback
-    const query = encodeURIComponent((item.basename || item.filename).replace(/\.[^.]+$/, ''));
-    return `https://civitai.com/search/models?query=${query}`;
+    // A search-results page is not a model source. Keep the item unresolved
+    // unless local metadata or an exact hash lookup identifies a release.
+    return '';
 }

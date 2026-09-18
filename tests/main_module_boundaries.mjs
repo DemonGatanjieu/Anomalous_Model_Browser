@@ -28,6 +28,7 @@ assert.equal(entry.settings.map(setting => setting.id).join(','), [
     entryModule.FLOATING_TRIGGER_STYLE_SETTING_ID,
     entryModule.FLOATING_TRIGGER_SIZE_SETTING_ID,
     entryModule.SHORTCUT_SETTING_ID,
+    entryModule.MATERIALS_SHORTCUT_SETTING_ID,
     entryModule.ENTRY_MODE_SETTING_ID,
 ].join(','));
 assert.equal(interfaceModule.createInterfaceSettings().map(setting => setting.id).join(','), [
@@ -50,8 +51,12 @@ assert.equal(storage.get('anomalous_theme_abyssal_scarlet'), 'true');
 
 await f.module('../main.js');
 assert.equal(registeredExtension.name, 'Anomalous.ModelBrowser');
-assert.equal(registeredExtension.settings.length, 6);
-assert.equal(registeredExtension.commands.length, 2);
+assert.equal(registeredExtension.settings.length, 7);
+assert.equal(registeredExtension.commands.length, 3);
+const materialsBinding = registeredExtension.keybindings.find(binding => binding.commandId === entryModule.OPEN_MATERIALS_COMMAND_ID)?.combo;
+assert.equal(materialsBinding?.key, 'l');
+assert.equal(materialsBinding?.ctrl, true);
+assert.equal(materialsBinding?.shift, true);
 assert.equal(typeof registeredExtension.setup, 'function');
 
 console.log('Main module boundaries: entry settings, language, and theme behavior passed.');

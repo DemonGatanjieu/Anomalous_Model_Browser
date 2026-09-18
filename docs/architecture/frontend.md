@@ -80,10 +80,10 @@ button, and `Extensions -> Anomalous Model Browser` command. Entry presentations
 are mutually exclusive and reuse the same browser instance. The Extensions
 command remains available as a recovery path in every mode.
 
-The native command owns the default `Ctrl + Shift + M` binding. Shortcut
-customization delegates to ComfyUI's command/keybinding panel and recorder; the
-plugin does not install a parallel global keyboard listener or maintain a second
-shortcut preference.
+Native commands own the default `Ctrl + Shift + M` browser binding and the
+`Ctrl + Shift + L` Material Library binding. Shortcut customization delegates
+to ComfyUI's command/keybinding panel and recorder; the plugin does not install
+a parallel global keyboard listener or maintain a second shortcut preference.
 
 Language changes replace the registered Interface setting descriptors with
 freshly translated copies. ComfyUI's reactive settings tree therefore updates
@@ -137,10 +137,10 @@ references remain visible even when the backend cannot locate an individual file
 `model_source_data.js` owns library-result shaping and the source hub's pure
 main/component grouping and filtering. CLIP, text encoder, CLIP Vision, VAE, and
 preview-VAE entries live in a session-local, default-collapsed disclosure; the
-source-status pills affect main models only, while search affects both groups.
-Collapsed component rows are not constructed. Main-model completion statistics
-exclude optional component links, while a missing-local component count remains
-visible on the disclosure independently of search.
+source-status pills and search affect both main models and components. Collapsed
+component rows are not constructed. Main-model completion statistics exclude
+optional component links, while the disclosure's missing-local count describes
+only the currently filtered component matches.
 Legacy Civitai placeholder links with non-positive model IDs are normalized to
 an unfilled source before grouping, so offline inference records remain visible
 under the source-needed filter.

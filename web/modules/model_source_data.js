@@ -51,15 +51,17 @@ export function partitionSourceModels(models, filter = 'all', searchKeyword = ''
     const allModels = Array.isArray(models) ? models : [];
     const allComponents = allModels.filter(model => Boolean(foundationModelType(model)));
     const allMain = allModels.filter(model => !foundationModelType(model));
-    const mainModels = allMain.filter(model => {
+    const matchesFilter = model => {
         if (filter === 'resolved' && !model.url) return false;
         if (filter === 'unresolved' && model.url) return false;
         return matchesSearch(model, searchKeyword);
-    });
+    };
+    const mainModels = allMain.filter(matchesFilter);
+    const componentModels = allComponents.filter(matchesFilter);
     return {
         mainModels,
-        componentModels: allComponents.filter(model => matchesSearch(model, searchKeyword)),
-        allComponentCount: allComponents.length,
-        componentMissingCount: allComponents.filter(model => model.isMissing === true).length,
+        componentModels,
+        allComponentCount: componentModels.length,
+        componentMissingCount: componentModels.filter(model => model.isMissing === true).length,
     };
 }

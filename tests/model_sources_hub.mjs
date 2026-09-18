@@ -73,6 +73,12 @@ assert.equal(
     sourceData.usableSourceUrl('https://civitai.com/models/123?modelVersionId=456'),
     'https://civitai.com/models/123?modelVersionId=456',
 );
+const filteredComponents = [
+    { type: 'vae', filename: 'resolved-vae.safetensors', url: 'https://huggingface.co/example/vae' },
+    { type: 'clip', filename: 'pending-clip.safetensors', url: '' },
+];
+assert.deepEqual(sourceData.partitionSourceModels(filteredComponents, 'resolved').componentModels.map(item => item.filename), ['resolved-vae.safetensors']);
+assert.deepEqual(sourceData.partitionSourceModels(filteredComponents, 'unresolved').componentModels.map(item => item.filename), ['pending-clip.safetensors']);
 
 // 1. detectPlatform test
 assert.equal(hub.detectPlatform('https://civitai.com/models/12345')?.name, 'Civitai');
@@ -220,6 +226,9 @@ const detectTarget = { filename: 'local_known.safetensors', basename: 'local_kno
 const detectedUrl = await hub.autoDetectModelSource(detectTarget);
 assert.equal(detectedUrl, 'https://huggingface.co/runwayml/stable-diffusion-v1-5');
 
+f.fetch = async () => ({ ok: true, status: 200, json: async () => ({ models: {} }) });
+assert.equal(await hub.autoDetectModelSource({ filename: 'unknown.safetensors', basename: 'unknown.safetensors', url: '', hash: '' }), '');
+
 // 10. Opening directly into the local library starts its load and distinguishes a successful empty result.
 const libraryFixture = fixture();
 libraryFixture.app.graph._nodes = [];
@@ -237,6 +246,35 @@ await libraryFixture.flush();
 assert.ok(libraryFixture.document.body.textContent.includes('Local library scope follows Settings → Folder Manager'));
 assert.ok(libraryFixture.document.body.textContent.includes('No models detected'));
 closeLibrary();
+
+// Exact detection moves to the resolved filter and keeps the recognized row visible.
+const detectFixture = fixture();
+detectFixture.app.graph._nodes = [];
+detectFixture.app.graph.extra = {};
+detectFixture.fetch = async (url) => {
+    if (url === '/anomalous/all_scan_models?limit=0') {
+        return { ok: true, status: 200, json: async () => ({ models: [{
+            type: 'checkpoints', path_idx: 0, filename: 'recognized.safetensors', metadata: {},
+        }] }) };
+    }
+    return { ok: true, status: 200, json: async () => ({ models: {
+        'recognized.safetensors': {
+            type: 'checkpoints', path_idx: 0, subfolder: '',
+            metadata: { source_url: 'https://huggingface.co/example/recognized' },
+        },
+    } }) };
+};
+const detectHub = await detectFixture.module('ui_model_sources.js');
+const closeDetected = detectHub.openModelSourcesModal('library');
+await detectFixture.flush();
+detectFixture.button(detectFixture.document.body, 'Source needed').click();
+await detectFixture.button(detectFixture.document.body, 'Detect').click();
+await detectFixture.flush();
+assert.equal(detectFixture.document.body.querySelectorAll('.anomalous-source-row-item').length, 1);
+assert.ok(detectFixture.document.body.querySelectorAll('.anomalous-sources-pill')
+    .find(pill => pill.classList.contains('is-active'))?.textContent.includes('Source provided'));
+assert.equal(detectFixture.document.body.querySelector('.anomalous-source-url-input')?.value, 'https://huggingface.co/example/recognized');
+closeDetected();
 
 // Closing aborts ownership of a late library response and must not recreate the modal.
 let finishLate;

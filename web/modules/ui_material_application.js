@@ -3,7 +3,7 @@ import { translate as t } from './locales.js';
 import { text, jsonResponse } from './ui_dom.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { escapeHtml } from './safe_dom.js';
-import { materialNodeHeading } from './material_inspector.js';
+import { applyPromptRolesToBlocks, materialNodeHeading } from './material_inspector.js';
 import { applyMaterialBlock, selectedMaterialNode } from './node_material_actions.js';
 
 export function showMaterialApplication(parent, result, node) {
@@ -110,7 +110,8 @@ export async function applyLibraryMaterial(owner, material, droppedNode = null, 
         if (app.graph !== graph || graph.getNodeById(node.id) !== node || (!droppedNode && selectedMaterialNode(app) !== node)) throw new Error('materialTargetChanged');
         if (owner.nbPanel?.style.display !== 'flex' || owner.materialView?.style.display !== 'flex'
             || (owner.modal && !owner.modal.classList.contains('visible'))) return;
-        const blocks = (payload.node_blocks || []).filter(block => block.type === node.type && block.widgets_values?.length);
+        const blocks = applyPromptRolesToBlocks(payload.node_blocks || [], payload.prompt_roles)
+            .filter(block => block.type === node.type && block.widgets_values?.length);
         if (!blocks.length) throw new Error('materialNoCompatibleValues');
         const apply = droppedNode ? applyMaterialToNode : applyMaterialToSelectedNode;
         if (blocks.length === 1) {
@@ -139,7 +140,7 @@ export async function applyLibraryMaterial(owner, material, droppedNode = null, 
                     positive: `[🟢 ${t('recipePromptRolePositive') || '正向'}] `,
                     negative: `[🔴 ${t('recipePromptRoleNegative') || '负向'}] `,
                     both: `[🟣 ${t('recipePromptRoleBoth') || '混合'}] `,
-                }[block.role] || '';
+                }[block.promptRole] || '';
 
                 const heading = document.createElement('div');
                 heading.style.cssText = 'font-weight:700;font-size:13px;color:#f3f4f6;display:flex;align-items:center;gap:6px;';

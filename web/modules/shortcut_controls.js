@@ -4,6 +4,12 @@ export const DEFAULT_BROWSER_SHORTCUT = Object.freeze({
     shift: true
 });
 
+export const DEFAULT_MATERIALS_SHORTCUT = Object.freeze({
+    key: 'l',
+    ctrl: true,
+    shift: true
+});
+
 export function formatKeyCombo(combo) {
     if (!combo) return '';
     if (typeof combo.getKeySequences === 'function') {
@@ -77,7 +83,7 @@ export async function openNativeKeybindingEditor(commandId) {
     return true;
 }
 
-export function createShortcutSettingControl({ app, commandId, translate }) {
+export function createShortcutSettingControl({ app, commandId, translate, settingLabelKey = 'mainShortcutSetting' }) {
     const container = document.createElement('div');
     container.className = 'anomalous-shortcut-setting';
 
@@ -97,7 +103,7 @@ export function createShortcutSettingControl({ app, commandId, translate }) {
         if (!opened) {
             app.extensionManager?.toast?.add?.({
                 severity: 'warn',
-                summary: translate('mainShortcutSetting'),
+                summary: translate(settingLabelKey),
                 detail: translate('mainShortcutOpenFailed'),
                 life: 3500
             });

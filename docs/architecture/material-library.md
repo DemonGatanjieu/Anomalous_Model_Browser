@@ -92,8 +92,9 @@ inspection and saving. These views use `material_inspector.js` for shared metada
 parameter rendering; the workbench does not import the library UI.
 `ui_gallery.js` and
 `ui_recipe_detail.js` only supply non-invasive gallery entry points. Main
-Gallery retains click-to-view, drag, delete, and cover-selection behavior; the
-material action appears only on hover and is hidden during cover selection.
+Gallery image clicks open the focused pan/zoom viewer, while the dedicated
+parameter action opens the Image Detail Studio. Drag, delete, and cover-selection
+behavior remains independent of those two entry points.
 `ui_node_presets.js` presents Node Assistant presets; it shares node application
 with the library through `ui_material_application.js` and `node_material_actions.js`.
 
@@ -311,7 +312,8 @@ Receipts name that target and provide the shared guarded undo.
 Parameter-bearing materials fetch their scoped node blocks only after drop and
 replace compatible widget values through the same transaction as Node Assistant,
 preserving seed, node position and links. Multiple matching blocks require a
-choice. No full workflow is loaded. Prompt-panel drops instead insert the chosen
+choice, and known positive/negative prompt roles are shown on those choices. No
+full workflow is loaded. Prompt-panel drops instead insert the chosen
 role's text before or after existing node text; multiple eligible text widgets
 require choosing one. Empty/unsupported targets and canceled drags do not mutate
 the graph. Neither drop path queues generation. Actual host drag visuals and

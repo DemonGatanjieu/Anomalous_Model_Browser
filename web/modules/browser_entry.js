@@ -6,13 +6,19 @@ import {
     normalizeFloatingTriggerSize,
     normalizeFloatingTriggerStyle
 } from './entry_controls.js';
-import { createShortcutSettingControl, DEFAULT_BROWSER_SHORTCUT } from './shortcut_controls.js';
+import {
+    createShortcutSettingControl,
+    DEFAULT_BROWSER_SHORTCUT,
+    DEFAULT_MATERIALS_SHORTCUT,
+} from './shortcut_controls.js';
 
 export const ENTRY_MODE_SETTING_ID = 'Anomalous.ModelBrowser.EntryMode';
 export const SHORTCUT_SETTING_ID = 'Anomalous.ModelBrowser.Shortcut';
+export const MATERIALS_SHORTCUT_SETTING_ID = 'Anomalous.ModelBrowser.MaterialsShortcut';
 export const FLOATING_TRIGGER_SIZE_SETTING_ID = 'Anomalous.ModelBrowser.FloatingTriggerSize';
 export const FLOATING_TRIGGER_STYLE_SETTING_ID = 'Anomalous.ModelBrowser.FloatingTriggerStyle';
 export const OPEN_BROWSER_COMMAND_ID = 'Anomalous.ModelBrowser.Open';
+export const OPEN_MATERIALS_COMMAND_ID = 'Anomalous.ModelBrowser.OpenMaterials';
 export const RESET_TRIGGER_POSITION_COMMAND_ID = 'Anomalous.ModelBrowser.ResetFloatingTriggerPosition';
 
 export function createBrowserEntry({ translate, getCurrentLanguage }) {
@@ -50,6 +56,11 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
                 name: t('mainShortcutSetting'),
                 category: ['Anomalous Model Browser', category, 'shortcut'],
                 tooltip: t('mainShortcutTooltip')
+            },
+            [MATERIALS_SHORTCUT_SETTING_ID]: {
+                name: t('mainMaterialsShortcutSetting'),
+                category: ['Anomalous Model Browser', category, 'materials-shortcut'],
+                tooltip: t('mainMaterialsShortcutTooltip')
             },
             [ENTRY_MODE_SETTING_ID]: {
                 name: t('mainEntryModeSetting'),
@@ -137,6 +148,13 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         ensureBrowser()?.show();
     }
 
+    async function openMaterials() {
+        const browser = ensureBrowser();
+        if (!browser) return;
+        browser.show();
+        await browser.openMaterialLibrary();
+    }
+
     const translationPatches = getSettingTranslationPatches();
     const settings = [
         {
@@ -163,6 +181,18 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
             id: SHORTCUT_SETTING_ID,
             ...translationPatches[SHORTCUT_SETTING_ID],
             type: () => createShortcutSettingControl({ app, commandId: OPEN_BROWSER_COMMAND_ID, translate: t }),
+            defaultValue: '',
+            telemetry: { trackChanges: false }
+        },
+        {
+            id: MATERIALS_SHORTCUT_SETTING_ID,
+            ...translationPatches[MATERIALS_SHORTCUT_SETTING_ID],
+            type: () => createShortcutSettingControl({
+                app,
+                commandId: OPEN_MATERIALS_COMMAND_ID,
+                translate: t,
+                settingLabelKey: 'mainMaterialsShortcutSetting',
+            }),
             defaultValue: '',
             telemetry: { trackChanges: false }
         },
@@ -301,15 +331,20 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         }],
         commands: [
             { id: OPEN_BROWSER_COMMAND_ID, label: t('mainOpenTitle'), function: open },
+            { id: OPEN_MATERIALS_COMMAND_ID, label: t('mainOpenMaterialsTitle'), function: openMaterials },
             { id: RESET_TRIGGER_POSITION_COMMAND_ID, label: t('mainResetFloatingTriggerPosition'), function: resetPosition }
         ],
-        keybindings: [{ combo: DEFAULT_BROWSER_SHORTCUT, commandId: OPEN_BROWSER_COMMAND_ID }],
+        keybindings: [
+            { combo: DEFAULT_BROWSER_SHORTCUT, commandId: OPEN_BROWSER_COMMAND_ID },
+            { combo: DEFAULT_MATERIALS_SHORTCUT, commandId: OPEN_MATERIALS_COMMAND_ID },
+        ],
         menuCommands: [{
             path: ['Extensions', 'Anomalous Model Browser'],
-            commands: [OPEN_BROWSER_COMMAND_ID, RESET_TRIGGER_POSITION_COMMAND_ID]
+            commands: [OPEN_BROWSER_COMMAND_ID, OPEN_MATERIALS_COMMAND_ID, RESET_TRIGGER_POSITION_COMMAND_ID]
         }],
         setup,
         open,
+        openMaterials,
         ensureBrowser,
         resetPosition,
         syncVisibility

@@ -86,9 +86,9 @@ assert.equal(pending.hidden, true, 'Typing a source removes the pending-source h
 assert.ok(missing.querySelector('.anomalous-source-badge-danger'));
 assert.equal(rows[4].querySelector('input').readOnly, true, 'Resolved source is preserved');
 
-// Source filters affect main models only; search affects component rows and disclosure count.
+// Source filters apply to components as well, so resolved components never appear under source-needed.
 f.button(f.document.body, 'Source provided').click();
-assert.equal(f.document.body.querySelectorAll('.anomalous-source-row-item').length, 6);
+assert.equal(f.document.body.querySelectorAll('.anomalous-source-row-item').length, 2);
 let search = f.document.body.querySelector('.anomalous-sources-search-input');
 search.value = 'vision';
 search.oninput();
@@ -96,7 +96,7 @@ rows = f.document.body.querySelectorAll('.anomalous-source-row-item');
 assert.equal(rows.length, 1);
 disclosure = f.document.body.querySelector('.anomalous-sources-components-toggle');
 assert.ok(disclosure.textContent.includes('Foundation components (advanced) · 1'));
-assert.ok(disclosure.textContent.includes('Missing local files × 2'), 'Missing warning ignores search and source filters');
+assert.equal(disclosure.textContent.includes('Missing local files'), false, 'Missing warning describes only visible component matches');
 await f.button(f.document.body, 'Copy Visible Range').click();
 assert.ok(f.clipboard.at(-1).includes('vision.safetensors'));
 assert.ok(!f.clipboard.at(-1).includes('t5.gguf'), 'Summary exports only the currently visible range');
