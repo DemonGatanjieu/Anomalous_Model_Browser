@@ -4,7 +4,10 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 export function selectedMaterialNode(app) {
     const nodes = Object.values(app.canvas?.selected_nodes || {});
-    return nodes.length === 1 && app.graph?.getNodeById(nodes[0].id) === nodes[0] ? nodes[0] : null;
+    if (nodes.length !== 1 || !nodes[0]) return null;
+    const node = nodes[0];
+    const graph = app.graph?.getNodeById(node.id) === node ? app.graph : (node.graph || app.canvas?.graph || app.graph);
+    return graph?.getNodeById(node.id) === node ? node : null;
 }
 
 function volatile(node, widget, index) {
@@ -25,7 +28,7 @@ function replaceHashes(graph, id, records) {
 }
 
 export function applyNodeMaterialValues(app, node, entries, options = {}) {
-    const graph = app.graph;
+    const graph = app.graph?.getNodeById(node?.id) === node ? app.graph : (node?.graph || app.canvas?.graph || app.graph);
     if (!node || graph?.getNodeById(node.id) !== node || !Array.isArray(node.widgets)) throw new Error('materialTargetChanged');
     const changes = entries.filter(({ index }) => !volatile(node, node.widgets[index], index));
     if (!changes.length) throw new Error('materialNoCompatibleValues');

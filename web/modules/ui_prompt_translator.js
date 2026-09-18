@@ -32,21 +32,125 @@ function showTranslatorToast(container, message, isError = false) {
     }, 2000);
 }
 
-function getCurrentlySelectedNode() {
+function getCanvasSelectedNodes() {
     try {
-        const materialNode = selectedMaterialNode(app);
-        if (materialNode) return materialNode;
+        const canvas = app?.canvas || window?.app?.canvas;
+        const sel = canvas?.selected_nodes;
+        if (Array.isArray(sel)) return sel.filter(Boolean);
+        if (sel instanceof Set || sel instanceof Map) return Array.from(sel.values()).filter(Boolean);
+        if (sel && typeof sel === 'object') return Object.values(sel).filter(Boolean);
+    } catch {
+        // ignore
+    }
+    return [];
+}
 
-        const selectedNodes = Object.values(app.canvas?.selected_nodes || {});
+/**
+ * Extracts prompt text and widget target from any supported canvas node.
+ * Supports standard CLIPTextEncode, Chinese-localized widgets, multiline text, and custom nodes.
+ * @param {Object} node 
+ * @returns {{ text: string, widgetIndex: number, widgetName: string, nodeTitle: string } | null}
+ */
+export function extractPromptFromNode(node) {
+    if (!node || !Array.isArray(node.widgets)) return null;
+
+    // 1. Try standard promptWidgetTargets
+    try {
+        const targets = promptWidgetTargets(node);
+        if (targets.length) {
+            const widget = node.widgets[targets[0].index];
+            const val = typeof widget?.value === 'string' ? widget.value.trim() : '';
+            if (val) {
+                return {
+                    text: val,
+                    widgetIndex: targets[0].index,
+                    widgetName: targets[0].name || 'text',
+                    nodeTitle: node.title || node.type || 'Node',
+                };
+            }
+        }
+    } catch {
+        // ignore
+    }
+
+    // 2. Check English and Chinese text widget names & labels
+    const promptNameRegex = /^(text|text_g|text_l|prompt|positive|negative|caption|string|value|文本|提示词|正面|负面|正向|反向|正面提示词|负面提示词|正向提示词|反向提示词|描述|内容)/i;
+    for (let i = 0; i < node.widgets.length; i++) {
+        const w = node.widgets[i];
+        if (!w) continue;
+        const name = String(w.name || '');
+        const label = String(w.label || '');
+        const notCombo = !w.options?.values || !Array.isArray(w.options.values);
+        const isStringVal = typeof w.value === 'string';
+
+        if (isStringVal && notCombo && (promptNameRegex.test(name) || promptNameRegex.test(label) || w.type === 'customtext' || w.type === 'text' || !!w.options?.multiline)) {
+            const val = w.value.trim();
+            if (val) {
+                return {
+                    text: val,
+                    widgetIndex: i,
+                    widgetName: w.name || w.label || 'text',
+                    nodeTitle: node.title || node.type || 'Node',
+                };
+            }
+        }
+    }
+
+    // 3. Fallback: Any string widget that is not a dropdown combo and has non-empty text
+    for (let i = 0; i < node.widgets.length; i++) {
+        const w = node.widgets[i];
+        if (!w) continue;
+        const notCombo = !w.options?.values || !Array.isArray(w.options.values);
+        if (typeof w.value === 'string' && notCombo && w.value.trim().length > 0) {
+            return {
+                text: w.value.trim(),
+                widgetIndex: i,
+                widgetName: w.name || w.label || 'text',
+                nodeTitle: node.title || node.type || 'Node',
+            };
+        }
+    }
+
+    // 4. Fallback: node.widgets_values
+    if (Array.isArray(node.widgets_values)) {
+        for (let i = 0; i < node.widgets_values.length; i++) {
+            const val = node.widgets_values[i];
+            if (typeof val === 'string' && val.trim().length > 0) {
+                const w = node.widgets[i];
+                const notCombo = !w?.options?.values || !Array.isArray(w.options.values);
+                if (notCombo) {
+                    return {
+                        text: val.trim(),
+                        widgetIndex: i,
+                        widgetName: w?.name || w?.label || 'text',
+                        nodeTitle: node.title || node.type || 'Node',
+                    };
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
+export function getCurrentlySelectedNode() {
+    try {
+        const canvas = app?.canvas || window?.app?.canvas;
+        const selectedNodes = getCanvasSelectedNodes();
+
         if (selectedNodes.length) {
             for (const n of selectedNodes) {
-                if (n && promptWidgetTargets(n).length) return n;
+                if (n && extractPromptFromNode(n)) return n;
             }
             return selectedNodes[0];
         }
-        if (app.canvas?.current_node) {
-            return app.canvas.current_node;
+
+        if (canvas?.current_node) {
+            return canvas.current_node;
         }
+
+        const materialNode = selectedMaterialNode(app);
+        if (materialNode) return materialNode;
     } catch {
         // ignore
     }
@@ -55,36 +159,14 @@ function getCurrentlySelectedNode() {
 
 /**
  * Reads prompt text from the currently selected canvas node.
- * @returns {{ text: string, nodeTitle: string } | null}
+ * @param {Object} [targetNode=null]
+ * @returns {{ text: string, nodeTitle: string, widgetIndex?: number, widgetName?: string } | null}
  */
-function readSelectedNodePrompt() {
+export function readSelectedNodePrompt(targetNode = null) {
     try {
-        const node = getCurrentlySelectedNode();
+        const node = targetNode || getCurrentlySelectedNode();
         if (!node) return null;
-
-        const targets = promptWidgetTargets(node);
-        if (targets.length) {
-            const widget = node.widgets[targets[0].index];
-            const val = typeof widget?.value === 'string' ? widget.value.trim() : '';
-            return {
-                text: val,
-                nodeTitle: node.title || node.type || 'Node',
-            };
-        }
-
-        const textWidget = (node.widgets || []).find(w =>
-            typeof w.value === 'string' &&
-            (!w.options?.values || Array.isArray(w.options.values) === false) &&
-            (w.type === 'customtext' || /^(text|prompt|string|value|caption|positive|negative)/i.test(w.name || ''))
-        );
-        if (textWidget) {
-            return {
-                text: String(textWidget.value || '').trim(),
-                nodeTitle: node.title || node.type || 'Node',
-            };
-        }
-
-        return null;
+        return extractPromptFromNode(node);
     } catch {
         return null;
     }
@@ -95,7 +177,7 @@ function readSelectedNodePrompt() {
  * @param {string} text 
  * @returns {{ success: boolean, message: string }}
  */
-function writeToSelectedNode(text) {
+export function writeToSelectedNode(text) {
     try {
         const node = getCurrentlySelectedNode();
         if (!node) {
@@ -105,22 +187,18 @@ function writeToSelectedNode(text) {
             };
         }
 
-        const targets = promptWidgetTargets(node);
-        let targetIndex = -1;
-        let targetName = 'text';
+        const promptInfo = extractPromptFromNode(node);
+        let targetIndex = promptInfo ? promptInfo.widgetIndex : -1;
+        let targetName = promptInfo ? promptInfo.widgetName : 'text';
 
-        if (targets.length) {
-            targetIndex = targets[0].index;
-            targetName = targets[0].name;
-        } else {
+        if (targetIndex < 0) {
             const textWidgetIndex = (node.widgets || []).findIndex(w =>
-                typeof w.value === 'string' &&
-                (!w.options?.values || Array.isArray(w.options.values) === false) &&
-                (w.type === 'customtext' || /^(text|prompt|string|value|caption|positive|negative)/i.test(w.name || ''))
+                typeof w?.value === 'string' &&
+                (!w.options?.values || Array.isArray(w.options.values) === false)
             );
             if (textWidgetIndex >= 0) {
                 targetIndex = textWidgetIndex;
-                targetName = node.widgets[textWidgetIndex].name || 'text';
+                targetName = node.widgets[textWidgetIndex].name || node.widgets[textWidgetIndex].label || 'text';
             }
         }
 
@@ -338,6 +416,25 @@ export function openPromptTranslator(owner) {
     const sourceLeftGroup = document.createElement('div');
     sourceLeftGroup.className = 'anomalous-translator-action-group';
 
+    const readNodeBtn = document.createElement('button');
+    readNodeBtn.type = 'button';
+    readNodeBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
+    readNodeBtn.innerHTML = `📥 ${t('读取选中节点', 'Read Node')}`;
+    readNodeBtn.title = t('从 ComfyUI 画布当前选中的节点读取提示词', 'Read prompt from selected canvas node');
+    readNodeBtn.onclick = () => {
+        if (typeof autoSyncFromNode === 'function') {
+            autoSyncFromNode(null, true);
+        } else {
+            const res = readSelectedNodePrompt();
+            if (res && res.text) {
+                sourceTextarea.value = res.text;
+                showTranslatorToast(modal, t(`✓ 已读取【${res.nodeTitle}】提示词`, `✓ Read prompt from [${res.nodeTitle}]`));
+            } else {
+                showTranslatorToast(modal, t('未检测到包含文本的选中节点', 'No text found in selected node'), true);
+            }
+        }
+    };
+
     const sourceCleanBtn = document.createElement('button');
     sourceCleanBtn.type = 'button';
     sourceCleanBtn.className = 'anomalous-btn-ghost anomalous-btn-sm';
@@ -367,7 +464,7 @@ export function openPromptTranslator(owner) {
         showTranslatorToast(modal, res.message, !res.success);
     };
 
-    sourceLeftGroup.append(sourceCleanBtn, sourceWriteBtn);
+    sourceLeftGroup.append(readNodeBtn, sourceCleanBtn, sourceWriteBtn);
 
     const sourceRightGroup = document.createElement('div');
     sourceRightGroup.className = 'anomalous-translator-action-group';
@@ -656,11 +753,57 @@ export function openPromptTranslator(owner) {
         updateTagChips(targetTextarea.value);
     };
 
-    // Auto-load prompt from selected canvas node if any
-    const initialNode = readSelectedNodePrompt();
-    if (initialNode && initialNode.text) {
-        sourceTextarea.value = initialNode.text;
-        showTranslatorToast(modal, t(`✓ 已自动读取选中节点【${initialNode.nodeTitle}】的内容`, `✓ Auto-loaded content from selected node [${initialNode.nodeTitle}]`));
+    let lastLoadedNodePrompt = '';
+    let isUserEditing = false;
+
+    sourceTextarea.addEventListener('input', () => {
+        isUserEditing = true;
+    });
+
+    function autoSyncFromNode(targetNode = null, isExplicitClick = false) {
+        const promptInfo = readSelectedNodePrompt(targetNode);
+        if (promptInfo && promptInfo.text) {
+            const currentVal = sourceTextarea.value.trim();
+            if (isExplicitClick || !currentVal || !isUserEditing || currentVal === lastLoadedNodePrompt) {
+                sourceTextarea.value = promptInfo.text;
+                lastLoadedNodePrompt = promptInfo.text;
+                isUserEditing = false;
+                showTranslatorToast(modal, t(`✓ 已读取选中节点【${promptInfo.nodeTitle}】的内容`, `✓ Loaded content from selected node [${promptInfo.nodeTitle}]`));
+            }
+        } else if (isExplicitClick) {
+            showTranslatorToast(modal, t('未检测到包含提示词文本的选中节点', 'No prompt text found in selected node'), true);
+        }
+    }
+
+    // Auto-load prompt from selected canvas node immediately
+    autoSyncFromNode();
+
+    // Deferred check in case canvas selection settles after modal/button focus
+    setTimeout(() => {
+        if (!sourceTextarea.value.trim()) {
+            autoSyncFromNode();
+        }
+    }, 60);
+
+    // Live canvas selection hook while translator is open
+    const canvas = app?.canvas || window?.app?.canvas;
+    if (canvas) {
+        const origOnSelected = canvas.onNodeSelected;
+        const origOnDeselected = canvas.onNodeDeselected;
+
+        canvas.onNodeSelected = function (node) {
+            if (origOnSelected) origOnSelected.apply(this, arguments);
+            autoSyncFromNode(node);
+        };
+
+        canvas.onNodeDeselected = function (node) {
+            if (origOnDeselected) origOnDeselected.apply(this, arguments);
+        };
+
+        scope.onDispose(() => {
+            canvas.onNodeSelected = origOnSelected;
+            canvas.onNodeDeselected = origOnDeselected;
+        });
     }
 
     // Close on clicking backdrop (only active in centered modal mode)

@@ -132,5 +132,41 @@ for (const change of ['selection', 'widget', 'close', 'none']) {
     (await f.module('translation_service.js')).clearTranslationCache();
     clean();
 }
+
+// Verify extractPromptFromNode with Chinese localized widget names & custom nodes
+const chineseNode = {
+    id: 2,
+    type: 'CLIPTextEncode',
+    widgets: [{ name: '文本', type: 'text', value: '1girl, sakura, masterpiece' }],
+    widgets_values: ['1girl, sakura, masterpiece'],
+};
+assert.equal(translator.extractPromptFromNode(chineseNode)?.text, '1girl, sakura, masterpiece');
+
+// Verify auto-load on open with selected node
+f.app.canvas.selected_nodes = { 2: chineseNode };
+translator.openPromptTranslator(owner);
+const sourceArea = f.document.querySelector('.anomalous-translator-textarea');
+assert.equal(sourceArea.value, '1girl, sakura, masterpiece');
+
+// Verify live canvas selection sync while translator is open
+const node3 = {
+    id: 3,
+    type: 'CLIPTextEncode',
+    widgets: [{ name: 'text', type: 'customtext', value: 'cyberpunk street, night' }],
+};
+f.app.canvas.selected_nodes = { 3: node3 };
+f.app.canvas.onNodeSelected(node3);
+assert.equal(sourceArea.value, 'cyberpunk street, night');
+
+// Verify manual Read Node button click
+sourceArea.value = '';
+await f.button(f.document.body, 'Read Node').click();
+assert.equal(sourceArea.value, 'cyberpunk street, night');
+
+f.document.querySelector('.anomalous-translator-close').click();
+f.app.canvas.selected_nodes = { 1: f.node };
+clean();
+
 assert.deepEqual(f.errors, []);
-console.log('prompt UI: reopen/close, Escape nesting, resize cleanup, real card insertion and delayed node writes passed');
+console.log('prompt UI: reopen/close, Escape nesting, resize cleanup, real card insertion, delayed node writes and live selection sync passed');
+
