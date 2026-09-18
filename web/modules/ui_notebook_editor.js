@@ -88,7 +88,8 @@ function createNotebookToolbar(ctx, notebook) {
         e.stopPropagation();
         if (!delBtn.classList.contains('confirming')) {
             delBtn.classList.add('confirming');
-            delBtn.innerHTML = `<span>⚠️</span> <span>${t('delSure') || (window.anomalous_browser_lang === 'zh' ? '确认删除?' : 'Confirm Delete?')}</span>`;
+            const delSureText = (t('delSure') || (window.anomalous_browser_lang === 'zh' ? '确认删除？' : 'Confirm Delete?')).replace(/^⚠️\s*/, '');
+            delBtn.innerHTML = `<span>⚠️</span> <span>${delSureText}</span>`;
             delTimer = setTimeout(resetDel, 4000);
         } else {
             resetDel();
