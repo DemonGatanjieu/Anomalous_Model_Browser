@@ -15,6 +15,6 @@ assert.equal(entry.replace(/@import[^;]+;\s*/g, ''), '', 'styles.css must remain
 
 const chunks = await Promise.all(imports.map(match => fs.readFile(path.join(root, 'web/styles', match[1]))));
 const digest = crypto.createHash('sha256').update(Buffer.concat(chunks)).digest('hex');
-assert.equal(digest, 'ae72e3f909be788d04ec2cc95992edb9ffec76b474418a33c07d8a8143dbe857', 'CSS rule bytes or cascade order changed');
+assert.equal(digest, '256b5229255eedf41c8b3a0fa29cde3854b6bd2db78b02163b9450db9db3e7e8', 'CSS rule bytes or cascade order changed');
 
 console.log('CSS bundle: ordered imports preserve the original stylesheet byte-for-byte.');

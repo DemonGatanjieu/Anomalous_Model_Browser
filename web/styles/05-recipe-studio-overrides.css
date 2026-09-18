@@ -174,6 +174,7 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
+    white-space: nowrap;
 }
 
 .anomalous-preset-btn-primary:hover {
@@ -195,6 +196,7 @@
     font-size: 0.82rem;
     cursor: pointer;
     transition: all 0.15s ease;
+    white-space: nowrap;
 }
 
 .anomalous-preset-btn-secondary:hover {
@@ -585,3 +587,148 @@
 }
 
 /* ========================================================================== */
+/* Sidebar Mode (Docked) Parameter Layout Proportions: Left Narrow, Right Wide*/
+/* ========================================================================== */
+
+#anomalous-container.anomalous-docked .anomalous-recipe-parameter-notebook-layout {
+    grid-template-columns: clamp(180px, 30%, 205px) minmax(0, 1fr);
+    gap: 10px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-detail-content {
+    padding: 12px 14px 36px 14px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-parameter-notebook-sidebar {
+    padding: 10px;
+    gap: 6px;
+    max-height: min(680px, 78vh);
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-parameter-notebook-sidebar .anomalous-recipe-detail-section-heading {
+    margin-bottom: 8px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-sidebar-actions {
+    gap: 6px !important;
+    margin-bottom: 8px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-sidebar-actions .anomalous-preset-btn-primary,
+#anomalous-container.anomalous-docked .anomalous-recipe-sidebar-actions .anomalous-preset-btn-secondary {
+    padding: 6px 8px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    justify-content: center;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-parameter-notebook-sidebar .anomalous-recipe-detail-muted {
+    font-size: 0.72rem;
+    line-height: 1.35;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-item-card {
+    padding: 7px 8px;
+    gap: 6px;
+    margin-bottom: 5px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-item-title {
+    font-size: 0.8rem;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-item-meta {
+    font-size: 0.68rem;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-item-btn {
+    width: 22px;
+    height: 22px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-item-btn svg {
+    width: 11px;
+    height: 11px;
+}
+
+/* Right Stage Console Header & Bento Matrix in Sidebar Mode */
+#anomalous-container.anomalous-docked .anomalous-preset-console-header {
+    padding: 12px 14px;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-compact-gallery {
+    width: 96px;
+    height: 68px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-console-title {
+    font-size: 1.05rem;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-console-actions {
+    gap: 6px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-console-actions .anomalous-preset-btn-primary {
+    padding: 7px 12px !important;
+    font-size: 0.82rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-console-actions .anomalous-preset-btn-secondary {
+    padding: 7px 12px !important;
+    font-size: 0.82rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-console-actions .anomalous-btn-ghost {
+    padding: 6px 10px !important;
+    font-size: 0.82rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-bento-deck {
+    padding: 10px 12px !important;
+    margin-bottom: 10px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-bento-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-bento-tile {
+    padding: 7px 10px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-bento-val {
+    font-size: 0.92rem;
+}
+
+/* Container query responsiveness for narrow/sidebar resize */
+@container (max-width: 768px) {
+    .anomalous-recipe-parameter-notebook-layout {
+        grid-template-columns: clamp(180px, 30%, 205px) minmax(0, 1fr);
+        gap: 10px;
+    }
+}
+
+@container (max-width: 480px) {
+    .anomalous-recipe-parameter-notebook-layout {
+        grid-template-columns: 1fr;
+    }
+    .anomalous-recipe-parameter-notebook-sidebar {
+        position: static;
+        max-height: none;
+    }
+}
+
+/* ========================================================================== */
+
