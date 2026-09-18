@@ -11,7 +11,7 @@ import { showMaterialSaved } from './material_feedback.js';
 const t = (key, params) => translate(key, params);
 
 /**
- * Sticky top action toolbar for the active notebook.
+ * Sticky top action toolbar for the active notebook with floating dropdown menu.
  */
 function createNotebookToolbar(ctx, notebook) {
     const tb = document.createElement('div');
@@ -59,56 +59,65 @@ function createNotebookToolbar(ctx, notebook) {
     sendBtn.className = 'anomalous-btn-success';
     sendBtn.onclick = () => ctx.sendNotebookToCanvas();
 
-    let delTimer = null;
-    const delContainer = document.createElement('span');
-    delContainer.style.display = 'inline-flex';
-    delContainer.style.alignItems = 'center';
+    // Floating More Dropdown Menu
+    const moreWrapper = document.createElement('div');
+    moreWrapper.className = 'anomalous-nb-dropdown-wrapper';
 
+    const moreBtn = document.createElement('button');
+    moreBtn.type = 'button';
+    moreBtn.className = 'anomalous-nb-more-btn';
+    moreBtn.innerHTML = `<span>··· ${t('notebookMore') || (window.anomalous_browser_lang === 'zh' ? '更多' : 'More')}</span> <span style="font-size:0.7rem;margin-left:2px;">▾</span>`;
+
+    const dropdownMenu = document.createElement('div');
+    dropdownMenu.className = 'anomalous-nb-dropdown-menu';
+
+    let delTimer = null;
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
-    delBtn.innerHTML = t('deleteNotebook') || (window.anomalous_browser_lang === 'zh' ? '删除笔记' : 'Delete Note');
-    delBtn.className = 'anomalous-btn-danger';
-
-    const cancelDelBtn = document.createElement('button');
-    cancelDelBtn.type = 'button';
-    cancelDelBtn.innerHTML = '✕';
-    cancelDelBtn.className = 'anomalous-btn-danger';
-    cancelDelBtn.style.display = 'none';
-    cancelDelBtn.style.background = '#555';
-    cancelDelBtn.style.marginLeft = '2px';
-    cancelDelBtn.style.padding = '6px 8px';
-
-    delContainer.appendChild(delBtn);
-    delContainer.appendChild(cancelDelBtn);
+    delBtn.className = 'anomalous-nb-dropdown-item anomalous-nb-dropdown-item-danger';
+    const normalDelHtml = `<span>🗑️</span> <span>${t('deleteNotebook') || (window.anomalous_browser_lang === 'zh' ? '删除笔记' : 'Delete Note')}</span>`;
+    delBtn.innerHTML = normalDelHtml;
 
     const resetDel = () => {
         clearTimeout(delTimer);
-        delBtn.innerHTML = t('deleteNotebook') || (window.anomalous_browser_lang === 'zh' ? '删除笔记' : 'Delete Note');
-        delBtn.style.background = '';
-        cancelDelBtn.style.display = 'none';
+        delBtn.classList.remove('confirming');
+        delBtn.innerHTML = normalDelHtml;
     };
 
-    delBtn.onclick = () => {
-        const deleteText = t('deleteNotebook') || (window.anomalous_browser_lang === 'zh' ? '删除笔记' : 'Delete Note');
-        if (delBtn.innerHTML === deleteText) {
-            delBtn.innerHTML = t('delSure') || (window.anomalous_browser_lang === 'zh' ? '确认删除?' : 'Confirm Delete?');
-            delBtn.style.background = '#800';
-            cancelDelBtn.style.display = 'block';
+    delBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (!delBtn.classList.contains('confirming')) {
+            delBtn.classList.add('confirming');
+            delBtn.innerHTML = `<span>⚠️</span> <span>${t('delSure') || (window.anomalous_browser_lang === 'zh' ? '确认删除?' : 'Confirm Delete?')}</span>`;
             delTimer = setTimeout(resetDel, 4000);
         } else {
             resetDel();
+            dropdownMenu.classList.remove('show');
+            moreBtn.classList.remove('active');
             ctx.deleteCurrentNotebook(true);
         }
     };
-    cancelDelBtn.onclick = resetDel;
 
-    const moreActions = document.createElement('details');
-    moreActions.className = 'anomalous-secondary-actions';
-    const moreSummary = document.createElement('summary');
-    moreSummary.textContent = t('notebookMore') || (window.anomalous_browser_lang === 'zh' ? '更多' : 'More');
-    moreActions.append(moreSummary, delContainer);
+    dropdownMenu.appendChild(delBtn);
 
-    rightBtns.append(saveBtn, sendBtn, moreActions);
+    moreBtn.onclick = (e) => {
+        e.stopPropagation();
+        const isOpen = dropdownMenu.classList.toggle('show');
+        moreBtn.classList.toggle('active', isOpen);
+        if (!isOpen) resetDel();
+    };
+
+    const onDocClick = (e) => {
+        if (!moreWrapper.contains(e.target)) {
+            dropdownMenu.classList.remove('show');
+            moreBtn.classList.remove('active');
+            resetDel();
+        }
+    };
+    document.addEventListener('click', onDocClick);
+
+    moreWrapper.append(moreBtn, dropdownMenu);
+    rightBtns.append(saveBtn, sendBtn, moreWrapper);
     tb.append(titleBox, rightBtns);
     return tb;
 }
@@ -169,7 +178,7 @@ function createCompanionModelsCard(ctx, data) {
     baseTitle.style.fontWeight = '600';
     baseTitle.style.fontSize = '0.88rem';
     baseTitle.style.color = '#cbd5e1';
-    baseTitle.textContent = `${t('baseModel') || (window.anomalous_browser_lang === 'zh' ? '底模' : 'Base Model')}:`;
+    baseTitle.textContent = `${t('baseModel') || (window.anomalous_browser_lang === 'zh' ? '基础模型' : 'Base Model')}:`;
     baseRow.appendChild(baseTitle);
 
     const baseSelect = document.createElement('select');

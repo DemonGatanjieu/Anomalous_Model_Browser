@@ -366,15 +366,6 @@
     border-color: rgba(239, 68, 68, 0.6);
     color: #ffffff;
 }
-    overflow: hidden;
-}
-
-.anomalous-btn-danger:hover {
-    background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
-    border-color: #f87171;
-    box-shadow: none;
-    transform: translateY(-1px);
-}
 
 .anomalous-btn-success {
     position: relative;
@@ -397,6 +388,121 @@
     border-color: #4ade80;
     box-shadow: none;
     transform: translateY(-1px);
+}
+
+/* Floating More Dropdown in Notebook Toolbar */
+.anomalous-nb-dropdown-wrapper {
+    position: relative;
+    display: inline-flex;
+}
+
+.anomalous-nb-more-btn {
+    position: relative;
+    background: rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    height: 32px;
+    padding: 0 12px;
+    border-radius: var(--amb-radius-control, 6px);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.16s ease;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.anomalous-nb-more-btn:hover,
+.anomalous-nb-more-btn.active {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+}
+
+.anomalous-nb-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 100;
+    min-width: 140px;
+    background: rgba(24, 24, 28, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.35);
+    padding: 4px;
+    flex-direction: column;
+    gap: 2px;
+    animation: anomalous-nb-dropdown-fadein 0.15s ease-out;
+}
+
+.anomalous-nb-dropdown-menu.show {
+    display: flex;
+}
+
+@keyframes anomalous-nb-dropdown-fadein {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.anomalous-nb-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: #e2e8f0;
+    font-size: 0.82rem;
+    font-weight: 500;
+    border-radius: 5px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+.anomalous-nb-dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.anomalous-nb-dropdown-item-danger {
+    color: #fca5a5;
+}
+
+.anomalous-nb-dropdown-item-danger:hover {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fecaca;
+}
+
+.anomalous-nb-dropdown-item-danger.confirming {
+    background: #991b1b;
+    color: #ffffff;
+    font-weight: 600;
+    animation: anomalous-nb-pulse 1s infinite alternate;
+}
+
+@keyframes anomalous-nb-pulse {
+    from {
+        box-shadow: 0 0 0 rgba(239, 68, 68, 0);
+    }
+    to {
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+    }
 }
 
 .anomalous-nb-section {
@@ -431,8 +537,7 @@
     gap: 10px;
     flex-wrap: wrap;
     padding: 10px 0;
-    max-height: 240px;
-    overflow-y: auto;
+    overflow: visible;
     content-visibility: auto;
     contain-intrinsic-size: 70px;
 }
@@ -503,8 +608,8 @@
 
 .anomalous-nb-textarea {
     width: 100%;
-    min-height: 140px;
-    max-height: 320px;
+    min-height: 120px;
+    max-height: 360px;
     background: #121316;
     color: #f1f5f9;
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -517,6 +622,8 @@
     font-size: 0.88rem;
     line-height: 1.5;
     outline: none;
+    overflow-y: auto;
+    field-sizing: content;
     transition: border-color 0.18s ease;
 }
 
@@ -774,4 +881,39 @@
     box-sizing: border-box;
     outline: none;
 }
+
+/* Notebook Modern Slim Scrollbars */
+.anomalous-nb-editor,
+.anomalous-nb-list,
+.anomalous-nb-textarea {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.anomalous-nb-editor::-webkit-scrollbar,
+.anomalous-nb-list::-webkit-scrollbar,
+.anomalous-nb-textarea::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.anomalous-nb-editor::-webkit-scrollbar-track,
+.anomalous-nb-list::-webkit-scrollbar-track,
+.anomalous-nb-textarea::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.anomalous-nb-editor::-webkit-scrollbar-thumb,
+.anomalous-nb-list::-webkit-scrollbar-thumb,
+.anomalous-nb-textarea::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 3px;
+}
+
+.anomalous-nb-editor::-webkit-scrollbar-thumb:hover,
+.anomalous-nb-list::-webkit-scrollbar-thumb:hover,
+.anomalous-nb-textarea::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
 
