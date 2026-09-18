@@ -1059,6 +1059,199 @@
     font-size: .69rem;
 }
 
+/* ========================================================================== */
+/* Material Library Sidebar Mode (Docked) Proportions: Left Narrow, Right Wide*/
+/* ========================================================================== */
+
+#anomalous-container.anomalous-docked .anomalous-library-detail-header {
+    flex-wrap: wrap;
+    min-height: auto;
+    padding: 10px 14px;
+    gap: 8px 12px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-library-detail-back {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+}
+
+#anomalous-container.anomalous-docked .anomalous-library-detail-heading {
+    order: 0;
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-library-detail-heading h2 {
+    font-size: 0.95rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#anomalous-container.anomalous-docked .anomalous-material-scope-badge {
+    font-size: 0.65rem;
+    padding: 2px 7px;
+    flex-shrink: 0;
+}
+
+#anomalous-container.anomalous-docked .anomalous-library-detail-actions {
+    flex: 1 0 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+#anomalous-container.anomalous-docked .anomalous-library-detail-actions .anomalous-btn-primary,
+#anomalous-container.anomalous-docked .anomalous-library-detail-actions .anomalous-btn-ghost,
+#anomalous-container.anomalous-docked .anomalous-material-header-apply-btn {
+    padding: 6px 10px !important;
+    font-size: 0.79rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+}
+
+#anomalous-container.anomalous-docked .anomalous-library-detail-layout {
+    grid-template-columns: clamp(180px, 30%, 205px) minmax(0, 1fr) !important;
+    overflow: hidden;
+}
+
+#anomalous-container.anomalous-docked .anomalous-library-detail-layout.is-parameter {
+    grid-template-columns: clamp(180px, 30%, 205px) minmax(0, 1fr) !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-library-detail-media {
+    padding: 10px;
+    gap: 8px;
+    min-height: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+#anomalous-container.anomalous-docked .anomalous-library-detail-image-stage {
+    max-height: min(240px, 36vh);
+    min-height: 140px;
+    border-radius: 8px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-library-detail-source {
+    padding: 6px 8px;
+    gap: 4px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-library-detail-source-copy span {
+    font-size: 0.62rem;
+}
+
+#anomalous-container.anomalous-docked .anomalous-library-detail-source-copy strong {
+    font-size: 0.7rem;
+}
+
+#anomalous-container.anomalous-docked .anomalous-library-detail-source-open {
+    padding: 4px 7px;
+    font-size: 0.64rem;
+}
+
+#anomalous-container.anomalous-docked .anomalous-library-detail-inspector {
+    padding: 12px 14px;
+    gap: 10px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-material-prompt-card {
+    padding: 8px 10px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-material-prompt-bar {
+    margin-bottom: 6px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-material-prompt-bar-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+#anomalous-container.anomalous-docked .anomalous-material-mini-btn {
+    padding: 3px 8px;
+    font-size: 0.72rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+#anomalous-container.anomalous-docked .anomalous-material-prompt-content {
+    font-size: 0.75rem;
+    line-height: 1.45;
+}
+
+/* Material Library Container Queries */
+@container (max-width: 768px) {
+    .anomalous-library-detail-header {
+        flex-wrap: wrap;
+        min-height: auto;
+        padding: 10px 14px;
+        gap: 8px 12px;
+    }
+    .anomalous-library-detail-back {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+    .anomalous-library-detail-heading {
+        order: 0;
+        min-width: 0;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .anomalous-library-detail-actions {
+        flex: 1 0 100%;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding-top: 6px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .anomalous-library-detail-layout {
+        grid-template-columns: clamp(180px, 30%, 205px) minmax(0, 1fr) !important;
+    }
+    .anomalous-library-detail-layout.is-parameter {
+        grid-template-columns: clamp(180px, 30%, 205px) minmax(0, 1fr) !important;
+    }
+    .anomalous-library-detail-media {
+        padding: 10px;
+        gap: 8px;
+    }
+    .anomalous-library-detail-image-stage {
+        max-height: min(240px, 36vh);
+        min-height: 140px;
+    }
+    .anomalous-library-detail-inspector {
+        padding: 12px 14px;
+    }
+}
+
+@container (max-width: 480px) {
+    .anomalous-library-detail-layout {
+        grid-template-columns: 1fr !important;
+        overflow-y: auto;
+    }
+    .anomalous-library-detail-media {
+        min-height: 220px;
+        border-right: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .anomalous-library-detail-inspector {
+        overflow: visible;
+    }
+}
+
 @media (max-width: 850px) {
     .anomalous-library-detail-header { align-items: flex-start; flex-wrap: wrap; }
     .anomalous-library-detail-heading { order: -1; flex-basis: 100%; }
