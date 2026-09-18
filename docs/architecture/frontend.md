@@ -125,6 +125,18 @@ query-aware extension test such as `/\.(mp4|webm)(?:$|\?|&|#)/i`. Do not use
 `new URL(url).pathname`, because the backend may put the actual filename in a
 query parameter.
 
+## Model source component links
+
+The source hub uses `inferModelFolderTypes` for workflow component labels and
+category-scoped, exact-path local metadata reads. Context requests are batched
+to respect the endpoint's 16-item limit. Missing source links and unavailable
+native model choices are independent states; dynamic choices are not treated
+as evidence of absence. Native extensionless component choices and PTH/GGUF
+references remain visible even when the backend cannot locate an individual file.
+Such links may be saved to the workflow, but component sidecar writes require
+a resolved local target. This does not expand library folder discovery, initiate
+cloud scans, or change graph/model identity recovery rules.
+
 ## Localization and DOM safety
 
 `web/modules/locales.js` is the canonical catalog for user-visible runtime

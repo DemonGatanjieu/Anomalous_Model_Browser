@@ -16,6 +16,7 @@ import { translate as t } from './locales.js';
 import { text, jsonResponse } from './ui_dom.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
+import { inferModelFolderTypes, isPhysicalRenameProtectedType } from './model_policies.js';
 
 let activeSourcesModalScope = null;
 
@@ -33,7 +34,7 @@ export function detectPlatform(url) {
 }
 
 export function isModelFilename(val) {
-    return typeof val === 'string' && /\.(safetensors|ckpt|pt|bin|sft)$/i.test(val);
+    return typeof val === 'string' && /\.(safetensors|ckpt|pt|pth|bin|sft|gguf)$/i.test(val);
 }
 
 export function normalizeUrl(url) {
@@ -44,6 +45,14 @@ export function normalizeUrl(url) {
         trimmed = 'https://' + trimmed;
     }
     return trimmed;
+}
+
+function foundationType(model) {
+    return (model.folderTypes || [model.type]).find(isPhysicalRenameProtectedType);
+}
+
+function canSaveLocalSource(model) {
+    return !model.isMissing && (!foundationType(model) || model.nodeId == null || Boolean(model.file_path));
 }
 
 /** 提取当前画布上所有正在使用的模型 */
@@ -58,14 +67,21 @@ export function collectWorkflowModels() {
         if (!Array.isArray(node.widgets)) continue;
         for (const w of node.widgets) {
             const val = w.value;
-            if (!isModelFilename(val)) continue;
+            const folderTypes = inferModelFolderTypes(node, w);
+            // Native component options such as TAESD need not have a file extension.
+            const componentOption = /^(vae_name|clip_name\d*|clip_vision(?:_name)?|text_encoder(?:_name)?\d*)$/i.test(w.name || '')
+                && folderTypes.some(isPhysicalRenameProtectedType)
+                && typeof val === 'string' && val.trim() && val.toLowerCase() !== 'none';
+            if (!isModelFilename(val) && !componentOption) continue;
 
             const dedupeKey = `${node.id}_${val}`;
             if (seen.has(dedupeKey)) continue;
             seen.add(dedupeKey);
 
             const basename = val.split(/[/\\]/).pop();
-            const isMissing = Boolean(w.options?.values && !w.options.values.includes(val));
+            const nativeValues = w.options?.values;
+            const isMissing = Array.isArray(nativeValues)
+                && !nativeValues.some(value => typeof value === 'string' && value.replaceAll('\\', '/') === val.replaceAll('\\', '/'));
             const hashObj = savedHashes[dedupeKey] || savedHashes[val] || window.anomalous_hash_cache?.[val] || window.anomalous_hash_cache?.[basename] || {};
             const hash = typeof hashObj === 'string' ? hashObj : (hashObj.hash || '');
 
@@ -77,6 +93,7 @@ export function collectWorkflowModels() {
                 nodeId: node.id,
                 nodeTitle: node.title || node.type || `Node #${node.id}`,
                 nodeType: node.type,
+                folderTypes,
                 filename: val,
                 basename,
                 isMissing,
@@ -235,6 +252,7 @@ export async function copySourcesSummary(models) {
 
 /** 保存单个模型自定义链接到本地 .civitai.info */
 export async function saveSingleModelToLocalSidecar(item, url) {
+    if (!canSaveLocalSource(item)) throw new Error(t('modelSourcesLocalTargetUnknown'));
     const cleanUrl = normalizeUrl(url);
     const targetFilename = item.basename || (item.filename ? item.filename.split(/[/\\]/).pop() : '');
     const body = {
@@ -262,7 +280,8 @@ export function openExternalUrl(rawUrl) {
 /** 异步解析工作流中模型的本地元数据与路径详情 */
 export async function resolveWorkflowModelsMetadata(models, signal = null) {
     if (!Array.isArray(models) || !models.length) return false;
-    const requestedPaths = models.map(m => m.filename);
+    const components = models.filter(m => foundationType(m));
+    const requestedPaths = models.filter(m => !foundationType(m)).map(m => m.filename);
     try {
         const res = await fetch('/anomalous/resolve_paths_to_previews', {
             method: 'POST',
@@ -272,15 +291,29 @@ export async function resolveWorkflowModelsMetadata(models, signal = null) {
         });
         const data = await jsonResponse(res, 'resolve workflow models');
         const modelsMap = data?.models || {};
+        const componentModels = {};
+        // The endpoint caps contextual lookups at 16; keep large workflows complete.
+        for (let offset = 0; offset < components.length; offset += 16) {
+            const response = await fetch('/anomalous/resolve_paths_to_previews', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, signal,
+                body: JSON.stringify({ paths: [], context_requests: components.slice(offset, offset + 16).map(m => ({
+                    key: m.key, path: m.relPath || m.filename, folder_types: m.folderTypes || [m.type], exact_only: true,
+                })) }),
+            });
+            const batch = await jsonResponse(response, 'resolve component sources');
+            Object.assign(componentModels, batch.context_models || {});
+        }
         let hasChanges = false;
 
         for (const m of models) {
-            const info = modelsMap[m.filename] || modelsMap[m.basename];
+            const info = foundationType(m) ? componentModels[m.key] : modelsMap[m.filename] || modelsMap[m.basename];
             if (info) {
                 m.type = info.type;
                 m.subfolder = info.subfolder;
                 m.path_idx = info.path_idx;
                 m.file_path = info.file_path;
+                hasChanges = true;
+                if (foundationType(m)) m.isMissing = false;
                 if (!m.hash && info.metadata?.hash) {
                     m.hash = info.metadata.hash;
                     hasChanges = true;
@@ -364,9 +397,18 @@ function renderModelTitle(infoCol, m) {
     text(titleRow, 'span', m.nodeTitle || m.type || 'Model', 'anomalous-source-node-tag');
     text(titleRow, 'strong', m.basename || m.filename, 'anomalous-source-model-name');
 
+    const component = foundationType(m);
+    if (component) {
+        const label = { clip: 'modelSourcesTypeTextEncoder', text_encoders: 'modelSourcesTypeTextEncoder',
+            vae: 'modelSourcesTypeVae', vae_approx: 'modelSourcesTypeVaeApprox', clip_vision: 'modelSourcesTypeVisionEncoder' }[component];
+        text(titleRow, 'span', t(label), 'anomalous-source-badge-neutral');
+    }
+    const sourceBadge = text(titleRow, 'span', t('modelSourcesStatusUnfilled'), 'anomalous-source-badge-neutral');
+    sourceBadge.hidden = Boolean(m.url?.trim());
+
     if (m.isMissing) {
         const missingBadge = text(titleRow, 'span', t('modelSourcesStatusMissingOnDisk'), 'anomalous-source-badge-danger');
-        missingBadge.title = '当前本地尚未下载安装此模型';
+        missingBadge.title = t('modelSourcesStatusMissingOnDisk');
     }
 
     if (m.isEditing) {
@@ -377,6 +419,7 @@ function renderModelTitle(infoCol, m) {
     if (m.hash) {
         text(titleRow, 'code', `SHA: ${m.hash.slice(0, 10)}...`, 'anomalous-source-hash-chip');
     }
+    return sourceBadge;
 }
 
 function renderModelUrlInput(inputWrap, m, onRefresh, getActions) {
@@ -417,9 +460,10 @@ function renderModelUrlInput(inputWrap, m, onRefresh, getActions) {
             } else {
                 platBadge.style.display = 'none';
             }
-            const { localBtn, jumpBtn } = getActions();
+            const { localBtn, jumpBtn, sourceBadge } = getActions();
+            if (sourceBadge) sourceBadge.hidden = Boolean(m.url);
             const isDirty = Boolean(m.url && m.url.trim() !== (m.initialUrl || '').trim());
-            if (localBtn) localBtn.style.display = (isDirty && !m.isMissing) ? '' : 'none';
+            if (localBtn) localBtn.style.display = (isDirty && canSaveLocalSource(m)) ? '' : 'none';
             if (jumpBtn) jumpBtn.disabled = !m.url;
         };
         urlInput.onkeydown = (e) => {
@@ -478,7 +522,7 @@ function renderModelRowActions(actionsRow, m, state, urlInput, onRefresh, onAuto
     }
 
     let localBtn = null;
-    if (!m.isMissing) {
+    if (canSaveLocalSource(m)) {
         localBtn = text(actionsRow, 'button', t('modelSourcesSaveLocal'), 'anomalous-btn-primary anomalous-btn-sm anomalous-btn-save-local');
         localBtn.title = window.anomalous_browser_lang === 'zh' ? '检测到链接已修改，点击记入本地模型的 .civitai.info' : 'Modified link detected. Save to local .civitai.info';
         localBtn.style.display = isDirty ? '' : 'none';
@@ -492,14 +536,14 @@ function renderModelRow(listEl, m, state, onRefresh, onAutoDetect, onSaveLocal) 
     const card = text(listEl, 'div', '', `anomalous-source-row-item${m.url ? ' has-url' : ' is-missing-url'}`);
 
     const infoCol = text(card, 'div', '', 'anomalous-source-col-info');
-    renderModelTitle(infoCol, m);
+    const sourceBadge = renderModelTitle(infoCol, m);
 
     const inputRow = text(card, 'div', '', 'anomalous-source-col-input-row');
     const inputWrap = text(inputRow, 'div', '', 'anomalous-source-input-wrap');
     const actionsRow = text(inputRow, 'div', '', 'anomalous-source-row-actions');
 
     let actionRefs = {};
-    const urlInput = renderModelUrlInput(inputWrap, m, onRefresh, () => actionRefs);
+    const urlInput = renderModelUrlInput(inputWrap, m, onRefresh, () => ({ ...actionRefs, sourceBadge }));
     actionRefs = renderModelRowActions(actionsRow, m, state, urlInput, onRefresh, onAutoDetect, onSaveLocal);
 }
 
@@ -690,6 +734,10 @@ export function openModelSourcesModal(initialScope = 'workflow') {
 /** 自动识别单条模型来源 */
 export async function autoDetectModelSource(item) {
     if (item.url) return item.url;
+    if (foundationType(item)) {
+        await resolveWorkflowModelsMetadata([item]);
+        return item.url || '';
+    }
 
     // 1. Priority: check local sidecar & metadata via backend resolver
     try {
