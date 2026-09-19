@@ -168,4 +168,33 @@
    - **核心 Bug 1**（`api/model_resolution.py` 误报 `identity_conflict`）是必须修复的高危逻辑漏洞，它直接导致工作流模型恢复方案失效；
    - **核心 Bug 2**（素材库拖拽无响应及画布/节点优先级颠倒）直接影响了用户对于“素材一拖即用”的核心预期。
 
-本报告已归档保存至本地。
+---
+
+## 四、 修复复查与验收记录 (Verification Sign-off)
+
+- **验收时间**：2026-09-19 20:30
+- **修复 Commit**：`04b2eeff8f` (*fix(materials, doctor, scan): polymorphic material drag, third-party prompt nodes, model resolution, and scan wizard improvements*)
+- **复查录屏文件**：`anomalous_fix_verify_1789820782702.webp`
+
+### 1. 自动化回归测试结果
+- **Python 后端单元测试**：运行 `unittest discover -s tests -p "test_*.py"`，**99 个测试全数通过 (OK)**。
+  - 特别验证 `test_dynamic_hash_mismatch_is_rejected` 与空候选测试，确认无哈希匹配时不再误报 `identity_conflict`。
+- **前端契约与模块测试**：运行全部 32 个前端 `.mjs` 测试（涵盖 `studio_contracts.mjs`、`sidebar_feature_modules.mjs`、`material_feature_modules.mjs` 等），**32 项全部通过 (PASSED)**。
+
+### 2. 浏览器端到端实测验证
+1. **模型修复与身份冲突 (Model Doctor)**：
+   - 模型比对逻辑恢复正常，本地缺失模型返回 `found: False`，恢复正常下载与引导逻辑；
+   - 唤起模型医生点击 `🔄 刷新缓存` 顺畅运行，控制台 0 报错。
+2. **素材库多态拖拽 (Polymorphic Material Drag)**：
+   - 全图工作流素材：卡片 Tooltip 提示更新为“按住拖至空白画布载入完整工作流”，拖拽至空白画布成功加载完整图谱；
+   - 提示词素材：支持拖拽至任意文本/提示词节点注入文本，或拖至空白画布自动创建对应 `CLIPTextEncode` 节点；
+   - 节点参数素材：拖拽至目标节点优先注入参数，拖至空白画布新建对应节点；修复了过去由于优先级颠倒导致的画布与节点拦截冲突。
+3. **扫描向导 (Scan Wizard)**：
+   - 弹窗底部操作按钮已设置固定粘性定位（Sticky Bottom），在任何屏幕高度下均不会被挤出视口；
+   - 点击外部暗色遮罩 Backdrop 立即平滑关闭向导；
+   - 按下键盘 `Escape` 键立即响应并关闭向导。
+4. **控制台与稳定性**：
+   - 全流程操作无任何未捕获的 JavaScript 异常或 HTTP 异常状态码。
+
+**验收结论**：本次修复完整、精准，所有指出的严重缺陷及交互体验问题均已彻底解决并闭环。
+
