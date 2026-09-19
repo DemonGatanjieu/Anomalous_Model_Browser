@@ -64,25 +64,31 @@ export function showUpdateGuide(owner, { force = false, guide = CURRENT_UPDATE_G
     title.id = 'anomalous-update-guide-title';
     const body = text(dialog, 'p', '');
     body.id = 'anomalous-update-guide-body';
+    const tourBanner = text(dialog, 'button', t('updateGuideTourBanner') || '💡 想在主界面实地体验？点击开启按键遮罩导览 ›', 'anomalous-update-guide-tour-banner');
+    tourBanner.type = 'button';
+    tourBanner.id = 'anomalous-update-guide-tour-btn';
+    tourBanner.onclick = () => {
+        closeUpdateGuide(owner, true);
+        startSpotlightTour(owner);
+    };
     const progress = text(dialog, 'p', '', 'anomalous-update-guide-progress');
     progress.setAttribute('aria-live', 'polite');
     const footer = text(dialog, 'div', '', 'anomalous-update-guide-footer');
     const skip = text(footer, 'button', t('updateGuideSkip'), 'anomalous-btn-ghost');
-    const startTour = text(footer, 'button', t('updateGuideStartTour') || '🎯 界面按键遮罩导览', 'anomalous-btn-tour');
-    startTour.id = 'anomalous-update-guide-tour-btn';
-    startTour.onclick = () => {
-        closeUpdateGuide(owner, true);
-        startSpotlightTour(owner);
-    };
-    const back = text(footer, 'button', t('updateGuideBack'), 'anomalous-btn-ghost');
-    const next = text(footer, 'button', '', 'anomalous-btn-primary');
-    for (const button of [skip, startTour, back, next]) button.type = 'button';
+    const navGroup = text(footer, 'div', '', 'anomalous-update-guide-nav-group');
+    navGroup.style.display = 'flex';
+    navGroup.style.gap = '8px';
+    navGroup.style.alignItems = 'center';
+    const back = text(navGroup, 'button', t('updateGuideBack'), 'anomalous-btn-ghost');
+    const next = text(navGroup, 'button', '', 'anomalous-btn-primary');
+    for (const button of [skip, back, next, tourBanner]) button.type = 'button';
     let index = 0;
     const render = () => {
         const step = guide.steps[index];
         icon.textContent = step.icon;
         title.textContent = t(step.titleKey);
         body.textContent = t(step.bodyKey);
+        tourBanner.textContent = t('updateGuideTourBanner') || '💡 想在主界面实地体验？点击开启按键遮罩导览 ›';
         progress.textContent = t('updateGuideProgress', { current: index + 1, total: guide.steps.length });
         back.disabled = index === 0;
         next.textContent = t(index === guide.steps.length - 1 ? 'updateGuideDone' : 'updateGuideNext');

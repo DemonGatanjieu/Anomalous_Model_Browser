@@ -254,47 +254,54 @@ export function ensureTourStyles() {
             background: #1d4ed8;
         }
         .anomalous-btn-tour {
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            gap: 6px !important;
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
-            color: #ffffff !important;
-            border: 1px solid rgba(147, 197, 253, 0.7) !important;
-            border-radius: 6px !important;
-            padding: 7px 16px !important;
-            font-size: 12px !important;
-            font-weight: 600 !important;
-            cursor: pointer !important;
-            box-shadow: 0 0 12px rgba(37, 99, 235, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-            animation: anomalous-tour-btn-pulse 2.6s infinite ease-in-out !important;
-            letter-spacing: 0.2px !important;
-        }
-        @keyframes anomalous-tour-btn-pulse {
-            0%, 100% {
-                box-shadow: 0 0 10px rgba(37, 99, 235, 0.4), 0 0 0 0 rgba(59, 130, 246, 0.4);
-            }
-            50% {
-                box-shadow: 0 0 18px rgba(37, 99, 235, 0.75), 0 0 0 3px rgba(59, 130, 246, 0.25);
-            }
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: #2563eb;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 7px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
         }
         .anomalous-btn-tour:hover {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
-            border-color: #ffffff !important;
-            color: #ffffff !important;
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.7), 0 4px 14px rgba(0, 0, 0, 0.35) !important;
-            transform: translateY(-1px) !important;
-            animation: none !important;
+            background: #1d4ed8;
+            border-color: rgba(255, 255, 255, 0.4);
         }
-        .anomalous-btn-tour:active {
-            transform: translateY(0) !important;
-            box-shadow: 0 0 8px rgba(37, 99, 235, 0.5) !important;
+        .anomalous-update-guide-tour-banner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin: 2px auto 14px auto;
+            padding: 6px 16px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            color: #94a3b8;
+            font-size: 11.5px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: fit-content;
+            text-align: center;
+            user-select: none;
+            letter-spacing: 0.2px;
         }
-        @media (prefers-reduced-motion: reduce) {
-            .anomalous-btn-tour {
-                animation: none !important;
-            }
+        .anomalous-update-guide-tour-banner:hover {
+            background: rgba(59, 130, 246, 0.12);
+            border-color: rgba(96, 165, 250, 0.4);
+            color: #93c5fd;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+        .anomalous-update-guide-tour-banner:active {
+            transform: translateY(0);
+            background: rgba(59, 130, 246, 0.2);
         }
     `;
     (document.head || document.body)?.appendChild(style);
