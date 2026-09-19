@@ -720,7 +720,7 @@ startBtn.textContent = t('sidebarExecute');
     document.body.appendChild(wizard);
 }
 
-async function formatScanCompletionToast(model) {
+export async function formatScanCompletionToast(model) {
     const isZh = window.anomalous_browser_lang === 'zh';
     const fallbackName = model.name || model.filename;
     try {
@@ -741,12 +741,12 @@ async function formatScanCompletionToast(model) {
                 if (!isCivitai) {
                     if (baseModel) {
                         return isZh
-                            ? `ℹ️ 非 Civitai 模型：已识别底模为 [${baseModel}]（暂无封面，可点击编辑按钮手动添加）`
-                            : `ℹ️ Non-Civitai model: inferred [${baseModel}] (no online cover)`;
+                            ? `ℹ️ 非 Civitai 模型：已识别底模为 [${baseModel}]`
+                            : `ℹ️ Non-Civitai model: inferred base model [${baseModel}]`;
                     }
                     return isZh
-                        ? `ℹ️ 未在 Civitai 匹配到此模型，已生成本地基础元数据`
-                        : `ℹ️ No Civitai match found (local metadata created)`;
+                        ? `ℹ️ 未在 Civitai 匹配到此模型`
+                        : `ℹ️ No Civitai match found for this model`;
                 }
             }
         }

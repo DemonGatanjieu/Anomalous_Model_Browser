@@ -216,4 +216,55 @@ assert.equal(JSON.parse(directScanReq[1].body).skip_rename, true, 'direct single
 assert.equal(directScanRefreshed, true, 'browser.loadModels called after scan completes');
 assert.equal(dummyBtn.classList.contains('anomalous-radar-spinning'), false, 'radar spinning class removed after completion');
 
+// Verification of factual scan completion feedback (strictly factual, zero speculative guidance)
+f.window.anomalous_browser_lang = 'zh';
+
+// 1. Civitai with cover
+f.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+        metadata: { id: 12345, modelId: 67890 },
+        preview_url: '/api/view?filename=cover.png'
+    })
+});
+let toastMsg = await wizard.formatScanCompletionToast({ filename: 'civitai_model.safetensors' });
+assert.equal(toastMsg.includes('已从 Civitai 获取封面与模型信息'), true, 'reports civitai cover & info');
+assert.equal(toastMsg.includes('编辑') || toastMsg.includes('右键'), false, 'no speculative advice');
+
+// 2. Civitai without cover
+f.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+        metadata: { id: 12345, modelId: 67890 },
+        preview_url: null
+    })
+});
+toastMsg = await wizard.formatScanCompletionToast({ filename: 'civitai_no_cover.safetensors' });
+assert.equal(toastMsg.includes('已匹配到 Civitai 信息（线上未提供封面）'), true, 'reports civitai without cover');
+assert.equal(toastMsg.includes('编辑') || toastMsg.includes('右键'), false, 'no speculative advice');
+
+// 3. Non-Civitai with baseModel
+f.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+        metadata: { id: -1, baseModel: 'FLUX.1-D' },
+        preview_url: null
+    })
+});
+toastMsg = await wizard.formatScanCompletionToast({ filename: 'flux_dev.safetensors' });
+assert.equal(toastMsg, 'ℹ️ 非 Civitai 模型：已识别底模为 [FLUX.1-D]', 'factual non-civitai base model info');
+assert.equal(toastMsg.includes('编辑') || toastMsg.includes('右键'), false, 'no speculative advice');
+
+// 4. Non-Civitai without baseModel
+f.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+        metadata: { id: -1 },
+        preview_url: null
+    })
+});
+toastMsg = await wizard.formatScanCompletionToast({ filename: 'unknown.safetensors' });
+assert.equal(toastMsg, 'ℹ️ 未在 Civitai 匹配到此模型', 'factual unmatched message');
+assert.equal(toastMsg.includes('编辑') || toastMsg.includes('右键'), false, 'no speculative advice');
+
 console.log('Sidebar feature modules: help close, folder cancel/save, and scan wizard launch passed.');

@@ -94,7 +94,7 @@ DOM or live LiteGraph state.
   `ui_settings_hub.js` owns settings and model-card preferences;
   `ui_toolbox.js` owns the tool catalog, fixed shortcut bar, and tool dispatch;
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return.
-  Scan-wizard launch, single-model precision scans (`triggerDirectModelScan` with intelligent Civitai vs non-Civitai transparent feedback), and polling live in `ui_scan_wizard.js`; folder visibility/order lives in
+  Scan-wizard launch, single-model precision scans (`triggerDirectModelScan` with strictly factual Civitai vs non-Civitai feedback reporting inferred base-model or match status without speculative action prompts), and polling live in `ui_scan_wizard.js`; folder visibility/order lives in
   `ui_folder_manager.js`; and help content lives in `ui_help.js`.
 - `ui_model_sources.js` owns the Model Sources Hub, managing workflow-model and global-library source detection, Civitai/HuggingFace URL attribution, sidecar persistence, and resilient scope switching between active workflow and full local library (with cached library state preservation and reliable re-rendering).
 - `ui_update_guide.js` owns the non-intrusive update guide modal (accessible via header icon).
