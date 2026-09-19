@@ -741,7 +741,7 @@ async function formatScanCompletionToast(model) {
                 if (!isCivitai) {
                     if (baseModel) {
                         return isZh
-                            ? `ℹ️ 非 Civitai 模型：已识别底模为 [${baseModel}]（暂无封面，可右键/编辑手动添加）`
+                            ? `ℹ️ 非 Civitai 模型：已识别底模为 [${baseModel}]（暂无封面，可点击编辑按钮手动添加）`
                             : `ℹ️ Non-Civitai model: inferred [${baseModel}] (no online cover)`;
                     }
                     return isZh
