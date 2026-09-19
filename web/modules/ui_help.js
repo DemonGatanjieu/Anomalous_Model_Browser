@@ -2,11 +2,12 @@
 
 import { translate } from './locales.js';
 import { showUpdateGuide } from './ui_update_guide.js';
-import { startSpotlightTour } from './ui_spotlight_tour.js';
+import { startSpotlightTour, ensureTourStyles } from './ui_spotlight_tour.js';
 
 const t = (key, params) => translate(key, params);
 
 export function showHelp() {
+        ensureTourStyles();
         if (this.helpModal) {
             this.helpModal.remove();
         }
@@ -79,15 +80,9 @@ export function showHelp() {
 
         const tourBtn = document.createElement('button');
         tourBtn.id = 'anomalous-help-tour-btn';
+        tourBtn.className = 'anomalous-btn-tour';
         tourBtn.textContent = t('updateGuideStartTour') || (window.anomalous_browser_lang === 'zh' ? '🎯 界面按键遮罩导览' : '🎯 Spotlight Tour');
         tourBtn.type = 'button';
-        tourBtn.style.padding = '8px 14px';
-        tourBtn.style.background = '#2563eb';
-        tourBtn.style.color = '#fff';
-        tourBtn.style.border = 'none';
-        tourBtn.style.borderRadius = '4px';
-        tourBtn.style.cursor = 'pointer';
-        tourBtn.style.fontWeight = '600';
         tourBtn.onclick = () => {
             this.helpModal?.remove();
             startSpotlightTour(this);

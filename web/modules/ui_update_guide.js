@@ -2,7 +2,7 @@ import { CURRENT_UPDATE_GUIDE, validateUpdateGuide } from './update_guide_data.j
 import { i18n, translate as t } from './locales.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { text } from './ui_dom.js';
-import { startSpotlightTour } from './ui_spotlight_tour.js';
+import { startSpotlightTour, ensureTourStyles } from './ui_spotlight_tour.js';
 
 const acknowledgedThisSession = new Set();
 let activeGuide = null;
@@ -37,6 +37,8 @@ export function showUpdateGuide(owner, { force = false, guide = CURRENT_UPDATE_G
     if (!force && hasAcknowledged(guide.id)) return false;
     if (activeGuide) closeUpdateGuide(activeGuide.owner);
 
+    ensureTourStyles();
+
     const scope = createViewScope();
     const previousFocus = document.activeElement;
     const dialog = document.createElement('dialog');
@@ -66,7 +68,7 @@ export function showUpdateGuide(owner, { force = false, guide = CURRENT_UPDATE_G
     progress.setAttribute('aria-live', 'polite');
     const footer = text(dialog, 'div', '', 'anomalous-update-guide-footer');
     const skip = text(footer, 'button', t('updateGuideSkip'), 'anomalous-btn-ghost');
-    const startTour = text(footer, 'button', t('updateGuideStartTour') || '🎯 界面按键遮罩导览', 'anomalous-btn-ghost anomalous-btn-tour');
+    const startTour = text(footer, 'button', t('updateGuideStartTour') || '🎯 界面按键遮罩导览', 'anomalous-btn-tour');
     startTour.id = 'anomalous-update-guide-tour-btn';
     startTour.onclick = () => {
         closeUpdateGuide(owner, true);
