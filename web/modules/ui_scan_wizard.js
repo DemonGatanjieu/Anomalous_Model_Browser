@@ -720,7 +720,43 @@ startBtn.textContent = t('sidebarExecute');
     document.body.appendChild(wizard);
 }
 
-function pollDirectScanStatus(params, titleText, modelLabel, onComplete) {
+async function formatScanCompletionToast(model) {
+    const isZh = window.anomalous_browser_lang === 'zh';
+    const fallbackName = model.name || model.filename;
+    try {
+        const findRes = await fetch('/anomalous/find_model?search=' + encodeURIComponent(model.filename));
+        if (findRes.ok) {
+            const updated = await findRes.json();
+            if (updated && updated.metadata) {
+                const isCivitai = Boolean(updated.metadata.id && updated.metadata.id !== -1 && updated.metadata.modelId !== -1);
+                const hasPreview = Boolean(updated.preview_url);
+                const baseModel = updated.metadata.baseModel;
+
+                if (isCivitai && hasPreview) {
+                    return isZh ? `✓ 已从 Civitai 获取封面与模型信息！` : `✓ Civitai cover & metadata fetched!`;
+                }
+                if (isCivitai && !hasPreview) {
+                    return isZh ? `✓ 已匹配到 Civitai 信息（线上未提供封面）` : `✓ Civitai metadata matched (no cover online)`;
+                }
+                if (!isCivitai) {
+                    if (baseModel) {
+                        return isZh
+                            ? `ℹ️ 非 Civitai 模型：已识别底模为 [${baseModel}]（暂无封面，可右键/编辑手动添加）`
+                            : `ℹ️ Non-Civitai model: inferred [${baseModel}] (no online cover)`;
+                    }
+                    return isZh
+                        ? `ℹ️ 未在 Civitai 匹配到此模型，已生成本地基础元数据`
+                        : `ℹ️ No Civitai match found (local metadata created)`;
+                }
+            }
+        }
+    } catch {
+        // fallback to standard text
+    }
+    return isZh ? `✓ 模型 [${fallbackName}] 扫描完成！` : `✓ Model [${fallbackName}] scanned!`;
+}
+
+function pollDirectScanStatus(params, titleText, model, onComplete) {
     const statusUrl = '/anomalous/scan_status?' + params.toString();
     const poll = setInterval(async () => {
         try {
@@ -735,11 +771,8 @@ function pollDirectScanStatus(params, titleText, modelLabel, onComplete) {
                     showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '扫描被中断' : 'Scan interrupted');
                 } else {
                     finishScanProgress();
-                    showWorkbenchToast(
-                        window.anomalous_browser_lang === 'zh'
-                            ? `✓ 模型 [${modelLabel}] 扫描完成！`
-                            : `✓ Model [${modelLabel}] scanned!`
-                    );
+                    const toastMsg = await formatScanCompletionToast(model);
+                    showWorkbenchToast(toastMsg);
                 }
                 onComplete(true);
             }
@@ -809,7 +842,7 @@ export async function triggerDirectModelScan(model, triggerBtn = null, browserIn
         const data = await res.json();
         if (data.status === 'ok') {
             showWorkbenchToast(isZh ? `开始精准扫描: ${modelLabel}` : `Scanning model: ${modelLabel}`);
-            pollDirectScanStatus(params, titleText, modelLabel, () => {
+            pollDirectScanStatus(params, titleText, model, () => {
                 resetBtn();
                 if (typeof browser.loadModels === 'function') {
                     browser.loadModels();

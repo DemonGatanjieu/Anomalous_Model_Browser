@@ -116,8 +116,23 @@ export async function loadModels() {
                     }
                 } else {
                     const ph = document.createElement('div');
-                    ph.className = 'anomalous-card-placeholder anomalous-skeleton-shimmer';
-                    ph.innerHTML = `<div style="text-align:center;color:#888;margin-top:80px;font-weight:500;">${t('noPreview')}</div><div style="font-size:0.8em;text-align:center;opacity:0.85;margin-top:5px;color:#f59e0b;font-weight:600;">${t('clickScan')}</div>`;
+                    ph.className = 'anomalous-card-placeholder';
+                    ph.style.display = 'flex';
+                    ph.style.flexDirection = 'column';
+                    ph.style.alignItems = 'center';
+                    ph.style.justifyContent = 'center';
+                    ph.style.height = '100%';
+                    ph.style.minHeight = '180px';
+                    ph.style.color = '#888';
+                    ph.style.userSelect = 'none';
+                    ph.innerHTML = `
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.35;margin-bottom:6px;">
+                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                            <circle cx="9" cy="9" r="2"/>
+                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                        </svg>
+                        <div style="font-size:0.85em;font-weight:500;opacity:0.7;">${t('noPreview')}</div>
+                    `;
                     card.appendChild(ph);
                 }
                 if (model.metadata && model.metadata.baseModel) {
