@@ -401,7 +401,6 @@ export function createDOM() {
                     finishScanProgress();
                     this.loadModels();
                     if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();
-                    alert(t('sidebarScanComplete'));
                 }
             } catch (e) { }
         }, 3000);

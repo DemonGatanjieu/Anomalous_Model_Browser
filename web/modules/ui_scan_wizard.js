@@ -770,8 +770,8 @@ function pollDirectScanStatus(params, titleText, model, onComplete) {
                     failScanProgress(t('scanProgressInterrupted'));
                     showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '扫描被中断' : 'Scan interrupted');
                 } else {
-                    finishScanProgress();
                     const toastMsg = await formatScanCompletionToast(model);
+                    finishScanProgress(toastMsg);
                     showWorkbenchToast(toastMsg);
                 }
                 onComplete(true);

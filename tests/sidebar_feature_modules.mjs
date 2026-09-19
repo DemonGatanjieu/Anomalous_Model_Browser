@@ -215,6 +215,10 @@ assert.deepEqual(JSON.parse(directScanReq[1].body).target_files, ['my_lora.safet
 assert.equal(JSON.parse(directScanReq[1].body).skip_rename, true, 'direct single model scan preserves physical file name');
 assert.equal(directScanRefreshed, true, 'browser.loadModels called after scan completes');
 assert.equal(dummyBtn.classList.contains('anomalous-radar-spinning'), false, 'radar spinning class removed after completion');
+const scanProgressPanel = f.document.getElementById('anomalous-scan-progress');
+assert.ok(scanProgressPanel, 'scan progress panel displayed in DOM');
+assert.equal(scanProgressPanel.classList.contains('is-complete'), true, 'scan progress panel marked complete');
+assert.equal(f.errors.length, 0, 'no alert or errors triggered on scan completion');
 
 // Verification of factual scan completion feedback (strictly factual, zero speculative guidance)
 f.window.anomalous_browser_lang = 'zh';
