@@ -1,0 +1,734 @@
+/* Studio Layout Overhaul */
+.anomalous-recipe-detail-overview .anomalous-recipe-detail-hero {
+    display: grid !important;
+    grid-template-columns: 260px minmax(0, 1fr) !important;
+    gap: 20px !important;
+    align-items: start !important;
+    padding: 16px !important;
+    border-radius: 14px !important;
+    background: linear-gradient(145deg, rgba(30, 32, 38, 0.7), rgba(18, 19, 23, 0.85)) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    margin-bottom: 16px !important;
+    backdrop-filter: blur(12px);
+}
+
+.anomalous-recipe-detail-hero-media {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0d0e11;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.anomalous-recipe-detail-hero-media img,
+.anomalous-recipe-detail-hero-media video {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+    object-fit: cover !important;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: transform 0.25s ease;
+}
+
+.anomalous-recipe-detail-hero-media:hover img {
+    transform: scale(1.02);
+}
+
+.anomalous-recipe-studio-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 8px;
+    margin: 12px 0 8px 0;
+}
+
+.anomalous-recipe-studio-metric-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.anomalous-recipe-studio-metric-label {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.anomalous-recipe-studio-metric-val {
+    font-size: 0.96rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Prompt Showcase Boxes - Ultra-clean Dark Glassmorphism */
+.anomalous-recipe-prompt-box {
+    position: relative;
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    font-size: 0.84rem;
+    line-height: 1.6;
+    word-break: break-word;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    color: #cbd5e1;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.anomalous-recipe-prompt-box:hover {
+    background: rgba(255, 255, 255, 0.035);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.anomalous-recipe-prompt-box.is-positive {
+    border-left: 3px solid rgba(16, 185, 129, 0.6);
+}
+
+.anomalous-recipe-prompt-box.is-negative {
+    border-left: 3px solid rgba(244, 63, 94, 0.6);
+}
+
+.anomalous-recipe-prompt-micro-copy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.anomalous-recipe-prompt-micro-copy:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.anomalous-recipe-prompt-micro-copy.is-copied {
+    background: rgba(16, 185, 129, 0.2) !important;
+    border-color: rgba(16, 185, 129, 0.4) !important;
+    color: #34d399 !important;
+}
+
+.anomalous-recipe-prompt-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+.anomalous-recipe-prompt-badge.is-positive {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.anomalous-recipe-prompt-badge.is-negative {
+    background: rgba(244, 63, 94, 0.12);
+    color: #fb7185;
+    border: 1px solid rgba(244, 63, 94, 0.25);
+}
+
+.anomalous-recipe-beta-notice[style*="display: none"] {
+    display: none !important;
+}
+
+/* ========================================================================== */
+/* Modern Studio Presets (Parameter Notebook Overhaul)                        */
+/* ========================================================================== */
+
+.anomalous-preset-btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #f1f5f9;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.anomalous-preset-btn-primary:hover {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.28);
+    color: #ffffff;
+}
+
+.anomalous-preset-btn-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.anomalous-preset-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+}
+
+.anomalous-preset-item-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-bottom: 6px;
+}
+
+.anomalous-preset-item-card:hover {
+    background: rgba(255, 255, 255, 0.045);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.anomalous-preset-item-card.is-active {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(16, 185, 129, 0.4);
+    box-shadow: inset 3px 0 0 #10b981;
+}
+
+.anomalous-preset-active-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    flex-shrink: 0;
+    display: inline-block;
+}
+
+.anomalous-preset-item-title-row {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+}
+
+.anomalous-recipe-info-bubble {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+    font-size: 0.74rem;
+    transition: all 0.15s ease;
+}
+
+.anomalous-recipe-info-bubble:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+.anomalous-preset-item-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.anomalous-preset-item-title {
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: #cbd5e1;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-preset-item-card.is-active .anomalous-preset-item-title {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.anomalous-preset-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: #64748b;
+}
+
+.anomalous-preset-item-badge {
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+    font-size: 0.68rem;
+    font-weight: 500;
+}
+
+.anomalous-preset-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    opacity: 0.35;
+    transition: opacity 0.15s ease;
+}
+
+.anomalous-preset-item-card:hover .anomalous-preset-item-actions {
+    opacity: 1;
+}
+
+.anomalous-preset-item-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 0.78rem;
+    line-height: 1;
+    transition: all 0.15s;
+    box-sizing: border-box;
+}
+
+.anomalous-preset-item-btn:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.anomalous-preset-item-btn.is-delete:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+}
+
+/* Modern Parameter Bento Matrix */
+.anomalous-preset-bento-deck {
+    background: var(--amb-bg-panel, #1C1E24) !important;
+    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.08)) !important;
+    border-radius: var(--amb-radius-panel, 12px) !important;
+    padding: 12px 14px !important;
+    margin-bottom: 12px !important;
+}
+
+.anomalous-recipe-bento-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.anomalous-recipe-bento-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 9px 12px;
+    border-radius: var(--amb-radius-control, 8px);
+    background: var(--amb-bg-card, #24262E);
+    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.07));
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.anomalous-recipe-bento-tile.is-interactive {
+    cursor: pointer;
+}
+
+.anomalous-recipe-bento-tile:hover {
+    background: var(--amb-bg-card-hover, #2d303a);
+    border-color: var(--amb-border-hover, rgba(255, 255, 255, 0.18));
+    transform: translateY(-1px);
+}
+
+.anomalous-recipe-bento-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+}
+
+.anomalous-recipe-bento-label {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.7rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-weight: 600;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-recipe-bento-val {
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: #f1f5f9;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-recipe-models-bento-deck {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.anomalous-recipe-model-highlight-card {
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    min-width: 0;
+}
+
+.anomalous-recipe-lora-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.anomalous-recipe-lora-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.82rem;
+    transition: all 0.15s ease;
+}
+
+.anomalous-recipe-lora-pill:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(99, 102, 241, 0.3);
+    transform: translateY(-1px);
+}
+
+.anomalous-recipe-lora-name {
+    flex: 1;
+    min-width: 0;
+    color: #e2e8f0;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-recipe-lora-weights {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    font-family: ui-monospace, monospace;
+}
+
+/* Preset Console Header (Right Main Stage) */
+.anomalous-preset-console-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(30, 32, 38, 0.7), rgba(18, 19, 23, 0.85));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 14px;
+    backdrop-filter: blur(12px);
+    flex-wrap: wrap;
+}
+
+.anomalous-preset-console-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anomalous-preset-console-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.anomalous-preset-console-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #f8fafc;
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.anomalous-preset-console-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.anomalous-preset-compact-gallery {
+    position: relative;
+    width: 120px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    cursor: pointer;
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 2px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.anomalous-preset-compact-gallery:hover {
+    transform: scale(1.03);
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+.anomalous-preset-compact-gallery img {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: none !important;
+    object-fit: cover !important;
+}
+
+.anomalous-preset-compact-gallery-badge {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: 0.68rem;
+    backdrop-filter: blur(4px);
+    white-space: nowrap;
+}
+
+/* Sticky Header in Parameter Editor */
+.anomalous-recipe-parameter-editor-sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 10px 0;
+    background: rgba(32, 32, 32, 0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* ========================================================================== */
+/* Sidebar Mode (Docked) Parameter Layout Proportions: Left Narrow, Right Wide*/
+/* ========================================================================== */
+
+#anomalous-container.anomalous-docked .anomalous-recipe-parameter-notebook-layout {
+    grid-template-columns: clamp(180px, 30%, 205px) minmax(0, 1fr);
+    gap: 10px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-detail-content {
+    padding: 12px 14px 36px 14px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-parameter-notebook-sidebar {
+    padding: 10px;
+    gap: 6px;
+    max-height: min(680px, 78vh);
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-parameter-notebook-sidebar .anomalous-recipe-detail-section-heading {
+    margin-bottom: 8px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-sidebar-actions {
+    gap: 6px !important;
+    margin-bottom: 8px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-sidebar-actions .anomalous-preset-btn-primary,
+#anomalous-container.anomalous-docked .anomalous-recipe-sidebar-actions .anomalous-preset-btn-secondary {
+    padding: 6px 8px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    justify-content: center;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-parameter-notebook-sidebar .anomalous-recipe-detail-muted {
+    font-size: 0.72rem;
+    line-height: 1.35;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-item-card {
+    padding: 7px 8px;
+    gap: 6px;
+    margin-bottom: 5px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-item-title {
+    font-size: 0.8rem;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-item-meta {
+    font-size: 0.68rem;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-item-btn {
+    width: 22px;
+    height: 22px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-item-btn svg {
+    width: 11px;
+    height: 11px;
+}
+
+/* Right Stage Console Header & Bento Matrix in Sidebar Mode */
+#anomalous-container.anomalous-docked .anomalous-preset-console-header {
+    padding: 12px 14px;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-compact-gallery {
+    width: 96px;
+    height: 68px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-console-title {
+    font-size: 1.05rem;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-console-actions {
+    gap: 6px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-console-actions .anomalous-preset-btn-primary {
+    padding: 7px 12px !important;
+    font-size: 0.82rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-console-actions .anomalous-preset-btn-secondary {
+    padding: 7px 12px !important;
+    font-size: 0.82rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-console-actions .anomalous-btn-ghost {
+    padding: 6px 10px !important;
+    font-size: 0.82rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0;
+}
+
+#anomalous-container.anomalous-docked .anomalous-preset-bento-deck {
+    padding: 10px 12px !important;
+    margin-bottom: 10px !important;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-bento-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-bento-tile {
+    padding: 7px 10px;
+}
+
+#anomalous-container.anomalous-docked .anomalous-recipe-bento-val {
+    font-size: 0.92rem;
+}
+
+/* Container query responsiveness for narrow/sidebar resize */
+@container (max-width: 768px) {
+    .anomalous-recipe-parameter-notebook-layout {
+        grid-template-columns: clamp(180px, 30%, 205px) minmax(0, 1fr);
+        gap: 10px;
+    }
+}
+
+@container (max-width: 480px) {
+    .anomalous-recipe-parameter-notebook-layout {
+        grid-template-columns: 1fr;
+    }
+    .anomalous-recipe-parameter-notebook-sidebar {
+        position: static;
+        max-height: none;
+    }
+}
+
+/* ========================================================================== */
+

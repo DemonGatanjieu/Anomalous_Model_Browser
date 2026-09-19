@@ -1,0 +1,651 @@
+/* Island UI: Floating Sidebar Navigation Console (Neutral Charcoal Frosted Glass) */
+#anomalous-sidebar-wrapper {
+    width: 250px;
+    margin: 8px 0 8px 8px;
+    height: calc(100% - 16px);
+    background: rgba(22, 22, 25, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.3s ease;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    overflow: visible;
+    box-sizing: border-box;
+}
+
+#anomalous-doctor-panel,
+#anomalous-assistant-panel {
+    background: var(--amb-bg-page, #131315) !important;
+    position: relative;
+    z-index: 2;
+}
+
+.anomalous-brand-badge {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #e5e7eb !important;
+    border-radius: 6px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+    backdrop-filter: blur(8px) !important;
+    letter-spacing: 1px !important;
+}
+
+#anomalous-sidebar input[type="text"] {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    backdrop-filter: blur(8px) !important;
+    color: #f3f4f6 !important;
+    transition: all 0.2s ease !important;
+}
+
+#anomalous-sidebar input[type="text"]:focus {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.06) !important;
+}
+
+#anomalous-sidebar-actions {
+    background: rgba(20, 20, 23, 0.6) !important;
+    backdrop-filter: blur(12px) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+#anomalous-sidebar-wrapper::after {
+    display: none;
+}
+
+.anomalous-sidebar-closed #anomalous-sidebar-wrapper {
+    width: 58px;
+}
+
+.anomalous-sidebar-closed #anomalous-sidebar-wrapper>div:first-child div {
+    display: none;
+    /* Hides "Anomalous Browser" text */
+}
+
+.anomalous-sidebar-closed #anomalous-sidebar {
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+#anomalous-settings-hub-modal {
+    position: absolute;
+    bottom: 16px;
+    left: 266px;
+    width: 270px;
+    max-height: calc(100% - 32px);
+    overflow-y: auto;
+    box-sizing: border-box;
+    background: rgba(24, 24, 28, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    z-index: 999999 !important;
+    transition: left 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+#anomalous-settings-hub-modal button {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    text-align: left !important;
+    box-sizing: border-box !important;
+}
+
+#anomalous-settings-hub-modal button svg {
+    flex-shrink: 0 !important;
+}
+
+.anomalous-sidebar-closed #anomalous-settings-hub-modal {
+    left: 72px !important;
+}
+
+@keyframes anomalous-popover-in {
+    0% {
+        opacity: 0;
+        transform: translateY(6px) scale(0.96);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+#anomalous-toolbox-modal {
+    position: absolute;
+    bottom: 58px;
+    left: 8px;
+    width: 216px;
+    min-height: auto;
+    box-sizing: border-box;
+    background: rgba(22, 22, 26, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 9px;
+    padding: 7px 7px 6px;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    z-index: 999999 !important;
+    display: none;
+    flex-direction: column;
+    gap: 3px;
+    overflow: visible !important;
+}
+
+#anomalous-toolbox-modal[style*="display: flex"] {
+    animation: anomalous-popover-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: 16px bottom;
+}
+
+#anomalous-toolbox-modal::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 16px;
+    width: 8px;
+    height: 8px;
+    background: rgba(22, 22, 26, 0.98);
+    border-right: 1px solid rgba(255, 255, 255, 0.12);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    transform: translateX(-50%) rotate(45deg);
+    pointer-events: none;
+}
+
+#anomalous-toolbox-modal::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+.anomalous-sidebar-closed #anomalous-toolbox-modal {
+    left: 64px !important;
+    bottom: 12px !important;
+}
+
+.anomalous-sidebar-closed #anomalous-toolbox-modal::after {
+    display: none !important;
+}
+
+.anomalous-toolbox-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 44px);
+    grid-auto-rows: 44px;
+    gap: 4px;
+    margin: 3px 0 1px;
+    align-content: start;
+    flex: 1;
+}
+
+.anomalous-toolbox-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 5px 2px 4px;
+    min-height: 40px;
+    box-sizing: border-box;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.anomalous-toolbox-tile:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.anomalous-toolbox-tile:active {
+    transform: scale(0.96);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.anomalous-toolbox-tile-icon {
+    font-size: 13.5px;
+    line-height: 1.1;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}
+
+.anomalous-toolbox-tile-label {
+    font-size: 9.5px;
+    font-weight: 500;
+    color: #cbd5e1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    line-height: 1.15;
+}
+
+.anomalous-toolbox-tile-dot {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #f59e0b;
+    box-shadow: 0 0 4px rgba(245, 158, 11, 0.6);
+}
+
+.anomalous-toolbox-tile-dot.is-ready {
+    background: #10b981;
+    box-shadow: 0 0 5px rgba(16, 185, 129, 0.75);
+}
+
+/* Suppress all tooltips and action labels on clicked/active elements so they never block vision or interaction */
+button:active::before,
+button:active::after,
+.anomalous-tooltip-target:active::before,
+.anomalous-tooltip-target:active::after,
+.anomalous-toolbox-tile:active::before,
+.anomalous-toolbox-tile:active::after,
+#anomalous-sidebar-actions button:active::before,
+#anomalous-sidebar-actions button:active::after,
+#anomalous-sidebar-actions button:active .anomalous-action-label,
+#anomalous-sidebar-actions button:focus:not(:focus-visible) .anomalous-action-label {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+#anomalous-sidebar-actions button:active > svg,
+#anomalous-sidebar-actions button:focus:not(:focus-visible) > svg {
+    opacity: 1 !important;
+}
+
+#anomalous-sidebar-actions button.is-active {
+    color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.14) !important;
+    border: 1px solid rgba(56, 189, 248, 0.35) !important;
+}
+
+#anomalous-sidebar-actions button.is-active .anomalous-action-label {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+#anomalous-sidebar-actions button.is-active > svg {
+    opacity: 1 !important;
+    color: #38bdf8 !important;
+}
+
+/* When toolbox or settings hub modal is open, completely suppress floating tooltip bubble */
+body:has(#anomalous-toolbox-modal[style*="display: flex"]) #anomalous-sidebar-tooltip-bubble,
+body:has(#anomalous-settings-hub-modal[style*="display: flex"]) #anomalous-sidebar-tooltip-bubble {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+.anomalous-sidebar-closed #anomalous-sidebar-actions {
+    flex-direction: column !important;
+}
+
+#anomalous-sidebar {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    transition: opacity 0.2s;
+}
+
+#anomalous-settings {
+    border-top: 1px solid var(--border-color, #444);
+    background: var(--bg-color, #111);
+}
+
+.anomalous-lang-btn {
+    width: 100% !important;
+    border: 2px solid #555 !important;
+    padding: 12px !important;
+    font-weight: bold;
+    border-radius: 4px !important;
+    background: #1a1a1a !important;
+    cursor: pointer;
+    color: #fff;
+    margin-bottom: 15px;
+}
+
+.anomalous-type-header {
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--fg-color, #fff);
+    font-weight: bold;
+    font-size: 0.9em;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.anomalous-folder-item {
+    padding: 8px 15px;
+    color: var(--fg-color, #cbd5e1);
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    border-left: 2px solid transparent;
+}
+
+.anomalous-folder-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+}
+
+/* Clean Neutral Active Indicator on Selected Menu (Normal Mode) */
+.anomalous-folder-item.active {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-weight: 600;
+    border-left: 2px solid #e5e7eb;
+    box-shadow: inset 3px 0 6px rgba(255, 255, 255, 0.03);
+    border-radius: 0 6px 6px 0;
+}
+
+.anomalous-folder-item.active .anomalous-folder-name {
+    color: #fff !important;
+    text-shadow: none;
+}
+
+.theme-abyssal-scarlet .anomalous-folder-item.active {
+    background: rgba(55, 12, 22, 0.85);
+    border-left: 2px solid #dc143c;
+    border-left-color: var(--c-crimson, #dc143c);
+    box-shadow: inset 2px 0 6px rgba(0, 0, 0, 0.8);
+}
+
+.theme-abyssal-scarlet .anomalous-folder-item.active .anomalous-folder-name {
+    color: #e0d8db;
+    text-shadow: none;
+}
+
+/* Sidebar Icons & Actions - Normal Mode (Neutral & Clean) */
+.anomalous-folder-item svg,
+#anomalous-sidebar h3 svg {
+    color: #94a3b8 !important;
+    filter: none;
+}
+
+.theme-abyssal-scarlet .anomalous-folder-item svg,
+.theme-abyssal-scarlet #anomalous-sidebar h3 svg {
+    color: #d4af37 !important;
+    filter: none;
+}
+
+#anomalous-scan-btn,
+#anomalous-materials-btn,
+#anomalous-doctor-btn,
+#anomalous-assistant-btn,
+#anomalous-global-settings-btn {
+    color: #94a3b8 !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+#anomalous-scan-btn:hover,
+#anomalous-materials-btn:hover,
+#anomalous-doctor-btn:hover,
+#anomalous-assistant-btn:hover,
+#anomalous-global-settings-btn:hover {
+    color: #f8fafc !important;
+    filter: none !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-scan-btn:hover {
+    color: #ff4d6d !important;
+    filter: none !important;
+    background: rgba(220, 20, 60, 0.12) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-materials-btn {
+    color: var(--c-amber, #d97706) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-materials-btn:hover {
+    color: #fbbf24 !important;
+    filter: none !important;
+    background: rgba(217, 119, 6, 0.12) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-doctor-btn {
+    color: var(--c-crimson, #dc143c) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-doctor-btn:hover {
+    color: #ff4d6d !important;
+    filter: none !important;
+    background: rgba(220, 20, 60, 0.12) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-assistant-btn {
+    color: var(--c-purple, #8b5cf6) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-assistant-btn:hover {
+    color: #c4b5fd !important;
+    filter: none !important;
+    background: rgba(139, 92, 246, 0.14) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-global-settings-btn {
+    color: var(--c-silver, #94a3b8) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-global-settings-btn:hover {
+    color: #f8fafc !important;
+    filter: none !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+
+#anomalous-detail {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-color, #222);
+}
+
+.anomalous-split-container {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+}
+
+.anomalous-split-left {
+    width: 40%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    overflow: hidden;
+}
+
+.anomalous-resizer {
+    width: 5px;
+    background: var(--border-color, #444);
+    cursor: col-resize;
+    transition: background 0.2s;
+}
+
+.anomalous-resizer:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.theme-abyssal-scarlet .anomalous-resizer:hover {
+    background: #dc143c;
+}
+
+.anomalous-split-right {
+    width: 60%;
+    background: var(--bg-color, #222);
+    overflow: auto;
+}
+
+.anomalous-card {
+    cursor: pointer;
+}
+
+.anomalous-folder-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+
+
+#anomalous-api-key {
+    background: #333;
+    border: 1px solid #555;
+    color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+    width: 150px;
+    margin-right: 15px;
+}
+
+#anomalous-api-key::placeholder {
+    color: #999;
+}
+
+@container (max-width: 750px) {
+    .anomalous-split-left,
+    .anomalous-resizer {
+        display: none !important;
+    }
+
+    .anomalous-split-right {
+        width: 100% !important;
+    }
+
+    .anomalous-nb-sidebar {
+        width: 80px !important;
+        min-width: 80px !important;
+    }
+
+    .anomalous-nb-sidebar .anomalous-nb-item {
+        font-size: 0.8em;
+        padding: 8px 4px;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .anomalous-nb-create-text,
+    .anomalous-nb-nav-header,
+    .anomalous-nb-nav-text {
+        display: none !important;
+    }
+
+    .anomalous-nb-sidebar-nav-group {
+        padding: 8px 4px !important;
+    }
+
+    .anomalous-nb-nav-item {
+        justify-content: center !important;
+        padding: 8px 0 !important;
+    }
+
+    .anomalous-nb-nav-icon {
+        font-size: 1.15rem !important;
+        margin: 0 !important;
+    }
+}
+
+/* English Layout Specific Scaling */
+.anomalous-lang-en {
+    font-size: 0.9em;
+}
+
+.anomalous-lang-en .anomalous-card-title {
+    font-size: 0.85em;
+}
+
+.anomalous-lang-en #anomalous-title {
+    font-size: 1.1em;
+}
+
+/* Compatible Models Section */
+.anomalous-compatible-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color, #444);
+}
+
+.anomalous-compatible-title {
+    color: var(--fg-color, #fff);
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.anomalous-compatible-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.anomalous-compatible-item {
+    background: var(--comfy-menu-bg, #333);
+    border: 1px solid var(--border-color, #555);
+    border-radius: 6px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    max-width: 200px;
+}
+
+.anomalous-compatible-item:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: var(--bg-color, #444);
+    transform: translateY(-2px);
+}
+
+.theme-abyssal-scarlet .anomalous-compatible-item:hover {
+    border-color: #dc143c;
+}
+
+.anomalous-compatible-item img,
+.anomalous-compatible-item video {
+    width: 30px;
+    height: 30px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.anomalous-compatible-item-name {
+    color: var(--fg-color, #fff);
+    font-size: 0.85em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+}
+
+

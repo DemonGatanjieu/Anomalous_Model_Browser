@@ -12,9 +12,17 @@ solves, so names cannot also be its proof.
 Allowed automatic evidence is:
 
 1. plugin-carried cryptographic hash;
-2. exact physical byte size as the controlled fallback/disambiguator allowed by
-   category policy;
+2. exact physical byte size only as a disambiguator for that hash;
 3. the model category required by the target widget.
+
+Without a hash, one unique in-category size match is only a candidate. Model
+Doctor may show it during an explicit manual check, but it cannot redirect the
+node until the user confirms that candidate. Confirmation applies to the current
+node only; it does not create a persistent binding. If both hash and size are
+present and point to conflicting physical files (both match distinct local files),
+resolution reports an identity conflict and is rejected. When a requested model hash
+simply does not exist in any local file, it returns `{"found": False}` cleanly without
+falsely flagging a conflict.
 
 Paths, filenames, source filenames, display/custom names, previews, workflow
 fingerprints, and fuzzy/visual similarity are never candidate evidence. They may
@@ -22,8 +30,15 @@ be used only after identity is established to return a local dropdown value,
 locate presentation media, and verify the value against ComfyUI's native choices.
 
 Foundation components—`vae`, `vae_approx`, `clip`, `text_encoders`, and
-`clip_vision`—are hash-only recovery categories. Byte size alone cannot repair
-them. A supplied hash mismatch never falls back to a filename or size-only guess.
+`clip_vision`—are hash-only automatic-recovery categories. Byte size alone
+cannot automatically repair them. When size provenance is available it may be
+shown as the same explicit manual candidate, but a supplied hash mismatch never
+falls back to a filename or size-only guess.
+This is a Model Doctor confidence boundary, not a scanner-support boundary. The
+scan wizard may traverse any active registered model folder and can still
+calculate a local hash when Civitai has no matching record. Sparse or ambiguous
+remote metadata is a reason to require cryptographic identity, not to exclude
+the category from scanning.
 
 An existing native combo value remains loadable even if a foundation component's
 current local hash differs from stored provenance. Model Doctor shows a
@@ -57,9 +72,10 @@ not the main browser.
 
 Exact-path checks are limited to preflight confirmation that an already resolved
 local value exists. Backend discovery constrains candidates to the inferred
-category and intersects saved hash/size evidence. Ordinary categories may use
-one unique in-category size match only when no hash exists; equal-sized
-candidates remain unresolved. A real hash/size conflict is rejected.
+category and intersects saved hash/size evidence. One unique in-category
+size-only match is returned as a confirmation-required candidate; it is never
+an automatic result. Multiple equal-sized candidates remain unresolved. A real
+hash/size conflict is rejected.
 
 ## Metadata association
 
@@ -78,11 +94,19 @@ position is not identity.
 Deep Hash Scan runs outside the aiohttp event loop and identifies a model through
 the established fallback sequence:
 
-1. read a bounded safetensors header and use an embedded SHA-256 or supported
-   model hash when present;
-2. otherwise calculate the complete file SHA-256;
+1. use existing valid file SHA-256 metadata when the scan does not request refresh;
+2. otherwise calculate the complete file SHA-256, never a ModelSpec header digest;
 3. if the remote service has no record, infer a bounded local base-model family
    from tensor/header fingerprints and write offline metadata.
+
+`model_identity.py` owns digest validation and the `anomalous_file_identity`
+sidecar record: algorithm, file scope, digest, physical size/mtime, and computed
+source. ModelSpec hashes may describe tensor content and are never full-file
+identity ([specification](https://github.com/Stability-AI/ModelSpec)). Old locally
+inferred sidecars without this record keep their display data but need an explicit
+scan or successful on-demand SHA-256 check before supplying identity again.
+Successful on-demand verification preserves existing notes and remote metadata.
+Imported workflow provenance stays intact; it must match valid local file evidence.
 
 Remote metadata requests are part of an explicit user-initiated scan. Local
 browsing and offline inference remain usable when the service is unavailable.
@@ -104,10 +128,11 @@ If a size-selected candidate lacks cached hash metadata, the backend may hash it
 on demand. Only an exact hash match establishes identity; successful discovery
 may write offline metadata for later reuse.
 
-After a match, the frontend refreshes ComfyUI's native combo definitions and
-accepts the returned path only if it is present in the target widget's choices.
-Then it updates the dropdown, clears the missing-model presentation, and marks
-the node as automatically resolved.
+After a hash match—or explicit confirmation of a size-only candidate—the
+frontend refreshes ComfyUI's native combo definitions and accepts the returned
+path only if it is present in the target widget's choices. Then it updates the
+dropdown and clears the missing-model presentation. Background checks may
+surface size candidates but never prompt for or apply them.
 
 Provenance-rich workflows skip the redundant full filename-to-hash cache refresh.
 Legacy workflows without injected provenance may refresh it for compatibility.

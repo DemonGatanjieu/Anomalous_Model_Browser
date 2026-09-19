@@ -6,6 +6,16 @@ const PHYSICAL_RENAME_PROTECTED_TYPES = new Set([
     'clip_vision',
 ]);
 
+// Scanner coverage is separate. These categories may be scanned, but automatic
+// Model Doctor redirection requires workflow-carried cryptographic identity.
+const HASH_ONLY_RECOVERY_TYPES = new Set([
+    'vae',
+    'vae_approx',
+    'clip',
+    'text_encoders',
+    'clip_vision',
+]);
+
 export function isPhysicalRenameProtectedType(folderType) {
     return PHYSICAL_RENAME_PROTECTED_TYPES.has(String(folderType || '').trim().toLowerCase());
 }
@@ -28,5 +38,5 @@ export function inferModelFolderTypes(node, widget) {
 
 export function requiresHashForModelRecovery(node, widget) {
     const types = inferModelFolderTypes(node, widget);
-    return types.length > 0 && types.every(type => PHYSICAL_RENAME_PROTECTED_TYPES.has(type));
+    return types.length > 0 && types.every(type => HASH_ONLY_RECOVERY_TYPES.has(type));
 }

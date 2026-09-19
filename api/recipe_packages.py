@@ -14,11 +14,15 @@ import zipfile
 
 from aiohttp import web
 
-from . import recipes as recipe_store
-from .recipes import get_recipes_dir
+from . import recipe_images, recipe_schema, recipe_store
+from .recipe_store import get_recipes_dir
 from .utils import require_filename, resolve_within
 
 
+# Release gates: package transfers stay closed until validation is complete.
+# Keep the format implementation for compatibility testing.
+RECIPE_PACKAGE_EXPORT_ENABLED = False
+RECIPE_PACKAGE_IMPORT_ENABLED = False
 PACKAGE_VERSION = 1
 MAX_UPLOAD_BYTES = 32 * 1024 * 1024
 MAX_ENTRY_COUNT = 256
@@ -155,12 +159,14 @@ def _validate_manifest(manifest, archive, names):
             raise ValueError("Package checksum mismatch")
 
 
-def _sanitize_recipe_for_export(recipe, include_snapshots=True, include_identity=True):
+def _sanitize_recipe_for_export(recipe, include_snapshots=True, include_identity=True, include_model_notes=True):
     value = json.loads(json.dumps(recipe, ensure_ascii=False))
     # A source_image points into the exporting machine's output directory and
     # is not portable package data. The bounded thumbnail remains the cover.
     value["source_image"] = None
     for reference in value.get("params", {}).get("model_references", []):
+        if not include_model_notes:
+            reference.pop("user_note", None)
         if not include_snapshots:
             reference.pop("preview", None)
         if not include_identity:
@@ -209,7 +215,8 @@ def _build_export(raw_recipe, recipes_dir, filename, options):
     include_snapshots = options.get("include_snapshots") is True
     include_history = options.get("include_history") is True
     include_identity = options.get("include_identity", True) is True
-    recipe = _sanitize_recipe_for_export(raw_recipe, include_snapshots, include_identity)
+    include_model_notes = options.get("include_model_notes", True) is True
+    recipe = _sanitize_recipe_for_export(raw_recipe, include_snapshots, include_identity, include_model_notes)
     history_recipes = []
     if include_history:
         for history_name in _recipe_history_files(recipes_dir, filename):
@@ -219,7 +226,12 @@ def _build_export(raw_recipe, recipes_dir, filename, options):
             if len(data) > MAX_ENTRY_BYTES:
                 raise ValueError("Historical recipe is too large")
             history_recipe = _parse_json(data, "historical recipe")
-            history_recipes.append((history_name, _sanitize_recipe_for_export(history_recipe, include_snapshots, include_identity)))
+            history_recipes.append((history_name, _sanitize_recipe_for_export(
+                history_recipe,
+                include_snapshots,
+                include_identity,
+                include_model_notes,
+            )))
     asset_ids = _referenced_asset_ids(recipe, include_snapshots)
     for _, history_recipe in history_recipes:
         asset_ids.update(_referenced_asset_ids(history_recipe, include_snapshots))
@@ -230,7 +242,7 @@ def _build_export(raw_recipe, recipes_dir, filename, options):
         _add_zip_entry(archive, entries, "recipe.json", recipe_bytes, "application/json")
 
         if asset_ids:
-            assets_dir = recipe_store._recipe_assets_dir(recipes_dir, filename)
+            assets_dir = recipe_images._recipe_assets_dir(recipes_dir, filename)
             for asset_id in sorted(asset_ids):
                 asset_path = resolve_within(assets_dir, asset_id)
                 if not os.path.isfile(asset_path):
@@ -254,6 +266,7 @@ def _build_export(raw_recipe, recipes_dir, filename, options):
                 "include_snapshots": include_snapshots,
                 "include_history": include_history,
                 "include_identity": include_identity,
+                "include_model_notes": include_model_notes,
             },
             "entries": entries,
         }
@@ -284,14 +297,14 @@ def _inspect_package(raw):
         manifest = _parse_json(_read_zip_entry(archive, "manifest.json"), "manifest")
         _validate_manifest(manifest, archive, names)
         recipe = _parse_json(_read_zip_entry(archive, "recipe.json"), "recipe")
-        recipe_store._normalise_recipe(recipe)
+        recipe_schema._normalise_recipe(recipe)
         history_names = [name for name in names if name.startswith("history/")]
         if len(history_names) > MAX_HISTORY_ENTRIES:
             raise ValueError("Too many history entries")
         history_recipes = []
         for name in history_names:
             history = _parse_json(_read_zip_entry(archive, name), "historical recipe")
-            recipe_store._normalise_recipe(history)
+            recipe_schema._normalise_recipe(history)
             history_recipes.append(history)
         _validate_recipe_assets(archive, [recipe, *history_recipes], names)
         return {
@@ -381,14 +394,14 @@ def _commit_import(record, payload):
     else:
         package_recipe["name"] = _unique_name(package_recipe.get("name", ""), existing_names)
 
-    normalized = recipe_store._normalise_recipe(package_recipe)
+    normalized = recipe_schema._normalise_recipe(package_recipe)
     normalized["presentation"]["imported"] = True
     filename = target_filename or f"recipe_{int(time.time())}_{uuid.uuid4().hex[:8]}.json"
-    normalized = recipe_store._enrich_recipe(normalized)
+    normalized = recipe_schema._enrich_recipe(normalized)
 
     staging = tempfile.mkdtemp(prefix=".recipe-import-", dir=recipes_dir)
     final_path = resolve_within(recipes_dir, filename)
-    final_assets = recipe_store._recipe_assets_dir(recipes_dir, filename)
+    final_assets = recipe_images._recipe_assets_dir(recipes_dir, filename)
     final_history = recipe_store._history_dir(recipes_dir, filename)
     backup_recipe = None
     backup_assets = None
@@ -448,6 +461,12 @@ def _commit_import(record, payload):
 
 
 async def api_export_recipe_package(request):
+    if not RECIPE_PACKAGE_EXPORT_ENABLED:
+        return web.json_response({
+            "status": "error",
+            "code": "recipe_export_disabled",
+            "message": "Recipe package export is temporarily unavailable",
+        }, status=503)
     try:
         payload = await request.json()
         filename = require_filename(payload.get("filename", ""))
@@ -470,6 +489,11 @@ async def api_export_recipe_package(request):
 
 
 async def api_import_recipe_package_inspect(request):
+    if not RECIPE_PACKAGE_IMPORT_ENABLED:
+        return web.json_response({
+            "status": "error", "code": "recipe_import_disabled",
+            "message": "Recipe package import is temporarily unavailable",
+        }, status=503)
     try:
         raw = await request.content.read(MAX_UPLOAD_BYTES + 1)
         report = await asyncio.to_thread(_inspect_package, raw)
@@ -489,6 +513,11 @@ async def api_import_recipe_package_inspect(request):
 
 
 async def api_import_recipe_package_commit(request):
+    if not RECIPE_PACKAGE_IMPORT_ENABLED:
+        return web.json_response({
+            "status": "error", "code": "recipe_import_disabled",
+            "message": "Recipe package import is temporarily unavailable",
+        }, status=503)
     try:
         payload = await request.json()
         token = payload.get("token")

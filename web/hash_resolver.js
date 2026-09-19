@@ -1,5 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { translate } from './modules/locales.js';
+import { anomalousConfirm } from './modules/ui_dialog.js';
+import { findWorkflowHashRecord } from './modules/recipe_provenance.js';
 import {
     inferModelFolderTypes,
     requiresHashForModelRecovery,
@@ -107,6 +109,15 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
     }
 
     let fixed_count = 0;
+
+    // These are per-check results shown by Model Doctor. Clear stale evidence
+    // before resolving the current graph again.
+    for (const node of app.graph._nodes) {
+        for (const widget of (node.widgets || [])) {
+            delete widget.anomalous_resolution_status;
+            delete widget.anomalous_size_candidate;
+        }
+    }
 
     const findHashData = (node, widget, value) => {
         let hashData = getWorkflowHash(node.id, value);
@@ -217,6 +228,38 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
                                 resData = await res.json();
                             }
 
+                            if (resData.identity_conflict) {
+                                w.anomalous_resolution_status = 'identity_conflict';
+                                continue;
+                            }
+
+                            if (resData.confirmation_required) {
+                                w.anomalous_resolution_status = 'size_candidate';
+                                w.anomalous_size_candidate = {
+                                    filename: resData.filename,
+                                    type: resData.type,
+                                    size: resData.size,
+                                };
+
+                                // Background checks may discover a candidate, but only an
+                                // explicit manual check is allowed to ask for and apply it.
+                                if (!is_manual || silent) continue;
+                                const confirmed = await anomalousConfirm(
+                                    translate('doctorSizeCandidatePrompt', {
+                                        original: val,
+                                        candidate: resData.filename,
+                                        size: resData.size ?? s ?? '',
+                                    }),
+                                    translate('doctorSizeCandidateTitle'),
+                                    {
+                                        okLabel: translate('doctorUseSizeCandidate'),
+                                        cancelLabel: translate('doctorKeepMissing'),
+                                    },
+                                );
+                                if (!confirmed) continue;
+                                resData = { ...resData, found: true, manually_confirmed: true };
+                            }
+
                             if (resData.found) {
                                 const normVal = val.replace(/\\/g, '/');
                                 const normRes = resData.filename.replace(/\\/g, '/');
@@ -253,7 +296,8 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
                                         finalValue = refreshedMatch;
                                     }
 
-                                    console.log(`[Anomalous Hash Resolver] Auto-fixed missing model: ${val} -> ${finalValue}`);
+                                    const repairKind = resData.manually_confirmed ? 'Manually confirmed' : 'Auto-fixed';
+                                    console.log(`[Anomalous Hash Resolver] ${repairKind} missing model: ${val} -> ${finalValue}`);
                                     w.value = finalValue;
                                     const wIdx = node.widgets.indexOf(w);
                                     if (wIdx !== -1 && node.widgets_values) {
@@ -262,8 +306,10 @@ window.anomalous_resolve_all_missing_nodes = async function (is_manual = false, 
                                     delete node.color;
                                     delete node.bgcolor;
                                     node.has_errors = false;
-                                    node.anomalous_auto_resolved = true;
+                                    node.anomalous_auto_resolved = !resData.manually_confirmed;
                                     node.anomalous_original_missing_val = val;
+                                    delete w.anomalous_resolution_status;
+                                    delete w.anomalous_size_candidate;
                                     if (w.callback) {
                                         w.callback(w.value, app.canvas, node, app.canvas.graph_mouse, null);
                                     }
@@ -356,7 +402,20 @@ app.registerExtension({
 
             // Clone extra to avoid mutating the live graph's extra object
             const extraObj = data.extra ? JSON.parse(JSON.stringify(data.extra)) : {};
+            const existingProvenance = {
+                extra: {
+                    anomalous_hashes: extraObj.anomalous_hashes
+                        ? JSON.parse(JSON.stringify(extraObj.anomalous_hashes))
+                        : {},
+                },
+            };
             extraObj.anomalous_hashes = {};
+            const liveSources = (this.extra && this.extra.anomalous_model_sources) ||
+                                (app.graph?.extra && app.graph.extra.anomalous_model_sources) ||
+                                extraObj.anomalous_model_sources || null;
+            if (liveSources && typeof liveSources === 'object') {
+                extraObj.anomalous_model_sources = JSON.parse(JSON.stringify(liveSources));
+            }
             let unscanned_models = [];
 
             if (data.nodes) {
@@ -383,15 +442,37 @@ app.registerExtension({
                                     const normVal = val.replace(/\\/g, '/');
                                     const cache_data = window.anomalous_hash_cache[val] || window.anomalous_hash_cache[normVal] || window.anomalous_hash_cache[basename];
                                     if (cache_data) {
-                                        const hashObj = typeof cache_data === 'string' ? { hash: cache_data, size: "" } : cache_data;
+                                        let hashObj = typeof cache_data === 'string' ? { hash: cache_data, size: "" } : cache_data;
                                         if (matchingWidget && requiresHashForModelRecovery(liveNode, matchingWidget) && !hashObj.hash) {
-                                            if (!unscanned_models.includes(basename)) unscanned_models.push(basename);
-                                            continue;
+                                            const preserved = findWorkflowHashRecord(existingProvenance, node.id, val);
+                                            if (preserved?.hash) hashObj = preserved;
+                                            else {
+                                                if (!unscanned_models.includes(basename)) unscanned_models.push(basename);
+                                                continue;
+                                            }
                                         }
                                         extraObj.anomalous_hashes[`${node.id}_${val}`] = hashObj;
                                         if (normVal !== val) {
                                             extraObj.anomalous_hashes[`${node.id}_${normVal}`] = hashObj;
                                         }
+                                    } else {
+                                        const preserved = findWorkflowHashRecord(existingProvenance, node.id, val);
+                                        if (preserved) {
+                                            extraObj.anomalous_hashes[`${node.id}_${val}`] = preserved;
+                                            if (normVal !== val) extraObj.anomalous_hashes[`${node.id}_${normVal}`] = preserved;
+                                        } else if (!unscanned_models.includes(basename)) {
+                                            unscanned_models.push(basename);
+                                        }
+                                    }
+                                } else {
+                                    // Missing dropdown values cannot be rediscovered from the
+                                    // local cache. Preserve recipe/workflow provenance so Model
+                                    // Doctor can still recover the exact appended reference.
+                                    const preserved = findWorkflowHashRecord(existingProvenance, node.id, val);
+                                    if (preserved) {
+                                        const normVal = val.replace(/\\/g, '/');
+                                        extraObj.anomalous_hashes[`${node.id}_${val}`] = preserved;
+                                        if (normVal !== val) extraObj.anomalous_hashes[`${node.id}_${normVal}`] = preserved;
                                     } else {
                                         if (!unscanned_models.includes(basename)) {
                                             unscanned_models.push(basename);

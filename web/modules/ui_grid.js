@@ -108,30 +108,48 @@ export async function loadModels() {
                         const img = document.createElement('img');
                         img.loading = 'lazy';
                         img.decoding = 'async';
+                        img.className = 'anomalous-skeleton-shimmer';
+                        img.onload = () => { img.classList.remove('anomalous-skeleton-shimmer'); };
+                        img.onerror = () => { img.classList.remove('anomalous-skeleton-shimmer'); };
                         img.src = cardPreviewUrl(model.preview_url, this.cardThumbnailMode);
                         card.appendChild(img);
                     }
                 } else {
                     const ph = document.createElement('div');
                     ph.className = 'anomalous-card-placeholder';
-                    ph.innerHTML = `<div style="text-align:center;color:#666;margin-top:80px;">${t('noPreview')}</div><div style="font-size:0.8em;text-align:center;opacity:0.5;margin-top:5px">${t('clickScan')}</div>`;
+                    ph.style.display = 'flex';
+                    ph.style.flexDirection = 'column';
+                    ph.style.alignItems = 'center';
+                    ph.style.justifyContent = 'center';
+                    ph.style.height = '100%';
+                    ph.style.minHeight = '180px';
+                    ph.style.color = '#888';
+                    ph.style.userSelect = 'none';
+                    ph.innerHTML = `
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.35;margin-bottom:6px;">
+                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                            <circle cx="9" cy="9" r="2"/>
+                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                        </svg>
+                        <div style="font-size:0.85em;font-weight:500;opacity:0.7;">${t('noPreview')}</div>
+                    `;
                     card.appendChild(ph);
                 }
                 if (model.metadata && model.metadata.baseModel) {
                     const badge = document.createElement('div');
-                    badge.innerText = model.metadata.baseModel;
-                    badge.style.position = 'absolute';
-                    badge.style.top = '6px';
-                    badge.style.left = '6px';
-                    badge.style.background = 'rgba(0,0,0,0.85)';
-                    badge.style.color = '#00ffcc';
-                    badge.style.padding = '3px 6px';
-                    badge.style.borderRadius = '4px';
-                    badge.style.fontSize = '0.75em';
-                    badge.style.fontWeight = 'bold';
-                    badge.style.border = '1px solid rgba(0,255,204,0.3)';
-                    badge.style.pointerEvents = 'none';
-                    badge.style.zIndex = '10';
+                    badge.className = 'anomalous-card-badge';
+                    const bm = String(model.metadata.baseModel);
+                    badge.textContent = bm;
+                    const bmLower = bm.toLowerCase();
+                    if (bmLower.includes('flux')) {
+                        badge.classList.add('badge-flux');
+                    } else if (bmLower.includes('pony') || bmLower.includes('illustrious') || bmLower.includes('anime')) {
+                        badge.classList.add('badge-rose');
+                    } else if (bmLower.includes('sdxl') || bmLower.includes('xl')) {
+                        badge.classList.add('badge-gold');
+                    } else {
+                        badge.classList.add('badge-amber');
+                    }
                     card.appendChild(badge);
                 }
                 const labels = document.createElement('div');
@@ -144,7 +162,7 @@ export async function loadModels() {
                 const physicalName = document.createElement('div');
                 physicalName.className = 'anomalous-card-filename';
                 physicalName.textContent = model.filename;
-                physicalName.title = model.file_path || model.filename;
+                physicalName.removeAttribute('title');
                 labels.appendChild(physicalName);
                 card.appendChild(labels);
 
@@ -156,82 +174,47 @@ export async function loadModels() {
                 };
 
                 const applyBtn = document.createElement('button');
-                applyBtn.innerHTML = '➕';
-                applyBtn.title = t('applyToCanvas');
-                applyBtn.style.position = 'absolute';
-                applyBtn.style.top = '6px';
-                applyBtn.style.right = '6px';
-                applyBtn.style.background = 'rgba(0,0,0,0.7)';
-                applyBtn.style.color = '#fff';
-                applyBtn.style.border = '1px solid rgba(255,255,255,0.2)';
-                applyBtn.style.borderRadius = '4px';
-                applyBtn.style.cursor = 'pointer';
-                applyBtn.style.padding = '4px 6px';
-                applyBtn.style.zIndex = '20';
-                applyBtn.style.fontSize = '1em';
-                applyBtn.style.display = 'none';
-
-                const singleScanBtn = document.createElement('button');
-                singleScanBtn.innerHTML = '🎯';
-                singleScanBtn.title = t('scanModelPrecisely');
-                singleScanBtn.style.position = 'absolute';
-                singleScanBtn.style.top = '6px';
-                singleScanBtn.style.right = '40px';
-                singleScanBtn.style.background = 'rgba(0,0,0,0.7)';
-                singleScanBtn.style.color = '#fff';
-                singleScanBtn.style.border = '1px solid rgba(255,255,255,0.2)';
-                singleScanBtn.style.borderRadius = '4px';
-                singleScanBtn.style.cursor = 'pointer';
-                singleScanBtn.style.padding = '4px 6px';
-                singleScanBtn.style.zIndex = '20';
-                singleScanBtn.style.fontSize = '1em';
-                singleScanBtn.style.display = 'none';
-
-                singleScanBtn.onclick = (e) => {
+                applyBtn.type = 'button';
+                applyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+                applyBtn.className = 'anomalous-card-action-btn action-apply anomalous-tooltip-target';
+                applyBtn.removeAttribute('title');
+                applyBtn.setAttribute('data-tooltip', window.anomalous_browser_lang === 'zh' ? '一键发布到画布' : 'Add Node to Canvas');
+                applyBtn.setAttribute('data-tooltip-pos', 'bottom');
+                applyBtn.onclick = (e) => {
                     e.stopPropagation();
-                    createWizardModal(false, model.filename);
+                    this.applyModelToCanvas(this.currentType, this.currentSubfolder, model);
                 };
-                card.appendChild(singleScanBtn);
+                card.appendChild(applyBtn);
 
                 const editBtn = document.createElement('button');
-                editBtn.innerHTML = '⚙️';
-                editBtn.title = t('editModel');
-                editBtn.style.position = 'absolute';
-                editBtn.style.top = '6px';
-                editBtn.style.right = '74px'; // shifted left for new button
-                editBtn.style.width = '26px';
-                editBtn.style.height = '26px';
-                editBtn.style.borderRadius = '50%';
-                editBtn.style.border = 'none';
-                editBtn.style.background = 'rgba(0,0,0,0.7)';
-                editBtn.style.color = '#fff';
-                editBtn.style.cursor = 'pointer';
-                editBtn.style.display = 'none';
-                editBtn.style.alignItems = 'center';
-                editBtn.style.justifyContent = 'center';
-                editBtn.style.fontSize = '14px';
+                editBtn.type = 'button';
+                editBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
+                editBtn.className = 'anomalous-card-action-btn action-edit anomalous-tooltip-target';
+                editBtn.removeAttribute('title');
+                editBtn.setAttribute('data-tooltip', window.anomalous_browser_lang === 'zh' ? '编辑模型信息' : 'Edit Model Info');
+                editBtn.setAttribute('data-tooltip-pos', 'bottom');
                 editBtn.onclick = (e) => {
                     e.stopPropagation();
                     this.showEditModal(model);
                 };
                 card.appendChild(editBtn);
 
-                card.addEventListener('mouseenter', () => {
-                    applyBtn.style.display = 'block';
-                    editBtn.style.display = 'flex';
-                    singleScanBtn.style.display = 'block';
-                });
-                card.addEventListener('mouseleave', () => {
-                    applyBtn.style.display = 'none';
-                    editBtn.style.display = 'none';
-                    singleScanBtn.style.display = 'none';
-                });
-
-                applyBtn.onclick = (e) => {
+                const singleScanBtn = document.createElement('button');
+                singleScanBtn.type = 'button';
+                singleScanBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>`;
+                singleScanBtn.className = 'anomalous-card-action-btn action-scan anomalous-tooltip-target';
+                singleScanBtn.removeAttribute('title');
+                singleScanBtn.setAttribute('data-tooltip', window.anomalous_browser_lang === 'zh' ? '立即精准扫描此模型' : 'Scan Model Directly');
+                singleScanBtn.setAttribute('data-tooltip-pos', 'bottom');
+                singleScanBtn.onclick = (e) => {
                     e.stopPropagation();
-                    this.applyModelToCanvas(this.currentType, this.currentSubfolder, model);
+                    if (typeof this.scanSingleModel === 'function') {
+                        this.scanSingleModel(model, singleScanBtn);
+                    } else if (typeof this.openScanWizard === 'function') {
+                        this.openScanWizard({ targetFiles: model.filename });
+                    }
                 };
-                card.appendChild(applyBtn);
+                card.appendChild(singleScanBtn);
 
 
                 fragment.appendChild(card);
@@ -253,17 +236,20 @@ export function applyModelToCanvas(type, subfolder, model) {
             'checkpoints': 'CheckpointLoaderSimple',
             'loras': 'LoraLoader',
             'unet': 'UNETLoader',
-            'diffusion_models': 'UNETLoader'
+            'diffusion_models': 'UNETLoader',
+            'vae': 'VAELoader',
+            'clip': 'CLIPLoader',
+            'controlnet': 'ControlNetLoader'
         };
         const nodeType = nodeTypeMap[type];
         if (!nodeType) {
-            alert(t('unsupportedAutoApply'));
+            alert(window.anomalous_browser_lang === 'zh' ? '当前类型暂不支持自动发布到画布' : 'Unsupported auto apply for this type');
             return;
         }
 
         const node = LiteGraph.createNode(nodeType);
         if (!node) {
-            alert(t('createNodeFailed') + nodeType);
+            alert((window.anomalous_browser_lang === 'zh' ? '创建节点失败: ' : 'Failed to create node: ') + nodeType);
             return;
         }
 
@@ -278,12 +264,15 @@ export function applyModelToCanvas(type, subfolder, model) {
 
         app.graph.add(node);
 
-        const sub = subfolder.replace(/^\/+/, '').replace(/\/+$/, '');
+        const sub = (subfolder || '').replace(/^\/+/, '').replace(/\/+$/, '');
         const relPath = sub ? `${sub}/${model.filename}` : model.filename;
 
         this.setWidgetValuePath(node, relPath);
 
-        this.close();
+        const isDocked = this.container?.classList.contains('anomalous-docked');
+        if (!isDocked) {
+            this.close();
+        }
 
         // 粘到鼠标上的逻辑
         let isSticking = true;

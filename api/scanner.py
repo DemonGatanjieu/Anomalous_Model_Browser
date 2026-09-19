@@ -1,3 +1,4 @@
+from .metadata import get_metadata
 import os
 import sys
 import json
@@ -12,7 +13,8 @@ import uuid
 from aiohttp import web
 import folder_paths
 import struct
-from .utils import get_active_folder_types, get_active_scan_paths, resolve_folder_subdir
+from .folder_types import get_active_folder_types, get_active_scan_paths
+from .path_utils import resolve_folder_subdir
 try:
     from ..model_policies import is_physical_rename_protected
 except ImportError:
@@ -497,7 +499,7 @@ async def api_scan_missing_models(request):
         sys.path.insert(0, plugin_dir)
         
     try:
-        from scraper import extract_safetensors_hash, calculate_sha256, fetch_civitai_info, infer_base_model_from_header
+        from scraper import calculate_sha256, fetch_civitai_info, infer_base_model_from_header, computed_file_identity
     except ImportError:
         return web.json_response({"status": "error", "message": "Failed to load scraper module"})
 
@@ -528,29 +530,8 @@ async def api_scan_missing_models(request):
                         if not file.endswith('.safetensors'):
                             continue
                         file_path = os.path.join(root, file)
-                        base_path = os.path.splitext(file_path)[0]
-                        info_path = base_path + ".info"
-                        civitai_info_path = base_path + ".civitai.info"
-                        
-                        # Check if a valid info file exists
-                        has_valid_info = False
-                        actual_info = info_path if os.path.exists(info_path) else (civitai_info_path if os.path.exists(civitai_info_path) else None)
-                        
-                        if force_overwrite:
-                            actual_info = None
-                            
-                        if actual_info:
-                            try:
-                                with open(actual_info, 'r', encoding='utf-8') as f:
-                                    data = json.load(f)
-                                    for fi in data.get("files", []):
-                                        if isinstance(fi, dict) and "hashes" in fi and "SHA256" in fi["hashes"]:
-                                            if fi["hashes"]["SHA256"]:
-                                                has_valid_info = True
-                                                break
-                            except Exception:
-                                pass
-                                
+                        has_valid_info = not force_overwrite and bool(get_metadata(file_path).get("hash"))
+
                         if not has_valid_info:
                             files_to_scan.append(file_path)
             
@@ -562,30 +543,14 @@ async def api_scan_missing_models(request):
                 GLOBAL_SCAN_STATE["filename"] = filename
                 
                 try:
-                    civitai_data = None
-                    file_hash = None
-                    
-                    # Fallback 1: Try header hash on Civitai
-                    header_hash = extract_safetensors_hash(file_path)
-                    if header_hash:
-                        civitai_data = fetch_civitai_info(header_hash)
-                        if civitai_data:
-                            file_hash = header_hash
-                            
-                    # Fallback 2: If header hash fails, compute full SHA256
-                    if not civitai_data:
-                        full_hash = calculate_sha256(file_path)
-                        civitai_data = fetch_civitai_info(full_hash)
-                        file_hash = full_hash
-                        
+                    file_hash = calculate_sha256(file_path)
+                    civitai_data = fetch_civitai_info(file_hash)
+
                     # Fallback 3: Local Offline Inference
                     if not civitai_data:
                         inferred_base = infer_base_model_from_header(file_path)
                         if inferred_base == 'Unknown':
                             inferred_base = ""
-                            
-                        if not file_hash:
-                            file_hash = header_hash or calculate_sha256(file_path)
                             
                         civitai_data = {
                             "id": -1,
@@ -600,15 +565,8 @@ async def api_scan_missing_models(request):
                             "files": [{"hashes": {"SHA256": file_hash}}]
                         }
                         
-                    # Ensure SHA256 is explicitly injected into the info data
-                    if civitai_data:
-                        if not civitai_data.get("files"):
-                            civitai_data["files"] = [{"hashes": {"SHA256": file_hash}}]
-                        elif isinstance(civitai_data["files"][0], dict):
-                            if "hashes" not in civitai_data["files"][0]:
-                                civitai_data["files"][0]["hashes"] = {}
-                            civitai_data["files"][0]["hashes"]["SHA256"] = file_hash
-                            
+                    civitai_data["anomalous_file_identity"] = computed_file_identity(file_path, file_hash)
+
                     # Save info file
                     info_path = os.path.splitext(file_path)[0] + ".info"
                     with open(info_path, 'w', encoding='utf-8') as f:

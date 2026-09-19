@@ -4,6 +4,38 @@ export const DEFAULT_BROWSER_SHORTCUT = Object.freeze({
     shift: true
 });
 
+export const DEFAULT_MATERIALS_SHORTCUT = Object.freeze({
+    key: 'l',
+    ctrl: true,
+    shift: true
+});
+
+function normalizedShortcutKey(value) {
+    const key = String(value || '').toLowerCase();
+    return key.startsWith('key') && key.length === 4 ? key.slice(3) : key;
+}
+
+export function shortcutEventMatches(event, combo) {
+    if (!event || !combo || event.isComposing) return false;
+    return normalizedShortcutKey(event.key || event.code) === normalizedShortcutKey(combo.key)
+        && !!event.ctrlKey === !!combo.ctrl
+        && !!event.shiftKey === !!combo.shift
+        && !!event.altKey === !!combo.alt
+        && !!event.metaKey === !!combo.meta;
+}
+
+export function installDeferredShortcutFallback({ target, getCombo, isHandled, onFallback, onError = console.error }) {
+    const handler = event => {
+        if (event.repeat || !shortcutEventMatches(event, getCombo?.())) return;
+        queueMicrotask(() => {
+            if (isHandled?.()) return;
+            Promise.resolve(onFallback?.()).catch(onError);
+        });
+    };
+    target.addEventListener('keydown', handler, true);
+    return () => target.removeEventListener('keydown', handler, true);
+}
+
 export function formatKeyCombo(combo) {
     if (!combo) return '';
     if (typeof combo.getKeySequences === 'function') {
@@ -77,7 +109,7 @@ export async function openNativeKeybindingEditor(commandId) {
     return true;
 }
 
-export function createShortcutSettingControl({ app, commandId, translate }) {
+export function createShortcutSettingControl({ app, commandId, translate, settingLabelKey = 'mainShortcutSetting' }) {
     const container = document.createElement('div');
     container.className = 'anomalous-shortcut-setting';
 
@@ -97,7 +129,7 @@ export function createShortcutSettingControl({ app, commandId, translate }) {
         if (!opened) {
             app.extensionManager?.toast?.add?.({
                 severity: 'warn',
-                summary: translate('mainShortcutSetting'),
+                summary: translate(settingLabelKey),
                 detail: translate('mainShortcutOpenFailed'),
                 life: 3500
             });

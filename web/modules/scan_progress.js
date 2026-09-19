@@ -31,6 +31,9 @@ function ensurePanel() {
 
     const detail = document.createElement('div');
     detail.className = 'anomalous-scan-progress-detail';
+    detail.style.whiteSpace = 'normal';
+    detail.style.lineHeight = '1.4';
+    detail.style.wordBreak = 'break-word';
     panel.appendChild(detail);
 
     const item = document.createElement('div');
@@ -114,13 +117,14 @@ export function updateScanProgress(status, titleText = '') {
 function closeLater(panel) {
     if (closeTimer) clearTimeout(closeTimer);
     closeTimer = setTimeout(() => {
-        panel.remove();
+        if (typeof panel.remove === 'function') panel.remove();
+        else if (panel.parentNode) panel.parentNode.removeChild(panel);
         closeTimer = null;
     }, 4000);
 }
 
 
-export function finishScanProgress() {
+export function finishScanProgress(detailText = '') {
     const panel = ensurePanel();
     panel.classList.remove('is-error');
     panel.classList.add('is-complete');
@@ -130,7 +134,14 @@ export function finishScanProgress() {
     fill.classList.remove('is-indeterminate');
     fill.style.width = '100%';
     panel.querySelector('.anomalous-scan-progress-track').setAttribute('aria-valuenow', '100');
-    panel.querySelector('.anomalous-scan-progress-detail').textContent = translate('scanProgressFinished');
+    if (detailText) {
+        panel.querySelector('.anomalous-scan-progress-detail').textContent = detailText;
+    } else {
+        const currentDetail = panel.querySelector('.anomalous-scan-progress-detail').textContent;
+        if (!currentDetail || currentDetail === translate('sidebarScanning') || currentDetail === translate('scanProgressPreparing')) {
+            panel.querySelector('.anomalous-scan-progress-detail').textContent = translate('scanProgressFinished');
+        }
+    }
     panel.querySelector('.anomalous-scan-progress-item').textContent = '';
     closeLater(panel);
 }

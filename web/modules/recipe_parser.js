@@ -465,14 +465,77 @@ export function captureRecipeDraft(graph) {
     const links = Array.isArray(workflow?.links)
         ? workflow.links
         : (workflow?.links && typeof workflow.links === 'object' ? Object.values(workflow.links) : []);
+    const scope = analyseRecipeScope(graph);
     return {
         workflow,
         metadata: extractRecipeMetadata(graph),
+        workflowScope: scope.scope,
         stats: {
             nodeCount: nodes.length,
             linkCount: links.length,
             groupCount: Array.isArray(workflow?.groups) ? workflow.groups.length : 0,
+            boundaryInputCount: scope.boundaryInputCount,
+            outputNodeCount: scope.outputNodeCount,
         },
+    };
+}
+
+function nodeIsActive(node) {
+    return node?.mode !== 2 && node?.mode !== 4;
+}
+
+function nodeIsOutput(node) {
+    return node?.constructor?.nodeData?.output_node === true;
+}
+
+function inputIsOptional(node, input) {
+    const nodeData = node?.constructor?.nodeData;
+    const name = String(input?.name || '');
+    const modern = Array.isArray(nodeData?.inputs)
+        ? nodeData.inputs.find((item) => String(item?.name || '') === name)
+        : null;
+    if (modern) return modern.isOptional === true || modern.optional === true;
+    if (nodeData?.input?.optional && Object.prototype.hasOwnProperty.call(nodeData.input.optional, name)) return true;
+    if (nodeData?.input?.required && Object.prototype.hasOwnProperty.call(nodeData.input.required, name)) return false;
+    const hollow = globalThis.LiteGraph?.HOLLOW_CIRCLE_SHAPE;
+    return hollow !== undefined && input?.shape === hollow;
+}
+
+function inputHasWidget(node, input) {
+    if (input?.widget || input?.widgetId) return true;
+    const name = String(input?.name || '');
+    return Boolean(name && (node?.widgets || []).some((widget) => String(widget?.name || '') === name));
+}
+
+function recipeGraphNodes(graph) {
+    const nodes = [];
+    const seen = new Set();
+    for (const node of graph?._nodes || []) {
+        for (const item of [node, ...(node?.getInnerNodes ? node.getInnerNodes(new Map()) : [])]) {
+            if (!item || seen.has(item)) continue;
+            seen.add(item);
+            nodes.push(item);
+        }
+    }
+    return nodes;
+}
+
+/** Classify a live graph as an independently runnable workflow or a reusable fragment. */
+export function analyseRecipeScope(graph) {
+    const nodes = recipeGraphNodes(graph).filter(nodeIsActive);
+    const outputNodeCount = nodes.filter(nodeIsOutput).length;
+    let boundaryInputCount = 0;
+    for (const node of nodes) {
+        for (const input of node.inputs || []) {
+            if (input?.link !== null && input?.link !== undefined) continue;
+            if (inputHasWidget(node, input) || inputIsOptional(node, input)) continue;
+            boundaryInputCount += 1;
+        }
+    }
+    return {
+        scope: outputNodeCount > 0 && boundaryInputCount === 0 ? 'complete' : 'partial',
+        outputNodeCount,
+        boundaryInputCount,
     };
 }
 

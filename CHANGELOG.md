@@ -2,10 +2,67 @@
 
 ## Unreleased
 
+### Customizable Tool Shortcuts and Toolbox Reorganization (自定义工具箱快捷栏)
+- **Customizable Bottom Shortcut Bar (自定义底部快捷栏)**:
+  - Transformed the lower-left navigation bar into a user-customizable tool dock. Left anchor (`Toolbox`) and right anchor (`Settings`) remain fixed; intermediate slots support up to 4 user-customized tools (default: Scan, Doctor, Assistant, Materials).
+  - Tools can be dragged between the Toolbox catalog and the shortcut bar with a 6px deadzone, live ghost preview, and precision drop indicators.
+  - Pinned shortcuts can be dragged back to the Toolbox modal (or its dedicated drop zone) to unpin them, or reordered directly inside the bar.
+  - Reaching the 4-shortcut capacity limit provides clear, non-intrusive feedback.
+  - Added an accessible "•••" context menu on toolbox cards and right-click menus on shortcut buttons, allowing full organization (pin, unpin, reorder) without pointer drag.
+  - Fully localized bilingual strings and persistent layout storage under `anomalous_shortcut_layout_v1` with graceful memory fallback.
+- **Enhanced Sidebar Tooltips & Reveal Timing (侧边栏操作提示与动画优化)**:
+  - 100ms quick hover text replacement on shortcut buttons and 600ms rich singleton floating tooltip bubble (`#anomalous-sidebar-tooltip-bubble`) with bold title and muted explanation, cleanly avoiding CSS pseudo-element clipping issues.
+  - Hovering over a closed Toolbox button while dragging auto-expands the Toolbox after 350ms for frictionless tool extraction.
+  - Maintained elegant obsidian glass / dark monochromatic aesthetics without harsh or distracting bright colors.
+
+### Navigation and update guide
+- Sidebar icons reveal compact text labels on hover or keyboard focus while keeping their existing button size and actions. Detailed hints explain each tool; scan-state and language changes retain labels. Unclipped tooltips ensure explanations are fully readable.
+- Update guide opens only from the persistent top-right exclamation button or Help. Dismissing never removes the entry. Sidebar labels slide upward on hover/focus; duplicate source-panel and obsolete notice styles were removed. See `docs/architecture/update-guide.md`.
+
+### Model Source Hub (模型来源中控中心)
+- Added a unified Model Source Hub under Toolbox for dual-scope (current workflow and full library) model source URL inspection, one-click browser navigation to Civitai/HuggingFace/Liblib/ModelScope, custom source editing, workflow metadata synchronization (`extra.anomalous_model_sources`), and instant canvas `Note` node generation for non-intrusive workflow documentation.
+
+### Export availability
+- Removed Prompt Studio's JSON export action and closed the Material Library file-import entry; copying prompts and local saves remain available.
+- Recipe package import/export is disabled in the UI and API, including both upload inspection and import commit. The verified AMB0/AMB1 workflow Import / Export Center is restored in Toolbox as the only active import/export center. Ordinary downloads and image/workflow hash metadata are unchanged.
+- Studio source cards automatically follow library additions, edits and deletions, display their origin, and cannot be deleted from the studio. Failed synchronization preserves existing cards; mixer copies remain editable.
+
+### Material Library
+- Fixed grouped material filters, Recipe scope/tag filters, and prompt studio imports using actual detail payloads. Fixed side-studio draft reset/return state and guarded recipe drops against canvas changes. Recipe model status no longer treats saved hash verification as current availability.
+- Separated the lower-left Material Library from the Recipes/Prompt Notes workspace. Added canvas drag-and-drop: parameter materials replace matching node values, while the simplified prompt panel inserts text at the beginning or end, with undo.
+- Material Library now opens from the lower-left control; Workflow Recipes stays at the upper right. The workflow Import / Export Center is available in Toolbox.
+- Added Prompt Combinations: ordered general/specific fragments, enable switches, separate positive/negative content, and saved snapshots.
+- Library cards can apply matching parameters to one selected node through the same transaction as Node Assistant, with seed preservation, native-option validation and guarded undo. Prompt combinations support explicit text replacement or append.
+- Material details initially expand prompt cards only; other node parameters render on first expansion. Details omit the complete source workflow, which loads separately when opening a full snapshot. Selected-node materials never return their hidden source graph.
+- Material capture supports PNG workflows, Recipe parameters and Prompt Notes. Applying reference images to LoadImage remains future work.
+- Added search by name, tag, or node type, type/tag filters, and pagination. Material names and tags can be edited in place without changing their workflow.
+- Saving the same source image and node selection now prompts before creating another copy. Save labels distinguish full image/workflow snapshots, node parameters, and Prompt Notes.
+- Shared parameter inspection between the library and image workbench, improved keyboard card access and clipboard failure feedback, and fixed confirmation dialogs being covered by the workbench.
+
+### Reliability
+- Material browsing reuses signature-validated summaries and reads full workflows only for matching node types. Gallery pagination shares a short-lived directory snapshot; refresh and deletion invalidate it immediately.
+- Prompt Notes now use the ComfyUI user directory with recoverable legacy copying, atomic saves, and visible save failures. Material saves stage their files and roll back new assets if persistence fails.
+- File identity now uses full-file SHA-256 only. BLAKE3 and tensor/header digests cannot become verified file identities. Older offline metadata is reverified on demand while preserving personal notes.
+
+### 🩺 Model Doctor
+- **Manual size fallback (模型大小手动兜底)**: A unique same-size local model is now presented for explicit confirmation instead of being applied automatically. Background checks never apply it, while hash/size identity conflicts are rejected and shown in the Doctor dashboard.
+
+### 🧰 Workflow Recipes
+- **Scope-aware recipes (局部/整体配方)**: Graphs with open required connections or no runnable output are saved as partial recipes and append to the current canvas. Independently runnable graphs are saved as complete recipes and open in a new workflow canvas.
+- **Optional save-time model verification (保存时可选模型核验)**: Recipe saving now performs a lightweight cached-identity check. Recognized model references missing identity are listed in the save dialog, while full SHA-256 calculation remains explicitly opt-in. This is especially useful for hash-only Model Doctor categories such as VAE and text encoders.
+- **Model lifecycle consistency (模型生命周期一致性)**: Partial append remaps and merges node-scoped model Hash records, while applying a local model match updates the workflow value, structured model reference, base-model summary, and Hash index together.
+- **Recipe-scoped model notes (配方模型备注)**: Each model reference can keep a bounded personal note. Package export asks whether to include these notes, and version comparison reports note and identity changes.
+- **Material Library MVP (统一素材库 MVP)**: Main Gallery and Recipe gallery images now expose a non-intrusive two-column parameter detail view and can be saved as one curated bundle containing the original image, exact embedded workflow, model provenance, and reusable node blocks. Core metrics remain concise, while a lazy two-level inspector exposes every serialized node widget value, node properties, mode, and volatile-parameter marker on demand. Every node card now has a direct “Save to Library” action; checked nodes share a colocated multi-save action above the list, while the footer is reserved for the full image/workflow snapshot. One generation-settings action saves the sampler and size nodes together, and prompt cards expose topology-based positive/negative detection, manual role overrides, and direct node saving. Saved Material details preserve those overrides and allow returning to automatic detection. Workflow Recipe parameters and saved Parameter Notebooks can now publish all widget-bearing nodes, one node, or an explicit node selection as image-free Recipe Parameter materials. The ambiguous plain-text share action has been removed in favor of a visible Material Library save entry. Focused node materials feed Node Assistant without exposing a misleading full-workflow action. Saved Material cards stay compact and open a focused in-library inspector with the uncropped reference image on the left and scoped model/node parameters on the right; returning releases the full response and detailed DOM. Detail navigation bounds parsed metadata to a 16-entry LRU, cancels obsolete reads, avoids a second full-PNG browser allocation, removes duplicated widget payloads, and defers local-model preview resolution until the Models tab opens. Main Gallery keeps its existing click, drag, delete, and cover-selection behavior. The Workspace Material Library opens complete snapshots in a new canvas, while Node Assistant filters matching blocks by the selected node type, skips volatile seeds, and hands remapped Hash evidence to Model Doctor.
+
+### ✨ Material capture and simpler pages
+- 图片、配方参数与提示词笔记均可保存到素材库，保存后直接查看。提示词笔记支持整份组合或仅提示词，并可从素材载入为新笔记。
+- 图片保存表单、用途调整、节点技术信息、笔记模型区与配方多选改为按需展开；配方参数页去掉重复数值，统一使用“参数方案”名称。
+
 ### ✨ Interface & Access
 - **Native Configurable Shortcut (原生可配置快捷键)**: Added `Ctrl + Shift + M` as the default shortcut for opening the browser. The plugin's Interface settings show the currently active binding and open ComfyUI's native key recorder for customization. Conflict detection, overwrite confirmation, removal, reserved-key guidance, and modal guards therefore remain centralized without a separate global keyboard listener.
 
 ### 🐛 Bug Fixes
+- **Prompt Studio Preview Popover Safe Zone (提示词预览浮窗全域安全区与防消失机制)**: 解决鼠标从词卡划向右侧浮窗按钮过程中浮窗提前消失的问题。引入全局动态指针安全区判定（`isPointInSafeZone`），将卡片、浮窗（向外各扩展 40px）与空间通道全部纳入安全驻留区，光标移动即实时取消关闭计时；并在定时器回调中执行终审坐标校验；结合 100ms 展开防抖与 `[📌 固定]` 钉住功能，确保用户可从容点击复制与添加按钮。
 - **Live Language Switching (语言即时切换)**: Changing the plugin language now immediately re-translates the open native Interface settings—including labels, tooltips, and combo choices—as well as the browser UI, without refreshing ComfyUI.
 
 ## v1.56.1 Beta (Interface Preferences & Scan Reliability) — 2026-08-26

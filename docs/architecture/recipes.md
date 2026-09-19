@@ -4,9 +4,29 @@ Read this document for recipe schemas, cards/detail behavior, package handling,
 result galleries, Parameter Notebooks, prompt roles, and the recipe-powered Node
 Assistant.
 
+## Package import/export availability
+
+Recipe package import and export are temporarily closed pending validation.
+Topbar/card/detail buttons are disabled with a localized explanation. The registered
+`POST /anomalous/export_recipe_package` route returns HTTP 503 with code
+`recipe_export_disabled` before reading request JSON or recipe files.
+`RECIPE_PACKAGE_EXPORT_ENABLED` in `api/recipe_packages.py` is a release gate,
+not a user setting. `RECIPE_PACKAGE_IMPORT_ENABLED` likewise gates both
+`POST /anomalous/import_recipe_package_inspect` and
+`POST /anomalous/import_recipe_package_commit`: each returns HTTP 503 with code
+`recipe_import_disabled` before reading uploaded bytes, request JSON, inspection
+tokens or writing files. Package format helpers remain for compatibility tests;
+local saves are unaffected.
+
+Reopening requires an explicit release decision, package round-trip and failure
+validation, then restoring the frontend export action and enabling the backend
+gates together. Do not reopen package transfers as a side effect of UX work. Workflow
+share-code import/export is a separate, verified feature available from Toolbox.
+
 ## Product and data model
 
-Workspace contains two sections: Prompt Notes and Workflow Recipes. Internal
+Workspace contains Prompt Notes, Workflow Recipes, and the Material Library.
+Recipe Parameter Notebooks are presented as Parameter Sets (参数方案). Internal
 notebook route and property names may remain stable for compatibility even when
 the user-facing presentation changes.
 
@@ -22,11 +42,24 @@ demand. Every update archives the previous full recipe locally, bounded to 20
 versions. The structural fingerprint (`sha256-structural-v1`) is an integrity
 and version-comparison value, not model identity evidence.
 
-The current persisted recipe schema is v5. Earlier schema steps introduced the
+Backend ownership is split by responsibility: `workflow_schema.py` owns graph
+validation, fingerprints, signatures and integrity receipts; `recipe_schema.py`
+owns recipe/model-reference normalization; `recipe_images.py` owns source images,
+covers and output-gallery inspection; `recipe_store.py` owns directory, record and
+history I/O. `recipes.py` maps HTTP requests and errors and retains narrow
+compatibility exports only. `recipe_packages.py`, `parameters.py`, and materials
+import those owners directly rather than reaching through the route facade.
+
+The current persisted recipe schema is v7. Earlier schema steps introduced the
 structural fingerprint, explicit model-reference identity records, and optional
 recipe-owned preview descriptors; v5 separates model identity from editable
-official-origin fields. Normal save/update paths preserve compatible imported
-records rather than rebuilding identity from the current machine.
+official-origin fields. V6 records whether the saved graph is a partial or
+complete recipe. V7 adds bounded recipe-scoped model notes and makes Hash
+synchronization across local matching and partial append an explicit invariant.
+Normal save/update paths preserve compatible imported
+records rather than rebuilding identity from the current machine. An explicit
+save-time verification choice may replace missing identity with a freshly
+computed SHA-256 for supported model categories.
 
 Recipe model references separate saved identity from current-machine
 availability and official origin metadata. Origin refresh is an explicit
@@ -43,10 +76,33 @@ notes, tags, and cover/source image. It does not ask users to select presentatio
 pins or a per-recipe snapshot policy. Existing `params.pinned` values survive an
 edit, while new recipes use an empty list.
 
+Before the dialog opens, an advisory check reads only the captured workflow hash
+records and cached local metadata. Recognized model references without verified
+identity appear as an optional action. The checkbox is off by default; enabling
+it computes the exact full-file SHA-256 in a worker thread during persistence.
+Foundation components such as VAE and text encoders are included because Model
+Doctor requires their hash for automatic recovery and treats size-only evidence
+as a manual candidate at most.
+Inspection failure never blocks the workflow snapshot from being saved.
+
 The detail view contains Overview, Parameters, Gallery, and Versions as
 applicable. Compact cards may ellipsize bounded values while preserving their
 full copy value. Detail rows provide visible expand/collapse and copy controls
 for long values and prompts; they do not silently truncate authoritative data.
+
+`ui_recipe_detail.js` coordinates the detail session, active tab, and model composition.
+`ui_recipe_overview.js` owns the overview; `ui_recipe_parameters.js` owns prompt roles,
+parameter editing, raw nodes, and preset saving; and `ui_recipe_model_matching.js`
+owns preview resolution plus explicit local matching. Inline persistence is centralized
+in `ui_recipe_metadata.js`, with pure ordering/value helpers in
+`ui_recipe_parameter_utils.js`. The catalog shell lives in `ui_recipe_catalog.js`,
+cards and card actions in `ui_recipe_cards.js`, save/edit dialogs in
+`ui_recipe_dialogs.js`, and shared cover helpers in `ui_recipe_media.js`.
+`ui_recipe_versions.js` owns version comparison and restore, while
+`ui_recipe_gallery.js` owns result rendering and opens `ui_gallery_detail.js`
+directly for image inspection. Shared detail DOM/copy primitives live in
+`ui_recipe_detail_dom.js`; the subviews return refresh/finish decisions through
+callbacks instead of redrawing one another.
 
 Model names in compact recipe presentation use a basename or official model
 name, never a full filesystem path. Saved paths and hashes belong behind advanced
@@ -56,8 +112,10 @@ only after the reference is already understood; it cannot establish identity.
 Import matching is a separate explicit recovery action. Unresolved references
 are sent to the hash/size/category resolver. A discovered candidate remains
 presentation-only until the user chooses Apply match; that action updates the
-authoritative workflow widget through the full-recipe update path and archives
-the previous recipe. The author's saved filename or path is never match evidence.
+authoritative workflow widget, model reference, and node-scoped Hash index
+through the full-recipe update path and archives the previous recipe. The
+author's saved filename or path is never match evidence. Model-reference
+`user_note` is recipe-scoped presentation metadata and never match evidence.
 
 Recipe-owned model preview snapshots are bounded, content-addressed WebP files
 below `.assets/<recipe-stem>/`. They are at most 320 px or 96 KiB each, limited
@@ -69,11 +127,16 @@ ID.
 
 ## Canvas actions
 
-Recipe cards and details expose **Append to Canvas** as the safe composition
-action. Append clones saved nodes into the current graph, assigns collision-free
-IDs, remaps links, places/selects the inserted content, treats groups as
-first-class items, and rolls back the complete insertion on failure. It does not
-replace the current graph or mutate the saved recipe.
+Recipe cards and details expose a scope-aware canvas action. A live graph with
+an active output node and no unconnected required inputs is saved as a complete
+recipe and opens as a new workflow canvas. A graph without an output node or
+with required connection boundaries is saved as a partial recipe and appends to
+the current canvas. Append clones saved nodes, assigns collision-free IDs,
+remaps links, places/selects the inserted content, treats groups as first-class
+items, remaps node-scoped model Hash records, and rolls back nodes/groups/Hash
+records together on failure. Legacy recipes without
+scope metadata are complete recipes because earlier releases only documented
+and captured complete workflows.
 
 Structural editing is separate from composition. It may load a recipe into a new
 canvas after explicit confirmation and saves back through the full-recipe update

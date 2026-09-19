@@ -10,45 +10,10 @@ from functools import lru_cache
 from aiohttp import web
 import folder_paths
 import struct
-
-def _read_safetensors_hash(file_path):
-    """Extract hash from safetensors header metadata (O(1) fast read, no full-file SHA256)."""
-    try:
-        with open(file_path, "rb") as f:
-            header_size_bytes = f.read(8)
-            if len(header_size_bytes) < 8:
-                return None
-            header_size = struct.unpack('<Q', header_size_bytes)[0]
-            if header_size > 100 * 1024 * 1024:
-                return None
-            
-            header_json_bytes = f.read(header_size)
-            header_str = header_json_bytes.decode('utf-8')
-            header_json = json.loads(header_str)
-            
-            metadata = header_json.get('__metadata__', {})
-            if not metadata:
-                return None
-                
-            if 'modelspec.hash.sha256' in metadata:
-                return metadata['modelspec.hash.sha256']
-            if 'modelspec.hash.blake3' in metadata:
-                return metadata['modelspec.hash.blake3']
-                
-    except Exception:
-        pass
-    return None
-
-
-@lru_cache(maxsize=4096)
-def _extract_safetensors_hash_cached(file_path, signature):
-    return _read_safetensors_hash(file_path)
-
-
-def _extract_safetensors_hash(file_path):
-    normalized_path = os.path.realpath(file_path)
-    return _extract_safetensors_hash_cached(normalized_path, _file_signature(normalized_path))
-
+try:
+    from ..model_identity import sidecar_file_hash
+except ImportError:
+    from model_identity import sidecar_file_hash
 
 def _select_info_file(data, file_path):
     """Select the Civitai file entry that actually describes ``file_path``.
@@ -106,6 +71,17 @@ def _select_info_hash(data, file_path):
     hashes = selected.get("hashes", {})
     return str(hashes.get("SHA256", "")) if isinstance(hashes, dict) else ""
 
+
+def _positive_civitai_id(value):
+    """Return a real Civitai identifier, excluding offline sentinel values."""
+    if isinstance(value, bool):
+        return None
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return parsed if parsed > 0 else None
+
 def _read_metadata(file_path):
     base_path = os.path.splitext(file_path)[0]
     metadata = {
@@ -115,7 +91,11 @@ def _read_metadata(file_path):
         "trainedWords": [],
         "baseModel": "",
         "civitai_url": "",
+        "source_url": "",
         "hash": "",
+        "hash_algorithm": "sha256",
+        "hash_scope": "file",
+        "hash_source": "",
         "custom_name": "",
         "custom_notes": ""
     }
@@ -139,10 +119,10 @@ def _read_metadata(file_path):
                     trained_words = data.get("trainedWords", [])
                     base_model = data.get("baseModel", "")
                     
-                    model_id = data.get("modelId", "")
-                    version_id = data.get("id", "")
+                    model_id = _positive_civitai_id(data.get("modelId"))
+                    version_id = _positive_civitai_id(data.get("id"))
                     civitai_url = ""
-                    if model_id:
+                    if model_id is not None:
                         # Handle Civitai's new mature content policy
                         nsfw_level = data.get("nsfwLevel", 1)
                         is_nsfw = False
@@ -151,37 +131,30 @@ def _read_metadata(file_path):
                         
                         domain = "civitai.red" if (nsfw_level > 1 or is_nsfw) else "civitai.com"
                         civitai_url = f"https://{domain}/models/{model_id}"
-                        if version_id:
+                        if version_id is not None:
                             civitai_url += f"?modelVersionId={version_id}"
                     
                     
                     selected_file = _select_info_file(data, file_path)
-                    hash_val = ""
-                    if selected_file:
-                        hashes = selected_file.get("hashes", {})
-                        if isinstance(hashes, dict):
-                            hash_val = str(hashes.get("SHA256", ""))
-                    
+                    hash_val, hash_source = sidecar_file_hash(data, file_path, selected_file)
+                    if hash_val:
+                        metadata["hash_source"] = hash_source
+
                     if name: metadata["name"] = name
                     if description: metadata["description"] = description
                     if notes: metadata["notes"] = notes
                     if trained_words: metadata["trainedWords"] = trained_words
                     if base_model: metadata["baseModel"] = base_model
                     if civitai_url: metadata["civitai_url"] = civitai_url
-                    if model_id: metadata["model_id"] = model_id
-                    if version_id: metadata["version_id"] = version_id
+                    if model_id is not None: metadata["model_id"] = model_id
+                    if version_id is not None: metadata["version_id"] = version_id
                     if hash_val: metadata["hash"] = hash_val
                     if "anomalous_custom_name" in data and data["anomalous_custom_name"]: metadata["custom_name"] = data["anomalous_custom_name"]
                     if "anomalous_custom_notes" in data and data["anomalous_custom_notes"]: metadata["custom_notes"] = data["anomalous_custom_notes"]
+                    if "anomalous_source_url" in data and data["anomalous_source_url"]: metadata["source_url"] = data["anomalous_source_url"]
             except Exception:
                 pass
     
-    # Fallback: if no hash found from .info files, try extracting from safetensors header directly
-    if not metadata["hash"] and file_path.endswith('.safetensors'):
-        header_hash = _extract_safetensors_hash(file_path)
-        if header_hash:
-            metadata["hash"] = header_hash
-                
     return metadata
 
 
@@ -220,7 +193,6 @@ def get_metadata(file_path):
 
 def clear_metadata_cache():
     _get_metadata_cached.cache_clear()
-    _extract_safetensors_hash_cached.cache_clear()
 
 
 def get_metadata_cache_info():

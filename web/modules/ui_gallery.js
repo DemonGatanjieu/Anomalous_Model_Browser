@@ -5,6 +5,7 @@
 
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
+import { showImageMaterialDetail } from './ui_materials.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -30,7 +31,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
         this.gallerySentinel.textContent = t('galleryLoading');
 
         try {
-            const res = await fetch(`/anomalous/gallery_images?page=${page}&limit=50`);
+            const res = await fetch(`/anomalous/gallery_images?page=${page}&limit=50${reset ? "&refresh=1" : ""}`);
             const data = await res.json();
 
             if (reset) {
@@ -38,9 +39,30 @@ export async function loadGalleryImages(page = 1, reset = false) {
                 const cards = this.galleryGrid.querySelectorAll('.anomalous-gallery-card');
                 cards.forEach(c => c.remove());
                 this.galleryLoaded = true;
+                this.galleryImagesList = [];
             }
 
             if (data.images && data.images.length > 0) {
+                const incomingItems = data.images.map(imgData => {
+                    const q_sub = encodeURIComponent(imgData.subfolder);
+                    const q_file = encodeURIComponent(imgData.filename);
+                    return {
+                        filename: imgData.filename,
+                        subfolder: imgData.subfolder || '',
+                        url: `/view?filename=${q_file}&subfolder=${q_sub}&type=output`,
+                        sourceImage: {
+                            type: 'output',
+                            filename: imgData.filename,
+                            subfolder: imgData.subfolder || '',
+                        }
+                    };
+                });
+                if (reset) {
+                    this.galleryImagesList = incomingItems;
+                } else {
+                    this.galleryImagesList = [...(this.galleryImagesList || []), ...incomingItems];
+                }
+
                 data.images.forEach(imgData => {
                     const card = document.createElement('div');
                     card.className = 'anomalous-gallery-card';
@@ -53,6 +75,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
                     img.src = imgUrl;
                     img.loading = 'lazy';
                     img.draggable = true;
+                    img.title = t('materialViewOriginal');
 
                     // Drag and drop support for ComfyUI
                     img.addEventListener('dragstart', (e) => {
@@ -65,6 +88,24 @@ export async function loadGalleryImages(page = 1, reset = false) {
                             e.dataTransfer.setDragImage(window.anomalousDragGhostImg, 40, 40);
                         }
                     });
+
+                    const openDetail = () => {
+                        const curIdx = (this.galleryImagesList || []).findIndex(it => it.filename === imgData.filename && it.subfolder === (imgData.subfolder || ''));
+                        void showImageMaterialDetail(this, {
+                            type: 'output',
+                            filename: imgData.filename,
+                            subfolder: imgData.subfolder || '',
+                        }, imgUrl, {
+                            items: this.galleryImagesList || [],
+                            currentIndex: curIdx >= 0 ? curIdx : 0,
+                            loadMore: async () => {
+                                if (this.galleryHasMore && !this.galleryLoading) {
+                                    await this.loadGalleryImages(this.galleryCurrentPage + 1);
+                                }
+                                return this.galleryImagesList || [];
+                            }
+                        });
+                    };
 
                     // Click to view
                     img.onclick = () => {
@@ -86,6 +127,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
                                     this.gallerySelectModel = null;
                                     const banner = document.getElementById('anomalous-gallery-select-banner');
                                     if (banner) banner.style.display = 'none';
+                                    this.galleryPanel.classList.remove('is-cover-selecting');
                                     this.galleryPanel.style.display = 'none';
 
                                     await this.loadModels();
@@ -106,12 +148,12 @@ export async function loadGalleryImages(page = 1, reset = false) {
                             });
                             return;
                         }
-                        this.showGalleryViewer(imgUrl);
+                        showGalleryViewer(imgUrl);
                     };
 
                     const delBtn = document.createElement('button');
                     delBtn.className = 'anomalous-gallery-delete';
-                    delBtn.innerHTML = '🗑️';
+                    delBtn.innerHTML = '<svg style="width:14px;height:14px;vertical-align:middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>';
                     delBtn.title = t('galleryDelete');
 
                     delBtn.onclick = (e) => {
@@ -148,7 +190,7 @@ export async function loadGalleryImages(page = 1, reset = false) {
                         btnRow.style.gap = '12px';
 
                         const confirmBtn = document.createElement('button');
-                        confirmBtn.textContent = `🗑️ ${t('galleryDelete')}`;
+                        confirmBtn.innerHTML = `<svg style="width:14px;height:14px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>${t('galleryDelete')}`;
                         confirmBtn.style.background = '#dc3545';
                         confirmBtn.style.color = '#fff';
                         confirmBtn.style.border = 'none';
@@ -190,6 +232,9 @@ export async function loadGalleryImages(page = 1, reset = false) {
                                 const dd = await dr.json();
                                 if (dd.status === 'success') {
                                     card.remove();
+                                    if (this.galleryImagesList) {
+                                        this.galleryImagesList = this.galleryImagesList.filter(it => !(it.filename === imgData.filename && it.subfolder === (imgData.subfolder || '')));
+                                    }
                                 } else {
                                     alert(t('galleryDeleteFailed') + dd.message);
                                     overlay.remove();
@@ -208,7 +253,29 @@ export async function loadGalleryImages(page = 1, reset = false) {
                         card.appendChild(overlay);
                     };
 
+                    const detailsBtn = document.createElement('button');
+                    detailsBtn.className = 'anomalous-gallery-details';
+                    detailsBtn.type = 'button';
+                    detailsBtn.innerHTML = `
+                        <svg class="anomalous-gallery-details-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+                            <line x1="2" y1="5" x2="8" y2="5"></line>
+                            <line x1="12" y1="5" x2="14" y2="5"></line>
+                            <circle cx="10" cy="5" r="2"></circle>
+                            <line x1="2" y1="11" x2="4" y2="11"></line>
+                            <line x1="8" y1="11" x2="14" y2="11"></line>
+                            <circle cx="6" cy="11" r="2"></circle>
+                        </svg>
+                        <span>${t('materialViewParameters')}</span>
+                    `;
+                    detailsBtn.title = t('materialViewDetails');
+                    detailsBtn.onclick = (event) => {
+                        event.stopPropagation();
+                        if (this.gallerySelectModel) return;
+                        openDetail();
+                    };
+
                     card.appendChild(img);
+                    card.appendChild(detailsBtn);
                     card.appendChild(delBtn);
                     this.galleryGrid.insertBefore(card, this.gallerySentinel);
                 });
@@ -425,7 +492,36 @@ export async function showGeneratedGallery(model) {
                 };
 
                 imgCont.onclick = () => {
-                    this.showGalleryViewer(img.url || img);
+                    const allGenCards = Array.from(contentCont.querySelectorAll('.anomalous-card'));
+                    const curIndex = allGenCards.indexOf(imgCont);
+                    const genItems = (data.images || []).map(im => {
+                        const u = im.url || im;
+                        let fn = '';
+                        let sub = '';
+                        if (im.url) {
+                            try {
+                                const up = new URLSearchParams(im.url.split('?')[1]);
+                                fn = up.get('filename') || '';
+                                sub = up.get('subfolder') || '';
+                            } catch (_) {}
+                        } else {
+                            fn = String(im).split('/').pop().split('?')[0];
+                        }
+                        return {
+                            filename: fn,
+                            subfolder: sub,
+                            url: u,
+                            sourceImage: { type: 'output', filename: fn, subfolder: sub }
+                        };
+                    });
+                    void showImageMaterialDetail(this, {
+                        type: 'output',
+                        filename: filenameText,
+                        subfolder: source_image.includes('/') ? source_image.split('/')[0] : '',
+                    }, img.url || img, {
+                        items: genItems,
+                        currentIndex: curIndex >= 0 ? curIndex : 0,
+                    });
                 };
 
                 imgCont.appendChild(el);
@@ -451,6 +547,7 @@ export function showGallerySelectMode(model) {
         this.grid.style.display = 'none';
         this.detailPanel.style.display = 'none';
         this.galleryPanel.style.display = 'flex';
+        this.galleryPanel.classList.add('is-cover-selecting');
         let banner = document.getElementById('anomalous-gallery-select-banner');
         if (!banner) {
             banner = document.createElement('div');
@@ -487,6 +584,7 @@ export function showGallerySelectMode(model) {
         cancelSelect.onclick = () => {
             const tempModel = this.gallerySelectModel;
             this.gallerySelectModel = null;
+            this.galleryPanel.classList.remove('is-cover-selecting');
             banner.style.display = 'none';
             this.galleryPanel.style.display = 'none';
             if (this.currentDetailModel) {

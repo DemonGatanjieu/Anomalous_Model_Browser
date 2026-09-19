@@ -9,10 +9,14 @@ recipe persistence, or filesystem-facing routes.
 package. `api/__init__.py` registers `aiohttp` routes, all prefixed with
 `/anomalous/`. Changes to Python modules require a full ComfyUI restart; a
 frontend reload alone does not replace registered handlers or module state.
+Route registration uses explicit module references. `tests/test_route_manifest.py`
+locks the HTTP method/path pairs so internal ownership changes cannot silently
+drop, duplicate, or rename an endpoint.
 
 The backend owns filesystem authority. A browser-supplied path, filename,
 category, output reference, recipe asset, or archive member is untrusted until
-validated. Use the shared helpers in `api/utils.py`:
+validated. Use the shared helpers in `api/path_utils.py` (also re-exported by the
+small `api/utils.py` compatibility facade):
 
 - `resolve_folder_subdir()` for configured model-folder boundaries;
 - `resolve_within()` for containment below an owned root;
@@ -22,9 +26,19 @@ Never rely only on `..` rejection. Absolute Windows paths, UNC paths, alternate
 separators, device paths, and symlinks can bypass naïve string checks. Media
 routes also enforce an explicit extension allowlist.
 
-Active model categories come from `api.utils.get_active_folder_types()`. Do not
-hardcode a scan across `checkpoints`, `loras`, or another category. A folder
+Configured model scope belongs to `api.folder_types`. Category mode uses
+`get_active_folder_types()`; folder-manager-facing library enumeration uses
+`get_active_model_roots()` so physical mode can retain the exact registered
+`type`, `path_idx`, and real root for every enabled directory. Real roots are
+deduplicated without merging same-named files from different roots. Do not
+hardcode a walk across `checkpoints`, `loras`, or another category. A directory
 disabled in `config.json` must cause no walk or metadata I/O.
+
+`/anomalous/all_scan_models` follows that current folder-manager mode and keeps
+its paginated response plus `limit=0` full-list behavior. Its local source-link
+inventory recognizes GGUF and PTH case-insensitively in addition to the existing
+list formats. This route-level inventory does not expand global model-format,
+scanner, metadata-parser, recovery, or cloud-identification support.
 
 ## Storage ownership
 
@@ -36,6 +50,34 @@ Workflow Recipes live below the active ComfyUI user directory in
 `workflows/anomalous_recipes`; Parameter Notebooks live in
 `workflows/anomalous_parameters`. They are user data, not repository assets.
 Writes validate their bounded schema and use atomic replacement.
+
+Backend modules follow route/domain/storage ownership. Model discovery,
+identity recovery, metadata mutation, and cover media live in
+`model_catalog.py`, `model_resolution.py`, `model_metadata.py`, and
+`model_media.py`. Recipe graph rules, recipe shaping, image processing, and
+persistence/history live in `workflow_schema.py`, `recipe_schema.py`,
+`recipe_images.py`, and `recipe_store.py`; `recipes.py` is the HTTP facade.
+Material shaping, private assets, and the single persistence lock/summary cache
+live in `material_schema.py`, `material_assets.py`, and `material_store.py`;
+`materials.py` owns request/response mapping and compatibility entry points.
+
+The former mixed utility routes are separated: `media_routes.py` owns card
+thumbnails and model/output media lookups, `gallery_routes.py` owns the bounded
+output snapshot and deletion, `translation_routes.py` owns provider fallback,
+and `folder_types.py` owns configured visibility and scan scope.
+
+Offline inference sidecars use non-positive Civitai IDs as sentinels. Metadata
+normalization must not expose those values as release-page URLs or resolved
+model/version identities; only positive IDs may form a Civitai source link.
+
+Prompt Notes use `workflows/anomalous_notebooks`. First access copies legacy
+`api/notebooks` records without deleting originals or overwriting current notes.
+Conflicts receive a deterministic recovered filename. A completion marker makes
+the copy retryable after write failure and prevents deleted notes reappearing.
+Invalid legacy records remain untouched and are listed in the migration marker.
+Notebook I/O runs in a worker under its persistence lock; the UI queues snapshots
+and reports failed saves instead of showing success. `api.path_utils.atomic_write_json`
+owns bounded, flushed temporary writes followed by atomic file replacement.
 
 The recipe card endpoint returns lightweight metadata. Full graphs and history
 are fetched only for detail, edit, compare, restore, export, or another operation
@@ -75,6 +117,10 @@ with parent-owned folder progress. The frontend can reconstruct this state by
 polling after its UI has been reopened.
 
 ## Metadata and cache behavior
+
+The output gallery keeps one ordered directory snapshot for at most ten seconds
+and 50,000 images. Page requests reuse it; explicit refresh and image deletion
+invalidate it immediately. Larger inventories are returned normally but not cached.
 
 Metadata and embedded safetensors-header hashes may be cached only in a bounded
 cache. The key includes the model's real path and the physical `size`, `mtime_ns`,

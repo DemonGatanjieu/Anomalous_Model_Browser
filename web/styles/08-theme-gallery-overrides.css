@@ -1,0 +1,1049 @@
+/* 1. Global Scoped Theme Variables */
+html.theme-abyssal-scarlet,
+.theme-abyssal-scarlet {
+    --bg-color: #0a0510;
+    --comfy-menu-bg: #12091c;
+    --border-color: rgba(220, 20, 60, 0.25);
+    --p-primary-color: #dc143c;
+    --fg-color: #e0d0df;
+}
+
+/* 2. Main Containers & Atmospheric Ocean Current Backdrop */
+.theme-abyssal-scarlet #anomalous-container,
+.theme-abyssal-scarlet#anomalous-container {
+    background: #0a0510 !important;
+    color: #e0d0df !important;
+    border-color: rgba(220, 20, 60, 0.35) !important;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.95) !important;
+    position: relative;
+}
+
+.theme-abyssal-scarlet #anomalous-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('assets/abyssal_currents_bg.webp') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    mix-blend-mode: overlay !important;
+    opacity: 0.15 !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
+}
+
+.theme-abyssal-scarlet .anomalous-prompt-workbench::before {
+    display: none !important;
+}
+
+.theme-abyssal-scarlet #anomalous-sidebar-wrapper {
+    background: #100818 !important;
+    border-right: 1px solid rgba(220, 20, 60, 0.22) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-content {
+    background-color: #0c0510 !important;
+    background-image: 
+        radial-gradient(ellipse 75% 55% at 50% -5%, rgba(220, 20, 60, 0.14) 0%, rgba(38, 12, 30, 0.06) 55%, transparent 100%),
+        radial-gradient(ellipse 55% 45% at 85% 95%, rgba(139, 92, 246, 0.08) 0%, transparent 100%) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-content::before {
+    display: block !important;
+    content: '' !important;
+    position: absolute !important;
+    inset: 0 !important;
+    background-image: url('assets/abyssal_scarlet_mansion.webp'), radial-gradient(circle at 50% 20%, rgba(220, 20, 60, 0.08) 0%, transparent 70%) !important;
+    background-size: cover !important;
+    background-position: center !important;
+    mix-blend-mode: soft-light !important;
+    opacity: 0.18 !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
+}
+
+.theme-abyssal-scarlet #anomalous-sidebar-wrapper::after {
+    display: block !important;
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 1px !important;
+    height: 100% !important;
+    background: linear-gradient(180deg, 
+        rgba(220, 20, 60, 0) 0%, 
+        rgba(220, 20, 60, 0.45) 20%, 
+        rgba(255, 51, 102, 0.7) 50%, 
+        rgba(147, 51, 234, 0.45) 80%, 
+        rgba(220, 20, 60, 0) 100%
+    ) !important;
+    pointer-events: none !important;
+    z-index: 5 !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet #anomalous-grid {
+    background: radial-gradient(ellipse 90% 55% at 50% 0%, rgba(220, 20, 60, 0.09) 0%, rgba(28, 9, 22, 0.04) 60%, transparent 100%);
+}
+
+.theme-abyssal-scarlet .anomalous-brand-badge {
+    background: rgba(45, 10, 18, 0.95) !important;
+    border: 1px solid #dc143c !important;
+    color: #e0d8db !important;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* 3. Empty State Thematic Illustration (Submerged Scarlet Mansion) */
+.theme-abyssal-scarlet .anomalous-empty-state-container,
+.theme-abyssal-scarlet .anomalous-source-empty,
+.theme-abyssal-scarlet .anomalous-recipe-empty {
+    background-image: url('assets/abyssal_scarlet_mansion.webp') !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.15) 95%) !important;
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.15) 95%) !important;
+    opacity: 0.75 !important;
+}
+
+/* 4. Gothic Buttons with Asymmetric Chamfers & Velvet Inner Shadow */
+.theme-abyssal-scarlet .anomalous-btn-primary,
+.theme-abyssal-scarlet .anomalous-recipe-btn-primary-action {
+    background-color: rgba(45, 10, 18, 0.95) !important;
+    background-image: none !important;
+    border: 1px solid rgba(220, 20, 60, 0.6) !important;
+    border-radius: 4px 12px 4px 12px !important;
+    color: #e0d8db !important;
+    box-shadow: none !important;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-btn-primary:hover,
+.theme-abyssal-scarlet .anomalous-recipe-btn-primary-action:hover {
+    background-color: rgba(65, 12, 24, 0.98) !important;
+    border-color: #dc143c !important;
+    color: #f1eaed !important;
+    box-shadow: none !important;
+    transform: translateY(-1px);
+}
+
+.theme-abyssal-scarlet .anomalous-btn-extract-node {
+    background-color: rgba(45, 10, 18, 0.95) !important;
+    background-image: none !important;
+    border: 1px solid rgba(220, 20, 60, 0.6) !important;
+    border-radius: 4px 12px 4px 12px !important;
+    color: #e0d8db !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet .anomalous-btn-extract-node:hover {
+    background-color: rgba(65, 12, 24, 0.98) !important;
+    border-color: #dc143c !important;
+    color: #f1eaed !important;
+    box-shadow: none !important;
+    transform: translateY(-1px);
+}
+
+.theme-abyssal-scarlet .anomalous-btn-ghost {
+    background: rgba(30, 10, 20, 0.6) !important;
+    border: 1px solid rgba(220, 20, 60, 0.35) !important;
+    color: #e0d8db !important;
+    border-radius: 2px 8px 2px 8px !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet .anomalous-btn-ghost:hover {
+    background: rgba(55, 12, 24, 0.85) !important;
+    border-color: #dc143c !important;
+    box-shadow: none !important;
+    color: #f1eaed !important;
+}
+
+.theme-abyssal-scarlet .anomalous-workbench-action-btn.is-primary {
+    background: rgba(50, 12, 22, 0.92) !important;
+    border: 1px solid rgba(220, 20, 60, 0.55) !important;
+    border-radius: 2px 10px 2px 10px !important;
+    color: #e0d8db !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet .anomalous-workbench-action-btn.is-primary:hover {
+    background: rgba(70, 15, 28, 0.95) !important;
+    border-color: #dc143c !important;
+    color: #f1eaed !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet .anomalous-workbench-action-btn.is-save {
+    background: rgba(30, 10, 20, 0.6) !important;
+    border: 1px solid rgba(220, 20, 60, 0.35) !important;
+    border-radius: 2px 8px 2px 8px !important;
+    color: #e0d8db !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet .anomalous-workbench-action-btn.is-save:hover {
+    background: rgba(55, 12, 24, 0.85) !important;
+    border-color: #dc143c !important;
+    box-shadow: none !important;
+    color: #f1eaed !important;
+}
+
+.theme-abyssal-scarlet .anomalous-mixer-smart-sort-btn {
+    background-color: rgba(45, 10, 22, 0.95) !important;
+    border: 1px solid rgba(220, 20, 60, 0.5) !important;
+    border-radius: 3px 8px 3px 8px !important;
+    color: #e0d8db !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet .anomalous-mixer-smart-sort-btn:hover {
+    background-color: rgba(65, 14, 28, 0.98) !important;
+    border-color: #dc143c !important;
+    box-shadow: none !important;
+    color: #f1eaed !important;
+    transform: translateY(-1px);
+}
+
+.theme-abyssal-scarlet .anomalous-workbench-generation-btn {
+    border-radius: 3px 10px 3px 10px !important;
+    background-color: rgba(45, 10, 20, 0.95) !important;
+    border: 1px solid rgba(220, 20, 60, 0.5) !important;
+    color: #e0d8db !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet .anomalous-workbench-generation-btn:hover:not(:disabled) {
+    background-color: rgba(65, 14, 28, 0.98) !important;
+    border-color: #dc143c !important;
+    color: #f1eaed !important;
+    box-shadow: none !important;
+}
+
+/* 5. Cards & Gothic Sovereign Palette (Strictly scoped, Inner Shadows & Sharp Borders) */
+.theme-abyssal-scarlet .anomalous-card {
+    border-color: rgba(220, 20, 60, 0.22) !important;
+    background: linear-gradient(180deg, rgba(25, 12, 20, 0.9) 0%, rgba(14, 6, 14, 0.98) 100%) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card:hover,
+.theme-abyssal-scarlet .anomalous-recipe-card:hover,
+.theme-abyssal-scarlet .anomalous-material-card:hover,
+.theme-abyssal-scarlet .anomalous-source-item:hover,
+.theme-abyssal-scarlet .anomalous-nb-note-item:hover {
+    border-color: #dc143c !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.95), inset 0 0 12px rgba(0, 0, 0, 0.7) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card-labels {
+    background: linear-gradient(to top, rgba(18, 5, 14, 0.97) 0%, rgba(18, 5, 14, 0.75) 65%, transparent 100%) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card:hover .anomalous-card-labels {
+    background: linear-gradient(to top, rgba(20, 6, 16, 0.99) 0%, rgba(22, 7, 18, 0.94) 75%, transparent 100%) !important;
+}
+
+/* Card Base Model Badges - Gothic Sovereign Palette (Inner Shadow, No Outer Glows) */
+.theme-abyssal-scarlet .anomalous-card-badge {
+    background: rgba(18, 8, 14, 0.92) !important;
+    color: #d4af37 !important;
+    border: 1px solid rgba(179, 135, 40, 0.4) !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card:hover .anomalous-card-badge {
+    border-color: #d4af37 !important;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.9) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card-badge.badge-gold {
+    color: #d4af37 !important;
+    background: rgba(26, 16, 10, 0.94) !important;
+    border-color: #b38728 !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card-badge.badge-amber {
+    color: #d97706 !important;
+    background: rgba(24, 12, 8, 0.94) !important;
+    border-color: #b45309 !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card-badge.badge-flux {
+    color: #a855f7 !important;
+    background: rgba(20, 8, 30, 0.94) !important;
+    border-color: #7c3aed !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card-badge.badge-rose,
+.theme-abyssal-scarlet .anomalous-model-tag {
+    color: #e0a0ac !important;
+    background: rgba(36, 10, 18, 0.92) !important;
+    border: 1px solid #dc143c !important;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8) !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card-action-btn {
+    background: rgba(22, 8, 16, 0.92) !important;
+    color: #e0d8db !important;
+    border: 1px solid rgba(220, 20, 60, 0.35) !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet .anomalous-card-action-btn:hover {
+    background: rgba(60, 12, 24, 0.9) !important;
+    border-color: #dc143c !important;
+    color: #f1eaed !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet .anomalous-recipe-card {
+    border-color: rgba(220, 20, 60, 0.22) !important;
+    background: rgba(18, 10, 26, 0.88) !important;
+}
+
+/* 6. Active Pills in Deep Velvet Wine (Inner Shadow & Sharp Border) */
+.theme-abyssal-scarlet .anomalous-recipe-pill.is-active,
+.theme-abyssal-scarlet .anomalous-workbench-pill.is-active {
+    background-color: rgba(60, 10, 20, 0.85) !important;
+    border-color: #dc143c !important;
+    color: #e0d8db !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet .anomalous-recipe-readiness-pill {
+    border-color: rgba(220, 20, 60, 0.35) !important;
+    color: #e0d8db !important;
+}
+
+/* 7. Error State Abyssal Corruption Animations */
+@keyframes abyssal-corruption {
+    0% {
+        box-shadow: 0 0 6px rgba(220, 20, 60, 0.4), inset 0 0 6px rgba(120, 0, 160, 0.3);
+        border-color: rgba(220, 20, 60, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 24px rgba(220, 20, 60, 0.88), inset 0 0 18px rgba(120, 0, 160, 0.65);
+        border-color: #ff3366;
+    }
+    100% {
+        box-shadow: 0 0 6px rgba(220, 20, 60, 0.4), inset 0 0 6px rgba(120, 0, 160, 0.3);
+        border-color: rgba(220, 20, 60, 0.5);
+    }
+}
+
+.theme-abyssal-scarlet .anomalous-trigger-error,
+.theme-abyssal-scarlet .anomalous-error-panel,
+.theme-abyssal-scarlet .anomalous-error-banner,
+.theme-abyssal-scarlet .anomalous-toast-error,
+.theme-abyssal-scarlet .anomalous-dialog-error {
+    animation: abyssal-corruption 2.8s infinite ease-in-out !important;
+    border: 1px solid rgba(220, 20, 60, 0.65) !important;
+}
+
+/* 8. Studio Dialog & Overlay Adaptations */
+.theme-abyssal-scarlet dialog.anomalous-gallery-viewer,
+html.theme-abyssal-scarlet dialog.anomalous-gallery-viewer {
+    background: #0a0510 !important;
+    border-color: rgba(220, 20, 60, 0.38) !important;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.95), inset 0 0 0 1px rgba(220, 20, 60, 0.3) !important;
+}
+
+/* 9. Model Scanner Radar Button & Spin Animation */
+#anomalous-scan-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 6px !important;
+    box-sizing: border-box !important;
+    vertical-align: middle !important;
+}
+
+#anomalous-scan-btn svg {
+    transition: transform 0.2s ease, filter 0.2s ease;
+    transform-origin: center center;
+}
+
+#anomalous-scan-btn:hover svg {
+    filter: none;
+}
+
+#anomalous-scan-btn.anomalous-radar-spinning {
+    color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.12) !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+
+#anomalous-scan-btn.anomalous-radar-spinning svg {
+    animation: anomalous-radar-spin 1.4s linear infinite !important;
+    filter: none !important;
+}
+
+@keyframes anomalous-radar-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.theme-abyssal-scarlet #anomalous-scan-btn:hover svg {
+    filter: none;
+}
+
+.theme-abyssal-scarlet #anomalous-scan-btn.anomalous-radar-spinning {
+    color: #ff4d6d !important;
+    background: rgba(45, 10, 20, 0.85) !important;
+    border: 1px solid #dc143c !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet #anomalous-scan-btn.anomalous-radar-spinning svg {
+    filter: none !important;
+}
+
+/* 10. Task 8: Pure Vector Iconography & Micro-interactions Overhaul */
+.anomalous-btn-icon {
+    display: inline-block;
+    vertical-align: -2px;
+    margin-right: 6px;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s ease;
+}
+
+button:hover .anomalous-btn-icon {
+    transform: scale(1.08);
+    filter: none;
+}
+
+#anomalous-sidebar-actions {
+    position: relative;
+    overflow: visible;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 8px 6px;
+    gap: 2px;
+    box-sizing: border-box;
+}
+
+#anomalous-sidebar-actions button {
+    position: relative;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 7px !important;
+    box-sizing: border-box !important;
+    vertical-align: middle !important;
+    color: #cbd5e1 !important;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    cursor: pointer !important;
+    overflow: hidden !important;
+    pointer-events: auto !important;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+#anomalous-sidebar-actions button:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.09) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    transform: none;
+    box-shadow: none;
+}
+
+#anomalous-sidebar-actions button svg {
+    width: 20px !important;
+    height: 20px !important;
+    stroke-width: 2px !important;
+    pointer-events: none !important;
+    transition: opacity 0.15s ease;
+}
+
+/* Abyssal Scarlet Mode overrides for Task 8 icon buttons (Sharp Borders & Inner Shadow) */
+.theme-abyssal-scarlet #anomalous-doctor-btn:hover {
+    color: #f43f5e !important;
+    background: rgba(55, 12, 22, 0.85) !important;
+    border: 1px solid #f43f5e !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet #anomalous-assistant-btn:hover {
+    color: #a855f7 !important;
+    background: rgba(36, 12, 45, 0.85) !important;
+    border: 1px solid #a855f7 !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet #anomalous-materials-btn:hover {
+    color: #d97706 !important;
+    background: rgba(45, 20, 10, 0.85) !important;
+    border: 1px solid #d97706 !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet #anomalous-global-settings-btn:hover {
+    color: #dc143c !important;
+    background: rgba(55, 12, 22, 0.85) !important;
+    border: 1px solid #dc143c !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet #anomalous-sidebar-actions button:hover {
+    border-color: #dc143c !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet #anomalous-sidebar-actions button:hover svg {
+    filter: none !important;
+}
+
+/* 11. Task 9: Master Container Geometric Details, Watermarks & Floating Tooltips */
+
+#anomalous-sidebar-actions::before {
+    display: none !important;
+}
+
+.theme-abyssal-scarlet #anomalous-sidebar-actions::before {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%23ff3366' stroke-width='1.5'%3E%3Ccircle cx='50' cy='50' r='45'/%3E%3Cpolygon points='50,5 95,50 50,95 5,50' stroke-dasharray='3 3'/%3E%3Cpolygon points='50,15 85,50 50,85 15,50'/%3E%3Ccircle cx='50' cy='50' r='12'/%3E%3C/svg%3E");
+    opacity: 0.055;
+}
+
+/* Abyssal Scarlet Mode override for energy divider */
+.theme-abyssal-scarlet #anomalous-sidebar-wrapper::after {
+    background: linear-gradient(180deg, 
+        rgba(220, 20, 60, 0) 0%, 
+        rgba(220, 20, 60, 0.45) 20%, 
+        rgba(255, 51, 102, 0.7) 50%, 
+        rgba(147, 51, 234, 0.45) 80%, 
+        rgba(220, 20, 60, 0) 100%
+    ) !important;
+    box-shadow: none !important;
+}
+
+/* ==========================================================================
+   GLOBAL CUSTOM TOOLTIP SYSTEM ([data-tooltip])
+   Frosted Glass, Anime Dark Neon Aesthetic, Absolute Native Title Killer
+   ========================================================================== */
+[data-tooltip]:not(.anomalous-card-action-btn),
+.anomalous-tooltip-target:not(.anomalous-card-action-btn) {
+    position: relative;
+}
+
+/* Base Tooltip Bubble (Default: Top) - Normal Mode (Neutral Clean Glass) */
+[data-tooltip]::after,
+.anomalous-tooltip-target::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    padding: 6px 12px;
+    background: rgba(18, 20, 26, 0.98);
+    color: #f1f5f9;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.35;
+    white-space: nowrap;
+    border-radius: var(--amb-radius-control, 6px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.65);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 999999;
+}
+
+/* Base Arrow (Default: Top) */
+[data-tooltip]::before,
+.anomalous-tooltip-target::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 3px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    border-width: 5px 5px 0 5px;
+    border-style: solid;
+    border-color: rgba(18, 20, 26, 0.98) transparent transparent transparent;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 999999;
+}
+
+/* Hover & Keyboard Focus Trigger (Standard 350ms Delay) */
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before,
+[data-tooltip]:focus-visible::after,
+[data-tooltip]:focus-visible::before,
+.anomalous-tooltip-target:hover::after,
+.anomalous-tooltip-target:hover::before,
+.anomalous-tooltip-target:focus-visible::after,
+.anomalous-tooltip-target:focus-visible::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    transition-delay: 0.35s;
+}
+
+/* Right-aligned Tooltip (Ideal for Sidebar Icons) */
+[data-tooltip-pos="right"]::after {
+    bottom: auto;
+    top: 50%;
+    left: calc(100% + 10px);
+    transform: translateY(-50%) translateX(-6px);
+}
+
+[data-tooltip-pos="right"]::before {
+    bottom: auto;
+    top: 50%;
+    left: calc(100% + 5px);
+    transform: translateY(-50%) translateX(-6px);
+    border-width: 5px 5px 5px 0;
+    border-color: transparent rgba(18, 20, 26, 0.98) transparent transparent;
+}
+
+[data-tooltip-pos="right"]:hover::after,
+[data-tooltip-pos="right"]:hover::before,
+[data-tooltip-pos="right"]:focus-visible::after,
+[data-tooltip-pos="right"]:focus-visible::before {
+    transform: translateY(-50%) translateX(0);
+    transition-delay: 0.35s;
+}
+
+/* Bottom-aligned Tooltip */
+[data-tooltip-pos="bottom"]::after {
+    bottom: auto;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-6px);
+}
+
+[data-tooltip-pos="bottom"]::before {
+    bottom: auto;
+    top: calc(100% + 3px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-6px);
+    border-width: 0 5px 5px 5px;
+    border-color: transparent transparent rgba(18, 20, 26, 0.98) transparent;
+}
+
+[data-tooltip-pos="bottom"]:hover::after,
+[data-tooltip-pos="bottom"]:hover::before,
+[data-tooltip-pos="bottom"]:focus-visible::after,
+[data-tooltip-pos="bottom"]:focus-visible::before {
+    transform: translateX(-50%) translateY(0);
+    transition-delay: 0.35s;
+}
+
+.anomalous-card-action-btn[data-tooltip-pos="bottom"]::after {
+    left: auto !important;
+    right: 0 !important;
+    transform: translateX(0) translateY(-6px) !important;
+}
+.anomalous-card-action-btn[data-tooltip-pos="bottom"]::before {
+    left: auto !important;
+    right: 8px !important;
+    transform: translateX(0) translateY(-6px) !important;
+}
+.anomalous-card-action-btn[data-tooltip-pos="bottom"]:hover::after,
+.anomalous-card-action-btn[data-tooltip-pos="bottom"]:hover::before {
+    transform: translateX(0) translateY(0) !important;
+}
+
+/* Left-aligned Tooltip */
+[data-tooltip-pos="left"]::after {
+    bottom: auto;
+    top: 50%;
+    left: auto;
+    right: calc(100% + 10px);
+    transform: translateY(-50%) translateX(6px);
+}
+
+[data-tooltip-pos="left"]::before {
+    bottom: auto;
+    top: 50%;
+    left: auto;
+    right: calc(100% + 5px);
+    transform: translateY(-50%) translateX(6px);
+    border-width: 5px 0 5px 5px;
+    border-color: transparent transparent transparent rgba(18, 20, 28, 0.95);
+}
+
+[data-tooltip-pos="left"]:hover::after,
+[data-tooltip-pos="left"]:hover::before {
+    transform: translateY(-50%) translateX(0);
+}
+
+/* Top-aligned Tooltip */
+[data-tooltip-pos="top"]::after,
+.anomalous-tooltip-target[data-tooltip-pos="top"]::after {
+    top: auto;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) translateY(4px);
+}
+
+[data-tooltip-pos="top"]::before,
+.anomalous-tooltip-target[data-tooltip-pos="top"]::before {
+    top: auto;
+    bottom: calc(100% + 3px);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%) translateY(4px);
+    border-width: 5px 5px 0 5px;
+    border-style: solid;
+    border-color: rgba(18, 20, 28, 0.95) transparent transparent transparent;
+}
+
+[data-tooltip-pos="top"]:hover::after,
+[data-tooltip-pos="top"]:hover::before,
+.anomalous-tooltip-target[data-tooltip-pos="top"]:hover::after,
+.anomalous-tooltip-target[data-tooltip-pos="top"]:hover::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Theme: Abyssal Scarlet Tooltip (Inner Shadow, Sharp Border, No Outer Neon Glow) */
+.theme-abyssal-scarlet [data-tooltip]::after,
+.theme-abyssal-scarlet .anomalous-tooltip-target::after {
+    background: rgba(22, 8, 16, 0.98);
+    border-color: #dc143c;
+    color: #e0d8db;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.95), inset 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.theme-abyssal-scarlet [data-tooltip]::before,
+.theme-abyssal-scarlet .anomalous-tooltip-target::before {
+    border-color: rgba(22, 8, 16, 0.98) transparent transparent transparent;
+}
+
+.theme-abyssal-scarlet [data-tooltip-pos="top"]::before,
+.theme-abyssal-scarlet .anomalous-tooltip-target[data-tooltip-pos="top"]::before {
+    border-color: rgba(22, 8, 16, 0.98) transparent transparent transparent;
+}
+
+.theme-abyssal-scarlet [data-tooltip-pos="right"]::before {
+    border-color: transparent rgba(22, 8, 16, 0.98) transparent transparent;
+}
+
+.theme-abyssal-scarlet [data-tooltip-pos="bottom"]::before {
+    border-color: transparent transparent rgba(22, 8, 16, 0.98) transparent;
+}
+
+.theme-abyssal-scarlet [data-tooltip-pos="left"]::before {
+    border-color: transparent transparent transparent rgba(22, 8, 16, 0.98);
+}
+
+
+
+
+
+
+
+
+/* ==========================================================================
+   MASTER HEADER & GALLERY CONTAINER DUAL-MODE ARCHITECTURE
+   Normal Mode: Restrained Dark Neutral Studio
+   Easter Egg Mode: Gothic Vampire Abyssal Scarlet Expansion
+   ========================================================================== */
+
+/* 1. Normal Mode Master Header (Neutral Charcoal Frosted Glass) */
+#anomalous-brand-bar {
+    height: 48px !important;
+    padding: 0 14px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+#anomalous-header {
+    height: 48px !important;
+    background: rgba(20, 20, 23, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 16px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+    cursor: move;
+    position: relative;
+    z-index: 10;
+}
+
+.anomalous-header-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.anomalous-header-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+
+.anomalous-header-center {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    flex: 1 1 auto !important;
+    margin: 0 auto !important;
+}
+
+.anomalous-header-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+#anomalous-header button {
+    margin-right: 0;
+    padding: 0 10px !important;
+    height: 28px !important;
+    box-sizing: border-box !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: #c0c4cc !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 6px !important;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    font-size: 11.5px !important;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    backdrop-filter: blur(8px);
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#anomalous-header button:hover {
+    background: rgba(255, 255, 255, 0.09) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: none !important;
+}
+
+#anomalous-header button.active {
+    background: rgba(255, 255, 255, 0.14) !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35) !important;
+}
+
+#anomalous-header button .anomalous-btn-text {
+    display: inline !important;
+    font-size: 11.5px !important;
+    font-weight: 500 !important;
+    line-height: 1 !important;
+    color: inherit !important;
+}
+
+#anomalous-header button svg,
+#anomalous-header button .anomalous-btn-icon {
+    width: 13px !important;
+    height: 13px !important;
+    flex-shrink: 0 !important;
+    vertical-align: -1px !important;
+}
+
+#anomalous-dock-btn {
+    padding: 0 !important;
+    width: 28px !important;
+    height: 28px !important;
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+#anomalous-dock-btn:hover {
+    background: rgba(255, 255, 255, 0.09) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important;
+}
+
+#anomalous-dock-btn svg {
+    width: 13px !important;
+    height: 13px !important;
+}
+
+/* 2. Normal Mode Gallery Container & Panels (Clean Neutral Dark Canvas) */
+#anomalous-gallery-panel,
+.anomalous-gallery-container {
+    background-color: transparent !important;
+    position: relative;
+}
+
+.anomalous-gallery-grid {
+    background-color: transparent !important;
+}
+
+.anomalous-gallery-container::before,
+#anomalous-gallery-panel::before {
+    display: none !important;
+}
+
+.anomalous-gallery-container > *,
+#anomalous-gallery-panel > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* 3. Abyssal Scarlet Mode Master Header & Gallery Domain Expansion (Easter Egg) */
+.theme-abyssal-scarlet #anomalous-header {
+    background: #140812 !important;
+    border-bottom: 1px solid rgba(220, 20, 60, 0.35) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.85) !important;
+}
+
+.theme-abyssal-scarlet #anomalous-header button {
+    background: rgba(30, 10, 20, 0.6) !important;
+    color: #e0d8db !important;
+    border: 1px solid rgba(220, 20, 60, 0.3) !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet #anomalous-header button:hover {
+    background: rgba(55, 12, 24, 0.85) !important;
+    border-color: #dc143c !important;
+    color: #f1eaed !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet #anomalous-header button.active {
+    background: rgba(55, 12, 22, 0.9) !important;
+    border: 1px solid #dc143c !important;
+    color: #e0d8db !important;
+    box-shadow: none !important;
+}
+
+.theme-abyssal-scarlet #anomalous-gallery-panel,
+.theme-abyssal-scarlet .anomalous-gallery-grid,
+.theme-abyssal-scarlet .anomalous-gallery-container {
+    background-color: #0c0812 !important;
+}
+
+.theme-abyssal-scarlet .anomalous-gallery-container::before,
+.theme-abyssal-scarlet #anomalous-gallery-panel::before {
+    display: block !important;
+    content: '' !important;
+    position: absolute !important;
+    inset: 0 !important;
+    background-color: #0d080c !important;
+    background-image: url('assets/abyssal_bg_concept.webp'), radial-gradient(circle at 50% 50%, rgba(220, 20, 60, 0.03) 0%, transparent 60%) !important;
+    background-size: cover !important;
+    background-position: center !important;
+    mix-blend-mode: overlay !important;
+    opacity: 0.15 !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
+}
+
+/* ==========================================================================
+   Recipe Studio Dedicated Container & Topbar Close Button
+   ========================================================================== */
+.anomalous-nb-container.anomalous-recipe-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #0d1117;
+    position: relative;
+}
+
+.anomalous-recipe-modal-close {
+    position: absolute;
+    top: 8px;
+    right: 14px;
+    z-index: 100;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: #ff4444;
+    font-size: 1.8rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.18s ease;
+    user-select: none;
+}
+
+.anomalous-recipe-modal-close:hover {
+    background: rgba(239, 68, 68, 0.16);
+    color: #ff6666;
+    transform: scale(1.08);
+}
+
+.anomalous-recipe-topbar-close {
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #94a3b8 !important;
+    padding: 4px 10px !important;
+    font-size: 0.88rem !important;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-left: 6px;
+}
+
+.anomalous-recipe-topbar-close:hover {
+    background: rgba(239, 68, 68, 0.18) !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+    color: #f87171 !important;
+}
+
+/* ==========================================================================
+   Quick Prompt Translator (Modal & Tag Chips)
+   ========================================================================== */
+.anomalous-translator-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(8px);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: anmFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.anomalous-translator-modal {
+    width: min(840px, 94vw);
+    max-height: 88vh;
+    background: #0f172a;
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8), 0 0 32px rgba(56, 189, 248, 0.12);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+

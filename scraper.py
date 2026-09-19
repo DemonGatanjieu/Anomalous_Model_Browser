@@ -22,6 +22,7 @@ import argparse
 import shutil
 from typing import Dict, Optional
 from model_policies import is_physical_rename_protected
+from model_identity import computed_file_identity
 
 
 # Fixed tuples avoid rebuilding long extension lists for every scanned model.
@@ -103,35 +104,6 @@ def calculate_sha256(file_path: str) -> str:
     return sha256_hash.hexdigest()
 
 import struct
-
-def extract_safetensors_hash(file_path: str) -> Optional[str]:
-    """尝试从 safetensors 头文件中以 O(1) 速度提取内置的 Hash，跳过全量计算"""
-    try:
-        with open(file_path, "rb") as f:
-            header_size_bytes = f.read(8)
-            if len(header_size_bytes) < 8:
-                return None
-            header_size = struct.unpack('<Q', header_size_bytes)[0]
-            if header_size > 100 * 1024 * 1024:  # 异常大小保护 (头文件大于100MB)
-                return None
-            
-            header_json_bytes = f.read(header_size)
-            header_str = header_json_bytes.decode('utf-8')
-            header_json = json.loads(header_str)
-            
-            metadata = header_json.get('__metadata__', {})
-            if not metadata:
-                return None
-                
-            # 优先级1: 标准 modelspec
-            if 'modelspec.hash.sha256' in metadata:
-                return metadata['modelspec.hash.sha256']
-            if 'modelspec.hash.blake3' in metadata:
-                return metadata['modelspec.hash.blake3']
-                
-    except Exception as e:
-        pass
-    return None
 
 def infer_base_model_from_header(file_path: str) -> str:
     """从 safetensors 头文件的张量键名推断底层 Base Model (用于脱机/HuggingFace 兼容)"""
@@ -380,6 +352,7 @@ def main():
             print(f"\n---> 处理文件: {filename} (位于 {root})")
             
             civitai_data = None
+            file_hash = None
             if info_exists and needs_rename:
                 info_path = old_base + ".info"
                 if not os.path.exists(info_path):
@@ -392,29 +365,10 @@ def main():
                     pass
             
             if not civitai_data:
-                file_hash = None
-                
+                file_hash = calculate_sha256(file_path)
                 if not args.offline_only:
-                    # Fallback 1: Try header hash on Civitai
-                    header_hash = extract_safetensors_hash(file_path)
-                    if header_hash:
-                        print(f"[*] 成功从头文件提取 Hash: {header_hash}，尝试请求 Civitai...")
-                        civitai_data = fetch_civitai_info(header_hash)
-                        if civitai_data:
-                            file_hash = header_hash
-                            
-                    # Fallback 2: If header hash fails (or doesn't exist), compute full SHA256
-                    if not civitai_data:
-                        print(f"[*] 头文件 Hash 未命中或不存在，计算全量物理 SHA256...")
-                        full_hash = calculate_sha256(file_path)
-                        civitai_data = fetch_civitai_info(full_hash)
-                        file_hash = full_hash
-                else:
-                    print(f"[*] Offline-only: 跳过 Civitai 获取，将强制使用脱机张量推断")
-                    file_hash = extract_safetensors_hash(file_path)
-                    if not file_hash:
-                        file_hash = calculate_sha256(file_path)
-            
+                    civitai_data = fetch_civitai_info(file_hash)
+
             # Fallback 3: Local Offline Inference (if Civitai still fails or offline_only)
             if not civitai_data:
                 if args.skip_local_metadata:
@@ -472,6 +426,8 @@ def main():
             # 兼容性大刀阔斧改革：直接保存全宇宙最原汁原味的格式
             # ==========================================
             info_data = civitai_data
+            if file_hash:
+                info_data["anomalous_file_identity"] = computed_file_identity(file_path, file_hash)
 
             if args.virtual_rename:
                 info_data["anomalous_custom_name"] = f"{model_name}_{version_name}"

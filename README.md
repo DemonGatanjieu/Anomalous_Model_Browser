@@ -36,7 +36,7 @@
 | **Comprehensive Model Management** | Automatically extract Base Model architectures, cover images, trigger words, and author info via hash scanning. Customize names, notes, and covers with safe deletion & visual replacement. |
 | **Workflow Repair (Model Doctor 🩺)** | Auto-detect missing model nodes when loading external workflows and swap them with matching local paths in one click. |
 | **Node Assistant & Presets (🤖)** | Visually replace models or safely insert LoRAs into compatible chains directly from the canvas. Apply node parameters from Workflow Recipes transactionally. |
-| **Workflow Recipes & Presets (🧰)** | Save complete workflows with covers, notes, tags, model identities, and parameter snapshots. Append to canvas, compare versions, and export portable packages. |
+| **Workflow Recipes & Presets (🧰)** | Save partial or complete workflows with covers, notes, tags, model identities, and parameter snapshots. Partial recipes append to the current canvas; complete recipes open in a new canvas. |
 | **Smart Prompt Notebook (📑)** | Architecture-aware compatibility matching for Checkpoints and LoRAs, built-in translation, auto-tagging, and 1-click canvas deployment. |
 | **History Gallery (🖼️)** | Native viewer for your `output` folder with mouse-wheel zoom, deletion, and direct drag-and-drop workflow reconstruction onto the canvas. |
 
@@ -73,7 +73,7 @@ Open it with **Ctrl + Shift + M**, the floating **📦** button, or **Extensions
 
 #### 4. Workflow Recipes & Parameter Notebooks 🧰
 * **Location**: Open **Creative Workspace (📑)** and switch to **Workflow Recipes**.
-* **Features**: Save graphs with covers, notes, and model hashes. Append recipes to current canvas, inspect parameter differences against outputs, compare versions, and import/export portable packages.
+* **Features**: Save graphs with covers, notes, and model hashes. Append recipes to current canvas, inspect parameter differences against outputs, and compare versions. Package import/export is temporarily unavailable. The verified workflow share-code Import / Export Center is in Toolbox.
 
 #### 5. Settings Panel ⚙️
 * **Location**: The Gear icon (**⚙️**) at the bottom-left.
@@ -82,6 +82,11 @@ Open it with **Ctrl + Shift + M**, the floating **📦** button, or **Extensions
 #### 6. Creative Workspace & Prompt Notes 📑
 * **Location**: Top navigation tabs (**Models 📦**, **Gallery 🖼️**, **Workspace 📑**, **Dock Side ◧**).
 * **Usage**: Select a Base Model architecture, attach compatible LoRAs, paste & auto-tag bilingual prompts, and click **Send to Canvas** to deploy directly.
+
+#### 7. Material Library 🖼️
+* **Capture**: Open a generated PNG's parameter details to save its image and complete workflow, or save selected node parameters. Repeated saves of the same image and selection ask before creating another copy.
+* **Find and reuse**: In Workspace → Material Library, search names, tags, or node types; filter by type/tag; edit names and tags in a material's details. Complete snapshots open as workflows; node parameters are applied through Node Assistant.
+* **Storage**: Materials live in the ComfyUI user directory under `workflows/anomalous_materials`. Prompt Notes use `workflows/anomalous_notebooks`; old notes in the extension are copied on first access, retaining the originals.
 
 > [!WARNING]
 > **Beta Data Protection:** Workflow Recipes and Parameter Presets are currently in testing. Please back up `workflows/anomalous_recipes` and `workflows/anomalous_parameters` inside your ComfyUI user directory before updating.
@@ -105,7 +110,7 @@ Open it with **Ctrl + Shift + M**, the floating **📦** button, or **Extensions
 | **全方位模型管理** | 通过文件哈希自动提取基础架构、封面图、触发词与作者信息；支持看图一键替换模型、自定义备注与安全删除。 |
 | **节点智能修复 (模型医生 🩺)** | 导入他人工作流发生节点爆红时，模型医生可自动识别缺失模型并一键替换为本地有效路径。 |
 | **节点助手与参数预设 (🤖)** | 画布选中节点即可可视化选图换模型、向兼容链路插入 LoRA，或一键应用工作流配方中沉淀的节点参数（自动跳过易变种子）。 |
-| **工作流配方 (🧰)** | 保存完整工作流及封面、标签、模型身份与参数快照；支持追加到画布、历史版本比对、参数差异分析及便携分享包导入导出。 |
+| **工作流配方 (🧰)** | 保存局部或整体工作流及封面、标签、模型身份与参数快照；局部配方追加到当前画布，整体配方在新画布打开。 |
 | **智能提示词笔记 (📑)** | 架构级兼容性匹配（主模型+兼容 LoRA），内置双语分块翻译与标签编辑，支持一键打包发送至画布。 |
 | **原生出图图库 (🖼️)** | 原生读取本地 `output` 文件夹，支持滚轮缩放与安全删除，**直接将图片拖拽至画布即可原地还原工作流**。 |
 
@@ -142,7 +147,7 @@ Open it with **Ctrl + Shift + M**, the floating **📦** button, or **Extensions
 
 #### 4. 工作流配方与参数笔记本 🧰
 * **入口位置**：顶部 **创作工作台 (📑)** ➔ 切换至 **工作流配方**。
-* **主要功能**：完整保存当前节点图、封面、标签与参数快照；支持无损追加到当前画布、出图参数差异对比、版本回滚与便携包分享。
+* **主要功能**：保存当前节点图、封面、标签与参数快照；未闭合的局部配方追加到当前画布，可独立运行的整体配方在新画布打开，并支持出图参数差异对比、版本回滚。配方包导入和导出暂未开放；已验证的工作流分享码导入导出中心位于实用工具箱。
 
 #### 5. 个性化配置 (设置面板) ⚙️
 * **入口位置**：侧边栏左下角 **齿轮图标 (⚙️)**。
@@ -151,6 +156,11 @@ Open it with **Ctrl + Shift + M**, the floating **📦** button, or **Extensions
 #### 6. 创作工作台与提示词笔记 📑
 * **入口位置**：顶部导航栏 (**模型 📦**、**图库 🖼️**、**工作台 📑**、**侧栏停靠 ◧**)。
 * **提示词组装**：选择基础模型架构过滤兼容 LoRA，粘贴提示词并一键双语翻译，点击 **发送到画布** 即可自动连线布署。
+
+#### 7. 素材库 🖼️
+* **保存素材**：打开生成 PNG 的参数详情，可以保存图片与完整工作流，也可以只保存选中节点参数。相同图片和节点范围再次保存时，会先提示是否另存一份。
+* **查找复用**：在「工作台 → 素材库」按名称、标签或节点类型搜索，按类型和标签筛选；进入详情可修改名称与标签。完整素材可打开工作流，节点参数通过节点助手应用。
+* **本地存储**：素材保存在 ComfyUI 用户目录的 `workflows/anomalous_materials`，提示词笔记保存在 `workflows/anomalous_notebooks`。首次访问会复制插件内的旧笔记，并保留原文件。
 
 > [!WARNING]
 > **测试功能数据安全提醒：** 工作流配方与参数预设目前属于测试阶段，更新插件前建议备份 ComfyUI 用户目录下的 `workflows/anomalous_recipes` 与 `workflows/anomalous_parameters` 文件夹。
