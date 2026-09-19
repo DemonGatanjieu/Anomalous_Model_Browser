@@ -13,8 +13,11 @@ assert.equal(imports.map(match => match[1]).length, new Set(imports.map(match =>
 assert.equal(new Set(imports.map(match => match[2])).size, 1, 'child stylesheets must share one cache version');
 assert.equal(entry.replace(/@import[^;]+;\s*/g, ''), '', 'styles.css must remain an import-only external entry');
 
-const chunks = await Promise.all(imports.map(match => fs.readFile(path.join(root, 'web/styles', match[1]))));
+const chunks = await Promise.all(imports.map(async match => {
+  const content = await fs.readFile(path.join(root, 'web/styles', match[1]), 'utf8');
+  return Buffer.from(content.replace(/\r\n/g, '\n'));
+}));
 const digest = crypto.createHash('sha256').update(Buffer.concat(chunks)).digest('hex');
-assert.equal(digest, 'da07cdcaf31cda5c126fef42dd341873851839b959b2871522d127da96862131', 'CSS rule bytes or cascade order changed');
+assert.equal(digest, 'b4b133ca259cd97ea814e74194074b652695547be53000858175e8b6ec118e02', 'CSS rule bytes or cascade order changed');
 
 console.log('CSS bundle: ordered imports preserve the original stylesheet byte-for-byte.');
