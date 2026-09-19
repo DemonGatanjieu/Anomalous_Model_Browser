@@ -73,3 +73,20 @@ assert.ok(scan.querySelector('.anomalous-action-label'));
 assert.ok(scan.classList.contains('anomalous-radar-spinning'));
 assert.match(scan.getAttribute('data-tooltip'), /metadata and previews/);
 console.log('Sidebar labels: repeated setup, scanner icon replacement and click behavior passed.');
+
+const tour = await f.module('ui_spotlight_tour.js');
+const modelsBtn = new Element('button'); modelsBtn.id = 'anomalous-models-btn';
+const scanBtn = new Element('button'); scanBtn.id = 'anomalous-scan-btn';
+f.document.body.append(modelsBtn, scanBtn);
+assert.equal(tour.isSpotlightTourActive(), false);
+assert.equal(tour.startSpotlightTour(owner), true);
+assert.equal(tour.isSpotlightTourActive(), true);
+const overlay = f.document.querySelector('.anomalous-spotlight-overlay');
+assert.ok(overlay);
+assert.match(overlay.textContent, /Dedicated Workspaces/);
+await f.button(overlay, 'Next ›').click();
+assert.match(overlay.textContent, /Precision Radar Scan/);
+tour.closeSpotlightTour();
+assert.equal(tour.isSpotlightTourActive(), false);
+console.log('Spotlight tour: lifecycle, step advancement, and clean exit passed.');
+

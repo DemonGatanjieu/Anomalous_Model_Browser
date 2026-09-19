@@ -2,6 +2,7 @@ import { CURRENT_UPDATE_GUIDE, validateUpdateGuide } from './update_guide_data.j
 import { i18n, translate as t } from './locales.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { text } from './ui_dom.js';
+import { startSpotlightTour } from './ui_spotlight_tour.js';
 
 const acknowledgedThisSession = new Set();
 let activeGuide = null;
@@ -65,9 +66,15 @@ export function showUpdateGuide(owner, { force = false, guide = CURRENT_UPDATE_G
     progress.setAttribute('aria-live', 'polite');
     const footer = text(dialog, 'div', '', 'anomalous-update-guide-footer');
     const skip = text(footer, 'button', t('updateGuideSkip'), 'anomalous-btn-ghost');
+    const startTour = text(footer, 'button', t('updateGuideStartTour') || '🎯 界面按键遮罩导览', 'anomalous-btn-ghost anomalous-btn-tour');
+    startTour.id = 'anomalous-update-guide-tour-btn';
+    startTour.onclick = () => {
+        closeUpdateGuide(owner, true);
+        startSpotlightTour(owner);
+    };
     const back = text(footer, 'button', t('updateGuideBack'), 'anomalous-btn-ghost');
     const next = text(footer, 'button', '', 'anomalous-btn-primary');
-    for (const button of [skip, back, next]) button.type = 'button';
+    for (const button of [skip, startTour, back, next]) button.type = 'button';
     let index = 0;
     const render = () => {
         const step = guide.steps[index];

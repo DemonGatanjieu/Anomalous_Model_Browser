@@ -2,6 +2,7 @@
 
 import { translate } from './locales.js';
 import { showUpdateGuide } from './ui_update_guide.js';
+import { startSpotlightTour } from './ui_spotlight_tour.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -72,14 +73,43 @@ export function showHelp() {
         footer.style.alignItems = 'center';
         footer.style.justifyContent = 'space-between';
 
+        const leftButtons = document.createElement('div');
+        leftButtons.style.display = 'flex';
+        leftButtons.style.gap = '10px';
+
+        const tourBtn = document.createElement('button');
+        tourBtn.id = 'anomalous-help-tour-btn';
+        tourBtn.textContent = t('updateGuideStartTour') || (window.anomalous_browser_lang === 'zh' ? '🎯 界面按键遮罩导览' : '🎯 Spotlight Tour');
+        tourBtn.type = 'button';
+        tourBtn.style.padding = '8px 14px';
+        tourBtn.style.background = '#2563eb';
+        tourBtn.style.color = '#fff';
+        tourBtn.style.border = 'none';
+        tourBtn.style.borderRadius = '4px';
+        tourBtn.style.cursor = 'pointer';
+        tourBtn.style.fontWeight = '600';
+        tourBtn.onclick = () => {
+            this.helpModal?.remove();
+            startSpotlightTour(this);
+        };
+
         const replayGuideBtn = document.createElement('button');
         replayGuideBtn.id = 'anomalous-help-replay-guide-btn';
         replayGuideBtn.textContent = t('updateGuideReplay');
         replayGuideBtn.type = 'button';
+        replayGuideBtn.style.padding = '8px 12px';
+        replayGuideBtn.style.background = 'transparent';
+        replayGuideBtn.style.color = '#cbd5e1';
+        replayGuideBtn.style.border = '1px solid rgba(255,255,255,0.2)';
+        replayGuideBtn.style.borderRadius = '4px';
+        replayGuideBtn.style.cursor = 'pointer';
         replayGuideBtn.onclick = () => {
             this.helpModal?.remove();
             showUpdateGuide(this, { force: true });
         };
+
+        leftButtons.appendChild(tourBtn);
+        leftButtons.appendChild(replayGuideBtn);
 
         const closeBtn = document.createElement('button');
         closeBtn.innerHTML = t('closeHelp');
@@ -91,7 +121,7 @@ export function showHelp() {
         closeBtn.style.cursor = 'pointer';
         closeBtn.onclick = () => this.helpModal.remove();
 
-        footer.appendChild(replayGuideBtn);
+        footer.appendChild(leftButtons);
         footer.appendChild(closeBtn);
 
         box.appendChild(header);
