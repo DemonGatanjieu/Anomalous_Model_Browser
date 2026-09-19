@@ -271,4 +271,24 @@ toastMsg = await wizard.formatScanCompletionToast({ filename: 'unknown.safetenso
 assert.equal(toastMsg, 'ℹ️ 未在 Civitai 匹配到此模型', 'factual unmatched message');
 assert.equal(toastMsg.includes('编辑') || toastMsg.includes('右键'), false, 'no speculative advice');
 
+// 5. Realistic backend response format with model wrapper and python metadata fields
+f.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+        status: 'success',
+        model: {
+            filename: 'flux1-dev-fp8_flux1-dev-fp8.safetensors',
+            metadata: {
+                name: 'flux1-dev-fp8',
+                baseModel: 'Flux.1 D',
+                civitai_url: '',
+                hash: '8e91b68084b53a7fc44ed2a3756d821e355ac1a7b6fe29be760c1db532f3d88a'
+            },
+            preview_url: ''
+        }
+    })
+});
+toastMsg = await wizard.formatScanCompletionToast({ filename: 'flux1-dev-fp8_flux1-dev-fp8.safetensors' });
+assert.equal(toastMsg, 'ℹ️ 非 Civitai 模型：已识别底模为 [Flux.1 D]', 'unpacks real backend model wrapper');
+
 console.log('Sidebar feature modules: help close, folder cancel/save, and scan wizard launch passed.');

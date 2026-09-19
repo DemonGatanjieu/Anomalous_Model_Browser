@@ -727,10 +727,18 @@ export async function formatScanCompletionToast(model) {
         const findRes = await fetch('/anomalous/find_model?search=' + encodeURIComponent(model.filename));
         if (findRes.ok) {
             const updated = await findRes.json();
-            if (updated && updated.metadata) {
-                const isCivitai = Boolean(updated.metadata.id && updated.metadata.id !== -1 && updated.metadata.modelId !== -1);
-                const hasPreview = Boolean(updated.preview_url);
-                const baseModel = updated.metadata.baseModel;
+            const target = updated?.model || updated || model;
+            if (target && target.metadata) {
+                const meta = target.metadata;
+                const isCivitai = Boolean(
+                    (meta.id && meta.id !== -1) ||
+                    (meta.modelId && meta.modelId !== -1) ||
+                    (meta.model_id && meta.model_id !== -1) ||
+                    (meta.version_id && meta.version_id !== -1) ||
+                    meta.civitai_url
+                );
+                const hasPreview = Boolean(target.preview_url);
+                const baseModel = meta.baseModel;
 
                 if (isCivitai && hasPreview) {
                     return isZh ? `✓ 已从 Civitai 获取封面与模型信息！` : `✓ Civitai cover & metadata fetched!`;
