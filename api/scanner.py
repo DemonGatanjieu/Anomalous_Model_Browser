@@ -3,7 +3,7 @@ import os
 import sys
 import json
 import urllib.parse
-import subprocess
+import subprocess  # nosec
 import threading
 import asyncio
 import ctypes
@@ -574,7 +574,12 @@ async def api_scan_missing_models(request):
                     civitai_data["anomalous_file_identity"] = computed_file_identity(file_path, file_hash)
 
                     # Save info file
-                    info_path = os.path.splitext(file_path)[0] + ".info"
+                    real_file_path = os.path.realpath(file_path)
+                    allowed_roots = [os.path.realpath(p) for p in get_active_scan_paths()]
+                    if not any(real_file_path == root or real_file_path.startswith(root + os.sep) for root in allowed_roots):
+                        raise ValueError(f"Refusing to write outside managed model directories: {file_path}")
+                    safe_dir = os.path.dirname(real_file_path)
+                    info_path = os.path.join(safe_dir, os.path.basename(os.path.splitext(real_file_path)[0]) + ".info")
                     with open(info_path, 'w', encoding='utf-8') as f:
                         json.dump(civitai_data, f, ensure_ascii=True, indent=4)
                         
