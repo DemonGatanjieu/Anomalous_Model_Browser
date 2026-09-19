@@ -159,10 +159,11 @@ export async function loadModels() {
                 };
 
                 const applyBtn = document.createElement('button');
-                applyBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+                applyBtn.type = 'button';
+                applyBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
                 applyBtn.className = 'anomalous-card-action-btn action-apply anomalous-tooltip-target';
                 applyBtn.removeAttribute('title');
-                applyBtn.setAttribute('data-tooltip', t('applyToCanvas'));
+                applyBtn.setAttribute('data-tooltip', window.anomalous_browser_lang === 'zh' ? '一键发布到画布' : 'Add Node to Canvas');
                 applyBtn.setAttribute('data-tooltip-pos', 'bottom');
                 applyBtn.onclick = (e) => {
                     e.stopPropagation();
@@ -171,10 +172,11 @@ export async function loadModels() {
                 card.appendChild(applyBtn);
 
                 const editBtn = document.createElement('button');
+                editBtn.type = 'button';
                 editBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
                 editBtn.className = 'anomalous-card-action-btn action-edit anomalous-tooltip-target';
                 editBtn.removeAttribute('title');
-                editBtn.setAttribute('data-tooltip', t('editModel'));
+                editBtn.setAttribute('data-tooltip', window.anomalous_browser_lang === 'zh' ? '编辑模型信息' : 'Edit Model Info');
                 editBtn.setAttribute('data-tooltip-pos', 'bottom');
                 editBtn.onclick = (e) => {
                     e.stopPropagation();
@@ -183,10 +185,11 @@ export async function loadModels() {
                 card.appendChild(editBtn);
 
                 const singleScanBtn = document.createElement('button');
+                singleScanBtn.type = 'button';
                 singleScanBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>`;
                 singleScanBtn.className = 'anomalous-card-action-btn action-scan anomalous-tooltip-target';
                 singleScanBtn.removeAttribute('title');
-                singleScanBtn.setAttribute('data-tooltip', t('scanModelPrecisely'));
+                singleScanBtn.setAttribute('data-tooltip', window.anomalous_browser_lang === 'zh' ? '精准扫描此模型' : 'Scan Model Precisely');
                 singleScanBtn.setAttribute('data-tooltip-pos', 'bottom');
                 singleScanBtn.onclick = (e) => {
                     e.stopPropagation();
@@ -214,17 +217,20 @@ export function applyModelToCanvas(type, subfolder, model) {
             'checkpoints': 'CheckpointLoaderSimple',
             'loras': 'LoraLoader',
             'unet': 'UNETLoader',
-            'diffusion_models': 'UNETLoader'
+            'diffusion_models': 'UNETLoader',
+            'vae': 'VAELoader',
+            'clip': 'CLIPLoader',
+            'controlnet': 'ControlNetLoader'
         };
         const nodeType = nodeTypeMap[type];
         if (!nodeType) {
-            alert(t('unsupportedAutoApply'));
+            alert(window.anomalous_browser_lang === 'zh' ? '当前类型暂不支持自动发布到画布' : 'Unsupported auto apply for this type');
             return;
         }
 
         const node = LiteGraph.createNode(nodeType);
         if (!node) {
-            alert(t('createNodeFailed') + nodeType);
+            alert((window.anomalous_browser_lang === 'zh' ? '创建节点失败: ' : 'Failed to create node: ') + nodeType);
             return;
         }
 
@@ -239,12 +245,15 @@ export function applyModelToCanvas(type, subfolder, model) {
 
         app.graph.add(node);
 
-        const sub = subfolder.replace(/^\/+/, '').replace(/\/+$/, '');
+        const sub = (subfolder || '').replace(/^\/+/, '').replace(/\/+$/, '');
         const relPath = sub ? `${sub}/${model.filename}` : model.filename;
 
         this.setWidgetValuePath(node, relPath);
 
-        this.close();
+        const isDocked = this.container?.classList.contains('anomalous-docked');
+        if (!isDocked) {
+            this.close();
+        }
 
         // 粘到鼠标上的逻辑
         let isSticking = true;

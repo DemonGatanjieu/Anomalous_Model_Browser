@@ -102,7 +102,10 @@ DOM or live LiteGraph state.
 - `tool_registry.js` centralizes metadata, SVG icons (enlarged 20px crisp vector outlines with 2px stroke, #cbd5e1 contrast), and stable IDs for the 9 catalog tools (including Prompt Notes / 提示词笔记) and 2 fixed anchors (Toolbox and Settings).
 - `shortcut_layout.js` provides tool layout utilities and fallbacks. The bottom shortcut bar maintains the clean fixed 4-tool setup (`scan`, `doctor`, `assistant`, `materials`) plus two anchors (`toolbox`, `settings`) housed in prominent 36px buttons with full click/active text suppression and `.is-active` toggled styling.
 - `ui_sidebar.js`'s Toolbox modal strictly filters out all tools already present on the bottom bar, presenting a sleek 216px 3-row utility catalog with compact, frameless 44px tiles (providing an elevated silhouette with breathing room for catalog discovery), downward anchor caret pointing to the toolbox trigger button, 0.18s smooth spring pop-in animation, clean click action execution, and zero obstructive text or beta footers.
-- `ui_grid.js` and model-detail modules own model presentation: `ui_detail.js`
+- `ui_grid.js` and model-detail modules own model presentation: `ui_grid.js` manages chunked card rendering,
+  card action buttons (one-click canvas addition with plus icon, model metadata editor, precision scanner)
+  with absolute positioning cascades immune to tooltip target conflicts, vibrant hover affordance,
+  safe docked sidebar preservation upon node addition, and multi-type node dispatch; `ui_detail.js`
   coordinates detail display, `ui_model_editor.js` owns metadata editing, and
   `ui_model_selector.js` owns advanced selection. `ui_gallery.js` and
   `ui_gallery_detail.js` own generated-image browsing and workbench lifecycle,

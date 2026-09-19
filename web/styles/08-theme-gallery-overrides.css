@@ -530,8 +530,8 @@ button:hover .anomalous-btn-icon {
    GLOBAL CUSTOM TOOLTIP SYSTEM ([data-tooltip])
    Frosted Glass, Anime Dark Neon Aesthetic, Absolute Native Title Killer
    ========================================================================== */
-[data-tooltip],
-.anomalous-tooltip-target {
+[data-tooltip]:not(.anomalous-card-action-btn),
+.anomalous-tooltip-target:not(.anomalous-card-action-btn) {
     position: relative;
 }
 
@@ -638,6 +638,21 @@ button:hover .anomalous-btn-icon {
 [data-tooltip-pos="bottom"]:focus-visible::before {
     transform: translateX(-50%) translateY(0);
     transition-delay: 0.35s;
+}
+
+.anomalous-card-action-btn[data-tooltip-pos="bottom"]::after {
+    left: auto !important;
+    right: 0 !important;
+    transform: translateX(0) translateY(-6px) !important;
+}
+.anomalous-card-action-btn[data-tooltip-pos="bottom"]::before {
+    left: auto !important;
+    right: 8px !important;
+    transform: translateX(0) translateY(-6px) !important;
+}
+.anomalous-card-action-btn[data-tooltip-pos="bottom"]:hover::after,
+.anomalous-card-action-btn[data-tooltip-pos="bottom"]:hover::before {
+    transform: translateX(0) translateY(0) !important;
 }
 
 /* Left-aligned Tooltip */
