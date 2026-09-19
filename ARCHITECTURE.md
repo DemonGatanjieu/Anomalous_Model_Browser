@@ -21,6 +21,7 @@ list summaries do not contain prompt bodies. See the Material Library contract b
 | Workflow Recipes, packages, galleries, Parameter Notebooks, or prompt roles | [`docs/architecture/recipes.md`](docs/architecture/recipes.md) |
 | Material Library snapshots, image parameter details, or reusable node blocks | [`docs/architecture/material-library.md`](docs/architecture/material-library.md) |
 | Model Doctor, provenance hashes, missing-model recovery, or deep scanning | [`docs/architecture/model-resolution.md`](docs/architecture/model-resolution.md) |
+| Browser audits, E2E functional bug reports, or verification sign-offs | [`docs/audits/README.md`](docs/audits/README.md) |
 | Why a current product boundary exists | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Recurring implementation mistakes and post-mortems | [`.agents/logs/ai_lessons.md`](.agents/logs/ai_lessons.md) |
 
