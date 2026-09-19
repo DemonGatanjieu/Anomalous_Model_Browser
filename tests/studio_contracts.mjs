@@ -59,6 +59,8 @@ recipeCatalog.updateRecipeFilterControls(recipeOwner, [{ data: { tags: ['A', 'B'
 assert.equal(recipeOwner.recipeTagSelect.children.length, 3); assert.equal(recipeOwner.recipeTagSelect.value, 'B');
 assert.equal(recipeCards.getRecipeReadiness({ params: { model_references: [{ identity: { status: 'verified' }, currentAvailability: 'missing' }] } }).status, 'missing');
 assert.equal(recipeCards.getRecipeReadiness({ params: { model_references: [{ identity: { status: 'verified' } }] } }).status, 'warning');
+assert.equal(recipeCards.getRecipeReadiness({ params: { model_references: [{ identity: { status: 'verified' }, currentAvailability: 'available' }] } }).status, 'ready');
+assert.equal(recipeCards.getRecipeReadiness({ params: { model_references: [{ localMatch: { filename: 'sub.safetensors' } }] } }).status, 'warning');
 
 const drags = await moduleFor('material_drag.js', '');
 const graph = { getNodeOnPos: () => null };

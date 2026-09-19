@@ -314,6 +314,64 @@ export async function showRecipes() {
     await this.refreshRecipes();
 }
 
+export async function resolveCatalogRecipeReadiness(owner, recipes) {
+    if (!owner || !Array.isArray(recipes) || !recipes.length) return;
+    const refMap = new Map();
+    for (const item of recipes) {
+        const refs = item?.data?.params?.model_references;
+        if (!Array.isArray(refs)) continue;
+        for (const ref of refs) {
+            if (ref?.currentAvailability) continue;
+            const val = ref?.saved_value;
+            if (typeof val === 'string' && val.trim()) {
+                const key = `${ref.node_id}:${ref.widget_index}:${val}`;
+                if (!refMap.has(key)) {
+                    refMap.set(key, {
+                        node_id: ref.node_id,
+                        widget_index: ref.widget_index,
+                        saved_value: val,
+                        category: ref.category,
+                    });
+                }
+            }
+        }
+    }
+    if (!refMap.size) return;
+    try {
+        const references = [...refMap.values()].slice(0, 128);
+        const response = await fetch('/anomalous/refresh_recipe_identity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ references }),
+        });
+        if (!response.ok) return;
+        const payload = await response.json();
+        if (payload.status !== 'success' || !Array.isArray(payload.results)) return;
+        const resultMap = new Map(payload.results.map((r) => [
+            `${r.node_id}:${r.widget_index}:${r.saved_value}`,
+            r.availability,
+        ]));
+        let updated = false;
+        for (const item of recipes) {
+            const refs = item?.data?.params?.model_references;
+            if (!Array.isArray(refs)) continue;
+            for (const ref of refs) {
+                const key = `${ref.node_id}:${ref.widget_index}:${ref.saved_value}`;
+                const avail = resultMap.get(key);
+                if (avail && ref.currentAvailability !== avail) {
+                    ref.currentAvailability = avail;
+                    updated = true;
+                }
+            }
+        }
+        if (updated && owner.recipeListContainer && !owner.recipeDetailView) {
+            owner.renderRecipeList(owner.recipeRecords || []);
+        }
+    } catch (err) {
+        console.warn('Could not pre-resolve recipe readiness:', err);
+    }
+}
+
 export async function refreshRecipes() {
     if (!this.recipeListContainer) return;
     try {
@@ -329,4 +387,5 @@ export async function refreshRecipes() {
         return;
     }
     this.renderRecipeList(this.recipeRecords);
+    void resolveCatalogRecipeReadiness(this, this.recipeRecords);
 }

@@ -307,6 +307,7 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
                 }
             }
             await loadCurrentPreviews(owner, references);
+            syncRecipeReferencesToCatalog(owner, owner.recipeDetailFilename, references);
             renderModelComposition(container, owner, recipe, references, finish, params);
         } catch (error) {
             console.error('Could not refresh recipe model availability:', error);
@@ -561,6 +562,17 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
     }
 }
 
+function syncRecipeReferencesToCatalog(owner, filename, references) {
+    if (!owner || !filename || !Array.isArray(references)) return;
+    const record = (owner.recipeRecords || []).find((r) => r?.filename === filename);
+    if (record?.data?.params) {
+        record.data.params.model_references = references.map((r) => ({
+            ...r,
+            currentAvailability: r.currentAvailability || (r.localModel ? 'available' : undefined),
+        }));
+    }
+}
+
 export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     const returnState = owner.recipeReturnState || null;
     owner.recipeReturnState = null;
@@ -586,10 +598,12 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         settled = true;
         view.remove();
         owner.recipeDetailView = null;
+        syncRecipeReferencesToCatalog(owner, filename, references);
         if (!['canvas', 'append', 'model'].includes(mode)) {
             owner.recipeListContainer.style.display = '';
             topbars.forEach(bar => { bar.style.display = ''; });
             if (betaNotice) betaNotice.style.display = '';
+            owner.renderRecipeList?.(owner.recipeRecords || []);
         }
         if (owner.recipeDetailFinish === finish) owner.recipeDetailFinish = null;
         if (mode !== 'model') delete owner.recipeDetailPayload;
@@ -732,6 +746,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
             .catch((error) => console.warn('Could not load recipe model previews:', error))
             .finally(() => {
                 owner.recipeDetailPreviewState = 'loaded';
+                syncRecipeReferencesToCatalog(owner, filename, references);
                 if (owner.recipeDetailView === view && owner.recipeDetailActiveTab === 'overview') {
                     // Re-render the overview so newly loaded previews become visible.
                     selectTab('overview');

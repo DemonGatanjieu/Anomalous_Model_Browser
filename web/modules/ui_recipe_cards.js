@@ -84,13 +84,32 @@ export function getRecipeReadiness(recipeData) {
     }
     let missing = 0;
     let unverified = 0;
+    let pendingMatch = 0;
     for (const ref of refs) {
+        if (ref?.localMatch && !ref?.localModel) {
+            pendingMatch++;
+            continue;
+        }
         const status = ref?.currentAvailability;
-        if (status === 'unavailable' || status === 'missing') missing++;
-        else if (status !== 'available') unverified++;
+        if (status === 'unavailable' || status === 'missing' || ref?.identity?.status === 'unavailable') {
+            missing++;
+        } else if (status === 'available' || ref?.localModel) {
+            // ready
+        } else if (status !== 'available') {
+            unverified++;
+        }
     }
-    if (missing > 0) return { status: 'missing', label: `${missing} ${t('recipeStatusMissing')}` };
-    if (unverified > 0) return { status: 'warning', label: `${unverified} ${t('recipeStatusUnverified')}` };
+    if (missing > 0) {
+        const tmpl = t('recipeStatusMissing');
+        const label = tmpl.includes('{count}') ? tmpl.replace('{count}', String(missing)) : `${missing} ${tmpl}`;
+        return { status: 'missing', label };
+    }
+    if (pendingMatch > 0) {
+        return { status: 'warning', label: t('recipeStatusNeedAttention').replace('{count}', String(pendingMatch)) };
+    }
+    if (unverified > 0) {
+        return { status: 'warning', label: `${unverified} ${t('recipeStatusUnverified')}` };
+    }
     return { status: 'ready', label: t('recipeStatusReady') };
 }
 
@@ -365,7 +384,7 @@ export function createRecipeCard(owner, recipe, services) {
     dot.className = `anomalous-recipe-readiness-dot is-${readiness.status}`;
     const rText = document.createElement('span');
     rText.className = 'anomalous-recipe-readiness-text';
-    rText.textContent = readiness.label;
+    rText.textContent = readiness.label.replace(/^[🟢🟡🔴⏳]\s*/, '');
     readinessPill.append(dot, rText);
     bottomChips.appendChild(readinessPill);
 
