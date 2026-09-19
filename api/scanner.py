@@ -248,6 +248,8 @@ async def api_scan_status(request):
 
 async def api_scan_folder(request):
     """Launches the scraper in the background for a specific directory."""
+    if request.remote not in ("127.0.0.1", "::1"):
+        return web.json_response({"status": "error", "message": "Forbidden: local access only"}, status=403)
     folder_type = request.query.get('type', 'checkpoints')
     subfolder = request.query.get('subfolder', '/')
     try:
@@ -354,6 +356,8 @@ async def api_scan_folder(request):
         return web.json_response({"status": "error", "message": str(e)})
 
 async def api_scan_all(request):
+    if request.remote not in ("127.0.0.1", "::1"):
+        return web.json_response({"status": "error", "message": "Forbidden: local access only"}, status=403)
     plugin_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     scraper_path = os.path.join(plugin_dir, "scraper.py")
     marker_file = os.path.join(plugin_dir, '.global_scan_in_progress')
@@ -490,6 +494,8 @@ async def api_scan_missing_models_status(request):
     return web.json_response(GLOBAL_SCAN_STATE)
 
 async def api_scan_missing_models(request):
+    if request.remote not in ("127.0.0.1", "::1"):
+        return web.json_response({"status": "error", "message": "Forbidden: local access only"}, status=403)
     import sys
     import threading
     import traceback
