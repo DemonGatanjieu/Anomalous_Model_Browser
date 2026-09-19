@@ -61,6 +61,8 @@ docs/*
 !docs/architecture/*.md
 !docs/decisions/
 !docs/decisions/*.md
+!docs/audits/
+!docs/audits/*.md
 AI_SYSTEM_TEMPLATE.md
 
 # AI Agents Directory
