@@ -71,39 +71,7 @@ AI_SYSTEM_TEMPLATE.md
 # Test files
 test_*.js
 test*.mjs
-tests/*
-!tests/package.json
-!tests/ui_fixture.mjs
-!tests/prompt_ui_lifecycle.mjs
-!tests/prompt_material_source.mjs
-!tests/prompt_library_sync.mjs
-!tests/translation_service_contracts.mjs
-!tests/studio_contracts.mjs
-!tests/material_workspace_flow.mjs
-!tests/export_availability.mjs
-!tests/update_guide.mjs
-!tests/test_export_availability.py
-!tests/test_route_manifest.py
-!tests/test_model_source_catalog.py
-!tests/test_model_doctor_resolution.py
-!tests/model_sources_hub.mjs
-!tests/model_source_components.mjs
-!tests/shortcut_layout.mjs
-!tests/shortcut_organizer.mjs
-!tests/sidebar_feature_modules.mjs
-!tests/recipe_detail_subviews.mjs
-!tests/main_module_boundaries.mjs
-!tests/recipe_card_render.mjs
-!tests/recipe_model_matching.mjs
-!tests/recipe_parameter_utils.mjs
-!tests/node_feature_modules.mjs
-!tests/model_detail_modules.mjs
-!tests/image_workbench_modules.mjs
-!tests/material_feature_modules.mjs
-!tests/notebook_feature_modules.mjs
-!tests/css_bundle_order.mjs
-!tests/notebook_render_test.mjs
-!tests/notebook_save_roundtrip.mjs
+tests/
 
 # Local diagnostic/test artifacts
 grep_doctor.txt
