@@ -84,7 +84,7 @@ function startInlineTitleEdit(owner, material, titleRow, cardTitle, editBtn) {
 export function renderMaterialCard(owner, material) {
     const card = document.createElement('article');
     card.className = 'anomalous-material-card';
-    card.title = t('materialViewDetails') || '点击查看详细参数';
+    card.title = `${material.name || t('materialUntitled')} — ${t('materialCardDragHint') || '按住可拖拽至画布节点注入参数，或拖至空白处载入工作流'}`;
     const activate = () => showMaterialDetail(owner, material);
     card.onclick = activate;
     if (material.node_types?.length) {

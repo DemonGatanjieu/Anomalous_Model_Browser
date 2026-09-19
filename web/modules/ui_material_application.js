@@ -64,7 +64,9 @@ export function updateMaterialContext(owner) {
             owner.refreshMaterials(1);
         };
     }
-    text(owner.materialContext, 'small', t('materialApplyContextHint'));
+    text(owner.materialContext, 'small', node
+        ? t('materialApplyContextHint')
+        : (t('materialDragGlobalHint') || '💡 提示：按住卡片直接拖到画布节点上注入参数，拖到空白处载入工作流'));
 }
 
 export function watchMaterialSelection(owner, showMaterialDetail) {

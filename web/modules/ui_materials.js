@@ -140,6 +140,126 @@ function renderMaterialPagination(owner, payload) {
     }
 }
 
+function ensureMaterialGuideStyles() {
+    if (typeof document === 'undefined') return;
+    if (document.querySelector?.('#anomalous-material-guide-styles')) return;
+
+    const style = document.createElement('style');
+    style.id = 'anomalous-material-guide-styles';
+    style.textContent = `
+        .anomalous-material-empty-guide {
+            grid-column: 1 / -1;
+            max-width: 580px;
+            margin: 32px auto;
+            padding: 28px 24px;
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            text-align: center;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .anomalous-material-empty-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 2px;
+        }
+        .anomalous-material-empty-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #f1f5f9;
+            letter-spacing: 0.2px;
+        }
+        .anomalous-material-empty-subtitle {
+            margin: 0;
+            font-size: 12.5px;
+            line-height: 1.55;
+            color: #94a3b8;
+            max-width: 440px;
+        }
+        .anomalous-material-empty-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            width: 100%;
+            margin-top: 14px;
+            text-align: left;
+        }
+        .anomalous-material-empty-step {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 14px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .anomalous-material-empty-step:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        .anomalous-material-step-icon {
+            font-size: 20px;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+        .anomalous-material-empty-step strong {
+            font-size: 13px;
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+        .anomalous-material-empty-step p {
+            margin: 0;
+            font-size: 11.5px;
+            line-height: 1.5;
+            color: #94a3b8;
+        }
+        .anomalous-material-card {
+            cursor: grab !important;
+        }
+        .anomalous-material-card:active {
+            cursor: grabbing !important;
+        }
+    `;
+    (document.head || document.body)?.appendChild(style);
+}
+
+function renderMaterialEmptyGuide(owner) {
+    const guide = text(owner.materialList, 'div', '', 'anomalous-material-empty-guide');
+    text(guide, 'div', '✨', 'anomalous-material-empty-icon');
+    text(guide, 'h3', t('materialEmptyGuideTitle') || '素材库暂无素材', 'anomalous-material-empty-title');
+    text(guide, 'p', t('materialEmptyGuideSubtitle') || '集中归档带有生成参数的图片与工作流片段，支持画布直接拖拽与参数复用。', 'anomalous-material-empty-subtitle');
+
+    const steps = text(guide, 'div', '', 'anomalous-material-empty-steps');
+
+    const step1 = text(steps, 'div', '', 'anomalous-material-empty-step');
+    text(step1, 'div', '📥', 'anomalous-material-step-icon');
+    text(step1, 'strong', t('materialEmptyStep1Title') || '1. 存入素材');
+    text(step1, 'p', t('materialEmptyStep1Desc') || '在「图库」图片详情中点击底部“存入素材库”，或在配方工坊中保存参数。');
+
+    const step2 = text(steps, 'div', '', 'anomalous-material-empty-step');
+    text(step2, 'div', '🎯', 'anomalous-material-step-icon');
+    text(step2, 'strong', t('materialEmptyStep2Title') || '2. 画布直接拖拽');
+    text(step2, 'p', t('materialEmptyStep2Desc') || '按住素材卡片拖到画布节点上覆盖参数，拖到空白处直接载入完整工作流。');
+
+    const step3 = text(steps, 'div', '', 'anomalous-material-empty-step');
+    text(step3, 'div', '🧩', 'anomalous-material-step-icon');
+    text(step3, 'strong', t('materialEmptyStep3Title') || '3. 提示词工坊拼装');
+    text(step3, 'p', t('materialEmptyStep3Desc') || '在「提示词工坊」中，已存素材中的提示词标签会自动提炼并同步，支持一键拼装。');
+}
+
 export async function refreshMaterials(page = this.materialPage || 1) {
     if (!this.materialList) return;
     this.materialListController?.abort();
@@ -167,7 +287,12 @@ export async function refreshMaterials(page = this.materialPage || 1) {
         renderMaterialPagination(this, payload);
         const materials = Array.isArray(payload.materials) ? payload.materials : [];
         if (!materials.length) {
-            text(this.materialList, 'p', t(this.materialQuery || this.materialTag || this.materialKind ? 'materialNoMatches' : 'materialEmpty'), 'anomalous-material-empty');
+            ensureMaterialGuideStyles();
+            if (this.materialQuery || this.materialTag || this.materialKind) {
+                text(this.materialList, 'p', t('materialNoMatches'), 'anomalous-material-empty');
+            } else {
+                renderMaterialEmptyGuide(this);
+            }
             return;
         }
         const fragment = document.createDocumentFragment();
@@ -196,6 +321,7 @@ export async function showMaterials() {
     }
     this.materialHeading.textContent = t('materialLibrary');
     this.materialContainer.style.display = 'flex';
+    ensureMaterialGuideStyles();
     watchMaterialSelection(this, showMaterialDetail);
     hideSiblingWorkspaceViews(this);
     leaveMaterialDetail(this);
