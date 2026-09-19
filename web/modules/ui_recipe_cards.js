@@ -94,11 +94,181 @@ export function getRecipeReadiness(recipeData) {
     return { status: 'ready', label: t('recipeStatusReady') };
 }
 
+export function ensureRecipeGuideStyles() {
+    if (typeof document === 'undefined') return;
+    if (document.querySelector?.('#anomalous-recipe-guide-styles')) return;
+    if (typeof document.createElement !== 'function') return;
+
+    const style = document.createElement('style');
+    style.id = 'anomalous-recipe-guide-styles';
+    style.textContent = `
+        .anomalous-recipe-card {
+            cursor: grab !important;
+        }
+        .anomalous-recipe-card:active {
+            cursor: grabbing !important;
+        }
+        .anomalous-recipe-card button,
+        .anomalous-recipe-card a,
+        .anomalous-recipe-card select,
+        .anomalous-recipe-card input {
+            cursor: pointer;
+        }
+        .anomalous-recipe-drag-badge {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 500;
+            background: rgba(10, 12, 16, 0.75);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            pointer-events: none;
+            transition: opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+            opacity: 0.85;
+            z-index: 2;
+        }
+        .anomalous-recipe-card:hover .anomalous-recipe-drag-badge {
+            opacity: 1;
+            background: rgba(15, 23, 42, 0.9);
+            border-color: rgba(99, 102, 241, 0.4);
+            color: #e2e8f0;
+        }
+        .anomalous-recipe-drag-hint-strip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 16px;
+            font-size: 12px;
+            color: #94a3b8;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            flex-shrink: 0;
+            line-height: 1.4;
+        }
+        .anomalous-recipe-drag-hint-content {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .anomalous-recipe-drag-hint-icon {
+            font-size: 13px;
+        }
+        .anomalous-recipe-empty-guide {
+            grid-column: 1 / -1;
+            max-width: 580px;
+            margin: 32px auto;
+            padding: 28px 24px;
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            text-align: center;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .anomalous-recipe-empty-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 2px;
+        }
+        .anomalous-recipe-empty-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #f1f5f9;
+            letter-spacing: 0.2px;
+        }
+        .anomalous-recipe-empty-subtitle {
+            margin: 0;
+            font-size: 12.5px;
+            line-height: 1.55;
+            color: #94a3b8;
+            max-width: 440px;
+        }
+        .anomalous-recipe-empty-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            width: 100%;
+            margin-top: 8px;
+            text-align: left;
+        }
+        .anomalous-recipe-empty-step {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 14px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .anomalous-recipe-empty-step:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        .anomalous-recipe-step-icon {
+            font-size: 20px;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+        .anomalous-recipe-empty-step strong {
+            font-size: 13px;
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+        .anomalous-recipe-empty-step p {
+            margin: 0;
+            font-size: 11.5px;
+            line-height: 1.5;
+            color: #94a3b8;
+        }
+        .anomalous-recipe-empty-action-btn {
+            margin-top: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #fff;
+            background: #4f46e5;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .anomalous-recipe-empty-action-btn:hover {
+            background: #4338ca;
+        }
+    `;
+    (document.head || document.body)?.appendChild(style);
+}
+
 export function createRecipeCard(owner, recipe, services) {
+    ensureRecipeGuideStyles();
     const data = recipe?.data || {};
     const card = document.createElement('article');
     card.className = 'anomalous-recipe-card';
-    card.style.cursor = 'pointer';
+    card.style.cursor = 'grab';
+    card.title = `${data.name || t('recipeUntitled')} — ${t('recipeCardDragHint') || '按住可拖拽至画布打开工作流'}`;
 
     // 1. Bento Media Wrap: Cover on TOP (136px)
     const mediaWrap = document.createElement('div');
@@ -146,6 +316,14 @@ export function createRecipeCard(owner, recipe, services) {
         : `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block;vertical-align:-1px;margin-right:3px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
     scopePill.innerHTML = `${scopeSvg}<span>${t(isPartial ? 'recipeScopePill_partial' : 'recipeScopePill_complete')}</span>`;
     mediaWrap.appendChild(scopePill);
+
+    // Drag Affordance Badge (Top-left of cover)
+    const dragBadge = document.createElement('span');
+    dragBadge.className = 'anomalous-recipe-drag-badge';
+    dragBadge.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="display:inline-block;vertical-align:-1px;margin-right:3px;"><circle cx="9" cy="5" r="2"/><circle cx="15" cy="5" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="9" cy="19" r="2"/><circle cx="15" cy="19" r="2"/></svg><span>${t('recipeDraggableBadge') || (window.anomalous_browser_lang === 'zh' ? '可拖拽' : 'Draggable')}</span>`;
+    dragBadge.title = t('recipeCardDragHint') || '按住可拖拽至画布打开工作流';
+    mediaWrap.appendChild(dragBadge);
+
     card.appendChild(mediaWrap);
 
     // 2. Card Body
@@ -192,7 +370,10 @@ export function createRecipeCard(owner, recipe, services) {
     const actionSvg = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block;vertical-align:-1px;margin-right:4px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
     appendBtn.innerHTML = `${actionSvg}<span>${t(isPartial ? 'recipeAppendCanvas' : 'recipeOpenCanvas')}</span>`;
     appendBtn.removeAttribute('title');
-    appendBtn.setAttribute('data-tooltip', isPartial ? t('recipeAppendCanvas') : t('recipeOpenCanvas'));
+    const primaryTooltip = isPartial
+        ? (t('recipeCardPrimaryActionTooltipPartial') || `${t('recipeAppendCanvas')}（也可按住卡片直接拖至画布）`)
+        : (t('recipeCardPrimaryActionTooltipComplete') || `${t('recipeOpenCanvas')}（也可按住卡片直接拖至画布）`);
+    appendBtn.setAttribute('data-tooltip', primaryTooltip);
     appendBtn.setAttribute('data-tooltip-pos', 'top');
     appendBtn.onclick = (e) => {
         e.stopPropagation();
@@ -273,8 +454,8 @@ export function createRecipeCard(owner, recipe, services) {
             type: 'recipe',
             filename: recipe.filename,
             scope: data.workflow_scope || 'complete',
-            dragHint: t('recipeDragHint'),
-            dragTargetHint: t('recipeDragTargetCanvas'),
+            dragHint: t('recipeDragHint') || '按住拖拽至画布打开工作流',
+            dragTargetHint: t('recipeDragTargetCanvas') || '释放以在画布打开工作流',
         }),
         accepts: () => false,
         dropOnCanvas: async (event, dragData, graph) => {
