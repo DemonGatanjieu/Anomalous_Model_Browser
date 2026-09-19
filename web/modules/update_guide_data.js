@@ -1,11 +1,12 @@
 // Content only. Maintenance checklist: docs/architecture/update-guide.md.
 // Change the ID only when users should see a new guide, never for typo fixes.
 export const CURRENT_UPDATE_GUIDE = Object.freeze({
-    id: '2026-09-navigation-and-library',
+    id: '2026-09-recipes-and-studios',
     steps: Object.freeze([
-        { id: 'navigation', icon: '◎', titleKey: 'updateGuideNavigationTitle', bodyKey: 'updateGuideNavigationBody' },
-        { id: 'transfers', icon: '⇄', titleKey: 'updateGuideTransferTitle', bodyKey: 'updateGuideTransferBody' },
-        { id: 'library', icon: '▧', titleKey: 'updateGuideLibraryTitle', bodyKey: 'updateGuideLibraryBody' },
+        { id: 'recipes', icon: '📑', titleKey: 'updateGuideRecipesTitle', bodyKey: 'updateGuideRecipesBody' },
+        { id: 'materials', icon: '✨', titleKey: 'updateGuideMaterialsTitle', bodyKey: 'updateGuideMaterialsBody' },
+        { id: 'sources', icon: '🌐', titleKey: 'updateGuideSourcesTitle', bodyKey: 'updateGuideSourcesBody' },
+        { id: 'precision-scan', icon: '🎯', titleKey: 'updateGuideScanTitle', bodyKey: 'updateGuideScanBody' },
     ]),
 });
 
