@@ -610,8 +610,12 @@ export function openModelSourcesModal(initialScope = 'workflow') {
     const bodyEl = text(modal, 'div', '', 'anomalous-sources-body');
     const footerEl = text(modal, 'footer', '', '');
 
-    const ensureLibraryLoaded = async () => {
-        if (state.libraryStatus === 'loading' || state.libraryStatus === 'ready') return;
+    const ensureLibraryLoaded = async (force = false) => {
+        if (state.libraryStatus === 'loading') return;
+        if (!force && state.libraryStatus === 'ready') {
+            refreshUi();
+            return;
+        }
         const requestId = ++state.libraryRequestId;
         state.libraryStatus = 'loading';
         refreshUi();
@@ -634,6 +638,7 @@ export function openModelSourcesModal(initialScope = 'workflow') {
         bodyEl.replaceChildren();
 
         renderModalHeader(headerEl, scope, state, (newScope) => {
+            if (state.scope === newScope) return;
             state.scope = newScope;
             if (newScope === 'library') {
                 ensureLibraryLoaded();

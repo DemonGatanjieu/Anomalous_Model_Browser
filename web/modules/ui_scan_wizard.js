@@ -5,6 +5,7 @@
 import { translate } from './locales.js';
 import { updateScanProgress, finishScanProgress, failScanProgress } from './scan_progress.js';
 import { configureSidebarAction } from './sidebar_actions.js';
+import { showWorkbenchToast } from './ui_prompt_toast.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -717,5 +718,113 @@ startBtn.textContent = t('sidebarExecute');
     content.appendChild(footer);
     wizard.appendChild(content);
     document.body.appendChild(wizard);
+}
+
+function pollDirectScanStatus(params, titleText, modelLabel, onComplete) {
+    const statusUrl = '/anomalous/scan_status?' + params.toString();
+    const poll = setInterval(async () => {
+        try {
+            const statusRes = await fetch(statusUrl);
+            const statusData = await statusRes.json();
+            updateScanProgress(statusData, titleText);
+
+            if (!statusData.scanning) {
+                clearInterval(poll);
+                if (statusData.interrupted) {
+                    failScanProgress(t('scanProgressInterrupted'));
+                    showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '扫描被中断' : 'Scan interrupted');
+                } else {
+                    finishScanProgress();
+                    showWorkbenchToast(
+                        window.anomalous_browser_lang === 'zh'
+                            ? `✓ 模型 [${modelLabel}] 扫描完成！`
+                            : `✓ Model [${modelLabel}] scanned!`
+                    );
+                }
+                onComplete(true);
+            }
+        } catch (err) {
+            clearInterval(poll);
+            failScanProgress(String(err));
+            onComplete(false);
+        }
+    }, 1200);
+    return poll;
+}
+
+export async function triggerDirectModelScan(model, triggerBtn = null, browserInstance = null) {
+    const browser = browserInstance || this || {};
+    if (!model || !model.filename) return;
+
+    const modelLabel = model.name || model.filename;
+    const isZh = window.anomalous_browser_lang === 'zh';
+    const titleText = isZh ? `精准扫描: ${modelLabel}` : `Scanning: ${modelLabel}`;
+
+    if (triggerBtn) {
+        triggerBtn.classList.add('anomalous-radar-spinning');
+        if (triggerBtn.firstElementChild) {
+            triggerBtn.firstElementChild.style.animation = 'anomalous-radar-spin 1.2s linear infinite';
+            triggerBtn.firstElementChild.style.stroke = '#10b981';
+        }
+        triggerBtn.style.pointerEvents = 'none';
+        triggerBtn.style.opacity = '0.7';
+    }
+    setActiveScanButtonState(true);
+    updateScanProgress({ scanning: true, phase: 'preparing', total: 1, current: 0, filename: model.filename }, titleText);
+
+    const resetBtn = () => {
+        setActiveScanButtonState(false);
+        if (triggerBtn) {
+            triggerBtn.classList.remove('anomalous-radar-spinning');
+            if (triggerBtn.firstElementChild) {
+                triggerBtn.firstElementChild.style.animation = '';
+                triggerBtn.firstElementChild.style.stroke = '';
+            }
+            triggerBtn.style.pointerEvents = '';
+            triggerBtn.style.opacity = '';
+        }
+    };
+
+    try {
+        const params = new URLSearchParams({
+            type: browser.currentType || 'checkpoints',
+            path_idx: browser.currentPathIdx || 0,
+            subfolder: browser.currentSubfolder || '/',
+        });
+        const reqBody = {
+            target_files: [model.filename],
+            offline_only: false,
+            skip_rename: true,
+            virtual_rename: false,
+            physical_rename: false,
+            force_overwrite: false
+        };
+
+        const res = await fetch('/anomalous/scan?' + params.toString(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(reqBody)
+        });
+
+        const data = await res.json();
+        if (data.status === 'ok') {
+            showWorkbenchToast(isZh ? `开始精准扫描: ${modelLabel}` : `Scanning model: ${modelLabel}`);
+            pollDirectScanStatus(params, titleText, modelLabel, () => {
+                resetBtn();
+                if (typeof browser.loadModels === 'function') {
+                    browser.loadModels();
+                }
+            });
+        } else {
+            resetBtn();
+            const errMsg = data.message || (isZh ? '扫描启动失败' : 'Failed to start scan');
+            failScanProgress(errMsg);
+            showWorkbenchToast(errMsg);
+        }
+    } catch (e) {
+        resetBtn();
+        failScanProgress(String(e));
+        showWorkbenchToast(String(e));
+    }
 }
 

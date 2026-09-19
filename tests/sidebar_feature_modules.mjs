@@ -182,4 +182,38 @@ assert.deepEqual(JSON.parse(scanRequest[1].body).target_files, ['model.safetenso
 assert.equal(wizardModal.isConnected, false, 'launching a scan closes only the wizard UI');
 assert.deepEqual(f.errors, [], 'feature flows complete without user-facing errors');
 
+// Direct single-model precision scan without opening wizard modal
+let directScanRefreshed = false;
+const directScanOwner = {
+    currentType: 'loras',
+    currentPathIdx: 0,
+    currentSubfolder: '/',
+    loadModels() { directScanRefreshed = true; },
+};
+const dummyBtn = f.document.createElement('button');
+const dummySvg = f.document.createElement('svg');
+dummyBtn.appendChild(dummySvg);
+
+f.fetch = async (url) => {
+    if (String(url).startsWith('/anomalous/scan?')) {
+        return { ok: true, json: async () => ({ status: 'ok' }) };
+    }
+    if (String(url).startsWith('/anomalous/scan_status?')) {
+        return { ok: true, json: async () => ({ scanning: false, interrupted: false }) };
+    }
+    return { ok: true, json: async () => ({}) };
+};
+
+await wizard.triggerDirectModelScan.call(directScanOwner, { filename: 'my_lora.safetensors', name: 'My Lora' }, dummyBtn);
+assert.equal(dummyBtn.classList.contains('anomalous-radar-spinning'), true, 'button spins immediately');
+f.runTimers();
+await f.flush();
+
+const directScanReq = f.requests.find(([url, options]) => String(url).includes('type=loras') && options.method === 'POST');
+assert.ok(directScanReq, 'direct scan triggers POST /anomalous/scan');
+assert.deepEqual(JSON.parse(directScanReq[1].body).target_files, ['my_lora.safetensors']);
+assert.equal(JSON.parse(directScanReq[1].body).skip_rename, true, 'direct single model scan preserves physical file name');
+assert.equal(directScanRefreshed, true, 'browser.loadModels called after scan completes');
+assert.equal(dummyBtn.classList.contains('anomalous-radar-spinning'), false, 'radar spinning class removed after completion');
+
 console.log('Sidebar feature modules: help close, folder cancel/save, and scan wizard launch passed.');

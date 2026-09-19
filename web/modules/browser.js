@@ -4,7 +4,7 @@ import { _openAdvancedModelSelector, setWidgetValuePath } from './ui_model_selec
 import { loadModels, applyModelToCanvas, stopMediaInContainer } from './ui_grid.js';
 import { createDOM, renderSidebar, loadFolders } from './ui_sidebar.js';
 import { closeWorkspace, hideAllPanels } from './ui_browser_navigation.js';
-import { openScanWizard } from './ui_scan_wizard.js';
+import { openScanWizard, triggerDirectModelScan } from './ui_scan_wizard.js';
 import { openFolderManager } from './ui_folder_manager.js';
 import { showHelp } from './ui_help.js';
 import { loadGalleryImages, refreshGalleryImages, showGeneratedGallery, showGallerySelectMode, showGalleryViewer } from './ui_gallery.js';
@@ -119,6 +119,7 @@ AnomalousBrowser.prototype.showImageWorkbench = showImageWorkbench;
 
 AnomalousBrowser.prototype.createDOM = createDOM;
 AnomalousBrowser.prototype.openScanWizard = openScanWizard;
+AnomalousBrowser.prototype.scanSingleModel = triggerDirectModelScan;
 AnomalousBrowser.prototype.openFolderManager = openFolderManager;
 AnomalousBrowser.prototype.renderSidebar = renderSidebar;
 AnomalousBrowser.prototype.loadFolders = loadFolders;

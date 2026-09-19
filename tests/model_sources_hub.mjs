@@ -299,4 +299,48 @@ assert.ok(errorFixture.document.body.textContent.includes('Failed to load the lo
 assert.ok(errorFixture.button(errorFixture.document.body, 'Retry'));
 closeError();
 
+// 12. Switching from workflow -> library -> workflow -> library preserves state and correctly re-renders library models.
+const toggleFixture = fixture();
+toggleFixture.app.graph._nodes = [
+    { type: 'CheckpointLoaderSimple', widgets: [{ name: 'ckpt_name', value: 'wf_model.safetensors' }] },
+];
+toggleFixture.app.graph.extra = {};
+toggleFixture.fetch = async (url) => {
+    if (url === '/anomalous/all_scan_models?limit=0') {
+        return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+                models: [
+                    { type: 'checkpoints', path_idx: 0, filename: 'lib_model.safetensors', metadata: {} },
+                ],
+            }),
+        };
+    }
+    return { ok: true, status: 200, json: async () => ({}) };
+};
+const toggleHub = await toggleFixture.module('ui_model_sources.js');
+const closeToggle = toggleHub.openModelSourcesModal('workflow');
+assert.ok(toggleFixture.document.body.textContent.includes('wf_model.safetensors'), 'workflow model is visible initially');
+
+// Switch to library
+let tabs = toggleFixture.document.body.querySelectorAll('.anomalous-sources-scope-tab');
+assert.equal(tabs.length, 2, 'two scope tabs exist');
+tabs[1].click();
+await toggleFixture.flush();
+assert.ok(toggleFixture.document.body.textContent.includes('lib_model.safetensors'), 'library model visible after first switch');
+
+// Switch back to workflow
+tabs = toggleFixture.document.body.querySelectorAll('.anomalous-sources-scope-tab');
+tabs[0].click();
+await toggleFixture.flush();
+assert.ok(toggleFixture.document.body.textContent.includes('wf_model.safetensors'), 'workflow model visible after switching back');
+
+// Switch to library again! (Previously failed due to missing refreshUi)
+tabs = toggleFixture.document.body.querySelectorAll('.anomalous-sources-scope-tab');
+tabs[1].click();
+await toggleFixture.flush();
+assert.ok(toggleFixture.document.body.textContent.includes('lib_model.safetensors'), 'library model visible on repeated switch to library');
+closeToggle();
+
 console.log('model sources hub tests: all passed!');
