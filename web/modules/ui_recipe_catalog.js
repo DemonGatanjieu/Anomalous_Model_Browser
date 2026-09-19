@@ -187,7 +187,10 @@ export function renderRecipeList(recipes, services) {
 
     if (this.recipeFilterSummary) this.recipeFilterSummary.textContent = `${filtered.length}/${records.length}`;
     if (this.recipeHintStrip) {
-        this.recipeHintStrip.style.display = records.length > 0 ? 'flex' : 'none';
+        const isDismissed = (() => {
+            try { return localStorage.getItem('amb_hide_recipe_drag_hint') === 'true'; } catch (_) { return false; }
+        })();
+        this.recipeHintStrip.style.display = (records.length > 0 && !isDismissed) ? 'flex' : 'none';
     }
     if (!records.length) {
         ensureRecipeGuideStyles();
@@ -257,7 +260,12 @@ export async function showRecipes() {
             if (this.recipeListContainer) this.recipeListContainer.style.display = '';
             const topbar = this.recipeView?.querySelector('.anomalous-recipe-topbar');
             if (topbar) topbar.style.display = '';
-            if (this.recipeHintStrip && (this.recipeRecords || []).length > 0) this.recipeHintStrip.style.display = 'flex';
+            const isDismissed = (() => {
+                try { return localStorage.getItem('amb_hide_recipe_drag_hint') === 'true'; } catch (_) { return false; }
+            })();
+            if (this.recipeHintStrip && (this.recipeRecords || []).length > 0 && !isDismissed) {
+                this.recipeHintStrip.style.display = 'flex';
+            }
             this.recipeReturnState = null;
             delete this.recipeDetailPayload;
         }
@@ -279,7 +287,24 @@ export async function showRecipes() {
     this.recipeHintStrip = document.createElement('div');
     this.recipeHintStrip.className = 'anomalous-recipe-actionbar anomalous-recipe-drag-hint-strip';
     this.recipeHintStrip.style.display = 'none';
-    this.recipeHintStrip.innerHTML = `<div class="anomalous-recipe-drag-hint-content"><span class="anomalous-recipe-drag-hint-icon">💡</span><span>${t('recipeDragGlobalHint') || '提示：按住卡片直接拖拽到 ComfyUI 画布空白处释放，即可立即载入工作流'}</span></div>`;
+
+    const hintContent = document.createElement('div');
+    hintContent.className = 'anomalous-recipe-drag-hint-content';
+    hintContent.innerHTML = `<span class="anomalous-recipe-drag-hint-icon">💡</span><span class="anomalous-recipe-drag-hint-text">${t('recipeDragGlobalHint') || '提示：按住卡片直接拖拽到 ComfyUI 画布空白处释放，即可立即载入工作流'}</span>`;
+    this.recipeHintStrip.appendChild(hintContent);
+
+    const hintClose = document.createElement('button');
+    hintClose.type = 'button';
+    hintClose.className = 'anomalous-recipe-drag-hint-close';
+    hintClose.innerHTML = '&times;';
+    hintClose.title = t('close') || (window.anomalous_browser_lang === 'zh' ? '关闭提示' : 'Dismiss tip');
+    hintClose.onclick = (e) => {
+        e.stopPropagation();
+        this.recipeHintStrip.style.display = 'none';
+        try { localStorage.setItem('amb_hide_recipe_drag_hint', 'true'); } catch (_) {}
+    };
+    this.recipeHintStrip.appendChild(hintClose);
+
     this.recipeView.appendChild(this.recipeHintStrip);
 
     this.recipeListContainer = document.createElement('div');

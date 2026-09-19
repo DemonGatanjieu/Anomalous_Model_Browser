@@ -141,25 +141,98 @@ export function ensureRecipeGuideStyles() {
             border-color: rgba(99, 102, 241, 0.4);
             color: #e2e8f0;
         }
+        /* 修复封面底部模型就绪状态徽标对比度与穿透：深色高对比毛玻璃底板 */
+        .anomalous-recipe-readiness-pill {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+            background: rgba(10, 12, 18, 0.88) !important;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.16) !important;
+            padding: 2.5px 8px !important;
+            border-radius: 6px !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45) !important;
+            color: #f1f5f9 !important;
+        }
+        .anomalous-recipe-readiness-pill.is-ready {
+            background: rgba(10, 12, 18, 0.9) !important;
+            border-color: rgba(16, 185, 129, 0.5) !important;
+        }
+        .anomalous-recipe-readiness-pill.is-ready .anomalous-recipe-readiness-text {
+            color: #6ee7b7 !important;
+            font-weight: 600 !important;
+        }
+        .anomalous-recipe-readiness-pill.is-warning {
+            background: rgba(10, 12, 18, 0.9) !important;
+            border-color: rgba(245, 158, 11, 0.6) !important;
+        }
+        .anomalous-recipe-readiness-pill.is-warning .anomalous-recipe-readiness-text {
+            color: #fde68a !important;
+            font-weight: 600 !important;
+        }
+        .anomalous-recipe-readiness-pill.is-missing {
+            background: rgba(10, 12, 18, 0.9) !important;
+            border-color: rgba(239, 68, 68, 0.6) !important;
+        }
+        .anomalous-recipe-readiness-pill.is-missing .anomalous-recipe-readiness-text {
+            color: #fca5a5 !important;
+            font-weight: 600 !important;
+        }
+        .anomalous-recipe-readiness-dot {
+            width: 7px !important;
+            height: 7px !important;
+            flex-shrink: 0 !important;
+        }
         .anomalous-recipe-drag-hint-strip {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 6px 16px;
+            gap: 12px;
+            padding: 6px 14px;
+            margin: 8px 16px 4px 16px;
+            border-radius: 8px;
             font-size: 12px;
             color: #94a3b8;
-            background: rgba(255, 255, 255, 0.02);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
             flex-shrink: 0;
             line-height: 1.4;
         }
         .anomalous-recipe-drag-hint-content {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            min-width: 0;
         }
         .anomalous-recipe-drag-hint-icon {
-            font-size: 13px;
+            font-size: 14px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .anomalous-recipe-drag-hint-text {
+            color: #cbd5e1;
+            font-size: 12px;
+        }
+        .anomalous-recipe-drag-hint-close {
+            background: transparent;
+            border: none;
+            color: #64748b;
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .anomalous-recipe-drag-hint-close:hover {
+            color: #f1f5f9;
+            background: rgba(255, 255, 255, 0.08);
         }
         .anomalous-recipe-empty-guide {
             grid-column: 1 / -1;
@@ -287,7 +360,7 @@ export function createRecipeCard(owner, recipe, services) {
     const readiness = getRecipeReadiness(data);
     const readinessPill = document.createElement('span');
     readinessPill.className = `anomalous-recipe-readiness-pill is-${readiness.status}`;
-    readinessPill.title = readiness.label;
+    readinessPill.title = `${readiness.label} — ${t('recipeReadinessHint') || (window.anomalous_browser_lang === 'zh' ? '检测工作流所需模型在本地环境中的就绪状态，点击卡片进入详情可进行智能比对与替换' : 'Detects model dependencies; open details for smart matching and replacement')}`;
     const dot = document.createElement('span');
     dot.className = `anomalous-recipe-readiness-dot is-${readiness.status}`;
     const rText = document.createElement('span');
