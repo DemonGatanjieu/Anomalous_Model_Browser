@@ -113,9 +113,13 @@ export function applyMaterialBlock(app, node, block, workflowHashes) {
 }
 
 export function promptWidgetTargets(node) {
+    const promptNameRegex = /^(text|text_g|text_l|prompt|positive|negative|caption|string|value|文本|提示词|正面|负面|正向|反向|正面提示词|负面提示词|正向提示词|反向提示词|描述|内容)$/i;
     return (node?.widgets || []).flatMap((widget, index) => {
+        if (!widget) return [];
         const name = String(widget.name || '');
-        return typeof widget.value === 'string' && /^(text|text_g|text_l|prompt|positive|negative)$/i.test(name)
-            && !widget.options?.values ? [{ index, name }] : [];
+        const label = String(widget.label || '');
+        const isNotCombo = !widget.options?.values || !Array.isArray(widget.options.values);
+        const matchesName = promptNameRegex.test(name) || promptNameRegex.test(label) || widget.type === 'customtext' || widget.type === 'text' || !!widget.options?.multiline;
+        return typeof widget.value === 'string' && matchesName && isNotCombo ? [{ index, name: name || label || 'text' }] : [];
     });
 }

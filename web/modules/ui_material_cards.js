@@ -1,14 +1,17 @@
 /** Material Library list-card rendering and inline title editing. */
 
+import { app } from '../../../scripts/app.js';
 import { bindMaterialDrag } from './material_drag.js';
 import { translate } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { text, jsonResponse } from './ui_dom.js';
 import { materialNodeHeading } from './material_inspector.js';
+import { promptWidgetTargets } from './node_material_actions.js';
 import { applyLibraryMaterial } from './ui_material_application.js';
 import {
     deleteMaterial,
     getMaterialPlaceholderSvg,
+    getMaterialPromptInfo,
     isPromptMaterial,
     materialAssetUrl,
     openMaterialWorkflow,
@@ -81,19 +84,115 @@ function startInlineTitleEdit(owner, material, titleRow, cardTitle, editBtn) {
     input.onblur = () => finish(true);
 }
 
+function bindPolymorphicMaterialCardDrag(card, owner, material) {
+    const isZh = window.anomalous_browser_lang === 'zh';
+    const isWorkflow = (material.capabilities || []).includes('open_workflow') || material.has_workflow;
+    const isPrompt = isPromptMaterial(material) || material.kind === 'prompt_plan';
+
+    let cardTitleText = `${material.name || t('materialUntitled')}`;
+    let dragHint = '';
+    let dragTargetHint = '';
+
+    if (isWorkflow) {
+        cardTitleText += ` — ${isZh ? '按住拖至空白画布载入完整工作流' : 'Drag to blank canvas to load workflow'}`;
+        dragHint = isZh ? '拖拽至空白画布载入工作流' : 'Drag to blank canvas to load workflow';
+        dragTargetHint = isZh ? '松开以载入完整工作流' : 'Release to load workflow';
+    } else if (isPrompt) {
+        cardTitleText += ` — ${isZh ? '按住拖至文本节点注入提示词，或拖至空白处创建提示词节点' : 'Drag to text node to inject prompt, or to blank canvas to create node'}`;
+        dragHint = isZh ? '拖拽提示词至文本节点或空白画布' : 'Drag prompt to text node or blank canvas';
+        dragTargetHint = isZh ? '松开以在空白画布创建提示词节点' : 'Release to create prompt node on blank canvas';
+    } else {
+        cardTitleText += ` — ${isZh ? '按住拖至节点注入参数，或拖至空白处新建对应节点' : 'Drag to node to apply parameters, or to blank canvas to create node'}`;
+        dragHint = t('materialDragParameters') || (isZh ? '拖拽素材参数至目标节点' : 'Drag parameters to target node');
+        dragTargetHint = isZh ? '松开以在空白画布创建对应节点' : 'Release to create node on blank canvas';
+    }
+
+    card.title = cardTitleText;
+
+    bindMaterialDrag(card, owner, {
+        payload: () => ({
+            ...material,
+            node_types: Array.isArray(material.node_types) ? [...material.node_types] : [],
+            dragHint,
+            dragTargetHint,
+        }),
+        accepts: (node, source) => {
+            if (!node) return false;
+            const promptMat = isPromptMaterial(source) || source.kind === 'prompt_plan';
+            if (promptMat) {
+                return promptWidgetTargets(node).length > 0 || (source.node_types || []).includes(node.type);
+            }
+            return (source.node_types || []).includes(node.type);
+        },
+        drop: (node, source, graph) => applyLibraryMaterial(owner, source, node, graph),
+        dropOnCanvas: async (event, source, graph, position) => {
+            if (isWorkflow) {
+                await openMaterialWorkflow(owner, source.filename);
+                return;
+            }
+
+            const creator = (typeof LiteGraph !== 'undefined' ? LiteGraph?.createNode : null)
+                || globalThis.LiteGraph?.createNode
+                || window.LiteGraph?.createNode;
+            if (!creator) return;
+
+            const pos = position || (app.canvas?.convertEventToCanvasOffset
+                ? app.canvas.convertEventToCanvasOffset(event)
+                : [100, 100]);
+
+            if (isPrompt) {
+                const info = getMaterialPromptInfo(source);
+                const isNegative = info.role === 'negative';
+                const node = creator.call(LiteGraph, 'CLIPTextEncode');
+                if (!node) return;
+                node.title = isNegative
+                    ? (isZh ? 'CLIP 文本编码器 (负向)' : 'CLIP Text Encode (Negative)')
+                    : (isZh ? 'CLIP 文本编码器 (正向)' : 'CLIP Text Encode (Positive)');
+                node.color = isNegative ? '#532323' : '#235327';
+                node.bgcolor = isNegative ? '#381616' : '#143818';
+                node.pos = [pos[0], pos[1]];
+
+                const tw = (node.widgets || []).find(w => /^(text|prompt)/i.test(w.name) || w.type === 'customtext') || node.widgets?.[0];
+                if (tw) {
+                    tw.value = info.text;
+                    if (Array.isArray(node.widgets_values)) node.widgets_values[0] = info.text;
+                    tw.callback?.call(tw, tw.value, app.canvas, node);
+                    node.onWidgetChanged?.(0, tw.value, '', tw);
+                }
+
+                graph.add(node);
+                app.canvas?.selectNode?.(node);
+                app.canvas?.setDirty?.(true, true);
+                graph.change?.();
+                return;
+            }
+
+            if (source.node_types?.length) {
+                const nodeType = source.node_types[0];
+                const node = creator.call(LiteGraph, nodeType);
+                if (node) {
+                    node.pos = [pos[0], pos[1]];
+                    graph.add(node);
+                    app.canvas?.selectNode?.(node);
+                    app.canvas?.setDirty?.(true, true);
+                    graph.change?.();
+                    try {
+                        await applyLibraryMaterial(owner, source, node, graph);
+                    } catch (err) {
+                        console.warn('[AMB] Error applying parameters to newly created node:', err);
+                    }
+                }
+            }
+        },
+    });
+}
+
 export function renderMaterialCard(owner, material) {
     const card = document.createElement('article');
     card.className = 'anomalous-material-card';
-    card.title = `${material.name || t('materialUntitled')} — ${t('materialCardDragHint') || '按住可拖拽至画布节点注入参数，或拖至空白处载入工作流'}`;
     const activate = () => showMaterialDetail(owner, material);
     card.onclick = activate;
-    if (material.node_types?.length) {
-        bindMaterialDrag(card, owner, {
-            payload: () => ({ ...material, node_types: [...material.node_types], dragHint: t('materialDragParameters') || '拖拽素材参数至目标节点' }),
-            accepts: (node, source) => source.node_types.includes(node.type),
-            drop: (node, source, graph) => applyLibraryMaterial(owner, source, node, graph),
-        });
-    }
+    bindPolymorphicMaterialCardDrag(card, owner, material);
     card.tabIndex = 0;
     card.setAttribute('aria-label', `${material.name} — ${t('materialViewDetails')}`);
     card.onkeydown = event => {

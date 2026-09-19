@@ -4,7 +4,8 @@ import { text, jsonResponse } from './ui_dom.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { escapeHtml } from './safe_dom.js';
 import { applyPromptRolesToBlocks, materialNodeHeading } from './material_inspector.js';
-import { applyMaterialBlock, selectedMaterialNode } from './node_material_actions.js';
+import { applyMaterialBlock, applyNodeMaterialValues, promptWidgetTargets, selectedMaterialNode } from './node_material_actions.js';
+import { getMaterialPromptInfo } from './ui_material_detail.js';
 
 export function showMaterialApplication(parent, result, node) {
     parent.querySelector('.anomalous-material-application-result')?.remove();
@@ -112,12 +113,57 @@ export async function applyLibraryMaterial(owner, material, droppedNode = null, 
         if (app.graph !== graph || graph.getNodeById(node.id) !== node || (!droppedNode && selectedMaterialNode(app) !== node)) throw new Error('materialTargetChanged');
         if (owner.nbPanel?.style.display !== 'flex' || owner.materialView?.style.display !== 'flex'
             || (owner.modal && !owner.modal.classList.contains('visible'))) return;
-        const blocks = applyPromptRolesToBlocks(payload.node_blocks || [], payload.prompt_roles)
+        let blocks = applyPromptRolesToBlocks(payload.node_blocks || [], payload.prompt_roles)
             .filter(block => block.type === node.type && block.widgets_values?.length);
+        const promptTargets = promptWidgetTargets(node);
+        if (!blocks.length && promptTargets.length > 0) {
+            const allBlocks = applyPromptRolesToBlocks(payload.node_blocks || [], payload.prompt_roles);
+            blocks = allBlocks.filter(b => Array.isArray(b.widgets_values) && b.widgets_values.some(v => typeof v === 'string' && v.trim()));
+            if (!blocks.length) {
+                const info = getMaterialPromptInfo(payload.data || material);
+                if (info.text) {
+                    blocks = [{
+                        node_id: 1,
+                        type: node.type,
+                        title: info.role === 'negative'
+                            ? (window.anomalous_browser_lang === 'zh' ? '负向提示词' : 'Negative Prompt')
+                            : (window.anomalous_browser_lang === 'zh' ? '正向提示词' : 'Positive Prompt'),
+                        promptRole: info.role,
+                        widgets_values: [info.text],
+                    }];
+                }
+            }
+        }
         if (!blocks.length) throw new Error('materialNoCompatibleValues');
-        const apply = droppedNode ? applyMaterialToNode : applyMaterialToSelectedNode;
+
+        const applyTarget = (targetBlock) => {
+            if (targetBlock.type === node.type) {
+                const apply = droppedNode ? applyMaterialToNode : applyMaterialToSelectedNode;
+                return apply(node, targetBlock, payload.workflow_hashes, owner.materialContext);
+            }
+            if (selectedMaterialNode(app) !== node && !droppedNode) throw new Error('materialTargetChanged');
+            const targetWidget = promptWidgetTargets(node)[0];
+            if (!targetWidget) throw new Error('materialNoCompatibleValues');
+            let textVal = '';
+            if (Array.isArray(targetBlock.widgets_values)) {
+                for (const v of targetBlock.widgets_values) {
+                    if (typeof v === 'string' && v.trim()) {
+                        textVal = v;
+                        break;
+                    }
+                }
+            }
+            if (!textVal) throw new Error('materialNoCompatibleValues');
+            const result = applyNodeMaterialValues(app, node, [{ index: targetWidget.index, value: textVal }], {
+                sourceNodeId: targetBlock.node_id,
+                workflowHashes: payload.workflow_hashes,
+            });
+            showMaterialApplication(owner.materialContext, result, node);
+            return result;
+        };
+
         if (blocks.length === 1) {
-            apply(node, blocks[0], payload.workflow_hashes, owner.materialContext);
+            applyTarget(blocks[0]);
         } else {
             owner.materialBlockDialog?.close();
             const dialog = document.createElement('dialog'); dialog.className = 'anomalous-material-choice';
@@ -206,7 +252,7 @@ export async function applyLibraryMaterial(owner, material, droppedNode = null, 
                 choose.onclick = async () => {
                     try {
                         if (app.graph !== graph) throw new Error('materialTargetChanged');
-                        apply(node, block, payload.workflow_hashes, owner.materialContext);
+                        applyTarget(block);
                         dialog.close();
                     } catch (error) {
                         status.textContent = t(error.message) === error.message ? t('materialApplyFailed') : t(error.message);

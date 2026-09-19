@@ -6,6 +6,14 @@ import { anomalousAlert } from './ui_dialog.js';
 
 let activeDrag = null;
 
+export function getCanvasPosition(event, canvas) {
+    if (!canvas) return null;
+    let position = null;
+    if (canvas.convertEventToCanvasOffset) position = canvas.convertEventToCanvasOffset(event);
+    else if (canvas.adjustMouseEvent) { canvas.adjustMouseEvent(event); position = [event.canvasX, event.canvasY]; }
+    return position && position.every(Number.isFinite) ? position : null;
+}
+
 export function materialDropNode(event, canvas, graph) {
     const surface = canvas?.canvas;
     if (!surface || !graph || canvas.graph !== graph) return null;
@@ -13,10 +21,8 @@ export function materialDropNode(event, canvas, graph) {
     if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) return null;
     // DOM text widgets overlay the canvas, so accept their drop surface too.
     if (event.target !== surface && !event.target?.closest?.('.dom-widget')) return null;
-    let position;
-    if (canvas.convertEventToCanvasOffset) position = canvas.convertEventToCanvasOffset(event);
-    else if (canvas.adjustMouseEvent) { canvas.adjustMouseEvent(event); position = [event.canvasX, event.canvasY]; }
-    if (!position?.every(Number.isFinite)) return null;
+    const position = getCanvasPosition(event, canvas);
+    if (!position) return null;
     const node = graph.getNodeOnPos?.(position[0], position[1]);
     return node && graph.getNodeById(node.id) === node ? node : null;
 }
@@ -54,33 +60,41 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropO
         const target = event => app.graph === graph && app.canvas === canvas ? materialDropNode(event, canvas, graph) : null;
         const over = event => {
             event.preventDefault(); event.stopImmediatePropagation();
-            if (dropOnCanvas && isOverCanvasSurface(event)) {
+            const node = target(event);
+            const validNode = !!node && accepts?.(node, data);
+            if (validNode) {
+                event.dataTransfer.dropEffect = 'copy';
+                hint.classList.add('is-target-valid');
+                hint.textContent = t('materialDropTarget', { name: materialNodeHeading(node) });
+            } else if (dropOnCanvas && isOverCanvasSurface(event)) {
                 event.dataTransfer.dropEffect = 'copy';
                 hint.classList.add('is-target-valid');
                 hint.textContent = data.dragTargetHint || defaultHint;
             } else {
-                const node = target(event);
-                const valid = !!node && accepts?.(node, data);
-                event.dataTransfer.dropEffect = valid ? 'copy' : 'none';
-                hint.classList.toggle('is-target-valid', valid);
-                hint.textContent = valid ? t('materialDropTarget', { name: materialNodeHeading(node) }) : defaultHint;
+                event.dataTransfer.dropEffect = 'none';
+                hint.classList.remove('is-target-valid');
+                hint.textContent = defaultHint;
             }
             hint.style.left = `${Math.max(8, Math.min(event.clientX + 16, window.innerWidth - 250))}px`;
             hint.style.top = `${Math.max(8, event.clientY - 48)}px`;
         };
         const finish = async event => {
             event.preventDefault(); event.stopImmediatePropagation();
-            const overCanvas = isOverCanvasSurface(event);
             const node = target(event);
+            const validNode = !!node && accepts?.(node, data);
+            const overCanvas = isOverCanvasSurface(event);
             cleanup();
+            if (validNode) {
+                try { await drop(node, data, graph); }
+                catch (error) { await anomalousAlert(t(error.message) === error.message ? t('materialApplyFailed') : t(error.message)); }
+                return;
+            }
             if (dropOnCanvas && overCanvas) {
-                try { await dropOnCanvas(event, data, graph); }
+                const pos = getCanvasPosition(event, canvas);
+                try { await dropOnCanvas(event, data, graph, pos); }
                 catch (error) { await anomalousAlert(t(error.message) === error.message ? t('recipeOpenError') : t(error.message)); }
                 return;
             }
-            if (!node || !accepts?.(node, data)) return;
-            try { await drop(node, data, graph); }
-            catch (error) { await anomalousAlert(t(error.message) === error.message ? t('materialApplyFailed') : t(error.message)); }
         };
         const escape = event => { if (event.key === 'Escape') cleanup(); };
         const listeners = [['dragover', over], ['drop', finish], ['dragend', cleanup], ['keydown', escape], ['blur', cleanup]];

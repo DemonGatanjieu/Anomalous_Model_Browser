@@ -172,6 +172,18 @@ let wizardModal = f.document.getElementById('anomalous-wizard-modal');
 await f.button(wizardModal, 'Cancel').click();
 assert.equal(wizardModal.isConnected, false, 'closing the wizard does not launch a scan');
 
+// Test backdrop click dismissal
+wizard.openScanWizard.call(scanOwner, { isGlobal: true });
+wizardModal = f.document.getElementById('anomalous-wizard-modal');
+wizardModal.onclick({ target: wizardModal });
+assert.equal(wizardModal.isConnected, false, 'clicking backdrop dismisses wizard');
+
+// Test Escape key dismissal
+wizard.openScanWizard.call(scanOwner, { isGlobal: true });
+wizardModal = f.document.getElementById('anomalous-wizard-modal');
+f.document.dispatch('keydown', { key: 'Escape' });
+assert.equal(wizardModal.isConnected, false, 'pressing Escape dismisses wizard');
+
 wizard.openScanWizard.call(scanOwner, { targetFiles: 'model.safetensors' });
 wizardModal = f.document.getElementById('anomalous-wizard-modal');
 await f.button(wizardModal, 'Execute').click();
@@ -184,6 +196,10 @@ assert.deepEqual(f.errors, [], 'feature flows complete without user-facing error
 
 // Direct single-model precision scan without opening wizard modal
 let directScanRefreshed = false;
+let hashesReloaded = false;
+let combosRefreshed = false;
+f.window.anomalous_reload_hashes = async () => { hashesReloaded = true; };
+f.app.refreshComboInNodes = async () => { combosRefreshed = true; };
 const directScanOwner = {
     currentType: 'loras',
     currentPathIdx: 0,
@@ -214,6 +230,8 @@ assert.ok(directScanReq, 'direct scan triggers POST /anomalous/scan');
 assert.deepEqual(JSON.parse(directScanReq[1].body).target_files, ['my_lora.safetensors']);
 assert.equal(JSON.parse(directScanReq[1].body).skip_rename, true, 'direct single model scan preserves physical file name');
 assert.equal(directScanRefreshed, true, 'browser.loadModels called after scan completes');
+assert.equal(hashesReloaded, true, 'anomalous_reload_hashes called after direct scan');
+assert.equal(combosRefreshed, true, 'app.refreshComboInNodes called after direct scan');
 assert.equal(dummyBtn.classList.contains('anomalous-radar-spinning'), false, 'radar spinning class removed after completion');
 const scanProgressPanel = f.document.getElementById('anomalous-scan-progress');
 assert.ok(scanProgressPanel, 'scan progress panel displayed in DOM');

@@ -2,6 +2,7 @@
  * Scan wizard UI and scan launch/polling coordination.
  */
 
+import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
 import { updateScanProgress, finishScanProgress, failScanProgress } from './scan_progress.js';
 import { configureSidebarAction } from './sidebar_actions.js';
@@ -26,7 +27,10 @@ function setActiveScanButtonState(isScanning) {
 
 export function openScanWizard({ isGlobal = false, targetFiles = null } = {}) {
     let wizard = document.getElementById('anomalous-wizard-modal');
-    if (wizard) document.body.removeChild(wizard);
+    if (wizard) {
+        if (typeof wizard.cleanupModal === 'function') wizard.cleanupModal();
+        else if (wizard.parentNode) wizard.parentNode.removeChild(wizard);
+    }
 
     wizard = document.createElement('div');
     wizard.id = 'anomalous-wizard-modal';
@@ -42,14 +46,32 @@ export function openScanWizard({ isGlobal = false, targetFiles = null } = {}) {
     wizard.style.alignItems = 'center';
     wizard.style.fontFamily = 'Roboto, "Segoe UI", sans-serif';
 
+    const closeWizard = () => {
+        document.removeEventListener('keydown', handleKeydown);
+        if (wizard && wizard.parentNode) {
+            wizard.parentNode.removeChild(wizard);
+        }
+    };
+    wizard.cleanupModal = closeWizard;
+
+    const handleKeydown = (e) => {
+        if (e.key === 'Escape') closeWizard();
+    };
+    document.addEventListener('keydown', handleKeydown);
+
+    wizard.onclick = (e) => {
+        if (e.target === wizard) closeWizard();
+    };
+
     const content = document.createElement('div');
     content.style.background = '#1E1E1E';
     content.style.borderRadius = '12px';
-    content.style.padding = '32px';
+    content.style.padding = '28px 32px 20px 32px';
     content.style.width = '760px';
     content.style.maxWidth = '95%';
-    content.style.maxHeight = '90vh';
-    content.style.overflowY = 'auto';
+    content.style.maxHeight = '85vh';
+    content.style.display = 'flex';
+    content.style.flexDirection = 'column';
     content.style.boxShadow = '0 11px 15px -7px rgba(0,0,0,0.2), 0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12)';
     content.style.color = '#fff';
     content.style.position = 'relative';
@@ -123,6 +145,10 @@ export function openScanWizard({ isGlobal = false, targetFiles = null } = {}) {
     formGroup.style.display = 'flex';
     formGroup.style.flexDirection = 'column';
     formGroup.style.gap = '24px';
+    formGroup.style.overflowY = 'auto';
+    formGroup.style.flex = '1';
+    formGroup.style.minHeight = '0';
+    formGroup.style.paddingRight = '6px';
 
     const createChoiceCard = (id, icon, titleKey, descKey, isSelected) => {
         const card = document.createElement('div');
@@ -525,7 +551,7 @@ export function openScanWizard({ isGlobal = false, targetFiles = null } = {}) {
                     return;
                 }
                 
-                document.body.removeChild(wizard);
+                closeWizard();
                 const activeScanBtn = document.getElementById('anomalous-scan-btn');
                 if (activeScanBtn) {
                     setScanButtonState(activeScanBtn, true);
@@ -593,6 +619,12 @@ export function openScanWizard({ isGlobal = false, targetFiles = null } = {}) {
                 
                 setActiveScanButtonState(false);
                 finishScanProgress();
+                try {
+                    if (app?.refreshComboInNodes) await app.refreshComboInNodes();
+                    if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();
+                } catch (e) {
+                    console.warn('[AMB] Error reloading hashes or combo nodes:', e);
+                }
                 if (enableAutoCheck && window.anomalous_resolve_all_missing_nodes) {
                     window.anomalous_resolve_all_missing_nodes(true);
                 }
@@ -644,6 +676,12 @@ export function openScanWizard({ isGlobal = false, targetFiles = null } = {}) {
                             else finishScanProgress();
                             setActiveScanButtonState(false);
 
+                            try {
+                                if (app?.refreshComboInNodes) await app.refreshComboInNodes();
+                                if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();
+                            } catch (e) {
+                                console.warn('[AMB] Error reloading hashes or combo nodes:', e);
+                            }
                             if (enableAutoCheck && window.anomalous_resolve_all_missing_nodes) {
                                 window.anomalous_resolve_all_missing_nodes(true);
                             }
@@ -654,7 +692,7 @@ export function openScanWizard({ isGlobal = false, targetFiles = null } = {}) {
                         setActiveScanButtonState(false);
                     }
                 }, 2000);
-                document.body.removeChild(wizard);
+                closeWizard();
                 return; // return early so we don't remove wizard again below
             } else {
                 failScanProgress(t('sidebarScanFailed') + data.message);
@@ -665,14 +703,17 @@ export function openScanWizard({ isGlobal = false, targetFiles = null } = {}) {
             alert("Error: " + e);
         }
 
-        document.body.removeChild(wizard);
+        closeWizard();
     };
 
     const footer = document.createElement('div');
-    footer.style.marginTop = '32px';
+    footer.style.marginTop = '16px';
+    footer.style.paddingTop = '16px';
+    footer.style.borderTop = '1px solid rgba(255,255,255,0.08)';
     footer.style.display = 'flex';
     footer.style.justifyContent = 'flex-end';
     footer.style.gap = '8px';
+    footer.style.flexShrink = '0';
 
     const closeBtn = document.createElement('button');
 closeBtn.textContent = t('sidebarCancel');
@@ -688,7 +729,7 @@ closeBtn.textContent = t('sidebarCancel');
     closeBtn.style.transition = 'background 0.2s';
     closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(255, 255, 255, 0.08)';
     closeBtn.onmouseout = () => closeBtn.style.background = 'transparent';
-    closeBtn.onclick = () => document.body.removeChild(wizard);
+    closeBtn.onclick = closeWizard;
 
     const startBtn = document.createElement('button');
 startBtn.textContent = t('sidebarExecute');
@@ -850,10 +891,16 @@ export async function triggerDirectModelScan(model, triggerBtn = null, browserIn
         const data = await res.json();
         if (data.status === 'ok') {
             showWorkbenchToast(isZh ? `开始精准扫描: ${modelLabel}` : `Scanning model: ${modelLabel}`);
-            pollDirectScanStatus(params, titleText, model, () => {
+            pollDirectScanStatus(params, titleText, model, async () => {
                 resetBtn();
                 if (typeof browser.loadModels === 'function') {
                     browser.loadModels();
+                }
+                try {
+                    if (app?.refreshComboInNodes) await app.refreshComboInNodes();
+                    if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();
+                } catch (e) {
+                    console.warn('[AMB] Error reloading hashes or combo nodes:', e);
                 }
             });
         } else {

@@ -72,4 +72,40 @@ const event = target => ({ target, clientX: 50, clientY: 50, dataTransfer: { set
 source.listeners.dragstart(event(source)); await events.drop(event(new Element('button'))); assert.equal(drops, 0);
 source.listeners.dragstart(event(source)); context.app.graph = {}; await events.drop(event(surface)); assert.equal(drops, 0); context.app.graph = graph;
 source.listeners.dragstart(event(source)); await events.drop(event(surface)); assert.equal(drops, 1); assert.equal(events.drop, undefined);
-console.log('studio contracts: recipe scope/tags/readiness, prompt detail shapes, active material drag cleanup passed');
+
+// Verify node drop takes priority over canvas drop
+let nodeDrops = 0; let canvasDrops = 0;
+const testNode = { id: 99, type: 'Any' };
+graph.getNodeOnPos = () => testNode;
+graph.getNodeById = id => id === 99 ? testNode : null;
+drags.bindMaterialDrag(source, {}, {
+    payload: () => ({}),
+    accepts: () => true,
+    drop: () => { nodeDrops++; },
+    dropOnCanvas: () => { canvasDrops++; }
+});
+source.listeners.dragstart(event(source));
+await events.drop(event(surface));
+assert.equal(nodeDrops, 1);
+assert.equal(canvasDrops, 0);
+
+// Verify fallback to canvas drop when node does not accept
+nodeDrops = 0; canvasDrops = 0;
+drags.bindMaterialDrag(source, {}, {
+    payload: () => ({}),
+    accepts: () => false,
+    drop: () => { nodeDrops++; },
+    dropOnCanvas: () => { canvasDrops++; }
+});
+source.listeners.dragstart(event(source));
+await events.drop(event(surface));
+assert.equal(nodeDrops, 0);
+assert.equal(canvasDrops, 1);
+
+const detail = await moduleFor('ui_material_detail.js', '');
+const negativePromptMat = { name: 'Dark scenery [negative]', tags: ['negative'], note: { promptEn: 'ugly, deformed' } };
+const promptInfo = detail.getMaterialPromptInfo(negativePromptMat);
+assert.equal(promptInfo.text, 'ugly, deformed');
+assert.equal(promptInfo.role, 'negative');
+
+console.log('studio contracts: recipe scope/tags/readiness, prompt detail shapes, active material drag cleanup and node priority passed');

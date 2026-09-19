@@ -295,26 +295,39 @@ beginning/end buttons for a selected node, copy controls and guarded undo.
 
 ## Canvas drag and drop
 
-`material_drag.js` binds native drag handles to parameter-bearing library cards
-and to each prompt field's drag button. Only an active, same-page drag is trusted;
-transfer data is a marker, not an external mutation command. During drag, the
-browser window becomes transparent and stops intercepting pointer events. End,
-drop, Escape and loss of focus restore it and remove temporary event listeners.
-There is no persistent drag polling or detail request during hover.
+`material_drag.js` binds native drag handles to all material cards and to each
+prompt field's drag button (`bindPolymorphicMaterialCardDrag`). Only an active,
+same-page drag is trusted; transfer data is a marker, not an external mutation
+command. During drag, the browser window becomes transparent and stops intercepting
+pointer events. End, drop, Escape and loss of focus restore it and remove temporary
+event listeners. There is no persistent drag polling or detail request during hover.
 
-Hit testing uses the host canvas coordinate conversion (including pan/zoom),
-canvas bounds and the graph's live node lookup. Canvas and DOM-widget surfaces are
-accepted. The graph/canvas identities are captured at drag start and checked again
-at drop; async material application rechecks the graph/node after loading detail.
-The actual drop node is the target, regardless of the previously selected node.
-Receipts name that target and provide the shared guarded undo.
+Hit testing evaluates live node target acceptance before canvas blank surface drop.
+Because nodes sit on the canvas element, testing canvas surface first would hijack
+node drops; evaluating `accepts(node, data)` first guarantees node targeting takes
+precedence. Live node lookup uses ComfyUI canvas coordinate conversion (including pan/zoom),
+canvas bounds, and graph node hit-testing. DOM-widget surfaces are accepted. The
+graph/canvas identities are captured at drag start and checked again at drop. The actual
+drop node is the target, regardless of the previously selected node. Receipts name
+that target and provide the shared guarded undo.
 
-Parameter-bearing materials fetch their scoped node blocks only after drop and
-replace compatible widget values through the same transaction as Node Assistant,
-preserving seed, node position and links. Multiple matching blocks require a
-choice, and known positive/negative prompt roles are shown on those choices. No
-full workflow is loaded. Prompt-panel drops instead insert the chosen
-role's text before or after existing node text; multiple eligible text widgets
-require choosing one. Empty/unsupported targets and canceled drags do not mutate
-the graph. Neither drop path queues generation. Actual host drag visuals and
-third-party/Vue node compatibility remain part of the deferred browser acceptance.
+When dropped onto a compatible node:
+- Parameter-bearing materials fetch scoped node blocks only after drop and replace
+  compatible widget values through the transactional parameter path, preserving seed,
+  node position, and links.
+- Prompt materials inject prompt text into target nodes via semantic prompt widget
+  sniffing (`customtext`, `multiline`, `text_g`, `text_l`, `prompt`, `positive`,
+  `negative`, and localized labels), relaxing strict node-type matching for third-party
+  text nodes. Text is cleanly inserted without synthetic prefixes ("负向:" / "正向:").
+
+When dropped onto blank canvas:
+- Workflow materials (`image_workflow_snapshot`) trigger full workflow loading
+  via `openMaterialWorkflow`.
+- Prompt materials (prompt notes, prompt plans, prompt node selections) auto-instantiate
+  native `CLIPTextEncode` nodes at canvas drop coordinates, populating the pure prompt
+  text, setting bilingual titles (`CLIP Text Encode (Negative/Positive)` /
+  `CLIP 文本编码器 (负向/正向)`), and applying standard LiteGraph dark theme colors
+  (`#532323` dark red for negative, `#235327` dark green for positive).
+
+Empty/unsupported targets and canceled drags do not mutate the graph. Neither drop path
+queues generation.

@@ -176,9 +176,9 @@ def _resolve_from_candidates(candidates, target_hash="", target_size=None, filen
                 return {"found": False, "ambiguous": True}
 
         hash_matches = [candidate for candidate in candidates if target_hash in _candidate_hashes(candidate)]
-        if hash_matches:
+        if hash_matches or size_matches:
             return {"found": False, "identity_conflict": True}
-        return {"found": False, "identity_conflict": True}
+        return {"found": False}
 
     if has_target_hash:
         hash_matches = [candidate for candidate in candidates if target_hash in _candidate_hashes(candidate)]

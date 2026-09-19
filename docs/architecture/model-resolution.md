@@ -19,7 +19,10 @@ Without a hash, one unique in-category size match is only a candidate. Model
 Doctor may show it during an explicit manual check, but it cannot redirect the
 node until the user confirms that candidate. Confirmation applies to the current
 node only; it does not create a persistent binding. If both hash and size are
-present and point to conflicting identity, resolution is rejected.
+present and point to conflicting physical files (both match distinct local files),
+resolution reports an identity conflict and is rejected. When a requested model hash
+simply does not exist in any local file, it returns `{"found": False}` cleanly without
+falsely flagging a conflict.
 
 Paths, filenames, source filenames, display/custom names, previews, workflow
 fingerprints, and fuzzy/visual similarity are never candidate evidence. They may
