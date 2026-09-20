@@ -320,6 +320,10 @@ When dropped onto a compatible node:
   - **Strategy ① (Dual-Slot Pair Injection)**: When target node has both positive and negative slots (e.g. `easy a1111Loader`, `easy fullLoader`), both fields are populated simultaneously in a single atomic transaction.
   - **Strategy ② (Role-Matched Injection)**: Pure negative materials are strictly routed to the `negative` slot, resolving the legacy `targets[0]` misplacement bug.
   - **Strategy ④ (Single-Slot Fallback)**: Single-slot nodes (e.g. `easy positive`, `easy negative`, `CLIPTextEncode`) cleanly receive role-matched or primary prompt text without artificial prefixes.
+  - **Prompt Extractor Pipeline & SSOT**:
+    - **Single Source of Truth (SSOT)**: `extractMaterialPromptEnvelope` in `node_material_actions.js` is the canonical prompt envelope extractor across the entire frontend. UI detail views, summary cards, and canvas actions delegate directly to it via `getMaterialPromptInfo` adapter.
+    - **Declarative Strategy Pipeline (`PROMPT_EXTRACTORS`)**: Decomposed into 5 decoupled, pure, single-responsibility extractors (`extractFromPlan`, `extractFromNote`, `extractFromPromptGroups`, `extractFromNodeBlocks`, `extractFromSummary`), complying with the 50-line rule.
+    - **Prompt Sanitizer Guard**: `sanitizePromptText` and `isModelFilePath` enforce a strict boundary between textual prompts and model weights/binary filenames (`.safetensors`, `.ckpt`, `.onnx`, `.gguf`), preventing model file leakage into prompt slots.
   All injections preserve atomic 1-click Undo.
 
 When dropped onto blank canvas:

@@ -12,82 +12,14 @@ import {
     renderMaterialPromptGroups,
     materialNodeHeading,
 } from './material_inspector.js';
-import { selectedMaterialNode, isModelFilePath, isPromptNodeType } from './node_material_actions.js';
+import { selectedMaterialNode, extractMaterialPromptEnvelope, getMaterialPromptInfo } from './node_material_actions.js';
 import { fetchMaterial, applyLibraryMaterial } from './ui_material_application.js';
 
 const t = (key, params) => translate(key, params);
 export const isPromptMaterial = material => ['prompt_note_bundle', 'prompt_text'].includes(material?.kind);
 export const promptKindLabel = material => t(material?.kind === 'prompt_text' ? 'materialPromptTextKind' : 'materialPromptNoteBundle');
 
-export function getMaterialPromptInfo(material) {
-    const isZh = window.anomalous_browser_lang === 'zh';
-    let text = '';
-    let role = 'positive';
-
-    const note = material?.data?.note || material?.note;
-    if (note) {
-        text = (isZh && note.promptZh) ? note.promptZh : (note.promptEn || note.promptZh || '');
-        if (isModelFilePath(text)) text = '';
-    }
-
-    if (!text) {
-        const plan = material?.data?.plan || material?.plan;
-        if (plan) {
-            if (plan.negative && !plan.positive) {
-                text = plan.negative;
-                role = 'negative';
-            } else if (plan.positive) {
-                text = plan.positive;
-                role = 'positive';
-            }
-        }
-    }
-
-    if (!text && material?.prompt_groups) {
-        const pos = (material.prompt_groups.positive || []).find(v => typeof v === 'string' && v.trim() && !isModelFilePath(v));
-        const neg = (material.prompt_groups.negative || []).find(v => typeof v === 'string' && v.trim() && !isModelFilePath(v));
-        if (pos) {
-            text = pos;
-            role = 'positive';
-        } else if (neg) {
-            text = neg;
-            role = 'negative';
-        }
-    }
-
-    if (!text && Array.isArray(material?.node_blocks)) {
-        for (const block of material.node_blocks) {
-            const isPrompt = block.promptRole === 'positive' || block.promptRole === 'negative' || isPromptNodeType(block.type);
-            if (!isPrompt) continue;
-            if (Array.isArray(block.widgets_values)) {
-                for (const val of block.widgets_values) {
-                    if (typeof val === 'string' && val.trim() && !isModelFilePath(val)) {
-                        text = val.trim();
-                        if (block.promptRole === 'negative') role = 'negative';
-                        break;
-                    }
-                }
-            }
-            if (text) break;
-        }
-    }
-
-    if (!text && material?.kind === 'prompt_text') {
-        text = material?.summary || material?.name || '';
-        if (isModelFilePath(text)) text = '';
-    }
-
-    if (role !== 'negative') {
-        const lowerName = String(material?.name || '').toLowerCase();
-        const tags = Array.isArray(material?.tags) ? material.tags.map(t => String(t).toLowerCase()) : [];
-        if (lowerName.includes('negative') || lowerName.includes('负向') || lowerName.includes('反向')
-            || tags.some(t => t.includes('negative') || t.includes('负向') || t.includes('反向'))) {
-            role = 'negative';
-        }
-    }
-
-    return { text: text.trim(), role };
-}
+export { getMaterialPromptInfo };
 
 export function getMaterialPlaceholderSvg(material, size = 36) {
     if (isPromptMaterial(material) || material?.kind === 'prompt_plan') {
