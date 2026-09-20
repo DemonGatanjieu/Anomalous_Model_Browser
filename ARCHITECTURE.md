@@ -90,10 +90,10 @@ DOM or live LiteGraph state.
 
 - `web/main.js` coordinates extension registration. `browser.js` owns the shared
   browser class and extracted-method wiring; `browser_entry.js` owns the single
-  browser instance plus floating/topbar/menu entry behavior; `entry_controls.js`
+  browser instance plus floating/topbar/menu entry behavior (with PointerEvents-driven drag capture, safe top-right default positioning at top: 80px, right: 24px, and clean coordinate persistence); `entry_controls.js`
   owns entry mode, trigger sizing/styling normalization, viewport-safe boundary
-  clamping (`clampFloatingTriggerPosition`), and toolbar occlusion auto-healing
-  (`isValidSavedTriggerPosition`, `normalizeSavedTriggerPosition`); and `interface_settings.js` owns language and theme preferences.
+  clamping (`clampFloatingTriggerPosition`), and reliable coordinate validation
+  (`isValidSavedTriggerPosition`); and `interface_settings.js` owns language and theme preferences.
 - `ui_domain_switcher.js` owns the dual-domain mode toggle (Visual Studio 🎨 vs Audio & Voice Studio 🎙️) embedded in the brand header.
 - `ui_audio_studio.js` owns the Audio & Voice Studio workspace, presenting character voice cards, emotion slice playback, prompt syntax copying, real-time search, animated equalizers, and canvas drag-and-drop.
 - `ui_audio_sidebar.js` owns the Audio Sidebar navigation, rendering trees for All Voices, Character Presets (e.g. Arona) with count badges, and Output History Vault.

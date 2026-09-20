@@ -267,7 +267,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         let initialX = 0;
         let initialY = 0;
 
-        btn.addEventListener('mousedown', event => {
+        btn.addEventListener('pointerdown', event => {
             if (event.button !== 0) return;
             isDragging = true;
             hasMoved = false;
@@ -277,8 +277,12 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
             initialX = rect.left;
             initialY = rect.top;
             btn.style.transition = 'none';
+            try {
+                btn.setPointerCapture(event.pointerId);
+            } catch (_) {}
         });
-        window.addEventListener('mousemove', event => {
+
+        btn.addEventListener('pointermove', event => {
             if (!isDragging) return;
             const dx = event.clientX - startX;
             const dy = event.clientY - startY;
@@ -301,28 +305,45 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
             btn.style.right = 'auto';
             btn.style.bottom = 'auto';
         });
-        window.addEventListener('mouseup', () => {
+
+        const finishDrag = (event) => {
             if (!isDragging) return;
             isDragging = false;
-            btn.style.transition = 'transform 0.15s, box-shadow 0.15s';
-            if (hasMoved) {
-                const norm = normalizeSavedTriggerPosition(btn.style.left, btn.style.top);
-                if (norm) {
-                    btn.style.left = norm.x + 'px';
-                    btn.style.top = norm.y + 'px';
-                    localStorage.setItem('anomalous_btn_x', btn.style.left);
-                    localStorage.setItem('anomalous_btn_y', btn.style.top);
+            try {
+                if (event && event.pointerId != null) {
+                    btn.releasePointerCapture(event.pointerId);
                 }
+            } catch (_) {}
+            btn.style.transition = '';
+            if (hasMoved) {
+                const rect = btn.getBoundingClientRect();
+                const finalPosition = clampFloatingTriggerPosition({
+                    x: rect.left,
+                    y: rect.top,
+                    width: btn.offsetWidth,
+                    height: btn.offsetHeight,
+                    viewportWidth: window.innerWidth,
+                    viewportHeight: window.innerHeight,
+                    margin: 0
+                });
+                btn.style.left = finalPosition.x + 'px';
+                btn.style.top = finalPosition.y + 'px';
+                btn.style.right = 'auto';
+                btn.style.bottom = 'auto';
+                localStorage.setItem('anomalous_btn_x', String(Math.round(finalPosition.x)));
+                localStorage.setItem('anomalous_btn_y', String(Math.round(finalPosition.y)));
             } else {
                 open();
             }
-        });
+        };
+
+        btn.addEventListener('pointerup', finishDrag);
+        btn.addEventListener('pointercancel', finishDrag);
 
         const updateBtnBounds = () => {
             const savedX = localStorage.getItem('anomalous_btn_x');
             const savedY = localStorage.getItem('anomalous_btn_y');
-            const norm = normalizeSavedTriggerPosition(savedX, savedY);
-            if (!norm) {
+            if (!isValidSavedTriggerPosition(savedX, savedY)) {
                 btn.style.left = '';
                 btn.style.top = '';
                 btn.style.right = '';
@@ -330,8 +351,8 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
                 return;
             }
             const position = clampFloatingTriggerPosition({
-                x: btn.style.left || (norm.x + 'px'),
-                y: btn.style.top || (norm.y + 'px'),
+                x: btn.style.left || savedX,
+                y: btn.style.top || savedY,
                 width: btn.offsetWidth,
                 height: btn.offsetHeight,
                 viewportWidth: window.innerWidth,
@@ -346,28 +367,37 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
 
         const initialSavedX = localStorage.getItem('anomalous_btn_x');
         const initialSavedY = localStorage.getItem('anomalous_btn_y');
-        const initialNorm = normalizeSavedTriggerPosition(initialSavedX, initialSavedY);
-        if (initialNorm) {
+        if (isValidSavedTriggerPosition(initialSavedX, initialSavedY)) {
+            const initialPos = clampFloatingTriggerPosition({
+                x: initialSavedX,
+                y: initialSavedY,
+                width: 60,
+                height: 60,
+                viewportWidth: window.innerWidth,
+                viewportHeight: window.innerHeight
+            });
             btn.style.right = 'auto';
             btn.style.bottom = 'auto';
-            btn.style.left = initialNorm.x + 'px';
-            btn.style.top = initialNorm.y + 'px';
-            localStorage.setItem('anomalous_btn_x', btn.style.left);
-            localStorage.setItem('anomalous_btn_y', btn.style.top);
-            setTimeout(updateBtnBounds, 200);
+            btn.style.left = initialPos.x + 'px';
+            btn.style.top = initialPos.y + 'px';
+            setTimeout(updateBtnBounds, 150);
         } else {
-            localStorage.removeItem('anomalous_btn_x');
-            localStorage.removeItem('anomalous_btn_y');
             btn.style.left = '';
             btn.style.top = '';
             btn.style.right = '';
             btn.style.bottom = '';
         }
+
         window.addEventListener('resize', () => {
             const curX = localStorage.getItem('anomalous_btn_x');
             const curY = localStorage.getItem('anomalous_btn_y');
-            if (normalizeSavedTriggerPosition(curX, curY)) {
+            if (isValidSavedTriggerPosition(curX, curY)) {
                 updateBtnBounds();
+            } else {
+                btn.style.left = '';
+                btn.style.top = '';
+                btn.style.right = '';
+                btn.style.bottom = '';
             }
             syncVisibility();
         });
