@@ -75,6 +75,7 @@ export function hideAllPanels() {
     if (this.assistantPanel) this.assistantPanel.style.display = 'none';
     if (this.paramPanel) this.paramPanel.style.display = 'none';
     if (this.audioStudioPanel) this.audioStudioPanel.style.display = 'none';
+    if (this.audioGalleryPanel) this.audioGalleryPanel.style.display = 'none';
     if (this.currentDetailObserver) {
         this.currentDetailObserver.disconnect();
         this.currentDetailObserver = null;

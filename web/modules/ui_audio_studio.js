@@ -1,4 +1,5 @@
 import { t } from './interface_settings.js';
+import { stopGalleryAudio } from './ui_audio_gallery.js';
 
 /**
  * Audio & Voice Studio Workspace
@@ -14,10 +15,11 @@ const SVG = {
     PAUSE: `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,
     MIC: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>`,
     COPY: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
-    CHECK: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+    CHECK: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+    SEARCH: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`
 };
 
-function stopCurrentAudio() {
+export function stopAudioStudioPlayback() {
     if (globalAudioPlayer) {
         globalAudioPlayer.pause();
         globalAudioPlayer.currentTime = 0;
@@ -25,8 +27,7 @@ function stopCurrentAudio() {
     }
     if (currentPlayingBtn) {
         currentPlayingBtn.innerHTML = SVG.PLAY;
-        currentPlayingBtn.style.color = '#94a3b8';
-        currentPlayingBtn.style.borderColor = 'rgba(255,255,255,0.12)';
+        currentPlayingBtn.classList.remove('is-playing');
         currentPlayingBtn = null;
     }
     if (currentPlayingBar) {
@@ -37,10 +38,11 @@ function stopCurrentAudio() {
 
 function playAudio(url, playBtn, eqBars) {
     if (currentPlayingBtn === playBtn) {
-        stopCurrentAudio();
+        stopAudioStudioPlayback();
         return;
     }
-    stopCurrentAudio();
+    stopAudioStudioPlayback();
+    if (typeof stopGalleryAudio === 'function') stopGalleryAudio();
 
     const audio = new Audio(url);
     globalAudioPlayer = audio;
@@ -48,13 +50,12 @@ function playAudio(url, playBtn, eqBars) {
     currentPlayingBar = eqBars;
 
     playBtn.innerHTML = SVG.PAUSE;
-    playBtn.style.color = '#38bdf8';
-    playBtn.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+    playBtn.classList.add('is-playing');
     if (eqBars) eqBars.style.display = 'inline-flex';
 
-    audio.onended = () => stopCurrentAudio();
-    audio.onerror = () => stopCurrentAudio();
-    audio.play().catch(() => stopCurrentAudio());
+    audio.onended = () => stopAudioStudioPlayback();
+    audio.onerror = () => stopAudioStudioPlayback();
+    audio.play().catch(() => stopAudioStudioPlayback());
 }
 
 function copySyntax(tag, btn) {
@@ -74,18 +75,18 @@ function copySyntax(tag, btn) {
 function getEmotionStyle(emotion) {
     const raw = String(emotion || '').toLowerCase();
     if (raw.includes('happy') || raw.includes('joy')) {
-        return { color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.25)' };
+        return { color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.3)' };
     }
     if (raw.includes('sad') || raw.includes('cry')) {
-        return { color: '#60a5fa', bg: 'rgba(59, 130, 246, 0.1)', border: 'rgba(59, 130, 246, 0.25)' };
+        return { color: '#60a5fa', bg: 'rgba(59, 130, 246, 0.12)', border: 'rgba(59, 130, 246, 0.3)' };
     }
     if (raw.includes('surpris') || raw.includes('shock')) {
-        return { color: '#f472b6', bg: 'rgba(244, 114, 182, 0.1)', border: 'rgba(244, 114, 182, 0.25)' };
+        return { color: '#f472b6', bg: 'rgba(244, 114, 182, 0.12)', border: 'rgba(244, 114, 182, 0.3)' };
     }
     if (raw.includes('normal') || raw.includes('calm')) {
-        return { color: '#34d399', bg: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.25)' };
+        return { color: '#34d399', bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.3)' };
     }
-    return { color: '#a78bfa', bg: 'rgba(167, 139, 250, 0.1)', border: 'rgba(167, 139, 250, 0.25)' };
+    return { color: '#a78bfa', bg: 'rgba(167, 139, 250, 0.12)', border: 'rgba(167, 139, 250, 0.3)' };
 }
 
 function renderEqIndicator() {
@@ -94,17 +95,30 @@ function renderEqIndicator() {
     barWrap.style.display = 'none';
     barWrap.style.alignItems = 'flex-end';
     barWrap.style.gap = '2px';
-    barWrap.style.height = '12px';
-    barWrap.style.marginRight = '4px';
+    barWrap.style.height = '14px';
+    barWrap.style.marginRight = '2px';
 
-    for (let i = 0; i < 3; i++) {
-        const bar = document.createElement('span');
-        bar.style.width = '2px';
-        bar.style.height = `${6 + (i % 2) * 6}px`;
-        bar.style.background = '#38bdf8';
-        bar.style.borderRadius = '1px';
-        barWrap.appendChild(bar);
-    }
+    const b1 = document.createElement('span');
+    b1.className = 'anomalous-eq-bar-1';
+    b1.style.width = '2px';
+    b1.style.background = '#38bdf8';
+    b1.style.borderRadius = '1px';
+
+    const b2 = document.createElement('span');
+    b2.className = 'anomalous-eq-bar-2';
+    b2.style.width = '2px';
+    b2.style.background = '#818cf8';
+    b2.style.borderRadius = '1px';
+
+    const b3 = document.createElement('span');
+    b3.className = 'anomalous-eq-bar-3';
+    b3.style.width = '2px';
+    b3.style.background = '#38bdf8';
+    b3.style.borderRadius = '1px';
+
+    barWrap.appendChild(b1);
+    barWrap.appendChild(b2);
+    barWrap.appendChild(b3);
     return barWrap;
 }
 
@@ -112,24 +126,6 @@ function renderSliceRow(slice) {
     const row = document.createElement('div');
     row.className = 'anomalous-voice-slice-row';
     row.draggable = true;
-    row.style.display = 'flex';
-    row.style.alignItems = 'center';
-    row.style.gap = '8px';
-    row.style.padding = '6px 10px';
-    row.style.borderRadius = '6px';
-    row.style.background = 'rgba(255, 255, 255, 0.02)';
-    row.style.border = '1px solid rgba(255, 255, 255, 0.05)';
-    row.style.transition = 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)';
-    row.style.cursor = 'grab';
-
-    row.addEventListener('mouseenter', () => {
-        row.style.background = 'rgba(255, 255, 255, 0.05)';
-        row.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-    });
-    row.addEventListener('mouseleave', () => {
-        row.style.background = 'rgba(255, 255, 255, 0.02)';
-        row.style.borderColor = 'rgba(255, 255, 255, 0.05)';
-    });
 
     row.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', slice.syntax_tag);
@@ -138,31 +134,20 @@ function renderSliceRow(slice) {
 
     const playBtn = document.createElement('button');
     playBtn.type = 'button';
+    playBtn.className = 'anomalous-audio-play-btn';
     playBtn.innerHTML = SVG.PLAY;
     playBtn.title = t('audioPlay');
-    playBtn.style.display = 'inline-flex';
-    playBtn.style.alignItems = 'center';
-    playBtn.style.justifyContent = 'center';
-    playBtn.style.width = '24px';
-    playBtn.style.height = '24px';
-    playBtn.style.borderRadius = '50%';
-    playBtn.style.border = '1px solid rgba(255, 255, 255, 0.12)';
-    playBtn.style.background = 'rgba(255, 255, 255, 0.04)';
-    playBtn.style.color = '#94a3b8';
-    playBtn.style.cursor = 'pointer';
-    playBtn.style.flexShrink = '0';
-    playBtn.style.transition = 'all 0.15s ease';
 
     const eqBars = renderEqIndicator();
-
     const emoStyle = getEmotionStyle(slice.emotion);
+
     const emoTag = document.createElement('span');
     emoTag.textContent = slice.emotion.toUpperCase();
     emoTag.style.fontSize = '9px';
     emoTag.style.fontWeight = '700';
     emoTag.style.letterSpacing = '0.5px';
-    emoTag.style.padding = '2px 5px';
-    emoTag.style.borderRadius = '3px';
+    emoTag.style.padding = '2px 6px';
+    emoTag.style.borderRadius = '4px';
     emoTag.style.color = emoStyle.color;
     emoTag.style.background = emoStyle.bg;
     emoTag.style.border = `1px solid ${emoStyle.border}`;
@@ -185,10 +170,10 @@ function renderSliceRow(slice) {
     copyBtn.style.display = 'inline-flex';
     copyBtn.style.alignItems = 'center';
     copyBtn.style.gap = '4px';
-    copyBtn.style.padding = '2px 7px';
+    copyBtn.style.padding = '2px 8px';
     copyBtn.style.borderRadius = '4px';
     copyBtn.style.border = '1px solid rgba(255, 255, 255, 0.08)';
-    copyBtn.style.background = 'rgba(0, 0, 0, 0.25)';
+    copyBtn.style.background = 'rgba(0, 0, 0, 0.3)';
     copyBtn.style.color = '#94a3b8';
     copyBtn.style.fontSize = '11px';
     copyBtn.style.fontFamily = 'monospace';
@@ -217,15 +202,6 @@ function renderSliceRow(slice) {
 function renderCharacterCard(charData) {
     const card = document.createElement('div');
     card.className = 'anomalous-character-voice-card';
-    card.style.background = 'rgba(22, 22, 27, 0.75)';
-    card.style.border = '1px solid rgba(255, 255, 255, 0.08)';
-    card.style.borderRadius = '10px';
-    card.style.padding = '14px';
-    card.style.display = 'flex';
-    card.style.flexDirection = 'column';
-    card.style.gap = '10px';
-    card.style.backdropFilter = 'blur(16px)';
-    card.style.boxShadow = '0 6px 20px rgba(0,0,0,0.3)';
 
     const header = document.createElement('div');
     header.style.display = 'flex';
@@ -235,40 +211,53 @@ function renderCharacterCard(charData) {
     const titleGroup = document.createElement('div');
     titleGroup.style.display = 'flex';
     titleGroup.style.alignItems = 'center';
-    titleGroup.style.gap = '8px';
+    titleGroup.style.gap = '10px';
 
+    const isArona = charData.character.toLowerCase() === 'arona';
     const avatar = document.createElement('div');
-    avatar.style.width = '26px';
-    avatar.style.height = '26px';
-    avatar.style.borderRadius = '6px';
-    avatar.style.background = charData.character.toLowerCase() === 'arona'
-        ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(99, 102, 241, 0.3))'
+    avatar.style.width = '32px';
+    avatar.style.height = '32px';
+    avatar.style.borderRadius = '8px';
+    avatar.style.background = isArona
+        ? 'linear-gradient(135deg, rgba(14, 165, 233, 0.35), rgba(99, 102, 241, 0.35))'
         : 'rgba(255, 255, 255, 0.06)';
-    avatar.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+    avatar.style.border = isArona ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)';
+    avatar.style.boxShadow = isArona ? '0 0 12px rgba(14, 165, 233, 0.25)' : 'none';
     avatar.style.display = 'flex';
     avatar.style.alignItems = 'center';
     avatar.style.justifyContent = 'center';
-    avatar.style.color = charData.character.toLowerCase() === 'arona' ? '#38bdf8' : '#94a3b8';
+    avatar.style.color = isArona ? '#38bdf8' : '#94a3b8';
     avatar.innerHTML = SVG.MIC;
 
+    const nameBox = document.createElement('div');
+    nameBox.style.display = 'flex';
+    nameBox.style.flexDirection = 'column';
+
     const name = document.createElement('span');
-    name.style.fontSize = '13px';
+    name.style.fontSize = '14px';
     name.style.fontWeight = '600';
-    name.style.letterSpacing = '0.3px';
-    name.style.color = '#f1f5f9';
+    name.style.color = '#f8fafc';
     name.textContent = charData.character;
 
+    const sub = document.createElement('span');
+    sub.style.fontSize = '11px';
+    sub.style.color = '#64748b';
+    sub.textContent = t('audioDragHint');
+
+    nameBox.appendChild(name);
+    nameBox.appendChild(sub);
+
     const countBadge = document.createElement('span');
-    countBadge.style.fontSize = '10px';
-    countBadge.style.padding = '2px 6px';
-    countBadge.style.borderRadius = '10px';
+    countBadge.style.fontSize = '11px';
+    countBadge.style.padding = '3px 8px';
+    countBadge.style.borderRadius = '12px';
     countBadge.style.background = 'rgba(255, 255, 255, 0.05)';
-    countBadge.style.border = '1px solid rgba(255, 255, 255, 0.06)';
-    countBadge.style.color = '#64748b';
+    countBadge.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+    countBadge.style.color = '#94a3b8';
     countBadge.textContent = `${charData.total_slices} ${t('audioVoicePresets')}`;
 
     titleGroup.appendChild(avatar);
-    titleGroup.appendChild(name);
+    titleGroup.appendChild(nameBox);
     header.appendChild(titleGroup);
     header.appendChild(countBadge);
     card.appendChild(header);
@@ -276,7 +265,7 @@ function renderCharacterCard(charData) {
     const sliceList = document.createElement('div');
     sliceList.style.display = 'flex';
     sliceList.style.flexDirection = 'column';
-    sliceList.style.gap = '5px';
+    sliceList.style.gap = '6px';
 
     charData.slices.forEach(slice => {
         sliceList.appendChild(renderSliceRow(slice));
@@ -286,75 +275,112 @@ function renderCharacterCard(charData) {
     return card;
 }
 
-export async function renderAudioStudio(container) {
-    stopCurrentAudio();
+function renderStudioToolbar(onSearch) {
+    const toolbar = document.createElement('div');
+    toolbar.className = 'anomalous-audio-toolbar';
+
+    const titleGroup = document.createElement('div');
+    titleGroup.className = 'anomalous-audio-title-group';
+
+    const iconBox = document.createElement('div');
+    iconBox.className = 'anomalous-audio-icon-box';
+    iconBox.innerHTML = SVG.MIC;
+
+    const textGroup = document.createElement('div');
+    textGroup.style.display = 'flex';
+    textGroup.style.flexDirection = 'column';
+
+    const title = document.createElement('span');
+    title.className = 'anomalous-audio-title-text';
+    title.textContent = t('audioStudioTitle');
+
+    const desc = document.createElement('span');
+    desc.className = 'anomalous-audio-sub-text';
+    desc.style.marginLeft = '0';
+    desc.textContent = t('audioStudioSubtitle');
+
+    textGroup.appendChild(title);
+    textGroup.appendChild(desc);
+
+    titleGroup.appendChild(iconBox);
+    titleGroup.appendChild(textGroup);
+
+    const searchWrap = document.createElement('div');
+    searchWrap.style.display = 'flex';
+    searchWrap.style.alignItems = 'center';
+    searchWrap.style.gap = '6px';
+    searchWrap.style.background = 'rgba(0, 0, 0, 0.25)';
+    searchWrap.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+    searchWrap.style.borderRadius = '8px';
+    searchWrap.style.padding = '4px 10px';
+
+    const searchIcon = document.createElement('span');
+    searchIcon.style.color = '#64748b';
+    searchIcon.innerHTML = SVG.SEARCH;
+
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = t('audioVoicePresets');
+    searchInput.style.background = 'transparent';
+    searchInput.style.border = 'none';
+    searchInput.style.outline = 'none';
+    searchInput.style.color = '#f1f5f9';
+    searchInput.style.fontSize = '12px';
+    searchInput.style.width = '140px';
+    searchInput.oninput = (e) => onSearch(e.target.value.toLowerCase());
+
+    searchWrap.appendChild(searchIcon);
+    searchWrap.appendChild(searchInput);
+
+    toolbar.appendChild(titleGroup);
+    toolbar.appendChild(searchWrap);
+    return toolbar;
+}
+
+export async function renderAudioStudio(container, filter = null) {
+    stopAudioStudioPlayback();
     container.innerHTML = '';
 
     const studioWrapper = document.createElement('div');
     studioWrapper.className = 'anomalous-audio-studio-wrapper';
-    studioWrapper.style.padding = '16px';
-    studioWrapper.style.height = '100%';
-    studioWrapper.style.overflowY = 'auto';
-    studioWrapper.style.boxSizing = 'border-box';
-
-    // Toolbar Header
-    const toolbar = document.createElement('div');
-    toolbar.style.display = 'flex';
-    toolbar.style.alignItems = 'center';
-    toolbar.style.justifyContent = 'space-between';
-    toolbar.style.marginBottom = '14px';
-    toolbar.style.paddingBottom = '10px';
-    toolbar.style.borderBottom = '1px solid rgba(255, 255, 255, 0.06)';
-
-    const titleGroup = document.createElement('div');
-    titleGroup.style.display = 'flex';
-    titleGroup.style.alignItems = 'center';
-    titleGroup.style.gap = '8px';
-
-    const iconBox = document.createElement('span');
-    iconBox.style.color = '#818cf8';
-    iconBox.style.display = 'flex';
-    iconBox.innerHTML = SVG.MIC;
-
-    const title = document.createElement('span');
-    title.style.fontSize = '14px';
-    title.style.fontWeight = '600';
-    title.style.color = '#f1f5f9';
-    title.textContent = t('audioStudioTitle');
-
-    const desc = document.createElement('span');
-    desc.style.fontSize = '11px';
-    desc.style.color = '#64748b';
-    desc.textContent = t('audioStudioSubtitle');
-
-    titleGroup.appendChild(iconBox);
-    titleGroup.appendChild(title);
-    titleGroup.appendChild(desc);
-    toolbar.appendChild(titleGroup);
-    studioWrapper.appendChild(toolbar);
 
     try {
         const resp = await fetch('/anomalous/audio_voices');
         const data = await resp.json();
+        let characters = data.characters || [];
 
-        if (!data.characters || data.characters.length === 0) {
+        // Apply character filter if selected from sidebar
+        if (filter && filter.type === 'character' && filter.value) {
+            characters = characters.filter(c => c.character.toLowerCase() === filter.value.toLowerCase());
+        }
+
+        const grid = document.createElement('div');
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(380px, 1fr))';
+        grid.style.gap = '16px';
+
+        const toolbar = renderStudioToolbar((searchTerm) => {
+            const cards = grid.querySelectorAll('.anomalous-character-voice-card');
+            cards.forEach(card => {
+                const text = card.textContent.toLowerCase();
+                card.style.display = text.includes(searchTerm) ? 'flex' : 'none';
+            });
+        });
+        studioWrapper.appendChild(toolbar);
+
+        if (characters.length === 0) {
             const emptyGuide = document.createElement('div');
-            emptyGuide.style.padding = '60px 20px';
+            emptyGuide.style.padding = '70px 20px';
             emptyGuide.style.textAlign = 'center';
             emptyGuide.style.color = '#64748b';
             emptyGuide.innerHTML = `
-                <div style="font-size:28px;margin-bottom:8px;opacity:0.6;">🎙️</div>
-                <div style="color:#cbd5e1;font-size:13px;font-weight:600;margin-bottom:4px;">${t('audioEmptyTitle')}</div>
-                <div style="font-size:11px;max-width:380px;margin:0 auto;line-height:1.5;">${t('audioEmptyDesc')}</div>
+                <div style="font-size:32px;margin-bottom:12px;opacity:0.6;">🎙️</div>
+                <div style="color:#cbd5e1;font-size:14px;font-weight:600;margin-bottom:6px;">${t('audioEmptyTitle')}</div>
+                <div style="font-size:12px;max-width:420px;margin:0 auto;line-height:1.6;">${t('audioEmptyDesc')}</div>
             `;
             studioWrapper.appendChild(emptyGuide);
         } else {
-            const grid = document.createElement('div');
-            grid.style.display = 'grid';
-            grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(360px, 1fr))';
-            grid.style.gap = '14px';
-
-            data.characters.forEach(charData => {
+            characters.forEach(charData => {
                 grid.appendChild(renderCharacterCard(charData));
             });
             studioWrapper.appendChild(grid);

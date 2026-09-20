@@ -84,7 +84,7 @@ DOM or live LiteGraph state.
   `api/folder_types.py` own the formerly mixed utility route families.
 - `model_policies.py` owns shared backend rename and protected-category policy.
 - `model_identity.py` owns file SHA-256 evidence shared with the standalone scanner.
-- `api/audio_catalog.py` owns audio preset scanning, voice character grouping, emotion slice indexing, and streaming.
+- `api/audio_catalog.py` owns audio preset scanning, voice character grouping, emotion slice indexing, audio streaming, and audio gallery output history listing and deletion.
 
 ### Frontend
 
@@ -93,8 +93,10 @@ DOM or live LiteGraph state.
   browser instance plus floating/topbar/menu entry behavior; and
   `interface_settings.js` owns language and theme preferences.
 - `ui_domain_switcher.js` owns the dual-domain mode toggle (Visual Studio 🎨 vs Audio & Voice Studio 🎙️) embedded in the brand header.
-- `ui_audio_studio.js` owns the Audio & Voice Studio workspace, presenting character voice cards, emotion slice playback, prompt syntax copying, and canvas drag-and-drop.
-- `ui_sidebar.js` creates the browser shell and folder navigation.
+- `ui_audio_studio.js` owns the Audio & Voice Studio workspace, presenting character voice cards, emotion slice playback, prompt syntax copying, real-time search, animated equalizers, and canvas drag-and-drop.
+- `ui_audio_sidebar.js` owns the Audio Sidebar navigation, rendering trees for All Voices, Character Presets (e.g. Arona) with count badges, and Output History Vault.
+- `ui_audio_gallery.js` owns the Generated Audio Vault, supporting track playback, scrubber progress, duration timecodes, audio download, deletion, and canvas drag-and-drop.
+- `ui_sidebar.js` creates the browser shell, domain-aware header tabs (`[音色预设]`, `[音频库]`, `[工作流]`), domain-aware bottom-left tool suppression, and folder navigation.
   `ui_settings_hub.js` owns settings and model-card preferences;
   `ui_toolbox.js` owns the tool catalog, fixed shortcut bar, and tool dispatch;
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return.

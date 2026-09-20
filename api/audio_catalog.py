@@ -118,14 +118,15 @@ async def api_get_audio_voices(request):
 
 
 async def api_serve_audio(request):
-    """GET /anomalous/audio_stream?path=... - Stream audio file securely."""
+    """GET /anomalous/audio_stream?path=...&type=input|output - Stream audio file securely."""
     rel_path = request.query.get("path", "").strip("/\\")
+    dir_type = request.query.get("type", "input")
     if not rel_path:
         return web.Response(status=400, text="Missing audio path")
 
-    input_dir = folder_paths.get_input_directory()
+    base_dir = folder_paths.get_output_directory() if dir_type == "output" else folder_paths.get_input_directory()
     try:
-        resolved_path = resolve_within(input_dir, rel_path)
+        resolved_path = resolve_within(base_dir, rel_path)
     except (ValueError, Exception):
         return web.Response(status=403, text="Forbidden path")
 
@@ -141,8 +142,90 @@ async def api_serve_audio(request):
         '.m4a': 'audio/mp4'
     }
     content_type = content_types.get(ext, 'application/octet-stream')
-
     return web.FileResponse(
         resolved_path,
         headers={"Content-Type": content_type, "Accept-Ranges": "bytes"}
     )
+
+
+def _collect_gallery_audios(output_dir):
+    """Scan output folder for generated audio files."""
+    audios = []
+    if not os.path.isdir(output_dir):
+        return audios
+
+    for root, _, files in os.walk(output_dir):
+        for name in files:
+            ext = os.path.splitext(name)[1].lower()
+            if ext not in AUDIO_EXTENSIONS:
+                continue
+            full_path = os.path.join(root, name)
+            try:
+                stat = os.stat(full_path)
+                mtime = stat.st_mtime
+                size = stat.st_size
+            except OSError:
+                continue
+
+            subfolder = os.path.relpath(root, output_dir)
+            clean_sub = "" if subfolder == "." else subfolder.replace(os.sep, '/')
+            rel_url_path = os.path.join(clean_sub, name).replace("\\", "/")
+
+            audios.append({
+                "filename": name,
+                "subfolder": clean_sub,
+                "size_bytes": size,
+                "mtime": mtime,
+                "audio_url": f"/anomalous/audio_stream?path={rel_url_path}&type=output"
+            })
+    audios.sort(key=lambda a: a["mtime"], reverse=True)
+    return audios
+
+
+async def api_get_audio_gallery(request):
+    """GET /anomalous/audio_gallery?page=1&limit=50 - List generated audio history."""
+    output_dir = folder_paths.get_output_directory()
+    page = max(1, int(request.query.get("page", 1)))
+    limit = max(1, min(100, int(request.query.get("limit", 40))))
+
+    all_audios = _collect_gallery_audios(output_dir)
+    total = len(all_audios)
+    start = (page - 1) * limit
+    sliced = all_audios[start:start + limit]
+
+    return web.json_response({
+        "success": True,
+        "audios": sliced,
+        "total": total,
+        "page": page,
+        "has_more": start + limit < total
+    })
+
+
+async def api_delete_audio_gallery(request):
+    """POST /anomalous/delete_audio_gallery - Delete a generated audio file."""
+    try:
+        data = await request.json()
+    except Exception:
+        return web.Response(status=400, text="Invalid JSON payload")
+
+    filename = data.get("filename", "").strip()
+    subfolder = data.get("subfolder", "").strip()
+    if not filename:
+        return web.Response(status=400, text="Missing filename")
+
+    output_dir = folder_paths.get_output_directory()
+    try:
+        rel = os.path.join(subfolder, filename).replace("\\", "/") if subfolder else filename
+        target = resolve_within(output_dir, rel)
+    except Exception:
+        return web.Response(status=403, text="Forbidden path")
+
+    if os.path.isfile(target):
+        try:
+            os.remove(target)
+            return web.json_response({"success": True})
+        except OSError as e:
+            return web.Response(status=500, text=f"Failed to delete: {e}")
+    return web.Response(status=404, text="File not found")
+
