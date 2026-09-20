@@ -2,6 +2,7 @@ import { app } from '../../../scripts/app.js';
 import { AnomalousBrowser } from './browser.js';
 import {
     clampFloatingTriggerPosition,
+    isValidSavedTriggerPosition,
     normalizeEntryMode,
     normalizeFloatingTriggerSize,
     normalizeFloatingTriggerStyle
@@ -107,7 +108,9 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         triggerButton.replaceChildren(icon, label);
         triggerButton.title = t('mainOpenTitle');
         triggerButton.setAttribute('aria-label', t('mainOpenTitle'));
-        requestAnimationFrame(() => triggerBoundsUpdater?.());
+        if (isValidSavedTriggerPosition(localStorage.getItem('anomalous_btn_x'), localStorage.getItem('anomalous_btn_y'))) {
+            requestAnimationFrame(() => triggerBoundsUpdater?.());
+        }
     }
 
     function resetPosition() {
@@ -116,9 +119,8 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         if (!triggerButton) return;
         triggerButton.style.left = '';
         triggerButton.style.top = '';
-        triggerButton.style.right = '30px';
-        triggerButton.style.bottom = '30px';
-        requestAnimationFrame(() => triggerBoundsUpdater?.());
+        triggerButton.style.right = '';
+        triggerButton.style.bottom = '';
     }
 
     function ensureBrowser() {
@@ -257,13 +259,16 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         if (browserInstance) browserInstance.triggerButton = btn;
         btn.title = t('mainOpenTitle');
         let isDragging = false;
-        let startX;
-        let startY;
-        let initialX;
-        let initialY;
+        let hasMoved = false;
+        let startX = 0;
+        let startY = 0;
+        let initialX = 0;
+        let initialY = 0;
 
         btn.addEventListener('mousedown', event => {
+            if (event.button !== 0) return;
             isDragging = true;
+            hasMoved = false;
             startX = event.clientX;
             startY = event.clientY;
             const rect = btn.getBoundingClientRect();
@@ -273,10 +278,16 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         });
         window.addEventListener('mousemove', event => {
             if (!isDragging) return;
+            const dx = event.clientX - startX;
+            const dy = event.clientY - startY;
+            if (!hasMoved && Math.hypot(dx, dy) >= 5) {
+                hasMoved = true;
+            }
+            if (!hasMoved) return;
             event.preventDefault();
             const nextPosition = clampFloatingTriggerPosition({
-                x: initialX + (event.clientX - startX),
-                y: initialY + (event.clientY - startY),
+                x: initialX + dx,
+                y: initialY + dy,
                 width: btn.offsetWidth,
                 height: btn.offsetHeight,
                 viewportWidth: window.innerWidth,
@@ -288,20 +299,28 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
             btn.style.right = 'auto';
             btn.style.bottom = 'auto';
         });
-        window.addEventListener('mouseup', event => {
+        window.addEventListener('mouseup', () => {
             if (!isDragging) return;
             isDragging = false;
             btn.style.transition = 'transform 0.15s, box-shadow 0.15s';
-            localStorage.setItem('anomalous_btn_x', btn.style.left);
-            localStorage.setItem('anomalous_btn_y', btn.style.top);
-            if (Math.abs(event.clientX - startX) < 5 && Math.abs(event.clientY - startY) < 5) open();
+            if (hasMoved) {
+                localStorage.setItem('anomalous_btn_x', btn.style.left);
+                localStorage.setItem('anomalous_btn_y', btn.style.top);
+            } else {
+                open();
+            }
         });
 
-        let savedX = localStorage.getItem('anomalous_btn_x');
-        let savedY = localStorage.getItem('anomalous_btn_y');
         const updateBtnBounds = () => {
-            savedX = localStorage.getItem('anomalous_btn_x');
-            savedY = localStorage.getItem('anomalous_btn_y');
+            const savedX = localStorage.getItem('anomalous_btn_x');
+            const savedY = localStorage.getItem('anomalous_btn_y');
+            if (!isValidSavedTriggerPosition(savedX, savedY)) {
+                btn.style.left = '';
+                btn.style.top = '';
+                btn.style.right = '';
+                btn.style.bottom = '';
+                return;
+            }
             const position = clampFloatingTriggerPosition({
                 x: btn.style.left || savedX,
                 y: btn.style.top || savedY,
@@ -317,15 +336,28 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         };
         triggerBoundsUpdater = updateBtnBounds;
 
-        if (savedX && savedY && savedX !== 'NaN' && savedY !== 'NaN') {
+        const initialSavedX = localStorage.getItem('anomalous_btn_x');
+        const initialSavedY = localStorage.getItem('anomalous_btn_y');
+        if (isValidSavedTriggerPosition(initialSavedX, initialSavedY)) {
             btn.style.right = 'auto';
             btn.style.bottom = 'auto';
-            btn.style.left = savedX;
-            btn.style.top = savedY;
+            btn.style.left = initialSavedX;
+            btn.style.top = initialSavedY;
+            setTimeout(updateBtnBounds, 200);
+        } else {
+            localStorage.removeItem('anomalous_btn_x');
+            localStorage.removeItem('anomalous_btn_y');
+            btn.style.left = '';
+            btn.style.top = '';
+            btn.style.right = '';
+            btn.style.bottom = '';
         }
-        setTimeout(updateBtnBounds, 200);
         window.addEventListener('resize', () => {
-            if (btn.style.left) updateBtnBounds();
+            const curX = localStorage.getItem('anomalous_btn_x');
+            const curY = localStorage.getItem('anomalous_btn_y');
+            if (isValidSavedTriggerPosition(curX, curY)) {
+                updateBtnBounds();
+            }
             syncVisibility();
         });
 

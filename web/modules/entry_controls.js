@@ -14,6 +14,16 @@ export function normalizeEntryMode(value) {
     return ENTRY_MODES.has(value) ? value : 'floating';
 }
 
+export function isValidSavedTriggerPosition(x, y) {
+    if (x == null || y == null) return false;
+    const px = Number.parseFloat(x);
+    const py = Number.parseFloat(y);
+    if (!Number.isFinite(px) || !Number.isFinite(py)) return false;
+    // Guard against collapsed / uninitialized top-left coordinates that occlude ComfyUI menu/topbar
+    if (px < 10 && py < 10) return false;
+    return true;
+}
+
 export function clampFloatingTriggerPosition({
     x,
     y,
@@ -25,15 +35,20 @@ export function clampFloatingTriggerPosition({
 }) {
     const safeWidth = Math.max(1, Number(width) || 60);
     const safeHeight = Math.max(1, Number(height) || 60);
-    const maxX = Math.max(0, (Number(viewportWidth) || safeWidth) - safeWidth);
-    const maxY = Math.max(0, (Number(viewportHeight) || safeHeight) - safeHeight);
+    const safeVw = Math.max(safeWidth + margin, Number(viewportWidth) || (typeof window !== 'undefined' ? window.innerWidth : 1024) || 1024);
+    const safeVh = Math.max(safeHeight + margin, Number(viewportHeight) || (typeof window !== 'undefined' ? window.innerHeight : 768) || 768);
+    const maxX = Math.max(0, safeVw - safeWidth);
+    const maxY = Math.max(0, safeVh - safeHeight);
     const fallbackX = Math.max(0, maxX - margin);
     const fallbackY = Math.max(0, maxY - margin);
     const parsedX = Number.parseFloat(x);
     const parsedY = Number.parseFloat(y);
 
+    const targetX = Number.isFinite(parsedX) ? parsedX : fallbackX;
+    const targetY = Number.isFinite(parsedY) ? parsedY : fallbackY;
+
     return {
-        x: Math.min(maxX, Math.max(0, Number.isFinite(parsedX) ? parsedX : fallbackX)),
-        y: Math.min(maxY, Math.max(0, Number.isFinite(parsedY) ? parsedY : fallbackY))
+        x: Math.min(maxX, Math.max(0, targetX)),
+        y: Math.min(maxY, Math.max(0, targetY))
     };
 }
