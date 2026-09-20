@@ -65,7 +65,7 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropO
             if (validNode) {
                 event.dataTransfer.dropEffect = 'copy';
                 hint.classList.add('is-target-valid');
-                hint.textContent = t('materialDropTarget', { name: materialNodeHeading(node) });
+                hint.textContent = data.nodeHint || t('materialDropTarget', { name: materialNodeHeading(node) });
             } else if (dropOnCanvas && isOverCanvasSurface(event)) {
                 event.dataTransfer.dropEffect = 'copy';
                 hint.classList.add('is-target-valid');
