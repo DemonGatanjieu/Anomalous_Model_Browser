@@ -1242,6 +1242,20 @@ export const i18n = {
         recipeCardSpecsSteps: '步数',
         recipeCardSpecsSampler: '采样',
         recipeCardSpecsResolution: '尺寸',
+        domainSwitchToAudio: "切换到音频与音色工作台",
+        domainSwitchToVisual: "返回图像模型工作台",
+        domainVisualBadge: "视觉",
+        domainAudioBadge: "音频",
+        audioStudioTitle: "角色音色与音频工作台",
+        audioStudioSubtitle: "管理角色声音切片，即时试听并一键注入 ComfyUI 配音工作流",
+        audioVoicePresets: "角色音色预设",
+        audioPlay: "播放试听",
+        audioPause: "暂停",
+        audioCopyTag: "复制语法",
+        audioCopied: "已复制语法",
+        audioDragHint: "按住卡片可直接拖拽至画布的 F5TTS 节点",
+        audioEmptyTitle: "暂无音频音色切片",
+        audioEmptyDesc: "将 5~10 秒的参考音频 (wav/mp3) 和同名文本 (txt) 放入 input/F5-TTS 目录，即可在此管理与试听。"
     },
     en: {
         actionTools: "Tools",
@@ -2486,6 +2500,20 @@ export const i18n = {
         recipeCardSpecsSteps: 'Steps',
         recipeCardSpecsSampler: 'Sampler',
         recipeCardSpecsResolution: 'Size',
+        domainSwitchToAudio: "Switch to Audio & Voice Studio",
+        domainSwitchToVisual: "Return to Visual Model Studio",
+        domainVisualBadge: "Visual",
+        domainAudioBadge: "Audio",
+        audioStudioTitle: "Audio & Voice Studio",
+        audioStudioSubtitle: "Manage voice presets, listen instantly, and drag into ComfyUI TTS workflows",
+        audioVoicePresets: "Voice Presets",
+        audioPlay: "Play",
+        audioPause: "Pause",
+        audioCopyTag: "Copy Tag",
+        audioCopied: "Tag Copied!",
+        audioDragHint: "Drag and drop directly onto F5TTS node on canvas",
+        audioEmptyTitle: "No Voice Presets Found",
+        audioEmptyDesc: "Place 5-10s reference audios (.wav/.mp3) and matching .txt into input/F5-TTS folder to preview here."
     }
 };
 

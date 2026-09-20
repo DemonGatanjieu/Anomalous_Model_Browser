@@ -21,6 +21,8 @@ import { showImageWorkbench } from './ui_gallery_detail.js';
 import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, openLoraInsertionPicker, runGlobalDoctorScan } from './ui_doctor.js';
 import { initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory } from './ui_node_assistant.js';
 import { _openGalleryReplacer } from './ui_node_model_picker.js';
+import { renderAudioStudio } from './ui_audio_studio.js';
+import { getActiveDomain } from './ui_domain_switcher.js';
 
 export class AnomalousBrowser {
     constructor() {
@@ -48,10 +50,34 @@ export class AnomalousBrowser {
         }
         this.setTriggerVisible(false);
         this.modal.classList.add('visible');
+        if (getActiveDomain() === 'audio') {
+            this.handleDomainChange('audio');
+            return;
+        }
         if (!this.foldersData) {
             this.loadFolders();
         } else {
             this.loadModels();
+        }
+    }
+
+    handleDomainChange(domain) {
+        if (domain === 'audio') {
+            this.hideAllPanels();
+            if (this.audioStudioPanel) {
+                this.audioStudioPanel.style.display = 'block';
+                renderAudioStudio(this.audioStudioPanel);
+            }
+        } else {
+            if (this.audioStudioPanel) {
+                this.audioStudioPanel.style.display = 'none';
+            }
+            this.grid.style.display = 'grid';
+            if (!this.foldersData) {
+                this.loadFolders();
+            } else {
+                this.loadModels();
+            }
         }
     }
 

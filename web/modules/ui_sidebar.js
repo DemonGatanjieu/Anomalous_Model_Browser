@@ -10,6 +10,7 @@ import { showUpdateGuide } from './ui_update_guide.js';
 import { setScanButtonState } from './ui_scan_wizard.js';
 import { createSettingsHub } from './ui_settings_hub.js';
 import { createToolbox } from './ui_toolbox.js';
+import { createDomainSwitcher } from './ui_domain_switcher.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -131,8 +132,17 @@ export function createDOM() {
             }
         };
 
+        const actionGroup = document.createElement('div');
+        actionGroup.style.display = 'flex';
+        actionGroup.style.alignItems = 'center';
+        actionGroup.style.gap = '6px';
+
+        const domainSwitcher = createDomainSwitcher(this);
+        actionGroup.appendChild(domainSwitcher);
+        actionGroup.appendChild(menuBtn);
+
         brandBar.appendChild(badge);
-        brandBar.appendChild(menuBtn);
+        brandBar.appendChild(actionGroup);
 
         this.sidebar = document.createElement('div');
         this.sidebar.id = 'anomalous-sidebar';
@@ -486,6 +496,13 @@ export function createDOM() {
         this.assistantPanel.style.boxSizing = 'border-box';
         this.assistantPanelInitialized = false;
 
+        this.audioStudioPanel = document.createElement('div');
+        this.audioStudioPanel.id = 'anomalous-audio-studio-panel';
+        this.audioStudioPanel.style.display = 'none';
+        this.audioStudioPanel.style.flex = '1';
+        this.audioStudioPanel.style.height = '100%';
+        this.audioStudioPanel.style.overflow = 'hidden';
+
         this.galleryGrid = document.createElement('div');
         this.galleryGrid.className = 'anomalous-gallery-grid';
         this.galleryPanel.appendChild(this.galleryGrid);
@@ -526,6 +543,7 @@ export function createDOM() {
         content.appendChild(this.galleryPanel);
         content.appendChild(this.doctorPanel);
         content.appendChild(this.assistantPanel);
+        content.appendChild(this.audioStudioPanel);
 
         container.appendChild(this.sidebarWrapper);
         container.appendChild(content);
