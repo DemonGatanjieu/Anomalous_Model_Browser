@@ -95,13 +95,18 @@ html.theme-abyssal-scarlet,
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
     display: flex !important;
     visibility: visible !important;
-    opacity: 1 !important;
+    opacity: 1;
     align-items: center !important;
     justify-content: center !important;
     user-select: none;
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    transition: opacity 0.18s ease-out, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
     gap: 8px;
     white-space: nowrap;
+}
+
+#anomalous-trigger-btn.anomalous-trigger-initializing {
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
 #anomalous-trigger-btn .anomalous-trigger-icon {

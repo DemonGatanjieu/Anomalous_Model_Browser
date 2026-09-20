@@ -10,13 +10,15 @@ import { AnomalousBrowser } from './browser.js';
 import {
     clampFloatingTriggerPosition,
     clearSavedTriggerPosition,
+    DEFAULT_SAFE_LEFT,
+    DEFAULT_SAFE_TOP,
     isValidSavedTriggerPosition,
     loadSavedTriggerPosition,
     normalizeEntryMode,
     normalizeFloatingTriggerSize,
     normalizeFloatingTriggerStyle,
     saveTriggerPosition
-} from './entry_controls.js?v=20260921-entry-v3';
+} from './entry_controls.js?v=20260921-flicker-free-1';
 import {
     createShortcutSettingControl,
     DEFAULT_BROWSER_SHORTCUT,
@@ -252,7 +254,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
     });
 
     async function setup() {
-        const cssUrl = '/extensions/Anomalous_Model_Browser/styles.css?v=' + Date.now();
+        const cssUrl = '/extensions/Anomalous_Model_Browser/styles.css?v=20260921-flicker-free-1';
         if (!document.querySelector('link[href^="/extensions/Anomalous_Model_Browser/styles.css"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
@@ -261,12 +263,47 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
             document.head.appendChild(link);
         }
 
+        try {
+            const registeredSettings = app.extensionManager?.setting;
+            entryMode = normalizeEntryMode(registeredSettings?.get(ENTRY_MODE_SETTING_ID));
+            floatingTriggerSize = normalizeFloatingTriggerSize(registeredSettings?.get(FLOATING_TRIGGER_SIZE_SETTING_ID));
+            floatingTriggerStyle = normalizeFloatingTriggerStyle(registeredSettings?.get(FLOATING_TRIGGER_STYLE_SETTING_ID));
+        } catch (error) {
+            console.warn('[Anomalous Model Browser] Unable to read entry preferences:', error);
+        }
+
         const btn = document.createElement('button');
         btn.id = 'anomalous-trigger-btn';
         btn.setAttribute('aria-label', 'Anomalous Model Browser');
+        // Prevent FOUC: Start hidden until presentation & exact coordinates are bound
+        btn.classList.add('anomalous-trigger-initializing');
         triggerButton = btn;
         if (browserInstance) browserInstance.triggerButton = btn;
         btn.title = t('mainOpenTitle');
+
+        // Pre-configure content & presentation BEFORE mounting
+        applyPresentation();
+
+        // Pre-calculate and assign exact target coordinates BEFORE appending to DOM
+        const savedInitialPos = loadSavedTriggerPosition();
+        if (savedInitialPos) {
+            const estSize = floatingTriggerSize === 'small' ? 44 : (floatingTriggerSize === 'large' ? 76 : 60);
+            const initialClamped = clampFloatingTriggerPosition({
+                x: savedInitialPos.x,
+                y: savedInitialPos.y,
+                width: estSize,
+                height: estSize,
+                viewportWidth: window.innerWidth,
+                viewportHeight: window.innerHeight,
+                minX: 70
+            });
+            btn.style.position = 'fixed';
+            btn.style.left = initialClamped.x + 'px';
+            btn.style.top = initialClamped.y + 'px';
+            btn.style.right = 'auto';
+            btn.style.bottom = 'auto';
+        }
+
         let isDragging = false;
         let hasMoved = false;
         let startPointerX = 0;
@@ -367,8 +404,9 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         const updateBtnBounds = () => {
             const saved = loadSavedTriggerPosition();
             if (saved) {
-                const btnW = btn.offsetWidth || 60;
-                const btnH = btn.offsetHeight || 60;
+                const estFallback = floatingTriggerSize === 'small' ? 44 : (floatingTriggerSize === 'large' ? 76 : 60);
+                const btnW = btn.offsetWidth || estFallback;
+                const btnH = btn.offsetHeight || btnW;
                 const clamped = clampFloatingTriggerPosition({
                     x: saved.x,
                     y: saved.y,
@@ -396,26 +434,17 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
             syncVisibility();
         });
 
-        // Mount first so dimensions and styles can be accurately calculated
+        // Mount pre-positioned and styled element to DOM
         document.body.appendChild(btn);
-
-        try {
-            const registeredSettings = app.extensionManager?.setting;
-            entryMode = normalizeEntryMode(registeredSettings?.get(ENTRY_MODE_SETTING_ID));
-            floatingTriggerSize = normalizeFloatingTriggerSize(registeredSettings?.get(FLOATING_TRIGGER_SIZE_SETTING_ID));
-            floatingTriggerStyle = normalizeFloatingTriggerStyle(registeredSettings?.get(FLOATING_TRIGGER_STYLE_SETTING_ID));
-        } catch (error) {
-            console.warn('[Anomalous Model Browser] Unable to read entry preferences:', error);
-        }
-        applyPresentation();
         syncVisibility();
         ensureBrowser();
         installMaterialsShortcutFallback();
 
-        // Restore position after the element is in the DOM tree, with multi-stage raf/timeout guards
-        updateBtnBounds();
-        requestAnimationFrame(() => updateBtnBounds());
-        setTimeout(() => updateBtnBounds(), 150);
+        // Reveal smoothly on first animation frame without any positional jump or flicker
+        requestAnimationFrame(() => {
+            updateBtnBounds();
+            btn.classList.remove('anomalous-trigger-initializing');
+        });
 
         window.anomalousDragGhostImg = new Image();
         window.anomalousDragGhostImg.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='76' height='76' x='2' y='2' fill='%23140812' fill-opacity='0.85' rx='16' stroke='%23f59e0b' stroke-width='2'/><text x='40' y='50' font-family='sans-serif' font-size='32' font-weight='bold' fill='%23f59e0b' text-anchor='middle'>W</text></svg>";
