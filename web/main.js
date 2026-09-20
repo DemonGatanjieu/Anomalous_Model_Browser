@@ -1,5 +1,5 @@
 import { app } from "../../scripts/app.js";
-import { createBrowserEntry } from "./modules/browser_entry.js";
+import { createBrowserEntry } from "./modules/browser_entry.js?v=20260921-entry-v2";
 import { createInterfaceSettings, getCurrentLanguage, setAbyssalScarletTheme, t } from "./modules/interface_settings.js";
 
 export { setAbyssalScarletTheme };

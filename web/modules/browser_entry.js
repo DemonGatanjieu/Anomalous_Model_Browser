@@ -2,11 +2,14 @@ import { app } from '../../../scripts/app.js';
 import { AnomalousBrowser } from './browser.js';
 import {
     clampFloatingTriggerPosition,
+    clearSavedTriggerPosition,
     isValidSavedTriggerPosition,
+    loadSavedTriggerPosition,
     normalizeEntryMode,
     normalizeFloatingTriggerSize,
-    normalizeFloatingTriggerStyle
-} from './entry_controls.js';
+    normalizeFloatingTriggerStyle,
+    saveTriggerPosition
+} from './entry_controls.js?v=20260921-entry-v2';
 import {
     createShortcutSettingControl,
     DEFAULT_BROWSER_SHORTCUT,
@@ -114,8 +117,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
     }
 
     function resetPosition() {
-        localStorage.removeItem('anomalous_btn_x');
-        localStorage.removeItem('anomalous_btn_y');
+        clearSavedTriggerPosition();
         if (!triggerButton) return;
         triggerButton.style.left = '';
         triggerButton.style.top = '';
@@ -265,22 +267,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         let initialX = 0;
         let initialY = 0;
 
-        btn.addEventListener('pointerdown', event => {
-            if (event.button !== 0) return;
-            isDragging = true;
-            hasMoved = false;
-            startX = event.clientX;
-            startY = event.clientY;
-            const rect = btn.getBoundingClientRect();
-            initialX = rect.left;
-            initialY = rect.top;
-            btn.style.transition = 'none';
-            try {
-                btn.setPointerCapture(event.pointerId);
-            } catch (_) {}
-        });
-
-        btn.addEventListener('pointermove', event => {
+        const onPointerMove = (event) => {
             if (!isDragging) return;
             const dx = event.clientX - startX;
             const dy = event.clientY - startY;
@@ -299,11 +286,14 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
             btn.style.top = nextY + 'px';
             btn.style.right = 'auto';
             btn.style.bottom = 'auto';
-        });
+        };
 
-        const finishDrag = (event) => {
+        const onPointerUp = (event) => {
             if (!isDragging) return;
             isDragging = false;
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerCancel);
             try {
                 if (event && event.pointerId != null) {
                     btn.releasePointerCapture(event.pointerId);
@@ -314,38 +304,59 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
                 const curLeft = Number.parseFloat(btn.style.left);
                 const curTop = Number.parseFloat(btn.style.top);
                 if (Number.isFinite(curLeft) && Number.isFinite(curTop)) {
-                    localStorage.setItem('anomalous_btn_x', String(Math.round(curLeft)));
-                    localStorage.setItem('anomalous_btn_y', String(Math.round(curTop)));
+                    saveTriggerPosition({ x: curLeft, y: curTop });
                 }
             } else {
                 open();
             }
         };
 
-        btn.addEventListener('pointerup', finishDrag);
-        btn.addEventListener('pointercancel', finishDrag);
+        const onPointerCancel = (event) => {
+            if (!isDragging) return;
+            isDragging = false;
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('pointercancel', onPointerCancel);
+            try {
+                if (event && event.pointerId != null) {
+                    btn.releasePointerCapture(event.pointerId);
+                }
+            } catch (_) {}
+            btn.style.transition = '';
+        };
+
+        btn.addEventListener('pointerdown', event => {
+            if (event.button !== 0) return;
+            isDragging = true;
+            hasMoved = false;
+            startX = event.clientX;
+            startY = event.clientY;
+            const rect = btn.getBoundingClientRect();
+            initialX = rect.left;
+            initialY = rect.top;
+            btn.style.transition = 'none';
+            try {
+                btn.setPointerCapture(event.pointerId);
+            } catch (_) {}
+            window.addEventListener('pointermove', onPointerMove, { passive: false });
+            window.addEventListener('pointerup', onPointerUp);
+            window.addEventListener('pointercancel', onPointerCancel);
+        });
 
         const updateBtnBounds = () => {
-            const savedX = localStorage.getItem('anomalous_btn_x');
-            const savedY = localStorage.getItem('anomalous_btn_y');
-            if (isValidSavedTriggerPosition(savedX, savedY)) {
+            const saved = loadSavedTriggerPosition();
+            if (saved) {
                 const btnW = btn.offsetWidth || 60;
                 const btnH = btn.offsetHeight || 60;
                 const maxW = Math.max(0, window.innerWidth - btnW);
                 const maxH = Math.max(0, window.innerHeight - btnH);
-                let px = Number.parseFloat(savedX);
-                let py = Number.parseFloat(savedY);
-                px = Math.min(maxW, Math.max(0, px));
-                py = Math.min(maxH, Math.max(0, py));
+                const px = Math.min(maxW, Math.max(0, saved.x));
+                const py = Math.min(maxH, Math.max(0, saved.y));
                 btn.style.left = px + 'px';
                 btn.style.top = py + 'px';
                 btn.style.right = 'auto';
                 btn.style.bottom = 'auto';
             } else {
-                if (savedX != null && Number.parseFloat(savedX) < 70) {
-                    localStorage.removeItem('anomalous_btn_x');
-                    localStorage.removeItem('anomalous_btn_y');
-                }
                 btn.style.left = '';
                 btn.style.top = '';
                 btn.style.right = '';
@@ -354,14 +365,14 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         };
         triggerBoundsUpdater = updateBtnBounds;
 
-        updateBtnBounds();
-
         window.addEventListener('resize', () => {
             updateBtnBounds();
             syncVisibility();
         });
 
+        // Mount first so dimensions and styles can be accurately calculated
         document.body.appendChild(btn);
+
         try {
             const registeredSettings = app.extensionManager?.setting;
             entryMode = normalizeEntryMode(registeredSettings?.get(ENTRY_MODE_SETTING_ID));
@@ -374,6 +385,9 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         syncVisibility();
         ensureBrowser();
         installMaterialsShortcutFallback();
+
+        // Restore position after the element is in the DOM tree
+        updateBtnBounds();
 
         window.anomalousDragGhostImg = new Image();
         window.anomalousDragGhostImg.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='76' height='76' x='2' y='2' fill='%23140812' fill-opacity='0.85' rx='16' stroke='%23f59e0b' stroke-width='2'/><text x='40' y='50' font-family='sans-serif' font-size='32' font-weight='bold' fill='%23f59e0b' text-anchor='middle'>W</text></svg>";
