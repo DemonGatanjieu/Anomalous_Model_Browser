@@ -2,15 +2,7 @@ import { app } from '../../../scripts/app.js';
 import { AnomalousBrowser } from './browser.js';
 import {
     clampFloatingTriggerPosition,
-    DEFAULT_SAFE_X,
-    DEFAULT_SAFE_Y,
-    DEFAULT_TRIGGER_POSITION,
-    isValidSavedTriggerPosition,
-    normalizeEntryMode,
-    normalizeFloatingTriggerSize,
-    normalizeFloatingTriggerStyle,
-    normalizeSavedTriggerPosition,
-    sanitizeSavedTriggerPosition
+    isValidSavedTriggerPosition
 } from './entry_controls.js';
 import {
     createShortcutSettingControl,
@@ -122,10 +114,10 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         localStorage.removeItem('anomalous_btn_x');
         localStorage.removeItem('anomalous_btn_y');
         if (!triggerButton) return;
-        triggerButton.style.right = 'auto';
-        triggerButton.style.bottom = 'auto';
-        triggerButton.style.left = DEFAULT_SAFE_X + 'px';
-        triggerButton.style.top = DEFAULT_SAFE_Y + 'px';
+        triggerButton.style.left = '';
+        triggerButton.style.top = '';
+        triggerButton.style.right = '';
+        triggerButton.style.bottom = '';
     }
 
     function ensureBrowser() {
@@ -289,22 +281,19 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
             if (!isDragging) return;
             const dx = event.clientX - startX;
             const dy = event.clientY - startY;
-            if (!hasMoved && Math.hypot(dx, dy) >= 5) {
+            if (!hasMoved && Math.hypot(dx, dy) >= 4) {
                 hasMoved = true;
             }
             if (!hasMoved) return;
             event.preventDefault();
-            const nextPosition = clampFloatingTriggerPosition({
-                x: initialX + dx,
-                y: initialY + dy,
-                width: btn.offsetWidth,
-                height: btn.offsetHeight,
-                viewportWidth: window.innerWidth,
-                viewportHeight: window.innerHeight,
-                margin: 0
-            });
-            btn.style.left = nextPosition.x + 'px';
-            btn.style.top = nextPosition.y + 'px';
+            const btnW = btn.offsetWidth || 60;
+            const btnH = btn.offsetHeight || 60;
+            const maxW = Math.max(0, window.innerWidth - btnW);
+            const maxH = Math.max(0, window.innerHeight - btnH);
+            const nextX = Math.min(maxW, Math.max(0, initialX + dx));
+            const nextY = Math.min(maxH, Math.max(0, initialY + dy));
+            btn.style.left = nextX + 'px';
+            btn.style.top = nextY + 'px';
             btn.style.right = 'auto';
             btn.style.bottom = 'auto';
         });
@@ -319,23 +308,12 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
             } catch (_) {}
             btn.style.transition = '';
             if (hasMoved) {
-                const rect = btn.getBoundingClientRect();
-                const sanitized = sanitizeSavedTriggerPosition(rect.left, rect.top);
-                const finalPosition = clampFloatingTriggerPosition({
-                    x: sanitized ? sanitized.x : rect.left,
-                    y: sanitized ? sanitized.y : rect.top,
-                    width: btn.offsetWidth,
-                    height: btn.offsetHeight,
-                    viewportWidth: window.innerWidth,
-                    viewportHeight: window.innerHeight,
-                    margin: 0
-                });
-                btn.style.left = finalPosition.x + 'px';
-                btn.style.top = finalPosition.y + 'px';
-                btn.style.right = 'auto';
-                btn.style.bottom = 'auto';
-                localStorage.setItem('anomalous_btn_x', String(Math.round(finalPosition.x)));
-                localStorage.setItem('anomalous_btn_y', String(Math.round(finalPosition.y)));
+                const curLeft = Number.parseFloat(btn.style.left);
+                const curTop = Number.parseFloat(btn.style.top);
+                if (Number.isFinite(curLeft) && Number.isFinite(curTop)) {
+                    localStorage.setItem('anomalous_btn_x', String(Math.round(curLeft)));
+                    localStorage.setItem('anomalous_btn_y', String(Math.round(curTop)));
+                }
             } else {
                 open();
             }
@@ -347,67 +325,32 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         const updateBtnBounds = () => {
             const savedX = localStorage.getItem('anomalous_btn_x');
             const savedY = localStorage.getItem('anomalous_btn_y');
-            const sanitized = sanitizeSavedTriggerPosition(savedX, savedY);
-            if (!sanitized) {
+            if (isValidSavedTriggerPosition(savedX, savedY)) {
+                const btnW = btn.offsetWidth || 60;
+                const btnH = btn.offsetHeight || 60;
+                const maxW = Math.max(0, window.innerWidth - btnW);
+                const maxH = Math.max(0, window.innerHeight - btnH);
+                let px = Number.parseFloat(savedX);
+                let py = Number.parseFloat(savedY);
+                px = Math.min(maxW, Math.max(0, px));
+                py = Math.min(maxH, Math.max(0, py));
+                btn.style.left = px + 'px';
+                btn.style.top = py + 'px';
                 btn.style.right = 'auto';
                 btn.style.bottom = 'auto';
-                btn.style.left = DEFAULT_SAFE_X + 'px';
-                btn.style.top = DEFAULT_SAFE_Y + 'px';
-                return;
+            } else {
+                btn.style.left = '';
+                btn.style.top = '';
+                btn.style.right = '';
+                btn.style.bottom = '';
             }
-            const position = clampFloatingTriggerPosition({
-                x: btn.style.left || sanitized.x,
-                y: btn.style.top || sanitized.y,
-                width: btn.offsetWidth,
-                height: btn.offsetHeight,
-                viewportWidth: window.innerWidth,
-                viewportHeight: window.innerHeight
-            });
-            btn.style.left = position.x + 'px';
-            btn.style.top = position.y + 'px';
-            btn.style.right = 'auto';
-            btn.style.bottom = 'auto';
         };
         triggerBoundsUpdater = updateBtnBounds;
 
-        const initialSavedX = localStorage.getItem('anomalous_btn_x');
-        const initialSavedY = localStorage.getItem('anomalous_btn_y');
-        const initialSanitized = sanitizeSavedTriggerPosition(initialSavedX, initialSavedY);
-        if (initialSanitized) {
-            const initialPos = clampFloatingTriggerPosition({
-                x: initialSanitized.x,
-                y: initialSanitized.y,
-                width: 60,
-                height: 60,
-                viewportWidth: window.innerWidth,
-                viewportHeight: window.innerHeight
-            });
-            btn.style.right = 'auto';
-            btn.style.bottom = 'auto';
-            btn.style.left = initialPos.x + 'px';
-            btn.style.top = initialPos.y + 'px';
-            localStorage.setItem('anomalous_btn_x', String(Math.round(initialPos.x)));
-            localStorage.setItem('anomalous_btn_y', String(Math.round(initialPos.y)));
-            setTimeout(updateBtnBounds, 150);
-        } else {
-            // Guarantee position outside the left sidebar dock frame
-            btn.style.right = 'auto';
-            btn.style.bottom = 'auto';
-            btn.style.left = DEFAULT_SAFE_X + 'px';
-            btn.style.top = DEFAULT_SAFE_Y + 'px';
-        }
+        updateBtnBounds();
 
         window.addEventListener('resize', () => {
-            const curX = localStorage.getItem('anomalous_btn_x');
-            const curY = localStorage.getItem('anomalous_btn_y');
-            if (sanitizeSavedTriggerPosition(curX, curY)) {
-                updateBtnBounds();
-            } else {
-                btn.style.right = 'auto';
-                btn.style.bottom = 'auto';
-                btn.style.left = DEFAULT_SAFE_X + 'px';
-                btn.style.top = DEFAULT_SAFE_Y + 'px';
-            }
+            updateBtnBounds();
             syncVisibility();
         });
 

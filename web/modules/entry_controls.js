@@ -14,11 +14,9 @@ export function normalizeEntryMode(value) {
     return ENTRY_MODES.has(value) ? value : 'floating';
 }
 
-export const SIDEBAR_FRAME_WIDTH = 68;
-export const TOPBAR_MENU_HEIGHT = 70;
-export const DEFAULT_SAFE_X = 72;
-export const DEFAULT_SAFE_Y = 80;
-export const DEFAULT_TRIGGER_POSITION = Object.freeze({ x: DEFAULT_SAFE_X, y: DEFAULT_SAFE_Y });
+export const DEFAULT_SAFE_TOP = 80;
+export const DEFAULT_SAFE_MARGIN_RIGHT = 24;
+export const DEFAULT_TRIGGER_POSITION = Object.freeze({ top: DEFAULT_SAFE_TOP, right: DEFAULT_SAFE_MARGIN_RIGHT });
 
 export function isValidSavedTriggerPosition(x, y) {
     if (x == null || y == null) return false;
@@ -29,17 +27,7 @@ export function isValidSavedTriggerPosition(x, y) {
 
 export function sanitizeSavedTriggerPosition(x, y) {
     if (!isValidSavedTriggerPosition(x, y)) return null;
-    let px = Number.parseFloat(x);
-    let py = Number.parseFloat(y);
-    // If dropped inside the left sidebar frame, automatically pull it out onto the canvas outside the frame
-    if (px < SIDEBAR_FRAME_WIDTH) {
-        px = DEFAULT_SAFE_X;
-    }
-    // If dropped inside the topbar menu zone, nudge below the menu
-    if (py < TOPBAR_MENU_HEIGHT && px < 350) {
-        py = DEFAULT_SAFE_Y;
-    }
-    return { x: px, y: py };
+    return { x: Number.parseFloat(x), y: Number.parseFloat(y) };
 }
 
 export function normalizeSavedTriggerPosition(x, y) {
@@ -65,8 +53,11 @@ export function clampFloatingTriggerPosition({
     const parsedX = Number.parseFloat(x);
     const parsedY = Number.parseFloat(y);
 
-    const targetX = Number.isFinite(parsedX) ? parsedX : DEFAULT_SAFE_X;
-    const targetY = Number.isFinite(parsedY) ? parsedY : DEFAULT_SAFE_Y;
+    const fallbackX = Math.max(0, maxX - DEFAULT_SAFE_MARGIN_RIGHT);
+    const fallbackY = Math.min(maxY, DEFAULT_SAFE_TOP);
+
+    const targetX = Number.isFinite(parsedX) ? parsedX : fallbackX;
+    const targetY = Number.isFinite(parsedY) ? parsedY : fallbackY;
 
     return {
         x: Math.min(maxX, Math.max(0, targetX)),
