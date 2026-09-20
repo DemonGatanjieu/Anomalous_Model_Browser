@@ -197,12 +197,30 @@ body:has(.anomalous-prompt-studio-drawer) #anomalous-trigger-btn {
     box-shadow: none;
 }
 
-.anomalous-topbar-entry {
+.anomalous-topbar-entry,
+button:has(.anomalous-topbar-entry),
+[data-testid="anomalous-topbar-entry"],
+.side-bar-button:has(.anomalous-topbar-entry) {
     display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
 }
 
-html.anomalous-topbar-entry-enabled .anomalous-topbar-entry {
+html.anomalous-topbar-entry-enabled .anomalous-topbar-entry,
+html.anomalous-topbar-entry-enabled button:has(.anomalous-topbar-entry),
+html.anomalous-topbar-entry-enabled .side-bar-button:has(.anomalous-topbar-entry) {
     display: inline-flex !important;
+    visibility: visible !important;
+    width: auto !important;
+    height: auto !important;
+    pointer-events: auto !important;
+    overflow: visible !important;
 }
 
 html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBrowser.FloatingTriggerSize"],

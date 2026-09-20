@@ -88,12 +88,12 @@ DOM or live LiteGraph state.
 
 ### Frontend
 
-- `web/main.js` coordinates extension registration (with `?v=...` versioned module imports busting aggressive browser ES Module caching). `browser.js` owns the shared
+- `web/main.js` coordinates extension registration (with `?v=...` versioned module imports busting aggressive browser ES Module caching and unconditional legacy storage key purging). `browser.js` owns the shared
   browser class and extracted-method wiring; `browser_entry.js` owns the single
-  browser instance plus floating/topbar/menu entry behavior (with Window-level PointerEvents drag capture, zero-drift viewport boundary clamping, mount-first DOM layout initialization, default safe placement in the top-right corner at `top: 80px; right: 24px;` avoiding both topbar menus and left sidebars, and versioned `anomalous_trigger_pos_v2` atomic JSON coordinate persistence); `entry_controls.js`
+  browser instance plus floating/topbar/menu entry behavior (with Dual-Binding PointerEvents drag capture, `lostpointercapture` fail-safe listeners, zero-drift viewport boundary clamping, mount-first DOM layout initialization with multi-stage rAF/timeout calibration, default safe placement in the top-right corner at `top: 80px; right: 24px;` avoiding both topbar menus and left sidebars, and versioned `anomalous_trigger_pos_v3` atomic JSON coordinate persistence); `entry_controls.js`
   owns entry mode, trigger sizing/styling normalization, mathematical viewport-safe boundary
-  clamping (`clampFloatingTriggerPosition`), clean `loadSavedTriggerPosition`/`saveTriggerPosition` storage drivers, and non-distorting coordinate validation
-  (`isValidSavedTriggerPosition`); and `interface_settings.js` owns language and theme preferences.
+  clamping (`clampFloatingTriggerPosition` with minimum safe boundary `minX=70` preventing left sidebar dock entrapment), clean `loadSavedTriggerPosition`/`saveTriggerPosition` storage drivers, and non-distorting coordinate validation
+  (`isValidSavedTriggerPosition`); `api/__init__.py` injects an aiohttp no-cache middleware (`Cache-Control: no-cache, no-store, must-revalidate`) for extension static files to eliminate browser memory/disk cache desynchronization across regular page refreshes; and `interface_settings.js` owns language and theme preferences.
 - `ui_domain_switcher.js` owns the dual-domain mode toggle (Visual Studio 🎨 vs Audio & Voice Studio 🎙️) embedded in the brand header.
 - `ui_audio_studio.js` owns the Audio & Voice Studio workspace, presenting character voice cards, emotion slice playback, prompt syntax copying, real-time search, animated equalizers, and canvas drag-and-drop.
 - `ui_audio_sidebar.js` owns the Audio Sidebar navigation, rendering trees for All Voices, Character Presets (e.g. Arona) with count badges, and Output History Vault.

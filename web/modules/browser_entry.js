@@ -1,3 +1,10 @@
+try {
+    if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('anomalous_btn_x');
+        localStorage.removeItem('anomalous_btn_y');
+    }
+} catch (_) {}
+
 import { app } from '../../../scripts/app.js';
 import { AnomalousBrowser } from './browser.js';
 import {
@@ -9,7 +16,7 @@ import {
     normalizeFloatingTriggerSize,
     normalizeFloatingTriggerStyle,
     saveTriggerPosition
-} from './entry_controls.js?v=20260921-entry-v2';
+} from './entry_controls.js?v=20260921-entry-v3';
 import {
     createShortcutSettingControl,
     DEFAULT_BROWSER_SHORTCUT,
@@ -111,7 +118,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         triggerButton.replaceChildren(icon, label);
         triggerButton.title = t('mainOpenTitle');
         triggerButton.setAttribute('aria-label', t('mainOpenTitle'));
-        if (isValidSavedTriggerPosition(localStorage.getItem('anomalous_btn_x'), localStorage.getItem('anomalous_btn_y'))) {
+        if (loadSavedTriggerPosition()) {
             requestAnimationFrame(() => triggerBoundsUpdater?.());
         }
     }
@@ -262,15 +269,18 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         btn.title = t('mainOpenTitle');
         let isDragging = false;
         let hasMoved = false;
-        let startX = 0;
-        let startY = 0;
-        let initialX = 0;
-        let initialY = 0;
+        let startPointerX = 0;
+        let startPointerY = 0;
+        let startBtnLeft = 0;
+        let startBtnTop = 0;
+        let currentDragX = null;
+        let currentDragY = null;
+        let activePointerId = null;
 
         const onPointerMove = (event) => {
             if (!isDragging) return;
-            const dx = event.clientX - startX;
-            const dy = event.clientY - startY;
+            const dx = event.clientX - startPointerX;
+            const dy = event.clientY - startPointerY;
             if (!hasMoved && Math.hypot(dx, dy) >= 4) {
                 hasMoved = true;
             }
@@ -278,69 +288,80 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
             event.preventDefault();
             const btnW = btn.offsetWidth || 60;
             const btnH = btn.offsetHeight || 60;
-            const maxW = Math.max(0, window.innerWidth - btnW);
-            const maxH = Math.max(0, window.innerHeight - btnH);
-            const nextX = Math.min(maxW, Math.max(0, initialX + dx));
-            const nextY = Math.min(maxH, Math.max(0, initialY + dy));
-            btn.style.left = nextX + 'px';
-            btn.style.top = nextY + 'px';
+            const clamped = clampFloatingTriggerPosition({
+                x: startBtnLeft + dx,
+                y: startBtnTop + dy,
+                width: btnW,
+                height: btnH,
+                viewportWidth: window.innerWidth,
+                viewportHeight: window.innerHeight,
+                minX: 70
+            });
+            currentDragX = clamped.x;
+            currentDragY = clamped.y;
+            btn.style.left = clamped.x + 'px';
+            btn.style.top = clamped.y + 'px';
             btn.style.right = 'auto';
             btn.style.bottom = 'auto';
         };
 
-        const onPointerUp = (event) => {
+        const finishDrag = (event) => {
             if (!isDragging) return;
             isDragging = false;
+
+            btn.removeEventListener('pointermove', onPointerMove);
+            btn.removeEventListener('pointerup', finishDrag);
+            btn.removeEventListener('pointercancel', finishDrag);
+            btn.removeEventListener('lostpointercapture', finishDrag);
             window.removeEventListener('pointermove', onPointerMove);
-            window.removeEventListener('pointerup', onPointerUp);
-            window.removeEventListener('pointercancel', onPointerCancel);
-            try {
-                if (event && event.pointerId != null) {
-                    btn.releasePointerCapture(event.pointerId);
-                }
-            } catch (_) {}
+            window.removeEventListener('pointerup', finishDrag);
+            window.removeEventListener('pointercancel', finishDrag);
+
+            if (activePointerId != null) {
+                try {
+                    if (btn.hasPointerCapture(activePointerId)) {
+                        btn.releasePointerCapture(activePointerId);
+                    }
+                } catch (_) {}
+                activePointerId = null;
+            }
+
             btn.style.transition = '';
-            if (hasMoved) {
-                const curLeft = Number.parseFloat(btn.style.left);
-                const curTop = Number.parseFloat(btn.style.top);
-                if (Number.isFinite(curLeft) && Number.isFinite(curTop)) {
-                    saveTriggerPosition({ x: curLeft, y: curTop });
-                }
-            } else {
+
+            if (hasMoved && currentDragX != null && currentDragY != null) {
+                saveTriggerPosition({ x: currentDragX, y: currentDragY });
+            } else if (!hasMoved) {
                 open();
             }
         };
 
-        const onPointerCancel = (event) => {
-            if (!isDragging) return;
-            isDragging = false;
-            window.removeEventListener('pointermove', onPointerMove);
-            window.removeEventListener('pointerup', onPointerUp);
-            window.removeEventListener('pointercancel', onPointerCancel);
-            try {
-                if (event && event.pointerId != null) {
-                    btn.releasePointerCapture(event.pointerId);
-                }
-            } catch (_) {}
-            btn.style.transition = '';
-        };
-
-        btn.addEventListener('pointerdown', event => {
+        btn.addEventListener('pointerdown', (event) => {
             if (event.button !== 0) return;
             isDragging = true;
             hasMoved = false;
-            startX = event.clientX;
-            startY = event.clientY;
+            startPointerX = event.clientX;
+            startPointerY = event.clientY;
+            activePointerId = event.pointerId;
+
             const rect = btn.getBoundingClientRect();
-            initialX = rect.left;
-            initialY = rect.top;
+            startBtnLeft = rect.left;
+            startBtnTop = rect.top;
+            currentDragX = rect.left;
+            currentDragY = rect.top;
+
             btn.style.transition = 'none';
+
             try {
                 btn.setPointerCapture(event.pointerId);
             } catch (_) {}
+
+            btn.addEventListener('pointermove', onPointerMove, { passive: false });
+            btn.addEventListener('pointerup', finishDrag);
+            btn.addEventListener('pointercancel', finishDrag);
+            btn.addEventListener('lostpointercapture', finishDrag);
             window.addEventListener('pointermove', onPointerMove, { passive: false });
-            window.addEventListener('pointerup', onPointerUp);
-            window.addEventListener('pointercancel', onPointerCancel);
+            window.addEventListener('pointerup', finishDrag);
+            window.addEventListener('pointercancel', finishDrag);
         });
 
         const updateBtnBounds = () => {
@@ -348,12 +369,17 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
             if (saved) {
                 const btnW = btn.offsetWidth || 60;
                 const btnH = btn.offsetHeight || 60;
-                const maxW = Math.max(0, window.innerWidth - btnW);
-                const maxH = Math.max(0, window.innerHeight - btnH);
-                const px = Math.min(maxW, Math.max(0, saved.x));
-                const py = Math.min(maxH, Math.max(0, saved.y));
-                btn.style.left = px + 'px';
-                btn.style.top = py + 'px';
+                const clamped = clampFloatingTriggerPosition({
+                    x: saved.x,
+                    y: saved.y,
+                    width: btnW,
+                    height: btnH,
+                    viewportWidth: window.innerWidth,
+                    viewportHeight: window.innerHeight,
+                    minX: 70
+                });
+                btn.style.left = clamped.x + 'px';
+                btn.style.top = clamped.y + 'px';
                 btn.style.right = 'auto';
                 btn.style.bottom = 'auto';
             } else {
@@ -386,8 +412,10 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         ensureBrowser();
         installMaterialsShortcutFallback();
 
-        // Restore position after the element is in the DOM tree
+        // Restore position after the element is in the DOM tree, with multi-stage raf/timeout guards
         updateBtnBounds();
+        requestAnimationFrame(() => updateBtnBounds());
+        setTimeout(() => updateBtnBounds(), 150);
 
         window.anomalousDragGhostImg = new Image();
         window.anomalousDragGhostImg.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='76' height='76' x='2' y='2' fill='%23140812' fill-opacity='0.85' rx='16' stroke='%23f59e0b' stroke-width='2'/><text x='40' y='50' font-family='sans-serif' font-size='32' font-weight='bold' fill='%23f59e0b' text-anchor='middle'>W</text></svg>";

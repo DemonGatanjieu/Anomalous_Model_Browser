@@ -8,7 +8,20 @@ from .config import *
 from .notebooks import *
 from .parameters import *
 
+from aiohttp import web
+
+@web.middleware
+async def no_cache_extension_middleware(request, handler):
+    response = await handler(request)
+    if request.path.startswith('/extensions/Anomalous_Model_Browser'):
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
+
 def setup_routes(app):
+    if hasattr(app, 'middlewares') and no_cache_extension_middleware not in app.middlewares:
+        app.middlewares.append(no_cache_extension_middleware)
     app.router.add_get('/anomalous/folders', model_catalog.api_get_folders)
     app.router.add_get('/anomalous/all_folder_types', folder_types.api_get_all_folder_types)
     app.router.add_get('/anomalous/models', model_catalog.api_get_models)

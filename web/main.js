@@ -1,5 +1,12 @@
+try {
+    if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('anomalous_btn_x');
+        localStorage.removeItem('anomalous_btn_y');
+    }
+} catch (_) {}
+
 import { app } from "../../scripts/app.js";
-import { createBrowserEntry } from "./modules/browser_entry.js?v=20260921-entry-v2";
+import { createBrowserEntry } from "./modules/browser_entry.js?v=20260921-entry-v3";
 import { createInterfaceSettings, getCurrentLanguage, setAbyssalScarletTheme, t } from "./modules/interface_settings.js";
 
 export { setAbyssalScarletTheme };
