@@ -14,18 +14,11 @@ export function normalizeEntryMode(value) {
     return ENTRY_MODES.has(value) ? value : 'floating';
 }
 
-export const DEFAULT_TRIGGER_TOP = 80;
-export const DEFAULT_TRIGGER_RIGHT_MARGIN = 24;
-
-export function getDefaultTriggerPosition(viewportWidth = (typeof window !== 'undefined' ? window.innerWidth : 1024), triggerWidth = 60) {
-    const vw = Math.max(triggerWidth + DEFAULT_TRIGGER_RIGHT_MARGIN, Number(viewportWidth) || 1024);
-    return {
-        x: Math.max(0, vw - triggerWidth - DEFAULT_TRIGGER_RIGHT_MARGIN),
-        y: DEFAULT_TRIGGER_TOP,
-    };
-}
-
-export const DEFAULT_TRIGGER_POSITION = Object.freeze({ x: 940, y: DEFAULT_TRIGGER_TOP });
+export const SIDEBAR_FRAME_WIDTH = 68;
+export const TOPBAR_MENU_HEIGHT = 70;
+export const DEFAULT_SAFE_X = 72;
+export const DEFAULT_SAFE_Y = 80;
+export const DEFAULT_TRIGGER_POSITION = Object.freeze({ x: DEFAULT_SAFE_X, y: DEFAULT_SAFE_Y });
 
 export function isValidSavedTriggerPosition(x, y) {
     if (x == null || y == null) return false;
@@ -34,12 +27,23 @@ export function isValidSavedTriggerPosition(x, y) {
     return Number.isFinite(px) && Number.isFinite(py);
 }
 
-export function normalizeSavedTriggerPosition(x, y) {
+export function sanitizeSavedTriggerPosition(x, y) {
     if (!isValidSavedTriggerPosition(x, y)) return null;
-    return {
-        x: Number.parseFloat(x),
-        y: Number.parseFloat(y),
-    };
+    let px = Number.parseFloat(x);
+    let py = Number.parseFloat(y);
+    // If dropped inside the left sidebar frame, automatically pull it out onto the canvas outside the frame
+    if (px < SIDEBAR_FRAME_WIDTH) {
+        px = DEFAULT_SAFE_X;
+    }
+    // If dropped inside the topbar menu zone, nudge below the menu
+    if (py < TOPBAR_MENU_HEIGHT && px < 350) {
+        py = DEFAULT_SAFE_Y;
+    }
+    return { x: px, y: py };
+}
+
+export function normalizeSavedTriggerPosition(x, y) {
+    return sanitizeSavedTriggerPosition(x, y);
 }
 
 export function clampFloatingTriggerPosition({
@@ -58,12 +62,11 @@ export function clampFloatingTriggerPosition({
     const maxX = Math.max(0, safeVw - safeWidth);
     const maxY = Math.max(0, safeVh - safeHeight);
 
-    const defaultPos = getDefaultTriggerPosition(safeVw, safeWidth);
     const parsedX = Number.parseFloat(x);
     const parsedY = Number.parseFloat(y);
 
-    const targetX = Number.isFinite(parsedX) ? parsedX : defaultPos.x;
-    const targetY = Number.isFinite(parsedY) ? parsedY : defaultPos.y;
+    const targetX = Number.isFinite(parsedX) ? parsedX : DEFAULT_SAFE_X;
+    const targetY = Number.isFinite(parsedY) ? parsedY : DEFAULT_SAFE_Y;
 
     return {
         x: Math.min(maxX, Math.max(0, targetX)),
