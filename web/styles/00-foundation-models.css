@@ -77,8 +77,10 @@ html.theme-abyssal-scarlet,
     --anomalous-trigger-font-size: 28px;
     --anomalous-trigger-pill-padding: 18px;
     position: fixed;
-    bottom: 30px;
-    right: 30px;
+    top: 80px;
+    left: 80px;
+    right: auto;
+    bottom: auto;
     width: var(--anomalous-trigger-size);
     height: var(--anomalous-trigger-size);
     border-radius: 50%;
@@ -93,13 +95,18 @@ html.theme-abyssal-scarlet,
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
     display: flex !important;
     visibility: visible !important;
-    opacity: 1 !important;
+    opacity: 1;
     align-items: center !important;
     justify-content: center !important;
     user-select: none;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity 0.18s ease-out, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
     gap: 8px;
     white-space: nowrap;
+}
+
+#anomalous-trigger-btn.anomalous-trigger-initializing {
+    opacity: 0 !important;
+    pointer-events: none !important;
 }
 
 #anomalous-trigger-btn .anomalous-trigger-icon {
@@ -195,12 +202,30 @@ body:has(.anomalous-prompt-studio-drawer) #anomalous-trigger-btn {
     box-shadow: none;
 }
 
-.anomalous-topbar-entry {
+.anomalous-topbar-entry,
+button:has(.anomalous-topbar-entry),
+[data-testid="anomalous-topbar-entry"],
+.side-bar-button:has(.anomalous-topbar-entry) {
     display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
 }
 
-html.anomalous-topbar-entry-enabled .anomalous-topbar-entry {
+html.anomalous-topbar-entry-enabled .anomalous-topbar-entry,
+html.anomalous-topbar-entry-enabled button:has(.anomalous-topbar-entry),
+html.anomalous-topbar-entry-enabled .side-bar-button:has(.anomalous-topbar-entry) {
     display: inline-flex !important;
+    visibility: visible !important;
+    width: auto !important;
+    height: auto !important;
+    pointer-events: auto !important;
+    overflow: visible !important;
 }
 
 html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBrowser.FloatingTriggerSize"],
