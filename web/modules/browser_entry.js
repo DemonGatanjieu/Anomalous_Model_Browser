@@ -2,7 +2,10 @@ import { app } from '../../../scripts/app.js';
 import { AnomalousBrowser } from './browser.js';
 import {
     clampFloatingTriggerPosition,
-    isValidSavedTriggerPosition
+    isValidSavedTriggerPosition,
+    normalizeEntryMode,
+    normalizeFloatingTriggerSize,
+    normalizeFloatingTriggerStyle
 } from './entry_controls.js';
 import {
     createShortcutSettingControl,
@@ -339,6 +342,10 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
                 btn.style.right = 'auto';
                 btn.style.bottom = 'auto';
             } else {
+                if (savedX != null && Number.parseFloat(savedX) < 70) {
+                    localStorage.removeItem('anomalous_btn_x');
+                    localStorage.removeItem('anomalous_btn_y');
+                }
                 btn.style.left = '';
                 btn.style.top = '';
                 btn.style.right = '';

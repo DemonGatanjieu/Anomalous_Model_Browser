@@ -22,7 +22,10 @@ export function isValidSavedTriggerPosition(x, y) {
     if (x == null || y == null) return false;
     const px = Number.parseFloat(x);
     const py = Number.parseFloat(y);
-    return Number.isFinite(px) && Number.isFinite(py);
+    if (!Number.isFinite(px) || !Number.isFinite(py)) return false;
+    // Guard against dirty legacy coordinates dropped inside the left sidebar dock (< 70px)
+    if (px < 70) return false;
+    return true;
 }
 
 export function sanitizeSavedTriggerPosition(x, y) {
