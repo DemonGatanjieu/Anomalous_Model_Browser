@@ -2,10 +2,12 @@ import { app } from '../../../scripts/app.js';
 import { AnomalousBrowser } from './browser.js';
 import {
     clampFloatingTriggerPosition,
+    DEFAULT_TRIGGER_POSITION,
     isValidSavedTriggerPosition,
     normalizeEntryMode,
     normalizeFloatingTriggerSize,
-    normalizeFloatingTriggerStyle
+    normalizeFloatingTriggerStyle,
+    normalizeSavedTriggerPosition
 } from './entry_controls.js';
 import {
     createShortcutSettingControl,
@@ -304,8 +306,13 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
             isDragging = false;
             btn.style.transition = 'transform 0.15s, box-shadow 0.15s';
             if (hasMoved) {
-                localStorage.setItem('anomalous_btn_x', btn.style.left);
-                localStorage.setItem('anomalous_btn_y', btn.style.top);
+                const norm = normalizeSavedTriggerPosition(btn.style.left, btn.style.top);
+                if (norm) {
+                    btn.style.left = norm.x + 'px';
+                    btn.style.top = norm.y + 'px';
+                    localStorage.setItem('anomalous_btn_x', btn.style.left);
+                    localStorage.setItem('anomalous_btn_y', btn.style.top);
+                }
             } else {
                 open();
             }
@@ -314,7 +321,8 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         const updateBtnBounds = () => {
             const savedX = localStorage.getItem('anomalous_btn_x');
             const savedY = localStorage.getItem('anomalous_btn_y');
-            if (!isValidSavedTriggerPosition(savedX, savedY)) {
+            const norm = normalizeSavedTriggerPosition(savedX, savedY);
+            if (!norm) {
                 btn.style.left = '';
                 btn.style.top = '';
                 btn.style.right = '';
@@ -322,8 +330,8 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
                 return;
             }
             const position = clampFloatingTriggerPosition({
-                x: btn.style.left || savedX,
-                y: btn.style.top || savedY,
+                x: btn.style.left || (norm.x + 'px'),
+                y: btn.style.top || (norm.y + 'px'),
                 width: btn.offsetWidth,
                 height: btn.offsetHeight,
                 viewportWidth: window.innerWidth,
@@ -338,11 +346,14 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
 
         const initialSavedX = localStorage.getItem('anomalous_btn_x');
         const initialSavedY = localStorage.getItem('anomalous_btn_y');
-        if (isValidSavedTriggerPosition(initialSavedX, initialSavedY)) {
+        const initialNorm = normalizeSavedTriggerPosition(initialSavedX, initialSavedY);
+        if (initialNorm) {
             btn.style.right = 'auto';
             btn.style.bottom = 'auto';
-            btn.style.left = initialSavedX;
-            btn.style.top = initialSavedY;
+            btn.style.left = initialNorm.x + 'px';
+            btn.style.top = initialNorm.y + 'px';
+            localStorage.setItem('anomalous_btn_x', btn.style.left);
+            localStorage.setItem('anomalous_btn_y', btn.style.top);
             setTimeout(updateBtnBounds, 200);
         } else {
             localStorage.removeItem('anomalous_btn_x');
@@ -355,7 +366,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         window.addEventListener('resize', () => {
             const curX = localStorage.getItem('anomalous_btn_x');
             const curY = localStorage.getItem('anomalous_btn_y');
-            if (isValidSavedTriggerPosition(curX, curY)) {
+            if (normalizeSavedTriggerPosition(curX, curY)) {
                 updateBtnBounds();
             }
             syncVisibility();

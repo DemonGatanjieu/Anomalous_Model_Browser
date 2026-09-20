@@ -23,12 +23,14 @@ the real ComfyUI runtime creates the configured entry. Floating trigger styling 
 the ordered stylesheet bundle rooted at `web/styles.css` uses dynamic `1em` SVG
 scaling and flex centering to guarantee
 consistent visual presentation across all configured trigger sizes. By default, the
-floating trigger button is positioned via pure responsive CSS (`bottom: 30px; right: 30px;`)
+floating trigger button is positioned via pure responsive CSS (`top: 60px; left: 60px;`),
+leaving comfortable 12px margins from both the ComfyUI left sidebar (~48px) and topbar (~48px)
 without inline left/top overrides. `browser_entry.js` strictly distinguishes clicks from
 drags (threshold: 5px) to prevent accidental persistence, while `entry_controls.js`
 provides robust boundary clamping (`clampFloatingTriggerPosition`) with safe viewport
-fallbacks (1024x768) and automatic healing of legacy collapsed top-left coordinates
-(`isValidSavedTriggerPosition`). Resetting trigger position cleanly restores default CSS positioning.
+fallbacks (1024x768) and automatic healing of legacy or accidental toolbar/sidebar
+occlusion coordinates (`isValidSavedTriggerPosition`, `normalizeSavedTriggerPosition`).
+Resetting trigger position cleanly restores default CSS positioning.
 
 Major UI panels live in `web/modules/ui_*.js`. Shared browser state remains on
 the `AnomalousBrowser` instance. Pure parsing, normalization, comparison, and
