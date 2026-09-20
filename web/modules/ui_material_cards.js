@@ -6,7 +6,7 @@ import { translate } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { text, jsonResponse } from './ui_dom.js';
 import { materialNodeHeading } from './material_inspector.js';
-import { promptWidgetTargets, inspectNodePromptSlots, inspectNodeParameterSlots } from './node_material_actions.js';
+import { promptWidgetTargets, inspectNodePromptSlots } from './node_material_actions.js';
 import { applyLibraryMaterial } from './ui_material_application.js';
 import {
     deleteMaterial,
@@ -118,52 +118,13 @@ function bindPolymorphicMaterialCardDrag(card, owner, material) {
         }),
         accepts: (node, source) => {
             if (!node) return false;
-            const isZh = typeof window !== 'undefined' && window.anomalous_browser_lang === 'zh';
-            const nodeName = node.title || node.type || '';
-
-            if ((source.node_types || []).includes(node.type)) {
-                source.nodeHint = isZh ? `松手全量覆盖：${nodeName}` : `Drop to overwrite: ${nodeName}`;
-                return true;
-            }
-
-            const promptSlots = inspectNodePromptSlots(node);
-            const paramSlots = inspectNodeParameterSlots(node);
-
-            if (!promptSlots.hasSlots && !paramSlots.hasSlots) {
-                source.nodeHint = null;
-                return false;
-            }
-
-            const hasPromptSource = isPromptMaterial(source)
-                || source.kind === 'prompt_plan'
-                || source.has_prompts
-                || source.prompt_roles
-                || source.prompt_groups
-                || (Array.isArray(source.node_types) && source.node_types.some(t => /cliptextencode|prompt|easy positive|easy negative/i.test(t)));
-
-            const hasParamSource = source.kind === 'recipe_parameter_selection'
-                || source.capabilities?.includes('apply_node_parameters')
-                || (Array.isArray(source.node_blocks) && source.node_blocks.length > 0)
-                || (Array.isArray(source.node_types) && source.node_types.length > 0);
-
-            const canDoPrompts = promptSlots.hasSlots && hasPromptSource;
-            const canDoParams = paramSlots.hasSlots && hasParamSource;
-
-            if (canDoParams && canDoPrompts) {
-                source.nodeHint = isZh ? `🎯 松手注入参数与提示词：${nodeName}` : `🎯 Drop to inject params & prompt: ${nodeName}`;
-                return true;
-            }
-            if (canDoParams) {
-                const keys = Object.keys(paramSlots.slots).slice(0, 4).join(', ');
-                source.nodeHint = isZh ? `🎯 松手注入参数 (${keys})：${nodeName}` : `🎯 Drop to inject params (${keys}): ${nodeName}`;
-                return true;
-            }
-            if (canDoPrompts) {
-                source.nodeHint = isZh ? `🎯 松手注入提示词：${nodeName}` : `🎯 Drop to inject prompt: ${nodeName}`;
-                return true;
-            }
-
-            source.nodeHint = null;
+            if ((source.node_types || []).includes(node.type)) return true;
+            const slots = inspectNodePromptSlots(node);
+            if (!slots.hasSlots) return false;
+            if (isPromptMaterial(source) || source.kind === 'prompt_plan') return true;
+            if (Array.isArray(source.node_types) && source.node_types.some(t => /cliptextencode|prompt|easy positive|easy negative/i.test(t))) return true;
+            if (source.has_prompts || source.prompt_roles || source.prompt_groups) return true;
+            if (source.capabilities?.includes('open_workflow') || source.capabilities?.includes('apply_node_parameters') || source.capabilities?.includes('copy_prompt')) return true;
             return false;
         },
         drop: (node, source, graph) => applyLibraryMaterial(owner, source, node, graph),

@@ -313,13 +313,8 @@ that target and provide the shared guarded undo.
 
 When dropped onto a compatible node:
 - Parameter-bearing materials fetch scoped node blocks only after drop and replace
-  compatible widget values through the transactional parameter path:
-  - **Path 1 (Same-Type Exact Direct Match)**: When source block and target node share the exact same `node.type`, physical widget values are applied in full, preserving volatile seed, node position, and links.
-  - **Path 2 (Cross-Node Parameter Protocol, CNPP)**: When types differ, parameter injection operates via **Semantic Key-Value Selective Absorption**:
-    - **Source Parameter Bag Extraction**: Employs a three-tier discovery algorithm: (1) `block.widget_names` forward schema if present, (2) `LiteGraph.registered_node_types` dynamic reflection instantiation, (3) `CORE_NODE_WIDGET_MAP` static fallback map covering core native samplers/latent nodes.
-    - **Semantic Registry & Aliases**: Resolves aliases for Sampler domain (`steps`, `cfg`, `sampler_name`, `scheduler`, `denoise`) and Latent domain (`width`, `height`, `batch_size`).
-    - **Safety Guards**: Strictly enforces combo enumeration checking (`widget.options.values`), finite range constraints, and volatile seed protection. Model weights (`ckpt_name`, `vae_name`, `lora_name`) and control flow widgets are explicitly excluded from loose semantic injection.
-    - **Selective Absorption**: Target nodes only absorb widgets they actually possess; unmatched properties are safely ignored without polluting other widgets.
+  compatible widget values through the transactional parameter path, preserving seed,
+  node position, and links.
 - Prompt-bearing materials (prompt notes, prompt plans, and multi-block images) inject prompt
   text into target nodes via the Cross-Node Prompt Injection Protocol (CNPIP):
   - **Strategy ① (Dual-Slot Pair Injection)**: When target node has both positive and negative slots (e.g. `easy a1111Loader`, `easy fullLoader`), both fields are populated simultaneously in a single atomic transaction.
@@ -329,8 +324,6 @@ When dropped onto a compatible node:
     - **Single Source of Truth (SSOT)**: `extractMaterialPromptEnvelope` in `node_material_actions.js` is the canonical prompt envelope extractor across the entire frontend. UI detail views, summary cards, and canvas actions delegate directly to it via `getMaterialPromptInfo` adapter.
     - **Declarative Strategy Pipeline (`PROMPT_EXTRACTORS`)**: Decomposed into 5 decoupled, pure, single-responsibility extractors (`extractFromPlan`, `extractFromNote`, `extractFromPromptGroups`, `extractFromNodeBlocks`, `extractFromSummary`), complying with the 50-line rule.
     - **Prompt Sanitizer Guard**: `sanitizePromptText` and `isModelFilePath` enforce a strict boundary between textual prompts and model weights/binary filenames (`.safetensors`, `.ckpt`, `.onnx`, `.gguf`), preventing model file leakage into prompt slots.
-- **Hybrid Unified Atomic Transactions**:
-  When dropping a rich material (e.g. image workflow snapshot) onto an all-in-one node that possesses both parameter slots and prompt slots (such as `easy a1111Loader`), parameter changes and prompt changes are merged into a single atomic transaction via `dispatchUnifiedCrossNodeInjection`. Status receipts clearly detail all modified parameters and prompts, and a single guarded 1-click Undo reverts the entire set of changes.
   All injections preserve atomic 1-click Undo.
 
 When dropped onto blank canvas:

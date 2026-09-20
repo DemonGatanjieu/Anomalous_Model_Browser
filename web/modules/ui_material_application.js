@@ -12,14 +12,8 @@ import {
     inspectNodePromptSlots,
     extractMaterialPromptEnvelope,
     dispatchPromptInjection,
-    planPromptInjection,
     isModelFilePath,
     isPromptNodeType,
-    inspectNodeParameterSlots,
-    extractMaterialParameterBag,
-    planParameterInjection,
-    dispatchParameterInjection,
-    dispatchUnifiedCrossNodeInjection,
 } from './node_material_actions.js';
 import { getMaterialPromptInfo } from './ui_material_detail.js';
 
@@ -27,11 +21,7 @@ export function showMaterialApplication(parent, result, node) {
     parent.querySelector('.anomalous-material-application-result')?.remove();
     const receipt = text(parent, 'div', '', 'anomalous-material-application-result');
     receipt.setAttribute('role', 'status');
-    let label = node ? t('materialAppliedTarget', { name: materialNodeHeading(node), id: node.id }) : t('materialNodeApplied');
-    if (Array.isArray(result?.appliedSummary) && result.appliedSummary.length > 0) {
-        label += ` (${result.appliedSummary.join(', ')})`;
-    }
-    const status = text(receipt, 'span', label);
+    const status = text(receipt, 'span', node ? t('materialAppliedTarget', { name: materialNodeHeading(node), id: node.id }) : t('materialNodeApplied'));
     const undo = text(receipt, 'button', t('materialUndo'), 'anomalous-btn-ghost');
     undo.type = 'button';
     undo.onclick = () => {
@@ -147,37 +137,28 @@ export async function applyLibraryMaterial(owner, material, droppedNode = null, 
             return;
         }
 
-        // Path 2 & 3: Cross-Node Semantic Parameter (CNPP) & Prompt (CNPIP) Injection
-        const parameterBag = extractMaterialParameterBag(material, payload);
-        const paramPlan = planParameterInjection(node, parameterBag);
-        const hasCompatibleParams = paramPlan.changes.length > 0;
+        // Path 2: Cross-Node Prompt Injection Protocol (CNPIP)
+        const slots = inspectNodePromptSlots(node);
+        if (!slots.hasSlots) throw new Error('materialNoCompatibleValues');
 
         const envelope = extractMaterialPromptEnvelope(material, payload);
-        const promptPlan = planPromptInjection(node, envelope);
-        const hasCompatiblePrompts = promptPlan.entries.length > 0;
+        if (!envelope.hasPrompt) throw new Error('materialNoCompatibleValues');
 
-        if (!hasCompatibleParams && !hasCompatiblePrompts) {
-            throw new Error('materialNoCompatibleValues');
+        const hasBothSlots = Boolean(slots.positiveSlot && slots.negativeSlot);
+        const hasSingleRoleSlot = Boolean((slots.positiveSlot && !slots.negativeSlot) || (slots.negativeSlot && !slots.positiveSlot));
+
+        const promptBlocks = applyPromptRolesToBlocks(payload.node_blocks || [], payload.prompt_roles)
+            .filter(b => {
+                const isPrompt = b.promptRole === 'positive' || b.promptRole === 'negative' || b.promptRole === 'both' || isPromptNodeType(b.type);
+                return isPrompt && Array.isArray(b.widgets_values) && b.widgets_values.some(v => typeof v === 'string' && v.trim() && !isModelFilePath(v));
+            });
+
+        if (!hasBothSlots && !hasSingleRoleSlot && promptBlocks.length > 1) {
+            openMaterialChoiceDialog(owner, node, promptBlocks, payload, droppedNode, graph);
+            return;
         }
 
-        if (!hasCompatibleParams && hasCompatiblePrompts) {
-            const promptSlots = inspectNodePromptSlots(node);
-            const hasBothSlots = Boolean(promptSlots.positiveSlot && promptSlots.negativeSlot);
-            const hasSingleRoleSlot = Boolean((promptSlots.positiveSlot && !promptSlots.negativeSlot) || (promptSlots.negativeSlot && !promptSlots.positiveSlot));
-
-            const promptBlocks = applyPromptRolesToBlocks(payload.node_blocks || [], payload.prompt_roles)
-                .filter(b => {
-                    const isPrompt = b.promptRole === 'positive' || b.promptRole === 'negative' || b.promptRole === 'both' || isPromptNodeType(b.type);
-                    return isPrompt && Array.isArray(b.widgets_values) && b.widgets_values.some(v => typeof v === 'string' && v.trim() && !isModelFilePath(v));
-                });
-
-            if (!hasBothSlots && !hasSingleRoleSlot && promptBlocks.length > 1) {
-                openMaterialChoiceDialog(owner, node, promptBlocks, payload, droppedNode, graph);
-                return;
-            }
-        }
-
-        const result = dispatchUnifiedCrossNodeInjection(app, node, { parameterBag, promptEnvelope: envelope }, {
+        const result = dispatchPromptInjection(app, node, envelope, {
             workflowHashes: payload.workflow_hashes,
         });
         showMaterialApplication(owner.materialContext, result, node);

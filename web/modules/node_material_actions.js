@@ -375,305 +375,57 @@ export function getMaterialPromptInfo(material) {
     };
 }
 
-export function planPromptInjection(node, envelope) {
+export function dispatchPromptInjection(app, node, envelope, options = {}) {
     if (!node || !envelope || !envelope.hasPrompt) {
-        return { entries: [], summary: [] };
+        throw new Error('materialNoCompatibleValues');
     }
+
     const slots = inspectNodePromptSlots(node);
     if (!slots.hasSlots) {
-        return { entries: [], summary: [] };
+        throw new Error('materialNoCompatibleValues');
     }
 
     const entries = [];
-    const summary = [];
-    const isZh = typeof window !== 'undefined' && window.anomalous_browser_lang === 'zh';
 
+    // Strategy ①: Dual-Slot Pair Injection (成对原子注入)
     if (envelope.positive && envelope.negative && slots.positiveSlot && slots.negativeSlot) {
         entries.push({ index: slots.positiveSlot.index, value: envelope.positive });
         entries.push({ index: slots.negativeSlot.index, value: envelope.negative });
-        summary.push(isZh ? '正向提示词' : 'positive prompt', isZh ? '负向提示词' : 'negative prompt');
-    } else if (envelope.primaryRole === 'negative' || (envelope.negative && !envelope.positive)) {
+    }
+    // Strategy ②: Role-Matched Injection (角色精准对齐)
+    else if (envelope.primaryRole === 'negative' || (envelope.negative && !envelope.positive)) {
         const val = envelope.negative || envelope.singleText;
         const targetSlot = slots.negativeSlot || slots.generalSlots[0] || slots.positiveSlot || slots.targets[0];
-        if (targetSlot) {
-            entries.push({ index: targetSlot.index, value: val });
-            summary.push(isZh ? '负向提示词' : 'negative prompt');
-        }
-    } else if (envelope.primaryRole === 'positive' || (envelope.positive && !envelope.negative)) {
+        if (!targetSlot) throw new Error('materialNoCompatibleValues');
+        entries.push({ index: targetSlot.index, value: val });
+    }
+    else if (envelope.primaryRole === 'positive' || (envelope.positive && !envelope.negative)) {
         const val = envelope.positive || envelope.singleText;
         const targetSlot = slots.positiveSlot || slots.generalSlots[0] || slots.negativeSlot || slots.targets[0];
-        if (targetSlot) {
-            entries.push({ index: targetSlot.index, value: val });
-            summary.push(isZh ? '正向提示词' : 'positive prompt');
-        }
-    } else {
+        if (!targetSlot) throw new Error('materialNoCompatibleValues');
+        entries.push({ index: targetSlot.index, value: val });
+    }
+    // Strategy ④: Single-Slot / General Fallback (单槽位/通用回退)
+    else {
         if (slots.negativeSlot && !slots.positiveSlot) {
             const val = envelope.negative || envelope.singleText || envelope.positive;
             entries.push({ index: slots.negativeSlot.index, value: val });
-            summary.push(isZh ? '负向提示词' : 'negative prompt');
         } else if (slots.positiveSlot && !slots.negativeSlot) {
             const val = envelope.positive || envelope.singleText || envelope.negative;
             entries.push({ index: slots.positiveSlot.index, value: val });
-            summary.push(isZh ? '正向提示词' : 'positive prompt');
         } else {
             const targetSlot = slots.generalSlots[0] || slots.positiveSlot || slots.negativeSlot || slots.targets[0];
-            if (targetSlot) {
-                const val = envelope.positive || envelope.singleText || envelope.negative;
-                entries.push({ index: targetSlot.index, value: val });
-                summary.push(isZh ? '提示词' : 'prompt');
-            }
+            if (!targetSlot) throw new Error('materialNoCompatibleValues');
+            const val = envelope.positive || envelope.singleText || envelope.negative;
+            entries.push({ index: targetSlot.index, value: val });
         }
     }
 
-    return { entries, summary };
-}
-
-export function dispatchPromptInjection(app, node, envelope, options = {}) {
-    const plan = planPromptInjection(node, envelope);
-    if (!plan.entries.length) {
-        throw new Error('materialNoCompatibleValues');
-    }
-    const result = applyNodeMaterialValues(app, node, plan.entries, options);
-    return {
-        ...result,
-        appliedSummary: plan.summary,
-    };
-}
-
-export const CORE_NODE_WIDGET_MAP = {
-    'ksampler': ['seed', 'control_after_generate', 'steps', 'cfg', 'sampler_name', 'scheduler', 'denoise'],
-    'ksampleradvanced': ['add_noise', 'noise_seed', 'control_after_generate', 'steps', 'cfg', 'sampler_name', 'scheduler', 'start_at_step', 'end_at_step', 'return_with_leftover_noise'],
-    'emptylatentimage': ['width', 'height', 'batch_size'],
-    'easy a1111loader': ['ckpt_name', 'vae_name', 'clip_skip', 'lora_name', 'lora_model_strength', 'lora_clip_strength', 'positive', 'negative', 'empty_latent_width', 'empty_latent_height', 'batch_size', 'seed', 'control_after_generate', 'steps', 'cfg', 'sampler_name', 'scheduler', 'denoise'],
-    'easy fullloader': ['ckpt_name', 'config_name', 'vae_name', 'clip_skip', 'lora_name', 'resolution', 'positive', 'positive_token_normalization', 'positive_weight_interpretation', 'negative', 'negative_token_normalization', 'negative_weight_interpretation', 'batch_size', 'a1111_prompt_style'],
-    'easy ksampler': ['pipe', 'image_output', 'link_id', 'save_prefix', 'seed', 'steps', 'cfg', 'sampler_name', 'scheduler', 'denoise'],
-};
-
-export const SEMANTIC_PARAMETER_REGISTRY = {
-    steps: {
-        aliases: ['steps', 'step', 'num_steps', 'sampling_steps'],
-        validate: val => typeof val === 'number' && Number.isFinite(val) && Math.round(val) >= 1,
-        coerce: val => Math.round(Number(val)),
-    },
-    cfg: {
-        aliases: ['cfg', 'cfg_scale', 'scale'],
-        validate: val => typeof val === 'number' && Number.isFinite(val) && val >= 0,
-        coerce: val => Number(val),
-    },
-    sampler_name: {
-        aliases: ['sampler_name', 'sampler'],
-        validate: (val, widget) => {
-            if (typeof val !== 'string' || !val.trim()) return false;
-            const values = widget?.options?.values;
-            return !Array.isArray(values) || values.includes(val);
-        },
-        coerce: val => String(val).trim(),
-    },
-    scheduler: {
-        aliases: ['scheduler', 'schedule'],
-        validate: (val, widget) => {
-            if (typeof val !== 'string' || !val.trim()) return false;
-            const values = widget?.options?.values;
-            return !Array.isArray(values) || values.includes(val);
-        },
-        coerce: val => String(val).trim(),
-    },
-    denoise: {
-        aliases: ['denoise', 'denoising', 'denoise_strength'],
-        validate: val => typeof val === 'number' && Number.isFinite(val) && val >= 0 && val <= 1.0,
-        coerce: val => Number(val),
-    },
-    width: {
-        aliases: ['width', 'empty_latent_width', 'image_width'],
-        validate: val => typeof val === 'number' && Number.isFinite(val) && Math.round(val) >= 16,
-        coerce: val => Math.round(Number(val)),
-    },
-    height: {
-        aliases: ['height', 'empty_latent_height', 'image_height'],
-        validate: val => typeof val === 'number' && Number.isFinite(val) && Math.round(val) >= 16,
-        coerce: val => Math.round(Number(val)),
-    },
-    batch_size: {
-        aliases: ['batch_size', 'batch'],
-        validate: val => typeof val === 'number' && Number.isFinite(val) && Math.round(val) >= 1,
-        coerce: val => Math.round(Number(val)),
-    },
-};
-
-export function resolveSemanticParameterKey(rawName) {
-    const norm = String(rawName || '').trim().toLowerCase();
-    if (!norm) return null;
-    for (const [key, spec] of Object.entries(SEMANTIC_PARAMETER_REGISTRY)) {
-        if (key === norm || spec.aliases.includes(norm)) {
-            return key;
-        }
-    }
-    return null;
-}
-
-export function getNodeTypeWidgetNames(type) {
-    const norm = String(type || '').trim().toLowerCase();
-    if (!norm) return [];
-
-    try {
-        const ctor = (typeof LiteGraph !== 'undefined' ? LiteGraph?.registered_node_types?.[type] : null)
-            || globalThis.LiteGraph?.registered_node_types?.[type]
-            || window?.LiteGraph?.registered_node_types?.[type];
-        if (ctor) {
-            const temp = new ctor();
-            if (Array.isArray(temp?.widgets) && temp.widgets.length > 0) {
-                return temp.widgets.map(w => String(w.name || w.label || ''));
-            }
-        }
-    } catch (_) { /* Ignored */ }
-
-    if (CORE_NODE_WIDGET_MAP[norm]) {
-        return CORE_NODE_WIDGET_MAP[norm];
-    }
-
-    return [];
-}
-
-export function extractMaterialParameterBag(material, payload = {}) {
-    const effectivePayload = (payload && Object.keys(payload).length > 0) ? payload : (material || {});
-    const data = effectivePayload.data || effectivePayload;
-    const blocks = effectivePayload.node_blocks || data.node_blocks || [];
-    const bag = {};
-
-    if (!Array.isArray(blocks)) return bag;
-
-    for (const block of blocks) {
-        if (!block || !Array.isArray(block.widgets_values)) continue;
-        const widgetNames = Array.isArray(block.widget_names) && block.widget_names.length > 0
-            ? block.widget_names
-            : getNodeTypeWidgetNames(block.type);
-        if (!widgetNames || !widgetNames.length) continue;
-
-        block.widgets_values.forEach((val, idx) => {
-            if (val === undefined || val === null || val === '') return;
-            const rawName = widgetNames[idx];
-            if (!rawName) return;
-            const semanticKey = resolveSemanticParameterKey(rawName);
-            if (!semanticKey) return;
-            const spec = SEMANTIC_PARAMETER_REGISTRY[semanticKey];
-            if (!spec) return;
-
-            if (bag[semanticKey] === undefined) {
-                const numVal = typeof val === 'string' && !isNaN(Number(val)) && val.trim() !== '' ? Number(val) : val;
-                bag[semanticKey] = {
-                    value: numVal,
-                    sourceType: block.type,
-                    sourceWidgetName: rawName,
-                };
-            }
-        });
-    }
-
-    return bag;
-}
-
-export function inspectNodeParameterSlots(node) {
-    if (!node || !Array.isArray(node.widgets)) {
-        return { hasSlots: false, slots: {}, targets: [] };
-    }
-
-    const slots = {};
-    const targets = [];
-
-    node.widgets.forEach((widget, index) => {
-        if (!widget) return;
-        const rawName = String(widget.name || widget.label || '');
-        const semanticKey = resolveSemanticParameterKey(rawName);
-        if (!semanticKey) return;
-
-        if (!slots[semanticKey]) {
-            const target = {
-                index,
-                widget,
-                name: rawName,
-                semanticKey,
-            };
-            slots[semanticKey] = target;
-            targets.push(target);
-        }
-    });
-
-    return {
-        hasSlots: targets.length > 0,
-        slots,
-        targets,
-    };
-}
-
-export function planParameterInjection(node, parameterBag) {
-    if (!node || !parameterBag || typeof parameterBag !== 'object') {
-        return { changes: [], appliedKeys: [], appliedSummary: [] };
-    }
-    const { slots } = inspectNodeParameterSlots(node);
-    const changes = [];
-    const appliedKeys = [];
-    const appliedSummary = [];
-
-    for (const [semanticKey, item] of Object.entries(parameterBag)) {
-        const slot = slots[semanticKey];
-        if (!slot) continue;
-        const spec = SEMANTIC_PARAMETER_REGISTRY[semanticKey];
-        if (!spec) continue;
-
-        const rawVal = item?.value;
-        const coerced = spec.coerce ? spec.coerce(rawVal) : rawVal;
-        if (!spec.validate(coerced, slot.widget)) continue;
-
-        changes.push({ index: slot.index, value: coerced });
-        appliedKeys.push(semanticKey);
-        appliedSummary.push(`${slot.name}=${coerced}`);
-    }
-
-    return {
-        changes,
-        appliedKeys,
-        appliedSummary,
-    };
-}
-
-export function dispatchParameterInjection(app, node, parameterBag, options = {}) {
-    const plan = planParameterInjection(node, parameterBag);
-    if (!plan.changes.length) {
-        throw new Error('materialNoCompatibleValues');
-    }
-    const result = applyNodeMaterialValues(app, node, plan.changes, options);
-    return {
-        ...result,
-        appliedKeys: plan.appliedKeys,
-        appliedSummary: plan.appliedSummary,
-    };
-}
-
-export function dispatchUnifiedCrossNodeInjection(app, node, { parameterBag, promptEnvelope }, options = {}) {
-    const paramPlan = planParameterInjection(node, parameterBag);
-    const promptPlan = planPromptInjection(node, promptEnvelope);
-
-    const changeMap = new Map();
-    for (const change of paramPlan.changes) {
-        changeMap.set(change.index, change.value);
-    }
-    for (const change of promptPlan.entries) {
-        changeMap.set(change.index, change.value);
-    }
-
-    const mergedChanges = Array.from(changeMap.entries()).map(([index, value]) => ({ index, value }));
-    if (!mergedChanges.length) {
+    if (!entries.length) {
         throw new Error('materialNoCompatibleValues');
     }
 
-    const result = applyNodeMaterialValues(app, node, mergedChanges, options);
-    return {
-        ...result,
-        appliedKeys: paramPlan.appliedKeys,
-        appliedSummary: [...paramPlan.appliedSummary, ...promptPlan.summary],
-        hasParameters: paramPlan.changes.length > 0,
-        hasPrompts: promptPlan.entries.length > 0,
-    };
+    return applyNodeMaterialValues(app, node, entries, options);
 }
 
 
