@@ -140,9 +140,10 @@ DOM or live LiteGraph state.
   `minmax(130px, 1fr)` Bento Grid with universal click-to-copy, LoRA cards with flexbox truncation guards,
   and sticky editor headers).
   `ui_materials.js` owns Material Library discovery and pagination,
-  `ui_material_cards.js` owns catalog cards, `ui_material_detail.js` owns the
+  `ui_material_cards.js` owns catalog cards and polymorphic drag-and-drop (`accepts` allowing prompt-bearing material drops onto any node exposing prompt slots while strictly preserving same-type parameter isolation), `ui_material_detail.js` owns the
   full detail surface, and `ui_material_application.js` owns selected-node
-  tracking and explicit material application.
+  tracking and explicit material application (refactored to cleanly isolate Path 1 same-type block application from Path 2 Cross-Node Prompt Injection Protocol, with `openMaterialChoiceDialog` encapsulated to strictly adhere to the 50-line rule).
+  `node_material_actions.js` powers the Cross-Node Prompt Injection Protocol (CNPIP) via `inspectNodePromptSlots` (dynamic target node role and slot introspection), `extractMaterialPromptEnvelope` (structured extraction of positive, negative, and single prompt text across plans, notes, and multi-block images), and `dispatchPromptInjection` (dual-slot pair injection for all-in-one nodes like `easy a1111Loader`, role-matched injection strictly routing negative prompts to negative slots, and single-slot fallback with atomic 1-click Undo).
   Within recipe detail, `ui_recipe_versions.js` owns history comparison/restore,
   `ui_recipe_gallery.js` owns result cards and direct Image Detail Workbench handoff,
   `ui_recipe_model_matching.js` owns preview resolution and explicit local replacement,

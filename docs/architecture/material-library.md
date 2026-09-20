@@ -315,10 +315,12 @@ When dropped onto a compatible node:
 - Parameter-bearing materials fetch scoped node blocks only after drop and replace
   compatible widget values through the transactional parameter path, preserving seed,
   node position, and links.
-- Prompt materials inject prompt text into target nodes via semantic prompt widget
-  sniffing (`customtext`, `multiline`, `text_g`, `text_l`, `prompt`, `positive`,
-  `negative`, and localized labels), relaxing strict node-type matching for third-party
-  text nodes. Text is cleanly inserted without synthetic prefixes ("负向:" / "正向:").
+- Prompt-bearing materials (prompt notes, prompt plans, and multi-block images) inject prompt
+  text into target nodes via the Cross-Node Prompt Injection Protocol (CNPIP):
+  - **Strategy ① (Dual-Slot Pair Injection)**: When target node has both positive and negative slots (e.g. `easy a1111Loader`, `easy fullLoader`), both fields are populated simultaneously in a single atomic transaction.
+  - **Strategy ② (Role-Matched Injection)**: Pure negative materials are strictly routed to the `negative` slot, resolving the legacy `targets[0]` misplacement bug.
+  - **Strategy ④ (Single-Slot Fallback)**: Single-slot nodes (e.g. `easy positive`, `easy negative`, `CLIPTextEncode`) cleanly receive role-matched or primary prompt text without artificial prefixes.
+  All injections preserve atomic 1-click Undo.
 
 When dropped onto blank canvas:
 - Workflow materials (`image_workflow_snapshot`) trigger full workflow loading
