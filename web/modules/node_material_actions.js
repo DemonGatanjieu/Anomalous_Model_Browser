@@ -112,8 +112,26 @@ export function applyMaterialBlock(app, node, block, workflowHashes) {
         { sourceNodeId: block.node_id, workflowHashes });
 }
 
+export const POSITIVE_PROMPT_REGEX = /^(positive|positive_prompt|text_positive|text_g|text_l|正面|正向|正面提示词|正向提示词)$/i;
+export const NEGATIVE_PROMPT_REGEX = /^(negative|negative_prompt|text_negative|负面|反向|负面提示词|反向提示词)$/i;
+
+export function isPositivePromptWidget(name) {
+    return POSITIVE_PROMPT_REGEX.test(String(name || '').trim());
+}
+
+export function isNegativePromptWidget(name) {
+    return NEGATIVE_PROMPT_REGEX.test(String(name || '').trim());
+}
+
+export function classifyPromptWidgetRole(name) {
+    const trimmed = String(name || '').trim();
+    if (POSITIVE_PROMPT_REGEX.test(trimmed)) return 'positive';
+    if (NEGATIVE_PROMPT_REGEX.test(trimmed)) return 'negative';
+    return null;
+}
+
 export function promptWidgetTargets(node) {
-    const promptNameRegex = /^(text|text_g|text_l|prompt|positive|negative|caption|string|value|文本|提示词|正面|负面|正向|反向|正面提示词|负面提示词|正向提示词|反向提示词|描述|内容)$/i;
+    const promptNameRegex = /^(text|text_g|text_l|prompt|positive|positive_prompt|negative|negative_prompt|text_positive|text_negative|caption|string|value|文本|提示词|正面|负面|正向|反向|正面提示词|负面提示词|正向提示词|反向提示词|描述|内容)$/i;
     return (node?.widgets || []).flatMap((widget, index) => {
         if (!widget) return [];
         const name = String(widget.name || '');
@@ -123,3 +141,4 @@ export function promptWidgetTargets(node) {
         return typeof widget.value === 'string' && matchesName && isNotCombo ? [{ index, name: name || label || 'text' }] : [];
     });
 }
+

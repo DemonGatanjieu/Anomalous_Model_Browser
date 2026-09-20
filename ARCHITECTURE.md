@@ -147,8 +147,15 @@ DOM or live LiteGraph state.
   `ui_recipe_gallery.js` owns result cards and direct Image Detail Workbench handoff,
   `ui_recipe_model_matching.js` owns preview resolution and explicit local replacement,
   `ui_recipe_metadata.js` owns inline persistence, and `ui_recipe_detail_dom.js` owns
-  the DOM/copy helpers shared by detail subviews. `ui_recipe_catalog.js` owns recipe
+  the DOM/copy helpers shared by detail subviews. `recipe_parser.js` and `recipe_identity.js`
+  provide the Unified Semantic Sniffing Engine for Workflow Recipes and All-in-One / third-party
+  loaders (e.g. `ComfyUI-Easy-Use`, `Efficient Loader`), replacing hardcoded node-type whitelists
+  with 3-tier dynamic model discovery (`deriveNodeModelSpecs`), multi-model composite key isolation
+  `(node_id, widget_index, category, saved_value)`, embedded prompt fallback via shared
+  `promptWidgetTargets` (strictly enforcing `External Link > Embedded fallback`), and two-way
+  widget synchronization (`syncCommonRecipeMetadata`). `ui_recipe_catalog.js` owns recipe
   filters, navigation, dismissible topbar drag guidance strip with localStorage persistence, the 3-step empty-state onboarding blueprint (`renderRecipeEmptyGuide`), and background catalog-wide model readiness resolution (`resolveCatalogRecipeReadiness`), `ui_recipe_cards.js` owns cards and card actions
+
   (including `grab` drag affordance, cover `可拖拽` badge, harmonized multi-state model readiness pill with `getRecipeReadiness` synchronizing available, missing, and pending matches with detail overview, and direct canvas drag-and-drop), `ui_recipe_dialogs.js` owns save/edit dialogs, and `ui_recipe_media.js` owns shared cover helpers. Detail sessions synchronize detected model availability back to `owner.recipeRecords` via `syncRecipeReferencesToCatalog`.
 - `ui_prompt_composer.js` owns the standalone Prompt Studio drawer. Its child
   views are `ui_prompt_source_deck.js`, `ui_prompt_workbench.js`, and

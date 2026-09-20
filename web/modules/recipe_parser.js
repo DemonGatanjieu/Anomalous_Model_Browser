@@ -1,3 +1,10 @@
+import {
+    promptWidgetTargets,
+    isPositivePromptWidget,
+    isNegativePromptWidget,
+    classifyPromptWidgetRole,
+} from './node_material_actions.js';
+
 /**
  * Read-only helpers for turning the live LiteGraph canvas into a compact
  * Workflow Recipe summary.  The saved workflow itself remains authoritative:
@@ -6,11 +13,13 @@
 
 const MAX_UPSTREAM_NODES = 96;
 const MAX_SUMMARY_NODES = 120;
-const MAX_WIDGETS_PER_NODE = 16;
+const MAX_WIDGETS_PER_NODE = 64;
 const MAX_WIDGET_TEXT = 320;
 const MAX_PINNED_VALUE_JSON = 2400;
 const MAX_PARAMETER_CHOICES = 5000;
+const MODEL_FILE_PATTERN = /\.(?:safetensors|ckpt|pt|bin|sft)$/i;
 const SENSITIVE_WIDGET_NAME = /(?:api.?key|access.?token|auth|password|passwd|secret|credential)/i;
+
 const SUPPORTED_PROMPT_NODE_TYPES = new Set([
     'cliptextencode',
 ]);
@@ -195,24 +204,37 @@ function syncCommonRecipeMetadata(params, change) {
     const type = normaliseName(change.nodeType);
     const widget = normaliseName(change.widgetName);
     const value = change.value;
-    if (/^(checkpointloader(simple)?|unetloader)$/.test(type) && /^(ckpt_name|checkpoint|unet_name|unet|model_name)$/.test(widget)) {
+
+    if (/^(ckpt_name|checkpoint|unet_name|unet|model_name|base_model)$/.test(widget)) {
         params.baseModel = textValue(value) || null;
         if (params.baseModel) params.baseModels = [params.baseModel, ...(params.baseModels || []).filter((item) => item !== params.baseModel)];
     }
-    if (/lora.*loader|loader.*lora/.test(type)) {
-        const loraIndex = (params.nodes || []).filter((item) => /lora.*loader|loader.*lora/i.test(item?.type || '')).findIndex((item) => item.id === change.nodeId);
-        const lora = params.loras?.[loraIndex];
+
+    if (/lora.*loader|loader.*lora/.test(type) || /lora/.test(widget)) {
+        if (!Array.isArray(params.loras)) params.loras = [];
+        let lora = params.loras.find((item) => item.nodeId === change.nodeId);
+        if (!lora) {
+            const loraIndex = (params.nodes || []).filter((item) => /lora.*loader|loader.*lora/i.test(item?.type || '')).findIndex((item) => item.id === change.nodeId);
+            if (loraIndex >= 0 && params.loras[loraIndex]) lora = params.loras[loraIndex];
+        }
+        if (!lora && params.loras.length > 0) {
+            lora = params.loras[0];
+        }
         if (lora) {
-            if (/^(lora_name|lora|model_name)$/.test(widget)) lora.name = textValue(value);
-            if (/^(strength_model|model_strength)$/.test(widget)) lora.strength_model = numberValue(value);
+            if (/^(lora_name|lora|model_name|lora_\d+_name)$/.test(widget)) lora.name = textValue(value);
+            if (/^(strength_model|model_strength|lora_\d+_strength)$/.test(widget)) lora.strength_model = numberValue(value);
             if (/^(strength_clip|clip_strength)$/.test(widget)) lora.strength_clip = numberValue(value);
         }
     }
-    if (/^ksampler(advanced)?$|samplercustom/.test(type)) {
-        const field = { seed: 'seed', noise_seed: 'seed', steps: 'steps', cfg: 'cfg', cfg_scale: 'cfg', sampler_name: 'sampler_name', sampler: 'sampler_name', scheduler: 'scheduler', denoise: 'denoise' }[widget];
-        if (field) params[field] = ['steps', 'cfg', 'denoise'].includes(field) ? numberValue(value) : value;
+
+    const samplingField = { seed: 'seed', noise_seed: 'seed', steps: 'steps', cfg: 'cfg', cfg_scale: 'cfg', sampler_name: 'sampler_name', sampler: 'sampler_name', scheduler: 'scheduler', denoise: 'denoise' }[widget];
+    if (samplingField) {
+        params[samplingField] = ['steps', 'cfg', 'denoise'].includes(samplingField) ? numberValue(value) : value;
     }
-    if (isSupportedPromptNodeType(type) && /^(text|prompt)$/.test(widget)) {
+
+    const isPos = isPositivePromptWidget(widget);
+    const isNeg = isNegativePromptWidget(widget);
+    if (isPos || isNeg || (isSupportedPromptNodeType(type) && /^(text|prompt)$/.test(widget))) {
         const positive = Array.isArray(params.promptPositive) ? params.promptPositive : (params.promptPositive = []);
         const negative = Array.isArray(params.promptNegative) ? params.promptNegative : (params.promptNegative = []);
         const position = positive.findIndex((item) => item === change.previousValue);
@@ -227,13 +249,19 @@ function syncCommonRecipeMetadata(params, change) {
         }
         const summary = (params.nodes || []).find((item) => String(item?.id) === String(change.nodeId));
         const override = params.promptRoleOverrides?.[String(change.nodeId)]?.role;
-        const role = ['positive', 'negative', 'both'].includes(override) ? override : summary?.role;
+        let role = ['positive', 'negative', 'both'].includes(override) ? override : summary?.role;
+        if (!role) {
+            if (isPos && isNeg) role = 'both';
+            else if (isPos) role = 'positive';
+            else if (isNeg) role = 'negative';
+        }
         const prompt = textValue(value);
         if (!prompt) return;
         if ((role === 'positive' || role === 'both') && !positive.includes(prompt)) positive.push(prompt);
         if ((role === 'negative' || role === 'both') && !negative.includes(prompt)) negative.push(prompt);
     }
 }
+
 
 /**
  * Apply direct safe-widget edits to a serialized recipe without instantiating
@@ -342,12 +370,16 @@ function recipeSampler(node) {
 }
 
 function mergeSampler(metadata, sampler) {
+    const isDedicated = /^ksampler(advanced)?$/i.test(sampler.type) || /samplercustom/i.test(sampler.type);
     metadata.samplers.push(sampler);
     for (const field of ['seed', 'steps', 'cfg', 'sampler_name', 'scheduler', 'denoise']) {
-        if (metadata[field] === null && sampler[field] !== null && sampler[field] !== '') {
-            metadata[field] = sampler[field];
+        if (sampler[field] !== null && sampler[field] !== '') {
+            if (metadata[field] === null || (isDedicated && !metadata._hasDedicatedSampler)) {
+                metadata[field] = sampler[field];
+            }
         }
     }
+    if (isDedicated) metadata._hasDedicatedSampler = true;
 }
 
 /**
@@ -382,32 +414,73 @@ export function extractRecipeMetadata(graph) {
         const type = nodeType(node);
         if (metadata.nodes.length < MAX_SUMMARY_NODES) metadata.nodes.push(extractGenericNodeSummary(node));
 
-        if (/^(checkpointloader(simple)?|unetloader)$/i.test(type)) {
-            const model = textValue(widgetValue(
-                node,
-                ['ckpt_name', 'checkpoint', 'unet_name', 'unet', 'model_name'],
-                0,
-            ));
-            if (model && !metadata.baseModels.includes(model)) metadata.baseModels.push(model);
-            if (!metadata.baseModel && model) metadata.baseModel = model;
+        // Sniff base model / checkpoint
+        const model = textValue(widgetValue(
+            node,
+            ['ckpt_name', 'checkpoint', 'unet_name', 'unet', 'base_model', 'model_name'],
+            /^(checkpointloader(simple)?|unetloader)$/i.test(type) ? 0 : -1,
+        ));
+        if (model && model.toLowerCase() !== 'none' && MODEL_FILE_PATTERN.test(model)) {
+            if (!metadata.baseModels.includes(model)) metadata.baseModels.push(model);
+            if (!metadata.baseModel) metadata.baseModel = model;
         }
 
-        if (/lora.*loader|loader.*lora/i.test(type)) {
-            const name = textValue(widgetValue(node, ['lora_name', 'lora', 'model_name'], 0));
-            if (name) {
+        // Sniff LoRAs (single widget or multi-slot stack)
+        const loraName = textValue(widgetValue(node, ['lora_name', 'lora'], /lora.*loader|loader.*lora/i.test(type) ? 0 : -1));
+        if (loraName && loraName.toLowerCase() !== 'none' && MODEL_FILE_PATTERN.test(loraName)) {
+            const strengthModel = numberValue(widgetValue(node, ['lora_model_strength', 'strength_model', 'model_strength'], 1));
+            const strengthClip = numberValue(widgetValue(node, ['lora_clip_strength', 'strength_clip', 'clip_strength'], 2));
+            if (!metadata.loras.some((l) => l.name === loraName)) {
                 metadata.loras.push({
-                    name,
-                    strength_model: numberValue(widgetValue(node, ['strength_model', 'model_strength'], 1)),
-                    strength_clip: numberValue(widgetValue(node, ['strength_clip', 'clip_strength'], 2)),
+                    name: loraName,
+                    strength_model: strengthModel,
+                    strength_clip: strengthClip,
                 });
             }
         }
 
-        if (/^ksampler(advanced)?$/i.test(type) || /samplercustom/i.test(type)) {
-            mergeSampler(metadata, recipeSampler(node));
+        if (Array.isArray(node.widgets)) {
+            for (const widget of node.widgets) {
+                const wName = String(widget?.name || '').toLowerCase();
+                const match = wName.match(/^lora(?:_(\d+))?_name$/) || wName.match(/^lora_name_(\d+)$/);
+                if (match && match[1]) {
+                    const slotNum = match[1];
+                    const slotVal = textValue(widget?.value);
+                    if (slotVal && slotVal.toLowerCase() !== 'none' && MODEL_FILE_PATTERN.test(slotVal)) {
+                        const slotStrengthModel = numberValue(widgetValue(node, [`lora_${slotNum}_strength`, `lora_${slotNum}_model_strength`, `lora_model_strength_${slotNum}`], -1));
+                        const slotStrengthClip = numberValue(widgetValue(node, [`lora_${slotNum}_clip_strength`, `lora_clip_strength_${slotNum}`], -1));
+                        if (!metadata.loras.some((l) => l.name === slotVal)) {
+                            metadata.loras.push({
+                                name: slotVal,
+                                strength_model: slotStrengthModel,
+                                strength_clip: slotStrengthClip,
+                            });
+                        }
+                    }
+                }
+            }
         }
 
-        const roleInputs = SUPPORTED_PROMPT_CONSUMERS.get(normaliseName(type));
+        // Sniff samplers
+        if (/^ksampler(advanced)?$/i.test(type) || /samplercustom/i.test(type) || /sampler/i.test(type) || widgetValue(node, ['sampler_name', 'sampler']) !== null || widgetValue(node, ['steps']) !== null) {
+            const sampler = recipeSampler(node);
+            if (sampler.steps !== null || sampler.sampler_name !== null || sampler.cfg !== null) {
+                mergeSampler(metadata, sampler);
+            }
+        }
+
+        // Sniff prompt consumers
+        let roleInputs = SUPPORTED_PROMPT_CONSUMERS.get(normaliseName(type));
+        if (!roleInputs && Array.isArray(node.inputs)) {
+            const inputNames = node.inputs.map((i) => normaliseName(i?.name));
+            const hasPos = inputNames.includes('positive');
+            const hasNeg = inputNames.includes('negative');
+            if (hasPos || hasNeg) {
+                roleInputs = {};
+                if (hasPos) roleInputs.positive = 'positive';
+                if (hasNeg) roleInputs.negative = 'negative';
+            }
+        }
         if (roleInputs) {
             for (const [inputName, role] of Object.entries(roleInputs)) {
                 for (const origin of inputLinkOrigins(graph, node, [inputName])) {
@@ -418,9 +491,10 @@ export function extractRecipeMetadata(graph) {
             }
         }
 
-        if (/empty.*latent/i.test(type) && !metadata.resolution) {
-            const width = numberValue(widgetValue(node, ['width'], 0));
-            const height = numberValue(widgetValue(node, ['height'], 1));
+        // Sniff latent resolution
+        if (!metadata.resolution) {
+            const width = numberValue(widgetValue(node, ['empty_latent_width', 'width'], /empty.*latent/i.test(type) ? 0 : -1));
+            const height = numberValue(widgetValue(node, ['empty_latent_height', 'height'], /empty.*latent/i.test(type) ? 1 : -1));
             if (width && height) metadata.resolution = { width, height };
         }
     }
@@ -452,8 +526,42 @@ export function extractRecipeMetadata(graph) {
             summary.roleSource = 'unresolved';
         }
     }
+
+    // Fallback for embedded prompts on Loader / All-in-One nodes
+    // Precedence: External Link > Embedded fallback (only if promptPositive/promptNegative are empty)
+    for (const node of graph._nodes) {
+        if (isSupportedPromptNodeType(nodeType(node))) continue;
+        const targets = promptWidgetTargets(node);
+        if (!targets || targets.length === 0) continue;
+
+        const summary = metadata.nodes.find((item) => String(item?.id) === String(node.id));
+
+        for (const target of targets) {
+            const widget = node.widgets?.[target.index];
+            const val = textValue(widget?.value);
+            if (!val) continue;
+
+            const role = classifyPromptWidgetRole(target.name);
+            if (role === 'positive' && metadata.promptPositive.length === 0) {
+                appendUnique(metadata.promptPositive, [val]);
+                if (summary) {
+                    summary.role = summary.role === 'negative' ? 'both' : 'positive';
+                    summary.roleSource = 'embedded';
+                }
+            } else if (role === 'negative' && metadata.promptNegative.length === 0) {
+                appendUnique(metadata.promptNegative, [val]);
+                if (summary) {
+                    summary.role = summary.role === 'positive' ? 'both' : 'negative';
+                    summary.roleSource = 'embedded';
+                }
+            }
+        }
+    }
+
+    delete metadata._hasDedicatedSampler;
     return metadata;
 }
+
 
 /**
  * Capture the graph once at save time. The serialized workflow is the source
