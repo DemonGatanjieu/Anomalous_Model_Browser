@@ -194,6 +194,25 @@ export function inspectNodePromptSlots(node) {
     };
 }
 
+export const MODEL_EXTENSIONS_REGEX = /\.(safetensors|ckpt|pt|bin|pth|sft|onnx|engine|gguf)$/i;
+
+export function isModelFilePath(value) {
+    if (typeof value !== 'string') return false;
+    const trimmed = value.trim();
+    if (!trimmed) return false;
+    const lines = trimmed.split(/[\r\n]+/).map(s => s.trim()).filter(Boolean);
+    return lines.length > 0 && lines.every(line => MODEL_EXTENSIONS_REGEX.test(line));
+}
+
+export function isPromptNodeType(type) {
+    const norm = String(type || '').trim().toLowerCase();
+    if (!norm) return false;
+    if (/lora|checkpoint|unet|vae|controlnet|sampler|latent|saveimage|previewimage|loadimage/i.test(norm)) {
+        return false;
+    }
+    return /cliptextencode|prompt|text_box|showtext|easy positive|easy negative|easy wildcards/i.test(norm);
+}
+
 export function extractMaterialPromptEnvelope(material, payload = {}) {
     const effectivePayload = (payload && Object.keys(payload).length > 0) ? payload : (material || {});
     const data = effectivePayload.data || effectivePayload;
@@ -231,7 +250,7 @@ export function extractMaterialPromptEnvelope(material, payload = {}) {
         if (note) {
             const isZh = typeof window !== 'undefined' && window.anomalous_browser_lang === 'zh';
             const txt = (isZh && note.promptZh) ? note.promptZh : (note.promptEn || note.promptZh || '');
-            if (txt && txt.trim()) {
+            if (txt && txt.trim() && !isModelFilePath(txt)) {
                 singleText = txt.trim();
                 const lowerName = String(effectivePayload.name || note.title || '').toLowerCase();
                 const tags = Array.isArray(effectivePayload.tags) ? effectivePayload.tags.map(t => String(t).toLowerCase()) : [];
@@ -248,7 +267,36 @@ export function extractMaterialPromptEnvelope(material, payload = {}) {
         }
     }
 
-    // 3. Check node_blocks (e.g. from curated image material or workflow snapshot)
+    // 3. Check prompt_groups (authoritative graph link tracing from backend)
+    if (primaryRole === 'none') {
+        const groups = effectivePayload.prompt_groups;
+        if (groups && typeof groups === 'object') {
+            const pgPos = (Array.isArray(groups.positive) ? groups.positive : [])
+                .filter(v => typeof v === 'string' && v.trim() && !isModelFilePath(v))
+                .join('\n\n')
+                .trim();
+            const pgNeg = (Array.isArray(groups.negative) ? groups.negative : [])
+                .filter(v => typeof v === 'string' && v.trim() && !isModelFilePath(v))
+                .join('\n\n')
+                .trim();
+            if (pgPos && pgNeg) {
+                positive = pgPos;
+                negative = pgNeg;
+                singleText = pgPos;
+                primaryRole = 'both';
+            } else if (pgPos) {
+                positive = pgPos;
+                singleText = pgPos;
+                primaryRole = 'positive';
+            } else if (pgNeg) {
+                negative = pgNeg;
+                singleText = pgNeg;
+                primaryRole = 'negative';
+            }
+        }
+    }
+
+    // 4. Check node_blocks (fallback only for prompt nodes)
     if (primaryRole === 'none') {
         const blocks = effectivePayload.node_blocks;
         const promptRoles = effectivePayload.prompt_roles;
@@ -257,11 +305,21 @@ export function extractMaterialPromptEnvelope(material, payload = {}) {
             const negList = [];
             for (const block of blocks) {
                 if (!block) continue;
+                const blockType = String(block.type || '').toLowerCase();
                 const role = promptRoles?.[String(block.node_id)]?.role || block.promptRole;
+                const isExplicitPrompt = role === 'positive' || role === 'negative' || role === 'both';
+                const isPromptType = isPromptNodeType(blockType);
+
+                // STRICT GUARD: Only inspect blocks that are recognized prompt nodes or have prompt role
+                if (!isExplicitPrompt && !isPromptType) continue;
+
                 const widgetValues = Array.isArray(block.widgets_values) ? block.widgets_values : [];
                 for (const val of widgetValues) {
                     if (typeof val === 'string' && val.trim()) {
                         const str = val.trim();
+                        // Strictly reject any model filenames
+                        if (isModelFilePath(str)) continue;
+
                         if (role === 'negative') {
                             negList.push(str);
                         } else if (role === 'positive') {
@@ -273,7 +331,7 @@ export function extractMaterialPromptEnvelope(material, payload = {}) {
                             const blockTitle = String(block.title || block.type || '').toLowerCase();
                             if (/negative|负向|反向/i.test(blockTitle)) {
                                 negList.push(str);
-                            } else {
+                            } else if (/positive|正向|正面/i.test(blockTitle) || isPromptType) {
                                 posList.push(str);
                             }
                         }
@@ -300,33 +358,10 @@ export function extractMaterialPromptEnvelope(material, payload = {}) {
         }
     }
 
-    // 4. Check prompt_groups if present
-    if (primaryRole === 'none') {
-        const groups = effectivePayload.prompt_groups;
-        if (groups && typeof groups === 'object') {
-            const pgPos = (Array.isArray(groups.positive) ? groups.positive : []).filter(v => typeof v === 'string' && v.trim()).join('\n\n');
-            const pgNeg = (Array.isArray(groups.negative) ? groups.negative : []).filter(v => typeof v === 'string' && v.trim()).join('\n\n');
-            if (pgPos && pgNeg) {
-                positive = pgPos;
-                negative = pgNeg;
-                singleText = pgPos;
-                primaryRole = 'both';
-            } else if (pgPos) {
-                positive = pgPos;
-                singleText = pgPos;
-                primaryRole = 'positive';
-            } else if (pgNeg) {
-                negative = pgNeg;
-                singleText = pgNeg;
-                primaryRole = 'negative';
-            }
-        }
-    }
-
     // 5. Fallback to summary or name if kind is prompt_text
     if (primaryRole === 'none' && effectivePayload.kind === 'prompt_text') {
         const raw = effectivePayload.summary || effectivePayload.name || '';
-        if (raw && raw.trim()) {
+        if (raw && raw.trim() && !isModelFilePath(raw)) {
             singleText = raw.trim();
             positive = singleText;
             primaryRole = 'positive';

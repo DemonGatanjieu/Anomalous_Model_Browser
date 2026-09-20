@@ -12,6 +12,8 @@ import {
     inspectNodePromptSlots,
     extractMaterialPromptEnvelope,
     dispatchPromptInjection,
+    isModelFilePath,
+    isPromptNodeType,
 } from './node_material_actions.js';
 import { getMaterialPromptInfo } from './ui_material_detail.js';
 
@@ -146,7 +148,10 @@ export async function applyLibraryMaterial(owner, material, droppedNode = null, 
         const hasSingleRoleSlot = Boolean((slots.positiveSlot && !slots.negativeSlot) || (slots.negativeSlot && !slots.positiveSlot));
 
         const promptBlocks = applyPromptRolesToBlocks(payload.node_blocks || [], payload.prompt_roles)
-            .filter(b => Array.isArray(b.widgets_values) && b.widgets_values.some(v => typeof v === 'string' && v.trim()));
+            .filter(b => {
+                const isPrompt = b.promptRole === 'positive' || b.promptRole === 'negative' || b.promptRole === 'both' || isPromptNodeType(b.type);
+                return isPrompt && Array.isArray(b.widgets_values) && b.widgets_values.some(v => typeof v === 'string' && v.trim() && !isModelFilePath(v));
+            });
 
         if (!hasBothSlots && !hasSingleRoleSlot && promptBlocks.length > 1) {
             openMaterialChoiceDialog(owner, node, promptBlocks, payload, droppedNode, graph);
@@ -177,8 +182,8 @@ function openMaterialChoiceDialog(owner, node, blocks, payload, droppedNode, gra
         let textVal = '';
         if (Array.isArray(targetBlock.widgets_values)) {
             for (const v of targetBlock.widgets_values) {
-                if (typeof v === 'string' && v.trim()) {
-                    textVal = v;
+                if (typeof v === 'string' && v.trim() && !isModelFilePath(v)) {
+                    textVal = v.trim();
                     break;
                 }
             }
@@ -237,7 +242,7 @@ function openMaterialChoiceDialog(owner, node, blocks, payload, droppedNode, gra
         let textContent = '';
         if (Array.isArray(block.widgets_values)) {
             for (const val of block.widgets_values) {
-                if (typeof val === 'string' && val.trim().length > 0) {
+                if (typeof val === 'string' && val.trim().length > 0 && !isModelFilePath(val)) {
                     textContent = val.trim();
                     break;
                 }
