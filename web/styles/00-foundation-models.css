@@ -78,8 +78,8 @@ html.theme-abyssal-scarlet,
     --anomalous-trigger-pill-padding: 18px;
     position: fixed;
     top: 80px;
-    right: 24px;
-    left: auto;
+    left: 80px;
+    right: auto;
     bottom: auto;
     width: var(--anomalous-trigger-size);
     height: var(--anomalous-trigger-size);

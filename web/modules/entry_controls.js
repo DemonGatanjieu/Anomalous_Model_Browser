@@ -23,9 +23,10 @@ export function normalizeEntryMode(value) {
 }
 
 export const DEFAULT_SAFE_TOP = 80;
+export const DEFAULT_SAFE_LEFT = 80; // Safe position outside ComfyUI left sidebar dock
 export const DEFAULT_SAFE_MARGIN_RIGHT = 24;
 export const DEFAULT_MIN_SAFE_X = 70; // Avoid ComfyUI left sidebar dock
-export const DEFAULT_TRIGGER_POSITION = Object.freeze({ top: DEFAULT_SAFE_TOP, right: DEFAULT_SAFE_MARGIN_RIGHT });
+export const DEFAULT_TRIGGER_POSITION = Object.freeze({ top: DEFAULT_SAFE_TOP, left: DEFAULT_SAFE_LEFT });
 export const TRIGGER_POSITION_STORAGE_KEY = 'anomalous_trigger_pos_v3';
 export const LEGACY_TRIGGER_X_KEY = 'anomalous_btn_x';
 export const LEGACY_TRIGGER_Y_KEY = 'anomalous_btn_y';
@@ -111,7 +112,7 @@ export function clampFloatingTriggerPosition({
     const parsedX = Number.parseFloat(x);
     const parsedY = Number.parseFloat(y);
 
-    const fallbackX = Math.max(minX, maxX - DEFAULT_SAFE_MARGIN_RIGHT);
+    const fallbackX = Math.max(minX, Math.min(maxX, DEFAULT_SAFE_LEFT));
     const fallbackY = Math.min(maxY, DEFAULT_SAFE_TOP);
 
     const targetX = Number.isFinite(parsedX) ? parsedX : fallbackX;
