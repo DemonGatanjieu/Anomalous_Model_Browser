@@ -95,7 +95,7 @@ DOM or live LiteGraph state.
   clamping (`clampFloatingTriggerPosition` with minimum safe boundary `minX=70` preventing left sidebar dock entrapment), clean `loadSavedTriggerPosition`/`saveTriggerPosition` storage drivers, and non-distorting coordinate validation
   (`isValidSavedTriggerPosition`); `api/__init__.py` injects an aiohttp no-cache middleware (`Cache-Control: no-cache, no-store, must-revalidate`) for extension static files to eliminate browser memory/disk cache desynchronization across regular page refreshes; and `interface_settings.js` owns language and theme preferences.
 - `ui_domain_switcher.js` owns the dual-domain mode toggle (Visual Studio 🎨 vs Audio & Voice Studio 🎙️) embedded in the brand header.
-- `ui_audio_studio.js` owns the Audio & Voice Studio workspace, presenting character voice cards, emotion slice playback, prompt syntax copying, real-time search, animated equalizers, and canvas drag-and-drop.
+- `ui_audio_studio.js` owns the Audio & Voice Studio workspace, presenting character voice cards, emotion slice playback, prompt syntax copying, real-time search, animated equalizers, 1-click Arona workflow loading (`app.loadGraphData`), and direct canvas node drop injection.
 - `ui_audio_sidebar.js` owns the Audio Sidebar navigation, rendering trees for All Voices, Character Presets (e.g. Arona) with count badges, and Output History Vault.
 - `ui_audio_gallery.js` owns the Generated Audio Vault, supporting track playback, scrubber progress, duration timecodes, audio download, deletion, and canvas drag-and-drop.
 - `ui_sidebar.js` creates the browser shell, domain-aware header tabs (`[音色预设]`, `[音频库]`, `[工作流]`), domain-aware bottom-left tool suppression, and folder navigation.
