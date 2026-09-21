@@ -2,6 +2,7 @@
 
 import os
 import re
+import json
 import folder_paths
 from aiohttp import web
 from .path_utils import resolve_within
@@ -228,4 +229,27 @@ async def api_delete_audio_gallery(request):
         except OSError as e:
             return web.Response(status=500, text=f"Failed to delete: {e}")
     return web.Response(status=404, text="File not found")
+
+
+async def api_get_audio_template_workflow(request):
+    """GET /anomalous/audio_template_workflow?name=arona - Return pre-configured audio workflow."""
+    name = request.query.get("name", "arona").lower()
+    base_dir = folder_paths.base_path
+    plugin_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    workflow_candidates = [
+        os.path.join(base_dir, f"{name}_multivoice_workflow.json"),
+        os.path.join(base_dir, "arona_multivoice_workflow.json"),
+        os.path.join(plugin_dir, "workflows", f"{name}_multivoice_workflow.json"),
+        os.path.join(plugin_dir, "workflows", "arona_multivoice_workflow.json")
+    ]
+    for wf_path in workflow_candidates:
+        if os.path.isfile(wf_path):
+            try:
+                with open(wf_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                return web.json_response({"success": True, "workflow": data})
+            except Exception as e:
+                return web.Response(status=500, text=f"Failed to read workflow: {e}")
+    return web.Response(status=404, text="Workflow template not found")
+
 

@@ -1274,7 +1274,9 @@ export const i18n = {
         audioTime: "生成时间",
         audioTabPresets: "音色预设",
         audioTabGallery: "音频库",
-        audioTabWorkflow: "音频工作流"
+        audioTabWorkflow: "音频工作流",
+        audioLoadAronaWorkflow: "载入阿罗娜工作流到画布",
+        audioWorkflowLoaded: "工作流已载入！"
     },
     en: {
         actionTools: "Tools",
@@ -2551,7 +2553,9 @@ export const i18n = {
         audioTime: "Created At",
         audioTabPresets: "Voice Presets",
         audioTabGallery: "Audio Gallery",
-        audioTabWorkflow: "Audio Workflows"
+        audioTabWorkflow: "Audio Workflows",
+        audioLoadAronaWorkflow: "Load Arona Workflow to Canvas",
+        audioWorkflowLoaded: "Workflow Loaded!"
     }
 };
 

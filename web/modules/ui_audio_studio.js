@@ -1,3 +1,4 @@
+import { app } from '../../../scripts/app.js';
 import { t } from './interface_settings.js';
 import { stopGalleryAudio } from './ui_audio_gallery.js';
 
@@ -130,6 +131,11 @@ function renderSliceRow(slice) {
     row.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', slice.syntax_tag);
         e.dataTransfer.setData('application/json', JSON.stringify(slice));
+        window.__anomalous_active_audio_slice = slice;
+        setupCanvasAudioDrop();
+    });
+    row.addEventListener('dragend', () => {
+        window.__anomalous_active_audio_slice = null;
     });
 
     const playBtn = document.createElement('button');
@@ -275,6 +281,86 @@ function renderCharacterCard(charData) {
     return card;
 }
 
+function setupCanvasAudioDrop() {
+    if (window.__anomalous_canvas_audio_drop_bound) return;
+    window.__anomalous_canvas_audio_drop_bound = true;
+
+    window.addEventListener('drop', (e) => {
+        const slice = window.__anomalous_active_audio_slice;
+        if (!slice || !app?.graph || !app?.canvas) return;
+
+        const surface = app.canvas.canvas;
+        if (!surface) return;
+        const rect = surface.getBoundingClientRect();
+        if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) return;
+
+        let pos = null;
+        if (app.canvas.convertEventToCanvasOffset) pos = app.canvas.convertEventToCanvasOffset(e);
+        else if (app.canvas.adjustMouseEvent) { app.canvas.adjustMouseEvent(e); pos = [e.canvasX, e.canvasY]; }
+        if (!pos) return;
+
+        const node = app.graph.getNodeOnPos?.(pos[0], pos[1]);
+        if (!node) return;
+
+        const sampleWidget = node.widgets?.find(w => w.name === 'sample' || w.name === 'audio' || w.name === 'prompt_audio');
+        if (sampleWidget) {
+            sampleWidget.value = `F5-TTS/${slice.filename}`;
+            node.setDirtyCanvas(true, true);
+        }
+    }, true);
+}
+
+function createLoadWorkflowButton() {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'anomalous-audio-load-wf-btn';
+    btn.innerHTML = `<span>⚡</span> <span>${t('audioLoadAronaWorkflow')}</span>`;
+    btn.style.display = 'inline-flex';
+    btn.style.alignItems = 'center';
+    btn.style.gap = '6px';
+    btn.style.padding = '5px 12px';
+    btn.style.borderRadius = '8px';
+    btn.style.border = '1px solid rgba(129, 140, 248, 0.4)';
+    btn.style.background = 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(56, 189, 248, 0.2))';
+    btn.style.color = '#e0e7ff';
+    btn.style.fontSize = '12px';
+    btn.style.fontWeight = '500';
+    btn.style.cursor = 'pointer';
+    btn.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+    btn.style.boxShadow = '0 2px 10px rgba(99, 102, 241, 0.2)';
+
+    btn.onmouseenter = () => {
+        btn.style.background = 'linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(56, 189, 248, 0.35))';
+        btn.style.borderColor = 'rgba(129, 140, 248, 0.7)';
+        btn.style.transform = 'translateY(-1px)';
+    };
+    btn.onmouseleave = () => {
+        btn.style.background = 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(56, 189, 248, 0.2))';
+        btn.style.borderColor = 'rgba(129, 140, 248, 0.4)';
+        btn.style.transform = 'translateY(0)';
+    };
+
+    btn.onclick = async () => {
+        try {
+            btn.style.opacity = '0.6';
+            const resp = await fetch('/anomalous/audio_template_workflow?name=arona');
+            const data = await resp.json();
+            if (data.workflow && app.loadGraphData) {
+                await app.loadGraphData(data.workflow);
+                btn.innerHTML = `<span>✅</span> <span>${t('audioWorkflowLoaded')}</span>`;
+                setTimeout(() => {
+                    btn.innerHTML = `<span>⚡</span> <span>${t('audioLoadAronaWorkflow')}</span>`;
+                    btn.style.opacity = '1';
+                }, 2000);
+            }
+        } catch (e) {
+            console.error('Failed to load Arona workflow:', e);
+            btn.style.opacity = '1';
+        }
+    };
+    return btn;
+}
+
 function renderStudioToolbar(onSearch) {
     const toolbar = document.createElement('div');
     toolbar.className = 'anomalous-audio-toolbar';
@@ -305,6 +391,11 @@ function renderStudioToolbar(onSearch) {
     titleGroup.appendChild(iconBox);
     titleGroup.appendChild(textGroup);
 
+    const rightActions = document.createElement('div');
+    rightActions.style.display = 'flex';
+    rightActions.style.alignItems = 'center';
+    rightActions.style.gap = '10px';
+
     const searchWrap = document.createElement('div');
     searchWrap.style.display = 'flex';
     searchWrap.style.alignItems = 'center';
@@ -332,8 +423,12 @@ function renderStudioToolbar(onSearch) {
     searchWrap.appendChild(searchIcon);
     searchWrap.appendChild(searchInput);
 
+    const loadWfBtn = createLoadWorkflowButton();
+    rightActions.appendChild(loadWfBtn);
+    rightActions.appendChild(searchWrap);
+
     toolbar.appendChild(titleGroup);
-    toolbar.appendChild(searchWrap);
+    toolbar.appendChild(rightActions);
     return toolbar;
 }
 
