@@ -1291,7 +1291,12 @@ export const i18n = {
         audioSaveAndIngest: "保存并入库",
         audioSaving: "正在入库...",
         audioSaveSuccess: "音色资产已成功入库！",
-        audioUploadRequiredError: "请上传音频文件并填写角色名称与情绪标签"
+        audioUploadRequiredError: "请上传音频文件并填写角色名称与情绪标签",
+        audioRomanizeBtn: "✨ 智能转罗马音",
+        audioRomanizeConverting: "转换中...",
+        audioRomanizeSuccess: "已转为罗马音！",
+        audioRomanizeEmptyHint: "请先在文本框中输入或粘贴日文/韩文台词",
+        audioRomanizeFailed: "转换失败，请重试"
     },
     en: {
         actionTools: "Tools",
@@ -2585,7 +2590,12 @@ export const i18n = {
         audioSaveAndIngest: "Save & Ingest",
         audioSaving: "Saving...",
         audioSaveSuccess: "Voice asset saved successfully!",
-        audioUploadRequiredError: "Please provide an audio file, character name, and emotion tag"
+        audioUploadRequiredError: "Please provide an audio file, character name, and emotion tag",
+        audioRomanizeBtn: "✨ Romanize (Romaji/RR)",
+        audioRomanizeConverting: "Converting...",
+        audioRomanizeSuccess: "Converted to Romaji!",
+        audioRomanizeEmptyHint: "Please enter Japanese or Korean dialogue first",
+        audioRomanizeFailed: "Conversion failed, please retry"
     }
 };
 

@@ -162,20 +162,76 @@ function createEmotionSection() {
     return { wrap, input };
 }
 
-function createTranscriptSection() {
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
+function createTranscriptHeader(textarea) {
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
 
     const label = document.createElement('label');
     label.style.cssText = 'font-size:12px;font-weight:600;color:#cbd5e1;';
     label.textContent = t('audioRefTextLabel');
+
+    const romanizeBtn = document.createElement('button');
+    romanizeBtn.type = 'button';
+    romanizeBtn.className = 'anomalous-romanize-btn';
+    romanizeBtn.innerHTML = `<span>✨</span> <span>${t('audioRomanizeBtn')}</span>`;
+    romanizeBtn.title = '将输入的日文（假名/汉字）或韩文（谚文）一键转换为标准罗马音';
+
+    romanizeBtn.onclick = async () => {
+        const originalText = textarea.value.trim();
+        if (!originalText) {
+            alert(t('audioRomanizeEmptyHint'));
+            textarea.focus();
+            return;
+        }
+
+        const prevHtml = romanizeBtn.innerHTML;
+        romanizeBtn.disabled = true;
+        romanizeBtn.innerHTML = `<span>⏳</span> <span>${t('audioRomanizeConverting')}</span>`;
+
+        try {
+            const resp = await fetch('/anomalous/romanize_text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: originalText })
+            });
+            const data = await resp.json();
+            if (data.success && data.romanized) {
+                textarea.value = data.romanized;
+                romanizeBtn.innerHTML = `<span>✅</span> <span>${t('audioRomanizeSuccess')}</span>`;
+                setTimeout(() => {
+                    romanizeBtn.innerHTML = prevHtml;
+                    romanizeBtn.disabled = false;
+                }, 1800);
+            } else {
+                alert(t('audioRomanizeFailed') + ': ' + (data.error || ''));
+                romanizeBtn.innerHTML = prevHtml;
+                romanizeBtn.disabled = false;
+            }
+        } catch (err) {
+            console.error('Failed to romanize text:', err);
+            alert(t('audioRomanizeFailed'));
+            romanizeBtn.innerHTML = prevHtml;
+            romanizeBtn.disabled = false;
+        }
+    };
+
+    header.appendChild(label);
+    header.appendChild(romanizeBtn);
+    return header;
+}
+
+function createTranscriptSection() {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;gap:6px;';
 
     const textarea = document.createElement('textarea');
     textarea.className = 'anomalous-uploader-textarea';
     textarea.rows = 3;
     textarea.placeholder = t('audioRefTextPlaceholder');
 
-    wrap.appendChild(label);
+    const header = createTranscriptHeader(textarea);
+
+    wrap.appendChild(header);
     wrap.appendChild(textarea);
     return { wrap, textarea };
 }
