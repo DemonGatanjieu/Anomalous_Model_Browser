@@ -24,13 +24,23 @@ def _parse_character_and_emotion(filename):
 
 
 def _read_associated_text(base_path):
-    """Read companion prompt text file if present."""
+    """Read companion prompt text file if present (preferring .orig.txt for display)."""
     stem, _ = os.path.splitext(base_path)
+    orig_path = stem + '.orig.txt'
+    if os.path.isfile(orig_path):
+        try:
+            with open(orig_path, 'r', encoding='utf-8-sig', errors='ignore') as f:
+                content = f.read().strip().lstrip('\ufeff')
+                if content:
+                    return content
+        except Exception:
+            pass
+
     txt_path = stem + '.txt'
     if os.path.isfile(txt_path):
         try:
-            with open(txt_path, 'r', encoding='utf-8', errors='ignore') as f:
-                return f.read().strip()
+            with open(txt_path, 'r', encoding='utf-8-sig', errors='ignore') as f:
+                return f.read().strip().lstrip('\ufeff')
         except Exception:
             return ""
     return ""
