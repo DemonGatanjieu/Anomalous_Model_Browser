@@ -37,18 +37,19 @@ def _read_associated_text(base_path):
 
 
 def _scan_single_audio_dir(directory, relative_prefix=""):
-    """Scan a directory for audio files and group by character."""
-    slices = []
+    """Scan directory for audio files, deduplicate stems preferring .wav, and group slices."""
     if not os.path.isdir(directory):
-        return slices
+        return []
 
     try:
         entries = sorted(os.listdir(directory))
     except OSError:
-        return slices
+        return []
 
+    stem_map = {}
     for name in entries:
-        ext = os.path.splitext(name)[1].lower()
+        stem, ext = os.path.splitext(name)
+        ext = ext.lower()
         if ext not in AUDIO_EXTENSIONS:
             continue
 
@@ -56,23 +57,30 @@ def _scan_single_audio_dir(directory, relative_prefix=""):
         if not os.path.isfile(full_path):
             continue
 
+        # If stem already recorded and is .wav, skip non-wav; otherwise update
+        if stem in stem_map and stem_map[stem]["ext"] == '.wav' and ext != '.wav':
+            continue
+
         char_name, emotion = _parse_character_and_emotion(name)
         ref_text = _read_associated_text(full_path)
         file_size = os.path.getsize(full_path)
         rel_path = os.path.join(relative_prefix, name).replace("\\", "/")
 
-        slices.append({
-            "id": os.path.splitext(name)[0],
-            "filename": name,
-            "relative_path": rel_path,
-            "character": char_name,
-            "emotion": emotion,
-            "text": ref_text,
-            "size_bytes": file_size,
-            "syntax_tag": f"{{{os.path.splitext(name)[0]}}}",
-            "audio_url": f"/anomalous/audio_stream?path={rel_path}"
-        })
-    return slices
+        stem_map[stem] = {
+            "ext": ext,
+            "slice": {
+                "id": stem,
+                "filename": name,
+                "relative_path": rel_path,
+                "character": char_name,
+                "emotion": emotion,
+                "text": ref_text,
+                "size_bytes": file_size,
+                "syntax_tag": f"{{{stem}}}",
+                "audio_url": f"/anomalous/audio_stream?path={rel_path}"
+            }
+        }
+    return [item["slice"] for item in stem_map.values()]
 
 
 def _group_slices_by_character(all_slices):
@@ -253,6 +261,17 @@ async def api_get_audio_template_workflow(request):
     return web.Response(status=404, text="Workflow template not found")
 
 
+def _convert_to_pcm_wav(src_path: str, dst_path: str) -> bool:
+    """Convert audio file to standard 16-bit 24kHz mono PCM WAV via ffmpeg."""
+    try:
+        import subprocess
+        cmd = ["ffmpeg", "-y", "-i", src_path, "-ar", "24000", "-ac", "1", "-c:a", "pcm_s16le", dst_path]
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+        return True
+    except Exception:
+        return False
+
+
 def _sanitize_name_part(part: str) -> str:
     """Sanitize character or emotion string for safe filesystem usage."""
     cleaned = re.sub(r'[^\w\u4e00-\u9fff\u3040-\u30ff\-]', '_', str(part or '').strip())
@@ -292,31 +311,44 @@ async def api_upload_audio_voice(request):
     os.makedirs(dest_dir, exist_ok=True)
 
     base_name = f"{character}_{emotion}"
-    target_audio_name = f"{base_name}{ext}"
-    target_audio_path = os.path.join(dest_dir, target_audio_name)
+    raw_audio_name = f"{base_name}{ext}"
+    raw_audio_path = os.path.join(dest_dir, raw_audio_name)
+    target_wav_path = os.path.join(dest_dir, f"{base_name}.wav")
     target_txt_path = os.path.join(dest_dir, f"{base_name}.txt")
 
     def _write_files():
-        with open(target_audio_path, 'wb') as f:
+        with open(raw_audio_path, 'wb') as f:
             f.write(audio_bytes)
         if text:
             with open(target_txt_path, 'w', encoding='utf-8') as f:
                 f.write(text)
 
-    import asyncio
-    await asyncio.to_thread(_write_files)
+        final_name = raw_audio_name
+        final_size = len(audio_bytes)
+        if ext != '.wav':
+            if _convert_to_pcm_wav(raw_audio_path, target_wav_path):
+                try:
+                    os.remove(raw_audio_path)
+                except OSError:
+                    pass
+                final_name = f"{base_name}.wav"
+                final_size = os.path.getsize(target_wav_path)
+        return final_name, final_size
 
-    rel_path = os.path.join(target_sub, target_audio_name).replace("\\", "/")
+    import asyncio
+    final_name, final_size = await asyncio.to_thread(_write_files)
+
+    rel_path = os.path.join(target_sub, final_name).replace("\\", "/")
     return web.json_response({
         "success": True,
         "slice": {
             "id": base_name,
-            "filename": target_audio_name,
+            "filename": final_name,
             "relative_path": rel_path,
             "character": character,
             "emotion": emotion,
             "text": text,
-            "size_bytes": len(audio_bytes),
+            "size_bytes": final_size,
             "syntax_tag": f"{{{base_name}}}",
             "audio_url": f"/anomalous/audio_stream?path={rel_path}"
         }

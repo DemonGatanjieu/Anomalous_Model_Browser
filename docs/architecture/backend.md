@@ -64,7 +64,8 @@ live in `material_schema.py`, `material_assets.py`, and `material_store.py`;
 The former mixed utility routes are separated: `media_routes.py` owns card
 thumbnails and model/output media lookups, `gallery_routes.py` owns the bounded
 output snapshot and deletion, `translation_routes.py` owns provider fallback,
-and `folder_types.py` owns configured visibility and scan scope.
+`folder_types.py` owns configured visibility and scan scope, and `audio_catalog.py`
+with `romanizer.py` owns Audio & Voice Studio scanning, WAV normalization, streaming, and multilingual romanization.
 
 Offline inference sidecars use non-positive Civitai IDs as sentinels. Metadata
 normalization must not expose those values as release-page URLs or resolved
