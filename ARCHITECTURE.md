@@ -83,8 +83,7 @@ DOM or live LiteGraph state.
 - `api/media_routes.py`, `api/gallery_routes.py`, `api/translation_routes.py`, and
   `api/folder_types.py` own the formerly mixed utility route families.
 - `model_policies.py` owns shared backend rename and protected-category policy.
-- `model_identity.py` owns file SHA-256 evidence shared with the standalone scanner.
-- `api/audio_catalog.py` owns audio preset scanning, voice character grouping, emotion slice indexing, audio streaming, and audio gallery output history listing and deletion.
+- `api/audio_catalog.py` owns audio preset scanning, voice character grouping, emotion slice indexing, audio streaming, audio gallery output history listing/deletion, and multipart voice asset uploading (`api_upload_audio_voice`) with companion transcript `.txt` pairing into F5-TTS directories.
 
 ### Frontend
 
@@ -95,7 +94,8 @@ DOM or live LiteGraph state.
   clamping (`clampFloatingTriggerPosition` with minimum safe boundary `minX=70` preventing left sidebar dock entrapment), clean `loadSavedTriggerPosition`/`saveTriggerPosition` storage drivers, and non-distorting coordinate validation
   (`isValidSavedTriggerPosition`); `api/__init__.py` injects an aiohttp no-cache middleware (`Cache-Control: no-cache, no-store, must-revalidate`) for extension static files to eliminate browser memory/disk cache desynchronization across regular page refreshes; and `interface_settings.js` owns language and theme preferences.
 - `ui_domain_switcher.js` owns the dual-domain mode toggle (Visual Studio 🎨 vs Audio & Voice Studio 🎙️) embedded in the brand header.
-- `ui_audio_studio.js` owns the Audio & Voice Studio workspace, presenting character voice cards, emotion slice playback, prompt syntax copying, real-time search, animated equalizers, 1-click Arona workflow loading (`app.loadGraphData`), and direct canvas node drop injection.
+- `ui_audio_studio.js` owns the Audio & Voice Studio workspace, presenting character voice cards, emotion slice playback, prompt syntax copying, real-time search, animated equalizers, 1-click Arona workflow loading (`app.loadGraphData`), direct canvas node drop injection, and voice asset creation button triggers.
+- `ui_audio_uploader.js` owns the Voice Asset Ingestion modal dialog, featuring audio file drag-and-drop, instant HTML5 preview playback, character/emotion tag selection with quick chips, companion reference transcript typing, and seamless hot reload into the studio view.
 - `ui_audio_sidebar.js` owns the Audio Sidebar navigation, rendering trees for All Voices, Character Presets (e.g. Arona) with count badges, and Output History Vault.
 - `ui_audio_gallery.js` owns the Generated Audio Vault, supporting track playback, scrubber progress, duration timecodes, audio download, deletion, and canvas drag-and-drop.
 - `ui_sidebar.js` creates the browser shell, domain-aware header tabs (`[音色预设]`, `[音频库]`, `[工作流]`), domain-aware bottom-left tool suppression, and folder navigation.

@@ -1,6 +1,7 @@
 import { app } from '../../../scripts/app.js';
 import { t } from './interface_settings.js';
 import { stopGalleryAudio } from './ui_audio_gallery.js';
+import { openAudioUploaderModal } from './ui_audio_uploader.js';
 
 /**
  * Audio & Voice Studio Workspace
@@ -361,7 +362,49 @@ function createLoadWorkflowButton() {
     return btn;
 }
 
-function renderStudioToolbar(onSearch) {
+function createAddVoiceButton(onVoiceAdded) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'anomalous-audio-add-voice-btn';
+    btn.innerHTML = `<span>➕</span> <span>${t('audioAddVoice')}</span>`;
+    btn.style.display = 'inline-flex';
+    btn.style.alignItems = 'center';
+    btn.style.gap = '6px';
+    btn.style.padding = '5px 12px';
+    btn.style.borderRadius = '8px';
+    btn.style.border = '1px solid rgba(52, 211, 153, 0.4)';
+    btn.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(52, 211, 153, 0.15))';
+    btn.style.color = '#a7f3d0';
+    btn.style.fontSize = '12px';
+    btn.style.fontWeight = '500';
+    btn.style.cursor = 'pointer';
+    btn.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+    btn.style.boxShadow = '0 2px 10px rgba(16, 185, 129, 0.15)';
+
+    btn.onmouseenter = () => {
+        btn.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(52, 211, 153, 0.3))';
+        btn.style.borderColor = 'rgba(52, 211, 153, 0.7)';
+        btn.style.transform = 'translateY(-1px)';
+    };
+    btn.onmouseleave = () => {
+        btn.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(52, 211, 153, 0.15))';
+        btn.style.borderColor = 'rgba(52, 211, 153, 0.4)';
+        btn.style.transform = 'translateY(0)';
+    };
+
+    btn.onclick = () => {
+        openAudioUploaderModal({
+            onSaved: (slice) => {
+                if (typeof onVoiceAdded === 'function') {
+                    onVoiceAdded(slice);
+                }
+            }
+        });
+    };
+    return btn;
+}
+
+function renderStudioToolbar(onSearch, onVoiceAdded) {
     const toolbar = document.createElement('div');
     toolbar.className = 'anomalous-audio-toolbar';
 
@@ -423,7 +466,9 @@ function renderStudioToolbar(onSearch) {
     searchWrap.appendChild(searchIcon);
     searchWrap.appendChild(searchInput);
 
+    const addVoiceBtn = createAddVoiceButton(onVoiceAdded);
     const loadWfBtn = createLoadWorkflowButton();
+    rightActions.appendChild(addVoiceBtn);
     rightActions.appendChild(loadWfBtn);
     rightActions.appendChild(searchWrap);
 
@@ -460,6 +505,8 @@ export async function renderAudioStudio(container, filter = null) {
                 const text = card.textContent.toLowerCase();
                 card.style.display = text.includes(searchTerm) ? 'flex' : 'none';
             });
+        }, () => {
+            renderAudioStudio(container, filter);
         });
         studioWrapper.appendChild(toolbar);
 

@@ -215,3 +215,119 @@
     border-left-color: #818cf8;
     font-weight: 600;
 }
+
+/* Audio Voice Ingestion Modal */
+.anomalous-voice-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    animation: ambModalFadeIn 0.2s ease-out;
+}
+
+@keyframes ambModalFadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.anomalous-voice-modal {
+    background: #141722;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 24px;
+    width: 520px;
+    max-width: 92vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(129, 140, 248, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    color: #f1f5f9;
+}
+
+.anomalous-voice-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 14px;
+}
+
+.anomalous-audio-dropzone {
+    border: 1.5px dashed rgba(129, 140, 248, 0.35);
+    background: rgba(99, 102, 241, 0.04);
+    border-radius: 12px;
+    padding: 20px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.anomalous-audio-dropzone:hover,
+.anomalous-audio-dropzone.dragover {
+    border-color: #818cf8;
+    background: rgba(99, 102, 241, 0.1);
+    transform: translateY(-1px);
+}
+
+.anomalous-uploader-input,
+.anomalous-uploader-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #f1f5f9;
+    font-size: 13px;
+    transition: border-color 0.2s;
+    outline: none;
+}
+
+.anomalous-uploader-input:focus,
+.anomalous-uploader-textarea:focus {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2);
+}
+
+.anomalous-tag-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    font-size: 11px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+}
+
+.anomalous-tag-chip:hover {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(129, 140, 248, 0.4);
+    color: #e0e7ff;
+}
+
+.anomalous-tag-chip.active {
+    background: rgba(99, 102, 241, 0.35);
+    border-color: #818cf8;
+    color: #ffffff;
+    font-weight: 600;
+}

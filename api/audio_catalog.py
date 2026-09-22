@@ -253,3 +253,73 @@ async def api_get_audio_template_workflow(request):
     return web.Response(status=404, text="Workflow template not found")
 
 
+def _sanitize_name_part(part: str) -> str:
+    """Sanitize character or emotion string for safe filesystem usage."""
+    cleaned = re.sub(r'[^\w\u4e00-\u9fff\u3040-\u30ff\-]', '_', str(part or '').strip())
+    return cleaned.strip('_') or "Voice"
+
+
+async def api_upload_audio_voice(request):
+    """POST /anomalous/upload_audio_voice - Ingest voice audio with companion transcription text."""
+    try:
+        data = await request.post()
+    except Exception as e:
+        return web.json_response({"success": False, "error": f"Invalid multipart payload: {e}"}, status=400)
+
+    audio_field = data.get("audio")
+    if audio_field is None or not hasattr(audio_field, "file"):
+        return web.json_response({"success": False, "error": "Audio file is required"}, status=400)
+
+    character = _sanitize_name_part(data.get("character", "General"))
+    emotion = _sanitize_name_part(data.get("emotion", "normal")).lower()
+    text = str(data.get("text", "")).strip()
+    target_sub = str(data.get("target_subfolder", "F5-TTS")).strip("/\\")
+
+    filename = getattr(audio_field, "filename", "") or "audio.wav"
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in AUDIO_EXTENSIONS:
+        return web.json_response({
+            "success": False,
+            "error": f"Unsupported audio format '{ext}'. Supported: {', '.join(sorted(AUDIO_EXTENSIONS))}"
+        }, status=415)
+
+    audio_bytes = audio_field.file.read()
+    if len(audio_bytes) > 100 * 1024 * 1024:
+        return web.json_response({"success": False, "error": "Audio file exceeds 100MB limit"}, status=413)
+
+    input_dir = folder_paths.get_input_directory()
+    dest_dir = os.path.join(input_dir, target_sub)
+    os.makedirs(dest_dir, exist_ok=True)
+
+    base_name = f"{character}_{emotion}"
+    target_audio_name = f"{base_name}{ext}"
+    target_audio_path = os.path.join(dest_dir, target_audio_name)
+    target_txt_path = os.path.join(dest_dir, f"{base_name}.txt")
+
+    def _write_files():
+        with open(target_audio_path, 'wb') as f:
+            f.write(audio_bytes)
+        if text:
+            with open(target_txt_path, 'w', encoding='utf-8') as f:
+                f.write(text)
+
+    import asyncio
+    await asyncio.to_thread(_write_files)
+
+    rel_path = os.path.join(target_sub, target_audio_name).replace("\\", "/")
+    return web.json_response({
+        "success": True,
+        "slice": {
+            "id": base_name,
+            "filename": target_audio_name,
+            "relative_path": rel_path,
+            "character": character,
+            "emotion": emotion,
+            "text": text,
+            "size_bytes": len(audio_bytes),
+            "syntax_tag": f"{{{base_name}}}",
+            "audio_url": f"/anomalous/audio_stream?path={rel_path}"
+        }
+    })
+
+

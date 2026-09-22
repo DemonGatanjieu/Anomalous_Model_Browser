@@ -1276,7 +1276,22 @@ export const i18n = {
         audioTabGallery: "音频库",
         audioTabWorkflow: "音频工作流",
         audioLoadAronaWorkflow: "载入阿罗娜工作流到画布",
-        audioWorkflowLoaded: "工作流已载入！"
+        audioWorkflowLoaded: "工作流已载入！",
+        audioAddVoice: "新增音色",
+        audioUploadModalTitle: "录入音色资产",
+        audioUploadModalSubtitle: "拖入音频并输入参考台词，系统将自动标准命名并落盘至 F5-TTS",
+        audioDropzoneHint: "点击或拖拽音频文件到此处 (.wav / .mp3 / .flac / .ogg)",
+        audioDropzoneSelected: "已就绪音频",
+        audioCharLabel: "角色名称",
+        audioCharPlaceholder: "例如：Arona 或 阿罗娜",
+        audioEmotionLabel: "情绪 / 标签",
+        audioEmotionPlaceholder: "例如：happy, angry, normal...",
+        audioRefTextLabel: "参考文本 (原话台词)",
+        audioRefTextPlaceholder: "请输入该音频对应的台词，F5-TTS 将根据文本与音频精准匹配发音...",
+        audioSaveAndIngest: "保存并入库",
+        audioSaving: "正在入库...",
+        audioSaveSuccess: "音色资产已成功入库！",
+        audioUploadRequiredError: "请上传音频文件并填写角色名称与情绪标签"
     },
     en: {
         actionTools: "Tools",
@@ -2555,7 +2570,22 @@ export const i18n = {
         audioTabGallery: "Audio Gallery",
         audioTabWorkflow: "Audio Workflows",
         audioLoadAronaWorkflow: "Load Arona Workflow to Canvas",
-        audioWorkflowLoaded: "Workflow Loaded!"
+        audioWorkflowLoaded: "Workflow Loaded!",
+        audioAddVoice: "Add Voice",
+        audioUploadModalTitle: "Ingest Voice Asset",
+        audioUploadModalSubtitle: "Drop audio and enter reference transcript; files are auto-named and saved to F5-TTS",
+        audioDropzoneHint: "Click or drop audio file here (.wav / .mp3 / .flac / .ogg)",
+        audioDropzoneSelected: "Audio Ready",
+        audioCharLabel: "Character Name",
+        audioCharPlaceholder: "e.g. Arona",
+        audioEmotionLabel: "Emotion / Tag",
+        audioEmotionPlaceholder: "e.g. happy, angry, normal...",
+        audioRefTextLabel: "Reference Text (Transcript)",
+        audioRefTextPlaceholder: "Enter spoken transcript so F5-TTS can accurately match voice characteristics...",
+        audioSaveAndIngest: "Save & Ingest",
+        audioSaving: "Saving...",
+        audioSaveSuccess: "Voice asset saved successfully!",
+        audioUploadRequiredError: "Please provide an audio file, character name, and emotion tag"
     }
 };
 
