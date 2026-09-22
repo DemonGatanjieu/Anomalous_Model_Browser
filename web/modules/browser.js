@@ -21,8 +21,8 @@ import { showImageWorkbench } from './ui_gallery_detail.js';
 import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, openLoraInsertionPicker, runGlobalDoctorScan } from './ui_doctor.js';
 import { initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory } from './ui_node_assistant.js';
 import { _openGalleryReplacer } from './ui_node_model_picker.js';
-import { renderAudioStudio, stopAudioStudioPlayback } from './ui_audio_studio.js';
-import { renderAudioGallery, stopGalleryAudio } from './ui_audio_gallery.js';
+import { renderAudioStudio, stopAudioStudioPlayback } from './ui_audio_studio.js?v=20260923-cache-kill';
+import { renderAudioGallery, stopGalleryAudio } from './ui_audio_gallery.js?v=20260923-cache-kill';
 import { getActiveDomain } from './ui_domain_switcher.js';
 
 export class AnomalousBrowser {

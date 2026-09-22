@@ -76,6 +76,7 @@ def _scan_single_audio_dir(directory, relative_prefix=""):
         file_size = os.path.getsize(full_path)
         rel_path = os.path.join(relative_prefix, name).replace("\\", "/")
 
+        mtime = int(os.path.getmtime(full_path))
         stem_map[stem] = {
             "ext": ext,
             "slice": {
@@ -87,7 +88,7 @@ def _scan_single_audio_dir(directory, relative_prefix=""):
                 "text": ref_text,
                 "size_bytes": file_size,
                 "syntax_tag": f"{{{stem}}}",
-                "audio_url": f"/anomalous/audio_stream?path={rel_path}"
+                "audio_url": f"/anomalous/audio_stream?path={rel_path}&v={mtime}"
             }
         }
     return [item["slice"] for item in stem_map.values()]
@@ -163,7 +164,13 @@ async def api_serve_audio(request):
     content_type = content_types.get(ext, 'application/octet-stream')
     return web.FileResponse(
         resolved_path,
-        headers={"Content-Type": content_type, "Accept-Ranges": "bytes"}
+        headers={
+            "Content-Type": content_type,
+            "Accept-Ranges": "bytes",
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
     )
 
 

@@ -73,7 +73,8 @@ function startPlayback(url, playBtn, fillEl, timeEl) {
     }
     stopGalleryAudio();
 
-    const audio = new Audio(url);
+    const freshUrl = url.includes('?') ? `${url}&_t=${Date.now()}` : `${url}?_t=${Date.now()}`;
+    const audio = new Audio(freshUrl);
     activeAudio = audio;
     activePlayBtn = playBtn;
     activeProgressFill = fillEl;

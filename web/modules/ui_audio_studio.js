@@ -46,7 +46,8 @@ function playAudio(url, playBtn, eqBars) {
     stopAudioStudioPlayback();
     if (typeof stopGalleryAudio === 'function') stopGalleryAudio();
 
-    const audio = new Audio(url);
+    const freshUrl = url.includes('?') ? `${url}&_t=${Date.now()}` : `${url}?_t=${Date.now()}`;
+    const audio = new Audio(freshUrl);
     globalAudioPlayer = audio;
     currentPlayingBtn = playBtn;
     currentPlayingBar = eqBars;

@@ -12,8 +12,8 @@ import { createSettingsHub } from './ui_settings_hub.js';
 import { createToolbox } from './ui_toolbox.js';
 import { createDomainSwitcher, getActiveDomain } from './ui_domain_switcher.js';
 import { renderAudioSidebar } from './ui_audio_sidebar.js';
-import { renderAudioStudio } from './ui_audio_studio.js';
-import { renderAudioGallery } from './ui_audio_gallery.js';
+import { renderAudioStudio } from './ui_audio_studio.js?v=20260923-cache-kill';
+import { renderAudioGallery } from './ui_audio_gallery.js?v=20260923-cache-kill';
 
 const t = (key, params) => translate(key, params);
 

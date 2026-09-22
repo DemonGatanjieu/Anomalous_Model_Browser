@@ -6,7 +6,7 @@ try {
 } catch (_) {}
 
 import { app } from "../../scripts/app.js";
-import { createBrowserEntry } from "./modules/browser_entry.js?v=20260921-flicker-free-1";
+import { createBrowserEntry } from "./modules/browser_entry.js?v=20260923-nocache-1";
 import { createInterfaceSettings, getCurrentLanguage, setAbyssalScarletTheme, t } from "./modules/interface_settings.js";
 
 export { setAbyssalScarletTheme };
