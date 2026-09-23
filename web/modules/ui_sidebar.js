@@ -170,6 +170,8 @@ export function createDOM() {
         this.sidebarWrapper.appendChild(brandBar);
         this.sidebarWrapper.appendChild(this.sidebar);
         this.sidebarWrapper.appendChild(this.sidebarActions);
+        // Version sits in the sidebar footer: the header has no spare width when docked or scaled.
+        this.sidebarWrapper.appendChild(createVersionChip(this));
 
         // Content Area
         const content = document.createElement('div');
@@ -487,7 +489,6 @@ export function createDOM() {
         updateNoticeBtn.appendChild(updateNoticeIcon);
         updateNoticeBtn.onclick = () => showUpdateGuide(this, { force: true });
 
-        rightGroup.appendChild(createVersionChip(this));
         rightGroup.appendChild(updateNoticeBtn);
         rightGroup.appendChild(dockBtn);
         rightGroup.appendChild(closeBtn);
