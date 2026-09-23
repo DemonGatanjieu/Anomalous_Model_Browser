@@ -2,6 +2,12 @@ import { app } from '../../../scripts/app.js';
 import { t } from './interface_settings.js';
 import { stopGalleryAudio } from './ui_audio_gallery.js';
 import { openAudioUploaderModal } from './ui_audio_uploader.js';
+import { 
+    openScriptDirector, 
+    closeScriptDirector, 
+    handleVoiceSelectionForScript, 
+    isScriptDirectorActive 
+} from './ui_script_director.js';
 
 /**
  * Audio & Voice Studio Workspace
@@ -125,7 +131,7 @@ function renderEqIndicator() {
     return barWrap;
 }
 
-function renderSliceRow(slice) {
+function renderSliceRow(slice, characterName) {
     const row = document.createElement('div');
     row.className = 'anomalous-voice-slice-row';
     row.draggable = true;
@@ -197,6 +203,15 @@ function renderSliceRow(slice) {
     playBtn.onclick = (e) => {
         e.stopPropagation();
         playAudio(slice.audio_url, playBtn, eqBars);
+    };
+
+    row.onclick = () => {
+        if (isScriptDirectorActive()) {
+            handleVoiceSelectionForScript({
+                character: characterName, 
+                audio_path: slice.syntax_tag 
+            });
+        }
     };
 
     row.appendChild(playBtn);
@@ -276,7 +291,7 @@ function renderCharacterCard(charData) {
     sliceList.style.gap = '6px';
 
     charData.slices.forEach(slice => {
-        sliceList.appendChild(renderSliceRow(slice));
+        sliceList.appendChild(renderSliceRow(slice, charData.character));
     });
 
     card.appendChild(sliceList);
@@ -321,25 +336,24 @@ function createLoadWorkflowButton() {
     btn.style.alignItems = 'center';
     btn.style.gap = '6px';
     btn.style.padding = '5px 12px';
-    btn.style.borderRadius = '8px';
-    btn.style.border = '1px solid rgba(129, 140, 248, 0.4)';
-    btn.style.background = 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(56, 189, 248, 0.2))';
-    btn.style.color = '#e0e7ff';
+    btn.style.borderRadius = '6px';
+    btn.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+    btn.style.background = 'rgba(255, 255, 255, 0.05)';
+    btn.style.color = '#d1d5db';
     btn.style.fontSize = '12px';
     btn.style.fontWeight = '500';
     btn.style.cursor = 'pointer';
-    btn.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
-    btn.style.boxShadow = '0 2px 10px rgba(99, 102, 241, 0.2)';
+    btn.style.transition = 'all 0.2s ease';
+    btn.style.boxShadow = 'none';
+    btn.style.whiteSpace = 'nowrap';
 
     btn.onmouseenter = () => {
-        btn.style.background = 'linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(56, 189, 248, 0.35))';
-        btn.style.borderColor = 'rgba(129, 140, 248, 0.7)';
-        btn.style.transform = 'translateY(-1px)';
+        btn.style.background = 'rgba(255, 255, 255, 0.1)';
+        btn.style.borderColor = 'rgba(255, 255, 255, 0.2)';
     };
     btn.onmouseleave = () => {
-        btn.style.background = 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(56, 189, 248, 0.2))';
-        btn.style.borderColor = 'rgba(129, 140, 248, 0.4)';
-        btn.style.transform = 'translateY(0)';
+        btn.style.background = 'rgba(255, 255, 255, 0.05)';
+        btn.style.borderColor = 'rgba(255, 255, 255, 0.1)';
     };
 
     btn.onclick = async () => {
@@ -372,25 +386,24 @@ function createAddVoiceButton(onVoiceAdded) {
     btn.style.alignItems = 'center';
     btn.style.gap = '6px';
     btn.style.padding = '5px 12px';
-    btn.style.borderRadius = '8px';
-    btn.style.border = '1px solid rgba(52, 211, 153, 0.4)';
-    btn.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(52, 211, 153, 0.15))';
-    btn.style.color = '#a7f3d0';
+    btn.style.borderRadius = '6px';
+    btn.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+    btn.style.background = 'rgba(255, 255, 255, 0.05)';
+    btn.style.color = '#d1d5db';
     btn.style.fontSize = '12px';
     btn.style.fontWeight = '500';
     btn.style.cursor = 'pointer';
-    btn.style.transition = 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
-    btn.style.boxShadow = '0 2px 10px rgba(16, 185, 129, 0.15)';
+    btn.style.transition = 'all 0.2s ease';
+    btn.style.boxShadow = 'none';
+    btn.style.whiteSpace = 'nowrap';
 
     btn.onmouseenter = () => {
-        btn.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(52, 211, 153, 0.3))';
-        btn.style.borderColor = 'rgba(52, 211, 153, 0.7)';
-        btn.style.transform = 'translateY(-1px)';
+        btn.style.background = 'rgba(255, 255, 255, 0.1)';
+        btn.style.borderColor = 'rgba(255, 255, 255, 0.2)';
     };
     btn.onmouseleave = () => {
-        btn.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(52, 211, 153, 0.15))';
-        btn.style.borderColor = 'rgba(52, 211, 153, 0.4)';
-        btn.style.transform = 'translateY(0)';
+        btn.style.background = 'rgba(255, 255, 255, 0.05)';
+        btn.style.borderColor = 'rgba(255, 255, 255, 0.1)';
     };
 
     btn.onclick = () => {
@@ -405,7 +418,31 @@ function createAddVoiceButton(onVoiceAdded) {
     return btn;
 }
 
-function renderStudioToolbar(onSearch, onVoiceAdded) {
+function createScriptDirectorButton(container) {
+    const btn = document.createElement('button');
+    btn.className = 'anomalous-audio-action-btn';
+    
+    // An icon representing a script or director's clapperboard
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>`;
+    
+    const textSpan = document.createElement('span');
+    textSpan.style.whiteSpace = 'nowrap';
+    textSpan.textContent = t('scriptDirectorOpen') || 'Script Director';
+    btn.appendChild(textSpan);
+    
+    btn.onclick = () => {
+        if (isScriptDirectorActive()) {
+            closeScriptDirector();
+            btn.classList.remove('active');
+        } else {
+            openScriptDirector(container);
+            btn.classList.add('active');
+        }
+    };
+    return btn;
+}
+
+function renderStudioToolbar(onSearch, onVoiceAdded, container) {
     const toolbar = document.createElement('div');
     toolbar.className = 'anomalous-audio-toolbar';
 
@@ -436,7 +473,8 @@ function renderStudioToolbar(onSearch, onVoiceAdded) {
     titleGroup.appendChild(textGroup);
 
     const rightActions = document.createElement('div');
-    rightActions.style.display = 'flex';
+    rightActions.className = 'anomalous-audio-right-actions';
+    rightActions.style.flexWrap = 'wrap';
     rightActions.style.alignItems = 'center';
     rightActions.style.gap = '10px';
 
@@ -469,6 +507,8 @@ function renderStudioToolbar(onSearch, onVoiceAdded) {
 
     const addVoiceBtn = createAddVoiceButton(onVoiceAdded);
     const loadWfBtn = createLoadWorkflowButton();
+    const scriptDirBtn = createScriptDirectorButton(container);
+    rightActions.appendChild(scriptDirBtn);
     rightActions.appendChild(addVoiceBtn);
     rightActions.appendChild(loadWfBtn);
     rightActions.appendChild(searchWrap);
@@ -508,7 +548,7 @@ export async function renderAudioStudio(container, filter = null) {
             });
         }, () => {
             renderAudioStudio(container, filter);
-        });
+        }, container);
         studioWrapper.appendChild(toolbar);
 
         if (characters.length === 0) {

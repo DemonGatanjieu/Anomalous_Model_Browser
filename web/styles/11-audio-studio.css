@@ -33,15 +33,16 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
-    background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.05), transparent 40%),
-                radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.04), transparent 40%);
+    background: transparent;
 }
 
 /* Header & Toolbars */
 .anomalous-audio-toolbar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     padding-bottom: 14px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     flex-shrink: 0;
@@ -60,10 +61,10 @@
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(56, 189, 248, 0.15));
-    border: 1px solid rgba(129, 140, 248, 0.3);
-    color: #818cf8;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+    box-shadow: none;
 }
 
 .anomalous-audio-title-text {

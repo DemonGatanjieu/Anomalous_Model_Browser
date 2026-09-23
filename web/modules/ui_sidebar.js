@@ -398,6 +398,11 @@ export function createDOM() {
 
         nbBtn.onclick = () => {
             setActiveHeaderTab(nbBtn);
+            if (getActiveDomain() === 'audio') {
+                this.recipeSelectedTags = new Set(['audio']);
+            } else {
+                this.recipeSelectedTags = new Set();
+            }
             if (typeof this.recipeModelReturn !== 'function') {
                 this.workspaceReturnState = {
                     grid: this.grid?.style.display || 'none',
@@ -405,6 +410,8 @@ export function createDOM() {
                     gallery: this.galleryPanel?.style.display || 'none',
                     doctor: this.doctorPanel?.style.display || 'none',
                     assistant: this.assistantPanel?.style.display || 'none',
+                    audioStudio: this.audioStudioPanel?.style.display || 'none',
+                    audioGallery: this.audioGalleryPanel?.style.display || 'none',
                 };
             } else if (!this.workspaceReturnState) {
                 this.workspaceReturnState = {
@@ -413,8 +420,11 @@ export function createDOM() {
                     gallery: 'none',
                     doctor: 'none',
                     assistant: 'none',
+                    audioStudio: 'none',
+                    audioGallery: 'none',
                 };
             }
+            this.hideAllPanels();
             this.nbPanel.style.display = 'flex';
             this.showRecipes();
         };
@@ -551,6 +561,7 @@ export function createDOM() {
         this.audioStudioPanel.style.flex = '1';
         this.audioStudioPanel.style.height = '100%';
         this.audioStudioPanel.style.overflow = 'hidden';
+        this.audioStudioPanel.style.position = 'relative';
 
         this.audioGalleryPanel = document.createElement('div');
         this.audioGalleryPanel.id = 'anomalous-audio-gallery-panel';

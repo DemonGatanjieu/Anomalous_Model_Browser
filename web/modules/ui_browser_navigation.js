@@ -9,6 +9,8 @@ function restoreWorkspaceReturnPanel(owner) {
         ['gallery', owner.galleryPanel],
         ['doctor', owner.doctorPanel],
         ['assistant', owner.assistantPanel],
+        ['audioStudio', owner.audioStudioPanel],
+        ['audioGallery', owner.audioGalleryPanel],
     ];
     if (state) {
         for (const [key, panel] of panels) {
