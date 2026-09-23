@@ -6,7 +6,7 @@ import { translate } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { text, jsonResponse } from './ui_dom.js';
 import { materialNodeHeading } from './material_inspector.js';
-import { promptWidgetTargets, inspectNodePromptSlots } from './node_material_actions.js';
+import { inspectNodePromptSlots, isPromptNodeType } from './node_material_actions.js';
 import { applyLibraryMaterial } from './ui_material_application.js';
 import {
     deleteMaterial,
@@ -119,13 +119,10 @@ function bindPolymorphicMaterialCardDrag(card, owner, material) {
         accepts: (node, source) => {
             if (!node) return false;
             if ((source.node_types || []).includes(node.type)) return true;
-            const slots = inspectNodePromptSlots(node);
-            if (!slots.hasSlots) return false;
-            if (isPromptMaterial(source) || source.kind === 'prompt_plan') return true;
-            if (Array.isArray(source.node_types) && source.node_types.some(t => /cliptextencode|prompt|easy positive|easy negative/i.test(t))) return true;
-            if (source.has_prompts || source.prompt_roles || source.prompt_groups) return true;
-            if (source.capabilities?.includes('open_workflow') || source.capabilities?.includes('apply_node_parameters') || source.capabilities?.includes('copy_prompt')) return true;
-            return false;
+            if (!inspectNodePromptSlots(node).hasSlots) return false;
+            // Cross-node drops only carry prompt text; parameter blocks stay same-type.
+            if (isPromptMaterial(source) || source.kind === 'prompt_plan' || source.capabilities?.includes('copy_prompt')) return true;
+            return (source.node_types || []).some(type => isPromptNodeType(type));
         },
         drop: (node, source, graph) => applyLibraryMaterial(owner, source, node, graph),
         dropOnCanvas: async (event, source, graph, position) => {

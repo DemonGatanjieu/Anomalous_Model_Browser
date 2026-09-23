@@ -17,13 +17,28 @@ from .workflow_schema import (
     _widget_values, _workflow_fingerprint,
 )
 
+# All-in-one loaders with a verified serialized widget layout. Must stay in sync
+# with ALL_IN_ONE_LOADER_SPECS in web/modules/recipe_identity.js.
+ALL_IN_ONE_LOADER_SPECS = {
+    # ComfyUI-Easy-Use: ckpt_name, vae_name, clip_skip, lora_name, ...
+    "easy a1111loader": ((0, "checkpoint", "ckpt_name"), (1, "vae", "vae_name"), (3, "lora", "lora_name")),
+    # ComfyUI-Easy-Use: ckpt_name, config_name, vae_name, clip_skip, lora_name, ...
+    "easy fullloader": ((0, "checkpoint", "ckpt_name"), (2, "vae", "vae_name"), (4, "lora", "lora_name")),
+    # efficiency-nodes-comfyui: ckpt_name, vae_name, clip_skip, lora_name, ...
+    "efficient loader": ((0, "checkpoint", "ckpt_name"), (1, "vae", "vae_name"), (3, "lora", "lora_name")),
+}
+PLACEHOLDER_MODEL_VALUES = {"none", "baked vae"}
+
+
 def _model_reference_specs(node):
     """Known loader adapters only; arbitrary third-party widgets stay parameters."""
     node_type = _node_type(node)
-    lowered = node_type.lower()
+    lowered = node_type.lower().strip()
     specs = []
 
-    if re.search(r"checkpointloader(simple)?$", lowered):
+    if lowered in ALL_IN_ONE_LOADER_SPECS:
+        specs.extend(ALL_IN_ONE_LOADER_SPECS[lowered])
+    elif re.search(r"checkpointloader(simple)?$", lowered):
         specs.append((0, "checkpoint", "checkpoint"))
     elif lowered.endswith("unetloader"):
         specs.append((0, "unet", "unet"))
@@ -174,6 +189,8 @@ def _build_model_references(recipe, verify_identities=False):
         for widget_index, category, widget_name in _model_reference_specs(node):
             saved_value = values[widget_index] if widget_index < len(values) else None
             if not isinstance(saved_value, str) or not saved_value.strip():
+                continue
+            if saved_value.strip().lower() in PLACEHOLDER_MODEL_VALUES:
                 continue
             identity_result = _identity_for_reference(saved_value)
             if isinstance(identity_result, tuple):

@@ -7,7 +7,6 @@ import { applyPromptRolesToBlocks, materialNodeHeading } from './material_inspec
 import {
     applyMaterialBlock,
     applyNodeMaterialValues,
-    promptWidgetTargets,
     selectedMaterialNode,
     inspectNodePromptSlots,
     extractMaterialPromptEnvelope,
@@ -15,7 +14,6 @@ import {
     isModelFilePath,
     isPromptNodeType,
 } from './node_material_actions.js';
-import { getMaterialPromptInfo } from './ui_material_detail.js';
 
 export function showMaterialApplication(parent, result, node) {
     parent.querySelector('.anomalous-material-application-result')?.remove();
@@ -189,14 +187,12 @@ function openMaterialChoiceDialog(owner, node, blocks, payload, droppedNode, gra
             }
         }
         if (!textVal) throw new Error('materialNoCompatibleValues');
+        // Never write a block into the opposite role's slot.
+        const general = slots.generalSlots[0] || null;
         let targetWidget = null;
-        if (targetBlock.promptRole === 'negative' && slots.negativeSlot) {
-            targetWidget = slots.negativeSlot;
-        } else if (targetBlock.promptRole === 'positive' && slots.positiveSlot) {
-            targetWidget = slots.positiveSlot;
-        } else {
-            targetWidget = slots.generalSlots[0] || slots.positiveSlot || slots.negativeSlot || slots.targets[0];
-        }
+        if (targetBlock.promptRole === 'negative') targetWidget = slots.negativeSlot || general;
+        else if (targetBlock.promptRole === 'positive') targetWidget = slots.positiveSlot || general;
+        else targetWidget = general || slots.positiveSlot || slots.negativeSlot;
         if (!targetWidget) throw new Error('materialNoCompatibleValues');
         const result = applyNodeMaterialValues(app, node, [{ index: targetWidget.index, value: textVal }], {
             sourceNodeId: targetBlock.node_id,

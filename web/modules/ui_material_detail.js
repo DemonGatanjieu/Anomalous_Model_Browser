@@ -12,7 +12,7 @@ import {
     renderMaterialPromptGroups,
     materialNodeHeading,
 } from './material_inspector.js';
-import { selectedMaterialNode, extractMaterialPromptEnvelope, getMaterialPromptInfo } from './node_material_actions.js';
+import { selectedMaterialNode, getMaterialPromptInfo } from './node_material_actions.js';
 import { fetchMaterial, applyLibraryMaterial } from './ui_material_application.js';
 
 const t = (key, params) => translate(key, params);

@@ -1,5 +1,3 @@
-import { inferModelFolderTypes } from './model_policies.js';
-
 /** Pure helpers for recipe model references and provenance labels. */
 
 const MODEL_FILE_PATTERN = /\.(?:safetensors|ckpt|pt|bin|sft)$/i;
@@ -21,115 +19,50 @@ function nodeTitle(node) {
     return String(node?._meta?.title || node?.title || nodeType(node) || 'Unknown node').trim();
 }
 
-export function deriveNodeModelSpecs(nodeOrType) {
-    const node = typeof nodeOrType === 'string' ? { type: nodeOrType } : (nodeOrType || {});
-    const type = nodeType(node);
-    const lowered = type.toLowerCase();
+/**
+ * All-in-one loaders with a verified serialized widget layout. Must stay in sync
+ * with ALL_IN_ONE_LOADER_SPECS in api/recipe_schema.py. Arbitrary third-party
+ * widgets stay parameters: guessing categories from file names mislabels models.
+ */
+export const ALL_IN_ONE_LOADER_SPECS = Object.freeze({
+    // ComfyUI-Easy-Use: ckpt_name, vae_name, clip_skip, lora_name, ...
+    'easy a1111loader': [[0, 'checkpoint', 'ckpt_name'], [1, 'vae', 'vae_name'], [3, 'lora', 'lora_name']],
+    // ComfyUI-Easy-Use: ckpt_name, config_name, vae_name, clip_skip, lora_name, ...
+    'easy fullloader': [[0, 'checkpoint', 'ckpt_name'], [2, 'vae', 'vae_name'], [4, 'lora', 'lora_name']],
+    // efficiency-nodes-comfyui: ckpt_name, vae_name, clip_skip, lora_name, ...
+    'efficient loader': [[0, 'checkpoint', 'ckpt_name'], [1, 'vae', 'vae_name'], [3, 'lora', 'lora_name']],
+});
 
-    // Tier 2: Static known mapping table for classic native nodes (100% backward compatible)
-    if (/checkpointloader(simple)?$/.test(lowered)) return [[0, 'checkpoint', 'ckpt_name']];
-    if (lowered.endsWith('unetloader')) return [[0, 'unet', 'unet_name']];
-    if (/loraloader/.test(lowered)) return [[0, 'lora', 'lora_name']];
-    if (lowered.endsWith('vaeloader')) return [[0, 'vae', 'vae_name']];
-    if (lowered.endsWith('clipvisionloader')) return [[0, 'clip_vision', 'clip_name']];
-    if (lowered.endsWith('controlnetloader')) return [[0, 'controlnet', 'control_net_name']];
-    if (/(^|[^a-z])(?:dual|triple)?cliploader$/.test(lowered)) {
-        const specs = [[0, 'text_encoder', 'clip_name1']];
-        if (lowered.includes('dualclip') || lowered.includes('tripleclip')) specs.push([1, 'text_encoder', 'clip_name2']);
-        if (lowered.includes('tripleclip')) specs.push([2, 'text_encoder', 'clip_name3']);
-        return specs;
-    }
+/** Loader values that mean "no file selected". */
+const PLACEHOLDER_MODEL_VALUES = new Set(['none', 'baked vae']);
 
-    // Tier 1: Live node with widgets array (inspect widget names and folder types dynamically)
-    if (Array.isArray(node.widgets) && node.widgets.length > 0) {
-        const specs = [];
-        for (const [index, widget] of node.widgets.entries()) {
-            if (!widget) continue;
-            const widgetName = String(widget.name || widget.label || '').trim();
-            const folderTypes = inferModelFolderTypes(node, widget);
-            let category = null;
-            if (folderTypes.includes('checkpoints')) category = 'checkpoint';
-            else if (folderTypes.includes('diffusion_models') || folderTypes.includes('unet')) category = 'unet';
-            else if (folderTypes.includes('loras')) category = 'lora';
-            else if (folderTypes.includes('vae')) category = 'vae';
-            else if (folderTypes.includes('controlnet')) category = 'controlnet';
-            else if (folderTypes.includes('clip_vision')) category = 'clip_vision';
-            else if (folderTypes.includes('text_encoders') || folderTypes.includes('clip')) category = 'text_encoder';
-
-            if (!category) {
-                const lowerName = widgetName.toLowerCase();
-                if (/^(ckpt_name|checkpoint|base_model)$/.test(lowerName)) category = 'checkpoint';
-                else if (/^(unet_name|unet)$/.test(lowerName)) category = 'unet';
-                else if (/^(vae_name|vae)$/.test(lowerName)) category = 'vae';
-                else if (/^(lora_name|lora|lora_\d+_name)$/.test(lowerName)) category = 'lora';
-                else if (/^(control_net_name|controlnet_name|controlnet)$/.test(lowerName)) category = 'controlnet';
-                else if (/^(clip_name|clip|text_encoder)$/.test(lowerName)) category = 'text_encoder';
-            }
-
-            if (category) {
-                specs.push([index, category, widgetName || category]);
-            }
-        }
-        if (specs.length > 0) return specs;
-    }
-
-    // Tier 3: Serialized JSON node without widgets array
-    // Known All-in-One loader layout patterns
-    if (/easy.*a1111loader/i.test(lowered)) {
-        return [[0, 'checkpoint', 'ckpt_name'], [1, 'vae', 'vae_name'], [3, 'lora', 'lora_name']];
-    }
-    if (/easy.*fullloader/i.test(lowered)) {
-        return [[0, 'checkpoint', 'ckpt_name'], [2, 'vae', 'vae_name'], [4, 'lora', 'lora_name']];
-    }
-    if (/efficient.*loader/i.test(lowered)) {
-        return [[0, 'checkpoint', 'ckpt_name'], [1, 'vae', 'vae_name'], [3, 'lora', 'lora_name']];
-    }
-
-    // General serialized JSON node inference via widgets_values scan
-    if (Array.isArray(node.widgets_values) && node.widgets_values.length > 0) {
-        const specs = [];
-        let hasCheckpoint = false;
-        for (const [index, val] of node.widgets_values.entries()) {
-            if (typeof val !== 'string' || !val.trim() || val.trim().toLowerCase() === 'none') continue;
-            if (!MODEL_FILE_PATTERN.test(val)) continue;
-
-            const lowerVal = val.toLowerCase();
-            let category = null;
-            let widgetName = `model_${index}`;
-
-            if (/(?:^|[\\/_-])vae(?:[\\/_-]|\.|$)/i.test(lowerVal) || lowerVal.includes('vae') || lowered.includes('vae')) {
-                category = 'vae';
-                widgetName = 'vae_name';
-            } else if (/(?:^|[\\/_-])lora(?:[\\/_-]|\.|$)/i.test(lowerVal) || lowerVal.includes('lora') || lowered.includes('lora')) {
-                category = 'lora';
-                widgetName = `lora_name_${index}`;
-            } else if (/(?:^|[\\/_-])controlnet(?:[\\/_-]|\.|$)/i.test(lowerVal) || lowerVal.includes('controlnet') || lowered.includes('controlnet')) {
-                category = 'controlnet';
-                widgetName = `controlnet_name_${index}`;
-            } else if (/(?:^|[\\/_-])clip(?:[\\/_-]|\.|$)/i.test(lowerVal) || lowerVal.includes('clip') || lowered.includes('clip')) {
-                category = 'text_encoder';
-                widgetName = `clip_name_${index}`;
-            } else if (lowered.includes('unet')) {
-                category = 'unet';
-                widgetName = 'unet_name';
-            } else if (!hasCheckpoint) {
-                category = 'checkpoint';
-                widgetName = 'ckpt_name';
-                hasCheckpoint = true;
-            } else {
-                category = 'checkpoint';
-                widgetName = `ckpt_name_${index}`;
-            }
-
-            specs.push([index, category, widgetName]);
-        }
-        if (specs.length > 0) return specs;
-    }
-
-    return [];
+export function isAllInOneLoaderType(type) {
+    return Object.prototype.hasOwnProperty.call(ALL_IN_ONE_LOADER_SPECS, String(type || '').trim().toLowerCase());
 }
 
-export const modelSpecs = deriveNodeModelSpecs;
+export function isPlaceholderModelValue(value) {
+    return PLACEHOLDER_MODEL_VALUES.has(String(value ?? '').trim().toLowerCase());
+}
+
+/** [widgetIndex, category, widgetName] triples for known loader nodes (by type). */
+export function deriveNodeModelSpecs(nodeOrType) {
+    const type = typeof nodeOrType === 'string' ? nodeOrType : nodeType(nodeOrType);
+    const lowered = type.trim().toLowerCase();
+    if (isAllInOneLoaderType(lowered)) return ALL_IN_ONE_LOADER_SPECS[lowered].map((spec) => [...spec]);
+    if (/checkpointloader(simple)?$/.test(lowered)) return [[0, 'checkpoint', 'checkpoint']];
+    if (lowered.endsWith('unetloader')) return [[0, 'unet', 'unet']];
+    if (/loraloader/.test(lowered)) return [[0, 'lora', 'lora']];
+    if (lowered.endsWith('vaeloader')) return [[0, 'vae', 'vae']];
+    if (lowered.endsWith('clipvisionloader')) return [[0, 'clip_vision', 'clip_vision']];
+    if (lowered.endsWith('controlnetloader')) return [[0, 'controlnet', 'controlnet']];
+    if (/(^|[^a-z])(?:dual|triple)?cliploader$/.test(lowered)) {
+        const specs = [[0, 'text_encoder', 'clip']];
+        if (lowered.includes('dualclip') || lowered.includes('tripleclip')) specs.push([1, 'text_encoder', 'clip']);
+        if (lowered.includes('tripleclip')) specs.push([2, 'text_encoder', 'clip']);
+        return specs;
+    }
+    return [];
+}
 
 
 function statusFor(identity) {
@@ -188,7 +121,7 @@ export function deriveRecipeModelReferences(recipe) {
         const values = Array.isArray(node?.widgets_values) ? node.widgets_values : [];
         for (const [widgetIndex, category, widgetName] of deriveNodeModelSpecs(node)) {
             const savedValue = values[widgetIndex];
-            if (typeof savedValue !== 'string' || !savedValue.trim() || savedValue.trim().toLowerCase() === 'none') continue;
+            if (typeof savedValue !== 'string' || !savedValue.trim() || isPlaceholderModelValue(savedValue)) continue;
             const identity = workflowIdentity(recipe?.workflow, node?.id, savedValue)
                 || { status: 'unverified' };
             references.push({
@@ -232,6 +165,5 @@ export function formatIdentitySize(value) {
 
 export function isModelReference(reference) {
     const val = String(reference?.saved_value || '').trim();
-    return Boolean(val && val.toLowerCase() !== 'none' && MODEL_FILE_PATTERN.test(val));
+    return Boolean(val && !isPlaceholderModelValue(val) && MODEL_FILE_PATTERN.test(val));
 }
-

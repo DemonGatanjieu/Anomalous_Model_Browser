@@ -375,56 +375,44 @@ export function getMaterialPromptInfo(material) {
     };
 }
 
+/**
+ * Choose prompt widgets for an envelope. Text never crosses roles: a negative
+ * prompt is not written into a positive slot (or the reverse). Role-neutral
+ * slots (e.g. CLIPTextEncode `text`) accept the envelope's primary text.
+ */
+export function planPromptInjection(slots, envelope) {
+    const { positiveSlot, negativeSlot } = slots;
+    const generalSlot = slots.generalSlots?.[0] || null;
+    const positive = envelope.positive || '';
+    const negative = envelope.negative || '';
+
+    // Strategy 1: both texts into a node that has both role slots.
+    if (positive && negative && positiveSlot && negativeSlot) {
+        return [{ index: positiveSlot.index, value: positive }, { index: negativeSlot.index, value: negative }];
+    }
+    // Strategy 2: a single-role node receives the matching text only.
+    if (negativeSlot && !positiveSlot && !generalSlot) return negative ? [{ index: negativeSlot.index, value: negative }] : [];
+    if (positiveSlot && !negativeSlot && !generalSlot) return positive ? [{ index: positiveSlot.index, value: positive }] : [];
+    // Strategy 3: role-matched slot for a one-sided envelope.
+    const wantsNegative = envelope.primaryRole === 'negative' || (negative && !positive);
+    if (wantsNegative && negativeSlot) return [{ index: negativeSlot.index, value: negative }];
+    if (!wantsNegative && positive && positiveSlot) return [{ index: positiveSlot.index, value: positive }];
+    // Strategy 4: role-neutral slot takes the primary text.
+    if (generalSlot) {
+        const value = wantsNegative ? negative : (positive || envelope.singleText || '');
+        return value ? [{ index: generalSlot.index, value }] : [];
+    }
+    return [];
+}
+
 export function dispatchPromptInjection(app, node, envelope, options = {}) {
     if (!node || !envelope || !envelope.hasPrompt) {
         throw new Error('materialNoCompatibleValues');
     }
-
     const slots = inspectNodePromptSlots(node);
-    if (!slots.hasSlots) {
-        throw new Error('materialNoCompatibleValues');
-    }
-
-    const entries = [];
-
-    // Strategy ①: Dual-Slot Pair Injection (成对原子注入)
-    if (envelope.positive && envelope.negative && slots.positiveSlot && slots.negativeSlot) {
-        entries.push({ index: slots.positiveSlot.index, value: envelope.positive });
-        entries.push({ index: slots.negativeSlot.index, value: envelope.negative });
-    }
-    // Strategy ②: Role-Matched Injection (角色精准对齐)
-    else if (envelope.primaryRole === 'negative' || (envelope.negative && !envelope.positive)) {
-        const val = envelope.negative || envelope.singleText;
-        const targetSlot = slots.negativeSlot || slots.generalSlots[0] || slots.positiveSlot || slots.targets[0];
-        if (!targetSlot) throw new Error('materialNoCompatibleValues');
-        entries.push({ index: targetSlot.index, value: val });
-    }
-    else if (envelope.primaryRole === 'positive' || (envelope.positive && !envelope.negative)) {
-        const val = envelope.positive || envelope.singleText;
-        const targetSlot = slots.positiveSlot || slots.generalSlots[0] || slots.negativeSlot || slots.targets[0];
-        if (!targetSlot) throw new Error('materialNoCompatibleValues');
-        entries.push({ index: targetSlot.index, value: val });
-    }
-    // Strategy ④: Single-Slot / General Fallback (单槽位/通用回退)
-    else {
-        if (slots.negativeSlot && !slots.positiveSlot) {
-            const val = envelope.negative || envelope.singleText || envelope.positive;
-            entries.push({ index: slots.negativeSlot.index, value: val });
-        } else if (slots.positiveSlot && !slots.negativeSlot) {
-            const val = envelope.positive || envelope.singleText || envelope.negative;
-            entries.push({ index: slots.positiveSlot.index, value: val });
-        } else {
-            const targetSlot = slots.generalSlots[0] || slots.positiveSlot || slots.negativeSlot || slots.targets[0];
-            if (!targetSlot) throw new Error('materialNoCompatibleValues');
-            const val = envelope.positive || envelope.singleText || envelope.negative;
-            entries.push({ index: targetSlot.index, value: val });
-        }
-    }
-
-    if (!entries.length) {
-        throw new Error('materialNoCompatibleValues');
-    }
-
+    if (!slots.hasSlots) throw new Error('materialNoCompatibleValues');
+    const entries = planPromptInjection(slots, envelope);
+    if (!entries.length) throw new Error('materialNoCompatibleValues');
     return applyNodeMaterialValues(app, node, entries, options);
 }
 

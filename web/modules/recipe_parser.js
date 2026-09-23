@@ -4,6 +4,7 @@ import {
     isNegativePromptWidget,
     classifyPromptWidgetRole,
 } from './node_material_actions.js';
+import { isAllInOneLoaderType, isPlaceholderModelValue } from './recipe_identity.js';
 
 /**
  * Read-only helpers for turning the live LiteGraph canvas into a compact
@@ -17,7 +18,13 @@ const MAX_WIDGETS_PER_NODE = 64;
 const MAX_WIDGET_TEXT = 320;
 const MAX_PINNED_VALUE_JSON = 2400;
 const MAX_PARAMETER_CHOICES = 5000;
-const MODEL_FILE_PATTERN = /\.(?:safetensors|ckpt|pt|bin|sft)$/i;
+const MODEL_FILE_PATTERN = /\.(?:safetensors|ckpt|pt|bin|sft|gguf)$/i;
+const NATIVE_MODEL_LOADER = /^(checkpointloader(simple)?|unetloader)$/i;
+const NATIVE_MODEL_WIDGETS = ['ckpt_name', 'checkpoint', 'unet_name', 'unet', 'model_name'];
+// Unambiguous names only: `model_name` also belongs to upscalers, detectors, etc.
+const MODEL_WIDGETS = ['ckpt_name', 'unet_name'];
+const LORA_LOADER = /lora.*loader|loader.*lora/i;
+const SAMPLING_NODE = /sampl|scheduler|noise|guider/i;
 const SENSITIVE_WIDGET_NAME = /(?:api.?key|access.?token|auth|password|passwd|secret|credential)/i;
 
 const SUPPORTED_PROMPT_NODE_TYPES = new Set([
@@ -200,35 +207,58 @@ function findSummaryWidget(params, change) {
     return widget ? { node, widget } : null;
 }
 
+function isSelectedModelFile(value) {
+    const text = textValue(value);
+    return Boolean(text && !isPlaceholderModelValue(text) && MODEL_FILE_PATTERN.test(text));
+}
+
+/** Current LoRA file shown by the edited node (single-LoRA loaders or a `lora_N_*` stack slot). */
+function loraNameForChange(params, change, widget) {
+    const summary = (params.nodes || []).find((item) => String(item?.id) === String(change.nodeId));
+    const slot = /^lora_(\d+)_/.exec(widget)?.[1];
+    const names = slot ? [`lora_${slot}_name`] : ['lora_name', 'lora', 'model_name'];
+    const nameWidget = (summary?.widgets || []).find((item) => names.includes(normaliseName(item?.name)));
+    return textValue(nameWidget?.value);
+}
+
+function syncLoraMetadata(params, change, type, widget) {
+    const isLoraNode = LORA_LOADER.test(type) || isAllInOneLoaderType(type);
+    const isStackSlot = /^lora_\d+_(name|strength|model_strength|clip_strength)$|^lora_name_\d+$/.test(widget);
+    if (!isLoraNode && !isStackSlot) return;
+    if (!Array.isArray(params.loras)) return;
+
+    if (/^(lora_name|lora|lora_\d+_name|lora_name_\d+)$/.test(widget) || (LORA_LOADER.test(type) && widget === 'model_name')) {
+        const previous = textValue(change.previousValue);
+        const lora = params.loras.find((item) => item?.name === previous);
+        if (lora && isSelectedModelFile(change.value)) lora.name = textValue(change.value);
+        return;
+    }
+    const lora = params.loras.find((item) => item?.name === loraNameForChange(params, change, widget));
+    if (!lora) return;
+    if (/^(strength_model|model_strength|lora_model_strength|lora_\d+_strength|lora_\d+_model_strength)$/.test(widget)) {
+        lora.strength_model = numberValue(change.value);
+    }
+    if (/^(strength_clip|clip_strength|lora_clip_strength|lora_\d+_clip_strength)$/.test(widget)) {
+        lora.strength_clip = numberValue(change.value);
+    }
+}
+
+/** Keep the presentation summary in step with an edited widget, using the same node rules as extraction. */
 function syncCommonRecipeMetadata(params, change) {
     const type = normaliseName(change.nodeType);
     const widget = normaliseName(change.widgetName);
     const value = change.value;
 
-    if (/^(ckpt_name|checkpoint|unet_name|unet|model_name|base_model)$/.test(widget)) {
+    const isModelWidget = NATIVE_MODEL_LOADER.test(type) ? NATIVE_MODEL_WIDGETS.includes(widget) : MODEL_WIDGETS.includes(widget);
+    if (isModelWidget && (NATIVE_MODEL_LOADER.test(type) || isSelectedModelFile(value))) {
         params.baseModel = textValue(value) || null;
         if (params.baseModel) params.baseModels = [params.baseModel, ...(params.baseModels || []).filter((item) => item !== params.baseModel)];
     }
 
-    if (/lora.*loader|loader.*lora/.test(type) || /lora/.test(widget)) {
-        if (!Array.isArray(params.loras)) params.loras = [];
-        let lora = params.loras.find((item) => item.nodeId === change.nodeId);
-        if (!lora) {
-            const loraIndex = (params.nodes || []).filter((item) => /lora.*loader|loader.*lora/i.test(item?.type || '')).findIndex((item) => item.id === change.nodeId);
-            if (loraIndex >= 0 && params.loras[loraIndex]) lora = params.loras[loraIndex];
-        }
-        if (!lora && params.loras.length > 0) {
-            lora = params.loras[0];
-        }
-        if (lora) {
-            if (/^(lora_name|lora|model_name|lora_\d+_name)$/.test(widget)) lora.name = textValue(value);
-            if (/^(strength_model|model_strength|lora_\d+_strength)$/.test(widget)) lora.strength_model = numberValue(value);
-            if (/^(strength_clip|clip_strength)$/.test(widget)) lora.strength_clip = numberValue(value);
-        }
-    }
+    syncLoraMetadata(params, change, type, widget);
 
     const samplingField = { seed: 'seed', noise_seed: 'seed', steps: 'steps', cfg: 'cfg', cfg_scale: 'cfg', sampler_name: 'sampler_name', sampler: 'sampler_name', scheduler: 'scheduler', denoise: 'denoise' }[widget];
-    if (samplingField) {
+    if (samplingField && (SAMPLING_NODE.test(type) || isAllInOneLoaderType(type))) {
         params[samplingField] = ['steps', 'cfg', 'denoise'].includes(samplingField) ? numberValue(value) : value;
     }
 
@@ -251,8 +281,7 @@ function syncCommonRecipeMetadata(params, change) {
         const override = params.promptRoleOverrides?.[String(change.nodeId)]?.role;
         let role = ['positive', 'negative', 'both'].includes(override) ? override : summary?.role;
         if (!role) {
-            if (isPos && isNeg) role = 'both';
-            else if (isPos) role = 'positive';
+            if (isPos) role = 'positive';
             else if (isNeg) role = 'negative';
         }
         const prompt = textValue(value);
@@ -414,27 +443,23 @@ export function extractRecipeMetadata(graph) {
         const type = nodeType(node);
         if (metadata.nodes.length < MAX_SUMMARY_NODES) metadata.nodes.push(extractGenericNodeSummary(node));
 
-        // Sniff base model / checkpoint
-        const model = textValue(widgetValue(
-            node,
-            ['ckpt_name', 'checkpoint', 'unet_name', 'unet', 'base_model', 'model_name'],
-            /^(checkpointloader(simple)?|unetloader)$/i.test(type) ? 0 : -1,
-        ));
-        if (model && model.toLowerCase() !== 'none' && MODEL_FILE_PATTERN.test(model)) {
+        // Base model: native loaders by position; other nodes only through unambiguous widget names.
+        const isNativeModelLoader = NATIVE_MODEL_LOADER.test(type);
+        const model = textValue(widgetValue(node, isNativeModelLoader ? NATIVE_MODEL_WIDGETS : MODEL_WIDGETS, isNativeModelLoader ? 0 : -1));
+        if (model && (isNativeModelLoader ? !isPlaceholderModelValue(model) : isSelectedModelFile(model))) {
             if (!metadata.baseModels.includes(model)) metadata.baseModels.push(model);
             if (!metadata.baseModel) metadata.baseModel = model;
         }
 
-        // Sniff LoRAs (single widget or multi-slot stack)
-        const loraName = textValue(widgetValue(node, ['lora_name', 'lora'], /lora.*loader|loader.*lora/i.test(type) ? 0 : -1));
-        if (loraName && loraName.toLowerCase() !== 'none' && MODEL_FILE_PATTERN.test(loraName)) {
-            const strengthModel = numberValue(widgetValue(node, ['lora_model_strength', 'strength_model', 'model_strength'], 1));
-            const strengthClip = numberValue(widgetValue(node, ['lora_clip_strength', 'strength_clip', 'clip_strength'], 2));
-            if (!metadata.loras.some((l) => l.name === loraName)) {
+        // LoRA loaders and all-in-one loaders: one entry per node, like the loaders themselves.
+        const isLoraLoader = LORA_LOADER.test(type);
+        if (isLoraLoader || isAllInOneLoaderType(type)) {
+            const loraName = textValue(widgetValue(node, ['lora_name', 'lora', 'model_name'], isLoraLoader ? 0 : -1));
+            if (isLoraLoader ? loraName && !isPlaceholderModelValue(loraName) : isSelectedModelFile(loraName)) {
                 metadata.loras.push({
                     name: loraName,
-                    strength_model: strengthModel,
-                    strength_clip: strengthClip,
+                    strength_model: numberValue(widgetValue(node, ['strength_model', 'model_strength', 'lora_model_strength'], isLoraLoader ? 1 : -1)),
+                    strength_clip: numberValue(widgetValue(node, ['strength_clip', 'clip_strength', 'lora_clip_strength'], isLoraLoader ? 2 : -1)),
                 });
             }
         }
@@ -446,16 +471,14 @@ export function extractRecipeMetadata(graph) {
                 if (match && match[1]) {
                     const slotNum = match[1];
                     const slotVal = textValue(widget?.value);
-                    if (slotVal && slotVal.toLowerCase() !== 'none' && MODEL_FILE_PATTERN.test(slotVal)) {
+                    if (isSelectedModelFile(slotVal)) {
                         const slotStrengthModel = numberValue(widgetValue(node, [`lora_${slotNum}_strength`, `lora_${slotNum}_model_strength`, `lora_model_strength_${slotNum}`], -1));
                         const slotStrengthClip = numberValue(widgetValue(node, [`lora_${slotNum}_clip_strength`, `lora_clip_strength_${slotNum}`], -1));
-                        if (!metadata.loras.some((l) => l.name === slotVal)) {
-                            metadata.loras.push({
-                                name: slotVal,
-                                strength_model: slotStrengthModel,
-                                strength_clip: slotStrengthClip,
-                            });
-                        }
+                        metadata.loras.push({
+                            name: slotVal,
+                            strength_model: slotStrengthModel,
+                            strength_clip: slotStrengthClip,
+                        });
                     }
                 }
             }
