@@ -1,13 +1,45 @@
-"""Audio and Voice catalog scanning, metadata extraction, and streaming service."""
+"""Audio and Voice catalog scanning, voice ingestion, and streaming service."""
 
+import asyncio
+import json
 import os
 import re
-import json
+import shutil
+import subprocess
+import sys
+import tempfile
+import uuid
+from urllib.parse import quote
+
 import folder_paths
 from aiohttp import web
+
 from .path_utils import resolve_within
 
 AUDIO_EXTENSIONS = {'.wav', '.mp3', '.flac', '.ogg', '.m4a'}
+AUDIO_CONTENT_TYPES = {
+    '.wav': 'audio/wav',
+    '.mp3': 'audio/mpeg',
+    '.flac': 'audio/flac',
+    '.ogg': 'audio/ogg',
+    '.m4a': 'audio/mp4',
+}
+MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+FFMPEG_TIMEOUT_SECONDS = 120
+VOICE_SCAN_SUBDIRS = ("F5-TTS", "audio", "")
+DEFAULT_VOICE_SUBFOLDER = "F5-TTS"
+WORKFLOW_TEMPLATE_NAME = re.compile(r'^[A-Za-z0-9_-]{1,64}$')
+# Revalidate instead of forbidding caches: overwritten voices get a new ?v=mtime URL.
+AUDIO_CACHE_HEADERS = {"Cache-Control": "no-cache"}
+
+
+def _audio_url(rel_path, dir_type="input", version=None):
+    url = f"/anomalous/audio_stream?path={quote(rel_path, safe='/')}"
+    if dir_type == "output":
+        url += "&type=output"
+    if version is not None:
+        url += f"&v={int(version)}"
+    return url
 
 
 def _parse_character_and_emotion(filename):
@@ -23,122 +55,106 @@ def _parse_character_and_emotion(filename):
     return character, emotion
 
 
-def _read_associated_text(base_path):
-    """Read companion prompt text file if present (preferring .orig.txt for display)."""
-    stem, _ = os.path.splitext(base_path)
-    orig_path = stem + '.orig.txt'
-    if os.path.isfile(orig_path):
-        try:
-            with open(orig_path, 'r', encoding='utf-8-sig', errors='ignore') as f:
-                content = f.read().strip().lstrip('\ufeff')
-                if content:
-                    return content
-        except Exception:
-            pass
+def _read_text_file(path):
+    try:
+        with open(path, 'r', encoding='utf-8-sig', errors='ignore') as f:
+            return f.read().strip()
+    except OSError:
+        return ""
 
-    txt_path = stem + '.txt'
-    if os.path.isfile(txt_path):
-        try:
-            with open(txt_path, 'r', encoding='utf-8-sig', errors='ignore') as f:
-                return f.read().strip().lstrip('\ufeff')
-        except Exception:
-            return ""
-    return ""
+
+def _read_associated_text(audio_path):
+    """Return (display_text, synthesis_text); .orig.txt holds the native script when present."""
+    stem, _ = os.path.splitext(audio_path)
+    synthesis = _read_text_file(stem + '.txt') if os.path.isfile(stem + '.txt') else ""
+    original = _read_text_file(stem + '.orig.txt') if os.path.isfile(stem + '.orig.txt') else ""
+    return (original or synthesis), synthesis
+
+
+def _slice_record(directory, name, relative_prefix):
+    full_path = os.path.join(directory, name)
+    stem, _ = os.path.splitext(name)
+    char_name, emotion = _parse_character_and_emotion(name)
+    display_text, synthesis_text = _read_associated_text(full_path)
+    stat = os.stat(full_path)
+    rel_path = "/".join(part for part in (relative_prefix, name) if part)
+    return {
+        "id": stem,
+        "filename": name,
+        "relative_path": rel_path,
+        "character": char_name,
+        "emotion": emotion,
+        "text": display_text,
+        "synthesis_text": synthesis_text,
+        "size_bytes": stat.st_size,
+        "syntax_tag": f"{{{stem}}}",
+        "audio_url": _audio_url(rel_path, "input", stat.st_mtime),
+    }
 
 
 def _scan_single_audio_dir(directory, relative_prefix=""):
-    """Scan directory for audio files, deduplicate stems preferring .wav, and group slices."""
+    """Scan one directory for audio files, preferring .wav when several share a stem."""
     if not os.path.isdir(directory):
         return []
-
     try:
         entries = sorted(os.listdir(directory))
     except OSError:
         return []
 
-    stem_map = {}
+    chosen = {}
     for name in entries:
         stem, ext = os.path.splitext(name)
         ext = ext.lower()
-        if ext not in AUDIO_EXTENSIONS:
+        if ext not in AUDIO_EXTENSIONS or not os.path.isfile(os.path.join(directory, name)):
             continue
-
-        full_path = os.path.join(directory, name)
-        if not os.path.isfile(full_path):
+        if stem in chosen and chosen[stem][1] == '.wav':
             continue
+        chosen[stem] = (name, ext)
 
-        # If stem already recorded and is .wav, skip non-wav; otherwise update
-        if stem in stem_map and stem_map[stem]["ext"] == '.wav' and ext != '.wav':
+    slices = []
+    for name, _ in chosen.values():
+        try:
+            slices.append(_slice_record(directory, name, relative_prefix))
+        except OSError:
             continue
-
-        char_name, emotion = _parse_character_and_emotion(name)
-        ref_text = _read_associated_text(full_path)
-        file_size = os.path.getsize(full_path)
-        rel_path = os.path.join(relative_prefix, name).replace("\\", "/")
-
-        mtime = int(os.path.getmtime(full_path))
-        stem_map[stem] = {
-            "ext": ext,
-            "slice": {
-                "id": stem,
-                "filename": name,
-                "relative_path": rel_path,
-                "character": char_name,
-                "emotion": emotion,
-                "text": ref_text,
-                "size_bytes": file_size,
-                "syntax_tag": f"{{{stem}}}",
-                "audio_url": f"/anomalous/audio_stream?path={rel_path}&v={mtime}"
-            }
-        }
-    return [item["slice"] for item in stem_map.values()]
+    return slices
 
 
 def _group_slices_by_character(all_slices):
     """Group flat slice list into character bundles."""
     char_map = {}
     for s in all_slices:
-        cname = s["character"]
-        if cname not in char_map:
-            char_map[cname] = {
-                "character": cname,
-                "slices": [],
-                "total_slices": 0
-            }
-        char_map[cname]["slices"].append(s)
-        char_map[cname]["total_slices"] += 1
+        bundle = char_map.setdefault(s["character"], {"character": s["character"], "slices": [], "total_slices": 0})
+        bundle["slices"].append(s)
+        bundle["total_slices"] += 1
     return list(char_map.values())
+
+
+def _collect_voice_slices(input_dir):
+    """Scan voice folders; the first folder wins when stems collide so {stem} tags stay unique."""
+    all_slices = []
+    seen_stems = set()
+    for sub in VOICE_SCAN_SUBDIRS:
+        for item in _scan_single_audio_dir(os.path.join(input_dir, sub) if sub else input_dir, sub):
+            if item["id"] in seen_stems:
+                continue
+            seen_stems.add(item["id"])
+            all_slices.append(item)
+    return all_slices
 
 
 async def api_get_audio_voices(request):
     """GET /anomalous/audio_voices - Return structured audio presets."""
-    input_dir = folder_paths.get_input_directory()
-    scan_targets = [
-        (os.path.join(input_dir, "F5-TTS"), "F5-TTS"),
-        (os.path.join(input_dir, "audio"), "audio"),
-        (input_dir, "")
-    ]
-
-    all_slices = []
-    seen_filenames = set()
-
-    for dir_path, prefix in scan_targets:
-        found = _scan_single_audio_dir(dir_path, relative_prefix=prefix)
-        for item in found:
-            if item["filename"] not in seen_filenames:
-                seen_filenames.add(item["filename"])
-                all_slices.append(item)
-
-    grouped = _group_slices_by_character(all_slices)
+    all_slices = await asyncio.to_thread(_collect_voice_slices, folder_paths.get_input_directory())
     return web.json_response({
         "success": True,
-        "characters": grouped,
-        "total_slices": len(all_slices)
+        "characters": _group_slices_by_character(all_slices),
+        "total_slices": len(all_slices),
     })
 
 
 async def api_serve_audio(request):
-    """GET /anomalous/audio_stream?path=...&type=input|output - Stream audio file securely."""
+    """GET /anomalous/audio_stream?path=...&type=input|output - Stream an audio file."""
     rel_path = request.query.get("path", "").strip("/\\")
     dir_type = request.query.get("type", "input")
     if not rel_path:
@@ -147,156 +163,263 @@ async def api_serve_audio(request):
     base_dir = folder_paths.get_output_directory() if dir_type == "output" else folder_paths.get_input_directory()
     try:
         resolved_path = resolve_within(base_dir, rel_path)
-    except (ValueError, Exception):
+    except ValueError:
         return web.Response(status=403, text="Forbidden path")
 
+    ext = os.path.splitext(resolved_path)[1].lower()
+    if ext not in AUDIO_EXTENSIONS:
+        return web.Response(status=415, text="Not an audio file")
     if not os.path.isfile(resolved_path):
         return web.Response(status=404, text="Audio file not found")
 
-    ext = os.path.splitext(resolved_path)[1].lower()
-    content_types = {
-        '.wav': 'audio/wav',
-        '.mp3': 'audio/mpeg',
-        '.flac': 'audio/flac',
-        '.ogg': 'audio/ogg',
-        '.m4a': 'audio/mp4'
-    }
-    content_type = content_types.get(ext, 'application/octet-stream')
-    return web.FileResponse(
-        resolved_path,
-        headers={
-            "Content-Type": content_type,
-            "Accept-Ranges": "bytes",
-            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-            "Pragma": "no-cache",
-            "Expires": "0"
-        }
-    )
+    return web.FileResponse(resolved_path, headers={"Content-Type": AUDIO_CONTENT_TYPES[ext], **AUDIO_CACHE_HEADERS})
 
 
 def _collect_gallery_audios(output_dir):
-    """Scan output folder for generated audio files."""
+    """Scan output folder for generated audio files, newest first."""
     audios = []
     if not os.path.isdir(output_dir):
         return audios
 
     for root, _, files in os.walk(output_dir):
         for name in files:
-            ext = os.path.splitext(name)[1].lower()
-            if ext not in AUDIO_EXTENSIONS:
+            if os.path.splitext(name)[1].lower() not in AUDIO_EXTENSIONS:
                 continue
-            full_path = os.path.join(root, name)
             try:
-                stat = os.stat(full_path)
-                mtime = stat.st_mtime
-                size = stat.st_size
+                stat = os.stat(os.path.join(root, name))
             except OSError:
                 continue
-
             subfolder = os.path.relpath(root, output_dir)
             clean_sub = "" if subfolder == "." else subfolder.replace(os.sep, '/')
-            rel_url_path = os.path.join(clean_sub, name).replace("\\", "/")
-
+            rel_path = "/".join(part for part in (clean_sub, name) if part)
             audios.append({
                 "filename": name,
                 "subfolder": clean_sub,
-                "size_bytes": size,
-                "mtime": mtime,
-                "audio_url": f"/anomalous/audio_stream?path={rel_url_path}&type=output"
+                "size_bytes": stat.st_size,
+                "mtime": stat.st_mtime,
+                "audio_url": _audio_url(rel_path, "output", stat.st_mtime),
             })
     audios.sort(key=lambda a: a["mtime"], reverse=True)
     return audios
 
 
+def _positive_int(value, default, maximum=None):
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return default
+    number = max(1, number)
+    return min(maximum, number) if maximum else number
+
+
 async def api_get_audio_gallery(request):
     """GET /anomalous/audio_gallery?page=1&limit=50 - List generated audio history."""
-    output_dir = folder_paths.get_output_directory()
-    page = max(1, int(request.query.get("page", 1)))
-    limit = max(1, min(100, int(request.query.get("limit", 40))))
+    page = _positive_int(request.query.get("page"), 1)
+    limit = _positive_int(request.query.get("limit"), 40, 100)
 
-    all_audios = _collect_gallery_audios(output_dir)
+    all_audios = await asyncio.to_thread(_collect_gallery_audios, folder_paths.get_output_directory())
     total = len(all_audios)
     start = (page - 1) * limit
-    sliced = all_audios[start:start + limit]
-
     return web.json_response({
         "success": True,
-        "audios": sliced,
+        "audios": all_audios[start:start + limit],
         "total": total,
         "page": page,
-        "has_more": start + limit < total
+        "has_more": start + limit < total,
     })
 
 
 async def api_delete_audio_gallery(request):
-    """POST /anomalous/delete_audio_gallery - Delete a generated audio file."""
+    """POST /anomalous/delete_audio_gallery - Delete one generated audio file."""
     try:
         data = await request.json()
     except Exception:
-        return web.Response(status=400, text="Invalid JSON payload")
+        return web.json_response({"success": False, "error": "Invalid JSON payload"}, status=400)
 
-    filename = data.get("filename", "").strip()
-    subfolder = data.get("subfolder", "").strip()
-    if not filename:
-        return web.Response(status=400, text="Missing filename")
+    filename = str(data.get("filename", "")).strip()
+    subfolder = str(data.get("subfolder", "")).strip().strip("/\\")
+    if not filename or os.path.basename(filename) != filename:
+        return web.json_response({"success": False, "error": "Invalid filename"}, status=400)
+    if os.path.splitext(filename)[1].lower() not in AUDIO_EXTENSIONS:
+        return web.json_response({"success": False, "error": "Only audio files can be deleted here"}, status=415)
 
-    output_dir = folder_paths.get_output_directory()
     try:
-        rel = os.path.join(subfolder, filename).replace("\\", "/") if subfolder else filename
-        target = resolve_within(output_dir, rel)
-    except Exception:
-        return web.Response(status=403, text="Forbidden path")
+        target = resolve_within(folder_paths.get_output_directory(), subfolder, filename)
+    except ValueError:
+        return web.json_response({"success": False, "error": "Forbidden path"}, status=403)
 
-    if os.path.isfile(target):
-        try:
-            os.remove(target)
-            return web.json_response({"success": True})
-        except OSError as e:
-            return web.Response(status=500, text=f"Failed to delete: {e}")
-    return web.Response(status=404, text="File not found")
+    if not os.path.isfile(target):
+        return web.json_response({"success": False, "error": "File not found"}, status=404)
+    try:
+        await asyncio.to_thread(os.remove, target)
+    except OSError as e:
+        return web.json_response({"success": False, "error": f"Failed to delete: {e}"}, status=500)
+    return web.json_response({"success": True})
+
+
+def _read_workflow_template(name):
+    plugin_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    filename = f"{name}_multivoice_workflow.json"
+    for wf_path in (os.path.join(folder_paths.base_path, filename), os.path.join(plugin_dir, "workflows", filename)):
+        if os.path.isfile(wf_path):
+            with open(wf_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    return None
 
 
 async def api_get_audio_template_workflow(request):
-    """GET /anomalous/audio_template_workflow?name=arona - Return pre-configured audio workflow."""
-    name = request.query.get("name", "arona").lower()
-    base_dir = folder_paths.base_path
-    plugin_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    workflow_candidates = [
-        os.path.join(base_dir, f"{name}_multivoice_workflow.json"),
-        os.path.join(base_dir, "arona_multivoice_workflow.json"),
-        os.path.join(plugin_dir, "workflows", f"{name}_multivoice_workflow.json"),
-        os.path.join(plugin_dir, "workflows", "arona_multivoice_workflow.json")
-    ]
-    for wf_path in workflow_candidates:
-        if os.path.isfile(wf_path):
-            try:
-                with open(wf_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                return web.json_response({"success": True, "workflow": data})
-            except Exception as e:
-                return web.Response(status=500, text=f"Failed to read workflow: {e}")
-    return web.Response(status=404, text="Workflow template not found")
-
-
-def _convert_to_pcm_wav(src_path: str, dst_path: str) -> bool:
-    """Convert audio file to standard 16-bit 24kHz mono PCM WAV via ffmpeg."""
+    """GET /anomalous/audio_template_workflow?name=arona - Return a local multi-voice workflow template."""
+    name = request.query.get("name", "arona").strip().lower()
+    if not WORKFLOW_TEMPLATE_NAME.match(name):
+        return web.json_response({"success": False, "error": "Invalid template name"}, status=400)
     try:
-        import subprocess
-        cmd = ["ffmpeg", "-y", "-i", src_path, "-ar", "24000", "-ac", "1", "-c:a", "pcm_s16le", dst_path]
-        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-        return True
+        workflow = await asyncio.to_thread(_read_workflow_template, name)
+    except (OSError, ValueError) as e:
+        return web.json_response({"success": False, "error": f"Failed to read workflow: {e}"}, status=500)
+    if workflow is None:
+        return web.json_response({
+            "success": False,
+            "code": "template_missing",
+            "error": f"{name}_multivoice_workflow.json not found",
+        }, status=404)
+    return web.json_response({"success": True, "workflow": workflow})
+
+
+def _ffmpeg_executable():
+    """Prefer ffmpeg on PATH, then the copies shipped beside the portable Python."""
+    found = shutil.which("ffmpeg")
+    if found:
+        return found
+    python_dir = os.path.dirname(sys.executable)
+    for candidate in (os.path.join(python_dir, "ffmpeg.exe"), os.path.join(python_dir, "Scripts", "ffmpeg.exe")):
+        if os.path.isfile(candidate):
+            return candidate
+    return None
+
+
+def _convert_to_pcm_wav(src_path, dst_path):
+    """Convert audio to 16-bit 24kHz mono PCM WAV. Returns an error message or None."""
+    ffmpeg = _ffmpeg_executable()
+    if not ffmpeg:
+        return "ffmpeg not found"
+    cmd = [ffmpeg, "-y", "-i", src_path, "-ar", "24000", "-ac", "1", "-c:a", "pcm_s16le", dst_path]
+    try:
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=FFMPEG_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired:
+        return "ffmpeg timed out"
+    except (OSError, subprocess.CalledProcessError) as e:
+        return f"ffmpeg failed: {e}"
+    return None
+
+
+def _sanitize_character(part):
+    """Character names cannot contain '-', '_' or '.', which separate character and emotion in filenames."""
+    cleaned = re.sub(r'[^\w]|_', '', str(part or '').strip())
+    return cleaned or "Voice"
+
+
+def _sanitize_emotion(part):
+    cleaned = re.sub(r'[^\w-]', '_', str(part or '').strip()).strip('_-')
+    return (cleaned or "normal").lower()
+
+
+def _voice_targets(dest_dir, base_name):
+    """Every file that belongs to one voice stem, including audio in other formats."""
+    targets = {ext: os.path.join(dest_dir, base_name + ext) for ext in AUDIO_EXTENSIONS}
+    targets[".txt"] = os.path.join(dest_dir, base_name + ".txt")
+    targets[".orig.txt"] = os.path.join(dest_dir, base_name + ".orig.txt")
+    return targets
+
+
+def _commit_voice_files(plan):
+    """Apply {final_path: staged_path_or_None} as one unit; restore previous files on failure."""
+    token = uuid.uuid4().hex[:8]
+    backups = {}
+    placed = []
+    try:
+        for final_path in plan:
+            if os.path.exists(final_path):
+                backup = f"{final_path}.bak-{token}"
+                os.replace(final_path, backup)
+                backups[final_path] = backup
+        for final_path, staged in plan.items():
+            if staged is not None:
+                os.replace(staged, final_path)
+                placed.append(final_path)
     except Exception:
-        return False
+        for final_path in placed:
+            try:
+                os.remove(final_path)
+            except OSError:
+                pass
+        for final_path, backup in backups.items():
+            try:
+                os.replace(backup, final_path)
+            except OSError:
+                pass
+        raise
+    for backup in backups.values():
+        try:
+            os.remove(backup)
+        except OSError:
+            pass
 
 
-def _sanitize_name_part(part: str) -> str:
-    """Sanitize character or emotion string for safe filesystem usage."""
-    cleaned = re.sub(r'[^\w\u4e00-\u9fff\u3040-\u30ff\-]', '_', str(part or '').strip())
-    return cleaned.strip('_') or "Voice"
+def _write_staged_text(dest_dir, text):
+    fd, path = tempfile.mkstemp(prefix=".voice-", suffix=".txt.tmp", dir=dest_dir)
+    with os.fdopen(fd, 'w', encoding='utf-8') as f:
+        f.write(text)
+    return path
+
+
+def _ingest_voice(dest_dir, base_name, ext, audio_bytes, text, original_text, overwrite):
+    """Stage every file first, then swap them in together so a failure keeps the previous voice."""
+    os.makedirs(dest_dir, exist_ok=True)
+    targets = _voice_targets(dest_dir, base_name)
+    existing = [path for path in targets.values() if os.path.exists(path)]
+    if existing and not overwrite:
+        return {"status": 409, "code": "exists", "error": f"{base_name} already exists"}
+
+    staged = []
+    try:
+        fd, raw_path = tempfile.mkstemp(prefix=".voice-", suffix=ext, dir=dest_dir)
+        staged.append(raw_path)
+        with os.fdopen(fd, 'wb') as f:
+            f.write(audio_bytes)
+
+        audio_path = raw_path
+        if ext != '.wav':
+            wav_path = raw_path[:-len(ext)] + '.wav'
+            staged.append(wav_path)
+            error = _convert_to_pcm_wav(raw_path, wav_path)
+            if error:
+                return {"status": 422, "code": "convert_failed", "error": f"Could not convert to WAV ({error}); existing files were kept"}
+            audio_path = wav_path
+
+        plan = {path: None for path in existing}
+        plan[targets['.wav']] = audio_path
+        if text:
+            text_path = _write_staged_text(dest_dir, text)
+            staged.append(text_path)
+            plan[targets['.txt']] = text_path
+        if original_text and original_text != text:
+            orig_path = _write_staged_text(dest_dir, original_text)
+            staged.append(orig_path)
+            plan[targets['.orig.txt']] = orig_path
+
+        _commit_voice_files(plan)
+        return {"status": 200, "filename": base_name + '.wav'}
+    finally:
+        for path in staged:
+            if os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
 
 
 async def api_upload_audio_voice(request):
-    """POST /anomalous/upload_audio_voice - Ingest voice audio with companion transcription text."""
+    """POST /anomalous/upload_audio_voice - Ingest a voice sample with its transcript."""
     try:
         data = await request.post()
     except Exception as e:
@@ -306,69 +429,42 @@ async def api_upload_audio_voice(request):
     if audio_field is None or not hasattr(audio_field, "file"):
         return web.json_response({"success": False, "error": "Audio file is required"}, status=400)
 
-    character = _sanitize_name_part(data.get("character", "General"))
-    emotion = _sanitize_name_part(data.get("emotion", "normal")).lower()
-    text = str(data.get("text", "")).strip()
-    target_sub = str(data.get("target_subfolder", "F5-TTS")).strip("/\\")
-
-    filename = getattr(audio_field, "filename", "") or "audio.wav"
-    ext = os.path.splitext(filename)[1].lower()
+    ext = os.path.splitext(getattr(audio_field, "filename", "") or "")[1].lower()
     if ext not in AUDIO_EXTENSIONS:
         return web.json_response({
             "success": False,
-            "error": f"Unsupported audio format '{ext}'. Supported: {', '.join(sorted(AUDIO_EXTENSIONS))}"
+            "error": f"Unsupported audio format '{ext}'. Supported: {', '.join(sorted(AUDIO_EXTENSIONS))}",
         }, status=415)
 
-    audio_bytes = audio_field.file.read()
-    if len(audio_bytes) > 100 * 1024 * 1024:
+    audio_bytes = audio_field.file.read(MAX_UPLOAD_BYTES + 1)
+    if len(audio_bytes) > MAX_UPLOAD_BYTES:
         return web.json_response({"success": False, "error": "Audio file exceeds 100MB limit"}, status=413)
 
+    character = _sanitize_character(data.get("character"))
+    emotion = _sanitize_emotion(data.get("emotion"))
+    text = str(data.get("text", "")).strip()
+    original_text = str(data.get("original_text", "")).strip()
+    overwrite = str(data.get("overwrite", "")).lower() in ("1", "true", "yes")
+    target_sub = str(data.get("target_subfolder", DEFAULT_VOICE_SUBFOLDER)).strip().strip("/\\")
+
     input_dir = folder_paths.get_input_directory()
-    dest_dir = os.path.join(input_dir, target_sub)
-    os.makedirs(dest_dir, exist_ok=True)
+    try:
+        dest_dir = resolve_within(input_dir, target_sub)
+    except ValueError:
+        return web.json_response({"success": False, "error": "Forbidden target folder"}, status=403)
+    if os.path.realpath(dest_dir) == os.path.realpath(input_dir):
+        target_sub = ""
 
     base_name = f"{character}_{emotion}"
-    raw_audio_name = f"{base_name}{ext}"
-    raw_audio_path = os.path.join(dest_dir, raw_audio_name)
-    target_wav_path = os.path.join(dest_dir, f"{base_name}.wav")
-    target_txt_path = os.path.join(dest_dir, f"{base_name}.txt")
+    try:
+        result = await asyncio.to_thread(_ingest_voice, dest_dir, base_name, ext, audio_bytes, text, original_text, overwrite)
+    except OSError as e:
+        return web.json_response({"success": False, "error": f"Failed to save voice: {e}"}, status=500)
+    if result["status"] != 200:
+        return web.json_response({"success": False, "code": result["code"], "error": result["error"]}, status=result["status"])
 
-    def _write_files():
-        with open(raw_audio_path, 'wb') as f:
-            f.write(audio_bytes)
-        if text:
-            with open(target_txt_path, 'w', encoding='utf-8') as f:
-                f.write(text)
-
-        final_name = raw_audio_name
-        final_size = len(audio_bytes)
-        if ext != '.wav':
-            if _convert_to_pcm_wav(raw_audio_path, target_wav_path):
-                try:
-                    os.remove(raw_audio_path)
-                except OSError:
-                    pass
-                final_name = f"{base_name}.wav"
-                final_size = os.path.getsize(target_wav_path)
-        return final_name, final_size
-
-    import asyncio
-    final_name, final_size = await asyncio.to_thread(_write_files)
-
-    rel_path = os.path.join(target_sub, final_name).replace("\\", "/")
+    rel_prefix = os.path.relpath(dest_dir, input_dir).replace(os.sep, "/")
     return web.json_response({
         "success": True,
-        "slice": {
-            "id": base_name,
-            "filename": final_name,
-            "relative_path": rel_path,
-            "character": character,
-            "emotion": emotion,
-            "text": text,
-            "size_bytes": final_size,
-            "syntax_tag": f"{{{base_name}}}",
-            "audio_url": f"/anomalous/audio_stream?path={rel_path}"
-        }
+        "slice": _slice_record(dest_dir, result["filename"], "" if rel_prefix == "." else rel_prefix),
     })
-
-

@@ -1,7 +1,10 @@
 import os
 import sys
 
-# Ensure python_embeded and Scripts (containing ffmpeg/ffprobe) are in PATH
+# Deliberate process-wide exception (AGENTS.md section 5): the portable build ships
+# ffmpeg/ffprobe beside python.exe, and audio nodes such as ComfyUI-F5-TTS look them
+# up on PATH. Only missing directories are prepended. This plugin's own conversion
+# resolves ffmpeg explicitly in api/audio_catalog.py and does not rely on this.
 python_dir = os.path.dirname(sys.executable)
 scripts_dir = os.path.join(python_dir, "Scripts")
 for p in [python_dir, scripts_dir]:

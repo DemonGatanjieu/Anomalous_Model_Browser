@@ -1,7 +1,6 @@
 """Intelligent Romanization Engine for Japanese and Korean text alignment in F5-TTS."""
 
 import re
-import json
 from aiohttp import web
 
 _kakasi_instance = None
@@ -46,8 +45,9 @@ def _clean_romanized_spacing(text: str) -> str:
 
 def romanize_text(text: str) -> dict:
     """
-    Detect language and convert Japanese or Korean into standard Latin/Romaji phonetics.
-    Returns dict with original, romanized, detected language, and success status.
+    Convert Japanese (text containing kana) or Korean (Hangul) into Latin phonetics.
+    Chinese and other scripts are returned unchanged: Han characters alone are not
+    treated as Japanese, because F5-TTS reads Chinese natively.
     """
     raw = (text or "").strip()
     if not raw:
@@ -56,48 +56,27 @@ def romanize_text(text: str) -> dict:
     has_hangul = bool(re.search(r'[\uac00-\ud7a3]', raw))
     has_kana = bool(re.search(r'[\u3040-\u30ff]', raw))
 
-    # 1. Process Korean text
     if has_hangul:
         ht = _get_hangul_transliter()
-        if ht:
-            try:
-                romanized = ht.translit(raw)
-                return {
-                    "success": True,
-                    "original": raw,
-                    "romanized": _clean_romanized_spacing(romanized),
-                    "lang": "ko"
-                }
-            except Exception as e:
-                return {"success": False, "error": f"Korean transliteration failed: {e}", "original": raw}
+        if not ht:
+            return {"success": False, "code": "missing_dependency", "error": "hangul-romanize is not installed", "original": raw}
+        try:
+            romanized = ht.translit(raw)
+        except Exception as e:
+            return {"success": False, "error": f"Korean transliteration failed: {e}", "original": raw}
+        return {"success": True, "original": raw, "romanized": _clean_romanized_spacing(romanized), "lang": "ko"}
 
-    # 2. Process Japanese text (Kana or Japanese context)
-    if has_kana or (not has_hangul and bool(re.search(r'[\u4e00-\u9fff]', raw))):
+    if has_kana:
         kakasi = _get_kakasi()
-        if kakasi:
-            try:
-                result = kakasi.convert(raw)
-                parts = []
-                for item in result:
-                    hep = item.get("hepburn", "")
-                    parts.append(hep if hep else item.get("orig", ""))
-                romanized = " ".join(parts)
-                return {
-                    "success": True,
-                    "original": raw,
-                    "romanized": _clean_romanized_spacing(romanized),
-                    "lang": "ja"
-                }
-            except Exception as e:
-                return {"success": False, "error": f"Japanese romanization failed: {e}", "original": raw}
+        if not kakasi:
+            return {"success": False, "code": "missing_dependency", "error": "pykakasi is not installed", "original": raw}
+        try:
+            parts = [item.get("hepburn") or item.get("orig", "") for item in kakasi.convert(raw)]
+        except Exception as e:
+            return {"success": False, "error": f"Japanese romanization failed: {e}", "original": raw}
+        return {"success": True, "original": raw, "romanized": _clean_romanized_spacing(" ".join(parts)), "lang": "ja"}
 
-    # Default: Already Latin or other language, keep as is
-    return {
-        "success": True,
-        "original": raw,
-        "romanized": raw,
-        "lang": "unchanged"
-    }
+    return {"success": True, "original": raw, "romanized": raw, "lang": "unchanged"}
 
 
 async def api_romanize_text(request):
@@ -107,7 +86,11 @@ async def api_romanize_text(request):
     except Exception:
         return web.json_response({"success": False, "error": "Invalid JSON body"}, status=400)
 
-    text = data.get("text", "")
-    res = romanize_text(text)
-    status_code = 200 if res.get("success") else 500
+    res = romanize_text(str(data.get("text", "")))
+    if res.get("success"):
+        status_code = 200
+    elif res.get("code") == "missing_dependency":
+        status_code = 503
+    else:
+        status_code = 500
     return web.json_response(res, status=status_code)

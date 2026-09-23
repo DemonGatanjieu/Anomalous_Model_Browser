@@ -10,13 +10,20 @@ from .parameters import *
 
 from aiohttp import web
 
+EXTENSION_STATIC_PREFIX = '/extensions/Anomalous_Model_Browser/'
+
+
 @web.middleware
 async def no_cache_extension_middleware(request, handler):
+    """Make browsers revalidate this plugin's JS/CSS so a normal refresh picks up updates.
+
+    `no-cache` still allows 304 responses via ETag/Last-Modified. This replaces
+    per-import `?v=` query strings, which load a second module instance whenever
+    two files import the same module with different URLs.
+    """
     response = await handler(request)
-    if request.path.startswith('/extensions/Anomalous_Model_Browser'):
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
+    if request.path.startswith(EXTENSION_STATIC_PREFIX):
+        response.headers['Cache-Control'] = 'no-cache'
     return response
 
 def setup_routes(app):
