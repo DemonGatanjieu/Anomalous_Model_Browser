@@ -6,6 +6,7 @@
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { showImageMaterialDetail } from './ui_materials.js';
+import { createSearchChips } from './ui_search_chips.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -25,34 +26,19 @@ export async function refreshGalleryImages() {
 
 
 
-const GALLERY_SEARCH_DELAY_MS = 350;
-
-/** Search box above the output gallery; the query lives on the browser as `gallerySearchQuery`. */
+/** Search blocks above the output gallery; the terms live on the browser as `gallerySearchTerms`. */
 export function createGallerySearchBar(owner) {
-    const bar = document.createElement('label');
-    bar.className = 'anomalous-gallery-search';
-    bar.title = t('gallerySearchHelp');
-    const icon = document.createElement('span');
-    icon.className = 'anomalous-gallery-search-icon';
-    icon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
-    const input = document.createElement('input');
-    input.type = 'search';
-    input.placeholder = t('gallerySearchPlaceholder');
-    const count = document.createElement('span');
-    count.className = 'anomalous-gallery-search-count';
-    owner.gallerySearchCount = count;
-    let timer = null;
-    input.oninput = () => {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-            const query = input.value.trim();
-            if (query === (owner.gallerySearchQuery || '')) return;
-            owner.gallerySearchQuery = query;
+    const search = createSearchChips({
+        placeholder: t('gallerySearchPlaceholder'),
+        help: t('gallerySearchHelp'),
+        onChange: (terms) => {
+            owner.gallerySearchTerms = terms;
             owner.loadGalleryImages(1, true, { refresh: false });
-        }, GALLERY_SEARCH_DELAY_MS);
-    };
-    bar.append(icon, input, count);
-    return bar;
+        },
+    });
+    search.element.classList.add('anomalous-gallery-search');
+    owner.gallerySearchCount = search.countElement;
+    return search.element;
 }
 
 export async function loadGalleryImages(page = 1, reset = false, { refresh = reset } = {}) {
@@ -62,16 +48,18 @@ export async function loadGalleryImages(page = 1, reset = false, { refresh = res
             return;
         }
         this.galleryLoading = true;
-        const query = this.gallerySearchQuery || '';
+        const terms = [...(this.gallerySearchTerms || [])];
+        const termsKey = JSON.stringify(terms);
+        const query = terms.length > 0;
         this.gallerySentinel.textContent = query && page === 1 ? t('gallerySearching') : t('galleryLoading');
 
         try {
             const params = new URLSearchParams({ page: String(page), limit: '50' });
             if (refresh) params.set('refresh', '1');
-            if (query) params.set('q', query);
+            terms.forEach(term => params.append('term', term));
             const res = await fetch(`/anomalous/gallery_images?${params}`);
             const data = await res.json();
-            if (query !== (this.gallerySearchQuery || '')) {
+            if (termsKey !== JSON.stringify(this.gallerySearchTerms || [])) {
                 this.galleryReloadPending = true;
                 return;
             }

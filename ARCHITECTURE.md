@@ -89,7 +89,9 @@ DOM or live LiteGraph state.
   workflow, A1111 `parameters`), caches one record per image by mtime, and
   matches all query terms; hex terms of 8+ characters also match recorded model
   SHA256 values and, via `collect_model_hash_index` in `model_resolution.py`,
-  local model files with that hash. `ui_gallery.js` owns the search box.
+  local model files with that hash. Terms arrive as repeated `term` params, one
+  phrase each. `ui_search_chips.js` is the reusable search-block input (Enter or a
+  comma commits a block); `ui_gallery.js` places it above the gallery.
 
 - `web/main.js` coordinates extension registration (with `?v=...` versioned module imports busting aggressive browser ES Module caching and unconditional legacy storage key purging). `browser.js` owns the shared
   browser class and extracted-method wiring; `browser_entry.js` owns the single

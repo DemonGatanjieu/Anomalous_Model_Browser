@@ -165,11 +165,18 @@ def _local_models_for_hash(term):
 
 
 def parse_query(query):
-    return [term for term in str(query or "").lower().split() if term]
+    """Search terms: a list keeps each entry as one phrase; a string splits on whitespace."""
+    raw = query if isinstance(query, (list, tuple)) else str(query or "").split()
+    terms = []
+    for term in raw:
+        term = " ".join(str(term).lower().split())
+        if term and term not in terms:
+            terms.append(term)
+    return terms
 
 
 def filter_images(output_dir, images, query):
-    """Keep gallery entries whose record matches every term of `query`."""
+    """Keep gallery entries whose record matches every term (phrases may contain spaces)."""
     terms = parse_query(query)
     if not terms:
         return images
