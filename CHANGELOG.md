@@ -2,7 +2,32 @@
 
 ## Unreleased
 
-### Customizable Tool Shortcuts and Toolbox Reorganization (自定义工具箱快捷栏)
+## v1.57.0 Beta (Toolbox Architecture, Gallery Search & Polymorphic Drag) — 2026-09-23
+
+### 🎨 Pure Vector Iconography Overhaul (纯代码矢量图标体系全面升级)
+- **Universal Code-Native SVG Icons (全套规范化纯代码矢量 SVG 图标)**:
+  - Completely phased out legacy emojis and pixel icons in favor of lightweight, mathematically crisp 24x24 code-native vector SVGs (`stroke-width: 2`, rounded joins/caps).
+  - Redesigned the floating entry trigger orb with the **Anomalous Hypercube Core** (`1b985ba`) and frosted glass lighting effect, maintaining smooth rendering and subtle hover micro-interactions.
+  - Sidebar and toolbox action buttons upgraded with distinct vector geometry: 3D Asset Cube for Toolbox, Radar Pulse for Scan Wizard, Stethoscope for Model Doctor, Four-Point Spark for Node Assistant, Layered Sheets for Material Library, and Obsidian Gear for Settings.
+  - Eliminated icon flicker, CSS pseudo-element clipping, and alignment shifts across all display scales.
+
+### 🔍 Multi-Dimensional Gallery Search (历史出图图库多维检索与标签块)
+- **Multi-Field Real-Time Search (提示词/模型/种子/哈希多维检索)**:
+  - Upgraded the native output gallery header with an intelligent search bar capable of parsing prompts, model file names, exact numeric seeds, and cryptographic SHA-256 model hashes simultaneously (`1476faf`).
+  - Search terms are dynamically converted into visually distinct, standalone **Search Blocks (搜索标签块)** (`e077689`).
+  - Each search block clearly displays its matched category and provides an accessible `×` button for one-click removal, enabling flexible compound filtering without retyping.
+  - Backed by optimized chunk parsing (`api/image_search.py`) that reads only header metadata prior to pixel buffers, ensuring zero-lag gallery navigation.
+
+### 🚀 Polymorphic Canvas Drag & Drop (全域多态画布拖拽架构)
+- **Universal Canvas Drag (全域多态画布拖拽)**:
+  - Dragging workflow materials onto empty canvas automatically reconstructs and opens the full workflow.
+  - Dragging prompt-only materials onto empty canvas auto-creates native `CLIPTextEncode` nodes with pure prompt text, bilingual titles, and standard ComfyUI dark theme colors (`#532323` for negative / `#235327` for positive).
+  - Dragging materials onto existing canvas nodes prioritizes the target node, injecting matching widget values and prompt text via semantic widget sniffing while strictly filtering out model file paths and loader blocks.
+- **Floating Trigger Pre-Mount & Anti-FOUC (悬浮入口预挂载防闪烁与安全吸附)**:
+  - Completely eliminated FOUC flicker on page refresh via pre-mount positioning and smooth opacity reveal (`53c9f1b`).
+  - Hardened PointerEvents persistence, safe coordinate validation, and boundary clamping to prevent trigger entrapment or collapsing to the viewport origin (`09b06d1`).
+
+### 🧰 Toolbox Catalog & Customizable Shortcut Dock (实用工具箱与底部快捷栏架构)
 - **Customizable Bottom Shortcut Bar (自定义底部快捷栏)**:
   - Transformed the lower-left navigation bar into a user-customizable tool dock. Left anchor (`Toolbox`) and right anchor (`Settings`) remain fixed; intermediate slots support up to 4 user-customized tools (default: Scan, Doctor, Assistant, Materials).
   - Tools can be dragged between the Toolbox catalog and the shortcut bar with a 6px deadzone, live ghost preview, and precision drop indicators.
