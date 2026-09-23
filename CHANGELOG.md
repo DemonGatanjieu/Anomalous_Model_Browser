@@ -1,13 +1,9 @@
 # 📈 Anomalous Model Browser Changelog
 
-## Unreleased
-
-- **Version number moved to the sidebar footer (版本号移到侧边栏底部)**: it now sits under the tool dock instead of the header, where it pushed the dock/close buttons out of view in docked or scaled layouts.
-
 ## v1.57.1 Beta (Version Panel: Update, Switch & Roll Back) — 2026-09-23
 
 ### 🏷️ Version & Updates Panel (版本号与一键更新 / 版本切换)
-- **Version chip in the header (顶栏版本号)**: the installed version (e.g. `v1.57.1-beta`) now sits in the browser header. Reading it is local only; nothing goes online.
+- **Version chip in the sidebar footer (侧边栏底部版本号)**: the installed version (e.g. `v1.57.1-beta`) now sits neatly under the tool dock in the sidebar footer, avoiding header crowding in docked or scaled layouts. Reading it is local only; nothing goes online.
 - **Manual "Check for updates" (手动检查更新)**: the plugin never checks by itself. Clicking the chip opens the panel, and only the **Check for updates** button contacts GitHub. Each published release shows its notes, date and a GitHub link; pre-releases are hidden by default and are never offered as the latest version.
 - **One-click update to published releases (一键更新到正式发布版本)**: updates only target releases published on GitHub, not in-progress commits, so what you install is a released build.
 - **Switch or roll back (切换 / 回退版本)**: any published release can be installed from the list. Rolling back warns that older versions may not read settings or recipes saved by newer ones; nothing is deleted, and it all works again after returning.
