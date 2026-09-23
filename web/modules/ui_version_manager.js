@@ -3,7 +3,7 @@ import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 
 /**
- * Version chip in the browser header and the "Version & updates" panel:
+ * Version chip in the sidebar footer and the "Version & updates" panel:
  * shows the installed version, lists published releases only when asked,
  * and switches, rolls back, returns to latest or undoes the last switch.
  */
@@ -61,9 +61,9 @@ function stateLabel(state) {
     return state.branch ? t('versionDevBuild', { base: state.base_tag || state.commit, branch: state.branch }) : state.label;
 }
 
-// ---------- header chip ----------
+// ---------- version chip ----------
 
-/** Small version button for the header; loads the installed version locally (no network). */
+/** Small version button for the sidebar footer; loads the installed version locally (no network). */
 export function createVersionChip(owner) {
     const chip = button('anomalous-version-chip', '…', () => openVersionPanel(owner, chip));
     chip.title = t('versionPanelTitle');

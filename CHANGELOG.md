@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Version number moved to the sidebar footer (版本号移到侧边栏底部)**: it now sits under the tool dock instead of the header, where it pushed the dock/close buttons out of view in docked or scaled layouts.
+
 ## v1.57.1 Beta (Version Panel: Update, Switch & Roll Back) — 2026-09-23
 
 ### 🏷️ Version & Updates Panel (版本号与一键更新 / 版本切换)

@@ -99,7 +99,7 @@ DOM or live LiteGraph state.
   checkout), returning to the default branch (fast-forward only), and undoing the
   last switch (recorded in the ignored `.anomalous_version.local.json`). Every
   switch refuses to run over modified tracked files. `ui_version_manager.js` is
-  the header version chip and panel; nothing goes online until "check for updates"
+  the version chip (sidebar footer) and panel; nothing goes online until "check for updates"
   is clicked, and restarts go through ComfyUI Manager's reboot route when present.
 
 - `web/main.js` coordinates extension registration (with `?v=...` versioned module imports busting aggressive browser ES Module caching and unconditional legacy storage key purging). `browser.js` owns the shared
