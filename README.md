@@ -49,6 +49,7 @@
    git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
    ```
 2. Restart ComfyUI. *(Alternatively, install via **ComfyUI Manager** by searching for `Anomalous Model Browser`)*
+3. **Updating**: click the version number in the browser header and press **Check for updates**. From there you can update to the newest published release, roll back to an earlier one, or return to the latest version, then restart ComfyUI. The plugin never checks for updates on its own.
 
 Open the browser via **Ctrl + Shift + M**, the floating canvas orb (**📦**), or **Extensions → Anomalous Model Browser** in ComfyUI's menu. **ComfyUI Settings → Anomalous Model Browser → Interface** lets you customize the shortcut, configure the UI language, and select an entry mode (floating button, action-bar button, or Extensions menu only).
 
@@ -139,6 +140,7 @@ The header provides 3 primary workspaces:
    git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
    ```
 2. 重启 ComfyUI 即可使用。（*也可以直接在 **ComfyUI Manager** 搜索 `Anomalous Model Browser` 点击安装*）
+3. **更新插件**：点击插件顶栏的版本号，再点 **检查更新**。可以一键更新到最新发布版本、回退到以前的版本，或回到最新版，之后重启 ComfyUI 即可。插件不会自己联网检查更新。
 
 可以按 **Ctrl + Shift + M**、点击画布上的悬浮 **📦**，或从 ComfyUI 顶部菜单 **扩展 → Anomalous Model Browser** 打开。**ComfyUI 设置 → Anomalous Model Browser → 界面** 会显示当前快捷键，并可直接打开 ComfyUI 原生录入窗口修改，因此冲突与保留按键检查仍然只有一套。该页面还可以让插件语言跟随 ComfyUI 或单独固定为中文/English，并严格三选一显示悬浮入口、运行按钮旁的原生顶部入口或仅使用扩展菜单。只有选择悬浮入口时才显示大小和样式选项。顶部栏重绘不会擅自改变所选模式，扩展菜单命令则始终保留，便于恢复设置。
 
