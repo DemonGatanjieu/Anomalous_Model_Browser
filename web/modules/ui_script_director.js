@@ -1,7 +1,7 @@
 import { app } from '../../../scripts/app.js';
 import { t } from './interface_settings.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
-import { buildScriptPackage, comboValueForPath, joinSegments, splitScriptLines, usableEmotions } from './audio_script.js';
+import { buildScriptPackage, comboValueForPath, joinSegments, splitScriptLines, splitSegmentAt, usableEmotions } from './audio_script.js';
 import { bindMaterialDrag } from './material_drag.js';
 
 /**
@@ -250,6 +250,20 @@ function renderLineCard(line, index, emotions, slices) {
     head.append(
         el('span', 'anomalous-sd-line-no', `#${index + 1}`),
         previewBtn,
+        // Split at the text caret (the textarea keeps its caret after losing focus to this button).
+        button('anomalous-sd-icon-btn', '✂', async () => {
+            const parts = splitSegmentAt(line.text, text.selectionStart);
+            if (!parts) {
+                await anomalousAlert(t('scriptDirectorSplitHint'));
+                text.focus();
+                return;
+            }
+            line.text = parts[0];
+            state.lines.splice(index + 1, 0, { text: parts[1], emotion: line.emotion });
+            state.focusIndex = index + 1;
+            stopScriptDirectorPreview();
+            renderAll();
+        }, t('scriptDirectorSplitAtCaret')),
     );
     if (index < state.lines.length - 1) {
         // Merge keeps this card's emotion: one card = one segment spoken with one voice.
