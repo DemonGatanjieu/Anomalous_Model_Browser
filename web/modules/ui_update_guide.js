@@ -3,6 +3,7 @@ import { i18n, translate as t } from './locales.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { text } from './ui_dom.js';
 import { startSpotlightTour, ensureTourStyles } from './ui_spotlight_tour.js';
+import { createVersionLine } from './ui_version_manager.js';
 
 const acknowledgedThisSession = new Set();
 let activeGuide = null;
@@ -58,6 +59,7 @@ export function showUpdateGuide(owner, { force = false, guide = CURRENT_UPDATE_G
     dismiss.type = 'button';
     dismiss.setAttribute('aria-label', t('close'));
     dismiss.onclick = () => closeUpdateGuide(owner, true);
+    dialog.appendChild(createVersionLine(owner, { beforeOpen: () => closeUpdateGuide(owner, true) }));
     const icon = text(dialog, 'div', '', 'anomalous-update-guide-icon');
     icon.setAttribute('aria-hidden', 'true');
     const title = text(dialog, 'h2', '');

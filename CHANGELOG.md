@@ -249,6 +249,10 @@
 
 # 📈 Anomalous Model Browser Changelog
 
+## Unreleased
+
+- **Version moved into the update guide (版本号移入更新引导)**: the sidebar-footer version sat right under the tool dock and invited misclicks. The current version and a **Check for updates / switch version** button now appear at the top of the update guide opened by the header **!** button.
+
 ## v2.0.0 (The Workflow & UI Evolution Update)
 ### 🚀 Major Features
 - **Node Assistant (节点助手)**: Introduced a dedicated "Assistant" tab within the Model Doctor. Selecting any node in the canvas instantly focuses the Assistant on that specific node, providing deep analysis and contextual controls without obscuring your view.

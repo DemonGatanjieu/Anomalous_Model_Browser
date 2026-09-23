@@ -3,7 +3,7 @@ import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 
 /**
- * Version chip in the sidebar footer and the "Version & updates" panel:
+ * Version line in the update guide ("!" in the header) and the "Version & updates" panel:
  * shows the installed version, lists published releases only when asked,
  * and switches, rolls back, returns to latest or undoes the last switch.
  */
@@ -61,17 +61,26 @@ function stateLabel(state) {
     return state.branch ? t('versionDevBuild', { base: state.base_tag || state.commit, branch: state.branch }) : state.label;
 }
 
-// ---------- version chip ----------
+// ---------- version line ----------
 
-/** Small version button for the sidebar footer; loads the installed version locally (no network). */
-export function createVersionChip(owner) {
-    const chip = button('anomalous-version-chip', '…', () => openVersionPanel(owner, chip));
-    chip.title = t('versionPanelTitle');
-    chip.setAttribute('aria-label', t('versionPanelTitle'));
-    request('/anomalous/version').then(data => {
-        chip.textContent = data.success && data.state?.is_git ? (data.state.tag || data.state.base_tag || data.state.label) : t('versionChipUnknown');
+/**
+ * "Current version · Check for updates" row for the update guide. Reads the installed
+ * version locally (no network). `beforeOpen` lets the host close itself first, since a
+ * modal <dialog> would stay above the panel.
+ */
+export function createVersionLine(owner, { beforeOpen } = {}) {
+    const line = el('div', 'anomalous-version-line');
+    const label = el('span', 'anomalous-version-line-label', t('versionCurrent'));
+    const value = el('strong', 'anomalous-version-line-value', '…');
+    const open = button('anomalous-version-line-open', t('versionCheckOpen'), () => {
+        beforeOpen?.();
+        openVersionPanel(owner);
     });
-    return chip;
+    line.append(label, value, open);
+    request('/anomalous/version').then(data => {
+        value.textContent = data.success && data.state?.is_git ? (data.state.tag || data.state.base_tag || data.state.label) : t('versionChipUnknown');
+    });
+    return line;
 }
 
 // ---------- panel ----------
