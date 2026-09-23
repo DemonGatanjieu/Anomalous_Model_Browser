@@ -10,6 +10,7 @@ import { showUpdateGuide } from './ui_update_guide.js';
 import { setScanButtonState } from './ui_scan_wizard.js';
 import { createSettingsHub } from './ui_settings_hub.js';
 import { createToolbox } from './ui_toolbox.js';
+import { createGallerySearchBar } from './ui_gallery.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -488,7 +489,7 @@ export function createDOM() {
 
         this.galleryGrid = document.createElement('div');
         this.galleryGrid.className = 'anomalous-gallery-grid';
-        this.galleryPanel.appendChild(this.galleryGrid);
+        this.galleryPanel.append(createGallerySearchBar(this), this.galleryGrid);
 
         this.gallerySentinel = document.createElement('div');
         this.gallerySentinel.className = 'anomalous-gallery-sentinel';

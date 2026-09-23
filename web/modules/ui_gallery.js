@@ -25,14 +25,59 @@ export async function refreshGalleryImages() {
 
 
 
-export async function loadGalleryImages(page = 1, reset = false) {
-        if (this.galleryLoading) return;
+const GALLERY_SEARCH_DELAY_MS = 350;
+
+/** Search box above the output gallery; the query lives on the browser as `gallerySearchQuery`. */
+export function createGallerySearchBar(owner) {
+    const bar = document.createElement('label');
+    bar.className = 'anomalous-gallery-search';
+    bar.title = t('gallerySearchHelp');
+    const icon = document.createElement('span');
+    icon.className = 'anomalous-gallery-search-icon';
+    icon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+    const input = document.createElement('input');
+    input.type = 'search';
+    input.placeholder = t('gallerySearchPlaceholder');
+    const count = document.createElement('span');
+    count.className = 'anomalous-gallery-search-count';
+    owner.gallerySearchCount = count;
+    let timer = null;
+    input.oninput = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            const query = input.value.trim();
+            if (query === (owner.gallerySearchQuery || '')) return;
+            owner.gallerySearchQuery = query;
+            owner.loadGalleryImages(1, true, { refresh: false });
+        }, GALLERY_SEARCH_DELAY_MS);
+    };
+    bar.append(icon, input, count);
+    return bar;
+}
+
+export async function loadGalleryImages(page = 1, reset = false, { refresh = reset } = {}) {
+        if (this.galleryLoading) {
+            // A newer query arrived while loading: run it once the current request settles.
+            if (reset) this.galleryReloadPending = true;
+            return;
+        }
         this.galleryLoading = true;
-        this.gallerySentinel.textContent = t('galleryLoading');
+        const query = this.gallerySearchQuery || '';
+        this.gallerySentinel.textContent = query && page === 1 ? t('gallerySearching') : t('galleryLoading');
 
         try {
-            const res = await fetch(`/anomalous/gallery_images?page=${page}&limit=50${reset ? "&refresh=1" : ""}`);
+            const params = new URLSearchParams({ page: String(page), limit: '50' });
+            if (refresh) params.set('refresh', '1');
+            if (query) params.set('q', query);
+            const res = await fetch(`/anomalous/gallery_images?${params}`);
             const data = await res.json();
+            if (query !== (this.gallerySearchQuery || '')) {
+                this.galleryReloadPending = true;
+                return;
+            }
+            if (this.gallerySearchCount) {
+                this.gallerySearchCount.textContent = query && Number.isFinite(data.total) ? t('gallerySearchCount', { count: data.total }) : '';
+            }
 
             if (reset) {
                 // Clear existing cards
@@ -290,14 +335,18 @@ export async function loadGalleryImages(page = 1, reset = false) {
                 }
             } else {
                 this.galleryHasMore = false;
-                this.gallerySentinel.textContent = reset ? t('galleryEmpty') : t('galleryNoMore');
+                this.gallerySentinel.textContent = reset ? t(query ? 'gallerySearchEmpty' : 'galleryEmpty') : t('galleryNoMore');
             }
         } catch (e) {
             console.error('Failed to load gallery images', e);
             this.gallerySentinel.textContent = t('galleryLoadFailed');
+        } finally {
+            this.galleryLoading = false;
+            if (this.galleryReloadPending) {
+                this.galleryReloadPending = false;
+                void this.loadGalleryImages(1, true, { refresh: false });
+            }
         }
-
-        this.galleryLoading = false;
     }
 
 

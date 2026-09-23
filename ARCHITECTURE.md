@@ -84,6 +84,12 @@ DOM or live LiteGraph state.
   `api/folder_types.py` own the formerly mixed utility route families.
 - `model_policies.py` owns shared backend rename and protected-category policy.
 - `model_identity.py` owns file SHA-256 evidence shared with the standalone scanner.
+- `api/image_search.py` powers the output gallery search (`gallery_images?q=`):
+  it reads only the PNG text chunks before the pixel data (ComfyUI prompt and
+  workflow, A1111 `parameters`), caches one record per image by mtime, and
+  matches all query terms; hex terms of 8+ characters also match recorded model
+  SHA256 values and, via `collect_model_hash_index` in `model_resolution.py`,
+  local model files with that hash. `ui_gallery.js` owns the search box.
 
 - `web/main.js` coordinates extension registration (with `?v=...` versioned module imports busting aggressive browser ES Module caching and unconditional legacy storage key purging). `browser.js` owns the shared
   browser class and extracted-method wiring; `browser_entry.js` owns the single

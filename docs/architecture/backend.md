@@ -63,8 +63,9 @@ live in `material_schema.py`, `material_assets.py`, and `material_store.py`;
 
 The former mixed utility routes are separated: `media_routes.py` owns card
 thumbnails and model/output media lookups, `gallery_routes.py` owns the bounded
-output snapshot and deletion, `translation_routes.py` owns provider fallback,
-and `folder_types.py` owns configured visibility and scan scope.
+output snapshot and deletion (searched through `image_search.py`, which reads
+PNG text chunks only and caches per-image records by mtime), `translation_routes.py`
+owns provider fallback, and `folder_types.py` owns configured visibility and scan scope.
 
 Offline inference sidecars use non-positive Civitai IDs as sentinels. Metadata
 normalization must not expose those values as release-page URLs or resolved
