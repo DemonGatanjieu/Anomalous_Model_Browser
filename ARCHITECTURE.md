@@ -104,6 +104,15 @@ DOM or live LiteGraph state.
   local model files with that hash. Terms arrive as repeated `term` params, one
   phrase each. `ui_search_chips.js` is the reusable search-block input (Enter or a
   comma commits a block); `ui_gallery.js` places it above the gallery.
+- `api/version_manager.py` owns the plugin's own version: the installed tag/branch
+  (`/anomalous/version`, local only), published releases fetched only on request
+  (GitHub releases API, falling back to `git ls-remote` tags; drafts skipped,
+  pre-releases never counted as latest), switching to a published tag (detached
+  checkout), returning to the default branch (fast-forward only), and undoing the
+  last switch (recorded in the ignored `.anomalous_version.local.json`). Every
+  switch refuses to run over modified tracked files. `ui_version_manager.js` is
+  the header version chip and panel; nothing goes online until "check for updates"
+  is clicked, and restarts go through ComfyUI Manager's reboot route when present.
 
 - `web/main.js` coordinates extension registration (with `?v=...` versioned module imports busting aggressive browser ES Module caching and unconditional legacy storage key purging). `browser.js` owns the shared
   browser class and extracted-method wiring; `browser_entry.js` owns the single
@@ -147,7 +156,7 @@ DOM or live LiteGraph state.
 - `sidebar_actions.js` owns the sidebar bottom action hover-reveal short labels (100ms), singleton dynamic DOM tooltip bubbles (`#anomalous-sidebar-tooltip-bubble`, 600ms), click/pointerdown instant text/tooltip suppression guards, `isBottomModalOpen` tooltip occlusion guards, and anti-flicker pointer stability.
 - `tool_registry.js` centralizes metadata, SVG icons (enlarged 20px crisp vector outlines with 2px stroke, #cbd5e1 contrast), and stable IDs for the 9 catalog tools (including Prompt Notes / 提示词笔记) and 2 fixed anchors (Toolbox and Settings).
 - `shortcut_layout.js` provides tool layout utilities and fallbacks. The bottom shortcut bar maintains the clean fixed 4-tool setup (`scan`, `doctor`, `assistant`, `materials`) plus two anchors (`toolbox`, `settings`) housed in prominent 36px buttons with full click/active text suppression and `.is-active` toggled styling.
-- `ui_sidebar.js`'s Toolbox modal strictly filters out all tools already present on the bottom bar, presenting a sleek 216px 3-row utility catalog with compact, frameless 44px tiles (providing an elevated silhouette with breathing room for catalog discovery), downward anchor caret pointing to the toolbox trigger button, 0.18s smooth spring pop-in animation, clean click action execution, and zero obstructive text or beta footers.
+- `ui_toolbox.js`'s Toolbox modal strictly filters out all tools already present on the bottom bar, presenting a sleek 216px 3-row utility catalog with compact, frameless 44px tiles (providing an elevated silhouette with breathing room for catalog discovery), downward anchor caret pointing to the toolbox trigger button, 0.18s smooth spring pop-in animation, clean click action execution, and zero obstructive text or beta footers.
 - `ui_grid.js` and model-detail modules own model presentation: `ui_grid.js` manages chunked card rendering,
   card placeholder ergonomics (eliminating misleading unclickable text in favor of pure centered icon and status),
   card action buttons (one-click canvas addition with plus icon, model metadata editor, direct precision scanner without wizard modal popups)

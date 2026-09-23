@@ -13,6 +13,7 @@ import { createToolbox } from './ui_toolbox.js';
 import { createDomainSwitcher, getActiveDomain } from './ui_domain_switcher.js';
 import { renderAudioSidebar } from './ui_audio_sidebar.js';
 import { createGallerySearchBar } from './ui_gallery.js';
+import { createVersionChip } from './ui_version_manager.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -486,6 +487,7 @@ export function createDOM() {
         updateNoticeBtn.appendChild(updateNoticeIcon);
         updateNoticeBtn.onclick = () => showUpdateGuide(this, { force: true });
 
+        rightGroup.appendChild(createVersionChip(this));
         rightGroup.appendChild(updateNoticeBtn);
         rightGroup.appendChild(dockBtn);
         rightGroup.appendChild(closeBtn);

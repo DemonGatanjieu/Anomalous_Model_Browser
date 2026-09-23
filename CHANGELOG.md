@@ -2,28 +2,61 @@
 
 ## Unreleased
 
-## v1.57.0 Beta (Recipe Studio, Material Library & Polymorphic Drag) — 2026-09-23
+## v1.58.0 Beta (Version Panel: Update, Switch & Roll Back) — 2026-09-23
 
-### 🚀 Polymorphic Canvas Drag & Drop (多态画布拖拽架构)
+### 🏷️ Version & Updates Panel (版本号与一键更新 / 版本切换)
+- **Version chip in the header (顶栏版本号)**: the installed version (e.g. `v1.58-beta`) now sits in the browser header. Reading it is local only; nothing goes online.
+- **Manual "Check for updates" (手动检查更新)**: the plugin never checks by itself. Clicking the chip opens the panel, and only the **Check for updates** button contacts GitHub. Each published release shows its notes, date and a GitHub link; pre-releases are hidden by default and are never offered as the latest version.
+- **One-click update to published releases (一键更新到正式发布版本)**: updates only target releases published on GitHub, not in-progress commits, so what you install is a released build.
+- **Switch or roll back (切换 / 回退版本)**: any published release can be installed from the list. Rolling back warns that older versions may not read settings or recipes saved by newer ones; nothing is deleted, and it all works again after returning.
+- **Back to latest & undo (回到最新版 / 撤销上次切换)**: **Back to latest** returns to the default branch and pulls the newest code; **Undo last switch** returns to exactly where you were before. Versions older than v1.58 have no panel, so from those use **Update** for this plugin in ComfyUI Manager to come back.
+- **Safe by default (安全保护)**: every switch is refused while plugin files have local modifications (the files are listed), and a local branch with unpublished commits is never overwritten.
+- **Restart (重启生效)**: after a switch the panel offers to restart ComfyUI through ComfyUI Manager; without Manager it asks you to restart by hand.
+
+## v1.57.0 Beta (Toolbox Architecture, Gallery Search & Polymorphic Drag) — 2026-09-23
+
+### 🎨 Pure Vector Iconography Overhaul (纯代码矢量图标体系全面升级)
+- **Universal Code-Native SVG Icons (全套规范化纯代码矢量 SVG 图标)**:
+  - Completely phased out legacy emojis and pixel icons in favor of lightweight, mathematically crisp 24x24 code-native vector SVGs (`stroke-width: 2`, rounded joins/caps).
+  - Redesigned the floating entry trigger orb with the **Anomalous Hypercube Core** (`1b985ba`) and frosted glass lighting effect, maintaining smooth rendering and subtle hover micro-interactions.
+  - Sidebar and toolbox action buttons upgraded with distinct vector geometry: 3D Asset Cube for Toolbox, Radar Pulse for Scan Wizard, Stethoscope for Model Doctor, Four-Point Spark for Node Assistant, Layered Sheets for Material Library, and Obsidian Gear for Settings.
+  - Eliminated icon flicker, CSS pseudo-element clipping, and alignment shifts across all display scales.
+
+### 🔍 Multi-Dimensional Gallery Search (历史出图图库多维检索与标签块)
+- **Multi-Field Real-Time Search (提示词/模型/种子/哈希多维检索)**:
+  - Upgraded the native output gallery header with an intelligent search bar capable of parsing prompts, model file names, exact numeric seeds, and cryptographic SHA-256 model hashes simultaneously (`1476faf`).
+  - Search terms are dynamically converted into visually distinct, standalone **Search Blocks (搜索标签块)** (`e077689`).
+  - Each search block clearly displays its matched category and provides an accessible `×` button for one-click removal, enabling flexible compound filtering without retyping.
+  - Backed by optimized chunk parsing (`api/image_search.py`) that reads only header metadata prior to pixel buffers, ensuring zero-lag gallery navigation.
+
+### 🚀 Polymorphic Canvas Drag & Drop (全域多态画布拖拽架构)
 - **Universal Canvas Drag (全域多态画布拖拽)**:
-  - Dragging workflow materials to blank canvas automatically reconstructs and opens the full workflow.
-  - Dragging prompt-only materials to blank canvas spawns native `CLIPTextEncode` nodes with pure prompt text, bilingual titles, and standard ComfyUI dark theme colors (`#532323` for negative / `#235327` for positive).
+  - Dragging workflow materials onto empty canvas automatically reconstructs and opens the full workflow.
+  - Dragging prompt-only materials onto empty canvas auto-creates native `CLIPTextEncode` nodes with pure prompt text, bilingual titles, and standard ComfyUI dark theme colors (`#532323` for negative / `#235327` for positive).
   - Dragging materials onto existing canvas nodes prioritizes the target node, injecting matching widget values and prompt text via semantic widget sniffing while strictly filtering out model file paths and loader blocks.
 - **Floating Trigger Pre-Mount & Anti-FOUC (悬浮入口预挂载防闪烁与安全吸附)**:
-  - Completely eliminated FOUC flicker on page refresh via pre-mount positioning and smooth opacity reveal.
-  - Hardened PointerEvents persistence, safe coordinate validation, and boundary clamping to prevent trigger entrapment or collapsing to the viewport origin.
+  - Completely eliminated FOUC flicker on page refresh via pre-mount positioning and smooth opacity reveal (`53c9f1b`).
+  - Hardened PointerEvents persistence, safe coordinate validation, and boundary clamping to prevent trigger entrapment or collapsing to the viewport origin (`09b06d1`).
 
-### Customizable Tool Shortcuts and Toolbox Reorganization (自定义工具箱快捷栏)
-- **Customizable Bottom Shortcut Bar (自定义底部快捷栏)**:
-  - Transformed the lower-left navigation bar into a user-customizable tool dock. Left anchor (`Toolbox`) and right anchor (`Settings`) remain fixed; intermediate slots support up to 4 user-customized tools (default: Scan, Doctor, Assistant, Materials).
-  - Tools can be dragged between the Toolbox catalog and the shortcut bar with a 6px deadzone, live ghost preview, and precision drop indicators.
-  - Pinned shortcuts can be dragged back to the Toolbox modal (or its dedicated drop zone) to unpin them, or reordered directly inside the bar.
-  - Reaching the 4-shortcut capacity limit provides clear, non-intrusive feedback.
-  - Added an accessible "•••" context menu on toolbox cards and right-click menus on shortcut buttons, allowing full organization (pin, unpin, reorder) without pointer drag.
-  - Fully localized bilingual strings and persistent layout storage under `anomalous_shortcut_layout_v1` with graceful memory fallback.
+### 🧰 Toolbox Catalog & Dedicated Bottom Dock (实用工具箱与底部固定快捷栏架构)
+- **Dedicated Bottom Action Bar (结构化底部快捷栏)**:
+  - Streamlined the lower-left sidebar into a dedicated 6-button utility bar:
+    1. **Toolbox (🧰 实用工具箱)**: Anchored as the primary launcher on the left to access secondary tools.
+    2. **Scan Wizard (🔄 扫描向导)**: Direct shortcut to launch model library scanning.
+    3. **Model Doctor (🩺 模型医生)**: Direct shortcut to diagnose and auto-heal missing workflow models.
+    4. **Node Assistant (🤖 节点助手)**: Direct shortcut for canvas node inspection, model swapping, and parameter injection.
+    5. **Material Library (✨ 素材库)**: Direct shortcut to manage curated material bundles and polymorphic canvas drag-and-drop.
+    6. **Settings (⚙️ 设置)**: Fixed anchor on the right for interface preferences.
+- **Toolbox Modal Catalog (实用工具箱浮窗面板)**:
+  - Clicking the first icon (**🧰 实用工具箱**) opens a dedicated popup panel housing 5 secondary tools not on the main dock:
+    1. **Workflow Transfer Center (导入导出)**: Lossless AMB format workflow share code import and export.
+    2. **Prompt Studio (提示词工坊)**: Modular prompt mixer deck for lego-block prompt extraction, reordering, and assembly.
+    3. **Prompt Translator (翻译助手)**: Bilingual real-time English/Chinese prompt translation.
+    4. **Model Source Hub (模型来源)**: Online model source URL inspector with instant canvas Note node generation.
+    5. **Prompt Notes (提示词笔记)**: Lightweight notebook for drafting and organizing reusable prompt snippets (`workflows/anomalous_notebooks`).
 - **Enhanced Sidebar Tooltips & Reveal Timing (侧边栏操作提示与动画优化)**:
   - 100ms quick hover text replacement on shortcut buttons and 600ms rich singleton floating tooltip bubble (`#anomalous-sidebar-tooltip-bubble`) with bold title and muted explanation, cleanly avoiding CSS pseudo-element clipping issues.
-  - Hovering over a closed Toolbox button while dragging auto-expands the Toolbox after 350ms for frictionless tool extraction.
+  - Clicking or pressing any action button immediately suppresses hover text and floating tooltips.
   - Maintained elegant obsidian glass / dark monochromatic aesthetics without harsh or distracting bright colors.
 
 ### Navigation and update guide

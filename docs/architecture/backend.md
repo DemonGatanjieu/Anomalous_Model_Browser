@@ -74,6 +74,13 @@ every file and swaps them in together so a failed conversion or write keeps the
 previous voice. The root `__init__.py` prepends the portable Python folders to
 PATH for other audio nodes; this is a deliberate process-wide exception.
 
+`version_manager.py` runs git against the plugin checkout only (no shell, no
+prompts, `CREATE_NO_WINDOW` on Windows) and accepts only tags that appear in the
+published release list. It refuses switches while tracked files are modified,
+never rewrites a local branch that has diverged from the remote, and reports
+stable error codes (`dirty`, `diverged`, `offline`, `unknown_tag`, ...) that the UI
+localizes. Switching changes code only; a ComfyUI restart applies it.
+
 Offline inference sidecars use non-positive Civitai IDs as sentinels. Metadata
 normalization must not expose those values as release-page URLs or resolved
 model/version identities; only positive IDs may form a Civitai source link.
