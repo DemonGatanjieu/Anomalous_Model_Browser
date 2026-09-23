@@ -1,34 +1,37 @@
 /* =============================================================================
-   Version chip (sidebar footer) and the "Version & updates" panel
+   Version line (update guide) and the "Version & updates" panel
    ============================================================================= */
 
-/* Sidebar footer, under the tool dock. */
-.anomalous-version-chip {
-    flex: none;
-    display: block;
-    width: 100%;
-    margin: 0;
-    padding: 3px 12px 7px;
-    overflow: hidden;
-    background: transparent;
-    border: none;
-    border-radius: 0 0 10px 10px;
-    color: var(--amb-text-muted, #9ca3af);
-    font: 500 11px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    text-align: center;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    opacity: 0.75;
+/* Row under the update guide header ("!" button). */
+.anomalous-version-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.anomalous-version-line-value {
+    color: #e2e8f0;
+    font: 600 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.anomalous-version-line-open {
+    margin-left: auto;
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: #e2e8f0;
+    font-size: 12px;
     cursor: pointer;
+    white-space: nowrap;
 }
 
-.anomalous-version-chip:hover {
-    color: var(--amb-text-main, #f3f4f6);
-    opacity: 1;
-}
-
-.anomalous-sidebar-closed .anomalous-version-chip {
-    display: none;
+.anomalous-version-line-open:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .anomalous-version-overlay {
@@ -317,7 +320,7 @@
 
 .anomalous-version-panel button:focus-visible,
 .anomalous-version-panel a:focus-visible,
-.anomalous-version-chip:focus-visible {
+.anomalous-version-line-open:focus-visible {
     outline: 2px solid var(--amb-accent, #f59e0b);
     outline-offset: 2px;
 }

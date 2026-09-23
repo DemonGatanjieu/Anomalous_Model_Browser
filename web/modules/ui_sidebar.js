@@ -13,7 +13,6 @@ import { createToolbox } from './ui_toolbox.js';
 import { createDomainSwitcher, getActiveDomain } from './ui_domain_switcher.js';
 import { renderAudioSidebar } from './ui_audio_sidebar.js';
 import { createGallerySearchBar } from './ui_gallery.js';
-import { createVersionChip } from './ui_version_manager.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -170,8 +169,6 @@ export function createDOM() {
         this.sidebarWrapper.appendChild(brandBar);
         this.sidebarWrapper.appendChild(this.sidebar);
         this.sidebarWrapper.appendChild(this.sidebarActions);
-        // Version sits in the sidebar footer: the header has no spare width when docked or scaled.
-        this.sidebarWrapper.appendChild(createVersionChip(this));
 
         // Content Area
         const content = document.createElement('div');
