@@ -202,6 +202,8 @@ body:has(.anomalous-prompt-studio-drawer) #anomalous-trigger-btn {
     box-shadow: none;
 }
 
+/* !important: ComfyUI's topbar/side-bar button styles would otherwise keep an empty
+   host button visible for this entry while the topbar entry mode is off. */
 .anomalous-topbar-entry,
 button:has(.anomalous-topbar-entry),
 [data-testid="anomalous-topbar-entry"],

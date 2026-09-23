@@ -128,7 +128,11 @@ the same normalization and enrichment boundaries as local recipes.
 - `api/recipes.py`: schema validation, enrichment, field preservation, history;
 - `api/recipe_packages.py`: export privacy and package boundaries;
 - `api/models.py`: Model Doctor evidence and candidate policy;
-- `web/modules/recipe_identity.js`: model-reference adapters for presentation;
+- `web/modules/recipe_identity.js`: model-reference adapters for presentation:
+  native loaders plus `ALL_IN_ONE_LOADER_SPECS` (verified serialized layouts),
+  mirrored by `_model_reference_specs` in `api/recipe_schema.py`. Add a loader
+  to both tables with its real widget order; never infer a category from a
+  file name, and skip placeholder values such as `None` / `Baked VAE`;
 - `web/modules/recipe_provenance.js`: pure Hash lookup/remap/replace helpers;
 - `web/modules/recipe_actions.js`: canvas transactions and append rollback;
 - `web/modules/ui_recipe_detail.js`: user actions that invoke the contracts;

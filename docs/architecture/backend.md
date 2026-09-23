@@ -65,7 +65,13 @@ The former mixed utility routes are separated: `media_routes.py` owns card
 thumbnails and model/output media lookups, `gallery_routes.py` owns the bounded
 output snapshot and deletion, `translation_routes.py` owns provider fallback,
 `folder_types.py` owns configured visibility and scan scope, and `audio_catalog.py`
-with `romanizer.py` owns Audio & Voice Studio scanning, WAV normalization, streaming, and multilingual romanization.
+with `romanizer.py` owns Audio & Voice Studio scanning, ingestion (conversion to
+24 kHz mono PCM WAV via an explicitly resolved ffmpeg), streaming, and
+romanization. Voice files use the ComfyUI-F5-TTS layout (`Character.wav` main
+sample, `Character.<voice>.wav` variants, `.txt` transcripts); ingestion stages
+every file and swaps them in together so a failed conversion or write keeps the
+previous voice. The root `__init__.py` prepends the portable Python folders to
+PATH for other audio nodes; this is a deliberate process-wide exception.
 
 Offline inference sidecars use non-positive Civitai IDs as sentinels. Metadata
 normalization must not expose those values as release-page URLs or resolved

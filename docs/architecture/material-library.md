@@ -315,16 +315,17 @@ When dropped onto a compatible node:
 - Parameter-bearing materials fetch scoped node blocks only after drop and replace
   compatible widget values through the transactional parameter path, preserving seed,
   node position, and links.
-- Prompt-bearing materials (prompt notes, prompt plans, and multi-block images) inject prompt
-  text into target nodes via the Cross-Node Prompt Injection Protocol (CNPIP):
-  - **Strategy ① (Dual-Slot Pair Injection)**: When target node has both positive and negative slots (e.g. `easy a1111Loader`, `easy fullLoader`), both fields are populated simultaneously in a single atomic transaction.
-  - **Strategy ② (Role-Matched Injection)**: Pure negative materials are strictly routed to the `negative` slot, resolving the legacy `targets[0]` misplacement bug.
-  - **Strategy ④ (Single-Slot Fallback)**: Single-slot nodes (e.g. `easy positive`, `easy negative`, `CLIPTextEncode`) cleanly receive role-matched or primary prompt text without artificial prefixes.
-  - **Prompt Extractor Pipeline & SSOT**:
-    - **Single Source of Truth (SSOT)**: `extractMaterialPromptEnvelope` in `node_material_actions.js` is the canonical prompt envelope extractor across the entire frontend. UI detail views, summary cards, and canvas actions delegate directly to it via `getMaterialPromptInfo` adapter.
-    - **Declarative Strategy Pipeline (`PROMPT_EXTRACTORS`)**: Decomposed into 5 decoupled, pure, single-responsibility extractors (`extractFromPlan`, `extractFromNote`, `extractFromPromptGroups`, `extractFromNodeBlocks`, `extractFromSummary`), complying with the 50-line rule.
-    - **Prompt Sanitizer Guard**: `sanitizePromptText` and `isModelFilePath` enforce a strict boundary between textual prompts and model weights/binary filenames (`.safetensors`, `.ckpt`, `.onnx`, `.gguf`), preventing model file leakage into prompt slots.
-  All injections preserve atomic 1-click Undo.
+- Prompt-bearing materials (prompt notes, prompt plans, materials with a `copy_prompt`
+  capability, or blocks of prompt node types) can be dropped onto any node with
+  prompt slots. `extractMaterialPromptEnvelope` (in `node_material_actions.js`)
+  builds `{positive, negative, primaryRole}` from plans, notes, `prompt_groups`,
+  prompt node blocks or the summary, never from model file paths. `planPromptInjection`
+  writes both texts into nodes with positive and negative slots (e.g. `easy a1111Loader`),
+  otherwise the matching role slot or a role-neutral slot (`CLIPTextEncode` `text`).
+  Negative text never goes into a positive slot and vice versa; if no slot fits, the
+  drop fails with `materialNoCompatibleValues`. Text is inserted without synthetic
+  prefixes, and every injection is one undo step.
+- Parameter blocks are never applied across node types.
 
 When dropped onto blank canvas:
 - Workflow materials (`image_workflow_snapshot`) trigger full workflow loading

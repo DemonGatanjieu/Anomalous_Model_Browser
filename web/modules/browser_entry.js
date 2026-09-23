@@ -1,24 +1,16 @@
-try {
-    if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem('anomalous_btn_x');
-        localStorage.removeItem('anomalous_btn_y');
-    }
-} catch (_) {}
-
 import { app } from '../../../scripts/app.js';
 import { AnomalousBrowser } from './browser.js';
 import {
     clampFloatingTriggerPosition,
     clearSavedTriggerPosition,
-    DEFAULT_SAFE_LEFT,
-    DEFAULT_SAFE_TOP,
-    isValidSavedTriggerPosition,
+    DEFAULT_MIN_SAFE_X,
     loadSavedTriggerPosition,
     normalizeEntryMode,
     normalizeFloatingTriggerSize,
     normalizeFloatingTriggerStyle,
+    removeLegacyTriggerPosition,
     saveTriggerPosition
-} from './entry_controls.js?v=20260921-flicker-free-1';
+} from './entry_controls.js';
 import {
     createShortcutSettingControl,
     DEFAULT_BROWSER_SHORTCUT,
@@ -253,7 +245,13 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         refreshRegisteredSettings();
     });
 
+    /** Size before the button is measurable; matches the size presets in 00-foundation-models.css. */
+    function estimatedTriggerSize() {
+        return floatingTriggerSize === 'small' ? 44 : (floatingTriggerSize === 'large' ? 76 : 60);
+    }
+
     async function setup() {
+        removeLegacyTriggerPosition();
         const cssUrl = '/extensions/Anomalous_Model_Browser/styles.css?v=20260921-flicker-free-1';
         if (!document.querySelector('link[href^="/extensions/Anomalous_Model_Browser/styles.css"]')) {
             const link = document.createElement('link');
@@ -287,7 +285,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         // Pre-calculate and assign exact target coordinates BEFORE appending to DOM
         const savedInitialPos = loadSavedTriggerPosition();
         if (savedInitialPos) {
-            const estSize = floatingTriggerSize === 'small' ? 44 : (floatingTriggerSize === 'large' ? 76 : 60);
+            const estSize = estimatedTriggerSize();
             const initialClamped = clampFloatingTriggerPosition({
                 x: savedInitialPos.x,
                 y: savedInitialPos.y,
@@ -295,7 +293,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
                 height: estSize,
                 viewportWidth: window.innerWidth,
                 viewportHeight: window.innerHeight,
-                minX: 70
+                minX: DEFAULT_MIN_SAFE_X
             });
             btn.style.position = 'fixed';
             btn.style.left = initialClamped.x + 'px';
@@ -332,7 +330,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
                 height: btnH,
                 viewportWidth: window.innerWidth,
                 viewportHeight: window.innerHeight,
-                minX: 70
+                minX: DEFAULT_MIN_SAFE_X
             });
             currentDragX = clamped.x;
             currentDragY = clamped.y;
@@ -404,8 +402,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         const updateBtnBounds = () => {
             const saved = loadSavedTriggerPosition();
             if (saved) {
-                const estFallback = floatingTriggerSize === 'small' ? 44 : (floatingTriggerSize === 'large' ? 76 : 60);
-                const btnW = btn.offsetWidth || estFallback;
+                const btnW = btn.offsetWidth || estimatedTriggerSize();
                 const btnH = btn.offsetHeight || btnW;
                 const clamped = clampFloatingTriggerPosition({
                     x: saved.x,
@@ -414,7 +411,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
                     height: btnH,
                     viewportWidth: window.innerWidth,
                     viewportHeight: window.innerHeight,
-                    minX: 70
+                    minX: DEFAULT_MIN_SAFE_X
                 });
                 btn.style.left = clamped.x + 'px';
                 btn.style.top = clamped.y + 'px';

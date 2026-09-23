@@ -83,30 +83,51 @@ DOM or live LiteGraph state.
 - `api/media_routes.py`, `api/gallery_routes.py`, `api/translation_routes.py`, and
   `api/folder_types.py` own the formerly mixed utility route families.
 - `model_policies.py` owns shared backend rename and protected-category policy.
-- `api/audio_catalog.py` owns audio preset scanning, voice character grouping, emotion slice indexing, audio streaming, audio gallery output history listing/deletion, and multipart voice asset uploading (`api_upload_audio_voice`) with companion transcript `.txt` pairing into F5-TTS directories.
-- `api/romanizer.py` owns Japanese and Korean automatic language detection and phonetic romanization (`api_romanize_text`), converting Kanji/Kana and Hangul to clean Latin text with speech-alignment punctuation normalization.
+- `model_identity.py` owns file SHA-256 evidence shared with the standalone scanner.
+- `api/audio_catalog.py` owns voice scanning, streaming, output-audio history and
+  voice ingestion. Voices follow the ComfyUI-F5-TTS multi-voice layout:
+  `Character.wav` + `.txt` is the main sample, `Character.<voice>.wav` + `.txt`
+  are variants addressed as `{<voice>}`; `<stem>.orig.txt` keeps a native-script
+  transcript for display. Ingestion validates the target folder, refuses to
+  overwrite without `overwrite=1`, and stages all files before swapping them in.
+- `api/romanizer.py` converts Japanese (text containing kana) and Korean to Latin
+  script for transcripts; Han-only text is left unchanged, and missing optional
+  dependencies (pykakasi, hangul-romanize) are reported, not hidden.
 
 ### Frontend
 
-- `web/main.js` coordinates extension registration (with `?v=...` versioned module imports busting aggressive browser ES Module caching and unconditional legacy storage key purging). `browser.js` owns the shared
+- `web/main.js` coordinates extension registration. `browser.js` owns the shared
   browser class and extracted-method wiring; `browser_entry.js` owns the single
-  browser instance plus floating/topbar/menu entry behavior (with Dual-Binding PointerEvents drag capture, `lostpointercapture` fail-safe listeners, zero-drift viewport boundary clamping, flicker-free pre-mount coordinate binding and `anomalous-trigger-initializing` smooth opacity fade reveal, default safe placement in the top-left canvas area at `top: 80px; left: 80px;` gracefully avoiding the left sidebar dock, and versioned `anomalous_trigger_pos_v3` atomic JSON coordinate persistence); `entry_controls.js`
-  owns entry mode, trigger sizing/styling normalization, mathematical viewport-safe boundary
-  clamping (`clampFloatingTriggerPosition` with minimum safe boundary `minX=70` preventing left sidebar dock entrapment), clean `loadSavedTriggerPosition`/`saveTriggerPosition` storage drivers, and non-distorting coordinate validation
-  (`isValidSavedTriggerPosition`); `api/__init__.py` injects an aiohttp no-cache middleware (`Cache-Control: no-cache, no-store, must-revalidate`) for extension static files to eliminate browser memory/disk cache desynchronization across regular page refreshes; and `interface_settings.js` owns language and theme preferences.
-- `ui_domain_switcher.js` owns the dual-domain mode toggle (Visual Studio 🎨 vs Audio & Voice Studio 🎙️) embedded in the brand header.
-- `ui_audio_studio.js` owns the Audio & Voice Studio workspace, presenting character voice cards, emotion slice playback, prompt syntax copying, real-time search, animated equalizers, 1-click Arona workflow loading (`app.loadGraphData`), direct canvas node drop injection, and voice asset creation button triggers.
-- `ui_audio_uploader.js` owns the Voice Asset Ingestion modal dialog, featuring audio file drag-and-drop, instant HTML5 preview playback, character/emotion tag selection with quick chips, companion reference transcript typing, 1-click Japanese/Korean intelligent romanization (`[✨ 智能转罗马音]`), and seamless hot reload into the studio view.
-- `ui_audio_sidebar.js` owns the Audio Sidebar navigation, rendering trees for All Voices, Character Presets (e.g. Arona) with count badges, and Output History Vault.
-- `ui_audio_gallery.js` owns the Generated Audio Vault, supporting track playback, scrubber progress, duration timecodes, audio download, deletion, and canvas drag-and-drop.
-- `ui_sidebar.js` creates the browser shell, domain-aware header tabs (`[音色预设]`, `[音频库]`, `[工作流]`), domain-aware bottom-left tool suppression, and folder navigation.
+  browser instance plus floating/topbar/menu entry behavior (pointer-capture drag,
+  pre-mount positioning to avoid a flash, `anomalous_trigger_pos_v3` persistence);
+  the unsaved default position is defined in CSS; `entry_controls.js`
+  owns entry mode, trigger size/style normalization, viewport clamping that keeps
+  the button out of the sidebar dock, and saved-position storage
+  (`isValidSavedTriggerPosition`); `api/__init__.py` sends `Cache-Control: no-cache`
+  for this plugin's static files so a normal refresh revalidates them (modules are
+  imported without `?v=` query strings, which would create second module
+  instances); and `interface_settings.js` owns language and theme preferences.
+- `ui_domain_switcher.js` owns the visual/audio domain toggle and its stored choice;
+  `browser.switchAudioTab` is the single entry for audio navigation (header tabs,
+  sidebar entries, domain switch) and `hideAllPanels` stops audio playback.
+- `ui_audio_studio.js` owns the voice cards, preview playback, tag copying, drops
+  onto TTS nodes (written in the node's own combo spelling) and the template
+  workflow loader (confirms before replacing the canvas). `audio_script.js` holds
+  the pure F5-TTS rules: script splitting and composition, one-character voice
+  planning, combo value matching. `ui_script_director.js` owns the script panel
+  and pushes `sample` (main voice) and `speech` together.
+- `ui_audio_uploader.js` owns the voice ingestion modal (createViewScope lifecycle,
+  overwrite confirmation, optional romanization keeping the original script).
+- `ui_audio_sidebar.js` owns the audio navigation and the active audio filter.
+- `ui_audio_gallery.js` owns the generated-audio history: playback, seeking, paging, download and deletion.
+- `ui_sidebar.js` creates the browser shell, domain-aware header tabs, and folder navigation.
   `ui_settings_hub.js` owns settings and model-card preferences;
   `ui_toolbox.js` owns the tool catalog, fixed shortcut bar, and tool dispatch;
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return.
   Scan-wizard launch, single-model precision scans (`triggerDirectModelScan` with strictly factual Civitai vs non-Civitai feedback reporting inferred base-model or match status directly within the bottom-right progress panel and toasts without blocking browser alerts), modal lifecycle ergonomics (backdrop click and Escape key dismissal with listener detachment, scrollable content area with sticky footer actions), post-scan frontend hash and native combo refreshes (`app.refreshComboInNodes()`, `window.anomalous_reload_hashes()`), and polling live in `ui_scan_wizard.js`; folder visibility/order lives in
   `ui_folder_manager.js`; and help content lives in `ui_help.js`.
 - `ui_model_sources.js` owns the Model Sources Hub, managing workflow-model and global-library source detection, Civitai/HuggingFace URL attribution, sidecar persistence, and resilient scope switching between active workflow and full local library (with cached library state preservation and reliable re-rendering).
-- `ui_materials.js`, `ui_material_cards.js`, and `ui_material_application.js` own the Material Library UI, category navigation, card presentation (with grab cursor affordances, explicit drag tooltips, and polymorphic card dragging via `bindPolymorphicMaterialCardDrag`), context-aware drag guidance, relaxed third-party node prompt widget sniffing and injection, and the structured empty state onboarding blueprint guiding users through collection, canvas drag, and prompt studio mixing. Drag precedence prioritizes node hits over blank canvas drops; blank canvas drops auto-instantiate `CLIPTextEncode` nodes for prompt materials with standard colors or open full workflows. `node_material_actions.js` hosts the canonical Single Source of Truth (SSOT) prompt envelope extraction (`extractMaterialPromptEnvelope`) backed by a declarative 5-stage strategy pipeline (`PROMPT_EXTRACTORS`) and `sanitizePromptText` model-file guardrails, re-exported to UI views via lightweight adapters.
+- `ui_materials.js`, `ui_material_cards.js`, and `ui_material_application.js` own the Material Library UI, category navigation, card presentation (with grab cursor affordances, explicit drag tooltips, and polymorphic card dragging via `bindPolymorphicMaterialCardDrag`), context-aware drag guidance, relaxed third-party node prompt widget sniffing and injection, and the structured empty state onboarding blueprint guiding users through collection, canvas drag, and prompt studio mixing. Drag precedence prioritizes node hits over blank canvas drops; blank canvas drops auto-instantiate `CLIPTextEncode` nodes for prompt materials with standard colors or open full workflows. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) shared by detail views, cards and canvas actions.
 - `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn` and Help modal; version ID `2026-09-recipes-and-studios`), presenting a 4-step milestone walkthrough (Workflow Recipe Studio, Material Library & Prompt Studio, Model Sources Hub, and Precision Direct Scan with canvas addition) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across topbar workspaces and bottom dock actions with directional tooltip cards and keyboard navigation.
 - `sidebar_actions.js` owns the sidebar bottom action hover-reveal short labels (100ms), singleton dynamic DOM tooltip bubbles (`#anomalous-sidebar-tooltip-bubble`, 600ms), click/pointerdown instant text/tooltip suppression guards, `isBottomModalOpen` tooltip occlusion guards, and anti-flicker pointer stability.
 - `tool_registry.js` centralizes metadata, SVG icons (enlarged 20px crisp vector outlines with 2px stroke, #cbd5e1 contrast), and stable IDs for the 9 catalog tools (including Prompt Notes / 提示词笔记) and 2 fixed anchors (Toolbox and Settings).
@@ -143,23 +164,28 @@ DOM or live LiteGraph state.
   `minmax(130px, 1fr)` Bento Grid with universal click-to-copy, LoRA cards with flexbox truncation guards,
   and sticky editor headers).
   `ui_materials.js` owns Material Library discovery and pagination,
-  `ui_material_cards.js` owns catalog cards and polymorphic drag-and-drop (`accepts` allowing prompt-bearing material drops onto any node exposing prompt slots while strictly preserving same-type parameter isolation), `ui_material_detail.js` owns the
+  `ui_material_cards.js` owns catalog cards and drag-and-drop (same-type blocks, or
+  prompt-bearing materials onto nodes with prompt slots), `ui_material_detail.js` owns the
   full detail surface, and `ui_material_application.js` owns selected-node
-  tracking and explicit material application (refactored to cleanly isolate Path 1 same-type block application from Path 2 Cross-Node Prompt Injection Protocol, with `openMaterialChoiceDialog` encapsulated to strictly adhere to the 50-line rule).
-  `node_material_actions.js` powers the Cross-Node Prompt Injection Protocol (CNPIP) via `inspectNodePromptSlots` (dynamic target node role and slot introspection), `extractMaterialPromptEnvelope` (structured prompt extraction prioritizing authoritative backend `prompt_groups` and strictly filtering out model file paths via `isModelFilePath` and non-prompt loader blocks via `isPromptNodeType`), and `dispatchPromptInjection` (dual-slot pair injection for all-in-one nodes like `easy a1111Loader`, role-matched injection strictly routing negative prompts to negative slots, and single-slot fallback with atomic 1-click Undo).
+  tracking and explicit material application (same-type block application first,
+  then cross-node prompt injection).
+  `node_material_actions.js` inspects prompt slots (`inspectNodePromptSlots`),
+  extracts prompt envelopes without model file paths, and plans injection
+  (`planPromptInjection`): both texts into two-slot nodes, otherwise the matching
+  role or a role-neutral slot. Text never crosses roles; writes are one undo step.
   Within recipe detail, `ui_recipe_versions.js` owns history comparison/restore,
   `ui_recipe_gallery.js` owns result cards and direct Image Detail Workbench handoff,
   `ui_recipe_model_matching.js` owns preview resolution and explicit local replacement,
   `ui_recipe_metadata.js` owns inline persistence, and `ui_recipe_detail_dom.js` owns
-  the DOM/copy helpers shared by detail subviews. `recipe_parser.js` and `recipe_identity.js`
-  provide the Unified Semantic Sniffing Engine for Workflow Recipes and All-in-One / third-party
-  loaders (e.g. `ComfyUI-Easy-Use`, `Efficient Loader`), replacing hardcoded node-type whitelists
-  with 3-tier dynamic model discovery (`deriveNodeModelSpecs`), multi-model composite key isolation
-  `(node_id, widget_index, category, saved_value)`, embedded prompt fallback via shared
-  `promptWidgetTargets` (strictly enforcing `External Link > Embedded fallback`), and two-way
-  widget synchronization (`syncCommonRecipeMetadata`). `ui_recipe_catalog.js` owns recipe
+  the DOM/copy helpers shared by detail subviews. `recipe_identity.js` derives model
+  references from native loaders plus a table of verified all-in-one loader layouts
+  (`ALL_IN_ONE_LOADER_SPECS`, mirrored in `api/recipe_schema.py`); other third-party
+  widgets stay parameters. References are keyed by
+  `(node_id, widget_index, category, saved_value)`. `recipe_parser.js` summarizes
+  models, LoRAs, samplers and prompts (linked prompt nodes before embedded loader
+  prompts) and keeps the summary in step with widget edits using the same node rules.
+  `ui_recipe_catalog.js` owns recipe
   filters, navigation, dismissible topbar drag guidance strip with localStorage persistence, the 3-step empty-state onboarding blueprint (`renderRecipeEmptyGuide`), and background catalog-wide model readiness resolution (`resolveCatalogRecipeReadiness`), `ui_recipe_cards.js` owns cards and card actions
-
   (including `grab` drag affordance, cover `可拖拽` badge, harmonized multi-state model readiness pill with `getRecipeReadiness` synchronizing available, missing, and pending matches with detail overview, and direct canvas drag-and-drop), `ui_recipe_dialogs.js` owns save/edit dialogs, and `ui_recipe_media.js` owns shared cover helpers. Detail sessions synchronize detected model availability back to `owner.recipeRecords` via `syncRecipeReferencesToCatalog`.
 - `ui_prompt_composer.js` owns the standalone Prompt Studio drawer. Its child
   views are `ui_prompt_source_deck.js`, `ui_prompt_workbench.js`, and
