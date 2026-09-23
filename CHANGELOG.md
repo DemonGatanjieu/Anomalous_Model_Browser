@@ -3,8 +3,8 @@
 ## v1.57.1 Beta (Version Panel: Update, Switch & Roll Back) — 2026-09-23
 
 ### 🏷️ Version & Updates Panel (版本号与一键更新 / 版本切换)
-- **Version chip in the sidebar footer (侧边栏底部版本号)**: the installed version (e.g. `v1.57.1-beta`) now sits neatly under the tool dock in the sidebar footer, avoiding header crowding in docked or scaled layouts. Reading it is local only; nothing goes online.
-- **Manual "Check for updates" (手动检查更新)**: the plugin never checks by itself. Clicking the chip opens the panel, and only the **Check for updates** button contacts GitHub. Each published release shows its notes, date and a GitHub link; pre-releases are hidden by default and are never offered as the latest version.
+- **Version entry in the update guide (更新引导顶部的版本号与更新入口)**: the installed version (e.g. `v1.57.1-beta`) and a **Check for updates / switch version** button now appear at the top of the update guide (opened via the header **!** button), avoiding accidental clicks near the tool dock or crowding the header in docked/scaled layouts. Reading it is local only; nothing goes online.
+- **Manual "Check for updates" (手动检查更新)**: the plugin never checks by itself. Clicking **Check for updates / switch version** opens the panel, and only the **Check for updates** button contacts GitHub. Each published release shows its notes, date and a GitHub link; pre-releases are hidden by default and are never offered as the latest version.
 - **One-click update to published releases (一键更新到正式发布版本)**: updates only target releases published on GitHub, not in-progress commits, so what you install is a released build.
 - **Switch or roll back (切换 / 回退版本)**: any published release can be installed from the list. Rolling back warns that older versions may not read settings or recipes saved by newer ones; nothing is deleted, and it all works again after returning.
 - **Back to latest & undo (回到最新版 / 撤销上次切换)**: **Back to latest** returns to the default branch and pulls the newest code; **Undo last switch** returns to exactly where you were before. Versions older than v1.57.1 have no panel, so from those use **Update** for this plugin in ComfyUI Manager to come back.
@@ -247,11 +247,11 @@
 - **Offline Base Model Inference**: Added a zero-API local inference engine! For models downloaded purely from HuggingFace (or private unreleased models) that return a 404 on Civitai, the scanner no longer gives up. It now forcibly parses the .safetensors structure and uses **Tensor Fingerprinting** (e.g., detecting double_blocks.0.img_attn for Flux) to accurately deduce the underlying base architecture with 100% precision.
 - **Universal UI Integration**: Successfully inferred offline models are dynamically assigned a virtual .info payload (ID: -1). This instantly grants them full VIP access to the frontend ecosystem—they seamlessly appear in the Cross-Folder Radar, interact perfectly with the bilingual Notebook, and support one-click Auto-Inject loaders, all completely completely offline!
 
-# 📈 Anomalous Model Browser Changelog
 
-## Unreleased
 
-- **Version moved into the update guide (版本号移入更新引导)**: the sidebar-footer version sat right under the tool dock and invited misclicks. The current version and a **Check for updates / switch version** button now appear at the top of the update guide opened by the header **!** button.
+
+
+
 
 ## v2.0.0 (The Workflow & UI Evolution Update)
 ### 🚀 Major Features
