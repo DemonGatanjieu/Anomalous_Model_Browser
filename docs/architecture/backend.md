@@ -67,6 +67,13 @@ output snapshot and deletion (searched through `image_search.py`, which reads
 PNG text chunks only and caches per-image records by mtime), `translation_routes.py`
 owns provider fallback, and `folder_types.py` owns configured visibility and scan scope.
 
+`version_manager.py` runs git against the plugin checkout only (no shell, no
+prompts, `CREATE_NO_WINDOW` on Windows) and accepts only tags that appear in the
+published release list. It refuses switches while tracked files are modified,
+never rewrites a local branch that has diverged from the remote, and reports
+stable error codes (`dirty`, `diverged`, `offline`, `unknown_tag`, ...) that the UI
+localizes. Switching changes code only; a ComfyUI restart applies it.
+
 Offline inference sidecars use non-positive Civitai IDs as sentinels. Metadata
 normalization must not expose those values as release-page URLs or resolved
 model/version identities; only positive IDs may form a Civitai source link.

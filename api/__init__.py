@@ -1,7 +1,7 @@
 from . import (
     folder_types, gallery_routes, materials, media_routes, model_catalog,
     model_media, model_metadata, model_resolution, recipe_packages, recipes,
-    translation_routes,
+    translation_routes, version_manager,
 )
 from .scanner import *
 from .config import *
@@ -97,3 +97,4 @@ def setup_routes(app):
     app.router.add_get('/anomalous/model_images', media_routes.api_get_model_images)
     app.router.add_post('/anomalous/resolve_paths_to_previews', model_catalog.api_resolve_paths_to_previews)
     app.router.add_post('/anomalous/scan_missing_models', api_scan_missing_models)
+    version_manager.register_routes(app)

@@ -11,6 +11,7 @@ import { setScanButtonState } from './ui_scan_wizard.js';
 import { createSettingsHub } from './ui_settings_hub.js';
 import { createToolbox } from './ui_toolbox.js';
 import { createGallerySearchBar } from './ui_gallery.js';
+import { createVersionChip } from './ui_version_manager.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -425,6 +426,7 @@ export function createDOM() {
         updateNoticeBtn.appendChild(updateNoticeIcon);
         updateNoticeBtn.onclick = () => showUpdateGuide(this, { force: true });
 
+        rightGroup.appendChild(createVersionChip(this));
         rightGroup.appendChild(updateNoticeBtn);
         rightGroup.appendChild(dockBtn);
         rightGroup.appendChild(closeBtn);

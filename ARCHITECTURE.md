@@ -92,6 +92,15 @@ DOM or live LiteGraph state.
   local model files with that hash. Terms arrive as repeated `term` params, one
   phrase each. `ui_search_chips.js` is the reusable search-block input (Enter or a
   comma commits a block); `ui_gallery.js` places it above the gallery.
+- `api/version_manager.py` owns the plugin's own version: the installed tag/branch
+  (`/anomalous/version`, local only), published releases fetched only on request
+  (GitHub releases API, falling back to `git ls-remote` tags; drafts skipped,
+  pre-releases never counted as latest), switching to a published tag (detached
+  checkout), returning to the default branch (fast-forward only), and undoing the
+  last switch (recorded in the ignored `.anomalous_version.local.json`). Every
+  switch refuses to run over modified tracked files. `ui_version_manager.js` is
+  the header version chip and panel; nothing goes online until "check for updates"
+  is clicked, and restarts go through ComfyUI Manager's reboot route when present.
 
 - `web/main.js` coordinates extension registration (with `?v=...` versioned module imports busting aggressive browser ES Module caching and unconditional legacy storage key purging). `browser.js` owns the shared
   browser class and extracted-method wiring; `browser_entry.js` owns the single
