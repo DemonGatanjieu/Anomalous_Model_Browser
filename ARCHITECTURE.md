@@ -90,6 +90,9 @@ DOM or live LiteGraph state.
   are variants addressed as `{<voice>}`; `<stem>.orig.txt` keeps a native-script
   transcript for display. Ingestion validates the target folder, refuses to
   overwrite without `overwrite=1`, and stages all files before swapping them in.
+- `api/audio_metadata.py` reads the ComfyUI `prompt` comment from FLAC and
+  Ogg/Opus files (read-only) and extracts the TTS node's speech, sample and seed
+  for the audio gallery.
 - `api/romanizer.py` converts Japanese (text containing kana) and Korean to Latin
   script for transcripts; Han-only text is left unchanged, and missing optional
   dependencies (pykakasi, hangul-romanize) are reported, not hidden.
@@ -122,7 +125,10 @@ DOM or live LiteGraph state.
 - `ui_audio_uploader.js` owns the voice ingestion modal (createViewScope lifecycle,
   overwrite confirmation, optional romanization keeping the original script).
 - `ui_audio_sidebar.js` owns the audio navigation and the active audio filter.
-- `ui_audio_gallery.js` owns the generated-audio history: playback, seeking, paging, download and deletion.
+- `ui_audio_gallery.js` owns the generated-audio history (output folder): playback,
+  seeking, search, paging, download and deletion, showing the speech/voice/seed
+  recorded in each file, plus a section for unsaved temp previews that can be
+  copied into `output/audio/`.
 - `ui_sidebar.js` creates the browser shell, domain-aware header tabs, and folder navigation.
   `ui_settings_hub.js` owns settings and model-card preferences;
   `ui_toolbox.js` owns the tool catalog, fixed shortcut bar, and tool dispatch;

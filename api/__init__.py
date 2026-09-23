@@ -110,6 +110,8 @@ def setup_routes(app):
     app.router.add_get('/anomalous/audio_stream', audio_catalog.api_serve_audio)
     app.router.add_get('/anomalous/audio_gallery', audio_catalog.api_get_audio_gallery)
     app.router.add_post('/anomalous/delete_audio_gallery', audio_catalog.api_delete_audio_gallery)
+    app.router.add_get('/anomalous/audio_previews', audio_catalog.api_get_audio_previews)
+    app.router.add_post('/anomalous/save_audio_preview', audio_catalog.api_save_audio_preview)
     app.router.add_get('/anomalous/audio_template_workflow', audio_catalog.api_get_audio_template_workflow)
     app.router.add_post('/anomalous/upload_audio_voice', audio_catalog.api_upload_audio_voice)
     app.router.add_post('/anomalous/romanize_text', romanizer.api_romanize_text)

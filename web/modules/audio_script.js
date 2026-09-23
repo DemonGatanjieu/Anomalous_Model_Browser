@@ -123,3 +123,17 @@ export function buildScriptPackage(lines, group) {
     if (!voiced.length) return { error: 'scriptDirectorEmpty' };
     return { sample: group.main_relative_path, speech: composeScript(voiced), lineCount: voiced.length };
 }
+
+/**
+ * Read an F5-TTS speech text back into segments, splitting at tags like F5-TTS
+ * does. Text before the first tag belongs to the main voice.
+ */
+export function parseTaggedSpeech(speech) {
+    return String(speech || '')
+        .split(/(?=\{[^}]+\})/)
+        .map(part => {
+            const match = /^\{([^}]+)\}/.exec(part);
+            return { emotion: match ? match[1].trim() : 'main', text: (match ? part.slice(match[0].length) : part).trim() };
+        })
+        .filter(segment => segment.text);
+}
