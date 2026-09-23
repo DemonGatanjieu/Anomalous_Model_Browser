@@ -1,21 +1,22 @@
-/* Script Director */
+/* Script Director: drawer inside the Audio Studio panel */
 .anomalous-script-director-panel {
     position: absolute;
-    top: 60px;
-    right: 20px;
-    width: 380px;
-    height: calc(100% - 80px);
+    top: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: min(460px, calc(100% - 24px));
     background: var(--amb-bg-panel, #1e1e24);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     z-index: 5;
     overflow: hidden;
 }
 
-.anomalous-script-director-panel[hidden] {
+.anomalous-script-director-panel[hidden],
+.anomalous-script-director-panel [hidden] {
     display: none;
 }
 
@@ -23,9 +24,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
     padding: 12px 16px;
-    background: rgba(0,0,0,0.2);
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .anomalous-sd-title {
@@ -45,6 +47,7 @@
     border: none;
     color: #94a3b8;
     font-size: 20px;
+    line-height: 1;
     cursor: pointer;
 }
 
@@ -52,133 +55,334 @@
     color: #f1f5f9;
 }
 
+/* Character */
+.anomalous-sd-character-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px 4px;
+}
+
+.anomalous-sd-step {
+    font-size: 12px;
+    font-weight: 600;
+    color: #cbd5e1;
+    flex-shrink: 0;
+}
+
+.anomalous-sd-character-select {
+    flex: 1;
+    min-width: 0;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: #f1f5f9;
+    font-size: 13px;
+    padding: 5px 8px;
+}
+
+.anomalous-sd-character-hint {
+    padding: 0 16px 10px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #64748b;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.anomalous-sd-character-hint.is-warning {
+    color: #fbbf24;
+}
+
+/* Script input */
 .anomalous-sd-input-area {
-    padding: 12px;
+    padding: 12px 16px;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    flex: 1;
+    min-height: 0;
 }
 
 .anomalous-sd-textarea {
     width: 100%;
-    height: 120px;
-    background: rgba(0,0,0,0.2);
-    border: 1px solid rgba(255,255,255,0.1);
+    flex: 1;
+    min-height: 160px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 6px;
     padding: 10px;
     color: #cbd5e1;
     font-size: 13px;
-    resize: vertical;
+    line-height: 1.6;
+    resize: none;
     box-sizing: border-box;
 }
 
+.anomalous-sd-input-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
 .anomalous-sd-btn {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: #e2e8f0;
     padding: 6px 12px;
     border-radius: 6px;
     cursor: pointer;
     font-size: 12px;
-    transition: all 0.2s;
+    white-space: nowrap;
+    transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.anomalous-sd-btn:hover {
-    background: rgba(255,255,255,0.1);
+.anomalous-sd-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.anomalous-sd-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 .anomalous-sd-btn.primary {
     background: rgba(56, 189, 248, 0.1);
     color: #38bdf8;
-    border-color: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.25);
 }
-.anomalous-sd-btn.primary:hover {
+
+.anomalous-sd-btn.primary:hover:not(:disabled) {
     background: rgba(56, 189, 248, 0.2);
 }
 
 .anomalous-sd-btn.accent {
-    background: rgba(99, 102, 241, 0.15);
-    color: #818cf8;
-    border-color: rgba(99, 102, 241, 0.3);
+    background: rgba(99, 102, 241, 0.18);
+    color: #a5b4fc;
+    border-color: rgba(99, 102, 241, 0.35);
     font-weight: 600;
 }
-.anomalous-sd-btn.accent:hover {
-    background: rgba(99, 102, 241, 0.25);
+
+.anomalous-sd-btn.accent:hover:not(:disabled) {
+    background: rgba(99, 102, 241, 0.3);
+}
+
+.anomalous-sd-btn.is-success {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.45);
+    color: #6ee7b7;
+}
+
+/* Lines */
+.anomalous-sd-lines-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px 0;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.anomalous-sd-link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #38bdf8;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-sd-link-btn:hover {
+    text-decoration: underline;
 }
 
 .anomalous-sd-lines-container {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    padding: 12px;
+    padding: 10px 16px;
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
 .anomalous-sd-line-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 8px;
-    padding: 10px;
-    cursor: pointer;
-    transition: all 0.2s;
+    padding: 8px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
-.anomalous-sd-line-card:hover {
-    background: rgba(255,255,255,0.06);
+.anomalous-sd-line-card:focus-within {
+    border-color: rgba(56, 189, 248, 0.35);
 }
 
-.anomalous-sd-line-card.active {
-    border-color: #38bdf8;
-    background: rgba(56, 189, 248, 0.05);
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.1);
+.anomalous-sd-line-head {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
-.anomalous-sd-voice-badge {
+.anomalous-sd-line-no {
+    flex: 1;
+    font-size: 11px;
+    font-family: monospace;
+    color: #64748b;
+}
+
+.anomalous-sd-icon-btn {
+    width: 22px;
+    height: 22px;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    margin-bottom: 6px;
-    padding: 2px 8px;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    font-size: 11px;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: #94a3b8;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
 }
 
-.anomalous-sd-voice-badge.has-voice {
-    background: rgba(16, 185, 129, 0.1);
-    border-color: rgba(16, 185, 129, 0.3);
-    color: #34d399;
+.anomalous-sd-icon-btn:hover,
+.anomalous-sd-icon-btn.is-playing {
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.4);
 }
 
-.anomalous-sd-voice-badge .placeholder {
-    color: #64748b;
+.anomalous-sd-icon-btn.is-danger:hover {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.4);
 }
 
 .anomalous-sd-line-text {
+    width: 100%;
+    box-sizing: border-box;
+    field-sizing: content;
+    min-height: 1.6em;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 2px 4px;
+    color: #e2e8f0;
+    font: inherit;
     font-size: 13px;
-    color: #cbd5e1;
-    line-height: 1.5;
+    line-height: 1.6;
+    resize: none;
 }
 
-.anomalous-sd-footer {
-    padding: 12px;
+.anomalous-sd-line-text:hover,
+.anomalous-sd-line-text:focus {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    outline: none;
+}
+
+.anomalous-sd-emotion-row {
     display: flex;
-    justify-content: space-between;
-    border-top: 1px solid rgba(255,255,255,0.05);
-    background: rgba(0,0,0,0.2);
+    flex-wrap: wrap;
+    gap: 5px;
 }
 
-.anomalous-sd-btn.accent.is-success {
-    background: #10b981;
+.anomalous-sd-emotion-chip {
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: #94a3b8;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.anomalous-sd-emotion-chip:hover {
+    color: #e2e8f0;
+    border-color: rgba(129, 140, 248, 0.4);
+}
+
+.anomalous-sd-emotion-chip.active {
+    background: rgba(99, 102, 241, 0.3);
+    border-color: #818cf8;
     color: #fff;
+    font-weight: 600;
 }
 
-.anomalous-sd-empty {
+.anomalous-sd-emotion-chip.is-main.active {
+    background: rgba(16, 185, 129, 0.22);
+    border-color: rgba(52, 211, 153, 0.7);
+}
+
+/* Bundle */
+.anomalous-sd-footer {
+    padding: 10px 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.anomalous-sd-package-summary {
     font-size: 12px;
-    color: #64748b;
-    text-align: center;
-    padding: 24px 8px;
+    color: #cbd5e1;
+}
+
+.anomalous-sd-package-summary.is-error {
+    color: #fbbf24;
+}
+
+.anomalous-sd-package-preview {
+    margin: 0;
+    max-height: 96px;
+    overflow: auto;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.anomalous-sd-package-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.anomalous-sd-drag-handle {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px dashed rgba(129, 140, 248, 0.5);
+    background: rgba(99, 102, 241, 0.08);
+    color: #a5b4fc;
+    font-size: 12px;
+    cursor: grab;
+    user-select: none;
+}
+
+.anomalous-sd-drag-handle:active {
+    cursor: grabbing;
+}
+
+.anomalous-sd-drag-handle.is-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.anomalous-sd-emotion-chip.is-missing {
+    border-style: dashed;
+    border-color: rgba(251, 191, 36, 0.7);
+    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.1);
 }

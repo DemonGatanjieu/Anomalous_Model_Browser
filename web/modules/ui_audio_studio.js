@@ -5,12 +5,14 @@ import { stopGalleryAudio } from './ui_audio_gallery.js';
 import { openAudioUploaderModal } from './ui_audio_uploader.js';
 import { getActiveAudioFilter } from './ui_audio_sidebar.js';
 import { comboValueForPath } from './audio_script.js';
+import { bindMaterialDrag } from './material_drag.js';
 import {
     openScriptDirector,
     closeScriptDirector,
-    handleVoiceSelectionForScript,
     isScriptDirectorActive,
-    setScriptDirectorStateListener,
+    setScriptDirectorHooks,
+    stopScriptDirectorPreview,
+    updateScriptDirectorVoices,
 } from './ui_script_director.js';
 
 /**
@@ -72,6 +74,7 @@ function playAudio(url, playBtn, eqBars) {
     }
     stopAudioStudioPlayback();
     stopGalleryAudio();
+    stopScriptDirectorPreview();
 
     const audio = new Audio(url);
     globalAudioPlayer = audio;
@@ -129,20 +132,31 @@ function renderEqIndicator() {
     return barWrap;
 }
 
-function renderSliceRow(slice, group) {
+function audioWidgetFor(node, slice) {
+    const widget = node?.widgets?.find(w => AUDIO_WIDGET_NAMES.includes(w.name));
+    const value = widget ? comboValueForPath(widget, slice.relative_path) : null;
+    return value == null ? null : { widget, value };
+}
+
+/** Drag a voice onto a TTS node to use it as the node's sample (shared material drag: the modal hides meanwhile). */
+function bindVoiceDrag(row, slice, owner) {
+    bindMaterialDrag(row, owner || {}, {
+        payload: () => ({ slice, dragHint: t('audioDragHint') }),
+        accepts: node => Boolean(audioWidgetFor(node, slice)),
+        drop: async node => {
+            const target = audioWidgetFor(node, slice);
+            if (!target) return;
+            target.widget.value = target.value;
+            target.widget.callback?.(target.value, app.canvas, node);
+            node.setDirtyCanvas?.(true, true);
+        },
+    });
+}
+
+function renderSliceRow(slice, owner) {
     const row = document.createElement('div');
     row.className = 'anomalous-voice-slice-row';
-    row.draggable = true;
-
-    row.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', slice.syntax_tag);
-        e.dataTransfer.setData('application/json', JSON.stringify(slice));
-        activeDragSlice = slice;
-        ensureCanvasAudioDrop();
-    });
-    row.addEventListener('dragend', () => {
-        activeDragSlice = null;
-    });
+    bindVoiceDrag(row, slice, owner);
 
     const playBtn = document.createElement('button');
     playBtn.type = 'button';
@@ -184,23 +198,11 @@ function renderSliceRow(slice, group) {
         playAudio(slice.audio_url, playBtn, eqBars);
     };
 
-    row.onclick = () => {
-        if (isScriptDirectorActive()) {
-            handleVoiceSelectionForScript({
-                character: group.character,
-                group: group.group,
-                mainPath: group.main_relative_path,
-                tag: slice.syntax_tag,
-                usable: slice.tag_usable,
-            });
-        }
-    };
-
     row.append(playBtn, eqBars, emoTag, textSpan, copyBtn);
     return row;
 }
 
-function renderCharacterCard(group) {
+function renderCharacterCard(group, owner) {
     const card = document.createElement('div');
     card.className = 'anomalous-character-voice-card';
 
@@ -250,44 +252,10 @@ function renderCharacterCard(group) {
 
     const sliceList = document.createElement('div');
     sliceList.className = 'anomalous-character-voice-slices';
-    group.slices.forEach(slice => sliceList.appendChild(renderSliceRow(slice, group)));
+    group.slices.forEach(slice => sliceList.appendChild(renderSliceRow(slice, owner)));
 
     card.appendChild(sliceList);
     return card;
-}
-
-// ---- Canvas drop: write the dragged voice into the TTS node under the pointer ----
-
-let activeDragSlice = null;
-let canvasDropBound = false;
-
-function ensureCanvasAudioDrop() {
-    if (canvasDropBound) return;
-    canvasDropBound = true;
-
-    window.addEventListener('drop', (e) => {
-        const slice = activeDragSlice;
-        activeDragSlice = null;
-        if (!slice || !app?.graph || !app?.canvas?.canvas) return;
-
-        const rect = app.canvas.canvas.getBoundingClientRect();
-        if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) return;
-
-        let pos = null;
-        if (app.canvas.convertEventToCanvasOffset) pos = app.canvas.convertEventToCanvasOffset(e);
-        else if (app.canvas.adjustMouseEvent) { app.canvas.adjustMouseEvent(e); pos = [e.canvasX, e.canvasY]; }
-        if (!pos) return;
-
-        const node = app.graph.getNodeOnPos?.(pos[0], pos[1]);
-        const widget = node?.widgets?.find(w => AUDIO_WIDGET_NAMES.includes(w.name));
-        if (!widget) return;
-
-        const value = comboValueForPath(widget, slice.relative_path);
-        if (value == null) return;
-        widget.value = value;
-        widget.callback?.(value, app.canvas, node);
-        node.setDirtyCanvas?.(true, true);
-    }, true);
 }
 
 // ---- Toolbar ----
@@ -345,10 +313,17 @@ function createAddVoiceButton(onVoiceAdded, defaultCharacter) {
     return btn;
 }
 
-function createScriptDirectorButton(container) {
+function createScriptDirectorButton(container, owner) {
     const btn = createToolButton(SVG.SCRIPT, t('scriptDirectorOpen'));
     btn.classList.toggle('active', isScriptDirectorActive());
-    setScriptDirectorStateListener(open => btn.classList.toggle('active', open));
+    setScriptDirectorHooks({
+        owner,
+        onStateChange: open => btn.classList.toggle('active', open),
+        onPreviewStart: () => {
+            stopAudioStudioPlayback();
+            stopGalleryAudio();
+        },
+    });
     btn.onclick = () => {
         if (isScriptDirectorActive()) closeScriptDirector();
         else openScriptDirector(container);
@@ -356,7 +331,7 @@ function createScriptDirectorButton(container) {
     return btn;
 }
 
-function renderStudioToolbar({ onSearch, onVoiceAdded, container, defaultCharacter }) {
+function renderStudioToolbar({ onSearch, onVoiceAdded, container, owner, defaultCharacter }) {
     const toolbar = document.createElement('div');
     toolbar.className = 'anomalous-audio-toolbar';
 
@@ -397,7 +372,7 @@ function renderStudioToolbar({ onSearch, onVoiceAdded, container, defaultCharact
 
     searchWrap.append(searchIcon, searchInput);
     rightActions.append(
-        createScriptDirectorButton(container),
+        createScriptDirectorButton(container, owner),
         createAddVoiceButton(onVoiceAdded, defaultCharacter),
         createLoadWorkflowButton(),
         searchWrap,
@@ -438,8 +413,9 @@ function resolveFilter(filter) {
 /**
  * Render the studio into `container`. Only the latest call for a container may
  * write to it, so fast filter clicks cannot stack duplicate content.
+ * `owner` is the browser instance (its modal hides while dragging to the canvas).
  */
-export async function renderAudioStudio(container, filter = null) {
+export async function renderAudioStudio(container, { filter = null, owner = null } = {}) {
     const token = {};
     renderTokens.set(container, token);
     const directorWasOpen = isScriptDirectorActive();
@@ -458,8 +434,9 @@ export async function renderAudioStudio(container, filter = null) {
                 card.style.display = card.textContent.toLowerCase().includes(searchTerm) ? '' : 'none';
             });
         },
-        onVoiceAdded: () => renderAudioStudio(container, filter),
+        onVoiceAdded: () => renderAudioStudio(container, { filter, owner }),
         container,
+        owner,
         defaultCharacter: characterFilter?.character || '',
     });
     studioWrapper.append(toolbar, renderStatus('anomalous-audio-status', t('audioLoading')));
@@ -478,6 +455,7 @@ export async function renderAudioStudio(container, filter = null) {
         return;
     }
     if (renderTokens.get(container) !== token) return;
+    updateScriptDirectorVoices(characters, characterFilter?.value || null);
 
     if (characterFilter) {
         characters = characters.filter(group => group.group === characterFilter.value);
@@ -487,6 +465,6 @@ export async function renderAudioStudio(container, filter = null) {
         studioWrapper.lastChild.replaceWith(renderEmptyGuide());
         return;
     }
-    characters.forEach(charData => grid.appendChild(renderCharacterCard(charData)));
+    characters.forEach(group => grid.appendChild(renderCharacterCard(group, owner)));
     studioWrapper.lastChild.replaceWith(grid);
 }

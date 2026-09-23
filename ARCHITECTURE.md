@@ -110,12 +110,15 @@ DOM or live LiteGraph state.
 - `ui_domain_switcher.js` owns the visual/audio domain toggle and its stored choice;
   `browser.switchAudioTab` is the single entry for audio navigation (header tabs,
   sidebar entries, domain switch) and `hideAllPanels` stops audio playback.
-- `ui_audio_studio.js` owns the voice cards, preview playback, tag copying, drops
-  onto TTS nodes (written in the node's own combo spelling) and the template
-  workflow loader (confirms before replacing the canvas). `audio_script.js` holds
-  the pure F5-TTS rules: script splitting and composition, one-character voice
-  planning, combo value matching. `ui_script_director.js` owns the script panel
-  and pushes `sample` (main voice) and `speech` together.
+- `ui_audio_studio.js` owns the voice cards, preview playback, tag copying, drags
+  onto TTS nodes through the shared `bindMaterialDrag` (value written in the
+  node's own combo spelling) and the template workflow loader (confirms before
+  replacing the canvas). `audio_script.js` holds the pure F5-TTS rules: script
+  splitting, bundling (`buildScriptPackage`) and combo value matching.
+  `ui_script_director.js` owns the script drawer: one character, an emotion chip
+  row per line card, and a bundle that is pushed to the selected/only
+  F5TTSAudio node or dragged onto one; it writes `sample` (main voice) and
+  `speech` together. The studio feeds it the voice groups after each fetch.
 - `ui_audio_uploader.js` owns the voice ingestion modal (createViewScope lifecycle,
   overwrite confirmation, optional romanization keeping the original script).
 - `ui_audio_sidebar.js` owns the audio navigation and the active audio filter.

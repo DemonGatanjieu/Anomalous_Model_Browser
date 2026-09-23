@@ -97,7 +97,7 @@ export class AnomalousBrowser {
             else if (getActiveAudioFilter().type === 'gallery') setActiveAudioFilter(null);
             this.setActiveHeaderTab?.(this.modelsBtn);
             this.audioStudioPanel.style.display = 'block';
-            renderAudioStudio(this.audioStudioPanel);
+            renderAudioStudio(this.audioStudioPanel, { owner: this });
         }
         syncAudioSidebarSelection(this);
     }

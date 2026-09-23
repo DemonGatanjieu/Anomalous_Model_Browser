@@ -39,12 +39,28 @@ export function composeScript(lines) {
         .trim();
 }
 
-/** Check the tagged voices can run in one F5TTSAudio node; returns { mainPath } or { error: localeKey }. */
-export function planScriptVoices(lines) {
-    const voices = lines.map(line => line.voice).filter(Boolean);
-    if (!voices.length) return { mainPath: null };
-    if (new Set(voices.map(voice => voice.group)).size > 1) return { error: 'scriptDirectorMixedCharacters' };
-    if (voices.some(voice => !voice.usable)) return { error: 'scriptDirectorVoiceUnusable' };
-    if (!voices[0].mainPath) return { error: 'scriptDirectorMainMissing' };
-    return { mainPath: voices[0].mainPath };
+/** Emotions of a voice group that F5-TTS can load as `{emotion}` (main first). */
+export function usableEmotions(group) {
+    return (group?.slices || []).filter(slice => slice.tag_usable).map(slice => slice.emotion);
+}
+
+/**
+ * Bundle script lines for one F5TTSAudio node. `lines` are `{ text, emotion }`;
+ * the node's sample becomes the group's main voice and every emotion must be a
+ * usable variant of that group. Returns `{ sample, speech, lineCount }` or `{ error: localeKey }`.
+ */
+export function buildScriptPackage(lines, group) {
+    if (!group) return { error: 'scriptDirectorPickCharacter' };
+    const usable = new Set(usableEmotions(group));
+    if (!group.main_relative_path || !usable.has('main')) return { error: 'scriptDirectorMainMissing' };
+    const voiced = [];
+    for (const line of lines || []) {
+        const text = String(line?.text || '').trim();
+        if (!text) continue;
+        const emotion = line.emotion || 'main';
+        if (!usable.has(emotion)) return { error: 'scriptDirectorVoiceUnusable' };
+        voiced.push({ text, voice: emotion === 'main' ? null : { tag: `{${emotion}}` } });
+    }
+    if (!voiced.length) return { error: 'scriptDirectorEmpty' };
+    return { sample: group.main_relative_path, speech: composeScript(voiced), lineCount: voiced.length };
 }
