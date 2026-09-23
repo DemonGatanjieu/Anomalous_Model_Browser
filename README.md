@@ -9,7 +9,7 @@
 
 [![ComfyUI Manager](https://img.shields.io/badge/ComfyUI-Manager-green?style=for-the-badge&logo=comfyui)](https://github.com/ltdrdata/ComfyUI-Manager)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
-[![Changelog](https://img.shields.io/badge/📖_Changelog-v1.56.1_Beta-blue?style=for-the-badge)](CHANGELOG.md)
+[![Changelog](https://img.shields.io/badge/📖_Changelog-v1.57_Beta-blue?style=for-the-badge)](CHANGELOG.md)
 [![Bilibili Video](https://img.shields.io/badge/Bilibili-视频演示-00A1D6?style=for-the-badge&logo=bilibili)](https://www.bilibili.com/video/BV1a1bv68EuA/)
 [![YouTube Video](https://img.shields.io/badge/YouTube-Video_Demo-red?style=for-the-badge&logo=youtube)](https://youtu.be/hAvsj7uiaCw)
 
@@ -37,6 +37,8 @@
 | **Workflow Repair (Model Doctor 🩺)** | Auto-detect missing model nodes when loading external workflows and swap them with matching local paths in one click. |
 | **Node Assistant & Presets (🤖)** | Visually replace models or safely insert LoRAs into compatible chains directly from the canvas. Apply node parameters from Workflow Recipes transactionally. |
 | **Workflow Recipes & Presets (🧰)** | Save partial or complete workflows with covers, notes, tags, model identities, and parameter snapshots. Partial recipes append to the current canvas; complete recipes open in a new canvas. |
+| **Material Library & Polymorphic Drag (✨)** | Save curated bundles (embedded workflow, provenance, reusable node blocks). Polymorphic canvas drag: drop workflow to open, drop prompts to auto-spawn native CLIP text nodes, or drop onto existing nodes to inject parameters. |
+| **Customizable Dock & Model Source Hub (🌐)** | Reorganize lower-left shortcuts (pin/unpin/reorder up to 4 tools). Unified Model Source Hub for dual-scope model URL inspection, Civitai/HuggingFace navigation, and canvas Note generation. |
 | **Smart Prompt Notebook (📑)** | Architecture-aware compatibility matching for Checkpoints and LoRAs, built-in translation, auto-tagging, and 1-click canvas deployment. |
 | **History Gallery (🖼️)** | Native viewer for your `output` folder with mouse-wheel zoom, deletion, and direct drag-and-drop workflow reconstruction onto the canvas. |
 
@@ -83,13 +85,18 @@ Open it with **Ctrl + Shift + M**, the floating **📦** button, or **Extensions
 * **Location**: Top navigation tabs (**Models 📦**, **Gallery 🖼️**, **Workspace 📑**, **Dock Side ◧**).
 * **Usage**: Select a Base Model architecture, attach compatible LoRAs, paste & auto-tag bilingual prompts, and click **Send to Canvas** to deploy directly.
 
-#### 7. Material Library 🖼️
-* **Capture**: Open a generated PNG's parameter details to save its image and complete workflow, or save selected node parameters. Repeated saves of the same image and selection ask before creating another copy.
-* **Find and reuse**: In Workspace → Material Library, search names, tags, or node types; filter by type/tag; edit names and tags in a material's details. Complete snapshots open as workflows; node parameters are applied through Node Assistant.
-* **Storage**: Materials live in the ComfyUI user directory under `workflows/anomalous_materials`. Prompt Notes use `workflows/anomalous_notebooks`; old notes in the extension are copied on first access, retaining the originals.
+#### 7. Material Library & Polymorphic Canvas Drag ✨
+* **Capture**: Open a generated PNG's parameter details in Gallery or Recipes to save its image and complete workflow, or save selected node parameters. Repeated saves of the same image and selection ask before creating another copy.
+* **Find and reuse**: In Workspace → Material Library, search names, tags, or node types; filter by type/tag; edit names and tags in a material's details.
+* **Polymorphic Canvas Drag**: Dragging workflow materials to blank canvas opens the workflow. Dragging prompt-only materials to blank canvas automatically spawns native `CLIPTextEncode` nodes with pure prompt text and standard ComfyUI dark theme coloring. Dragging materials onto existing nodes injects parameters directly into compatible fields.
+* **Storage**: Materials live in the ComfyUI user directory under `workflows/anomalous_materials`. Prompt Notes use `workflows/anomalous_notebooks`; old notes in the extension are copied on first access, retaining originals.
+
+#### 8. Customizable Tool Dock & Model Source Hub 🌐
+* **Customizable Shortcut Dock**: The lower-left navigation bar supports up to 4 user-customized tool slots (default: Scan, Doctor, Assistant, Materials). Drag tools between the Toolbox catalog and shortcut bar, or use the accessible "•••" card menu and button right-click menus to pin, unpin, and reorder shortcuts effortlessly.
+* **Model Source Hub**: Access the Source Hub from Toolbox to inspect model download URLs across the active workflow and full library. Jump directly to Civitai, HuggingFace, Liblib, or ModelScope, edit custom source links, sync metadata, and create non-intrusive canvas Note documentation with one click.
 
 > [!WARNING]
-> **Beta Data Protection:** Workflow Recipes and Parameter Presets are currently in testing. Please back up `workflows/anomalous_recipes` and `workflows/anomalous_parameters` inside your ComfyUI user directory before updating.
+> **Beta Data Protection:** Workflow Recipes, Material Library, and Parameter Presets are currently in active preview. Please back up `workflows/anomalous_recipes`, `workflows/anomalous_materials`, and `workflows/anomalous_parameters` inside your ComfyUI user directory before updating.
 
 </details>
 
@@ -111,6 +118,8 @@ Open it with **Ctrl + Shift + M**, the floating **📦** button, or **Extensions
 | **节点智能修复 (模型医生 🩺)** | 导入他人工作流发生节点爆红时，模型医生可自动识别缺失模型并一键替换为本地有效路径。 |
 | **节点助手与参数预设 (🤖)** | 画布选中节点即可可视化选图换模型、向兼容链路插入 LoRA，或一键应用工作流配方中沉淀的节点参数（自动跳过易变种子）。 |
 | **工作流配方 (🧰)** | 保存局部或整体工作流及封面、标签、模型身份与参数快照；局部配方追加到当前画布，整体配方在新画布打开。 |
+| **统一素材库与多态拖拽 (✨)** | 原生 PNG 资产一键打包保存（完整工作流、模型血缘与节点参数）；多态拖拽：拖至空白画布还原工作流或生成原生提示词节点，拖至已有节点智能注入参数。 |
+| **自定义快捷栏与来源中控 (🌐)** | 底部左侧快捷栏自由定制（拖拽或右键最多容纳 4 个常用工具）；工具箱内嵌来源中控中心，双域检视模型来源 URL，一键直达主流平台并生成 Note 节点。 |
 | **智能提示词笔记 (📑)** | 架构级兼容性匹配（主模型+兼容 LoRA），内置双语分块翻译与标签编辑，支持一键打包发送至画布。 |
 | **原生出图图库 (🖼️)** | 原生读取本地 `output` 文件夹，支持滚轮缩放与安全删除，**直接将图片拖拽至画布即可原地还原工作流**。 |
 
@@ -157,13 +166,18 @@ Open it with **Ctrl + Shift + M**, the floating **📦** button, or **Extensions
 * **入口位置**：顶部导航栏 (**模型 📦**、**图库 🖼️**、**工作台 📑**、**侧栏停靠 ◧**)。
 * **提示词组装**：选择基础模型架构过滤兼容 LoRA，粘贴提示词并一键双语翻译，点击 **发送到画布** 即可自动连线布署。
 
-#### 7. 素材库 🖼️
-* **保存素材**：打开生成 PNG 的参数详情，可以保存图片与完整工作流，也可以只保存选中节点参数。相同图片和节点范围再次保存时，会先提示是否另存一份。
-* **查找复用**：在「工作台 → 素材库」按名称、标签或节点类型搜索，按类型和标签筛选；进入详情可修改名称与标签。完整素材可打开工作流，节点参数通过节点助手应用。
-* **本地存储**：素材保存在 ComfyUI 用户目录的 `workflows/anomalous_materials`，提示词笔记保存在 `workflows/anomalous_notebooks`。首次访问会复制插件内的旧笔记，并保留原文件。
+#### 7. 统一素材库与多态画布拖拽 ✨
+* **保存素材**：在出图图库或配方详情中打开任意生成 PNG 的参数面板，可一键将图片、完整工作流、模型依赖与可复用节点参数打包收藏。相同图片与选区再次保存时会安全提示防重复。
+* **查找与管理**：在「工作台 → 素材库」按名称、标签或节点类型实时搜索过滤；卡片详情支持内联重命名与标签修改。
+* **多态画布拖拽**：将工作流素材直接拖至空白画布即可原地恢复工作流；将纯提示词素材拖至空白画布会自动创建带有正负区分色（深红/墨绿）的原生 `CLIPTextEncode` 节点；拖入已有节点时则会自动将匹配参数智能注入目标节点中。
+* **本地安全存储**：素材存储于 ComfyUI 用户目录下的 `workflows/anomalous_materials`，提示词笔记保存于 `workflows/anomalous_notebooks`，支持原子写入与异常回滚。
+
+#### 8. 自定义快捷栏与模型来源中控 🌐
+* **自定义底部快捷栏**：侧边栏左下角原生支持最多 4 个用户自定义工具卡槽（默认：扫描、医生、助手、素材库）。可在实用工具箱与底栏之间自由拖拽工具，或通过卡片“•••”菜单及右键菜单一键 Pin、Unpin 与排序。
+* **模型来源中控中心**：在工具箱打开来源中控，可在当前工作流或全局模型库双域下检视全部模型的下载链接，一键直达 Civitai、HuggingFace、Liblib 或 ModelScope，支持自定义模型来源并能一键向画布生成免干扰的 Note 记录节点。
 
 > [!WARNING]
-> **测试功能数据安全提醒：** 工作流配方与参数预设目前属于测试阶段，更新插件前建议备份 ComfyUI 用户目录下的 `workflows/anomalous_recipes` 与 `workflows/anomalous_parameters` 文件夹。
+> **测试功能数据安全提醒：** 工作流配方、素材库与参数预设目前属于活跃测试阶段，更新插件前建议备份 ComfyUI 用户目录下的 `workflows/anomalous_recipes`、`workflows/anomalous_materials` 与 `workflows/anomalous_parameters` 文件夹。
 
 </details>
 

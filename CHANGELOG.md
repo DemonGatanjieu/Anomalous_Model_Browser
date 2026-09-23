@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## v1.57.0 Beta (Recipe Studio, Material Library & Polymorphic Drag) — 2026-09-23
+
+### 🚀 Polymorphic Canvas Drag & Drop (多态画布拖拽架构)
+- **Universal Canvas Drag (全域多态画布拖拽)**:
+  - Dragging workflow materials to blank canvas automatically reconstructs and opens the full workflow.
+  - Dragging prompt-only materials to blank canvas spawns native `CLIPTextEncode` nodes with pure prompt text, bilingual titles, and standard ComfyUI dark theme colors (`#532323` for negative / `#235327` for positive).
+  - Dragging materials onto existing canvas nodes prioritizes the target node, injecting matching widget values and prompt text via semantic widget sniffing while strictly filtering out model file paths and loader blocks.
+- **Floating Trigger Pre-Mount & Anti-FOUC (悬浮入口预挂载防闪烁与安全吸附)**:
+  - Completely eliminated FOUC flicker on page refresh via pre-mount positioning and smooth opacity reveal.
+  - Hardened PointerEvents persistence, safe coordinate validation, and boundary clamping to prevent trigger entrapment or collapsing to the viewport origin.
+
 ### Customizable Tool Shortcuts and Toolbox Reorganization (自定义工具箱快捷栏)
 - **Customizable Bottom Shortcut Bar (自定义底部快捷栏)**:
   - Transformed the lower-left navigation bar into a user-customizable tool dock. Left anchor (`Toolbox`) and right anchor (`Settings`) remain fixed; intermediate slots support up to 4 user-customized tools (default: Scan, Doctor, Assistant, Materials).
