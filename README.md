@@ -36,7 +36,7 @@
 | **Model Browser (📦 Models)** | Browse models categorized by folder (checkpoints, unet, loras). Displays Civitai metadata, triggers, architectures, and high-res covers. Supports visual swapping, renaming, and notes. |
 | **History Gallery (🖼️ Gallery)** | Native viewer for the ComfyUI `output` directory. Features multi-dimensional search (prompt, model, seed, hash) with removable filter blocks, mouse-wheel zoom, and drag-to-canvas workflow reconstruction. |
 | **Workflow Recipes (🪡 Workflows)** | Save full workflows or partial subgraphs. Displays live model readiness status (e.g. all models ready). Open recipes in a new canvas or drag cards directly onto the canvas to load. |
-| **Toolbox & Shortcut Dock (🧰)** | Lower-left navigation bar with Toolbox as the first icon. Houses 9 built-in tools; up to 4 tools can be pinned to the bottom shortcut bar via drag-and-drop or context menus. |
+| **Toolbox & Bottom Dock (🧰)** | Lower-left navigation bar featuring the Toolbox as the first icon. Directly hosts 4 frequent tools (Scan, Doctor, Assistant, Material Library) plus Settings. Clicking the Toolbox opens a panel containing 5 secondary utilities (Workflow Transfer, Prompt Studio, Prompt Translator, Model Source Hub, Prompt Notes). |
 | **Workflow Repair (Model Doctor 🩺)** | Automatically detects broken nodes in external workflows and reconnects them to local models by comparing SHA-256 hashes and file sizes. |
 | **Node Assistant & Presets (🤖)** | Canvas-linked sidebar. Select any node on the canvas to inspect covers/triggers, visually swap models, or apply recipe parameters transactionally. |
 | **Material Library & Polymorphic Drag (✨)** | Save curated bundles from output PNGs (workflow, provenance, node parameters). Drop onto canvas to open workflow, drop prompts to auto-create native CLIP nodes, or drop onto existing nodes to inject parameters. |
@@ -66,29 +66,34 @@ The header provides 3 primary workspaces:
 * **Workflows (🪡)**: Workflow Recipe studio. Filter by `[All]`, `[Full Workflows]`, or `[Subgraphs]`. Click `Save Current Workflow` to save the active canvas, or drag any recipe card directly onto the canvas to load it.
 
 #### 2. Bottom Navigation & Toolbox Catalog (🧰 第一个图标：实用工具箱)
-* **Dock Layout**: The lower-left navigation bar has **Toolbox (🧰)** as the fixed first anchor on the left, **Settings (⚙️)** as the fixed anchor on the right, and **up to 4 user-customizable shortcut slots in the middle** (default: Scan, Doctor, Assistant, Materials).
-* **Toolbox Catalog**: Clicking the first icon opens the Toolbox window, listing tools not currently pinned to the bottom dock:
-  1. **Workflow Transfer Center (⇄ 导入导出)**: Lossless AMB format workflow share code import and export.
-  2. **Prompt Studio (🎛️ 提示词工坊)**: Modular prompt mixer deck for lego-block reordering and composition.
-  3. **Prompt Translator (🌐 翻译助手)**: Bilingual prompt translation between English and Chinese.
-  4. **Model Source Hub (🔗 模型来源)**: Dual-scope (workflow and library) download URL inspector; navigates to Civitai/HuggingFace/Liblib/ModelScope and creates canvas Note nodes.
-  5. **Prompt Notes (📑 提示词笔记)**: Lightweight drafts and prompt notes saved in the user directory (`workflows/anomalous_notebooks`).
-* **Shortcut Customization**: Drag tools between the Toolbox catalog and the bottom bar to pin or unpin them, or use the card's "•••" menu and shortcut button right-click menu to organize them without dragging.
+* **Dock Layout**: The lower-left navigation bar hosts 6 permanent buttons in a fixed layout:
+  1. **Toolbox (🧰)**: First anchor on the left. Opens the Toolbox panel for secondary tools.
+  2. **Scan Wizard (🔄)**: Direct shortcut to launch model library scanning.
+  3. **Model Doctor (🩺)**: Direct shortcut to diagnose and repair missing workflow nodes.
+  4. **Node Assistant (🤖)**: Direct shortcut to inspect canvas node models and inject parameter presets.
+  5. **Material Library (✨)**: Direct shortcut to manage curated bundles and drag assets to the canvas.
+  6. **Settings (⚙️)**: Fixed anchor on the far right for global preferences.
+* **Toolbox Catalog**: Clicking the first icon (**🧰 实用工具箱**) opens a dedicated popup panel containing 5 secondary utilities:
+  1. **Workflow Transfer Center (⇄ 导入导出)**: Lossless AMB format workflow share code import and export. Allows importing workflows from text codes or exporting the current canvas with embedded hashes.
+  2. **Prompt Studio (🎛️ 提示词工坊)**: Modular prompt mixer deck. Extract prompt cards from history or materials, reorder segments, and assemble positive/negative prompts.
+  3. **Prompt Translator (🌐 翻译助手)**: Built-in bilingual prompt translation between Chinese and English without leaving the interface.
+  4. **Model Source Hub (🔗 模型来源)**: Dual-scope (workflow and library) download URL inspector. Navigates to Civitai, HuggingFace, Liblib, or ModelScope, and generates non-intrusive canvas Note nodes.
+  5. **Prompt Notes (📑 提示词笔记)**: Lightweight notebook for drafting, editing, and managing reusable prompt snippets saved locally in the user directory (`workflows/anomalous_notebooks`).
 
 #### 3. Scan Wizard (🔄 扫描向导)
-* **Location**: Shortcut bar or Toolbox.
+* **Location**: Direct shortcut on the bottom dock (2nd icon).
 * **Operation**: Scan configured model directories to compute file hashes, download Civitai covers, tags, and architectures, and build the local offline database.
 
 #### 4. Model Doctor (🩺 模型医生)
-* **Location**: Shortcut bar or Toolbox.
+* **Location**: Direct shortcut on the bottom dock (3rd icon).
 * **Operation**: When loading an external workflow with missing red nodes, Model Doctor inspects embedded provenance hashes and file sizes to reconnect local matches automatically. The "View Hash" button opens a side-by-side SHA256 comparison modal.
 
 #### 5. Node Assistant & Parameter Presets (🤖 节点助手)
-* **Location**: Shortcut bar or Toolbox.
+* **Location**: Direct shortcut on the bottom dock (4th icon).
 * **Actions**: Select a model node on the canvas to view high-res previews and trigger words, or swap models visually. Switch to **Parameter Presets** to inject recipe-saved node values (e.g., KSampler steps, CFG, denoise) into matching canvas nodes with safe seed preservation.
 
 #### 6. Material Library & Polymorphic Canvas Drag (✨ 素材库与多态拖拽)
-* **Location**: Shortcut bar or Toolbox.
+* **Location**: Direct shortcut on the bottom dock (5th icon).
 * **Capture**: In Gallery or Workflows, open an image's parameter inspector to save its image, workflow, and node blocks as a curated material bundle (`workflows/anomalous_materials`).
 * **Polymorphic Canvas Drag**:
   - Dragging a workflow material to an empty canvas area opens the full workflow.
@@ -96,7 +101,7 @@ The header provides 3 primary workspaces:
   - Dragging materials onto existing canvas nodes injects matching parameter values directly.
 
 #### 7. Global Settings (⚙️ 设置)
-* **Location**: The Gear icon at the far right of the lower-left navigation bar.
+* **Location**: Direct shortcut on the far right of the lower-left navigation bar (6th icon).
 * **Options**: Interface language, font scale, thumbnail rendering, video cover hover behavior, and model folder blacklist.
 
 > [!WARNING]
@@ -105,8 +110,6 @@ The header provides 3 primary workspaces:
 </details>
 
 ---
-
-<h2 id="中文">🇨🇳 中文说明</h2>
 
 <h2 id="中文">🇨🇳 中文说明</h2>
 
@@ -123,7 +126,7 @@ The header provides 3 primary workspaces:
 | **模型浏览 (📦 模型)** | 本地模型管理网格。左侧树状目录分类（checkpoints、unet、loras），卡片展示 C 站元数据、触发词、基础架构与高清封面，支持看图换模与自定义备注。 |
 | **出图图库 (🖼️ 图库)** | 原生读取本地 `output` 文件夹，支持滚轮缩放与安全删除；顶部搜索栏支持按提示词、模型名、LoRA、seed、文件名或模型哈希多维检索，生成可点击独立移除的搜索标签块；拖拽图片原地还原工作流。 |
 | **工作流配方 (🪡 工作流)** | 工作流配方工坊。支持保存完整工作流或局部子图，实时显示模型就绪状态（如“全部模型就绪”）；支持一键在新画布打开或直接拖拽卡片到画布空白处载入。 |
-| **实用工具箱与快捷栏 (🧰)** | 侧边栏左下角第一个图标为工具箱，内嵌 9 大功能工具；底部快捷栏原生支持最多 4 个自定义快捷槽位，支持拖拽或右键菜单免拖拽管理。 |
+| **实用工具箱与底栏 (🧰)** | 侧边栏左下角第一个图标为工具箱，底栏直达 4 大常用工具（扫描向导、模型医生、节点助手、素材库）与全局设置；点击工具箱弹出浮窗面板，提供 5 大扩展工具（导入导出、提示词工坊、翻译助手、模型来源、提示词笔记）。 |
 | **节点智能修复 (模型医生 🩺)** | 导入他人工作流发生节点爆红时，自动比对本地模型 SHA256 哈希与字节大小，一键替换为有效路径，支持哈希透视比对。 |
 | **节点助手与参数预设 (🤖)** | 画布选中节点即可可视化选图换模型、向兼容链路插入 LoRA，或一键应用工作流配方中沉淀的节点参数（自动跳过易变种子）。 |
 | **统一素材库与多态拖拽 (✨)** | 原生 PNG 资产一键打包保存（完整工作流、模型血缘与节点参数）；多态拖拽：拖至空白画布还原工作流或生成原生红绿提示词节点，拖至已有节点智能注入参数。 |
@@ -153,30 +156,35 @@ The header provides 3 primary workspaces:
 * **工作流 (🪡)**：工作流配方工坊。提供 `[全部]`、`[完整工作流]`、`[局部子图]` 子过滤器与标签筛选；点击右上角 `保存当前工作流` 即可将当前画布打包为配方；直接按住配方卡片拖拽到 ComfyUI 画布空白处释放即可立即载入。
 
 #### 2. 底部导航与实用工具箱 (🧰 第一个图标：实用工具箱)
-* **布局结构**：底部导航栏由左侧固定锚点（**实用工具箱 🧰**）、右侧固定锚点（**全局设置 ⚙️**），以及中间**最多 4 个自定义快捷工具槽位**（默认：扫描、医生、助手、素材库）组成。
-* **实用工具箱浮窗**：点击左下角第一个图标打开工具箱窗口，集中陈列当前未固定到底栏的其他功能工具：
-  1. **导入导出 (⇄)**：带哈希验证的工作流分享码（AMB 格式）导入导出中心。
-  2. **提示词工坊 (🎛️)**：乐高积木式提示词组装台，支持来源词卡提取与分块混音。
-  3. **翻译助手 (🌐)**：双语提示词中英双向互译工具。
-  4. **模型来源 (🔗)**：检视工作流或全局模型的在线来源 URL，一键直达平台或在画布生成 Note 说明节点。
-  5. **提示词笔记 (📑)**：保存在 ComfyUI 用户目录（`workflows/anomalous_notebooks`）下的轻量提示词草稿与笔记。
-* **快捷栏定制方法**：可在工具箱与底部快捷栏之间自由拖拽工具进行 Pin / Unpin 与排序，也可以在卡片“•••”菜单及底栏按钮右键菜单中一键执行固定、解绑及调整排序。
+* **布局结构**：侧边栏左下角常驻 6 个固定图标按钮：
+  1. **实用工具箱 (🧰)**：左侧首个图标，点击展开工具箱浮窗面板。
+  2. **扫描向导 (🔄)**：直达本地模型扫描与哈希/元数据建立。
+  3. **模型医生 (🩺)**：直达工作流爆红诊断与缺失模型自动自愈。
+  4. **节点助手 (🤖)**：直达画布选中节点模型信息查看、可视化换模与参数预设注入。
+  5. **素材库 (✨)**：直达素材资产管理与多态画布拖拽。
+  6. **全局设置 (⚙️)**：最右侧齿轮图标，直达全局偏好设置。
+* **实用工具箱浮窗**：点击首个图标（**🧰 实用工具箱**）打开工具箱窗口，集中收纳了未在底栏常驻的 5 大扩展工具：
+  1. **导入导出 (⇄)**：无损 AMB 格式工作流分享码导入与导出，支持从文本分享码原地解析还原画布，或将当前画布打包生成带校验哈希的分享码。
+  2. **提示词工坊 (🎛️)**：模块化提示词积木组装台，支持从出图历史或素材中抽取词卡并分块混音、正负词排序与组合。
+  3. **翻译助手 (🌐)**：内置中英双向提示词互译工具，无需离开 ComfyUI 即可完成提示词中英翻译。
+  4. **模型来源 (🔗)**：检视当前工作流或模型库中模型的在线下载来源（Civitai、HuggingFace、Liblib、ModelScope），支持一键在画布生成包含模型来源信息的 Note 说明节点。
+  5. **提示词笔记 (📑)**：保存在 ComfyUI 用户目录（`workflows/anomalous_notebooks`）下的轻量提示词草稿本，用于随时记录、整理与复用常用提示词片段。
 
 #### 3. 扫描向导 (🔄 扫描向导)
-* **入口位置**：底部快捷栏或实用工具箱内。
+* **入口位置**：底部快捷栏第 2 个图标。
 * **操作步骤**：首次使用或添加新模型后打开，选择扫描范围（全部路径、仅缺失元数据或自定义目录）并执行，系统将自动建立本地模型库并拉取 C 站封面、标签与架构信息。
 
 #### 4. 拯救爆红 (🩺 模型医生)
-* **入口位置**：底部快捷栏或实用工具箱内。
+* **入口位置**：底部快捷栏第 3 个图标。
 * **操作步骤**：载入他人工作流或图片出现红框缺失报错时，点击模型医生即可自动比对本地模型哈希与字节大小，一键批量映射为本地正确路径。卡片上的“查看哈希”可展开内嵌指纹与磁盘文件的 SHA256 逐项比对面板。
 
 #### 5. 选中交互与预设 (🤖 节点助手)
-* **入口位置**：底部快捷栏或实用工具箱内。
+* **入口位置**：底部快捷栏第 4 个图标。
 * **动作功能**：在画布选中模型节点后，可在“动作”页查看高清预览图与触发词，支持看图一键替换模型或在兼容链路前后插入 LoRA。
 * **参数预设**：切换至“参数预设”页，可读取工作流配方中同类型节点的保存参数并一键注入画布（自动保留种子等易变数值）。
 
 #### 6. 统一素材库与多态画布拖拽 (✨ 素材库与多态拖拽)
-* **入口位置**：底部快捷栏或实用工具箱内。
+* **入口位置**：底部快捷栏第 5 个图标。
 * **保存素材**：在出图图库或配方详情中打开任意生成 PNG 的参数面板，可一键将图片、完整工作流、模型依赖与可复用节点参数打包收藏。
 * **多态画布拖拽**：
   - 将工作流素材直接拖拽至空白画布，即可原地恢复并打开完整工作流。
@@ -185,7 +193,7 @@ The header provides 3 primary workspaces:
 * **本地存储**：素材存储于 ComfyUI 用户目录下的 `workflows/anomalous_materials`，支持原子写入。
 
 #### 7. 全局设置面板 (⚙️ 设置)
-* **入口位置**：侧边栏左下角最右侧 **齿轮图标 (⚙️)**。
+* **入口位置**：侧边栏左下角最右侧第 6 个图标（**齿轮图标 ⚙️**）。
 * **个性调节**：支持中英文界面切换、字体大小缩放、视频封面悬停/常开播放、缩略图优化与目录黑名单管理。
 
 > [!WARNING]

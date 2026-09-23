@@ -27,17 +27,25 @@
   - Completely eliminated FOUC flicker on page refresh via pre-mount positioning and smooth opacity reveal (`53c9f1b`).
   - Hardened PointerEvents persistence, safe coordinate validation, and boundary clamping to prevent trigger entrapment or collapsing to the viewport origin (`09b06d1`).
 
-### 🧰 Toolbox Catalog & Customizable Shortcut Dock (实用工具箱与底部快捷栏架构)
-- **Customizable Bottom Shortcut Bar (自定义底部快捷栏)**:
-  - Transformed the lower-left navigation bar into a user-customizable tool dock. Left anchor (`Toolbox`) and right anchor (`Settings`) remain fixed; intermediate slots support up to 4 user-customized tools (default: Scan, Doctor, Assistant, Materials).
-  - Tools can be dragged between the Toolbox catalog and the shortcut bar with a 6px deadzone, live ghost preview, and precision drop indicators.
-  - Pinned shortcuts can be dragged back to the Toolbox modal (or its dedicated drop zone) to unpin them, or reordered directly inside the bar.
-  - Reaching the 4-shortcut capacity limit provides clear, non-intrusive feedback.
-  - Added an accessible "•••" context menu on toolbox cards and right-click menus on shortcut buttons, allowing full organization (pin, unpin, reorder) without pointer drag.
-  - Fully localized bilingual strings and persistent layout storage under `anomalous_shortcut_layout_v1` with graceful memory fallback.
+### 🧰 Toolbox Catalog & Dedicated Bottom Dock (实用工具箱与底部固定快捷栏架构)
+- **Dedicated Bottom Action Bar (结构化底部快捷栏)**:
+  - Streamlined the lower-left sidebar into a dedicated 6-button utility bar:
+    1. **Toolbox (🧰 实用工具箱)**: Anchored as the primary launcher on the left to access secondary tools.
+    2. **Scan Wizard (🔄 扫描向导)**: Direct shortcut to launch model library scanning.
+    3. **Model Doctor (🩺 模型医生)**: Direct shortcut to diagnose and auto-heal missing workflow models.
+    4. **Node Assistant (🤖 节点助手)**: Direct shortcut for canvas node inspection, model swapping, and parameter injection.
+    5. **Material Library (✨ 素材库)**: Direct shortcut to manage curated material bundles and polymorphic canvas drag-and-drop.
+    6. **Settings (⚙️ 设置)**: Fixed anchor on the right for interface preferences.
+- **Toolbox Modal Catalog (实用工具箱浮窗面板)**:
+  - Clicking the first icon (**🧰 实用工具箱**) opens a dedicated popup panel housing 5 secondary tools not on the main dock:
+    1. **Workflow Transfer Center (导入导出)**: Lossless AMB format workflow share code import and export.
+    2. **Prompt Studio (提示词工坊)**: Modular prompt mixer deck for lego-block prompt extraction, reordering, and assembly.
+    3. **Prompt Translator (翻译助手)**: Bilingual real-time English/Chinese prompt translation.
+    4. **Model Source Hub (模型来源)**: Online model source URL inspector with instant canvas Note node generation.
+    5. **Prompt Notes (提示词笔记)**: Lightweight notebook for drafting and organizing reusable prompt snippets (`workflows/anomalous_notebooks`).
 - **Enhanced Sidebar Tooltips & Reveal Timing (侧边栏操作提示与动画优化)**:
   - 100ms quick hover text replacement on shortcut buttons and 600ms rich singleton floating tooltip bubble (`#anomalous-sidebar-tooltip-bubble`) with bold title and muted explanation, cleanly avoiding CSS pseudo-element clipping issues.
-  - Hovering over a closed Toolbox button while dragging auto-expands the Toolbox after 350ms for frictionless tool extraction.
+  - Clicking or pressing any action button immediately suppresses hover text and floating tooltips.
   - Maintained elegant obsidian glass / dark monochromatic aesthetics without harsh or distracting bright colors.
 
 ### Navigation and update guide
