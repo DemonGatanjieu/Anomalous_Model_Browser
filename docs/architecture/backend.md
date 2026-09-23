@@ -63,8 +63,9 @@ live in `material_schema.py`, `material_assets.py`, and `material_store.py`;
 
 The former mixed utility routes are separated: `media_routes.py` owns card
 thumbnails and model/output media lookups, `gallery_routes.py` owns the bounded
-output snapshot and deletion, `translation_routes.py` owns provider fallback,
-`folder_types.py` owns configured visibility and scan scope, and `audio_catalog.py`
+output snapshot and deletion (searched through `image_search.py`, which reads
+PNG text chunks only and caches per-image records by mtime), `translation_routes.py`
+owns provider fallback, `folder_types.py` owns configured visibility and scan scope, and `audio_catalog.py`
 with `romanizer.py` owns Audio & Voice Studio scanning, ingestion (conversion to
 24 kHz mono PCM WAV via an explicitly resolved ffmpeg), streaming, and
 romanization. Voice files use the ComfyUI-F5-TTS layout (`Character.wav` main

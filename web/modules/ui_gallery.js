@@ -6,6 +6,7 @@
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { showImageMaterialDetail } from './ui_materials.js';
+import { createSearchChips } from './ui_search_chips.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -25,14 +26,46 @@ export async function refreshGalleryImages() {
 
 
 
-export async function loadGalleryImages(page = 1, reset = false) {
-        if (this.galleryLoading) return;
+/** Search blocks above the output gallery; the terms live on the browser as `gallerySearchTerms`. */
+export function createGallerySearchBar(owner) {
+    const search = createSearchChips({
+        placeholder: t('gallerySearchPlaceholder'),
+        help: t('gallerySearchHelp'),
+        onChange: (terms) => {
+            owner.gallerySearchTerms = terms;
+            owner.loadGalleryImages(1, true, { refresh: false });
+        },
+    });
+    search.element.classList.add('anomalous-gallery-search');
+    owner.gallerySearchCount = search.countElement;
+    return search.element;
+}
+
+export async function loadGalleryImages(page = 1, reset = false, { refresh = reset } = {}) {
+        if (this.galleryLoading) {
+            // A newer query arrived while loading: run it once the current request settles.
+            if (reset) this.galleryReloadPending = true;
+            return;
+        }
         this.galleryLoading = true;
-        this.gallerySentinel.textContent = t('galleryLoading');
+        const terms = [...(this.gallerySearchTerms || [])];
+        const termsKey = JSON.stringify(terms);
+        const query = terms.length > 0;
+        this.gallerySentinel.textContent = query && page === 1 ? t('gallerySearching') : t('galleryLoading');
 
         try {
-            const res = await fetch(`/anomalous/gallery_images?page=${page}&limit=50${reset ? "&refresh=1" : ""}`);
+            const params = new URLSearchParams({ page: String(page), limit: '50' });
+            if (refresh) params.set('refresh', '1');
+            terms.forEach(term => params.append('term', term));
+            const res = await fetch(`/anomalous/gallery_images?${params}`);
             const data = await res.json();
+            if (termsKey !== JSON.stringify(this.gallerySearchTerms || [])) {
+                this.galleryReloadPending = true;
+                return;
+            }
+            if (this.gallerySearchCount) {
+                this.gallerySearchCount.textContent = query && Number.isFinite(data.total) ? t('gallerySearchCount', { count: data.total }) : '';
+            }
 
             if (reset) {
                 // Clear existing cards
@@ -290,14 +323,18 @@ export async function loadGalleryImages(page = 1, reset = false) {
                 }
             } else {
                 this.galleryHasMore = false;
-                this.gallerySentinel.textContent = reset ? t('galleryEmpty') : t('galleryNoMore');
+                this.gallerySentinel.textContent = reset ? t(query ? 'gallerySearchEmpty' : 'galleryEmpty') : t('galleryNoMore');
             }
         } catch (e) {
             console.error('Failed to load gallery images', e);
             this.gallerySentinel.textContent = t('galleryLoadFailed');
+        } finally {
+            this.galleryLoading = false;
+            if (this.galleryReloadPending) {
+                this.galleryReloadPending = false;
+                void this.loadGalleryImages(1, true, { refresh: false });
+            }
         }
-
-        this.galleryLoading = false;
     }
 
 

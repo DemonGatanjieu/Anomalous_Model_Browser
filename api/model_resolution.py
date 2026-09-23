@@ -18,7 +18,7 @@ try:
 except ImportError:
     from model_policies import requires_hash_for_model_recovery
 from .metadata import get_metadata
-from .model_constants import RESOLVABLE_MODEL_TYPES
+from .model_constants import MODEL_EXTENSIONS, RESOLVABLE_MODEL_TYPES
 from .utils import atomic_write_json
 
 def _parse_resolution_types(expected_types_raw):
@@ -266,66 +266,70 @@ async def api_resolve_hash_batch(request):
     return web.json_response({"results": await asyncio.to_thread(resolve_batch)})
 
 
+def collect_model_hash_index():
+    """Scanned models keyed by relative path and basename -> {hash, size, url}.
+
+    Ambiguous keys (same name, different hash) are dropped. Shared by the
+    all-hashes endpoint and the output gallery's hash search.
+    """
+    hashes = {}
+    ambiguous_keys = set()
+
+    def add_hash(key, value):
+        if key in ambiguous_keys:
+            return
+        existing = hashes.get(key)
+        if existing is None or existing == value:
+            hashes[key] = value
+        else:
+            hashes.pop(key, None)
+            ambiguous_keys.add(key)
+
+    types = RESOLVABLE_MODEL_TYPES
+    seen_dirs = set()
+    for t in types:
+        try:
+            paths = folder_paths.get_folder_paths(t)
+            if not paths: continue
+            for base_dir in paths:
+                if base_dir in seen_dirs: continue
+                seen_dirs.add(base_dir)
+                if not os.path.exists(base_dir): continue
+                for root, dirs, files in os.walk(base_dir):
+                    for file in files:
+                        if file.lower().endswith(MODEL_EXTENSIONS):
+                            file_path = os.path.join(root, file)
+                            try:
+                                size_bytes = os.path.getsize(file_path)
+                            except Exception:
+                                size_bytes = 0
+                                
+                            meta = get_metadata(file_path)
+                            hash_val = ""
+                            if meta and meta.get("hash"):
+                                hash_val = meta["hash"]
+                            model_url = ""
+                            if meta:
+                                model_url = meta.get("source_url") or meta.get("civitai_url") or ""
+                            
+                            rel_path = os.path.relpath(file_path, base_dir)
+                            if rel_path.startswith('.\\') or rel_path.startswith('./'):
+                                rel_path = rel_path[2:]
+                            rel_path = rel_path.replace('\\', '/')
+                            basename = os.path.basename(file_path)
+                            
+                            val = {"hash": hash_val, "size": size_bytes, "url": model_url}
+                            add_hash(rel_path, val)
+                            add_hash(basename, val)
+        except Exception:
+            pass
+    return hashes
+
+
 async def api_get_all_hashes(request):
     """
     Returns a dictionary of all scanned models with their hash and size.
     Keyed by both relative path and basename for maximum frontend resilience.
     """
-    import asyncio
-    
-    def fetch_all():
-        hashes = {}
-        ambiguous_keys = set()
-
-        def add_hash(key, value):
-            if key in ambiguous_keys:
-                return
-            existing = hashes.get(key)
-            if existing is None or existing == value:
-                hashes[key] = value
-            else:
-                hashes.pop(key, None)
-                ambiguous_keys.add(key)
-
-        types = RESOLVABLE_MODEL_TYPES
-        seen_dirs = set()
-        for t in types:
-            try:
-                paths = folder_paths.get_folder_paths(t)
-                if not paths: continue
-                for base_dir in paths:
-                    if base_dir in seen_dirs: continue
-                    seen_dirs.add(base_dir)
-                    if not os.path.exists(base_dir): continue
-                    for root, dirs, files in os.walk(base_dir):
-                        for file in files:
-                            if file.lower().endswith(MODEL_EXTENSIONS):
-                                file_path = os.path.join(root, file)
-                                try:
-                                    size_bytes = os.path.getsize(file_path)
-                                except Exception:
-                                    size_bytes = 0
-                                    
-                                meta = get_metadata(file_path)
-                                hash_val = ""
-                                if meta and meta.get("hash"):
-                                    hash_val = meta["hash"]
-                                model_url = ""
-                                if meta:
-                                    model_url = meta.get("source_url") or meta.get("civitai_url") or ""
-                                
-                                rel_path = os.path.relpath(file_path, base_dir)
-                                if rel_path.startswith('.\\') or rel_path.startswith('./'):
-                                    rel_path = rel_path[2:]
-                                rel_path = rel_path.replace('\\', '/')
-                                basename = os.path.basename(file_path)
-                                
-                                val = {"hash": hash_val, "size": size_bytes, "url": model_url}
-                                add_hash(rel_path, val)
-                                add_hash(basename, val)
-            except Exception:
-                pass
-        return hashes
-        
-    hashes = await asyncio.to_thread(fetch_all)
+    hashes = await asyncio.to_thread(collect_model_hash_index)
     return web.json_response(hashes)

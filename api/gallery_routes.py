@@ -8,6 +8,7 @@ import time
 from aiohttp import web
 import folder_paths
 
+from .image_search import filter_images
 from .path_utils import require_filename, resolve_within
 
 
@@ -55,11 +56,20 @@ def _invalidate_gallery_snapshot():
         _gallery_snapshot.update(root=None, expires=0, images=[])
 
 
+def _gallery_listing(output_dir, refresh, query):
+    images = _gallery_images(output_dir, refresh)
+    return filter_images(os.path.realpath(output_dir), images, query) if query else images
+
+
 async def api_get_gallery_images(request):
+    """GET /anomalous/gallery_images?page&limit&refresh&term=..&term=.. (or q) - Output images, optionally searched by embedded generation info."""
     try:
         page = max(1, int(request.query.get('page', 1)))
         limit = min(200, max(1, int(request.query.get('limit', 50))))
-        images = await asyncio.to_thread(_gallery_images, folder_paths.get_output_directory(), request.query.get('refresh') == '1')
+        # Repeated `term` params keep phrases whole; `q` is split on whitespace.
+        terms = [term for term in request.query.getall('term', []) if term.strip()]
+        query = terms or request.query.get('q', '').strip()
+        images = await asyncio.to_thread(_gallery_listing, folder_paths.get_output_directory(), request.query.get('refresh') == '1', query)
         total = len(images)
         start = (page - 1) * limit
         return web.json_response({"images": images[start:start + limit], "total": total,

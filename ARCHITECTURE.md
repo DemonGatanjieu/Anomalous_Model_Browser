@@ -96,10 +96,16 @@ DOM or live LiteGraph state.
 - `api/romanizer.py` converts Japanese (text containing kana) and Korean to Latin
   script for transcripts; Han-only text is left unchanged, and missing optional
   dependencies (pykakasi, hangul-romanize) are reported, not hidden.
+- `api/image_search.py` powers the output gallery search (`gallery_images?q=`):
+  it reads only the PNG text chunks before the pixel data (ComfyUI prompt and
+  workflow, A1111 `parameters`), caches one record per image by mtime, and
+  matches all query terms; hex terms of 8+ characters also match recorded model
+  SHA256 values and, via `collect_model_hash_index` in `model_resolution.py`,
+  local model files with that hash. Terms arrive as repeated `term` params, one
+  phrase each. `ui_search_chips.js` is the reusable search-block input (Enter or a
+  comma commits a block); `ui_gallery.js` places it above the gallery.
 
-### Frontend
-
-- `web/main.js` coordinates extension registration. `browser.js` owns the shared
+- `web/main.js` coordinates extension registration (with `?v=...` versioned module imports busting aggressive browser ES Module caching and unconditional legacy storage key purging). `browser.js` owns the shared
   browser class and extracted-method wiring; `browser_entry.js` owns the single
   browser instance plus floating/topbar/menu entry behavior (pointer-capture drag,
   pre-mount positioning to avoid a flash, `anomalous_trigger_pos_v3` persistence);

@@ -2849,3 +2849,122 @@ dialog.anomalous-gallery-viewer[open] {
     transform: translateY(-2px);
 }
 
+
+/* Search blocks (ui_search_chips.js); used above the output gallery */
+.anomalous-search-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.25);
+    color: #94a3b8;
+    cursor: text;
+}
+
+.anomalous-search-chips:focus-within {
+    border-color: rgba(129, 140, 248, 0.5);
+}
+
+.anomalous-search-chips-icon {
+    display: inline-flex;
+}
+
+.anomalous-search-chips-list {
+    display: contents;
+}
+
+.anomalous-search-chips-input {
+    flex: 1 1 160px;
+    min-width: 120px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #f1f5f9;
+    font-size: 13px;
+    padding: 3px 0;
+}
+
+.anomalous-search-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 100%;
+    padding: 2px 4px 2px 9px;
+    border-radius: 999px;
+    border: 1px solid rgba(129, 140, 248, 0.4);
+    background: rgba(99, 102, 241, 0.18);
+    color: #e0e7ff;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.anomalous-search-chip.is-hash {
+    border-color: rgba(251, 191, 36, 0.5);
+    background: rgba(245, 158, 11, 0.14);
+    color: #fde68a;
+    font-family: monospace;
+}
+
+.anomalous-search-chip.is-number {
+    border-color: rgba(52, 211, 153, 0.45);
+    background: rgba(16, 185, 129, 0.14);
+    color: #a7f3d0;
+}
+
+.anomalous-search-chip-kind {
+    font-size: 10px;
+    opacity: 0.75;
+    font-family: inherit;
+}
+
+.anomalous-search-chip-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-search-chip-remove,
+.anomalous-search-chips-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.anomalous-search-chip-remove:hover,
+.anomalous-search-chips-clear:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.anomalous-search-chips-clear[hidden] {
+    display: none;
+}
+
+.anomalous-search-chips-count {
+    font-size: 12px;
+    color: #a5b4fc;
+    white-space: nowrap;
+}
+
+.anomalous-search-chips-count:empty {
+    display: none;
+}
+
+.anomalous-gallery-search {
+    margin: 12px 20px 0;
+    flex-shrink: 0;
+}
