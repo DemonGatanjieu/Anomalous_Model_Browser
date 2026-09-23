@@ -1,7 +1,7 @@
 import { app } from '../../../scripts/app.js';
 import { t } from './interface_settings.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
-import { buildScriptPackage, comboValueForPath, splitScriptLines, usableEmotions } from './audio_script.js';
+import { buildScriptPackage, comboValueForPath, joinSegments, splitScriptLines, usableEmotions } from './audio_script.js';
 import { bindMaterialDrag } from './material_drag.js';
 
 /**
@@ -27,6 +27,8 @@ const state = {
     groupKey: null,
     lines: [],          // { text, emotion }
     editing: true,
+    splitMode: 'sentence',
+    focusIndex: null,   // card whose text box should receive focus after the next render
 };
 
 let panel = null;
@@ -144,8 +146,17 @@ function createPanel() {
     const textarea = el('textarea', 'anomalous-sd-textarea');
     textarea.placeholder = t('scriptDirectorInputPlaceholder');
     const inputActions = el('div', 'anomalous-sd-input-actions');
+    const splitMode = el('select', 'anomalous-sd-split-mode');
+    for (const [value, key] of [['sentence', 'scriptDirectorSplitSentence'], ['line', 'scriptDirectorSplitLine']]) {
+        const option = el('option', '', t(key));
+        option.value = value;
+        splitMode.appendChild(option);
+    }
+    splitMode.value = state.splitMode;
+    splitMode.onchange = () => { state.splitMode = splitMode.value; };
     const cancelEdit = button('anomalous-sd-btn', t('dialogCancel'), () => { state.editing = false; renderAll(); });
     inputActions.append(
+        splitMode,
         button('anomalous-sd-btn', t('scriptDirectorClear'), () => { textarea.value = ''; textarea.focus(); }),
         cancelEdit,
         button('anomalous-sd-btn primary', t('scriptDirectorParse'), () => parseScript(textarea.value)),
@@ -218,7 +229,16 @@ function renderLines() {
     const group = selectedGroup();
     const emotions = usableEmotions(group);
     const slices = new Map((group?.slices || []).map(slice => [slice.emotion, slice]));
-    refs.linesContainer.replaceChildren(...state.lines.map((line, index) => renderLineCard(line, index, emotions, slices)));
+    const addLine = button('anomalous-sd-add-line', t('scriptDirectorAddLine'), () => {
+        state.lines.push({ text: '', emotion: state.lines.at(-1)?.emotion || 'main' });
+        state.focusIndex = state.lines.length - 1;
+        renderAll();
+    });
+    refs.linesContainer.replaceChildren(...state.lines.map((line, index) => renderLineCard(line, index, emotions, slices)), addLine);
+    if (state.focusIndex !== null) {
+        refs.linesContainer.querySelectorAll('.anomalous-sd-line-text')[state.focusIndex]?.focus();
+        state.focusIndex = null;
+    }
 }
 
 function renderLineCard(line, index, emotions, slices) {
@@ -230,6 +250,17 @@ function renderLineCard(line, index, emotions, slices) {
     head.append(
         el('span', 'anomalous-sd-line-no', `#${index + 1}`),
         previewBtn,
+    );
+    if (index < state.lines.length - 1) {
+        // Merge keeps this card's emotion: one card = one segment spoken with one voice.
+        head.append(button('anomalous-sd-icon-btn', '↧', () => {
+            line.text = joinSegments(line.text, state.lines[index + 1].text);
+            state.lines.splice(index + 1, 1);
+            stopScriptDirectorPreview();
+            renderAll();
+        }, t('scriptDirectorMergeNext')));
+    }
+    head.append(
         button('anomalous-sd-icon-btn is-danger', '×', () => {
             state.lines.splice(index, 1);
             stopScriptDirectorPreview();
@@ -293,7 +324,7 @@ function renderPackage() {
 // ---------- actions ----------
 
 function parseScript(text) {
-    const parsed = splitScriptLines(text);
+    const parsed = splitScriptLines(text, state.splitMode);
     if (!parsed.length) return;
     const previous = new Map(state.lines.map(line => [line.text.trim(), line.emotion]));
     state.lines = parsed.map(lineText => ({ text: lineText, emotion: previous.get(lineText) || 'main' }));

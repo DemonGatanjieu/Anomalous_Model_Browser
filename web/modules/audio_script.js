@@ -19,12 +19,24 @@ export function comboValueForPath(widget, relativePath) {
     return values.find(value => normalisePath(value) === wanted) ?? null;
 }
 
-/** Split on sentence punctuation and newlines; '.' only ends a line before whitespace (keeps 3.5). */
-export function splitScriptLines(text) {
+/**
+ * Split a script into segments. `sentence`: sentence punctuation and newlines
+ * ('.' only before whitespace, so 3.5 stays whole). `line`: one segment per line.
+ */
+export function splitScriptLines(text, mode = 'sentence') {
+    const pattern = mode === 'line' ? /\n+/ : /\n+|(?<=[。！？!?…])|(?<=\.)(?=\s)/;
     return String(text || '')
-        .split(/\n+|(?<=[。！？!?…])|(?<=\.)(?=\s)/)
+        .split(pattern)
         .map(line => line.trim())
         .filter(Boolean);
+}
+
+/** Join two segments: a space only between Latin words/digits, none for CJK text. */
+export function joinSegments(first, second) {
+    const a = String(first || '').trim();
+    const b = String(second || '').trim();
+    if (!a || !b) return a || b;
+    return /[A-Za-z0-9,.;:!?]$/.test(a) && /^[A-Za-z0-9]/.test(b) ? `${a} ${b}` : `${a}${b}`;
 }
 
 /** Once any line is tagged, untagged lines get {main} instead of inheriting the previous voice. */

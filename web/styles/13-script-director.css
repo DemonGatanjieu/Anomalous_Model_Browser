@@ -120,6 +120,7 @@
 
 .anomalous-sd-input-actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     gap: 8px;
 }
@@ -385,4 +386,31 @@
     border-color: rgba(251, 191, 36, 0.7);
     color: #fbbf24;
     background: rgba(245, 158, 11, 0.1);
+}
+
+.anomalous-sd-split-mode {
+    margin-right: auto;
+    min-width: 0;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    color: #cbd5e1;
+    font-size: 12px;
+    padding: 5px 6px;
+}
+
+.anomalous-sd-add-line {
+    align-self: stretch;
+    padding: 7px;
+    border-radius: 8px;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    background: transparent;
+    color: #94a3b8;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-sd-add-line:hover {
+    color: #e2e8f0;
+    border-color: rgba(56, 189, 248, 0.45);
 }
