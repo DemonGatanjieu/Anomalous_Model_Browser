@@ -1,3 +1,5 @@
+import { composePromptPlan } from './prompt_composition.js';
+
 // Shared by Node Assistant and Material Library. No node creation or link edits.
 const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -112,8 +114,26 @@ export function applyMaterialBlock(app, node, block, workflowHashes) {
         { sourceNodeId: block.node_id, workflowHashes });
 }
 
+export const POSITIVE_PROMPT_REGEX = /^(positive|positive_prompt|text_positive|text_g|text_l|正面|正向|正面提示词|正向提示词)$/i;
+export const NEGATIVE_PROMPT_REGEX = /^(negative|negative_prompt|text_negative|负面|反向|负面提示词|反向提示词)$/i;
+
+export function isPositivePromptWidget(name) {
+    return POSITIVE_PROMPT_REGEX.test(String(name || '').trim());
+}
+
+export function isNegativePromptWidget(name) {
+    return NEGATIVE_PROMPT_REGEX.test(String(name || '').trim());
+}
+
+export function classifyPromptWidgetRole(name) {
+    const trimmed = String(name || '').trim();
+    if (POSITIVE_PROMPT_REGEX.test(trimmed)) return 'positive';
+    if (NEGATIVE_PROMPT_REGEX.test(trimmed)) return 'negative';
+    return null;
+}
+
 export function promptWidgetTargets(node) {
-    const promptNameRegex = /^(text|text_g|text_l|prompt|positive|negative|caption|string|value|文本|提示词|正面|负面|正向|反向|正面提示词|负面提示词|正向提示词|反向提示词|描述|内容)$/i;
+    const promptNameRegex = /^(text|text_g|text_l|prompt|positive|positive_prompt|negative|negative_prompt|text_positive|text_negative|caption|string|value|文本|提示词|正面|负面|正向|反向|正面提示词|负面提示词|正向提示词|反向提示词|描述|内容)$/i;
     return (node?.widgets || []).flatMap((widget, index) => {
         if (!widget) return [];
         const name = String(widget.name || '');
@@ -123,3 +143,277 @@ export function promptWidgetTargets(node) {
         return typeof widget.value === 'string' && matchesName && isNotCombo ? [{ index, name: name || label || 'text' }] : [];
     });
 }
+
+export function inspectNodePromptSlots(node) {
+    const targets = promptWidgetTargets(node);
+    if (!targets || !targets.length) {
+        return {
+            hasSlots: false,
+            positiveSlot: null,
+            negativeSlot: null,
+            generalSlots: [],
+            targets: [],
+        };
+    }
+
+    let positiveSlot = null;
+    let negativeSlot = null;
+    const generalSlots = [];
+
+    const nodeTitle = String(node?.title || node?.type || '').toLowerCase();
+    const isNegativeTitle = /^(negative|负面|反向|负向)/i.test(nodeTitle) || /negative/i.test(nodeTitle);
+
+    for (const target of targets) {
+        const role = classifyPromptWidgetRole(target.name);
+        if (role === 'positive' && !positiveSlot) {
+            positiveSlot = target;
+        } else if (role === 'negative' && !negativeSlot) {
+            negativeSlot = target;
+        } else {
+            generalSlots.push(target);
+        }
+    }
+
+    const isPositiveTitle = /^(positive|正面|正向)/i.test(nodeTitle) || /positive/i.test(nodeTitle);
+    if (!positiveSlot && !negativeSlot && generalSlots.length === 1) {
+        if (isNegativeTitle) {
+            negativeSlot = generalSlots[0];
+            generalSlots.length = 0;
+        } else if (isPositiveTitle) {
+            positiveSlot = generalSlots[0];
+            generalSlots.length = 0;
+        }
+    }
+
+    return {
+        hasSlots: true,
+        positiveSlot,
+        negativeSlot,
+        generalSlots,
+        targets,
+    };
+}
+
+export const MODEL_EXTENSIONS_REGEX = /\.(safetensors|ckpt|pt|bin|pth|sft|onnx|engine|gguf)$/i;
+
+export function isModelFilePath(value) {
+    if (typeof value !== 'string') return false;
+    const trimmed = value.trim();
+    if (!trimmed) return false;
+    const lines = trimmed.split(/[\r\n]+/).map(s => s.trim()).filter(Boolean);
+    return lines.length > 0 && lines.every(line => MODEL_EXTENSIONS_REGEX.test(line));
+}
+
+export function isPromptNodeType(type) {
+    const norm = String(type || '').trim().toLowerCase();
+    if (!norm) return false;
+    if (/lora|checkpoint|unet|vae|controlnet|sampler|latent|saveimage|previewimage|loadimage/i.test(norm)) {
+        return false;
+    }
+    return /cliptextencode|prompt|text_box|showtext|easy positive|easy negative|easy wildcards/i.test(norm);
+}
+
+export function sanitizePromptText(value) {
+    if (typeof value !== 'string') return '';
+    const trimmed = value.trim();
+    if (!trimmed || isModelFilePath(trimmed)) return '';
+    return trimmed;
+}
+
+export function formatPromptEnvelope(res = {}) {
+    const positive = (res.positive || '').trim();
+    const negative = (res.negative || '').trim();
+    const singleText = (res.singleText || '').trim();
+    const primaryRole = res.primaryRole || 'none';
+    const hasPrompt = Boolean(positive || negative || singleText);
+    return {
+        hasPrompt,
+        positive,
+        negative,
+        singleText,
+        primaryRole,
+    };
+}
+
+function extractFromPlan(payload, data) {
+    if (data.kind === 'prompt_plan' || payload.kind === 'prompt_plan' || data.plan || payload.plan) {
+        const plan = data.plan || payload.plan || {};
+        const composed = composePromptPlan(plan);
+        const pos = sanitizePromptText(composed.positive);
+        const neg = sanitizePromptText(composed.negative);
+        if (pos && neg) return { positive: pos, negative: neg, singleText: pos, primaryRole: 'both' };
+        if (pos) return { positive: pos, negative: '', singleText: pos, primaryRole: 'positive' };
+        if (neg) return { positive: '', negative: neg, singleText: neg, primaryRole: 'negative' };
+    }
+    return null;
+}
+
+function extractFromNote(payload, data) {
+    const note = data.note || payload.note;
+    if (!note) return null;
+    const isZh = typeof window !== 'undefined' && window.anomalous_browser_lang === 'zh';
+    const raw = (isZh && note.promptZh) ? note.promptZh : (note.promptEn || note.promptZh || '');
+    const txt = sanitizePromptText(raw);
+    if (!txt) return null;
+
+    const lowerName = String(payload.name || note.title || '').toLowerCase();
+    const tags = Array.isArray(payload.tags) ? payload.tags.map(t => String(t).toLowerCase()) : [];
+    const isNeg = lowerName.includes('negative') || lowerName.includes('负向') || lowerName.includes('反向')
+        || tags.some(t => t.includes('negative') || t.includes('负向') || t.includes('反向'));
+    return isNeg
+        ? { positive: '', negative: txt, singleText: txt, primaryRole: 'negative' }
+        : { positive: txt, negative: '', singleText: txt, primaryRole: 'positive' };
+}
+
+function extractFromPromptGroups(payload) {
+    const groups = payload.prompt_groups;
+    if (!groups || typeof groups !== 'object') return null;
+
+    const pgPos = (Array.isArray(groups.positive) ? groups.positive : [])
+        .map(sanitizePromptText)
+        .filter(Boolean)
+        .join('\n\n');
+    const pgNeg = (Array.isArray(groups.negative) ? groups.negative : [])
+        .map(sanitizePromptText)
+        .filter(Boolean)
+        .join('\n\n');
+
+    if (pgPos && pgNeg) return { positive: pgPos, negative: pgNeg, singleText: pgPos, primaryRole: 'both' };
+    if (pgPos) return { positive: pgPos, negative: '', singleText: pgPos, primaryRole: 'positive' };
+    if (pgNeg) return { positive: '', negative: pgNeg, singleText: pgNeg, primaryRole: 'negative' };
+    return null;
+}
+
+function extractFromNodeBlocks(payload) {
+    const blocks = payload.node_blocks;
+    if (!Array.isArray(blocks) || blocks.length === 0) return null;
+
+    const promptRoles = payload.prompt_roles;
+    const posList = [];
+    const negList = [];
+
+    for (const block of blocks) {
+        if (!block) continue;
+        const blockType = String(block.type || '').toLowerCase();
+        const role = promptRoles?.[String(block.node_id)]?.role || block.promptRole;
+        const isExplicitPrompt = role === 'positive' || role === 'negative' || role === 'both';
+        const isPromptType = isPromptNodeType(blockType);
+
+        if (!isExplicitPrompt && !isPromptType) continue;
+
+        const widgetValues = Array.isArray(block.widgets_values) ? block.widgets_values : [];
+        for (const val of widgetValues) {
+            const str = sanitizePromptText(val);
+            if (!str) continue;
+
+            if (role === 'negative') {
+                negList.push(str);
+            } else if (role === 'positive') {
+                posList.push(str);
+            } else if (role === 'both') {
+                posList.push(str);
+                negList.push(str);
+            } else {
+                const blockTitle = String(block.title || block.type || '').toLowerCase();
+                if (/negative|负向|反向/i.test(blockTitle)) {
+                    negList.push(str);
+                } else if (/positive|正向|正面/i.test(blockTitle) || isPromptType) {
+                    posList.push(str);
+                }
+            }
+            break;
+        }
+    }
+
+    const pos = [...new Set(posList)].join('\n\n');
+    const neg = [...new Set(negList)].join('\n\n');
+    if (pos && neg) return { positive: pos, negative: neg, singleText: pos, primaryRole: 'both' };
+    if (pos) return { positive: pos, negative: '', singleText: pos, primaryRole: 'positive' };
+    if (neg) return { positive: '', negative: neg, singleText: neg, primaryRole: 'negative' };
+    return null;
+}
+
+function extractFromSummary(payload) {
+    if (payload.kind === 'prompt_text') {
+        const raw = sanitizePromptText(payload.summary || payload.name || '');
+        if (raw) return { positive: raw, negative: '', singleText: raw, primaryRole: 'positive' };
+    }
+    return null;
+}
+
+export const PROMPT_EXTRACTORS = [
+    extractFromPlan,
+    extractFromNote,
+    extractFromPromptGroups,
+    extractFromNodeBlocks,
+    extractFromSummary,
+];
+
+export function extractMaterialPromptEnvelope(material, payload = {}) {
+    const effectivePayload = (payload && Object.keys(payload).length > 0) ? payload : (material || {});
+    const data = effectivePayload.data || effectivePayload;
+
+    for (const extractor of PROMPT_EXTRACTORS) {
+        const result = extractor(effectivePayload, data);
+        if (result && result.primaryRole !== 'none') {
+            return formatPromptEnvelope(result);
+        }
+    }
+
+    return formatPromptEnvelope();
+}
+
+export function getMaterialPromptInfo(material) {
+    const env = extractMaterialPromptEnvelope(material);
+    const isNeg = env.primaryRole === 'negative';
+    const text = isNeg
+        ? (env.negative || env.singleText)
+        : (env.positive || env.singleText || env.negative);
+    return {
+        text: (text || '').trim(),
+        role: isNeg ? 'negative' : 'positive',
+    };
+}
+
+/**
+ * Choose prompt widgets for an envelope. Text never crosses roles: a negative
+ * prompt is not written into a positive slot (or the reverse). Role-neutral
+ * slots (e.g. CLIPTextEncode `text`) accept the envelope's primary text.
+ */
+export function planPromptInjection(slots, envelope) {
+    const { positiveSlot, negativeSlot } = slots;
+    const generalSlot = slots.generalSlots?.[0] || null;
+    const positive = envelope.positive || '';
+    const negative = envelope.negative || '';
+
+    // Strategy 1: both texts into a node that has both role slots.
+    if (positive && negative && positiveSlot && negativeSlot) {
+        return [{ index: positiveSlot.index, value: positive }, { index: negativeSlot.index, value: negative }];
+    }
+    // Strategy 2: a single-role node receives the matching text only.
+    if (negativeSlot && !positiveSlot && !generalSlot) return negative ? [{ index: negativeSlot.index, value: negative }] : [];
+    if (positiveSlot && !negativeSlot && !generalSlot) return positive ? [{ index: positiveSlot.index, value: positive }] : [];
+    // Strategy 3: role-matched slot for a one-sided envelope.
+    const wantsNegative = envelope.primaryRole === 'negative' || (negative && !positive);
+    if (wantsNegative && negativeSlot) return [{ index: negativeSlot.index, value: negative }];
+    if (!wantsNegative && positive && positiveSlot) return [{ index: positiveSlot.index, value: positive }];
+    // Strategy 4: role-neutral slot takes the primary text.
+    if (generalSlot) {
+        const value = wantsNegative ? negative : (positive || envelope.singleText || '');
+        return value ? [{ index: generalSlot.index, value }] : [];
+    }
+    return [];
+}
+
+export function dispatchPromptInjection(app, node, envelope, options = {}) {
+    if (!node || !envelope || !envelope.hasPrompt) {
+        throw new Error('materialNoCompatibleValues');
+    }
+    const slots = inspectNodePromptSlots(node);
+    if (!slots.hasSlots) throw new Error('materialNoCompatibleValues');
+    const entries = planPromptInjection(slots, envelope);
+    if (!entries.length) throw new Error('materialNoCompatibleValues');
+    return applyNodeMaterialValues(app, node, entries, options);
+}
+
+

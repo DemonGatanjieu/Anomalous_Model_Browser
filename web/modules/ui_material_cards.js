@@ -6,7 +6,7 @@ import { translate } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { text, jsonResponse } from './ui_dom.js';
 import { materialNodeHeading } from './material_inspector.js';
-import { promptWidgetTargets } from './node_material_actions.js';
+import { inspectNodePromptSlots, isPromptNodeType } from './node_material_actions.js';
 import { applyLibraryMaterial } from './ui_material_application.js';
 import {
     deleteMaterial,
@@ -118,11 +118,11 @@ function bindPolymorphicMaterialCardDrag(card, owner, material) {
         }),
         accepts: (node, source) => {
             if (!node) return false;
-            const promptMat = isPromptMaterial(source) || source.kind === 'prompt_plan';
-            if (promptMat) {
-                return promptWidgetTargets(node).length > 0 || (source.node_types || []).includes(node.type);
-            }
-            return (source.node_types || []).includes(node.type);
+            if ((source.node_types || []).includes(node.type)) return true;
+            if (!inspectNodePromptSlots(node).hasSlots) return false;
+            // Cross-node drops only carry prompt text; parameter blocks stay same-type.
+            if (isPromptMaterial(source) || source.kind === 'prompt_plan' || source.capabilities?.includes('copy_prompt')) return true;
+            return (source.node_types || []).some(type => isPromptNodeType(type));
         },
         drop: (node, source, graph) => applyLibraryMaterial(owner, source, node, graph),
         dropOnCanvas: async (event, source, graph, position) => {

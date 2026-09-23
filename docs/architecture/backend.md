@@ -65,7 +65,14 @@ The former mixed utility routes are separated: `media_routes.py` owns card
 thumbnails and model/output media lookups, `gallery_routes.py` owns the bounded
 output snapshot and deletion (searched through `image_search.py`, which reads
 PNG text chunks only and caches per-image records by mtime), `translation_routes.py`
-owns provider fallback, and `folder_types.py` owns configured visibility and scan scope.
+owns provider fallback, `folder_types.py` owns configured visibility and scan scope, and `audio_catalog.py`
+with `romanizer.py` owns Audio & Voice Studio scanning, ingestion (conversion to
+24 kHz mono PCM WAV via an explicitly resolved ffmpeg), streaming, and
+romanization. Voice files use the ComfyUI-F5-TTS layout (`Character.wav` main
+sample, `Character.<voice>.wav` variants, `.txt` transcripts); ingestion stages
+every file and swaps them in together so a failed conversion or write keeps the
+previous voice. The root `__init__.py` prepends the portable Python folders to
+PATH for other audio nodes; this is a deliberate process-wide exception.
 
 `version_manager.py` runs git against the plugin checkout only (no shell, no
 prompts, `CREATE_NO_WINDOW` on Windows) and accepts only tags that appear in the

@@ -12,66 +12,14 @@ import {
     renderMaterialPromptGroups,
     materialNodeHeading,
 } from './material_inspector.js';
-import { selectedMaterialNode } from './node_material_actions.js';
+import { selectedMaterialNode, getMaterialPromptInfo } from './node_material_actions.js';
 import { fetchMaterial, applyLibraryMaterial } from './ui_material_application.js';
 
 const t = (key, params) => translate(key, params);
 export const isPromptMaterial = material => ['prompt_note_bundle', 'prompt_text'].includes(material?.kind);
 export const promptKindLabel = material => t(material?.kind === 'prompt_text' ? 'materialPromptTextKind' : 'materialPromptNoteBundle');
 
-export function getMaterialPromptInfo(material) {
-    const isZh = window.anomalous_browser_lang === 'zh';
-    let text = '';
-    let role = 'positive';
-
-    const note = material?.data?.note || material?.note;
-    if (note) {
-        text = (isZh && note.promptZh) ? note.promptZh : (note.promptEn || note.promptZh || '');
-    }
-
-    if (!text) {
-        const plan = material?.data?.plan || material?.plan;
-        if (plan) {
-            if (plan.negative && !plan.positive) {
-                text = plan.negative;
-                role = 'negative';
-            } else if (plan.positive) {
-                text = plan.positive;
-                role = 'positive';
-            }
-        }
-    }
-
-    if (!text && Array.isArray(material?.node_blocks)) {
-        for (const block of material.node_blocks) {
-            if (Array.isArray(block.widgets_values)) {
-                for (const val of block.widgets_values) {
-                    if (typeof val === 'string' && val.trim()) {
-                        text = val.trim();
-                        if (block.promptRole === 'negative') role = 'negative';
-                        break;
-                    }
-                }
-            }
-            if (text) break;
-        }
-    }
-
-    if (!text) {
-        text = material?.summary || material?.name || '';
-    }
-
-    if (role !== 'negative') {
-        const lowerName = String(material?.name || '').toLowerCase();
-        const tags = Array.isArray(material?.tags) ? material.tags.map(t => String(t).toLowerCase()) : [];
-        if (lowerName.includes('negative') || lowerName.includes('负向') || lowerName.includes('反向')
-            || tags.some(t => t.includes('negative') || t.includes('负向') || t.includes('反向'))) {
-            role = 'negative';
-        }
-    }
-
-    return { text: text.trim(), role };
-}
+export { getMaterialPromptInfo };
 
 export function getMaterialPlaceholderSvg(material, size = 36) {
     if (isPromptMaterial(material) || material?.kind === 'prompt_plan') {

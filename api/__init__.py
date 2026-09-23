@@ -1,7 +1,7 @@
 from . import (
-    folder_types, gallery_routes, materials, media_routes, model_catalog,
+    audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
     model_media, model_metadata, model_resolution, recipe_packages, recipes,
-    translation_routes, version_manager,
+    romanizer, translation_routes, version_manager,
 )
 from .scanner import *
 from .config import *
@@ -10,13 +10,20 @@ from .parameters import *
 
 from aiohttp import web
 
+EXTENSION_STATIC_PREFIX = '/extensions/Anomalous_Model_Browser/'
+
+
 @web.middleware
 async def no_cache_extension_middleware(request, handler):
+    """Make browsers revalidate this plugin's JS/CSS so a normal refresh picks up updates.
+
+    `no-cache` still allows 304 responses via ETag/Last-Modified. This replaces
+    per-import `?v=` query strings, which load a second module instance whenever
+    two files import the same module with different URLs.
+    """
     response = await handler(request)
-    if request.path.startswith('/extensions/Anomalous_Model_Browser'):
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
+    if request.path.startswith(EXTENSION_STATIC_PREFIX):
+        response.headers['Cache-Control'] = 'no-cache'
     return response
 
 def setup_routes(app):
@@ -97,4 +104,15 @@ def setup_routes(app):
     app.router.add_get('/anomalous/model_images', media_routes.api_get_model_images)
     app.router.add_post('/anomalous/resolve_paths_to_previews', model_catalog.api_resolve_paths_to_previews)
     app.router.add_post('/anomalous/scan_missing_models', api_scan_missing_models)
+
+    # Audio & Voice Studio Routes
+    app.router.add_get('/anomalous/audio_voices', audio_catalog.api_get_audio_voices)
+    app.router.add_get('/anomalous/audio_stream', audio_catalog.api_serve_audio)
+    app.router.add_get('/anomalous/audio_gallery', audio_catalog.api_get_audio_gallery)
+    app.router.add_post('/anomalous/delete_audio_gallery', audio_catalog.api_delete_audio_gallery)
+    app.router.add_get('/anomalous/audio_previews', audio_catalog.api_get_audio_previews)
+    app.router.add_post('/anomalous/save_audio_preview', audio_catalog.api_save_audio_preview)
+    app.router.add_get('/anomalous/audio_template_workflow', audio_catalog.api_get_audio_template_workflow)
+    app.router.add_post('/anomalous/upload_audio_voice', audio_catalog.api_upload_audio_voice)
+    app.router.add_post('/anomalous/romanize_text', romanizer.api_romanize_text)
     version_manager.register_routes(app)

@@ -1,5 +1,8 @@
 /** Main browser panel visibility and recoverable detail cleanup. */
 
+import { stopAudioStudioPlayback } from './ui_audio_studio.js';
+import { stopGalleryAudio } from './ui_audio_gallery.js';
+
 function restoreWorkspaceReturnPanel(owner) {
     const state = owner.workspaceReturnState;
     owner.workspaceReturnState = null;
@@ -9,6 +12,8 @@ function restoreWorkspaceReturnPanel(owner) {
         ['gallery', owner.galleryPanel],
         ['doctor', owner.doctorPanel],
         ['assistant', owner.assistantPanel],
+        ['audioStudio', owner.audioStudioPanel],
+        ['audioGallery', owner.audioGalleryPanel],
     ];
     if (state) {
         for (const [key, panel] of panels) {
@@ -74,6 +79,10 @@ export function hideAllPanels() {
     if (this.doctorPanel) this.doctorPanel.style.display = 'none';
     if (this.assistantPanel) this.assistantPanel.style.display = 'none';
     if (this.paramPanel) this.paramPanel.style.display = 'none';
+    if (this.audioStudioPanel) this.audioStudioPanel.style.display = 'none';
+    if (this.audioGalleryPanel) this.audioGalleryPanel.style.display = 'none';
+    stopAudioStudioPlayback();
+    stopGalleryAudio();
     if (this.currentDetailObserver) {
         this.currentDetailObserver.disconnect();
         this.currentDetailObserver = null;

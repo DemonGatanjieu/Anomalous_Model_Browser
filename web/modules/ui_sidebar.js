@@ -10,6 +10,8 @@ import { showUpdateGuide } from './ui_update_guide.js';
 import { setScanButtonState } from './ui_scan_wizard.js';
 import { createSettingsHub } from './ui_settings_hub.js';
 import { createToolbox } from './ui_toolbox.js';
+import { createDomainSwitcher, getActiveDomain } from './ui_domain_switcher.js';
+import { renderAudioSidebar } from './ui_audio_sidebar.js';
 import { createGallerySearchBar } from './ui_gallery.js';
 
 const t = (key, params) => translate(key, params);
@@ -18,6 +20,8 @@ const SIDEBAR_ICONS = {
     MODELS: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
     GALLERY: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`,
     RECIPES: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v6"/><path d="M9 6h6"/><path d="M7.8 7.8l8.4 8.4"/></svg>`,
+    AUDIO_STUDIO: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>`,
+    AUDIO_VAULT: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="anomalous-btn-icon"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>`,
     DOCK: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>`,
     HELP: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:7px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
     TOOLBOX: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><rect width="20" height="14" x="2" y="6" rx="2"/><path d="M2 12h20"/><path d="M10 12v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2"/></svg>`,
@@ -132,8 +136,17 @@ export function createDOM() {
             }
         };
 
+        const actionGroup = document.createElement('div');
+        actionGroup.style.display = 'flex';
+        actionGroup.style.alignItems = 'center';
+        actionGroup.style.gap = '6px';
+
+        const domainSwitcher = createDomainSwitcher(this);
+        actionGroup.appendChild(domainSwitcher);
+        actionGroup.appendChild(menuBtn);
+
         brandBar.appendChild(badge);
-        brandBar.appendChild(menuBtn);
+        brandBar.appendChild(actionGroup);
 
         this.sidebar = document.createElement('div');
         this.sidebar.id = 'anomalous-sidebar';
@@ -248,6 +261,33 @@ export function createDOM() {
         galleryBtn.id = 'anomalous-gallery-btn';
         galleryBtn.innerHTML = `${SIDEBAR_ICONS.GALLERY}<span class="anomalous-btn-text">${t('gallery') || '图库'}</span>`;
 
+        const nbBtn = document.createElement('button');
+        nbBtn.id = 'anomalous-notebook-btn';
+        nbBtn.title = t('recipeTitle');
+        nbBtn.innerHTML = `${SIDEBAR_ICONS.RECIPES}<span class="anomalous-btn-text">${t('recipeTitle')}</span>`;
+
+        this.modelsBtn = modelsBtn;
+        this.galleryBtn = galleryBtn;
+        this.nbBtn = nbBtn;
+
+        const updateHeaderTabs = (domain) => {
+            const isAudio = domain === 'audio';
+            if (isAudio) {
+                modelsBtn.innerHTML = `${SIDEBAR_ICONS.AUDIO_STUDIO}<span class="anomalous-btn-text">${t('audioTabPresets')}</span>`;
+                galleryBtn.innerHTML = `${SIDEBAR_ICONS.AUDIO_VAULT}<span class="anomalous-btn-text">${t('audioTabGallery')}</span>`;
+                const nbText = nbBtn.querySelector('.anomalous-btn-text');
+                if (nbText) nbText.textContent = t('audioTabWorkflow');
+                if (this.sidebarActions) this.sidebarActions.style.display = 'none';
+            } else {
+                modelsBtn.innerHTML = `${SIDEBAR_ICONS.MODELS}<span class="anomalous-btn-text">${t('models')}</span>`;
+                galleryBtn.innerHTML = `${SIDEBAR_ICONS.GALLERY}<span class="anomalous-btn-text">${t('gallery') || '图库'}</span>`;
+                const nbText = nbBtn.querySelector('.anomalous-btn-text');
+                if (nbText) nbText.textContent = t('recipeTitle');
+                if (this.sidebarActions) this.sidebarActions.style.display = 'flex';
+            }
+        };
+        this.updateHeaderTabs = updateHeaderTabs;
+
         const setActiveHeaderTab = (btn) => {
             modelsBtn.classList.remove('active');
             galleryBtn.classList.remove('active');
@@ -259,6 +299,14 @@ export function createDOM() {
         modelsBtn.onclick = () => {
             this.hideAllPanels();
             setActiveHeaderTab(modelsBtn);
+            if (getActiveDomain() === 'audio') {
+                showSidebar();
+                menuBtn.disabled = false;
+                menuBtn.style.opacity = '1';
+                menuBtn.style.cursor = 'pointer';
+                this.switchAudioTab('presets');
+                return;
+            }
             if (localStorage.getItem('anomalous_user_sidebar_closed') === 'true') {
                 container.classList.add('anomalous-sidebar-closed');
             } else {
@@ -278,6 +326,14 @@ export function createDOM() {
         galleryBtn.onclick = () => {
             this.hideAllPanels();
             setActiveHeaderTab(galleryBtn);
+            if (getActiveDomain() === 'audio') {
+                showSidebar();
+                menuBtn.disabled = false;
+                menuBtn.style.opacity = '1';
+                menuBtn.style.cursor = 'pointer';
+                this.switchAudioTab('gallery');
+                return;
+            }
             this.gallerySelectModel = null;
             this.galleryPanel.classList.remove('is-cover-selecting');
             const selectBanner = document.getElementById('anomalous-gallery-select-banner');
@@ -311,11 +367,6 @@ export function createDOM() {
             container.classList.add('anomalous-docked');
         }
 
-        const nbBtn = document.createElement('button');
-        nbBtn.id = 'anomalous-notebook-btn';
-        nbBtn.title = t('recipeTitle');
-        nbBtn.innerHTML = `${SIDEBAR_ICONS.RECIPES}<span class="anomalous-btn-text">${t('recipeTitle')}</span>`;
-
         const dBtn = document.getElementById('anomalous-doctor-btn');
         if (dBtn) { dBtn.removeAttribute('title'); dBtn.setAttribute('aria-label', t('sidebarDoctor')); }
         const aBtn = document.getElementById('anomalous-assistant-btn');
@@ -340,6 +391,11 @@ export function createDOM() {
 
         nbBtn.onclick = () => {
             setActiveHeaderTab(nbBtn);
+            if (getActiveDomain() === 'audio') {
+                this.recipeSelectedTags = new Set(['audio']);
+            } else {
+                this.recipeSelectedTags = new Set();
+            }
             if (typeof this.recipeModelReturn !== 'function') {
                 this.workspaceReturnState = {
                     grid: this.grid?.style.display || 'none',
@@ -347,6 +403,8 @@ export function createDOM() {
                     gallery: this.galleryPanel?.style.display || 'none',
                     doctor: this.doctorPanel?.style.display || 'none',
                     assistant: this.assistantPanel?.style.display || 'none',
+                    audioStudio: this.audioStudioPanel?.style.display || 'none',
+                    audioGallery: this.audioGalleryPanel?.style.display || 'none',
                 };
             } else if (!this.workspaceReturnState) {
                 this.workspaceReturnState = {
@@ -355,8 +413,11 @@ export function createDOM() {
                     gallery: 'none',
                     doctor: 'none',
                     assistant: 'none',
+                    audioStudio: 'none',
+                    audioGallery: 'none',
                 };
             }
+            this.hideAllPanels();
             this.nbPanel.style.display = 'flex';
             this.showRecipes();
         };
@@ -487,6 +548,21 @@ export function createDOM() {
         this.assistantPanel.style.boxSizing = 'border-box';
         this.assistantPanelInitialized = false;
 
+        this.audioStudioPanel = document.createElement('div');
+        this.audioStudioPanel.id = 'anomalous-audio-studio-panel';
+        this.audioStudioPanel.style.display = 'none';
+        this.audioStudioPanel.style.flex = '1';
+        this.audioStudioPanel.style.height = '100%';
+        this.audioStudioPanel.style.overflow = 'hidden';
+        this.audioStudioPanel.style.position = 'relative';
+
+        this.audioGalleryPanel = document.createElement('div');
+        this.audioGalleryPanel.id = 'anomalous-audio-gallery-panel';
+        this.audioGalleryPanel.style.display = 'none';
+        this.audioGalleryPanel.style.flex = '1';
+        this.audioGalleryPanel.style.height = '100%';
+        this.audioGalleryPanel.style.overflow = 'hidden';
+
         this.galleryGrid = document.createElement('div');
         this.galleryGrid.className = 'anomalous-gallery-grid';
         this.galleryPanel.append(createGallerySearchBar(this), this.galleryGrid);
@@ -527,6 +603,8 @@ export function createDOM() {
         content.appendChild(this.galleryPanel);
         content.appendChild(this.doctorPanel);
         content.appendChild(this.assistantPanel);
+        content.appendChild(this.audioStudioPanel);
+        content.appendChild(this.audioGalleryPanel);
 
         container.appendChild(this.sidebarWrapper);
         container.appendChild(content);
@@ -571,6 +649,10 @@ export function createDOM() {
 
 
 export function renderSidebar() {
+        if (getActiveDomain() === 'audio') {
+            renderAudioSidebar(this);
+            return;
+        }
         this.sidebar.innerHTML = '';
 
         const topBar = document.createElement('div');

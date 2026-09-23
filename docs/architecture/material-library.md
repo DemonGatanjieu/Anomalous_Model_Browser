@@ -315,10 +315,17 @@ When dropped onto a compatible node:
 - Parameter-bearing materials fetch scoped node blocks only after drop and replace
   compatible widget values through the transactional parameter path, preserving seed,
   node position, and links.
-- Prompt materials inject prompt text into target nodes via semantic prompt widget
-  sniffing (`customtext`, `multiline`, `text_g`, `text_l`, `prompt`, `positive`,
-  `negative`, and localized labels), relaxing strict node-type matching for third-party
-  text nodes. Text is cleanly inserted without synthetic prefixes ("负向:" / "正向:").
+- Prompt-bearing materials (prompt notes, prompt plans, materials with a `copy_prompt`
+  capability, or blocks of prompt node types) can be dropped onto any node with
+  prompt slots. `extractMaterialPromptEnvelope` (in `node_material_actions.js`)
+  builds `{positive, negative, primaryRole}` from plans, notes, `prompt_groups`,
+  prompt node blocks or the summary, never from model file paths. `planPromptInjection`
+  writes both texts into nodes with positive and negative slots (e.g. `easy a1111Loader`),
+  otherwise the matching role slot or a role-neutral slot (`CLIPTextEncode` `text`).
+  Negative text never goes into a positive slot and vice versa; if no slot fits, the
+  drop fails with `materialNoCompatibleValues`. Text is inserted without synthetic
+  prefixes, and every injection is one undo step.
+- Parameter blocks are never applied across node types.
 
 When dropped onto blank canvas:
 - Workflow materials (`image_workflow_snapshot`) trigger full workflow loading

@@ -21,6 +21,10 @@ import { showImageWorkbench } from './ui_gallery_detail.js';
 import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, openLoraInsertionPicker, runGlobalDoctorScan } from './ui_doctor.js';
 import { initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory } from './ui_node_assistant.js';
 import { _openGalleryReplacer } from './ui_node_model_picker.js';
+import { renderAudioStudio, stopAudioStudioPlayback } from './ui_audio_studio.js';
+import { renderAudioGallery, stopGalleryAudio } from './ui_audio_gallery.js';
+import { getActiveAudioFilter, setActiveAudioFilter, syncAudioSidebarSelection } from './ui_audio_sidebar.js';
+import { getActiveDomain } from './ui_domain_switcher.js';
 
 export class AnomalousBrowser {
     constructor() {
@@ -48,6 +52,11 @@ export class AnomalousBrowser {
         }
         this.setTriggerVisible(false);
         this.modal.classList.add('visible');
+        this.updateHeaderTabs?.(getActiveDomain());
+        if (getActiveDomain() === 'audio') {
+            this.handleDomainChange('audio');
+            return;
+        }
         if (!this.foldersData) {
             this.loadFolders();
         } else {
@@ -55,10 +64,50 @@ export class AnomalousBrowser {
         }
     }
 
+    handleDomainChange(domain) {
+        this.updateHeaderTabs?.(domain);
+        if (domain === 'audio') {
+            if (this.sidebarActions) this.sidebarActions.style.display = 'none';
+            this.renderSidebar();
+            this.switchAudioTab('presets');
+        } else {
+            if (this.sidebarActions) this.sidebarActions.style.display = 'flex';
+            if (this.modelsBtn) this.setActiveHeaderTab?.(this.modelsBtn);
+            this.hideAllPanels();
+            this.grid.style.display = 'grid';
+            this.renderSidebar();
+            if (!this.foldersData) {
+                this.loadFolders();
+            } else {
+                this.loadModels();
+            }
+        }
+    }
+
+    /** Single entry for audio-domain navigation: header tabs, sidebar entries and domain switch. */
+    switchAudioTab(tabName, filter = null) {
+        this.hideAllPanels();
+        if (tabName === 'gallery') {
+            setActiveAudioFilter({ type: 'gallery', value: null });
+            this.setActiveHeaderTab?.(this.galleryBtn);
+            this.audioGalleryPanel.style.display = 'block';
+            renderAudioGallery(this.audioGalleryPanel);
+        } else {
+            if (filter) setActiveAudioFilter(filter);
+            else if (getActiveAudioFilter().type === 'gallery') setActiveAudioFilter(null);
+            this.setActiveHeaderTab?.(this.modelsBtn);
+            this.audioStudioPanel.style.display = 'block';
+            renderAudioStudio(this.audioStudioPanel, { owner: this });
+        }
+        syncAudioSidebarSelection(this);
+    }
+
     close() {
         closeUpdateGuide(this);
         this.modal.classList.remove('visible');
         this.setTriggerVisible(true);
+        stopAudioStudioPlayback();
+        stopGalleryAudio();
         const canvas = document.getElementById('graph-canvas');
         if (canvas instanceof HTMLElement) canvas.focus({ preventScroll: true });
         if (this._modelLoadController) this._modelLoadController.abort();
