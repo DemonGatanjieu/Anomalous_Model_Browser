@@ -11,8 +11,12 @@
     display: flex;
     flex-direction: column;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    z-index: 9999;
+    z-index: 5;
     overflow: hidden;
+}
+
+.anomalous-script-director-panel[hidden] {
+    display: none;
 }
 
 .anomalous-sd-header {
@@ -167,8 +171,14 @@
     background: rgba(0,0,0,0.2);
 }
 
-.anomalous-audio-action-btn.active {
-    background: rgba(56, 189, 248, 0.15);
-    color: #38bdf8;
-    border-color: rgba(56, 189, 248, 0.3);
+.anomalous-sd-btn.accent.is-success {
+    background: #10b981;
+    color: #fff;
+}
+
+.anomalous-sd-empty {
+    font-size: 12px;
+    color: #64748b;
+    text-align: center;
+    padding: 24px 8px;
 }

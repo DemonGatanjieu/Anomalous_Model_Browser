@@ -12,8 +12,6 @@ import { createSettingsHub } from './ui_settings_hub.js';
 import { createToolbox } from './ui_toolbox.js';
 import { createDomainSwitcher, getActiveDomain } from './ui_domain_switcher.js';
 import { renderAudioSidebar } from './ui_audio_sidebar.js';
-import { renderAudioStudio } from './ui_audio_studio.js?v=20260923-cache-kill';
-import { renderAudioGallery } from './ui_audio_gallery.js?v=20260923-cache-kill';
 
 const t = (key, params) => translate(key, params);
 
@@ -305,10 +303,7 @@ export function createDOM() {
                 menuBtn.disabled = false;
                 menuBtn.style.opacity = '1';
                 menuBtn.style.cursor = 'pointer';
-                if (this.audioStudioPanel) {
-                    this.audioStudioPanel.style.display = 'block';
-                    renderAudioStudio(this.audioStudioPanel);
-                }
+                this.switchAudioTab('presets');
                 return;
             }
             if (localStorage.getItem('anomalous_user_sidebar_closed') === 'true') {
@@ -335,10 +330,7 @@ export function createDOM() {
                 menuBtn.disabled = false;
                 menuBtn.style.opacity = '1';
                 menuBtn.style.cursor = 'pointer';
-                if (this.audioGalleryPanel) {
-                    this.audioGalleryPanel.style.display = 'block';
-                    renderAudioGallery(this.audioGalleryPanel);
-                }
+                this.switchAudioTab('gallery');
                 return;
             }
             this.gallerySelectModel = null;

@@ -1,4 +1,10 @@
-"""Audio and Voice catalog scanning, voice ingestion, and streaming service."""
+"""Audio and Voice catalog scanning, voice ingestion, and streaming service.
+
+Voice files follow the ComfyUI-F5-TTS multi-voice layout: `Character.wav` +
+`Character.txt` is the main sample, `Character.<voice>.wav` + `.txt` are the
+variants addressed as `{<voice>}` in the speech text. An optional
+`<stem>.orig.txt` keeps the native-script transcript for display.
+"""
 
 import asyncio
 import json
@@ -28,6 +34,8 @@ MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 FFMPEG_TIMEOUT_SECONDS = 120
 VOICE_SCAN_SUBDIRS = ("F5-TTS", "audio", "")
 DEFAULT_VOICE_SUBFOLDER = "F5-TTS"
+MAIN_VOICE = "main"
+RESERVED_VOICE_NAMES = {"orig"}
 WORKFLOW_TEMPLATE_NAME = re.compile(r'^[A-Za-z0-9_-]{1,64}$')
 # Revalidate instead of forbidding caches: overwritten voices get a new ?v=mtime URL.
 AUDIO_CACHE_HEADERS = {"Cache-Control": "no-cache"}
@@ -42,17 +50,15 @@ def _audio_url(rel_path, dir_type="input", version=None):
     return url
 
 
-def _parse_character_and_emotion(filename):
-    """Parse character name and emotion tag from audio filename."""
+def parse_voice_name(filename):
+    """Split a voice file name the way ComfyUI-F5-TTS does.
+
+    `Arona.wav` is the main voice of Arona; `Arona.happy.wav` is the `{happy}`
+    variant that F5-TTS loads beside a selected `Arona.wav` sample.
+    """
     stem, _ = os.path.splitext(filename)
-    parts = re.split(r'[-_.]', stem)
-    if len(parts) >= 2:
-        character = parts[0].capitalize()
-        emotion = "_".join(parts[1:]).lower()
-    else:
-        character = "General"
-        emotion = stem.lower()
-    return character, emotion
+    main_stem, sep, voice = stem.partition('.')
+    return main_stem, (voice if sep and voice else MAIN_VOICE)
 
 
 def _read_text_file(path):
@@ -73,21 +79,27 @@ def _read_associated_text(audio_path):
 
 def _slice_record(directory, name, relative_prefix):
     full_path = os.path.join(directory, name)
-    stem, _ = os.path.splitext(name)
-    char_name, emotion = _parse_character_and_emotion(name)
+    stem, ext = os.path.splitext(name)
+    main_stem, voice = parse_voice_name(name)
     display_text, synthesis_text = _read_associated_text(full_path)
     stat = os.stat(full_path)
     rel_path = "/".join(part for part in (relative_prefix, name) if part)
     return {
         "id": stem,
         "filename": name,
+        "extension": ext.lower(),
         "relative_path": rel_path,
-        "character": char_name,
-        "emotion": emotion,
+        "folder": relative_prefix,
+        "group": "/".join(part for part in (relative_prefix, main_stem) if part),
+        "character": main_stem,
+        "emotion": voice,
+        "is_main": voice == MAIN_VOICE,
         "text": display_text,
         "synthesis_text": synthesis_text,
+        # ComfyUI-F5-TTS only lists and loads samples that have a .txt transcript.
+        "has_transcript": os.path.isfile(os.path.join(directory, stem + '.txt')),
         "size_bytes": stat.st_size,
-        "syntax_tag": f"{{{stem}}}",
+        "syntax_tag": f"{{{voice}}}",
         "audio_url": _audio_url(rel_path, "input", stat.st_mtime),
     }
 
@@ -120,35 +132,48 @@ def _scan_single_audio_dir(directory, relative_prefix=""):
     return slices
 
 
-def _group_slices_by_character(all_slices):
-    """Group flat slice list into character bundles."""
-    char_map = {}
+def _group_voice_slices(all_slices):
+    """One group per F5-TTS main sample: `<folder>/<Character>` plus its `.variant` files."""
+    groups = {}
     for s in all_slices:
-        bundle = char_map.setdefault(s["character"], {"character": s["character"], "slices": [], "total_slices": 0})
-        bundle["slices"].append(s)
-        bundle["total_slices"] += 1
-    return list(char_map.values())
+        group = groups.setdefault(s["group"], {
+            "group": s["group"],
+            "character": s["character"],
+            "folder": s["folder"],
+            "main_relative_path": None,
+            "slices": [],
+            "total_slices": 0,
+        })
+        group["slices"].append(s)
+        group["total_slices"] += 1
+        if s["is_main"]:
+            group["main_relative_path"] = s["relative_path"]
+
+    for group in groups.values():
+        main = next((s for s in group["slices"] if s["is_main"]), None)
+        group["has_main"] = main is not None
+        group["slices"].sort(key=lambda s: (not s["is_main"], s["emotion"]))
+        for s in group["slices"]:
+            # F5-TTS builds variant paths with the main sample's extension.
+            s["tag_usable"] = bool(main and s["has_transcript"] and main["has_transcript"]
+                                   and (s["is_main"] or s["extension"] == main["extension"]))
+    return list(groups.values())
 
 
 def _collect_voice_slices(input_dir):
-    """Scan voice folders; the first folder wins when stems collide so {stem} tags stay unique."""
+    """Scan the folders ComfyUI-F5-TTS lists samples from."""
     all_slices = []
-    seen_stems = set()
     for sub in VOICE_SCAN_SUBDIRS:
-        for item in _scan_single_audio_dir(os.path.join(input_dir, sub) if sub else input_dir, sub):
-            if item["id"] in seen_stems:
-                continue
-            seen_stems.add(item["id"])
-            all_slices.append(item)
+        all_slices.extend(_scan_single_audio_dir(os.path.join(input_dir, sub) if sub else input_dir, sub))
     return all_slices
 
 
 async def api_get_audio_voices(request):
-    """GET /anomalous/audio_voices - Return structured audio presets."""
+    """GET /anomalous/audio_voices - Return voice groups (main sample plus variants)."""
     all_slices = await asyncio.to_thread(_collect_voice_slices, folder_paths.get_input_directory())
     return web.json_response({
         "success": True,
-        "characters": _group_slices_by_character(all_slices),
+        "characters": _group_voice_slices(all_slices),
         "total_slices": len(all_slices),
     })
 
@@ -313,14 +338,19 @@ def _convert_to_pcm_wav(src_path, dst_path):
 
 
 def _sanitize_character(part):
-    """Character names cannot contain '-', '_' or '.', which separate character and emotion in filenames."""
-    cleaned = re.sub(r'[^\w]|_', '', str(part or '').strip())
+    """'.' separates the main sample from its variants, so it cannot appear in names."""
+    cleaned = re.sub(r'[^\w-]', '', str(part or '').strip())
     return cleaned or "Voice"
 
 
 def _sanitize_emotion(part):
-    cleaned = re.sub(r'[^\w-]', '_', str(part or '').strip()).strip('_-')
-    return (cleaned or "normal").lower()
+    cleaned = re.sub(r'[^\w-]+', '_', str(part or '').strip()).strip('_-').lower()
+    return cleaned or MAIN_VOICE
+
+
+def voice_base_name(character, emotion):
+    """`Arona` for the main voice, `Arona.happy` for a variant (ComfyUI-F5-TTS layout)."""
+    return character if emotion == MAIN_VOICE else f"{character}.{emotion}"
 
 
 def _voice_targets(dest_dir, base_name):
@@ -442,6 +472,8 @@ async def api_upload_audio_voice(request):
 
     character = _sanitize_character(data.get("character"))
     emotion = _sanitize_emotion(data.get("emotion"))
+    if emotion in RESERVED_VOICE_NAMES:
+        return web.json_response({"success": False, "error": f"'{emotion}' is reserved"}, status=400)
     text = str(data.get("text", "")).strip()
     original_text = str(data.get("original_text", "")).strip()
     overwrite = str(data.get("overwrite", "")).lower() in ("1", "true", "yes")
@@ -455,7 +487,7 @@ async def api_upload_audio_voice(request):
     if os.path.realpath(dest_dir) == os.path.realpath(input_dir):
         target_sub = ""
 
-    base_name = f"{character}_{emotion}"
+    base_name = voice_base_name(character, emotion)
     try:
         result = await asyncio.to_thread(_ingest_voice, dest_dir, base_name, ext, audio_bytes, text, original_text, overwrite)
     except OSError as e:
@@ -467,4 +499,5 @@ async def api_upload_audio_voice(request):
     return web.json_response({
         "success": True,
         "slice": _slice_record(dest_dir, result["filename"], "" if rel_prefix == "." else rel_prefix),
+        "main_missing": emotion != MAIN_VOICE and not os.path.isfile(os.path.join(dest_dir, f"{character}.wav")),
     })

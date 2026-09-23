@@ -21,8 +21,9 @@ import { showImageWorkbench } from './ui_gallery_detail.js';
 import { initDoctorPanel, diagnoseNode, renderGlobalDashboard, openLoraInsertionPicker, runGlobalDoctorScan } from './ui_doctor.js';
 import { initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory } from './ui_node_assistant.js';
 import { _openGalleryReplacer } from './ui_node_model_picker.js';
-import { renderAudioStudio, stopAudioStudioPlayback } from './ui_audio_studio.js?v=20260923-cache-kill';
-import { renderAudioGallery, stopGalleryAudio } from './ui_audio_gallery.js?v=20260923-cache-kill';
+import { renderAudioStudio, stopAudioStudioPlayback } from './ui_audio_studio.js';
+import { renderAudioGallery, stopGalleryAudio } from './ui_audio_gallery.js';
+import { getActiveAudioFilter, setActiveAudioFilter, syncAudioSidebarSelection } from './ui_audio_sidebar.js';
 import { getActiveDomain } from './ui_domain_switcher.js';
 
 export class AnomalousBrowser {
@@ -66,14 +67,9 @@ export class AnomalousBrowser {
     handleDomainChange(domain) {
         this.updateHeaderTabs?.(domain);
         if (domain === 'audio') {
-            this.hideAllPanels();
             if (this.sidebarActions) this.sidebarActions.style.display = 'none';
-            if (this.modelsBtn) this.setActiveHeaderTab?.(this.modelsBtn);
-            if (this.audioStudioPanel) {
-                this.audioStudioPanel.style.display = 'block';
-                renderAudioStudio(this.audioStudioPanel);
-            }
             this.renderSidebar();
+            this.switchAudioTab('presets');
         } else {
             if (this.sidebarActions) this.sidebarActions.style.display = 'flex';
             if (this.modelsBtn) this.setActiveHeaderTab?.(this.modelsBtn);
@@ -88,29 +84,30 @@ export class AnomalousBrowser {
         }
     }
 
+    /** Single entry for audio-domain navigation: header tabs, sidebar entries and domain switch. */
     switchAudioTab(tabName, filter = null) {
         this.hideAllPanels();
         if (tabName === 'gallery') {
-            if (this.galleryBtn) this.setActiveHeaderTab?.(this.galleryBtn);
-            if (this.audioGalleryPanel) {
-                this.audioGalleryPanel.style.display = 'block';
-                renderAudioGallery(this.audioGalleryPanel);
-            }
+            setActiveAudioFilter({ type: 'gallery', value: null });
+            this.setActiveHeaderTab?.(this.galleryBtn);
+            this.audioGalleryPanel.style.display = 'block';
+            renderAudioGallery(this.audioGalleryPanel);
         } else {
-            if (this.modelsBtn) this.setActiveHeaderTab?.(this.modelsBtn);
-            if (this.audioStudioPanel) {
-                this.audioStudioPanel.style.display = 'block';
-                renderAudioStudio(this.audioStudioPanel, filter);
-            }
+            if (filter) setActiveAudioFilter(filter);
+            else if (getActiveAudioFilter().type === 'gallery') setActiveAudioFilter(null);
+            this.setActiveHeaderTab?.(this.modelsBtn);
+            this.audioStudioPanel.style.display = 'block';
+            renderAudioStudio(this.audioStudioPanel);
         }
+        syncAudioSidebarSelection(this);
     }
 
     close() {
         closeUpdateGuide(this);
         this.modal.classList.remove('visible');
         this.setTriggerVisible(true);
-        if (typeof stopAudioStudioPlayback === 'function') stopAudioStudioPlayback();
-        if (typeof stopGalleryAudio === 'function') stopGalleryAudio();
+        stopAudioStudioPlayback();
+        stopGalleryAudio();
         const canvas = document.getElementById('graph-canvas');
         if (canvas instanceof HTMLElement) canvas.focus({ preventScroll: true });
         if (this._modelLoadController) this._modelLoadController.abort();
