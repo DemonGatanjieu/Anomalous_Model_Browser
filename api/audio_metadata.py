@@ -10,7 +10,8 @@ import os
 MAX_TAG_BYTES = 16 * 1024 * 1024
 MAX_OGG_SCAN_BYTES = 32 * 1024 * 1024
 SPEECH_INPUTS = ("speech", "text", "gen_text")
-SAMPLE_INPUTS = ("sample", "ref_audio", "audio_prompt")
+# "character": Anomalous_TTS (GPT-SoVITS) names the voice by character instead of a file.
+SAMPLE_INPUTS = ("sample", "ref_audio", "audio_prompt", "character")
 
 
 def _parse_vorbis_comment(data, offset=0):

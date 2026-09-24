@@ -4,10 +4,12 @@ import { comboValueForPath } from './audio_script.js';
  * The only canvas nodes the audio studio writes into, and what each accepts.
  * No guessing by widget name: a node that is not listed here is refused.
  *
+ * engine: whose voices the node takes (audio_engines.js); voices of another engine are refused.
  * takes:
- *   'character' — the node picks a character's main voice and switches emotions itself
- *                 through `{emotion}` tags in its text (ComfyUI-F5-TTS multi-voice).
- *   'clip'      — the node uses exactly one audio file (ComfyUI's Load Audio).
+ *   'character' — the node picks a character and switches emotions itself through
+ *                 `{emotion}` tags in its text (F5-TTS multi-voice, Anomalous_TTS).
+ *   'clip'      — the node uses exactly one audio file (ComfyUI's Load Audio; files
+ *                 from the input folder, i.e. the F5-TTS voice library).
  * listedOnly: write only values the node's own dropdown offers (in its spelling).
  * overriddenBy: an input that, when linked, makes the node ignore voiceWidget.
  * speechWidget: where the Script Director writes the tagged script.
@@ -18,7 +20,9 @@ export const AUDIO_NODE_TARGETS = Object.freeze([
     Object.freeze({
         id: 'f5-tts',
         label: 'F5-TTS',
+        engine: 'f5',
         types: Object.freeze(['F5TTSAudio', 'F5TTSAudioAdvanced', 'F5TTSAudioFromModel']),
+        typeLabels: Object.freeze(['F5-TTS Audio', 'F5-TTS Audio Advanced', 'F5-TTS Audio From Model']),
         takes: 'character',
         voiceWidget: 'sample',
         listedOnly: true,
@@ -26,9 +30,22 @@ export const AUDIO_NODE_TARGETS = Object.freeze([
         speechWidget: 'speech',
     }),
     Object.freeze({
+        id: 'anomalous-tts',
+        label: 'GPT-SoVITS',
+        engine: 'gpt_sovits',
+        types: Object.freeze(['AnomalousTTS_CharacterSpeech']),
+        typeLabels: Object.freeze(['角色语音 (GPT-SoVITS)']),
+        takes: 'character',
+        voiceWidget: 'character',
+        listedOnly: true,
+        speechWidget: 'text',
+    }),
+    Object.freeze({
         id: 'load-audio',
         label: 'Load Audio',
+        engine: 'f5',
         types: Object.freeze(['LoadAudio']),
+        typeLabels: Object.freeze(['Load Audio']),
         takes: 'clip',
         voiceWidget: 'audio',
         // Load Audio lists only the top of input/, but validates by file existence, so subfolders work.
@@ -43,10 +60,10 @@ export function targetForNode(node) {
     return AUDIO_NODE_TARGETS.find(target => target.types.includes(type)) || null;
 }
 
-/** Nodes the Script Director can write a tagged script into. */
-export function isScriptTarget(node) {
+/** Nodes the Script Director can write a tagged script into; `engine` narrows to one engine's nodes. */
+export function isScriptTarget(node, engine = null) {
     const target = targetForNode(node);
-    return Boolean(target?.speechWidget && target.takes === 'character');
+    return Boolean(target?.speechWidget && target.takes === 'character' && (!engine || target.engine === engine));
 }
 
 function widgetOf(node, name) {
@@ -67,10 +84,14 @@ const forwardSlashes = value => String(value ?? '').replace(/\\/g, '/');
 export function planVoiceDrop(node, item) {
     const target = targetForNode(node);
     if (!target) return { ok: false, reason: 'unsupported' };
+    const engine = item?.kind === 'character' ? item.group?.engine : item?.slice?.engine;
+    if ((engine || 'f5') !== target.engine) return { ok: false, reason: 'otherEngine', target };
     if (item?.kind !== target.takes) {
         return { ok: false, reason: target.takes === 'character' ? 'needsCharacter' : 'needsClip', target };
     }
-    const path = item.kind === 'character' ? item.group?.main_relative_path : item.slice?.relative_path;
+    const path = item.kind === 'character'
+        ? (item.group?.has_main === false ? null : item.group?.node_value ?? item.group?.main_relative_path)
+        : item.slice?.relative_path;
     if (!path) return { ok: false, reason: 'noMainVoice', target };
     if (inputLinked(node, target.overriddenBy)) return { ok: false, reason: 'overridden', target };
     const widget = widgetOf(node, target.voiceWidget);

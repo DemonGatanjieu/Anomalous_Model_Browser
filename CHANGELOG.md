@@ -9,6 +9,7 @@
 - **Arona multi-voice template (阿罗娜多情绪模板)**: loads a ready-made F5-TTS workflow that ends in Save Audio.
 - **Clear drag rules (拖动规则明确)**: drag a character card's header onto an F5-TTS node (sets the main voice), or one row onto a Load Audio node (uses that exact clip). The hint says what releasing will do; unsupported nodes are refused with the reason instead of being guessed. A single emotion clip is never written into F5-TTS's `sample`, which would break `{emotion}` tags.
 - **Usage guide (使用说明)**: in the audio page, the header **!** opens a five-step how-to; the full guide is `docs/guides/audio-studio.md`.
+- **Engine switch: F5-TTS / GPT-SoVITS (引擎切换)**: the audio page now manages voices per engine. Installed engines are detected at runtime; a missing one stays visible as "not installed" with install steps instead of disappearing, and nothing else depends on it. GPT-SoVITS characters come from the separate Anomalous_TTS node pack: preview reference clips, pick a reference clip per emotion ("Edit emotions", saved through the node's API), drag a character onto the node, and push scripts with the Script Director.
 
 ### Fixes
 - All-in-one loader recipes and cross-node prompt injection use one verified adapter table; prompt text never crosses between positive and negative.

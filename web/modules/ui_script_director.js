@@ -3,6 +3,7 @@ import { t } from './interface_settings.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { buildScriptPackage, comboValueForPath, joinSegments, splitScriptLines, splitSegmentAt, usableEmotions } from './audio_script.js';
 import { isScriptTarget, targetForNode } from './audio_node_targets.js';
+import { engineById } from './audio_engines.js';
 import { bindMaterialDrag } from './material_drag.js';
 
 /**
@@ -20,6 +21,7 @@ const ICONS = {
 };
 
 const state = {
+    engine: 'f5',       // audio_engines.js id; decides which nodes the bundle may go to
     groups: [],
     groupKey: null,
     lines: [],          // { text, emotion }
@@ -62,7 +64,11 @@ export function isScriptDirectorActive() {
 }
 
 /** Called by the studio after each voice fetch; keeps the chosen character when it still exists. */
-export function updateScriptDirectorVoices(groups, preferredGroup = null) {
+export function updateScriptDirectorVoices(groups, preferredGroup = null, engine = null) {
+    if (engine && engine !== state.engine) {
+        state.engine = engine;
+        state.groupKey = null;
+    }
     state.groups = Array.isArray(groups) ? groups : [];
     const exists = key => state.groups.some(group => group.group === key);
     if (!exists(state.groupKey)) {
@@ -90,6 +96,18 @@ export function stopScriptDirectorPreview() {
 
 function selectedGroup() {
     return state.groups.find(group => group.group === state.groupKey) || null;
+}
+
+/** Node name shown in every hint, e.g. "F5-TTS" or "GPT-SoVITS". */
+function nodeLabel() {
+    return engineById(state.engine)?.label || state.engine;
+}
+
+/** Engine-specific wording for the few messages whose advice differs per engine. */
+function engineKey(key) {
+    return state.engine === 'gpt_sovits' && ['scriptDirectorMainMissing', 'scriptDirectorNoCharacters'].includes(key)
+        ? `${key}GptSovits`
+        : key;
 }
 
 function emotionLabel(emotion) {
@@ -126,7 +144,8 @@ function createPanel() {
 
     const header = el('div', 'anomalous-sd-header');
     const titleGroup = el('div');
-    titleGroup.append(el('div', 'anomalous-sd-title', t('scriptDirectorTitle')), el('div', 'anomalous-sd-subtitle', t('scriptDirectorSubtitle')));
+    const subtitle = el('div', 'anomalous-sd-subtitle');
+    titleGroup.append(el('div', 'anomalous-sd-title', t('scriptDirectorTitle')), subtitle);
     header.append(titleGroup, button('anomalous-sd-close-btn', '×', closeScriptDirector, t('scriptDirectorClose')));
 
     const characterBar = el('label', 'anomalous-sd-character-bar');
@@ -176,21 +195,25 @@ function createPanel() {
     const preview = el('pre', 'anomalous-sd-package-preview');
     const actions = el('div', 'anomalous-sd-package-actions');
     const dragHandle = el('div', 'anomalous-sd-drag-handle');
-    dragHandle.title = t('scriptDirectorDragHint');
     dragHandle.innerHTML = ICONS.GRIP;
     dragHandle.append(el('span', '', t('scriptDirectorDragHandle')));
     bindPackageDrag(dragHandle);
     const copyBtn = button('anomalous-sd-btn', t('scriptDirectorCopy'), copyScript);
-    const pushBtn = button('anomalous-sd-btn accent', t('scriptDirectorInject'), pushToNode, t('scriptDirectorPushHint'));
+    const pushBtn = button('anomalous-sd-btn accent', t('scriptDirectorInject'), pushToNode);
     actions.append(dragHandle, copyBtn, pushBtn);
     footer.append(summary, preview, actions);
 
     panel.append(header, characterBar, characterHint, inputArea, linesBar, linesContainer, footer);
-    refs = { characterSelect, characterHint, inputArea, textarea, cancelEdit, linesBar, linesCount, linesContainer, footer, summary, preview, dragHandle, copyBtn, pushBtn };
+    refs = { subtitle, characterSelect, characterHint, inputArea, textarea, cancelEdit, linesBar, linesCount, linesContainer, footer, summary, preview, dragHandle, copyBtn, pushBtn };
 }
 
 function renderAll() {
     if (!panel) return;
+    const node = nodeLabel();
+    refs.subtitle.textContent = t('scriptDirectorSubtitle', { node });
+    refs.dragHandle.title = t('scriptDirectorDragHint', { node });
+    refs.pushBtn.title = t('scriptDirectorPushHint', { node });
+    refs.pushBtn.setAttribute('aria-label', refs.pushBtn.title);
     renderCharacterBar();
     const hasLines = state.lines.length > 0;
     refs.inputArea.hidden = hasLines && !state.editing;
@@ -206,7 +229,8 @@ function renderAll() {
 function renderCharacterBar() {
     const select = refs.characterSelect;
     select.replaceChildren(...state.groups.map(group => {
-        const option = el('option', '', group.folder && group.folder !== 'F5-TTS' ? `${group.character} · ${group.folder}` : group.character);
+        const showFolder = group.engine !== 'gpt_sovits' && group.folder && group.folder !== 'F5-TTS';
+        const option = el('option', '', showFolder ? `${group.character} · ${group.folder}` : group.character);
         option.value = group.group;
         return option;
     }));
@@ -215,8 +239,10 @@ function renderCharacterBar() {
 
     const group = selectedGroup();
     let hint = '';
-    if (!state.groups.length) hint = t('scriptDirectorNoCharacters');
-    else if (group && !usableEmotions(group).includes('main')) hint = t('audioMainMissing', { file: `${group.character}.wav` });
+    if (!state.groups.length) hint = t(engineKey('scriptDirectorNoCharacters'));
+    else if (group && !usableEmotions(group).includes('main')) {
+        hint = state.engine === 'gpt_sovits' ? t('scriptDirectorMainMissingGptSovits') : t('audioMainMissing', { file: `${group.character}.wav` });
+    }
     else if (group) hint = t('scriptDirectorEmotionsAvailable', { emotions: usableEmotions(group).map(emotionLabel).join(' · ') });
     refs.characterHint.textContent = hint;
     refs.characterHint.classList.toggle('is-warning', Boolean(group && !usableEmotions(group).includes('main')) || !state.groups.length);
@@ -322,7 +348,7 @@ function renderPackage() {
         refs.summary.textContent = t('scriptDirectorPackageSummary', { count: pkg.lineCount, emotions: used.join(' · ') });
         refs.preview.textContent = pkg.speech;
     } else {
-        refs.summary.textContent = t(pkg.error);
+        refs.summary.textContent = t(engineKey(pkg.error), { node: nodeLabel() });
         refs.preview.textContent = '';
     }
     refs.preview.hidden = !ok;
@@ -384,9 +410,10 @@ function flash(btn, text, restore) {
 }
 
 function findTargetNode() {
-    const nodes = (app.graph?._nodes || []).filter(isScriptTarget);
+    const fits = node => isScriptTarget(node, state.engine);
+    const nodes = (app.graph?._nodes || []).filter(fits);
     if (!nodes.length) return { error: 'scriptDirectorNoNode' };
-    const selected = Object.values(app.canvas?.selected_nodes || {}).filter(isScriptTarget);
+    const selected = Object.values(app.canvas?.selected_nodes || {}).filter(fits);
     if (selected.length === 1) return { node: selected[0] };
     if (nodes.length === 1) return { node: nodes[0] };
     return { error: 'scriptDirectorPickNode' };
@@ -397,7 +424,7 @@ async function pushToNode() {
     if (pkg.error) return;
     const { node, error } = findTargetNode();
     if (error) {
-        await anomalousAlert(t(error));
+        await anomalousAlert(t(error, { node: nodeLabel() }));
         return;
     }
     if (await applyPackageToNode(node, pkg)) flash(refs.pushBtn, t('scriptDirectorSuccess'), t('scriptDirectorInject'));
@@ -406,11 +433,11 @@ async function pushToNode() {
 /** Write sample + speech into one node; re-checks the node after any dialog. Returns true when written. */
 async function applyPackageToNode(node, pkg) {
     const graph = app.graph;
-    const target = isScriptTarget(node) ? targetForNode(node) : null;
+    const target = isScriptTarget(node, state.engine) ? targetForNode(node) : null;
     const speechWidget = target && node.widgets?.find(w => w.name === target.speechWidget);
     const sampleWidget = target && node.widgets?.find(w => w.name === target.voiceWidget);
     if (!speechWidget || !sampleWidget) {
-        await anomalousAlert(t('scriptDirectorDropNotTts'));
+        await anomalousAlert(t('scriptDirectorDropNotTts', { node: nodeLabel() }));
         return false;
     }
     if (target.overriddenBy && node.inputs?.some(input => input?.name === target.overriddenBy && input.link != null)) {
@@ -419,7 +446,7 @@ async function applyPackageToNode(node, pkg) {
     }
     const sampleValue = comboValueForPath(sampleWidget, pkg.sample);
     if (sampleValue == null) {
-        await anomalousAlert(t('scriptDirectorSampleNotListed', { file: pkg.sample }));
+        await anomalousAlert(t('scriptDirectorSampleNotListed', { file: pkg.sample, node: nodeLabel() }));
         return false;
     }
     const previous = speechWidget.value;
@@ -443,9 +470,9 @@ function bindPackageDrag(handle) {
     bindMaterialDrag(handle, dragOwner, {
         payload: () => {
             const pkg = currentPackage();
-            return pkg.error ? null : { ...pkg, dragHint: t('scriptDirectorDragHint') };
+            return pkg.error ? null : { ...pkg, dragHint: t('scriptDirectorDragHint', { node: nodeLabel() }) };
         },
-        accepts: node => isScriptTarget(node),
+        accepts: node => isScriptTarget(node, state.engine),
         drop: async node => {
             if (await applyPackageToNode(node, currentPackage())) flash(refs.pushBtn, t('scriptDirectorSuccess'), t('scriptDirectorInject'));
         },

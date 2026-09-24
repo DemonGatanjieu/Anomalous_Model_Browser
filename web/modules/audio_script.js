@@ -104,14 +104,16 @@ export function usableEmotions(group) {
 }
 
 /**
- * Bundle script lines for one F5TTSAudio node. `lines` are `{ text, emotion }`;
- * the node's sample becomes the group's main voice and every emotion must be a
- * usable variant of that group. Returns `{ sample, speech, lineCount }` or `{ error: localeKey }`.
+ * Bundle script lines for one TTS node. `lines` are `{ text, emotion }`; the node's
+ * voice widget gets the group's `node_value` (F5-TTS: main voice file; GPT-SoVITS:
+ * character name) and every emotion must be usable for that group.
+ * Returns `{ sample, speech, lineCount }` or `{ error: localeKey }`.
  */
 export function buildScriptPackage(lines, group) {
     if (!group) return { error: 'scriptDirectorPickCharacter' };
     const usable = new Set(usableEmotions(group));
-    if (!group.main_relative_path || !usable.has('main')) return { error: 'scriptDirectorMainMissing' };
+    const voice = group.node_value ?? group.main_relative_path;
+    if (!voice || group.has_main === false || !usable.has('main')) return { error: 'scriptDirectorMainMissing' };
     const voiced = [];
     for (const line of lines || []) {
         const text = String(line?.text || '').trim();
@@ -121,7 +123,7 @@ export function buildScriptPackage(lines, group) {
         voiced.push({ text, voice: emotion === 'main' ? null : { tag: `{${emotion}}` } });
     }
     if (!voiced.length) return { error: 'scriptDirectorEmpty' };
-    return { sample: group.main_relative_path, speech: composeScript(voiced), lineCount: voiced.length };
+    return { sample: voice, speech: composeScript(voiced), lineCount: voiced.length };
 }
 
 /**

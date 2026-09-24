@@ -1144,3 +1144,213 @@
 .anomalous-character-voice-header.is-draggable:active {
     cursor: grabbing;
 }
+
+/* ---------- Engine switch (F5-TTS / GPT-SoVITS) ---------- */
+.anomalous-audio-engine-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    padding: 10px 0 12px;
+}
+
+.anomalous-audio-engine-tabs {
+    display: inline-flex;
+    padding: 3px;
+    gap: 3px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.anomalous-audio-engine-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.anomalous-audio-engine-tab:hover {
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.anomalous-audio-engine-tab.active {
+    color: #f8fafc;
+    background: rgba(129, 140, 248, 0.18);
+    box-shadow: inset 0 0 0 1px rgba(129, 140, 248, 0.45);
+}
+
+.anomalous-audio-engine-tab.is-missing span:first-child {
+    opacity: 0.7;
+}
+
+.anomalous-audio-engine-badge {
+    padding: 1px 6px;
+    border-radius: 999px;
+    border: 1px dashed rgba(148, 163, 184, 0.5);
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.anomalous-audio-engine-targets {
+    color: #64748b;
+    font-size: 11px;
+}
+
+/* ---------- "Not installed" card ---------- */
+.anomalous-audio-install-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 560px;
+    margin: 28px auto;
+    padding: 18px 20px;
+    border-radius: 12px;
+    border: 1px dashed rgba(129, 140, 248, 0.4);
+    background: rgba(129, 140, 248, 0.05);
+    color: #cbd5e1;
+    font-size: 12.5px;
+    line-height: 1.6;
+}
+
+.anomalous-audio-install-card.is-compact {
+    max-width: none;
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border-color: rgba(245, 158, 11, 0.35);
+    background: rgba(245, 158, 11, 0.06);
+}
+
+.anomalous-audio-install-title {
+    color: #f1f5f9;
+    font-size: 13.5px;
+    font-weight: 700;
+}
+
+.anomalous-audio-install-how {
+    color: #94a3b8;
+}
+
+.anomalous-audio-install-link {
+    align-self: flex-start;
+    color: #a5b4fc;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* ---------- GPT-SoVITS cards ---------- */
+.anomalous-character-voice-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.anomalous-audio-tool-btn.is-compact {
+    padding: 3px 8px;
+    font-size: 11px;
+}
+
+.anomalous-voice-slice-row.is-static {
+    cursor: default;
+}
+
+.anomalous-voice-slice-row.is-static:hover {
+    transform: none;
+}
+
+/* ---------- GPT-SoVITS emotion editor ---------- */
+.anomalous-tts-editor {
+    width: 680px;
+}
+
+.anomalous-tts-editor-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.anomalous-tts-section {
+    margin-top: 6px;
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.anomalous-tts-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anomalous-tts-row {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1.4fr) auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+}
+
+.anomalous-tts-row.is-main {
+    grid-template-columns: 110px minmax(0, 1.4fr) auto minmax(0, 1fr);
+}
+
+.anomalous-tts-row-name {
+    color: #a5b4fc;
+    font: 600 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.anomalous-tts-row input {
+    min-width: 0;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.25);
+    color: #e2e8f0;
+    font-size: 12px;
+}
+
+.anomalous-tts-remove,
+.anomalous-tts-add {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #cbd5e1;
+    cursor: pointer;
+}
+
+.anomalous-tts-remove {
+    width: 26px;
+    height: 26px;
+}
+
+.anomalous-tts-add {
+    align-self: flex-start;
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.anomalous-tts-hint {
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.anomalous-tts-hint[hidden] {
+    display: none;
+}
+
+@media (max-width: 560px) {
+    .anomalous-tts-row,
+    .anomalous-tts-row.is-main {
+        grid-template-columns: 1fr auto;
+    }
+}

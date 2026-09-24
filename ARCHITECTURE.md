@@ -128,6 +128,17 @@ DOM or live LiteGraph state.
 - `ui_domain_switcher.js` owns the visual/audio domain toggle and its stored choice;
   `browser.switchAudioTab` is the single entry for audio navigation (header tabs,
   sidebar entries, domain switch) and `hideAllPanels` stops audio playback.
+- `audio_engines.js` lists the speech engines the audio page can manage (F5-TTS,
+  GPT-SoVITS via the separate Anomalous_TTS node pack) and detects them at runtime
+  through `/object_info/<node class>`. Every engine's voices are normalised into one
+  voice-group shape (`node_value` = what the node's voice widget takes), so cards,
+  sidebar and Script Director share one implementation. A missing engine stays in
+  the switch marked "not installed" with install steps; nothing else depends on it.
+  GPT-SoVITS data comes only from the node's HTTP contract
+  (`/anomalous_tts/characters`, `/audio`, `/settings`; see the project doc
+  `anomalous-tts-interface.md`); Anomalous never reads or writes its model folders.
+  `ui_audio_tts_editor.js` edits a character's emotion references through that API,
+  keeping settings fields it does not know.
 - `audio_node_targets.js` is the single table of canvas nodes the audio studio
   writes into and what each takes: F5-TTS (`F5TTSAudio`, `F5TTSAudioAdvanced`,
   `F5TTSAudioFromModel`) takes a whole character (main voice in `sample`,

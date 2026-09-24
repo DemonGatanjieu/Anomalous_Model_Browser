@@ -1,8 +1,10 @@
 import { t } from './interface_settings.js';
+import { engineById, getStoredEngine, loadEngine } from './audio_engines.js';
 
 /**
- * Audio sidebar: All Voices, one entry per voice group (main sample + variants),
- * and the generated-audio history. Owns the active audio filter.
+ * Audio sidebar: All Voices, one entry per voice group of the active engine
+ * (F5-TTS voices or GPT-SoVITS characters), and the generated-audio history.
+ * Owns the active audio filter.
  */
 
 let activeFilter = { type: 'all', value: null };
@@ -112,33 +114,31 @@ export async function renderAudioSidebar(owner) {
     listContainer.className = 'anomalous-audio-nav-list';
     owner.sidebar.replaceChildren(renderSidebarHeader(owner), listContainer);
 
-    let data;
-    try {
-        const resp = await fetch('/anomalous/audio_voices');
-        data = await resp.json().catch(() => ({}));
-        if (!resp.ok || !data.success) throw new Error(data.error || `HTTP ${resp.status}`);
-    } catch (e) {
-        if (renderTokens.get(owner.sidebar) !== token) return;
-        const error = createSectionLabel(t('audioLoadFailed', { error: e.message }));
+    const engineId = engineById(getStoredEngine()) ? getStoredEngine() : 'f5';
+    const result = await loadEngine(engineId);
+    if (renderTokens.get(owner.sidebar) !== token) return;
+    if (result.error) {
+        const error = createSectionLabel(t('audioLoadFailed', { error: result.error }));
         error.classList.add('is-error');
         listContainer.appendChild(error);
         return;
     }
-    if (renderTokens.get(owner.sidebar) !== token) return;
 
-    const groups = data.characters || [];
+    const groups = result.groups;
+    const totalSlices = groups.reduce((sum, group) => sum + (group.total_slices || 0), 0);
     if (activeFilter.type === 'group' && !groups.some(group => group.group === activeFilter.value)) {
         activeFilter = { type: 'all', value: null };
     }
 
     listContainer.appendChild(createNavItem(owner, {
-        label: t('audioAllVoices'), iconSvg: SIDEBAR_SVG.ALL_VOICES, count: data.total_slices || 0,
+        label: t('audioAllVoices'), iconSvg: SIDEBAR_SVG.ALL_VOICES, count: totalSlices,
         filter: { type: 'all', value: null }, tab: 'presets',
     }));
 
-    listContainer.appendChild(createSectionLabel(t('audioSectionCharacters')));
+    listContainer.appendChild(createSectionLabel(t('audioSectionCharactersOf', { engine: engineById(engineId).label })));
     for (const group of groups) {
-        const label = group.folder && group.folder !== 'F5-TTS' ? `${group.character} · ${group.folder}` : group.character;
+        const showFolder = group.engine === 'f5' && group.folder && group.folder !== 'F5-TTS';
+        const label = showFolder ? `${group.character} · ${group.folder}` : group.character;
         listContainer.appendChild(createNavItem(owner, {
             label, iconSvg: SIDEBAR_SVG.USER, count: group.total_slices,
             filter: { type: 'group', value: group.group, character: group.character }, tab: 'presets',
