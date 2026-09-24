@@ -296,6 +296,8 @@ export async function refreshMaterials(page = this.materialPage || 1) {
             return;
         }
         const fragment = document.createDocumentFragment();
+        // Apply-mode cards carry an extra button row; the grid gives them a taller row.
+        this.materialList.classList.toggle('is-apply-mode', Boolean(this.materialApplyMode));
         for (const material of materials) fragment.appendChild(renderMaterialCard(this, material));
         this.materialList.appendChild(fragment);
     } catch (error) {

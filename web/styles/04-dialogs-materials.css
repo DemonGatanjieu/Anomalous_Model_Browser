@@ -377,7 +377,7 @@
 .anomalous-material-list.is-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    grid-auto-rows: 248px;
+    grid-auto-rows: 262px;
     align-content: start;
     gap: 14px;
     padding: 16px;
@@ -418,10 +418,39 @@
 
 /* 网格模式下的卡片几何规范 */
 .anomalous-material-list.is-grid .anomalous-material-card {
-    height: 248px;
-    max-height: 248px;
+    height: 262px;
+    max-height: 262px;
     flex-direction: column;
     border-radius: var(--amb-radius-card, 10px);
+}
+
+/* 应用模式：卡片多一行“应用方案”按钮，行高随之增加，信息不被挤压重叠 */
+.anomalous-material-list.is-grid.is-apply-mode {
+    grid-auto-rows: 300px;
+}
+
+.anomalous-material-list.is-grid.is-apply-mode .anomalous-material-card {
+    height: 300px;
+    max-height: 300px;
+}
+
+/* Everything keeps its size except the tag row, which is clipped first when space runs out. */
+.anomalous-material-list.is-grid .anomalous-material-card-body {
+    overflow: hidden;
+}
+
+.anomalous-material-list.is-grid .anomalous-material-card-body > * {
+    flex-shrink: 0;
+}
+
+.anomalous-material-list.is-grid .anomalous-material-card-body > .anomalous-material-tags {
+    flex-shrink: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.anomalous-material-list.is-grid .anomalous-material-card-apply-btn {
+    margin-top: auto;
 }
 
 .anomalous-material-list.is-grid .anomalous-material-card:hover {
