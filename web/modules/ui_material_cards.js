@@ -349,35 +349,30 @@ export function renderMaterialCard(owner, material) {
         material.tags.forEach(tag => text(tags, 'span', tag, 'anomalous-material-tag'));
     }
     if (owner.materialApplyMode) {
+        // One apply button per card, in both grid and list layouts. The locale text already carries its icon.
         const applyBtn = document.createElement('button');
         applyBtn.type = 'button';
         applyBtn.className = 'anomalous-material-card-apply-btn';
-        applyBtn.innerHTML = `<span>⚡</span> <span>${t('assistantApplyScheme') || (window.anomalous_browser_lang === 'zh' ? '应用到节点' : 'Apply to Node')}</span>`;
-        applyBtn.title = t('materialApplyCard') || (window.anomalous_browser_lang === 'zh' ? '点击将本方案参数应用替换到当前节点' : 'Click to apply parameters to current node');
+        applyBtn.textContent = t('assistantApplyScheme');
+        applyBtn.title = t('materialApplyCard');
         applyBtn.onclick = async (e) => {
             e.stopPropagation();
             applyBtn.disabled = true;
-            applyBtn.innerHTML = `<span>⏳</span> <span>${t('assistantApplying') || '应用中...'}</span>`;
+            applyBtn.textContent = t('assistantApplying');
             try {
                 await applyLibraryMaterial(owner, material);
-                applyBtn.innerHTML = `<span>✅</span> <span>${t('assistantApplied') || '已应用'}</span>`;
+                applyBtn.textContent = t('assistantApplied');
                 setTimeout(() => {
-                    if (applyBtn) {
-                        applyBtn.disabled = false;
-                        applyBtn.innerHTML = `<span>⚡</span> <span>${t('assistantApplyScheme') || (window.anomalous_browser_lang === 'zh' ? '应用到节点' : 'Apply to Node')}</span>`;
-                    }
+                    applyBtn.disabled = false;
+                    applyBtn.textContent = t('assistantApplyScheme');
                 }, 2000);
             } catch (err) {
                 console.error(err);
                 applyBtn.disabled = false;
-                applyBtn.innerHTML = `<span>⚡</span> <span>${t('assistantApplyScheme') || (window.anomalous_browser_lang === 'zh' ? '应用到节点' : 'Apply to Node')}</span>`;
+                applyBtn.textContent = t('assistantApplyScheme');
             }
         };
         body.appendChild(applyBtn);
-
-        const applyBtnClone = applyBtn.cloneNode(true);
-        applyBtnClone.onclick = applyBtn.onclick;
-        actionsWrapper.insertBefore(applyBtnClone, actionsWrapper.firstChild);
     }
     card.appendChild(body);
     card.appendChild(actionsWrapper);
