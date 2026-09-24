@@ -121,9 +121,20 @@ export function gptSovitsGroups(payload) {
 }
 
 // ---------- detection + loading ----------
+//
+// Switching to the audio domain, clicking a sidebar entry or saving a setting all
+// re-render the studio and the sidebar. They must not hit the server each time:
+// `/object_info/<class>` makes ComfyUI rebuild that node's inputs (a folder scan),
+// and a character list can be large. So both results are kept until something
+// says they are stale: the Refresh button, a save, an added voice, or MAX_AGE_MS.
 
-async function getJson(url) {
-    const resp = await fetch(url);
+const MAX_AGE_MS = 60_000;
+let installCache = null; // { at, promise } — node pack presence, per page session
+const loadCache = new Map(); // engineId -> { at, promise }
+let rescanNext = false;
+
+async function getJson(url, signal) {
+    const resp = await fetch(url, { signal });
     const data = await resp.json().catch(() => null);
     return { ok: resp.ok, status: resp.status, data };
 }
@@ -138,42 +149,53 @@ async function isNodeInstalled(nodeClass) {
     }
 }
 
+function fresh(entry) {
+    return entry && Date.now() - entry.at < MAX_AGE_MS;
+}
+
 async function loadGroups(engineId) {
     if (engineId === 'f5') {
         const { ok, status, data } = await getJson('/anomalous/audio_voices');
         if (!ok || !data?.success) throw new Error(data?.error || `HTTP ${status}`);
         return f5Groups(data.characters);
     }
-    const { ok, status, data } = await getJson('/anomalous_tts/characters');
+    // The node caches its folder scan; `refresh=1` makes it look at the disk again.
+    const url = rescanNext ? '/anomalous_tts/characters?refresh=1' : '/anomalous_tts/characters';
+    rescanNext = false;
+    const { ok, status, data } = await getJson(url);
     if (!ok || !data) throw new Error(`HTTP ${status}`);
     return gptSovitsGroups(data);
 }
 
-// The studio and the sidebar render together; share one request per engine for a moment.
-const CACHE_MS = 1500;
-const loadCache = new Map();
-
-/** Forget cached engine data (after a refresh or a settings save). */
-export function invalidateEngineCache() {
+/**
+ * Forget cached engine data. `rescan: true` (the Refresh button) also asks the
+ * GPT-SoVITS node to re-read its folders instead of answering from its own cache.
+ */
+export function invalidateEngineCache({ rescan = false } = {}) {
     loadCache.clear();
+    installCache = null;
+    if (rescan) rescanNext = true;
 }
 
 /**
  * { installed, groups, error } for one engine. The F5-TTS library is the plugin's own
  * input/F5-TTS folder, so it is listed even when the F5-TTS node is not installed.
+ * Concurrent callers (studio + sidebar) share one request.
  */
 export function loadEngine(engineId) {
     const hit = loadCache.get(engineId);
-    if (hit && Date.now() - hit.at < CACHE_MS) return hit.promise;
+    if (fresh(hit)) return hit.promise;
     const promise = loadEngineNow(engineId);
     loadCache.set(engineId, { at: Date.now(), promise });
+    // A failure must not stick for a minute.
+    promise.then(result => { if (result.error && loadCache.get(engineId)?.promise === promise) loadCache.delete(engineId); });
     return promise;
 }
 
 async function loadEngineNow(engineId) {
     const engine = engineById(engineId);
     if (!engine) return { installed: false, groups: [], error: 'unknown engine' };
-    const installed = await isNodeInstalled(engine.probeNode);
+    const installed = Boolean((await detectEngines())[engineId]?.installed);
     if (!installed && engineId !== 'f5') return { installed, groups: [], error: '' };
     try {
         return { installed, groups: await loadGroups(engineId), error: '' };
@@ -182,10 +204,23 @@ async function loadEngineNow(engineId) {
     }
 }
 
-/** Status of every engine (installed only), for the switcher badges. */
-export async function detectEngines() {
-    const entries = await Promise.all(AUDIO_ENGINES.map(async engine => [engine.id, { installed: await isNodeInstalled(engine.probeNode) }]));
-    return Object.fromEntries(entries);
+/** Status of every engine (installed only), for the switcher badges. Cached like loadEngine. */
+export function detectEngines() {
+    if (fresh(installCache)) return installCache.promise;
+    const promise = Promise.all(AUDIO_ENGINES.map(async engine => [engine.id, { installed: await isNodeInstalled(engine.probeNode) }]))
+        .then(Object.fromEntries);
+    installCache = { at: Date.now(), promise };
+    return promise;
+}
+
+/**
+ * One GPT-SoVITS character with its file lists (`gpt`, `sovits`, `audio`), which the
+ * summary list leaves out because a folder can hold thousands of clips.
+ */
+export async function fetchGptSovitsCharacter(name, signal) {
+    const { ok, status, data } = await getJson(`/anomalous_tts/characters?name=${encodeURIComponent(name)}`, signal);
+    if (!ok || !data?.character) throw new Error(status === 404 ? `404 ${name}` : `HTTP ${status}`);
+    return data.character;
 }
 
 // ---------- GPT-SoVITS settings (Anomalous writes, the node reads) ----------

@@ -1,13 +1,17 @@
 import { t } from './interface_settings.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert } from './ui_dialog.js';
-import { mergeGptSovitsSettings, saveGptSovitsSettings, ttsAudioUrl } from './audio_engines.js';
+import { fetchGptSovitsCharacter, mergeGptSovitsSettings, saveGptSovitsSettings, ttsAudioUrl } from './audio_engines.js';
 
 /**
  * GPT-SoVITS (Anomalous_TTS) emotion editor: pick one reference audio from the
  * character's folder for the main voice and for each emotion. The node owns the
  * file; this modal only sends the new settings through its API, keeping every
  * field it does not edit.
+ *
+ * The studio list carries no file lists (a folder can hold thousands of clips), so
+ * the modal opens at once and fetches this character's files in the background;
+ * saving waits until they are here.
  */
 
 let activeScope = null;
@@ -56,8 +60,9 @@ export function openGptSovitsEditor(group, { onSaved } = {}) {
     activeScope = scope;
     const raw = group.raw || {};
     const name = raw.name || group.character;
-    const audioList = Array.isArray(raw.audio) ? raw.audio : [];
-    const settings = raw.settings && typeof raw.settings === 'object' ? raw.settings : {};
+    let audioList = [];
+    let settings = raw.settings && typeof raw.settings === 'object' ? raw.settings : {};
+    let loaded = false;
     let player = null;
 
     const overlay = el('div', 'anomalous-voice-modal-overlay');
@@ -97,7 +102,6 @@ export function openGptSovitsEditor(group, { onSaved } = {}) {
     const listId = `anomalous-tts-audio-${Math.random().toString(36).slice(2)}`;
     const datalist = el('datalist');
     datalist.id = listId;
-    datalist.append(...audioList.map(path => { const option = el('option'); option.value = path; return option; }));
 
     // Main reference
     const mainRow = el('div', 'anomalous-tts-row is-main');
@@ -145,6 +149,7 @@ export function openGptSovitsEditor(group, { onSaved } = {}) {
     // Footer
     const footer = el('div', 'anomalous-voice-modal-footer');
     const saveBtn = button('anomalous-voice-modal-submit', t('ttsEditorSave'), async () => {
+        if (!loaded) return;
         const rows = [...rowsBox.querySelectorAll('.anomalous-tts-row')].map(line => {
             const [nameInput, audio, , text] = line.querySelectorAll('input, button');
             return { name: nameInput.value.trim(), audio: audio.value.trim(), text: text.value.trim() };
@@ -166,13 +171,31 @@ export function openGptSovitsEditor(group, { onSaved } = {}) {
         } catch (e) {
             if (!scope.signal.aborted) await anomalousAlert(t('ttsEditorSaveFailed', { error: e.message }));
         } finally {
-            if (!scope.signal.aborted) saveBtn.disabled = false;
+            if (!scope.signal.aborted) saveBtn.disabled = !loaded;
         }
     });
     footer.append(button('anomalous-voice-modal-cancel', t('dialogCancel'), close), saveBtn);
 
+    const status = el('div', 'anomalous-tts-hint anomalous-tts-status', t('ttsEditorLoadingFiles'));
+    saveBtn.disabled = true;
+    fetchGptSovitsCharacter(name, scope.signal).then(detail => {
+        if (scope.signal.aborted) return;
+        audioList = Array.isArray(detail.audio) ? detail.audio : [];
+        // The detail is read from disk now: keep its unknown fields when saving.
+        if (detail.settings && typeof detail.settings === 'object') settings = detail.settings;
+        datalist.replaceChildren(...audioList.map(path => { const option = el('option'); option.value = path; return option; }));
+        status.textContent = t('ttsEditorFileCount', { count: audioList.length });
+        loaded = true;
+        saveBtn.disabled = false;
+    }).catch(e => {
+        if (scope.signal.aborted) return;
+        status.textContent = t('ttsEditorLoadFailed', { error: e.message || String(e) });
+        status.classList.add('is-error');
+    });
+
     const body = el('div', 'anomalous-tts-editor-body');
     body.append(
+        status,
         datalist,
         el('div', 'anomalous-tts-section', t('ttsEditorMainSection')), mainRow, mainHint,
         el('div', 'anomalous-tts-section', t('ttsEditorEmotionSection')), rowsBox, addBtn, autoNote,

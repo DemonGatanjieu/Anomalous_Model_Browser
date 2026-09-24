@@ -232,13 +232,15 @@
 
 .anomalous-character-voice-header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
+    gap: 8px 10px;
 }
 
 .anomalous-character-voice-title {
     display: flex;
+    flex: 1 1 160px;
     align-items: center;
     gap: 10px;
     min-width: 0;
@@ -277,8 +279,11 @@
 }
 
 .anomalous-character-voice-hint {
+    overflow: hidden;
     font-size: 11px;
     color: #64748b;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .anomalous-character-voice-count {
@@ -1251,8 +1256,10 @@
 /* ---------- GPT-SoVITS cards ---------- */
 .anomalous-character-voice-actions {
     display: inline-flex;
+    flex-shrink: 0;
     align-items: center;
     gap: 8px;
+    margin-left: auto;
 }
 
 .anomalous-audio-tool-btn.is-compact {
@@ -1271,6 +1278,10 @@
 /* ---------- GPT-SoVITS emotion editor ---------- */
 .anomalous-tts-editor {
     width: 680px;
+}
+
+.anomalous-tts-status.is-error {
+    color: #f87171;
 }
 
 .anomalous-tts-editor-body {

@@ -283,17 +283,22 @@ function renderCharacterCard(group, owner, { onChanged } = {}) {
 
     const name = document.createElement('span');
     name.className = 'anomalous-character-voice-name';
-    name.textContent = group.character;
-    if (!isTts && group.folder && group.folder !== 'F5-TTS') {
+    // GPT-SoVITS versions are named "角色/日配"; show the version as a quiet suffix.
+    const cut = isTts ? group.character.lastIndexOf('/') : -1;
+    name.textContent = cut > 0 ? group.character.slice(0, cut) : group.character;
+    const suffix = cut > 0 ? group.character.slice(cut + 1) : (!isTts && group.folder !== 'F5-TTS' ? group.folder : '');
+    if (suffix) {
         const folder = document.createElement('span');
         folder.className = 'anomalous-character-voice-folder';
-        folder.textContent = group.folder;
+        folder.textContent = suffix;
         name.append(' ', folder);
     }
+    name.title = group.character;
 
     const sub = document.createElement('span');
     sub.className = 'anomalous-character-voice-hint';
     sub.textContent = t(isTts ? 'audioDragCardHintGptSovits' : 'audioDragCardHint');
+    sub.title = sub.textContent;
 
     nameBox.append(name, sub);
 
@@ -588,7 +593,7 @@ export async function renderAudioStudio(container, { filter = null, owner = null
             });
         },
         onVoiceAdded: () => { invalidateEngineCache(); rerender(); },
-        onRefresh: () => { invalidateEngineCache(); rerender(); if (owner) renderAudioSidebar(owner); },
+        onRefresh: () => { invalidateEngineCache({ rescan: true }); rerender(); if (owner) renderAudioSidebar(owner); },
         container,
         owner,
         defaultCharacter: characterFilter?.character || '',

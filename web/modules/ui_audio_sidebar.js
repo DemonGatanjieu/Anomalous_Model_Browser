@@ -1,5 +1,5 @@
 import { t } from './interface_settings.js';
-import { engineById, getStoredEngine, loadEngine } from './audio_engines.js';
+import { engineById, getStoredEngine, invalidateEngineCache, loadEngine } from './audio_engines.js';
 
 /**
  * Audio sidebar: All Voices, one entry per voice group of the active engine
@@ -58,6 +58,7 @@ function renderSidebarHeader(owner) {
     refreshBtn.title = t('audioRefresh');
     refreshBtn.setAttribute('aria-label', t('audioRefresh'));
     refreshBtn.onclick = () => {
+        invalidateEngineCache({ rescan: true });
         renderAudioSidebar(owner);
         if (activeFilter.type !== 'gallery') owner.switchAudioTab?.('presets', activeFilter);
     };
