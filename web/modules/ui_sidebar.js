@@ -7,6 +7,7 @@ import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
 import { updateScanProgress, finishScanProgress, failScanProgress } from './scan_progress.js';
 import { showUpdateGuide } from './ui_update_guide.js';
+import { AUDIO_USAGE_GUIDE, CURRENT_UPDATE_GUIDE } from './update_guide_data.js';
 import { setScanButtonState } from './ui_scan_wizard.js';
 import { createSettingsHub } from './ui_settings_hub.js';
 import { createToolbox } from './ui_toolbox.js';
@@ -484,7 +485,11 @@ export function createDOM() {
         updateNoticeIcon.setAttribute('aria-hidden', 'true');
         updateNoticeIcon.textContent = '!';
         updateNoticeBtn.appendChild(updateNoticeIcon);
-        updateNoticeBtn.onclick = () => showUpdateGuide(this, { force: true });
+        // In the audio domain "!" explains the audio studio; elsewhere it shows what's new.
+        updateNoticeBtn.onclick = () => showUpdateGuide(this, {
+            force: true,
+            guide: getActiveDomain() === 'audio' ? AUDIO_USAGE_GUIDE : CURRENT_UPDATE_GUIDE,
+        });
 
         rightGroup.appendChild(updateNoticeBtn);
         rightGroup.appendChild(dockBtn);

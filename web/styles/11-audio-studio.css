@@ -1112,3 +1112,35 @@
     background: rgba(99, 102, 241, 0.28);
     border-color: rgba(129, 140, 248, 0.6);
 }
+
+/* ---------- Drag handles: header = whole character, row = one clip ---------- */
+.anomalous-voice-grip {
+    display: inline-flex;
+    flex: none;
+    color: #475569;
+    opacity: 0.8;
+}
+
+.anomalous-character-voice-header.is-draggable {
+    margin: -6px -8px 0;
+    padding: 6px 8px;
+    border: 1px dashed transparent;
+    border-radius: 10px;
+    cursor: grab;
+    user-select: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.anomalous-character-voice-header.is-draggable:hover {
+    border-color: rgba(129, 140, 248, 0.45);
+    background: rgba(129, 140, 248, 0.06);
+}
+
+.anomalous-character-voice-header.is-draggable:hover .anomalous-voice-grip,
+.anomalous-voice-slice-row:hover .anomalous-voice-grip {
+    color: #cbd5e1;
+}
+
+.anomalous-character-voice-header.is-draggable:active {
+    cursor: grabbing;
+}

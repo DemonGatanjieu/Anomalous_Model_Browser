@@ -27,8 +27,12 @@ export function materialDropNode(event, canvas, graph) {
     return node && graph.getNodeById(node.id) === node ? node : null;
 }
 
-/** Only this page's active drag can mutate a node; transfer data is never trusted. */
-export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropOnCanvas }) {
+/**
+ * Only this page's active drag can mutate a node; transfer data is never trusted.
+ * Optional `targetHint(node, data)` says what dropping on an accepted node will do;
+ * optional `rejectHint(node, data)` explains why a hovered node is refused.
+ */
+export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropOnCanvas, targetHint, rejectHint }) {
     element.draggable = true;
     element.addEventListener('dragstart', event => {
         if (event.target !== element && event.target?.closest?.('button, input, textarea, select')) { event.preventDefault(); return; }
@@ -65,7 +69,8 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropO
             if (validNode) {
                 event.dataTransfer.dropEffect = 'copy';
                 hint.classList.add('is-target-valid');
-                hint.textContent = t('materialDropTarget', { name: materialNodeHeading(node) });
+                hint.classList.remove('is-target-refused');
+                hint.textContent = targetHint?.(node, data) || t('materialDropTarget', { name: materialNodeHeading(node) });
             } else if (dropOnCanvas && isOverCanvasSurface(event)) {
                 event.dataTransfer.dropEffect = 'copy';
                 hint.classList.add('is-target-valid');
@@ -73,7 +78,9 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropO
             } else {
                 event.dataTransfer.dropEffect = 'none';
                 hint.classList.remove('is-target-valid');
-                hint.textContent = defaultHint;
+                const refusal = node ? rejectHint?.(node, data) : '';
+                hint.classList.toggle('is-target-refused', Boolean(refusal));
+                hint.textContent = refusal || defaultHint;
             }
             hint.style.left = `${Math.max(8, Math.min(event.clientX + 16, window.innerWidth - 250))}px`;
             hint.style.top = `${Math.max(8, event.clientY - 48)}px`;

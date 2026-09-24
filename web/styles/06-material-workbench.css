@@ -2196,3 +2196,8 @@
     color: #ffffff;
 }
 
+.anomalous-material-drag-hint.is-target-refused {
+    border-color: rgba(245, 158, 11, 0.55);
+    color: #fcd34d;
+}
+

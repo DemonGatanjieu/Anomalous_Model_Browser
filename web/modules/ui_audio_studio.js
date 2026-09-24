@@ -4,7 +4,7 @@ import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { stopGalleryAudio } from './ui_audio_gallery.js';
 import { openAudioUploaderModal } from './ui_audio_uploader.js';
 import { getActiveAudioFilter } from './ui_audio_sidebar.js';
-import { comboValueForPath } from './audio_script.js';
+import { SUPPORTED_TARGET_LABELS, alignedVoiceValue, planVoiceDrop } from './audio_node_targets.js';
 import { bindMaterialDrag } from './material_drag.js';
 import {
     openScriptDirector,
@@ -20,7 +20,6 @@ import {
  * tag copying, canvas drop into TTS nodes, and toolbar entry points.
  */
 
-const AUDIO_WIDGET_NAMES = ['sample', 'audio', 'prompt_audio'];
 const WORKFLOW_TEMPLATE = 'arona';
 const renderTokens = new WeakMap();
 
@@ -33,6 +32,7 @@ const SVG = {
     PAUSE: `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,
     MIC: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>`,
     COPY: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
+    GRIP: `<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg>`,
     CHECK: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
     SEARCH: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
     SCRIPT: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>`,
@@ -132,31 +132,71 @@ function renderEqIndicator() {
     return barWrap;
 }
 
-function audioWidgetFor(node, slice) {
-    const widget = node?.widgets?.find(w => AUDIO_WIDGET_NAMES.includes(w.name));
-    const value = widget ? comboValueForPath(widget, slice.relative_path) : null;
-    return value == null ? null : { widget, value };
+function itemLabel(item) {
+    if (item.kind === 'character') return item.group.character;
+    return `${item.slice.character} · ${String(item.slice.emotion || '').toUpperCase()}`;
 }
 
-/** Drag a voice onto a TTS node to use it as the node's sample (shared material drag: the modal hides meanwhile). */
-function bindVoiceDrag(row, slice, owner) {
-    bindMaterialDrag(row, owner || {}, {
-        payload: () => ({ slice, dragHint: t('audioDragHint') }),
-        accepts: node => Boolean(audioWidgetFor(node, slice)),
+/** What the drop will do, shown while hovering an accepted node. */
+function dropTargetHint(node, item) {
+    const plan = planVoiceDrop(node, item);
+    if (!plan.ok) return '';
+    return item.kind === 'character'
+        ? t('audioDropCharacterTarget', { node: plan.target.label, character: item.group.character })
+        : t('audioDropClipTarget', { node: plan.target.label, clip: itemLabel(item) });
+}
+
+/** Why a hovered node is refused; every refusal names what to do instead. */
+function dropRejectHint(node, item) {
+    const plan = planVoiceDrop(node, item);
+    if (plan.ok) return '';
+    const params = {
+        node: plan.target?.label || '',
+        supported: SUPPORTED_TARGET_LABELS.join(t('audioListSeparator')),
+        character: item.kind === 'character' ? item.group.character : item.slice.character,
+        emotion: item.kind === 'clip' && !item.slice.is_main ? `{${item.slice.emotion}}` : t('audioEmotionTagExample'),
+        file: plan.path || '',
+    };
+    return t(`audioDropReject_${plan.reason}`, params);
+}
+
+/**
+ * Drag a character (card header) or one clip (row) onto a canvas node. Which one a node
+ * takes is decided by audio_node_targets.js; unlisted nodes are refused, never guessed.
+ */
+function bindVoiceDrag(element, item, owner) {
+    bindMaterialDrag(element, owner || {}, {
+        payload: () => ({
+            ...item,
+            dragHint: item.kind === 'character'
+                ? t('audioDragCharacterHint', { character: item.group.character })
+                : t('audioDragClipHint', { clip: itemLabel(item) }),
+        }),
+        accepts: node => planVoiceDrop(node, item).ok,
+        targetHint: node => dropTargetHint(node, item),
+        rejectHint: node => dropRejectHint(node, item),
         drop: async node => {
-            const target = audioWidgetFor(node, slice);
-            if (!target) return;
-            target.widget.value = target.value;
-            target.widget.callback?.(target.value, app.canvas, node);
+            const plan = planVoiceDrop(node, item);
+            if (!plan.ok) return;
+            plan.widget.value = plan.value;
+            plan.widget.callback?.(plan.value, app.canvas, node);
             node.setDirtyCanvas?.(true, true);
         },
     });
 }
 
+function gripIcon() {
+    const grip = document.createElement('span');
+    grip.className = 'anomalous-voice-grip';
+    grip.innerHTML = SVG.GRIP;
+    return grip;
+}
+
 function renderSliceRow(slice, owner) {
     const row = document.createElement('div');
     row.className = 'anomalous-voice-slice-row';
-    bindVoiceDrag(row, slice, owner);
+    row.title = t('audioDragClipTitle');
+    bindVoiceDrag(row, { kind: 'clip', slice }, owner);
 
     const playBtn = document.createElement('button');
     playBtn.type = 'button';
@@ -198,7 +238,7 @@ function renderSliceRow(slice, owner) {
         playAudio(slice.audio_url, playBtn, eqBars);
     };
 
-    row.append(playBtn, eqBars, emoTag, textSpan, copyBtn);
+    row.append(gripIcon(), playBtn, eqBars, emoTag, textSpan, copyBtn);
     return row;
 }
 
@@ -231,7 +271,7 @@ function renderCharacterCard(group, owner) {
 
     const sub = document.createElement('span');
     sub.className = 'anomalous-character-voice-hint';
-    sub.textContent = t('audioDragHint');
+    sub.textContent = t('audioDragCardHint');
 
     nameBox.append(name, sub);
 
@@ -239,8 +279,14 @@ function renderCharacterCard(group, owner) {
     countBadge.className = 'anomalous-character-voice-count';
     countBadge.textContent = `${group.total_slices} ${t('audioVoicePresets')}`;
 
-    titleGroup.append(avatar, nameBox);
+    // Only a draggable header shows a grip; without a main voice there is nothing to drag.
+    titleGroup.append(...(group.has_main ? [gripIcon()] : []), avatar, nameBox);
     header.append(titleGroup, countBadge);
+    if (group.has_main) {
+        header.classList.add('is-draggable');
+        header.title = t('audioDragCharacterTitle', { character: group.character });
+        bindVoiceDrag(header, { kind: 'character', group }, owner);
+    }
     card.appendChild(header);
 
     if (!group.has_main) {
@@ -271,11 +317,8 @@ function createToolButton(iconSvg, label, className = '') {
 /** Templates store "F5-TTS/x.wav"; Windows combos list "F5-TTS\\x.wav". Adopt the node's own spelling. */
 function alignLoadedAudioSamples() {
     for (const node of app.graph?._nodes || []) {
-        for (const widget of node.widgets || []) {
-            if (!AUDIO_WIDGET_NAMES.includes(widget.name) || typeof widget.value !== 'string') continue;
-            const value = comboValueForPath(widget, widget.value);
-            if (value != null && value !== widget.value) widget.value = value;
-        }
+        const aligned = alignedVoiceValue(node);
+        if (aligned) aligned.widget.value = aligned.value;
     }
     app.graph?.setDirtyCanvas?.(true, true);
 }

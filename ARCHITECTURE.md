@@ -128,15 +128,26 @@ DOM or live LiteGraph state.
 - `ui_domain_switcher.js` owns the visual/audio domain toggle and its stored choice;
   `browser.switchAudioTab` is the single entry for audio navigation (header tabs,
   sidebar entries, domain switch) and `hideAllPanels` stops audio playback.
+- `audio_node_targets.js` is the single table of canvas nodes the audio studio
+  writes into and what each takes: F5-TTS (`F5TTSAudio`, `F5TTSAudioAdvanced`,
+  `F5TTSAudioFromModel`) takes a whole character (main voice in `sample`,
+  emotions via `{tags}` in `speech`); ComfyUI's `LoadAudio` takes one exact clip.
+  `planVoiceDrop` decides every drop and names the reason for each refusal;
+  unlisted nodes are refused, never matched by widget name. Supporting a node
+  means adding one entry plus a test.
 - `ui_audio_studio.js` owns the voice cards, preview playback, tag copying, drags
-  onto TTS nodes through the shared `bindMaterialDrag` (value written in the
-  node's own combo spelling) and the template workflow loader (confirms before
-  replacing the canvas). `audio_script.js` holds the pure F5-TTS rules: script
-  splitting, bundling (`buildScriptPackage`) and combo value matching.
+  (card header = character, row = clip) through the shared `bindMaterialDrag`
+  with `targetHint`/`rejectHint` telling the user what releasing does, and the
+  template workflow loader (confirms before replacing the canvas).
+  `audio_script.js` holds the pure F5-TTS rules: script splitting, bundling
+  (`buildScriptPackage`) and combo value matching.
   `ui_script_director.js` owns the script drawer: one character, an emotion chip
   row per line card, and a bundle that is pushed to the selected/only
-  F5TTSAudio node or dragged onto one; it writes `sample` (main voice) and
-  `speech` together. The studio feeds it the voice groups after each fetch.
+  script-capable target node or dragged onto one; it writes the voice widget
+  (main voice) and the speech widget together. The studio feeds it the voice
+  groups after each fetch.
+- In the audio domain the header **!** opens `AUDIO_USAGE_GUIDE` (a how-to, see
+  `docs/guides/audio-studio.md`) instead of the visual update guide.
 - `ui_audio_uploader.js` owns the voice ingestion modal (createViewScope lifecycle,
   overwrite confirmation, optional romanization keeping the original script).
 - `ui_audio_sidebar.js` owns the audio navigation and the active audio filter.

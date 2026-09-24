@@ -2,19 +2,16 @@ import { app } from '../../../scripts/app.js';
 import { t } from './interface_settings.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { buildScriptPackage, comboValueForPath, joinSegments, splitScriptLines, splitSegmentAt, usableEmotions } from './audio_script.js';
+import { isScriptTarget, targetForNode } from './audio_node_targets.js';
 import { bindMaterialDrag } from './material_drag.js';
 
 /**
  * Script Director: paste a script, pick one character, choose an emotion per
- * line on the line cards, then push the bundle to an F5TTSAudio node or drag it
- * onto one. ComfyUI-F5-TTS resolves `{happy}` to `<sample>.happy.wav`, so the
+ * line on the line cards, then push the bundle to an F5-TTS node or drag it
+ * onto one (supported nodes: audio_node_targets.js). ComfyUI-F5-TTS resolves `{happy}` to `<sample>.happy.wav`, so the
  * node's `sample` becomes the character's main voice and `speech` the tagged text.
  * The panel and its lines live for the page session; the studio re-attaches it.
  */
-
-const TARGET_NODE_TYPE = 'F5TTSAudio';
-const SPEECH_WIDGET = 'speech';
-const SAMPLE_WIDGET = 'sample';
 
 const ICONS = {
     PLAY: `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
@@ -387,9 +384,9 @@ function flash(btn, text, restore) {
 }
 
 function findTargetNode() {
-    const nodes = app.graph?.findNodesByType?.(TARGET_NODE_TYPE) || [];
+    const nodes = (app.graph?._nodes || []).filter(isScriptTarget);
     if (!nodes.length) return { error: 'scriptDirectorNoNode' };
-    const selected = Object.values(app.canvas?.selected_nodes || {}).filter(node => node?.type === TARGET_NODE_TYPE);
+    const selected = Object.values(app.canvas?.selected_nodes || {}).filter(isScriptTarget);
     if (selected.length === 1) return { node: selected[0] };
     if (nodes.length === 1) return { node: nodes[0] };
     return { error: 'scriptDirectorPickNode' };
@@ -409,10 +406,15 @@ async function pushToNode() {
 /** Write sample + speech into one node; re-checks the node after any dialog. Returns true when written. */
 async function applyPackageToNode(node, pkg) {
     const graph = app.graph;
-    const speechWidget = node.widgets?.find(w => w.name === SPEECH_WIDGET);
-    const sampleWidget = node.widgets?.find(w => w.name === SAMPLE_WIDGET);
+    const target = isScriptTarget(node) ? targetForNode(node) : null;
+    const speechWidget = target && node.widgets?.find(w => w.name === target.speechWidget);
+    const sampleWidget = target && node.widgets?.find(w => w.name === target.voiceWidget);
     if (!speechWidget || !sampleWidget) {
         await anomalousAlert(t('scriptDirectorDropNotTts'));
+        return false;
+    }
+    if (target.overriddenBy && node.inputs?.some(input => input?.name === target.overriddenBy && input.link != null)) {
+        await anomalousAlert(t('scriptDirectorOverridden', { input: target.overriddenBy }));
         return false;
     }
     const sampleValue = comboValueForPath(sampleWidget, pkg.sample);
@@ -443,7 +445,7 @@ function bindPackageDrag(handle) {
             const pkg = currentPackage();
             return pkg.error ? null : { ...pkg, dragHint: t('scriptDirectorDragHint') };
         },
-        accepts: node => node?.type === TARGET_NODE_TYPE,
+        accepts: node => isScriptTarget(node),
         drop: async node => {
             if (await applyPackageToNode(node, currentPackage())) flash(refs.pushBtn, t('scriptDirectorSuccess'), t('scriptDirectorInject'));
         },

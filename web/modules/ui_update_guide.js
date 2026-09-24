@@ -54,7 +54,7 @@ export function showUpdateGuide(owner, { force = false, guide = CURRENT_UPDATE_G
     });
 
     const header = text(dialog, 'div', '', 'anomalous-update-guide-header');
-    text(header, 'span', t('updateGuideTitle'));
+    text(header, 'span', t(guide.titleKey || 'updateGuideTitle'));
     const dismiss = text(header, 'button', '×', 'anomalous-update-guide-close');
     dismiss.type = 'button';
     dismiss.setAttribute('aria-label', t('close'));
@@ -69,6 +69,7 @@ export function showUpdateGuide(owner, { force = false, guide = CURRENT_UPDATE_G
     const tourBanner = text(dialog, 'button', t('updateGuideTourBanner') || '💡 想在主界面实地体验？点击开启按键遮罩导览 ›', 'anomalous-update-guide-tour-banner');
     tourBanner.type = 'button';
     tourBanner.id = 'anomalous-update-guide-tour-btn';
+    tourBanner.hidden = guide.tour === false;
     tourBanner.onclick = () => {
         closeUpdateGuide(owner, true);
         startSpotlightTour(owner);

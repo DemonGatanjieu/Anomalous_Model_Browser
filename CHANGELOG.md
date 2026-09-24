@@ -7,6 +7,8 @@
 - **Script Director (剧本台)**: paste a script for one character; each sentence becomes a card with emotion chips, inline editing, split at cursor, merge and delete. The finished script is pushed to the selected F5-TTS node or dragged onto one, with the tags written for you.
 - **Audio gallery (音频库)**: lists generated audio with its speech text, voice and seed read from the file itself, supports search, and can save unsaved previews into `output/audio/`.
 - **Arona multi-voice template (阿罗娜多情绪模板)**: loads a ready-made F5-TTS workflow that ends in Save Audio.
+- **Clear drag rules (拖动规则明确)**: drag a character card's header onto an F5-TTS node (sets the main voice), or one row onto a Load Audio node (uses that exact clip). The hint says what releasing will do; unsupported nodes are refused with the reason instead of being guessed. A single emotion clip is never written into F5-TTS's `sample`, which would break `{emotion}` tags.
+- **Usage guide (使用说明)**: in the audio page, the header **!** opens a five-step how-to; the full guide is `docs/guides/audio-studio.md`.
 
 ### Fixes
 - All-in-one loader recipes and cross-node prompt injection use one verified adapter table; prompt text never crosses between positive and negative.
