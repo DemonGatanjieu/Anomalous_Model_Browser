@@ -1,15 +1,16 @@
 import { t } from './interface_settings.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { loadGptSovitsStatus } from './audio_engines.js';
-import { changeLibrary, changePretrainedSource, setupSummary, startPretrainedDownload } from './tts_setup_api.js';
+import { changePretrainedSource, changeStorage, forgetLibrary, setupSummary, startPretrainedDownload } from './tts_setup_api.js';
 import { formatSize, pickServerPath } from './ui_tts_path_picker.js';
 
 /**
- * GPT-SoVITS setup card at the top of the audio studio: character libraries,
+ * GPT-SoVITS setup card at the top of the audio studio: the storage place (change it,
+ * optionally moving the characters there), other places that still hold characters,
  * pretrained files (download or use an existing GPT-SoVITS package) and missing
  * Python packages, from the node's `/anomalous_tts/status`. Collapsed to one line
- * once everything is ready. While a download runs the card polls the status and
- * redraws itself; it stops as soon as it is no longer in the page.
+ * once everything is ready. While a download or a move runs the card polls the
+ * status and redraws itself; it stops as soon as it is no longer in the page.
  */
 
 const OPEN_KEY = 'anomalous_tts_setup_open';
@@ -55,38 +56,76 @@ async function act(btn, work, onChanged) {
 
 function summaryText(status, summary) {
     const parts = [t('ttsSetupCharacters', { count: summary.characters })];
+    if (summary.moving) parts.push(t('ttsSetupMoving', { done: status.move.done, total: status.move.total }));
     parts.push(summary.downloading ? t('ttsSetupDownloading')
         : summary.missing ? t('ttsSetupPretrainedMissing', { count: summary.missing }) : t('ttsSetupPretrainedOk'));
     if (summary.packages) parts.push(t('ttsSetupPackagesMissing', { count: summary.packages }));
     return parts.join(' · ');
 }
 
-function renderLibraries(status, local, onChanged) {
+/** Progress or result of the last move, shown only while it concerns the current storage place. */
+function moveLine(move, storage) {
+    if (!move || move.to.toLowerCase() !== storage.toLowerCase()) return null;
+    if (move.state === 'moving') {
+        const copied = move.bytes_total ? t('ttsStorageMovingBytes', { percent: Math.floor(100 * move.bytes_done / move.bytes_total) }) : '';
+        return el('div', 'anomalous-tts-state is-busy', t('ttsStorageMoving', { done: move.done, total: move.total, current: move.current || '…' }) + copied);
+    }
+    if (move.state === 'error') {
+        return el('div', 'anomalous-tts-state is-error', t('ttsStorageMoveError', { error: move.error, done: move.done, total: move.total }));
+    }
+    return el('div', 'anomalous-tts-state is-ok', t('ttsStorageMoveDone', { count: move.done }));
+}
+
+/** Ask where to, and whether the characters already there come along. */
+async function pickStorage(status) {
+    const path = await pickServerPath({ mode: 'folder', title: t('ttsStorageChangeTitle'), hint: t('ttsStorageChangeHint') });
+    if (!path) return false;
+    const here = status.libraries.find(lib => lib.storage)?.characters || 0;
+    let move = false;
+    if (here) {
+        move = await anomalousConfirm(t('ttsStorageMoveAsk', { count: here, path }), 'Anomalous',
+            { okLabel: t('ttsStorageMoveYes'), noLabel: t('ttsStorageMoveNo') });
+        if (move === null) return false;
+    }
+    await changeStorage(path, move);
+}
+
+function renderStorage(status, local, onChanged) {
     const group = el('div', 'anomalous-tts-setup-group');
-    group.append(el('div', 'anomalous-tts-section', t('ttsSetupLibraries')));
-    for (const lib of status.libraries) {
-        const row = el('div', 'anomalous-tts-setup-row');
-        const path = el('span', 'anomalous-tts-setup-path', lib.path);
-        path.title = lib.path;
-        row.append(path, el('span', 'anomalous-tts-kind', t(`ttsLibrarySource_${lib.source}`)),
+    group.append(el('div', 'anomalous-tts-section', t('ttsSetupStorage')));
+    const home = status.libraries.find(lib => lib.storage);
+    const row = el('div', 'anomalous-tts-setup-row');
+    const path = el('span', 'anomalous-tts-setup-path', status.storage);
+    path.title = status.storage;
+    const change = button('anomalous-tts-add', t('ttsStorageChange'), () => act(change, () => pickStorage(status), onChanged));
+    change.disabled = !local || status.move?.state === 'moving';
+    row.append(path, el('span', 'anomalous-tts-setup-meta', t('ttsSetupCharacters', { count: home?.characters || 0 })), change);
+    group.append(row);
+    const move = moveLine(status.move, status.storage);
+    if (move) group.append(move);
+    group.append(el('div', 'anomalous-tts-hint', t('ttsStorageHint')));
+
+    // Other places that still hold characters: earlier storage places, yaml folders.
+    const others = status.libraries.filter(lib => !lib.storage && (lib.source !== 'default' || lib.characters > 0));
+    if (!others.length) return group;
+    group.append(el('div', 'anomalous-tts-section', t('ttsSetupOtherPlaces')));
+    for (const lib of others) {
+        const line = el('div', 'anomalous-tts-setup-row');
+        const where = el('span', 'anomalous-tts-setup-path', lib.path);
+        where.title = lib.path;
+        line.append(where, el('span', 'anomalous-tts-kind', t(`ttsLibrarySource_${lib.source}`)),
             el('span', 'anomalous-tts-setup-meta', lib.exists ? t('ttsSetupCharacters', { count: lib.characters }) : t('ttsLibraryMissing')));
         if (lib.source === 'app') {
             const remove = button('anomalous-tts-remove', '×', () => act(remove, async () => {
                 if (!await anomalousConfirm(t('ttsLibraryRemoveConfirm', { path: lib.path }))) return false;
-                await changeLibrary(lib.path, true);
+                await forgetLibrary(lib.path);
             }, onChanged), t('ttsLibraryRemove'));
             remove.disabled = !local;
-            row.append(remove);
+            line.append(remove);
         }
-        group.append(row);
+        group.append(line);
     }
-    const add = button('anomalous-tts-add', t('ttsLibraryAdd'), () => act(add, async () => {
-        const path = await pickServerPath({ mode: 'folder', title: t('ttsLibraryAdd'), hint: t('ttsLibraryAddHint') });
-        if (!path) return false;
-        await changeLibrary(path);
-    }, onChanged));
-    add.disabled = !local;
-    group.append(add, el('div', 'anomalous-tts-hint', t('ttsLibraryHint')));
+    group.append(el('div', 'anomalous-tts-hint', t('ttsOtherPlacesHint')));
     return group;
 }
 
@@ -195,24 +234,27 @@ export function renderTtsSetup(status, { onChanged, onImport }) {
 
     const body = el('div', 'anomalous-tts-setup-body');
     if (!local) body.append(el('div', 'anomalous-tts-setup-notice', t('ttsSetupRemote')));
-    body.append(renderLibraries(status, local, onChanged), renderPretrained(status, local, onChanged));
+    body.append(renderStorage(status, local, onChanged), renderPretrained(status, local, onChanged));
     const packages = renderPackages(status);
     if (packages) body.append(packages);
 
     card.classList.toggle('is-open', open);
     card.append(head, body);
-    if (summary.downloading) pollWhileDownloading(card, { onChanged, onImport });
+    if (summary.downloading || summary.moving) pollWhileBusy(card, { onChanged, onImport }, summary.moving);
     return card;
 }
 
-function pollWhileDownloading(card, options) {
+/** Redraw the card with fresh status; when a move ends, redraw the whole studio (characters moved). */
+function pollWhileBusy(card, options, moving) {
     setTimeout(async () => {
         if (!card.isConnected) return;
         try {
             const status = await loadGptSovitsStatus({ force: true });
-            if (card.isConnected && status) card.replaceWith(renderTtsSetup(status, options));
+            if (!card.isConnected || !status) return;
+            if (moving && status.move?.state !== 'moving') options.onChanged();
+            else card.replaceWith(renderTtsSetup(status, options));
         } catch (_) {
-            if (card.isConnected) pollWhileDownloading(card, options);
+            if (card.isConnected) pollWhileBusy(card, options, moving);
         }
     }, POLL_MS);
 }

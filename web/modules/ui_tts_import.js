@@ -102,12 +102,12 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
         await anomalousAlert(t('ttsSetupRemote'));
         return;
     }
-    const libraries = status.libraries.filter(lib => lib.writable);
-    if (!initialTarget && !libraries.length) {
-        await anomalousAlert(t('ttsImportNoLibrary'));
+    // New characters always go to the storage place (changed on the setup card).
+    const home = status.libraries.find(lib => lib.storage);
+    if (!initialTarget && !home?.writable) {
+        await anomalousAlert(t('ttsImportNoLibrary', { path: status.storage }));
         return;
     }
-    const defaultLibrary = (libraries.find(lib => lib.source === 'default') || libraries[0])?.path || '';
 
     activeScope?.dispose();
     const scope = createViewScope();
@@ -161,28 +161,12 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
     const nameField = el('label', 'anomalous-voice-field');
     nameField.append(el('span', 'anomalous-voice-field-label', t('ttsImportName')), nameInput);
     const conflictLine = el('div', 'anomalous-tts-import-conflict');
-    const librarySelect = el('select', 'anomalous-uploader-input');
-    for (const lib of libraries) {
-        const option = el('option', '', t('ttsImportLibraryOption', { path: lib.path, count: lib.characters }));
-        option.value = lib.path;
-        librarySelect.append(option);
-    }
-    librarySelect.value = defaultLibrary;
-    librarySelect.hidden = true; // one standard place; shown only when asked for
-    const saveTo = el('span', 'anomalous-tts-hint');
-    const changeLocation = button('anomalous-tts-link', t('ttsImportChangeLocation'), () => {
-        librarySelect.hidden = false;
-        changeLocation.hidden = true;
-        librarySelect.focus();
-    });
-    changeLocation.hidden = libraries.length < 2;
-    const saveLine = el('div', 'anomalous-tts-import-saveto');
-    saveLine.append(saveTo, changeLocation);
+    const saveTo = el('div', 'anomalous-tts-hint');
     const nameBlock = el('div', 'anomalous-tts-import-target');
-    nameBlock.append(nameField, conflictLine, saveLine, librarySelect);
+    nameBlock.append(nameField, conflictLine, saveTo);
 
     const syncSaveTo = () => {
-        saveTo.textContent = t('ttsImportSaveTo', { path: `${librarySelect.value}/${nameInput.value.trim() || '…'}` });
+        saveTo.textContent = t('ttsImportSaveTo', { path: `${status.storage}/${nameInput.value.trim() || '…'}` });
     };
     const syncConflict = () => {
         conflict = target ? null : nameConflict(nameInput.value, existing);
@@ -196,7 +180,6 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
         }
     };
     nameInput.oninput = () => { nameEdited = true; syncSaveTo(); syncConflict(); };
-    librarySelect.onchange = syncSaveTo;
 
     // ---- adding files ----
     const fileInput = el('input');
@@ -415,7 +398,7 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
         if (row.controller.signal.aborted) return;
         try {
             await uploadFile(row.file, {
-                library: target ? undefined : librarySelect.value,
+                library: target ? undefined : status.storage,
                 signal: row.controller.signal,
                 onStart: (id) => { row.uploadId = id; },
                 onProgress: (fraction) => { row.progress = fraction; renderState(row); },
@@ -480,7 +463,7 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
         }
         const index = ready.findIndex(row => row.key === referenceKey);
         const body = buildImportBody({
-            target, library: librarySelect.value, character: nameInput.value.trim(), language: languageSelect.value,
+            target, library: status.storage, character: nameInput.value.trim(), language: languageSelect.value,
             referenceIndex: index >= 0 ? index : null,
             rows: ready.map(row => ({ spec: row.spec, kind: row.kind, emotion: row.emotion, text: row.text })),
         });

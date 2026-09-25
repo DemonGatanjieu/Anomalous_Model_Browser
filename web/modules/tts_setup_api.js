@@ -1,8 +1,8 @@
 import { invalidateEngineCache } from './audio_engines.js';
 
 /**
- * GPT-SoVITS setup and import through the Anomalous_TTS node (interface v3, §5.2–5.3).
- * The node owns every file: character libraries, pretrained files and imported
+ * GPT-SoVITS setup and import through the Anomalous_TTS node (interface v4, §5.2–5.3).
+ * The node owns every file: the storage place, pretrained files and imported
  * characters. This module only calls its API and holds the pure rules the import
  * form needs; it has no DOM.
  */
@@ -46,11 +46,18 @@ async function request(url, { method = 'POST', body, raw, signal, keepalive } = 
     return data;
 }
 
-// ---------- libraries, pretrained files ----------
+// ---------- storage place, pretrained files ----------
 
-/** Add (or remove) a character library. Returns the new status. */
-export async function changeLibrary(path, remove = false) {
-    const status = await request('/anomalous_tts/libraries', { body: { path, remove } });
+/** Make `path` the storage place; `move` moves the current characters there (in the background). */
+export async function changeStorage(path, move) {
+    const status = await request('/anomalous_tts/storage', { body: { path, move } });
+    invalidateEngineCache();
+    return status;
+}
+
+/** Stop reading an earlier storage place; its files stay. */
+export async function forgetLibrary(path) {
+    const status = await request('/anomalous_tts/libraries', { body: { path, remove: true } });
     invalidateEngineCache();
     return status;
 }
@@ -228,7 +235,8 @@ export function setupSummary(status) {
     const missing = (status?.pretrained || []).filter(item => item.state !== 'ok');
     const packages = Object.values(status?.dependencies || {}).reduce((sum, dep) => sum + (dep.missing?.length || 0), 0);
     const downloading = missing.some(item => item.state === 'queued' || item.state === 'downloading');
+    const moving = status?.move?.state === 'moving';
     const requiredMissing = missing.filter(item => item.required).length;
-    return { characters, missing: missing.length, requiredMissing, packages, downloading,
-        ready: characters > 0 && requiredMissing === 0 && packages === 0 };
+    return { characters, missing: missing.length, requiredMissing, packages, downloading, moving,
+        ready: characters > 0 && requiredMissing === 0 && packages === 0 && !moving };
 }

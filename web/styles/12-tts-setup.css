@@ -191,23 +191,20 @@
 }
 
 .anomalous-tts-import-target[hidden],
-.anomalous-tts-import-target select[hidden],
-.anomalous-tts-link[hidden],
 .anomalous-tts-import-empty[hidden] {
     display: none;
 }
 
-.anomalous-tts-import-saveto,
+.anomalous-tts-import-target > .anomalous-tts-hint {
+    overflow-wrap: anywhere;
+}
+
 .anomalous-tts-import-conflict {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
     gap: 8px;
     min-width: 0;
-}
-
-.anomalous-tts-import-saveto .anomalous-tts-hint {
-    overflow-wrap: anywhere;
 }
 
 .anomalous-tts-import-conflict {
