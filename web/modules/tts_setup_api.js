@@ -15,6 +15,10 @@ const IMPORT_KINDS = {
     '.txt': 'text', '.list': 'text',
 };
 const FORBIDDEN_IN_EMOTION = /[{}[\]]/;
+// GPT-SoVITS reference clips must be 3–10 s (the node refuses others as a main voice).
+export const REF_MIN_SEC = 3;
+export const REF_MAX_SEC = 10;
+const EPOCH = { gpt: /-e(\d+)/i, sovits: /_e(\d+)(?:_s(\d+))?/i };
 
 /** gpt | sovits | audio | text | null — the node checks again; this only avoids uploading unusable files. */
 export function importKind(name) {
@@ -134,14 +138,57 @@ export function buildImportBody({ target = null, library = '', character = '', r
     return body;
 }
 
-/** First reason the form cannot be sent, as [locale key, params], or null. */
-export function importProblem({ target = null, character = '', rows, uploading = 0 }) {
+/** Training epoch in a weight file name (`X-e15.ckpt`, `X_e16_s224.pth`), or -1. */
+export function weightEpoch(name, kind) {
+    const m = EPOCH[kind]?.exec(String(name || ''));
+    return m ? Number(m[1]) * 1e6 + Number(m[2] || 0) : -1;
+}
+
+/**
+ * A form holds one GPT and one SoVITS weight. From files added together, keep the
+ * latest epoch of each kind. Returns { skip: Set of indexes, kept: [{ kind, name, others }] }.
+ */
+export function pickWeights(items) {
+    const skip = new Set();
+    const kept = [];
+    for (const kind of ['gpt', 'sovits']) {
+        const candidates = items.map((item, index) => ({ ...item, index })).filter(item => item.kind === kind);
+        if (candidates.length < 2) continue;
+        const best = candidates.reduce((a, b) => (weightEpoch(b.name, kind) > weightEpoch(a.name, kind) ? b : a));
+        candidates.forEach(item => { if (item !== best) skip.add(item.index); });
+        kept.push({ kind, name: best.name, others: candidates.length - 1 });
+    }
+    return { skip, kept };
+}
+
+/** Does a new character name clash with existing ones? exact | variant (`name/…` versions) | null. */
+export function nameConflict(name, existing) {
+    const wanted = String(name || '').trim();
+    if (!wanted) return null;
+    if (existing.includes(wanted)) return { kind: 'exact', name: wanted };
+    const variants = existing.filter(other => other.startsWith(`${wanted}/`));
+    return variants.length ? { kind: 'variant', name: wanted, variants } : null;
+}
+
+export function usableAsReference(seconds) {
+    return seconds === undefined || (seconds >= REF_MIN_SEC && seconds <= REF_MAX_SEC);
+}
+
+/**
+ * First reason the form cannot be sent, as [locale key, params], or null. Rows may
+ * carry the node's inspect result (`supported`, `version`) for SoVITS weights.
+ */
+export function importProblem({ target = null, character = '', rows, uploading = 0, conflict = null }) {
     if (!rows.length) return ['ttsImportNoFiles', {}];
     if (uploading) return ['ttsImportStillUploading', { count: uploading }];
     if (!target) {
         if (!character.trim()) return ['ttsImportNameMissing', {}];
+        if (conflict?.kind === 'exact') return ['ttsImportNameTaken', { name: conflict.name }];
+        if (conflict?.kind === 'variant') return ['ttsImportNameTakenVariant', { name: conflict.name, variants: conflict.variants.join('、') }];
         if (!rows.some(row => row.kind === 'gpt') || !rows.some(row => row.kind === 'sovits')) return ['ttsImportWeightsMissing', {}];
     }
+    const unsupported = rows.find(row => row.kind === 'sovits' && row.supported === false);
+    if (unsupported) return ['ttsImportUnsupportedBlock', { file: unsupported.name, version: unsupported.version || '?' }];
     const seen = new Set();
     for (const row of rows) {
         if (row.kind !== 'audio' || !row.emotion) continue;

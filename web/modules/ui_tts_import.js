@@ -1,8 +1,10 @@
 import { t } from './interface_settings.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert } from './ui_dialog.js';
-import { loadGptSovitsStatus } from './audio_engines.js';
-import { buildImportBody, commitImport, discardUploads, importKind, importProblem, inspectImport, uploadFile } from './tts_setup_api.js';
+import { loadEngine, loadGptSovitsStatus } from './audio_engines.js';
+import {
+    buildImportBody, commitImport, discardUploads, importKind, importProblem, inspectImport, nameConflict, pickWeights, uploadFile, usableAsReference,
+} from './tts_setup_api.js';
 import { PICKER_OVERLAY_CLASS, formatSize, pickServerPath } from './ui_tts_path_picker.js';
 
 /**
@@ -82,10 +84,14 @@ export function bindTtsFileDrop(root, onDrop) {
 }
 
 /** Open the import form. `onDone(character)` runs after the node created or updated it. */
-export async function openTtsImport({ files = [], target = null, onDone } = {}) {
+export async function openTtsImport({ files = [], target: initialTarget = null, onDone } = {}) {
     let status;
+    let existing = [];
     try {
-        status = await loadGptSovitsStatus();
+        [status, existing] = await Promise.all([
+            loadGptSovitsStatus(),
+            loadEngine('gpt_sovits').then(result => result.groups.map(group => group.character)),
+        ]);
     } catch (e) {
         await anomalousAlert(t('ttsSetupFailed', { error: e.message || String(e) }));
         return;
@@ -96,19 +102,22 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         return;
     }
     const libraries = status.libraries.filter(lib => lib.writable);
-    if (!target && !libraries.length) {
+    if (!initialTarget && !libraries.length) {
         await anomalousAlert(t('ttsImportNoLibrary'));
         return;
     }
+    const defaultLibrary = (libraries.find(lib => lib.source === 'default') || libraries[0])?.path || '';
 
     activeScope?.dispose();
     const scope = createViewScope();
     activeScope = scope;
     const rows = [];
+    let target = initialTarget;
     let committed = false;
     let referenceKey = null;
     let referenceChosen = Boolean(target); // adding files never replaces the main voice unless asked
     let nameEdited = false;
+    let conflict = null;
     let inspectTimer = null;
     let inspectToken = 0;
     let player = null;
@@ -138,64 +147,98 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         close();
     }, true);
 
-    // ---- header, target ----
+    // ---- header ----
     const header = el('div', 'anomalous-voice-modal-header');
     const heading = el('div', 'anomalous-voice-modal-heading');
-    heading.append(
-        el('div', 'anomalous-voice-modal-title', target ? t('ttsImportAddTitle', { name: target }) : t('ttsImportTitle')),
-        el('div', 'anomalous-voice-modal-subtitle', t(target ? 'ttsImportAddSubtitle' : 'ttsImportSubtitle')),
-    );
+    const title = el('div', 'anomalous-voice-modal-title');
+    const subtitle = el('div', 'anomalous-voice-modal-subtitle');
+    heading.append(title, subtitle);
     header.append(heading, button('anomalous-voice-modal-close', '×', close, t('close')));
 
+    // ---- name, where it goes ----
     const nameInput = input('anomalous-uploader-input', t('ttsImportNamePlaceholder'));
-    nameInput.oninput = () => { nameEdited = true; syncNote(); };
+    const nameField = el('label', 'anomalous-voice-field');
+    nameField.append(el('span', 'anomalous-voice-field-label', t('ttsImportName')), nameInput);
+    const conflictLine = el('div', 'anomalous-tts-import-conflict');
     const librarySelect = el('select', 'anomalous-uploader-input');
     for (const lib of libraries) {
         const option = el('option', '', t('ttsImportLibraryOption', { path: lib.path, count: lib.characters }));
         option.value = lib.path;
         librarySelect.append(option);
     }
-    librarySelect.onchange = () => syncNote();
-    const targetBox = el('div', 'anomalous-tts-import-target');
-    if (!target) {
-        const nameField = el('label', 'anomalous-voice-field');
-        nameField.append(el('span', 'anomalous-voice-field-label', t('ttsImportName')), nameInput);
-        const libField = el('label', 'anomalous-voice-field');
-        libField.append(el('span', 'anomalous-voice-field-label', t('ttsImportLibrary')), librarySelect);
-        targetBox.append(nameField, libField);
-    }
+    librarySelect.value = defaultLibrary;
+    librarySelect.hidden = true; // one standard place; shown only when asked for
+    const saveTo = el('span', 'anomalous-tts-hint');
+    const changeLocation = button('anomalous-tts-link', t('ttsImportChangeLocation'), () => {
+        librarySelect.hidden = false;
+        changeLocation.hidden = true;
+        librarySelect.focus();
+    });
+    changeLocation.hidden = libraries.length < 2;
+    const saveLine = el('div', 'anomalous-tts-import-saveto');
+    saveLine.append(saveTo, changeLocation);
+    const nameBlock = el('div', 'anomalous-tts-import-target');
+    nameBlock.append(nameField, conflictLine, saveLine, librarySelect);
 
-    // ---- sources ----
+    const syncSaveTo = () => {
+        saveTo.textContent = t('ttsImportSaveTo', { path: `${librarySelect.value}/${nameInput.value.trim() || '…'}` });
+    };
+    const syncConflict = () => {
+        conflict = target ? null : nameConflict(nameInput.value, existing);
+        conflictLine.replaceChildren();
+        if (!conflict) return;
+        if (conflict.kind === 'exact') {
+            conflictLine.append(el('span', '', t('ttsImportNameTaken', { name: conflict.name })),
+                button('anomalous-tts-link', t('ttsImportSwitchToAdd'), () => switchToAdd(conflict.name)));
+        } else {
+            conflictLine.append(el('span', '', t('ttsImportNameTakenVariant', { name: conflict.name, variants: conflict.variants.join('、') })));
+        }
+    };
+    nameInput.oninput = () => { nameEdited = true; syncSaveTo(); syncConflict(); };
+    librarySelect.onchange = syncSaveTo;
+
+    // ---- adding files ----
     const fileInput = el('input');
     fileInput.type = 'file';
     fileInput.multiple = true;
-    fileInput.accept = ACCEPT;
     fileInput.hidden = true;
     fileInput.onchange = () => { addBrowserFiles([...fileInput.files]); fileInput.value = ''; };
-    const dropzone = el('div', 'anomalous-audio-dropzone anomalous-tts-import-drop');
-    const pickLocal = button('anomalous-tts-add', t('ttsImportPickLocal'), async (e) => {
-        e.stopPropagation();
-        const paths = await pickServerPath({ mode: 'files', title: t('ttsImportPickLocal'), hint: t('ttsImportPickLocalHint') });
+    const chooseBrowser = (accept) => { fileInput.accept = accept; fileInput.click(); };
+    const chooseLocal = async (kinds) => {
+        const paths = await pickServerPath({ mode: 'files', title: t('ttsImportPickLocal'), hint: t('ttsImportPickLocalHint'), kinds });
         if (paths && !scope.signal.aborted) addPaths(paths);
-    });
-    const pickBrowser = button('anomalous-tts-add', t('ttsImportPickFiles'), (e) => { e.stopPropagation(); fileInput.click(); });
-    const dropButtons = el('div', 'anomalous-tts-setup-actions');
-    dropButtons.append(pickBrowser, pickLocal);
-    dropzone.append(el('div', 'anomalous-audio-dropzone-hint', t('ttsImportDropHint')),
-        el('div', 'anomalous-audio-dropzone-formats', t('ttsImportDropFormats')), dropButtons, fileInput);
-    dropzone.ondragover = (e) => { e.preventDefault(); dropzone.classList.add('dragover'); };
-    dropzone.ondragleave = () => dropzone.classList.remove('dragover');
-    dropzone.ondrop = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dropzone.classList.remove('dragover');
-        addBrowserFiles([...(e.dataTransfer?.files || [])]);
+    };
+    const addBar = el('div', 'anomalous-tts-import-addbar');
+    const addButtons = el('div', 'anomalous-tts-setup-actions');
+    addButtons.append(button('anomalous-tts-add', t('ttsImportPickFiles'), () => chooseBrowser(ACCEPT)),
+        button('anomalous-tts-add', t('ttsImportPickLocal'), () => chooseLocal(null)));
+    addBar.append(el('span', 'anomalous-tts-hint', t('ttsImportDropHint')), addButtons, fileInput);
+
+    /** A labelled section holding rows of some kinds, with an empty placeholder and its own pick buttons. */
+    function section(label, kind, accept, emptyText) {
+        const box = el('div', `anomalous-tts-import-section is-${kind}`);
+        const head = el('div', 'anomalous-tts-import-section-head');
+        const pick = el('span', 'anomalous-tts-import-section-pick');
+        pick.append(button('anomalous-tts-link', t('ttsImportPick'), () => chooseBrowser(accept)),
+            button('anomalous-tts-link', t('ttsImportPickHere'), () => chooseLocal([kind])));
+        head.append(el('span', 'anomalous-voice-field-label', label), pick);
+        const list = el('div', 'anomalous-tts-import-list');
+        const empty = el('div', 'anomalous-tts-import-empty', emptyText);
+        box.append(head, list, empty);
+        return { box, list, empty };
+    }
+    const sections = {
+        gpt: section(t('ttsImportSlotGpt'), 'gpt', '.ckpt', t('ttsImportSlotEmpty')),
+        sovits: section(t('ttsImportSlotSovits'), 'sovits', '.pth', t('ttsImportSlotEmpty')),
+        audio: section(t('ttsImportSlotAudio'), 'audio', '.wav,.flac,.ogg,.mp3', t('ttsImportAudioEmpty')),
+        text: section(t('ttsImportSlotText'), 'text', '.txt,.list', t('ttsImportTextEmpty')),
+    };
+    const syncSections = () => {
+        for (const [kind, sec] of Object.entries(sections)) sec.empty.hidden = rows.some(row => row.kind === kind);
     };
 
-    const list = el('div', 'anomalous-tts-import-list');
-    const skipped = el('div', 'anomalous-tts-hint');
+    const notes = el('div', 'anomalous-tts-hint');
     const problems = el('div', 'anomalous-tts-import-problems');
-
     const languageSelect = el('select', 'anomalous-uploader-input');
     const languageField = el('label', 'anomalous-voice-field anomalous-tts-import-language');
     languageField.append(el('span', 'anomalous-voice-field-label', t('ttsImportLanguage')), languageSelect);
@@ -210,12 +253,6 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         languageSelect.value = keep;
     };
     fillLanguages(null);
-    const note = el('div', 'anomalous-tts-hint');
-    const syncNote = () => {
-        note.textContent = target ? t('ttsImportAddNote', { name: target })
-            : t('ttsImportNote', { path: `${librarySelect.value}/${nameInput.value.trim() || '…'}` });
-    };
-    syncNote();
 
     // ---- rows ----
     const readyRows = () => rows.filter(row => row.spec && !row.error);
@@ -233,14 +270,20 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         if (info.version) parts.push(info.supported ? info.version : t('ttsImportUnsupported', { version: info.version }));
         if (info.seconds !== undefined) parts.push(t('ttsImportSeconds', { seconds: info.seconds }));
         row.els.meta.textContent = parts.join(' · ');
+        row.els.root.classList.toggle('is-unsupported', info.supported === false);
+        row.els.root.classList.toggle('is-out-of-range', !usableAsReference(info.seconds));
     }
 
     function syncReference() {
         for (const row of rows) {
             if (!row.els.main) continue;
+            const usable = usableAsReference(row.info?.seconds);
+            if (!usable && referenceKey === row.key) referenceKey = null;
             const on = row.key === referenceKey;
             row.els.main.setAttribute('aria-pressed', String(on));
             row.els.main.classList.toggle('active', on);
+            row.els.main.disabled = !usable;
+            row.els.main.title = usable ? t('ttsImportMainTitle') : t('ttsImportOutOfRange');
             row.els.emotion.disabled = on;
         }
     }
@@ -252,6 +295,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         rows.splice(rows.indexOf(row), 1);
         row.els.root.remove();
         if (referenceKey === row.key) referenceKey = null;
+        syncSections();
         scheduleInspect();
     }
 
@@ -262,8 +306,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         const name = el('span', 'anomalous-tts-picker-name', row.name);
         name.title = row.path || row.name;
         row.els = { root, meta: el('span', 'anomalous-tts-picker-meta'), state: el('span', 'anomalous-tts-import-state') };
-        line.append(el('span', 'anomalous-tts-kind', t(`ttsKind_${row.kind}`)), name, row.els.meta, row.els.state,
-            button('anomalous-tts-remove', '×', () => removeRow(row), t('ttsEditorRemove')));
+        line.append(name, row.els.meta, row.els.state, button('anomalous-tts-remove', '×', () => removeRow(row), t('ttsEditorRemove')));
         root.append(line);
         if (row.kind === 'audio') {
             const audio = el('div', 'anomalous-tts-import-audio');
@@ -291,40 +334,47 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         return root;
     }
 
+    /** GPT and SoVITS hold one file each: a new one replaces the old. Other kinds skip duplicates. */
     function addRow(fields) {
-        const duplicate = rows.some(row => row.kind === fields.kind && row.name.toLowerCase() === fields.name.toLowerCase());
-        if (duplicate) return null;
+        if (fields.kind === 'gpt' || fields.kind === 'sovits') {
+            const old = rows.find(row => row.kind === fields.kind);
+            if (old) removeRow(old);
+        } else if (rows.some(row => row.kind === fields.kind && row.name.toLowerCase() === fields.name.toLowerCase())) {
+            return null;
+        }
         const row = { key: nextKey++, progress: 0, emotion: '', text: '', textEdited: false, uploadId: null,
             spec: null, error: '', info: null, controller: new AbortController(), ...fields };
         rows.push(row);
-        list.append(buildRow(row));
+        sections[row.kind].list.append(buildRow(row));
+        syncSections();
         return row;
     }
 
-    function reportSkipped(names) {
-        skipped.textContent = names.length ? t('ttsImportSkipped', { files: names.join(', ') }) : '';
+    /** Sort a batch by kind, keep the latest epoch of each weight kind, and say what was left out. */
+    function addBatch(items, add) {
+        const known = items.map(item => ({ ...item, kind: importKind(item.name) }));
+        const { skip, kept } = pickWeights(known);
+        const bad = [];
+        known.forEach((item, index) => {
+            if (skip.has(index)) return;
+            if (!item.kind || !add(item)) bad.push(item.name);
+        });
+        const lines = kept.map(k => t('ttsImportKeptBest', { kind: t(`ttsKind_${k.kind}`), file: k.name, count: k.others }));
+        if (bad.length) lines.push(t('ttsImportSkipped', { files: bad.join(', ') }));
+        notes.textContent = lines.join(' ');
     }
 
     function addBrowserFiles(fileList) {
-        const bad = [];
-        for (const file of fileList) {
-            const kind = importKind(file.name);
-            const row = kind ? addRow({ name: file.name, kind, size: file.size, file }) : null;
-            if (!row) { bad.push(file.name); continue; }
-            uploads = uploads.then(() => upload(row));
-        }
-        reportSkipped(bad);
+        addBatch(fileList.map(file => ({ name: file.name, file })), (item) => {
+            const row = addRow({ name: item.name, kind: item.kind, size: item.file.size, file: item.file });
+            if (row) uploads = uploads.then(() => upload(row));
+            return row;
+        });
     }
 
     function addPaths(paths) {
-        const bad = [];
-        for (const path of paths) {
-            const name = path.split('/').pop();
-            const kind = importKind(name);
-            const row = kind ? addRow({ name, kind, size: 0, path, spec: { path } }) : null;
-            if (!row) bad.push(name);
-        }
-        reportSkipped(bad);
+        addBatch(paths.map(path => ({ name: path.split('/').pop(), path })),
+            (item) => addRow({ name: item.name, kind: item.kind, size: 0, path: item.path, spec: { path: item.path } }));
         scheduleInspect();
     }
 
@@ -371,7 +421,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
                 }
             });
             const { suggested } = result;
-            if (!target && !nameEdited && suggested.name) { nameInput.value = suggested.name; syncNote(); }
+            if (!target && !nameEdited && suggested.name) { nameInput.value = suggested.name; syncSaveTo(); syncConflict(); }
             if (!referenceChosen) referenceKey = suggested.reference !== null ? ready[suggested.reference]?.key ?? null : null;
             syncReference();
             fillLanguages(suggested.language);
@@ -382,12 +432,14 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         }
     }
 
-    // ---- footer ----
-    const footer = el('div', 'anomalous-voice-modal-footer');
-    const submit = button('anomalous-voice-modal-submit', t(target ? 'ttsImportAddSubmit' : 'ttsImportSubmit'), async () => {
+    // ---- mode: new character, or add to one ----
+    const submit = button('anomalous-voice-modal-submit', '', async () => {
         const ready = readyRows();
         const pending = rows.filter(row => !row.spec && !row.error).length;
-        const problem = importProblem({ target, character: nameInput.value, rows: ready, uploading: pending });
+        const problem = importProblem({
+            target, character: nameInput.value, uploading: pending, conflict,
+            rows: ready.map(row => ({ kind: row.kind, name: row.name, emotion: row.emotion, supported: row.info?.supported, version: row.info?.version })),
+        });
         if (problem) {
             await anomalousAlert(t(problem[0], problem[1]));
             return;
@@ -410,13 +462,50 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
             if (!scope.signal.aborted) submit.disabled = false;
         }
     });
-    footer.append(button('anomalous-voice-modal-cancel', t('dialogCancel'), close), submit);
 
+    function syncMode() {
+        title.textContent = target ? t('ttsImportAddTitle', { name: target }) : t('ttsImportTitle');
+        subtitle.textContent = t(target ? 'ttsImportAddSubtitle' : 'ttsImportSubtitle');
+        submit.textContent = t(target ? 'ttsImportAddSubmit' : 'ttsImportSubmit');
+        nameBlock.hidden = Boolean(target);
+        syncConflict();
+    }
+
+    /** The name belongs to an existing character: add these files to it instead. */
+    function switchToAdd(name) {
+        target = name;
+        referenceKey = null; // do not replace its main voice unless the user picks one again
+        referenceChosen = true;
+        syncReference();
+        syncMode();
+    }
+
+    // Files can be dropped anywhere on the form; each goes to its section by kind.
+    modal.addEventListener('dragover', (e) => {
+        if (![...(e.dataTransfer?.types || [])].includes('Files')) return;
+        e.preventDefault();
+        modal.classList.add('is-dragover');
+    });
+    modal.addEventListener('dragleave', (e) => { if (!modal.contains(e.relatedTarget)) modal.classList.remove('is-dragover'); });
+    modal.addEventListener('drop', (e) => {
+        if (![...(e.dataTransfer?.types || [])].includes('Files')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        modal.classList.remove('is-dragover');
+        addBrowserFiles([...e.dataTransfer.files]);
+    });
+
+    const footer = el('div', 'anomalous-voice-modal-footer');
+    footer.append(button('anomalous-voice-modal-cancel', t('dialogCancel'), close), submit);
     const body = el('div', 'anomalous-tts-editor-body');
-    body.append(targetBox, dropzone, skipped, list, languageField, problems, note);
+    body.append(nameBlock, addBar, notes, sections.gpt.box, sections.sovits.box, sections.audio.box, sections.text.box,
+        languageField, problems);
     modal.append(header, body, footer);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
+    syncSaveTo();
+    syncMode();
+    syncSections();
     addBrowserFiles(files);
-    (target ? pickBrowser : nameInput).focus();
+    (target ? submit : nameInput).focus();
 }

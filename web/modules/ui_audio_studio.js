@@ -637,7 +637,16 @@ export async function renderAudioStudio(container, { filter = null, owner = null
     const onChanged = () => { rerender(); if (owner) renderAudioSidebar(owner); };
     const canImport = Boolean(ttsStatus) && ttsStatus.local !== false;
     if (ttsStatus) {
-        const onImport = (options = {}) => openTtsImport({ ...options, onDone: onChanged });
+        // After an import, redraw and point at the character so the next step (drag it) is obvious.
+        const onDone = (character) => {
+            if (owner) renderAudioSidebar(owner);
+            rerender().then(() => {
+                const card = [...container.querySelectorAll('[data-tts-character]')].find(c => c.dataset.ttsCharacter === character?.name);
+                card?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                card?.classList.add('is-just-added');
+            });
+        };
+        const onImport = (options = {}) => openTtsImport({ ...options, onDone });
         studioWrapper.insertBefore(renderTtsSetup(ttsStatus, { onChanged, onImport: () => onImport() }), studioWrapper.lastChild);
         if (canImport) bindTtsFileDrop(studioWrapper, (files, target) => onImport({ files, target }));
     }

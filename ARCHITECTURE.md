@@ -155,7 +155,9 @@ DOM or live LiteGraph state.
   `setupSummary`); no DOM. `ui_tts_setup.js` is the setup card at the top of the
   GPT-SoVITS studio (polls the status only while a download runs and it is in the
   page). `ui_tts_import.js` is the import form (new character or `target` = add
-  files; rows are built once and updated in place; closing discards unfinished
+  files, switchable when the name already exists; one GPT and one SoVITS slot,
+  the latest epoch kept from a batch; the save location stays folded unless asked
+  for; rows are built once and updated in place; closing discards unfinished
   uploads) and `bindTtsFileDrop`, which turns OS file drops on the studio or a card
   into that form. `ui_tts_path_picker.js` picks server-side folders or files
   through the node's browse route, since the browser cannot see local paths.
