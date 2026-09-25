@@ -174,7 +174,27 @@ async function loadGroups(engineId) {
 export function invalidateEngineCache({ rescan = false } = {}) {
     loadCache.clear();
     installCache = null;
+    statusCache = null;
     if (rescan) rescanNext = true;
+}
+
+let statusCache = null; // { at, promise } — GPT-SoVITS setup status
+
+/**
+ * The GPT-SoVITS node's setup status (libraries, pretrained files, packages; interface v3),
+ * or null for a node that predates it (no `/anomalous_tts/status`). Cached like loadEngine;
+ * `force` skips the cache (download progress polling).
+ */
+export function loadGptSovitsStatus({ force = false } = {}) {
+    if (!force && fresh(statusCache)) return statusCache.promise;
+    const promise = getJson('/anomalous_tts/status').then(({ ok, status, data }) => {
+        if (status === 404) return null;
+        if (!ok || !data) throw new Error(`HTTP ${status}`);
+        return data;
+    });
+    statusCache = { at: Date.now(), promise };
+    promise.catch(() => { if (statusCache?.promise === promise) statusCache = null; });
+    return promise;
 }
 
 /**

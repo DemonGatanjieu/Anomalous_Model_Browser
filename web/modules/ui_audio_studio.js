@@ -5,8 +5,10 @@ import { stopGalleryAudio } from './ui_audio_gallery.js';
 import { openAudioUploaderModal } from './ui_audio_uploader.js';
 import { getActiveAudioFilter, renderAudioSidebar, setActiveAudioFilter } from './ui_audio_sidebar.js';
 import { AUDIO_NODE_TARGETS, alignedVoiceValue, planVoiceDrop } from './audio_node_targets.js';
-import { AUDIO_ENGINES, detectEngines, engineById, engineTargetLabels, getStoredEngine, invalidateEngineCache, loadEngine, pickEngine, setStoredEngine } from './audio_engines.js';
+import { AUDIO_ENGINES, detectEngines, engineById, engineTargetLabels, getStoredEngine, invalidateEngineCache, loadEngine, loadGptSovitsStatus, pickEngine, setStoredEngine } from './audio_engines.js';
 import { openGptSovitsEditor } from './ui_audio_tts_editor.js';
+import { renderTtsSetup } from './ui_tts_setup.js';
+import { bindTtsFileDrop, openTtsImport } from './ui_tts_import.js';
 import { bindMaterialDrag } from './material_drag.js';
 import {
     openScriptDirector,
@@ -263,10 +265,11 @@ function renderSliceRow(slice, owner) {
     return row;
 }
 
-function renderCharacterCard(group, owner, { onChanged } = {}) {
+function renderCharacterCard(group, owner, { onChanged, canImport = false } = {}) {
     const isTts = group.engine === 'gpt_sovits';
     const card = document.createElement('div');
     card.className = 'anomalous-character-voice-card';
+    if (isTts && canImport && !group.error) card.dataset.ttsCharacter = group.character; // file drop target
 
     const header = document.createElement('div');
     header.className = 'anomalous-character-voice-header';
@@ -314,6 +317,11 @@ function renderCharacterCard(group, owner, { onChanged } = {}) {
         const edit = createToolButton(SVG.EDIT, t('ttsEditorOpen'), 'is-compact');
         edit.onclick = () => openGptSovitsEditor(group, { onSaved: () => onChanged?.() });
         headerRight.append(edit);
+        if (canImport) {
+            const add = createToolButton(SVG.PLUS, t('ttsImportAddOpen'), 'is-compact');
+            add.onclick = () => openTtsImport({ target: group.character, onDone: () => onChanged?.() });
+            headerRight.append(add);
+        }
     }
     headerRight.append(countBadge);
     header.append(titleGroup, headerRight);
@@ -614,7 +622,9 @@ export async function renderAudioStudio(container, { filter = null, owner = null
         studioWrapper.lastChild.replaceWith(renderInstallCard(engine));
         return;
     }
-    const result = await loadEngine(engineId);
+    // The setup status only exists for GPT-SoVITS nodes with interface v3 (null otherwise).
+    const statusRequest = engineId === 'gpt_sovits' ? loadGptSovitsStatus().catch(() => null) : null;
+    const [result, ttsStatus] = await Promise.all([loadEngine(engineId), statusRequest]);
     if (renderTokens.get(container) !== token) return;
     if (result.error) {
         studioWrapper.lastChild.replaceWith(renderStatus('anomalous-audio-status is-error', t('audioLoadFailed', { error: result.error })));
@@ -624,6 +634,14 @@ export async function renderAudioStudio(container, { filter = null, owner = null
     updateScriptDirectorVoices(characters, characterFilter?.value || null, engineId);
     if (!installed) studioWrapper.insertBefore(renderInstallCard(engine, { compact: true }), studioWrapper.lastChild);
 
+    const onChanged = () => { rerender(); if (owner) renderAudioSidebar(owner); };
+    const canImport = Boolean(ttsStatus) && ttsStatus.local !== false;
+    if (ttsStatus) {
+        const onImport = (options = {}) => openTtsImport({ ...options, onDone: onChanged });
+        studioWrapper.insertBefore(renderTtsSetup(ttsStatus, { onChanged, onImport: () => onImport() }), studioWrapper.lastChild);
+        if (canImport) bindTtsFileDrop(studioWrapper, (files, target) => onImport({ files, target }));
+    }
+
     if (characterFilter) {
         characters = characters.filter(group => group.group === characterFilter.value);
     }
@@ -632,7 +650,6 @@ export async function renderAudioStudio(container, { filter = null, owner = null
         studioWrapper.lastChild.replaceWith(renderEmptyGuide(engineId));
         return;
     }
-    const onChanged = () => { rerender(); if (owner) renderAudioSidebar(owner); };
-    characters.forEach(group => grid.appendChild(renderCharacterCard(group, owner, { onChanged })));
+    characters.forEach(group => grid.appendChild(renderCharacterCard(group, owner, { onChanged, canImport })));
     studioWrapper.lastChild.replaceWith(grid);
 }

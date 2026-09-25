@@ -134,10 +134,12 @@ DOM or live LiteGraph state.
   voice-group shape (`node_value` = what the node's voice widget takes), so cards,
   sidebar and Script Director share one implementation. A missing engine stays in
   the switch marked "not installed" with install steps; nothing else depends on it.
-  GPT-SoVITS data comes only from the node's HTTP contract, version 2
-  (`/anomalous_tts/characters`, `/audio`, `/settings`; the node repo's
-  `docs/INTERFACE.md`, mirrored as the project doc `anomalous-tts-interface.md`);
-  Anomalous never reads or writes its model folders. The character list is a
+  GPT-SoVITS data comes only from the node's HTTP contract, version 3
+  (`/anomalous_tts/characters`, `/audio`, `/settings`, `/status`, the library,
+  pretrained, browse and import routes; the node repo's `docs/INTERFACE.md`,
+  mirrored as the project doc `anomalous-tts-interface.md`); Anomalous never
+  reads or writes its model folders. `loadGptSovitsStatus` caches the setup status
+  with the engine data (null for a node without v3, which hides setup and import). The character list is a
   summary without file lists; `fetchGptSovitsCharacter` gets one character's files.
   Engine presence and loaded voice groups are cached (`MAX_AGE_MS`) so re-renders
   from sidebar clicks, domain switches and the studio + sidebar pair cost no
@@ -147,6 +149,16 @@ DOM or live LiteGraph state.
   `ui_audio_tts_editor.js` edits a character's emotion references through that API:
   it opens at once, loads the character's audio list in the background (save waits
   for it), and keeps settings fields it does not know.
+  `tts_setup_api.js` holds the other v3 calls (libraries, pretrained sources and
+  downloads, folder browse, chunked upload, inspect, commit, discard) and the pure
+  import-form rules (`importKind`, `buildImportBody`, `importProblem`,
+  `setupSummary`); no DOM. `ui_tts_setup.js` is the setup card at the top of the
+  GPT-SoVITS studio (polls the status only while a download runs and it is in the
+  page). `ui_tts_import.js` is the import form (new character or `target` = add
+  files; rows are built once and updated in place; closing discards unfinished
+  uploads) and `bindTtsFileDrop`, which turns OS file drops on the studio or a card
+  into that form. `ui_tts_path_picker.js` picks server-side folders or files
+  through the node's browse route, since the browser cannot see local paths.
 - `audio_node_targets.js` is the single table of canvas nodes the audio studio
   writes into and what each takes: F5-TTS (`F5TTSAudio`, `F5TTSAudioAdvanced`,
   `F5TTSAudioFromModel`) takes a whole character (main voice in `sample`,

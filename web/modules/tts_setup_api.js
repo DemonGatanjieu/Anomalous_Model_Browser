@@ -1,0 +1,164 @@
+import { invalidateEngineCache } from './audio_engines.js';
+
+/**
+ * GPT-SoVITS setup and import through the Anomalous_TTS node (interface v3, §5.2–5.3).
+ * The node owns every file: character libraries, pretrained files and imported
+ * characters. This module only calls its API and holds the pure rules the import
+ * form needs; it has no DOM.
+ */
+
+export const UPLOAD_CHUNK = 8 * 1024 * 1024; // under ComfyUI's default 100 MB request limit
+
+const IMPORT_KINDS = {
+    '.ckpt': 'gpt', '.pth': 'sovits',
+    '.wav': 'audio', '.flac': 'audio', '.ogg': 'audio', '.mp3': 'audio',
+    '.txt': 'text', '.list': 'text',
+};
+const FORBIDDEN_IN_EMOTION = /[{}[\]]/;
+
+/** gpt | sovits | audio | text | null — the node checks again; this only avoids uploading unusable files. */
+export function importKind(name) {
+    const dot = String(name || '').lastIndexOf('.');
+    return dot < 0 ? null : IMPORT_KINDS[String(name).slice(dot).toLowerCase()] || null;
+}
+
+async function request(url, { method = 'POST', body, raw, signal, keepalive } = {}) {
+    const headers = raw ? { 'Content-Type': 'application/octet-stream' } : body !== undefined ? { 'Content-Type': 'application/json' } : undefined;
+    const resp = await fetch(url, {
+        method, signal, keepalive, headers,
+        body: raw ?? (body !== undefined ? JSON.stringify(body) : undefined),
+    });
+    const text = await resp.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch (_) { /* plain-text error message */ }
+    if (!resp.ok) {
+        const error = new Error(data?.error || text || `HTTP ${resp.status}`);
+        error.status = resp.status;
+        error.data = data;
+        throw error;
+    }
+    return data;
+}
+
+// ---------- libraries, pretrained files ----------
+
+/** Add (or remove) a character library. Returns the new status. */
+export async function changeLibrary(path, remove = false) {
+    const status = await request('/anomalous_tts/libraries', { body: { path, remove } });
+    invalidateEngineCache();
+    return status;
+}
+
+/** Use (or stop using) a GPT-SoVITS package as a pretrained source. Returns the new status. */
+export async function changePretrainedSource(path, remove = false) {
+    const status = await request('/anomalous_tts/pretrained/source', { body: { path, remove } });
+    invalidateEngineCache();
+    return status;
+}
+
+/** Start background downloads; progress shows up in the status. */
+export async function startPretrainedDownload(ids) {
+    await request('/anomalous_tts/pretrained/download', { body: { ids } });
+    invalidateEngineCache();
+}
+
+export function browseFolder(path, signal) {
+    return request(`/anomalous_tts/browse${path ? `?path=${encodeURIComponent(path)}` : ''}`, { method: 'GET', signal });
+}
+
+// ---------- import ----------
+
+/**
+ * Upload one browser File in chunks. `onStart(id)` gets the upload id at once so the
+ * caller can discard it if the form is closed; a 409 resumes from what the node has.
+ */
+export async function uploadFile(file, { library, signal, onStart, onProgress } = {}) {
+    const { upload } = await request('/anomalous_tts/import/upload', { body: { name: file.name, size: file.size, library }, signal });
+    onStart?.(upload);
+    let offset = 0;
+    while (offset < file.size) {
+        try {
+            const { received } = await request(`/anomalous_tts/import/upload?upload=${upload}&offset=${offset}`, {
+                raw: file.slice(offset, offset + UPLOAD_CHUNK), signal,
+            });
+            offset = received;
+        } catch (e) {
+            if (e.status !== 409 || !Number.isInteger(e.data?.received)) throw e;
+            offset = e.data.received;
+        }
+        onProgress?.(offset / file.size);
+    }
+    return upload;
+}
+
+export function inspectImport(files, signal) {
+    return request('/anomalous_tts/import/inspect', { body: { files }, signal });
+}
+
+/** Not tied to the form's AbortSignal: closing the form must not pretend to cancel a write. */
+export async function commitImport(body) {
+    const result = await request('/anomalous_tts/import/commit', { body });
+    invalidateEngineCache();
+    return result.character;
+}
+
+/** Fire and forget; `keepalive` lets it finish while the page is closing. */
+export function discardUploads(ids) {
+    if (!ids.length) return;
+    request('/anomalous_tts/import/discard', { body: { uploads: ids }, keepalive: true }).catch(() => {});
+}
+
+/**
+ * The commit request for the import form. `rows` are in file order:
+ * { spec: {upload}|{path}, kind, emotion, text }. `language` '' = let the node decide.
+ */
+export function buildImportBody({ target = null, library = '', character = '', rows, referenceIndex = null, language = '' }) {
+    const settings = {};
+    if (language) settings.language = language;
+    const main = referenceIndex !== null ? rows[referenceIndex] : null;
+    if (main?.kind === 'audio') {
+        settings.reference = { file: referenceIndex };
+        if (main.text) settings.reference.text = main.text;
+        if (language) settings.reference.language = language;
+    }
+    const emotions = {};
+    rows.forEach((row, index) => {
+        if (row.kind !== 'audio' || index === referenceIndex || !row.emotion) return;
+        emotions[row.emotion] = { file: index };
+        if (row.text) emotions[row.emotion].text = row.text;
+    });
+    if (Object.keys(emotions).length) settings.emotions = emotions;
+    const body = { files: rows.map(row => row.spec), settings };
+    if (target) body.target = target;
+    else Object.assign(body, { library, character });
+    return body;
+}
+
+/** First reason the form cannot be sent, as [locale key, params], or null. */
+export function importProblem({ target = null, character = '', rows, uploading = 0 }) {
+    if (!rows.length) return ['ttsImportNoFiles', {}];
+    if (uploading) return ['ttsImportStillUploading', { count: uploading }];
+    if (!target) {
+        if (!character.trim()) return ['ttsImportNameMissing', {}];
+        if (!rows.some(row => row.kind === 'gpt') || !rows.some(row => row.kind === 'sovits')) return ['ttsImportWeightsMissing', {}];
+    }
+    const seen = new Set();
+    for (const row of rows) {
+        if (row.kind !== 'audio' || !row.emotion) continue;
+        if (row.emotion === 'main' || FORBIDDEN_IN_EMOTION.test(row.emotion)) return ['ttsEditorNameInvalid', { name: row.emotion }];
+        if (seen.has(row.emotion)) return ['ttsEditorNameDuplicate', { name: row.emotion }];
+        seen.add(row.emotion);
+    }
+    return null;
+}
+
+/** Summary for the setup card: what still needs doing. */
+export function setupSummary(status) {
+    const characters = (status?.libraries || []).reduce((sum, lib) => sum + (lib.characters || 0), 0);
+    const missing = (status?.pretrained || []).filter(item => item.state !== 'ok');
+    const packages = Object.values(status?.dependencies || {}).reduce((sum, dep) => sum + (dep.missing?.length || 0), 0);
+    const downloading = missing.some(item => item.state === 'queued' || item.state === 'downloading');
+    const requiredMissing = missing.filter(item => item.required).length;
+    return { characters, missing: missing.length, requiredMissing, packages, downloading,
+        ready: characters > 0 && requiredMissing === 0 && packages === 0 };
+}

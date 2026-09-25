@@ -1,0 +1,398 @@
+/* GPT-SoVITS setup card, import form, server path picker and studio file drop.
+   Modal shell, fields, chips and buttons come from 11-audio-studio.css. */
+
+/* ---------- Setup card ---------- */
+.anomalous-tts-setup {
+    margin: 0 0 12px;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 12px;
+    background: rgba(245, 158, 11, 0.05);
+    color: #cbd5e1;
+    font-size: 12px;
+}
+
+.anomalous-tts-setup.is-ready {
+    border-color: rgba(52, 211, 153, 0.25);
+    background: rgba(52, 211, 153, 0.04);
+}
+
+.anomalous-tts-setup-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px 8px 12px;
+}
+
+.anomalous-tts-setup-toggle {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.anomalous-tts-setup-dot {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f59e0b;
+}
+
+.anomalous-tts-setup.is-ready .anomalous-tts-setup-dot {
+    background: #34d399;
+}
+
+.anomalous-tts-setup-title {
+    flex-shrink: 0;
+    color: #f1f5f9;
+    font-weight: 700;
+}
+
+.anomalous-tts-setup-summary {
+    min-width: 0;
+    overflow: hidden;
+    color: #94a3b8;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-tts-setup-chevron {
+    margin-left: auto;
+    color: #64748b;
+    transition: transform 0.15s ease;
+}
+
+.anomalous-tts-setup.is-open .anomalous-tts-setup-chevron {
+    transform: rotate(180deg);
+}
+
+.anomalous-voice-modal-submit.anomalous-tts-setup-import {
+    flex-shrink: 0;
+    padding: 5px 14px;
+    font-size: 12px;
+}
+
+.anomalous-tts-setup-body {
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px 12px 12px;
+}
+
+.anomalous-tts-setup.is-open .anomalous-tts-setup-body {
+    display: flex;
+}
+
+.anomalous-tts-setup-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anomalous-tts-setup-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 26px;
+}
+
+.anomalous-tts-setup-row.is-package {
+    flex-wrap: wrap;
+}
+
+.anomalous-tts-setup-path {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: #e2e8f0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-tts-setup-meta {
+    flex-shrink: 0;
+    color: #94a3b8;
+}
+
+.anomalous-tts-setup-command {
+    flex: 1 1 320px;
+    min-width: 0;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    color: #e2e8f0;
+    font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-tts-setup-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.anomalous-tts-setup-notice {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(248, 113, 113, 0.08);
+    color: #fca5a5;
+}
+
+.anomalous-tts-kind {
+    flex-shrink: 0;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(129, 140, 248, 0.12);
+    color: #a5b4fc;
+    font-size: 10.5px;
+    white-space: nowrap;
+}
+
+.anomalous-tts-state {
+    flex-shrink: 0;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.anomalous-tts-state.is-ok { color: #34d399; }
+.anomalous-tts-state.is-busy { color: #38bdf8; }
+.anomalous-tts-state.is-missing { color: #f59e0b; }
+.anomalous-tts-state.is-error { color: #f87171; cursor: help; }
+
+.anomalous-tts-add:disabled,
+.anomalous-tts-remove:disabled,
+.anomalous-voice-modal-submit.anomalous-tts-setup-import:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ---------- Import form ---------- */
+.anomalous-tts-import {
+    width: 720px;
+}
+
+.anomalous-tts-import-target {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+    gap: 10px;
+}
+
+.anomalous-tts-import-target:empty {
+    display: none;
+}
+
+.anomalous-tts-import-drop {
+    cursor: default;
+}
+
+.anomalous-tts-import-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anomalous-tts-import-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 7px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.anomalous-tts-import-line,
+.anomalous-tts-import-audio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+/* The play button's own display rule would override [hidden] (local paths cannot be played). */
+.anomalous-tts-import-audio [hidden] {
+    display: none;
+}
+
+.anomalous-tts-import-audio input {
+    min-width: 0;
+    padding: 5px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.25);
+    color: #e2e8f0;
+    font-size: 12px;
+}
+
+.anomalous-tts-import-audio .anomalous-tts-name-input {
+    flex: 0 0 120px;
+}
+
+.anomalous-tts-import-audio .anomalous-tts-text-input {
+    flex: 1;
+}
+
+.anomalous-tts-import-audio .anomalous-tts-name-input:disabled {
+    opacity: 0.4;
+}
+
+.anomalous-tts-import-state {
+    flex-shrink: 0;
+    margin-left: auto;
+    color: #94a3b8;
+    font-size: 11px;
+}
+
+.anomalous-tts-import-state.is-error {
+    max-width: 260px;
+    overflow: hidden;
+    color: #f87171;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-tts-import-language {
+    max-width: 260px;
+}
+
+.anomalous-tts-import-problems {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.anomalous-tts-import-problem {
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: rgba(245, 158, 11, 0.08);
+    color: #fbbf24;
+    font-size: 11.5px;
+}
+
+.anomalous-tts-import-problem.is-error {
+    background: rgba(248, 113, 113, 0.08);
+    color: #f87171;
+}
+
+@media (max-width: 600px) {
+    .anomalous-tts-import-target {
+        grid-template-columns: 1fr;
+    }
+
+    .anomalous-tts-import-audio {
+        flex-wrap: wrap;
+    }
+}
+
+/* ---------- Server path picker ---------- */
+.anomalous-tts-picker {
+    width: 620px;
+}
+
+.anomalous-tts-picker-bar {
+    display: flex;
+    gap: 6px;
+}
+
+.anomalous-tts-picker-path {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.25);
+    color: #e2e8f0;
+    font-size: 12px;
+}
+
+.anomalous-tts-picker-list {
+    display: flex;
+    flex-direction: column;
+    height: 320px;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.anomalous-tts-picker-item {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    background: none;
+    color: #e2e8f0;
+    font: inherit;
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.anomalous-tts-picker-item:hover,
+.anomalous-tts-picker-item:focus-visible {
+    background: rgba(129, 140, 248, 0.1);
+}
+
+.anomalous-tts-picker-icon {
+    display: inline-flex;
+    color: #fbbf24;
+}
+
+.anomalous-tts-picker-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-tts-picker-meta {
+    flex-shrink: 0;
+    color: #64748b;
+    font-size: 11px;
+}
+
+.anomalous-tts-hint.is-error {
+    color: #f87171;
+}
+
+/* ---------- Dropping files on the studio ---------- */
+.anomalous-audio-studio-wrapper.is-file-dragover {
+    position: relative;
+    outline: 2px dashed rgba(129, 140, 248, 0.6);
+    outline-offset: -2px;
+    border-radius: 12px;
+}
+
+.anomalous-audio-studio-wrapper.is-file-dragover::after {
+    content: attr(data-drop-hint);
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    z-index: 2;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #4f46e5;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.anomalous-character-voice-card.is-file-target {
+    outline: 2px solid #818cf8;
+    outline-offset: 1px;
+}
