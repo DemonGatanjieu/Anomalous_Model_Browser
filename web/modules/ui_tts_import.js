@@ -3,7 +3,8 @@ import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { loadEngine, loadGptSovitsStatus } from './audio_engines.js';
 import {
-    buildImportBody, commitImport, discardUploads, importKind, importProblem, inspectImport, nameConflict, pickWeights, uploadFile, usableAsReference,
+    buildImportBody, commitImport, discardUploads, importKind, importProblem, inspectImport, nameConflict, pickWeights,
+    textFromFile, uploadFile, usableAsReference,
 } from './tts_setup_api.js';
 import { PICKER_OVERLAY_CLASS, formatSize, pickServerPath } from './ui_tts_path_picker.js';
 
@@ -19,7 +20,7 @@ import { PICKER_OVERLAY_CLASS, formatSize, pickServerPath } from './ui_tts_path_
 
 let activeScope = null;
 const LANGUAGES = ['', 'ja', 'zh', 'en'];
-const ACCEPT = '.ckpt,.pth,.wav,.flac,.ogg,.mp3,.txt,.list';
+const ACCEPT = '.ckpt,.pth,.wav,.flac,.ogg,.mp3,.txt,.lab,.list';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -231,7 +232,7 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
         gpt: section(t('ttsImportSlotGpt'), 'gpt', '.ckpt', t('ttsImportSlotEmpty')),
         sovits: section(t('ttsImportSlotSovits'), 'sovits', '.pth', t('ttsImportSlotEmpty')),
         audio: section(t('ttsImportSlotAudio'), 'audio', '.wav,.flac,.ogg,.mp3', t('ttsImportAudioEmpty')),
-        text: section(t('ttsImportSlotText'), 'text', '.txt,.list', t('ttsImportTextEmpty')),
+        text: section(t('ttsImportSlotText'), 'text', '.txt,.lab,.list', t('ttsImportTextEmpty')),
     };
     const syncSections = () => {
         for (const [kind, sec] of Object.entries(sections)) sec.empty.hidden = rows.some(row => row.kind === kind);
@@ -325,13 +326,45 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
             row.els.emotion = input('anomalous-tts-name-input', t('ttsImportEmotionPlaceholder'));
             row.els.emotion.oninput = () => { row.emotion = row.els.emotion.value.trim(); };
             row.els.text = input('anomalous-tts-text-input', t('ttsImportTextPlaceholder'));
-            row.els.text.oninput = () => { row.text = row.els.text.value.trim(); row.textEdited = true; };
+            row.els.text.oninput = () => { row.text = row.els.text.value.trim(); row.textEdited = true; showSource(row, null); };
+            bindTextDrop(row);
+            row.els.source = el('div', 'anomalous-tts-import-source');
             audio.append(row.els.main, play, row.els.emotion, row.els.text);
-            root.append(audio);
+            root.append(audio, row.els.source);
         }
         renderMeta(row);
         renderState(row);
         return root;
+    }
+
+    /** Where a clip's line came from, under its text box. `source`: txt | lab | list | filename | file | none | null. */
+    function showSource(row, source, file = '') {
+        row.els.source.textContent = source ? t(`ttsTextSource_${source}`, { file }) : '';
+        row.els.source.classList.toggle('is-guess', source === 'filename');
+    }
+
+    /**
+     * A .txt / .lab / .list dropped on a clip's text box fills that clip's line: the whole
+     * file, or this clip's entry in an annotation file. Other files fall through to the form.
+     */
+    function bindTextDrop(row) {
+        const box = row.els.text;
+        box.addEventListener('dragover', (e) => { e.preventDefault(); box.classList.add('dragover'); });
+        box.addEventListener('dragleave', () => box.classList.remove('dragover'));
+        box.addEventListener('drop', async (e) => {
+            box.classList.remove('dragover');
+            const file = [...(e.dataTransfer?.files || [])].find(f => importKind(f.name) === 'text');
+            if (!file) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const line = textFromFile(await file.text(), row.name);
+            if (scope.signal.aborted) return;
+            if (line === null) { showSource(row, 'missing', file.name); return; }
+            box.value = line;
+            row.text = line;
+            row.textEdited = true;
+            showSource(row, 'file', file.name);
+        });
     }
 
     /** GPT and SoVITS hold one file each: a new one replaces the old. Other kinds skip duplicates. */
@@ -415,9 +448,10 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
                 row.info = result.files[i];
                 if (row.info.size) row.size = row.info.size;
                 renderMeta(row);
-                if (row.els.text && !row.textEdited && row.info.text) {
-                    row.text = row.info.text;
-                    row.els.text.value = row.info.text;
+                if (row.els.text && !row.textEdited) {
+                    row.text = row.info.text || '';
+                    row.els.text.value = row.text;
+                    showSource(row, row.info.text_source || 'none');
                 }
             });
             const { suggested } = result;

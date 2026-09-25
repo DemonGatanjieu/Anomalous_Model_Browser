@@ -325,6 +325,24 @@
     font-size: 12px;
 }
 
+.anomalous-tts-import-audio .anomalous-tts-text-input.dragover {
+    border-color: #818cf8;
+    background: rgba(99, 102, 241, 0.12);
+}
+
+.anomalous-tts-import-source {
+    color: #64748b;
+    font-size: 11px;
+}
+
+.anomalous-tts-import-source:empty {
+    display: none;
+}
+
+.anomalous-tts-import-source.is-guess {
+    color: #fbbf24;
+}
+
 .anomalous-tts-import-audio .anomalous-tts-name-input {
     flex: 0 0 120px;
 }

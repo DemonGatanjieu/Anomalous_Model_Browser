@@ -12,8 +12,10 @@ export const UPLOAD_CHUNK = 8 * 1024 * 1024; // under ComfyUI's default 100 MB r
 const IMPORT_KINDS = {
     '.ckpt': 'gpt', '.pth': 'sovits',
     '.wav': 'audio', '.flac': 'audio', '.ogg': 'audio', '.mp3': 'audio',
-    '.txt': 'text', '.list': 'text',
+    '.txt': 'text', '.lab': 'text', '.list': 'text',
 };
+// GPT-SoVITS annotation line: path|speaker|LANG|text (same rule as the node's characters.read_list).
+const LIST_LINE = /^[^|]+\|[^|]*\|([A-Za-z_]+)\|(.+)$/;
 const FORBIDDEN_IN_EMOTION = /[{}[\]]/;
 // GPT-SoVITS reference clips must be 3–10 s (the node refuses others as a main voice).
 export const REF_MIN_SEC = 3;
@@ -197,6 +199,27 @@ export function importProblem({ target = null, character = '', rows, uploading =
         seen.add(row.emotion);
     }
     return null;
+}
+
+/**
+ * The line for `clipName` from a text file dropped on that clip's text box: a GPT-SoVITS
+ * annotation file is searched by file name (then without the emotion part, like the node);
+ * any other text file is the line itself. null = an annotation file without this clip.
+ */
+export function textFromFile(content, clipName) {
+    const text = String(content || '').trim(); // trim() also drops a BOM
+    const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    if (!lines.length || !LIST_LINE.test(lines[0])) return text;
+    const table = new Map();
+    for (const line of lines) {
+        const m = LIST_LINE.exec(line);
+        const file = line.split('|', 1)[0].replace(/\\/g, '/').split('/').pop().toLowerCase();
+        if (m && !table.has(file)) table.set(file, m[2].trim());
+    }
+    const name = String(clipName || '').toLowerCase();
+    const dot = name.lastIndexOf('.');
+    const [stem, ext] = dot > 0 ? [name.slice(0, dot), name.slice(dot)] : [name, ''];
+    return table.get(name) ?? table.get(`${stem.split('.')[0]}${ext}`) ?? null;
 }
 
 /** Summary for the setup card: what still needs doing. */
