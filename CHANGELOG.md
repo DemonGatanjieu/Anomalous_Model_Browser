@@ -23,6 +23,10 @@
 - **Large workflows with ComfyUI Prompt Assistant (与提示词小助手同时安装时的严重卡顿)**: the cost grew with the number of page elements, and Prompt Assistant adds a row of buttons to every text box, so together style work took about 19 ms per frame (more than a whole 60 fps frame): single-digit frame rates or freezes on big workflows. It is now back to the level of Prompt Assistant alone. The two plugins never conflicted otherwise.
 - The tooltip still stays hidden while the Toolbox or Settings popup is open; the popups already hide it when they open and it does not reappear until they close.
 
+### 🧩 Material Library with a node selected (选中节点时素材库卡片错位)
+- **One apply button per card (每张卡片只有一个应用按钮)**: with a node selected, the Material Library showed every card's **Apply Scheme** button twice, each with a doubled ⚡ icon.
+- **No more overlapping text (卡片文字不再重叠)**: the extra button squeezed the badges, date, node types and tags on top of each other. Cards in apply mode now get a taller row with the button at the bottom; applying works as before.
+
 ## v1.57.1 Beta (Version Panel: Update, Switch & Roll Back) — 2026-09-23
 
 ### 🏷️ Version & Updates Panel (版本号与一键更新 / 版本切换)
