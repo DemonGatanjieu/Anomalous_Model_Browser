@@ -61,6 +61,11 @@ DOM or live LiteGraph state.
 
 ## Ownership map
 
+This map, with the topic documents, is also the file directory: every source
+module under `api/`, `web/` and `web/modules/` and each root Python file is
+named with its owner. `node tests/architecture_map.mjs` checks this. Styles are
+covered by the `styles.css` manifest.
+
 ### Backend
 
 - `api/config.py` owns configured paths and active model-folder types.
@@ -69,11 +74,13 @@ DOM or live LiteGraph state.
 - `api/metadata.py` owns sidecar and safetensors metadata extraction.
 - `api/model_catalog.py`, `api/model_resolution.py`, `api/model_metadata.py`, and
   `api/model_media.py` own model listing, identity recovery, mutation, and covers;
-  `api/models.py` is a compatibility facade.
+  `api/models.py` is a compatibility facade; `api/model_constants.py` holds the
+  model, media and sidecar extensions they share.
 - `api/scanner.py` and `scraper.py` own scan orchestration and enrichment.
 - `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
   `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
-  integrity receipts; `api/recipes.py` is the HTTP facade.
+  integrity receipts; `api/recipes.py` is the HTTP facade. `api/recipe_constants.py`
+  holds the size and count limits shared by recipes, parameters and materials.
 - `api/recipe_packages.py` owns bounded inspect-stage-commit package handling.
 - `api/parameters.py` owns Parameter Notebook persistence and lookup.
 - `api/notebooks.py` owns Prompt Note persistence and recoverable legacy copying.
@@ -221,6 +228,11 @@ DOM or live LiteGraph state.
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return.
   Scan-wizard launch, single-model precision scans (`triggerDirectModelScan` with strictly factual Civitai vs non-Civitai feedback reporting inferred base-model or match status directly within the bottom-right progress panel and toasts without blocking browser alerts), modal lifecycle ergonomics (backdrop click and Escape key dismissal with listener detachment, scrollable content area with sticky footer actions), post-scan frontend hash and native combo refreshes (`app.refreshComboInNodes()`, `window.anomalous_reload_hashes()`), and polling live in `ui_scan_wizard.js`; folder visibility/order lives in
   `ui_folder_manager.js`; and help content lives in `ui_help.js`.
+  `scan_progress.js` owns the bottom-right scan progress panel
+  (`updateScanProgress` / `finishScanProgress` / `failScanProgress`).
+  `shortcut_controls.js` owns the open-browser and material-library keyboard
+  shortcuts, their fallback when ComfyUI's keybinding does not fire, and the
+  settings control that opens ComfyUI's keybinding editor.
 - `ui_model_sources.js` owns the Model Sources Hub, managing workflow-model and global-library source detection, Civitai/HuggingFace URL attribution, sidecar persistence, and resilient scope switching between active workflow and full local library (with cached library state preservation and reliable re-rendering).
 - `ui_materials.js`, `ui_material_cards.js`, and `ui_material_application.js` own the Material Library UI, category navigation, card presentation (with grab cursor affordances, explicit drag tooltips, and polymorphic card dragging via `bindPolymorphicMaterialCardDrag`), context-aware drag guidance, relaxed third-party node prompt widget sniffing and injection, and the structured empty state onboarding blueprint guiding users through collection, canvas drag, and prompt studio mixing. Drag precedence prioritizes node hits over blank canvas drops; blank canvas drops auto-instantiate `CLIPTextEncode` nodes for prompt materials with standard colors or open full workflows. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) shared by detail views, cards and canvas actions.
 - `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn` and Help modal; version ID `2026-09-recipes-and-studios`), presenting a 4-step milestone walkthrough (Workflow Recipe Studio, Material Library & Prompt Studio, Model Sources Hub, and Precision Direct Scan with canvas addition) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across topbar workspaces and bottom dock actions with directional tooltip cards and keyboard navigation. Other views pass their own `steps` (text from locale keys) and an optional `onClose`; the GPT-SoVITS import window does.
@@ -291,6 +303,13 @@ DOM or live LiteGraph state.
 - `ui_prompt_translator.js` owns the standalone Prompt Translator, featuring robust multilingual/Chinese node prompt extraction (`extractPromptFromNode`), real-time canvas selection synchronization (`app.canvas.onNodeSelected`), automatic prompt injection on open/docked mode, on-demand read/sync controls, guarded selection writeback across single and multi-tab workflows, compact streamlined button ergonomics preventing multi-row wrapping, elastic vertical flex textareas maximizing canvas-side vertical space, and an expanded 460px default sidebar width with automatic backward-compatible width migration. Both translator and
   studio use `ui_lifecycle.js` for global listeners, request cancellation and
   resize cleanup. Translation requests go through `translation_service.js`.
+- `ui_dialog.js` owns the plugin's own alert / confirm / prompt dialogs
+  (`anomalousAlert`, `anomalousConfirm`, `anomalousPrompt`), used instead of the
+  browser's native ones. `ui_prompt_toast.js` is the short toast shared by the
+  Prompt Studio views and the Model Source Hub.
+- `model_policies.js` mirrors `model_policies.py` for the frontend: which folder
+  types a loader widget holds, which are never physically renamed, and which
+  need a workflow-carried hash before Model Doctor recovers them.
 - `ui_dom.js` provides small DOM/JSON helpers; `material_inspector.js` owns
   material-specific metadata and parameter rendering.
 - `ui_doctor.js` owns diagnostics and global scans; `ui_node_assistant.js` owns
@@ -364,7 +383,9 @@ Every product-code change should end as one coherent local Git snapshot:
 1. Run checks proportional to the changed behavior.
 2. Update architecture documentation **only** when the change modifies a module
    owner, data flow, public/internal interface contract, persistence format,
-   security boundary, or critical invariant.
+   security boundary, or critical invariant. Adding, deleting, renaming or
+   splitting a source file always counts as a module-owner change: update its
+   line in the same commit (`node tests/architecture_map.mjs` fails otherwise).
 3. When architecture changes, update the narrowest relevant topic document.
    Update this entry point only if the system map, cross-system invariants, or
    reading map changed.
