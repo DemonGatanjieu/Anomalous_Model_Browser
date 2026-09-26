@@ -237,6 +237,163 @@
     overflow-y: auto;
 }
 
+/* ---- the first question: what do you have? ---- */
+.anomalous-tts-header-buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.anomalous-tts-help {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 50%;
+    background: transparent;
+    color: #94a3b8;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.anomalous-tts-help:hover {
+    border-color: #818cf8;
+    color: #e0e7ff;
+}
+
+.anomalous-tts-choose {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(560px, 100%);
+    margin: auto;
+    padding: 12px 0;
+}
+
+.anomalous-tts-choose-title {
+    margin-bottom: 6px;
+    color: #f1f5f9;
+    font-size: 19px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.anomalous-tts-mode {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    color: #e2e8f0;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.anomalous-tts-mode:hover:not(:disabled) {
+    border-color: rgba(129, 140, 248, 0.55);
+    background: rgba(99, 102, 241, 0.1);
+    transform: translateY(-1px);
+}
+
+.anomalous-tts-mode:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.anomalous-tts-mode-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(99, 102, 241, 0.16);
+    color: #a5b4fc;
+}
+
+.anomalous-tts-mode-words {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.anomalous-tts-mode-title {
+    font-size: 14.5px;
+    font-weight: 700;
+}
+
+.anomalous-tts-mode-desc {
+    color: #94a3b8;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.anomalous-tts-mode-go {
+    color: #64748b;
+    font-size: 22px;
+}
+
+.anomalous-tts-pick-character {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px;
+    border: 1px dashed rgba(129, 140, 248, 0.35);
+    border-radius: 12px;
+}
+
+.anomalous-tts-pick-character[hidden] {
+    display: none;
+}
+
+.anomalous-tts-pick-character-title {
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.anomalous-tts-pick-character-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 160px;
+    overflow-y: auto;
+}
+
+.anomalous-tts-pick-character-item {
+    padding: 5px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.2);
+    color: #e2e8f0;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-tts-pick-character-item:hover {
+    border-color: #818cf8;
+    background: rgba(99, 102, 241, 0.16);
+}
+
+.anomalous-tts-toolbar-hint {
+    color: #64748b;
+    font-size: 11.5px;
+}
+
+.anomalous-tts-toolbar [hidden] {
+    display: none;
+}
+
 /* ---- empty: the drop area ---- */
 .anomalous-tts-hero {
     display: flex;
@@ -596,25 +753,11 @@
 .anomalous-tts-card[data-tone="error"] .anomalous-tts-card-pill { background: rgba(248, 113, 113, 0.14); color: #f87171; }
 .anomalous-tts-card[data-tone="busy"] .anomalous-tts-card-pill { background: rgba(56, 189, 248, 0.14); color: #38bdf8; }
 
-.anomalous-tts-card-holds {
-    display: inline-flex;
+.anomalous-tts-card-meta {
     flex-shrink: 0;
-    gap: 4px;
-}
-
-.anomalous-tts-card-hold {
-    padding: 2px 7px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.04);
-    color: #475569;
-    font-size: 10.5px;
-    text-decoration: line-through;
+    color: #64748b;
+    font-size: 11px;
     white-space: nowrap;
-}
-
-.anomalous-tts-card-hold.is-on {
-    color: #94a3b8;
-    text-decoration: none;
 }
 
 .anomalous-tts-card-remove,
@@ -649,70 +792,6 @@
     border-style: dashed;
     border-color: rgba(251, 191, 36, 0.4);
     background: rgba(251, 191, 36, 0.035);
-}
-
-.anomalous-tts-card-weights {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-}
-
-.anomalous-tts-tile {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 0;
-    padding: 10px 12px;
-    border: 1px solid rgba(52, 211, 153, 0.25);
-    border-radius: 10px;
-    background: rgba(0, 0, 0, 0.18);
-}
-
-.anomalous-tts-tile.is-empty {
-    border-style: dashed;
-    border-color: rgba(255, 255, 255, 0.12);
-    background: transparent;
-}
-
-.anomalous-tts-tile.is-needed {
-    border-color: rgba(251, 191, 36, 0.45);
-}
-
-.anomalous-tts-tile-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.anomalous-tts-tile-kind {
-    color: #cbd5e1;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-.anomalous-tts-tile-ext {
-    color: #475569;
-    font-size: 11px;
-}
-
-.anomalous-tts-tile-actions,
-.anomalous-tts-card-add {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
-}
-
-.anomalous-tts-card-add.is-empty {
-    justify-content: center;
-    padding: 18px;
-    border: 1px dashed rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
-}
-
-.anomalous-tts-card-add.is-needed {
-    border-color: rgba(251, 191, 36, 0.45);
 }
 
 .anomalous-tts-pick {
@@ -753,6 +832,100 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
+}
+
+/* ---- the checklist: done items ticked and quiet, the next one lit with its button ---- */
+.anomalous-tts-check {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.16);
+}
+
+.anomalous-tts-check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    min-height: 36px;
+    padding: 5px 8px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: #64748b;
+    font-size: 12.5px;
+}
+
+.anomalous-tts-check-mark {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.anomalous-tts-check-text {
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+.anomalous-tts-check-actions {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.anomalous-tts-check-item > .anomalous-tts-file {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    margin-left: auto;
+}
+
+.anomalous-tts-check-item > .anomalous-tts-file .anomalous-tts-file-label {
+    flex: 0 1 auto;
+}
+
+.anomalous-tts-check-item.is-done {
+    color: #94a3b8;
+}
+
+.anomalous-tts-check-item.is-done .anomalous-tts-check-mark {
+    border-color: rgba(52, 211, 153, 0.5);
+    background: rgba(52, 211, 153, 0.12);
+    color: #34d399;
+}
+
+.anomalous-tts-check-item.is-next {
+    border-color: rgba(129, 140, 248, 0.5);
+    background: rgba(99, 102, 241, 0.12);
+    color: #e0e7ff;
+    font-weight: 600;
+}
+
+.anomalous-tts-check-item.is-next .anomalous-tts-check-mark {
+    border-color: transparent;
+    background: linear-gradient(135deg, #6366f1, #38bdf8);
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
+}
+
+.anomalous-tts-card[data-tone="error"] .anomalous-tts-check-item.is-next {
+    border-color: rgba(248, 113, 113, 0.45);
+    background: rgba(248, 113, 113, 0.08);
+}
+
+.anomalous-tts-card-clips {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 /* ---- one file ---- */
@@ -982,12 +1155,6 @@
     color: #fde68a;
 }
 
-.anomalous-tts-tile .anomalous-tts-file-move,
-.anomalous-tts-card.is-tray .anomalous-tts-file-main,
-.anomalous-tts-card.is-tray .anomalous-tts-file-bottom {
-    display: none;
-}
-
 /* Line files and language: the quieter things at the bottom of a card. */
 .anomalous-tts-card-extras {
     display: flex;
@@ -1103,12 +1270,13 @@
 
 @media (max-width: 700px) {
     .anomalous-tts-step-label,
-    .anomalous-tts-card-holds {
+    .anomalous-tts-card-meta,
+    .anomalous-tts-toolbar-hint {
         display: none;
     }
 
-    .anomalous-tts-card-weights {
-        grid-template-columns: minmax(0, 1fr);
+    .anomalous-tts-check-item {
+        flex-wrap: wrap;
     }
 
     .anomalous-tts-file-top,

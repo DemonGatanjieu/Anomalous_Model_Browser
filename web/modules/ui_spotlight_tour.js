@@ -6,6 +6,9 @@
  * 2. Floating directional speech bubble card explaining key buttons step-by-step.
  * 3. Keyboard navigation (ArrowRight/Enter, ArrowLeft, Escape) & viewport auto-scroll.
  * 4. Zero CSS-bundle modifications (injected scoped stylesheet).
+ *
+ * The browser tour uses TOUR_STEPS; other views pass their own steps, whose text
+ * may come from locale keys (`titleKey` / `bodyKey`) instead of titleZh/titleEn.
  */
 
 import { translate as t } from './locales.js';
@@ -347,9 +350,10 @@ export function isSpotlightTourActive() {
 
 export function closeSpotlightTour() {
     if (!activeTourInstance) return;
-    const { overlay, cleanupListeners } = activeTourInstance;
+    const { overlay, cleanupListeners, onClose } = activeTourInstance;
     activeTourInstance = null;
     if (typeof cleanupListeners === 'function') cleanupListeners();
+    onClose?.();
     if (overlay && overlay.parentNode) {
         overlay.style.animation = 'none';
         overlay.style.opacity = '0';
@@ -358,14 +362,15 @@ export function closeSpotlightTour() {
     }
 }
 
-export function startSpotlightTour(owner) {
+/** `steps` defaults to the browser tour; `onClose` runs however the tour ends. */
+export function startSpotlightTour(owner, { steps = TOUR_STEPS, onClose = null } = {}) {
     if (typeof document === 'undefined') return false;
     if (activeTourInstance) closeSpotlightTour();
 
     ensureTourStyles();
 
     // Filter steps to those with targets present on current DOM
-    const availableSteps = TOUR_STEPS.filter(step => Boolean(resolveStepTarget(step)));
+    const availableSteps = steps.filter(step => Boolean(resolveStepTarget(step)));
     if (!availableSteps.length) {
         console.warn('[AMB] No tour targets visible on screen.');
         return false;
@@ -417,8 +422,8 @@ export function startSpotlightTour(owner) {
         spotlightBox.style.height = `${rect.height + buffer * 2}px`;
 
         // Card content
-        const titleText = isZh() ? step.titleZh : step.titleEn;
-        const bodyText = isZh() ? step.bodyZh : step.bodyEn;
+        const titleText = step.titleKey ? t(step.titleKey) : isZh() ? step.titleZh : step.titleEn;
+        const bodyText = step.bodyKey ? t(step.bodyKey) : isZh() ? step.bodyZh : step.bodyEn;
         const total = availableSteps.length;
         const stepNum = currentIndex + 1;
 
@@ -514,7 +519,7 @@ export function startSpotlightTour(owner) {
         overlay.removeEventListener('click', onOverlayClick);
     };
 
-    activeTourInstance = { overlay, cleanupListeners, owner };
+    activeTourInstance = { overlay, cleanupListeners, owner, onClose };
 
     renderCurrentStep();
     return true;

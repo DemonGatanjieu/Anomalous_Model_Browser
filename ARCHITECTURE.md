@@ -161,19 +161,23 @@ DOM or live LiteGraph state.
   needed file brings it back); missing packages get a red one. Inside: one storage place (changing it asks whether the characters
   move along), other places still read, pretrained files, packages. It polls the
   status only while a download or move runs and it is open, and redraws the
-  studio when a move ends. `ui_tts_import.js` is the import window: empty it is
-  one drop area; with files it lists one card per draft (one unfolded at a time).
-  It owns the drafts (characters being built; `target` = files added to an
+  studio when a move ends. `ui_tts_import.js` is the import window. It first asks
+  what the user has (`mode`: `single` = one card led by its checklist, `batch` = a
+  drop area then one card per draft, one unfolded at a time, `add` = files for an
+  existing character, also opened straight from a card's "Add files"), and runs a
+  spotlight tour once per screen ("?" replays it). It owns the drafts (characters being built; `target` = files added to an
   existing one) and the unassigned tray, every file row (in exactly one draft's
   `rows`), the uploads, a debounced inspect per draft, and imports the ready
   drafts one after another (each commit on its own; closing discards uncommitted
   uploads). `draw()` rebuilds the cards on structural changes, `refresh()` only
   repaints status, so typing never loses focus.
   `tts_import_groups.js` holds the pure rules: which draft a file goes to (weight
-  stems, then folder names or file-name prefixes) and where a draft stands.
-  `ui_tts_import_draft.js` draws a draft's card (name in the header, a short
-  status, GPT / SoVITS tiles, one line per clip with its owner picker, line files,
-  language) and the unassigned card, and builds each row's elements once, so they
+  stems, then folder names or file-name prefixes), where a draft stands, and its
+  checklist (the next step first). `ui_tts_import_draft.js` draws a draft's card
+  (name in the header, steps left, the checklist with the next step's button and
+  the chosen weights, one line per clip with its owner picker, line files,
+  language) and the unassigned card; `ui_tts_import_screens.js` holds the fixed
+  screens (the first question, the batch drop area) and the tour steps, and builds each row's elements once, so they
   survive redraws and moves. `ui_tts_file_drop.js` reads OS
   drops (walking dropped folders) for the studio, the sidebar and the workbench. `ui_tts_path_picker.js` picks server-side folders or files
   through the node's browse route, since the browser cannot see local paths.
@@ -219,7 +223,7 @@ DOM or live LiteGraph state.
   `ui_folder_manager.js`; and help content lives in `ui_help.js`.
 - `ui_model_sources.js` owns the Model Sources Hub, managing workflow-model and global-library source detection, Civitai/HuggingFace URL attribution, sidecar persistence, and resilient scope switching between active workflow and full local library (with cached library state preservation and reliable re-rendering).
 - `ui_materials.js`, `ui_material_cards.js`, and `ui_material_application.js` own the Material Library UI, category navigation, card presentation (with grab cursor affordances, explicit drag tooltips, and polymorphic card dragging via `bindPolymorphicMaterialCardDrag`), context-aware drag guidance, relaxed third-party node prompt widget sniffing and injection, and the structured empty state onboarding blueprint guiding users through collection, canvas drag, and prompt studio mixing. Drag precedence prioritizes node hits over blank canvas drops; blank canvas drops auto-instantiate `CLIPTextEncode` nodes for prompt materials with standard colors or open full workflows. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) shared by detail views, cards and canvas actions.
-- `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn` and Help modal; version ID `2026-09-recipes-and-studios`), presenting a 4-step milestone walkthrough (Workflow Recipe Studio, Material Library & Prompt Studio, Model Sources Hub, and Precision Direct Scan with canvas addition) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across topbar workspaces and bottom dock actions with directional tooltip cards and keyboard navigation.
+- `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn` and Help modal; version ID `2026-09-recipes-and-studios`), presenting a 4-step milestone walkthrough (Workflow Recipe Studio, Material Library & Prompt Studio, Model Sources Hub, and Precision Direct Scan with canvas addition) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across topbar workspaces and bottom dock actions with directional tooltip cards and keyboard navigation. Other views pass their own `steps` (text from locale keys) and an optional `onClose`; the GPT-SoVITS import window does.
 - `sidebar_actions.js` owns the sidebar bottom action hover-reveal short labels (100ms), singleton dynamic DOM tooltip bubbles (`#anomalous-sidebar-tooltip-bubble`, 600ms), click/pointerdown instant text/tooltip suppression guards, `isBottomModalOpen` tooltip occlusion guards, and anti-flicker pointer stability.
 - `tool_registry.js` centralizes metadata, SVG icons (enlarged 20px crisp vector outlines with 2px stroke, #cbd5e1 contrast), and stable IDs for the 9 catalog tools (including Prompt Notes / 提示词笔记) and 2 fixed anchors (Toolbox and Settings).
 - `shortcut_layout.js` provides tool layout utilities and fallbacks. The bottom shortcut bar maintains the clean fixed 4-tool setup (`scan`, `doctor`, `assistant`, `materials`) plus two anchors (`toolbox`, `settings`) housed in prominent 36px buttons with full click/active text suppression and `.is-active` toggled styling.

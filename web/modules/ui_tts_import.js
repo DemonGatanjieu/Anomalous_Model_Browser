@@ -5,31 +5,32 @@ import { loadEngine, loadGptSovitsStatus } from './audio_engines.js';
 import {
     buildImportBody, commitImport, discardUploads, importKind, inspectImport, nameConflict, pickWeights, scanFolder, uploadFile,
 } from './tts_setup_api.js';
-import { draftState, groupFiles, groupKey } from './tts_import_groups.js';
+import { draftChecklist, draftState, groupFiles, groupKey } from './tts_import_groups.js';
 import { TRAY, renderDraftCard, renderTrayCard, showSource, syncReference, updateRow } from './ui_tts_import_draft.js';
 import { PICKER_OVERLAY_CLASS, pickServerPath } from './ui_tts_path_picker.js';
 import { readDroppedFiles } from './ui_tts_file_drop.js';
+import { closeSpotlightTour, isSpotlightTourActive, startSpotlightTour } from './ui_spotlight_tour.js';
+import { TOURS, markTourSeen, renderBatchHero, renderChooseScreen, seenTours } from './ui_tts_import_screens.js';
 
 /**
- * The GPT-SoVITS import window: one or many characters at once, or files added to
- * an existing one (`target`), through the Anomalous_TTS node. Files come from a
- * drop (folders too), the browser's file or folder dialog (uploaded in chunks) or
- * the node's folder picker (sent as paths). The node copies everything; the
- * originals are never touched.
+ * The GPT-SoVITS import window, through the Anomalous_TTS node. It first asks what
+ * the user has: one character (`single`: one card, its checklist leads step by
+ * step), many characters or a package (`batch`: a drop area, then files sorted
+ * into one card per character, plus a card for files that match no character),
+ * or files for an existing character (`add`, also opened straight from a
+ * character's "Add files"). A spotlight tour explains each screen the first time.
  *
- * Empty, the window is one big drop area that says what to bring. With files it
- * lists one card per character (ui_tts_import_draft.js), one unfolded at a time,
- * plus a card for files that match no character. Files are sorted into drafts by
- * tts_import_groups.js; each draft is inspected and imported on its own, so one
- * failure leaves the others alone. Every file is one row object, owned by exactly
- * one draft's `rows`; its elements are built once and move with it.
+ * Files come from a drop (folders too), the browser's file or folder dialog
+ * (uploaded in chunks) or the node's folder picker (sent as paths). The node copies
+ * everything; the originals are never touched. Each draft is inspected and
+ * imported on its own, so one failure leaves the others alone. Every file is one
+ * row object, owned by exactly one draft's `rows`; its elements are built once
+ * (ui_tts_import_draft.js) and move with it.
  */
 
 let activeScope = null;
 const ACCEPT = { gpt: '.ckpt', sovits: '.pth', audio: '.wav,.flac,.ogg,.mp3', text: '.txt,.lab,.list' };
 const ACCEPT_ALL = Object.values(ACCEPT).join(',');
-const UPLOAD_SVG = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>';
-
 function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -79,6 +80,8 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
     const drafts = [];
     const tray = { id: TRAY, rows: [] };
     const cards = new Map(); // draft -> { refresh } of its drawn card
+    // Dropped files skip the question: several files are sorted like a package.
+    let mode = target ? 'add' : files.length ? 'batch' : null;
     let nextDraft = 0;
     let nextRow = 0;
     let importing = false;
@@ -93,6 +96,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
     const close = () => { if (!importing) scope.dispose(); };
     const allRows = () => [...drafts.flatMap(draft => draft.rows), ...tray.rows];
     scope.onDispose(() => {
+        closeSpotlightTour();
         for (const draft of drafts) clearTimeout(draft.inspectTimer);
         player?.pause();
         const rows = allRows();
@@ -106,7 +110,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
     });
     // No close on a backdrop click: a stray click would throw away the files and uploads.
     scope.listen(window, 'keydown', (e) => {
-        if (e.key !== 'Escape' || document.querySelector(`.anomalous-dialog-overlay, .${PICKER_OVERLAY_CLASS}`)) return;
+        if (e.key !== 'Escape' || isSpotlightTourActive() || document.querySelector(`.anomalous-dialog-overlay, .${PICKER_OVERLAY_CLASS}`)) return;
         e.stopPropagation();
         if (menu.classList.contains('is-open')) { menu.classList.remove('is-open'); return; }
         close();
@@ -126,18 +130,23 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
     const placeOf = id => (id === TRAY ? tray : drafts.find(draft => draft.id === id));
     const ownerOf = row => [...drafts, tray].find(place => place.rows.includes(row));
     const openDrafts = () => drafts.filter(draft => !draft.done);
+    const solo = () => mode !== 'batch' && drafts.length === 1;
 
     const rowView = row => ({ kind: row.kind, name: row.name, emotion: row.emotion, error: row.error, uploaded: Boolean(row.spec),
-        progress: row.progress, existing: row.info?.existing ?? null, supported: row.info?.supported, version: row.info?.version });
+        progress: row.progress, existing: row.info?.existing ?? null, supported: row.info?.supported, version: row.info?.version,
+        seconds: row.info?.seconds });
 
     function viewOf(draft) {
         const name = draft.name.trim();
         const conflict = draft.target ? null : nameConflict(name, existing);
         const duplicate = !draft.target && Boolean(name) && openDrafts().some(other => other !== draft && !other.target
             && other.name.trim().toLowerCase() === name.toLowerCase());
-        const state = draftState({ target: draft.target, name, rows: draft.rows.map(rowView), conflict, duplicate,
+        const rows = draft.rows.map(rowView);
+        const main = draft.rows.find(row => row.key === draft.referenceKey)?.name || null;
+        const state = draftState({ target: draft.target, name, rows, main, conflict, duplicate,
             done: draft.done, failed: draft.failed, importing: draft.importing });
-        return { ...state, conflict, problems: draft.problems };
+        const checklist = draftChecklist({ target: draft.target, name, rows, main, conflict, duplicate });
+        return { ...state, conflict, problems: draft.problems, checklist };
     }
 
     /** One card open at a time; a lone character is always open. */
@@ -196,15 +205,16 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
 
     /**
      * Add files: `items` are `{ name, dir, file }` or `{ name, dir, path, size }`. Into
-     * `into` when given, else sorted into drafts (new ones for new weight names).
+     * `into` when given (or the only card outside batch mode), else sorted into drafts.
      */
     function addItems(items, into = null) {
         const known = items.map(item => ({ ...item, kind: importKind(item.name) }));
         const bad = known.filter(item => !item.kind).map(item => item.name);
         const usable = known.filter(item => item.kind);
+        const place = into || (solo() ? drafts[0] : null);
         let assign;
-        if (into) {
-            assign = usable.map(() => into);
+        if (place) {
+            assign = usable.map(() => place);
         } else {
             const grouped = groupFiles(usable, openDrafts().map(draft => ({ key: draft.key, target: draft.target })));
             for (const add of grouped.added) newDraft(add);
@@ -212,8 +222,8 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         }
         const notes = [];
         const touched = new Set();
-        for (const place of new Set(assign)) {
-            const mine = usable.filter((_, i) => assign[i] === place);
+        for (const owner of new Set(assign)) {
+            const mine = usable.filter((_, i) => assign[i] === owner);
             const { skip, kept } = pickWeights(mine);
             notes.push(...kept.map(k => t('ttsImportKeptBest', { kind: t(`ttsKind_${k.kind}`), file: k.name, count: k.others })));
             mine.forEach((item, i) => {
@@ -223,15 +233,15 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
                     size: item.file?.size ?? item.size ?? 0, spec: item.path ? { path: item.path } : null, uploadId: null, progress: 0,
                     error: '', info: null, emotion: '', text: '', textEdited: false, committed: false, controller: new AbortController(),
                 };
-                if (!placeRow(place, row)) { bad.push(item.name); return; }
-                touched.add(place);
+                if (!placeRow(owner, row)) { bad.push(item.name); return; }
+                touched.add(owner);
                 if (row.file) uploads = uploads.then(() => upload(row));
             });
         }
         if (bad.length) notes.push(t('ttsImportSkipped', { files: bad.join(', ') }));
         noteLine.textContent = notes.join(' ');
         touched.forEach(touch);
-        const first = [...touched].find(place => place !== tray);
+        const first = [...touched].find(owner => owner !== tray);
         if (first && !openDrafts().some(draft => draft.expanded)) expand(first);
         draw();
     }
@@ -286,7 +296,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
             draft.detectedLanguage = suggested.language;
             draft.problems = result.problems;
             syncReference(draft);
-            if (renamed || (languageChanged && draft.expanded)) { draw(); return; }
+            if (renamed || (languageChanged && (draft.expanded || solo()))) { draw(); return; }
         } catch (e) {
             if (mine !== draft.inspectToken || scope.signal.aborted) return;
             draft.problems = [e.message || String(e)];
@@ -336,15 +346,25 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
     const header = el('div', 'anomalous-voice-modal-header');
     const heading = el('div', 'anomalous-voice-modal-heading');
     heading.append(el('div', 'anomalous-voice-modal-title', target ? t('ttsImportAddTitle', { name: target }) : t('ttsImportTitle')));
+    const helpBtn = button('anomalous-tts-help', '?', () => runTour(currentTour(), true), t('ttsTourReplay'));
     const closeBtn = button('anomalous-voice-modal-close', '×', close, t('close'));
-    header.append(heading, closeBtn);
+    const headerButtons = el('div', 'anomalous-tts-header-buttons');
+    headerButtons.append(helpBtn, closeBtn);
+    header.append(heading, headerButtons);
 
     const steps = el('ol', 'anomalous-tts-steps');
-    const stepItems = ['ttsStepFiles', 'ttsStepCheck', 'ttsStepImport'].map((key, i) => {
+    const stepItems = ['ttsStepChoose', 'ttsStepFiles', 'ttsStepImport'].map((key, i) => {
         const item = el('li', 'anomalous-tts-step');
         item.append(el('span', 'anomalous-tts-step-no', String(i + 1)), el('span', 'anomalous-tts-step-label', t(key)));
         steps.append(item);
         return item;
+    });
+
+    // Step 1: what do you have?
+    const choose = renderChooseScreen(existing, {
+        single: () => { mode = 'single'; expand(newDraft({ key: '#solo', name: '' })); draw(); },
+        batch: () => { mode = 'batch'; draw(); },
+        character: (name) => { mode = 'add'; expand(newDraft({ key: groupKey(name), name, target: name })); draw(); },
     });
 
     // "Add more" is one button with a small menu, so the list stays the main thing.
@@ -367,30 +387,24 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         draw();
         cardsBox.querySelector('.anomalous-tts-card.is-open .anomalous-tts-card-name-input')?.focus();
     });
+    const backBtn = button('anomalous-tts-link', t('ttsChooseAgain'), () => {
+        drafts.length = 0;
+        mode = null;
+        draw();
+    });
     const toolbar = el('div', 'anomalous-tts-toolbar');
     const found = el('span', 'anomalous-tts-toolbar-title');
-    toolbar.append(found, menuWrap, newBtn);
+    const dropHint = el('span', 'anomalous-tts-toolbar-hint', t('ttsSoloDropHint'));
+    toolbar.append(found, dropHint, backBtn, menuWrap, newBtn);
     const noteLine = el('div', 'anomalous-tts-note');
     const cardsBox = el('div', 'anomalous-tts-cards');
     const content = el('div', 'anomalous-tts-content');
 
-    const hero = el('div', 'anomalous-tts-hero');
-    const heroIcon = el('div', 'anomalous-tts-hero-icon');
-    heroIcon.innerHTML = UPLOAD_SVG;
-    const needs = el('div', 'anomalous-tts-hero-needs');
-    for (const [key, ext] of [['ttsCardGpt', '.ckpt'], ['ttsCardSovits', '.pth'], ['ttsHeroClips', t('ttsHeroClipsLength')]]) {
-        const chip = el('span', 'anomalous-tts-hero-need');
-        chip.append(el('b', '', t(key)), el('span', '', ext));
-        needs.append(chip);
-    }
-    const heroButtons = el('div', 'anomalous-tts-hero-buttons');
-    heroButtons.append(button('anomalous-voice-modal-submit', t('ttsImportPickFiles'), () => chooseFiles()),
-        button('anomalous-tts-ghost is-large', t('ttsBatchPickFolder'), () => folderInput.click()));
-    const heroLocal = el('div', 'anomalous-tts-hero-local');
-    heroLocal.append(el('span', '', t('ttsHeroLocal')), button('anomalous-tts-link', t('ttsHeroLocalFiles'), () => chooseLocalFiles()),
-        el('span', 'anomalous-tts-hero-dot', '·'), button('anomalous-tts-link', t('ttsHeroLocalFolder'), chooseLocalFolder));
-    hero.append(heroIcon, el('div', 'anomalous-tts-hero-title', t(target ? 'ttsHeroTitleAdd' : 'ttsHeroTitle', { name: target })),
-        needs, el('div', 'anomalous-tts-hero-desc', t(target ? 'ttsHeroDescAdd' : 'ttsHeroDesc')), heroButtons, heroLocal);
+    // Batch mode before any file: the drop area says what to bring.
+    const hero = renderBatchHero({
+        folder: () => folderInput.click(), files: () => chooseFiles(), localFolder: chooseLocalFolder,
+        localFiles: () => chooseLocalFiles(), back: () => { mode = null; draw(); },
+    });
 
     const saveTo = el('span', 'anomalous-tts-footer-path');
     const summary = el('span', 'anomalous-tts-footer-summary');
@@ -445,6 +459,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
             draft.referenceKey = draft.referenceKey === row.key ? null : row.key;
             draft.referenceChosen = true;
             syncReference(draft);
+            refresh();
         },
         onEdited: (row) => {
             const draft = ownerOf(row);
@@ -472,8 +487,15 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         },
     };
 
+    // ---- tours ----
+    const currentTour = () => (mode === null ? 'choose' : cardsBox.querySelector('.anomalous-tts-card.is-open .anomalous-tts-check') && content.contains(cardsBox) ? 'card' : null);
+    function runTour(id, force = false) {
+        if (!id || scope.signal.aborted || isSpotlightTourActive() || (!force && seenTours().has(id))) return;
+        if (startSpotlightTour(null, { steps: TOURS[id] })) markTourSeen(id);
+    }
+
     // ---- drawing ----
-    /** Status only: the cards' pills and problems, the steps and the footer. */
+    /** Status only: the cards' pills, checklists and problems, the steps and the footer. */
     function refresh() {
         let ready = 0;
         let waiting = 0;
@@ -483,34 +505,35 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
             if (view.tone === 'ready') ready++;
             else if (view.tone !== 'done') waiting++;
         }
-        const hasFiles = allRows().length > 0 || drafts.length > (target ? 1 : 0);
+        const at = importing || (ready && !waiting && !tray.rows.length) ? 2 : mode === null ? 0 : 1;
         stepItems.forEach((item, i) => {
-            const at = importing ? 2 : hasFiles ? 1 : 0;
             item.classList.toggle('is-current', i === at);
             item.classList.toggle('is-done', i < at);
         });
         const open = openDrafts().length;
-        found.textContent = target && open === 1 ? t('ttsToolbarAdding', { name: target }) : t('ttsToolbarFound', { count: open });
+        found.textContent = mode === 'add' && open === 1 ? t('ttsToolbarAdding', { name: drafts[0].target })
+            : mode === 'single' ? t('ttsToolbarSingle') : t('ttsToolbarFound', { count: open });
         const parts = [];
-        if (waiting) parts.push(t('ttsFooterWaiting', { count: waiting }));
+        if (waiting && !solo()) parts.push(t('ttsFooterWaiting', { count: waiting }));
         if (tray.rows.length) parts.push(t('ttsFooterTray', { count: tray.rows.length }));
         summary.textContent = parts.join(' · ');
         summary.hidden = !parts.length;
         saveTo.textContent = t('ttsFooterSaveTo', { path: status.storage });
         saveTo.title = status.storage;
-        const single = drafts.length === 1 && drafts[0].target;
-        submit.textContent = single ? t('ttsImportAddSubmit') : ready > 1 ? t('ttsBatchSubmit', { count: ready }) : t('ttsFooterImportOne');
+        submit.textContent = mode === 'add' && drafts.length === 1 ? t('ttsImportAddSubmit') : ready > 1 ? t('ttsBatchSubmit', { count: ready }) : t('ttsFooterImportOne');
         submit.disabled = importing || !ready;
         closeBtn.disabled = importing;
     }
 
-    /** Structure changed: rebuild the cards (rows keep their elements), keep the scroll. */
+    /** Structure changed: rebuild the screen (rows keep their elements), keep the scroll. */
     function draw() {
         const open = openDrafts();
         if (open.length === 1) open[0].expanded = true;
-        const hasFiles = allRows().length > 0 || drafts.length > (target ? 1 : 0);
-        modal.classList.toggle('is-empty', !hasFiles);
-        if (!hasFiles) {
+        const batchEmpty = mode === 'batch' && !allRows().length && !drafts.length;
+        modal.classList.toggle('is-empty', mode === null || batchEmpty);
+        if (mode === null) {
+            content.replaceChildren(choose);
+        } else if (batchEmpty) {
             content.replaceChildren(hero);
         } else {
             const top = content.scrollTop;
@@ -518,14 +541,20 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
             cardsBox.replaceChildren();
             if (tray.rows.length) cardsBox.append(renderTrayCard(tray, ctx));
             for (const draft of drafts) {
-                const card = renderDraftCard(draft, viewOf(draft), ctx);
+                const card = renderDraftCard(draft, viewOf(draft), ctx, { solo: solo() });
                 cards.set(draft, card);
                 cardsBox.append(card.root);
             }
+            const batch = mode === 'batch';
+            menuWrap.hidden = !batch;
+            newBtn.hidden = !batch;
+            dropHint.hidden = batch;
+            backBtn.hidden = Boolean(target) || allRows().length > 0;
             if (content.firstChild !== toolbar) content.replaceChildren(toolbar, noteLine, cardsBox);
             content.scrollTop = top;
         }
         refresh();
+        setTimeout(() => runTour(currentTour()), 60); // after layout, so the spotlight finds its targets
     }
 
     // ---- importing, one character after another ----
@@ -568,7 +597,8 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         draw();
     }
 
-    // Files can be dropped anywhere on the window; they are sorted by name and folder.
+    // Files can be dropped anywhere on the window: on the question screen they are
+    // sorted like a package, otherwise they go where the current mode puts them.
     const dropCover = el('div', 'anomalous-tts-drop-cover', t('ttsDropCover'));
     modal.addEventListener('dragover', (e) => {
         if (![...(e.dataTransfer?.types || [])].includes('Files')) return;
@@ -582,7 +612,9 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         e.stopPropagation();
         modal.classList.remove('is-dragover');
         readDroppedFiles(e.dataTransfer).then(dropped => {
-            if (!scope.signal.aborted) addItems(dropped.map(({ file, dir }) => ({ name: file.name, dir, file })));
+            if (scope.signal.aborted) return;
+            if (mode === null) mode = 'batch';
+            addItems(dropped.map(({ file, dir }) => ({ name: file.name, dir, file })));
         });
     });
 

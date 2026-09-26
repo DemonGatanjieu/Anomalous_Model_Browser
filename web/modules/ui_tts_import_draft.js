@@ -4,33 +4,29 @@ import { importKind, missingForLanguage, rowState, textFromFile, usableAsReferen
 
 /**
  * One character card of the import window (and the card of files nobody claims).
- * Folded, a card is one line: name, a short status, what it holds. Unfolded it
- * shows the two weight tiles, one line per clip, line files and language. The
- * import window owns drafts and rows; this module builds each row's elements once
- * (`row.els`), so they keep what was typed when cards are redrawn or a file moves.
+ * Folded, a card is one line: name, how many steps are left, how many clips.
+ * Unfolded it leads with a checklist (tts_import_groups.js draftChecklist) that
+ * lights up the next step and offers its button right there; the chosen weights
+ * sit in their checklist lines, then come the clips, line files and language.
+ * The import window owns drafts and rows; this module builds each row's elements
+ * once (`row.els`), so they keep what was typed when cards are redrawn or a file moves.
  */
 
 export const TRAY = '#unassigned';
 const LANGUAGES = ['', 'ja', 'zh', 'en'];
+const PICKS = { gpt: ['gpt'], sovits: ['sovits'], audio: ['audio'], files: null };
 
-/** The card's short status for each reason a draft cannot be imported yet. */
+/** The card's short status for reasons the checklist does not already show. */
 const SHORT = {
-    ttsImportNameMissing: 'ttsCardNeedName',
-    ttsImportWeightsMissing: 'ttsCardNeedWeights',
-    ttsBatchNoAudio: 'ttsCardNeedAudio',
-    ttsImportNameTaken: 'ttsCardNameTaken',
-    ttsImportNameTakenVariant: 'ttsCardNameTaken',
-    ttsBatchDuplicateName: 'ttsCardNameTwice',
     ttsBatchRowProblem: 'ttsCardFileProblem',
     ttsImportExistingDifferent: 'ttsCardFileProblem',
-    ttsImportUnsupportedBlock: 'ttsCardUnsupported',
     ttsImportFailed: 'ttsCardFailed',
     ttsEditorNameInvalid: 'ttsCardEmotionProblem',
     ttsEditorNameDuplicate: 'ttsCardEmotionProblem',
-    ttsImportNoFiles: 'ttsCardEmpty',
 };
-/** Problems the card already shows in place (the name field, the empty tiles). */
-const SHOWN_IN_PLACE = ['ttsImportWeightsMissing', 'ttsImportNameTaken', 'ttsImportNameTakenVariant', 'ttsBatchNoAudio', 'ttsImportNameMissing', 'ttsImportNoFiles'];
+/** Problems the checklist already shows. */
+const IN_CHECKLIST = ['ttsImportWeightsMissing', 'ttsImportNameTaken', 'ttsImportNameTakenVariant', 'ttsBatchNoAudio', 'ttsBatchNoMain',
+    'ttsImportNameMissing', 'ttsImportNoFiles', 'ttsBatchDuplicateName', 'ttsImportUnsupportedBlock'];
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -176,70 +172,84 @@ function showRow(row, place, ctx) {
     return row.els.root;
 }
 
-/** GPT or SoVITS: the file, or an empty tile that opens the file dialog. */
-function weightTile(kind, draft, ctx) {
-    const row = draft.rows.find(r => r.kind === kind);
-    const tile = el('div', `anomalous-tts-tile is-${kind}${row ? '' : ' is-empty'}${!row && !draft.target ? ' is-needed' : ''}`);
-    const head = el('div', 'anomalous-tts-tile-head');
-    head.append(el('span', 'anomalous-tts-tile-kind', t(kind === 'gpt' ? 'ttsCardGpt' : 'ttsCardSovits')),
-        el('span', 'anomalous-tts-tile-ext', kind === 'gpt' ? '.ckpt' : '.pth'));
-    tile.append(head);
-    if (row) {
-        tile.append(showRow(row, draft, ctx));
-    } else {
-        const actions = el('div', 'anomalous-tts-tile-actions');
-        actions.append(button('anomalous-tts-pick', draft.target ? t('ttsCardWeightOptional') : t('ttsCardWeightPick'), () => ctx.pick(draft, [kind], false)),
-            button('anomalous-tts-link', t('ttsCardFromThisPc'), () => ctx.pick(draft, [kind], true)));
-        tile.append(actions);
-    }
-    return tile;
-}
-
 function statusOf(view) {
     const key = view.tone === 'ready' ? 'ttsCardReady' : view.tone === 'busy' ? 'ttsCardBusy' : view.tone === 'done' ? 'ttsCardDone'
-        : SHORT[view.problem?.[0]] || 'ttsCardNeedLook';
-    return { text: t(key), title: view.problem ? t(view.problem[0], view.problem[1]) : t(key) };
+        : SHORT[view.problem?.[0]] || null;
+    const next = view.checklist.find(item => !item.done);
+    const text = key ? t(key) : t('ttsCardSteps', { count: view.checklist.filter(item => !item.done).length });
+    return { text, title: view.problem ? t(view.problem[0], view.problem[1]) : next ? t(next.key, next.params) : text };
+}
+
+/** What a checklist line offers: file buttons, "fill in the name", "pick in the list". */
+function checkActions(item, isNext, draft, view, ctx, parts) {
+    const side = el('span', 'anomalous-tts-check-actions');
+    if (item.id in PICKS && !item.done) {
+        if (isNext) {
+            side.append(button('anomalous-tts-pick', t('ttsCardPickFile'), () => ctx.pick(draft, PICKS[item.id], false)),
+                button('anomalous-tts-link', t('ttsCardFromThisPc'), () => ctx.pick(draft, PICKS[item.id], true)));
+        } else {
+            side.append(button('anomalous-tts-link', t('ttsCardPickShort'), () => ctx.pick(draft, PICKS[item.id], false)));
+        }
+    } else if (item.id === 'main' && !item.done && isNext) {
+        side.append(button('anomalous-tts-pick', t('ttsCheckMainGo'), () => parts.clips.scrollIntoView({ block: 'nearest', behavior: 'smooth' })));
+    } else if (item.id === 'name' && !item.done) {
+        if (view.conflict?.kind === 'exact') side.append(button('anomalous-tts-link', t('ttsImportSwitchToAdd'), () => ctx.onSwitchToAdd(draft)));
+        else if (isNext) side.append(button('anomalous-tts-pick', t('ttsCheckNameGo'), () => parts.name?.focus()));
+    }
+    return side;
+}
+
+function renderChecklist(list, draft, view, ctx, parts) {
+    list.replaceChildren();
+    const next = view.checklist.find(item => !item.done);
+    view.checklist.forEach((item, i) => {
+        const isNext = item === next;
+        const line = el('div', `anomalous-tts-check-item ${item.done ? 'is-done' : isNext ? 'is-next' : 'is-todo'}`);
+        line.dataset.check = item.id;
+        line.append(el('span', 'anomalous-tts-check-mark', item.done ? '✓' : String(i + 1)), el('span', 'anomalous-tts-check-text', t(item.key, item.params)));
+        const weight = (item.id === 'gpt' || item.id === 'sovits') && draft.rows.find(row => row.kind === item.id);
+        if (weight) line.append(showRow(weight, draft, ctx));
+        else line.append(checkActions(item, isNext, draft, view, ctx, parts));
+        list.append(line);
+    });
 }
 
 /**
  * A character card. `ctx`: `{ status, signal, places(), play(row), pick(draft, kinds, local),
  * onToggle(draft), onName(draft, value), onSwitchToAdd(draft), onReference(row), onEdited(row),
  * onLanguage(draft, value), onMoveRow(row, id), onRemoveRow(row), onRemoveDraft(draft),
- * onDropFiles(draft, dataTransfer) }`. `view`: `{ tone, problem, conflict, problems }`.
- * The returned `refresh(view)` repaints status and problems without touching the fields.
+ * onDropFiles(draft, dataTransfer) }`. `view`: `{ tone, problem, conflict, problems, checklist }`;
+ * `solo` = the only card of the window (always open, cannot be removed). The returned
+ * `refresh(view)` repaints status, checklist and problems without touching the fields.
  */
-export function renderDraftCard(draft, view, ctx) {
-    const card = el('section', `anomalous-tts-card${draft.expanded ? ' is-open' : ''}`);
+export function renderDraftCard(draft, view, ctx, { solo = false } = {}) {
+    const open = solo || draft.expanded;
+    const card = el('section', `anomalous-tts-card${open ? ' is-open' : ''}${solo ? ' is-solo' : ''}`);
     const head = el('div', 'anomalous-tts-card-head');
-    const chevron = button('anomalous-tts-card-chevron', '', () => ctx.onToggle(draft), t(draft.expanded ? 'ttsCardFold' : 'ttsCardUnfold'));
     const avatar = el('span', 'anomalous-tts-card-avatar', (draft.target || draft.name).trim().slice(0, 1).toUpperCase() || '?');
-    let title;
+    const parts = { name: null, clips: null };
+    if (!solo) head.append(button('anomalous-tts-card-chevron', '', () => ctx.onToggle(draft), t(open ? 'ttsCardFold' : 'ttsCardUnfold')));
+    head.append(avatar);
     if (draft.target) {
-        title = el('span', 'anomalous-tts-card-title');
+        const title = el('span', 'anomalous-tts-card-title');
         title.append(el('span', 'anomalous-tts-card-addto', t('ttsCardAddTo')), el('span', 'anomalous-tts-card-name', draft.target));
+        head.append(title);
     } else {
-        title = input('anomalous-tts-card-name-input', t('ttsCardNamePlaceholder'));
+        const title = input('anomalous-tts-card-name-input', t('ttsCardNamePlaceholder'));
         title.value = draft.name;
         title.title = t('ttsCardNameTitle');
         title.oninput = () => {
             avatar.textContent = title.value.trim().slice(0, 1).toUpperCase() || '?';
             ctx.onName(draft, title.value);
         };
+        parts.name = title;
+        head.append(title);
     }
     const pill = el('span', 'anomalous-tts-card-pill');
-    const clips = draft.rows.filter(row => row.kind === 'audio').length;
-    const holds = el('span', 'anomalous-tts-card-holds');
-    for (const kind of ['gpt', 'sovits']) {
-        const has = draft.rows.some(row => row.kind === kind);
-        // An existing character already has its models: only new ones are worth a mention.
-        if (has || !draft.target) holds.append(el('span', `anomalous-tts-card-hold${has ? ' is-on' : ''}`, t(kind === 'gpt' ? 'ttsCardGpt' : 'ttsCardSovits')));
-    }
-    holds.append(el('span', `anomalous-tts-card-hold${clips ? ' is-on' : ''}`, t('ttsCardClips', { count: clips })));
-    head.append(chevron, avatar, title, pill, holds);
-    // Adding to a character is what the window is for; its files can still be removed one by one.
-    if (!draft.target) head.append(button('anomalous-tts-card-remove', '×', () => ctx.onRemoveDraft(draft), t('ttsCardRemove')));
-    // The whole line folds and unfolds, except where it is a field or a button.
-    head.addEventListener('click', (e) => { if (!e.target.closest('input, button')) ctx.onToggle(draft); });
+    const clipCount = draft.rows.filter(row => row.kind === 'audio').length;
+    head.append(pill, el('span', 'anomalous-tts-card-meta', t('ttsCardClips', { count: clipCount })));
+    if (!solo && !draft.target) head.append(button('anomalous-tts-card-remove', '×', () => ctx.onRemoveDraft(draft), t('ttsCardRemove')));
+    if (!solo) head.addEventListener('click', (e) => { if (!e.target.closest('input, button')) ctx.onToggle(draft); });
     card.append(head);
 
     // Files dropped on a card are this character's.
@@ -257,46 +267,42 @@ export function renderDraftCard(draft, view, ctx) {
         ctx.onDropFiles(draft, e.dataTransfer);
     });
 
-    const conflictLine = el('div', 'anomalous-tts-card-problem is-conflict');
+    const checklist = el('div', 'anomalous-tts-check');
     const problems = el('div', 'anomalous-tts-card-problems');
     const paint = (next) => {
         card.dataset.tone = next.tone;
         const status = statusOf(next);
         pill.textContent = status.text;
         pill.title = status.title;
-        conflictLine.replaceChildren();
-        conflictLine.hidden = !next.conflict;
-        if (next.conflict?.kind === 'exact') {
-            conflictLine.append(el('span', '', t('ttsImportNameTaken', { name: next.conflict.name })),
-                button('anomalous-tts-link', t('ttsImportSwitchToAdd'), () => ctx.onSwitchToAdd(draft)));
-        } else if (next.conflict) {
-            conflictLine.append(el('span', '', t('ttsImportNameTakenVariant', { name: next.conflict.name, variants: next.conflict.variants.join('、') })));
-        }
+        if (!open) return;
+        renderChecklist(checklist, draft, next, ctx, parts);
         problems.replaceChildren();
-        if (next.problem && !SHOWN_IN_PLACE.includes(next.problem[0])) {
+        if (next.problem && !IN_CHECKLIST.includes(next.problem[0])) {
             problems.append(el('div', 'anomalous-tts-card-problem is-blocking', t(next.problem[0], next.problem[1])));
         }
         for (const text of next.problems) problems.append(el('div', 'anomalous-tts-card-problem', text));
     };
-    paint(view);
-    if (!draft.expanded) return { root: card, refresh: paint };
+    if (!open) {
+        paint(view);
+        return { root: card, refresh: paint };
+    }
 
     const body = el('div', 'anomalous-tts-card-body');
-    body.append(conflictLine);
-    const weights = el('div', 'anomalous-tts-card-weights');
-    weights.append(weightTile('gpt', draft, ctx), weightTile('sovits', draft, ctx));
-    body.append(weights);
+    body.append(checklist);
 
     const audioRows = draft.rows.filter(row => row.kind === 'audio');
-    const audioHead = el('div', 'anomalous-tts-card-section');
-    audioHead.append(el('span', 'anomalous-tts-card-section-title', t('ttsCardClipsTitle', { count: audioRows.length })),
-        el('span', 'anomalous-tts-card-section-hint', t('ttsCardClipsHint')));
-    const audioList = el('div', 'anomalous-tts-card-files');
-    for (const row of audioRows) audioList.append(showRow(row, draft, ctx));
-    const addAudio = el('div', `anomalous-tts-card-add${audioRows.length ? '' : ' is-empty'}${!audioRows.length && !draft.target ? ' is-needed' : ''}`);
-    addAudio.append(button('anomalous-tts-pick', t(audioRows.length ? 'ttsCardAddClips' : 'ttsCardFirstClips'), () => ctx.pick(draft, ['audio'], false)),
-        button('anomalous-tts-link', t('ttsCardFromThisPc'), () => ctx.pick(draft, ['audio'], true)));
-    body.append(audioHead, audioList, addAudio);
+    const clips = el('div', 'anomalous-tts-card-clips');
+    parts.clips = clips;
+    if (audioRows.length) {
+        const audioHead = el('div', 'anomalous-tts-card-section');
+        audioHead.append(el('span', 'anomalous-tts-card-section-title', t('ttsCardClipsTitle', { count: audioRows.length })),
+            el('span', 'anomalous-tts-card-section-hint', t('ttsCardClipsHint')),
+            button('anomalous-tts-link', t('ttsCardAddClips'), () => ctx.pick(draft, ['audio'], false)));
+        const audioList = el('div', 'anomalous-tts-card-files');
+        for (const row of audioRows) audioList.append(showRow(row, draft, ctx));
+        clips.append(audioHead, audioList);
+        body.append(clips);
+    }
 
     const textRows = draft.rows.filter(row => row.kind === 'text');
     const extras = el('div', 'anomalous-tts-card-extras');
@@ -304,21 +310,24 @@ export function renderDraftCard(draft, view, ctx) {
     lines.append(el('span', 'anomalous-tts-card-extra-label', t('ttsCardLineFiles')));
     for (const row of textRows) lines.append(showRow(row, draft, ctx));
     lines.append(button('anomalous-tts-link', t('ttsCardAddLineFile'), () => ctx.pick(draft, ['text'], false)));
-    const languageSelect = el('select', 'anomalous-tts-card-language');
-    for (const code of LANGUAGES) {
-        const option = el('option', '', code ? t(`ttsNeededFor_${code}`)
-            : draft.detectedLanguage ? t('ttsImportLanguageAutoFound', { lang: t(`ttsNeededFor_${draft.detectedLanguage}`) }) : t('ttsImportLanguageAuto'));
-        option.value = code;
-        languageSelect.append(option);
+    extras.append(lines);
+    if (!draft.target) {
+        const languageSelect = el('select', 'anomalous-tts-card-language');
+        for (const code of LANGUAGES) {
+            const option = el('option', '', code ? t(`ttsNeededFor_${code}`)
+                : draft.detectedLanguage ? t('ttsImportLanguageAutoFound', { lang: t(`ttsNeededFor_${draft.detectedLanguage}`) }) : t('ttsImportLanguageAuto'));
+            option.value = code;
+            languageSelect.append(option);
+        }
+        languageSelect.value = draft.language;
+        languageSelect.onchange = () => ctx.onLanguage(draft, languageSelect.value);
+        const language = el('label', 'anomalous-tts-card-lang');
+        language.append(el('span', 'anomalous-tts-card-extra-label', t('ttsImportLanguage')), languageSelect);
+        extras.append(language);
     }
-    languageSelect.value = draft.language;
-    languageSelect.onchange = () => ctx.onLanguage(draft, languageSelect.value);
-    const language = el('label', 'anomalous-tts-card-lang');
-    language.append(el('span', 'anomalous-tts-card-extra-label', t('ttsImportLanguage')), languageSelect);
-    extras.append(lines, language);
     body.append(extras);
     const missing = missingForLanguage(ctx.status, draft.language || draft.detectedLanguage || '');
-    if (missing.length) {
+    if (missing.length && !draft.target) {
         body.append(el('div', 'anomalous-tts-card-note', t('ttsImportPretrainedNote', {
             files: missing.map(item => item.label).join('、'),
             size: formatSize(missing.reduce((sum, item) => sum + (item.size || 0), 0)),
@@ -326,6 +335,7 @@ export function renderDraftCard(draft, view, ctx) {
     }
     body.append(problems);
     card.append(body);
+    paint(view);
     syncReference(draft);
     return { root: card, refresh: paint };
 }
