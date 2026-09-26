@@ -153,8 +153,11 @@ DOM or live LiteGraph state.
   an earlier place, pretrained sources and downloads, folder browse, chunked
   upload, inspect, commit, discard) and the pure import-form rules (`importKind`,
   `pickWeights`, `nameConflict`, `textFromFile`, `buildImportBody`, `importProblem`,
-  `setupSummary`); no DOM. `ui_tts_setup.js` is the setup card at the top of the
-  GPT-SoVITS studio: one storage place (changing it asks whether the characters
+  `setupSummary`, `pretrainedReminder`, `missingForLanguage`); no DOM.
+  `ui_tts_setup.js` is the setup card at the top of the GPT-SoVITS studio, one
+  quiet line unless opened. Missing pretrained files only get a dismissable dot
+  when the studio's characters need them (dismissed ids in `localStorage`; a newly
+  needed file brings it back); missing packages get a red one. Inside: one storage place (changing it asks whether the characters
   move along), other places still read, pretrained files, packages. It polls the
   status only while a download or move runs and it is in the page, and redraws the
   studio when a move ends. `ui_tts_import.js` is the import form (new character or `target` = add

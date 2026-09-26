@@ -482,9 +482,10 @@ function renderStatus(className, message) {
     return box;
 }
 
-function renderEmptyGuide(engine = 'f5') {
+/** Empty studio. For GPT-SoVITS with `onImport` it is the drop area with the import button. */
+function renderEmptyGuide(engine = 'f5', onImport = null) {
     const emptyGuide = document.createElement('div');
-    emptyGuide.className = 'anomalous-audio-empty';
+    emptyGuide.className = `anomalous-audio-empty${onImport ? ' is-drop' : ''}`;
     const icon = document.createElement('div');
     icon.className = 'anomalous-audio-empty-icon';
     icon.innerHTML = SVG.MIC;
@@ -495,6 +496,14 @@ function renderEmptyGuide(engine = 'f5') {
     desc.className = 'anomalous-audio-empty-desc';
     desc.textContent = t(engine === 'f5' ? 'audioEmptyDesc' : 'ttsEmptyDesc');
     emptyGuide.append(icon, title, desc);
+    if (onImport) {
+        const importBtn = document.createElement('button');
+        importBtn.type = 'button';
+        importBtn.className = 'anomalous-voice-modal-submit anomalous-audio-empty-action';
+        importBtn.textContent = t('ttsImportOpen');
+        importBtn.onclick = () => onImport();
+        emptyGuide.append(importBtn);
+    }
     return emptyGuide;
 }
 
@@ -636,6 +645,7 @@ export async function renderAudioStudio(container, { filter = null, owner = null
 
     const onChanged = () => { rerender(); if (owner) renderAudioSidebar(owner); };
     const canImport = Boolean(ttsStatus) && ttsStatus.local !== false;
+    let onImport = null;
     if (ttsStatus) {
         // After an import, redraw and point at the character so the next step (drag it) is obvious.
         const onDone = (character) => {
@@ -646,8 +656,9 @@ export async function renderAudioStudio(container, { filter = null, owner = null
                 card?.classList.add('is-just-added');
             });
         };
-        const onImport = (options = {}) => openTtsImport({ ...options, onDone });
-        studioWrapper.insertBefore(renderTtsSetup(ttsStatus, { onChanged, onImport: () => onImport() }), studioWrapper.lastChild);
+        onImport = (options = {}) => openTtsImport({ ...options, onDone });
+        const languages = characters.map(group => group.language);
+        studioWrapper.insertBefore(renderTtsSetup(ttsStatus, { onChanged, onImport: () => onImport(), languages }), studioWrapper.lastChild);
         if (canImport) bindTtsFileDrop(studioWrapper, (files, target) => onImport({ files, target }));
     }
 
@@ -656,7 +667,7 @@ export async function renderAudioStudio(container, { filter = null, owner = null
     }
 
     if (characters.length === 0) {
-        studioWrapper.lastChild.replaceWith(renderEmptyGuide(engineId));
+        studioWrapper.lastChild.replaceWith(renderEmptyGuide(engineId, canImport ? onImport : null));
         return;
     }
     characters.forEach(group => grid.appendChild(renderCharacterCard(group, owner, { onChanged, canImport })));

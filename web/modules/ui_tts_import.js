@@ -3,8 +3,8 @@ import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { loadEngine, loadGptSovitsStatus } from './audio_engines.js';
 import {
-    buildImportBody, commitImport, discardUploads, importKind, importProblem, inspectImport, nameConflict, pickWeights,
-    textFromFile, uploadFile, usableAsReference,
+    buildImportBody, commitImport, discardUploads, importKind, importProblem, inspectImport, missingForLanguage, nameConflict,
+    pickWeights, textFromFile, uploadFile, usableAsReference,
 } from './tts_setup_api.js';
 import { PICKER_OVERLAY_CLASS, formatSize, pickServerPath } from './ui_tts_path_picker.js';
 
@@ -226,7 +226,9 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
     const languageSelect = el('select', 'anomalous-uploader-input');
     const languageField = el('label', 'anomalous-voice-field anomalous-tts-import-language');
     languageField.append(el('span', 'anomalous-voice-field-label', t('ttsImportLanguage')), languageSelect);
+    let detectedLanguage = null;
     const fillLanguages = (suggested) => {
+        detectedLanguage = suggested;
         const keep = languageSelect.value;
         languageSelect.replaceChildren(...LANGUAGES.map(code => {
             const option = el('option', '', code ? t(`ttsNeededFor_${code}`)
@@ -237,6 +239,18 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
         languageSelect.value = keep;
     };
     fillLanguages(null);
+    // Pretrained files this language still needs (fetched on first use; just so it is no surprise).
+    const pretrainedNote = el('div', 'anomalous-tts-hint');
+    const syncPretrainedNote = () => {
+        const missing = missingForLanguage(status, languageSelect.value || detectedLanguage || '');
+        pretrainedNote.hidden = !missing.length;
+        pretrainedNote.textContent = missing.length ? t('ttsImportPretrainedNote', {
+            files: missing.map(item => item.label).join('、'),
+            size: formatSize(missing.reduce((sum, item) => sum + (item.size || 0), 0)),
+        }) : '';
+    };
+    languageSelect.addEventListener('change', syncPretrainedNote);
+    syncPretrainedNote();
 
     // ---- rows ----
     const readyRows = () => rows.filter(row => row.spec && !row.error);
@@ -442,6 +456,7 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
             if (!referenceChosen) referenceKey = suggested.reference !== null ? ready[suggested.reference]?.key ?? null : null;
             syncReference();
             fillLanguages(suggested.language);
+            syncPretrainedNote();
             problems.replaceChildren(...result.problems.map(text => el('div', 'anomalous-tts-import-problem', text)));
         } catch (e) {
             if (mine !== inspectToken || scope.signal.aborted) return;
@@ -516,7 +531,7 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
     footer.append(button('anomalous-voice-modal-cancel', t('dialogCancel'), close), submit);
     const body = el('div', 'anomalous-tts-editor-body');
     body.append(nameBlock, addBar, notes, sections.gpt.box, sections.sovits.box, sections.audio.box, sections.text.box,
-        languageField, problems);
+        languageField, pretrainedNote, problems);
     modal.append(header, body, footer);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);

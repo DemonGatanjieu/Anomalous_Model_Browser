@@ -1,19 +1,22 @@
 import { t } from './interface_settings.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { loadGptSovitsStatus } from './audio_engines.js';
-import { changePretrainedSource, changeStorage, forgetLibrary, setupSummary, startPretrainedDownload } from './tts_setup_api.js';
+import { changePretrainedSource, changeStorage, forgetLibrary, pretrainedReminder, setupSummary, startPretrainedDownload } from './tts_setup_api.js';
 import { formatSize, pickServerPath } from './ui_tts_path_picker.js';
 
 /**
  * GPT-SoVITS setup card at the top of the audio studio: the storage place (change it,
  * optionally moving the characters there), other places that still hold characters,
  * pretrained files (download or use an existing GPT-SoVITS package) and missing
- * Python packages, from the node's `/anomalous_tts/status`. Collapsed to one line
- * once everything is ready. While a download or a move runs the card polls the
+ * Python packages, from the node's `/anomalous_tts/status`. It stays one quiet line
+ * unless opened: missing pretrained files are fetched on first use anyway, so they
+ * only get a small dot (dismissable) when the characters here need them; missing
+ * Python packages get a red one. While a download or a move runs the card polls the
  * status and redraws itself; it stops as soon as it is no longer in the page.
  */
 
 const OPEN_KEY = 'anomalous_tts_setup_open';
+const DISMISSED_KEY = 'anomalous_tts_pretrained_dismissed';
 const POLL_MS = 1000;
 
 function el(tag, className, text) {
@@ -39,6 +42,17 @@ function storeOpen(open) {
     try { localStorage.setItem(OPEN_KEY, open ? '1' : '0'); } catch (_) { /* convenience only */ }
 }
 
+function storedDismissed() {
+    try {
+        const ids = JSON.parse(localStorage.getItem(DISMISSED_KEY) || '[]');
+        return Array.isArray(ids) ? ids : [];
+    } catch (_) { return []; }
+}
+
+function storeDismissed(ids) {
+    try { localStorage.setItem(DISMISSED_KEY, JSON.stringify([...new Set([...storedDismissed(), ...ids])])); } catch (_) { /* convenience only */ }
+}
+
 /**
  * Run a change, report failures, then let the studio redraw. The button stays disabled
  * while it runs; `work` returns false when the user cancelled (nothing to redraw).
@@ -57,8 +71,7 @@ async function act(btn, work, onChanged) {
 function summaryText(status, summary) {
     const parts = [t('ttsSetupCharacters', { count: summary.characters })];
     if (summary.moving) parts.push(t('ttsSetupMoving', { done: status.move.done, total: status.move.total }));
-    parts.push(summary.downloading ? t('ttsSetupDownloading')
-        : summary.missing ? t('ttsSetupPretrainedMissing', { count: summary.missing }) : t('ttsSetupPretrainedOk'));
+    if (summary.downloading) parts.push(t('ttsSetupDownloading'));
     if (summary.packages) parts.push(t('ttsSetupPackagesMissing', { count: summary.packages }));
     return parts.join(' · ');
 }
@@ -206,16 +219,31 @@ function renderPackages(status) {
     return group;
 }
 
+/** "N pretrained files not downloaded yet" with download-all and "don't remind me". */
+function renderReminder(reminder, local, onChanged, onDismiss) {
+    const box = el('div', 'anomalous-tts-reminder');
+    box.append(el('span', 'anomalous-tts-reminder-text', t('ttsReminderText', { count: reminder.items.length, size: formatSize(reminder.size) })));
+    const get = button('anomalous-tts-add', t('ttsReminderDownload'),
+        () => act(get, () => startPretrainedDownload(reminder.items.map(item => item.id)), onChanged));
+    get.disabled = !local;
+    const dismiss = button('anomalous-tts-link', t('ttsReminderDismiss'), onDismiss);
+    box.append(get, dismiss);
+    return box;
+}
+
 /**
- * The card for one status payload. `onChanged()` redraws the studio (libraries and
- * sources change the character list); `onImport()` opens the import form.
+ * The card for one status payload. `onChanged()` redraws the studio (storage and
+ * sources change the character list); `onImport()` opens the import form;
+ * `languages` are the languages of the characters in the studio (for the reminder).
  */
-export function renderTtsSetup(status, { onChanged, onImport }) {
+export function renderTtsSetup(status, options) {
+    const { onChanged, onImport, languages = [] } = options;
     const summary = setupSummary(status);
     const local = status.local !== false;
-    const card = el('section', `anomalous-tts-setup${summary.ready ? ' is-ready' : ''}`);
-    const stored = storedOpen();
-    let open = stored === null ? !summary.ready : stored === '1';
+    const reminder = pretrainedReminder(status, languages, storedDismissed());
+    const attention = summary.packages ? 'is-blocked' : reminder.due ? 'is-reminder' : '';
+    const card = el('section', `anomalous-tts-setup ${attention}`.trim());
+    let open = storedOpen() === '1';
 
     const head = el('div', 'anomalous-tts-setup-head');
     const toggle = button('anomalous-tts-setup-toggle', '', () => {
@@ -225,22 +253,37 @@ export function renderTtsSetup(status, { onChanged, onImport }) {
         toggle.setAttribute('aria-expanded', String(open));
     });
     toggle.setAttribute('aria-expanded', String(open));
-    toggle.append(el('span', 'anomalous-tts-setup-dot'), el('span', 'anomalous-tts-setup-title', t('ttsSetupTitle')),
+    if (attention) {
+        const dot = el('span', 'anomalous-tts-setup-dot');
+        dot.title = t(summary.packages ? 'ttsSetupDotPackages' : 'ttsSetupDotPretrained');
+        toggle.append(dot);
+    }
+    toggle.append(el('span', 'anomalous-tts-setup-title', t('ttsSetupTitle')),
         el('span', 'anomalous-tts-setup-summary', summaryText(status, summary)), el('span', 'anomalous-tts-setup-chevron', '▾'));
-    const importBtn = button('anomalous-voice-modal-submit anomalous-tts-setup-import', t('ttsImportOpen'), onImport);
-    importBtn.disabled = !local;
-    if (!local) importBtn.title = t('ttsSetupRemote');
-    head.append(toggle, importBtn);
+    head.append(toggle);
+    // With no characters the empty studio below carries the import button.
+    if (summary.characters) {
+        const importBtn = button('anomalous-voice-modal-submit anomalous-tts-setup-import', t('ttsImportOpen'), onImport);
+        importBtn.disabled = !local;
+        if (!local) importBtn.title = t('ttsSetupRemote');
+        head.append(importBtn);
+    }
 
     const body = el('div', 'anomalous-tts-setup-body');
     if (!local) body.append(el('div', 'anomalous-tts-setup-notice', t('ttsSetupRemote')));
-    body.append(renderStorage(status, local, onChanged), renderPretrained(status, local, onChanged));
+    if (reminder.due) {
+        body.append(renderReminder(reminder, local, onChanged, () => {
+            storeDismissed(reminder.items.map(item => item.id));
+            card.replaceWith(renderTtsSetup(status, options));
+        }));
+    }
     const packages = renderPackages(status);
     if (packages) body.append(packages);
+    body.append(renderStorage(status, local, onChanged), renderPretrained(status, local, onChanged));
 
     card.classList.toggle('is-open', open);
     card.append(head, body);
-    if (summary.downloading || summary.moving) pollWhileBusy(card, { onChanged, onImport }, summary.moving);
+    if (summary.downloading || summary.moving) pollWhileBusy(card, options, summary.moving);
     return card;
 }
 

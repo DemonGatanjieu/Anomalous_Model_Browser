@@ -229,6 +229,29 @@ export function textFromFile(content, clipName) {
     return table.get(name) ?? table.get(`${stem.split('.')[0]}${ext}`) ?? null;
 }
 
+/**
+ * Pretrained files worth a reminder dot: missing ones that the characters in the
+ * studio will actually load (the shared ones, English for mixed-in words, v2Pro's
+ * speaker model, plus their languages; a character with no known language counts
+ * as every language). No characters, no reminder: an empty studio is only about
+ * importing. `due` is false once every such file was dismissed with "don't remind
+ * me"; a newly needed one (say, the first Chinese character) brings the dot back.
+ */
+export function pretrainedReminder(status, languages, dismissed = []) {
+    const langs = new Set(languages || []);
+    if (!langs.size) return { items: [], size: 0, due: false };
+    const needed = (item) => ['all', 'en', 'v2pro'].includes(item.needed_for) || langs.has(item.needed_for) || langs.has('');
+    const items = (status?.pretrained || []).filter(item => (item.state === 'missing' || item.state === 'error') && needed(item));
+    const seen = new Set(dismissed);
+    return { items, size: items.reduce((sum, item) => sum + (item.size || 0), 0), due: items.some(item => !seen.has(item.id)) };
+}
+
+/** Required pretrained files still missing for a character in `language` ('' = not chosen yet). */
+export function missingForLanguage(status, language) {
+    return (status?.pretrained || []).filter(item => item.required && item.state !== 'ok'
+        && (item.needed_for === 'all' || (language && item.needed_for === language)));
+}
+
 /** Summary for the setup card: what still needs doing. */
 export function setupSummary(status) {
     const characters = (status?.libraries || []).reduce((sum, lib) => sum + (lib.characters || 0), 0);
