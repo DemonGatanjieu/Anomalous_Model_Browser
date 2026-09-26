@@ -4,12 +4,11 @@ import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { stopGalleryAudio } from './ui_audio_gallery.js';
 import { openAudioUploaderModal } from './ui_audio_uploader.js';
 import { getActiveAudioFilter, renderAudioSidebar, setActiveAudioFilter } from './ui_audio_sidebar.js';
-import { AUDIO_NODE_TARGETS, alignedVoiceValue, planVoiceDrop } from './audio_node_targets.js';
+import { alignedVoiceValue } from './audio_node_targets.js';
+import { bindVoiceDrag } from './audio_voice_drag.js';
 import { AUDIO_ENGINES, detectEngines, engineById, engineTargetLabels, getStoredEngine, invalidateEngineCache, loadEngine, loadGptSovitsStatus, pickEngine, setStoredEngine } from './audio_engines.js';
 import { openGptSovitsEditor } from './ui_audio_tts_editor.js';
-import { renderTtsSetup } from './ui_tts_setup.js';
 import { bindTtsFileDrop, openTtsImport } from './ui_tts_import.js';
-import { bindMaterialDrag } from './material_drag.js';
 import {
     openScriptDirector,
     closeScriptDirector,
@@ -139,68 +138,6 @@ function renderEqIndicator() {
     return barWrap;
 }
 
-function itemEngine(item) {
-    return (item.kind === 'character' ? item.group?.engine : item.slice?.engine) || 'f5';
-}
-
-function engineLabel(id) {
-    return engineById(id)?.label || id;
-}
-
-function itemLabel(item) {
-    if (item.kind === 'character') return item.group.character;
-    return `${item.slice.character} · ${String(item.slice.emotion || '').toUpperCase()}`;
-}
-
-/** What the drop will do, shown while hovering an accepted node. */
-function dropTargetHint(node, item) {
-    const plan = planVoiceDrop(node, item);
-    if (!plan.ok) return '';
-    return item.kind === 'character'
-        ? t('audioDropCharacterTarget', { node: plan.target.label, character: item.group.character })
-        : t('audioDropClipTarget', { node: plan.target.label, clip: itemLabel(item) });
-}
-
-/** Why a hovered node is refused; every refusal names what to do instead. */
-function dropRejectHint(node, item) {
-    const plan = planVoiceDrop(node, item);
-    if (plan.ok) return '';
-    const params = {
-        node: plan.target?.label || '',
-        supported: AUDIO_NODE_TARGETS.filter(target => target.engine === itemEngine(item)).map(target => target.label).join(t('audioListSeparator')),
-        voiceEngine: engineLabel(itemEngine(item)),
-        character: item.kind === 'character' ? item.group.character : item.slice.character,
-        emotion: item.kind === 'clip' && !item.slice.is_main ? `{${item.slice.emotion}}` : t('audioEmotionTagExample'),
-        file: plan.path || '',
-    };
-    return t(`audioDropReject_${plan.reason}`, params);
-}
-
-/**
- * Drag a character (card header) or one clip (row) onto a canvas node. Which one a node
- * takes is decided by audio_node_targets.js; unlisted nodes are refused, never guessed.
- */
-function bindVoiceDrag(element, item, owner) {
-    bindMaterialDrag(element, owner || {}, {
-        payload: () => ({
-            ...item,
-            dragHint: item.kind === 'character'
-                ? t('audioDragCharacterHint', { character: item.group.character, node: engineLabel(itemEngine(item)) })
-                : t('audioDragClipHint', { clip: itemLabel(item) }),
-        }),
-        accepts: node => planVoiceDrop(node, item).ok,
-        targetHint: node => dropTargetHint(node, item),
-        rejectHint: node => dropRejectHint(node, item),
-        drop: async node => {
-            const plan = planVoiceDrop(node, item);
-            if (!plan.ok) return;
-            plan.widget.value = plan.value;
-            plan.widget.callback?.(plan.value, app.canvas, node);
-            node.setDirtyCanvas?.(true, true);
-        },
-    });
-}
-
 function gripIcon() {
     const grip = document.createElement('span');
     grip.className = 'anomalous-voice-grip';
@@ -212,6 +149,7 @@ function gripIcon() {
 function renderSliceRow(slice, owner) {
     const row = document.createElement('div');
     row.className = 'anomalous-voice-slice-row';
+    row.dataset.sliceId = slice.id; // the sidebar plays a clip through its row
     const draggable = (slice.engine || 'f5') === 'f5';
     row.classList.toggle('is-static', !draggable);
     if (draggable) {
@@ -657,8 +595,12 @@ export async function renderAudioStudio(container, { filter = null, owner = null
             });
         };
         onImport = (options = {}) => openTtsImport({ ...options, onDone });
-        const languages = characters.map(group => group.language);
-        studioWrapper.insertBefore(renderTtsSetup(ttsStatus, { onChanged, onImport: () => onImport(), languages }), studioWrapper.lastChild);
+        // Settings (storage, pretrained files, packages) live behind the sidebar's footer entry.
+        const importBtn = createToolButton(SVG.PLUS, t('ttsImportOpenShort'));
+        importBtn.onclick = () => onImport();
+        importBtn.disabled = !canImport;
+        if (!canImport) importBtn.title = t('ttsSetupRemote');
+        toolbar.querySelector('.anomalous-audio-right-actions')?.prepend(importBtn);
         if (canImport) bindTtsFileDrop(studioWrapper, (files, target) => onImport({ files, target }));
     }
 

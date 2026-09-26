@@ -780,6 +780,218 @@
     font-weight: 600;
 }
 
+/* Sidebar: search, language / folder groups, clips, settings entry */
+.anomalous-audio-sidebar-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 12px 0;
+    padding: 5px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.25);
+    color: #64748b;
+}
+
+.anomalous-audio-sidebar-search input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #f1f5f9;
+    font-size: 12px;
+}
+
+.anomalous-audio-nav-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-audio-nav-bucket-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: calc(100% - 16px);
+    margin: 6px 8px 0;
+    padding: 4px 6px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #94a3b8;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.anomalous-audio-nav-bucket-head:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: #e2e8f0;
+}
+
+.anomalous-audio-nav-bucket-count {
+    margin-left: auto;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.anomalous-audio-nav-chevron {
+    display: inline-flex;
+    flex-shrink: 0;
+    color: #64748b;
+    transition: transform 0.15s ease;
+}
+
+.anomalous-audio-nav-chevron.is-open {
+    transform: rotate(90deg);
+}
+
+.anomalous-audio-nav-bucket-head.is-collapsed .anomalous-audio-nav-chevron {
+    transform: none;
+}
+
+.anomalous-audio-nav-chevron[hidden] {
+    display: none;
+}
+
+.anomalous-audio-nav-bucket .anomalous-audio-nav-item {
+    padding-left: 10px;
+}
+
+.anomalous-audio-nav-item > .anomalous-audio-nav-chevron {
+    margin: -4px -4px -4px -2px;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.anomalous-audio-nav-item > .anomalous-audio-nav-chevron:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+}
+
+.anomalous-audio-nav-item .anomalous-audio-nav-label {
+    flex: 1;
+}
+
+.anomalous-audio-nav-problem {
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #f87171;
+}
+
+.anomalous-audio-nav-clips {
+    display: flex;
+    flex-direction: column;
+    margin: 0 8px 4px 30px;
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.anomalous-audio-nav-clip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 0 6px 6px 0;
+    background: transparent;
+    color: #94a3b8;
+    font: inherit;
+    font-size: 11px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.anomalous-audio-nav-clip:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: #e2e8f0;
+}
+
+.anomalous-audio-nav-clip-play {
+    display: inline-flex;
+    flex-shrink: 0;
+    color: #818cf8;
+}
+
+.anomalous-audio-nav-clip-tag {
+    flex-shrink: 0;
+    color: #c4b5fd;
+    font-weight: 600;
+}
+
+.anomalous-audio-nav-clip-text {
+    min-width: 0;
+    overflow: hidden;
+    color: #64748b;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-audio-nav-empty {
+    padding: 10px 16px;
+    color: #64748b;
+    font-size: 11px;
+}
+
+.anomalous-audio-nav-list.is-file-dragover {
+    outline: 2px dashed rgba(129, 140, 248, 0.6);
+    outline-offset: -4px;
+    border-radius: 10px;
+}
+
+.anomalous-audio-nav-character.is-file-target > .anomalous-audio-nav-item {
+    background: rgba(99, 102, 241, 0.2);
+    box-shadow: inset 0 0 0 1px #818cf8;
+}
+
+.anomalous-audio-sidebar-settings {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 10px 16px;
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    background: transparent;
+    color: #94a3b8;
+    font: inherit;
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.anomalous-audio-sidebar-settings:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: #f1f5f9;
+}
+
+/* Amber: pretrained files worth a look (dismissable); red: missing Python packages. */
+.anomalous-audio-sidebar-settings-dot {
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #f59e0b;
+}
+
+.anomalous-audio-sidebar-settings.is-blocked .anomalous-audio-sidebar-settings-dot {
+    background: #f87171;
+}
+
+.anomalous-audio-sidebar-settings-busy {
+    padding-left: 21px;
+    color: #38bdf8;
+    font-size: 10px;
+}
+
 /* Audio Voice Ingestion Modal */
 .anomalous-voice-modal-overlay {
     position: fixed;

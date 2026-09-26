@@ -154,12 +154,12 @@ DOM or live LiteGraph state.
   upload, inspect, commit, discard) and the pure import-form rules (`importKind`,
   `pickWeights`, `nameConflict`, `textFromFile`, `buildImportBody`, `importProblem`,
   `setupSummary`, `pretrainedReminder`, `missingForLanguage`); no DOM.
-  `ui_tts_setup.js` is the setup card at the top of the GPT-SoVITS studio, one
-  quiet line unless opened. Missing pretrained files only get a dismissable dot
+  `ui_tts_setup.js` is the GPT-SoVITS settings dialog, opened from the sidebar
+  footer (`setupAttention` gives that entry its dot). Missing pretrained files only get a dismissable dot
   when the studio's characters need them (dismissed ids in `localStorage`; a newly
   needed file brings it back); missing packages get a red one. Inside: one storage place (changing it asks whether the characters
   move along), other places still read, pretrained files, packages. It polls the
-  status only while a download or move runs and it is in the page, and redraws the
+  status only while a download or move runs and it is open, and redraws the
   studio when a move ends. `ui_tts_import.js` is the import form (new character or `target` = add
   files, switchable when the name already exists; one GPT and one SoVITS slot,
   the latest epoch kept from a batch; new characters always go to the storage
@@ -189,7 +189,14 @@ DOM or live LiteGraph state.
   `docs/guides/audio-studio.md`) instead of the visual update guide.
 - `ui_audio_uploader.js` owns the voice ingestion modal (createViewScope lifecycle,
   overwrite confirmation, optional romanization keeping the original script).
-- `ui_audio_sidebar.js` owns the audio navigation and the active audio filter.
+- `ui_audio_sidebar.js` owns the audio navigation and the active audio filter:
+  characters grouped by language (GPT-SoVITS) or folder (F5-TTS), groups folded
+  in `localStorage`, a character unfolds into its clips (a click plays the clip
+  through its studio row, switching the studio to that character when needed), a
+  search box from six characters on, a red dot for characters that need a look,
+  and for GPT-SoVITS the settings entry at the bottom and file drops on a
+  character. Canvas drags go through `audio_voice_drag.js`, shared with the
+  studio cards.
 - `ui_audio_gallery.js` owns the generated-audio history (output folder): playback,
   seeking, search, paging, download and deletion, showing the speech/voice/seed
   recorded in each file, plus a section for unsaved temp previews that can be

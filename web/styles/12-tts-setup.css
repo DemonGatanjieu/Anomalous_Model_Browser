@@ -1,60 +1,18 @@
 /* GPT-SoVITS setup card, import form, server path picker and studio file drop.
    Modal shell, fields, chips and buttons come from 11-audio-studio.css. */
 
-/* ---------- Setup card ---------- */
+/* ---------- Settings dialog (opened from the audio sidebar) ---------- */
+.anomalous-voice-modal.anomalous-tts-setup-modal {
+    width: 760px;
+}
+
 .anomalous-tts-setup {
-    margin: 0 0 12px;
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    border-radius: 12px;
-    background: rgba(148, 163, 184, 0.03);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 12px;
     color: #cbd5e1;
     font-size: 12px;
-}
-
-.anomalous-tts-setup.is-blocked {
-    border-color: rgba(248, 113, 113, 0.35);
-    background: rgba(248, 113, 113, 0.04);
-}
-
-.anomalous-tts-setup-head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 10px 8px 12px;
-}
-
-.anomalous-tts-setup-toggle {
-    display: flex;
-    flex: 1;
-    min-width: 0;
-    align-items: center;
-    gap: 8px;
-    padding: 2px 0;
-    border: none;
-    background: none;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-}
-
-/* Only when something wants a look: amber = pretrained reminder, red = packages. */
-.anomalous-tts-setup-dot {
-    flex-shrink: 0;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #f59e0b;
-}
-
-.anomalous-tts-setup.is-blocked .anomalous-tts-setup-dot {
-    background: #f87171;
-}
-
-.anomalous-tts-setup-title {
-    flex-shrink: 0;
-    color: #cbd5e1;
-    font-weight: 600;
 }
 
 .anomalous-tts-reminder {
@@ -89,41 +47,6 @@
     margin-top: 18px;
     padding: 7px 18px;
     font-size: 13px;
-}
-
-.anomalous-tts-setup-summary {
-    min-width: 0;
-    overflow: hidden;
-    color: #94a3b8;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.anomalous-tts-setup-chevron {
-    margin-left: auto;
-    color: #64748b;
-    transition: transform 0.15s ease;
-}
-
-.anomalous-tts-setup.is-open .anomalous-tts-setup-chevron {
-    transform: rotate(180deg);
-}
-
-.anomalous-voice-modal-submit.anomalous-tts-setup-import {
-    flex-shrink: 0;
-    padding: 5px 14px;
-    font-size: 12px;
-}
-
-.anomalous-tts-setup-body {
-    display: none;
-    flex-direction: column;
-    gap: 14px;
-    padding: 4px 12px 12px;
-}
-
-.anomalous-tts-setup.is-open .anomalous-tts-setup-body {
-    display: flex;
 }
 
 .anomalous-tts-setup-group {
@@ -203,8 +126,7 @@
 .anomalous-tts-state.is-error { color: #f87171; cursor: help; }
 
 .anomalous-tts-add:disabled,
-.anomalous-tts-remove:disabled,
-.anomalous-voice-modal-submit.anomalous-tts-setup-import:disabled {
+.anomalous-tts-remove:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
