@@ -16,6 +16,13 @@
 ### Fixes
 - All-in-one loader recipes and cross-node prompt injection use one verified adapter table; prompt text never crosses between positive and negative.
 
+## v1.57.2 Beta (Canvas Performance Hotfix) — 2026-09-26
+
+### ⚡ Smooth canvas dragging again (画布拖动卡顿修复)
+- **Dragging and zooming the canvas no longer slows down with this plugin installed (安装插件后拖动画布掉帧)**: one stylesheet rule, which only hid the sidebar tooltip while the Toolbox or Settings popup was open, made the browser re-check the whole page every time any element's inline style changed. ComfyUI moves every text-box widget on every frame while you pan or zoom, so each frame paid for it, even with the browser closed. Measured on a 300-node workflow in ComfyUI: style work while panning drops from about 11× the no-plugin cost back to the same as without the plugin.
+- **Large workflows with ComfyUI Prompt Assistant (与提示词小助手同时安装时的严重卡顿)**: the cost grew with the number of page elements, and Prompt Assistant adds a row of buttons to every text box, so together style work took about 19 ms per frame (more than a whole 60 fps frame): single-digit frame rates or freezes on big workflows. It is now back to the level of Prompt Assistant alone. The two plugins never conflicted otherwise.
+- The tooltip still stays hidden while the Toolbox or Settings popup is open; the popups already hide it when they open and it does not reappear until they close.
+
 ## v1.57.1 Beta (Version Panel: Update, Switch & Roll Back) — 2026-09-23
 
 ### 🏷️ Version & Updates Panel (版本号与一键更新 / 版本切换)
