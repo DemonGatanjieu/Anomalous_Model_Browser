@@ -32,10 +32,6 @@
     line-height: 1.5;
 }
 
-.anomalous-tts-import .anomalous-tts-hint[hidden] {
-    display: none;
-}
-
 /* Empty GPT-SoVITS studio: the whole area takes dropped files. */
 .anomalous-audio-empty.is-drop {
     margin-top: 4px;
@@ -131,391 +127,6 @@
     cursor: not-allowed;
 }
 
-/* ---------- Import workbench: characters on the left, the selected one on the right ---------- */
-.anomalous-voice-modal.anomalous-tts-import {
-    width: 1080px;
-    height: 86vh;
-    max-width: 94vw;
-    overflow: hidden;
-    gap: 12px;
-}
-
-.anomalous-tts-import > .anomalous-voice-modal-header,
-.anomalous-tts-import > .anomalous-tts-import-addbar,
-.anomalous-tts-import > .anomalous-voice-modal-footer {
-    flex-shrink: 0;
-}
-
-.anomalous-tts-import > .anomalous-tts-hint:empty {
-    display: none;
-}
-
-.anomalous-tts-import.is-dragover {
-    border-color: #818cf8;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 0 2px rgba(129, 140, 248, 0.6);
-}
-
-.anomalous-tts-import-addbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 12px;
-    padding: 8px 12px;
-    border: 1.5px dashed rgba(129, 140, 248, 0.35);
-    border-radius: 10px;
-    background: rgba(99, 102, 241, 0.04);
-}
-
-.anomalous-tts-batch-main {
-    display: grid;
-    flex: 1 1 auto;
-    grid-template-columns: 230px minmax(0, 1fr);
-    gap: 14px;
-    min-height: 0;
-}
-
-.anomalous-tts-batch-side {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-height: 0;
-}
-
-.anomalous-tts-batch-drafts {
-    display: flex;
-    flex: 1 1 auto;
-    flex-direction: column;
-    gap: 4px;
-    min-height: 0;
-    overflow-y: auto;
-}
-
-.anomalous-tts-batch-side > .anomalous-tts-link {
-    align-self: flex-start;
-    margin-left: 4px;
-}
-
-/* One character in the list: dot = where it stands (see tts_import_groups.js draftState). */
-.anomalous-tts-batch-draft {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 8px 10px;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.03);
-    color: #cbd5e1;
-    font: inherit;
-    font-size: 12px;
-    text-align: left;
-    cursor: pointer;
-}
-
-.anomalous-tts-batch-draft:hover {
-    background: rgba(255, 255, 255, 0.06);
-}
-
-.anomalous-tts-batch-draft.active {
-    border-color: rgba(129, 140, 248, 0.5);
-    background: rgba(99, 102, 241, 0.14);
-    color: #f1f5f9;
-}
-
-.anomalous-tts-batch-draft.is-drop-target {
-    border-color: #818cf8;
-    box-shadow: inset 0 0 0 1px #818cf8;
-}
-
-.anomalous-tts-batch-draft-top {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    min-width: 0;
-}
-
-.anomalous-tts-batch-draft-name {
-    min-width: 0;
-    overflow: hidden;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.anomalous-tts-batch-draft-meta {
-    padding-left: 15px;
-    color: #64748b;
-    font-size: 10.5px;
-}
-
-.anomalous-tts-batch-dot {
-    flex-shrink: 0;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #64748b;
-}
-
-.anomalous-tts-batch-draft[data-tone="ready"] .anomalous-tts-batch-dot { background: #34d399; }
-.anomalous-tts-batch-draft[data-tone="needed"] .anomalous-tts-batch-dot { background: #fbbf24; }
-.anomalous-tts-batch-draft[data-tone="error"] .anomalous-tts-batch-dot { background: #f87171; }
-.anomalous-tts-batch-draft[data-tone="busy"] .anomalous-tts-batch-dot { background: #38bdf8; }
-.anomalous-tts-batch-draft[data-tone="done"] { opacity: 0.6; }
-.anomalous-tts-batch-draft[data-tone="done"] .anomalous-tts-batch-draft-meta { color: #34d399; }
-
-.anomalous-tts-batch-draft.is-tray {
-    margin-top: 6px;
-    border-style: dashed;
-    border-color: rgba(251, 191, 36, 0.35);
-}
-
-.anomalous-tts-batch-draft.is-tray .anomalous-tts-batch-dot { background: #fbbf24; }
-
-/* The selected character: this side scrolls, the list and the footer stay. */
-.anomalous-tts-batch-detail {
-    min-height: 0;
-    padding-right: 6px;
-    overflow-y: auto;
-}
-
-.anomalous-tts-batch-pane {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.anomalous-tts-batch-empty,
-.anomalous-tts-batch-tray-note {
-    padding: 14px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.03);
-    color: #94a3b8;
-    font-size: 12px;
-    line-height: 1.6;
-}
-
-.anomalous-tts-batch-tray-note {
-    background: rgba(251, 191, 36, 0.07);
-    color: #fde68a;
-}
-
-.anomalous-tts-batch-title {
-    color: #f1f5f9;
-    font-size: 14px;
-    font-weight: 700;
-}
-
-.anomalous-tts-batch-weights {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-}
-
-.anomalous-tts-batch-slot,
-.anomalous-tts-batch-section {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 0;
-}
-
-.anomalous-tts-batch-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.anomalous-tts-import-section-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.anomalous-tts-import-section-title {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 8px;
-}
-
-.anomalous-tts-import-section-pick {
-    display: inline-flex;
-    gap: 12px;
-}
-
-.anomalous-tts-import-mark {
-    color: #34d399;
-    font-size: 11px;
-    font-weight: 600;
-}
-
-.anomalous-tts-import-mark.is-needed {
-    color: #fbbf24;
-}
-
-.anomalous-tts-import-empty {
-    padding: 8px 10px;
-    border: 1px dashed rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: #64748b;
-    font-size: 11.5px;
-}
-
-.anomalous-tts-batch-slot:has(.is-needed) .anomalous-tts-import-empty {
-    border-color: rgba(251, 191, 36, 0.35);
-}
-
-/* One file per line. Left bar: green ready / merged, blue uploading, grey skipped, red failed or refused. */
-.anomalous-tts-batch-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-    padding: 4px 6px;
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-left: 3px solid rgba(255, 255, 255, 0.12);
-    border-radius: 7px;
-    background: rgba(0, 0, 0, 0.2);
-    font-size: 12px;
-}
-
-.anomalous-tts-batch-row[data-tone="ready"],
-.anomalous-tts-batch-row[data-tone="merge"] {
-    border-color: rgba(52, 211, 153, 0.22);
-    border-left-color: #34d399;
-}
-
-.anomalous-tts-batch-row[data-tone="busy"] { border-left-color: #38bdf8; }
-.anomalous-tts-batch-row[data-tone="skip"] { border-left-color: #64748b; opacity: 0.75; }
-
-.anomalous-tts-batch-row[data-tone="error"] {
-    border-color: rgba(248, 113, 113, 0.4);
-    border-left-color: #f87171;
-    background: rgba(248, 113, 113, 0.05);
-}
-
-.anomalous-tts-batch-grip {
-    flex-shrink: 0;
-    color: #475569;
-    font-size: 11px;
-    letter-spacing: -2px;
-    cursor: grab;
-    user-select: none;
-}
-
-.anomalous-tts-batch-grip:hover {
-    color: #a5b4fc;
-}
-
-.anomalous-tts-batch-file {
-    display: flex;
-    flex: 1 1 120px;
-    flex-direction: column;
-    min-width: 0;
-}
-
-.anomalous-tts-batch-row.is-audio .anomalous-tts-batch-file {
-    flex: 0 1 150px;
-}
-
-.anomalous-tts-batch-name {
-    overflow: hidden;
-    color: #e2e8f0;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.anomalous-tts-batch-meta {
-    color: #64748b;
-    font-size: 10.5px;
-}
-
-.anomalous-tts-batch-row.is-out-of-range .anomalous-tts-batch-meta {
-    color: #fbbf24;
-}
-
-/* The play button's own display rule would override [hidden] (local paths cannot be played). */
-.anomalous-tts-batch-row [hidden] {
-    display: none;
-}
-
-.anomalous-tts-batch-row input,
-.anomalous-tts-batch-move {
-    min-width: 0;
-    padding: 4px 7px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    background: rgba(0, 0, 0, 0.25);
-    color: #e2e8f0;
-    font-size: 11.5px;
-}
-
-.anomalous-tts-batch-row .anomalous-tts-name-input {
-    flex: 0 1 96px;
-}
-
-.anomalous-tts-batch-row .anomalous-tts-name-input:disabled {
-    opacity: 0.4;
-}
-
-.anomalous-tts-batch-row .anomalous-tts-text-input {
-    flex: 1 1 160px;
-}
-
-/* Where the line came from: amber = a guess from the file name, red edge = none found. */
-.anomalous-tts-batch-row .anomalous-tts-text-input[data-source="filename"] {
-    border-color: rgba(251, 191, 36, 0.5);
-}
-
-.anomalous-tts-batch-row .anomalous-tts-text-input[data-source="none"],
-.anomalous-tts-batch-row .anomalous-tts-text-input[data-source="missing"] {
-    border-style: dashed;
-    border-color: rgba(248, 113, 113, 0.45);
-}
-
-.anomalous-tts-batch-row .anomalous-tts-text-input.dragover {
-    border-color: #818cf8;
-    background: rgba(99, 102, 241, 0.12);
-}
-
-.anomalous-tts-batch-row .anomalous-tag-chip:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-}
-
-.anomalous-tts-batch-move {
-    flex: 0 1 110px;
-}
-
-.anomalous-tts-import-state {
-    flex: 0 1 auto;
-    max-width: 150px;
-    overflow: hidden;
-    color: #94a3b8;
-    font-size: 11px;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.anomalous-tts-batch-row[data-tone="ready"] .anomalous-tts-import-state,
-.anomalous-tts-batch-row[data-tone="merge"] .anomalous-tts-import-state { color: #34d399; }
-.anomalous-tts-batch-row[data-tone="busy"] .anomalous-tts-import-state { color: #38bdf8; }
-.anomalous-tts-batch-row[data-tone="error"] .anomalous-tts-import-state { color: #f87171; }
-
-.anomalous-tts-import-conflict {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 8px;
-    min-width: 0;
-    color: #fbbf24;
-    font-size: 12px;
-}
-
-.anomalous-tts-import-conflict:empty {
-    display: none;
-}
-
 .anomalous-tts-link {
     padding: 0;
     border: none;
@@ -528,52 +139,985 @@
     cursor: pointer;
 }
 
-.anomalous-tts-import-language {
-    max-width: 260px;
+/* ---------- Import window ----------
+   Empty: one drop area saying what to bring. With files: one card per character,
+   one unfolded at a time. Tones: ready green, needed amber, error red, busy blue. */
+.anomalous-voice-modal.anomalous-tts-import {
+    position: relative;
+    width: 880px;
+    height: min(84vh, 800px);
+    max-width: 94vw;
+    overflow: hidden;
+    gap: 14px;
 }
 
-.anomalous-tts-import-problems {
+.anomalous-tts-import > .anomalous-voice-modal-header,
+.anomalous-tts-import > .anomalous-tts-steps,
+.anomalous-tts-import > .anomalous-voice-modal-footer {
+    flex-shrink: 0;
+}
+
+/* Three steps, so a first-time user knows where they are. */
+.anomalous-tts-steps {
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.anomalous-tts-step {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.anomalous-tts-step:not(:last-child)::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    margin-left: 4px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.anomalous-tts-step-no {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.anomalous-tts-step-label {
+    white-space: nowrap;
+}
+
+.anomalous-tts-step.is-current {
+    color: #e0e7ff;
+    font-weight: 600;
+}
+
+.anomalous-tts-step.is-current .anomalous-tts-step-no {
+    border-color: transparent;
+    background: linear-gradient(135deg, #6366f1, #38bdf8);
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
+}
+
+.anomalous-tts-step.is-done {
+    color: #94a3b8;
+}
+
+.anomalous-tts-step.is-done .anomalous-tts-step-no {
+    border-color: rgba(52, 211, 153, 0.5);
+    color: #34d399;
+}
+
+.anomalous-tts-step.is-done::after {
+    background: rgba(52, 211, 153, 0.35);
+}
+
+.anomalous-tts-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    margin: 0 -6px;
+    padding: 0 6px 2px;
+    overflow-y: auto;
+}
+
+/* ---- empty: the drop area ---- */
+.anomalous-tts-hero {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 32px 24px;
+    border: 2px dashed rgba(129, 140, 248, 0.35);
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.12), transparent 60%),
+        rgba(255, 255, 255, 0.015);
+    text-align: center;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.anomalous-tts-hero-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(99, 102, 241, 0.16);
+    color: #a5b4fc;
+}
+
+.anomalous-tts-hero-title {
+    color: #f1f5f9;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.anomalous-tts-hero-needs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+
+.anomalous-tts-hero-need {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 5px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.25);
+    color: #64748b;
+    font-size: 11.5px;
+}
+
+.anomalous-tts-hero-need b {
+    color: #e2e8f0;
+    font-weight: 600;
+}
+
+.anomalous-tts-hero-desc {
+    max-width: 540px;
+    color: #94a3b8;
+    font-size: 12.5px;
+    line-height: 1.7;
+}
+
+.anomalous-tts-hero-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.anomalous-tts-hero-buttons .anomalous-voice-modal-submit {
+    padding: 10px 26px;
+    font-size: 13.5px;
+}
+
+.anomalous-tts-hero-local {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: baseline;
+    gap: 8px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.anomalous-tts-hero-dot {
+    color: #475569;
+}
+
+/* Dragging files over the window. */
+.anomalous-tts-drop-cover {
+    position: absolute;
+    inset: 10px;
+    z-index: 5;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed #818cf8;
+    border-radius: 14px;
+    background: rgba(20, 23, 34, 0.88);
+    color: #e0e7ff;
+    font-size: 18px;
+    font-weight: 700;
+    pointer-events: none;
+}
+
+.anomalous-tts-import.is-dragover .anomalous-tts-drop-cover {
+    display: flex;
+}
+
+/* ---- with files: toolbar and "add more" menu ---- */
+.anomalous-tts-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.anomalous-tts-toolbar-title {
+    margin-right: auto;
+    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.anomalous-tts-ghost {
+    padding: 6px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #cbd5e1;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.anomalous-tts-ghost:hover {
+    border-color: rgba(129, 140, 248, 0.45);
+    background: rgba(99, 102, 241, 0.12);
+    color: #e0e7ff;
+}
+
+.anomalous-tts-ghost.is-large {
+    padding: 10px 22px;
+    font-size: 13.5px;
+}
+
+.anomalous-tts-menu-wrap {
+    position: relative;
+}
+
+.anomalous-tts-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 4;
+    display: none;
+    flex-direction: column;
+    min-width: 240px;
+    padding: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    background: #1b1f2e;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+
+.anomalous-tts-menu.is-open {
+    display: flex;
+}
+
+.anomalous-tts-menu-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    color: #e2e8f0;
+    font: inherit;
+    font-size: 12.5px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.anomalous-tts-menu-item:hover {
+    background: rgba(99, 102, 241, 0.16);
+}
+
+.anomalous-tts-menu-hint {
+    color: #64748b;
+    font-size: 11px;
+}
+
+.anomalous-tts-note {
+    color: #94a3b8;
+    font-size: 11.5px;
+}
+
+.anomalous-tts-note:empty {
+    display: none;
+}
+
+/* ---- character cards ---- */
+.anomalous-tts-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.anomalous-tts-card {
+    flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.025);
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.anomalous-tts-card.is-open {
+    border-color: rgba(129, 140, 248, 0.35);
+    background: rgba(99, 102, 241, 0.04);
+}
+
+.anomalous-tts-card.is-drop-target {
+    border-color: #818cf8;
+    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.35);
+}
+
+.anomalous-tts-card[data-tone="done"] {
+    opacity: 0.55;
+}
+
+.anomalous-tts-card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 9px 12px;
+    cursor: pointer;
+}
+
+.anomalous-tts-card.is-tray .anomalous-tts-card-head {
+    cursor: default;
+}
+
+.anomalous-tts-card-chevron {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.anomalous-tts-card-chevron::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.15s ease;
+}
+
+.anomalous-tts-card.is-open .anomalous-tts-card-chevron::before {
+    transform: rotate(45deg);
+}
+
+.anomalous-tts-card-avatar {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #38bdf8);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.anomalous-tts-card.is-tray .anomalous-tts-card-avatar {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+}
+
+.anomalous-tts-card-title {
+    display: inline-flex;
+    flex: 1 1 auto;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    overflow: hidden;
+    color: #f1f5f9;
+    font-size: 14px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-tts-card-addto {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.anomalous-tts-card-name-input {
+    flex: 1 1 auto;
+    min-width: 60px;
+    padding: 4px 8px;
+    margin-left: -8px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #f1f5f9;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.anomalous-tts-card-name-input:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.anomalous-tts-card-name-input:focus {
+    border-color: rgba(129, 140, 248, 0.6);
+    background: rgba(0, 0, 0, 0.25);
+    outline: none;
+}
+
+.anomalous-tts-card-name-input::placeholder {
+    color: #fbbf24;
+    font-weight: 500;
+}
+
+.anomalous-tts-card-pill {
+    flex-shrink: 0;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.12);
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.anomalous-tts-card[data-tone="ready"] .anomalous-tts-card-pill { background: rgba(52, 211, 153, 0.14); color: #34d399; }
+.anomalous-tts-card[data-tone="needed"] .anomalous-tts-card-pill { background: rgba(251, 191, 36, 0.14); color: #fbbf24; }
+.anomalous-tts-card[data-tone="error"] .anomalous-tts-card-pill { background: rgba(248, 113, 113, 0.14); color: #f87171; }
+.anomalous-tts-card[data-tone="busy"] .anomalous-tts-card-pill { background: rgba(56, 189, 248, 0.14); color: #38bdf8; }
+
+.anomalous-tts-card-holds {
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: 4px;
+}
+
+.anomalous-tts-card-hold {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #475569;
+    font-size: 10.5px;
+    text-decoration: line-through;
+    white-space: nowrap;
+}
+
+.anomalous-tts-card-hold.is-on {
+    color: #94a3b8;
+    text-decoration: none;
+}
+
+.anomalous-tts-card-remove,
+.anomalous-tts-file-remove {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: #64748b;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.anomalous-tts-card-remove:hover,
+.anomalous-tts-file-remove:hover {
+    background: rgba(248, 113, 113, 0.12);
+    color: #f87171;
+}
+
+.anomalous-tts-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 2px 14px 14px;
+}
+
+.anomalous-tts-card.is-tray {
+    border-style: dashed;
+    border-color: rgba(251, 191, 36, 0.4);
+    background: rgba(251, 191, 36, 0.035);
+}
+
+.anomalous-tts-card-weights {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.anomalous-tts-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid rgba(52, 211, 153, 0.25);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.anomalous-tts-tile.is-empty {
+    border-style: dashed;
+    border-color: rgba(255, 255, 255, 0.12);
+    background: transparent;
+}
+
+.anomalous-tts-tile.is-needed {
+    border-color: rgba(251, 191, 36, 0.45);
+}
+
+.anomalous-tts-tile-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.anomalous-tts-tile-kind {
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.anomalous-tts-tile-ext {
+    color: #475569;
+    font-size: 11px;
+}
+
+.anomalous-tts-tile-actions,
+.anomalous-tts-card-add {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.anomalous-tts-card-add.is-empty {
+    justify-content: center;
+    padding: 18px;
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+}
+
+.anomalous-tts-card-add.is-needed {
+    border-color: rgba(251, 191, 36, 0.45);
+}
+
+.anomalous-tts-pick {
+    padding: 6px 14px;
+    border: 1px solid rgba(129, 140, 248, 0.4);
+    border-radius: 8px;
+    background: rgba(99, 102, 241, 0.14);
+    color: #e0e7ff;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.anomalous-tts-pick:hover {
+    background: rgba(99, 102, 241, 0.26);
+}
+
+.anomalous-tts-card-section {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+}
+
+.anomalous-tts-card-section-title {
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.anomalous-tts-card-section-hint {
+    color: #64748b;
+    font-size: 11px;
+}
+
+.anomalous-tts-card-files {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* ---- one file ---- */
+.anomalous-tts-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.anomalous-tts-file.is-audio {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-left: 3px solid rgba(52, 211, 153, 0.7);
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.anomalous-tts-card-files > .anomalous-tts-file:not(.is-audio) {
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.anomalous-tts-file[data-tone="busy"] { border-left-color: #38bdf8; }
+.anomalous-tts-file[data-tone="skip"] { border-left-color: #64748b; opacity: 0.7; }
+
+.anomalous-tts-file[data-tone="error"] {
+    border-color: rgba(248, 113, 113, 0.4);
+    border-left-color: #f87171;
+    background: rgba(248, 113, 113, 0.05);
+}
+
+.anomalous-tts-file-top,
+.anomalous-tts-file-bottom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.anomalous-tts-file-bottom {
+    padding-left: 34px;
+}
+
+.anomalous-tts-file [hidden] {
+    display: none;
+}
+
+.anomalous-tts-file-play {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0 0 0 2px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+    color: #cbd5e1;
+    font-size: 9px;
+    cursor: pointer;
+}
+
+.anomalous-tts-file-play:hover {
+    border-color: #818cf8;
+    color: #fff;
+}
+
+.anomalous-tts-file-label {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+}
+
+.anomalous-tts-file-name {
+    overflow: hidden;
+    color: #e2e8f0;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-tts-file-meta {
+    flex-shrink: 0;
+    color: #64748b;
+    font-size: 11px;
+}
+
+.anomalous-tts-file.is-out-of-range .anomalous-tts-file-meta {
+    color: #fbbf24;
+}
+
+.anomalous-tts-file-state {
+    flex-shrink: 1;
+    max-width: 180px;
+    overflow: hidden;
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-tts-file-state:empty {
+    display: none;
+}
+
+.anomalous-tts-file[data-tone="busy"] .anomalous-tts-file-state { color: #38bdf8; }
+.anomalous-tts-file[data-tone="merge"] .anomalous-tts-file-state { color: #34d399; }
+.anomalous-tts-file[data-tone="error"] .anomalous-tts-file-state { color: #f87171; }
+
+.anomalous-tts-file-main {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    background: transparent;
+    color: #64748b;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.anomalous-tts-file-main::before {
+    content: "☆ ";
+}
+
+.anomalous-tts-file-main:hover:not(:disabled) {
+    border-color: rgba(251, 191, 36, 0.5);
+    color: #fde68a;
+}
+
+.anomalous-tts-file-main.active {
+    border-color: rgba(251, 191, 36, 0.6);
+    background: rgba(251, 191, 36, 0.14);
+    color: #fbbf24;
+    font-weight: 700;
+}
+
+.anomalous-tts-file-main.active::before {
+    content: "★ ";
+}
+
+.anomalous-tts-file-main:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.anomalous-tts-file input,
+.anomalous-tts-file-move,
+.anomalous-tts-card-language {
+    min-width: 0;
+    padding: 5px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 7px;
+    background: rgba(0, 0, 0, 0.25);
+    color: #e2e8f0;
+    font: inherit;
+    font-size: 12px;
+}
+
+.anomalous-tts-file input:focus,
+.anomalous-tts-card-language:focus {
+    border-color: rgba(129, 140, 248, 0.6);
+    outline: none;
+}
+
+.anomalous-tts-file-emotion {
+    flex: 0 0 132px;
+}
+
+.anomalous-tts-file-emotion:disabled {
+    opacity: 0.5;
+}
+
+.anomalous-tts-file-text {
+    flex: 1 1 auto;
+}
+
+/* Where the line came from: amber = a guess from the file name, red dashes = none found. */
+.anomalous-tts-file-text[data-source="filename"] {
+    border-color: rgba(251, 191, 36, 0.5);
+}
+
+.anomalous-tts-file-text[data-source="none"],
+.anomalous-tts-file-text[data-source="missing"] {
+    border-style: dashed;
+    border-color: rgba(248, 113, 113, 0.45);
+}
+
+.anomalous-tts-file-text.dragover {
+    border-color: #818cf8;
+    background: rgba(99, 102, 241, 0.12);
+}
+
+.anomalous-tts-file-move {
+    flex: 0 1 auto;
+    max-width: 150px;
+    padding: 3px 6px;
+    border-color: transparent;
+    background: transparent;
+    color: #64748b;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+/* Where a file belongs stays quiet until the row is pointed at, except where it is the question. */
+.anomalous-tts-file:hover .anomalous-tts-file-move,
+.anomalous-tts-file-move:focus,
+.anomalous-tts-card.is-tray .anomalous-tts-file-move {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.25);
+    color: #cbd5e1;
+}
+
+.anomalous-tts-card.is-tray .anomalous-tts-file-move {
+    border-color: rgba(251, 191, 36, 0.5);
+    color: #fde68a;
+}
+
+.anomalous-tts-tile .anomalous-tts-file-move,
+.anomalous-tts-card.is-tray .anomalous-tts-file-main,
+.anomalous-tts-card.is-tray .anomalous-tts-file-bottom {
+    display: none;
+}
+
+/* Line files and language: the quieter things at the bottom of a card. */
+.anomalous-tts-card-extras {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 20px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.anomalous-tts-card-lines,
+.anomalous-tts-card-lang {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    min-width: 0;
+}
+
+.anomalous-tts-card-lines > .anomalous-tts-file {
+    padding: 2px 4px 2px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.anomalous-tts-card-lines .anomalous-tts-file-meta,
+.anomalous-tts-card-lines .anomalous-tts-file-move {
+    display: none;
+}
+
+.anomalous-tts-card-extra-label {
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.anomalous-tts-card-note {
+    color: #94a3b8;
+    font-size: 11.5px;
+    line-height: 1.6;
+}
+
+.anomalous-tts-card-problems {
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-.anomalous-tts-import-problem {
-    padding: 5px 8px;
-    border-radius: 6px;
+.anomalous-tts-card-problem {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
     background: rgba(245, 158, 11, 0.08);
     color: #fbbf24;
-    font-size: 11.5px;
+    font-size: 12px;
 }
 
-.anomalous-tts-import-problem.is-blocking {
+.anomalous-tts-card-problem[hidden] {
+    display: none;
+}
+
+.anomalous-tts-card-problem.is-blocking {
     background: rgba(248, 113, 113, 0.08);
     color: #fca5a5;
 }
 
-.anomalous-tts-batch-summary {
-    margin-right: auto;
-    align-self: center;
-    color: #94a3b8;
-    font-size: 12px;
+/* ---- footer ---- */
+.anomalous-tts-footer {
+    align-items: center;
 }
 
-@media (max-width: 760px) {
-    .anomalous-tts-batch-main {
+.anomalous-tts-footer > button {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* Nothing to import yet: the drop area is the whole window. */
+.anomalous-tts-import.is-empty .anomalous-tts-footer {
+    display: none;
+}
+
+.anomalous-tts-footer-info {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    margin-right: auto;
+}
+
+.anomalous-tts-footer-summary {
+    color: #fbbf24;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.anomalous-tts-footer-summary[hidden] {
+    display: none;
+}
+
+.anomalous-tts-footer-path {
+    overflow: hidden;
+    color: #64748b;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+    .anomalous-tts-step-label,
+    .anomalous-tts-card-holds {
+        display: none;
+    }
+
+    .anomalous-tts-card-weights {
         grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: auto minmax(0, 1fr);
     }
 
-    .anomalous-tts-batch-drafts {
-        max-height: 150px;
-    }
-
-    .anomalous-tts-batch-weights {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .anomalous-tts-batch-row {
+    .anomalous-tts-file-top,
+    .anomalous-tts-file-bottom {
         flex-wrap: wrap;
+    }
+
+    .anomalous-tts-file-bottom {
+        padding-left: 0;
     }
 }
 

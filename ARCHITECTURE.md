@@ -161,16 +161,20 @@ DOM or live LiteGraph state.
   needed file brings it back); missing packages get a red one. Inside: one storage place (changing it asks whether the characters
   move along), other places still read, pretrained files, packages. It polls the
   status only while a download or move runs and it is open, and redraws the
-  studio when a move ends. `ui_tts_import.js` is the import workbench: it owns
-  the drafts (characters being built; `target` = files added to an existing one)
-  and the unassigned tray, every file row (in exactly one draft's `rows`), the
-  uploads, a debounced inspect per draft, and imports the ready drafts one after
-  another (each commit on its own; closing discards uncommitted uploads).
+  studio when a move ends. `ui_tts_import.js` is the import window: empty it is
+  one drop area; with files it lists one card per draft (one unfolded at a time).
+  It owns the drafts (characters being built; `target` = files added to an
+  existing one) and the unassigned tray, every file row (in exactly one draft's
+  `rows`), the uploads, a debounced inspect per draft, and imports the ready
+  drafts one after another (each commit on its own; closing discards uncommitted
+  uploads). `draw()` rebuilds the cards on structural changes, `refresh()` only
+  repaints status, so typing never loses focus.
   `tts_import_groups.js` holds the pure rules: which draft a file goes to (weight
   stems, then folder names or file-name prefixes) and where a draft stands.
-  `ui_tts_import_draft.js` draws the selected draft (name, GPT / SoVITS slots,
-  one line per clip with its owner picker, language) and builds each row's
-  elements once, so they survive redraws and moves. `ui_tts_file_drop.js` reads OS
+  `ui_tts_import_draft.js` draws a draft's card (name in the header, a short
+  status, GPT / SoVITS tiles, one line per clip with its owner picker, line files,
+  language) and the unassigned card, and builds each row's elements once, so they
+  survive redraws and moves. `ui_tts_file_drop.js` reads OS
   drops (walking dropped folders) for the studio, the sidebar and the workbench. `ui_tts_path_picker.js` picks server-side folders or files
   through the node's browse route, since the browser cannot see local paths.
 - `audio_node_targets.js` is the single table of canvas nodes the audio studio
