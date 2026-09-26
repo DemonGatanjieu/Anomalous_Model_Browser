@@ -254,7 +254,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
     });
 
     async function setup() {
-        const cssUrl = '/extensions/Anomalous_Model_Browser/styles.css?v=20260921-flicker-free-1';
+        const cssUrl = '/extensions/Anomalous_Model_Browser/styles.css?v=20260926-canvas-perf-1';
         if (!document.querySelector('link[href^="/extensions/Anomalous_Model_Browser/styles.css"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';

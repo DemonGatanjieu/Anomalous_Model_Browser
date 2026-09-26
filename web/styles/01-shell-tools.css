@@ -292,15 +292,6 @@ button:active::after,
     color: #38bdf8 !important;
 }
 
-/* When toolbox or settings hub modal is open, completely suppress floating tooltip bubble */
-body:has(#anomalous-toolbox-modal[style*="display: flex"]) #anomalous-sidebar-tooltip-bubble,
-body:has(#anomalous-settings-hub-modal[style*="display: flex"]) #anomalous-sidebar-tooltip-bubble {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-}
-
 .anomalous-sidebar-closed #anomalous-sidebar-actions {
     flex-direction: column !important;
 }
