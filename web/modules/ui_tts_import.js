@@ -3,8 +3,8 @@ import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { loadEngine, loadGptSovitsStatus } from './audio_engines.js';
 import {
-    buildImportBody, commitImport, discardUploads, importKind, importProblem, inspectImport, missingForLanguage, nameConflict,
-    pickWeights, textFromFile, uploadFile, usableAsReference,
+    buildImportBody, commitImport, discardUploads, importKind, importProblem, inspectImport, missingForLanguage,
+    nameConflict, pickWeights, rowState, sectionState, textFromFile, uploadFile, usableAsReference,
 } from './tts_setup_api.js';
 import { PICKER_OVERLAY_CLASS, formatSize, pickServerPath } from './ui_tts_path_picker.js';
 
@@ -205,11 +205,14 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
         const pick = el('span', 'anomalous-tts-import-section-pick');
         pick.append(button('anomalous-tts-link', t('ttsImportPick'), () => chooseBrowser(accept)),
             button('anomalous-tts-link', t('ttsImportPickHere'), () => chooseLocal([kind])));
-        head.append(el('span', 'anomalous-voice-field-label', label), pick);
+        const title = el('span', 'anomalous-tts-import-section-title');
+        const mark = el('span', 'anomalous-tts-import-mark');
+        title.append(el('span', 'anomalous-voice-field-label', label), mark);
+        head.append(title, pick);
         const list = el('div', 'anomalous-tts-import-list');
         const empty = el('div', 'anomalous-tts-import-empty', emptyText);
         box.append(head, list, empty);
-        return { box, list, empty };
+        return { box, list, empty, mark };
     }
     const sections = {
         gpt: section(t('ttsImportSlotGpt'), 'gpt', '.ckpt', t('ttsImportSlotEmpty')),
@@ -217,8 +220,17 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
         audio: section(t('ttsImportSlotAudio'), 'audio', '.wav,.flac,.ogg,.mp3', t('ttsImportAudioEmpty')),
         text: section(t('ttsImportSlotText'), 'text', '.txt,.lab,.list', t('ttsImportTextEmpty')),
     };
+    /** Each section says at a glance whether it is done: a green count, red, or "needed". */
     const syncSections = () => {
-        for (const [kind, sec] of Object.entries(sections)) sec.empty.hidden = rows.some(row => row.kind === kind);
+        for (const [kind, sec] of Object.entries(sections)) {
+            const tones = rows.filter(row => row.kind === kind).map(row => row.tone);
+            sec.empty.hidden = tones.length > 0;
+            const state = sectionState(kind, tones, { adding: Boolean(target) });
+            sec.box.dataset.tone = state.tone;
+            sec.mark.textContent = state.tone === 'ok' ? t(kind === 'gpt' || kind === 'sovits' ? 'ttsImportMarkOk' : 'ttsImportMarkCount', { count: state.count })
+                : state.tone === 'needed' ? t(kind === 'audio' ? 'ttsImportMarkAtLeastOne' : 'ttsImportMarkNeeded')
+                    : state.tone === 'error' ? t('ttsImportMarkError') : '';
+        }
     };
 
     const notes = el('div', 'anomalous-tts-hint');
@@ -256,10 +268,14 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
     const readyRows = () => rows.filter(row => row.spec && !row.error);
 
     function renderState(row) {
-        const { state } = row.els;
-        state.classList.toggle('is-error', Boolean(row.error));
-        state.textContent = row.error ? t('ttsImportRowError', { error: row.error })
-            : row.spec ? t('ttsImportRowReady') : t('ttsImportRowUploading', { percent: Math.floor(100 * row.progress) });
+        const { state, root } = row.els;
+        const view = rowState({ error: row.error, uploaded: Boolean(row.spec), progress: row.progress,
+            existing: row.info?.existing ?? null, unsupported: row.info?.supported === false });
+        row.tone = view.tone;
+        root.dataset.tone = view.tone;
+        state.textContent = t(view.key, view.params);
+        state.title = state.textContent;
+        syncSections();
     }
 
     function renderMeta(row) {
@@ -439,12 +455,13 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
         }
         const mine = ++inspectToken;
         try {
-            const result = await inspectImport(ready.map(row => row.spec), scope.signal);
+            const result = await inspectImport(ready.map(row => row.spec), scope.signal, target);
             if (mine !== inspectToken || scope.signal.aborted) return;
             ready.forEach((row, i) => {
                 row.info = result.files[i];
                 if (row.info.size) row.size = row.info.size;
                 renderMeta(row);
+                renderState(row);
                 if (row.els.text && !row.textEdited) {
                     row.text = row.info.text || '';
                     row.els.text.value = row.text;
@@ -470,7 +487,8 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
         const pending = rows.filter(row => !row.spec && !row.error).length;
         const problem = importProblem({
             target, character: nameInput.value, uploading: pending, conflict,
-            rows: ready.map(row => ({ kind: row.kind, name: row.name, emotion: row.emotion, supported: row.info?.supported, version: row.info?.version })),
+            rows: ready.map(row => ({ kind: row.kind, name: row.name, emotion: row.emotion, supported: row.info?.supported,
+                version: row.info?.version, existing: row.info?.existing })),
         });
         if (problem) {
             await anomalousAlert(t(problem[0], problem[1]));
@@ -510,6 +528,8 @@ export async function openTtsImport({ files = [], target: initialTarget = null, 
         referenceChosen = true;
         syncReference();
         syncMode();
+        syncSections();
+        scheduleInspect(); // what the character already has changes each file's state
     }
 
     // Files can be dropped anywhere on the form; each goes to its section by kind.

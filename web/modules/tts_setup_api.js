@@ -104,8 +104,9 @@ export async function uploadFile(file, { library, signal, onStart, onProgress } 
     return upload;
 }
 
-export function inspectImport(files, signal) {
-    return request('/anomalous_tts/import/inspect', { body: { files }, signal });
+/** `target`: the character files are added to; each file then says what it meets there (`existing`). */
+export function inspectImport(files, signal, target = null) {
+    return request('/anomalous_tts/import/inspect', { body: target ? { files, target } : { files }, signal });
 }
 
 /** Not tied to the form's AbortSignal: closing the form must not pretend to cancel a write. */
@@ -196,6 +197,8 @@ export function importProblem({ target = null, character = '', rows, uploading =
         if (conflict?.kind === 'variant') return ['ttsImportNameTakenVariant', { name: conflict.name, variants: conflict.variants.join('、') }];
         if (!rows.some(row => row.kind === 'gpt') || !rows.some(row => row.kind === 'sovits')) return ['ttsImportWeightsMissing', {}];
     }
+    const clash = rows.find(row => row.existing === 'different');
+    if (clash) return ['ttsImportExistingDifferent', { file: clash.name }];
     const unsupported = rows.find(row => row.kind === 'sovits' && row.supported === false);
     if (unsupported) return ['ttsImportUnsupportedBlock', { file: unsupported.name, version: unsupported.version || '?' }];
     const seen = new Set();
@@ -250,6 +253,33 @@ export function pretrainedReminder(status, languages, dismissed = []) {
 export function missingForLanguage(status, language) {
     return (status?.pretrained || []).filter(item => item.required && item.state !== 'ok'
         && (item.needed_for === 'all' || (language && item.needed_for === language)));
+}
+
+/**
+ * One import row at a glance: `tone` colours it (busy | ready | skip | merge | error)
+ * and `key` / `params` are its state text. `existing` comes from inspect with a target.
+ */
+export function rowState({ error = '', uploaded = false, progress = 0, existing = null, unsupported = false }) {
+    if (error) return { tone: 'error', key: 'ttsImportRowError', params: { error } };
+    if (!uploaded) return { tone: 'busy', key: 'ttsImportRowUploading', params: { percent: Math.floor(100 * progress) } };
+    if (existing === 'different') return { tone: 'error', key: 'ttsImportRowConflict', params: {} };
+    if (unsupported) return { tone: 'error', key: 'ttsImportRowUnsupported', params: {} };
+    if (existing === 'same') return { tone: 'skip', key: 'ttsImportRowSkip', params: {} };
+    if (existing === 'merge') return { tone: 'merge', key: 'ttsImportRowMerge', params: {} };
+    return { tone: 'ready', key: 'ttsImportRowReady', params: {} };
+}
+
+/**
+ * The mark beside a section title: `ok` (count usable rows), `error` (only failed rows),
+ * `needed` (a new character must have it), or '' (optional and empty). Adding to a
+ * character needs nothing.
+ */
+export function sectionState(kind, tones, { adding = false } = {}) {
+    const usable = tones.filter(tone => tone !== 'error' && tone !== 'busy').length;
+    if (usable) return { tone: 'ok', count: usable };
+    if (tones.includes('busy')) return { tone: 'busy', count: 0 };
+    if (tones.length) return { tone: 'error', count: 0 };
+    return { tone: !adding && kind !== 'text' ? 'needed' : '', count: 0 };
 }
 
 /** Summary for the setup card: what still needs doing. */

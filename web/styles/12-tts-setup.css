@@ -132,8 +132,23 @@
 }
 
 /* ---------- Import form ---------- */
-.anomalous-tts-import {
+/* The form scrolls inside; the title and the Import button stay in view. */
+.anomalous-voice-modal.anomalous-tts-import {
     width: 720px;
+    overflow: hidden;
+}
+
+.anomalous-tts-import > .anomalous-tts-editor-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0 -8px;
+    padding: 0 8px;
+    overflow-y: auto;
+}
+
+.anomalous-tts-import > .anomalous-voice-modal-header,
+.anomalous-tts-import > .anomalous-voice-modal-footer {
+    flex-shrink: 0;
 }
 
 .anomalous-tts-import.is-dragover {
@@ -210,6 +225,37 @@
     gap: 8px;
 }
 
+.anomalous-tts-import-section-title {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+/* Section mark: green when done, amber when a new character still needs it, red on problems. */
+.anomalous-tts-import-mark {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.anomalous-tts-import-mark:empty {
+    display: none;
+}
+
+.anomalous-tts-import-section[data-tone="ok"] .anomalous-tts-import-mark { color: #34d399; }
+.anomalous-tts-import-section[data-tone="needed"] .anomalous-tts-import-mark { color: #fbbf24; }
+.anomalous-tts-import-section[data-tone="error"] .anomalous-tts-import-mark { color: #f87171; }
+
+.anomalous-tts-import-section[data-tone="needed"] .anomalous-tts-import-empty {
+    border-color: rgba(251, 191, 36, 0.35);
+}
+
+/* Many clips scroll inside their own box. */
+.anomalous-tts-import-section.is-audio .anomalous-tts-import-list {
+    max-height: 340px;
+    padding-right: 4px;
+    overflow-y: auto;
+}
+
 .anomalous-tts-import-section-pick {
     display: inline-flex;
     gap: 12px;
@@ -221,10 +267,6 @@
     border-radius: 8px;
     color: #64748b;
     font-size: 11.5px;
-}
-
-.anomalous-tts-import-row.is-unsupported {
-    border-color: rgba(248, 113, 113, 0.5);
 }
 
 .anomalous-tts-import-row.is-unsupported .anomalous-tts-picker-meta {
@@ -248,12 +290,37 @@
 
 .anomalous-tts-import-row {
     display: flex;
+    flex-shrink: 0;
     flex-direction: column;
     gap: 6px;
-    padding: 7px 8px;
+    padding: 7px 8px 7px 10px;
     border: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 3px solid rgba(255, 255, 255, 0.12);
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.2);
+}
+
+/* Row tone: green ready / merged, blue uploading, grey skipped, red failed or refused. */
+.anomalous-tts-import-row[data-tone="ready"],
+.anomalous-tts-import-row[data-tone="merge"] {
+    border-color: rgba(52, 211, 153, 0.28);
+    border-left-color: #34d399;
+    background: rgba(52, 211, 153, 0.05);
+}
+
+.anomalous-tts-import-row[data-tone="busy"] {
+    border-left-color: #38bdf8;
+}
+
+.anomalous-tts-import-row[data-tone="skip"] {
+    border-left-color: #64748b;
+    opacity: 0.75;
+}
+
+.anomalous-tts-import-row[data-tone="error"] {
+    border-color: rgba(248, 113, 113, 0.4);
+    border-left-color: #f87171;
+    background: rgba(248, 113, 113, 0.05);
 }
 
 .anomalous-tts-import-line,
@@ -311,18 +378,20 @@
 
 .anomalous-tts-import-state {
     flex-shrink: 0;
+    max-width: 260px;
     margin-left: auto;
+    overflow: hidden;
     color: #94a3b8;
     font-size: 11px;
-}
-
-.anomalous-tts-import-state.is-error {
-    max-width: 260px;
-    overflow: hidden;
-    color: #f87171;
+    font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.anomalous-tts-import-row[data-tone="ready"] .anomalous-tts-import-state,
+.anomalous-tts-import-row[data-tone="merge"] .anomalous-tts-import-state { color: #34d399; }
+.anomalous-tts-import-row[data-tone="busy"] .anomalous-tts-import-state { color: #38bdf8; }
+.anomalous-tts-import-row[data-tone="error"] .anomalous-tts-import-state { color: #f87171; }
 
 .anomalous-tts-import-language {
     max-width: 260px;

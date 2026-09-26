@@ -153,6 +153,7 @@ DOM or live LiteGraph state.
   an earlier place, pretrained sources and downloads, folder browse, chunked
   upload, inspect, commit, discard) and the pure import-form rules (`importKind`,
   `pickWeights`, `nameConflict`, `textFromFile`, `buildImportBody`, `importProblem`,
+  `rowState` / `sectionState` for the form's colours,
   `setupSummary`, `pretrainedReminder`, `missingForLanguage`); no DOM.
   `ui_tts_setup.js` is the GPT-SoVITS settings dialog, opened from the sidebar
   footer (`setupAttention` gives that entry its dot). Missing pretrained files only get a dismissable dot
