@@ -834,6 +834,38 @@
     gap: 6px;
 }
 
+.anomalous-tts-card-more {
+    align-self: flex-start;
+}
+
+/* ---- folded rows: files left out, and the unassigned files of one folder ---- */
+.anomalous-tts-card-fold {
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.anomalous-tts-card-fold-summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    color: #94a3b8;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-tts-card-fold-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-tts-card-fold[open] > .anomalous-tts-card-files {
+    padding: 0 8px 8px;
+}
+
 /* ---- the checklist: done items ticked and quiet, the next one lit with its button ---- */
 .anomalous-tts-check {
     display: flex;
@@ -1021,6 +1053,10 @@
     flex-shrink: 0;
     color: #64748b;
     font-size: 11px;
+}
+
+.anomalous-tts-file.is-out-of-range {
+    opacity: 0.6;
 }
 
 .anomalous-tts-file.is-out-of-range .anomalous-tts-file-meta {

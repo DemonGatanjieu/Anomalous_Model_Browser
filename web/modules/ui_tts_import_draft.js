@@ -25,6 +25,7 @@ const SHORT = {
     ttsEditorNameDuplicate: 'ttsCardEmotionProblem',
 };
 /** Problems the checklist already shows. */
+const LIST_LIMIT = 60; // clips shown before "show all": a character can bring hundreds
 const IN_CHECKLIST = ['ttsImportWeightsMissing', 'ttsImportNameTaken', 'ttsImportNameTakenVariant', 'ttsBatchNoAudio', 'ttsBatchNoMain',
     'ttsImportNameMissing', 'ttsImportNoFiles', 'ttsBatchDuplicateName', 'ttsImportUnsupportedBlock'];
 
@@ -58,12 +59,14 @@ export function updateRow(row) {
     if (info.version) parts.push(info.supported ? info.version : t('ttsImportUnsupported', { version: info.version }));
     if (info.seconds !== undefined) parts.push(t('ttsImportSeconds', { seconds: info.seconds }));
     row.els.meta.textContent = parts.join(' · ');
-    row.els.root.classList.toggle('is-out-of-range', row.kind === 'audio' && info.seconds !== undefined && !usableAsReference(info.seconds));
+    const outOfRange = row.kind === 'audio' && info.seconds !== undefined && !usableAsReference(info.seconds);
+    row.els.root.classList.toggle('is-out-of-range', outOfRange);
     const view = rowState({ error: row.error, uploaded: Boolean(row.spec), progress: row.progress,
         existing: info.existing ?? null, unsupported: info.supported === false });
     row.els.root.dataset.tone = view.tone;
-    row.els.state.textContent = view.tone === 'ready' ? '' : t(view.key, view.params);
-    row.els.state.title = t(view.key, view.params);
+    const leftOut = outOfRange && view.tone === 'ready';
+    row.els.state.textContent = leftOut ? t('ttsImportLeftOut') : view.tone === 'ready' ? '' : t(view.key, view.params);
+    row.els.state.title = leftOut ? t('ttsImportOutOfRange') : t(view.key, view.params);
 }
 
 /** Where a clip's line came from, shown as the text box's tooltip and colour. */
@@ -125,6 +128,11 @@ function rowElements(row, ctx) {
     row.els = els;
     els.move.title = t('ttsBatchMoveTo');
     els.move.onchange = () => ctx.onMoveRow(row, els.move.value);
+    // The full list is built when the menu is about to open: thousands of rows each
+    // holding every character would make each redraw slow.
+    const fill = () => { if (els.movePlace) fillMoveOptions(els.move, els.movePlace, ctx.places()); };
+    els.move.addEventListener('pointerdown', fill);
+    els.move.addEventListener('focus', fill);
     const remove = button('anomalous-tts-file-remove', '×', () => ctx.onRemoveRow(row), t('ttsEditorRemove'));
     const label = el('span', 'anomalous-tts-file-label');
     label.append(name, els.meta);
@@ -152,24 +160,29 @@ function rowElements(row, ctx) {
     return els;
 }
 
-/** Where this row can go; hidden while there is nowhere else to put it. */
-function fillMove(row, place, ctx) {
-    const select = row.els.move;
-    const places = ctx.places();
-    select.hidden = places.length < 2;
+function fillMoveOptions(select, place, places) {
+    if (select.options.length === places.length) return;
     select.replaceChildren();
     for (const option of places) {
-        const node = el('option', '', option.id === place.id ? t('ttsCardMoveHere', { name: option.label }) : t('ttsCardMoveTo', { name: option.label }));
+        const label = option.id === place.id ? t('ttsCardMoveHere', { name: option.label }) : t('ttsCardMoveTo', { name: option.label });
+        const node = el('option', '', label);
         node.value = option.id;
         select.append(node);
     }
     select.value = place.id;
 }
 
+/** Where this row can go (the list itself is filled on open); hidden while there is nowhere else. */
 function showRow(row, place, ctx) {
-    rowElements(row, ctx);
-    fillMove(row, place, ctx);
-    return row.els.root;
+    const els = rowElements(row, ctx);
+    const places = ctx.places();
+    els.move.hidden = places.length < 2;
+    els.movePlace = place;
+    const here = places.find(option => option.id === place.id);
+    const node = el('option', '', here ? t('ttsCardMoveHere', { name: here.label }) : '');
+    node.value = place.id;
+    els.move.replaceChildren(node);
+    return els.root;
 }
 
 function statusOf(view) {
@@ -246,7 +259,7 @@ export function renderDraftCard(draft, view, ctx, { solo = false } = {}) {
         head.append(title);
     }
     const pill = el('span', 'anomalous-tts-card-pill');
-    const clipCount = draft.rows.filter(row => row.kind === 'audio').length;
+    const clipCount = draft.rows.filter(row => row.kind === 'audio' && !view.skipped.has(row.key)).length;
     head.append(pill, el('span', 'anomalous-tts-card-meta', t('ttsCardClips', { count: clipCount })));
     if (!solo && !draft.target) head.append(button('anomalous-tts-card-remove', '×', () => ctx.onRemoveDraft(draft), t('ttsCardRemove')));
     if (!solo) head.addEventListener('click', (e) => { if (!e.target.closest('input, button')) ctx.onToggle(draft); });
@@ -290,7 +303,8 @@ export function renderDraftCard(draft, view, ctx, { solo = false } = {}) {
     const body = el('div', 'anomalous-tts-card-body');
     body.append(checklist);
 
-    const audioRows = draft.rows.filter(row => row.kind === 'audio');
+    const kept = draft.rows.filter(row => !view.skipped.has(row.key));
+    const audioRows = kept.filter(row => row.kind === 'audio');
     const clips = el('div', 'anomalous-tts-card-clips');
     parts.clips = clips;
     if (audioRows.length) {
@@ -299,12 +313,21 @@ export function renderDraftCard(draft, view, ctx, { solo = false } = {}) {
             el('span', 'anomalous-tts-card-section-hint', t('ttsCardClipsHint')),
             button('anomalous-tts-link', t('ttsCardAddClips'), () => ctx.pick(draft, ['audio'], false)));
         const audioList = el('div', 'anomalous-tts-card-files');
-        for (const row of audioRows) audioList.append(showRow(row, draft, ctx));
+        const shown = draft.showAll ? audioRows : audioRows.filter((row, i) => i < LIST_LIMIT || row.key === draft.referenceKey);
+        for (const row of shown) audioList.append(showRow(row, draft, ctx));
         clips.append(audioHead, audioList);
+        if (shown.length < audioRows.length) {
+            clips.append(button('anomalous-tts-link anomalous-tts-card-more', t('ttsCardShowAll', { count: audioRows.length }), () => ctx.onShowAll(draft)));
+        }
         body.append(clips);
     }
+    const skippedRows = draft.rows.filter(row => view.skipped.has(row.key));
+    if (skippedRows.length) {
+        const count = skippedRows.filter(row => row.kind === 'audio').length;
+        body.append(foldedRows(skippedRows, draft, ctx, t('ttsCardLeftOut', { count })));
+    }
 
-    const textRows = draft.rows.filter(row => row.kind === 'text');
+    const textRows = kept.filter(row => row.kind === 'text');
     const extras = el('div', 'anomalous-tts-card-extras');
     const lines = el('div', 'anomalous-tts-card-lines');
     lines.append(el('span', 'anomalous-tts-card-extra-label', t('ttsCardLineFiles')));
@@ -348,9 +371,50 @@ export function renderTrayCard(tray, ctx) {
         el('span', 'anomalous-tts-card-title', t('ttsCardTrayTitle', { count: tray.rows.length })));
     const body = el('div', 'anomalous-tts-card-body');
     body.append(el('div', 'anomalous-tts-card-note', t('ttsCardTrayHint')));
-    const list = el('div', 'anomalous-tts-card-files');
-    for (const row of tray.rows) list.append(showRow(row, tray, ctx));
-    body.append(list);
+    const folders = new Map();
+    for (const row of tray.rows) {
+        if (!folders.has(row.dir)) folders.set(row.dir, []);
+        folders.get(row.dir).push(row);
+    }
+    if (tray.rows.length <= LIST_LIMIT && folders.size === 1) {
+        const list = el('div', 'anomalous-tts-card-files');
+        for (const row of tray.rows) list.append(showRow(row, tray, ctx));
+        body.append(list);
+    } else {
+        // One line per folder: assign the whole folder, or open it to sort file by file.
+        for (const [dir, rows] of folders) {
+            const fold = foldedRows(rows, tray, ctx, t('ttsCardTrayFolder', { folder: dir || t('ttsCardTrayTop'), count: rows.length }));
+            const move = el('select', 'anomalous-tts-file-move');
+            move.title = t('ttsBatchMoveTo');
+            const first = el('option', '', t('ttsCardTrayMoveAll'));
+            first.value = '';
+            move.append(first);
+            move.addEventListener('pointerdown', () => {
+                if (move.options.length > 1) return;
+                for (const place of ctx.places().filter(option => option.id !== TRAY)) {
+                    const node = el('option', '', t('ttsCardMoveTo', { name: place.label }));
+                    node.value = place.id;
+                    move.append(node);
+                }
+            });
+            move.onchange = () => { if (move.value) ctx.onMoveRows(rows, move.value); };
+            fold.querySelector('summary').append(move);
+            body.append(fold);
+        }
+    }
     card.append(head, body);
     return card;
+}
+
+/** Rows folded under a summary line; built the first time it is opened. */
+function foldedRows(rows, place, ctx, label) {
+    const box = el('details', 'anomalous-tts-card-fold');
+    const summary = el('summary', 'anomalous-tts-card-fold-summary');
+    summary.append(el('span', 'anomalous-tts-card-fold-label', label));
+    const list = el('div', 'anomalous-tts-card-files');
+    box.append(summary, list);
+    box.addEventListener('toggle', () => {
+        if (box.open && !list.childElementCount) for (const row of rows) list.append(showRow(row, place, ctx));
+    });
+    return box;
 }

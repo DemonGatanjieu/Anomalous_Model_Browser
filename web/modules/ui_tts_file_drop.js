@@ -1,4 +1,5 @@
 import { t } from './interface_settings.js';
+import { isSkippedFolder } from './tts_import_groups.js';
 
 /**
  * Files dropped from the OS on the audio studio, the sidebar or the import
@@ -6,8 +7,11 @@ import { t } from './interface_settings.js';
  * from (dropped folders are walked), so the workbench can sort them.
  */
 
-async function walkEntry(entry, dir) {
+/** GPT-SoVITS program and training folders inside a drop are not walked: `{ skipped: folder }`. */
+async function walkEntry(entry, dir, top = false) {
     if (entry.isFile) return [{ file: await new Promise((ok, fail) => entry.file(ok, fail)), dir }];
+    const sub = dir ? `${dir}/${entry.name}` : entry.name;
+    if (!top && isSkippedFolder(entry.name)) return [{ skipped: sub }];
     const reader = entry.createReader();
     const children = [];
     for (;;) {
@@ -15,7 +19,6 @@ async function walkEntry(entry, dir) {
         if (!batch.length) break;
         children.push(...batch);
     }
-    const sub = dir ? `${dir}/${entry.name}` : entry.name;
     return (await Promise.all(children.map(child => walkEntry(child, sub)))).flat();
 }
 
@@ -26,7 +29,7 @@ async function walkEntry(entry, dir) {
 export function readDroppedFiles(dataTransfer) {
     const entries = [...(dataTransfer?.items || [])].map(item => item.webkitGetAsEntry?.()).filter(Boolean);
     if (!entries.length) return Promise.resolve([...(dataTransfer?.files || [])].map(file => ({ file, dir: '' })));
-    return Promise.all(entries.map(entry => walkEntry(entry, ''))).then(lists => lists.flat());
+    return Promise.all(entries.map(entry => walkEntry(entry, '', true))).then(lists => lists.flat());
 }
 
 /**

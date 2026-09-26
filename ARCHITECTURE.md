@@ -175,16 +175,22 @@ covered by the `styles.css` manifest.
   existing character, also opened straight from a card's "Add files"), and runs a
   spotlight tour once per screen ("?" replays it). It owns the drafts (characters being built; `target` = files added to an
   existing one) and the unassigned tray, every file row (in exactly one draft's
-  `rows`), the uploads, a debounced inspect per draft, and imports the ready
-  drafts one after another (each commit on its own; closing discards uncommitted
-  uploads). `draw()` rebuilds the cards on structural changes, `refresh()` only
+  `rows`), the uploads (three at a time), a debounced inspect per draft, and imports
+  the ready drafts one after another (each commit on its own, without the rows
+  `leftOut` names; closing discards uncommitted uploads). `draw()` rebuilds the cards on structural changes, `refresh()` only
   repaints status, so typing never loses focus.
   `tts_import_groups.js` holds the pure rules: which draft a file goes to (weight
-  stems, then folder names or file-name prefixes), where a draft stands, and its
-  checklist (the next step first). `ui_tts_import_draft.js` draws a draft's card
+  stems; other files follow the weights in their nearest folder, then folder names
+  or file-name prefixes), which files are left out (`leftOut`: clips outside 3–10 s
+  and their line files), which folders are never taken (GPT-SoVITS program and
+  training folders, the same list as the node's scan), where a draft stands, and its
+  checklist (the next step first). `ui_tts_import_sources.js` brings files in: the
+  browser's dialogs and drops (uploaded), the node's picker (paths), leaving out
+  those folders and offering the picker before a very large upload. `ui_tts_import_draft.js` draws a draft's card
   (name in the header, steps left, the checklist with the next step's button and
-  the chosen weights, one line per clip with its owner picker, line files,
-  language) and the unassigned card; `ui_tts_import_screens.js` holds the fixed
+  the chosen weights, one line per clip with its owner picker, the first clips with
+  "show all", left-out files folded, line files, language) and the unassigned card
+  (one folded line per folder when large); `ui_tts_import_screens.js` holds the fixed
   screens (the first question, the batch drop area) and the tour steps, and builds each row's elements once, so they
   survive redraws and moves. `ui_tts_file_drop.js` reads OS
   drops (walking dropped folders) for the studio, the sidebar and the workbench. `ui_tts_path_picker.js` picks server-side folders or files
