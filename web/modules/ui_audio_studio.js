@@ -8,7 +8,8 @@ import { alignedVoiceValue } from './audio_node_targets.js';
 import { bindVoiceDrag } from './audio_voice_drag.js';
 import { AUDIO_ENGINES, detectEngines, engineById, engineTargetLabels, getStoredEngine, invalidateEngineCache, loadEngine, loadGptSovitsStatus, pickEngine, setStoredEngine } from './audio_engines.js';
 import { openGptSovitsEditor } from './ui_audio_tts_editor.js';
-import { bindTtsFileDrop, openTtsImport } from './ui_tts_import.js';
+import { bindTtsFileDrop } from './ui_tts_file_drop.js';
+import { openTtsImport } from './ui_tts_import.js';
 import {
     openScriptDirector,
     closeScriptDirector,

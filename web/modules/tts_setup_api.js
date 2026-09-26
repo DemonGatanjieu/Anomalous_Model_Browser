@@ -79,6 +79,11 @@ export function browseFolder(path, signal) {
     return request(`/anomalous_tts/browse${path ? `?path=${encodeURIComponent(path)}` : ''}`, { method: 'GET', signal });
 }
 
+/** Every usable file a few levels under `path`, each with its folder relative to it (batch import). */
+export function scanFolder(path, signal) {
+    return request(`/anomalous_tts/browse?recursive=1&path=${encodeURIComponent(path)}`, { method: 'GET', signal });
+}
+
 // ---------- import ----------
 
 /**
@@ -188,9 +193,8 @@ export function usableAsReference(seconds) {
  * First reason the form cannot be sent, as [locale key, params], or null. Rows may
  * carry the node's inspect result (`supported`, `version`) for SoVITS weights.
  */
-export function importProblem({ target = null, character = '', rows, uploading = 0, conflict = null }) {
+export function importProblem({ target = null, character = '', rows, conflict = null }) {
     if (!rows.length) return ['ttsImportNoFiles', {}];
-    if (uploading) return ['ttsImportStillUploading', { count: uploading }];
     if (!target) {
         if (!character.trim()) return ['ttsImportNameMissing', {}];
         if (conflict?.kind === 'exact') return ['ttsImportNameTaken', { name: conflict.name }];
@@ -267,19 +271,6 @@ export function rowState({ error = '', uploaded = false, progress = 0, existing 
     if (existing === 'same') return { tone: 'skip', key: 'ttsImportRowSkip', params: {} };
     if (existing === 'merge') return { tone: 'merge', key: 'ttsImportRowMerge', params: {} };
     return { tone: 'ready', key: 'ttsImportRowReady', params: {} };
-}
-
-/**
- * The mark beside a section title: `ok` (count usable rows), `error` (only failed rows),
- * `needed` (a new character must have it), or '' (optional and empty). Adding to a
- * character needs nothing.
- */
-export function sectionState(kind, tones, { adding = false } = {}) {
-    const usable = tones.filter(tone => tone !== 'error' && tone !== 'busy').length;
-    if (usable) return { tone: 'ok', count: usable };
-    if (tones.includes('busy')) return { tone: 'busy', count: 0 };
-    if (tones.length) return { tone: 'error', count: 0 };
-    return { tone: !adding && kind !== 'text' ? 'needed' : '', count: 0 };
 }
 
 /** Summary for the setup card: what still needs doing. */

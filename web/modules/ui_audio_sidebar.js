@@ -1,7 +1,8 @@
 import { t } from './interface_settings.js';
 import { engineById, getStoredEngine, invalidateEngineCache, loadEngine, loadGptSovitsStatus } from './audio_engines.js';
 import { bindVoiceDrag } from './audio_voice_drag.js';
-import { bindTtsFileDrop, openTtsImport } from './ui_tts_import.js';
+import { bindTtsFileDrop } from './ui_tts_file_drop.js';
+import { openTtsImport } from './ui_tts_import.js';
 import { openTtsSetup, setupAttention } from './ui_tts_setup.js';
 
 /**
