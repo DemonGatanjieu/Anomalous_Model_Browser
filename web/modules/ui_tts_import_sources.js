@@ -1,15 +1,18 @@
 import { t } from './interface_settings.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { importKind, scanFolder } from './tts_setup_api.js';
-import { isSkippedFolder } from './tts_import_groups.js';
+import { DROP_FILE_LIMIT, sortOutFolders } from './tts_import_groups.js';
 import { formatSize, pickServerPath } from './ui_tts_path_picker.js';
 
 /**
  * Where the import window's files come from: the browser's file and folder dialogs
  * and drops (uploaded to the node), or the node's own picker (local paths, copied
- * without uploading). Files inside GPT-SoVITS program or training folders are left
- * out, and a very large upload first offers the node's picker instead: ComfyUI runs
- * on this computer, so copying from the path skips sending every byte twice.
+ * without uploading). Folders of Python environments, base models and a GPT-SoVITS
+ * package's program and training runs are left out (tts_import_groups.js skipFolder),
+ * and the user is told which; a very large upload first offers the node's picker
+ * instead: ComfyUI runs on this computer, so copying from the path skips sending
+ * every byte twice. Every source gives each file's folder starting with the folder
+ * that was chosen, so files are sorted the same whichever way they came in.
  */
 
 const ACCEPT = { gpt: '.ckpt', sovits: '.pth', audio: '.wav,.flac,.ogg,.mp3', text: '.txt,.lab,.list' };
@@ -17,11 +20,10 @@ const ACCEPT_ALL = Object.values(ACCEPT).join(',');
 export const UPLOAD_WARN_BYTES = 2 * 1024 ** 3;
 export const UPLOAD_WARN_FILES = 1500;
 
-/** The first skipped folder on `dir` (`a/logs/b` → `a/logs`), or null. */
-function skippedPart(dir) {
-    const parts = String(dir || '').split('/');
-    const at = parts.findIndex(isSkippedFolder);
-    return at < 0 ? null : parts.slice(0, at + 1).join('/');
+/** `a、b、c…`: the first few names of a list, in name order. */
+function few(names) {
+    const sorted = [...names].sort((a, b) => a.localeCompare(b));
+    return sorted.slice(0, 3).join('、') + (sorted.length > 3 ? '…' : '');
 }
 
 /**
@@ -41,7 +43,11 @@ export function createFileSources({ signal, add, note }) {
         if (!path || signal.aborted) return;
         try {
             const result = await scanFolder(path, signal);
-            add(result.files.map(file => ({ name: file.name, dir: file.dir, path: file.path, size: file.size })));
+            const top = result.path.split('/').filter(Boolean).pop() || '';
+            const under = dir => [top, dir].filter(Boolean).join('/');
+            add(result.files.map(file => ({ name: file.name, dir: under(file.dir), path: file.path, size: file.size })));
+            if (result.skipped?.length) note(t('ttsSkippedFolders', { folders: few(result.skipped.map(under)) }));
+            if (result.too_deep?.length) note(t('ttsScanTooDeep', { folders: few(result.too_deep.map(under)) }));
             if (result.truncated) note(t('ttsBatchScanTruncated', { count: result.files.length }));
         } catch (e) {
             if (!signal.aborted) await anomalousAlert(t('ttsSetupFailed', { error: e.message || String(e) }));
@@ -49,18 +55,14 @@ export function createFileSources({ signal, add, note }) {
     };
 
     /**
-     * Browser files, `{ file, dir }` (or `{ skipped: folder }` for a folder a drop did
-     * not go into). Leaves out program and training folders, and asks before a very
-     * large upload.
+     * Browser files, `{ file, dir }`, with `{ skipped: folder }` and `{ truncated: true }`
+     * markers from a drop (ui_tts_file_drop.js). Says what was left out, and asks before
+     * a very large upload.
      */
     async function takeFiles(list, into = null) {
-        const skipped = new Set();
-        const items = [];
-        for (const item of list) {
-            const part = item.skipped || skippedPart(item.dir);
-            if (part) skipped.add(part);
-            else items.push({ name: item.file.name, dir: item.dir || '', file: item.file });
-        }
+        const skipped = list.filter(item => item.skipped).map(item => item.skipped);
+        const truncated = list.some(item => item.truncated);
+        const items = list.filter(item => item.file).map(item => ({ name: item.file.name, dir: item.dir || '', file: item.file }));
         const usable = items.filter(item => importKind(item.name));
         const bytes = usable.reduce((sum, item) => sum + item.file.size, 0);
         if (bytes > UPLOAD_WARN_BYTES || usable.length > UPLOAD_WARN_FILES) {
@@ -70,10 +72,17 @@ export function createFileSources({ signal, add, note }) {
             if (choice) { await chooseLocalFolder(); return; }
         }
         if (items.length) add(items, into);
-        if (skipped.size) {
-            const names = [...skipped];
-            note(t('ttsSkippedFolders', { folders: names.slice(0, 3).join('、') + (names.length > 3 ? '…' : '') }));
-        }
+        if (skipped.length) note(t('ttsSkippedFolders', { folders: few(skipped) }));
+        if (truncated) note(t('ttsBatchScanTruncated', { count: items.length }));
+    }
+
+    /** The browser's folder dialog lists every file: leave out the same folders a drop does. */
+    function takeFolder(files) {
+        const all = files.map(file => ({ file, name: file.name, dir: file.webkitRelativePath.split('/').slice(0, -1).join('/') }));
+        const { kept, skipped } = sortOutFolders(all);
+        const usable = kept.map(i => all[i]).filter(item => importKind(item.name));
+        const list = usable.slice(0, DROP_FILE_LIMIT).map(item => ({ file: item.file, dir: item.dir }));
+        takeFiles([...list, ...skipped.map(folder => ({ skipped: folder })), ...(usable.length > DROP_FILE_LIMIT ? [{ truncated: true }] : [])]);
     }
 
     const fileInput = document.createElement('input');
@@ -89,7 +98,7 @@ export function createFileSources({ signal, add, note }) {
     folderInput.webkitdirectory = true;
     folderInput.hidden = true;
     folderInput.onchange = () => {
-        takeFiles([...folderInput.files].map(file => ({ file, dir: file.webkitRelativePath.split('/').slice(0, -1).join('/') })));
+        takeFolder([...folderInput.files]);
         folderInput.value = '';
     };
     const chooseFiles = (kinds = null, into = null) => {

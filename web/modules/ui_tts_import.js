@@ -3,15 +3,17 @@ import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { loadEngine, loadGptSovitsStatus } from './audio_engines.js';
 import {
-    buildImportBody, commitImport, discardUploads, importKind, inspectImport, nameConflict, pickWeights, uploadFile,
+    buildImportBody, commitImport, discardUploads, importKind, inspectImport, nameConflict, pickWeights,
 } from './tts_setup_api.js';
-import { draftChecklist, draftState, groupFiles, groupKey, leftOut } from './tts_import_groups.js';
+import { clashFreeNames, draftChecklist, draftState, groupKey, leftOut, planGroups, splitBatch } from './tts_import_groups.js';
 import { TRAY, renderDraftCard, renderTrayCard, showSource, syncReference, updateRow } from './ui_tts_import_draft.js';
 import { PICKER_OVERLAY_CLASS } from './ui_tts_path_picker.js';
 import { readDroppedFiles } from './ui_tts_file_drop.js';
 import { createFileSources } from './ui_tts_import_sources.js';
+import { createImportPlayer } from './ui_tts_import_player.js';
+import { createUploadQueue } from './ui_tts_import_uploads.js';
 import { closeSpotlightTour, isSpotlightTourActive, startSpotlightTour } from './ui_spotlight_tour.js';
-import { TOURS, markTourSeen, renderBatchHero, renderChooseScreen, seenTours } from './ui_tts_import_screens.js';
+import { TOURS, markTourSeen, renderAddMenu, renderBatchHero, renderChooseScreen, seenTours } from './ui_tts_import_screens.js';
 
 /**
  * The GPT-SoVITS import window, through the Anomalous_TTS node. It first asks what
@@ -22,16 +24,19 @@ import { TOURS, markTourSeen, renderBatchHero, renderChooseScreen, seenTours } f
  * character's "Add files"). A spotlight tour explains each screen the first time.
  *
  * Files come from a drop (folders too), the browser's file or folder dialog
- * (uploaded in chunks, a few files at a time) or the node's folder picker (sent as
- * paths); see ui_tts_import_sources.js. The node copies what is imported; the
- * originals are never touched. Clips outside 3–10 s are left out. Each draft is inspected and
+ * (uploaded in chunks, a few files at a time, once they are in a character) or the
+ * node's folder picker (sent as paths); see ui_tts_import_sources.js. A large add
+ * opens a batch of characters at a time; the rest waits for "next batch" (and opens
+ * by itself once the batch is imported). Files that would clash by name inside a
+ * character get their folder's name in front. Every clip can be listened to at any
+ * time (ui_tts_import_player.js). The node copies what is imported; the originals
+ * are never touched. Clips outside 3–10 s are left out. Each draft is inspected and
  * imported on its own, so one failure leaves the others alone. Every file is one
  * row object, owned by exactly one draft's `rows`; its elements are built once
  * (ui_tts_import_draft.js) and move with it.
  */
 
 let activeScope = null;
-const UPLOADS_AT_ONCE = 3;
 function el(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -86,9 +91,12 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
     let nextDraft = 0;
     let nextRow = 0;
     let importing = false;
-    let player = null;
-    const uploadQueue = [];
-    let uploading = 0;
+    const player = createImportPlayer();
+    const pending = []; // groups of characters waiting for the next batch (tts_import_groups.js planGroups)
+    const uploads = createUploadQueue({
+        onProgress: updateRow,
+        onDone: (row) => { updateRow(row); touch(ownerOf(row)); refreshSoon(); },
+    });
     let refreshTimer = 0;
 
     const overlay = el('div', 'anomalous-voice-modal-overlay');
@@ -101,8 +109,9 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         closeSpotlightTour();
         for (const draft of drafts) clearTimeout(draft.inspectTimer);
         clearTimeout(refreshTimer);
-        uploadQueue.length = 0;
-        player?.pause();
+        uploads.clear();
+        pending.length = 0;
+        player.stop();
         const rows = allRows();
         for (const row of rows) {
             row.controller.abort();
@@ -136,7 +145,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
     const openDrafts = () => drafts.filter(draft => !draft.done);
     const solo = () => mode !== 'batch' && drafts.length === 1;
 
-    const rowView = row => ({ kind: row.kind, name: row.name, emotion: row.emotion, error: row.error, uploaded: Boolean(row.spec),
+    const rowView = row => ({ kind: row.kind, name: row.name, emotion: row.emotion, error: row.error, uploaded: Boolean(row.spec), queued: row.queued,
         progress: row.progress, existing: row.info?.existing ?? null, supported: row.info?.supported, version: row.info?.version,
         seconds: row.info?.seconds });
     /** Keys of the draft's rows the import leaves out (clips outside 3–10 s and their line files). */
@@ -172,6 +181,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
     }
 
     function forgetRow(row) {
+        player.forget(row);
         row.controller.abort();
         if (row.uploadId) discardUploads([row.uploadId]);
         if (row.url) URL.revokeObjectURL(row.url);
@@ -187,15 +197,30 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         if (redraw) draw();
     }
 
-    /** GPT and SoVITS hold one file per draft: a newer one replaces the old. Other kinds skip duplicates. */
+    /** What the node gets for a row: its upload or path, and its name when it was renamed. */
+    const specOf = row => (row.name !== row.original ? { ...row.spec, name: row.name } : row.spec);
+
+    /**
+     * GPT and SoVITS hold one file per draft: a newer one replaces the old. The same file
+     * twice is skipped; another file of the same name is renamed (tts_import_groups.js
+     * clashFreeNames). In the tray a file keeps its own name and is not uploaded yet.
+     */
     function placeRow(place, row) {
         if (place !== tray && (row.kind === 'gpt' || row.kind === 'sovits')) {
             const old = place.rows.find(other => other.kind === row.kind && other !== row);
             if (old) removeRow(old, { redraw: false });
-        } else if (place.rows.some(other => other !== row && other.kind === row.kind && other.name.toLowerCase() === row.name.toLowerCase())) {
+        } else if (place.rows.some(other => other !== row && other.kind === row.kind && other.dir === row.dir
+            && other.original.toLowerCase() === row.original.toLowerCase())) {
             return false;
         }
+        row.name = place === tray ? row.original
+            : clashFreeNames([{ name: row.original, dir: row.dir, kind: row.kind }], place.rows.filter(other => other !== row))[0];
         place.rows.push(row);
+        updateRow(row);
+        if (place !== tray && row.file && !row.queued) {
+            row.queued = true;
+            uploads.add(row);
+        }
         return true;
     }
 
@@ -225,48 +250,35 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         draw();
     }
 
-    /**
-     * Add files: `items` are `{ name, dir, file }` or `{ name, dir, path, size }`. Into
-     * `into` when given (or the only card outside batch mode), else sorted into drafts.
-     */
-    function addItems(items, into = null) {
-        const known = items.map(item => ({ ...item, kind: importKind(item.name) }));
-        const bad = known.filter(item => !item.kind).map(item => item.name);
-        const usable = known.filter(item => item.kind);
-        const place = into || (solo() ? drafts[0] : null);
-        let assign;
-        if (place) {
-            assign = usable.map(() => place);
-        } else {
-            const grouped = groupFiles(usable, openDrafts().map(draft => ({ key: draft.key, target: draft.target })));
-            for (const add of grouped.added) newDraft(add);
-            assign = grouped.assign.map(key => (key === null ? tray : openDrafts().find(draft => draft.key === key)));
-        }
-        const notes = [];
+    /** Put `groups` (planGroups) into their characters: rows, uploads, and what to tell the user. */
+    function fill(groups, bad = []) {
         const keptBest = [];
         const touched = new Set();
-        for (const owner of new Set(assign)) {
-            const mine = usable.filter((_, i) => assign[i] === owner);
-            const { skip, kept } = pickWeights(mine);
+        let renamed = 0;
+        for (const group of groups) {
+            const owner = group.owner || (group.tray ? tray
+                : openDrafts().find(draft => draft.key === group.key) || newDraft({ key: group.key, name: group.name }));
+            const { skip, kept } = pickWeights(group.items);
             keptBest.push(...kept);
-            mine.forEach((item, i) => {
+            group.items.forEach((item, i) => {
                 if (skip.has(i)) return;
                 const row = {
-                    key: nextRow++, kind: item.kind, name: item.name, dir: item.dir || '', path: item.path || '', file: item.file || null,
-                    size: item.file?.size ?? item.size ?? 0, spec: item.path ? { path: item.path } : null, uploadId: null, progress: 0,
-                    error: '', info: null, emotion: '', text: '', textEdited: false, committed: false, controller: new AbortController(),
+                    key: nextRow++, kind: item.kind, name: item.name, original: item.name, dir: item.dir || '', path: item.path || '',
+                    file: item.file || null, size: item.file?.size ?? item.size ?? 0, spec: item.path ? { path: item.path } : null,
+                    queued: false, uploadId: null, progress: 0, error: '', info: null, emotion: '', text: '', textEdited: false,
+                    committed: false, controller: new AbortController(),
                 };
                 if (!placeRow(owner, row)) { bad.push(item.name); return; }
+                if (row.name !== row.original) renamed++;
                 touched.add(owner);
-                if (row.file) queueUpload(row);
             });
         }
-        if (keptBest.length > 2) {
-            notes.push(t('ttsImportKeptBestMany', { count: keptBest.reduce((sum, k) => sum + k.others, 0) }));
-        } else {
-            notes.push(...keptBest.map(k => t('ttsImportKeptBest', { kind: t(`ttsKind_${k.kind}`), file: k.name, count: k.others })));
-        }
+        const notes = keptBest.length > 2
+            ? [t('ttsImportKeptBestMany', { count: keptBest.reduce((sum, k) => sum + k.others, 0) })]
+            : keptBest.map(k => t('ttsImportKeptBest', { kind: t(`ttsKind_${k.kind}`), file: k.name, count: k.others }));
+        if (renamed) notes.push(t('ttsImportRenamed', { count: renamed }));
         if (bad.length) notes.push(t('ttsImportSkipped', { files: bad.join(', ') }));
+        if (pending.length) notes.push(t('ttsBatchLater', { count: pending.length }));
         noteLine.textContent = notes.join(' ');
         touched.forEach(touch);
         const first = [...touched].find(owner => owner !== tray);
@@ -274,41 +286,32 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         draw();
     }
 
-    function queueUpload(row) {
-        uploadQueue.push(row);
-        pumpUploads();
+    /**
+     * Add files: `items` are `{ name, dir, file }` or `{ name, dir, path, size }`. Into
+     * `into` when given (or the only card outside batch mode), else sorted into drafts,
+     * a batch at a time.
+     */
+    function addItems(items, into = null) {
+        const known = items.map(item => ({ ...item, kind: importKind(item.name) }));
+        const bad = known.filter(item => !item.kind).map(item => item.name);
+        const usable = known.filter(item => item.kind);
+        const place = into || (solo() ? drafts[0] : null);
+        if (place) { fill([{ owner: place, items: usable }], bad); return; }
+        const { now, later } = splitBatch(planGroups(usable, openDrafts().map(draft => ({ key: draft.key, target: draft.target }))));
+        pending.push(...later);
+        fill(now, bad);
     }
 
-    function pumpUploads() {
-        while (uploading < UPLOADS_AT_ONCE && uploadQueue.length) {
-            const row = uploadQueue.shift();
-            if (row.controller.signal.aborted) continue;
-            uploading++;
-            upload(row).finally(() => { uploading--; pumpUploads(); });
-        }
+    /** Open the next batch of waiting characters. */
+    function nextBatch() {
+        const { now, later } = splitBatch(pending.splice(0));
+        pending.push(...later);
+        fill(now);
     }
 
     /** Many uploads finish close together: repaint once for them. */
     function refreshSoon() {
         if (!refreshTimer) refreshTimer = setTimeout(() => { refreshTimer = 0; if (!scope.signal.aborted) refresh(); }, 100);
-    }
-
-    async function upload(row) {
-        if (row.controller.signal.aborted) return;
-        try {
-            await uploadFile(row.file, {
-                signal: row.controller.signal,
-                onStart: (id) => { row.uploadId = id; },
-                onProgress: (fraction) => { row.progress = fraction; updateRow(row); },
-            });
-            row.spec = { upload: row.uploadId };
-        } catch (e) {
-            if (row.controller.signal.aborted) return;
-            row.error = e.message || String(e);
-        }
-        updateRow(row);
-        touch(ownerOf(row));
-        refreshSoon();
     }
 
     async function inspect(draft) {
@@ -322,7 +325,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
             return;
         }
         try {
-            const result = await inspectImport(ready.map(row => row.spec), scope.signal, draft.target);
+            const result = await inspectImport(ready.map(specOf), scope.signal, draft.target);
             if (mine !== draft.inspectToken || scope.signal.aborted) return;
             const skippedBefore = skippedKeys(draft.rows).size;
             ready.forEach((row, i) => {
@@ -386,26 +389,16 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         character: (name) => { mode = 'add'; expand(newDraft({ key: groupKey(name), name, target: name })); draw(); },
     });
 
-    // "Add more" is one button with a small menu, so the list stays the main thing.
-    const menu = el('div', 'anomalous-tts-menu');
-    const menuItem = (label, hint, onClick) => {
-        const item = button('anomalous-tts-menu-item', '', () => { menu.classList.remove('is-open'); onClick(); });
-        item.append(el('span', 'anomalous-tts-menu-label', label), el('span', 'anomalous-tts-menu-hint', hint));
-        return item;
-    };
-    menu.append(menuItem(t('ttsImportPickFiles'), t('ttsMenuUploadHint'), () => chooseFiles()),
-        menuItem(t('ttsBatchPickFolder'), t('ttsMenuUploadHint'), sources.chooseFolder),
-        menuItem(t('ttsMenuLocalFiles'), t('ttsMenuLocalHint'), () => chooseLocalFiles()),
-        menuItem(t('ttsBatchPickLocalFolder'), t('ttsMenuLocalHint'), chooseLocalFolder));
-    const addMore = button('anomalous-tts-ghost', t('ttsAddMore'), () => menu.classList.toggle('is-open'));
-    const menuWrap = el('div', 'anomalous-tts-menu-wrap');
-    menuWrap.append(addMore, menu);
+    const { root: menuWrap, menu } = renderAddMenu({
+        files: () => chooseFiles(), folder: sources.chooseFolder, localFiles: () => chooseLocalFiles(), localFolder: chooseLocalFolder,
+    });
     scope.listen(document, 'mousedown', (e) => { if (!menuWrap.contains(e.target)) menu.classList.remove('is-open'); });
     const newBtn = button('anomalous-tts-ghost', t('ttsBatchNewDraft'), () => {
         expand(newDraft({ key: `#new${nextDraft}`, name: '' }));
         draw();
         cardsBox.querySelector('.anomalous-tts-card.is-open .anomalous-tts-card-name-input')?.focus();
     });
+    const nextBtn = button('anomalous-tts-pick', '', nextBatch);
     const backBtn = button('anomalous-tts-link', t('ttsChooseAgain'), () => {
         drafts.length = 0;
         mode = null;
@@ -414,7 +407,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
     const toolbar = el('div', 'anomalous-tts-toolbar');
     const found = el('span', 'anomalous-tts-toolbar-title');
     const dropHint = el('span', 'anomalous-tts-toolbar-hint', t('ttsSoloDropHint'));
-    toolbar.append(found, dropHint, backBtn, menuWrap, newBtn);
+    toolbar.append(found, dropHint, backBtn, nextBtn, menuWrap, newBtn);
     const noteLine = el('div', 'anomalous-tts-note');
     const cardsBox = el('div', 'anomalous-tts-cards');
     const content = el('div', 'anomalous-tts-content');
@@ -442,12 +435,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         status,
         signal: scope.signal,
         places,
-        play: (row) => {
-            player?.pause();
-            row.url = row.url || URL.createObjectURL(row.file);
-            player = new Audio(row.url);
-            player.play().catch(() => {});
-        },
+        play: row => player.toggle(row),
         pick: (draft, kinds, local) => (local ? chooseLocalFiles(kinds, draft) : chooseFiles(kinds, draft)),
         onToggle: (draft) => {
             if (draft.done) return;
@@ -535,6 +523,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         const parts = [];
         if (waiting && !solo()) parts.push(t('ttsFooterWaiting', { count: waiting }));
         if (tray.rows.length) parts.push(t('ttsFooterTray', { count: tray.rows.length }));
+        if (pending.length) parts.push(t('ttsFooterPending', { count: pending.length }));
         summary.textContent = parts.join(' · ');
         summary.hidden = !parts.length;
         saveTo.textContent = t('ttsFooterSaveTo', { path: status.storage });
@@ -568,6 +557,8 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
             menuWrap.hidden = !batch;
             newBtn.hidden = !batch;
             dropHint.hidden = batch;
+            nextBtn.hidden = !pending.length;
+            nextBtn.textContent = t('ttsBatchNext', { count: pending.length });
             backBtn.hidden = Boolean(target) || allRows().length > 0;
             if (content.firstChild !== toolbar) content.replaceChildren(toolbar, noteLine, cardsBox);
             content.scrollTop = top;
@@ -591,7 +582,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
             const body = buildImportBody({
                 target: draft.target, library: status.storage, character: draft.name.trim(), language: draft.language,
                 referenceIndex: index >= 0 ? index : null,
-                rows: ready.map(row => ({ spec: row.spec, kind: row.kind, emotion: row.emotion, text: row.text })),
+                rows: ready.map(row => ({ spec: specOf(row), kind: row.kind, emotion: row.emotion, text: row.text })),
             });
             try {
                 last = await commitImport(body);
@@ -608,6 +599,20 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         importing = false;
         if (scope.signal.aborted) return;
         if (last) onDone?.(last);
+        if (!openDrafts().length && pending.length) {
+            // This batch is in: its cards make way and the next batch opens by itself.
+            const imported = drafts.splice(0);
+            for (const draft of imported) {
+                cards.delete(draft);
+                for (const row of draft.rows) { // committed: the node already moved the uploads
+                    player.forget(row);
+                    if (row.url) URL.revokeObjectURL(row.url);
+                }
+            }
+            nextBatch();
+            noteLine.textContent = `${t('ttsBatchImported', { count: imported.length })} ${noteLine.textContent}`;
+            return;
+        }
         if (!openDrafts().length && !tray.rows.length) {
             scope.dispose();
             return;

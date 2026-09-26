@@ -1,5 +1,6 @@
 import { t } from './interface_settings.js';
-import { isSkippedFolder } from './tts_import_groups.js';
+import { importKind } from './tts_setup_api.js';
+import { DROP_FILE_LIMIT, isPackage, skipFolder } from './tts_import_groups.js';
 
 /**
  * Files dropped from the OS on the audio studio, the sidebar or the import
@@ -7,29 +8,48 @@ import { isSkippedFolder } from './tts_import_groups.js';
  * from (dropped folders are walked), so the workbench can sort them.
  */
 
-/** GPT-SoVITS program and training folders inside a drop are not walked: `{ skipped: folder }`. */
-async function walkEntry(entry, dir, top = false) {
-    if (entry.isFile) return [{ file: await new Promise((ok, fail) => entry.file(ok, fail)), dir }];
-    const sub = dir ? `${dir}/${entry.name}` : entry.name;
-    if (!top && isSkippedFolder(entry.name)) return [{ skipped: sub }];
-    const reader = entry.createReader();
-    const children = [];
-    for (;;) {
-        const batch = await new Promise((ok, fail) => reader.readEntries(ok, fail));
-        if (!batch.length) break;
-        children.push(...batch);
-    }
-    return (await Promise.all(children.map(child => walkEntry(child, sub)))).flat();
+const readAll = reader => new Promise((ok, fail) => reader.readEntries(ok, fail));
+
+/**
+ * The entries of a drop, walked: `{ file, dir }` for each file an import can use,
+ * `{ skipped: folder }` for a folder left out (tts_import_groups.js skipFolder: never
+ * one that was dropped by itself), `{ truncated: true }` once `DROP_FILE_LIMIT` files
+ * were taken. Other files are not even opened: a program folder holds thousands.
+ */
+async function walkEntries(entries, dir, inPackage, count) {
+    const sorted = [...entries].sort((a, b) => a.name.localeCompare(b.name));
+    const lists = await Promise.all(sorted.map(async (entry) => {
+        const at = dir ? `${dir}/${entry.name}` : entry.name;
+        if (entry.isFile) {
+            if (!importKind(entry.name)) return [];
+            if (count.files >= DROP_FILE_LIMIT) { count.truncated = true; return []; }
+            count.files++;
+            return [{ file: await new Promise((ok, fail) => entry.file(ok, fail)), dir }];
+        }
+        if (inPackage !== null && skipFolder(entry.name, inPackage)) return [{ skipped: at }];
+        const reader = entry.createReader();
+        const children = [];
+        for (;;) {
+            const batch = await readAll(reader);
+            if (!batch.length) break;
+            children.push(...batch);
+        }
+        return walkEntries(children, at, isPackage(children.map(child => child.name)), count);
+    }));
+    return lists.flat(); // in name order, whatever finished first
 }
 
 /**
  * Files of a drop, with the folder each came from (dropped folders are walked).
  * The entries must be taken during the drop event, so call it synchronously there.
+ * Several things dropped together are judged as one folder's contents.
  */
 export function readDroppedFiles(dataTransfer) {
     const entries = [...(dataTransfer?.items || [])].map(item => item.webkitGetAsEntry?.()).filter(Boolean);
     if (!entries.length) return Promise.resolve([...(dataTransfer?.files || [])].map(file => ({ file, dir: '' })));
-    return Promise.all(entries.map(entry => walkEntry(entry, '', true))).then(lists => lists.flat());
+    const count = { files: 0, truncated: false };
+    const together = entries.length > 1 ? isPackage(entries.map(entry => entry.name)) : null;
+    return walkEntries(entries, '', together, count).then(list => (count.truncated ? [...list, { truncated: true }] : list));
 }
 
 /**

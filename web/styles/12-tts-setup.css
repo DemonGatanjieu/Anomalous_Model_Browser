@@ -988,6 +988,7 @@
 
 .anomalous-tts-file[data-tone="busy"] { border-left-color: #38bdf8; }
 .anomalous-tts-file[data-tone="skip"] { border-left-color: #64748b; opacity: 0.7; }
+.anomalous-tts-file[data-tone="idle"] { border-left-color: #475569; }
 
 .anomalous-tts-file[data-tone="error"] {
     border-color: rgba(248, 113, 113, 0.4);
@@ -1030,6 +1031,24 @@
 .anomalous-tts-file-play:hover {
     border-color: #818cf8;
     color: #fff;
+}
+
+/* The clip being listened to: its button is "stop". */
+.anomalous-tts-file.is-playing {
+    border-color: rgba(129, 140, 248, 0.45);
+    background: rgba(129, 140, 248, 0.08);
+}
+
+.anomalous-tts-file.is-playing .anomalous-tts-file-play {
+    padding: 0;
+    border-color: #818cf8;
+    background: #818cf8;
+    color: #fff;
+}
+
+.anomalous-tts-file-play.is-failed {
+    border-color: rgba(248, 113, 113, 0.6);
+    color: #f87171;
 }
 
 .anomalous-tts-file-label {
