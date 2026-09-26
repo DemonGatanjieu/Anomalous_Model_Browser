@@ -8,7 +8,8 @@ by default.
 ## Reading map
 
 Before implementation, follow [AGENTS.md](AGENTS.md), the canonical development
-and maintenance rules. [GEMINI.md](GEMINI.md) is the Gemini reading entry point.
+and maintenance rules; its section 0 is required for every commit.
+[GEMINI.md](GEMINI.md) and [CLAUDE.md](CLAUDE.md) are reading entry points only.
 
 The prompt studio reads material prompt payloads through `web/modules/material_prompt_data.js`;
 list summaries do not contain prompt bodies. See the Material Library contract below.
@@ -63,7 +64,7 @@ DOM or live LiteGraph state.
 
 This map, with the topic documents, is also the file directory: every source
 module under `api/`, `web/` and `web/modules/` and each root Python file is
-named with its owner. `node tests/architecture_map.mjs` checks this. Styles are
+named with its owner. `node tools/check_structure.mjs` checks this. Styles are
 covered by the `styles.css` manifest.
 
 ### Backend
@@ -238,7 +239,7 @@ covered by the `styles.css` manifest.
 - `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn` and Help modal; version ID `2026-09-recipes-and-studios`), presenting a 4-step milestone walkthrough (Workflow Recipe Studio, Material Library & Prompt Studio, Model Sources Hub, and Precision Direct Scan with canvas addition) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across topbar workspaces and bottom dock actions with directional tooltip cards and keyboard navigation. Other views pass their own `steps` (text from locale keys) and an optional `onClose`; the GPT-SoVITS import window does.
 - `sidebar_actions.js` owns the sidebar bottom action hover-reveal short labels (100ms), singleton dynamic DOM tooltip bubbles (`#anomalous-sidebar-tooltip-bubble`, 600ms), click/pointerdown instant text/tooltip suppression guards, `isBottomModalOpen` tooltip occlusion guards, and anti-flicker pointer stability.
 - `tool_registry.js` centralizes metadata, SVG icons (enlarged 20px crisp vector outlines with 2px stroke, #cbd5e1 contrast), and stable IDs for the 9 catalog tools (including Prompt Notes / 提示词笔记) and 2 fixed anchors (Toolbox and Settings).
-- `shortcut_layout.js` provides tool layout utilities and fallbacks. The bottom shortcut bar maintains the clean fixed 4-tool setup (`scan`, `doctor`, `assistant`, `materials`) plus two anchors (`toolbox`, `settings`) housed in prominent 36px buttons with full click/active text suppression and `.is-active` toggled styling.
+- The bottom shortcut bar (built in `ui_toolbox.js`, not user-arrangeable) maintains the clean fixed 4-tool setup (`scan`, `doctor`, `assistant`, `materials`) plus two anchors (`toolbox`, `settings`) housed in prominent 36px buttons with full click/active text suppression and `.is-active` toggled styling.
 - `ui_toolbox.js`'s Toolbox modal strictly filters out all tools already present on the bottom bar, presenting a sleek 216px 3-row utility catalog with compact, frameless 44px tiles (providing an elevated silhouette with breathing room for catalog discovery), downward anchor caret pointing to the toolbox trigger button, 0.18s smooth spring pop-in animation, clean click action execution, and zero obstructive text or beta footers.
 - `ui_grid.js` and model-detail modules own model presentation: `ui_grid.js` manages chunked card rendering,
   card placeholder ergonomics (eliminating misleading unclickable text in favor of pure centered icon and status),
@@ -378,26 +379,11 @@ documents.
 
 ## Change and snapshot protocol
 
-Every product-code change should end as one coherent local Git snapshot:
-
-1. Run checks proportional to the changed behavior.
-2. Update architecture documentation **only** when the change modifies a module
-   owner, data flow, public/internal interface contract, persistence format,
-   security boundary, or critical invariant. Adding, deleting, renaming or
-   splitting a source file always counts as a module-owner change: update its
-   line in the same commit (`node tests/architecture_map.mjs` fails otherwise).
-3. When architecture changes, update the narrowest relevant topic document.
-   Update this entry point only if the system map, cross-system invariants, or
-   reading map changed.
-4. Do not add an architecture entry merely to say that existing boundaries were
-   unchanged. Ordinary fixes belong in code, tests, Git history, and—when useful
-   to users—`CHANGELOG.md`.
-5. Record a durable lesson in `.agents/logs/ai_lessons.md` only for a recurring
-   trap or a critical failure mode, not as a turn-by-turn work log.
-6. Create a local commit after verification. Keep unrelated work out of the
-   snapshot and do not push without explicit user authorization.
-7. Leave a clean worktree, or identify every intentional uncommitted file in the
-   handoff.
+The per-commit requirements (which document to update, the structure check,
+verification, snapshots and pushing) live in section 0 of [AGENTS.md](AGENTS.md)
+and are not repeated here. Update this entry point only when the system map,
+cross-system invariants, or reading map change; everything else goes in the
+narrowest topic document.
 
 Decision records explain enduring choices; they are not a chronological diary.
 Git history is the authoritative record of implementation changes. Planning-only
