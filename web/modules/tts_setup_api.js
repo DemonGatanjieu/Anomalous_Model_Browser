@@ -1,7 +1,7 @@
 import { invalidateEngineCache } from './audio_engines.js';
 
 /**
- * GPT-SoVITS setup and import through the Anomalous_TTS node (interface v4, §5.2–5.3).
+ * GPT-SoVITS setup and import through the Anomalous_TTS node (interface v9, §5.2–5.3).
  * The node owns every file: the storage place, pretrained files and imported
  * characters. This module only calls its API and holds the pure rules the import
  * form needs; it has no DOM.
@@ -84,6 +84,11 @@ export function scanFolder(path, signal) {
     return request(`/anomalous_tts/browse?recursive=1&path=${encodeURIComponent(path)}`, { method: 'GET', signal });
 }
 
+/** Where the browser can play a local audio file picked by path (the node serves it). */
+export function previewUrl(path) {
+    return `/anomalous_tts/import/preview?path=${encodeURIComponent(path)}`;
+}
+
 // ---------- import ----------
 
 /**
@@ -129,7 +134,7 @@ export function discardUploads(ids) {
 
 /**
  * The commit request for the import form. `rows` are in file order:
- * { spec: {upload}|{path}, kind, emotion, text }. `language` '' = let the node decide.
+ * { spec: {upload}|{path} (plus `name` when renamed), kind, emotion, text }. `language` '' = let the node decide.
  */
 export function buildImportBody({ target = null, library = '', character = '', rows, referenceIndex = null, language = '' }) {
     const settings = {};
@@ -260,11 +265,13 @@ export function missingForLanguage(status, language) {
 }
 
 /**
- * One import row at a glance: `tone` colours it (busy | ready | skip | merge | error)
+ * One import row at a glance: `tone` colours it (busy | ready | skip | merge | error | idle)
  * and `key` / `params` are its state text. `existing` comes from inspect with a target.
+ * `queued` false: a file nobody claims yet, uploaded once it is put into a character.
  */
-export function rowState({ error = '', uploaded = false, progress = 0, existing = null, unsupported = false }) {
+export function rowState({ error = '', uploaded = false, queued = true, progress = 0, existing = null, unsupported = false }) {
     if (error) return { tone: 'error', key: 'ttsImportRowError', params: { error } };
+    if (!uploaded && !queued) return { tone: 'idle', key: 'ttsImportRowNotSent', params: {} };
     if (!uploaded) return { tone: 'busy', key: 'ttsImportRowUploading', params: { percent: Math.floor(100 * progress) } };
     if (existing === 'different') return { tone: 'error', key: 'ttsImportRowConflict', params: {} };
     if (unsupported) return { tone: 'error', key: 'ttsImportRowUnsupported', params: {} };

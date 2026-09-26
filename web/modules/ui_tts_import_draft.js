@@ -51,17 +51,20 @@ function input(className, placeholder) {
     return node;
 }
 
-/** State text, size / version / length, and the row's colour. */
+/** Name (a renamed file says what it was), state text, size / version / length, and the row's colour. */
 export function updateRow(row) {
     if (!row.els) return;
     const info = row.info || {};
+    const from = [row.dir, row.original].filter(Boolean).join('/');
+    row.els.name.textContent = row.name;
+    row.els.name.title = row.name !== row.original ? t('ttsImportRenamedFrom', { file: row.path || from }) : row.path || from;
     const parts = row.size ? [formatSize(row.size)] : [];
     if (info.version) parts.push(info.supported ? info.version : t('ttsImportUnsupported', { version: info.version }));
     if (info.seconds !== undefined) parts.push(t('ttsImportSeconds', { seconds: info.seconds }));
     row.els.meta.textContent = parts.join(' · ');
     const outOfRange = row.kind === 'audio' && info.seconds !== undefined && !usableAsReference(info.seconds);
     row.els.root.classList.toggle('is-out-of-range', outOfRange);
-    const view = rowState({ error: row.error, uploaded: Boolean(row.spec), progress: row.progress,
+    const view = rowState({ error: row.error, uploaded: Boolean(row.spec), queued: row.queued, progress: row.progress,
         existing: info.existing ?? null, unsupported: info.supported === false });
     row.els.root.dataset.tone = view.tone;
     const leftOut = outOfRange && view.tone === 'ready';
@@ -122,8 +125,7 @@ function rowElements(row, ctx) {
     if (row.els) return row.els;
     const root = el('div', `anomalous-tts-file is-${row.kind}`);
     const name = el('span', 'anomalous-tts-file-name', row.name);
-    name.title = row.path || row.name;
-    const els = { root, meta: el('span', 'anomalous-tts-file-meta'), state: el('span', 'anomalous-tts-file-state'),
+    const els = { root, name, meta: el('span', 'anomalous-tts-file-meta'), state: el('span', 'anomalous-tts-file-state'),
         move: el('select', 'anomalous-tts-file-move') };
     row.els = els;
     els.move.title = t('ttsBatchMoveTo');
@@ -137,8 +139,7 @@ function rowElements(row, ctx) {
     const label = el('span', 'anomalous-tts-file-label');
     label.append(name, els.meta);
     if (row.kind === 'audio') {
-        const play = button('anomalous-tts-file-play', '▶', () => ctx.play(row), t('audioPlay'));
-        play.hidden = !row.file; // local paths cannot be played from the browser
+        els.play = button('anomalous-tts-file-play', '▶', () => ctx.play(row), t('audioPlay'));
         els.main = button('anomalous-tts-file-main', t('ttsImportMain'), () => ctx.onReference(row));
         els.emotion = input('anomalous-tts-file-emotion', t('ttsImportEmotionPlaceholder'));
         els.emotion.value = row.emotion;
@@ -148,7 +149,7 @@ function rowElements(row, ctx) {
         els.text.oninput = () => { row.text = els.text.value.trim(); row.textEdited = true; showSource(row, null); };
         if (row.info && !row.textEdited) showSource(row, row.info.text_source || 'none');
         const top = el('div', 'anomalous-tts-file-top');
-        top.append(play, label, els.state, els.main, els.move, remove);
+        top.append(els.play, label, els.state, els.main, els.move, remove);
         const bottom = el('div', 'anomalous-tts-file-bottom');
         bottom.append(els.emotion, els.text);
         root.append(top, bottom);

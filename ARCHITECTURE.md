@@ -142,9 +142,9 @@ covered by the `styles.css` manifest.
   voice-group shape (`node_value` = what the node's voice widget takes), so cards,
   sidebar and Script Director share one implementation. A missing engine stays in
   the switch marked "not installed" with install steps; nothing else depends on it.
-  GPT-SoVITS data comes only from the node's HTTP contract, version 4
+  GPT-SoVITS data comes only from the node's HTTP contract, version 9
   (`/anomalous_tts/characters`, `/audio`, `/settings`, `/status`, the storage,
-  library, pretrained, browse and import routes; the node repo's `docs/INTERFACE.md`,
+  library, pretrained, browse, import and import preview routes; the node repo's `docs/INTERFACE.md`,
   mirrored as the project doc `anomalous-tts-interface.md`); Anomalous never
   reads or writes its model folders. `loadGptSovitsStatus` caches the setup status
   with the engine data (null for a node without `/status`, which hides setup and import). The character list is a
@@ -174,26 +174,42 @@ covered by the `styles.css` manifest.
   drop area then one card per draft, one unfolded at a time, `add` = files for an
   existing character, also opened straight from a card's "Add files"), and runs a
   spotlight tour once per screen ("?" replays it). It owns the drafts (characters being built; `target` = files added to an
-  existing one) and the unassigned tray, every file row (in exactly one draft's
-  `rows`), the uploads (three at a time), a debounced inspect per draft, and imports
-  the ready drafts one after another (each commit on its own, without the rows
-  `leftOut` names; closing discards uncommitted uploads). `draw()` rebuilds the cards on structural changes, `refresh()` only
-  repaints status, so typing never loses focus.
-  `tts_import_groups.js` holds the pure rules: which draft a file goes to (weight
-  stems; other files follow the weights in their nearest folder, then folder names
-  or file-name prefixes), which files are left out (`leftOut`: clips outside 3–10 s
-  and their line files), which folders are never taken (GPT-SoVITS program and
-  training folders, the same list as the node's scan), where a draft stands, and its
-  checklist (the next step first). `ui_tts_import_sources.js` brings files in: the
-  browser's dialogs and drops (uploaded), the node's picker (paths), leaving out
-  those folders and offering the picker before a very large upload. `ui_tts_import_draft.js` draws a draft's card
+  existing one), the unassigned tray, the characters waiting for the next batch
+  (a large add opens one batch; the next opens on request or once the batch is
+  imported), every file row (in exactly one draft's `rows`; a row keeps its own
+  name in `original` and gets a clash-free `name` in a draft, sent to the node as
+  the file's `name`), a debounced inspect per draft, and imports the ready drafts
+  one after another (each commit on its own, without the rows `leftOut` names;
+  closing discards uncommitted uploads). `draw()` rebuilds the cards on structural
+  changes, `refresh()` only repaints status, so typing never loses focus.
+  `ui_tts_import_uploads.js` sends browser files in chunks, three at a time, once
+  they are in a draft (tray files wait); `ui_tts_import_player.js` plays one clip
+  at a time for comparing (browser files from memory, local paths through the
+  node's preview route).
+  `tts_import_groups.js` holds the pure rules: which folders are never taken
+  (`skipFolder` / `isPackage`, the same rules as the node's scan: Python
+  environments and base models anywhere, a package's program and training folders
+  only inside a package, never the chosen folder), which draft a file goes to
+  (`groupFiles`: a folder with one character's weights and clips is that character;
+  other weights by stem; other files follow the character folder, the weights in
+  their nearest folder, then folder names or file-name prefixes; unclaimed `.list`
+  files go to every character), how an add splits into groups and batches
+  (`planGroups`, `splitBatch`), new names for files that would clash inside a
+  character (`clashFreeNames`), which files are left out (`leftOut`: clips outside
+  3–10 s and their line files), where a draft stands, and its checklist (the next
+  step first). `ui_tts_import_sources.js` brings files in: the browser's dialogs and
+  drops (uploaded), the node's picker (paths); every source gives folders starting
+  with the chosen one, says which folders were left out or too deep, and offers the
+  picker before a very large upload. `ui_tts_import_draft.js` draws a draft's card
   (name in the header, steps left, the checklist with the next step's button and
   the chosen weights, one line per clip with its owner picker, the first clips with
   "show all", left-out files folded, line files, language) and the unassigned card
-  (one folded line per folder when large); `ui_tts_import_screens.js` holds the fixed
-  screens (the first question, the batch drop area) and the tour steps, and builds each row's elements once, so they
-  survive redraws and moves. `ui_tts_file_drop.js` reads OS
-  drops (walking dropped folders) for the studio, the sidebar and the workbench. `ui_tts_path_picker.js` picks server-side folders or files
+  (one folded line per folder when large), and builds each row's elements once, so
+  they survive redraws and moves; `ui_tts_import_screens.js` holds the fixed
+  screens (the first question, the batch drop area, the "add more" menu) and the
+  tour steps. `ui_tts_file_drop.js` reads OS drops (walking dropped folders, only
+  files an import can use, up to 5000) for the studio, the sidebar and the
+  workbench. `ui_tts_path_picker.js` picks server-side folders or files
   through the node's browse route, since the browser cannot see local paths.
 - `audio_node_targets.js` is the single table of canvas nodes the audio studio
   writes into and what each takes: F5-TTS (`F5TTSAudio`, `F5TTSAudioAdvanced`,

@@ -2,8 +2,9 @@ import { t } from './interface_settings.js';
 
 /**
  * The fixed screens of the GPT-SoVITS import window (ui_tts_import.js): the first
- * question (what do you have?), the drop area of batch mode, and the spotlight tour
- * steps that explain them. Only markup and callbacks; the window owns all state.
+ * question (what do you have?), the drop area of batch mode, the "add more" menu,
+ * and the spotlight tour steps that explain them. Only markup and callbacks; the
+ * window owns all state.
  */
 
 const UPLOAD_SVG = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>';
@@ -107,4 +108,25 @@ export function renderBatchHero(on) {
     hero.append(heroIcon, el('div', 'anomalous-tts-hero-title', t('ttsHeroTitle')), needs,
         el('div', 'anomalous-tts-hero-desc', t('ttsHeroDesc')), buttons, local, button('anomalous-tts-link', t('ttsChooseAgain'), on.back));
     return hero;
+}
+
+/**
+ * "Add more": one button with a small menu, so the list stays the main thing.
+ * `on`: `{ files, folder, localFiles, localFolder }`. Returns `{ root, menu }`; the
+ * window closes the menu on an outside click or Escape (`menu` loses `is-open`).
+ */
+export function renderAddMenu(on) {
+    const menu = el('div', 'anomalous-tts-menu');
+    const item = (label, hint, onClick) => {
+        const node = button('anomalous-tts-menu-item', '', () => { menu.classList.remove('is-open'); onClick(); });
+        node.append(el('span', 'anomalous-tts-menu-label', label), el('span', 'anomalous-tts-menu-hint', hint));
+        return node;
+    };
+    menu.append(item(t('ttsImportPickFiles'), t('ttsMenuUploadHint'), on.files),
+        item(t('ttsBatchPickFolder'), t('ttsMenuUploadHint'), on.folder),
+        item(t('ttsMenuLocalFiles'), t('ttsMenuLocalHint'), on.localFiles),
+        item(t('ttsBatchPickLocalFolder'), t('ttsMenuLocalHint'), on.localFolder));
+    const root = el('div', 'anomalous-tts-menu-wrap');
+    root.append(button('anomalous-tts-ghost', t('ttsAddMore'), () => menu.classList.toggle('is-open')), menu);
+    return { root, menu };
 }
