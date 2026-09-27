@@ -14,6 +14,7 @@ from .model_constants import (
     CIVITAI_BACKUP_SUFFIXES, MEDIA_EXTENSIONS, MODEL_EXTENSIONS,
     PREVIEW_SUFFIXES, SIDECAR_SUFFIXES,
 )
+from .model_catalog import _resolve_paths_to_model_info_sync
 from .utils import require_filename, resolve_folder_subdir, resolve_within
 
 def _first_existing_sidecar(base_path, suffixes):

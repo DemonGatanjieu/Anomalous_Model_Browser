@@ -10,6 +10,7 @@ import folder_paths
 
 from .metadata import get_metadata
 from .recipe_constants import *
+from .path_utils import _model_roots, _resolve_exact_model_reference
 from .recipe_images import _attach_preview_snapshots
 from .utils import require_filename, resolve_within
 from .workflow_schema import (
@@ -42,39 +43,6 @@ def _model_reference_specs(node):
         if "tripleclip" in lowered:
             specs.append((2, "text_encoder", "clip"))
     return specs
-
-
-def _model_roots():
-    for folder_type in getattr(folder_paths, "folder_names_and_paths", {}):
-        try:
-            paths = folder_paths.get_folder_paths(folder_type)
-        except Exception:
-            continue
-        for path_index, base_dir in enumerate(paths or []):
-            if os.path.isdir(base_dir):
-                yield folder_type, path_index, os.path.realpath(base_dir)
-
-
-def _resolve_exact_model_reference(saved_value):
-    """Resolve one saved model value without recursive scanning or hashing."""
-    if not isinstance(saved_value, str) or not saved_value.strip():
-        return None
-    relative_value = saved_value.replace("/", os.sep)
-    for folder_type, path_index, base_dir in _model_roots():
-        candidate = os.path.realpath(os.path.join(base_dir, relative_value))
-        try:
-            if os.path.commonpath((base_dir, candidate)) != base_dir:
-                continue
-        except ValueError:
-            continue
-        if not os.path.isfile(candidate) or not candidate.lower().endswith(MODEL_FILE_SUFFIXES):
-            continue
-        return {
-            "path": candidate,
-            "folder_type": folder_type,
-            "path_index": path_index,
-        }
-    return None
 
 
 def _identity_for_reference(saved_value):

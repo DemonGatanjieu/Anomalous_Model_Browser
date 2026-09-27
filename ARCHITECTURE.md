@@ -64,7 +64,8 @@ DOM or live LiteGraph state.
 ### Backend
 
 - `api/config.py` owns configured paths and active model-folder types.
-- `api/path_utils.py` owns containment, filename validation, and atomic JSON writes;
+- `api/path_utils.py` owns containment, filename validation, atomic JSON writes, and resolving
+  a saved model value inside the model folders;
   `api/utils.py` is a compatibility export surface.
 - `api/metadata.py` owns sidecar and safetensors metadata extraction.
 - `api/model_catalog.py`, `api/model_resolution.py`, `api/model_metadata.py`, and

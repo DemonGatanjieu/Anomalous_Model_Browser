@@ -1,6 +1,11 @@
 # 📈 Anomalous Model Browser Changelog
 
-## v1.57.2 Beta (Canvas Performance Hotfix) — 2026-09-26
+## v1.57.2 Beta (Hotfix: Canvas Performance, Saving Workflows) — 2026-09-27
+
+### 💾 Saving workflows and Prompt Notes (保存工作流与提示词笔记)
+- **Saving a workflow works again (保存工作流失败)**: since v1.57, **Save Current Workflow** failed with "Could not save this Workflow Recipe" for any workflow with a model loader, because splitting the backend into smaller files left the save path calling a function that was no longer imported. The same split also made model cards load full-size cover images instead of thumbnails (slow on big folders), and made editing details of a model that had moved fail.
+- **Prompt Notes with UNet models (提示词笔记与 UNet 模型)**: sending a note with a UNet / diffusion model to the canvas built a graph that could not run, because its LoRAs waited for a CLIP the UNet does not have. LoRAs of a UNet now load model-only, and the note says to connect your own text encoder to the two prompt nodes. Models whose metadata names no base model (most models not downloaded from Civitai) were missing from every group; they now appear under **No base model listed**. Listing models no longer blocks ComfyUI while it reads the folders.
+- Installed v1.57.2 before 2026-09-27 through the version panel? Pick v1.57.2 there once more to get this build; updating through ComfyUI Manager gets it as usual.
 
 ### ⚡ Smooth canvas dragging again (画布拖动卡顿修复)
 - **Dragging and zooming the canvas no longer slows down with this plugin installed (安装插件后拖动画布掉帧)**: one stylesheet rule, which only hid the sidebar tooltip while the Toolbox or Settings popup was open, made the browser re-check the whole page every time any element's inline style changed. ComfyUI moves every text-box widget on every frame while you pan or zoom, so each frame paid for it, even with the browser closed. Measured on a 300-node workflow in ComfyUI: style work while panning drops from about 11× the no-plugin cost back to the same as without the plugin.

@@ -1,6 +1,7 @@
 """Contained Recipe image assets and bounded output-gallery inspection."""
 
 from io import BytesIO
+import hashlib
 import heapq
 import json
 import os
@@ -8,6 +9,7 @@ import os
 import folder_paths
 from PIL import Image
 
+from .path_utils import _resolve_exact_model_reference
 from .recipe_constants import *
 from .utils import require_filename, resolve_within
 from .workflow_schema import _node_type, _parameter_signature, _workflow_node_signature
