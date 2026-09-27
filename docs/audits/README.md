@@ -8,7 +8,7 @@
 
 | 日期 | 报告文件 | 测试类型 | 涉及模块 | 验收状态 |
 | :--- | :--- | :--- | :--- | :--- |
-| **2026-09-19** | [AUDIT_AND_BUG_REPORT.md](file:///e:/ComfyUI_windows_portable/ComfyUI/custom_nodes/Anomalous_Model_Browser/docs/audits/AUDIT_AND_BUG_REPORT.md) | E2E 浏览器全功能实测 & 缺陷深度排查 | Model Doctor / 素材库多态拖拽 / 扫描向导 / 模型恢复 | ✅ 已全数修复并验收闭环 |
+| **2026-09-19** | [AUDIT_AND_BUG_REPORT.md](AUDIT_AND_BUG_REPORT.md) | E2E 浏览器全功能实测 & 缺陷深度排查 | Model Doctor / 素材库多态拖拽 / 扫描向导 / 模型恢复 | ✅ 已全数修复并验收闭环 |
 
 ---
 

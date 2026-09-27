@@ -56,14 +56,20 @@ api/notebooks/
 # AI Dev Scripts & Temporary text dumps
 scripts/
 doctor_code.txt
+# Only the Markdown of these doc folders is tracked: screenshots, logs and raw test
+# data stay local (put them under .agents/).
 docs/*
 !docs/architecture/
+docs/architecture/*
 !docs/architecture/*.md
 !docs/decisions/
+docs/decisions/*
 !docs/decisions/*.md
 !docs/audits/
+docs/audits/*
 !docs/audits/*.md
 !docs/guides/
+docs/guides/*
 !docs/guides/*.md
 AI_SYSTEM_TEMPLATE.md
 
