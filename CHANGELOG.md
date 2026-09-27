@@ -15,6 +15,7 @@
 
 ### Fixes
 - All-in-one loader recipes and cross-node prompt injection use one verified adapter table; prompt text never crosses between positive and negative.
+- The Workflows, Prompt Notes and Material Library workspace no longer covers the header: the Models / Gallery / Workflows tabs stay clickable while it is open, and **Esc** closes it (back to what was open before) unless a dialog is above it or a text field has focus. Closing the Prompt Translator brings back the browser it folded away.
 
 ## v1.57.2 Beta (Canvas Performance Hotfix) — 2026-09-26
 

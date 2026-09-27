@@ -14,6 +14,7 @@ import { createToolbox } from './ui_toolbox.js';
 import { createDomainSwitcher, getActiveDomain } from './ui_domain_switcher.js';
 import { renderAudioSidebar } from './ui_audio_sidebar.js';
 import { createGallerySearchBar } from './ui_gallery.js';
+import { bindWorkspaceEscape } from './ui_browser_navigation.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -601,6 +602,7 @@ export function createDOM() {
         this.nbPanel.onclick = (e) => {
             if (e.target === this.nbPanel) this.closeWorkspace();
         };
+        bindWorkspaceEscape(this);
 
         content.appendChild(header);
         content.appendChild(this.grid);

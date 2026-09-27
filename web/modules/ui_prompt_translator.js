@@ -252,6 +252,11 @@ export function openPromptTranslator(owner) {
             owner.close();
         }
     }
+    // Closing the translator gives the browser back, unless the text went on to the studio.
+    let restoreMaster = masterWasVisible;
+    scope.onDispose(() => {
+        if (restoreMaster && !owner.modal?.classList.contains('visible')) owner.show?.();
+    });
 
     // Left/Right edge resize handle for sidebar mode
     const resizeHandle = document.createElement('div');
@@ -601,6 +606,7 @@ export function openPromptTranslator(owner) {
         if (/[，、;；|｜]/.test(out) && !hasChinese(out)) {
             out = normalizePromptFormatting(out);
         }
+        restoreMaster = false;
         scope.dispose();
         if (typeof owner?.openPromptStudio === 'function') {
             owner.openPromptStudio();

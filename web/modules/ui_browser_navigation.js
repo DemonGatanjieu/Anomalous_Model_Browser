@@ -56,6 +56,24 @@ export function closeWorkspace() {
     restoreWorkspaceReturnPanel(this);
 }
 
+/**
+ * Esc on the recipe / notes / material workspace does what a click beside it does:
+ * `closeWorkspace()`. Not while one of this plugin's dialogs or a ComfyUI dialog sits
+ * above it, and not while a text field has the key (Esc there belongs to the field).
+ * ComfyUI's own keybindings mark Esc as handled, so `defaultPrevented` says nothing here.
+ */
+export function bindWorkspaceEscape(owner) {
+    window.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (!owner.modal?.classList.contains('visible') || owner.nbPanel?.style.display !== 'flex') return;
+        if (e.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+        const layered = [...document.body.children, ...owner.nbPanel.children]
+            .some(el => [...el.classList].some(c => c.startsWith('anomalous-') && c.endsWith('overlay')) && el.getClientRects().length);
+        if (layered || document.querySelector('dialog[open], .p-dialog-mask')) return;
+        owner.closeWorkspace();
+    });
+}
+
 export function hideAllPanels() {
     const abandonedRecipeModel = typeof this.recipeModelReturn === 'function';
     this.recipeModelReturn = null;

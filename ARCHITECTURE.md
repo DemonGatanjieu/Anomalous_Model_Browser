@@ -248,7 +248,8 @@ covered by the `styles.css` manifest.
 - `ui_sidebar.js` creates the browser shell, domain-aware header tabs, and folder navigation.
   `ui_settings_hub.js` owns settings and model-card preferences;
   `ui_toolbox.js` owns the tool catalog, fixed shortcut bar, and tool dispatch;
-  `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return.
+  `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,
+  including Esc on the workspace panel (`nbPanel`, which starts below the header).
   Scan-wizard launch, single-model precision scans (`triggerDirectModelScan` with strictly factual Civitai vs non-Civitai feedback reporting inferred base-model or match status directly within the bottom-right progress panel and toasts without blocking browser alerts), modal lifecycle ergonomics (backdrop click and Escape key dismissal with listener detachment, scrollable content area with sticky footer actions), post-scan frontend hash and native combo refreshes (`app.refreshComboInNodes()`, `window.anomalous_reload_hashes()`), and polling live in `ui_scan_wizard.js`; folder visibility/order lives in
   `ui_folder_manager.js`; and help content lives in `ui_help.js`.
   `scan_progress.js` owns the bottom-right scan progress panel
