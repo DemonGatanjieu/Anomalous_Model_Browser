@@ -5,6 +5,14 @@ import { translate } from './locales.js';
 
 const t = (key, params) => translate(key, params);
 
+/** Base-model value the backend uses for models whose metadata names no base model. */
+export const UNLABELED_BASE_MODEL = '__unlabeled__';
+
+/** UNet / diffusion models carry no text encoder, so their LoRAs patch the model only. */
+export function isUnetModel(model) {
+    return model?.type === 'unet' || model?.type === 'diffusion_models';
+}
+
 export function sendNotebookToCanvas() {
         if (!this.currentNotebook) return;
         const data = this.currentNotebook.data || {};
@@ -14,7 +22,7 @@ export function sendNotebookToCanvas() {
         }
 
         const groupNodes = [];
-        const isUnet = data.mainModel.type === 'unet' || data.mainModel.type === 'diffusion_models';
+        const isUnet = isUnetModel(data.mainModel);
 
         const ckptNode = LiteGraph.createNode(isUnet ? "UNETLoader" : "CheckpointLoaderSimple");
         app.graph.add(ckptNode);
@@ -25,14 +33,14 @@ export function sendNotebookToCanvas() {
         this.setWidgetValuePath(ckptNode, relPath);
 
         let lastNode = ckptNode;
-        let lastModelSlot = isUnet ? 0 : 0;
+        let lastModelSlot = 0;
         let lastClipSlot = isUnet ? null : 1;
 
         let relX = 350;
         let relY = 0;
 
         data.loras.forEach((lora, idx) => {
-            const loraNode = LiteGraph.createNode("LoraLoader");
+            const loraNode = LiteGraph.createNode(isUnet ? "LoraLoaderModelOnly" : "LoraLoader");
             app.graph.add(loraNode);
             groupNodes.push({ node: loraNode, relX: relX, relY: relY });
 
@@ -45,7 +53,7 @@ export function sendNotebookToCanvas() {
 
             lastNode = loraNode;
             lastModelSlot = 0;
-            lastClipSlot = 1;
+            if (!isUnet) lastClipSlot = 1;
             relX += 350;
         });
 

@@ -289,116 +289,106 @@ async def api_find_model(request):
     })
 
 
-async def api_compatible_models(request):
-    base_model = request.query.get('base_model', '')
-    target_type = request.query.get('target_type', 'loras')
-    
-    if not base_model:
-        return web.json_response({"models": []})
-        
-    target_types = [t.strip() for t in target_type.split(',')]
-    compatible_models = []
+# Prompt Notes ask for this base model to list models whose metadata names none.
+UNLABELED_BASE_MODEL = "__unlabeled__"
+
+
+def _normalised_base(value):
+    return str(value or "").strip().lower().replace(" ", "")
+
+
+def _walk_model_files(target_types):
+    """Yield (folder_type, path_idx, base_dir, root, filename, metadata) once per real file."""
     seen_files = set()
-    
-    for t in target_types:
+    for folder_type in target_types:
         try:
-            paths = folder_paths.get_folder_paths(t)
+            paths = folder_paths.get_folder_paths(folder_type)
         except Exception:
             continue
-            
-        if not paths:
-            continue
-            
-        for path_idx, base_dir in enumerate(paths):
+        for path_idx, base_dir in enumerate(paths or []):
             if not os.path.exists(base_dir):
                 continue
-                
             for root, _, files in os.walk(base_dir):
-                for f in files:
-                    if f.endswith('.safetensors') or f.endswith('.ckpt') or f.endswith('.pt'):
-                        file_path = os.path.join(root, f)
-                        real_path = os.path.realpath(file_path)
-                        if real_path in seen_files:
-                            continue
-                        seen_files.add(real_path)
-                        
-                        meta = get_metadata(file_path)
-                        m_bm = str(meta.get("baseModel", "")).strip().lower().replace(" ", "")
-                        req_bm = str(base_model).strip().lower().replace(" ", "")
-                        
-                        if req_bm and m_bm and (req_bm in m_bm or m_bm in req_bm):
-                            rel_subfolder = os.path.relpath(root, base_dir)
-                            if rel_subfolder == '.':
-                                rel_subfolder = '/'
-                            else:
-                                rel_subfolder = '/' + rel_subfolder.replace('\\', '/')
-                                
-                            base_name = os.path.splitext(f)[0]
-                            preview_file = None
-                            for ext in PREVIEW_SUFFIXES + MEDIA_EXTENSIONS:
-                                if os.path.exists(os.path.join(root, base_name + ext)):
-                                    preview_file = base_name + ext
-                                    break
-                            
-                            preview_url = ""
-                            if preview_file:
-                                q_type = urllib.parse.quote(t)
-                                q_idx = str(path_idx)
-                                q_sub = urllib.parse.quote(rel_subfolder.strip('/')) if rel_subfolder != '/' else ""
-                                q_file = urllib.parse.quote(preview_file)
-                                preview_url = f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}"
-                            
-                            try:
-                                size_bytes = os.path.getsize(file_path)
-                                size_mb = round(size_bytes / (1024 * 1024), 1)
-                            except Exception:
-                                size_mb = 0
-                                size_bytes = 0
+                for filename in files:
+                    if not filename.lower().endswith(MODEL_EXTENSIONS):
+                        continue
+                    file_path = os.path.join(root, filename)
+                    real_path = os.path.realpath(file_path)
+                    if real_path in seen_files:
+                        continue
+                    seen_files.add(real_path)
+                    yield folder_type, path_idx, base_dir, root, filename, get_metadata(file_path)
 
-                            compatible_models.append({
-                                "type": t,
-                                "path_idx": path_idx,
-                                "subfolder": rel_subfolder,
-                                "filename": f,
-                                "size_mb": size_mb,
-                                "size_bytes": size_bytes,
-                                "preview_url": preview_url,
-                                "metadata": meta
-                            })
-                        
-    return web.json_response({"models": compatible_models})
+
+def _base_matches(requested, metadata):
+    model_base = _normalised_base(metadata.get("baseModel"))
+    if requested == UNLABELED_BASE_MODEL:
+        return not model_base
+    wanted = _normalised_base(requested)
+    return bool(wanted and model_base and (wanted in model_base or model_base in wanted))
+
+
+def _compatible_models_sync(base_model, target_types):
+    compatible_models = []
+    for folder_type, path_idx, base_dir, root, filename, meta in _walk_model_files(target_types):
+        if not _base_matches(base_model, meta):
+            continue
+        rel_subfolder = os.path.relpath(root, base_dir)
+        rel_subfolder = '/' if rel_subfolder == '.' else '/' + rel_subfolder.replace('\\', '/')
+        base_name = os.path.splitext(filename)[0]
+        preview_file = None
+        for ext in PREVIEW_SUFFIXES + MEDIA_EXTENSIONS:
+            if os.path.exists(os.path.join(root, base_name + ext)):
+                preview_file = base_name + ext
+                break
+        preview_url = ""
+        if preview_file:
+            q_sub = urllib.parse.quote(rel_subfolder.strip('/')) if rel_subfolder != '/' else ""
+            preview_url = (
+                f"/anomalous/image?type={urllib.parse.quote(folder_type)}&path_idx={path_idx}"
+                f"&subfolder={q_sub}&filename={urllib.parse.quote(preview_file)}"
+            )
+        try:
+            size_bytes = os.path.getsize(os.path.join(root, filename))
+        except OSError:
+            size_bytes = 0
+        compatible_models.append({
+            "type": folder_type,
+            "path_idx": path_idx,
+            "subfolder": rel_subfolder,
+            "filename": filename,
+            "size_mb": round(size_bytes / (1024 * 1024), 1),
+            "size_bytes": size_bytes,
+            "preview_url": preview_url,
+            "metadata": meta,
+        })
+    return compatible_models
+
+
+async def api_compatible_models(request):
+    base_model = request.query.get('base_model', '')
+    if not base_model:
+        return web.json_response({"models": []})
+    target_types = [t.strip() for t in request.query.get('target_type', 'loras').split(',') if t.strip()]
+    models = await asyncio.to_thread(_compatible_models_sync, base_model, target_types)
+    return web.json_response({"models": models})
+
+
+def _base_models_sync(target_types):
+    base_models = set()
+    unlabeled = False
+    for *_, meta in _walk_model_files(target_types):
+        label = str(meta.get("baseModel") or "").strip()
+        if label:
+            base_models.add(label)
+        else:
+            unlabeled = True
+    return sorted(base_models), unlabeled
 
 
 async def api_base_models(request):
-    target_types = get_active_folder_types()
-    base_models = set()
-    seen_files = set()
-    
-    for t in target_types:
-        try:
-            paths = folder_paths.get_folder_paths(t)
-        except Exception:
-            continue
-        if not paths: continue
-            
-        for base_dir in paths:
-            if not os.path.exists(base_dir): continue
-            for root, _, files in os.walk(base_dir):
-                for f in files:
-                    if f.endswith('.safetensors') or f.endswith('.ckpt') or f.endswith('.pt'):
-                        file_path = os.path.join(root, f)
-                        real_path = os.path.realpath(file_path)
-                        if real_path in seen_files: continue
-                        seen_files.add(real_path)
-                        
-                        meta = get_metadata(file_path)
-                        m_bm = meta.get("baseModel", "")
-                        if m_bm and str(m_bm).strip():
-                            # Remove typical generic strings that might pollute
-                            clean_bm = str(m_bm).strip()
-                            base_models.add(clean_bm)
-                            
-    return web.json_response({"base_models": sorted(list(base_models))})
+    base_models, unlabeled = await asyncio.to_thread(_base_models_sync, get_active_folder_types())
+    return web.json_response({"base_models": base_models, "unlabeled": unlabeled})
 
 
 def _model_info_for_path(folder_type, path_idx, base_dir, file_path):

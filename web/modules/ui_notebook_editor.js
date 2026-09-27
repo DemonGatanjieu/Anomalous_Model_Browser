@@ -7,6 +7,7 @@ import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { showMaterialSaved } from './material_feedback.js';
+import { isUnetModel, UNLABELED_BASE_MODEL } from './notebook_canvas.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -158,7 +159,7 @@ function createCompanionModelsCard(ctx, data) {
     loraSelectedBadge.style.color = '#fbbf24';
 
     const updateSummary = () => {
-        const baseInfo = data.baseModel || 'SDXL';
+        const baseInfo = data.baseModel === UNLABELED_BASE_MODEL ? t('notebookUnlabeledBase') : (data.baseModel || 'SDXL');
         const mainInfo = data.mainModel?.filename ? ` · ${data.mainModel.filename}` : '';
         const loraCount = data.loras?.length ? ` · ${data.loras.length} LoRA` : '';
         modelsBadge.textContent = `${baseInfo}${mainInfo}${loraCount}`;
@@ -188,7 +189,8 @@ function createCompanionModelsCard(ctx, data) {
         baseSelect.innerHTML = '';
         bases.forEach(b => {
             const opt = document.createElement('option');
-            opt.value = b; opt.text = b;
+            opt.value = b;
+            opt.text = b === UNLABELED_BASE_MODEL ? t('notebookUnlabeledBase') : b;
             if (data.baseModel === b) opt.selected = true;
             baseSelect.appendChild(opt);
         });
@@ -202,8 +204,9 @@ function createCompanionModelsCard(ctx, data) {
         const tempBases = ['SD 1.5', 'SD 2.1', 'SDXL', 'SD 3.0', 'SD 3.5', 'Flux.1', 'Pony', 'HunyuanVideo', 'LTX-Video', 'OmniGen'];
         buildSelect(tempBases);
         fetch('/anomalous/base_models').then(r => r.json()).then(d => {
-            if (d.base_models && d.base_models.length > 0) {
-                ctx.baseModelsCache = d.base_models;
+            const bases = [...(d.base_models || []), ...(d.unlabeled ? [UNLABELED_BASE_MODEL] : [])];
+            if (bases.length > 0) {
+                ctx.baseModelsCache = bases;
                 buildSelect(ctx.baseModelsCache);
             }
         }).catch(() => { });
@@ -249,6 +252,14 @@ function createCompanionModelsCard(ctx, data) {
     const loraGallery = document.createElement('div');
     loraGallery.className = 'anomalous-nb-gallery-wrap';
     loraBox.append(loraRow, loraGallery);
+
+    const unetHint = document.createElement('div');
+    unetHint.className = 'anomalous-nb-unet-hint';
+    unetHint.textContent = t('notebookUnetNeedsTextEncoder');
+    mainBox.appendChild(unetHint);
+    const showUnetHint = () => { unetHint.hidden = !isUnetModel(data.mainModel); };
+    ctx.updateNotebookUnetHint = showUnetHint;
+    showUnetHint();
 
     card.append(header, baseRow, mainBox, loraBox);
     updateSummary();
@@ -613,6 +624,7 @@ export function fillNotebookGalleries(baseModel, mainGallery, loraGallery, data)
                             data.mainModel = (data.mainModel && data.mainModel.filename === m.filename) ? null : m;
                             this.saveCurrentNotebook();
                             this.updateNotebookModelsSummary?.();
+                            this.updateNotebookUnetHint?.();
                             buildMainDOM(models);
                         };
                         mainGallery.appendChild(card);

@@ -700,6 +700,17 @@
     margin-bottom: 15px;
 }
 
+.anomalous-nb-unet-hint {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--amb-text-muted);
+}
+
+.anomalous-nb-unet-hint[hidden] {
+    display: none;
+}
+
 /* Notebook Model Fold & Sections Enhancement */
 .anomalous-nb-models-fold {
     background: rgba(255, 255, 255, 0.02);
