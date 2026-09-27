@@ -15,6 +15,7 @@
 
 ### Fixes
 - **Saving a workflow works again (保存工作流失败)**: in v1.57 to v1.57.2, **Save Current Workflow** failed with "Could not save this Workflow Recipe" for any workflow with a model loader, because splitting the backend into smaller files left the save path calling a function that was no longer imported. The same split also made model cards load full-size cover images instead of thumbnails (slow on big folders), and made editing details of a model that had moved fail.
+- **Prompt Notes with UNet models (提示词笔记与 UNet 模型)**: UNet / diffusion models were listed, but sending one to the canvas built a graph that could not run: its LoRAs waited for a CLIP the UNet does not have. LoRAs of a UNet now load model-only, and the note says to connect your own text encoder to the two prompt nodes. Models whose metadata names no base model (most models not downloaded from Civitai) were missing from every group; they now appear under **No base model listed**. Listing models no longer blocks ComfyUI while it reads the folders.
 - All-in-one loader recipes and cross-node prompt injection use one verified adapter table; prompt text never crosses between positive and negative.
 - The Workflows, Prompt Notes and Material Library workspace no longer covers the header: the Models / Gallery / Workflows tabs stay clickable while it is open, and **Esc** closes it (back to what was open before) unless a dialog is above it or a text field has focus. Closing the Prompt Translator brings back the browser it folded away.
 
