@@ -5,11 +5,13 @@ import { buildScriptPackage, comboValueForPath, joinSegments, splitScriptLines, 
 import { isScriptTarget, targetForNode } from './audio_node_targets.js';
 import { engineById } from './audio_engines.js';
 import { bindMaterialDrag } from './material_drag.js';
+import { createRunSection } from './ui_script_run.js';
 
 /**
  * Script Director: paste a script, pick one character, choose an emotion per
  * line on the line cards, then push the bundle to an F5-TTS node or drag it
- * onto one (supported nodes: audio_node_targets.js). ComfyUI-F5-TTS resolves `{happy}` to `<sample>.happy.wav`, so the
+ * onto one (supported nodes: audio_node_targets.js). GPT-SoVITS characters can
+ * also be generated right here, without the canvas (ui_script_run.js). ComfyUI-F5-TTS resolves `{happy}` to `<sample>.happy.wav`, so the
  * node's `sample` becomes the character's main voice and `speech` the tagged text.
  * The panel and its lines live for the page session; the studio re-attaches it.
  */
@@ -24,7 +26,7 @@ const state = {
     engine: 'f5',       // audio_engines.js id; decides which nodes the bundle may go to
     groups: [],
     groupKey: null,
-    lines: [],          // { text, emotion }
+    lines: [],          // { text, emotion, take } — take > 1: that line was retaken (GPT-SoVITS)
     editing: true,
     splitMode: 'sentence',
     focusIndex: null,   // card whose text box should receive focus after the next render
@@ -35,6 +37,7 @@ let refs = null;
 let hooks = {};
 let previewAudio = null;
 let previewButton = null;
+let runSection = null;
 // bindMaterialDrag hides the browser modal while dragging; the owner is only known once the studio sets hooks.
 const dragOwner = { get modal() { return hooks.owner?.modal; } };
 
@@ -81,6 +84,11 @@ export function updateScriptDirectorVoices(groups, preferredGroup = null, engine
 }
 
 export function stopScriptDirectorPreview() {
+    stopLinePreview();
+    runSection?.stopPlayback();
+}
+
+function stopLinePreview() {
     if (previewAudio) {
         previewAudio.pause();
         previewAudio = null;
@@ -99,6 +107,13 @@ function selectedGroup() {
 }
 
 /** Node name shown in every hint, e.g. "F5-TTS" or "GPT-SoVITS". */
+/** The script with retakes, for a direct GPT-SoVITS run; null for other engines. */
+function runScript() {
+    if (state.engine !== 'gpt_sovits') return null;
+    const group = selectedGroup();
+    return { group, pkg: buildScriptPackage(state.lines, group, { takes: true }) };
+}
+
 function nodeLabel() {
     return engineById(state.engine)?.label || state.engine;
 }
@@ -201,7 +216,16 @@ function createPanel() {
     const copyBtn = button('anomalous-sd-btn', t('scriptDirectorCopy'), copyScript);
     const pushBtn = button('anomalous-sd-btn accent', t('scriptDirectorInject'), pushToNode);
     actions.append(dragHandle, copyBtn, pushBtn);
-    footer.append(summary, preview, actions);
+    runSection = createRunSection({
+        getScript: runScript,
+        onPlay: () => {
+            stopLinePreview();
+            hooks.onPreviewStart?.();
+        },
+        resetTakes: () => state.lines.forEach(line => { line.take = 1; }),
+        onBusyChange: () => renderAll(),
+    });
+    footer.append(summary, preview, runSection.element, actions);
 
     panel.append(header, characterBar, characterHint, inputArea, linesBar, linesContainer, footer);
     refs = { subtitle, characterSelect, characterHint, inputArea, textarea, cancelEdit, linesBar, linesCount, linesContainer, footer, summary, preview, dragHandle, copyBtn, pushBtn };
@@ -210,7 +234,7 @@ function createPanel() {
 function renderAll() {
     if (!panel) return;
     const node = nodeLabel();
-    refs.subtitle.textContent = t('scriptDirectorSubtitle', { node });
+    refs.subtitle.textContent = t(state.engine === 'gpt_sovits' ? 'scriptDirectorSubtitleGptSovits' : 'scriptDirectorSubtitle', { node });
     refs.dragHandle.title = t('scriptDirectorDragHint', { node });
     refs.pushBtn.title = t('scriptDirectorPushHint', { node });
     refs.pushBtn.setAttribute('aria-label', refs.pushBtn.title);
@@ -253,7 +277,7 @@ function renderLines() {
     const emotions = usableEmotions(group);
     const slices = new Map((group?.slices || []).map(slice => [slice.emotion, slice]));
     const addLine = button('anomalous-sd-add-line', t('scriptDirectorAddLine'), () => {
-        state.lines.push({ text: '', emotion: state.lines.at(-1)?.emotion || 'main' });
+        state.lines.push({ text: '', emotion: state.lines.at(-1)?.emotion || 'main', take: 1 });
         state.focusIndex = state.lines.length - 1;
         renderAll();
     });
@@ -282,7 +306,7 @@ function renderLineCard(line, index, emotions, slices) {
                 return;
             }
             line.text = parts[0];
-            state.lines.splice(index + 1, 0, { text: parts[1], emotion: line.emotion });
+            state.lines.splice(index + 1, 0, { text: parts[1], emotion: line.emotion, take: 1 });
             state.focusIndex = index + 1;
             stopScriptDirectorPreview();
             renderAll();
@@ -296,6 +320,14 @@ function renderLineCard(line, index, emotions, slices) {
             stopScriptDirectorPreview();
             renderAll();
         }, t('scriptDirectorMergeNext')));
+    }
+    if (runSection?.canRetake(selectedGroup())) {
+        const retake = button('anomalous-sd-icon-btn', '↻', () => {
+            line.take = (line.take || 1) + 1;
+            runSection.generate();
+        }, t('scriptRunRetakeLine'));
+        if (line.take > 1) retake.append(el('span', 'anomalous-sd-take-no', String(line.take)));
+        head.append(retake);
     }
     head.append(
         button('anomalous-sd-icon-btn is-danger', '×', () => {
@@ -356,6 +388,7 @@ function renderPackage() {
     refs.pushBtn.disabled = !ok;
     refs.dragHandle.draggable = ok;
     refs.dragHandle.classList.toggle('is-disabled', !ok);
+    runSection.render();
 }
 
 // ---------- actions ----------
@@ -363,8 +396,12 @@ function renderPackage() {
 function parseScript(text) {
     const parsed = splitScriptLines(text, state.splitMode);
     if (!parsed.length) return;
-    const previous = new Map(state.lines.map(line => [line.text.trim(), line.emotion]));
-    state.lines = parsed.map(lineText => ({ text: lineText, emotion: previous.get(lineText) || 'main' }));
+    const previous = new Map(state.lines.map(line => [line.text.trim(), line]));
+    state.lines = parsed.map(lineText => ({
+        text: lineText,
+        emotion: previous.get(lineText)?.emotion || 'main',
+        take: previous.get(lineText)?.take || 1,
+    }));
     state.editing = false;
     renderAll();
 }

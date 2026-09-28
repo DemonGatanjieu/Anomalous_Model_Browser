@@ -1,9 +1,11 @@
 /**
- * Pure rules for ComfyUI-F5-TTS voices (no DOM, no canvas access).
+ * Pure script rules for the audio engines (no DOM, no canvas access).
  *
  * F5-TTS multi-voice layout: the node's `sample` is a main voice such as
  * `F5-TTS/Arona.wav`; `{happy}` in the speech loads `F5-TTS/Arona.happy.wav`
  * beside it, and `{main}` is the sample itself. Speech is split only at tags.
+ * GPT-SoVITS (Anomalous_TTS) reads the same `{emotion}` tags, plus `[take:N]`
+ * for another take of one line; `buildTtsPrompt` runs a script without a canvas.
  */
 
 export const MAIN_TAG = '{main}';
@@ -86,13 +88,17 @@ export function joinSegments(first, second) {
     return /[A-Za-z0-9,.;:!?]$/.test(a) && /^[A-Za-z0-9]/.test(b) ? `${a} ${b}` : `${a}${b}`;
 }
 
-/** Once any line is tagged, untagged lines get {main} instead of inheriting the previous voice. */
+/**
+ * Once any line is tagged, untagged lines get {main} instead of inheriting the previous voice.
+ * A line with `take` > 1 (GPT-SoVITS only) gets `[take:N]` right before its text.
+ */
 export function composeScript(lines) {
     const anyTagged = lines.some(line => line.voice?.tag);
     return lines
         .map(line => {
             const tag = line.voice?.tag || (anyTagged ? MAIN_TAG : '');
-            return tag ? `${tag} ${line.text}` : line.text;
+            const text = line.take > 1 ? `[take:${line.take}]${line.text}` : line.text;
+            return tag ? `${tag} ${text}` : text;
         })
         .join('\n')
         .trim();
@@ -107,9 +113,10 @@ export function usableEmotions(group) {
  * Bundle script lines for one TTS node. `lines` are `{ text, emotion }`; the node's
  * voice widget gets the group's `node_value` (F5-TTS: main voice file; GPT-SoVITS:
  * character name) and every emotion must be usable for that group.
+ * `takes` (GPT-SoVITS runs only) writes each line's `take` as `[take:N]`.
  * Returns `{ sample, speech, lineCount }` or `{ error: localeKey }`.
  */
-export function buildScriptPackage(lines, group) {
+export function buildScriptPackage(lines, group, { takes = false } = {}) {
     if (!group) return { error: 'scriptDirectorPickCharacter' };
     const usable = new Set(usableEmotions(group));
     const voice = group.node_value ?? group.main_relative_path;
@@ -120,10 +127,31 @@ export function buildScriptPackage(lines, group) {
         if (!text) continue;
         const emotion = line.emotion || 'main';
         if (!usable.has(emotion)) return { error: 'scriptDirectorVoiceUnusable' };
-        voiced.push({ text, voice: emotion === 'main' ? null : { tag: `{${emotion}}` } });
+        voiced.push({ text, voice: emotion === 'main' ? null : { tag: `{${emotion}}` }, take: takes ? line.take || 1 : 1 });
     }
     if (!voiced.length) return { error: 'scriptDirectorEmpty' };
     return { sample: voice, speech: composeScript(voiced), lineCount: voiced.length };
+}
+
+/** Save Audio prefix for a character: `output/audio/<character>/…`, keeping file names Windows accepts. */
+export function ttsOutputPrefix(character) {
+    const parts = String(character || '').split('/')
+        .map(part => part.replace(/[<>:"\\|?*\u0000-\u001f]/g, '_').trim().replace(/^\.+$/, '_') || '_');
+    return `audio/${parts.join('/')}/${parts[parts.length - 1]}`;
+}
+
+/** ComfyUI API prompt for one GPT-SoVITS script: the character node, then Save Audio. */
+export function buildTtsPrompt({ character, speech, seed, language = 'auto', speed = 1 }) {
+    return {
+        1: {
+            class_type: 'AnomalousTTS_CharacterSpeech',
+            inputs: { character, text: speech, seed, language, speed },
+        },
+        2: {
+            class_type: 'SaveAudio',
+            inputs: { audio: ['1', 0], filename_prefix: ttsOutputPrefix(character) },
+        },
+    };
 }
 
 /**

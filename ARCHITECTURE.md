@@ -221,15 +221,23 @@ covered by the `styles.css` manifest.
   means adding one entry plus a test.
 - `ui_audio_studio.js` owns the voice cards, preview playback, tag copying, drags
   (card header = character, row = clip) through the shared `bindMaterialDrag`
-  with `targetHint`/`rejectHint` telling the user what releasing does, and the
-  template workflow loader (confirms before replacing the canvas).
-  `audio_script.js` holds the pure F5-TTS rules: script splitting, bundling
-  (`buildScriptPackage`) and combo value matching.
+  with `targetHint`/`rejectHint` telling the user what releasing does.
+  `audio_script.js` holds the pure script rules: splitting, bundling
+  (`buildScriptPackage`, with `[take:N]` for GPT-SoVITS retakes), combo value
+  matching, and `buildTtsPrompt` (a GPT-SoVITS script as a ComfyUI API prompt
+  saving to `output/audio/<character>/`).
   `ui_script_director.js` owns the script drawer: one character, an emotion chip
   row per line card, and a bundle that is pushed to the selected/only
   script-capable target node or dragged onto one; it writes the voice widget
   (main voice) and the speech widget together. The studio feeds it the voice
   groups after each fetch.
+  `ui_script_run.js` is the drawer's "Generate" section for GPT-SoVITS: it runs
+  the script without the canvas, plays the result, retakes the whole script
+  (new seed) or one line (`[take:N]`, the node caches the rest), and saves a
+  character's language/speed to its `defaults` (needs Anomalous_TTS interface 11).
+  `audio_tts_run.js` queues one API prompt with this page's client id and
+  follows it (websocket status, `/history` result, cancel = queue delete or
+  targeted `/interrupt`); it never touches the canvas.
 - In the audio domain the header **!** opens `AUDIO_USAGE_GUIDE` (a how-to, see
   `docs/guides/audio-studio.md`) instead of the visual update guide.
 - `ui_audio_uploader.js` owns the voice ingestion modal (createViewScope lifecycle,

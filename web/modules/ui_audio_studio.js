@@ -1,10 +1,8 @@
 import { app } from '../../../scripts/app.js';
 import { t } from './interface_settings.js';
-import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { stopGalleryAudio } from './ui_audio_gallery.js';
 import { openAudioUploaderModal } from './ui_audio_uploader.js';
 import { getActiveAudioFilter, renderAudioSidebar, setActiveAudioFilter } from './ui_audio_sidebar.js';
-import { alignedVoiceValue } from './audio_node_targets.js';
 import { bindVoiceDrag } from './audio_voice_drag.js';
 import { AUDIO_ENGINES, detectEngines, engineById, engineTargetLabels, getStoredEngine, invalidateEngineCache, loadEngine, loadGptSovitsStatus, pickEngine, setStoredEngine } from './audio_engines.js';
 import { openGptSovitsEditor } from './ui_audio_tts_editor.js';
@@ -25,7 +23,6 @@ import {
  * TTS nodes, and toolbar entry points.
  */
 
-const WORKFLOW_TEMPLATE = 'arona';
 const renderTokens = new WeakMap();
 
 let globalAudioPlayer = null;
@@ -44,7 +41,6 @@ const SVG = {
     PLUS: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
     EDIT: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
     REFRESH: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>`,
-    WORKFLOW: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
 };
 
 /** Icon markup is static; any label goes through textContent. */
@@ -298,42 +294,6 @@ function createToolButton(iconSvg, label, className = '') {
     return btn;
 }
 
-/** Templates store "F5-TTS/x.wav"; Windows combos list "F5-TTS\\x.wav". Adopt the node's own spelling. */
-function alignLoadedAudioSamples() {
-    for (const node of app.graph?._nodes || []) {
-        const aligned = alignedVoiceValue(node);
-        if (aligned) aligned.widget.value = aligned.value;
-    }
-    app.graph?.setDirtyCanvas?.(true, true);
-}
-
-function createLoadWorkflowButton() {
-    const btn = createToolButton(SVG.WORKFLOW, t('audioLoadAronaWorkflow'));
-    btn.onclick = async () => {
-        if (btn.disabled) return;
-        if (!await anomalousConfirm(t('audioWorkflowConfirm'))) return;
-        btn.disabled = true;
-        try {
-            const resp = await fetch(`/anomalous/audio_template_workflow?name=${WORKFLOW_TEMPLATE}`);
-            const data = await resp.json().catch(() => ({}));
-            if (resp.status === 404 && data.code === 'template_missing') {
-                await anomalousAlert(t('audioWorkflowMissing', { file: `${WORKFLOW_TEMPLATE}_multivoice_workflow.json` }));
-                return;
-            }
-            if (!resp.ok || !data.workflow) throw new Error(data.error || `HTTP ${resp.status}`);
-            await app.loadGraphData(data.workflow);
-            alignLoadedAudioSamples();
-            setIconLabel(btn, SVG.CHECK, t('audioWorkflowLoaded'));
-            setTimeout(() => setIconLabel(btn, SVG.WORKFLOW, t('audioLoadAronaWorkflow')), 2000);
-        } catch (e) {
-            await anomalousAlert(t('audioWorkflowFailed', { error: e.message }));
-        } finally {
-            btn.disabled = false;
-        }
-    };
-    return btn;
-}
-
 function createAddVoiceButton(onVoiceAdded, defaultCharacter) {
     const btn = createToolButton(SVG.PLUS, t('audioAddVoice'));
     btn.onclick = () => openAudioUploaderModal({ defaultCharacter, onSaved: onVoiceAdded });
@@ -406,7 +366,7 @@ function renderStudioToolbar({ engine, onSearch, onVoiceAdded, onRefresh, contai
     searchWrap.append(searchIcon, searchInput);
     // F5-TTS voices are files Anomalous manages; GPT-SoVITS characters are model folders the node scans.
     const engineActions = engine === 'f5'
-        ? [createAddVoiceButton(onVoiceAdded, defaultCharacter), createLoadWorkflowButton()]
+        ? [createAddVoiceButton(onVoiceAdded, defaultCharacter)]
         : [createRefreshButton(onRefresh)];
     rightActions.append(createScriptDirectorButton(container, owner), ...engineActions, searchWrap);
 

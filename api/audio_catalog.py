@@ -7,7 +7,6 @@ variants addressed as `{<voice>}` in the speech text. An optional
 """
 
 import asyncio
-import json
 import os
 import re
 import shutil
@@ -46,7 +45,6 @@ VOICE_SCAN_SUBDIRS = ("F5-TTS", "audio", "")
 DEFAULT_VOICE_SUBFOLDER = "F5-TTS"
 MAIN_VOICE = "main"
 RESERVED_VOICE_NAMES = {"orig"}
-WORKFLOW_TEMPLATE_NAME = re.compile(r'^[A-Za-z0-9_-]{1,64}$')
 # Revalidate instead of forbidding caches: overwritten voices get a new ?v=mtime URL.
 AUDIO_CACHE_HEADERS = {"Cache-Control": "no-cache"}
 
@@ -406,34 +404,6 @@ async def api_delete_audio_gallery(request):
     except OSError as e:
         return web.json_response({"success": False, "error": f"Failed to delete: {e}"}, status=500)
     return web.json_response({"success": True})
-
-
-def _read_workflow_template(name):
-    plugin_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    filename = f"{name}_multivoice_workflow.json"
-    for wf_path in (os.path.join(folder_paths.base_path, filename), os.path.join(plugin_dir, "workflows", filename)):
-        if os.path.isfile(wf_path):
-            with open(wf_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-    return None
-
-
-async def api_get_audio_template_workflow(request):
-    """GET /anomalous/audio_template_workflow?name=arona - Return a local multi-voice workflow template."""
-    name = request.query.get("name", "arona").strip().lower()
-    if not WORKFLOW_TEMPLATE_NAME.match(name):
-        return web.json_response({"success": False, "error": "Invalid template name"}, status=400)
-    try:
-        workflow = await asyncio.to_thread(_read_workflow_template, name)
-    except (OSError, ValueError) as e:
-        return web.json_response({"success": False, "error": f"Failed to read workflow: {e}"}, status=500)
-    if workflow is None:
-        return web.json_response({
-            "success": False,
-            "code": "template_missing",
-            "error": f"{name}_multivoice_workflow.json not found",
-        }, status=404)
-    return web.json_response({"success": True, "workflow": workflow})
 
 
 def _ffmpeg_executable():

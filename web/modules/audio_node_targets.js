@@ -100,13 +100,3 @@ export function planVoiceDrop(node, item) {
     if (value == null) return { ok: false, reason: 'notListed', target, path };
     return { ok: true, target, widget, value };
 }
-
-/** Rewrite template values ("F5-TTS/x.wav") to the node's own spelling where the node lists them. */
-export function alignedVoiceValue(node) {
-    const target = targetForNode(node);
-    if (!target?.listedOnly) return null;
-    const widget = widgetOf(node, target.voiceWidget);
-    if (!widget || typeof widget.value !== 'string') return null;
-    const value = comboValueForPath(widget, widget.value);
-    return value != null && value !== widget.value ? { widget, value } : null;
-}
