@@ -140,12 +140,17 @@ export function ttsOutputPrefix(character) {
     return `audio/${parts.join('/')}/${parts[parts.length - 1]}`;
 }
 
-/** ComfyUI API prompt for one GPT-SoVITS script: the character node, then Save Audio. */
-export function buildTtsPrompt({ character, speech, seed, language = 'auto', speed = 1 }) {
+export const TTS_NODE_CLASS = 'AnomalousTTS_CharacterSpeech';
+
+/**
+ * ComfyUI API prompt for one GPT-SoVITS script: the character node, then Save Audio.
+ * `inputs` are more node inputs by name (speed, top_k …); left out, the node's defaults apply.
+ */
+export function buildTtsPrompt({ character, speech, seed, language = 'auto', ...inputs }) {
     return {
         1: {
-            class_type: 'AnomalousTTS_CharacterSpeech',
-            inputs: { character, text: speech, seed, language, speed },
+            class_type: TTS_NODE_CLASS,
+            inputs: { character, text: speech, seed, language, ...inputs },
         },
         2: {
             class_type: 'SaveAudio',

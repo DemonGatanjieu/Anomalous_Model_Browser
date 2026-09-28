@@ -1,6 +1,6 @@
 import { t } from './interface_settings.js';
 import { anomalousAlert } from './ui_dialog.js';
-import { buildTtsPrompt } from './audio_script.js';
+import { buildTtsPrompt, TTS_NODE_CLASS } from './audio_script.js';
 import { startPromptJob } from './audio_tts_run.js';
 import { fetchGptSovitsCharacter, loadGptSovitsStatus, saveGptSovitsSettings } from './audio_engines.js';
 
@@ -8,8 +8,9 @@ import { fetchGptSovitsCharacter, loadGptSovitsStatus, saveGptSovitsSettings } f
  * The Script Director's "Generate" section for GPT-SoVITS characters: runs the
  * script through ComfyUI's queue (audio_tts_run.js) without touching the canvas,
  * plays the result, and offers another take of the whole script (new seed) or of
- * one line (`[take:N]`, the other lines come from the node's cache). Language and
- * speed start from the character's `defaults` and can be saved back to it.
+ * one line (`[take:N]`, the other lines come from the node's cache). Language,
+ * speed and the sampling parameters start from the character's `defaults` and a
+ * setting that worked can be saved back to it.
  *
  * The director owns the lines; this section owns the job, the options and the
  * result, which live for the page session like the director's panel.
@@ -17,6 +18,9 @@ import { fetchGptSovitsCharacter, loadGptSovitsStatus, saveGptSovitsSettings } f
 
 const LANGUAGES = ['auto', 'zh', 'ja', 'en'];
 const MIN_FORMAT = 11; // Anomalous_TTS interface with [take:N] and `defaults`
+// Folded under "Advanced"; ranges and defaults come from the node's own input spec.
+const SAMPLING = ['top_k', 'top_p', 'temperature', 'repetition_penalty'];
+const NUMBERS = ['speed', ...SAMPLING];
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -37,17 +41,22 @@ function newSeed() {
     return Math.floor(Math.random() * 2 ** 31);
 }
 
-function savedDefaults(group) {
-    const defaults = group?.raw?.settings?.defaults;
-    return {
-        language: LANGUAGES.includes(defaults?.language) ? defaults.language : 'auto',
-        speed: typeof defaults?.speed === 'number' ? defaults.speed : 1,
-    };
-}
-
 function audioUrl(audio) {
     const query = new URLSearchParams({ filename: audio.filename, subfolder: audio.subfolder || '', type: audio.type || 'output' });
     return `/view?${query}`;
+}
+
+/** `{ speed: { default, min, max, step }, top_k: … }` from ComfyUI's description of the node. */
+async function loadNodeSpec() {
+    const resp = await fetch(`/object_info/${TTS_NODE_CLASS}`);
+    const info = (await resp.json())?.[TTS_NODE_CLASS]?.input || {};
+    const inputs = { ...(info.required || {}), ...(info.optional || {}) };
+    const spec = {};
+    for (const name of NUMBERS) {
+        const options = inputs[name]?.[1];
+        if (options && typeof options.default === 'number') spec[name] = options;
+    }
+    return spec;
 }
 
 /**
@@ -59,8 +68,9 @@ function audioUrl(audio) {
 export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }) {
     const state = {
         seed: newSeed(),
-        options: new Map(),   // character -> { language, speed } being edited
-        saved: new Map(),     // character -> defaults saved in this session
+        spec: null,           // node input ranges/defaults; null until loaded
+        options: new Map(),   // character -> options being edited
+        saved: new Map(),     // character -> options saved in this session
         job: null,
         status: null,         // { state: 'queued' | 'running' | 'done' | 'cancelled', value?, max?, summary? }
         result: null,         // { audio, url, warnings, character }
@@ -77,14 +87,36 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
         option.value = code;
         language.appendChild(option);
     }
-    const speed = el('input', 'anomalous-sd-run-speed');
-    Object.assign(speed, { type: 'number', min: '0.5', max: '2', step: '0.05' });
-    const saveDefaults = button('anomalous-sd-link-btn', t('scriptRunSaveDefaults'), () => storeDefaults());
+    const fields = {};
+    const numberField = name => {
+        const input = el('input', 'anomalous-sd-run-number');
+        input.type = 'number';
+        input.title = t(`scriptRunParamHint_${name}`);
+        input.onchange = () => {
+            const script = getScript();
+            const range = state.spec?.[name];
+            let value = Number(input.value);
+            if (!Number.isFinite(value) || !range) value = range?.default ?? 1;
+            value = Math.min(range?.max ?? value, Math.max(range?.min ?? value, name === 'top_k' ? Math.round(value) : value));
+            if (script?.group) currentOptions(script.group)[name] = value;
+            render();
+        };
+        fields[name] = input;
+        return input;
+    };
     options.append(
         el('span', 'anomalous-sd-step', t('scriptRunLanguage')), language,
-        el('span', 'anomalous-sd-step', t('scriptRunSpeed')), speed,
-        saveDefaults,
+        el('span', 'anomalous-sd-step', t('scriptRunSpeed')), numberField('speed'),
     );
+    const advanced = el('details', 'anomalous-sd-run-advanced');
+    const advancedGrid = el('div', 'anomalous-sd-run-advanced-grid');
+    for (const name of SAMPLING) {
+        const label = el('label', 'anomalous-sd-run-param');
+        label.append(el('span', '', name), numberField(name));
+        advancedGrid.appendChild(label);
+    }
+    advanced.append(el('summary', '', t('scriptRunAdvanced')), advancedGrid, el('div', 'anomalous-sd-run-advanced-note', t('scriptRunAdvancedNote')));
+    const saveDefaults = button('anomalous-sd-link-btn', t('scriptRunSaveDefaults'), () => storeDefaults(), t('scriptRunSaveDefaultsHint'));
 
     const actions = el('div', 'anomalous-sd-run-actions');
     const generateBtn = button('anomalous-sd-btn accent', t('scriptRunGenerate'), () => generate());
@@ -94,9 +126,9 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
         generate();
     }, t('scriptRunNewTakeHint'));
     const cancelBtn = button('anomalous-sd-btn', t('scriptRunCancel'), () => state.job?.cancel());
-    actions.append(generateBtn, newTakeBtn, cancelBtn);
+    const status = el('span', 'anomalous-sd-run-status');
+    actions.append(generateBtn, newTakeBtn, cancelBtn, status);
 
-    const status = el('div', 'anomalous-sd-run-status');
     const player = el('audio', 'anomalous-sd-run-player');
     player.controls = true;
     player.preload = 'auto';
@@ -104,33 +136,41 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
     const savedTo = el('div', 'anomalous-sd-run-saved');
     const warnings = el('div', 'anomalous-sd-run-warnings');
 
-    root.append(hint, options, actions, status, player, savedTo, warnings);
+    root.append(hint, options, advanced, saveDefaults, actions, player, savedTo, warnings);
+
+    /** The character's saved defaults over the node's own defaults. */
+    function storedOptions(group) {
+        if (state.saved.has(group.character)) return state.saved.get(group.character);
+        const defaults = group?.raw?.settings?.defaults || {};
+        const out = { language: LANGUAGES.includes(defaults.language) ? defaults.language : 'auto' };
+        for (const name of NUMBERS) {
+            out[name] = typeof defaults[name] === 'number' ? defaults[name] : state.spec?.[name]?.default ?? null;
+        }
+        return out;
+    }
 
     function currentOptions(group) {
-        if (!state.options.has(group.character)) state.options.set(group.character, { ...(state.saved.get(group.character) || savedDefaults(group)) });
+        if (!state.options.has(group.character)) state.options.set(group.character, { ...storedOptions(group) });
         return state.options.get(group.character);
     }
+
+    const sameOptions = (a, b) => ['language', ...NUMBERS].every(name => a[name] === b[name]);
 
     language.onchange = () => {
         const script = getScript();
         if (script?.group) currentOptions(script.group).language = language.value;
         render();
     };
-    speed.onchange = () => {
-        const script = getScript();
-        const value = Math.min(2, Math.max(0.5, Number(speed.value) || 1));
-        speed.value = String(value);
-        if (script?.group) currentOptions(script.group).speed = value;
-        render();
-    };
 
     async function checkSupport() {
         try {
-            const status = await loadGptSovitsStatus();
-            state.supported = Number(status?.format) >= MIN_FORMAT;
+            const [status, spec] = await Promise.all([loadGptSovitsStatus(), loadNodeSpec()]);
+            state.spec = spec;
+            state.supported = Number(status?.format) >= MIN_FORMAT && NUMBERS.every(name => spec[name]);
         } catch (_) {
             state.supported = false;
         }
+        state.options.clear(); // options built before the spec arrived lack the node's defaults
         render();
     }
 
@@ -138,8 +178,8 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
         const script = getScript();
         if (!script?.group || script.pkg.error || state.job || !state.supported) return;
         const character = script.group.character;
-        const opts = currentOptions(script.group);
-        const prompt = buildTtsPrompt({ character, speech: script.pkg.speech, seed: state.seed, language: opts.language, speed: opts.speed });
+        const { language: lang, ...numbers } = currentOptions(script.group);
+        const prompt = buildTtsPrompt({ character, speech: script.pkg.speech, seed: state.seed, language: lang, ...numbers });
         state.status = { state: 'queued' };
         state.job = startPromptJob(prompt, {
             onStatus: next => {
@@ -177,7 +217,13 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
             const fresh = await fetchGptSovitsCharacter(character);
             if (fresh.settings_error) throw new Error(t('scriptRunSettingsBroken', { error: fresh.settings_error }));
             const settings = { ...(fresh.settings || {}), format: 1 };
-            settings.defaults = { ...(settings.defaults || {}), language: opts.language, speed: opts.speed };
+            // Only what differs from the node's own defaults, so the file stays short.
+            const defaults = {};
+            if (opts.language !== 'auto') defaults.language = opts.language;
+            for (const name of NUMBERS) {
+                if (opts[name] !== state.spec[name].default) defaults[name] = opts[name];
+            }
+            if (Object.keys(defaults).length) settings.defaults = defaults; else delete settings.defaults;
             await saveGptSovitsSettings(character, settings);
             state.saved.set(character, opts);
             saveDefaults.textContent = t('scriptRunDefaultsSaved');
@@ -211,24 +257,31 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
         }
         const { group, pkg } = script;
         const busy = Boolean(state.job);
+        const ready = Boolean(state.supported && group);
         hint.textContent = state.supported ? t('scriptRunHint', { character: group?.character || '' }) : t('scriptRunNeedsUpdate');
         hint.classList.toggle('is-warning', !state.supported);
 
-        const opts = group ? currentOptions(group) : { language: 'auto', speed: 1 };
-        language.value = opts.language;
-        speed.value = String(opts.speed);
-        const stored = group ? (state.saved.get(group.character) || savedDefaults(group)) : opts;
-        saveDefaults.hidden = !group || (stored.language === opts.language && stored.speed === opts.speed);
-        options.hidden = !state.supported || !group;
-        language.disabled = speed.disabled = busy;
+        options.hidden = advanced.hidden = actions.hidden = !ready;
+        if (ready) {
+            const opts = currentOptions(group);
+            language.value = opts.language;
+            for (const name of NUMBERS) {
+                const range = state.spec[name];
+                Object.assign(fields[name], { min: String(range.min), max: String(range.max), step: String(range.step ?? 1) });
+                fields[name].value = String(opts[name]);
+                fields[name].disabled = busy;
+            }
+            language.disabled = busy;
+            saveDefaults.hidden = sameOptions(opts, storedOptions(group));
+        } else {
+            saveDefaults.hidden = true;
+        }
 
-        const ready = state.supported && group && !pkg.error;
-        generateBtn.disabled = !ready || busy;
+        generateBtn.disabled = !ready || Boolean(pkg.error) || busy;
         const hasResult = Boolean(state.result && group && state.result.character === group.character);
         newTakeBtn.hidden = !hasResult;
-        newTakeBtn.disabled = !ready || busy;
+        newTakeBtn.disabled = generateBtn.disabled;
         cancelBtn.hidden = !busy;
-        actions.hidden = !state.supported;
 
         renderStatus();
         player.hidden = !hasResult;

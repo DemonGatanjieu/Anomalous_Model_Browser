@@ -234,7 +234,9 @@ covered by the `styles.css` manifest.
   `ui_script_run.js` is the drawer's "Generate" section for GPT-SoVITS: it runs
   the script without the canvas, plays the result, retakes the whole script
   (new seed) or one line (`[take:N]`, the node caches the rest), and saves a
-  character's language/speed to its `defaults` (needs Anomalous_TTS interface 11).
+  character's language, speed and folded sampling parameters to its `defaults`
+  (only values that differ from the node's own defaults, which it reads from
+  `/object_info`; needs Anomalous_TTS interface 11).
   `audio_tts_run.js` queues one API prompt with this page's client id and
   follows it (websocket status, `/history` result, cancel = queue delete or
   targeted `/interrupt`); it never touches the canvas.

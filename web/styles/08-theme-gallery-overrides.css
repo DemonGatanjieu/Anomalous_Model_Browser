@@ -832,6 +832,11 @@ button:hover .anomalous-btn-icon {
     transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* The rule above forces inline-flex with !important; a tab a domain does not use sets `hidden`. */
+#anomalous-header button[hidden] {
+    display: none !important;
+}
+
 #anomalous-header button:hover {
     background: rgba(255, 255, 255, 0.09) !important;
     border-color: rgba(255, 255, 255, 0.2) !important;

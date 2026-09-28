@@ -274,17 +274,14 @@ export function createDOM() {
 
         const updateHeaderTabs = (domain) => {
             const isAudio = domain === 'audio';
+            nbBtn.hidden = isAudio;
             if (isAudio) {
                 modelsBtn.innerHTML = `${SIDEBAR_ICONS.AUDIO_STUDIO}<span class="anomalous-btn-text">${t('audioTabPresets')}</span>`;
                 galleryBtn.innerHTML = `${SIDEBAR_ICONS.AUDIO_VAULT}<span class="anomalous-btn-text">${t('audioTabGallery')}</span>`;
-                const nbText = nbBtn.querySelector('.anomalous-btn-text');
-                if (nbText) nbText.textContent = t('audioTabWorkflow');
                 if (this.sidebarActions) this.sidebarActions.style.display = 'none';
             } else {
                 modelsBtn.innerHTML = `${SIDEBAR_ICONS.MODELS}<span class="anomalous-btn-text">${t('models')}</span>`;
                 galleryBtn.innerHTML = `${SIDEBAR_ICONS.GALLERY}<span class="anomalous-btn-text">${t('gallery') || '图库'}</span>`;
-                const nbText = nbBtn.querySelector('.anomalous-btn-text');
-                if (nbText) nbText.textContent = t('recipeTitle');
                 if (this.sidebarActions) this.sidebarActions.style.display = 'flex';
             }
         };
@@ -393,11 +390,7 @@ export function createDOM() {
 
         nbBtn.onclick = () => {
             setActiveHeaderTab(nbBtn);
-            if (getActiveDomain() === 'audio') {
-                this.recipeSelectedTags = new Set(['audio']);
-            } else {
-                this.recipeSelectedTags = new Set();
-            }
+            this.recipeSelectedTags = new Set();
             if (typeof this.recipeModelReturn !== 'function') {
                 this.workspaceReturnState = {
                     grid: this.grid?.style.display || 'none',

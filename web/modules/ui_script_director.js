@@ -235,6 +235,8 @@ function renderAll() {
     if (!panel) return;
     const node = nodeLabel();
     refs.subtitle.textContent = t(state.engine === 'gpt_sovits' ? 'scriptDirectorSubtitleGptSovits' : 'scriptDirectorSubtitle', { node });
+    // Generated here, the bundle preview only repeats the cards; the canvas buttons stay as a small row.
+    refs.footer.classList.toggle('is-direct', state.engine === 'gpt_sovits');
     refs.dragHandle.title = t('scriptDirectorDragHint', { node });
     refs.pushBtn.title = t('scriptDirectorPushHint', { node });
     refs.pushBtn.setAttribute('aria-label', refs.pushBtn.title);
