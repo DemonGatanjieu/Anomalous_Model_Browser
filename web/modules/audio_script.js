@@ -143,19 +143,19 @@ export function ttsOutputPrefix(character) {
 export const TTS_NODE_CLASS = 'AnomalousTTS_CharacterSpeech';
 
 /**
- * ComfyUI API prompt for one GPT-SoVITS script: the character node, then Save Audio.
+ * ComfyUI API prompt for one GPT-SoVITS script: the character node, then Save Audio
+ * (`preview: true`: Preview Audio, a temp file that stays out of the audio gallery).
  * `inputs` are more node inputs by name (speed, top_k …); left out, the node's defaults apply.
  */
-export function buildTtsPrompt({ character, speech, seed, language = 'auto', ...inputs }) {
+export function buildTtsPrompt({ character, speech, seed, language = 'auto', preview = false, ...inputs }) {
     return {
         1: {
             class_type: TTS_NODE_CLASS,
             inputs: { character, text: speech, seed, language, ...inputs },
         },
-        2: {
-            class_type: 'SaveAudio',
-            inputs: { audio: ['1', 0], filename_prefix: ttsOutputPrefix(character) },
-        },
+        2: preview
+            ? { class_type: 'PreviewAudio', inputs: { audio: ['1', 0] } }
+            : { class_type: 'SaveAudio', inputs: { audio: ['1', 0], filename_prefix: ttsOutputPrefix(character) } },
     };
 }
 

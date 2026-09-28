@@ -237,6 +237,10 @@ covered by the `styles.css` manifest.
   character's language, speed and folded sampling parameters to its `defaults`
   (only values that differ from the node's own defaults, which it reads from
   `/object_info`; needs Anomalous_TTS interface 11).
+  `ui_tts_pronunciation.js` edits a GPT-SoVITS character's pronunciation table
+  (the node's `replace` setting) from its card; each row can be heard as it reads
+  now and as replaced, through a Preview Audio run, and saving keeps every other
+  settings field.
   `audio_tts_run.js` queues one API prompt with this page's client id and
   follows it (websocket status, `/history` result, cancel = queue delete or
   targeted `/interrupt`); it never touches the canvas.

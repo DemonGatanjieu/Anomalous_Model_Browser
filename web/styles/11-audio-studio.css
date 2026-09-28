@@ -1571,9 +1571,45 @@
     display: none;
 }
 
+/* Pronunciation table (ui_tts_pronunciation.js): from → to, two listen buttons, remove */
+.anomalous-tts-pronounce .anomalous-tts-row {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto auto auto;
+}
+
+.anomalous-tts-arrow {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.anomalous-tts-listen {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 11px;
+    padding: 4px 8px;
+    min-width: 40px;
+}
+
+.anomalous-tts-listen:hover,
+.anomalous-tts-listen.is-busy {
+    border-color: rgba(56, 189, 248, 0.4);
+    color: #38bdf8;
+}
+
+.anomalous-tts-pronounce-language {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #cbd5e1;
+}
+
 @media (max-width: 560px) {
     .anomalous-tts-row,
-    .anomalous-tts-row.is-main {
+    .anomalous-tts-row.is-main,
+    .anomalous-tts-pronounce .anomalous-tts-row {
         grid-template-columns: 1fr auto;
     }
 }
