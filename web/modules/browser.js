@@ -65,6 +65,7 @@ export class AnomalousBrowser {
         } else {
             this.loadModels();
         }
+        if (this.currentShellPage() === 'gallery') void this.refreshGalleryImages();
     }
 
     /** The image / audio switch: the first page of that side. */
@@ -109,6 +110,9 @@ export class AnomalousBrowser {
             this.stopMediaInContainer(this.grid);
             this.grid.replaceChildren();
             this.models = [];
+            // The output gallery reloads its first page when opened again.
+            this.galleryGrid.querySelectorAll('.anomalous-gallery-card').forEach(card => card.remove());
+            this.galleryImagesList = [];
         }, 90000);
     }
 

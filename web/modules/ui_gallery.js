@@ -105,7 +105,7 @@ export async function loadGalleryImages(page = 1, reset = false, { refresh = res
                     const imgUrl = `/view?filename=${q_file}&subfolder=${q_sub}&type=output`;
 
                     const img = document.createElement('img');
-                    img.src = imgUrl;
+                    img.src = `/anomalous/output_thumbnail?filename=${q_file}&subfolder=${q_sub}`; // drags and the viewer use the original
                     img.loading = 'lazy';
                     img.draggable = true;
                     img.title = t('materialViewOriginal');

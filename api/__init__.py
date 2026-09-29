@@ -91,6 +91,7 @@ def setup_routes(app):
     app.router.add_get('/anomalous/base_models', model_catalog.api_base_models)
     app.router.add_get('/anomalous/gallery_images', gallery_routes.api_get_gallery_images)
     app.router.add_post('/anomalous/delete_gallery_image', gallery_routes.api_delete_gallery_image)
+    app.router.add_get('/anomalous/output_thumbnail', gallery_routes.api_output_thumbnail)
     app.router.add_get('/anomalous/resolve_hash', model_resolution.api_resolve_hash)
     app.router.add_post('/anomalous/resolve_hash_batch', model_resolution.api_resolve_hash_batch)
     app.router.add_get('/anomalous/all_hashes', model_resolution.api_get_all_hashes)

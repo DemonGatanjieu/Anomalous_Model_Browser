@@ -9,6 +9,7 @@ from aiohttp import web
 import folder_paths
 
 from .image_search import filter_images
+from .media_routes import CARD_THUMBNAIL_STATIC_EXTENSIONS, _build_card_thumbnail
 from .path_utils import require_filename, resolve_within
 
 
@@ -78,6 +79,24 @@ async def api_get_gallery_images(request):
         return web.json_response({"error": "Invalid pagination"}, status=400)
     except OSError:
         return web.json_response({"error": "Could not list output images"}, status=500)
+
+
+async def api_output_thumbnail(request):
+    """GET /anomalous/output_thumbnail?filename&subfolder - the gallery grid's 512 px WebP of an
+    output image (cached like model cards); the original stays at ComfyUI's /view."""
+    output_dir = folder_paths.get_output_directory()
+    try:
+        filename = require_filename(request.query.get('filename'))
+        file_path = resolve_within(resolve_within(output_dir, request.query.get('subfolder', '')), filename)
+    except ValueError:
+        return web.json_response({"status": "error", "message": "Invalid parameters"}, status=400)
+    if not os.path.isfile(file_path):
+        return web.json_response({"status": "error", "message": "File not found"}, status=404)
+    served = file_path
+    if os.path.splitext(file_path)[1].lower() in CARD_THUMBNAIL_STATIC_EXTENSIONS:
+        served = await asyncio.to_thread(_build_card_thumbnail, file_path)
+    # Revalidate (cheap 304s): an output file can be replaced under the same name.
+    return web.FileResponse(served, headers={'Cache-Control': 'no-cache'})
 
 
 async def api_delete_gallery_image(request):

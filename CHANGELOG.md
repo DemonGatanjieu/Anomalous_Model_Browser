@@ -8,6 +8,9 @@
 - **Home page (主页)**: "What would you like to do?" with a card per task (find a model, fix missing models, give a character a voice, look through outputs, keep workflows, organize materials) and first steps (scan model folders, tour the interface, what's new). The first time you open the browser it starts here; after that it reopens the page you used last.
 - The header shows the current page's name; workflow and material workspaces keep the rail visible, so you can switch pages without closing them first.
 
+### 🪶 Lighter on memory (更省内存)
+- The output gallery shows 512 px thumbnails instead of full images (cached like model cards), so scrolling through hundreds of outputs no longer fills the browser's memory and graphics memory with full-size pictures. Dragging an image to the canvas and the large viewer still use the original. When the browser has been closed for 90 seconds, its gallery images are released too, like the model grid.
+
 ### 🕘 Activity log (操作记录)
 - **See what Anomalous changed (看 Anomalous 改了什么)**: the new **Activity** page on the rail lists, by day, every change the plugin made: on the canvas, which node settings changed (from → to), which nodes were added or removed, and which workflow was opened; in files, models, covers, recipes, materials, notes, presets, images, audio and imported characters. Filter by canvas or files; open a canvas entry for its details and **Find on canvas** to jump to the node. Your own edits on the canvas are not recorded as the plugin's. The home page shows the latest few.
 - It only records; nothing is undone for you. **Clear** removes the log itself, never your changes. The newest 500 entries (at most 2 MB) are kept in ComfyUI's user folder.
