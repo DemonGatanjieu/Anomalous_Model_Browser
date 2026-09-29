@@ -1,8 +1,8 @@
 # 📈 Anomalous Model Browser Changelog
 
-## Unreleased
+## v1.57.3 Beta (Hotfix: Offline Scan, Prompt Workshop) — 2026-09-29
 
-### Fixes
+### 🔌 Offline scan and small fixes (离线扫描与小修复)
 - **Offline scan stays offline (离线扫描不再联网)**: "Offline fast read" no longer sends the greyed-out rename and overwrite options, and an offline scan never fetches Civitai model pages or preview images, even for models whose `.info` came from Civitai. Scan requests without options are refused instead of starting an online scan.
 - Clicking the drop zone at the end of the Prompt Workshop's assembly track focuses the card search again instead of failing silently.
 - Malformed requests to translation, deletion, scanning and image-material routes get a clear 400 instead of a server error.
