@@ -704,7 +704,7 @@ export function createPromptWorkbench(owner, container, scope, options) {
         `;
         setupDropzoneListeners(snapDock);
         snapDock.onclick = () => {
-            leftSearch?.focus?.();
+            sourceDeck.focusSearch();
             showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '点击左侧词卡即可直接加入此处' : 'Click any card on left to add here');
         };
     }

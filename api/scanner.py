@@ -274,8 +274,10 @@ async def api_scan_folder(request):
     
     try:
         data = await request.json()
-    except Exception:
-        data = {}
+    except ValueError:
+        data = None
+    if not isinstance(data, dict):
+        return web.json_response({"status": "error", "message": "Invalid request body"}, status=400)
         
     offline_only = data.get("offline_only", False)
     skip_rename = data.get("skip_rename", False)
@@ -361,8 +363,10 @@ async def api_scan_all(request):
         
     try:
         data = await request.json()
-    except Exception:
-        data = {}
+    except ValueError:
+        data = None
+    if not isinstance(data, dict):
+        return web.json_response({"status": "error", "message": "Invalid request body"}, status=400)
         
     offline_only = data.get("offline_only", False)
     use_local_metadata = data.get("use_local_metadata", True)

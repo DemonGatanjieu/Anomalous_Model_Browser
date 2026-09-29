@@ -75,6 +75,11 @@ def _reset_model_cover(base_path):
 async def api_delete_model(request):
     try:
         data = await request.json()
+    except ValueError:
+        data = None
+    if not isinstance(data, dict):
+        return web.json_response({"status": "error", "message": "Invalid request body"}, status=400)
+    try:
         folder_type = data.get('type', 'checkpoints')
         subfolder = data.get('subfolder', '/')
         filename = data.get('filename', '')

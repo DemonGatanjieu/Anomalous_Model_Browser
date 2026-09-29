@@ -1,19 +1,11 @@
-import { applyNodeMaterialValues } from './node_material_actions.js';
-import { applyMaterialToSelectedNode } from './ui_material_application.js';
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
 import {
     analyzeModelChainInsertion,
     getModelChainInsertionCapabilities,
-    spliceModelChainNode,
 } from './graph_splice.js';
-import {
-    collectMainModelContextRequests,
-    formatModelTypeLabel,
-    getBaseModelFamily,
-    inferPickerModelType,
-} from './model_picker.js';
+import { inferPickerModelType } from './model_picker.js';
 import { requiresHashForModelRecovery } from './model_policies.js';
 import { findModelComboWidget, getNativeWidgetValues } from './ui_node_model_picker.js';
 import { renderParameterPresets } from './ui_node_presets.js';
