@@ -125,3 +125,15 @@ canvas. The F5-TTS voice library (files under `input/F5-TTS`, upload, romanizati
 Load Audio drags) was removed rather than kept as a parallel engine, so the page
 teaches one set of rules. A zero-shot voice (one clip, no trained model) belongs
 in Anomalous_TTS as a character kind, not as a second engine here.
+
+## AD-017 — The browser is a rail of pages with a home page
+
+Navigation is one narrow icon rail: a home page, the image pages (models, gallery,
+workflows, materials), the audio pages (voices, audio gallery), the canvas tools and
+settings. The rail replaces the header tabs, the image/audio toggle and the tool bar
+under the folder list, so the list column holds only a list and can close without
+hiding any command. Each page decides whether it has a list; the open state is
+remembered per page and narrow windows start with it closed. The home page offers
+tasks rather than a manual: each card opens its page, and a first visit lands there.
+AMB stays the chore layer around ComfyUI (AD-016 keeps one engine per page); a new
+page earns a rail entry only when it is a place users return to, not a one-off tool.

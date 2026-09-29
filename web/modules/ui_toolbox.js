@@ -5,7 +5,6 @@
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { openModelSourcesModal } from './ui_model_sources.js';
-import { configureSidebarActions } from './sidebar_actions.js';
 import { CATALOG_TOOLS, getToolDefinition } from './tool_registry.js';
 import { setScanButtonState } from './ui_scan_wizard.js';
 
@@ -13,7 +12,6 @@ const t = (key, params) => translate(key, params);
 
 export function createToolbox(owner, {
     container,
-    menuBtn,
     toolboxIcon,
     isScanning,
     getSettingsButton,
@@ -25,22 +23,13 @@ export function createToolbox(owner, {
     toolboxBtn.removeAttribute('title');
     toolboxBtn.setAttribute('aria-label', t('sidebarToolbox'));
     toolboxBtn.setAttribute('data-tooltip', t('sidebarToolbox'));
-    toolboxBtn.setAttribute('data-tooltip-pos', 'top');
+    toolboxBtn.setAttribute('data-tooltip-pos', 'right');
     toolboxBtn.innerHTML = toolboxIcon;
-    toolboxBtn.style.background = 'transparent';
-    toolboxBtn.style.border = 'none';
-    toolboxBtn.style.borderRadius = '6px';
-    toolboxBtn.style.padding = '6px';
-    toolboxBtn.style.fontSize = '1.1em';
-    toolboxBtn.style.cursor = 'pointer';
 
 
     const toolboxModal = document.createElement('div');
     toolboxModal.id = 'anomalous-toolbox-modal';
     toolboxModal.style.display = 'none';
-    toolboxModal.addEventListener('mouseenter', () => {
-        if (window.AMB_hideTooltipImmediately) window.AMB_hideTooltipImmediately();
-    });
 
     const closeToolbox = (e) => {
         if (toolboxModal.style.display !== 'none' && !toolboxModal.contains(e.target) && !toolboxBtn.contains(e.target)) {
@@ -52,9 +41,6 @@ export function createToolbox(owner, {
 
     toolboxBtn.onclick = (e) => {
         e.stopPropagation();
-        if (window.AMB_hideTooltipImmediately) window.AMB_hideTooltipImmediately();
-        toolboxBtn.classList.remove('anomalous-action-label-active');
-        toolboxBtn.__suppress_text_until_leave = true;
         onBeforeOpen();
         if (toolboxModal.style.display === 'none') {
             toolboxModal.style.display = 'flex';
@@ -73,15 +59,8 @@ export function createToolbox(owner, {
                 owner.openScanWizard({ isGlobal: true });
                 break;
             case 'doctor':
+                owner.enterToolPage?.('doctor');
                 owner.hideAllPanels();
-                if (localStorage.getItem('anomalous_user_sidebar_closed') === 'true') {
-                    container.classList.add('anomalous-sidebar-closed');
-                } else {
-                    container.classList.remove('anomalous-sidebar-closed');
-                }
-                menuBtn.disabled = false;
-                menuBtn.style.opacity = '1';
-                menuBtn.style.cursor = 'pointer';
                 owner.doctorPanel.style.display = 'flex';
                 if (!owner.doctorPanelInitialized) {
                     owner.initDoctorPanel();
@@ -93,12 +72,8 @@ export function createToolbox(owner, {
                 owner.renderGlobalDashboard();
                 break;
             case 'assistant':
+                owner.enterToolPage?.('assistant');
                 owner.hideAllPanels();
-                if (owner.setActiveHeaderTab) owner.setActiveHeaderTab(null);
-                container.classList.add('anomalous-sidebar-closed');
-                menuBtn.disabled = false;
-                menuBtn.style.opacity = '1';
-                menuBtn.style.cursor = 'pointer';
                 owner.assistantPanel.style.display = 'flex';
                 if (!owner.assistantPanelInitialized) {
                     owner.initAssistantPanel();
@@ -111,7 +86,7 @@ export function createToolbox(owner, {
                 }
                 break;
             case 'materials':
-                owner.openMaterialLibrary();
+                owner.goTo('materials');
                 break;
             case 'workflow-transfer':
                 if (window.AMB_WorkflowShare && typeof window.AMB_WorkflowShare.showUnifiedModal === 'function') {
@@ -150,10 +125,10 @@ export function createToolbox(owner, {
     owner.executeToolAction = executeToolAction;
 
     const renderShortcutActions = () => {
-        owner.sidebarActions.replaceChildren();
-        owner.sidebarActions.appendChild(toolboxBtn);
+        owner.railTools.replaceChildren();
 
-        const defaultLayout = ['scan', 'doctor', 'assistant', 'materials'];
+        // Materials has its own page on the rail; the toolbox comes last, settings at the bottom.
+        const defaultLayout = ['scan', 'doctor', 'assistant'];
         for (const toolId of defaultLayout) {
             const def = getToolDefinition(toolId);
             if (!def) continue;
@@ -165,13 +140,7 @@ export function createToolbox(owner, {
             btn.removeAttribute('title');
             btn.setAttribute('aria-label', t(def.nameKey));
             btn.setAttribute('data-tooltip', t(def.nameKey));
-            btn.setAttribute('data-tooltip-pos', 'top');
-            btn.style.background = 'transparent';
-            btn.style.border = 'none';
-            btn.style.borderRadius = '6px';
-            btn.style.padding = '6px';
-            btn.style.fontSize = '1.1em';
-            btn.style.cursor = 'pointer';
+            btn.setAttribute('data-tooltip-pos', 'right');
 
             if (toolId === 'scan') {
                 setScanButtonState(btn, isScanning());
@@ -184,11 +153,11 @@ export function createToolbox(owner, {
                 executeToolAction(toolId);
             };
 
-            owner.sidebarActions.appendChild(btn);
+            owner.railTools.appendChild(btn);
         }
 
-        owner.sidebarActions.appendChild(getSettingsButton());
-        configureSidebarActions(owner.sidebarWrapper);
+        owner.railTools.appendChild(toolboxBtn);
+        owner.railFoot.replaceChildren(getSettingsButton());
     };
     owner.renderShortcutActions = renderShortcutActions;
 
@@ -241,7 +210,7 @@ export function createToolbox(owner, {
         const gridContainer = document.createElement('div');
         gridContainer.className = 'anomalous-toolbox-grid';
 
-        // 过滤掉已经常驻底栏的工具（scan, doctor, assistant, materials 及两端锚点）
+        // 已经在左侧图标栏上的工具（扫描、医生、助手、素材、工具箱、设置）不再放进工具箱
         const outsideToolIds = new Set(['scan', 'doctor', 'assistant', 'materials', 'toolbox', 'settings']);
         const allTools = [...CATALOG_TOOLS, ...(owner.customToolboxItems || [])];
         const toolboxTools = allTools.filter(tool => !outsideToolIds.has(tool.id));
@@ -271,7 +240,6 @@ export function createToolbox(owner, {
 
             tile.onclick = (e) => {
                 e.stopPropagation();
-                if (window.AMB_hideTooltipImmediately) window.AMB_hideTooltipImmediately();
                 toolboxModal.style.display = 'none';
                 toolboxBtn.classList.remove('is-active');
                 executeToolAction(tool.id);

@@ -1,0 +1,213 @@
+/**
+ * Page navigation for the shell: `owner.goTo(page)` for the rail, the home cards and the
+ * domain switch; which page shows its list column (and whether that list is open); the
+ * page title in the header; the page reopened next time.
+ *
+ * Pages: home, models, gallery, voices, audio-gallery (base pages); recipes, materials
+ * (workspaces over the base page, closed with `closeWorkspace()`); doctor, assistant
+ * (tool pages, entered through `owner.enterToolPage`).
+ */
+
+import { translate as t } from './locales.js';
+import { getActiveDomain, setActiveDomain } from './ui_domain_switcher.js';
+import { renderHome } from './ui_home.js';
+
+const LAST_PAGE_KEY = 'anomalous_last_page';
+const REMEMBERED = new Set(['home', 'models', 'gallery', 'voices', 'audio-gallery']);
+const AUDIO_PAGES = new Set(['voices', 'audio-gallery']);
+// Pages with a list column, and where each remembers whether you closed it.
+const LIST_KEYS = {
+    models: 'anomalous_user_sidebar_closed',
+    doctor: 'anomalous_user_sidebar_closed',
+    voices: 'anomalous_audio_list_closed',
+    'audio-gallery': 'anomalous_audio_list_closed',
+};
+const TITLE_KEYS = {
+    home: 'shellHome', models: 'shellTitleModels', gallery: 'gallery', recipes: 'recipeTitle',
+    materials: 'materialLibrary', voices: 'shellVoices', 'audio-gallery': 'shellAudioGallery',
+    doctor: 'sidebarDoctor', assistant: 'sidebarAssistant',
+};
+// Below this width the list covers the page instead of sitting beside it, and starts closed.
+const NARROW_PX = 760;
+
+const read = (key) => {
+    try { return localStorage.getItem(key); } catch (_) { return null; }
+};
+const write = (key, value) => {
+    try { localStorage.setItem(key, value); } catch (_) { /* a per-viewer convenience only */ }
+};
+
+/** The page to open first: the last one used, else home. */
+export function startPage() {
+    const saved = read(LAST_PAGE_KEY);
+    return REMEMBERED.has(saved) ? saved : 'home';
+}
+
+/**
+ * Wires navigation onto `owner`. `rail`: from createShellRail; `listToggle`: the header's
+ * list button; `title`: the header's page title element.
+ */
+export function installShellNavigation(owner, { container, rail, listToggle, title }) {
+    let current = null;
+    const narrow = () => container.clientWidth > 0 && container.clientWidth < NARROW_PX;
+
+    const setTitle = (page) => { title.textContent = page ? t(TITLE_KEYS[page]) : ''; };
+
+    const applyList = (page) => {
+        const key = LIST_KEYS[page];
+        listToggle.disabled = !key;
+        container.classList.toggle('anomalous-sidebar-closed', !key || narrow() || read(key) === 'true');
+    };
+
+    const toggleList = () => {
+        if (listToggle.disabled) return;
+        const closed = !container.classList.contains('anomalous-sidebar-closed');
+        container.classList.toggle('anomalous-sidebar-closed', closed);
+        if (!narrow() && LIST_KEYS[current]) write(LIST_KEYS[current], String(closed));
+    };
+    listToggle.onclick = toggleList;
+
+    // Crossing the narrow width re-decides the list: closed when narrow, as remembered when wide.
+    let wasNarrow = null;
+    if (typeof ResizeObserver === 'function') {
+        new ResizeObserver(() => {
+            const now = narrow();
+            container.classList.toggle('anomalous-shell-narrow', now);
+            if (now !== wasNarrow && current) applyList(current);
+            wasNarrow = now;
+        }).observe(container);
+    }
+
+    /** Switches the domain the list column and the "!" guide follow; loads the model list once. */
+    const useDomain = (domain) => {
+        const changed = getActiveDomain() !== domain;
+        if (changed) setActiveDomain(domain);
+        if (domain === 'audio') {
+            if (changed) owner.renderSidebar();
+            return;
+        }
+        if (!owner.foldersData) owner.loadFolders();
+        else if (changed) {
+            owner.renderSidebar();
+            owner.loadModels();
+        }
+    };
+
+    const enter = (page) => {
+        current = page;
+        if (REMEMBERED.has(page)) write(LAST_PAGE_KEY, page);
+        rail.setActive(page);
+        setTitle(page);
+    };
+
+    const showModels = () => {
+        owner.grid.style.display = 'grid';
+        if (owner.detailPanel.innerHTML !== '') {
+            owner.stopMediaInContainer(owner.detailPanel);
+            owner.detailPanel.innerHTML = '';
+            owner.currentDetailModel = null;
+            owner.historyStack = [];
+        }
+    };
+
+    const showGallery = () => {
+        owner.gallerySelectModel = null;
+        owner.galleryPanel.classList.remove('is-cover-selecting');
+        const selectBanner = document.getElementById('anomalous-gallery-select-banner');
+        if (selectBanner) selectBanner.style.display = 'none';
+        owner.galleryPanel.style.display = 'flex';
+        void owner.refreshGalleryImages();
+    };
+
+    /** The recipe workspace over the current page; closing it comes back here. */
+    const openRecipes = () => {
+        owner.recipeSelectedTags = new Set();
+        if (typeof owner.recipeModelReturn !== 'function') {
+            owner.workspaceReturnState = Object.fromEntries([
+                ['grid', owner.grid], ['detail', owner.detailPanel], ['gallery', owner.galleryPanel],
+                ['doctor', owner.doctorPanel], ['assistant', owner.assistantPanel], ['home', owner.homePanel],
+                ['audioStudio', owner.audioStudioPanel], ['audioGallery', owner.audioGalleryPanel],
+            ].filter(([, panel]) => panel).map(([key, panel]) => [key, panel.style.display || 'none']));
+        } else if (!owner.workspaceReturnState) {
+            owner.workspaceReturnState = { grid: 'grid' };
+        }
+        owner.hideAllPanels();
+        owner.nbPanel.style.display = 'flex';
+        owner.showRecipes();
+    };
+
+    owner.goTo = (page, { fromRail = false } = {}) => {
+        const inWorkspace = owner.nbPanel?.style.display === 'flex';
+        // The rail entry of the page you are on opens or closes its list; from a model's
+        // detail it goes back to the grid instead.
+        const atRoot = page !== 'models' || owner.grid.style.display !== 'none';
+        if (fromRail && page === current && !inWorkspace && atRoot && LIST_KEYS[page]) {
+            toggleList();
+            return;
+        }
+        if (page === 'recipes' || page === 'materials') {
+            // Workspaces belong to the image side: from an audio page they open over the models.
+            if (AUDIO_PAGES.has(current)) owner.goTo('models');
+            rail.setActive(page);
+            setTitle(page);
+            if (page === 'recipes') openRecipes();
+            else void Promise.resolve(owner.openMaterialLibrary()).then(() => rail.setActive('materials'));
+            return;
+        }
+        if (inWorkspace) owner.closeWorkspace();
+        enter(page);
+        if (AUDIO_PAGES.has(page)) {
+            useDomain('audio');
+            applyList(page);
+            owner.switchAudioTab(page === 'voices' ? 'presets' : 'gallery');
+            return;
+        }
+        useDomain('visual');
+        owner.hideAllPanels();
+        applyList(page);
+        if (page === 'home') {
+            owner.homePanel.style.display = 'flex';
+            renderHome(owner, owner.homePanel);
+        } else if (page === 'gallery') {
+            showGallery();
+        } else {
+            showModels();
+        }
+    };
+
+    /** Doctor and assistant: image-side pages without a rail entry, opened from the tools. */
+    owner.enterToolPage = (page) => {
+        if (owner.nbPanel?.style.display === 'flex') owner.closeWorkspace();
+        useDomain('visual');
+        current = page;
+        rail.setActive(null);
+        setTitle(page);
+        applyList(page);
+        if (page === 'assistant') container.classList.add('anomalous-sidebar-closed');
+    };
+
+    // Other modules mark tabs through these; they map onto the rail now.
+    owner.setActiveHeaderTab = (button) => rail.setActive(button?.dataset?.page ?? null);
+    owner.updateHeaderTabs = () => {};
+
+    // Closing a workspace goes back to the page under it.
+    const closeWorkspace = owner.closeWorkspace;
+    owner.closeWorkspace = function (...args) {
+        const result = closeWorkspace.apply(this, args);
+        rail.setActive(REMEMBERED.has(current) ? current : null);
+        setTitle(current);
+        return result;
+    };
+
+    owner.refreshShellLanguage = () => {
+        rail.refreshLanguage();
+        setTitle(current);
+        listToggle.setAttribute('aria-label', t('sidebarToggle'));
+        listToggle.dataset.tooltip = t('sidebarToggle');
+        if (current === 'home') renderHome(owner, owner.homePanel);
+    };
+
+    owner.currentShellPage = () => current;
+    // Pages reached another way (the audio list's own entries) still mark the rail and title.
+    owner.markShellPage = enter;
+}

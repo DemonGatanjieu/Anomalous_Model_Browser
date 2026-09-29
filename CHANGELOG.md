@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### 🧭 New layout (新布局)
+- **Icon rail (左侧图标栏)**: every page now has one place on the left: Home, Models, Gallery, Workflows, Materials, then Voices and Audio for the audio side, then scan, Model Doctor, Node Assistant and the toolbox, with settings at the bottom. It replaces the tabs at the top, the image/audio switch and the tool bar under the folder list.
+- **Folder list opens and closes per page (列表按页面收放)**: click the current page's icon again, or the button at the top left, to hide or show its list; each page remembers your choice. Pages without a list (Home, Gallery) give the space to the content. In a narrow or docked window the list starts closed and opens over the page.
+- **Home page (主页)**: "What would you like to do?" with a card per task (find a model, fix missing models, give a character a voice, look through outputs, keep workflows, organize materials) and first steps (scan model folders, tour the interface, what's new). The first time you open the browser it starts here; after that it reopens the page you used last.
+- The header shows the current page's name; workflow and material workspaces keep the rail visible, so you can switch pages without closing them first.
+
 ### 🎙️ Audio & Voice Studio (音频与声音工作台)
 - **Generate right in the Script Director (剧本台直接生成)**: for GPT-SoVITS characters, **Generate** runs the script in ComfyUI without touching the canvas (it waits in the queue while ComfyUI is busy), plays the result and saves it to `output/audio/<character>/`. **↻** on a line card gives just that line another take while the others come from cache; **New take of all** starts over with a new seed. Language, speed and the sampling parameters (one folded **Generation settings** line, with a hint on each) start from the character's saved defaults; when a take sounds right, **Save these settings as this character's default** keeps them for next time. The drawer is wider: the line cards get the full height with generating in a column beside them, and in a narrow or docked browser the drawer covers the studio with generating below the cards; either way only the cards scroll, however long the script is. Needs Anomalous_TTS interface 11.
 - **Pronunciation table (读音表)**: **Pronunciation** on a GPT-SoVITS character card lists what the script says and what the character should read instead (`C站 → 西站`); each line can be heard as the character reads it now and as replaced, without filling the audio gallery.

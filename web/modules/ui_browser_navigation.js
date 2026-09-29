@@ -14,6 +14,7 @@ function restoreWorkspaceReturnPanel(owner) {
         ['assistant', owner.assistantPanel],
         ['audioStudio', owner.audioStudioPanel],
         ['audioGallery', owner.audioGalleryPanel],
+        ['home', owner.homePanel],
     ];
     if (state) {
         for (const [key, panel] of panels) {
@@ -99,6 +100,7 @@ export function hideAllPanels() {
     if (this.paramPanel) this.paramPanel.style.display = 'none';
     if (this.audioStudioPanel) this.audioStudioPanel.style.display = 'none';
     if (this.audioGalleryPanel) this.audioGalleryPanel.style.display = 'none';
+    if (this.homePanel) this.homePanel.style.display = 'none';
     stopAudioStudioPlayback();
     stopGalleryAudio();
     if (this.currentDetailObserver) {

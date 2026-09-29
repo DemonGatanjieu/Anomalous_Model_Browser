@@ -85,7 +85,7 @@ html.theme-abyssal-scarlet,
     background: radial-gradient(ellipse 90% 55% at 50% 0%, rgba(220, 20, 60, 0.09) 0%, rgba(28, 9, 22, 0.04) 60%, transparent 100%);
 }
 
-.theme-abyssal-scarlet .anomalous-brand-badge {
+.theme-abyssal-scarlet .anomalous-rail-brand {
     background: rgba(45, 10, 18, 0.95) !important;
     border: 1px solid #dc143c !important;
     color: #e0d8db !important;
@@ -419,52 +419,6 @@ button:hover .anomalous-btn-icon {
     filter: none;
 }
 
-#anomalous-sidebar-actions {
-    position: relative;
-    overflow: visible;
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    padding: 8px 6px;
-    gap: 2px;
-    box-sizing: border-box;
-}
-
-#anomalous-sidebar-actions button {
-    position: relative;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 36px !important;
-    height: 36px !important;
-    border-radius: 7px !important;
-    box-sizing: border-box !important;
-    vertical-align: middle !important;
-    color: #cbd5e1 !important;
-    background: transparent !important;
-    border: 1px solid transparent !important;
-    cursor: pointer !important;
-    overflow: hidden !important;
-    pointer-events: auto !important;
-    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
-}
-
-#anomalous-sidebar-actions button:hover {
-    color: #ffffff !important;
-    background: rgba(255, 255, 255, 0.09) !important;
-    border: 1px solid rgba(255, 255, 255, 0.18) !important;
-    transform: none;
-    box-shadow: none;
-}
-
-#anomalous-sidebar-actions button svg {
-    width: 20px !important;
-    height: 20px !important;
-    stroke-width: 2px !important;
-    pointer-events: none !important;
-    transition: opacity 0.15s ease;
-}
-
 /* Abyssal Scarlet Mode overrides for Task 8 icon buttons (Sharp Borders & Inner Shadow) */
 .theme-abyssal-scarlet #anomalous-doctor-btn:hover {
     color: #f43f5e !important;
@@ -494,26 +448,7 @@ button:hover .anomalous-btn-icon {
     box-shadow: none !important;
 }
 
-.theme-abyssal-scarlet #anomalous-sidebar-actions button:hover {
-    border-color: #dc143c !important;
-    box-shadow: none !important;
-}
-
-.theme-abyssal-scarlet #anomalous-sidebar-actions button:hover svg {
-    filter: none !important;
-}
-
 /* 11. Task 9: Master Container Geometric Details, Watermarks & Floating Tooltips */
-
-#anomalous-sidebar-actions::before {
-    display: none !important;
-}
-
-.theme-abyssal-scarlet #anomalous-sidebar-actions::before {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='%23ff3366' stroke-width='1.5'%3E%3Ccircle cx='50' cy='50' r='45'/%3E%3Cpolygon points='50,5 95,50 50,95 5,50' stroke-dasharray='3 3'/%3E%3Cpolygon points='50,15 85,50 50,85 15,50'/%3E%3Ccircle cx='50' cy='50' r='12'/%3E%3C/svg%3E");
-    opacity: 0.055;
-}
-
 /* Abyssal Scarlet Mode override for energy divider */
 .theme-abyssal-scarlet #anomalous-sidebar-wrapper::after {
     background: linear-gradient(180deg, 
@@ -754,16 +689,6 @@ button:hover .anomalous-btn-icon {
    ========================================================================== */
 
 /* 1. Normal Mode Master Header (Neutral Charcoal Frosted Glass) */
-#anomalous-brand-bar {
-    height: 48px !important;
-    padding: 0 14px !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-}
-
 #anomalous-header {
     height: 48px !important;
     background: rgba(20, 20, 23, 0.85) !important;
@@ -832,11 +757,6 @@ button:hover .anomalous-btn-icon {
     transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* The rule above forces inline-flex with !important; a tab a domain does not use sets `hidden`. */
-#anomalous-header button[hidden] {
-    display: none !important;
-}
-
 #anomalous-header button:hover {
     background: rgba(255, 255, 255, 0.09) !important;
     border-color: rgba(255, 255, 255, 0.2) !important;
@@ -850,14 +770,6 @@ button:hover .anomalous-btn-icon {
     border-color: rgba(255, 255, 255, 0.28) !important;
     color: #ffffff !important;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35) !important;
-}
-
-#anomalous-header button .anomalous-btn-text {
-    display: inline !important;
-    font-size: 11.5px !important;
-    font-weight: 500 !important;
-    line-height: 1 !important;
-    color: inherit !important;
 }
 
 #anomalous-header button svg,

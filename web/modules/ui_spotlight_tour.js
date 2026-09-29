@@ -19,14 +19,14 @@ let activeTourInstance = null;
 const TOUR_STEPS = Object.freeze([
     {
         id: 'workspaces',
-        targetSelector: '#anomalous-models-btn',
-        fallbackSelector: '.anomalous-header-left',
+        targetSelector: '.anomalous-rail-nav',
+        fallbackSelector: '#anomalous-rail',
         icon: '🏠',
-        titleZh: '顶栏工作区切换',
-        titleEn: 'Workspace Navigation',
-        bodyZh: '用于在模型库、图库、工作流配方工坊和素材库之间切换。各个页面保持独立的视图状态与筛选条件。',
-        bodyEn: 'Switch between Model Browser, Gallery, Recipe Studio, and Material Library. Each maintains independent view and filter states.',
-        position: 'bottom',
+        titleZh: '左侧图标栏',
+        titleEn: 'The rail',
+        bodyZh: '主页、模型库、图库、工作流、素材库和角色语音都在这里。再点一下当前页的图标（或顶栏最左边的按钮），可以收起、展开旁边的列表。',
+        bodyEn: 'Home, models, gallery, workflows, materials and voices live here. Click the current page\'s icon again (or the button at the top left) to show or hide its list.',
+        position: 'right',
     },
     {
         id: 'update-notice',
@@ -46,7 +46,7 @@ const TOUR_STEPS = Object.freeze([
         titleEn: '🎯 Model Scanning',
         bodyZh: '点击此按钮可打开扫描向导，对模型目录建立索引与哈希。在模型网格中悬浮卡片点击雷达图标，则仅原地扫描该单个模型。',
         bodyEn: 'Click to open the scan wizard for folder indexing. You can also hover over any model card and click the radar icon to scan only that model.',
-        position: 'top',
+        position: 'right',
     },
     {
         id: 'doctor',
@@ -56,7 +56,7 @@ const TOUR_STEPS = Object.freeze([
         titleEn: '🩺 Model Doctor (Node Repair)',
         bodyZh: '用于排查当前画布中因模型缺失而报错的节点。系统通过文件的 SHA256 哈希值与文件名，匹配本地现有模型并执行路径替换。',
         bodyEn: 'Inspects red error nodes in the active graph caused by missing models, matching local files by SHA256 hash and filename for replacement.',
-        position: 'top',
+        position: 'right',
     },
     {
         id: 'assistant',
@@ -66,7 +66,7 @@ const TOUR_STEPS = Object.freeze([
         titleEn: '🤖 Node Assistant',
         bodyZh: '选中画布节点后，可在动作页直接更换该节点的模型或追加 LoRA；在参数方案页可将配方保存的采样器、步数等参数写入该节点。',
         bodyEn: 'Select a canvas node to swap its model or insert a LoRA via Actions, or apply saved sampler/step parameters via Parameter Presets.',
-        position: 'top',
+        position: 'right',
     },
     {
         id: 'materials',
@@ -76,7 +76,7 @@ const TOUR_STEPS = Object.freeze([
         titleEn: '✨ Material Library',
         bodyZh: '用于管理已归档的图片、提示词与工作流片段。按住卡片拖拽到画布节点上可注入对应参数；拖拽到画布空白处可直接加载该工作流。',
         bodyEn: 'Manages saved images, prompts, and workflow snippets. Drag a card onto a canvas node to inject values, or drop on empty canvas to load the workflow.',
-        position: 'top',
+        position: 'right',
     },
     {
         id: 'toolbox',
@@ -86,7 +86,7 @@ const TOUR_STEPS = Object.freeze([
         titleEn: '🧰 Utility Toolbox',
         bodyZh: '点击展开九宫格面板，收纳了模型来源中心（检测工作流模型对应的 Civitai/HuggingFace 链接）、提示词笔记、文件夹管理等工具。',
         bodyEn: 'Opens the drawer hosting Model Sources Hub (detects Civitai/HuggingFace links for workflow models), Prompt Notes, and Folder Manager.',
-        position: 'top',
+        position: 'right',
     },
     {
         id: 'settings',
@@ -96,7 +96,7 @@ const TOUR_STEPS = Object.freeze([
         titleEn: '⚙️ Global Settings',
         bodyZh: '用于切换界面中英文、调节 UI 缩放比例、设置卡片网格列数与密度、选择视频封面悬停播放模式，以及清理本地缓存。',
         bodyEn: 'Adjust language (ZH/EN), UI zoom scaling, card grid density, hover-video playback behavior, and manage local cache.',
-        position: 'top',
+        position: 'right',
     },
 ]);
 
@@ -329,7 +329,10 @@ function computeCardPosition(rect, position, cardWidth = 330, cardHeight = 220) 
     let left = rect.left + rect.width / 2 - cardWidth / 2;
     let top = 0;
 
-    if (position === 'top') {
+    if (position === 'right') {
+        left = rect.right + margin;
+        top = rect.top + rect.height / 2 - cardHeight / 2;
+    } else if (position === 'top') {
         top = rect.top - cardHeight - margin;
         if (top < padding) {
             top = rect.bottom + margin; // flip to bottom if offscreen

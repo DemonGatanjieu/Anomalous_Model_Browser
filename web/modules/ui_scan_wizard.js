@@ -5,7 +5,6 @@
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
 import { updateScanProgress, finishScanProgress, failScanProgress } from './scan_progress.js';
-import { configureSidebarAction } from './sidebar_actions.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 
 const t = (key, params) => translate(key, params);
@@ -18,7 +17,6 @@ export function setScanButtonState(btn, isScanning) {
     btn.classList.toggle('anomalous-radar-spinning', Boolean(isScanning));
     btn.style.opacity = isScanning ? '0.85' : '1';
     btn.style.animation = '';
-    configureSidebarAction(btn);
 }
 
 function setActiveScanButtonState(isScanning) {

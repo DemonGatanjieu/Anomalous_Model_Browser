@@ -10,8 +10,7 @@
 | `web/modules/update_guide_data.js` | 当前引导的稳定 ID、步骤顺序、图标和文案键；也提供配置校验 |
 | `web/modules/locales.js` | 每个步骤及按钮的中英文文案，均按纯文本展示 |
 | `web/modules/ui_update_guide.js` | 显示、翻页、关闭、焦点、版本记录；一般内容更新不要修改 |
-| `web/modules/sidebar_actions.js` | 六个底部按钮的短标签、完整名称和用途提示，不改变点击动作 |
-| `web/styles.css` | 引导布局和底部图标/文字切换的现有规则 |
+| `web/styles.css` | 引导布局的现有规则 |
 | `web/main.js` / `ui_sidebar.js` | 父窗口关闭清理，以及上方按钮和帮助页的手动入口 |
 
 ## 后续 AI 更新步骤

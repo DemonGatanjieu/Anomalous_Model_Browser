@@ -25,6 +25,7 @@ import { renderAudioStudio, stopAudioStudioPlayback } from './ui_audio_studio.js
 import { renderAudioGallery, stopGalleryAudio } from './ui_audio_gallery.js';
 import { getActiveAudioFilter, setActiveAudioFilter, syncAudioSidebarSelection } from './ui_audio_sidebar.js';
 import { getActiveDomain } from './ui_domain_switcher.js';
+import { startPage } from './ui_shell_nav.js';
 
 export class AnomalousBrowser {
     constructor() {
@@ -52,50 +53,37 @@ export class AnomalousBrowser {
         }
         this.setTriggerVisible(false);
         this.modal.classList.add('visible');
-        this.updateHeaderTabs?.(getActiveDomain());
-        if (getActiveDomain() === 'audio') {
-            this.handleDomainChange('audio');
+        if (!this.currentShellPage()) {
+            this.goTo(startPage());
             return;
         }
-        if (!this.foldersData) {
+        // Opened again: stay on the page, refresh what may have changed meanwhile.
+        if (getActiveDomain() === 'audio') {
+            this.switchAudioTab(this.currentShellPage() === 'audio-gallery' ? 'gallery' : 'presets');
+        } else if (!this.foldersData) {
             this.loadFolders();
         } else {
             this.loadModels();
         }
     }
 
+    /** The image / audio switch: the first page of that side. */
     handleDomainChange(domain) {
-        this.updateHeaderTabs?.(domain);
-        if (domain === 'audio') {
-            if (this.sidebarActions) this.sidebarActions.style.display = 'none';
-            this.renderSidebar();
-            this.switchAudioTab('presets');
-        } else {
-            if (this.sidebarActions) this.sidebarActions.style.display = 'flex';
-            if (this.modelsBtn) this.setActiveHeaderTab?.(this.modelsBtn);
-            this.hideAllPanels();
-            this.grid.style.display = 'grid';
-            this.renderSidebar();
-            if (!this.foldersData) {
-                this.loadFolders();
-            } else {
-                this.loadModels();
-            }
-        }
+        this.goTo(domain === 'audio' ? 'voices' : 'models');
     }
 
-    /** Single entry for audio-domain navigation: header tabs, sidebar entries and domain switch. */
+    /** Single entry for audio-domain navigation: the rail, the audio list's entries and the domain switch. */
     switchAudioTab(tabName, filter = null) {
         this.hideAllPanels();
         if (tabName === 'gallery') {
             setActiveAudioFilter({ type: 'gallery', value: null });
-            this.setActiveHeaderTab?.(this.galleryBtn);
+            this.markShellPage?.('audio-gallery');
             this.audioGalleryPanel.style.display = 'block';
             renderAudioGallery(this.audioGalleryPanel);
         } else {
             if (filter) setActiveAudioFilter(filter);
             else if (getActiveAudioFilter().type === 'gallery') setActiveAudioFilter(null);
-            this.setActiveHeaderTab?.(this.modelsBtn);
+            this.markShellPage?.('voices');
             this.audioStudioPanel.style.display = 'block';
             renderAudioStudio(this.audioStudioPanel, { owner: this });
         }

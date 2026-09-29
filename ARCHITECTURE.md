@@ -129,9 +129,10 @@ covered by the `styles.css` manifest.
   for this plugin's static files so a normal refresh revalidates them (modules are
   imported without `?v=` query strings, which would create second module
   instances); and `interface_settings.js` owns language and theme preferences.
-- `ui_domain_switcher.js` owns the visual/audio domain toggle and its stored choice;
-  `browser.switchAudioTab` is the single entry for audio navigation (header tabs,
-  sidebar entries, domain switch) and `hideAllPanels` stops audio playback.
+- `ui_domain_switcher.js` stores which side is active (image or audio: which list the
+  list column shows, which guide "!" opens); the rail's pages switch it through
+  `ui_shell_nav.js`. `browser.switchAudioTab` is the single entry for the audio panels
+  (rail pages, the audio list's own entries) and `hideAllPanels` stops audio playback.
 - `audio_engines.js` owns the audio page's one speech engine, GPT-SoVITS through
   the separate Anomalous_TTS node pack (docs/decisions AD-016), detected at runtime
   through `/object_info/<node class>`. Characters are normalised into one
@@ -253,11 +254,20 @@ covered by the `styles.css` manifest.
   seeking, search, paging, download and deletion, showing the speech/voice/seed
   recorded in each file, plus a section for unsaved temp previews that can be
   copied into `output/audio/`.
-- `ui_sidebar.js` creates the browser shell, domain-aware header tabs, and folder navigation.
+- `ui_sidebar.js` assembles the browser window (rail, list column, header, page panels)
+  and renders the model folder list. `ui_shell_rail.js` owns the left icon rail: one
+  entry per page, the tool slots and the settings slot. `ui_shell_nav.js` owns page
+  navigation (`goTo`): the domain each page needs, which pages have a list and whether
+  it is open (remembered per page; closed and overlaying below 760 px), the header's
+  page title, and the page reopened next time. `ui_home.js` owns the home page (task
+  cards, first steps). `ui_shell_frame.js` owns dragging, resizing and keeping the
+  floating window on screen; `ui_scan_watch.js` polls scan status for the rail's scan
+  button, the progress panel and the model reload afterwards.
   `ui_settings_hub.js` owns settings and model-card preferences;
-  `ui_toolbox.js` owns the tool catalog, fixed shortcut bar, and tool dispatch;
+  `ui_toolbox.js` owns the tool catalog, the rail's tool buttons, and tool dispatch;
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,
-  including Esc on the workspace panel (`nbPanel`, which starts below the header).
+  including Esc on the workspace panel (`nbPanel`, below the header and right of the
+  rail; the list column steps aside while it is open).
   Scan-wizard launch, single-model precision scans (`triggerDirectModelScan` with strictly factual Civitai vs non-Civitai feedback reporting inferred base-model or match status directly within the bottom-right progress panel and toasts without blocking browser alerts), modal lifecycle ergonomics (backdrop click and Escape key dismissal with listener detachment, scrollable content area with sticky footer actions), post-scan frontend hash and native combo refreshes (`app.refreshComboInNodes()`, `window.anomalous_reload_hashes()`), and polling live in `ui_scan_wizard.js`; folder visibility/order lives in
   `ui_folder_manager.js`; and help content lives in `ui_help.js`.
   `scan_progress.js` owns the bottom-right scan progress panel
@@ -267,11 +277,9 @@ covered by the `styles.css` manifest.
   settings control that opens ComfyUI's keybinding editor.
 - `ui_model_sources.js` owns the Model Sources Hub, managing workflow-model and global-library source detection, Civitai/HuggingFace URL attribution, sidecar persistence, and resilient scope switching between active workflow and full local library (with cached library state preservation and reliable re-rendering).
 - `ui_materials.js`, `ui_material_cards.js`, and `ui_material_application.js` own the Material Library UI, category navigation, card presentation (with grab cursor affordances, explicit drag tooltips, and polymorphic card dragging via `bindPolymorphicMaterialCardDrag`), context-aware drag guidance, relaxed third-party node prompt widget sniffing and injection, and the structured empty state onboarding blueprint guiding users through collection, canvas drag, and prompt studio mixing. Drag precedence prioritizes node hits over blank canvas drops; blank canvas drops auto-instantiate `CLIPTextEncode` nodes for prompt materials with standard colors or open full workflows. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) shared by detail views, cards and canvas actions.
-- `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn` and Help modal; version ID `2026-09-recipes-and-studios`), presenting a 4-step milestone walkthrough (Workflow Recipe Studio, Material Library & Prompt Studio, Model Sources Hub, and Precision Direct Scan with canvas addition) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across topbar workspaces and bottom dock actions with directional tooltip cards and keyboard navigation. Other views pass their own `steps` (text from locale keys) and an optional `onClose`; the GPT-SoVITS import window does.
-- `sidebar_actions.js` owns the sidebar bottom action hover-reveal short labels (100ms), singleton dynamic DOM tooltip bubbles (`#anomalous-sidebar-tooltip-bubble`, 600ms), click/pointerdown instant text/tooltip suppression guards, `isBottomModalOpen` tooltip occlusion guards, and anti-flicker pointer stability.
-- `tool_registry.js` centralizes metadata, SVG icons (enlarged 20px crisp vector outlines with 2px stroke, #cbd5e1 contrast), and stable IDs for the 9 catalog tools (including Prompt Notes / 提示词笔记) and 2 fixed anchors (Toolbox and Settings).
-- The bottom shortcut bar (built in `ui_toolbox.js`, not user-arrangeable) maintains the clean fixed 4-tool setup (`scan`, `doctor`, `assistant`, `materials`) plus two anchors (`toolbox`, `settings`) housed in prominent 36px buttons with full click/active text suppression and `.is-active` toggled styling.
-- `ui_toolbox.js`'s Toolbox modal strictly filters out all tools already present on the bottom bar, presenting a sleek 216px 3-row utility catalog with compact, frameless 44px tiles (providing an elevated silhouette with breathing room for catalog discovery), downward anchor caret pointing to the toolbox trigger button, 0.18s smooth spring pop-in animation, clean click action execution, and zero obstructive text or beta footers.
+- `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn` and Help modal; version ID `2026-09-recipes-and-studios`), presenting a 4-step milestone walkthrough (Workflow Recipe Studio, Material Library & Prompt Studio, Model Sources Hub, and Precision Direct Scan with canvas addition) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across the rail's pages and tools with directional tooltip cards and keyboard navigation; steps whose target is not on screen are skipped. Other views pass their own `steps` (text from locale keys) and an optional `onClose`; the GPT-SoVITS import window does.
+- `tool_registry.js` holds the tools' names, icons and stable IDs: the catalog tools (including Prompt Notes / 提示词笔记) and the two anchors (Toolbox and Settings).
+- The rail's tool slots (built in `ui_toolbox.js`, fixed) hold scan, doctor and assistant, then the toolbox; settings sits at the rail's bottom. Materials is a rail page. The Toolbox popover lists the remaining catalog tools and opens beside the rail.
 - `ui_grid.js` and model-detail modules own model presentation: `ui_grid.js` manages chunked card rendering,
   card placeholder ergonomics (eliminating misleading unclickable text in favor of pure centered icon and status),
   card action buttons (one-click canvas addition with plus icon, model metadata editor, direct precision scanner without wizard modal popups)

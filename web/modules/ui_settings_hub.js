@@ -4,7 +4,6 @@
 
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
-import { configureSidebarActions } from './sidebar_actions.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -13,10 +12,7 @@ export function createSettingsHub(owner, {
     savedScale,
     savedBgOpacity,
     updateLangClass,
-    modelsBtn,
-    galleryBtn,
     toolboxBtn,
-    nbBtn,
     dockBtn,
     updateNoticeBtn,
     icons,
@@ -42,23 +38,17 @@ export function createSettingsHub(owner, {
     const refreshLanguageUi = () => {
         langBtn.textContent = t(window.anomalous_browser_lang === 'zh' ? 'sidebarSwitchToEnglish' : 'sidebarSwitchToChinese');
         updateLangClass();
-        modelsBtn.innerHTML = `${icons.MODELS}<span class="anomalous-btn-text">${t('models')}</span>`;
-        galleryBtn.innerHTML = `${icons.GALLERY}<span class="anomalous-btn-text">${t('gallery')}</span>`;
         toolboxBtn.removeAttribute('title');
         toolboxBtn.setAttribute('aria-label', t('sidebarToolbox'));
         toolboxBtn.setAttribute('data-tooltip', t('sidebarToolbox'));
-        toolboxBtn.setAttribute('data-tooltip-pos', 'top');
+        toolboxBtn.setAttribute('data-tooltip-pos', 'right');
         helpBtn.innerHTML = `${icons.HELP}<span class="anomalous-btn-text">${t('help')}</span>`;
         if (owner.renderToolboxModal) owner.renderToolboxModal();
         if (owner.renderShortcutActions) owner.renderShortcutActions();
-        nbBtn.removeAttribute('title');
-        nbBtn.setAttribute('data-tooltip', t('recipeTitle'));
-        nbBtn.setAttribute('data-tooltip-pos', 'bottom');
-        nbBtn.innerHTML = `${icons.RECIPES}<span class="anomalous-btn-text">${t('recipeTitle')}</span>`;
 
         const sBtn = document.getElementById('anomalous-global-settings-btn');
-        if (sBtn) { sBtn.removeAttribute('title'); sBtn.setAttribute('data-tooltip', t('sidebarSettings')); sBtn.setAttribute('data-tooltip-pos', 'top'); }
-        configureSidebarActions(owner.sidebarWrapper);
+        if (sBtn) { sBtn.removeAttribute('title'); sBtn.setAttribute('data-tooltip', t('sidebarSettings')); sBtn.setAttribute('data-tooltip-pos', 'right'); }
+        owner.refreshShellLanguage?.();
         const bgLabel = document.getElementById('anomalous-bg-opacity-label');
         if (bgLabel) bgLabel.textContent = t('sidebarBgAtmosphere');
         if (dockBtn) {
@@ -554,14 +544,7 @@ export function createSettingsHub(owner, {
     settingsBtn.removeAttribute('title');
     settingsBtn.setAttribute('aria-label', t('sidebarSettings'));
     settingsBtn.setAttribute('data-tooltip', t('sidebarSettings'));
-    settingsBtn.setAttribute('data-tooltip-pos', 'top');
-    settingsBtn.style.background = 'transparent';
-    settingsBtn.style.border = 'none';
-    settingsBtn.style.borderRadius = '6px';
-    settingsBtn.style.padding = '6px';
-    settingsBtn.style.fontSize = '1.1em';
-    settingsBtn.style.marginLeft = 'auto';
-    settingsBtn.style.cursor = 'pointer';
+    settingsBtn.setAttribute('data-tooltip-pos', 'right');
     const closeSettingsHub = (e) => {
         if (settingsHubModal.style.display !== 'none' && !settingsHubModal.contains(e.target) && !settingsBtn.contains(e.target)) {
             settingsHubModal.style.display = 'none';
@@ -572,7 +555,6 @@ export function createSettingsHub(owner, {
 
     settingsBtn.onclick = (e) => {
         e.stopPropagation();
-        if (window.AMB_hideTooltipImmediately) window.AMB_hideTooltipImmediately();
         onBeforeOpen();
         if (settingsHubModal.style.display === 'none') {
             settingsHubModal.style.display = 'flex';
