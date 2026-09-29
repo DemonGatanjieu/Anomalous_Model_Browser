@@ -1,5 +1,5 @@
 from . import (
-    audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
+    activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
     model_media, model_metadata, model_resolution, recipe_packages, recipes,
     translation_routes, version_manager,
 )
@@ -112,3 +112,4 @@ def setup_routes(app):
     app.router.add_get('/anomalous/audio_previews', audio_catalog.api_get_audio_previews)
     app.router.add_post('/anomalous/save_audio_preview', audio_catalog.api_save_audio_preview)
     version_manager.register_routes(app)
+    activity_log.register_routes(app)

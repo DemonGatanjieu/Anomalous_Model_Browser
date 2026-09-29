@@ -17,6 +17,7 @@ import { createShellRail } from './ui_shell_rail.js';
 import { installShellNavigation } from './ui_shell_nav.js';
 import { bindShellDrag, bindShellResize } from './ui_shell_frame.js';
 import { watchScans } from './ui_scan_watch.js';
+import { watchCanvasChanges } from './activity_canvas.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -160,6 +161,7 @@ export function createDOM() {
         this.detailPanel = panel('anomalous-detail');
         this.galleryPanel = panel('anomalous-gallery-panel', '');
         this.homePanel = panel('anomalous-home-panel');
+        this.activityPanel = panel('anomalous-activity-panel');
         this.doctorPanel = panel('anomalous-doctor-panel');
         this.doctorPanel.style.flexDirection = 'column';
         this.doctorPanel.style.flex = '1';
@@ -215,12 +217,13 @@ export function createDOM() {
         };
         bindWorkspaceEscape(this);
 
-        content.append(header, this.grid, this.detailPanel, this.galleryPanel, this.homePanel, this.doctorPanel,
+        content.append(header, this.grid, this.detailPanel, this.galleryPanel, this.homePanel, this.activityPanel, this.doctorPanel,
             this.assistantPanel, this.audioStudioPanel, this.audioGalleryPanel);
         container.append(rail.root, this.sidebarWrapper, content, this.nbPanel);
         this.modal.appendChild(container);
 
         installShellNavigation(this, { container, rail, listToggle, title: pageTitle });
+        watchCanvasChanges(this);
 
         const isScanning = watchScans(this);
         let settingsHubControl = null;

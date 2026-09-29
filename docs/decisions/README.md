@@ -137,3 +137,15 @@ remembered per page and narrow windows start with it closed. The home page offer
 tasks rather than a manual: each card opens its page, and a first visit lands there.
 AMB stays the chore layer around ComfyUI (AD-016 keeps one engine per page); a new
 page earns a rail entry only when it is a place users return to, not a one-off tool.
+
+## AD-018 — The activity log records what Anomalous changed, without undo for now
+
+Users need to see what the plugin did to their canvas and files. File changes are
+recorded on the server, after a write request succeeds, from one table of routes,
+so a new write route is logged by adding a line there. Canvas changes are recorded
+without each action reporting itself: a press inside Anomalous takes a snapshot, and
+the difference is logged when the user next presses or types outside it, so the
+user's own edits are never attributed to the plugin. Opening another workflow is
+logged as that, not as removed nodes. The log is bounded and never fails the action
+it records. Undo comes later and only for changes that can be reversed safely
+(canvas values, renames); deletions go through their own confirmations instead.

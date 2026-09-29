@@ -91,6 +91,7 @@ export class AnomalousBrowser {
     }
 
     close() {
+        this.flushCanvasActivity?.();
         closeUpdateGuide(this);
         this.modal.classList.remove('visible');
         this.setTriggerVisible(true);

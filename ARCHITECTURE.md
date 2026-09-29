@@ -263,6 +263,14 @@ covered by the `styles.css` manifest.
   cards, first steps). `ui_shell_frame.js` owns dragging, resizing and keeping the
   floating window on screen; `ui_scan_watch.js` polls scan status for the rail's scan
   button, the progress panel and the model reload afterwards.
+  The activity log (docs/decisions AD-018): `api/activity_log.py` keeps the entries
+  (newest first, bounded, in the ComfyUI user folder), records this plugin's and
+  Anomalous_TTS's successful write requests in a middleware, and serves
+  `/anomalous/activity`; `activity_canvas.js` records canvas changes by comparing a
+  snapshot taken when the user presses inside Anomalous with the canvas when they
+  next press or type outside it (`activity_diff.js` holds the pure snapshot and
+  difference); `activity_log.js` is the client and the words for each entry;
+  `ui_activity.js` renders the activity page and the home page's recent list.
   `ui_settings_hub.js` owns settings and model-card preferences;
   `ui_toolbox.js` owns the tool catalog, the rail's tool buttons, and tool dispatch;
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,

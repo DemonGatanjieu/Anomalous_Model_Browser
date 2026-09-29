@@ -11,9 +11,10 @@
 import { translate as t } from './locales.js';
 import { getActiveDomain, setActiveDomain } from './ui_domain_switcher.js';
 import { renderHome } from './ui_home.js';
+import { renderActivityPage } from './ui_activity.js';
 
 const LAST_PAGE_KEY = 'anomalous_last_page';
-const REMEMBERED = new Set(['home', 'models', 'gallery', 'voices', 'audio-gallery']);
+const REMEMBERED = new Set(['home', 'activity', 'models', 'gallery', 'voices', 'audio-gallery']);
 const AUDIO_PAGES = new Set(['voices', 'audio-gallery']);
 // Pages with a list column, and where each remembers whether you closed it.
 const LIST_KEYS = {
@@ -23,7 +24,7 @@ const LIST_KEYS = {
     'audio-gallery': 'anomalous_audio_list_closed',
 };
 const TITLE_KEYS = {
-    home: 'shellHome', models: 'shellTitleModels', gallery: 'gallery', recipes: 'recipeTitle',
+    home: 'shellHome', activity: 'activityTitle', models: 'shellTitleModels', gallery: 'gallery', recipes: 'recipeTitle',
     materials: 'materialLibrary', voices: 'shellVoices', 'audio-gallery': 'shellAudioGallery',
     doctor: 'sidebarDoctor', assistant: 'sidebarAssistant',
 };
@@ -126,6 +127,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
             owner.workspaceReturnState = Object.fromEntries([
                 ['grid', owner.grid], ['detail', owner.detailPanel], ['gallery', owner.galleryPanel],
                 ['doctor', owner.doctorPanel], ['assistant', owner.assistantPanel], ['home', owner.homePanel],
+                ['activity', owner.activityPanel],
                 ['audioStudio', owner.audioStudioPanel], ['audioGallery', owner.audioGalleryPanel],
             ].filter(([, panel]) => panel).map(([key, panel]) => [key, panel.style.display || 'none']));
         } else if (!owner.workspaceReturnState) {
@@ -168,6 +170,9 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         if (page === 'home') {
             owner.homePanel.style.display = 'flex';
             renderHome(owner, owner.homePanel);
+        } else if (page === 'activity') {
+            owner.activityPanel.style.display = 'flex';
+            renderActivityPage(owner, owner.activityPanel);
         } else if (page === 'gallery') {
             showGallery();
         } else {
@@ -204,7 +209,13 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         setTitle(current);
         listToggle.setAttribute('aria-label', t('sidebarToggle'));
         listToggle.dataset.tooltip = t('sidebarToggle');
-        if (current === 'home') renderHome(owner, owner.homePanel);
+        owner.onActivityRecorded();
+    };
+
+    // A new entry shows at once on the pages that list entries.
+    owner.onActivityRecorded = () => {
+        if (current === 'home' && owner.homePanel.style.display !== 'none') renderHome(owner, owner.homePanel);
+        if (current === 'activity' && owner.activityPanel.style.display !== 'none') renderActivityPage(owner, owner.activityPanel);
     };
 
     owner.currentShellPage = () => current;

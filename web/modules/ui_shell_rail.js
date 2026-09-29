@@ -13,6 +13,7 @@ const icon = paths => `<svg width="19" height="19" viewBox="0 0 24 24" fill="non
 
 export const PAGE_ICONS = {
     home: icon('<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'),
+    activity: icon('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
     models: icon('<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>'),
     gallery: icon('<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>'),
     recipes: icon('<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v6"/><path d="M9 6h6"/><path d="M7.8 7.8l8.4 8.4"/>'),
@@ -24,6 +25,7 @@ export const PAGE_ICONS = {
 /** Pages on the rail, top to bottom. `audio`: the page belongs to the audio domain. */
 export const RAIL_PAGES = Object.freeze([
     { page: 'home', id: 'anomalous-home-btn', labelKey: 'shellHome' },
+    { page: 'activity', id: 'anomalous-activity-btn', labelKey: 'shellActivity' },
     { page: 'models', id: 'anomalous-models-btn', labelKey: 'models' },
     { page: 'gallery', id: 'anomalous-gallery-btn', labelKey: 'gallery' },
     { page: 'recipes', id: 'anomalous-notebook-btn', labelKey: 'recipeTitle' },

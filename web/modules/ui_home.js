@@ -9,6 +9,7 @@ import { PAGE_ICONS } from './ui_shell_rail.js';
 import { TOOL_ICONS } from './tool_registry.js';
 import { startSpotlightTour } from './ui_spotlight_tour.js';
 import { showUpdateGuide } from './ui_update_guide.js';
+import { renderRecentActivity } from './ui_activity.js';
 
 // One card per task: where it goes and its text (`homeCard<Name>Title` / `…Body`).
 const CARDS = Object.freeze([
@@ -59,4 +60,5 @@ export function renderHome(owner, panel) {
 
     page.append(grid, start);
     panel.replaceChildren(page);
+    renderRecentActivity(owner, page);
 }
