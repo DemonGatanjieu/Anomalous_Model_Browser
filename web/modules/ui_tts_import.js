@@ -1,7 +1,7 @@
 import { t } from './interface_settings.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
-import { loadEngine, loadGptSovitsStatus } from './audio_engines.js';
+import { loadGptSovitsStatus, loadVoices } from './audio_engines.js';
 import {
     buildImportBody, commitImport, discardUploads, importKind, inspectImport, nameConflict, pickWeights,
 } from './tts_setup_api.js';
@@ -62,7 +62,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
     try {
         [status, existing] = await Promise.all([
             loadGptSovitsStatus(),
-            loadEngine('gpt_sovits').then(result => result.groups.map(group => group.character)),
+            loadVoices().then(result => result.groups.map(group => group.character)),
         ]);
     } catch (e) {
         await anomalousAlert(t('ttsSetupFailed', { error: e.message || String(e) }));

@@ -1,16 +1,16 @@
 import { t } from './interface_settings.js';
-import { engineById, getStoredEngine, invalidateEngineCache, loadEngine, loadGptSovitsStatus } from './audio_engines.js';
+import { TTS_ENGINE, invalidateEngineCache, loadGptSovitsStatus, loadVoices } from './audio_engines.js';
 import { bindVoiceDrag } from './audio_voice_drag.js';
 import { bindTtsFileDrop } from './ui_tts_file_drop.js';
 import { openTtsImport } from './ui_tts_import.js';
 import { openTtsSetup, setupAttention } from './ui_tts_setup.js';
 
 /**
- * Audio sidebar: All Voices, the active engine's characters (GPT-SoVITS grouped by
- * language, F5-TTS by folder; each group folds, each character unfolds into its
- * clips), the generated-audio history, and for GPT-SoVITS a settings entry at the
- * bottom. Owns the active audio filter. Characters drag onto canvas nodes like the
- * studio cards; files dropped on a GPT-SoVITS character open the import form for it.
+ * Audio sidebar: All Voices, the GPT-SoVITS characters (grouped by language; each
+ * group folds, each character unfolds into its clips), the generated-audio history,
+ * and a settings entry at the bottom. Owns the active audio filter. Characters drag
+ * onto canvas nodes like the studio cards; files dropped on a character open the
+ * import form for it.
  */
 
 let activeFilter = { type: 'all', value: null };
@@ -126,19 +126,15 @@ function createSectionLabel(text) {
     return el('div', 'anomalous-audio-nav-section', text);
 }
 
-/** GPT-SoVITS characters group by language, F5-TTS voices by folder (root first). */
+/** Characters group by language; unlabeled ones last. */
 function bucketOf(group) {
-    if (group.engine === 'gpt_sovits') {
-        const lang = group.language || '';
-        const known = LANGUAGE_ORDER.indexOf(lang);
-        return {
-            key: `gpt_sovits:${lang}`,
-            sort: !lang ? 99 : known >= 0 ? known : 50,
-            label: !lang ? t('audioSidebarLanguageUnknown') : known >= 0 ? t(`ttsNeededFor_${lang}`) : lang.toUpperCase(),
-        };
-    }
-    const folder = group.folder || 'F5-TTS';
-    return { key: `f5:${folder}`, sort: folder === 'F5-TTS' ? 0 : 1, label: folder };
+    const lang = group.language || '';
+    const known = LANGUAGE_ORDER.indexOf(lang);
+    return {
+        key: `gpt_sovits:${lang}`,
+        sort: !lang ? 99 : known >= 0 ? known : 50,
+        label: !lang ? t('audioSidebarLanguageUnknown') : known >= 0 ? t(`ttsNeededFor_${lang}`) : lang.toUpperCase(),
+    };
 }
 
 function bucketsOf(groups) {
@@ -154,8 +150,7 @@ function bucketsOf(groups) {
 /** Why a character needs a look (read error, no main voice), or ''. */
 function problemOf(group) {
     if (group.error) return t('ttsCharacterError', { error: group.error });
-    if (group.has_main) return '';
-    return group.engine === 'gpt_sovits' ? t('ttsMainMissing') : t('audioMainMissing', { file: `${group.character}.wav` });
+    return group.has_main ? '' : t('ttsMainMissing');
 }
 
 function matches(group, term) {
@@ -195,8 +190,6 @@ function renderClipRow(owner, group, slice) {
     row.append(icon(SIDEBAR_SVG.PLAY, 'anomalous-audio-nav-clip-play'), el('span', 'anomalous-audio-nav-clip-tag', tag),
         el('span', 'anomalous-audio-nav-clip-text', slice.text || slice.filename || ''));
     row.onclick = () => playClip(owner, group, slice);
-    // F5-TTS clips are files in the input folder and drag onto Load Audio, as in the studio.
-    if ((slice.engine || 'f5') === 'f5') bindVoiceDrag(row, { kind: 'clip', slice }, owner);
     return row;
 }
 
@@ -226,10 +219,10 @@ function renderCharacter(owner, group, { canImport, forceOpen }) {
         item.querySelector('.anomalous-audio-nav-label').append(dot);
     }
     if (group.has_main && !group.error) {
-        item.title = t(group.engine === 'gpt_sovits' ? 'audioDragCharacterTitleGptSovits' : 'audioDragCharacterTitle', { character: group.character });
-        bindVoiceDrag(item, { kind: 'character', group }, owner);
+        item.title = t('audioDragCharacterTitle', { character: group.character });
+        bindVoiceDrag(item, group, owner);
     }
-    if (group.engine === 'gpt_sovits' && canImport && !group.error) wrap.dataset.ttsCharacter = group.character; // file drop target
+    if (canImport && !group.error) wrap.dataset.ttsCharacter = group.character; // file drop target
 
     wrap.append(item);
     if (open) {
@@ -297,9 +290,7 @@ export async function renderAudioSidebar(owner) {
     const listContainer = el('div', 'anomalous-audio-nav-list');
     owner.sidebar.replaceChildren(renderSidebarHeader(owner), listContainer);
 
-    const engineId = engineById(getStoredEngine()) ? getStoredEngine() : 'f5';
-    const statusRequest = engineId === 'gpt_sovits' ? loadGptSovitsStatus().catch(() => null) : null;
-    const [result, status] = await Promise.all([loadEngine(engineId), statusRequest]);
+    const [result, status] = await Promise.all([loadVoices(), loadGptSovitsStatus().catch(() => null)]);
     if (renderTokens.get(owner.sidebar) !== token) return;
     if (result.error) {
         const error = createSectionLabel(t('audioLoadFailed', { error: result.error }));
@@ -327,10 +318,10 @@ export async function renderAudioSidebar(owner) {
             characters.replaceChildren();
             renderCharacters(owner, characters, groups, { canImport, term: input.value.trim().toLowerCase() });
         };
-        listContainer.append(allVoices(owner, totalSlices), createSectionLabel(t('audioSectionCharactersOf', { engine: engineById(engineId).label })), characters);
+        listContainer.append(allVoices(owner, totalSlices), createSectionLabel(t('audioSectionCharactersOf', { engine: TTS_ENGINE.label })), characters);
         renderCharacters(owner, characters, groups, { canImport, term: '' });
     } else {
-        listContainer.append(allVoices(owner, totalSlices), createSectionLabel(t('audioSectionCharactersOf', { engine: engineById(engineId).label })));
+        listContainer.append(allVoices(owner, totalSlices), createSectionLabel(t('audioSectionCharactersOf', { engine: TTS_ENGINE.label })));
         renderCharacters(owner, listContainer, groups, { canImport, term: '' });
     }
 

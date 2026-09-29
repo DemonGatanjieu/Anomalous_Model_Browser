@@ -339,33 +339,14 @@
     color: #fbbf24;
 }
 
-.anomalous-sd-package-preview {
-    margin: 0;
-    max-height: 96px;
-    overflow: auto;
-    padding: 6px 8px;
-    border-radius: 6px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    color: #94a3b8;
-    font-size: 11px;
-    line-height: 1.5;
-    white-space: pre-wrap;
-    word-break: break-word;
-}
-
 .anomalous-sd-package-actions {
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.anomalous-sd-footer.is-direct .anomalous-sd-package-preview {
-    display: none;
-}
-
-.anomalous-sd-footer.is-direct .anomalous-sd-package-actions .anomalous-sd-btn,
-.anomalous-sd-footer.is-direct .anomalous-sd-drag-handle {
+/* Generating happens in the run section; the canvas buttons stay a small row. */
+.anomalous-sd-package-actions .anomalous-sd-btn {
     padding: 3px 8px;
     font-size: 11px;
 }
@@ -376,12 +357,12 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 6px 10px;
+    padding: 3px 8px;
     border-radius: 6px;
     border: 1px dashed rgba(129, 140, 248, 0.5);
     background: rgba(99, 102, 241, 0.08);
     color: #a5b4fc;
-    font-size: 12px;
+    font-size: 11px;
     cursor: grab;
     user-select: none;
 }

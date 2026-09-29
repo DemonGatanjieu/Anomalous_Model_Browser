@@ -93,18 +93,13 @@ covered by the `styles.css` manifest.
   `api/folder_types.py` own the formerly mixed utility route families.
 - `model_policies.py` owns shared backend rename and protected-category policy.
 - `model_identity.py` owns file SHA-256 evidence shared with the standalone scanner.
-- `api/audio_catalog.py` owns voice scanning, streaming, output-audio history and
-  voice ingestion. Voices follow the ComfyUI-F5-TTS multi-voice layout:
-  `Character.wav` + `.txt` is the main sample, `Character.<voice>.wav` + `.txt`
-  are variants addressed as `{<voice>}`; `<stem>.orig.txt` keeps a native-script
-  transcript for display. Ingestion validates the target folder, refuses to
-  overwrite without `overwrite=1`, and stages all files before swapping them in.
+- `api/audio_catalog.py` owns the generated-audio side: the output-audio history,
+  temp Preview Audio results (listed, and copied into `output/audio/` on save),
+  deletion, and streaming files from the output and temp folders. Characters and
+  their reference clips belong to the Anomalous_TTS node and come from its routes.
 - `api/audio_metadata.py` reads the ComfyUI `prompt` comment from FLAC and
   Ogg/Opus files (read-only) and extracts the TTS node's speech, sample and seed
   for the audio gallery.
-- `api/romanizer.py` converts Japanese (text containing kana) and Korean to Latin
-  script for transcripts; Han-only text is left unchanged, and missing optional
-  dependencies (pykakasi, hangul-romanize) are reported, not hidden.
 - `api/image_search.py` powers the output gallery search (`gallery_images?q=`):
   it reads only the PNG text chunks before the pixel data (ComfyUI prompt and
   workflow, A1111 `parameters`), caches one record per image by mtime, and
@@ -137,13 +132,13 @@ covered by the `styles.css` manifest.
 - `ui_domain_switcher.js` owns the visual/audio domain toggle and its stored choice;
   `browser.switchAudioTab` is the single entry for audio navigation (header tabs,
   sidebar entries, domain switch) and `hideAllPanels` stops audio playback.
-- `audio_engines.js` lists the speech engines the audio page can manage (F5-TTS,
-  GPT-SoVITS via the separate Anomalous_TTS node pack) and detects them at runtime
-  through `/object_info/<node class>`. Every engine's voices are normalised into one
-  voice-group shape (`node_value` = what the node's voice widget takes), so cards,
-  sidebar and Script Director share one implementation. A missing engine stays in
-  the switch marked "not installed" with install steps; nothing else depends on it.
-  GPT-SoVITS data comes only from the node's HTTP contract, version 9
+- `audio_engines.js` owns the audio page's one speech engine, GPT-SoVITS through
+  the separate Anomalous_TTS node pack (docs/decisions AD-016), detected at runtime
+  through `/object_info/<node class>`. Characters are normalised into one
+  voice-group shape (`node_value` = what the node's `character` widget takes), so
+  cards, sidebar and Script Director share one implementation. While the pack is
+  missing the studio shows install steps instead of cards; nothing else depends on it.
+  Its data comes only from the node's HTTP contract, version 11
   (`/anomalous_tts/characters`, `/audio`, `/settings`, `/status`, the storage,
   library, pretrained, browse, import and import preview routes; the node repo's `docs/INTERFACE.md`,
   mirrored as the project doc `anomalous-tts-interface.md`); Anomalous never
@@ -213,25 +208,23 @@ covered by the `styles.css` manifest.
   workbench. `ui_tts_path_picker.js` picks server-side folders or files
   through the node's browse route, since the browser cannot see local paths.
 - `audio_node_targets.js` is the single table of canvas nodes the audio studio
-  writes into and what each takes: F5-TTS (`F5TTSAudio`, `F5TTSAudioAdvanced`,
-  `F5TTSAudioFromModel`) takes a whole character (main voice in `sample`,
-  emotions via `{tags}` in `speech`); ComfyUI's `LoadAudio` takes one exact clip.
-  `planVoiceDrop` decides every drop and names the reason for each refusal;
+  writes into (the character widget and the script widget of
+  `AnomalousTTS_CharacterSpeech`).
+  `planVoiceDrop` decides every character drop and names the reason for each refusal;
   unlisted nodes are refused, never matched by widget name. Supporting a node
   means adding one entry plus a test.
-- `ui_audio_studio.js` owns the voice cards, preview playback, tag copying, drags
-  (card header = character, row = clip) through the shared `bindMaterialDrag`
+- `ui_audio_studio.js` owns the character cards, preview playback, tag copying,
+  and dragging a card header onto a node through the shared `bindMaterialDrag`
   with `targetHint`/`rejectHint` telling the user what releasing does.
   `audio_script.js` holds the pure script rules: splitting, bundling
-  (`buildScriptPackage`, with `[take:N]` for GPT-SoVITS retakes), combo value
+  (`buildScriptPackage`, with `[take:N]` for retakes), combo value
   matching, and `buildTtsPrompt` (a GPT-SoVITS script as a ComfyUI API prompt
   saving to `output/audio/<character>/`).
   `ui_script_director.js` owns the script drawer: one character, an emotion chip
-  row per line card, and a bundle that is pushed to the selected/only
-  script-capable target node or dragged onto one; it writes the voice widget
-  (main voice) and the speech widget together. The studio feeds it the voice
-  groups after each fetch.
-  `ui_script_run.js` is the drawer's "Generate" section for GPT-SoVITS: it runs
+  row per line card, and a bundle that is generated in the drawer, or pushed to
+  the selected/only target node or dragged onto one (writing the character and
+  script widgets together). The studio feeds it the voice groups after each fetch.
+  `ui_script_run.js` is the drawer's "Generate" section: it runs
   the script without the canvas, plays the result, retakes the whole script
   (new seed) or one line (`[take:N]`, the node caches the rest), and saves a
   character's language, speed and folded sampling parameters to its `defaults`
@@ -246,15 +239,12 @@ covered by the `styles.css` manifest.
   targeted `/interrupt`); it never touches the canvas.
 - In the audio domain the header **!** opens `AUDIO_USAGE_GUIDE` (a how-to, see
   `docs/guides/audio-studio.md`) instead of the visual update guide.
-- `ui_audio_uploader.js` owns the voice ingestion modal (createViewScope lifecycle,
-  overwrite confirmation, optional romanization keeping the original script).
 - `ui_audio_sidebar.js` owns the audio navigation and the active audio filter:
-  characters grouped by language (GPT-SoVITS) or folder (F5-TTS), groups folded
+  characters grouped by language, groups folded
   in `localStorage`, a character unfolds into its clips (a click plays the clip
   through its studio row, switching the studio to that character when needed), a
   search box from six characters on, a red dot for characters that need a look,
-  and for GPT-SoVITS the settings entry at the bottom and file drops on a
-  character. Canvas drags go through `audio_voice_drag.js`, shared with the
+  the GPT-SoVITS settings entry at the bottom and file drops on a character. Canvas drags go through `audio_voice_drag.js`, shared with the
   studio cards.
 - `ui_audio_gallery.js` owns the generated-audio history (output folder): playback,
   seeking, search, paging, download and deletion, showing the speech/voice/seed

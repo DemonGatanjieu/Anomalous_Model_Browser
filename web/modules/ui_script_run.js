@@ -60,8 +60,8 @@ async function loadNodeSpec() {
 }
 
 /**
- * `getScript()` -> `{ group, pkg }` for a GPT-SoVITS character (pkg from buildScriptPackage
- * with takes) or null for other engines; `onPlay()` when the result starts playing;
+ * `getScript()` -> `{ group, pkg }` for the chosen character (pkg from buildScriptPackage
+ * with takes); `onPlay()` when the result starts playing;
  * `resetTakes()` when a new take of the whole script starts; `onBusyChange()` when a job
  * starts or ends (the director re-renders its line cards, whose retake buttons depend on it).
  */
@@ -249,8 +249,6 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
 
     function render() {
         const script = getScript();
-        root.hidden = !script;
-        if (!script) return;
         if (state.supported === null) {
             state.supported = false;
             checkSupport();

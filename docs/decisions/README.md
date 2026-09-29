@@ -115,3 +115,13 @@ Model Doctor Hash index form one mutation boundary. Local matching updates all
 three through the archived full-recipe path. Partial append remaps Hash records
 with node IDs and rolls them back with the inserted graph. Personal model notes
 are recipe-scoped presentation data and may be excluded from package export.
+
+## AD-016 — The audio page manages one speech engine
+
+The audio page is built around GPT-SoVITS through the separate Anomalous_TTS
+node pack: its characters, emotions, pronunciation and sampling defaults live in
+the node's own settings, and the Script Director can run a script without the
+canvas. The F5-TTS voice library (files under `input/F5-TTS`, upload, romanization,
+Load Audio drags) was removed rather than kept as a parallel engine, so the page
+teaches one set of rules. A zero-shot voice (one clip, no trained model) belongs
+in Anomalous_TTS as a character kind, not as a second engine here.

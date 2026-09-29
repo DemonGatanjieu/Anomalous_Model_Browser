@@ -1,18 +1,16 @@
 /**
- * Pure script rules for the audio engines (no DOM, no canvas access).
+ * Pure script rules for GPT-SoVITS (Anomalous_TTS) scripts (no DOM, no canvas access).
  *
- * F5-TTS multi-voice layout: the node's `sample` is a main voice such as
- * `F5-TTS/Arona.wav`; `{happy}` in the speech loads `F5-TTS/Arona.happy.wav`
- * beside it, and `{main}` is the sample itself. Speech is split only at tags.
- * GPT-SoVITS (Anomalous_TTS) reads the same `{emotion}` tags, plus `[take:N]`
- * for another take of one line; `buildTtsPrompt` runs a script without a canvas.
+ * The node takes a character and a script in which `{happy}` switches to that
+ * emotion's reference, `{main}` back to the main one, and `[take:N]` asks for
+ * another take of one line. `buildTtsPrompt` runs a script without a canvas.
  */
 
 export const MAIN_TAG = '{main}';
 
 const normalisePath = value => String(value ?? '').replace(/\\/g, '/');
 
-/** Return the widget's own spelling of `relativePath` (Windows combos use "F5-TTS\\x.wav"), or null when not offered. */
+/** Return the widget's own spelling of `relativePath` (slashes may differ on Windows), or null when not offered. */
 export function comboValueForPath(widget, relativePath) {
     const wanted = normalisePath(relativePath);
     if (!wanted) return null;
@@ -104,22 +102,21 @@ export function composeScript(lines) {
         .trim();
 }
 
-/** Emotions of a voice group that F5-TTS can load as `{emotion}` (main first). */
+/** Emotions of a voice group the node can switch to with `{emotion}` (main first). */
 export function usableEmotions(group) {
-    return (group?.slices || []).filter(slice => slice.tag_usable).map(slice => slice.emotion);
+    return (group?.slices || []).map(slice => slice.emotion);
 }
 
 /**
  * Bundle script lines for one TTS node. `lines` are `{ text, emotion }`; the node's
- * voice widget gets the group's `node_value` (F5-TTS: main voice file; GPT-SoVITS:
- * character name) and every emotion must be usable for that group.
- * `takes` (GPT-SoVITS runs only) writes each line's `take` as `[take:N]`.
+ * `character` widget gets the group's `node_value` and every emotion must be usable
+ * for that group. `takes` (runs in the director) writes each line's `take` as `[take:N]`.
  * Returns `{ sample, speech, lineCount }` or `{ error: localeKey }`.
  */
 export function buildScriptPackage(lines, group, { takes = false } = {}) {
     if (!group) return { error: 'scriptDirectorPickCharacter' };
     const usable = new Set(usableEmotions(group));
-    const voice = group.node_value ?? group.main_relative_path;
+    const voice = group.node_value;
     if (!voice || group.has_main === false || !usable.has('main')) return { error: 'scriptDirectorMainMissing' };
     const voiced = [];
     for (const line of lines || []) {
@@ -160,8 +157,8 @@ export function buildTtsPrompt({ character, speech, seed, language = 'auto', pre
 }
 
 /**
- * Read an F5-TTS speech text back into segments, splitting at tags like F5-TTS
- * does. Text before the first tag belongs to the main voice.
+ * Read a tagged script back into segments, splitting at `{emotion}` tags.
+ * Text before the first tag belongs to the main voice.
  */
 export function parseTaggedSpeech(speech) {
     return String(speech || '')

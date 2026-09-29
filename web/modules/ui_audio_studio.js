@@ -1,10 +1,8 @@
-import { app } from '../../../scripts/app.js';
 import { t } from './interface_settings.js';
 import { stopGalleryAudio } from './ui_audio_gallery.js';
-import { openAudioUploaderModal } from './ui_audio_uploader.js';
-import { getActiveAudioFilter, renderAudioSidebar, setActiveAudioFilter } from './ui_audio_sidebar.js';
+import { getActiveAudioFilter, renderAudioSidebar } from './ui_audio_sidebar.js';
 import { bindVoiceDrag } from './audio_voice_drag.js';
-import { AUDIO_ENGINES, detectEngines, engineById, engineTargetLabels, getStoredEngine, invalidateEngineCache, loadEngine, loadGptSovitsStatus, pickEngine, setStoredEngine } from './audio_engines.js';
+import { TTS_ENGINE, invalidateEngineCache, isTtsInstalled, loadGptSovitsStatus, loadVoices } from './audio_engines.js';
 import { openGptSovitsEditor } from './ui_audio_tts_editor.js';
 import { openPronunciationEditor } from './ui_tts_pronunciation.js';
 import { bindTtsFileDrop } from './ui_tts_file_drop.js';
@@ -19,9 +17,9 @@ import {
 } from './ui_script_director.js';
 
 /**
- * Audio & Voice Studio workspace: engine switch (F5-TTS / GPT-SoVITS, detected at
- * runtime), character voice cards, preview playback, tag copying, canvas drop into
- * TTS nodes, and toolbar entry points.
+ * Audio & Voice Studio workspace: GPT-SoVITS character cards (Anomalous_TTS,
+ * detected at runtime), preview playback, tag copying, dropping a character onto
+ * a TTS node, and toolbar entry points.
  */
 
 const renderTokens = new WeakMap();
@@ -144,19 +142,12 @@ function gripIcon() {
     return grip;
 }
 
-/** One clip. Only F5-TTS library clips (input folder) can be dragged, onto Load Audio. */
-function renderSliceRow(slice, owner) {
+/** One reference clip of a character. */
+function renderSliceRow(slice) {
     const row = document.createElement('div');
     row.className = 'anomalous-voice-slice-row';
     row.dataset.sliceId = slice.id; // the sidebar plays a clip through its row
-    const draggable = (slice.engine || 'f5') === 'f5';
-    row.classList.toggle('is-static', !draggable);
-    if (draggable) {
-        row.title = t('audioDragClipTitle');
-        bindVoiceDrag(row, { kind: 'clip', slice }, owner);
-    } else {
-        row.title = slice.relative_path || '';
-    }
+    row.title = slice.relative_path || '';
 
     const playBtn = document.createElement('button');
     playBtn.type = 'button';
@@ -184,8 +175,7 @@ function renderSliceRow(slice, owner) {
     const copyBtn = document.createElement('button');
     copyBtn.type = 'button';
     copyBtn.className = 'anomalous-voice-copy-btn';
-    copyBtn.title = slice.tag_usable ? t('audioCopyTag') : t('audioTagUnusable');
-    copyBtn.classList.toggle('is-unusable', !slice.tag_usable);
+    copyBtn.title = t('audioCopyTag');
     setIconLabel(copyBtn, SVG.COPY, slice.syntax_tag);
 
     copyBtn.onclick = (e) => {
@@ -198,15 +188,14 @@ function renderSliceRow(slice, owner) {
         playAudio(slice.audio_url, playBtn, eqBars);
     };
 
-    row.append(...(draggable ? [gripIcon()] : []), playBtn, eqBars, emoTag, textSpan, copyBtn);
+    row.append(playBtn, eqBars, emoTag, textSpan, copyBtn);
     return row;
 }
 
 function renderCharacterCard(group, owner, { onChanged, canImport = false } = {}) {
-    const isTts = group.engine === 'gpt_sovits';
     const card = document.createElement('div');
     card.className = 'anomalous-character-voice-card';
-    if (isTts && canImport && !group.error) card.dataset.ttsCharacter = group.character; // file drop target
+    if (canImport && !group.error) card.dataset.ttsCharacter = group.character; // file drop target
 
     const header = document.createElement('div');
     header.className = 'anomalous-character-voice-header';
@@ -224,20 +213,19 @@ function renderCharacterCard(group, owner, { onChanged, canImport = false } = {}
     const name = document.createElement('span');
     name.className = 'anomalous-character-voice-name';
     // GPT-SoVITS versions are named "角色/日配"; show the version as a quiet suffix.
-    const cut = isTts ? group.character.lastIndexOf('/') : -1;
+    const cut = group.character.lastIndexOf('/');
     name.textContent = cut > 0 ? group.character.slice(0, cut) : group.character;
-    const suffix = cut > 0 ? group.character.slice(cut + 1) : (!isTts && group.folder !== 'F5-TTS' ? group.folder : '');
-    if (suffix) {
-        const folder = document.createElement('span');
-        folder.className = 'anomalous-character-voice-folder';
-        folder.textContent = suffix;
-        name.append(' ', folder);
+    if (cut > 0) {
+        const version = document.createElement('span');
+        version.className = 'anomalous-character-voice-folder';
+        version.textContent = group.character.slice(cut + 1);
+        name.append(' ', version);
     }
     name.title = group.character;
 
     const sub = document.createElement('span');
     sub.className = 'anomalous-character-voice-hint';
-    sub.textContent = t(isTts ? 'audioDragCardHintGptSovits' : 'audioDragCardHint');
+    sub.textContent = t('audioDragCardHint');
     sub.title = sub.textContent;
 
     nameBox.append(name, sub);
@@ -250,7 +238,7 @@ function renderCharacterCard(group, owner, { onChanged, canImport = false } = {}
     titleGroup.append(...(group.has_main ? [gripIcon()] : []), avatar, nameBox);
     const headerRight = document.createElement('div');
     headerRight.className = 'anomalous-character-voice-actions';
-    if (isTts && group.raw && !group.raw.error) {
+    if (!group.raw.error) {
         const edit = createToolButton(SVG.EDIT, t('ttsEditorOpen'), 'is-compact');
         edit.onclick = () => openGptSovitsEditor(group, { onSaved: () => onChanged?.() });
         const pronounce = createToolButton(SVG.PRONOUNCE, t('ttsPronounceOpen'), 'is-compact');
@@ -266,23 +254,21 @@ function renderCharacterCard(group, owner, { onChanged, canImport = false } = {}
     header.append(titleGroup, headerRight);
     if (group.has_main) {
         header.classList.add('is-draggable');
-        header.title = t(isTts ? 'audioDragCharacterTitleGptSovits' : 'audioDragCharacterTitle', { character: group.character });
-        bindVoiceDrag(header, { kind: 'character', group }, owner);
+        header.title = t('audioDragCharacterTitle', { character: group.character });
+        bindVoiceDrag(header, group, owner);
     }
     card.appendChild(header);
 
     if (!group.has_main) {
         const warning = document.createElement('div');
         warning.className = 'anomalous-character-voice-warning';
-        warning.textContent = isTts
-            ? (group.error ? t('ttsCharacterError', { error: group.error }) : t('ttsMainMissing'))
-            : t('audioMainMissing', { file: `${group.character}.wav` });
+        warning.textContent = group.error ? t('ttsCharacterError', { error: group.error }) : t('ttsMainMissing');
         card.appendChild(warning);
     }
 
     const sliceList = document.createElement('div');
     sliceList.className = 'anomalous-character-voice-slices';
-    group.slices.forEach(slice => sliceList.appendChild(renderSliceRow(slice, owner)));
+    group.slices.forEach(slice => sliceList.appendChild(renderSliceRow(slice)));
 
     card.appendChild(sliceList);
     return card;
@@ -295,12 +281,6 @@ function createToolButton(iconSvg, label, className = '') {
     btn.type = 'button';
     btn.className = `anomalous-audio-tool-btn ${className}`.trim();
     setIconLabel(btn, iconSvg, label);
-    return btn;
-}
-
-function createAddVoiceButton(onVoiceAdded, defaultCharacter) {
-    const btn = createToolButton(SVG.PLUS, t('audioAddVoice'));
-    btn.onclick = () => openAudioUploaderModal({ defaultCharacter, onSaved: onVoiceAdded });
     return btn;
 }
 
@@ -328,7 +308,7 @@ function createScriptDirectorButton(container, owner) {
     return btn;
 }
 
-function renderStudioToolbar({ engine, onSearch, onVoiceAdded, onRefresh, container, owner, defaultCharacter }) {
+function renderStudioToolbar({ onSearch, onRefresh, container, owner }) {
     const toolbar = document.createElement('div');
     toolbar.className = 'anomalous-audio-toolbar';
 
@@ -368,11 +348,7 @@ function renderStudioToolbar({ engine, onSearch, onVoiceAdded, onRefresh, contai
     searchInput.oninput = (e) => onSearch(e.target.value.trim().toLowerCase());
 
     searchWrap.append(searchIcon, searchInput);
-    // F5-TTS voices are files Anomalous manages; GPT-SoVITS characters are model folders the node scans.
-    const engineActions = engine === 'f5'
-        ? [createAddVoiceButton(onVoiceAdded, defaultCharacter)]
-        : [createRefreshButton(onRefresh)];
-    rightActions.append(createScriptDirectorButton(container, owner), ...engineActions, searchWrap);
+    rightActions.append(createScriptDirectorButton(container, owner), createRefreshButton(onRefresh), searchWrap);
 
     toolbar.append(titleGroup, rightActions);
     return toolbar;
@@ -385,8 +361,8 @@ function renderStatus(className, message) {
     return box;
 }
 
-/** Empty studio. For GPT-SoVITS with `onImport` it is the drop area with the import button. */
-function renderEmptyGuide(engine = 'f5', onImport = null) {
+/** Empty studio. With `onImport` it is the drop area with the import button. */
+function renderEmptyGuide(onImport = null) {
     const emptyGuide = document.createElement('div');
     emptyGuide.className = `anomalous-audio-empty${onImport ? ' is-drop' : ''}`;
     const icon = document.createElement('div');
@@ -394,10 +370,10 @@ function renderEmptyGuide(engine = 'f5', onImport = null) {
     icon.innerHTML = SVG.MIC;
     const title = document.createElement('div');
     title.className = 'anomalous-audio-empty-title';
-    title.textContent = t(engine === 'f5' ? 'audioEmptyTitle' : 'ttsEmptyTitle');
+    title.textContent = t('ttsEmptyTitle');
     const desc = document.createElement('div');
     desc.className = 'anomalous-audio-empty-desc';
-    desc.textContent = t(engine === 'f5' ? 'audioEmptyDesc' : 'ttsEmptyDesc');
+    desc.textContent = t('ttsEmptyDesc');
     emptyGuide.append(icon, title, desc);
     if (onImport) {
         const importBtn = document.createElement('button');
@@ -415,62 +391,26 @@ function resolveFilter(filter) {
     return active?.type === 'group' && active.value ? active : null;
 }
 
-/** Engine switch: every engine is listed; missing ones stay visible, marked "not installed". */
-function renderEngineBar(activeId, statuses, onPick) {
-    const bar = document.createElement('div');
-    bar.className = 'anomalous-audio-engine-bar';
-    const tabs = document.createElement('div');
-    tabs.className = 'anomalous-audio-engine-tabs';
-    tabs.setAttribute('role', 'tablist');
-    for (const engine of AUDIO_ENGINES) {
-        const installed = Boolean(statuses[engine.id]?.installed);
-        const tab = document.createElement('button');
-        tab.type = 'button';
-        tab.className = 'anomalous-audio-engine-tab';
-        tab.setAttribute('role', 'tab');
-        tab.setAttribute('aria-selected', String(engine.id === activeId));
-        tab.classList.toggle('active', engine.id === activeId);
-        tab.classList.toggle('is-missing', !installed);
-        tab.dataset.engine = engine.id;
-        const label = document.createElement('span');
-        label.textContent = engine.label;
-        tab.append(label);
-        if (!installed) {
-            const badge = document.createElement('span');
-            badge.className = 'anomalous-audio-engine-badge';
-            badge.textContent = t('audioEngineMissing');
-            tab.append(badge);
-        }
-        tab.onclick = () => { if (engine.id !== activeId) onPick(engine.id); };
-        tabs.append(tab);
-    }
-    const targets = document.createElement('div');
-    targets.className = 'anomalous-audio-engine-targets';
-    targets.textContent = t('audioEngineWorksWith', { nodes: engineTargetLabels(activeId).join(' / ') });
-    bar.append(tabs, targets);
-    return bar;
-}
-
-/** Shown instead of (GPT-SoVITS) or above (F5-TTS library) the cards when the engine's node pack is missing. */
-function renderInstallCard(engine, { compact = false } = {}) {
+/** Shown instead of the cards when the Anomalous_TTS node pack is missing. */
+function renderInstallCard() {
     const card = document.createElement('div');
-    card.className = `anomalous-audio-install-card${compact ? ' is-compact' : ''}`;
+    card.className = 'anomalous-audio-install-card';
     const title = document.createElement('div');
     title.className = 'anomalous-audio-install-title';
-    title.textContent = t('audioEngineInstallTitle', { engine: engine.label, pack: engine.pack });
+    title.textContent = t('audioEngineInstallTitle', { engine: TTS_ENGINE.label, pack: TTS_ENGINE.pack });
     const desc = document.createElement('div');
     desc.className = 'anomalous-audio-install-desc';
-    desc.textContent = compact ? t('audioEngineLibraryOnly', { engine: engine.label }) : t(engine.descKey);
+    desc.textContent = t('audioEngineDesc');
     const how = document.createElement('div');
     how.className = 'anomalous-audio-install-how';
-    how.textContent = engine.repoUrl
-        ? t('audioEngineInstallHow', { search: engine.managerSearch })
-        : t('audioEngineNotPublished', { pack: engine.pack });
+    how.textContent = TTS_ENGINE.repoUrl
+        ? t('audioEngineInstallHow', { search: TTS_ENGINE.managerSearch })
+        : t('audioEngineNotPublished', { pack: TTS_ENGINE.pack });
     card.append(title, desc, how);
-    if (engine.repoUrl) {
+    if (TTS_ENGINE.repoUrl) {
         const link = document.createElement('a');
         link.className = 'anomalous-audio-install-link';
-        link.href = engine.repoUrl;
+        link.href = TTS_ENGINE.repoUrl;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
         link.textContent = t('audioEngineOpenRepo');
@@ -490,61 +430,45 @@ export async function renderAudioStudio(container, { filter = null, owner = null
     const directorWasOpen = isScriptDirectorActive();
     stopAudioStudioPlayback();
 
-    const statuses = await detectEngines();
+    const installed = await isTtsInstalled();
     if (renderTokens.get(container) !== token) return;
-    const engineId = pickEngine(statuses);
-    if (!getStoredEngine()) setStoredEngine(engineId);
-    const engine = engineById(engineId);
     const rerender = () => renderAudioStudio(container, { filter, owner });
 
     const characterFilter = resolveFilter(filter);
     const studioWrapper = document.createElement('div');
     studioWrapper.className = 'anomalous-audio-studio-wrapper';
-    studioWrapper.dataset.engine = engineId;
 
     const grid = document.createElement('div');
     grid.className = 'anomalous-voice-card-grid';
 
     const toolbar = renderStudioToolbar({
-        engine: engineId,
         onSearch: (searchTerm) => {
             grid.querySelectorAll('.anomalous-character-voice-card').forEach(card => {
                 card.style.display = card.textContent.toLowerCase().includes(searchTerm) ? '' : 'none';
             });
         },
-        onVoiceAdded: () => { invalidateEngineCache(); rerender(); },
         onRefresh: () => { invalidateEngineCache({ rescan: true }); rerender(); if (owner) renderAudioSidebar(owner); },
         container,
         owner,
-        defaultCharacter: characterFilter?.character || '',
     });
-    const engineBar = renderEngineBar(engineId, statuses, (next) => {
-        setStoredEngine(next);
-        setActiveAudioFilter(null);
-        if (owner) renderAudioSidebar(owner);
-        renderAudioStudio(container, { owner });
-    });
-    studioWrapper.append(toolbar, engineBar, renderStatus('anomalous-audio-status', t('audioLoading')));
+    studioWrapper.append(toolbar, renderStatus('anomalous-audio-status', t('audioLoading')));
     container.replaceChildren(studioWrapper);
     if (directorWasOpen) openScriptDirector(container);
 
-    const installed = Boolean(statuses[engineId]?.installed);
-    if (!installed && engineId !== 'f5') {
-        updateScriptDirectorVoices([], null, engineId);
-        studioWrapper.lastChild.replaceWith(renderInstallCard(engine));
+    if (!installed) {
+        updateScriptDirectorVoices([]);
+        studioWrapper.lastChild.replaceWith(renderInstallCard());
         return;
     }
-    // The setup status only exists for GPT-SoVITS nodes with interface v3 (null otherwise).
-    const statusRequest = engineId === 'gpt_sovits' ? loadGptSovitsStatus().catch(() => null) : null;
-    const [result, ttsStatus] = await Promise.all([loadEngine(engineId), statusRequest]);
+    // The setup status only exists for nodes with interface v3 (null otherwise).
+    const [result, ttsStatus] = await Promise.all([loadVoices(), loadGptSovitsStatus().catch(() => null)]);
     if (renderTokens.get(container) !== token) return;
     if (result.error) {
         studioWrapper.lastChild.replaceWith(renderStatus('anomalous-audio-status is-error', t('audioLoadFailed', { error: result.error })));
         return;
     }
     let characters = result.groups;
-    updateScriptDirectorVoices(characters, characterFilter?.value || null, engineId);
-    if (!installed) studioWrapper.insertBefore(renderInstallCard(engine, { compact: true }), studioWrapper.lastChild);
+    updateScriptDirectorVoices(characters, characterFilter?.value || null);
 
     const onChanged = () => { rerender(); if (owner) renderAudioSidebar(owner); };
     const canImport = Boolean(ttsStatus) && ttsStatus.local !== false;
@@ -574,7 +498,7 @@ export async function renderAudioStudio(container, { filter = null, owner = null
     }
 
     if (characters.length === 0) {
-        studioWrapper.lastChild.replaceWith(renderEmptyGuide(engineId, canImport ? onImport : null));
+        studioWrapper.lastChild.replaceWith(renderEmptyGuide(canImport ? onImport : null));
         return;
     }
     characters.forEach(group => grid.appendChild(renderCharacterCard(group, owner, { onChanged, canImport })));

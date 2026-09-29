@@ -1,75 +1,25 @@
-import { AUDIO_NODE_TARGETS } from './audio_node_targets.js';
+import { TTS_NODE_CLASS } from './audio_script.js';
 
 /**
- * Speech engines the audio studio can manage. Anomalous never bundles an engine:
- * each one is a separate ComfyUI node pack, detected at runtime. A missing engine
- * only changes what the audio page shows; nothing else depends on it.
+ * The speech engine the audio page manages: GPT-SoVITS through the Anomalous_TTS
+ * node pack. Anomalous never bundles it; it is detected at runtime, and a missing
+ * pack only changes what the audio page shows.
  *
- * Every engine's voices are normalised into the same "voice group" shape so the
- * studio cards, sidebar and Script Director share one implementation:
- *   { engine, group, character, folder, has_main, node_value, total_slices,
- *     slices: [{ engine, emotion, is_main, text, audio_url, syntax_tag, tag_usable, relative_path? }] }
- * `node_value` is what goes into the node's voice widget (F5-TTS: the main voice
- * file; GPT-SoVITS: the character name).
+ * Characters are normalised into "voice groups" that the studio cards, sidebar
+ * and Script Director share:
+ *   { group, character, language, has_main, node_value, total_slices, raw,
+ *     slices: [{ emotion, is_main, text, audio_url, syntax_tag, relative_path }] }
+ * `node_value` is what goes into the node's `character` widget.
  */
-export const AUDIO_ENGINES = Object.freeze([
-    Object.freeze({
-        id: 'f5',
-        label: 'F5-TTS',
-        pack: 'ComfyUI-F5-TTS',
-        probeNode: 'F5TTSAudio',
-        repoUrl: 'https://github.com/niknah/ComfyUI-F5-TTS',
-        managerSearch: 'F5-TTS',
-        descKey: 'audioEngineF5Desc',
-    }),
-    Object.freeze({
-        id: 'gpt_sovits',
-        label: 'GPT-SoVITS',
-        pack: 'Anomalous_TTS',
-        probeNode: 'AnomalousTTS_CharacterSpeech',
-        // Not published yet: the install card explains instead of linking.
-        repoUrl: '',
-        managerSearch: 'Anomalous TTS',
-        descKey: 'audioEngineGptSovitsDesc',
-    }),
-]);
-
-const STORAGE_KEY = 'anomalous_audio_engine';
-
-export function engineById(id) {
-    return AUDIO_ENGINES.find(engine => engine.id === id) || null;
-}
-
-/** Node labels an engine writes into, for "works with …" lines. */
-export function engineTargetLabels(id) {
-    return AUDIO_NODE_TARGETS.filter(target => target.engine === id && target.takes === 'character')
-        .flatMap(target => target.typeLabels || target.types);
-}
-
-export function getStoredEngine() {
-    try { return localStorage.getItem(STORAGE_KEY) || null; } catch (_) { return null; }
-}
-
-export function setStoredEngine(id) {
-    try { localStorage.setItem(STORAGE_KEY, id); } catch (_) { /* session-only choice */ }
-}
-
-/** Stored choice if it exists, else the first installed engine, else the first engine. */
-export function pickEngine(statuses, stored = getStoredEngine()) {
-    if (stored && engineById(stored)) return stored;
-    return AUDIO_ENGINES.find(engine => statuses?.[engine.id]?.installed)?.id || AUDIO_ENGINES[0].id;
-}
+export const TTS_ENGINE = Object.freeze({
+    label: 'GPT-SoVITS',
+    pack: 'Anomalous_TTS',
+    // Not published yet: the install card explains instead of linking.
+    repoUrl: '',
+    managerSearch: 'Anomalous TTS',
+});
 
 // ---------- normalisation ----------
-
-function f5Groups(characters) {
-    return (characters || []).map(group => ({
-        ...group,
-        engine: 'f5',
-        node_value: group.main_relative_path || null,
-        slices: (group.slices || []).map(slice => ({ ...slice, engine: 'f5' })),
-    }));
-}
 
 export function ttsAudioUrl(name, path) {
     return `/anomalous_tts/audio?character=${encodeURIComponent(name)}&path=${encodeURIComponent(path)}`;
@@ -77,7 +27,6 @@ export function ttsAudioUrl(name, path) {
 
 function ttsSlice(name, emotion, ref, isMain) {
     return {
-        engine: 'gpt_sovits',
         id: `${name}:${emotion}`,
         character: name,
         emotion,
@@ -89,7 +38,6 @@ function ttsSlice(name, emotion, ref, isMain) {
         language: ref.language || '',
         source: ref.source || '',
         syntax_tag: `{${emotion}}`,
-        tag_usable: true,
         audio_url: ref.audio ? ttsAudioUrl(name, ref.audio) : '',
     };
 }
@@ -104,10 +52,8 @@ export function gptSovitsGroups(payload) {
             if (emotion !== 'main' && ref?.audio) slices.push(ttsSlice(name, emotion, ref, false));
         }
         return {
-            engine: 'gpt_sovits',
             group: `gpt_sovits:${name}`,
             character: name,
-            folder: 'GPT-SoVITS',
             language: item.language || '',
             aliases: Array.isArray(item.aliases) ? item.aliases : [],
             error: item.error || item.settings_error || '',
@@ -129,8 +75,8 @@ export function gptSovitsGroups(payload) {
 // says they are stale: the Refresh button, a save, an added voice, or MAX_AGE_MS.
 
 const MAX_AGE_MS = 60_000;
-let installCache = null; // { at, promise } — node pack presence, per page session
-const loadCache = new Map(); // engineId -> { at, promise }
+let installCache = null; // { at, promise } — node pack presence
+let loadCache = null; // { at, promise } — the character list
 let rescanNext = false;
 
 async function getJson(url, signal) {
@@ -139,7 +85,7 @@ async function getJson(url, signal) {
     return { ok: resp.ok, status: resp.status, data };
 }
 
-/** Installed = ComfyUI knows the engine's node class (`/object_info/<class>` is `{}` otherwise). */
+/** Installed = ComfyUI knows the node class (`/object_info/<class>` is `{}` otherwise). */
 async function isNodeInstalled(nodeClass) {
     try {
         const { ok, data } = await getJson(`/object_info/${encodeURIComponent(nodeClass)}`);
@@ -153,12 +99,7 @@ function fresh(entry) {
     return entry && Date.now() - entry.at < MAX_AGE_MS;
 }
 
-async function loadGroups(engineId) {
-    if (engineId === 'f5') {
-        const { ok, status, data } = await getJson('/anomalous/audio_voices');
-        if (!ok || !data?.success) throw new Error(data?.error || `HTTP ${status}`);
-        return f5Groups(data.characters);
-    }
+async function loadGroups() {
     // The node caches its folder scan; `refresh=1` makes it look at the disk again.
     const url = rescanNext ? '/anomalous_tts/characters?refresh=1' : '/anomalous_tts/characters';
     rescanNext = false;
@@ -169,10 +110,10 @@ async function loadGroups(engineId) {
 
 /**
  * Forget cached engine data. `rescan: true` (the Refresh button) also asks the
- * GPT-SoVITS node to re-read its folders instead of answering from its own cache.
+ * node to re-read its folders instead of answering from its own cache.
  */
 export function invalidateEngineCache({ rescan = false } = {}) {
-    loadCache.clear();
+    loadCache = null;
     installCache = null;
     statusCache = null;
     if (rescan) rescanNext = true;
@@ -182,7 +123,7 @@ let statusCache = null; // { at, promise } — GPT-SoVITS setup status
 
 /**
  * The GPT-SoVITS node's setup status (libraries, pretrained files, packages; interface v3),
- * or null for a node that predates it (no `/anomalous_tts/status`). Cached like loadEngine;
+ * or null for a node that predates it (no `/anomalous_tts/status`). Cached like loadVoices;
  * `force` skips the cache (download progress polling).
  */
 export function loadGptSovitsStatus({ force = false } = {}) {
@@ -198,37 +139,32 @@ export function loadGptSovitsStatus({ force = false } = {}) {
 }
 
 /**
- * { installed, groups, error } for one engine. The F5-TTS library is the plugin's own
- * input/F5-TTS folder, so it is listed even when the F5-TTS node is not installed.
- * Concurrent callers (studio + sidebar) share one request.
+ * { installed, groups, error }: the GPT-SoVITS characters, none while the node pack
+ * is missing. Concurrent callers (studio + sidebar) share one request.
  */
-export function loadEngine(engineId) {
-    const hit = loadCache.get(engineId);
-    if (fresh(hit)) return hit.promise;
-    const promise = loadEngineNow(engineId);
-    loadCache.set(engineId, { at: Date.now(), promise });
+export function loadVoices() {
+    if (fresh(loadCache)) return loadCache.promise;
+    const promise = loadVoicesNow();
+    loadCache = { at: Date.now(), promise };
     // A failure must not stick for a minute.
-    promise.then(result => { if (result.error && loadCache.get(engineId)?.promise === promise) loadCache.delete(engineId); });
+    promise.then(result => { if (result.error && loadCache?.promise === promise) loadCache = null; });
     return promise;
 }
 
-async function loadEngineNow(engineId) {
-    const engine = engineById(engineId);
-    if (!engine) return { installed: false, groups: [], error: 'unknown engine' };
-    const installed = Boolean((await detectEngines())[engineId]?.installed);
-    if (!installed && engineId !== 'f5') return { installed, groups: [], error: '' };
+async function loadVoicesNow() {
+    const installed = await isTtsInstalled();
+    if (!installed) return { installed, groups: [], error: '' };
     try {
-        return { installed, groups: await loadGroups(engineId), error: '' };
+        return { installed, groups: await loadGroups(), error: '' };
     } catch (e) {
         return { installed, groups: [], error: e.message || String(e) };
     }
 }
 
-/** Status of every engine (installed only), for the switcher badges. Cached like loadEngine. */
-export function detectEngines() {
+/** Whether ComfyUI has the Anomalous_TTS node. Cached like loadVoices. */
+export function isTtsInstalled() {
     if (fresh(installCache)) return installCache.promise;
-    const promise = Promise.all(AUDIO_ENGINES.map(async engine => [engine.id, { installed: await isNodeInstalled(engine.probeNode) }]))
-        .then(Object.fromEntries);
+    const promise = isNodeInstalled(TTS_NODE_CLASS);
     installCache = { at: Date.now(), promise };
     return promise;
 }
