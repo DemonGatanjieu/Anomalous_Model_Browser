@@ -73,7 +73,12 @@ def _translate_with_mymemory(text, tl):
 async def api_translate(request):
     try:
         data = await request.json()
-        text = str(data.get("text", "")).strip()
+    except ValueError:
+        data = None
+    if not isinstance(data, dict):
+        return web.json_response({"status": "error", "message": "Invalid request body"}, status=400)
+    text = str(data.get("text", "")).strip()
+    try:
         tl = str(data.get("target_lang", "zh-CN")).strip()
         if not text:
             return web.json_response({"translated": "", "status": "success"})

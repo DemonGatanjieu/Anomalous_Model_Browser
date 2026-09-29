@@ -533,12 +533,14 @@ export function openScanWizard({ isGlobal = false, targetFiles = null } = {}) {
     // Execute Scan Logic
                 const doScan = async () => {
         try {
+            // Offline greys out renaming and overwriting, so none of them may be sent.
+            const offline = scanMode === 'offline';
             const reqBody = {
-                offline_only: scanMode === 'offline',
-                skip_rename: !enableRename,
-                virtual_rename: enableRename ? enableVirtualRename : false,
-                physical_rename: enableRename ? enablePhysicalRename : false,
-                force_overwrite: enableForceOverwrite
+                offline_only: offline,
+                skip_rename: offline || !enableRename,
+                virtual_rename: !offline && enableRename && enableVirtualRename,
+                physical_rename: !offline && enableRename && enablePhysicalRename,
+                force_overwrite: !offline && enableForceOverwrite
             };
 
             if (targetMode === 'custom') {

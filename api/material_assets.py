@@ -25,6 +25,8 @@ def _material_assets_dir(materials_dir, filename, create=False):
 
 def _inspect_source_image(source_image):
     source = _normalise_source_image(source_image)
+    if source is None:
+        raise ValueError("Missing source image")
     if not source["filename"].lower().endswith(".png"):
         raise ValueError("Only PNG output images can contain reusable workflow metadata")
     source_path = _output_source_path(source)

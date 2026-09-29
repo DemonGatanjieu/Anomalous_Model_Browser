@@ -230,6 +230,9 @@ def main():
     parser.add_argument("--folder-type", default="", help="由 ComfyUI 传入的模型目录类型，用于执行安全策略")
     parser.add_argument("--progress-file", default="", help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.offline_only:
+        # Offline means no network at all: previews and model pages come from Civitai.
+        args.skip_media = True
 
     target_folder = args.folder
     if not os.path.isdir(target_folder):
@@ -396,7 +399,7 @@ def main():
                 
             # --- 额外获取模型主页的说明文字 ---
             model_id = civitai_data.get("modelId")
-            if model_id and model_id != -1:
+            if model_id and model_id != -1 and not args.offline_only:
                 try:
                     headers = {
                         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"

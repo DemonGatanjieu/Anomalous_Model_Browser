@@ -83,6 +83,11 @@ async def api_get_gallery_images(request):
 async def api_delete_gallery_image(request):
     try:
         data = await request.json()
+    except ValueError:
+        data = None
+    if not isinstance(data, dict):
+        return web.json_response({"status": "error", "message": "Invalid request body"}, status=400)
+    try:
         filename = data.get("filename")
         subfolder = data.get("subfolder", "")
         

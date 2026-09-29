@@ -789,5 +789,6 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
         refresh: renderSourceCardsList,
         sync: syncMaterialsIntoSourceDeck,
         hidePreview: (force = false) => hideCardPreviewPopover(force),
+        focusSearch: () => leftSearch.focus(),
     };
 }
