@@ -60,6 +60,24 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         container.classList.toggle('anomalous-sidebar-closed', !key || narrow() || read(key) === 'true');
     };
 
+    // Narrow window: the open list is a drawer over the page. Picking an entry, pressing the
+    // dimmed page or Esc closes it, without changing what the page remembers.
+    const drawerOpen = () => narrow() && !container.classList.contains('anomalous-sidebar-closed');
+    const closeDrawer = () => container.classList.add('anomalous-sidebar-closed');
+    const scrim = document.createElement('div');
+    scrim.className = 'anomalous-list-scrim';
+    scrim.onclick = closeDrawer;
+    container.insertBefore(scrim, owner.sidebarWrapper.nextSibling);
+    owner.sidebarWrapper.addEventListener('click', (e) => {
+        if (!drawerOpen() || e.target.classList.contains('anomalous-folder-toggle')) return;
+        if (e.target.closest('.anomalous-folder-item, .anomalous-audio-nav-item')) closeDrawer();
+    });
+    window.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape' || !drawerOpen() || !owner.modal?.classList.contains('visible')) return;
+        if (e.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+        closeDrawer();
+    });
+
     const toggleList = () => {
         if (listToggle.disabled) return;
         const closed = !container.classList.contains('anomalous-sidebar-closed');

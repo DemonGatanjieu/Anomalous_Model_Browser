@@ -149,16 +149,35 @@
     pointer-events: none;
 }
 
-/* Narrow window (docked, or small): the open list covers the page instead. */
+/* Narrow window (docked, or small): the open list is a drawer against the rail, over a
+   dimmed page; pressing the dimmed page closes it (ui_shell_nav.js). */
 #anomalous-container.anomalous-shell-narrow:not(.anomalous-sidebar-closed) #anomalous-sidebar-wrapper {
     position: absolute;
     top: 48px;
     bottom: 0;
     left: 60px;
     z-index: 20;
+    width: 270px;
     height: auto;
-    margin: 8px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+    margin: 0;
+    border-width: 0 1px 0 0;
+    border-radius: 0;
+    box-shadow: 16px 0 36px rgba(0, 0, 0, 0.55);
+}
+
+.anomalous-list-scrim {
+    display: none;
+}
+
+#anomalous-container.anomalous-shell-narrow:not(.anomalous-sidebar-closed) > .anomalous-list-scrim {
+    position: absolute;
+    top: 48px;
+    right: 0;
+    bottom: 0;
+    left: 60px;
+    z-index: 19;
+    display: block;
+    background: rgba(0, 0, 0, 0.45);
 }
 
 /* Workspaces (recipes, notes, materials) leave the rail visible. */

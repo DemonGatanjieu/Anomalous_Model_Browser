@@ -22,6 +22,7 @@ import folder_paths
 from .path_utils import atomic_write_json
 
 MAX_ENTRIES = 500
+MAX_LOG_BYTES = 2 * 1024 * 1024  # long canvas entries could otherwise outgrow the JSON writer's limit
 MAX_VALUE_CHARS = 400
 MAX_CHANGES = 60
 
@@ -88,6 +89,17 @@ def _load():
     return _entries
 
 
+def _encoded_size(entries):
+    return len(json.dumps(entries, ensure_ascii=False, separators=(',', ':')).encode('utf-8'))
+
+
+def _trim(entries):
+    """Drop the oldest entries until the list fits MAX_ENTRIES and MAX_LOG_BYTES."""
+    del entries[MAX_ENTRIES:]
+    while len(entries) > 1 and _encoded_size(entries) > MAX_LOG_BYTES:
+        del entries[max(1, len(entries) * 9 // 10):]
+
+
 def _short(value):
     text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
     return text if len(text) <= MAX_VALUE_CHARS else text[:MAX_VALUE_CHARS] + '…'
@@ -107,7 +119,7 @@ def add_entry(source, action, target='', detail=None):
     with _lock:
         entries = _load()
         entries.insert(0, entry)
-        del entries[MAX_ENTRIES:]
+        _trim(entries)
         atomic_write_json(log_path(), entries)
     return entry
 
