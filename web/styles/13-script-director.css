@@ -4,7 +4,7 @@
     top: 12px;
     right: 12px;
     bottom: 12px;
-    width: min(560px, calc(100% - 24px));
+    width: min(1000px, calc(100% - 24px));
     background: var(--amb-bg-panel, #1e1e24);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
@@ -18,6 +18,48 @@
 .anomalous-script-director-panel[hidden],
 .anomalous-script-director-panel [hidden] {
     display: none;
+}
+
+/* Docked browser: the studio column is narrow, so the drawer covers all of it. */
+#anomalous-container.anomalous-docked .anomalous-script-director-panel {
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: calc(100% - 16px);
+}
+
+.anomalous-sd-body,
+.anomalous-sd-main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Narrow: settings and the generate bar under the cards, never taking over the drawer. */
+.anomalous-sd-side {
+    flex-shrink: 0;
+    max-height: 55%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 16px 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Wide: cards take the full height, the generate side is a column beside them. */
+.anomalous-script-director-panel.is-wide .anomalous-sd-body {
+    flex-direction: row;
+}
+
+.anomalous-script-director-panel.is-wide .anomalous-sd-side {
+    width: 320px;
+    max-height: none;
+    padding: 12px 14px;
+    border-top: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .anomalous-sd-header {
@@ -324,13 +366,9 @@
 
 /* Bundle */
 .anomalous-sd-footer {
-    flex-shrink: 0;
-    padding: 8px 16px 10px;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(0, 0, 0, 0.2);
 }
 
 .anomalous-sd-package-summary {

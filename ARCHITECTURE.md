@@ -224,8 +224,10 @@ covered by the `styles.css` manifest.
   row per line card, and a bundle that is generated in the drawer, or pushed to
   the selected/only target node or dragged onto one (writing the character and
   script widgets together). The studio feeds it the voice groups after each fetch.
+  The drawer puts the cards on one side and generating on the other: beside
+  them once the drawer is wide, below them when it is narrow (docked browser).
   `ui_script_run.js` is the drawer's "Generate" section (a folded settings line
-  that scrolls with the cards, and a short bar at the bottom): it runs
+  and a short bar): it runs
   the script without the canvas, plays the result, retakes the whole script
   (new seed) or one line (`[take:N]`, the node caches the rest), and saves a
   character's language, speed and folded sampling parameters to its `defaults`

@@ -15,6 +15,9 @@ import { createRunSection } from './ui_script_run.js';
  * studio re-attaches it.
  */
 
+// From this drawer width on, the cards get the full height and the generate side sits beside them.
+const WIDE_FROM = 760;
+
 const ICONS = {
     PLAY: `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
     STOP: `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>`,
@@ -185,7 +188,6 @@ function createPanel() {
     }));
 
     const linesContainer = el('div', 'anomalous-sd-lines-container');
-    // Settings and cards share one scroll area; the footer below stays a short bar.
     const scroll = el('div', 'anomalous-sd-scroll');
 
     const footer = el('div', 'anomalous-sd-footer');
@@ -207,11 +209,22 @@ function createPanel() {
         resetTakes: () => state.lines.forEach(line => { line.take = 1; }),
         onBusyChange: () => renderAll(),
     });
-    scroll.append(runSection.settings, linesContainer);
+    scroll.append(linesContainer);
     footer.append(summary, runSection.bar, actions);
 
-    panel.append(header, characterBar, characterHint, inputArea, linesBar, scroll, footer);
-    refs = { subtitle, characterSelect, characterHint, inputArea, textarea, cancelEdit, linesBar, linesCount, scroll, linesContainer, footer, summary, dragHandle, copyBtn, pushBtn };
+    // Cards on one side, everything about generating on the other: below the cards
+    // in a narrow drawer (docked browser), beside them once the drawer is wide.
+    const main = el('div', 'anomalous-sd-main');
+    main.append(linesBar, scroll);
+    const side = el('div', 'anomalous-sd-side');
+    side.append(runSection.settings, footer);
+    const body = el('div', 'anomalous-sd-body');
+    body.append(main, side);
+    // The panel lives for the page session, so the observer does too.
+    new ResizeObserver(([entry]) => panel.classList.toggle('is-wide', entry.contentRect.width >= WIDE_FROM)).observe(panel);
+
+    panel.append(header, characterBar, characterHint, inputArea, body);
+    refs = { subtitle, characterSelect, characterHint, inputArea, textarea, cancelEdit, body, linesCount, linesContainer, summary, dragHandle, copyBtn, pushBtn };
 }
 
 function renderAll() {
@@ -225,9 +238,7 @@ function renderAll() {
     const hasLines = state.lines.length > 0;
     refs.inputArea.hidden = hasLines && !state.editing;
     refs.cancelEdit.hidden = !hasLines;
-    refs.linesBar.hidden = !hasLines || state.editing;
-    refs.scroll.hidden = !hasLines || state.editing;
-    refs.footer.hidden = !hasLines || state.editing;
+    refs.body.hidden = !hasLines || state.editing;
     refs.linesCount.textContent = t('scriptDirectorLinesCount', { count: state.lines.length });
     if (hasLines && !state.editing) renderLines();
     renderPackage();

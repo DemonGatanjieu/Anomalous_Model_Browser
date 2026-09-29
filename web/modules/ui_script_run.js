@@ -14,9 +14,8 @@ import { fetchGptSovitsCharacter, loadGptSovitsStatus, saveGptSovitsSettings } f
  *
  * The director owns the lines; this section owns the job, the options and the
  * result, which live for the page session like the director's panel. It has two
- * parts: `settings` (one folded line, placed above the line cards so it scrolls
- * with them) and `bar` (generate / retake / cancel and the result, kept short at
- * the bottom of the drawer).
+ * parts that the director places together: `settings` (one folded line) and `bar`
+ * (generate / retake / cancel and the result).
  */
 
 const LANGUAGES = ['auto', 'zh', 'ja', 'en'];
