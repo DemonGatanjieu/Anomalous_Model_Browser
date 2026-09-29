@@ -485,6 +485,48 @@
     color: #475569;
 }
 
+/* Suggested folder layout under the batch drop area. */
+.anomalous-tts-layout {
+    width: 100%;
+    max-width: 540px;
+    color: #94a3b8;
+    font-size: 12px;
+    text-align: left;
+}
+
+.anomalous-tts-layout summary {
+    width: fit-content;
+    margin: 0 auto;
+    color: #a5b4fc;
+    cursor: pointer;
+}
+
+.anomalous-tts-layout-tree {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 18px;
+    margin-top: 10px;
+    padding: 10px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.anomalous-tts-layout-name {
+    color: #e2e8f0;
+    font-family: ui-monospace, Consolas, monospace;
+    white-space: nowrap;
+}
+
+.anomalous-tts-layout-note {
+    color: #64748b;
+}
+
+.anomalous-tts-layout-foot {
+    margin: 8px 2px 0;
+    line-height: 1.6;
+}
+
 /* Dragging files over the window. */
 .anomalous-tts-drop-cover {
     position: absolute;

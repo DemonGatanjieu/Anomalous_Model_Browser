@@ -10,12 +10,25 @@ export const CURRENT_UPDATE_GUIDE = Object.freeze({
     ]),
 });
 
+// Spotlight tour of the audio studio. Steps whose target is not on screen (no characters
+// yet, the audio gallery open, sidebar collapsed) are skipped.
+export const AUDIO_TOUR_STEPS = Object.freeze([
+    { targetSelector: '[data-tour="audio-import"]', icon: '📥', titleKey: 'audioTourImportTitle', bodyKey: 'audioTourImportBody', position: 'bottom' },
+    { targetSelector: '.anomalous-character-voice-header.is-draggable', icon: '🧲', titleKey: 'audioTourDragTitle', bodyKey: 'audioTourDragBody', position: 'bottom' },
+    { targetSelector: '.anomalous-character-voice-actions', icon: '🎭', titleKey: 'audioTourEditTitle', bodyKey: 'audioTourEditBody', position: 'bottom' },
+    { targetSelector: '.anomalous-voice-copy-btn', icon: '🏷️', titleKey: 'audioTourTagTitle', bodyKey: 'audioTourTagBody', position: 'bottom' },
+    { targetSelector: '[data-tour="audio-script"]', icon: '📜', titleKey: 'audioTourScriptTitle', bodyKey: 'audioTourScriptBody', position: 'bottom' },
+    { targetSelector: '#anomalous-gallery-btn', icon: '🎧', titleKey: 'audioTourGalleryTitle', bodyKey: 'audioTourGalleryBody', position: 'bottom' },
+    { targetSelector: '.anomalous-audio-sidebar-settings', icon: '⚙️', titleKey: 'audioTourSettingsTitle', bodyKey: 'audioTourSettingsBody', position: 'top' },
+]);
+
 // How-to for the audio studio; the "!" button opens it while the audio domain is active.
-// Optional fields: titleKey (dialog title), tour: false (no spotlight tour banner).
+// Optional fields: titleKey (dialog title), tour: false (no spotlight tour banner) or the
+// guide's own spotlight steps (default: the browser's tour).
 export const AUDIO_USAGE_GUIDE = Object.freeze({
     id: 'audio-studio-usage',
     titleKey: 'audioGuideTitle',
-    tour: false,
+    tour: AUDIO_TOUR_STEPS,
     steps: Object.freeze([
         { id: 'files', icon: '🎙️', titleKey: 'audioGuideFilesTitle', bodyKey: 'audioGuideFilesBody' },
         { id: 'drag', icon: '🧲', titleKey: 'audioGuideDragTitle', bodyKey: 'audioGuideDragBody' },
@@ -29,6 +42,8 @@ export function validateUpdateGuide(guide, locales) {
     if (!guide || typeof guide.id !== 'string' || !/^[a-z0-9][a-z0-9-]{0,79}$/.test(guide.id)) return false;
     if (!Array.isArray(guide.steps) || guide.steps.length < 1 || guide.steps.length > 5) return false;
     if (guide.titleKey !== undefined && !['zh', 'en'].every(locale => typeof locales[locale]?.[guide.titleKey] === 'string')) return false;
+    if (Array.isArray(guide.tour) && !guide.tour.every(step => typeof step?.targetSelector === 'string'
+        && ['titleKey', 'bodyKey'].every(field => ['zh', 'en'].every(locale => typeof locales[locale]?.[step[field]] === 'string')))) return false;
     const ids = new Set();
     return guide.steps.every(step => {
         if (!step || typeof step.id !== 'string' || !step.id || ids.has(step.id)) return false;

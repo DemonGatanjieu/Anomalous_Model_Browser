@@ -295,6 +295,9 @@ export function ensureTourStyles() {
             user-select: none;
             letter-spacing: 0.2px;
         }
+        .anomalous-update-guide-tour-banner[hidden] {
+            display: none;
+        }
         .anomalous-update-guide-tour-banner:hover {
             background: rgba(59, 130, 246, 0.12);
             border-color: rgba(96, 165, 250, 0.4);
@@ -312,11 +315,12 @@ export function ensureTourStyles() {
 
 function resolveStepTarget(step) {
     if (typeof document === 'undefined') return null;
+    const shown = el => Boolean(el?.isConnected && el.getClientRects().length); // hidden targets are skipped
     let el = document.querySelector(step.targetSelector);
-    if ((!el || !el.isConnected) && step.fallbackSelector) {
+    if (!shown(el) && step.fallbackSelector) {
         el = document.querySelector(step.fallbackSelector);
     }
-    return el && el.isConnected ? el : null;
+    return shown(el) ? el : null;
 }
 
 function computeCardPosition(rect, position, cardWidth = 330, cardHeight = 220) {

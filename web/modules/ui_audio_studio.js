@@ -292,6 +292,7 @@ function createRefreshButton(onRefresh) {
 
 function createScriptDirectorButton(container, owner) {
     const btn = createToolButton(SVG.SCRIPT, t('scriptDirectorOpen'));
+    btn.dataset.tour = 'audio-script';
     btn.classList.toggle('active', isScriptDirectorActive());
     setScriptDirectorHooks({
         owner,
@@ -486,6 +487,7 @@ export async function renderAudioStudio(container, { filter = null, owner = null
         onImport = (options = {}) => openTtsImport({ ...options, onDone });
         // Settings (storage, pretrained files, packages) live behind the sidebar's footer entry.
         const importBtn = createToolButton(SVG.PLUS, t('ttsImportOpenShort'));
+        importBtn.dataset.tour = 'audio-import';
         importBtn.onclick = () => onImport();
         importBtn.disabled = !canImport;
         if (!canImport) importBtn.title = t('ttsSetupRemote');

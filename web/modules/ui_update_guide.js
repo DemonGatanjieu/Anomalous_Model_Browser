@@ -72,7 +72,7 @@ export function showUpdateGuide(owner, { force = false, guide = CURRENT_UPDATE_G
     tourBanner.hidden = guide.tour === false;
     tourBanner.onclick = () => {
         closeUpdateGuide(owner, true);
-        startSpotlightTour(owner);
+        startSpotlightTour(owner, Array.isArray(guide.tour) ? { steps: guide.tour } : {});
     };
     const progress = text(dialog, 'p', '', 'anomalous-update-guide-progress');
     progress.setAttribute('aria-live', 'polite');

@@ -27,7 +27,7 @@
 ## 音频页使用说明
 
 - `AUDIO_USAGE_GUIDE`（同在 `update_guide_data.js`）是音频页的使用说明，不是更新公告。音频域激活时，右上角 **!** 打开它；图像域照旧打开 `CURRENT_UPDATE_GUIDE`。
-- 可选字段：`titleKey` 替换对话框标题，`tour: false` 隐藏图像界面的遮罩导览入口。
+- 可选字段：`titleKey` 替换对话框标题；`tour: false` 不显示遮罩导览入口，`tour: [...]` 用这份说明自己的导览步骤（音频页用 `AUDIO_TOUR_STEPS`），不写则是图像界面的导览。导览步骤的目标不在屏幕上时自动跳过。
 - 内容跟着功能改，ID 保持 `audio-studio-usage`。完整说明在 `docs/guides/audio-studio.md`，两边要一致。
 
 ## 生命周期与记录

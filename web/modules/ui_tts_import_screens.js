@@ -106,8 +106,32 @@ export function renderBatchHero(on) {
     local.append(el('span', '', t('ttsHeroLocal')), button('anomalous-tts-link', t('ttsHeroLocalFolder'), on.localFolder),
         el('span', 'anomalous-tts-hero-dot', '·'), button('anomalous-tts-link', t('ttsHeroLocalFiles'), on.localFiles));
     hero.append(heroIcon, el('div', 'anomalous-tts-hero-title', t('ttsHeroTitle')), needs,
-        el('div', 'anomalous-tts-hero-desc', t('ttsHeroDesc')), buttons, local, button('anomalous-tts-link', t('ttsChooseAgain'), on.back));
+        el('div', 'anomalous-tts-hero-desc', t('ttsHeroDesc')), buttons, local, renderFolderLayout(),
+        button('anomalous-tts-link', t('ttsChooseAgain'), on.back));
     return hero;
+}
+
+/** A folder that sorts cleanly: one folder per character, named after it. Folded by default. */
+function renderFolderLayout() {
+    const box = el('details', 'anomalous-tts-layout');
+    box.append(el('summary', '', t('ttsLayoutTitle')));
+    const tree = el('div', 'anomalous-tts-layout-tree');
+    const [a, b, clip] = [t('ttsLayoutCharA'), t('ttsLayoutCharB'), t('ttsLayoutClip')];
+    for (const [depth, name, note] of [
+        [0, `${t('ttsLayoutRoot')}/`, t('ttsLayoutRootNote')],
+        [1, `${a}/`, t('ttsLayoutCharNote')],
+        [2, `${a}-e15.ckpt`, t('ttsCardGpt')],
+        [2, `${a}_e8_s200.pth`, t('ttsCardSovits')],
+        [2, `${clip}.wav`, t('ttsLayoutClipNote')],
+        [2, `${clip}.lab`, t('ttsLayoutLineNote')],
+        [1, `${b}/`, t('ttsLayoutMore')],
+    ]) {
+        const file = el('span', 'anomalous-tts-layout-name', name);
+        file.style.paddingLeft = `${depth * 16}px`;
+        tree.append(file, el('span', 'anomalous-tts-layout-note', note));
+    }
+    box.append(tree, el('p', 'anomalous-tts-layout-foot', t('ttsLayoutFoot')));
+    return box;
 }
 
 /**
