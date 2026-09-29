@@ -1,0 +1,77 @@
+/* Models page: the type chips (and the list-folder crumb) that head the model grid. */
+
+.anomalous-model-types {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.anomalous-model-types:empty {
+    display: none;
+}
+
+.anomalous-model-type-chip,
+.anomalous-model-type-crumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 11px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.03);
+    color: #cbd5e1;
+    font-size: 12.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.anomalous-model-type-chip:hover,
+.anomalous-model-type-crumb:hover {
+    border-color: rgba(165, 180, 252, 0.35);
+    background: rgba(255, 255, 255, 0.07);
+    color: #f1f5f9;
+}
+
+.anomalous-model-type-chip.is-active {
+    border-color: rgba(165, 180, 252, 0.45);
+    background: rgba(165, 180, 252, 0.14);
+    color: #e0e7ff;
+}
+
+.anomalous-model-type-chip[aria-pressed="true"] {
+    cursor: default;
+}
+
+.anomalous-model-type-count {
+    color: rgba(203, 213, 225, 0.55);
+    font-variant-numeric: tabular-nums;
+}
+
+.anomalous-model-type-chip.is-active .anomalous-model-type-count {
+    color: #a5b4fc;
+}
+
+.anomalous-model-type-crumb {
+    border-style: dashed;
+    color: #e0e7ff;
+}
+
+.anomalous-model-type-crumb-x {
+    opacity: 0.55;
+    font-size: 11px;
+}
+
+.anomalous-model-type-crumb:hover .anomalous-model-type-crumb-x {
+    opacity: 1;
+}
+
+.anomalous-grid-empty {
+    grid-column: 1 / -1;
+    padding: 20px;
+    color: #fff;
+}

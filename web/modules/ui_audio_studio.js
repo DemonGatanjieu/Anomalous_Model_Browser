@@ -94,13 +94,13 @@ function playAudio(url, playBtn, eqBars) {
     audio.play().catch(stopIfCurrent);
 }
 
-function copySyntax(tag, btn) {
+function copySyntax(tag, btn, label) {
     if (!navigator.clipboard?.writeText) return;
     navigator.clipboard.writeText(tag).then(() => {
         setIconLabel(btn, SVG.CHECK, t('audioCopied'));
         btn.classList.add('is-copied');
         setTimeout(() => {
-            setIconLabel(btn, SVG.COPY, tag);
+            setIconLabel(btn, SVG.COPY, label);
             btn.classList.remove('is-copied');
         }, 1500);
     }).catch(() => {});
@@ -142,8 +142,8 @@ function gripIcon() {
     return grip;
 }
 
-/** One reference clip of a character. */
-function renderSliceRow(slice) {
+/** One reference clip of a character; `withTag`: the character has emotions, so its tags are worth copying. */
+function renderSliceRow(slice, withTag) {
     const row = document.createElement('div');
     row.className = 'anomalous-voice-slice-row';
     row.dataset.sliceId = slice.id; // the sidebar plays a clip through its row
@@ -172,23 +172,26 @@ function renderSliceRow(slice) {
         ? `${slice.text}\n${slice.synthesis_text}`
         : (slice.text || slice.filename);
 
-    const copyBtn = document.createElement('button');
-    copyBtn.type = 'button';
-    copyBtn.className = 'anomalous-voice-copy-btn';
-    copyBtn.title = t('audioCopyTag');
-    setIconLabel(copyBtn, SVG.COPY, slice.syntax_tag);
-
-    copyBtn.onclick = (e) => {
-        e.stopPropagation();
-        copySyntax(slice.syntax_tag, copyBtn);
-    };
-
     playBtn.onclick = (e) => {
         e.stopPropagation();
         playAudio(slice.audio_url, playBtn, eqBars);
     };
 
-    row.append(playBtn, eqBars, emoTag, textSpan, copyBtn);
+    row.append(playBtn, eqBars, emoTag, textSpan);
+    if (!withTag) return row; // only a main voice: speech text needs no tag
+
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'anomalous-voice-copy-btn';
+    copyBtn.title = slice.is_main ? t('audioCopyMainHint') : t('audioCopyEmotionHint', { emotion: slice.emotion });
+    const label = t('audioCopyTagLabel', { tag: slice.syntax_tag });
+    setIconLabel(copyBtn, SVG.COPY, label);
+
+    copyBtn.onclick = (e) => {
+        e.stopPropagation();
+        copySyntax(slice.syntax_tag, copyBtn, label);
+    };
+    row.append(copyBtn);
     return row;
 }
 
@@ -268,7 +271,8 @@ function renderCharacterCard(group, owner, { onChanged, canImport = false } = {}
 
     const sliceList = document.createElement('div');
     sliceList.className = 'anomalous-character-voice-slices';
-    group.slices.forEach(slice => sliceList.appendChild(renderSliceRow(slice)));
+    const withTags = group.slices.some(slice => !slice.is_main);
+    group.slices.forEach(slice => sliceList.appendChild(renderSliceRow(slice, withTags)));
 
     card.appendChild(sliceList);
     return card;

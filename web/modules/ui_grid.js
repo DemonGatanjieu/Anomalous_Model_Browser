@@ -5,6 +5,7 @@
 
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
+import { focusModel, modelListUrl, renderTypeBar } from './ui_model_types.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -26,8 +27,7 @@ export async function loadModels() {
             this._modelRenderGeneration = (this._modelRenderGeneration || 0) + 1;
             const loadController = new AbortController();
             this._modelLoadController = loadController;
-            const params = new URLSearchParams({ type: this.currentType, path_idx: this.currentPathIdx, subfolder: this.currentSubfolder });
-            const res = await fetch('/anomalous/models?' + params.toString(), { signal: loadController.signal });
+            const res = await fetch(modelListUrl(this), { signal: loadController.signal });
             const data = await res.json();
             if (this._modelLoadController !== loadController) return;
 
@@ -61,10 +61,13 @@ export async function loadModels() {
                 }, { rootMargin: '300px' })
                 : null;
             stopMediaInContainer(this.grid);
-            this.grid.replaceChildren();
+            this.grid.replaceChildren(renderTypeBar(this, (data.models || []).length));
 
             if (!data.models || data.models.length === 0) {
-                this.grid.innerHTML = `<div style="color:white; padding:20px;">${t('noModels')}</div>`;
+                const empty = document.createElement('div');
+                empty.className = 'anomalous-grid-empty';
+                empty.textContent = t('noModels');
+                this.grid.appendChild(empty);
                 return;
             }
 
@@ -168,6 +171,7 @@ export async function loadModels() {
 
                 card.onclick = () => { 
                     this.recipeModelReturn = null;
+                    focusModel(this, model);
                     this.historyStack = []; 
                     this.currentDetailModel = model; 
                     this.showDetail(model); 
@@ -182,6 +186,7 @@ export async function loadModels() {
                 applyBtn.setAttribute('data-tooltip-pos', 'bottom');
                 applyBtn.onclick = (e) => {
                     e.stopPropagation();
+                    focusModel(this, model);
                     this.applyModelToCanvas(this.currentType, this.currentSubfolder, model);
                 };
                 card.appendChild(applyBtn);
@@ -195,6 +200,7 @@ export async function loadModels() {
                 editBtn.setAttribute('data-tooltip-pos', 'bottom');
                 editBtn.onclick = (e) => {
                     e.stopPropagation();
+                    focusModel(this, model);
                     this.showEditModal(model);
                 };
                 card.appendChild(editBtn);
@@ -208,6 +214,7 @@ export async function loadModels() {
                 singleScanBtn.setAttribute('data-tooltip-pos', 'bottom');
                 singleScanBtn.onclick = (e) => {
                     e.stopPropagation();
+                    focusModel(this, model);
                     if (typeof this.scanSingleModel === 'function') {
                         this.scanSingleModel(model, singleScanBtn);
                     } else if (typeof this.openScanWizard === 'function') {

@@ -77,7 +77,8 @@ covered by the `styles.css` manifest.
 - `api/model_catalog.py`, `api/model_resolution.py`, `api/model_metadata.py`, and
   `api/model_media.py` own model listing, identity recovery, mutation, and covers;
   `api/models.py` is a compatibility facade; `api/model_constants.py` holds the
-  model, media and sidecar extensions they share.
+  model, media and sidecar extensions they share. `api/model_type_listing.py` lists a
+  whole models folder with its subfolders for the models page's type chips.
 - `api/scanner.py` and `scraper.py` own scan orchestration and enrichment.
 - `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
   `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
@@ -288,6 +289,10 @@ covered by the `styles.css` manifest.
 - `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn` and Help modal; version ID `2026-09-recipes-and-studios`), presenting a 4-step milestone walkthrough (Workflow Recipe Studio, Material Library & Prompt Studio, Model Sources Hub, and Precision Direct Scan with canvas addition) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across the rail's pages and tools with directional tooltip cards and keyboard navigation; steps whose target is not on screen are skipped. Other views pass their own `steps` (text from locale keys) and an optional `onClose`; the GPT-SoVITS import window does.
 - `tool_registry.js` holds the tools' names, icons and stable IDs: the catalog tools (including Prompt Notes / 提示词笔记) and the two anchors (Toolbox and Settings).
 - The rail's tool slots (built in `ui_toolbox.js`, fixed) hold scan, doctor and assistant, then the toolbox; settings sits at the rail's bottom. Materials is a rail page. The Toolbox popover lists the remaining catalog tools and opens beside the rail.
+- `ui_model_types.js` owns the models page's type chips (one per models folder, with its count) and
+  `owner.modelScope`, what the grid lists: a whole type, or one list folder shown as a crumb. The
+  grid's cards set `currentType/PathIdx/Subfolder` to their own model's folder (`focusModel`),
+  which the editor, the scanner and "add to canvas" read.
 - `ui_grid.js` and model-detail modules own model presentation: `ui_grid.js` manages chunked card rendering,
   card placeholder ergonomics (eliminating misleading unclickable text in favor of pure centered icon and status),
   card action buttons (one-click canvas addition with plus icon, model metadata editor, direct precision scanner without wizard modal popups)

@@ -18,6 +18,7 @@ import { installShellNavigation } from './ui_shell_nav.js';
 import { bindShellDrag, bindShellResize } from './ui_shell_frame.js';
 import { watchScans } from './ui_scan_watch.js';
 import { watchCanvasChanges } from './activity_canvas.js';
+import { settleModelScope } from './ui_model_types.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -400,7 +401,8 @@ export function renderSidebar() {
 
                 item.innerHTML = `${toggleIcon}<span class="anomalous-folder-name" style="color: #ddd;">${escapeHtml(info.name)}</span> <span style="opacity:0.4; font-size:0.8em; margin-left: 5px;">${escapeHtml(info.model_count)}</span>`;
 
-                if (this.currentType === typeGroup.type && this.currentPathIdx === typeGroup.path_idx && this.currentSubfolder === path) {
+                const scope = this.modelScope;
+                if (scope?.subfolder === path && scope.type === typeGroup.type && scope.path_idx === typeGroup.path_idx) {
                     item.classList.add('active');
                 }
 
@@ -411,6 +413,7 @@ export function renderSidebar() {
                         this.renderSidebar();
                         return;
                     }
+                    this.modelScope = { type: typeGroup.type, path_idx: typeGroup.path_idx, subfolder: path };
                     this.currentType = typeGroup.type;
                     this.currentPathIdx = typeGroup.path_idx;
                     this.currentSubfolder = path;
@@ -434,24 +437,7 @@ export async function loadFolders() {
             const res = await fetch('/anomalous/folders');
             const data = await res.json();
             this.foldersData = data.folders || [];
-
-            if (!this.firstLoadDone && this.foldersData.length > 0) {
-                this.firstLoadDone = true;
-                let found = false;
-                for (const typeGroup of this.foldersData) {
-                    const sortedPaths = Object.keys(typeGroup.folders).sort();
-                    for (const path of sortedPaths) {
-                        if (typeGroup.folders[path].model_count > 0) {
-                            this.currentType = typeGroup.type;
-                            this.currentPathIdx = typeGroup.path_idx;
-                            this.currentSubfolder = path;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (found) break;
-                }
-            }
+            settleModelScope(this);
 
             // Auto expand all
             (this.foldersData || []).forEach(typeGroup => {

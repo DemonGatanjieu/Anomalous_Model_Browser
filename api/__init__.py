@@ -1,6 +1,6 @@
 from . import (
     activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
-    model_media, model_metadata, model_resolution, recipe_packages, recipes,
+    model_media, model_metadata, model_resolution, model_type_listing, recipe_packages, recipes,
     translation_routes, version_manager,
 )
 from .scanner import *
@@ -32,6 +32,7 @@ def setup_routes(app):
     app.router.add_get('/anomalous/folders', model_catalog.api_get_folders)
     app.router.add_get('/anomalous/all_folder_types', folder_types.api_get_all_folder_types)
     app.router.add_get('/anomalous/models', model_catalog.api_get_models)
+    app.router.add_get('/anomalous/type_models', model_type_listing.api_get_type_models)
     app.router.add_get('/anomalous/all_scan_models', model_catalog.api_get_all_scan_models)
     app.router.add_get('/anomalous/batch_select', model_catalog.api_batch_select)
     app.router.add_get('/anomalous/image', media_routes.api_serve_image)
