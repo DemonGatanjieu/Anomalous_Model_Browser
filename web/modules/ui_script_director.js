@@ -185,6 +185,8 @@ function createPanel() {
     }));
 
     const linesContainer = el('div', 'anomalous-sd-lines-container');
+    // Settings and cards share one scroll area; the footer below stays a short bar.
+    const scroll = el('div', 'anomalous-sd-scroll');
 
     const footer = el('div', 'anomalous-sd-footer');
     const summary = el('div', 'anomalous-sd-package-summary');
@@ -205,10 +207,11 @@ function createPanel() {
         resetTakes: () => state.lines.forEach(line => { line.take = 1; }),
         onBusyChange: () => renderAll(),
     });
-    footer.append(summary, runSection.element, actions);
+    scroll.append(runSection.settings, linesContainer);
+    footer.append(summary, runSection.bar, actions);
 
-    panel.append(header, characterBar, characterHint, inputArea, linesBar, linesContainer, footer);
-    refs = { subtitle, characterSelect, characterHint, inputArea, textarea, cancelEdit, linesBar, linesCount, linesContainer, footer, summary, dragHandle, copyBtn, pushBtn };
+    panel.append(header, characterBar, characterHint, inputArea, linesBar, scroll, footer);
+    refs = { subtitle, characterSelect, characterHint, inputArea, textarea, cancelEdit, linesBar, linesCount, scroll, linesContainer, footer, summary, dragHandle, copyBtn, pushBtn };
 }
 
 function renderAll() {
@@ -223,7 +226,7 @@ function renderAll() {
     refs.inputArea.hidden = hasLines && !state.editing;
     refs.cancelEdit.hidden = !hasLines;
     refs.linesBar.hidden = !hasLines || state.editing;
-    refs.linesContainer.hidden = !hasLines || state.editing;
+    refs.scroll.hidden = !hasLines || state.editing;
     refs.footer.hidden = !hasLines || state.editing;
     refs.linesCount.textContent = t('scriptDirectorLinesCount', { count: state.lines.length });
     if (hasLines && !state.editing) renderLines();

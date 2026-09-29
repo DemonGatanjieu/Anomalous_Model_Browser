@@ -13,7 +13,10 @@ import { fetchGptSovitsCharacter, loadGptSovitsStatus, saveGptSovitsSettings } f
  * setting that worked can be saved back to it.
  *
  * The director owns the lines; this section owns the job, the options and the
- * result, which live for the page session like the director's panel.
+ * result, which live for the page session like the director's panel. It has two
+ * parts: `settings` (one folded line, placed above the line cards so it scrolls
+ * with them) and `bar` (generate / retake / cancel and the result, kept short at
+ * the bottom of the drawer).
  */
 
 const LANGUAGES = ['auto', 'zh', 'ja', 'en'];
@@ -21,6 +24,7 @@ const MIN_FORMAT = 11; // Anomalous_TTS interface with [take:N] and `defaults`
 // Folded under "Advanced"; ranges and defaults come from the node's own input spec.
 const SAMPLING = ['top_k', 'top_p', 'temperature', 'repetition_penalty'];
 const NUMBERS = ['speed', ...SAMPLING];
+const OPEN_KEY = 'anomalous_script_run_settings_open';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -77,10 +81,15 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
         supported: null,      // TTS interface >= MIN_FORMAT; null while unknown
     };
 
-    const root = el('div', 'anomalous-sd-run');
-    const hint = el('div', 'anomalous-sd-run-hint');
+    const bar = el('div', 'anomalous-sd-run');
+    const hint = el('div', 'anomalous-sd-run-hint is-warning', t('scriptRunNeedsUpdate'));
 
-    const options = el('div', 'anomalous-sd-run-options');
+    const settings = el('details', 'anomalous-sd-run-settings');
+    const settingsSummary = el('summary');
+    try { settings.open = localStorage.getItem(OPEN_KEY) === '1'; } catch (_) { /* folded by default */ }
+    settings.addEventListener('toggle', () => {
+        try { localStorage.setItem(OPEN_KEY, settings.open ? '1' : '0'); } catch (_) { /* convenience only */ }
+    });
     const language = el('select', 'anomalous-sd-run-select');
     for (const code of LANGUAGES) {
         const option = el('option', '', t(`scriptRunLang_${code}`));
@@ -104,19 +113,17 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
         fields[name] = input;
         return input;
     };
-    options.append(
-        el('span', 'anomalous-sd-step', t('scriptRunLanguage')), language,
-        el('span', 'anomalous-sd-step', t('scriptRunSpeed')), numberField('speed'),
-    );
-    const advanced = el('details', 'anomalous-sd-run-advanced');
-    const advancedGrid = el('div', 'anomalous-sd-run-advanced-grid');
-    for (const name of SAMPLING) {
-        const label = el('label', 'anomalous-sd-run-param');
-        label.append(el('span', '', name), numberField(name));
-        advancedGrid.appendChild(label);
-    }
-    advanced.append(el('summary', '', t('scriptRunAdvanced')), advancedGrid, el('div', 'anomalous-sd-run-advanced-note', t('scriptRunAdvancedNote')));
+    const grid = el('div', 'anomalous-sd-run-grid');
+    const param = (label, control) => {
+        const row = el('label', 'anomalous-sd-run-param');
+        row.append(el('span', '', label), control);
+        grid.appendChild(row);
+    };
+    param(t('scriptRunLanguage'), language);
+    param(t('scriptRunSpeed'), numberField('speed'));
+    for (const name of SAMPLING) param(name, numberField(name));
     const saveDefaults = button('anomalous-sd-link-btn', t('scriptRunSaveDefaults'), () => storeDefaults(), t('scriptRunSaveDefaultsHint'));
+    settings.append(settingsSummary, grid, el('div', 'anomalous-sd-run-note', t('scriptRunAdvancedNote')), saveDefaults);
 
     const actions = el('div', 'anomalous-sd-run-actions');
     const generateBtn = button('anomalous-sd-btn accent', t('scriptRunGenerate'), () => generate());
@@ -136,7 +143,7 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
     const savedTo = el('div', 'anomalous-sd-run-saved');
     const warnings = el('div', 'anomalous-sd-run-warnings');
 
-    root.append(hint, options, advanced, saveDefaults, actions, player, savedTo, warnings);
+    bar.append(hint, actions, player, savedTo, warnings);
 
     /** The character's saved defaults over the node's own defaults. */
     function storedOptions(group) {
@@ -256,12 +263,17 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
         const { group, pkg } = script;
         const busy = Boolean(state.job);
         const ready = Boolean(state.supported && group);
-        hint.textContent = state.supported ? t('scriptRunHint', { character: group?.character || '' }) : t('scriptRunNeedsUpdate');
-        hint.classList.toggle('is-warning', !state.supported);
+        hint.hidden = Boolean(state.supported);
+        generateBtn.title = t('scriptRunHint', { character: group?.character || '' });
 
-        options.hidden = advanced.hidden = actions.hidden = !ready;
+        settings.hidden = actions.hidden = !ready;
         if (ready) {
             const opts = currentOptions(group);
+            const tuned = SAMPLING.some(name => opts[name] !== state.spec[name].default);
+            settingsSummary.textContent = t('scriptRunSettingsSummary', {
+                language: t(`scriptRunLang_${opts.language}`),
+                speed: opts.speed,
+            }) + (tuned ? t('scriptRunSettingsTuned') : '');
             language.value = opts.language;
             for (const name of NUMBERS) {
                 const range = state.spec[name];
@@ -294,7 +306,8 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
     }
 
     return {
-        element: root,
+        settings,
+        bar,
         render,
         generate,
         /** A line can be retaken once this character has a result and nothing is running. */
