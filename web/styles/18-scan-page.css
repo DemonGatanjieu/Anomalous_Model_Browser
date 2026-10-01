@@ -44,6 +44,18 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.03);
+    font: inherit;
+    text-align: left;
+}
+
+/* Unmatched and not scanned open their list. */
+button.anomalous-scan-stat {
+    cursor: pointer;
+}
+
+button.anomalous-scan-stat:hover {
+    border-color: rgba(165, 180, 252, 0.4);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .anomalous-scan-stat-value {
@@ -228,7 +240,165 @@
     border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+/* The scan page's cards: the last scan's result and the model lists. */
+.anomalous-scan-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.anomalous-scan-card-title {
+    color: #9ca3af;
+    font-size: 12.5px;
+}
+
+.anomalous-scan-result-counts {
+    color: #f3f4f6;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.anomalous-scan-note {
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    line-height: 1.55;
+}
+
+.anomalous-scan-note.is-warn {
+    background: rgba(252, 211, 77, 0.08);
+    color: #fcd34d;
+}
+
+.anomalous-scan-note.is-error {
+    background: rgba(248, 113, 113, 0.08);
+    color: #fca5a5;
+}
+
+.anomalous-scan-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.anomalous-scan-tab {
+    padding: 5px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.anomalous-scan-tab[aria-selected="true"] {
+    border-color: rgba(165, 180, 252, 0.45);
+    background: rgba(165, 180, 252, 0.12);
+    color: #e5e7eb;
+}
+
+.anomalous-scan-tab:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.anomalous-scan-rows {
+    display: flex;
+    flex-direction: column;
+}
+
+.anomalous-scan-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.anomalous-scan-row-mark {
+    flex-shrink: 0;
+    width: 16px;
+    color: #fcd34d;
+    text-align: center;
+}
+
+.anomalous-scan-row.is-matched .anomalous-scan-row-mark { color: #86efac; }
+.anomalous-scan-row.is-failed .anomalous-scan-row-mark { color: #fca5a5; }
+.anomalous-scan-row.is-unchanged .anomalous-scan-row-mark { color: #9ca3af; }
+
+.anomalous-scan-row-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.anomalous-scan-row-name,
+.anomalous-scan-row-where,
+.anomalous-scan-row-detail {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.anomalous-scan-row-name {
+    color: #e5e7eb;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.anomalous-scan-row-where {
+    color: #6b7280;
+    font-size: 11.5px;
+}
+
+.anomalous-scan-row-detail {
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+.anomalous-scan-row-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 6px;
+}
+
+.anomalous-scan-row-btn,
+.anomalous-scan-more {
+    padding: 3px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    background: transparent;
+    color: #d1d5db;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-scan-row-btn:hover:not(:disabled),
+.anomalous-scan-more:hover {
+    border-color: rgba(165, 180, 252, 0.45);
+    color: #ffffff;
+}
+
+.anomalous-scan-row-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.anomalous-scan-more {
+    align-self: flex-start;
+    margin-top: 8px;
+}
+
 @media (max-width: 560px) {
     .anomalous-scan-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .anomalous-scan-page { padding: 24px 16px 32px; }
+    .anomalous-scan-row { flex-wrap: wrap; }
+    .anomalous-scan-row-actions { width: 100%; padding-left: 26px; }
 }

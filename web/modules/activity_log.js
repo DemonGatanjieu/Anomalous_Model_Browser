@@ -5,13 +5,14 @@
  */
 
 import { translate as t } from './locales.js';
+import { countsLine, fileOutcome, scanScope, STATUS_MARKS } from './scan_results.js';
 
 // Server action id → locale key.
 const ACTION_KEYS = {
     model_delete: 'activityModelDelete',
     model_edit: 'activityModelEdit',
     model_cover: 'activityModelCover',
-    scan: 'activityScan',
+    scan: 'activityScan', // entries from before scans were recorded with their result
     recipe_save: 'activityRecipeSave',
     recipe_edit: 'activityRecipeEdit',
     recipe_delete: 'activityRecipeDelete',
@@ -70,8 +71,39 @@ export function entrySummary(entry) {
         if (opened) return t('activityCanvasOpened', { name: opened.node || '—', count: opened.after || '?' });
         return t('activityCanvasChanged', { count: entry.detail?.total || changes.length });
     }
+    if (entry.action === 'scan_done') {
+        const scan = entry.detail?.scan || {};
+        return t('activityScanDone', { scope: scanScope(scan, entry.target), counts: countsLine(scan.counts) });
+    }
     const words = t(ACTION_KEYS[entry.action] || 'activityUnknown');
     return entry.target ? t('activityWithTarget', { action: words, target: entry.target }) : words;
+}
+
+const FIELD_KEYS = {
+    custom_name: 'modelSourceFieldName', custom_notes: 'modelSourceFieldNotes',
+    source_url: 'modelSourceFieldLink', filename: 'activityFieldFilename',
+};
+
+/**
+ * The lines a file entry opens to: [{text, model?}], `model` being a scanned model the line
+ * can open ({type, path_idx, rel, filename}). Empty for entries without details.
+ */
+export function fileDetailLines(entry) {
+    const detail = entry.detail || {};
+    const empty = t('activityEmptyValue');
+    const lines = [];
+    if (detail.scan?.civitai_down) lines.push({ text: t('scanResultCivitaiDown') });
+    for (const error of detail.scan?.errors || []) lines.push({ text: error });
+    for (const item of detail.files || []) {
+        if (typeof item === 'string') lines.push({ text: t('activityFileMoved', { name: item }) });
+        else lines.push({ text: `${STATUS_MARKS[item.status] || '·'} ${item.filename}: ${fileOutcome(item)}`, model: item.rel ? item : null });
+    }
+    for (const field of detail.fields || []) {
+        lines.push({ text: t('activityFieldChange', {
+            field: t(FIELD_KEYS[field.field] || field.field), before: field.before || empty, after: field.after || empty,
+        }) });
+    }
+    return lines;
 }
 
 /** One line per canvas change (not for `opened`). */

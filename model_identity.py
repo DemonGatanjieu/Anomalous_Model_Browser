@@ -48,6 +48,17 @@ def is_unmatched(info):
     return isinstance(info, dict) and info.get("id") == -1
 
 
+# Why an unmatched model has no Civitai record: Civitai does not know the file; Civitai could
+# not be reached; the scan was offline. Scans before this was recorded leave it empty.
+UNMATCHED_REASONS = ("not_found", "network", "offline")
+
+
+def unmatched_reason(info):
+    """One of UNMATCHED_REASONS for an unmatched model's info, else ""."""
+    reason = info.get("anomalous_unmatched_reason") if is_unmatched(info) else ""
+    return reason if reason in UNMATCHED_REASONS else ""
+
+
 def normalise_sha256(value):
     if not isinstance(value, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", value.strip()):
         return ""

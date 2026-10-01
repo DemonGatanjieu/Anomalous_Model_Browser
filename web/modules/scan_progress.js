@@ -138,17 +138,18 @@ export function updateScanProgress(status, titleText = '') {
 }
 
 
-function closeLater(panel) {
+function closeLater(panel, ms = 4000) {
     if (closeTimer) clearTimeout(closeTimer);
     if (host) return; // on the scan page the result stays until the page is left
     closeTimer = setTimeout(() => {
         if (panel === current) removePanel();
         closeTimer = null;
-    }, 4000);
+    }, ms);
 }
 
 
-export function finishScanProgress(detailText = '') {
+/** The scan has ended. `action` ({label, onClick}): a button while the box floats, e.g. to the result. */
+export function finishScanProgress(detailText = '', action = null) {
     const panel = ensurePanel();
     panel.classList.remove('is-error');
     panel.classList.add('is-complete');
@@ -166,8 +167,20 @@ export function finishScanProgress(detailText = '') {
             panel.querySelector('.anomalous-scan-progress-detail').textContent = translate('scanProgressFinished');
         }
     }
-    panel.querySelector('.anomalous-scan-progress-item').textContent = '';
-    closeLater(panel);
+    const item = panel.querySelector('.anomalous-scan-progress-item');
+    item.textContent = '';
+    if (action && !host) {
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'anomalous-scan-progress-action';
+        open.textContent = action.label;
+        open.onclick = () => {
+            removePanel();
+            action.onClick();
+        };
+        item.appendChild(open);
+    }
+    closeLater(panel, action && !host ? 12000 : 4000);
 }
 
 

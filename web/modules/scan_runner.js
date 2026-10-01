@@ -1,13 +1,15 @@
 /**
- * Starting scans and following them: a scan of every model folder (or of picked models)
- * from the scan page, and the precision scan of one model from its card. Progress goes
- * to scan_progress.js; when a scan ends, node drop-downs, hashes and the model grid are
- * refreshed. No page DOM here: ui_scan_page.js renders the page.
+ * Starting scans and following them: every model folder, picked models or listed models from
+ * the scan page (all through /anomalous/scan_all), and one model from its card. Progress goes
+ * to scan_progress.js; when a scan ends its result (GET /anomalous/last_scan) is shown, and
+ * node drop-downs, hashes and the model grid are refreshed. No page DOM here: ui_scan_page.js
+ * renders the page.
  */
 
 import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
 import { updateScanProgress, finishScanProgress, failScanProgress } from './scan_progress.js';
+import { oneModelLine, resultLine } from './scan_results.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 
 const POLL_MS = 2000;
@@ -50,6 +52,31 @@ export function scanRequestBody(options) {
     };
 }
 
+/** Listed models ({type, path_idx, rel}) as the scan's `targets`, one per folder. */
+export function targetsForItems(items) {
+    const folders = new Map();
+    for (const item of items) {
+        const cut = item.rel.lastIndexOf('/');
+        const subfolder = cut < 0 ? '/' : `/${item.rel.slice(0, cut)}`;
+        const key = `${item.type}|${item.path_idx}|${subfolder}`;
+        if (!folders.has(key)) folders.set(key, { type: item.type, path_idx: item.path_idx, subfolder, files: [] });
+        folders.get(key).files.push(item.filename);
+    }
+    return [...folders.values()];
+}
+
+/** The model picker's selection (Map "type|path_idx|subfolder" -> Set of file names) as `targets`. */
+function targetsForSelection(selection) {
+    const targets = [];
+    for (const [folderKey, files] of selection.entries()) {
+        const [type, pathIdx, ...rest] = folderKey.split('|');
+        if (type && pathIdx !== undefined && rest.length && files.size) {
+            targets.push({ type, path_idx: Number(pathIdx), subfolder: rest.join('|'), files: [...files] });
+        }
+    }
+    return targets;
+}
+
 async function postJson(url, body) {
     const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));
@@ -57,13 +84,22 @@ async function postJson(url, body) {
     return data;
 }
 
+/** The last scan's result ({} before the first, or when it cannot be read). */
+export async function fetchLastScan() {
+    try {
+        return await (await fetch('/anomalous/last_scan')).json();
+    } catch {
+        return {};
+    }
+}
+
 /** Polls a status URL until the scan there stops; resolves with the last status. */
-function followScan(statusUrl, extra = {}) {
+function followScan(statusUrl, extra = {}, everyMs = POLL_MS, title = '') {
     return new Promise((resolve, reject) => {
         const poll = setInterval(async () => {
             try {
                 const status = await (await fetch(statusUrl)).json();
-                updateScanProgress({ ...status, ...extra });
+                updateScanProgress({ ...status, ...extra }, title);
                 if (!status.scanning) {
                     clearInterval(poll);
                     resolve(status);
@@ -72,7 +108,7 @@ function followScan(statusUrl, extra = {}) {
                 clearInterval(poll);
                 reject(error);
             }
-        }, POLL_MS);
+        }, everyMs);
     });
 }
 
@@ -87,131 +123,45 @@ async function afterScan(owner, autoFix) {
     owner.loadModels?.();
 }
 
-/** Picked models: one folder after the other (`selection`: Map "type|path_idx|subfolder" -> Set of file names). */
-async function scanSelection(selection, body) {
-    const folders = [...selection.entries()].filter(([, files]) => files.size > 0);
-    let current = 0;
-    updateScanProgress({ scanning: true, phase: 'preparing', folder_total: folders.length, folder_current: 0 });
-    let last = {};
-    for (const [folderKey, files] of folders) {
-        current += 1;
-        const [type, pathIdx, ...rest] = folderKey.split('|');
-        const subfolder = rest.join('|');
-        if (!type || pathIdx === undefined || !rest.length) continue;
-        const params = new URLSearchParams({ type, path_idx: pathIdx, subfolder });
-        try {
-            await postJson(`/anomalous/scan?${params}`, { ...body, target_files: [...files] });
-            last = await followScan(`/anomalous/scan_status?${params}`, { folder_total: folders.length, folder_current: current, folder: subfolder });
-        } catch (error) {
-            console.error('[AMB] Scan failed for folder:', folderKey, error);
-            last = { error: String(error.message || error) };
-        }
-    }
-    return last;
+/** The ended scan's line, with a way to its result when the progress box floats. */
+export function showScanResult(owner, result) {
+    finishScanProgress(resultLine(result), {
+        label: t('scanProgressShowResult'),
+        onClick: () => {
+            owner.show?.();
+            owner.openScanPage?.();
+        },
+    });
 }
 
 /**
- * Runs one scan from the scan page: every active model folder, or `options.selection`.
- * Resolves when it has ended (true) or could not start (false, with the reason shown).
+ * Runs one scan from the scan page: every active model folder, `options.selection` (the model
+ * picker) or `options.targets` (listed models). Resolves with the scan's result when it has
+ * ended, or null when it could not start (the reason shown).
  */
 export async function startScan(owner, options) {
-    if (running) return false;
+    if (running) return null;
     running = true;
     setActiveScanButtonState(true);
     const body = scanRequestBody(options);
+    const targets = options.targets || (options.selection ? targetsForSelection(options.selection) : null);
+    if (targets) body.targets = targets;
     try {
-        let status;
-        if (options.selection) {
-            status = await scanSelection(options.selection, body);
-        } else {
-            const data = await postJson('/anomalous/scan_all', body);
-            updateScanProgress({ scanning: true, phase: 'preparing', recovered: data.recovered });
-            status = await followScan('/anomalous/global_scan_status');
-        }
+        const data = await postJson('/anomalous/scan_all', body);
+        updateScanProgress({ scanning: true, phase: 'preparing', recovered: data.recovered });
+        const status = await followScan('/anomalous/global_scan_status');
+        const result = await fetchLastScan();
         if (status.interrupted) failScanProgress(t('scanProgressInterrupted'));
-        else finishScanProgress();
+        else showScanResult(owner, result);
         await afterScan(owner, options.autoFix);
-        return true;
+        return result;
     } catch (error) {
         failScanProgress(t('scanPageStartFailed', { error: String(error.message || error) }));
-        return false;
+        return null;
     } finally {
         running = false;
         setActiveScanButtonState(false);
     }
-}
-
-export async function formatScanCompletionToast(model) {
-    const isZh = window.anomalous_browser_lang === 'zh';
-    const fallbackName = model.name || model.filename;
-    try {
-        const findRes = await fetch('/anomalous/find_model?search=' + encodeURIComponent(model.filename));
-        if (findRes.ok) {
-            const updated = await findRes.json();
-            const target = updated?.model || updated || model;
-            if (target && target.metadata) {
-                const meta = target.metadata;
-                const isCivitai = Boolean(
-                    (meta.id && meta.id !== -1) ||
-                    (meta.modelId && meta.modelId !== -1) ||
-                    (meta.model_id && meta.model_id !== -1) ||
-                    (meta.version_id && meta.version_id !== -1) ||
-                    meta.civitai_url
-                );
-                const hasPreview = Boolean(target.preview_url);
-                const baseModel = meta.baseModel;
-
-                if (isCivitai && hasPreview) {
-                    return isZh ? `✓ 已从 Civitai 获取封面与模型信息！` : `✓ Civitai cover & metadata fetched!`;
-                }
-                if (isCivitai && !hasPreview) {
-                    return isZh ? `✓ 已匹配到 Civitai 信息（线上未提供封面）` : `✓ Civitai metadata matched (no cover online)`;
-                }
-                if (!isCivitai) {
-                    if (baseModel) {
-                        return isZh
-                            ? `ℹ️ 非 Civitai 模型：已识别底模为 [${baseModel}]`
-                            : `ℹ️ Non-Civitai model: inferred base model [${baseModel}]`;
-                    }
-                    return isZh
-                        ? `ℹ️ 未在 Civitai 匹配到此模型`
-                        : `ℹ️ No Civitai match found for this model`;
-                }
-            }
-        }
-    } catch {
-        // fallback to standard text
-    }
-    return isZh ? `✓ 模型 [${fallbackName}] 扫描完成！` : `✓ Model [${fallbackName}] scanned!`;
-}
-
-function pollDirectScanStatus(params, titleText, model, onComplete) {
-    const statusUrl = '/anomalous/scan_status?' + params.toString();
-    const poll = setInterval(async () => {
-        try {
-            const statusRes = await fetch(statusUrl);
-            const statusData = await statusRes.json();
-            updateScanProgress(statusData, titleText);
-
-            if (!statusData.scanning) {
-                clearInterval(poll);
-                if (statusData.interrupted) {
-                    failScanProgress(t('scanProgressInterrupted'));
-                    showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? '扫描被中断' : 'Scan interrupted');
-                } else {
-                    const toastMsg = await formatScanCompletionToast(model);
-                    finishScanProgress(toastMsg);
-                    showWorkbenchToast(toastMsg);
-                }
-                onComplete(true);
-            }
-        } catch (err) {
-            clearInterval(poll);
-            failScanProgress(String(err));
-            onComplete(false);
-        }
-    }, 1200);
-    return poll;
 }
 
 /** The radar button on a model card: scan just that model, in its own folder. */
@@ -220,8 +170,7 @@ export async function triggerDirectModelScan(model, triggerBtn = null, browserIn
     if (!model || !model.filename) return;
 
     const modelLabel = model.name || model.filename;
-    const isZh = window.anomalous_browser_lang === 'zh';
-    const titleText = isZh ? `精准扫描: ${modelLabel}` : `Scanning: ${modelLabel}`;
+    const titleText = t('scanOneTitle', { name: modelLabel });
 
     if (triggerBtn) {
         triggerBtn.classList.add('anomalous-radar-spinning');
@@ -254,45 +203,38 @@ export async function triggerDirectModelScan(model, triggerBtn = null, browserIn
             path_idx: browser.currentPathIdx || 0,
             subfolder: browser.currentSubfolder || '/',
         });
-        const reqBody = {
+        // A model that was looked up without an answer is looked up again.
+        await postJson(`/anomalous/scan?${params}`, {
             target_files: [model.filename],
             offline_only: false,
             skip_rename: true,
             virtual_rename: false,
             physical_rename: false,
-            force_overwrite: false
-        };
-
-        const res = await fetch('/anomalous/scan?' + params.toString(), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(reqBody)
+            force_overwrite: false,
+            retry_unmatched: model.metadata?.info_source === 'local',
         });
-
-        const data = await res.json();
-        if (data.status === 'ok') {
-            showWorkbenchToast(isZh ? `开始精准扫描: ${modelLabel}` : `Scanning model: ${modelLabel}`);
-            pollDirectScanStatus(params, titleText, model, async () => {
-                resetBtn();
-                if (typeof browser.loadModels === 'function') {
-                    browser.loadModels();
-                }
-                try {
-                    if (app?.refreshComboInNodes) await app.refreshComboInNodes();
-                    if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();
-                } catch (e) {
-                    console.warn('[AMB] Error reloading hashes or combo nodes:', e);
-                }
-            });
+        showWorkbenchToast(titleText);
+        const status = await followScan(`/anomalous/scan_status?${params}`, {}, 1200, titleText);
+        resetBtn();
+        if (status.interrupted) {
+            failScanProgress(t('scanProgressInterrupted'));
+            showWorkbenchToast(t('scanProgressInterrupted'));
         } else {
-            resetBtn();
-            const errMsg = data.message || (isZh ? '扫描启动失败' : 'Failed to start scan');
-            failScanProgress(errMsg);
-            showWorkbenchToast(errMsg);
+            const line = oneModelLine(await fetchLastScan());
+            finishScanProgress(line);
+            showWorkbenchToast(line);
+        }
+        browser.loadModels?.();
+        try {
+            if (app?.refreshComboInNodes) await app.refreshComboInNodes();
+            if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();
+        } catch (e) {
+            console.warn('[AMB] Error reloading hashes or combo nodes:', e);
         }
     } catch (e) {
         resetBtn();
-        failScanProgress(String(e));
-        showWorkbenchToast(String(e));
+        const message = String(e.message || e) || t('scanPageStartFailed', { error: '' });
+        failScanProgress(message);
+        showWorkbenchToast(message);
     }
 }

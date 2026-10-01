@@ -128,6 +128,22 @@ file count, current index, and filename. Status responses merge worker progress
 with parent-owned folder progress. The frontend can reconstruct this state by
 polling after its UI has been reopened.
 
+`scraper.py --report-file` appends one JSON line per model it changed (`matched`,
+`inferred` with its reason, `failed` with the error, renames and covers) and events
+(`civitai_down`, `done` with the unchanged count). One model's error is reported and
+the scan goes on. `ScanJob` in `api/scan_report.py` reads each folder's report when its
+worker exits and, before the scan's marker is released, writes the scan's result to
+`user/anomalous/last_scan.json` and the activity log, so whoever sees the scan end can
+read its result. The scan page's picked or listed models go to `/anomalous/scan_all` as
+`targets` (`--targets-file` per folder), so one scan has one result.
+
+An unmatched model's `.info` (`id` -1) keeps why: `anomalous_unmatched_reason` is
+`not_found` (Civitai answered 404), `network` (no answer after the retries) or
+`offline`. Online scans look up `network` and `offline` models again; `not_found` ones
+wait for "look up again". After `CIVITAI_DOWN_AFTER` models in a row without an answer
+a scan stops asking (`--civitai-down` carries this to the next folders) and infers the
+rest from the files, instead of waiting for every timeout.
+
 ## Metadata and cache behavior
 
 The output gallery keeps one ordered directory snapshot for at most ten seconds

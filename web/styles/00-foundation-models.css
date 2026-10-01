@@ -903,6 +903,22 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     font-size: 11px;
 }
 
+.anomalous-scan-progress-action {
+    margin-top: 8px;
+    padding: 4px 12px;
+    border: 1px solid rgba(138, 180, 248, 0.45);
+    border-radius: 999px;
+    background: transparent;
+    color: #d7dde8;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-scan-progress-action:hover {
+    background: rgba(138, 180, 248, 0.14);
+    color: #ffffff;
+}
+
 .anomalous-scan-progress.is-complete .anomalous-scan-progress-fill {
     background: #81c995;
 }

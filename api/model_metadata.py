@@ -14,6 +14,8 @@ from .model_constants import (
     CIVITAI_BACKUP_SUFFIXES, MEDIA_EXTENSIONS, MODEL_EXTENSIONS,
     PREVIEW_SUFFIXES, SIDECAR_SUFFIXES,
 )
+from .activity_log import ACTIVITY_DETAIL
+from .metadata import get_metadata
 from .model_catalog import _resolve_paths_to_model_info_sync
 from .trash import move_to_trash, trash_failure
 from .utils import atomic_write_json
@@ -117,6 +119,7 @@ async def api_delete_model(request):
         except Exception as e:
             return web.json_response({"status": "error", "message": trash_failure(e)})
         deleted_files = [os.path.basename(path) for path in moved]
+        request[ACTIVITY_DETAIL] = {"files": deleted_files}
 
         # 前端期待的成功状态是 "success" 而不是 "ok"
         return web.json_response({
@@ -194,6 +197,7 @@ async def api_update_metadata(request):
         if os.path.exists(user_file) and read_json(user_file) is None:
             return web.json_response({"status": "error", "message": f"{os.path.basename(user_file)} is unreadable; nothing was changed."})
         user_data = read_json(user_file) or {"format": 1}
+        before = get_metadata(file_path)  # what was shown, for the activity log
         if 'custom_name' in data:
             user_data["custom_name"] = str(custom_name)
         if 'custom_notes' in data:
@@ -231,6 +235,13 @@ async def api_update_metadata(request):
             elif os.path.exists(new_file_path) and new_file_path != file_path:
                 return web.json_response({"status": "error", "message": "A file with the target physical name already exists."})
             
+        sent = [key for key in ("custom_name", "custom_notes") if key in data]
+        sent += ["source_url"] if custom_source_url is not None else []
+        fields = [{"field": key, "before": before.get(key) or "", "after": user_data[key]}
+                  for key in sent if user_data[key] != (before.get(key) or "")]
+        if new_filename != filename:
+            fields.append({"field": "filename", "before": filename, "after": new_filename})
+        request[ACTIVITY_DETAIL] = {"fields": fields}
         response_data = {
             "status": "success",
             "new_filename": new_filename,

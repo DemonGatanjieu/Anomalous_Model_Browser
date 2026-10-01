@@ -87,9 +87,14 @@ covered by the `styles.css` manifest.
   whole models folder with its subfolders for the models page's type chips.
 - `api/scanner.py` and `scraper.py` own scan orchestration and enrichment; both scan
   routes map request fields to scraper switches in one place (`_scraper_flags`).
+  `civitai_client.py` is the scraper's network side (version by hash, model page, media),
+  telling "Civitai does not know the file" from "Civitai could not be asked".
+  `api/scan_report.py` turns the scraper's per-model report lines into one result per
+  scan: kept as the last scan (`/anomalous/last_scan`), recorded in the activity log, each
+  model located so the browser can open it (`/anomalous/scan_model`).
   `api/scan_summary.py` counts models matched on Civitai, unmatched and not yet scanned
-  for the scan page, by the same sidecar rules the scraper uses (`sidecar_info`,
-  `is_unmatched` in `model_identity.py`).
+  for the scan page and lists the last two, by the same sidecar rules the scraper uses
+  (`sidecar_info`, `is_unmatched`, `unmatched_reason` in `model_identity.py`).
 - `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
   `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
   integrity receipts; `api/recipes.py` is the HTTP facade. `api/recipe_constants.py`
@@ -282,7 +287,8 @@ covered by the `styles.css` manifest.
   The activity log (docs/decisions AD-018): `api/activity_log.py` keeps the entries
   (newest first, bounded, in the ComfyUI user folder), records this plugin's and
   Anomalous_TTS's successful write requests in a middleware, and serves
-  `/anomalous/activity`; `activity_canvas.js` records canvas changes by comparing a
+  `/anomalous/activity` (a handler may attach what it changed, `request[ACTIVITY_DETAIL]`;
+  scans record themselves when they end); `activity_canvas.js` records canvas changes by comparing a
   snapshot taken when the user presses inside Anomalous with the canvas when they
   next press or type outside it (`activity_diff.js` holds the pure snapshot and
   difference); `activity_log.js` is the client and the words for each entry;
@@ -293,9 +299,12 @@ covered by the `styles.css` manifest.
   including Esc on the workspace panel (`nbPanel`, below the header and right of the
   rail; the list column steps aside while it is open).
   `ui_scan_page.js` is the scan page (a tool page like the doctor): counts, scan and
-  look-up-again buttons, advanced options. `scan_runner.js` starts and follows scans
-  (every folder, picked models, or one model from its card) and refreshes node
-  drop-downs, hashes and the grid afterwards; folder visibility/order lives in
+  look-up-again buttons, advanced options; `ui_scan_lists.js` renders its last-scan result
+  and the unmatched / not-scanned lists, whose rows open a model or scan it;
+  `scan_results.js` holds the words for scan results, shared with the activity page.
+  `scan_runner.js` starts and follows scans (every folder, picked or listed models, or one
+  model from its card), shows the result and refreshes node drop-downs, hashes and the
+  grid afterwards; folder visibility/order lives in
   `ui_folder_manager.js`; and help content lives in `ui_help.js`.
   `scan_progress.js` owns the scan progress panel
   (`updateScanProgress` / `finishScanProgress` / `failScanProgress`): inside the scan

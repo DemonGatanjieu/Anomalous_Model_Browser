@@ -26,14 +26,13 @@ MAX_LOG_BYTES = 2 * 1024 * 1024  # long canvas entries could otherwise outgrow t
 MAX_VALUE_CHARS = 400
 MAX_CHANGES = 60
 
-# Write routes worth a line in the log → the action id the browser has words for.
+# Write routes worth a line in the log → the action id the browser has words for. Scans are
+# recorded when they end, with what they found (api/scan_report.py), not here.
 ROUTE_ACTIONS = {
     '/anomalous/delete_model': 'model_delete',
     '/anomalous/update_metadata': 'model_edit',
     '/anomalous/set_custom_cover': 'model_cover',
     '/anomalous/upload_custom_cover': 'model_cover',
-    '/anomalous/scan': 'scan',
-    '/anomalous/scan_all': 'scan',
     '/anomalous/save_recipe': 'recipe_save',
     '/anomalous/update_recipe': 'recipe_edit',
     '/anomalous/delete_recipe': 'recipe_delete',
@@ -62,6 +61,10 @@ ROUTE_ACTIONS = {
 # Request fields that name what was changed, in order of preference.
 TARGET_FIELDS = ('name', 'character', 'filename', 'target_filename', 'recipe_filename',
                  'notebook_filename', 'new_name', 'path', 'file', 'target')
+
+# What a handler attaches to its request for the log: request[ACTIVITY_DETAIL] = {fields, files}.
+# web.RequestKey is newer than the aiohttp some ComfyUI installs have; a plain key works there.
+ACTIVITY_DETAIL = web.RequestKey("activity_detail", dict) if hasattr(web, "RequestKey") else "activity_detail"
 
 _lock = threading.RLock()
 _entries = None
@@ -173,6 +176,20 @@ async def _request_body(request):
     return {}
 
 
+def _clean_detail(detail):
+    """What a handler attached for the log (request[ACTIVITY_DETAIL]): the fields it changed
+    ({field, before, after}) and the files it moved, values shortened."""
+    if not isinstance(detail, dict):
+        return None
+    cleaned = {}
+    if isinstance(detail.get('fields'), list):
+        cleaned['fields'] = [{key: _short(item[key]) for key in ('field', 'before', 'after') if key in item}
+                             for item in detail['fields'][:MAX_CHANGES] if isinstance(item, dict)]
+    if isinstance(detail.get('files'), list):
+        cleaned['files'] = [_short(name) for name in detail['files'][:MAX_CHANGES]]
+    return {key: value for key, value in cleaned.items() if value} or None
+
+
 @web.middleware
 async def activity_middleware(request, handler):
     response = await handler(request)
@@ -180,7 +197,8 @@ async def activity_middleware(request, handler):
     if action and not _failed(response):
         try:
             target = _target_of(await _request_body(request))
-            await asyncio.get_running_loop().run_in_executor(None, add_entry, 'file', action, target)
+            detail = _clean_detail(request.get(ACTIVITY_DETAIL))
+            await asyncio.get_running_loop().run_in_executor(None, add_entry, 'file', action, target, detail)
         except Exception:  # noqa: BLE001 - the log must never fail the action it records
             logging.getLogger(__name__).warning('Anomalous activity log: could not record %s', request.path, exc_info=True)
     return response

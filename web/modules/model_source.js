@@ -7,6 +7,7 @@
 
 import { translate as t } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
+import { reasonText } from './scan_results.js';
 
 const FIELD_KEYS = { custom_name: 'modelSourceFieldName', custom_notes: 'modelSourceFieldNotes', source_url: 'modelSourceFieldLink' };
 
@@ -32,7 +33,7 @@ export function renderSourceBadge(model) {
     if (meta.info_source === 'local') {
         badge.classList.add('is-inferred', ...(baseModel ? [colourClass(baseModel)] : []));
         badge.textContent = `≈ ${baseModel || t('modelSourceLocalShort')}`;
-        badge.title = t('modelSourceLocalHint');
+        badge.title = t('modelSourceLocalHint', { reason: reasonText(meta.unmatched_reason) });
     } else if (!meta.info_source && scannable(model)) {
         badge.classList.add('is-unscanned');
         badge.textContent = t('modelSourceNotScanned');
@@ -57,6 +58,6 @@ export function renderSourceLine(span, model, meta) {
     const edited = (meta.user_fields || []).map(field => t(FIELD_KEYS[field] || field));
     if (edited.length) parts.push(escapeHtml(t('modelSourceEdited', { fields: edited.join(t('modelSourceListSep')) })));
     span.innerHTML = parts.join('<span class="anomalous-source-sep"> · </span>');
-    span.title = meta.info_source === 'local' ? t('modelSourceLocalHint')
+    span.title = meta.info_source === 'local' ? t('modelSourceLocalHint', { reason: reasonText(meta.unmatched_reason) })
         : !meta.info_source && scannable(model) ? t('modelSourceNotScannedHint') : '';
 }

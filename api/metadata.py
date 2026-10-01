@@ -11,9 +11,9 @@ from aiohttp import web
 import folder_paths
 import struct
 try:
-    from ..model_identity import USER_INFO_SUFFIX, is_unmatched, read_json, sidecar_file_hash, sidecar_info
+    from ..model_identity import USER_INFO_SUFFIX, is_unmatched, read_json, sidecar_file_hash, sidecar_info, unmatched_reason
 except ImportError:
-    from model_identity import USER_INFO_SUFFIX, is_unmatched, read_json, sidecar_file_hash, sidecar_info
+    from model_identity import USER_INFO_SUFFIX, is_unmatched, read_json, sidecar_file_hash, sidecar_info, unmatched_reason
 
 # Fields the model editor sets: <model>.anomalous.json key -> metadata key.
 USER_FIELDS = {"custom_name": "custom_name", "custom_notes": "custom_notes", "source_url": "source_url"}
@@ -103,6 +103,7 @@ def _read_metadata(file_path):
         "custom_notes": "",
         # "civitai" (matched), "local" (only what the file tells: no match, or offline) or "" (not scanned)
         "info_source": "",
+        "unmatched_reason": "",  # for "local": not_found | network | offline | "" (scanned before this was kept)
         "user_fields": [],
     }
     
@@ -164,6 +165,7 @@ def _read_metadata(file_path):
     scan = sidecar_info(base_path)
     if scan is not None:
         metadata["info_source"] = "local" if is_unmatched(scan) else "civitai"
+        metadata["unmatched_reason"] = unmatched_reason(scan)
     # The user's own layer comes last and wins, also when a field was cleared on purpose ("").
     user = read_json(base_path + USER_INFO_SUFFIX) or {}
     for key, field in USER_FIELDS.items():

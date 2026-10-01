@@ -1,14 +1,16 @@
 /**
- * The scan page: how many models are matched on Civitai, unmatched or new
+ * The scan page: how many models are matched on Civitai, unmatched or not scanned
  * (GET /anomalous/scan_summary), one button to scan, one to look unmatched models up
- * again, progress in the page, and the rarer choices folded under "Advanced".
+ * again, progress in the page, the last scan's result and the unmatched / not scanned
+ * models (ui_scan_lists.js), and the rarer choices folded under "Advanced".
  * Scans run through scan_runner.js; the progress box is scan_progress.js's panel,
  * hosted here while the page is shown.
  */
 
 import { translate as t } from './locales.js';
-import { isScanRunning, startScan } from './scan_runner.js';
+import { isScanRunning, startScan, targetsForItems } from './scan_runner.js';
 import { setScanProgressHost } from './scan_progress.js';
+import { openListedModel, renderLastScan, renderModelLists, showList } from './ui_scan_lists.js';
 
 // Choices kept while the browser is open. The two risky ones go back off after each scan.
 const options = {
@@ -20,6 +22,7 @@ const options = {
     forceOverwrite: false,
     autoFix: true,
 };
+const listState = { tab: '' }; // the open list: 'new' | 'unmatched'
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -50,8 +53,14 @@ async function fetchJson(url) {
     }
 }
 
-function stat(value, label, tone) {
-    const box = el('div', `anomalous-scan-stat${tone ? ` is-${tone}` : ''}`);
+/** A count; with `onClick` it opens the list of those models. */
+function stat(value, label, tone, onClick) {
+    const box = el(onClick ? 'button' : 'div', `anomalous-scan-stat${tone ? ` is-${tone}` : ''}`);
+    if (onClick) {
+        box.type = 'button';
+        box.onclick = onClick;
+        box.title = t('scanPageShowList');
+    }
     box.append(el('strong', 'anomalous-scan-stat-value', value ?? '–'), el('span', 'anomalous-scan-stat-label', label));
     return box;
 }
@@ -144,26 +153,45 @@ async function saveApiKey() {
     }
 }
 
+/** A scan from this page. `extra`: { retryUnmatched } for every unmatched model, or
+ * { targets, retryUnmatched } for the models of a list row. */
 async function run(owner, panel, extra = {}) {
-    if (options.scope === 'picked' && !extra.retryUnmatched && pickedCount() === 0) {
+    const whole = !extra.retryUnmatched && !extra.targets;
+    if (whole && options.scope === 'picked' && pickedCount() === 0) {
         alert(t('scanPageNothingPicked'));
         return;
     }
-    if (options.forceOverwrite && !extra.retryUnmatched && !confirm(t('scanPageForceConfirm'))) return;
-    const selection = options.scope === 'picked' && !extra.retryUnmatched ? options.selection : null;
+    if (whole && options.forceOverwrite && !confirm(t('scanPageForceConfirm'))) return;
+    const selection = whole && options.scope === 'picked' ? options.selection : null;
     const started = startScan(owner, { ...options, ...extra, selection });
     renderScanPage(owner, panel); // buttons show "scanning"
     await started;
-    options.physicalRename = false;
-    options.forceOverwrite = false;
+    if (whole) {
+        options.physicalRename = false;
+        options.forceOverwrite = false;
+    }
     if (panel.isConnected && panel.style.display !== 'none') renderScanPage(owner, panel);
+}
+
+/** What the list rows' buttons do. */
+function listActions(owner, panel, busy) {
+    return {
+        busy,
+        offline: options.offline,
+        open: item => openListedModel(owner, item, () => openScanPage(owner)),
+        scan: (items, { retry = false } = {}) => run(owner, panel, { targets: targetsForItems(items), retryUnmatched: retry }),
+    };
 }
 
 /** Renders the page into `panel` (again after each scan, so the counts are fresh). */
 export async function renderScanPage(owner, panel) {
     const token = (panel._scanRender = (panel._scanRender || 0) + 1);
-    const [summary, config] = await Promise.all([fetchJson('/anomalous/scan_summary'), fetchJson('/anomalous/config')]);
+    const [summary, config, last] = await Promise.all([
+        fetchJson('/anomalous/scan_summary'), fetchJson('/anomalous/config'), fetchJson('/anomalous/last_scan'),
+    ]);
     if (token !== panel._scanRender) return;
+    // Closed or left meanwhile: the progress box keeps floating instead of hiding in the page.
+    if (panel.style.display === 'none' || !owner.modal?.classList.contains('visible')) return;
 
     const page = el('div', 'anomalous-scan-page');
     page.append(el('h1', 'anomalous-scan-title', t('scanPageTitle')), el('p', 'anomalous-scan-lead', t('scanPageLead')));
@@ -172,8 +200,10 @@ export async function renderScanPage(owner, panel) {
     stats.append(
         stat(summary?.total, t('scanPageTotal')),
         stat(summary?.matched, t('scanPageMatched'), 'ok'),
-        stat(summary?.unmatched, t('scanPageUnmatched'), summary?.unmatched ? 'warn' : ''),
-        stat(summary?.new, t('scanPageNew'), summary?.new ? 'new' : ''),
+        stat(summary?.unmatched, t('scanPageUnmatched'), summary?.unmatched ? 'warn' : '',
+            summary?.unmatched ? () => showList(page, listState, 'unmatched') : null),
+        stat(summary?.new, t('scanPageNew'), summary?.new ? 'new' : '',
+            summary?.new ? () => showList(page, listState, 'new') : null),
     );
     page.append(stats);
     if (!summary) page.append(el('p', 'anomalous-scan-muted', t('scanPageSummaryFailed')));
@@ -181,9 +211,11 @@ export async function renderScanPage(owner, panel) {
     const busy = isScanRunning();
     const actions = el('div', 'anomalous-scan-actions');
     const picked = options.scope === 'picked';
+    // An online scan also looks up the models earlier scans could not ask Civitai about.
+    const waiting = (summary?.new || 0) + (options.offline ? 0 : summary?.pending || 0);
     const label = busy ? t('scanPageScanning')
         : picked ? t('scanPageScanPicked', { count: pickedCount() })
-            : summary?.new ? t('scanPageScanNew', { count: summary.new })
+            : waiting ? t(options.offline ? 'scanPageScanNewOffline' : 'scanPageScanNew', { count: waiting })
                 : t('scanPageScanAgain');
     const primary = button('anomalous-scan-primary', label, () => run(owner, panel));
     primary.disabled = busy;
@@ -194,12 +226,15 @@ export async function renderScanPage(owner, panel) {
         actions.append(retry);
     }
     page.append(actions);
-    const hint = picked ? t('scanPageHintPicked')
-        : summary?.unmatched && !options.offline ? t('scanPageHintRetry') : t('scanPageHint');
+    const hint = picked ? t('scanPageHintPicked') : t(options.offline ? 'scanPageHintOffline' : 'scanPageHint');
     page.append(el('p', 'anomalous-scan-muted', hint));
 
     const progressHost = el('div', 'anomalous-scan-progress-host');
-    page.append(progressHost, renderAdvanced(owner, panel, Boolean(config?.has_api_key)));
+    page.append(progressHost);
+    const rowActions = listActions(owner, panel, busy);
+    const result = renderLastScan(last, rowActions);
+    const lists = renderModelLists(summary, rowActions, listState);
+    page.append(...[result, lists].filter(Boolean), renderAdvanced(owner, panel, Boolean(config?.has_api_key)));
     panel.replaceChildren(page);
     setScanProgressHost(progressHost);
     // A scan that ends elsewhere (a card's radar, another tab) refreshes the counts too.

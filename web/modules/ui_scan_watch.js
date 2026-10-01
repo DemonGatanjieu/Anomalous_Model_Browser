@@ -1,11 +1,11 @@
 /**
- * Follows scans started anywhere (the wizard, a single model, another tab): shows their
- * progress, turns the rail's scan button into a spinner, and reloads the models when done.
+ * Follows scans started anywhere (the scan page, a single model, another tab): shows their
+ * progress and result, turns the rail's scan button into a spinner, and reloads the models when done.
  */
 
 import { translate as t } from './locales.js';
-import { updateScanProgress, finishScanProgress, failScanProgress } from './scan_progress.js';
-import { setScanButtonState } from './scan_runner.js';
+import { updateScanProgress, failScanProgress } from './scan_progress.js';
+import { fetchLastScan, setScanButtonState, showScanResult } from './scan_runner.js';
 
 const POLL_MS = 3000;
 
@@ -33,7 +33,7 @@ export function watchScans(owner) {
             } else if (!active && scanning) {
                 scanning = false;
                 if (button) setScanButtonState(button, false);
-                finishScanProgress();
+                showScanResult(owner, await fetchLastScan());
                 owner.loadModels();
                 owner.onScanFinished?.();
                 if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();

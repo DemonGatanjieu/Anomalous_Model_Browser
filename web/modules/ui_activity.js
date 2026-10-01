@@ -1,12 +1,13 @@
 /**
- * The activity page (everything Anomalous changed, by day, with filters, details and
- * "find on canvas") and the home page's "recent" list. Reads through activity_log.js;
- * each render cancels the previous one's request.
+ * The activity page (everything Anomalous changed, by day, with filters, details,
+ * "find on canvas" and "open" for scanned models) and the home page's "recent" list.
+ * Reads through activity_log.js; each render cancels the previous one's request.
  */
 
 import { app } from "../../../scripts/app.js";
 import { translate as t } from './locales.js';
-import { changeLine, clearActivity, dayLabel, entrySummary, fetchActivity, timeLabel } from './activity_log.js';
+import { changeLine, clearActivity, dayLabel, entrySummary, fetchActivity, fileDetailLines, timeLabel } from './activity_log.js';
+import { openListedModel } from './ui_scan_lists.js';
 import { changeNodeId } from './activity_diff.js';
 import { anomalousConfirm } from './ui_dialog.js';
 
@@ -45,34 +46,50 @@ function locateNode(change, note) {
     app.canvas.setDirty?.(true, true);
 }
 
-function renderEntry(entry, { compact = false } = {}) {
+/** What an entry opens to: [{text, label?, onClick?}]. */
+function entryLines(entry, owner, note) {
+    if (entry.source !== 'canvas') {
+        return fileDetailLines(entry).map(line => (line.model && owner ? {
+            text: line.text,
+            label: t('scanRowOpen'),
+            onClick: () => openListedModel(owner, line.model, () => owner.goTo('activity')),
+        } : line));
+    }
+    return (entry.detail?.changes || []).filter(change => change.kind !== 'opened').map(change => ({
+        text: changeLine(change),
+        ...(change.kind !== 'removed' ? { label: t('activityLocate'), onClick: () => locateNode(change, note) } : {}),
+    }));
+}
+
+function renderEntry(entry, { compact = false, owner = null } = {}) {
     const row = el('div', `anomalous-activity-entry is-${entry.source === 'canvas' ? 'canvas' : 'file'}`);
     const head = el('div', 'anomalous-activity-head');
+    const summary = entrySummary(entry);
     head.append(el('span', 'anomalous-activity-time', timeLabel(entry.time)),
         el('span', 'anomalous-activity-source', t(entry.source === 'canvas' ? 'activityCanvas' : 'activityFiles')),
-        el('span', 'anomalous-activity-summary', entrySummary(entry)));
+        el('span', 'anomalous-activity-summary', summary));
+    head.title = summary;
     row.appendChild(head);
-    const changes = (entry.detail?.changes || []).filter(change => change.kind !== 'opened');
-    if (compact || !changes.length) return row;
+    if (compact) return row;
+    const note = el('div', 'anomalous-activity-note');
+    const lines = entryLines(entry, owner, note);
+    if (!lines.length) return row;
 
-    // Canvas entries open to one line per change.
+    // An entry with details opens to one line each.
     head.classList.add('is-expandable');
     head.tabIndex = 0;
     head.setAttribute('role', 'button');
     head.setAttribute('aria-expanded', 'false');
     const details = el('div', 'anomalous-activity-details');
     details.hidden = true;
-    const note = el('div', 'anomalous-activity-note');
-    for (const change of changes) {
+    for (const { text, label, onClick } of lines) {
         const line = el('div', 'anomalous-activity-change');
-        line.appendChild(el('span', 'anomalous-activity-change-text', changeLine(change)));
-        line.title = changeLine(change);
-        if (change.kind !== 'removed') {
-            line.appendChild(button('anomalous-activity-locate', t('activityLocate'), () => locateNode(change, note)));
-        }
+        line.appendChild(el('span', 'anomalous-activity-change-text', text));
+        line.title = text;
+        if (onClick) line.appendChild(button('anomalous-activity-locate', label, onClick));
         details.appendChild(line);
     }
-    const shown = changes.length;
+    const shown = entry.source === 'canvas' ? lines.length : (entry.detail?.files || []).length;
     const total = entry.detail?.total || shown;
     if (total > shown) details.appendChild(el('div', 'anomalous-activity-more', t('activityMore', { count: total - shown })));
     details.appendChild(note);
@@ -91,7 +108,7 @@ function renderEntry(entry, { compact = false } = {}) {
     return row;
 }
 
-function renderList(list, entries) {
+function renderList(list, entries, owner) {
     list.replaceChildren();
     let day = null;
     for (const entry of entries) {
@@ -100,7 +117,7 @@ function renderList(list, entries) {
             day = label;
             list.appendChild(el('div', 'anomalous-activity-day', label));
         }
-        list.appendChild(renderEntry(entry));
+        list.appendChild(renderEntry(entry, { owner }));
     }
 }
 
@@ -120,7 +137,7 @@ export function renderActivityPage(owner, panel) {
         fetchActivity({ limit: PAGE_SIZE, source: filter, signal })
             .then(entries => {
                 if (signal.aborted) return;
-                if (entries.length) renderList(list, entries);
+                if (entries.length) renderList(list, entries, owner);
                 else list.replaceChildren(el('div', 'anomalous-activity-empty', t('activityEmpty')));
             })
             .catch((error) => {
