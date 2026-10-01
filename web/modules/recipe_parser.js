@@ -1,9 +1,4 @@
-import {
-    promptWidgetTargets,
-    isPositivePromptWidget,
-    isNegativePromptWidget,
-    classifyPromptWidgetRole,
-} from './node_material_actions.js';
+import { promptBoxes, promptNameRole } from './prompt_boxes.js';
 import { isAllInOneLoaderType, isPlaceholderModelValue } from './recipe_identity.js';
 
 /**
@@ -262,9 +257,9 @@ function syncCommonRecipeMetadata(params, change) {
         params[samplingField] = ['steps', 'cfg', 'denoise'].includes(samplingField) ? numberValue(value) : value;
     }
 
-    const isPos = isPositivePromptWidget(widget);
-    const isNeg = isNegativePromptWidget(widget);
-    if (isPos || isNeg || (isSupportedPromptNodeType(type) && /^(text|prompt)$/.test(widget))) {
+    const isPos = promptNameRole(widget) === 'positive';
+    const isNeg = promptNameRole(widget) === 'negative';
+    if (isPos || isNeg || (isSupportedPromptNodeType(type) && /^(text|text_g|text_l|prompt)$/.test(widget))) {
         const positive = Array.isArray(params.promptPositive) ? params.promptPositive : (params.promptPositive = []);
         const negative = Array.isArray(params.promptNegative) ? params.promptNegative : (params.promptNegative = []);
         const position = positive.findIndex((item) => item === change.previousValue);
@@ -554,7 +549,7 @@ export function extractRecipeMetadata(graph) {
     // Precedence: External Link > Embedded fallback (only if promptPositive/promptNegative are empty)
     for (const node of graph._nodes) {
         if (isSupportedPromptNodeType(nodeType(node))) continue;
-        const targets = promptWidgetTargets(node);
+        const targets = promptBoxes(node);
         if (!targets || targets.length === 0) continue;
 
         const summary = metadata.nodes.find((item) => String(item?.id) === String(node.id));
@@ -564,7 +559,7 @@ export function extractRecipeMetadata(graph) {
             const val = textValue(widget?.value);
             if (!val) continue;
 
-            const role = classifyPromptWidgetRole(target.name);
+            const role = promptNameRole(target.name);
             if (role === 'positive' && metadata.promptPositive.length === 0) {
                 appendUnique(metadata.promptPositive, [val]);
                 if (summary) {

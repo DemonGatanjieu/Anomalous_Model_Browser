@@ -7,7 +7,8 @@
 
 import { app } from '../../../scripts/app.js';
 import { translatePromptText, splitPromptTags, normalizePromptFormatting, hasChinese } from './translation_service.js';
-import { selectedMaterialNode, promptWidgetTargets, applyNodeMaterialValues } from './node_material_actions.js';
+import { selectedMaterialNode, applyNodeMaterialValues } from './node_material_actions.js';
+import { promptBoxes } from './prompt_boxes.js';
 import { createViewScope, bindDrawerResize } from './ui_lifecycle.js';
 import { appendPromptToStudio } from './ui_prompt_composer.js';
 
@@ -52,85 +53,13 @@ function getCanvasSelectedNodes() {
  * @returns {{ text: string, widgetIndex: number, widgetName: string, nodeTitle: string } | null}
  */
 export function extractPromptFromNode(node) {
-    if (!node || !Array.isArray(node.widgets)) return null;
-
-    // 1. Try standard promptWidgetTargets
-    try {
-        const targets = promptWidgetTargets(node);
-        if (targets.length) {
-            const widget = node.widgets[targets[0].index];
-            const val = typeof widget?.value === 'string' ? widget.value.trim() : '';
-            if (val) {
-                return {
-                    text: val,
-                    widgetIndex: targets[0].index,
-                    widgetName: targets[0].name || 'text',
-                    nodeTitle: node.title || node.type || 'Node',
-                };
-            }
-        }
-    } catch {
-        // ignore
-    }
-
-    // 2. Check English and Chinese text widget names & labels
-    const promptNameRegex = /^(text|text_g|text_l|prompt|positive|negative|caption|string|value|文本|提示词|正面|负面|正向|反向|正面提示词|负面提示词|正向提示词|反向提示词|描述|内容)/i;
-    for (let i = 0; i < node.widgets.length; i++) {
-        const w = node.widgets[i];
-        if (!w) continue;
-        const name = String(w.name || '');
-        const label = String(w.label || '');
-        const notCombo = !w.options?.values || !Array.isArray(w.options.values);
-        const isStringVal = typeof w.value === 'string';
-
-        if (isStringVal && notCombo && (promptNameRegex.test(name) || promptNameRegex.test(label) || w.type === 'customtext' || w.type === 'text' || !!w.options?.multiline)) {
-            const val = w.value.trim();
-            if (val) {
-                return {
-                    text: val,
-                    widgetIndex: i,
-                    widgetName: w.name || w.label || 'text',
-                    nodeTitle: node.title || node.type || 'Node',
-                };
-            }
-        }
-    }
-
-    // 3. Fallback: Any string widget that is not a dropdown combo and has non-empty text
-    for (let i = 0; i < node.widgets.length; i++) {
-        const w = node.widgets[i];
-        if (!w) continue;
-        const notCombo = !w.options?.values || !Array.isArray(w.options.values);
-        if (typeof w.value === 'string' && notCombo && w.value.trim().length > 0) {
-            return {
-                text: w.value.trim(),
-                widgetIndex: i,
-                widgetName: w.name || w.label || 'text',
-                nodeTitle: node.title || node.type || 'Node',
-            };
-        }
-    }
-
-    // 4. Fallback: node.widgets_values
-    if (Array.isArray(node.widgets_values)) {
-        for (let i = 0; i < node.widgets_values.length; i++) {
-            const val = node.widgets_values[i];
-            if (typeof val === 'string' && val.trim().length > 0) {
-                const w = node.widgets[i];
-                const notCombo = !w?.options?.values || !Array.isArray(w.options.values);
-                if (notCombo) {
-                    return {
-                        text: val.trim(),
-                        widgetIndex: i,
-                        widgetName: w?.name || w?.label || 'text',
-                        nodeTitle: node.title || node.type || 'Node',
-                    };
-                }
-            }
-        }
-    }
-
-    return null;
+    const box = promptBoxes(node).find(item => item.widget.value.trim());
+    return box ? {
+        text: box.widget.value.trim(),
+        widgetIndex: box.index,
+        widgetName: box.name,
+        nodeTitle: node.title || node.type || 'Node',
+    } : null;
 }
 
 export function getCurrentlySelectedNode() {
@@ -187,20 +116,9 @@ export function writeToSelectedNode(text) {
             };
         }
 
-        const promptInfo = extractPromptFromNode(node);
-        let targetIndex = promptInfo ? promptInfo.widgetIndex : -1;
-        let targetName = promptInfo ? promptInfo.widgetName : 'text';
-
-        if (targetIndex < 0) {
-            const textWidgetIndex = (node.widgets || []).findIndex(w =>
-                typeof w?.value === 'string' &&
-                (!w.options?.values || Array.isArray(w.options.values) === false)
-            );
-            if (textWidgetIndex >= 0) {
-                targetIndex = textWidgetIndex;
-                targetName = node.widgets[textWidgetIndex].name || node.widgets[textWidgetIndex].label || 'text';
-            }
-        }
+        const box = promptBoxes(node).find(item => item.widget.value.trim()) || promptBoxes(node)[0];
+        const targetIndex = box ? box.index : -1;
+        const targetName = box ? box.name : 'text';
 
         if (targetIndex < 0) {
             return {
@@ -643,7 +561,7 @@ export function openPromptTranslator(owner) {
         // Capture the exact destination before awaiting a translation.
         const graph = app.graph;
         const node = selectedMaterialNode(app);
-        const target = node && promptWidgetTargets(node)[0];
+        const target = node && promptBoxes(node)[0];
         if (!target) {
             showTranslatorToast(modal, t('请先选中可写入的提示词节点', 'Select a writable prompt node first'), true);
             return;

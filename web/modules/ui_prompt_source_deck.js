@@ -3,7 +3,8 @@ import { translate as t } from './locales.js';
 import { text, jsonResponse } from './ui_dom.js';
 import { materialNodeHeading } from './material_inspector.js';
 import { anomalousAlert } from './ui_dialog.js';
-import { promptWidgetTargets, selectedMaterialNode } from './node_material_actions.js';
+import { selectedMaterialNode } from './node_material_actions.js';
+import { promptBoxes } from './prompt_boxes.js';
 import { categorizePromptSnippet } from './prompt_composition.js';
 import { CATEGORY_META, STARTER_SOURCE_PROMPTS } from './prompt_studio_data.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
@@ -195,34 +196,6 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
         }
     }, { passive: true });
 
-    function detectNodePromptRole(node, widgetName = '') {
-        if (/neg|negative|反向|负向/i.test(widgetName)) return 'negative';
-        if (/pos|positive|正面|正向/i.test(widgetName)) return 'positive';
-
-        if (app?.graph && Array.isArray(node?.outputs)) {
-            for (const output of node.outputs) {
-                if (!Array.isArray(output.links)) continue;
-                for (const linkId of output.links) {
-                    const link = app.graph.links?.[linkId];
-                    if (!link) continue;
-                    const targetNode = app.graph.getNodeById(link.target_id);
-                    if (targetNode?.inputs && targetNode.inputs[link.target_slot]) {
-                        const targetInput = targetNode.inputs[link.target_slot];
-                        const inputName = String(targetInput.name || '').toLowerCase();
-                        if (inputName.includes('neg') || inputName.includes('负')) return 'negative';
-                        if (inputName.includes('pos') || inputName.includes('正')) return 'positive';
-                    }
-                }
-            }
-        }
-
-        const nodeText = `${node?.title || ''} ${node?.type || ''}`.toLowerCase();
-        if (/neg|negative|反向|负向/.test(nodeText)) return 'negative';
-        if (/pos|positive|正面|正向/.test(nodeText)) return 'positive';
-
-        return 'positive';
-    }
-
     // Extract prompts from selected canvas node
     function extractPromptsFromSelectedNode(intoRightMixer = false) {
         const node = selectedMaterialNode(app);
@@ -234,24 +207,7 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
         }
 
         const heading = materialNodeHeading(node) || node.title || node.type || `Node #${node.id}`;
-        let targets = promptWidgetTargets(node);
-
-        // Safe fallback: only prompt/caption/text widgets or textarea, exclude settings/file paths
-        if (!targets.length && Array.isArray(node.widgets)) {
-            targets = node.widgets.flatMap((w, idx) => {
-                const name = String(w.name || '').toLowerCase();
-                if (/filename|prefix|path|directory|save|load|ckpt|model|vae|seed|steps|cfg|denoise|sampler|scheduler/i.test(name)) {
-                    return [];
-                }
-                if (typeof w.value === 'string' && w.value.trim().length > 0 && !w.options?.values) {
-                    if (/prompt|caption|text|description|words|tags/i.test(name) || w.type === 'customtext' || w.type === 'string') {
-                        return [{ index: idx, name: w.name || 'text' }];
-                    }
-                }
-                return [];
-            });
-        }
-
+        const targets = promptBoxes(node);
         if (!targets.length) {
             anomalousAlert(window.anomalous_browser_lang === 'zh'
                 ? `⚠️ 选中的节点【${heading}】中未检测到有效的提示词文本输入！`
@@ -263,7 +219,7 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
         targets.forEach(t => {
             const rawVal = String(node.widgets[t.index]?.value || '').trim();
             if (!rawVal) return;
-            const role = detectNodePromptRole(node, t.name);
+            const role = t.role === 'negative' ? 'negative' : 'positive';
             const cat = role === 'negative' ? 'base' : categorizePromptSnippet(rawVal);
             const cardTitle = `${heading} · ${t.name}`;
 

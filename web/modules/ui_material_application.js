@@ -8,12 +8,11 @@ import {
     applyMaterialBlock,
     applyNodeMaterialValues,
     selectedMaterialNode,
-    inspectNodePromptSlots,
     extractMaterialPromptEnvelope,
-    dispatchPromptInjection,
+    fillPrompt,
     isModelFilePath,
-    isPromptNodeType,
 } from './node_material_actions.js';
+import { promptBoxes, typeTakesPrompt } from './prompt_boxes.js';
 
 export function showMaterialApplication(parent, result, node) {
     parent.querySelector('.anomalous-material-application-result')?.remove();
@@ -135,30 +134,26 @@ export async function applyLibraryMaterial(owner, material, droppedNode = null, 
             return;
         }
 
-        // Path 2: Cross-Node Prompt Injection Protocol (CNPIP)
-        const slots = inspectNodePromptSlots(node);
-        if (!slots.hasSlots) throw new Error('materialNoCompatibleValues');
+        // Path 2: the material's prompt text into the node's prompt boxes.
+        const boxes = promptBoxes(node);
+        if (!boxes.length) throw new Error('materialNoCompatibleValues');
 
         const envelope = extractMaterialPromptEnvelope(material, payload);
         if (!envelope.hasPrompt) throw new Error('materialNoCompatibleValues');
 
-        const hasBothSlots = Boolean(slots.positiveSlot && slots.negativeSlot);
-        const hasSingleRoleSlot = Boolean((slots.positiveSlot && !slots.negativeSlot) || (slots.negativeSlot && !slots.positiveSlot));
-
         const promptBlocks = applyPromptRolesToBlocks(payload.node_blocks || [], payload.prompt_roles)
             .filter(b => {
-                const isPrompt = b.promptRole === 'positive' || b.promptRole === 'negative' || b.promptRole === 'both' || isPromptNodeType(b.type);
+                const isPrompt = b.promptRole === 'positive' || b.promptRole === 'negative' || b.promptRole === 'both' || typeTakesPrompt(b.type);
                 return isPrompt && Array.isArray(b.widgets_values) && b.widgets_values.some(v => typeof v === 'string' && v.trim() && !isModelFilePath(v));
             });
 
-        if (!hasBothSlots && !hasSingleRoleSlot && promptBlocks.length > 1) {
+        // Boxes nothing tells the role of: the user picks which of the material's prompts.
+        if (boxes.every(box => !box.role) && promptBlocks.length > 1) {
             openMaterialChoiceDialog(owner, node, promptBlocks, payload, droppedNode, graph);
             return;
         }
 
-        const result = dispatchPromptInjection(app, node, envelope, {
-            workflowHashes: payload.workflow_hashes,
-        });
+        const result = fillPrompt(app, node, envelope);
         showMaterialApplication(owner.materialContext, result, node);
         return result;
     } catch (error) {
@@ -175,8 +170,7 @@ function openMaterialChoiceDialog(owner, node, blocks, payload, droppedNode, gra
             return apply(node, targetBlock, payload.workflow_hashes, owner.materialContext);
         }
         if (selectedMaterialNode(app) !== node && !droppedNode) throw new Error('materialTargetChanged');
-        const slots = inspectNodePromptSlots(node);
-        if (!slots.hasSlots) throw new Error('materialNoCompatibleValues');
+        const boxes = promptBoxes(node);
         let textVal = '';
         if (Array.isArray(targetBlock.widgets_values)) {
             for (const v of targetBlock.widgets_values) {
@@ -187,12 +181,11 @@ function openMaterialChoiceDialog(owner, node, blocks, payload, droppedNode, gra
             }
         }
         if (!textVal) throw new Error('materialNoCompatibleValues');
-        // Never write a block into the opposite role's slot.
-        const general = slots.generalSlots[0] || null;
-        let targetWidget = null;
-        if (targetBlock.promptRole === 'negative') targetWidget = slots.negativeSlot || general;
-        else if (targetBlock.promptRole === 'positive') targetWidget = slots.positiveSlot || general;
-        else targetWidget = general || slots.positiveSlot || slots.negativeSlot;
+        // Never write a block into the opposite role's box.
+        const role = targetBlock.promptRole;
+        const targetWidget = role === 'positive' || role === 'negative'
+            ? boxes.find(box => box.role === role) || boxes.find(box => !box.role)
+            : boxes.find(box => !box.role) || boxes[0];
         if (!targetWidget) throw new Error('materialNoCompatibleValues');
         const result = applyNodeMaterialValues(app, node, [{ index: targetWidget.index, value: textVal }], {
             sourceNodeId: targetBlock.node_id,

@@ -360,10 +360,13 @@ covered by the `styles.css` manifest.
   full detail surface, and `ui_material_application.js` owns selected-node
   tracking and explicit material application (same-type block application first,
   then cross-node prompt injection).
-  `node_material_actions.js` inspects prompt slots (`inspectNodePromptSlots`),
-  extracts prompt envelopes without model file paths, and plans injection
-  (`planPromptInjection`): both texts into two-slot nodes, otherwise the matching
-  role or a role-neutral slot. Text never crosses roles; writes are one undo step.
+  `prompt_boxes.js` is the one place that finds prompt boxes on the live canvas: a
+  multiline STRING input by the node's ComfyUI definition, whatever it is called; its
+  role is the box's own name (positive / negative) or else the wiring (outputs followed
+  to an input named positive / negative). It also plans which box takes which text and
+  finds a box's opposite-role partner on the same sampler. `node_material_actions.js`
+  extracts prompt envelopes without model file paths and writes them (`fillPrompt`);
+  text never crosses roles unless the user picked the box; writes are one undo step.
   Within recipe detail, `ui_recipe_versions.js` owns history comparison/restore,
   `ui_recipe_gallery.js` owns result cards and direct Image Detail Workbench handoff,
   `ui_recipe_model_matching.js` owns preview resolution and explicit local replacement,

@@ -1,4 +1,5 @@
 import { composePromptPlan } from './prompt_composition.js';
+import { planPromptFill, typeTakesPrompt } from './prompt_boxes.js';
 
 // Shared by Node Assistant and Material Library. No node creation or link edits.
 const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
@@ -80,7 +81,7 @@ export function applyNodeMaterialValues(app, node, entries, options = {}) {
             widget.value = clone(value);
             if (Array.isArray(node.widgets_values)) node.widgets_values[index] = clone(value);
             widget.callback?.call(widget, widget.value, app.canvas, node);
-            node.onWidgetChanged?.(index, widget.value, previous[index], widget);
+            node.onWidgetChanged?.(widget.name, widget.value, previous[index], widget);
         }
         if (transportsHashes) replaceHashes(graph, node.id, mapped);
         notify();
@@ -114,86 +115,6 @@ export function applyMaterialBlock(app, node, block, workflowHashes) {
         { sourceNodeId: block.node_id, workflowHashes });
 }
 
-export const POSITIVE_PROMPT_REGEX = /^(positive|positive_prompt|text_positive|text_g|text_l|正面|正向|正面提示词|正向提示词)$/i;
-export const NEGATIVE_PROMPT_REGEX = /^(negative|negative_prompt|text_negative|负面|反向|负面提示词|反向提示词)$/i;
-
-export function isPositivePromptWidget(name) {
-    return POSITIVE_PROMPT_REGEX.test(String(name || '').trim());
-}
-
-export function isNegativePromptWidget(name) {
-    return NEGATIVE_PROMPT_REGEX.test(String(name || '').trim());
-}
-
-export function classifyPromptWidgetRole(name) {
-    const trimmed = String(name || '').trim();
-    if (POSITIVE_PROMPT_REGEX.test(trimmed)) return 'positive';
-    if (NEGATIVE_PROMPT_REGEX.test(trimmed)) return 'negative';
-    return null;
-}
-
-export function promptWidgetTargets(node) {
-    const promptNameRegex = /^(text|text_g|text_l|prompt|positive|positive_prompt|negative|negative_prompt|text_positive|text_negative|caption|string|value|文本|提示词|正面|负面|正向|反向|正面提示词|负面提示词|正向提示词|反向提示词|描述|内容)$/i;
-    return (node?.widgets || []).flatMap((widget, index) => {
-        if (!widget) return [];
-        const name = String(widget.name || '');
-        const label = String(widget.label || '');
-        const isNotCombo = !widget.options?.values || !Array.isArray(widget.options.values);
-        const matchesName = promptNameRegex.test(name) || promptNameRegex.test(label) || widget.type === 'customtext' || widget.type === 'text' || !!widget.options?.multiline;
-        return typeof widget.value === 'string' && matchesName && isNotCombo ? [{ index, name: name || label || 'text' }] : [];
-    });
-}
-
-export function inspectNodePromptSlots(node) {
-    const targets = promptWidgetTargets(node);
-    if (!targets || !targets.length) {
-        return {
-            hasSlots: false,
-            positiveSlot: null,
-            negativeSlot: null,
-            generalSlots: [],
-            targets: [],
-        };
-    }
-
-    let positiveSlot = null;
-    let negativeSlot = null;
-    const generalSlots = [];
-
-    const nodeTitle = String(node?.title || node?.type || '').toLowerCase();
-    const isNegativeTitle = /^(negative|负面|反向|负向)/i.test(nodeTitle) || /negative/i.test(nodeTitle);
-
-    for (const target of targets) {
-        const role = classifyPromptWidgetRole(target.name);
-        if (role === 'positive' && !positiveSlot) {
-            positiveSlot = target;
-        } else if (role === 'negative' && !negativeSlot) {
-            negativeSlot = target;
-        } else {
-            generalSlots.push(target);
-        }
-    }
-
-    const isPositiveTitle = /^(positive|正面|正向)/i.test(nodeTitle) || /positive/i.test(nodeTitle);
-    if (!positiveSlot && !negativeSlot && generalSlots.length === 1) {
-        if (isNegativeTitle) {
-            negativeSlot = generalSlots[0];
-            generalSlots.length = 0;
-        } else if (isPositiveTitle) {
-            positiveSlot = generalSlots[0];
-            generalSlots.length = 0;
-        }
-    }
-
-    return {
-        hasSlots: true,
-        positiveSlot,
-        negativeSlot,
-        generalSlots,
-        targets,
-    };
-}
-
 export const MODEL_EXTENSIONS_REGEX = /\.(safetensors|ckpt|pt|bin|pth|sft|onnx|engine|gguf)$/i;
 
 export function isModelFilePath(value) {
@@ -202,15 +123,6 @@ export function isModelFilePath(value) {
     if (!trimmed) return false;
     const lines = trimmed.split(/[\r\n]+/).map(s => s.trim()).filter(Boolean);
     return lines.length > 0 && lines.every(line => MODEL_EXTENSIONS_REGEX.test(line));
-}
-
-export function isPromptNodeType(type) {
-    const norm = String(type || '').trim().toLowerCase();
-    if (!norm) return false;
-    if (/lora|checkpoint|unet|vae|controlnet|sampler|latent|saveimage|previewimage|loadimage/i.test(norm)) {
-        return false;
-    }
-    return /cliptextencode|prompt|text_box|showtext|easy positive|easy negative|easy wildcards/i.test(norm);
 }
 
 export function sanitizePromptText(value) {
@@ -297,7 +209,7 @@ function extractFromNodeBlocks(payload) {
         const blockType = String(block.type || '').toLowerCase();
         const role = promptRoles?.[String(block.node_id)]?.role || block.promptRole;
         const isExplicitPrompt = role === 'positive' || role === 'negative' || role === 'both';
-        const isPromptType = isPromptNodeType(blockType);
+        const isPromptType = typeTakesPrompt(block.type);
 
         if (!isExplicitPrompt && !isPromptType) continue;
 
@@ -376,44 +288,12 @@ export function getMaterialPromptInfo(material) {
 }
 
 /**
- * Choose prompt widgets for an envelope. Text never crosses roles: a negative
- * prompt is not written into a positive slot (or the reverse). Role-neutral
- * slots (e.g. CLIPTextEncode `text`) accept the envelope's primary text.
+ * Writes an envelope's prompt text into `node`'s prompt boxes (prompt_boxes.js decides
+ * which box takes which text); `box`, one of the node's boxes, limits it to that box.
  */
-export function planPromptInjection(slots, envelope) {
-    const { positiveSlot, negativeSlot } = slots;
-    const generalSlot = slots.generalSlots?.[0] || null;
-    const positive = envelope.positive || '';
-    const negative = envelope.negative || '';
-
-    // Strategy 1: both texts into a node that has both role slots.
-    if (positive && negative && positiveSlot && negativeSlot) {
-        return [{ index: positiveSlot.index, value: positive }, { index: negativeSlot.index, value: negative }];
-    }
-    // Strategy 2: a single-role node receives the matching text only.
-    if (negativeSlot && !positiveSlot && !generalSlot) return negative ? [{ index: negativeSlot.index, value: negative }] : [];
-    if (positiveSlot && !negativeSlot && !generalSlot) return positive ? [{ index: positiveSlot.index, value: positive }] : [];
-    // Strategy 3: role-matched slot for a one-sided envelope.
-    const wantsNegative = envelope.primaryRole === 'negative' || (negative && !positive);
-    if (wantsNegative && negativeSlot) return [{ index: negativeSlot.index, value: negative }];
-    if (!wantsNegative && positive && positiveSlot) return [{ index: positiveSlot.index, value: positive }];
-    // Strategy 4: role-neutral slot takes the primary text.
-    if (generalSlot) {
-        const value = wantsNegative ? negative : (positive || envelope.singleText || '');
-        return value ? [{ index: generalSlot.index, value }] : [];
-    }
-    return [];
-}
-
-export function dispatchPromptInjection(app, node, envelope, options = {}) {
-    if (!node || !envelope || !envelope.hasPrompt) {
-        throw new Error('materialNoCompatibleValues');
-    }
-    const slots = inspectNodePromptSlots(node);
-    if (!slots.hasSlots) throw new Error('materialNoCompatibleValues');
-    const entries = planPromptInjection(slots, envelope);
+export function fillPrompt(app, node, envelope, box = null, options = {}) {
+    if (!node || !envelope?.hasPrompt) throw new Error('materialNoCompatibleValues');
+    const entries = planPromptFill(node, envelope, box);
     if (!entries.length) throw new Error('materialNoCompatibleValues');
-    return applyNodeMaterialValues(app, node, entries, options);
+    return applyNodeMaterialValues(app, node, entries.map(({ index, value }) => ({ index, value })), options);
 }
-
-

@@ -316,14 +316,16 @@ When dropped onto a compatible node:
   compatible widget values through the transactional parameter path, preserving seed,
   node position, and links.
 - Prompt-bearing materials (prompt notes, prompt plans, materials with a `copy_prompt`
-  capability, or blocks of prompt node types) can be dropped onto any node with
-  prompt slots. `extractMaterialPromptEnvelope` (in `node_material_actions.js`)
-  builds `{positive, negative, primaryRole}` from plans, notes, `prompt_groups`,
-  prompt node blocks or the summary, never from model file paths. `planPromptInjection`
-  writes both texts into nodes with positive and negative slots (e.g. `easy a1111Loader`),
-  otherwise the matching role slot or a role-neutral slot (`CLIPTextEncode` `text`).
-  Negative text never goes into a positive slot and vice versa; if no slot fits, the
-  drop fails with `materialNoCompatibleValues`. Text is inserted without synthetic
+  capability, or blocks of node types that take a prompt) can be dropped onto any node
+  with prompt boxes. A prompt box is a multiline STRING input by the node's definition
+  (`prompt_boxes.js`); names do not make a box. `extractMaterialPromptEnvelope` (in
+  `node_material_actions.js`) builds `{positive, negative, primaryRole}` from plans,
+  notes, `prompt_groups`, prompt node blocks or the summary, never from model file paths.
+  Each box's role is its own name (e.g. `easy a1111Loader`'s positive / negative) or the
+  wiring: a `CLIPTextEncode` feeding a sampler's negative input is a negative box,
+  whatever its title. Each box takes its own role's text; a box nothing tells the role
+  of takes the main text. Negative text never goes into a positive box and vice versa;
+  if no box fits, the drop fails with `materialNoCompatibleValues`. Text is inserted without synthetic
   prefixes, and every injection is one undo step.
 - Parameter blocks are never applied across node types.
 

@@ -3,7 +3,8 @@ import { translate as t } from './locales.js';
 import { text, jsonResponse } from './ui_dom.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { joinPromptText, categorizePromptSnippet, smartSortPromptBlocks, workbenchDraftToSavedPlan } from './prompt_composition.js';
-import { applyNodeMaterialValues, promptWidgetTargets, selectedMaterialNode } from './node_material_actions.js';
+import { applyNodeMaterialValues, selectedMaterialNode } from './node_material_actions.js';
+import { promptBoxes } from './prompt_boxes.js';
 import { showMaterialApplication } from './ui_material_application.js';
 import { showMaterialSaved } from './material_feedback.js';
 import { translatePromptText } from './translation_service.js';
@@ -226,19 +227,15 @@ export function createPromptWorkbench(owner, container, scope, options) {
     const applyPromptToCurrentNode = async (role, promptContent, triggerBtn = null) => {
         const node = selectedMaterialNode(app);
         if (!node) {
-            anomalousAlert(window.anomalous_browser_lang === 'zh'
-                ? '💡 请先在 ComfyUI 画布上点击选中一个提示词节点（例如 CLIPTextEncode）！'
-                : '💡 Please select a prompt node (e.g. CLIPTextEncode) on the ComfyUI canvas first!');
+            anomalousAlert(t('promptSelectNodeFirst'));
             return;
         }
-        const targets = promptWidgetTargets(node);
+        const targets = promptBoxes(node);
         if (!targets.length) {
-            anomalousAlert(window.anomalous_browser_lang === 'zh'
-                ? '⚠️ 选中的节点中未找到可写入的提示词文本输入！'
-                : '⚠️ No writable prompt text widget found in selected node!');
+            anomalousAlert(t('promptNodeHasNoBox'));
             return;
         }
-        const widgetIndex = targets[0].index;
+        const widgetIndex = (targets.find(box => box.role === role) || targets.find(box => !box.role) || targets[0]).index;
         try {
             const value = joinPromptText(node.widgets[widgetIndex].value, promptContent, posSelect.value);
             showMaterialApplication(view, applyNodeMaterialValues(app, node, [{ index: widgetIndex, value }]), node);
