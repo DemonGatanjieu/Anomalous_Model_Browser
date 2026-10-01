@@ -675,13 +675,6 @@ button:hover .anomalous-btn-icon {
     border-color: transparent transparent transparent rgba(22, 8, 16, 0.98);
 }
 
-
-
-
-
-
-
-
 /* ==========================================================================
    MASTER HEADER & GALLERY CONTAINER DUAL-MODE ARCHITECTURE
    Normal Mode: Restrained Dark Neutral Studio
@@ -933,34 +926,3 @@ button:hover .anomalous-btn-icon {
     border-color: rgba(239, 68, 68, 0.4) !important;
     color: #f87171 !important;
 }
-
-/* ==========================================================================
-   Quick Prompt Translator (Modal & Tag Chips)
-   ========================================================================== */
-.anomalous-translator-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.72);
-    backdrop-filter: blur(8px);
-    z-index: 999999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    animation: anmFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.anomalous-translator-modal {
-    width: min(840px, 94vw);
-    max-height: 88vh;
-    background: #0f172a;
-    border: 1px solid rgba(56, 189, 248, 0.25);
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8), 0 0 32px rgba(56, 189, 248, 0.12);
-    border-radius: 14px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    position: relative;
-    transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
-}
-

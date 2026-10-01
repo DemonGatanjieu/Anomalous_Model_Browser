@@ -90,11 +90,6 @@ export function createToolbox(owner, {
                     owner.openMaterialLibrary();
                 }
                 break;
-            case 'prompt-translator':
-                if (typeof owner.openPromptTranslator === 'function') {
-                    owner.openPromptTranslator();
-                }
-                break;
             case 'model-sources':
                 openModelSourcesModal('workflow');
                 break;
@@ -208,7 +203,6 @@ export function createToolbox(owner, {
         const COLOR_ICONS = {
             'workflow-transfer': '🔄',
             'prompt-studio': '🎛️',
-            'prompt-translator': '🌐',
             'model-sources': '🔗',
             'prompt-notes': '📝',
         };

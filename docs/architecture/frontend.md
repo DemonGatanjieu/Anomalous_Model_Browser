@@ -286,9 +286,9 @@ through `material_prompt_data.js`. Reconciliation uses source filename and role,
 so equal text from different materials retains each origin. A newer sync cancels the old
 one and only the current result updates the deck.
 
-The translator captures graph, node, widget and widget value before an async
-write. It revalidates that destination and the input after translation; close,
-selection changes and intervening widget edits invalidate the pending write.
+Translation in the current-node panel (`ui_node_prompts.js`) captures the node,
+the prompt box's widget and its text before the request, and writes only when the
+same widget still holds the same text; a closed panel or an edited box drops the result.
 Explicit English translation applies to all input languages, including kana
 and Korean. Transport errors and rejected bridge responses remain local errors;
 provider-specific validation belongs to the backend translation route.

@@ -391,9 +391,10 @@ covered by the `styles.css` manifest.
   cross-role tail smart-sorting are owned by `prompt_composition.js` and `prompt_studio_data.js`.
   `ui_prompt_source_deck.js` owns the card preview popover with narrow bridging corridors,
   differentiated hide timers, and fast dismissal when hovering or clicking library blank space.
-- `ui_prompt_translator.js` owns the standalone Prompt Translator, featuring robust multilingual/Chinese node prompt extraction (`extractPromptFromNode`), real-time canvas selection synchronization (`app.canvas.onNodeSelected`), automatic prompt injection on open/docked mode, on-demand read/sync controls, guarded selection writeback across single and multi-tab workflows, compact streamlined button ergonomics preventing multi-row wrapping, elastic vertical flex textareas maximizing canvas-side vertical space, and an expanded 460px default sidebar width with automatic backward-compatible width migration. Both translator and
-  studio use `ui_lifecycle.js` for global listeners, request cancellation and
-  resize cleanup. Translation requests go through `translation_service.js`.
+- `ui_node_prompts.js` is the current-node panel's prompt boxes: role, text and
+  translation in place (Chinese to English written back with one undo, or the Chinese
+  meaning shown without writing). The studio uses `ui_lifecycle.js` for global listeners,
+  request cancellation and resize cleanup. Translation requests go through `translation_service.js`.
 - `ui_dialog.js` owns the plugin's own alert / confirm / prompt dialogs
   (`anomalousAlert`, `anomalousConfirm`, `anomalousPrompt`), used instead of the
   browser's native ones. `ui_prompt_toast.js` is the short toast shared by the

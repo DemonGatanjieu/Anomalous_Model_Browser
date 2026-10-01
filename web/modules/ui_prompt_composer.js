@@ -1,7 +1,7 @@
 import { createViewScope, bindDrawerResize } from './ui_lifecycle.js';
 import { createPromptWorkbench } from './ui_prompt_workbench.js';
-import { newDraft, normalizeBlock, syncDraftSynthesizedText } from './prompt_studio_data.js';
-import { categorizePromptSnippet, planToWorkbenchDraft } from './prompt_composition.js';
+import { newDraft } from './prompt_studio_data.js';
+import { planToWorkbenchDraft } from './prompt_composition.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { jsonResponse } from './ui_dom.js';
 import { translate as t } from './locales.js';
@@ -122,27 +122,3 @@ export async function showPromptComposer(owner, material) {
     owner.promptPlanDraft ||= newDraft();
     await openPromptStudio(owner);
 }
-
-export function appendPromptToStudio(owner, textSnippet, isPositive = true, noteTitle = '') {
-    if (!textSnippet || !textSnippet.trim()) return;
-    const role = isPositive ? 'positive' : 'negative';
-    const cat = isPositive ? categorizePromptSnippet(textSnippet) : 'base';
-    const block = normalizeBlock({
-        title: noteTitle || (window.anomalous_browser_lang === 'zh' ? '素材片段' : 'Material Snippet'),
-        content: textSnippet.trim(),
-        role,
-        category: cat,
-    });
-
-    if (owner.sidePromptComposerControl?.addBlock) {
-        owner.sidePromptComposerControl.addBlock(block);
-
-    } else {
-        owner.promptPlanDraft ||= newDraft();
-        owner.promptPlanDraft.plan.parts ||= [];
-        owner.promptPlanDraft.plan.parts.push(block);
-        syncDraftSynthesizedText(owner.promptPlanDraft);
-        if (!owner.promptPlanDraft.name?.trim() && noteTitle) owner.promptPlanDraft.name = noteTitle;
-    }
-}
-

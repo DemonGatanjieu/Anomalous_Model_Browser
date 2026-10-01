@@ -1,5 +1,6 @@
 /** The current-node panel (Node Assistant): the selected node's model actions (change it,
- * insert a LoRA), model cards with their history, and its parameters (ui_node_parameters.js). */
+ * insert a LoRA), model cards with their history, its prompt boxes with translation
+ * (ui_node_prompts.js) and its parameters (ui_node_parameters.js). */
 
 import { app } from "../../../scripts/app.js";
 import { translate } from "./locales.js";
@@ -7,6 +8,7 @@ import { analyzeModelChainInsertion, getModelChainInsertionCapabilities } from "
 import { formatModelTypeLabel, inferPickerModelType } from "./model_picker.js";
 import { findModelComboWidget, getNativeWidgetValues } from "./ui_node_model_picker.js";
 import { renderNodeParameters } from "./ui_node_parameters.js";
+import { renderNodePrompts } from "./ui_node_prompts.js";
 
 const t = (key, params) => translate(key, params);
 
@@ -461,5 +463,6 @@ for (const w of node.widgets) {
             body.appendChild(quickActions);
             for (const w of modelWidgets) this.renderAssistantModelCard(node, w, body);
         }
+        renderNodePrompts(node, body);
         renderNodeParameters(node, body);
     }

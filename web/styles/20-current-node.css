@@ -1,4 +1,4 @@
-/* The current-node panel (Node Assistant): one scrolling body of sections; the parameters list. */
+/* The current-node panel (Node Assistant): one scrolling body of sections; prompts; the parameters list. */
 
 .anomalous-node-body {
     display: flex;
@@ -158,4 +158,51 @@
     background: transparent;
     color: #6b7280;
     cursor: default;
+}
+
+/* A prompt box of the node, with its translation. */
+.anomalous-node-prompt {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.anomalous-node-param-role.is-plain { color: #d1d5db; }
+
+.anomalous-node-prompt-name {
+    color: #6b7280;
+    font-size: 10.5px;
+}
+
+.anomalous-node-prompt-text,
+.anomalous-node-prompt-note {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    color: #e5e7eb;
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+}
+
+.anomalous-node-prompt-text.is-empty { color: #6b7280; }
+
+.anomalous-node-prompt-note {
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: rgba(165, 180, 252, 0.08);
+    color: #c7d2fe;
+    -webkit-line-clamp: 8;
+}
+
+.anomalous-node-prompt-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
 }

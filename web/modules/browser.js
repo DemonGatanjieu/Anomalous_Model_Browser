@@ -16,7 +16,6 @@ import { showRecipes, refreshRecipes } from './ui_recipe_catalog.js';
 import { renderRecipeList, handleSaveRecipe } from './ui_recipes.js';
 import { showMaterials, refreshMaterials, openSavedMaterial, openMaterialLibrary } from './ui_materials.js';
 import { openPromptStudio } from './ui_prompt_composer.js';
-import { openPromptTranslator } from './ui_prompt_translator.js';
 import { closeUpdateGuide } from './ui_update_guide.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
 import { openDoctorPage } from './ui_doctor.js';
@@ -162,7 +161,6 @@ AnomalousBrowser.prototype.showMaterials = showMaterials;
 AnomalousBrowser.prototype.openSavedMaterial = openSavedMaterial;
 AnomalousBrowser.prototype.openMaterialLibrary = openMaterialLibrary;
 AnomalousBrowser.prototype.openPromptStudio = openPromptStudio;
-AnomalousBrowser.prototype.openPromptTranslator = function() { openPromptTranslator(this); };
 AnomalousBrowser.prototype.refreshMaterials = refreshMaterials;
 
 AnomalousBrowser.prototype.loadGalleryImages = loadGalleryImages;
