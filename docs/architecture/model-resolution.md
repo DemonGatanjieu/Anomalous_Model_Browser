@@ -1,7 +1,7 @@
 # Model Identity and Scanning
 
 Read this document for Model Doctor, workflow provenance, missing-model recovery,
-hash caches, Civitai metadata resolution, or deep scanning.
+hash caches, Civitai metadata resolution, or model scanning.
 
 ## Identity boundary
 
@@ -89,7 +89,7 @@ metadata includes the discovered hash, but consumers still associate the record
 with the current physical file through the established size/name rules; array
 position is not identity.
 
-## Deep scanning
+## Scanning
 
 A scan (the scan page) runs outside the aiohttp event loop and identifies a model through
 the established fallback sequence:

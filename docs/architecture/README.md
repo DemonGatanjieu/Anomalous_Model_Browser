@@ -14,7 +14,7 @@ open only the topic needed for the current task.
 - [`recipe-model-lifecycle.md`](recipe-model-lifecycle.md): authoritative model
   fields, Hash synchronization, local matching, partial append, and note privacy.
 - [`model-resolution.md`](model-resolution.md): model provenance, Model Doctor,
-  hash injection, deep scanning, and recovery policy.
+  hash injection, model scanning, and recovery policy.
 - [`../decisions/README.md`](../decisions/README.md): concise records of product
   and architectural decisions that still explain current behavior.
 
