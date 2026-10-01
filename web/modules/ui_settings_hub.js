@@ -12,11 +12,9 @@ export function createSettingsHub(owner, {
     savedScale,
     savedBgOpacity,
     updateLangClass,
-    toolboxBtn,
     dockBtn,
     updateNoticeBtn,
     icons,
-    onBeforeOpen,
 }) {
     let refreshModelSettingsText = () => {};
 
@@ -38,13 +36,8 @@ export function createSettingsHub(owner, {
     const refreshLanguageUi = () => {
         langBtn.textContent = t(window.anomalous_browser_lang === 'zh' ? 'sidebarSwitchToEnglish' : 'sidebarSwitchToChinese');
         updateLangClass();
-        toolboxBtn.removeAttribute('title');
-        toolboxBtn.setAttribute('aria-label', t('sidebarToolbox'));
-        toolboxBtn.setAttribute('data-tooltip', t('sidebarToolbox'));
-        toolboxBtn.setAttribute('data-tooltip-pos', 'right');
         helpBtn.innerHTML = `${icons.HELP}<span class="anomalous-btn-text">${t('help')}</span>`;
-        if (owner.renderToolboxModal) owner.renderToolboxModal();
-        if (owner.renderShortcutActions) owner.renderShortcutActions();
+        owner.renderRailTools?.();
 
         const sBtn = document.getElementById('anomalous-global-settings-btn');
         if (sBtn) { sBtn.removeAttribute('title'); sBtn.setAttribute('data-tooltip', t('sidebarSettings')); sBtn.setAttribute('data-tooltip-pos', 'right'); }
@@ -567,7 +560,6 @@ modelSettingsNote.textContent = t('sidebarModelSettingsNote');
 
     settingsBtn.onclick = (e) => {
         e.stopPropagation();
-        onBeforeOpen();
         if (settingsHubModal.style.display === 'none') {
             settingsHubModal.style.display = 'flex';
             settingsBtn.classList.add('is-active');

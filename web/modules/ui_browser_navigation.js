@@ -113,8 +113,6 @@ export function hideAllPanels() {
         this.currentDetailObserver.disconnect();
         this.currentDetailObserver = null;
     }
-    const tbModal = document.getElementById('anomalous-toolbox-modal');
-    if (tbModal) tbModal.style.display = 'none';
     const setModal = document.getElementById('anomalous-settings-hub-modal');
     if (setModal) setModal.style.display = 'none';
 }

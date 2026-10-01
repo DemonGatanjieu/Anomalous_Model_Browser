@@ -106,11 +106,12 @@ function buildRecipeStudioTopbar(owner) {
     viewSwitch.append(gridButton, listButton);
     right.appendChild(viewSwitch);
 
-    const importButton = appendText(right, 'button', '⇧', 'anomalous-recipe-topbar-btn anomalous-tooltip-target');
-    importButton.type = 'button';
-    importButton.disabled = true;
-    importButton.setAttribute('data-tooltip', t('recipeImportUnavailable'));
-    importButton.setAttribute('aria-label', t('recipeImportUnavailable'));
+    // Workflow share codes (AMB0/AMB1): import and export the canvas workflow (main.js).
+    const shareButton = appendText(right, 'button', '⇅', 'anomalous-recipe-topbar-btn anomalous-tooltip-target');
+    shareButton.type = 'button';
+    shareButton.setAttribute('data-tooltip', t('toolWorkflowTransferTitle'));
+    shareButton.setAttribute('aria-label', t('toolWorkflowTransferTitle'));
+    shareButton.onclick = () => window.AMB_WorkflowShare?.showUnifiedModal();
 
     const saveButton = appendText(right, 'button', '', 'anomalous-recipe-topbar-btn is-primary');
     saveButton.dataset.recipeSaveCurrent = 'true';

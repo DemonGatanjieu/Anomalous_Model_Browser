@@ -334,6 +334,15 @@ export function openLoraInsertionPicker(anchorNode, direction) {
     });
 }
 
+/** The rail's Current node button: the panel for the selected node, or the hint to select one. */
+export function openCurrentNode(owner) {
+    owner.enterToolPage?.('assistant');
+    owner.hideAllPanels();
+    owner.assistantPanel.style.display = 'flex';
+    if (!owner.assistantPanelInitialized) owner.initAssistantPanel();
+    owner.diagnoseNode(Object.values(app.canvas?.selected_nodes || {})[0] || null);
+}
+
 export function diagnoseNode(node) {
         if (!this.assistantPanelInitialized) {
             this.initAssistantPanel();

@@ -1,11 +1,5 @@
 export const i18n = {
     zh: {
-        actionTools: "工具",
-        actionScan: "扫描",
-        actionDoctor: "医生",
-        actionAssistant: "节点",
-        actionMaterials: "素材",
-        actionSettings: "设置",
         updateGuideTitle: "本次更新",
         updateGuideReplay: "查看更新引导",
         updateGuideSkip: "跳过",
@@ -418,7 +412,7 @@ export const i18n = {
 <div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
     <h3 style="color:#f59e0b; margin-top:0;">📖 使用说明</h3>
     <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 测试功能与数据保护</strong><br>工作流配方、素材库和“当前节点”的参数仍在测试阶段。更新插件、导入别人的配方、恢复版本、删除配方或应用参数前，请先保存当前画布，并备份 ComfyUI 用户目录里的 <code>workflows/anomalous_recipes</code>、<code>workflows/anomalous_materials</code> 与 <code>workflows/anomalous_parameters</code>。</div>
-    <p><strong>1. 🧭 左侧图标栏</strong><br>每个页面一个图标：主页、记录、模型、图库、工作流、素材，以及角色语音和音频库。再点一下当前页的图标，或顶栏最左边的按钮，可以收起、展开旁边的列表；窗口较窄时，列表会变成从左边滑出的抽屉。图标栏下半部分是工具：扫描、模型医生、当前节点和工具箱，最下面是设置。</p>
+    <p><strong>1. 🧭 左侧图标栏</strong><br>每个页面一个图标：主页、记录、模型、图库、工作流、素材，以及角色语音和音频库。再点一下当前页的图标，或顶栏最左边的按钮，可以收起、展开旁边的列表；窗口较窄时，列表会变成从左边滑出的抽屉。图标栏下半部分是工具：扫描、模型医生和当前节点，最下面是设置。</p>
     <p><strong>2. 🔄 先扫描一次</strong><br>点图标栏的 <strong>扫描</strong>（或主页的“扫描模型文件夹”）。插件按文件哈希从 C 站获取封面、触发词和底模，需要联网；没匹配上的模型可以在扫描页“重新联网查找”，部分限制级模型需要在扫描页的“高级选项”里填写 C 站 API Key。扫描在后台进行，可以关掉窗口。扫描完成后，其余功能才有完整的模型信息。</p>
     <p><strong>3. 📦 模型</strong><br>顶部标签按类型（Checkpoint、LoRA、VAE…）切换，连同子文件夹一起列出；在左侧列表点某个文件夹只看那一个，点标签末尾的 ✕ 回到整个类型。卡片上的 <strong>+</strong> 在画布上创建加载节点，铅笔编辑名称、备注和封面，雷达图标只扫描这一个模型。</p>
     <p><strong>4. 🩺 模型医生</strong><br>打开别人的工作流或图片、模型报红时点它：按哈希和文件大小在本地找到对应的模型，一键替换。“查看哈希”可以逐项比对。</p>
@@ -427,7 +421,7 @@ export const i18n = {
     <p><strong>7. ✨ 素材</strong><br>在图库或配方里打开一张图的参数详情，可以把原图、完整工作流和节点参数存成素材。拖到画布空白处打开工作流（提示词素材会生成提示词节点），拖到已有节点上则把参数填进去。</p>
     <p><strong>8. 🎙️ 角色语音</strong><br>需要另外安装 Anomalous_TTS 节点包。导入 GPT-SoVITS 角色、设置情绪和读音、在剧本台生成语音；音频页右上角的 <strong>!</strong> 有分步说明和遮罩导览。</p>
     <p><strong>9. 🕘 操作记录</strong><br>按天列出插件改过的东西：画布上节点设置的变化、加删的节点、打开的工作流，以及模型、封面、配方、素材等文件。只记录、不撤销；你自己在画布上的修改不会记进来。</p>
-    <p><strong>10. 🧰 工具箱</strong><br>导入导出（AMB0/AMB1 工作流分享码）、提示词工坊、翻译助手、模型来源和提示词笔记。</p>
+    <p><strong>10. 🧰 其他工具在哪</strong><br>工作流分享码（AMB0/AMB1 导入导出）在“工作流”页右上角 ⇅；提示词工坊和提示词笔记在“素材”页右上角；模型来源在“模型”页类型标签的最右边，工作流里模型的来源在模型医生里；翻译在“当前节点”的提示词框上。</p>
     <p><strong>11. ⚙️ 设置</strong><br>语言、字号、缩略图和视频封面。<strong>文件夹管理</strong> 可以隐藏不需要的模型文件夹、调整顺序，隐藏的文件夹不再读取和扫描。<strong>💬 提交反馈 / 报告问题</strong> 直达 GitHub Issues。</p>
 </div>`,
         notebooks: '笔记本',
@@ -740,6 +734,7 @@ export const i18n = {
         doctorUseCandidate: '用它',
         doctorPick: '自己挑',
         doctorRecheck: '重新检查',
+        doctorSources: '模型去哪下载',
         doctorNoModels: '当前工作流没有用到模型文件。',
         doctorAllHere: '{count} 个模型都在本机，可以直接运行。',
         doctorHowItWorks: '“换上”只会用同一个文件（指纹一致）。其余的请自己挑一个本地模型，或者去 Civitai 下载。',
@@ -970,7 +965,7 @@ export const i18n = {
         sidebarAssistant: '当前节点',
         sidebarPreflight: '预检导入工作流',
         sidebarSettings: '设置中心',
-        sidebarScanWizard: '📡 模型扫描向导',
+        sidebarScan: '扫描模型',
         sidebarScanComplete: '✅ 扫描/重命名已完成！数据已为您更新。',
         sidebarGlobalWizardTitle: '全局扫描向导',
         sidebarProvenance: '在工作流里记下模型指纹',
@@ -1016,33 +1011,15 @@ export const i18n = {
         sidebarBgAtmosphereHelp: '调节底图星图蓝图的可见度（0%为纯净黑曜石）',
         sidebarResetLayout: '↺ 恢复默认窗口布局',
         sidebarResetConfirm: '确认重置窗口位置、缩放和停靠状态吗？',
-        sidebarToolbox: '实用工具箱',
-        toolboxTitle: '实用工具箱',
         promptLibraryAutoSync: "素材库词卡自动同步",
         promptLibrarySyncFailed: "素材库同步失败，已保留现有词卡，将自动重试",
         promptLibraryBadge: "🔒 来自素材库",
         promptLibrarySource: "来自素材库：{name}（{filename}）",
         promptLibraryReadOnly: "由源素材管理，不能在工坊删除；拼装台中的副本可自由编辑。",
-        toolWorkflowTransferShort: "导入导出",
         toolWorkflowTransferTitle: "工作流导入导出中心",
-        toolboxSubtitle: '模型维护与拓展辅助工具',
-        toolboxPlanned: '规划中',
-        toolboxReady: '就绪',
-        toolboxHintFooter: '💡 持续扩展中：模型批量重整、孤立缓存清理、哈希重算等运维工具将在此聚合。',
-        toolPromptStudioTitle: '提示词工坊',
         toolPromptStudioShort: '提示词工坊',
-        toolOrphanCleanerTitle: '孤立缓存与临时文件清理',
-        toolOrphanCleanerShort: '缓存清理',
-        toolOrphanCleanerDesc: '扫描并清理已删除模型的未引用缩略图缓存与临时残余文件。',
-        toolBatchRenameTitle: '批量命名与标签重整',
-        toolBatchRenameShort: '批量重整',
-        toolBatchRenameDesc: '对指定目录下的模型批量规范命名规则或批量附加分类标签。',
-        toolCivitaiJumpTitle: 'Civitai 页面一键直达',
-        toolCivitaiJumpShort: 'Civitai',
-        toolCivitaiJumpDesc: '根据模型 SHA256 哈希或名称直接在浏览器打开对应发布页。',
         toolModelSourcesTitle: '模型来源与发布页中控',
         toolModelSourcesShort: '模型来源',
-        toolPromptNotesTitle: '提示词笔记',
         toolPromptNotesShort: '提示词笔记',
         modelSourcesModalTitle: '🌐 模型来源统一中控中心',
         modelSourcesScopeWorkflow: '当前工作流',
@@ -1084,15 +1061,6 @@ export const i18n = {
         modelSourcesLocalTargetUnknown: '尚未确定本地文件位置，可先将链接保存到工作流。',
         modelSourcesNoModelsFound: '未检测到任何模型',
         modelSourcesUrlPlaceholder: '输入或粘贴来源链接 (Civitai / Hugging Face / Liblib / 网盘 等)...',
-        toolHashRecalcTitle: '哈希快查',
-        toolHashRecalcShort: '哈希快查',
-        toolHashRecalcDesc: '快速计算并校验模型文件的 SHA256 哈希值。',
-        toolFormatConvertTitle: '格式转换',
-        toolFormatConvertShort: '格式转换',
-        toolFormatConvertDesc: '模型权重的 FP8/FP16 精度或格式互转辅助工具。',
-        toolCustomScriptsTitle: '扩展脚本',
-        toolCustomScriptsShort: '扩展脚本',
-        toolCustomScriptsDesc: '通过开放接口注册并执行自定义 Python / JS 运维动作。',
         sidebarInjectHash: '🟢 注入工作流哈希',
         sidebarSkipHash: '⚪ 不注入工作流哈希',
         sidebarManageFolders: '文件夹管理',
@@ -1169,7 +1137,6 @@ export const i18n = {
         recipeNoMatches: '没有匹配的配方。请清除搜索或标签筛选。',
         recipeFilterByTag: '按此标签筛选',
         recipeImport: '导入配方包',
-        recipeImportUnavailable: '配方包导入暂未开放',
         recipeExport: '导出配方包',
         recipeExportUnavailable: '配方包导出暂未开放',
         recipeModel: '模型',
@@ -1904,12 +1871,6 @@ export const i18n = {
         scriptDirectorSampleNotListed: "{node} 节点的列表里还没有 {file}。请先在 ComfyUI 中刷新节点定义（按 R）后再试。"
     },
     en: {
-        actionTools: "Tools",
-        actionScan: "Scan",
-        actionDoctor: "Fix",
-        actionAssistant: "Node",
-        actionMaterials: "Lib",
-        actionSettings: "Prefs",
         updateGuideTitle: "What's new",
         updateGuideReplay: "View update guide",
         updateGuideSkip: "Skip",
@@ -2322,7 +2283,7 @@ export const i18n = {
 <div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
     <h3 style="color:#f59e0b; margin-top:0;">📖 How to use</h3>
     <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 Preview features and your data</strong><br>Workflow recipes, the Material Library and Current node's parameters are still in preview. Before updating the plugin, importing someone else's recipe, restoring a version, deleting a recipe or applying parameters, save your canvas and back up <code>workflows/anomalous_recipes</code>, <code>workflows/anomalous_materials</code> and <code>workflows/anomalous_parameters</code> in your ComfyUI user folder.</div>
-    <p><strong>1. 🧭 The rail on the left</strong><br>One icon per page: Home, Activity, Models, Gallery, Workflows, Materials, then Voices and Audio. Click the current page's icon again, or the button at the far left of the header, to hide or show its list; in a narrow window the list slides in as a drawer. Below the pages are the tools: Scan, Model Doctor, Current node and the Toolbox, with Settings at the bottom.</p>
+    <p><strong>1. 🧭 The rail on the left</strong><br>One icon per page: Home, Activity, Models, Gallery, Workflows, Materials, then Voices and Audio. Click the current page's icon again, or the button at the far left of the header, to hide or show its list; in a narrow window the list slides in as a drawer. Below the pages are the tools: Scan, Model Doctor and Current node, with Settings at the bottom.</p>
     <p><strong>2. 🔄 Scan once first</strong><br>Click <strong>Scan</strong> on the rail (or "Scan model folders" on Home). The plugin fetches covers, trigger words and base models from Civitai by file hash, so it needs the internet; models that were not matched can be looked up again from the scan page, and some restricted models need a Civitai API key, entered under Advanced on the scan page. The scan runs in the background, so you can close the window. Once scanned, every other feature has full model information.</p>
     <p><strong>3. 📦 Models</strong><br>The chips at the top switch between types (Checkpoint, LoRA, VAE…) and list the whole type, subfolders included; click a folder in the list to see only that one, and the ✕ at the end of the chips to go back. On a card, <strong>+</strong> adds a loader node to the canvas, the pencil edits name, notes and cover, and the radar icon scans just that model.</p>
     <p><strong>4. 🩺 Model Doctor</strong><br>When someone else's workflow or image opens with red, missing models, click it: it finds your local copy of each model by hash and file size and swaps it in. "View hash" compares them side by side.</p>
@@ -2331,7 +2292,7 @@ export const i18n = {
     <p><strong>7. ✨ Materials</strong><br>Open an image's parameter details in the Gallery or a recipe to save the image, its full workflow and its node settings as a material. Drop it on an empty canvas to open the workflow (prompt materials create prompt nodes), or on a node to fill in its settings.</p>
     <p><strong>8. 🎙️ Character voices</strong><br>Needs the Anomalous_TTS node pack. Import GPT-SoVITS characters, set emotions and pronunciations, and generate speech in the Script Director; the <strong>!</strong> at the top right of the audio page has a step-by-step guide and a spotlight tour.</p>
     <p><strong>9. 🕘 Activity</strong><br>What the plugin changed, by day: node settings on the canvas, nodes added or removed, workflows opened, and files such as models, covers, recipes and materials. It records only and undoes nothing; your own edits on the canvas are not listed.</p>
-    <p><strong>10. 🧰 Toolbox</strong><br>Import / export (AMB0/AMB1 workflow share codes), Prompt Studio, the prompt translator, Model Sources and Prompt Notes.</p>
+    <p><strong>10. 🧰 Where the other tools are</strong><br>Workflow share codes (AMB0/AMB1 import / export): ⇅ at the top right of Workflows. Prompt Studio and Prompt Notes: top right of Materials. Model Sources: at the end of the type chips on Models; the sources of the open workflow's models: in Model Doctor. Translation: on the prompt boxes in Current node.</p>
     <p><strong>11. ⚙️ Settings</strong><br>Language, font size, thumbnails and video covers. <strong>Folder manager</strong> hides model folders you do not need and orders them; hidden folders are not read or scanned. <strong>💬 Feedback / report an issue</strong> opens GitHub Issues.</p>
 </div>`,
         notebooks: 'Notebooks',
@@ -2644,6 +2605,7 @@ export const i18n = {
         doctorUseCandidate: 'Use it',
         doctorPick: 'Pick one',
         doctorRecheck: 'Check again',
+        doctorSources: 'Where to download',
         doctorNoModels: 'The open workflow uses no model files.',
         doctorAllHere: 'All {count} models are on this computer; the workflow can run.',
         doctorHowItWorks: '"Put in" only uses the same file (same fingerprint). For the others, pick a local model yourself or download it from Civitai.',
@@ -2874,7 +2836,7 @@ export const i18n = {
         sidebarAssistant: 'Current node',
         sidebarPreflight: 'Preflight Import',
         sidebarSettings: 'Settings Hub',
-        sidebarScanWizard: '📡 Model Scan Wizard',
+        sidebarScan: 'Scan models',
         sidebarScanComplete: '✅ Scan/Rename completed! Data updated.',
         sidebarGlobalWizardTitle: 'Global Scan Wizard',
         sidebarProvenance: 'Record model fingerprints in workflows',
@@ -2920,33 +2882,15 @@ export const i18n = {
         sidebarBgAtmosphereHelp: 'Adjust blueprint backdrop opacity (0% is pure solid dark)',
         sidebarResetLayout: '↺ Reset Window Layout',
         sidebarResetConfirm: 'Reset window position, scale and dock state?',
-        sidebarToolbox: 'Toolbox Hub',
-        toolboxTitle: 'Toolbox Hub',
         promptLibraryAutoSync: "Material Library cards sync automatically",
         promptLibrarySyncFailed: "Library sync failed. Existing cards are kept; retrying automatically.",
         promptLibraryBadge: "🔒 From Material Library",
         promptLibrarySource: "Material Library: {name} ({filename})",
         promptLibraryReadOnly: "Managed by the source material; cannot be deleted here. Mixer copies remain editable.",
-        toolWorkflowTransferShort: "Import / Export",
         toolWorkflowTransferTitle: "Workflow Import / Export Center",
-        toolboxSubtitle: 'Model Maintenance & Utility Tools',
-        toolboxPlanned: 'Planned',
-        toolboxReady: 'Ready',
-        toolboxHintFooter: '💡 Expanding: Batch organizer, orphan cache cleaner, and hash recalculation tools will be hosted here.',
-        toolPromptStudioTitle: 'Prompt Studio',
         toolPromptStudioShort: 'Prompt Studio',
-        toolOrphanCleanerTitle: 'Orphan Cache & Temp Cleaner',
-        toolOrphanCleanerShort: 'Cache Clean',
-        toolOrphanCleanerDesc: 'Scan and remove unreferenced thumbnails and temporary files for deleted models.',
-        toolBatchRenameTitle: 'Batch Rename & Tagging',
-        toolBatchRenameShort: 'Batch Rename',
-        toolBatchRenameDesc: 'Standardize model filenames or batch-assign taxonomy tags to folders.',
-        toolCivitaiJumpTitle: 'Civitai Quick Jump',
-        toolCivitaiJumpShort: 'Civitai',
-        toolCivitaiJumpDesc: 'Quickly open official model release pages in browser by SHA256 hash or title.',
         toolModelSourcesTitle: 'Model Source Hub',
         toolModelSourcesShort: 'Sources',
-        toolPromptNotesTitle: 'Prompt Notes',
         toolPromptNotesShort: 'Prompt Notes',
         modelSourcesModalTitle: '🌐 Model Source Hub',
         modelSourcesScopeWorkflow: 'Active Workflow',
@@ -2988,15 +2932,6 @@ export const i18n = {
         modelSourcesLocalTargetUnknown: 'Local file location is not resolved. You can save the link to the workflow.',
         modelSourcesNoModelsFound: 'No models detected',
         modelSourcesUrlPlaceholder: 'Enter or paste source URL (Civitai / Hugging Face / Liblib / etc)...',
-        toolHashRecalcTitle: 'Hash Check',
-        toolHashRecalcShort: 'Hash Check',
-        toolHashRecalcDesc: 'Quickly compute and verify model file SHA256 hash.',
-        toolFormatConvertTitle: 'Format Convert',
-        toolFormatConvertShort: 'Convert',
-        toolFormatConvertDesc: 'Helper tools for model FP8/FP16 precision and format conversion.',
-        toolCustomScriptsTitle: 'Custom Scripts',
-        toolCustomScriptsShort: 'Scripts',
-        toolCustomScriptsDesc: 'Register and run custom Python / JS maintenance scripts via API.',
         sidebarInjectHash: '🟢 Inject Workflow Hash',
         sidebarSkipHash: '⚪ Skip Workflow Hash',
         sidebarManageFolders: 'Manage Folders',
@@ -3072,7 +3007,6 @@ export const i18n = {
         recipeNoMatches: 'No recipes match. Clear the search or tag filters.',
         recipeFilterByTag: 'Filter by this tag',
         recipeImport: 'Import package',
-        recipeImportUnavailable: 'Recipe package import is temporarily unavailable',
         recipeExport: 'Export package',
         recipeExportUnavailable: 'Recipe package export is temporarily unavailable',
         recipeDialogNo: 'No',

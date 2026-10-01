@@ -94,3 +94,8 @@
 .anomalous-source-sep {
     opacity: 0.5;
 }
+
+/* The Model Source Hub's entry, at the end of the chip row. */
+.anomalous-model-type-chip.is-tool {
+    margin-left: auto;
+}

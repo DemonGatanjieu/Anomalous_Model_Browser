@@ -6,7 +6,7 @@ localization, media, or explicit canvas mutations.
 ## Bootstrap and module ownership
 
 The verified AMB0/AMB1 workflow share-code Import / Export Center is available
-from Toolbox through `window.AMB_WorkflowShare.showUnifiedModal()`. Both directions
+from the Workflows page's top bar (⇅) through `window.AMB_WorkflowShare.showUnifiedModal()`. Both directions
 are enabled by explicit product decision. It is independent of the paused Recipe
 package import/export and closed Material Library file import. Image/workflow hash
 injection, host saving, and ordinary image downloads remain unchanged.
@@ -44,7 +44,7 @@ icon rail (`ui_shell_rail.js`), page navigation and the list column's open state
 (`ui_shell_nav.js`), the home page (`ui_home.js`) and the window frame
 (`ui_shell_frame.js`) are their own modules. Every page change goes through
 `owner.goTo(page)`. `ui_settings_hub.js` owns settings and model-card preferences,
-while `ui_toolbox.js` owns the catalog, the rail's tool buttons, and tool dispatch.
+while `ui_rail_tools.js` owns the rail's tool buttons.
 The Material Library shortcut remains a native ComfyUI command/keybinding; a
 deferred window-key fallback invokes the same command path only when the host
 did not bring the library forward, so handled shortcuts are not executed twice.

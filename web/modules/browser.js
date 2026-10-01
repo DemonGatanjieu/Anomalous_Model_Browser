@@ -19,7 +19,7 @@ import { openPromptStudio } from './ui_prompt_composer.js';
 import { closeUpdateGuide } from './ui_update_guide.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
 import { openDoctorPage } from './ui_doctor.js';
-import { initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, diagnoseNode, openLoraInsertionPicker } from './ui_node_assistant.js';
+import { initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, diagnoseNode, openCurrentNode, openLoraInsertionPicker } from './ui_node_assistant.js';
 import { _openGalleryReplacer } from './ui_node_model_picker.js';
 import { renderAudioStudio, stopAudioStudioPlayback } from './ui_audio_studio.js';
 import { renderAudioGallery, stopGalleryAudio } from './ui_audio_gallery.js';
@@ -138,6 +138,7 @@ export class AnomalousBrowser {
 
 AnomalousBrowser.prototype.openDoctorPage = function () { openDoctorPage(this); };
 AnomalousBrowser.prototype.diagnoseNode = diagnoseNode;
+AnomalousBrowser.prototype.openCurrentNode = function () { openCurrentNode(this); };
 AnomalousBrowser.prototype.initAssistantPanel = initAssistantPanel;
 AnomalousBrowser.prototype.renderAssistantModelCard = renderAssistantModelCard;
 AnomalousBrowser.prototype._loadAssistantHistory = _loadAssistantHistory;

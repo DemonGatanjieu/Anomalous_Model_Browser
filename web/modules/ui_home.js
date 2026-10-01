@@ -14,7 +14,7 @@ import { renderRecentActivity } from './ui_activity.js';
 // One card per task: where it goes and its text (`homeCard<Name>Title` / `…Body`).
 const CARDS = Object.freeze([
     { name: 'Models', icon: PAGE_ICONS.models, open: owner => owner.goTo('models') },
-    { name: 'Doctor', icon: TOOL_ICONS.DOCTOR, open: owner => owner.executeToolAction?.('doctor') },
+    { name: 'Doctor', icon: TOOL_ICONS.DOCTOR, open: owner => owner.openDoctorPage() },
     { name: 'Voices', icon: PAGE_ICONS.voices, open: owner => owner.goTo('voices') },
     { name: 'Gallery', icon: PAGE_ICONS.gallery, open: owner => owner.goTo('gallery') },
     { name: 'Recipes', icon: PAGE_ICONS.recipes, open: owner => owner.goTo('recipes') },

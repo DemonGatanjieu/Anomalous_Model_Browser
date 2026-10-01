@@ -79,16 +79,6 @@ const TOUR_STEPS = Object.freeze([
         position: 'right',
     },
     {
-        id: 'toolbox',
-        targetSelector: '#anomalous-toolbox-btn',
-        icon: '🧰',
-        titleZh: '🧰 实用工具箱',
-        titleEn: '🧰 Utility Toolbox',
-        bodyZh: '点击展开九宫格面板，收纳了模型来源中心（检测工作流模型对应的 Civitai/HuggingFace 链接）、提示词笔记、文件夹管理等工具。',
-        bodyEn: 'Opens the drawer hosting Model Sources Hub (detects Civitai/HuggingFace links for workflow models), Prompt Notes, and Folder Manager.',
-        position: 'right',
-    },
-    {
         id: 'settings',
         targetSelector: '#anomalous-global-settings-btn',
         icon: '⚙️',

@@ -296,7 +296,7 @@ covered by the `styles.css` manifest.
   difference); `activity_log.js` is the client and the words for each entry;
   `ui_activity.js` renders the activity page and the home page's recent list.
   `ui_settings_hub.js` owns settings and model-card preferences;
-  `ui_toolbox.js` owns the tool catalog, the rail's tool buttons, and tool dispatch;
+  `ui_rail_tools.js` owns the rail's tool buttons (scan, doctor, current node);
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,
   including Esc on the workspace panel (`nbPanel`, below the header and right of the
   rail; the list column steps aside while it is open).
@@ -315,10 +315,10 @@ covered by the `styles.css` manifest.
   shortcuts, their fallback when ComfyUI's keybinding does not fire, and the
   settings control that opens ComfyUI's keybinding editor.
 - `ui_model_sources.js` owns the Model Sources Hub, managing workflow-model and global-library source detection, Civitai/HuggingFace URL attribution, sidecar persistence, and resilient scope switching between active workflow and full local library (with cached library state preservation and reliable re-rendering).
-- `ui_materials.js`, `ui_material_cards.js`, and `ui_material_application.js` own the Material Library UI, category navigation, card presentation (with grab cursor affordances, explicit drag tooltips, and polymorphic card dragging via `bindPolymorphicMaterialCardDrag`), context-aware drag guidance, relaxed third-party node prompt widget sniffing and injection, and the structured empty state onboarding blueprint guiding users through collection, canvas drag, and prompt studio mixing. Drag precedence prioritizes node hits over blank canvas drops; blank canvas drops auto-instantiate `CLIPTextEncode` nodes for prompt materials with standard colors or open full workflows. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) shared by detail views, cards and canvas actions.
+- `ui_materials.js`, `ui_material_cards.js`, and `ui_material_application.js` own the Material Library UI, category navigation, card presentation (with grab cursor affordances, explicit drag tooltips, and polymorphic card dragging via `bindPolymorphicMaterialCardDrag`), context-aware drag guidance, prompt drops into the prompt box under the pointer (`prompt_drop.js`), and the structured empty state onboarding blueprint guiding users through collection, canvas drag, and prompt studio mixing. Drag precedence prioritizes node hits over blank canvas drops; blank canvas drops create `CLIPTextEncode` nodes (one per side the prompt has) or open full workflows. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) shared by detail views, cards and canvas actions.
 - `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn`, the Help modal and Home's "What's new"; the current guide's ID and steps live in `update_guide_data.js`) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across the rail's pages and tools with directional tooltip cards and keyboard navigation; steps whose target is not on screen are skipped. Other views pass their own `steps` (text from locale keys) and an optional `onClose`; the GPT-SoVITS import window does.
-- `tool_registry.js` holds the tools' names, icons and stable IDs: the catalog tools (including Prompt Notes / 提示词笔记) and the two anchors (Toolbox and Settings).
-- The rail's tool slots (built in `ui_toolbox.js`, fixed) hold scan, doctor and assistant, then the toolbox; settings sits at the rail's bottom. Materials is a rail page. The Toolbox popover lists the remaining catalog tools and opens beside the rail.
+- `tool_registry.js` holds the tool icons shared by the rail and Home.
+- The rail's tool slots (`ui_rail_tools.js`, fixed) hold scan, doctor and current node; settings sits at the rail's bottom. Materials is a rail page. There is no toolbox: the other tools open from their pages (workflow share codes on Workflows, Prompt Studio and Prompt Notes on Materials, Model Sources on Models and in the doctor, translation in Current node).
 - `ui_model_types.js` owns the models page's type chips (one per models folder, with its count) and
   `owner.modelScope`, what the grid lists: a whole type, or one list folder shown as a crumb. The
   grid's cards set `currentType/PathIdx/Subfolder` to their own model's folder (`focusModel`),
@@ -348,7 +348,7 @@ covered by the `styles.css` manifest.
   unfolded companion models card with unconstrained multi-column tile flow eliminating nested gallery scrollbars,
   prompt composer with dynamic field-sizing and compact inline find & replace toolbar, flat material library archiving card with
   clean single-icon feedback, and unified dark slim scrollbar ergonomics with complete bilingual dictionary coverage in `locales.js`), and
-  `notebook_canvas.js` owns LiteGraph creation. Prompt Notes are integrated as a standard tool in the Toolbox
+  `notebook_canvas.js` owns LiteGraph creation. Prompt Notes open from the Material Library's top bar
   with defensive workspace return state restoration, TDZ-safe summary initialization, and responsive empty-state fallback rendering. `ui_recipe_detail.js`
   coordinates the Workflow Recipe detail session and model composition. `ui_recipe_overview.js`
   owns the Overview prompt showcase (with `entry.text` fallback, guarded non-shrinking primary action CTA, and floating Popover More dropdown menu), and `ui_recipe_parameters.js`

@@ -1,7 +1,7 @@
 /**
  * The shell's left icon rail: one entry per page (image pages, then the audio pages),
- * the canvas tools and settings. Entries open pages through `owner.goTo(page)`; the
- * toolbox module fills `owner.railTools` (toolbox, scan, doctor, assistant) and
+ * the canvas tools and settings. Entries open pages through `owner.goTo(page)`;
+ * ui_rail_tools.js fills `owner.railTools` (scan, doctor, current node) and
  * `owner.railFoot` (settings). Old ids are kept (`#anomalous-models-btn` …) so tours
  * and other modules still find them.
  */

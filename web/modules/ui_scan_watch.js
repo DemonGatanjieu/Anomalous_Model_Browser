@@ -9,7 +9,7 @@ import { fetchLastScan, setScanButtonState, showScanResult } from './scan_runner
 
 const POLL_MS = 3000;
 
-/** Starts polling; returns `isScanning()` for the toolbox's scan button. */
+/** Starts polling; returns `isScanning()` for the rail's scan button. */
 export function watchScans(owner) {
     let scanning = false;
     setInterval(async () => {

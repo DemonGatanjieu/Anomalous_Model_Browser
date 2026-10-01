@@ -21,7 +21,7 @@ local saves are unaffected.
 Reopening requires an explicit release decision, package round-trip and failure
 validation, then restoring the frontend export action and enabling the backend
 gates together. Do not reopen package transfers as a side effect of UX work. Workflow
-share-code import/export is a separate, verified feature available from Toolbox.
+share-code import/export is a separate, verified feature on the Workflows page's top bar (⇅).
 
 ## Product and data model
 

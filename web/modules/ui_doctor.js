@@ -9,6 +9,7 @@
 import { translate as t } from './locales.js';
 import { applyModelFix, checkWorkflowModels, fixWorkflowModels, isProblem, markReplaced, replacedFrom } from './model_check.js';
 import { updateDoctorBanner } from './ui_doctor_banner.js';
+import { openModelSourcesModal } from './ui_model_sources.js';
 
 const MODEL_EXT = /\.(safetensors|ckpt|pt|bin|pth|sft)$/i;
 const ORDER = ['fixable', 'candidate', 'conflict', 'ambiguous', 'missing', 'changed'];
@@ -190,7 +191,8 @@ export async function renderDoctorPage(owner, panel, { refresh = false } = {}) {
             renderDoctorPage(owner, panel);
         }));
     }
-    actions.append(button('anomalous-scan-secondary', t('doctorRecheck'), () => renderDoctorPage(owner, panel, { refresh: true })));
+    actions.append(button('anomalous-scan-secondary', t('doctorRecheck'), () => renderDoctorPage(owner, panel, { refresh: true })),
+        button('anomalous-scan-secondary', t('doctorSources'), () => openModelSourcesModal('workflow')));
     page.append(actions);
     const verdict = !entries.length ? t('doctorNoModels')
         : !entries.some(isProblem) ? t('doctorAllHere', { count: entries.length })

@@ -10,6 +10,7 @@
  */
 
 import { translate as t } from './locales.js';
+import { openModelSourcesModal } from './ui_model_sources.js';
 
 const SCOPE_KEY = 'anomalous_model_scope';
 
@@ -130,5 +131,13 @@ export function renderTypeBar(owner, listed) {
         crumb.onclick = () => openType(owner, group);
         bar.appendChild(crumb);
     }
+    // Where each model can be downloaded (the Model Source Hub, library scope).
+    const sources = document.createElement('button');
+    sources.type = 'button';
+    sources.className = 'anomalous-model-type-chip is-tool';
+    sources.textContent = t('toolModelSourcesShort');
+    sources.title = t('toolModelSourcesTitle');
+    sources.onclick = () => openModelSourcesModal('library');
+    bar.appendChild(sources);
     return bar;
 }

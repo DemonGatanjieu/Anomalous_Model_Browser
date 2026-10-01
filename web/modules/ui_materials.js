@@ -109,6 +109,14 @@ function buildMaterialTopbar(owner) {
         owner.materialList?.classList.add('is-list');
     };
 
+    // Prompts are assembled from these materials, and prompt notes are kept beside them.
+    const studioBtn = text(right, 'button', t('toolPromptStudioShort'), 'anomalous-material-topbar-btn');
+    studioBtn.type = 'button';
+    studioBtn.onclick = () => owner.openPromptStudio();
+    const notesBtn = text(right, 'button', t('toolPromptNotesShort'), 'anomalous-material-topbar-btn');
+    notesBtn.type = 'button';
+    notesBtn.onclick = () => owner.showNotebooks();
+
     // 刷新按钮
     const refreshBtn = text(right, 'button', '↻', 'anomalous-material-topbar-btn');
     refreshBtn.type = 'button';
