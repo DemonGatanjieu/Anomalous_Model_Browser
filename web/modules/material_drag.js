@@ -29,10 +29,13 @@ export function materialDropNode(event, canvas, graph) {
 
 /**
  * Only this page's active drag can mutate a node; transfer data is never trusted.
- * Optional `targetHint(node, data)` says what dropping on an accepted node will do;
- * optional `rejectHint(node, data)` explains why a hovered node is refused.
+ * `accepts`, `targetHint`, `rejectHint` and `drop` also get the drag event, for what is
+ * under the pointer. Optional `targetHint(node, data, event)` says what dropping on an
+ * accepted node will do; optional `rejectHint(node, data, event)` explains why a hovered
+ * node is refused. Optional `onStart(data)` may return what to undo when the drag ends;
+ * optional `onMove(node, data, event)` follows the accepted node under the pointer (or null).
  */
-export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropOnCanvas, targetHint, rejectHint }) {
+export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropOnCanvas, targetHint, rejectHint, onStart, onMove }) {
     element.draggable = true;
     element.addEventListener('dragstart', event => {
         if (event.target !== element && event.target?.closest?.('button, input, textarea, select')) { event.preventDefault(); return; }
@@ -47,8 +50,10 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropO
         const defaultHint = data.dragHint || t('materialDropHint');
         const hint = text(document.body, 'div', defaultHint, 'anomalous-material-drag-hint');
         hint.setAttribute('role', 'status');
+        const stopStart = onStart?.(data);
         const cleanup = () => {
             clearTimeout(reveal);
+            stopStart?.();
             owner.modal?.classList.remove('anomalous-material-dragging');
             hint.remove();
             for (const [name, fn] of listeners) window.removeEventListener(name, fn, true);
@@ -65,20 +70,22 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropO
         const over = event => {
             event.preventDefault(); event.stopImmediatePropagation();
             const node = target(event);
-            const validNode = !!node && accepts?.(node, data);
+            const validNode = !!node && accepts?.(node, data, event);
+            // A node that says why it refuses is not "blank canvas".
+            const refusal = node && !validNode ? rejectHint?.(node, data, event) || '' : '';
+            onMove?.(validNode ? node : null, data, event);
             if (validNode) {
                 event.dataTransfer.dropEffect = 'copy';
                 hint.classList.add('is-target-valid');
                 hint.classList.remove('is-target-refused');
-                hint.textContent = targetHint?.(node, data) || t('materialDropTarget', { name: materialNodeHeading(node) });
-            } else if (dropOnCanvas && isOverCanvasSurface(event)) {
+                hint.textContent = targetHint?.(node, data, event) || t('materialDropTarget', { name: materialNodeHeading(node) });
+            } else if (!refusal && dropOnCanvas && isOverCanvasSurface(event)) {
                 event.dataTransfer.dropEffect = 'copy';
                 hint.classList.add('is-target-valid');
                 hint.textContent = data.dragTargetHint || defaultHint;
             } else {
                 event.dataTransfer.dropEffect = 'none';
                 hint.classList.remove('is-target-valid');
-                const refusal = node ? rejectHint?.(node, data) : '';
                 hint.classList.toggle('is-target-refused', Boolean(refusal));
                 hint.textContent = refusal || defaultHint;
             }
@@ -88,15 +95,16 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropO
         const finish = async event => {
             event.preventDefault(); event.stopImmediatePropagation();
             const node = target(event);
-            const validNode = !!node && accepts?.(node, data);
+            const validNode = !!node && accepts?.(node, data, event);
+            const refused = node && !validNode && Boolean(rejectHint?.(node, data, event));
             const overCanvas = isOverCanvasSurface(event);
             cleanup();
             if (validNode) {
-                try { await drop(node, data, graph); }
+                try { await drop(node, data, graph, event); }
                 catch (error) { await anomalousAlert(t(error.message) === error.message ? t('materialApplyFailed') : t(error.message)); }
                 return;
             }
-            if (dropOnCanvas && overCanvas) {
+            if (!refused && dropOnCanvas && overCanvas) {
                 const pos = getCanvasPosition(event, canvas);
                 try { await dropOnCanvas(event, data, graph, pos); }
                 catch (error) { await anomalousAlert(t(error.message) === error.message ? t('recipeOpenError') : t(error.message)); }

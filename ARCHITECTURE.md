@@ -364,7 +364,9 @@ covered by the `styles.css` manifest.
   multiline STRING input by the node's ComfyUI definition, whatever it is called; its
   role is the box's own name (positive / negative) or else the wiring (outputs followed
   to an input named positive / negative). It also plans which box takes which text and
-  finds a box's opposite-role partner on the same sampler. `node_material_actions.js`
+  finds a box's opposite-role partner on the same sampler. `prompt_drop.js` is the
+  prompt drag on the canvas: boxes outlined by role, the box under the pointer as the
+  target, and a hint saying what release writes where. `node_material_actions.js`
   extracts prompt envelopes without model file paths and writes them (`fillPrompt`);
   text never crosses roles unless the user picked the box; writes are one undo step.
   Within recipe detail, `ui_recipe_versions.js` owns history comparison/restore,

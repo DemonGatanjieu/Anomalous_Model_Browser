@@ -2201,3 +2201,19 @@
     color: #fcd34d;
 }
 
+/* Prompt boxes on the canvas while a prompt is dragged: outlined by role, the target solid. */
+.anomalous-prompt-box {
+    outline: 2px dashed rgba(156, 163, 175, 0.75);
+    outline-offset: 2px;
+}
+
+.anomalous-prompt-box.is-positive { outline-color: rgba(74, 222, 128, 0.85); }
+.anomalous-prompt-box.is-negative { outline-color: rgba(248, 113, 113, 0.9); }
+.anomalous-prompt-box.is-both { outline-color: rgba(192, 132, 252, 0.9); }
+
+.anomalous-prompt-box.is-hover {
+    outline-style: solid;
+    outline-width: 3px;
+    box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.12);
+}
+

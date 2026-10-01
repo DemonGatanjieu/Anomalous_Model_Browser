@@ -12,7 +12,8 @@ import {
     fillPrompt,
     isModelFilePath,
 } from './node_material_actions.js';
-import { promptBoxes, typeTakesPrompt } from './prompt_boxes.js';
+import { partnerBox, promptBoxes, typeTakesPrompt } from './prompt_boxes.js';
+import { showWorkbenchToast } from './ui_prompt_toast.js';
 
 export function showMaterialApplication(parent, result, node) {
     parent.querySelector('.anomalous-material-application-result')?.remove();
@@ -110,7 +111,30 @@ export function watchMaterialSelection(owner, showMaterialDetail) {
     }
 }
 
-export async function applyLibraryMaterial(owner, material, droppedNode = null, graph = app.graph) {
+/**
+ * A prompt dropped on one box: that box takes its role's text, and the opposite-role box
+ * on the same sampler takes the other text when the material has it. One undo for both.
+ */
+function fillDroppedBox(owner, material, payload, node, box) {
+    if (node.widgets?.[box.index] !== box.widget) throw new Error('materialTargetChanged');
+    const envelope = extractMaterialPromptEnvelope(material, payload);
+    const results = [fillPrompt(app, node, envelope, box)];
+    const other = { positive: 'negative', negative: 'positive' }[box.role];
+    let partner = other && envelope[box.role] && envelope[other] ? partnerBox(node, box.role) : null;
+    if (partner) {
+        try { results.push(fillPrompt(app, partner.node, envelope, partner.box)); }
+        catch (error) { partner = null; }
+    }
+    const result = { undo() { for (const item of [...results].reverse()) item.undo(); } };
+    showMaterialApplication(owner.materialContext, result, node);
+    showWorkbenchToast(partner
+        ? t('promptFilledTwo', { node: `#${node.id}`, other: `#${partner.node.id}` })
+        : t('promptFilledOne', { node: `#${node.id}` }));
+    return result;
+}
+
+/** Applies a material to `droppedNode` or the selected node; `box`: the prompt box it was dropped on. */
+export async function applyLibraryMaterial(owner, material, droppedNode = null, graph = app.graph, { box = null } = {}) {
     const node = droppedNode || selectedMaterialNode(app);
     if (!node) { await anomalousAlert(t('materialTargetChanged')); return; }
     if (owner.materialApplying) return;
@@ -120,6 +144,8 @@ export async function applyLibraryMaterial(owner, material, droppedNode = null, 
         if (app.graph !== graph || graph.getNodeById(node.id) !== node || (!droppedNode && selectedMaterialNode(app) !== node)) throw new Error('materialTargetChanged');
         if (owner.nbPanel?.style.display !== 'flex' || owner.materialView?.style.display !== 'flex'
             || (owner.modal && !owner.modal.classList.contains('visible'))) return;
+
+        if (box) return fillDroppedBox(owner, material, payload, node, box);
 
         // Path 1: Strict same-type block application
         const sameTypeBlocks = applyPromptRolesToBlocks(payload.node_blocks || [], payload.prompt_roles)

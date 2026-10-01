@@ -6,12 +6,12 @@ import { translate } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { text, jsonResponse } from './ui_dom.js';
 import { materialNodeHeading } from './material_inspector.js';
-import { promptBoxes, typeTakesPrompt } from './prompt_boxes.js';
-import { applyLibraryMaterial } from './ui_material_application.js';
+import { carriesPrompt, markTargetBox, outlinePromptBoxes, preparePromptDrag, promptBoxAt, promptDropHint, promptRefusal } from './prompt_drop.js';
+import { applyLibraryMaterial, fetchMaterial } from './ui_material_application.js';
+import { extractMaterialPromptEnvelope } from './node_material_actions.js';
 import {
     deleteMaterial,
     getMaterialPlaceholderSvg,
-    getMaterialPromptInfo,
     isPromptMaterial,
     materialAssetUrl,
     openMaterialWorkflow,
@@ -98,9 +98,9 @@ function bindPolymorphicMaterialCardDrag(card, owner, material) {
         dragHint = isZh ? '拖拽至空白画布载入工作流' : 'Drag to blank canvas to load workflow';
         dragTargetHint = isZh ? '松开以载入完整工作流' : 'Release to load workflow';
     } else if (isPrompt) {
-        cardTitleText += ` — ${isZh ? '按住拖至文本节点注入提示词，或拖至空白处创建提示词节点' : 'Drag to text node to inject prompt, or to blank canvas to create node'}`;
-        dragHint = isZh ? '拖拽提示词至文本节点或空白画布' : 'Drag prompt to text node or blank canvas';
-        dragTargetHint = isZh ? '松开以在空白画布创建提示词节点' : 'Release to create prompt node on blank canvas';
+        cardTitleText += ` — ${t('promptDragTitle')}`;
+        dragHint = t('promptDragHint');
+        dragTargetHint = t('promptDragCanvas');
     } else {
         cardTitleText += ` — ${isZh ? '按住拖至节点注入参数，或拖至空白处新建对应节点' : 'Drag to node to apply parameters, or to blank canvas to create node'}`;
         dragHint = t('materialDragParameters') || (isZh ? '拖拽素材参数至目标节点' : 'Drag parameters to target node');
@@ -108,6 +108,8 @@ function bindPolymorphicMaterialCardDrag(card, owner, material) {
     }
 
     card.title = cardTitleText;
+    // A prompt goes into the box under the pointer (prompt_drop.js); other values need the same node type.
+    const prompt = carriesPrompt(material, isPrompt);
 
     bindMaterialDrag(card, owner, {
         payload: () => ({
@@ -116,15 +118,19 @@ function bindPolymorphicMaterialCardDrag(card, owner, material) {
             dragHint,
             dragTargetHint,
         }),
-        accepts: (node, source) => {
-            if (!node) return false;
-            if ((source.node_types || []).includes(node.type)) return true;
-            if (!promptBoxes(node).length) return false;
-            // Cross-node drops only carry prompt text; parameter blocks stay same-type.
-            if (isPromptMaterial(source) || source.kind === 'prompt_plan' || source.capabilities?.includes('copy_prompt')) return true;
-            return (source.node_types || []).some(type => typeTakesPrompt(type));
+        accepts: (node, source, event) => (prompt && !promptRefusal(node, event)) || (source.node_types || []).includes(node.type),
+        targetHint: (node, source, event) => {
+            const box = prompt ? promptBoxAt(node, event) : null;
+            return box ? promptDropHint(source, node, box) : '';
         },
-        drop: (node, source, graph) => applyLibraryMaterial(owner, source, node, graph),
+        rejectHint: (node, source, event) => (prompt ? promptRefusal(node, event) : ''),
+        onStart: (source) => {
+            if (!prompt) return null;
+            preparePromptDrag(source);
+            return outlinePromptBoxes(app.graph);
+        },
+        onMove: (node, source, event) => { if (prompt) markTargetBox(node && promptBoxAt(node, event)); },
+        drop: (node, source, graph, event) => applyLibraryMaterial(owner, source, node, graph, { box: prompt ? promptBoxAt(node, event) : null }),
         dropOnCanvas: async (event, source, graph, position) => {
             if (isWorkflow) {
                 await openMaterialWorkflow(owner, source.filename);
@@ -141,27 +147,34 @@ function bindPolymorphicMaterialCardDrag(card, owner, material) {
                 : [100, 100]);
 
             if (isPrompt) {
-                const info = getMaterialPromptInfo(source);
-                const isNegative = info.role === 'negative';
-                const node = creator.call(LiteGraph, 'CLIPTextEncode');
-                if (!node) return;
-                node.title = isNegative
-                    ? (isZh ? 'CLIP 文本编码器 (负向)' : 'CLIP Text Encode (Negative)')
-                    : (isZh ? 'CLIP 文本编码器 (正向)' : 'CLIP Text Encode (Positive)');
-                node.color = isNegative ? '#532323' : '#235327';
-                node.bgcolor = isNegative ? '#381616' : '#143818';
-                node.pos = [pos[0], pos[1]];
-
-                const tw = (node.widgets || []).find(w => /^(text|prompt)/i.test(w.name) || w.type === 'customtext') || node.widgets?.[0];
-                if (tw) {
-                    tw.value = info.text;
-                    if (Array.isArray(node.widgets_values)) node.widgets_values[0] = info.text;
-                    tw.callback?.call(tw, tw.value, app.canvas, node);
-                    node.onWidgetChanged?.(0, tw.value, '', tw);
-                }
-
-                graph.add(node);
-                app.canvas?.selectNode?.(node);
+                // One prompt node per side the material has; the list summary may not carry the text.
+                const payload = await fetchMaterial(source.filename);
+                if (app.graph !== graph) throw new Error('materialTargetChanged');
+                const envelope = extractMaterialPromptEnvelope(source, payload);
+                const sides = [['positive', envelope.positive], ['negative', envelope.negative]].filter(([, value]) => value);
+                if (!sides.length && envelope.singleText) sides.push([envelope.primaryRole === 'negative' ? 'negative' : 'positive', envelope.singleText]);
+                if (!sides.length) throw new Error('materialNoCompatibleValues');
+                let created = null;
+                sides.forEach(([role, value], index) => {
+                    const isNegative = role === 'negative';
+                    const node = creator.call(LiteGraph, 'CLIPTextEncode');
+                    if (!node) return;
+                    node.title = isNegative
+                        ? (isZh ? 'CLIP 文本编码器 (负向)' : 'CLIP Text Encode (Negative)')
+                        : (isZh ? 'CLIP 文本编码器 (正向)' : 'CLIP Text Encode (Positive)');
+                    node.color = isNegative ? '#532323' : '#235327';
+                    node.bgcolor = isNegative ? '#381616' : '#143818';
+                    node.pos = [pos[0], pos[1] + index * 260];
+                    graph.add(node);
+                    const box = node.widgets?.find(widget => widget.name === 'text');
+                    if (box) {
+                        box.value = value;
+                        box.callback?.call(box, value, app.canvas, node);
+                        node.onWidgetChanged?.(box.name, value, '', box);
+                    }
+                    created ||= node;
+                });
+                if (created) app.canvas?.selectNode?.(created);
                 app.canvas?.setDirty?.(true, true);
                 graph.change?.();
                 return;

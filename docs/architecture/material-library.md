@@ -327,6 +327,14 @@ When dropped onto a compatible node:
   of takes the main text. Negative text never goes into a positive box and vice versa;
   if no box fits, the drop fails with `materialNoCompatibleValues`. Text is inserted without synthetic
   prefixes, and every injection is one undo step.
+- Dragging a prompt shows where it goes before release (`prompt_drop.js`): every prompt
+  box on the canvas is outlined in its role's colour, the box under the pointer is the
+  target (a node with one box needs no aim; on a node with several the pointer must be on
+  one), and the hint names the node, the box and, when the material has the other side,
+  the opposite-role box on the same sampler that is filled too. The dragged material is
+  fetched when the drag starts so the hint knows its sides; until then it says "if any".
+  A box chosen this way takes its role's text, or the material's main text when it has
+  none of that role (the hint says so). Both fills are one undo in the receipt.
 - Parameter blocks are never applied across node types.
 
 When dropped onto blank canvas:
