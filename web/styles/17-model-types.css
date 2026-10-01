@@ -75,3 +75,22 @@
     padding: 20px;
     color: #fff;
 }
+
+/* Card badges for the exceptions: base model inferred from the file, model not scanned yet.
+   Unlike the other badges they take the pointer, so their tooltip can explain them. */
+.anomalous-card-badge.is-inferred,
+.anomalous-card-badge.is-unscanned {
+    pointer-events: auto;
+    cursor: help;
+    border-style: dashed;
+}
+
+.anomalous-card-badge.is-unscanned {
+    background: rgba(18, 20, 26, 0.7);
+    color: #9ca3af;
+    text-transform: none;
+}
+
+.anomalous-source-sep {
+    opacity: 0.5;
+}

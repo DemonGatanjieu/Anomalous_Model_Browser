@@ -6,6 +6,7 @@
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { escapeHtml, setSafeRichHtml } from './safe_dom.js';
+import { renderSourceLine } from './model_source.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -407,15 +408,12 @@ export function showDetail(model) {
         titleEl.style.fontSize = '1.3em';
         titleEl.style.marginRight = '10px';
         titleEl.innerText = m.custom_name || m.name || model.filename;
-        if (m.custom_name) {
-            titleEl.style.color = '#88ff88';
-        }
         topRow.appendChild(titleEl);
 
         const metaSpan = document.createElement('span');
         metaSpan.style.fontSize = '0.9em';
         metaSpan.style.color = '#aaa';
-        metaSpan.innerHTML = `<strong>Size:</strong> ${escapeHtml(model.size_mb)} MB` + (m.baseModel ? ` <strong style="margin-left:10px;">Base:</strong> ${escapeHtml(m.baseModel)}` : '');
+        renderSourceLine(metaSpan, model, m);
         topRow.appendChild(metaSpan);
 
         if (m.civitai_url) {

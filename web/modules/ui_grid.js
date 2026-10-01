@@ -6,6 +6,7 @@
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { focusModel, modelListUrl, renderTypeBar } from './ui_model_types.js';
+import { renderSourceBadge } from './model_source.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -138,23 +139,8 @@ export async function loadModels() {
                     `;
                     card.appendChild(ph);
                 }
-                if (model.metadata && model.metadata.baseModel) {
-                    const badge = document.createElement('div');
-                    badge.className = 'anomalous-card-badge';
-                    const bm = String(model.metadata.baseModel);
-                    badge.textContent = bm;
-                    const bmLower = bm.toLowerCase();
-                    if (bmLower.includes('flux')) {
-                        badge.classList.add('badge-flux');
-                    } else if (bmLower.includes('pony') || bmLower.includes('illustrious') || bmLower.includes('anime')) {
-                        badge.classList.add('badge-rose');
-                    } else if (bmLower.includes('sdxl') || bmLower.includes('xl')) {
-                        badge.classList.add('badge-gold');
-                    } else {
-                        badge.classList.add('badge-amber');
-                    }
-                    card.appendChild(badge);
-                }
+                const badge = renderSourceBadge(model);
+                if (badge) card.appendChild(badge);
                 const labels = document.createElement('div');
                 labels.className = 'anomalous-card-labels';
                 const title = document.createElement('div');

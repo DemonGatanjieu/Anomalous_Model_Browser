@@ -312,6 +312,9 @@ covered by the `styles.css` manifest.
   `owner.modelScope`, what the grid lists: a whole type, or one list folder shown as a crumb. The
   grid's cards set `currentType/PathIdx/Subfolder` to their own model's folder (`focusModel`),
   which the editor, the scanner and "add to canvas" read.
+- `model_source.js` shows where a model's information came from: the card badge (marked only
+  when inferred from the file, ≈, or not scanned yet) and the detail header's source line with
+  the fields the user set.
 - `ui_grid.js` and model-detail modules own model presentation: `ui_grid.js` manages chunked card rendering,
   card placeholder ergonomics (eliminating misleading unclickable text in favor of pure centered icon and status),
   card action buttons (one-click canvas addition with plus icon, model metadata editor, direct precision scanner without wizard modal popups)

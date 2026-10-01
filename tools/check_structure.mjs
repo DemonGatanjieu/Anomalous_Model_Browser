@@ -1,7 +1,8 @@
 // Structure check, run before every commit: node tools/check_structure.mjs
 // Fails when a source file is missing from the architecture map, a web module is
-// no longer imported from an entry, a new file starts over the size threshold, or a
-// file already over it grew since the last commit (AGENTS.md section 2).
+// no longer imported from an entry, a new file starts over the size threshold, a
+// file already over it grew since the last commit (AGENTS.md section 2), or a web file
+// does not parse as the ES module the browser loads.
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -67,6 +68,19 @@ if (large.length) {
         else if (lines > before) failures.push(`${file}: over ${SIZE_LIMIT} lines and grew from ${before} to ${lines}; move a responsibility out first`);
     }
 }
+// 4. Syntax: every web file must parse as an ES module. `node --check` on a .js file can
+// pass what the browser rejects (a raw line break inside a string did), so compile them
+// the way the browser does, in one child process.
+const PARSE = "const vm = require('node:vm'); const fs = require('node:fs');"
+    + " for (const f of process.argv.slice(1)) { try { new vm.SourceTextModule(fs.readFileSync(f, 'utf8')); }"
+    + " catch (e) { console.log(f + ' | ' + e.message); } }";
+const syntax = execFileSync(process.execPath, ['--experimental-vm-modules', '--no-warnings', '-e', PARSE,
+    ...webFiles.map((file) => path.join(ROOT, file))], { encoding: 'utf8' });
+for (const line of syntax.split(/\r?\n/).filter(Boolean)) {
+    const [file, message] = line.split(' | ');
+    failures.push(`${path.relative(ROOT, file).split(path.sep).join('/')}: does not parse (${message})`);
+}
+
 if (failures.length) {
     console.error(`\nStructure check failed:\n  ${failures.join('\n  ')}`);
     process.exit(1);
