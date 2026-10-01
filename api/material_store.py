@@ -22,6 +22,7 @@ from .material_schema import (
 from .parameters import get_parameters_dir
 from .recipe_constants import MAX_RECIPE_BYTES
 from .recipe_store import _read_recipe, get_recipes_dir
+from .trash import move_to_trash
 from .utils import atomic_write_json as _atomic_write_json, require_filename, resolve_within
 from .workflow_schema import _parameter_signature, _validate_workflow
 
@@ -291,7 +292,4 @@ def _update_material_details(materials_dir, filename, name, tags, prompt_role_ov
 def _delete_material(materials_dir, filename, path):
     with _material_write_lock:
         _read_material(path)
-        os.remove(path)
-        assets_dir = _material_assets_dir(materials_dir, filename)
-        if os.path.isdir(assets_dir):
-            shutil.rmtree(assets_dir)
+        move_to_trash(path, _material_assets_dir(materials_dir, filename))

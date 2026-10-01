@@ -42,7 +42,6 @@ def setup_routes(app):
     app.router.add_get('/anomalous/config', api_get_config)
     app.router.add_post('/anomalous/save_config', api_save_config)
     app.router.add_post('/anomalous/delete_model', model_metadata.api_delete_model)
-    app.router.add_post('/anomalous/clean_civitai_info', api_clean_civitai_info)
     app.router.add_get('/anomalous/compatible_models', model_catalog.api_compatible_models)
     app.router.add_get('/anomalous/notebooks', api_get_notebooks)
     app.router.add_post('/anomalous/save_notebook', api_save_notebook)

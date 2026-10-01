@@ -11,6 +11,7 @@ import folder_paths
 from .image_search import filter_images
 from .media_routes import CARD_THUMBNAIL_STATIC_EXTENSIONS, _build_card_thumbnail
 from .path_utils import require_filename, resolve_within
+from .trash import move_to_trash, trash_failure
 
 
 GALLERY_SNAPSHOT_SECONDS = 10
@@ -119,7 +120,10 @@ async def api_delete_gallery_image(request):
             return web.json_response({"status": "error", "message": "Invalid parameters"}, status=400)
         
         if os.path.exists(file_path):
-            os.remove(file_path)
+            try:
+                await asyncio.to_thread(move_to_trash, file_path)
+            except OSError as e:
+                return web.json_response({"status": "error", "message": trash_failure(e)}, status=409)
             _invalidate_gallery_snapshot()
             return web.json_response({"status": "success"})
         else:

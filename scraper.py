@@ -22,6 +22,7 @@ import argparse
 import shutil
 from typing import Dict, Optional
 from model_policies import is_physical_rename_protected
+from recycle_bin import move_to_trash
 from model_identity import computed_file_identity, is_unmatched, sidecar_file_hash, sidecar_info as read_local_info
 
 
@@ -486,10 +487,10 @@ def main():
                                     p = old_base + c_ext
                                     if os.path.exists(p) and not p.endswith('.civitai_bak' + c_ext):
                                         try:
-                                            os.remove(p)
-                                            print(f"[*] 强制覆盖: 已删除旧预览文件 {os.path.basename(p)}")
-                                        except:
-                                            pass
+                                            move_to_trash(p)
+                                            print(f"[*] 强制覆盖: 旧预览文件已移到回收站 {os.path.basename(p)}")
+                                        except Exception as e:
+                                            print(f"[-] 旧预览文件没有移走: {e}")
                             preview_ext = ext if ext.startswith('.preview.') else f".preview{ext}"
                             shutil.copy2(saved_path, old_base + preview_ext)
                 else:
@@ -513,15 +514,11 @@ def main():
                         fail_count += 1
                     elif not args.dry_run:
                         try:
-                            print(f"[*] Hash 一致，删除已确认的重复副本: {filename}")
-                            os.remove(file_path)
-                            for ext in SIDECAR_SUFFIXES:
-                                old_ext = old_base + ext
-                                if os.path.exists(old_ext):
-                                    os.remove(old_ext)
+                            print(f"[*] Hash 一致，把已确认的重复副本移到回收站: {filename}")
+                            move_to_trash(file_path, *[old_base + ext for ext in SIDECAR_SUFFIXES])
                             success_count += 1
                         except Exception as e:
-                            print(f"[-] 删除多余副本失败 (可能文件被占用): {e}")
+                            print(f"[-] 重复副本没有移走，两份都保留 (可能文件被占用或这个盘没有回收站): {e}")
                             fail_count += 1
                     else:
                         print(f"[Dry-Run] Hash 一致，拟删除重复副本及其附属文件: {filename}")

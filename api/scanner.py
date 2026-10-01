@@ -443,26 +443,6 @@ async def api_global_scan_status(request):
     marker_file = os.path.join(plugin_dir, '.global_scan_in_progress')
     progress_file = os.path.join(plugin_dir, '.global_scan_progress.json')
     return web.json_response(_scan_status_payload(marker_file, progress_file, (progress_file,)))
-async def api_clean_civitai_info(request):
-    try:
-        paths_to_clean = get_active_scan_paths()
-        deleted_count = 0
-        for base_dir in paths_to_clean:
-            if not os.path.exists(base_dir): continue
-            for root, dirs, files in os.walk(base_dir):
-                for file in files:
-                    if file.endswith('.civitai.info'):
-                        file_path = os.path.join(root, file)
-                        try:
-                            os.remove(file_path)
-                            deleted_count += 1
-                        except Exception as e:
-                            pass
-                                
-        return web.json_response({"status": "success", "count": deleted_count})
-    except Exception as e:
-        return web.json_response({"status": "error", "message": str(e)}, status=500)
-
 GLOBAL_SCAN_STATE = {
     "scanning": False,
     "total": 0,

@@ -32,7 +32,6 @@ ROUTE_ACTIONS = {
     '/anomalous/update_metadata': 'model_edit',
     '/anomalous/set_custom_cover': 'model_cover',
     '/anomalous/upload_custom_cover': 'model_cover',
-    '/anomalous/clean_civitai_info': 'model_info_clean',
     '/anomalous/scan': 'scan',
     '/anomalous/scan_all': 'scan',
     '/anomalous/save_recipe': 'recipe_save',

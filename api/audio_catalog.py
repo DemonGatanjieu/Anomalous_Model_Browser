@@ -11,6 +11,7 @@ from aiohttp import web
 
 from .audio_metadata import generation_info
 from .path_utils import resolve_within
+from .trash import move_to_trash, trash_failure
 
 AUDIO_EXTENSIONS = {'.wav', '.mp3', '.flac', '.ogg', '.opus', '.m4a'}
 AUDIO_CONTENT_TYPES = {
@@ -249,7 +250,7 @@ async def api_delete_audio_gallery(request):
     if not os.path.isfile(target):
         return web.json_response({"success": False, "error": "File not found"}, status=404)
     try:
-        await asyncio.to_thread(os.remove, target)
+        await asyncio.to_thread(move_to_trash, target)
     except OSError as e:
-        return web.json_response({"success": False, "error": f"Failed to delete: {e}"}, status=500)
+        return web.json_response({"success": False, "error": trash_failure(e)}, status=409)
     return web.json_response({"success": True})

@@ -11,7 +11,6 @@ const ACTION_KEYS = {
     model_delete: 'activityModelDelete',
     model_edit: 'activityModelEdit',
     model_cover: 'activityModelCover',
-    model_info_clean: 'activityModelInfoClean',
     scan: 'activityScan',
     recipe_save: 'activityRecipeSave',
     recipe_edit: 'activityRecipeEdit',

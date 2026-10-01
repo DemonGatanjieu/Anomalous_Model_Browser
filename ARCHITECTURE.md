@@ -98,6 +98,11 @@ covered by the `styles.css` manifest.
   `api/folder_types.py` own the formerly mixed utility route families.
 - `model_policies.py` owns shared backend rename and protected-category policy.
 - `model_identity.py` owns file SHA-256 evidence shared with the standalone scanner.
+- `recycle_bin.py` is the only way the plugin deletes the user's files (models, covers,
+  outputs, recipes, materials, notes, audio): to the system Recycle Bin, together, or not
+  at all (`TrashUnavailable` on drives without one). `api/trash.py` is the API's import of it
+  plus the message shown when nothing was deleted. The plugin's own temporary files, caches
+  and bounded recipe history are still removed directly.
 - `api/audio_catalog.py` owns the generated-audio side: the output-audio history,
   temp Preview Audio results (listed, and copied into `output/audio/` on save),
   deletion, and streaming files from the output and temp folders. Characters and

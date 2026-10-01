@@ -15,6 +15,7 @@ from .model_constants import (
     PREVIEW_SUFFIXES, SIDECAR_SUFFIXES,
 )
 from .model_catalog import _resolve_paths_to_model_info_sync
+from .trash import move_to_trash, trash_failure
 from .utils import require_filename, resolve_folder_subdir, resolve_within
 
 def _first_existing_sidecar(base_path, suffixes):
@@ -44,9 +45,7 @@ def _reset_model_cover(base_path):
             # remains untouched. os.replace then makes the actual restore atomic.
             shutil.copy2(backup_path, temp_path)
             os.replace(temp_path, restored_path)
-            for preview_path in preview_paths:
-                if preview_path != restored_path and os.path.isfile(preview_path):
-                    os.remove(preview_path)
+            move_to_trash(*[path for path in preview_paths if path != restored_path])
         except Exception as exc:
             try:
                 if os.path.isfile(temp_path):
@@ -58,10 +57,9 @@ def _reset_model_cover(base_path):
 
     if original_path:
         try:
-            for preview_path in preview_paths:
-                os.remove(preview_path)
+            move_to_trash(*preview_paths)
         except Exception as exc:
-            return False, 'restore_failed', str(exc)
+            return False, 'restore_failed', trash_failure(exc)
         return True, 'original_cover', None
 
     if preview_paths:
@@ -97,37 +95,25 @@ async def api_delete_model(request):
         if not os.path.exists(model_path):
             return web.json_response({"status": "error", "message": "Model file not found"})
             
-        # 1. 优先尝试删除你点击的主模型文件
-        try:
-            os.remove(model_path)
-        except Exception as e:
-            error_msg = str(e)
-            if "being used" in error_msg or "WinError 32" in error_msg or "Permission" in error_msg:
-                error_msg = "文件被占用 (正在被 ComfyUI 使用)。请先重启 ComfyUI 或在工作流中卸载该模型后再删除！"
-            return web.json_response({"status": "error", "message": f"主模型删除失败: {error_msg}"})
-
         base_name = os.path.splitext(filename)[0]
-        
-        # 2. 主模型成功删除后，再清理配套的垃圾文件
         # Sidecars are keyed by stem, not by the main model extension. If a
         # second real model shares this stem, preserve the shared sidecars for
         # the survivor instead of treating that model as cleanup debris.
         shared_stem_in_use = any(
             os.path.isfile(os.path.join(target_dir, base_name + model_ext))
-            for model_ext in MODEL_EXTENSIONS
+            for model_ext in MODEL_EXTENSIONS if base_name + model_ext != filename
         )
-        deleted_files = [filename]
-        if not shared_stem_in_use:
-            for suffix in SIDECAR_SUFFIXES:
-                file_to_del = os.path.join(target_dir, base_name + suffix)
-                if os.path.isfile(file_to_del):
-                    try:
-                        os.remove(file_to_del)
-                        deleted_files.append(base_name + suffix)
-                    except Exception as e:
-                        print(f"[Anomalous Browser] Warning: Failed to delete {file_to_del}: {e}")
-                    
-        # 3. 修正：前端期待的成功状态是 "success" 而不是 "ok"
+        sidecars = [] if shared_stem_in_use else [
+            os.path.join(target_dir, base_name + suffix) for suffix in SIDECAR_SUFFIXES
+        ]
+        # The model and its covers and info go to the Recycle Bin together, or nothing moves.
+        try:
+            moved = move_to_trash(model_path, *sidecars)
+        except Exception as e:
+            return web.json_response({"status": "error", "message": trash_failure(e)})
+        deleted_files = [os.path.basename(path) for path in moved]
+
+        # 前端期待的成功状态是 "success" 而不是 "ok"
         return web.json_response({
             "status": "success",
             "deleted": deleted_files,
