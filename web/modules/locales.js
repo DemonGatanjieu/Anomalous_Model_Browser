@@ -83,20 +83,16 @@ export const i18n = {
         materialEmptyStep2Desc: "按住素材卡片拖到画布节点上覆盖参数，拖到空白处直接载入完整工作流。",
         materialEmptyStep3Title: "3. 提示词工坊拼装",
         materialEmptyStep3Desc: "在「提示词工坊」中，已存素材中的提示词标签会自动提炼并同步，支持一键拼装。",
-        updateGuideNavigationTitle: "悬停，看懂每个入口",
-        updateGuideNavigationBody: "左下角的按钮保持原来的大小。鼠标悬停或用键盘选中时，图标会切换成文字；稍作停留可以查看完整用途。依次为工具箱、扫描、模型医生、节点助手、素材库和设置。",
-        updateGuideTransferTitle: "导入导出，统一到工具箱",
-        updateGuideTransferBody: "已验证的工作流分享码导入导出中心现在位于工具箱。配方包导入导出、素材库文件导入和工坊文件导出暂不提供。保存到本地库、使用已有素材，以及图片和工作流附带的哈希信息不受影响。",
-        updateGuideLibraryTitle: "素材库词卡，自动来到工坊",
-        updateGuideLibraryBody: "打开提示词工坊后，素材库提示词会自动同步，并标注来源。源素材更新或删除时，词卡会随自动刷新变化。它们由素材库管理，不能在工坊删除；加入拼装台的副本仍可自由编辑。",
-        updateGuideRecipesTitle: "工作流配方工坊：参数预设与模型匹配",
-        updateGuideRecipesBody: "顶栏新增“工作流”工作室，可保存和管理工作流配方。支持参数预设深度拆解与一键复制、缺失模型智能比对与本地直接替换，并支持版本快照回滚。",
-        updateGuideMaterialsTitle: "素材库与提示词工坊：拖拽拼装与节点互译",
-        updateGuideMaterialsBody: "全新素材库支持把素材卡片直接拖拽到 ComfyUI 画布节点注入参数与模型；提示词工坊提供双分栏工作台，左栏素材词卡可拖拽或一键加入右栏拼装台；选中画布节点还可自动吸取词句并实时双语互译与反向写回。",
-        updateGuideSourcesTitle: "模型来源中心：工作流模型一键寻源",
-        updateGuideSourcesBody: "从工具箱打开模型来源中心，自动侦测当前工作流用到的所有模型并匹配 Civitai/HuggingFace 官方页面，支持一键跳转与本地绑定，并可在工作流与全库间自如切换。",
-        updateGuideScanTitle: "单模型精准雷达直扫，一键发布到画布",
-        updateGuideScanBody: "鼠标悬浮模型卡片，点击雷达图标即可原地直接扫描该模型获取信息与底模归类，彻底告别繁琐向导与阻断弹窗；点击加号(+)即可一键创建对应节点发布到画布。",
+        updateGuideLayoutTitle: "新布局：左侧图标栏和主页",
+        updateGuideLayoutBody: "每个页面都在左侧图标栏上有一个图标，工具在下面，设置在最底下。再点一下当前页的图标可以收起或展开列表。打开插件先到主页：想做什么点哪张卡片，第一次用可以从“扫描模型文件夹”和“界面导览”开始。",
+        updateGuideModelTypesTitle: "模型按类型列出",
+        updateGuideModelTypesBody: "模型页顶部的标签切换 Checkpoint、LoRA、VAE 等类型，并显示数量，连同子文件夹一起列出。在左侧列表点某个文件夹只看那一个，点 ✕ 回到整个类型。",
+        updateGuideActivityTitle: "操作记录：插件改了什么一目了然",
+        updateGuideActivityBody: "图标栏的“记录”按天列出插件做过的改动：画布上哪个节点的设置从什么改成了什么、加了或删了哪些节点、打开了哪个工作流，以及改过的模型、封面、配方和素材文件。点“在画布上找到”可以跳到那个节点。只记录，不会替你撤销。",
+        updateGuideVoicesTitle: "给角色配音",
+        updateGuideVoicesBody: "装上 Anomalous_TTS 节点包后，“角色语音”页可以导入 GPT-SoVITS 角色、设置情绪和读音，在剧本台粘贴台词直接生成；生成的音频在“音频库”。音频页右上角的 ! 有分步说明。",
+        updateGuideMemoryTitle: "更省内存",
+        updateGuideMemoryBody: "图库改用小缩略图，翻几百张图也不会占满浏览器的内存和显存；拖到画布和看大图仍用原图。关闭插件一分半后，图片会释放。",
         promptFullTextEditHint: '修改全文会将当前方向已启用的词块合并为一个词块。',
         materialNoPromptContent: '这份素材没有已明确分类的提示词，请先在详情中检查提示词角色。',
         promptDrawerReplace: '替换这组文字',
@@ -319,17 +315,19 @@ export const i18n = {
         helpTitle: '📖 使用手册',
         helpContent: `
 <div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
-    <h3 style="color:#f59e0b; margin-top:0;">📖 标准操作说明</h3>
-    <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 测试功能与数据保护</strong><br>工作流配方及节点助手的“参数方案”联动目前属于测试功能；节点助手的“动作”页不属于测试范围。更新插件、导入他人配方、恢复版本、删除配方或应用参数前，请先保存当前画布并备份 ComfyUI 用户目录中 <code>workflows/anomalous_recipes</code> 与 <code>workflows/anomalous_parameters</code> 文件夹。模型预览快照不包含模型文件，不能代替模型备份。</div>
-    <p><strong>1. 🔄 前置准备 (扫描向导)</strong><br>具体位置：界面左侧底部的 <strong>扫描向导 (🔄)</strong>。<br>这是最重要的前置操作！请先打开扫描向导执行扫描。切记保持网络畅通。部分 C站限制级模型信息需要在设置中填入 API-KEY。扫描完成后，插件的各项功能基本激活。</p>
-    <p><strong>2. 🩺 拯救爆红 (模型医生)</strong><br>具体位置：左侧底部第二个 <strong>听诊器 (🩺)</strong> 按钮。<br>当导入别人使用该插件输出的工作流或者图片时，若模型路径爆红，点击模型医生就能智能识别当前所有节点实现正确路径的替换。</p>
-    <p><strong>3. 🤖 选中交互与参数预设 (节点助手)</strong><br>具体位置：左侧第三个 <strong>机器人 (🤖)</strong> 按钮。<br>在画布上选中节点后，“动作”页可以可视化替换模型，或在兼容的 MODEL + CLIP 链前后插入 LoRA。“参数方案”页会按配方分组读取工作流配方保存的同类型节点参数；点击一条记录即可把参数应用到当前选中节点。例如选中 KSampler 后，可一键载入配方中的采样器、调度器、步数、CFG 与降噪等值；种子等每次运行变化的参数会被忽略。</p>
-    <p><strong>4. 工作流配方、参数方案与素材库</strong><br>具体位置：打开 <strong>创作工作台</strong>。<br>配方会保存工作流、封面、标签、备注、模型引用及常用参数。未闭合的局部配方默认追加到当前画布，可独立运行的整体配方会在新画布打开；配方包导入和导出暂未开放。详情页包含概览、参数方案、图库和版本：可匹配本地模型、查看与复制完整参数、比较历史出图参数、比较或恢复配方版本。主图库或配方图库的图片悬浮后可进入参数详情，把原图、完整工作流和节点参数保存为一个素材快照；素材库可打开完整工作流，节点助手则按当前节点类型筛选并应用其中的参数。参数方案可从当前画布读取同一骨架的新参数，也可编辑安全控件并保存；“应用到当前工作流”只会在骨架匹配后写入参数。</p>
-    <p><strong>5. 个性化配置 (设置面板)</strong><br>具体位置：左侧底部的 <strong>齿轮 ()</strong> 按钮。<br>可以调节语言、主页面字体大小；进入“模型设置”可选择视频封面始终播放或悬停播放，以及卡片使用流畅缩略图或原始封面。详情页始终保留原图画质。</p>
-    <p><strong>6. 📑 顶部导航与提示词笔记</strong><br>具体位置：右侧顶部的按钮分别为 <strong>模型 ()</strong>、<strong>图库 ()</strong>、<strong>创作工作台 (📑)</strong>、<strong>停靠侧边栏 (◧)</strong>。<br>进入创作工作台的“提示词笔记”，点击新建 <strong></strong>。选择基础模型、主模型和 LoRA 后，可通过 <strong>📝纯文本/粘贴</strong> 填入提示词并进行双语对照、分块、查找替换和标签编辑，最后点击 <strong>发送到画布</strong> 一键组装节点。</p>
-    <p><strong>7. 文件夹管理 (Folder Manager)</strong><br>具体位置：设置 () 面板内的 <strong>文件夹管理</strong>。<br>可以用来隐藏不需要的内置文件夹。隐藏后的文件夹不仅从侧边栏消失，后端的静默扫描和本地读取也会完全跳过，实现真正的“零性能损耗”。并且可以在这里拖拽调整文件夹在侧边栏显示的顺序。</p>
-    <p><strong>8. 工作流导入导出 (分享码)</strong><br>打开<strong>实用工具箱 → 导入导出</strong>，通过已有的 AMB0/AMB1 分享码导入或导出工作流。素材库的文件导入入口已关闭；图片和工作流附带的哈希信息保持现状。</p>
-    <p><strong>9. 💬 提交反馈 / 报告问题</strong><br>具体位置：设置 () 面板内的 <strong>💬 提交反馈 / 报告问题</strong>。<br>当你遇到插件报错或有新功能建议时，点击该按钮可一键直达 GitHub Issues 页面提交反馈。</p>
+    <h3 style="color:#f59e0b; margin-top:0;">📖 使用说明</h3>
+    <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 测试功能与数据保护</strong><br>工作流配方、素材库和节点助手的“参数方案”仍在测试阶段。更新插件、导入别人的配方、恢复版本、删除配方或应用参数前，请先保存当前画布，并备份 ComfyUI 用户目录里的 <code>workflows/anomalous_recipes</code>、<code>workflows/anomalous_materials</code> 与 <code>workflows/anomalous_parameters</code>。</div>
+    <p><strong>1. 🧭 左侧图标栏</strong><br>每个页面一个图标：主页、记录、模型、图库、工作流、素材，以及角色语音和音频库。再点一下当前页的图标，或顶栏最左边的按钮，可以收起、展开旁边的列表；窗口较窄时，列表会变成从左边滑出的抽屉。图标栏下半部分是工具：扫描、模型医生、节点助手和工具箱，最下面是设置。</p>
+    <p><strong>2. 🔄 先扫描一次</strong><br>点图标栏的 <strong>扫描</strong>（或主页的“扫描模型文件夹”）。插件按文件哈希从 C 站获取封面、触发词和底模，需要联网；部分限制级模型需要在扫描向导里点 🔑 填写 C 站 API Key。扫描完成后，其余功能才有完整的模型信息。</p>
+    <p><strong>3. 📦 模型</strong><br>顶部标签按类型（Checkpoint、LoRA、VAE…）切换，连同子文件夹一起列出；在左侧列表点某个文件夹只看那一个，点标签末尾的 ✕ 回到整个类型。卡片上的 <strong>+</strong> 在画布上创建加载节点，铅笔编辑名称、备注和封面，雷达图标只扫描这一个模型。</p>
+    <p><strong>4. 🩺 模型医生</strong><br>打开别人的工作流或图片、模型报红时点它：按哈希和文件大小在本地找到对应的模型，一键替换。“查看哈希”可以逐项比对。</p>
+    <p><strong>5. 🤖 节点助手</strong><br>在画布上选中节点后，“动作”页可以看图换模型，或在兼容的 MODEL + CLIP 链前后插入 LoRA；“参数方案”页按配方列出同类节点保存过的参数，点一条就应用到当前节点（种子这类每次都变的值会跳过）。</p>
+    <p><strong>6. 🪡 工作流配方</strong><br>把当前画布的完整工作流或其中一段，连同模型、封面、标签、备注和参数存成配方。卡片会显示本机模型是否齐全，拖到画布上即可载入；详情页可以匹配本地模型、查看与复制参数、比较历史出图，以及比较或恢复版本。</p>
+    <p><strong>7. ✨ 素材</strong><br>在图库或配方里打开一张图的参数详情，可以把原图、完整工作流和节点参数存成素材。拖到画布空白处打开工作流（提示词素材会生成提示词节点），拖到已有节点上则把参数填进去。</p>
+    <p><strong>8. 🎙️ 角色语音</strong><br>需要另外安装 Anomalous_TTS 节点包。导入 GPT-SoVITS 角色、设置情绪和读音、在剧本台生成语音；音频页右上角的 <strong>!</strong> 有分步说明和遮罩导览。</p>
+    <p><strong>9. 🕘 操作记录</strong><br>按天列出插件改过的东西：画布上节点设置的变化、加删的节点、打开的工作流，以及模型、封面、配方、素材等文件。只记录、不撤销；你自己在画布上的修改不会记进来。</p>
+    <p><strong>10. 🧰 工具箱</strong><br>导入导出（AMB0/AMB1 工作流分享码）、提示词工坊、翻译助手、模型来源和提示词笔记。</p>
+    <p><strong>11. ⚙️ 设置</strong><br>语言、字号、缩略图和视频封面。<strong>文件夹管理</strong> 可以隐藏不需要的模型文件夹、调整顺序，隐藏的文件夹不再读取和扫描。<strong>💬 提交反馈 / 报告问题</strong> 直达 GitHub Issues。</p>
 </div>`,
         notebooks: '笔记本',
         notebookTitle: '笔记本管理',
@@ -762,7 +760,7 @@ export const i18n = {
         homeTitle: "今天要做什么？",
         homeLead: "Anomalous 帮你打理 ComfyUI 周边的杂事：模型、出图、工作流、素材和角色语音。点一张卡片直接开始。",
         homeCardModelsTitle: "找模型，放进节点",
-        homeCardModelsBody: "按文件夹浏览模型和预览图，拖到画布的节点上就换好。",
+        homeCardModelsBody: "按类型浏览模型和预览图，拖到画布的节点上就换好。",
         homeCardDoctorTitle: "修复缺失的模型",
         homeCardDoctorBody: "别人的工作流打开报红？模型医生找出你本地对应的模型并替换。",
         homeCardVoicesTitle: "给角色配音",
@@ -1365,7 +1363,7 @@ export const i18n = {
         audioGuideDragTitle: "拖动：把角色放到节点上",
         audioGuideDragBody: "拖角色卡片的标题栏（或左边侧栏里的角色名）→ 放到“角色语音 (GPT-SoVITS)”节点上：设为这个角色。拖动时鼠标旁的提示会写明“松手会发生什么”；放错节点会说明原因，不会乱写。",
         audioGuideTagsTitle: "情绪靠台词里的 {标签}",
-        audioGuideTagsBody: "台词里的标签切换情绪：写 {开心} 或 {happy} 就换成这种情绪的参考音频，写 {main} 回到主声音。每行右边的 {标签} 按钮点一下就能复制。还支持 [角色名] 换人说、[pause:1s] 插入停顿，直接写在台词里即可。",
+        audioGuideTagsBody: "台词里的标签切换情绪：写 {开心} 或 {happy} 就换成这种情绪的参考音频，写 {main} 回到主声音。设了情绪的角色，每行右边有“复制 {标签}”按钮。还支持 [角色名] 换人说、[pause:1s] 插入停顿，直接写在台词里即可。",
         audioGuideScriptTitle: "剧本台：不用手写标签",
         audioGuideScriptBody: "点“打开剧本台”，选角色、粘贴整段台词，每句会变成一张卡片，点一下就能选情绪，也可以拆分、合并、删除。然后直接点“生成语音”；想放进自己的工作流，也可以点“推送到节点”或按住“拖到节点”，角色和台词会一起填好。",
         audioGuideGenerateTitle: "生成与音频库",
@@ -1897,20 +1895,16 @@ export const i18n = {
         materialEmptyStep2Desc: "Drag cards onto canvas nodes to overwrite parameters, or drop onto empty canvas to load the full workflow.",
         materialEmptyStep3Title: "3. Prompt Studio Mixer",
         materialEmptyStep3Desc: "Prompt tags from saved materials automatically sync to the Prompt Studio workbench for one-click assembly.",
-        updateGuideNavigationTitle: "Hover to identify each action",
-        updateGuideNavigationBody: "The lower-left buttons keep their compact size. Hover or focus with the keyboard to replace an icon with a short label; pause for its full description. The actions are Toolbox, Scan, Model Doctor, Node Assistant, Material Library and Settings.",
-        updateGuideTransferTitle: "Workflow sharing lives in Toolbox",
-        updateGuideTransferBody: "The verified workflow share-code Import / Export Center now lives in Toolbox. Recipe package transfers, library file import and studio file export are unavailable. Local saves, existing materials and image/workflow hash metadata are unaffected.",
-        updateGuideLibraryTitle: "Library prompts sync automatically",
-        updateGuideLibraryBody: "Open Prompt Studio to sync Material Library prompts automatically, with their source shown. Source edits and deletions appear on refresh. These cards are managed in the library and cannot be deleted in the studio; copies in the mixer remain editable.",
-        updateGuideRecipesTitle: "Workflow Recipe Studio: Presets & Model Matching",
-        updateGuideRecipesBody: "Access the new Workflow Studio from the top bar to manage recipes. Inspect deep node parameters in Bento cards with one-click copy, resolve missing models with local replacements, and restore historical snapshots.",
-        updateGuideMaterialsTitle: "Material Library & Prompt Studio: Drag Assembly & Node Sync",
-        updateGuideMaterialsBody: "Drag material cards directly onto ComfyUI canvas nodes to inject parameters and models. Prompt Studio offers a dual-column workbench to drag-assemble cards into mixer chains, plus automatic text extraction and real-time translation for selected canvas nodes.",
-        updateGuideSourcesTitle: "Model Sources Hub: Attribution & Scope",
-        updateGuideSourcesBody: "Launch the Sources Hub from Toolbox to detect active workflow models and match their official Civitai/HuggingFace links with local sidecar binding, plus seamless switching between workflow and library views.",
-        updateGuideScanTitle: "Direct Precision Scan & Instant Canvas Addition",
-        updateGuideScanBody: "Hover over any model card and click the radar icon to scan it immediately with factual base-model feedback—no wizard modals or blocking alerts. Click the plus icon (+) to add it to the canvas instantly.",
+        updateGuideLayoutTitle: "New layout: the rail and the home page",
+        updateGuideLayoutBody: "Every page has an icon on the rail at the left, with the tools below and Settings at the bottom. Click the current page's icon again to hide or show its list. The browser opens on Home: pick a card for what you want to do; first time here, start with \"Scan model folders\" and \"Tour the interface\".",
+        updateGuideModelTypesTitle: "Models by type",
+        updateGuideModelTypesBody: "Chips at the top of the models page switch between Checkpoint, LoRA, VAE and the other types, with their counts, and list each type with its subfolders. Click a folder in the list to see only that one; ✕ goes back to the whole type.",
+        updateGuideActivityTitle: "Activity: see what the plugin changed",
+        updateGuideActivityBody: "Activity on the rail lists, by day, what the plugin did: which node settings changed on the canvas and from what to what, nodes added or removed, workflows opened, and the model, cover, recipe and material files it changed. \"Find on canvas\" jumps to the node. It only records; nothing is undone for you.",
+        updateGuideVoicesTitle: "Give your characters a voice",
+        updateGuideVoicesBody: "With the Anomalous_TTS node pack installed, the Voices page imports GPT-SoVITS characters, sets their emotions and pronunciations, and generates a pasted script right in the Script Director; generated audio is in Audio. The ! at the top right of the audio page has a step-by-step guide.",
+        updateGuideMemoryTitle: "Lighter on memory",
+        updateGuideMemoryBody: "The gallery shows small thumbnails, so scrolling through hundreds of outputs no longer fills the browser's memory and graphics memory; dragging to the canvas and the large viewer still use the original. A minute and a half after you close the browser, its pictures are released.",
         promptFullTextEditHint: 'Editing the full text merges the enabled blocks in this direction into one block.',
         materialNoPromptContent: 'This material has no classified prompts. Check its prompt roles in details first.',
         promptDrawerReplace: 'Replace this text',
@@ -2133,17 +2127,19 @@ export const i18n = {
         helpTitle: '📖 User Manual',
         helpContent: `
 <div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
-    <h3 style="color:#f59e0b; margin-top:0;">📖 Step-by-Step Guide</h3>
-    <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 Beta features and data protection</strong><br>Workflow Recipes and the Node Assistant's Parameter Presets integration are currently beta features; the Node Assistant's Actions tab is not part of this beta. Before updating the plugin, importing another person's recipe, restoring a version, deleting a recipe, or applying parameters, save the current canvas and back up the <code>workflows/anomalous_recipes</code> and <code>workflows/anomalous_parameters</code> folders in your ComfyUI user directory. Model preview snapshots do not contain model files and are not model backups.</div>
-    <p><strong>1. 🔄 Prerequisites (Scan Wizard)</strong><br>Location: The <strong>Scan (🔄)</strong> icon at the bottom left.<br>This is the most crucial step! Open the Scan Wizard and execute a scan. Keep your network connected. (API-KEY may be needed in Settings for NSFW Civitai models). Scanning activates all core features.</p>
-    <p><strong>2. 🩺 Fix Broken Nodes (Model Doctor)</strong><br>Location: The 2nd icon <strong>(Stethoscope 🩺)</strong> from the bottom left.<br>When importing a workflow/image exported by this plugin and nodes turn red, open the Model Doctor to intelligently identify and replace them with correct local paths.</p>
-    <p><strong>3. 🤖 Node actions and parameter presets (Node Assistant)</strong><br>Location: The 3rd icon <strong>(Robot 🤖)</strong> from the bottom left.<br>After selecting a canvas node, Actions can visually replace its model or insert a LoRA before/after a compatible MODEL + CLIP chain. Parameter Presets reads same-type node values saved by Workflow Recipes and groups them by recipe. Click one record to apply it to the selected node. For example, selecting a KSampler can load its sampler, scheduler, steps, CFG, and denoise values in one click; volatile values such as seeds are ignored.</p>
-    <p><strong>4. Workflow Recipes and Parameter Sets</strong><br>Location: Open the <strong>Creative Workspace</strong> and switch to <strong>Workflow Recipes</strong>.<br>A recipe saves the workflow, cover, tags, notes, model references, and common parameters. Open partial recipes append to the current canvas, while independently runnable complete recipes open in a new canvas; recipe package import and export are temporarily unavailable. Details include Overview, Parameter Set, Gallery, and Versions for local model matching, full parameter viewing/copying, output comparison, and version comparison/restoration. Parameter notes can capture fresh values from a matching live canvas or edit safe controls; Apply to Current Workflow writes only after the recipe skeleton matches. Third-party prompt nodes that cannot be classified reliably can be labelled manually.</p>
-    <p><strong>5. Settings Panel</strong><br>Location: The <strong>Gear ()</strong> icon at the bottom left.<br>Adjust language and UI scale. Open “Model Settings” to choose always-play or hover-play video covers and optimized thumbnails or original covers. Detail pages always retain original image quality.</p>
-    <p><strong>6. 📑 Top Navigation & Prompt Notes</strong><br>Location: Top-right tabs <strong>Models ()</strong>, <strong>Gallery ()</strong>, <strong>Creative Workspace (📑)</strong>, and <strong>Dock (◧)</strong>.<br>Open Prompt Notes in the Creative Workspace and click <strong></strong>. Select a Base Model, Main Model, and LoRAs; use <strong>📝 Edit Raw/Paste</strong> for bilingual prompts, chunking, find/replace, and tag editing; then click <strong>Send to Canvas</strong> to assemble the nodes.</p>
-    <p><strong>7. Folder Manager</strong><br>Location: Inside the Settings () panel, click <strong>Manage Folders</strong>.<br>Use this to hide unneeded built-in folders. Hidden folders will be completely skipped by background scans and I/O reads, achieving true "zero performance cost". You can also drag and drop to reorder how folders appear in the sidebar.</p>
-    <p><strong>8. Workflow Import / Export (Share Code)</strong><br>Open <strong>Toolbox → Import / Export</strong> to import or export AMB0/AMB1 workflow share codes. File import from the Material Library is closed; image/workflow hash metadata is unchanged.</p>
-    <p><strong>9. 💬 Submit Feedback / Report Bug</strong><br>Location: Inside the Settings () panel, click <strong>💬 Submit Feedback / Report Bug</strong>.<br>If you encounter bugs or have feature requests, click this to go directly to our GitHub Issues page.</p>
+    <h3 style="color:#f59e0b; margin-top:0;">📖 How to use</h3>
+    <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 Preview features and your data</strong><br>Workflow recipes, the Material Library and the Node Assistant's parameter presets are still in preview. Before updating the plugin, importing someone else's recipe, restoring a version, deleting a recipe or applying parameters, save your canvas and back up <code>workflows/anomalous_recipes</code>, <code>workflows/anomalous_materials</code> and <code>workflows/anomalous_parameters</code> in your ComfyUI user folder.</div>
+    <p><strong>1. 🧭 The rail on the left</strong><br>One icon per page: Home, Activity, Models, Gallery, Workflows, Materials, then Voices and Audio. Click the current page's icon again, or the button at the far left of the header, to hide or show its list; in a narrow window the list slides in as a drawer. Below the pages are the tools: Scan, Model Doctor, Node Assistant and the Toolbox, with Settings at the bottom.</p>
+    <p><strong>2. 🔄 Scan once first</strong><br>Click <strong>Scan</strong> on the rail (or "Scan model folders" on Home). The plugin fetches covers, trigger words and base models from Civitai by file hash, so it needs the internet; some restricted models need a Civitai API key, entered with 🔑 in the scan wizard. Once scanned, every other feature has full model information.</p>
+    <p><strong>3. 📦 Models</strong><br>The chips at the top switch between types (Checkpoint, LoRA, VAE…) and list the whole type, subfolders included; click a folder in the list to see only that one, and the ✕ at the end of the chips to go back. On a card, <strong>+</strong> adds a loader node to the canvas, the pencil edits name, notes and cover, and the radar icon scans just that model.</p>
+    <p><strong>4. 🩺 Model Doctor</strong><br>When someone else's workflow or image opens with red, missing models, click it: it finds your local copy of each model by hash and file size and swaps it in. "View hash" compares them side by side.</p>
+    <p><strong>5. 🤖 Node Assistant</strong><br>Select a node on the canvas. The Actions tab swaps its model from the covers or inserts a LoRA before or after a compatible MODEL + CLIP chain; the Presets tab lists, by recipe, the saved parameters of nodes of the same type, and one click applies them (values that change every run, like the seed, are skipped).</p>
+    <p><strong>6. 🪡 Workflow recipes</strong><br>Save the whole canvas, or a part of it, with its models, cover, tags, notes and parameters. A card shows whether the models are on this computer; drag it onto the canvas to load it. The detail view matches local models, shows and copies parameters, compares past outputs and compares or restores versions.</p>
+    <p><strong>7. ✨ Materials</strong><br>Open an image's parameter details in the Gallery or a recipe to save the image, its full workflow and its node settings as a material. Drop it on an empty canvas to open the workflow (prompt materials create prompt nodes), or on a node to fill in its settings.</p>
+    <p><strong>8. 🎙️ Character voices</strong><br>Needs the Anomalous_TTS node pack. Import GPT-SoVITS characters, set emotions and pronunciations, and generate speech in the Script Director; the <strong>!</strong> at the top right of the audio page has a step-by-step guide and a spotlight tour.</p>
+    <p><strong>9. 🕘 Activity</strong><br>What the plugin changed, by day: node settings on the canvas, nodes added or removed, workflows opened, and files such as models, covers, recipes and materials. It records only and undoes nothing; your own edits on the canvas are not listed.</p>
+    <p><strong>10. 🧰 Toolbox</strong><br>Import / export (AMB0/AMB1 workflow share codes), Prompt Studio, the prompt translator, Model Sources and Prompt Notes.</p>
+    <p><strong>11. ⚙️ Settings</strong><br>Language, font size, thumbnails and video covers. <strong>Folder manager</strong> hides model folders you do not need and orders them; hidden folders are not read or scanned. <strong>💬 Feedback / report an issue</strong> opens GitHub Issues.</p>
 </div>`,
         notebooks: 'Notebooks',
         notebookTitle: 'Notebook Manager',
@@ -2576,7 +2572,7 @@ export const i18n = {
         homeTitle: "What would you like to do?",
         homeLead: "Anomalous takes care of the chores around ComfyUI: models, outputs, workflows, materials and character voices. Pick a card to start.",
         homeCardModelsTitle: "Find a model, put it on a node",
-        homeCardModelsBody: "Browse models by folder with previews; drag one onto a canvas node to use it.",
+        homeCardModelsBody: "Browse models by type with previews; drag one onto a canvas node to use it.",
         homeCardDoctorTitle: "Fix missing models",
         homeCardDoctorBody: "A shared workflow shows red nodes? The Model Doctor finds your matching local models and swaps them in.",
         homeCardVoicesTitle: "Give a character a voice",
@@ -3179,7 +3175,7 @@ export const i18n = {
         audioGuideDragTitle: "Drag: a character onto a node",
         audioGuideDragBody: "Drag a character card's header (or the character in the sidebar) onto a \"角色语音 (GPT-SoVITS)\" node to select that character. While dragging, the hint says what releasing will do; a wrong node is refused with the reason, and nothing is written.",
         audioGuideTagsTitle: "Emotions come from {tags} in the text",
-        audioGuideTagsBody: "Tags in the text switch emotion: {happy} (or {开心}) uses that emotion's reference, {main} goes back to the main voice. Click the {tag} button on a row to copy it. [Character] changes speaker and [pause:1s] adds a pause, written straight into the text.",
+        audioGuideTagsBody: "Tags in the text switch emotion: {happy} (or {开心}) uses that emotion's reference, {main} goes back to the main voice. Characters with emotions have a “Copy {tag}” button on each row. [Character] changes speaker and [pause:1s] adds a pause, written straight into the text.",
         audioGuideScriptTitle: "Script Director: no hand-written tags",
         audioGuideScriptBody: "Open the Script Director, pick a character and paste the script. Each sentence becomes a card where you click an emotion; you can split, merge or delete cards. Then press \"Generate\"; to use your own workflow instead, press \"Push to node\" or drag \"Drag to node\" to fill in both the character and the text.",
         audioGuideGenerateTitle: "Generate and find it in the audio gallery",

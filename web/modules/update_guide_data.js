@@ -1,12 +1,13 @@
 // Content only. Maintenance checklist: docs/architecture/update-guide.md.
 // Change the ID only when users should see a new guide, never for typo fixes.
 export const CURRENT_UPDATE_GUIDE = Object.freeze({
-    id: '2026-09-recipes-and-studios',
+    id: '2026-10-rail-and-voices',
     steps: Object.freeze([
-        { id: 'recipes', icon: '📑', titleKey: 'updateGuideRecipesTitle', bodyKey: 'updateGuideRecipesBody' },
-        { id: 'materials', icon: '✨', titleKey: 'updateGuideMaterialsTitle', bodyKey: 'updateGuideMaterialsBody' },
-        { id: 'sources', icon: '🌐', titleKey: 'updateGuideSourcesTitle', bodyKey: 'updateGuideSourcesBody' },
-        { id: 'precision-scan', icon: '🎯', titleKey: 'updateGuideScanTitle', bodyKey: 'updateGuideScanBody' },
+        { id: 'layout', icon: '🧭', titleKey: 'updateGuideLayoutTitle', bodyKey: 'updateGuideLayoutBody' },
+        { id: 'model-types', icon: '📦', titleKey: 'updateGuideModelTypesTitle', bodyKey: 'updateGuideModelTypesBody' },
+        { id: 'activity', icon: '🕘', titleKey: 'updateGuideActivityTitle', bodyKey: 'updateGuideActivityBody' },
+        { id: 'voices', icon: '🎙️', titleKey: 'updateGuideVoicesTitle', bodyKey: 'updateGuideVoicesBody' },
+        { id: 'memory', icon: '🪶', titleKey: 'updateGuideMemoryTitle', bodyKey: 'updateGuideMemoryBody' },
     ]),
 });
 
