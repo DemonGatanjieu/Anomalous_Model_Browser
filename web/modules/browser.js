@@ -4,7 +4,8 @@ import { _openAdvancedModelSelector, setWidgetValuePath } from './ui_model_selec
 import { loadModels, applyModelToCanvas, stopMediaInContainer } from './ui_grid.js';
 import { createDOM, renderSidebar, loadFolders } from './ui_sidebar.js';
 import { closeWorkspace, hideAllPanels } from './ui_browser_navigation.js';
-import { openScanWizard, triggerDirectModelScan } from './ui_scan_wizard.js';
+import { triggerDirectModelScan } from './scan_runner.js';
+import { openScanPage, renderScanPage, leaveScanPage } from './ui_scan_page.js';
 import { openFolderManager } from './ui_folder_manager.js';
 import { showHelp } from './ui_help.js';
 import { loadGalleryImages, refreshGalleryImages, showGeneratedGallery, showGallerySelectMode, showGalleryViewer } from './ui_gallery.js';
@@ -67,6 +68,7 @@ export class AnomalousBrowser {
             this.loadModels();
         }
         if (this.currentShellPage() === 'gallery') void this.refreshGalleryImages();
+        if (this.currentShellPage() === 'scan') void renderScanPage(this, this.scanPanel);
     }
 
     /** The image / audio switch: the first page of that side. */
@@ -106,6 +108,7 @@ export class AnomalousBrowser {
     close() {
         this.flushCanvasActivity?.();
         closeUpdateGuide(this);
+        leaveScanPage(); // a running scan's progress floats over the canvas
         this.modal.classList.remove('visible');
         this.setTriggerVisible(true);
         stopAudioStudioPlayback();
@@ -172,7 +175,7 @@ AnomalousBrowser.prototype.showGalleryViewer = showGalleryViewer;
 AnomalousBrowser.prototype.showImageWorkbench = showImageWorkbench;
 
 AnomalousBrowser.prototype.createDOM = createDOM;
-AnomalousBrowser.prototype.openScanWizard = openScanWizard;
+AnomalousBrowser.prototype.openScanPage = function () { openScanPage(this); };
 AnomalousBrowser.prototype.scanSingleModel = triggerDirectModelScan;
 AnomalousBrowser.prototype.openFolderManager = openFolderManager;
 AnomalousBrowser.prototype.renderSidebar = renderSidebar;

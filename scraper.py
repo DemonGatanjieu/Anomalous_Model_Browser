@@ -22,7 +22,7 @@ import argparse
 import shutil
 from typing import Dict, Optional
 from model_policies import is_physical_rename_protected
-from model_identity import computed_file_identity
+from model_identity import computed_file_identity, is_unmatched, sidecar_file_hash, sidecar_info as read_local_info
 
 
 # Fixed tuples avoid rebuilding long extension lists for every scanned model.
@@ -60,13 +60,14 @@ def write_scan_progress(progress_file, phase, total=0, current=0, filename=""):
             pass
 
 
-def count_scan_files(target_folder, target_files_basenames):
+def count_scan_files(target_folder, target_files_basenames, unmatched_only=False):
     total = 0
     selected = set(target_files_basenames)
-    for _, _, files in os.walk(target_folder):
+    for root, _, files in os.walk(target_folder):
         total += sum(
             1 for filename in files
             if filename.endswith(".safetensors") and (not selected or filename in selected)
+            and (not unmatched_only or is_unmatched(read_local_info(os.path.join(root, os.path.splitext(filename)[0]))))
         )
     return total
 
@@ -225,6 +226,7 @@ def main():
     parser.add_argument("--skip-media", action="store_true", help="不下载预览图或视频")
     parser.add_argument("--offline-only", action="store_true", help="跳过 Civitai 联网获取，强制使用本地脱机张量推断提取 Base Model")
     parser.add_argument("--force-overwrite", action="store_true", help="强制覆盖已存在的信息文件")
+    parser.add_argument("--retry-unmatched", action="store_true", help="只处理之前没在 Civitai 匹配到的模型，重新联网查找（文件没变时复用哈希，不替换封面）")
     parser.add_argument("--skip-local-metadata", action="store_true", help="忽略本地已有的.info / .json文件")
     parser.add_argument("--target-files", type=str, default="", help="仅扫描逗号分隔的具体文件(相对路径)")
     parser.add_argument("--folder-type", default="", help="由 ComfyUI 传入的模型目录类型，用于执行安全策略")
@@ -309,7 +311,7 @@ def main():
         print("==================================================")
 
     write_scan_progress(args.progress_file, "enumerating")
-    total_files = count_scan_files(target_folder, target_files_basenames)
+    total_files = count_scan_files(target_folder, target_files_basenames, args.retry_unmatched)
     write_scan_progress(args.progress_file, "scanning", total_files)
     current_file = 0
     last_progress_write = 0.0
@@ -320,6 +322,9 @@ def main():
                 continue
 
             if target_files_basenames and filename not in target_files_basenames:
+                continue
+            previous_info = read_local_info(os.path.join(root, os.path.splitext(filename)[0])) if args.retry_unmatched else None
+            if args.retry_unmatched and not is_unmatched(previous_info):
                 continue
 
             current_file += 1
@@ -332,9 +337,9 @@ def main():
             old_base = os.path.splitext(file_path)[0]
             
             info_exists = os.path.exists(old_base + ".info") or os.path.exists(old_base + ".civitai.info")
-            if args.force_overwrite:
+            if args.force_overwrite or args.retry_unmatched:
                 info_exists = False
-                
+
             preview_exists = args.skip_media
             if not preview_exists:
                 for ext in COVER_SUFFIXES:
@@ -368,7 +373,9 @@ def main():
                     pass
             
             if not civitai_data:
-                file_hash = calculate_sha256(file_path)
+                if previous_info:  # --retry-unmatched: the hash from last time, if the file is unchanged
+                    file_hash = sidecar_file_hash(previous_info, file_path, (previous_info.get("files") or [{}])[0])[0]
+                file_hash = file_hash or calculate_sha256(file_path)
                 if not args.offline_only:
                     civitai_data = fetch_civitai_info(file_hash)
 
@@ -432,7 +439,12 @@ def main():
             if file_hash:
                 info_data["anomalous_file_identity"] = computed_file_identity(file_path, file_hash)
 
-            if args.virtual_rename:
+            # A display name set in the model editor stays, also when the info is fetched anew;
+            # only models without one get Civitai's.
+            kept_name = (read_local_info(old_base) or {}).get("anomalous_custom_name")
+            if kept_name:
+                info_data["anomalous_custom_name"] = kept_name
+            elif args.virtual_rename:
                 info_data["anomalous_custom_name"] = f"{model_name}_{version_name}"
             
             if not args.dry_run:

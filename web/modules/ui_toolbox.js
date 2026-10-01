@@ -6,7 +6,7 @@ import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { openModelSourcesModal } from './ui_model_sources.js';
 import { CATALOG_TOOLS, getToolDefinition } from './tool_registry.js';
-import { setScanButtonState } from './ui_scan_wizard.js';
+import { setScanButtonState } from './scan_runner.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -56,7 +56,7 @@ export function createToolbox(owner, {
     const executeToolAction = async (toolId) => {
         switch (toolId) {
             case 'scan':
-                owner.openScanWizard({ isGlobal: true });
+                owner.openScanPage();
                 break;
             case 'doctor':
                 owner.enterToolPage?.('doctor');

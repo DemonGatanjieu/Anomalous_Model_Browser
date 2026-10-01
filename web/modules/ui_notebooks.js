@@ -160,9 +160,10 @@ export async function showNotebooks() {
         this.workspaceReturnState = Object.fromEntries([
             ['grid', this.grid], ['detail', this.detailPanel], ['gallery', this.galleryPanel],
             ['doctor', this.doctorPanel], ['assistant', this.assistantPanel], ['home', this.homePanel], ['activity', this.activityPanel],
+            ['scan', this.scanPanel],
         ].filter(([, panel]) => panel).map(([key, panel]) => [key, panel.style.display]));
     }
-    for (const panel of [this.grid, this.detailPanel, this.galleryPanel, this.doctorPanel, this.assistantPanel, this.homePanel, this.activityPanel, this.paramPanel]) {
+    for (const panel of [this.grid, this.detailPanel, this.galleryPanel, this.doctorPanel, this.assistantPanel, this.homePanel, this.activityPanel, this.scanPanel, this.paramPanel]) {
         if (panel) panel.style.display = 'none';
     }
     if (this.materialContainer) this.materialContainer.style.display = 'none';

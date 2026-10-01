@@ -5,7 +5,7 @@
 
 import { translate as t } from './locales.js';
 import { updateScanProgress, finishScanProgress, failScanProgress } from './scan_progress.js';
-import { setScanButtonState } from './ui_scan_wizard.js';
+import { setScanButtonState } from './scan_runner.js';
 
 const POLL_MS = 3000;
 
@@ -35,6 +35,7 @@ export function watchScans(owner) {
                 if (button) setScanButtonState(button, false);
                 finishScanProgress();
                 owner.loadModels();
+                owner.onScanFinished?.();
                 if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();
             }
         } catch (_) { /* the server may be restarting; the next poll tries again */ }

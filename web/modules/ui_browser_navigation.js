@@ -2,6 +2,7 @@
 
 import { stopAudioStudioPlayback } from './ui_audio_studio.js';
 import { stopGalleryAudio } from './ui_audio_gallery.js';
+import { leaveScanPage } from './ui_scan_page.js';
 
 function restoreWorkspaceReturnPanel(owner) {
     const state = owner.workspaceReturnState;
@@ -16,6 +17,7 @@ function restoreWorkspaceReturnPanel(owner) {
         ['audioGallery', owner.audioGalleryPanel],
         ['home', owner.homePanel],
         ['activity', owner.activityPanel],
+        ['scan', owner.scanPanel],
     ];
     if (state) {
         for (const [key, panel] of panels) {
@@ -103,6 +105,8 @@ export function hideAllPanels() {
     if (this.audioGalleryPanel) this.audioGalleryPanel.style.display = 'none';
     if (this.homePanel) this.homePanel.style.display = 'none';
     if (this.activityPanel) this.activityPanel.style.display = 'none';
+    if (this.scanPanel) this.scanPanel.style.display = 'none';
+    leaveScanPage();
     stopAudioStudioPlayback();
     stopGalleryAudio();
     if (this.currentDetailObserver) {

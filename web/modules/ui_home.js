@@ -54,7 +54,7 @@ export function renderHome(owner, panel) {
 
     const start = el('div', 'anomalous-home-start');
     start.append(el('span', 'anomalous-home-start-label', t('homeStartLabel')),
-        button('anomalous-home-link', t('homeStartScan'), () => owner.openScanWizard({ isGlobal: true })),
+        button('anomalous-home-link', t('homeStartScan'), () => owner.openScanPage()),
         button('anomalous-home-link', t('homeStartTour'), () => startSpotlightTour(owner)),
         button('anomalous-home-link', t('homeStartNews'), () => showUpdateGuide(owner, { force: true })));
 

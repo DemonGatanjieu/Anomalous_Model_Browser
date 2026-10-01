@@ -1,7 +1,26 @@
 """File SHA-256 evidence shared by the standalone scanner and API."""
 
+import json
 import os
 import re
+
+
+def sidecar_info(base):
+    """A model's .info (or .civitai.info) sidecar as a dict; None when missing or unreadable.
+    ``base`` is the model path without its extension."""
+    for ext in (".info", ".civitai.info"):
+        if os.path.exists(base + ext):
+            try:
+                with open(base + ext, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except (OSError, ValueError):
+                return None
+    return None
+
+
+def is_unmatched(info):
+    """Info the scanner wrote from the file alone: Civitai had no match, or was not reachable then."""
+    return isinstance(info, dict) and info.get("id") == -1
 
 
 def normalise_sha256(value):

@@ -79,7 +79,11 @@ covered by the `styles.css` manifest.
   `api/models.py` is a compatibility facade; `api/model_constants.py` holds the
   model, media and sidecar extensions they share. `api/model_type_listing.py` lists a
   whole models folder with its subfolders for the models page's type chips.
-- `api/scanner.py` and `scraper.py` own scan orchestration and enrichment.
+- `api/scanner.py` and `scraper.py` own scan orchestration and enrichment; both scan
+  routes map request fields to scraper switches in one place (`_scraper_flags`).
+  `api/scan_summary.py` counts models matched on Civitai, unmatched and not yet scanned
+  for the scan page, by the same sidecar rules the scraper uses (`sidecar_info`,
+  `is_unmatched` in `model_identity.py`).
 - `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
   `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
   integrity receipts; `api/recipes.py` is the HTTP facade. `api/recipe_constants.py`
@@ -277,10 +281,14 @@ covered by the `styles.css` manifest.
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,
   including Esc on the workspace panel (`nbPanel`, below the header and right of the
   rail; the list column steps aside while it is open).
-  Scan-wizard launch, single-model precision scans (`triggerDirectModelScan` with strictly factual Civitai vs non-Civitai feedback reporting inferred base-model or match status directly within the bottom-right progress panel and toasts without blocking browser alerts), modal lifecycle ergonomics (backdrop click and Escape key dismissal with listener detachment, scrollable content area with sticky footer actions), post-scan frontend hash and native combo refreshes (`app.refreshComboInNodes()`, `window.anomalous_reload_hashes()`), and polling live in `ui_scan_wizard.js`; folder visibility/order lives in
+  `ui_scan_page.js` is the scan page (a tool page like the doctor): counts, scan and
+  look-up-again buttons, advanced options. `scan_runner.js` starts and follows scans
+  (every folder, picked models, or one model from its card) and refreshes node
+  drop-downs, hashes and the grid afterwards; folder visibility/order lives in
   `ui_folder_manager.js`; and help content lives in `ui_help.js`.
-  `scan_progress.js` owns the bottom-right scan progress panel
-  (`updateScanProgress` / `finishScanProgress` / `failScanProgress`).
+  `scan_progress.js` owns the scan progress panel
+  (`updateScanProgress` / `finishScanProgress` / `failScanProgress`): inside the scan
+  page while it is shown (`setScanProgressHost`), floating at the bottom right otherwise.
   `shortcut_controls.js` owns the open-browser and material-library keyboard
   shortcuts, their fallback when ComfyUI's keybinding does not fire, and the
   settings control that opens ComfyUI's keybinding editor.

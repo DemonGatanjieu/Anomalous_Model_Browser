@@ -215,11 +215,7 @@ export async function loadModels() {
                 singleScanBtn.onclick = (e) => {
                     e.stopPropagation();
                     focusModel(this, model);
-                    if (typeof this.scanSingleModel === 'function') {
-                        this.scanSingleModel(model, singleScanBtn);
-                    } else if (typeof this.openScanWizard === 'function') {
-                        this.openScanWizard({ targetFiles: model.filename });
-                    }
+                    this.scanSingleModel(model, singleScanBtn);
                 };
                 card.appendChild(singleScanBtn);
 

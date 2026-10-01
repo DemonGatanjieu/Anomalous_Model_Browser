@@ -190,6 +190,12 @@ export function createSettingsHub(owner, {
     const originalThumbnailOption = new Option('', 'original');
     thumbnailSetting.select.append(balancedThumbnailOption, originalThumbnailOption);
 
+    // Read by hash_resolver.js when a workflow is serialized ('false' turns it off).
+    const provenanceSetting = createSettingRow();
+    const provenanceOnOption = new Option('', 'on');
+    const provenanceOffOption = new Option('', 'off');
+    provenanceSetting.select.append(provenanceOnOption, provenanceOffOption);
+
     const modelSettingsNote = document.createElement('div');
     modelSettingsNote.className = 'anomalous-model-settings-note';
 
@@ -201,6 +207,7 @@ export function createSettingsHub(owner, {
         modelSettingsDescription,
         videoSetting.row,
         thumbnailSetting.row,
+        provenanceSetting.row,
         modelSettingsNote,
         modelSettingsClose,
     );
@@ -219,10 +226,15 @@ export function createSettingsHub(owner, {
         thumbnailSetting.help.textContent = t('sidebarCardQualityHelp');
         balancedThumbnailOption.textContent = t('sidebarOptimizedThumbnail');
         originalThumbnailOption.textContent = t('sidebarOriginalCover');
-        modelSettingsNote.textContent = t('sidebarModelSettingsNote');
+        provenanceSetting.name.textContent = t('sidebarProvenance');
+        provenanceSetting.help.textContent = t('sidebarProvenanceDesc');
+        provenanceOnOption.textContent = t('sidebarProvenanceOn');
+        provenanceOffOption.textContent = t('sidebarProvenanceOff');
+modelSettingsNote.textContent = t('sidebarModelSettingsNote');
         modelSettingsClose.textContent = t('sidebarDone');
         videoSetting.select.value = owner.energySaving ? 'hover' : 'always';
         thumbnailSetting.select.value = owner.cardThumbnailMode;
+        provenanceSetting.select.value = localStorage.getItem('anomalous_inject_hash') === 'false' ? 'off' : 'on';
     };
     refreshModelSettingsText();
 
@@ -245,6 +257,9 @@ export function createSettingsHub(owner, {
         owner.energySaving = videoSetting.select.value === 'hover';
         localStorage.setItem('anomalous_energy_saving', String(owner.energySaving));
         owner.loadModels();
+    };
+    provenanceSetting.select.onchange = () => {
+        localStorage.setItem('anomalous_inject_hash', provenanceSetting.select.value === 'on' ? 'true' : 'false');
     };
     thumbnailSetting.select.onchange = () => {
         owner.cardThumbnailMode = thumbnailSetting.select.value === 'original' ? 'original' : 'balanced';

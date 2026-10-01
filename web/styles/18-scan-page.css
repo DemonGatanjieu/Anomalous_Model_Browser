@@ -1,0 +1,234 @@
+/* Scan page: counts, the scan buttons, progress in the page, advanced options. */
+
+#anomalous-scan-panel {
+    flex: 1;
+    flex-direction: column;
+    overflow-y: auto;
+    background: var(--amb-bg-page, #131315);
+}
+
+.anomalous-scan-page {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: min(760px, 100%);
+    margin: 0 auto;
+    padding: 32px 28px 40px;
+    box-sizing: border-box;
+}
+
+.anomalous-scan-title {
+    margin: 0;
+    color: #f3f4f6;
+    font-size: 1.6em;
+    font-weight: 600;
+}
+
+.anomalous-scan-lead {
+    margin: 0;
+    color: #9ca3af;
+    line-height: 1.6;
+}
+
+.anomalous-scan-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.anomalous-scan-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.anomalous-scan-stat-value {
+    color: #f3f4f6;
+    font-size: 1.5em;
+    font-variant-numeric: tabular-nums;
+}
+
+.anomalous-scan-stat-label {
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+.anomalous-scan-stat.is-ok .anomalous-scan-stat-value { color: #86efac; }
+.anomalous-scan-stat.is-warn .anomalous-scan-stat-value { color: #fcd34d; }
+.anomalous-scan-stat.is-new .anomalous-scan-stat-value { color: #a5b4fc; }
+
+.anomalous-scan-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.anomalous-scan-primary,
+.anomalous-scan-secondary {
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+.anomalous-scan-primary {
+    border: 1px solid transparent;
+    background: #e5e7eb;
+    color: #111827;
+}
+
+.anomalous-scan-primary:hover:not(:disabled) {
+    background: #ffffff;
+}
+
+.anomalous-scan-secondary {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.04);
+    color: #e5e7eb;
+}
+
+.anomalous-scan-secondary:hover:not(:disabled) {
+    border-color: rgba(165, 180, 252, 0.4);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.anomalous-scan-primary:disabled,
+.anomalous-scan-secondary:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.anomalous-scan-muted {
+    margin: 0;
+    color: #9ca3af;
+    font-size: 12.5px;
+    line-height: 1.6;
+}
+
+.anomalous-scan-progress-host:empty {
+    display: none;
+}
+
+.anomalous-scan-progress.is-inline {
+    position: static;
+    width: auto;
+    z-index: auto;
+    box-shadow: none;
+    backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.anomalous-scan-advanced {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.anomalous-scan-advanced > summary {
+    padding: 12px 16px;
+    color: #d1d5db;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.anomalous-scan-advanced[open] > summary {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.anomalous-scan-advanced > :not(summary) {
+    margin: 0 16px;
+}
+
+.anomalous-scan-group-title {
+    margin-top: 14px;
+    margin-bottom: 6px;
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.anomalous-scan-scope-choice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    color: #e5e7eb;
+    cursor: pointer;
+}
+
+.anomalous-scan-pick {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0 2px 26px;
+}
+
+.anomalous-scan-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 0;
+    cursor: pointer;
+}
+
+.anomalous-scan-option input {
+    margin-top: 3px;
+}
+
+.anomalous-scan-option-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.anomalous-scan-option-copy strong {
+    color: #e5e7eb;
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.anomalous-scan-option-copy small {
+    color: #9ca3af;
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.anomalous-scan-option.is-warn .anomalous-scan-option-copy small {
+    color: #fcd34d;
+}
+
+.anomalous-scan-advanced > .anomalous-scan-online {
+    margin-left: 42px;
+    padding-left: 12px;
+    border-left: 2px solid rgba(255, 255, 255, 0.06);
+}
+
+.anomalous-scan-online.is-disabled {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.anomalous-scan-advanced > .anomalous-scan-key {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 6px 16px 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+@media (max-width: 560px) {
+    .anomalous-scan-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .anomalous-scan-page { padding: 24px 16px 32px; }
+}

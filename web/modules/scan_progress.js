@@ -3,13 +3,15 @@ import { translate } from './locales.js';
 
 const PANEL_ID = 'anomalous-scan-progress';
 let closeTimer = null;
+let host = null; // the scan page's slot while it is shown; otherwise the panel floats on the page
+// Held here, not looked up by id: the scan page re-renders and briefly detaches it.
+let current = null;
 
 
 function ensurePanel() {
-    let panel = document.getElementById(PANEL_ID);
-    if (panel) return panel;
+    if (current) return current;
 
-    panel = document.createElement('section');
+    const panel = document.createElement('section');
     panel.id = PANEL_ID;
     panel.className = 'anomalous-scan-progress';
     panel.setAttribute('role', 'status');
@@ -40,8 +42,30 @@ function ensurePanel() {
     item.className = 'anomalous-scan-progress-item';
     panel.appendChild(item);
 
-    document.body.appendChild(panel);
+    panel.classList.toggle('is-inline', Boolean(host));
+    (host || document.body).appendChild(panel);
+    current = panel;
     return panel;
+}
+
+function removePanel() {
+    current?.remove();
+    current = null;
+}
+
+
+/** The scan page shows the progress inside itself (`element`), or lets it float again (null). */
+export function setScanProgressHost(element) {
+    host = element;
+    const panel = current;
+    if (!panel) return;
+    // A result kept on the page is not worth floating over the canvas afterwards.
+    if (!host && panel.getAttribute('aria-busy') === 'false') {
+        removePanel();
+        return;
+    }
+    panel.classList.toggle('is-inline', Boolean(host));
+    (host || document.body).appendChild(panel);
 }
 
 
@@ -116,9 +140,9 @@ export function updateScanProgress(status, titleText = '') {
 
 function closeLater(panel) {
     if (closeTimer) clearTimeout(closeTimer);
+    if (host) return; // on the scan page the result stays until the page is left
     closeTimer = setTimeout(() => {
-        if (typeof panel.remove === 'function') panel.remove();
-        else if (panel.parentNode) panel.parentNode.removeChild(panel);
+        if (panel === current) removePanel();
         closeTimer = null;
     }, 4000);
 }

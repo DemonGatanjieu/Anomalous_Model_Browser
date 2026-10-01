@@ -26,7 +26,7 @@ const LIST_KEYS = {
 const TITLE_KEYS = {
     home: 'shellHome', activity: 'activityTitle', models: 'shellTitleModels', gallery: 'gallery', recipes: 'recipeTitle',
     materials: 'materialLibrary', voices: 'shellVoices', 'audio-gallery': 'shellAudioGallery',
-    doctor: 'sidebarDoctor', assistant: 'sidebarAssistant',
+    doctor: 'sidebarDoctor', assistant: 'sidebarAssistant', scan: 'scanPageTitle',
 };
 // Below this width the list covers the page instead of sitting beside it, and starts closed.
 const NARROW_PX = 760;
@@ -145,7 +145,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
             owner.workspaceReturnState = Object.fromEntries([
                 ['grid', owner.grid], ['detail', owner.detailPanel], ['gallery', owner.galleryPanel],
                 ['doctor', owner.doctorPanel], ['assistant', owner.assistantPanel], ['home', owner.homePanel],
-                ['activity', owner.activityPanel],
+                ['activity', owner.activityPanel], ['scan', owner.scanPanel],
                 ['audioStudio', owner.audioStudioPanel], ['audioGallery', owner.audioGalleryPanel],
             ].filter(([, panel]) => panel).map(([key, panel]) => [key, panel.style.display || 'none']));
         } else if (!owner.workspaceReturnState) {
@@ -198,7 +198,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         }
     };
 
-    /** Doctor and assistant: image-side pages without a rail entry, opened from the tools. */
+    /** Scan, doctor and assistant: image-side pages without a rail entry, opened from the tools. */
     owner.enterToolPage = (page) => {
         if (owner.nbPanel?.style.display === 'flex') owner.closeWorkspace();
         useDomain('visual');

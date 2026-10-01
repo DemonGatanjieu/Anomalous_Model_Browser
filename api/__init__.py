@@ -1,6 +1,6 @@
 from . import (
     activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
-    model_media, model_metadata, model_resolution, model_type_listing, recipe_packages, recipes,
+    model_media, model_metadata, model_resolution, model_type_listing, recipe_packages, recipes, scan_summary,
     translation_routes, version_manager,
 )
 from .scanner import *
@@ -106,6 +106,7 @@ def setup_routes(app):
     app.router.add_get('/anomalous/model_images', media_routes.api_get_model_images)
     app.router.add_post('/anomalous/resolve_paths_to_previews', model_catalog.api_resolve_paths_to_previews)
     app.router.add_post('/anomalous/scan_missing_models', api_scan_missing_models)
+    app.router.add_get('/anomalous/scan_summary', scan_summary.api_scan_summary)
 
     # Audio & Voice Studio Routes
     app.router.add_get('/anomalous/audio_stream', audio_catalog.api_serve_audio)

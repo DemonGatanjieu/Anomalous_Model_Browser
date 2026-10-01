@@ -35,7 +35,7 @@ cannot automatically repair them. When size provenance is available it may be
 shown as the same explicit manual candidate, but a supplied hash mismatch never
 falls back to a filename or size-only guess.
 This is a Model Doctor confidence boundary, not a scanner-support boundary. The
-scan wizard may traverse any active registered model folder and can still
+scanner may traverse any active registered model folder and can still
 calculate a local hash when Civitai has no matching record. Sparse or ambiguous
 remote metadata is a reason to require cryptographic identity, not to exclude
 the category from scanning.

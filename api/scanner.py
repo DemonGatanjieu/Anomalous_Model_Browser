@@ -27,6 +27,37 @@ ACTIVE_SCAN_MARKERS = set()
 SCAN_RUNTIME_STATE = {}
 
 
+# Request field -> scraper switch, with the field's default. Both scan routes read these.
+_SCRAPER_FLAGS = (
+    ("offline_only", "--offline-only", False),
+    ("virtual_rename", "--virtual-rename", False),
+    ("force_overwrite", "--force-overwrite", False),
+    ("retry_unmatched", "--retry-unmatched", False),
+    ("skip_media", "--skip-media", False),
+)
+
+
+def _scraper_flags(data, skip_rename_default, physical_allowed):
+    """The scraper's command-line switches for one scan request."""
+    flags = [flag for field, flag, default in _SCRAPER_FLAGS if data.get(field, default)]
+    if data.get("skip_rename", skip_rename_default):
+        flags.append("--skip-rename")
+    if data.get("physical_rename", False) and physical_allowed:
+        flags.append("--physical-rename")
+    if not data.get("use_local_metadata", True):
+        flags.append("--skip-local-metadata")
+    return flags
+
+
+def _clear_folder_caches():
+    """ComfyUI lists model folders from caches; a scan may have renamed files."""
+    for cache in (getattr(folder_paths, "filename_list_cache", None), getattr(folder_paths, "cache_helper", None)):
+        try:
+            cache.clear()
+        except Exception:
+            pass
+
+
 def _read_json_file(path):
     try:
         with open(path, 'r', encoding='utf-8') as f:
@@ -279,16 +310,11 @@ async def api_scan_folder(request):
     if not isinstance(data, dict):
         return web.json_response({"status": "error", "message": "Invalid request body"}, status=400)
         
-    offline_only = data.get("offline_only", False)
-    skip_rename = data.get("skip_rename", False)
-    virtual_rename = data.get("virtual_rename", False)
-    physical_rename_requested = data.get("physical_rename", False)
-    physical_rename = physical_rename_requested and not is_physical_rename_protected(
+    flags = _scraper_flags(data, False, not is_physical_rename_protected(
         folder_type=folder_type,
         folder_path=target_dir,
-    )
-    force_overwrite = data.get("force_overwrite", False)
-    
+    ))
+
     target_files_list = data.get("target_files", [])
     if not target_files_list:
         target_files_str = request.query.get('target_files', '')
@@ -313,18 +339,7 @@ async def api_scan_folder(request):
 
         def run_bg():
             try:
-                cmd = [sys.executable, scraper_path, target_dir, "--folder-type", folder_type]
-                if offline_only:
-                    cmd.append("--offline-only")
-                if skip_rename:
-                    cmd.append("--skip-rename")
-                if virtual_rename:
-                    cmd.append("--virtual-rename")
-                if physical_rename:
-                    cmd.append("--physical-rename")
-                if force_overwrite:
-                    cmd.append("--force-overwrite")
-                
+                cmd = [sys.executable, scraper_path, target_dir, "--folder-type", folder_type, *flags]
                 cmd.extend(["--progress-file", progress_file])
                 process = subprocess.Popen(cmd, cwd=plugin_dir)
                 _update_scan_marker(marker_file, worker_pid=process.pid)
@@ -334,13 +349,7 @@ async def api_scan_folder(request):
                     with open(result_file, 'w', encoding='utf-8') as f:
                         json.dump({"success": 0, "fail": 1, "error": f"Scanner exited with code {return_code}"}, f)
             finally:
-                if hasattr(folder_paths, "filename_list_cache"):
-                    try: folder_paths.filename_list_cache.clear()
-                    except: pass
-                if hasattr(folder_paths, "cache_helper") and hasattr(folder_paths.cache_helper, "clear"):
-                    try: folder_paths.cache_helper.clear()
-                    except: pass
-                    
+                _clear_folder_caches()
                 _release_scan_marker(marker_file, (progress_file, targets_file))
         
         threading.Thread(target=run_bg, daemon=True).start()
@@ -368,14 +377,6 @@ async def api_scan_all(request):
     if not isinstance(data, dict):
         return web.json_response({"status": "error", "message": "Invalid request body"}, status=400)
         
-    offline_only = data.get("offline_only", False)
-    use_local_metadata = data.get("use_local_metadata", True)
-    skip_rename = data.get("skip_rename", True)
-    virtual_rename = data.get("virtual_rename", False)
-    physical_rename = data.get("physical_rename", False)
-    force_overwrite = data.get("force_overwrite", False)
-    skip_media = data.get("skip_media", False)
-    
     claimed = False
     try:
         claimed, recovered = _claim_scan_marker(marker_file, "global", (progress_file,))
@@ -410,23 +411,10 @@ async def api_scan_all(request):
                         protected_type = _protected_type_for_path(base_dir)
                         if protected_type:
                             cmd.extend(["--folder-type", protected_type])
-                        if offline_only:
-                            cmd.append("--offline-only")
-                        if skip_rename:
-                            cmd.append("--skip-rename")
-                        if virtual_rename:
-                            cmd.append("--virtual-rename")
-                        if physical_rename and not is_physical_rename_protected(
+                        cmd.extend(_scraper_flags(data, True, not is_physical_rename_protected(
                             folder_type=protected_type,
                             folder_path=base_dir,
-                        ):
-                            cmd.append("--physical-rename")
-                        if force_overwrite:
-                            cmd.append("--force-overwrite")
-                        if skip_media:
-                            cmd.append("--skip-media")
-                        if not use_local_metadata:
-                            cmd.append("--skip-local-metadata")
+                        )))
                         cmd.extend(["--progress-file", progress_file])
                         process = subprocess.Popen(cmd, cwd=plugin_dir)
                         _update_scan_marker(marker_file, worker_pid=process.pid)
@@ -440,13 +428,7 @@ async def api_scan_all(request):
                         _update_scan_state(marker_file, error=str(e))
                         print(f"[Anomalous Browser] Global scan error on {base_dir}: {e}")
             finally:
-                if hasattr(folder_paths, "filename_list_cache"):
-                    try: folder_paths.filename_list_cache.clear()
-                    except: pass
-                if hasattr(folder_paths, "cache_helper") and hasattr(folder_paths.cache_helper, "clear"):
-                    try: folder_paths.cache_helper.clear()
-                    except: pass
-                    
+                _clear_folder_caches()
                 _release_scan_marker(marker_file, (progress_file,))
                     
         threading.Thread(target=run_global_bg, daemon=True).start()
@@ -586,11 +568,7 @@ async def api_scan_missing_models(request):
             GLOBAL_SCAN_STATE["scanning"] = False
             GLOBAL_SCAN_STATE["filename"] = ""
             
-            # Clear caches
-            if hasattr(folder_paths, "filename_list_cache"):
-                folder_paths.filename_list_cache.clear()
-            if hasattr(folder_paths, "cache_helper") and hasattr(folder_paths.cache_helper, "clear"):
-                folder_paths.cache_helper.clear()
+            _clear_folder_caches()
                 
     try:
         threading.Thread(target=run_deep_scan, daemon=True).start()

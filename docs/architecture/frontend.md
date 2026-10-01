@@ -49,7 +49,7 @@ The Material Library shortcut remains a native ComfyUI command/keybinding; a
 deferred window-key fallback invokes the same command path only when the host
 did not bring the library forward, so handled shortcuts are not executed twice.
 `ui_browser_navigation.js` owns shared panel hiding, recoverable detail cleanup,
-and workspace return. `ui_scan_wizard.js` owns scan configuration and scan-launch polling,
+and workspace return. `ui_scan_page.js` owns the scan page and `scan_runner.js` scan launch and polling,
 `ui_folder_manager.js` owns folder visibility/order and presentation-mode
 changes, and `ui_help.js` owns the help dialog. Public entry functions remain
 browser-instance methods so existing actions share current browser state.
@@ -63,7 +63,7 @@ bootstrap or reuse its content version as a feature flag.
 The main surfaces are:
 
 - Sidebar shell: navigation and persistent scan controls; focused child modules
-  own the scan wizard, folder manager, and help dialog.
+  own the scan page, folder manager, and help dialog.
 - Grid and model detail: model browsing plus coordinated detail display in
   `ui_detail.js`, metadata editing in `ui_model_editor.js`, and advanced selection
   in `ui_model_selector.js`.
