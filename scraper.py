@@ -23,7 +23,7 @@ import shutil
 from typing import Dict, Optional
 from model_policies import is_physical_rename_protected
 from recycle_bin import move_to_trash
-from model_identity import computed_file_identity, is_unmatched, sidecar_file_hash, sidecar_info as read_local_info
+from model_identity import USER_INFO_SUFFIX, computed_file_identity, is_unmatched, scan_info_path, sidecar_file_hash, sidecar_info as read_local_info
 
 
 # Fixed tuples avoid rebuilding long extension lists for every scanned model.
@@ -34,11 +34,28 @@ CIVITAI_BACKUP_SUFFIXES = tuple(f".civitai_bak{ext}" for ext in MEDIA_EXTENSIONS
 COVER_SUFFIXES = MEDIA_EXTENSIONS + PREVIEW_SUFFIXES
 ACTIVE_COVER_SUFFIXES = PREVIEW_SUFFIXES + MEDIA_EXTENSIONS
 SIDECAR_SUFFIXES = (
-    ".info", ".civitai.info", ".json", ".txt", ".yaml",
+    ".info", ".civitai.info", USER_INFO_SUFFIX, ".json", ".txt", ".yaml",
     *MEDIA_EXTENSIONS,
     *PREVIEW_SUFFIXES,
     *CIVITAI_BACKUP_SUFFIXES,
 )
+
+
+def same_file(a, b):
+    """Byte-for-byte equal (covers are small; size is checked first)."""
+    try:
+        return os.path.getsize(a) == os.path.getsize(b) and calculate_sha256(a) == calculate_sha256(b)
+    except OSError:
+        return False
+
+
+def cover_owners(base):
+    """(Civitai's, the user's) active covers. A cover is Civitai's only when it is a copy of the
+    Civitai image saved last time (<model>.civitai_bak.*); any other cover is the user's."""
+    backups = [base + ext for ext in CIVITAI_BACKUP_SUFFIXES if os.path.exists(base + ext)]
+    covers = [base + ext for ext in ACTIVE_COVER_SUFFIXES if os.path.exists(base + ext)]
+    civitai = [c for c in covers if any(same_file(c, b) for b in backups)]
+    return civitai, [c for c in covers if c not in civitai]
 
 
 def write_scan_progress(progress_file, phase, total=0, current=0, filename=""):
@@ -337,7 +354,8 @@ def main():
             file_path = os.path.join(root, filename)
             old_base = os.path.splitext(file_path)[0]
             
-            info_exists = os.path.exists(old_base + ".info") or os.path.exists(old_base + ".civitai.info")
+            # A .civitai.info holding only edits from older versions is not a scan result.
+            info_exists = scan_info_path(old_base) is not None
             if args.force_overwrite or args.retry_unmatched:
                 info_exists = False
 
@@ -363,9 +381,7 @@ def main():
             civitai_data = None
             file_hash = None
             if info_exists and needs_rename:
-                info_path = old_base + ".info"
-                if not os.path.exists(info_path):
-                    info_path = old_base + ".civitai.info"
+                info_path = scan_info_path(old_base)
                 try:
                     with open(info_path, 'r', encoding='utf-8') as f:
                         civitai_data = json.load(f)
@@ -406,8 +422,11 @@ def main():
                 }
                 
             # --- 额外获取模型主页的说明文字 ---
+            # What was read from disk is not fetched again: only fresh Civitai data needs the
+            # model page's description and the cover.
+            fresh = file_hash is not None and not args.offline_only
             model_id = civitai_data.get("modelId")
-            if model_id and model_id != -1 and not args.offline_only:
+            if fresh and model_id and model_id != -1:
                 try:
                     headers = {
                         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -440,12 +459,9 @@ def main():
             if file_hash:
                 info_data["anomalous_file_identity"] = computed_file_identity(file_path, file_hash)
 
-            # A display name set in the model editor stays, also when the info is fetched anew;
-            # only models without one get Civitai's.
-            kept_name = (read_local_info(old_base) or {}).get("anomalous_custom_name")
-            if kept_name:
-                info_data["anomalous_custom_name"] = kept_name
-            elif args.virtual_rename:
+            # Civitai's name for the card; a name set in the model editor lives in
+            # <model>.anomalous.json and is shown instead.
+            if args.virtual_rename:
                 info_data["anomalous_custom_name"] = f"{model_name}_{version_name}"
             
             if not args.dry_run:
@@ -465,34 +481,28 @@ def main():
                             media_url = img_obj.get("url")
                             break
             
-            if media_url and not args.skip_media:
+            civitai_covers, user_covers = cover_owners(old_base)
+            # Download when the data is fresh, or when the model has no cover at all.
+            if media_url and not args.skip_media and (fresh or not (civitai_covers or user_covers)):
                 if not args.dry_run:
                     print(f"[*] 正在下载预览媒体...")
                     saved_path = download_media(media_url, old_base + ".civitai_bak")
                     if saved_path:
                         print(f"[+] 媒体下载成功 -> {os.path.basename(saved_path)}")
-                        # Promote to .preview if no custom cover exists
-                        has_custom = False
-                        if not args.force_overwrite:
-                            for c_ext in ACTIVE_COVER_SUFFIXES:
-                                p = old_base + c_ext
-                                if os.path.exists(p) and not p.endswith('.civitai_bak' + c_ext):
-                                    has_custom = True
-                                    break
-                        if not has_custom:
+                        if user_covers:
+                            # The user's cover always stays; Civitai's image is kept as the backup.
+                            print(f"[*] 保留你自己的封面，Civitai 封面存为备份")
+                        else:
                             ext = os.path.splitext(saved_path)[1]
-                            import shutil
-                            if args.force_overwrite:
-                                for c_ext in ACTIVE_COVER_SUFFIXES:
-                                    p = old_base + c_ext
-                                    if os.path.exists(p) and not p.endswith('.civitai_bak' + c_ext):
-                                        try:
-                                            move_to_trash(p)
-                                            print(f"[*] 强制覆盖: 旧预览文件已移到回收站 {os.path.basename(p)}")
-                                        except Exception as e:
-                                            print(f"[-] 旧预览文件没有移走: {e}")
-                            preview_ext = ext if ext.startswith('.preview.') else f".preview{ext}"
-                            shutil.copy2(saved_path, old_base + preview_ext)
+                            preview_path = old_base + (ext if ext.startswith('.preview.') else f".preview{ext}")
+                            # Earlier copies of Civitai's image under another name give way to the new one.
+                            older = [c for c in civitai_covers if c != preview_path]
+                            try:
+                                if older:
+                                    move_to_trash(*older)
+                            except Exception as e:
+                                print(f"[-] 旧的 Civitai 封面没有移走: {e}")
+                            shutil.copy2(saved_path, preview_path)
                 else:
                     print(f"[Dry-Run] 拟下载预览媒体...")
                         

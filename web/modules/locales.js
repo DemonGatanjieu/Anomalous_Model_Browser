@@ -316,9 +316,13 @@ export const i18n = {
         scanPageDisplayName: "用 Civitai 上的名称作为显示名",
         scanPageDisplayNameHelp: "只改卡片上显示的名字，不改文件。你在编辑窗口里改过的名字会保留。",
         scanPageFileRename: "同时修改磁盘上的文件名",
-        scanPageFileRenameHelp: "会真的给模型文件改名，用到这些模型的旧工作流要靠模型医生修复；遇到内容完全相同的重复副本会删掉其中一个；部分文件夹受保护，不会改名。扫描完自动关掉。",
+        scanPageFileRenameHelp: "会真的给模型文件改名，用到这些模型的旧工作流要靠模型医生修复；遇到内容完全相同的重复副本，会把其中一个移到回收站；部分文件夹受保护，不会改名。扫描完自动关掉。",
         scanPageForce: "重新获取已扫描的模型",
-        scanPageForceHelp: "每个模型都重新计算哈希并联网获取，很慢；你自己换的封面会被 Civitai 的封面替换（删除）。扫描完自动关掉。",
+        scanPageForceHelp: "每个模型都重新计算哈希并联网获取，很慢。只更新 Civitai 的信息和 Civitai 的封面；你改的名字、备注和自己换的封面都会保留。扫描完自动关掉。",
+        scanPageForceConfirm: "重新获取全部已扫描的模型？
+
+每个模型都要重新计算哈希、联网下载信息和封面，模型多时可能要很久。
+你改的名字、备注和自己换的封面都会保留；被替换的只有 Civitai 自己的旧封面。",
         scanPageAutoFix: "扫描完自动修复当前工作流里缺失的模型",
         scanPageAutoFixHelp: "像模型医生一样，把画布上找不到的模型换成本地对应的那个。",
         scanPageApiKey: "Civitai API Key",
@@ -2135,9 +2139,13 @@ export const i18n = {
         scanPageDisplayName: "Use Civitai's name as the display name",
         scanPageDisplayNameHelp: "Only the name shown on cards; files keep their names. Names you set in the model editor are kept.",
         scanPageFileRename: "Also rename the files on disk",
-        scanPageFileRenameHelp: "Really renames model files, so older workflows using them need the Model Doctor; of two identical copies one is deleted; protected folders are never renamed. Turns itself off after the scan.",
+        scanPageFileRenameHelp: "Really renames model files, so older workflows using them need the Model Doctor; of two identical copies one goes to the Recycle Bin; protected folders are never renamed. Turns itself off after the scan.",
         scanPageForce: "Fetch scanned models again",
-        scanPageForceHelp: "Every model is hashed and fetched again, which is slow; covers you set yourself are replaced (deleted) by Civitai's. Turns itself off after the scan.",
+        scanPageForceHelp: "Every model is hashed and fetched again, which is slow. Only Civitai's information and Civitai's covers are updated; names, notes and covers you set stay. Turns itself off after the scan.",
+        scanPageForceConfirm: "Fetch every scanned model again?
+
+Each model is hashed and its information and cover downloaded again, which can take long for a big library.
+Names, notes and covers you set stay; only Civitai's own older covers are replaced.",
         scanPageAutoFix: "Fix missing models in the open workflow afterwards",
         scanPageAutoFixHelp: "Like the Model Doctor, swaps models the canvas cannot find for your local copies.",
         scanPageApiKey: "Civitai API key",

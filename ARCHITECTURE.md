@@ -73,7 +73,13 @@ covered by the `styles.css` manifest.
 - `api/path_utils.py` owns containment, filename validation, atomic JSON writes, and resolving
   a saved model value inside the model folders;
   `api/utils.py` is a compatibility export surface.
-- `api/metadata.py` owns sidecar and safetensors metadata extraction.
+- `api/metadata.py` owns sidecar and safetensors metadata extraction. A model's information
+  has three layers, the user's first: `<model>.anomalous.json` (what the model editor set; only
+  the editor writes it), the scan result (`<model>.info`, or another tool's `.civitai.info`
+  with Civitai ids; `id: -1` means inferred from the file) and the file itself. Metadata
+  reports `info_source` (`civitai` / `local` / empty) and `user_fields`. A cover is Civitai's
+  only while it is byte-identical to `<model>.civitai_bak.*`; any other cover is the user's,
+  and no scan replaces or deletes it.
 - `api/model_catalog.py`, `api/model_resolution.py`, `api/model_metadata.py`, and
   `api/model_media.py` own model listing, identity recovery, mutation, and covers;
   `api/models.py` is a compatibility facade; `api/model_constants.py` holds the

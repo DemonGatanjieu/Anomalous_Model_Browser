@@ -1,21 +1,46 @@
-"""File SHA-256 evidence shared by the standalone scanner and API."""
+"""File SHA-256 evidence and the model sidecars, shared by the standalone scanner and API.
+
+A model's information comes in three layers, the user's first:
+- <model>.anomalous.json  what the user set in the model editor (only the editor writes it);
+- <model>.info            what a scan found: Civitai's record, or (id -1) what the file
+                          itself tells; <model>.civitai.info is the same from other tools;
+- the model file itself.
+"""
 
 import json
 import os
 import re
 
 
-def sidecar_info(base):
-    """A model's .info (or .civitai.info) sidecar as a dict; None when missing or unreadable.
-    ``base`` is the model path without its extension."""
-    for ext in (".info", ".civitai.info"):
-        if os.path.exists(base + ext):
-            try:
-                with open(base + ext, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            except (OSError, ValueError):
-                return None
+USER_INFO_SUFFIX = ".anomalous.json"
+
+
+def read_json(path):
+    """A JSON object from ``path``; None when missing, unreadable or not an object."""
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def scan_info_path(base):
+    """The sidecar holding a scan result: <model>.info, else another tool's <model>.civitai.info.
+    A .civitai.info with only edits made in older versions (no Civitai ids) does not count,
+    so editing a model's name never makes it look scanned. ``base``: the path without extension."""
+    if os.path.exists(base + ".info"):
+        return base + ".info"
+    data = read_json(base + ".civitai.info")
+    if data is not None and ("id" in data or "modelId" in data):
+        return base + ".civitai.info"
     return None
+
+
+def sidecar_info(base):
+    """The scan result (see scan_info_path) as a dict; None when there is none or it is unreadable."""
+    path = scan_info_path(base)
+    return read_json(path) if path else None
 
 
 def is_unmatched(info):

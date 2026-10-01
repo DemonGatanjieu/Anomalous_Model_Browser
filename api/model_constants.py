@@ -5,7 +5,7 @@ MODEL_EXTENSIONS = ('.safetensors', '.ckpt', '.pt', '.bin')
 PREVIEW_SUFFIXES = tuple(f'.preview{ext}' for ext in MEDIA_EXTENSIONS)
 CIVITAI_BACKUP_SUFFIXES = tuple(f'.civitai_bak{ext}' for ext in MEDIA_EXTENSIONS)
 SIDECAR_SUFFIXES = (
-    '.info', '.civitai.info', '.json', '.txt', '.yaml',
+    '.info', '.civitai.info', '.anomalous.json', '.json', '.txt', '.yaml',
     *MEDIA_EXTENSIONS,
     *PREVIEW_SUFFIXES,
     *CIVITAI_BACKUP_SUFFIXES,

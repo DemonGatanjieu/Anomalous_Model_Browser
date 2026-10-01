@@ -11,9 +11,12 @@ from aiohttp import web
 import folder_paths
 import struct
 try:
-    from ..model_identity import sidecar_file_hash
+    from ..model_identity import USER_INFO_SUFFIX, is_unmatched, read_json, sidecar_file_hash, sidecar_info
 except ImportError:
-    from model_identity import sidecar_file_hash
+    from model_identity import USER_INFO_SUFFIX, is_unmatched, read_json, sidecar_file_hash, sidecar_info
+
+# Fields the model editor sets: <model>.anomalous.json key -> metadata key.
+USER_FIELDS = {"custom_name": "custom_name", "custom_notes": "custom_notes", "source_url": "source_url"}
 
 def _select_info_file(data, file_path):
     """Select the Civitai file entry that actually describes ``file_path``.
@@ -97,7 +100,10 @@ def _read_metadata(file_path):
         "hash_scope": "file",
         "hash_source": "",
         "custom_name": "",
-        "custom_notes": ""
+        "custom_notes": "",
+        # "civitai" (matched), "local" (only what the file tells: no match, or offline) or "" (not scanned)
+        "info_source": "",
+        "user_fields": [],
     }
     
     info_files = [f"{base_path}.info", f"{base_path}.civitai.info"]
@@ -154,7 +160,16 @@ def _read_metadata(file_path):
                     if "anomalous_source_url" in data and data["anomalous_source_url"]: metadata["source_url"] = data["anomalous_source_url"]
             except Exception:
                 pass
-    
+
+    scan = sidecar_info(base_path)
+    if scan is not None:
+        metadata["info_source"] = "local" if is_unmatched(scan) else "civitai"
+    # The user's own layer comes last and wins, also when a field was cleared on purpose ("").
+    user = read_json(base_path + USER_INFO_SUFFIX) or {}
+    for key, field in USER_FIELDS.items():
+        if isinstance(user.get(key), str):
+            metadata[field] = user[key]
+            metadata["user_fields"].append(field)
     return metadata
 
 
@@ -172,6 +187,7 @@ def _metadata_signature(file_path):
         _file_signature(file_path),
         _file_signature(f"{base_path}.info"),
         _file_signature(f"{base_path}.civitai.info"),
+        _file_signature(base_path + USER_INFO_SUFFIX),
     )
 
 

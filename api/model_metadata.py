@@ -16,6 +16,11 @@ from .model_constants import (
 )
 from .model_catalog import _resolve_paths_to_model_info_sync
 from .trash import move_to_trash, trash_failure
+from .utils import atomic_write_json
+try:
+    from ..model_identity import USER_INFO_SUFFIX, read_json
+except ImportError:
+    from model_identity import USER_INFO_SUFFIX, read_json
 from .utils import require_filename, resolve_folder_subdir, resolve_within
 
 def _first_existing_sidecar(base_path, suffixes):
@@ -183,28 +188,18 @@ async def api_update_metadata(request):
             
         base_name = os.path.splitext(file_path)[0]
         model_ext = os.path.splitext(file_path)[1]
-        info_file = f"{base_name}.civitai.info"
-        
-        info_data = {}
-        if os.path.exists(info_file):
-            parsed = False
-            for enc in ['utf-8', 'utf-8-sig', 'mbcs', 'latin-1']:
-                try:
-                    with open(info_file, 'r', encoding=enc) as f:
-                        info_data = json.load(f)
-                    parsed = True
-                    break
-                except Exception:
-                    pass
-            if not parsed:
-                return web.json_response({"status": "error", "message": "Failed to parse existing .civitai.info file due to encoding or corruption. Rename aborted to prevent data loss."})
-                
+        # The user's edits have a file of their own (<model>.anomalous.json): a scan never
+        # writes it, and other tools that rewrite .civitai.info cannot lose them.
+        user_file = base_name + USER_INFO_SUFFIX
+        if os.path.exists(user_file) and read_json(user_file) is None:
+            return web.json_response({"status": "error", "message": f"{os.path.basename(user_file)} is unreadable; nothing was changed."})
+        user_data = read_json(user_file) or {"format": 1}
         if 'custom_name' in data:
-            info_data["anomalous_custom_name"] = custom_name
+            user_data["custom_name"] = str(custom_name)
         if 'custom_notes' in data:
-            info_data["anomalous_custom_notes"] = custom_notes
+            user_data["custom_notes"] = str(custom_notes)
         if custom_source_url is not None:
-            info_data["anomalous_source_url"] = str(custom_source_url).strip()
+            user_data["source_url"] = str(custom_source_url).strip()
         
         reset_cover = data.get('reset_cover', False)
         cover_reset = None
@@ -213,8 +208,7 @@ async def api_update_metadata(request):
         if reset_cover:
             cover_reset, cover_reset_source, cover_reset_warning = _reset_model_cover(base_name)
 
-        with open(info_file, 'w', encoding='utf-8') as f:
-            json.dump(info_data, f, indent=4, ensure_ascii=False)
+        atomic_write_json(user_file, user_data)
             
         new_filename = filename
         

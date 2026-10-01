@@ -149,6 +149,7 @@ async function run(owner, panel, extra = {}) {
         alert(t('scanPageNothingPicked'));
         return;
     }
+    if (options.forceOverwrite && !extra.retryUnmatched && !confirm(t('scanPageForceConfirm'))) return;
     const selection = options.scope === 'picked' && !extra.retryUnmatched ? options.selection : null;
     const started = startScan(owner, { ...options, ...extra, selection });
     renderScanPage(owner, panel); // buttons show "scanning"
