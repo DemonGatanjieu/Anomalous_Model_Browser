@@ -11,6 +11,8 @@ import { translate as t } from './locales.js';
 import { updateScanProgress, finishScanProgress, failScanProgress } from './scan_progress.js';
 import { oneModelLine, resultLine } from './scan_results.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
+import { checkWorkflowModels, fixWorkflowModels } from './model_check.js';
+import { updateDoctorBanner } from './ui_doctor_banner.js';
 
 const POLL_MS = 2000;
 const SCAN_RADAR_ICON_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="21" stroke-opacity="0.35"/><line x1="3" y1="12" x2="21" y2="12" stroke-opacity="0.35"/><line x1="12" y1="12" x2="18.5" y2="5.5" stroke-width="2"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>`;
@@ -119,7 +121,13 @@ async function afterScan(owner, autoFix) {
     } catch (error) {
         console.warn('[AMB] Error reloading hashes or combo nodes:', error);
     }
-    if (autoFix && window.anomalous_resolve_all_missing_nodes) window.anomalous_resolve_all_missing_nodes(true);
+    if (autoFix) {
+        // The scan may have hashed the files the open workflow could not find.
+        const entries = await checkWorkflowModels();
+        const count = fixWorkflowModels(entries);
+        updateDoctorBanner(owner, count ? await checkWorkflowModels() : entries, count);
+        if (count) showWorkbenchToast(t('doctorBannerPutIn', { count }));
+    }
     owner.loadModels?.();
 }
 

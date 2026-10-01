@@ -51,62 +51,6 @@ function createModelLocationCard(model) {
 
 
 export function showDetail(model) {
-        if (this.isPickingModelForNode) {
-            const targetNode = this.isPickingModelForNode.node;
-            const targetWidget = this.isPickingModelForNode.widget;
-            if (!targetNode || !targetWidget || !model?.filename) {
-                this.isPickingModelForNode = null;
-                return;
-            }
-
-            const normVal = (model.filename).replace(/\\/g, '/');
-            let foundPath = model.filename;
-            if (targetWidget.options && targetWidget.options.values) {
-                const exactMatch = targetWidget.options.values.find(v => typeof v === 'string' && v.replace(/\\/g, '/').endsWith(normVal));
-                if (exactMatch) foundPath = exactMatch;
-            }
-            const oldValue = targetWidget.value;
-            const widgetIndex = targetNode.widgets?.indexOf(targetWidget) ?? -1;
-            app.graph?.beforeChange?.(targetNode);
-            try {
-                targetWidget.value = foundPath;
-                if (widgetIndex >= 0) {
-                    targetNode.widgets_values = Array.isArray(targetNode.widgets_values)
-                        ? targetNode.widgets_values
-                        : (targetNode.widgets || []).map((widget) => widget?.value);
-                    targetNode.widgets_values[widgetIndex] = foundPath;
-                }
-                delete targetNode.color;
-                delete targetNode.bgcolor;
-                targetNode.has_errors = false;
-                if (typeof targetWidget.callback === 'function') {
-                    targetWidget.callback.call(targetWidget, targetWidget.value, app.canvas, targetNode, app.canvas?.graph_mouse, null);
-                }
-                if (typeof targetNode.onWidgetChanged === 'function' && widgetIndex >= 0) {
-                    targetNode.onWidgetChanged(widgetIndex, targetWidget.value, oldValue, targetWidget);
-                }
-                app.graph?.afterChange?.(targetNode);
-                app.graph?.change?.();
-                app.graph?.setDirtyCanvas?.(true, true);
-                app.canvas?.setDirty?.(true, true);
-                try { window.dispatchEvent(new CustomEvent('graphChanged')); } catch (error) {}
-            } catch (error) {
-                targetWidget.value = oldValue;
-                if (widgetIndex >= 0 && Array.isArray(targetNode.widgets_values)) targetNode.widgets_values[widgetIndex] = oldValue;
-                app.graph?.afterChange?.(targetNode);
-                console.error('Could not apply selected model to node:', error);
-                return;
-            }
-
-            this.isPickingModelForNode = null;
-            const banner = document.getElementById('anomalous-picker-banner');
-            if (banner) banner.remove();
-
-            if (this.grid) this.grid.style.display = 'none';
-            this.doctorPanel.style.display = 'flex';
-            this.diagnoseNode(targetNode);
-            return;
-        }
         if (this.currentDetailObserver) {
             this.currentDetailObserver.disconnect();
             this.currentDetailObserver = null;
@@ -177,12 +121,6 @@ export function showDetail(model) {
             }
             if (this.historyStack.length > 0) {
                 const prev = this.historyStack.pop();
-                if (prev.type === 'doctor') {
-                    this.detailPanel.style.display = 'none';
-                    this.stopMediaInContainer(this.detailPanel); this.detailPanel.innerHTML = '';
-                    this.doctorPanel.style.display = 'flex';
-                    return;
-                }
                 if (prev.type === 'assistant') {
                     this.detailPanel.style.display = 'none';
                     this.stopMediaInContainer(this.detailPanel); this.detailPanel.innerHTML = '';

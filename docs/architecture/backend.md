@@ -112,8 +112,7 @@ small bounded safetensors header is acceptable; reading a whole multi-gigabyte
 model to discover metadata is not.
 
 Background work claims state before launching. Folder scans use
-`.scan_in_progress`; global quick scans use `.global_scan_in_progress`; deep
-missing-model scans use `GLOBAL_SCAN_STATE` and the corresponding status route.
+`.scan_in_progress`; global scans use `.global_scan_in_progress`.
 Marker files are versioned JSON records containing backend session, owner PID,
 worker PID, and job ID. Status checks validate ownership and process liveness;
 file existence alone is not proof that a scan is active.

@@ -65,10 +65,7 @@ export function createSettingsHub(owner, {
         // Reset dynamic panels so they re-render in new language
         if (window.anomalousBrowserInstance) {
             const b = window.anomalousBrowserInstance;
-            if (b.doctorPanel) {
-                b.doctorPanel.innerHTML = '';
-                b.doctorPanelInitialized = false;
-            }
+            if (b.doctorPanel && b.doctorPanel.style.display !== 'none') b.openDoctorPage();
             if (b.assistantPanel && b.assistantPanelInitialized) {
                 const selectedNode = Object.values(app.canvas?.selected_nodes || {})[0] || null;
                 b.assistantPanelInitialized = false;

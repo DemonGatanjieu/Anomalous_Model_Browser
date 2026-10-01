@@ -245,7 +245,6 @@ export async function openMaterialWorkflow(owner, filename) {
     app.canvas?.setDirty?.(true, true);
     owner.closeWorkspace?.();
     owner.close?.();
-    window.setTimeout(() => window.anomalous_resolve_all_missing_nodes?.(true, false), 0);
 }
 
 function buildMaterialDetailHeader(owner, material) {

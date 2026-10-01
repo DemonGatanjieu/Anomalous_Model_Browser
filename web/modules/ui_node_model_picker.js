@@ -423,6 +423,8 @@ export function _openGalleryReplacer(node, w, options = {}) {
                     try {
                         setWidgetValue(node, w, selectedPath);
                         if (typeof w.callback === 'function') w.callback(w.value, app.canvas, node, app.canvas?.graph_mouse, null);
+                        // ComfyUI clears its own missing-model mark through this hook.
+                        node.onWidgetChanged?.(w.name, w.value, oldValue, w);
                         app.graph?.afterChange?.(node);
                     } catch (error) {
                         setWidgetValue(node, w, oldValue);
@@ -440,6 +442,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
                 try { window.dispatchEvent(new CustomEvent('graphChanged')); } catch (error) {}
                 closeModal();
                 if (mode === 'insert' && app.canvas?.selectNode) app.canvas.selectNode(node);
+                else if (options.onApplied) options.onApplied();
                 else this.diagnoseNode(node);
             } catch (error) {
                 setWidgetValue(node, w, oldValue);

@@ -396,8 +396,11 @@ covered by the `styles.css` manifest.
   need a workflow-carried hash before Model Doctor recovers them.
 - `ui_dom.js` provides small DOM/JSON helpers; `material_inspector.js` owns
   material-specific metadata and parameter rendering.
-- `ui_doctor.js` owns diagnostics and global scans; `ui_node_assistant.js` owns
-  selected-node assistant history, `ui_node_model_picker.js` owns native combo
+- `model_check.js` checks the open workflow's models against this computer (Model
+  Doctor's verdicts, no DOM) and puts a found file into its node; `ui_doctor.js` is the
+  doctor page and `ui_doctor_banner.js` the bar over the canvas when an opened workflow
+  misses models. `ui_node_assistant.js` owns the selected-node assistant (actions, LoRA
+  insertion, history), `ui_node_model_picker.js` owns native combo
   replacement, and `ui_node_presets.js` owns parameter preset rendering and
   application. `model_picker.js`, `node_material_actions.js`, and `graph_splice.js`
   own the remaining explicit graph changes.

@@ -1,8 +1,13 @@
-/** Node Assistant panel and model history cards. */
+/** Node Assistant panel: the selected node's actions (change its model, insert a LoRA),
+ * model history cards and parameter presets. */
 
 import { app } from "../../../scripts/app.js";
 import { translate } from "./locales.js";
+import { analyzeModelChainInsertion, getModelChainInsertionCapabilities } from "./graph_splice.js";
 import { formatModelTypeLabel, inferPickerModelType } from "./model_picker.js";
+import { escapeHtml } from "./safe_dom.js";
+import { findModelComboWidget, getNativeWidgetValues } from "./ui_node_model_picker.js";
+import { renderParameterPresets } from "./ui_node_presets.js";
 
 const t = (key, params) => translate(key, params);
 
@@ -288,3 +293,222 @@ if (img.workflow) {
             }).catch(() => { });
     }
 
+function getInsertionCapabilityMessage(capability) {
+    const messages = {
+        missing_graph_or_node: 'doctorGraphUnavailable',
+        missing_chain_inputs: 'doctorMissingChainInputs',
+        unconnected_chain_inputs: 'doctorUnconnectedChainInputs',
+        missing_chain_outputs: 'doctorMissingChainOutputs',
+        ambiguous_downstream_branches: 'doctorAmbiguousBranches',
+        invalid_downstream_link: 'doctorInvalidDownstream',
+    };
+    return t(messages[capability?.code] || 'doctorUnsupportedInsertion');
+}
+
+export function openLoraInsertionPicker(anchorNode, direction) {
+    const analysis = analyzeModelChainInsertion(app.graph, anchorNode, direction);
+    if (!analysis.supported) {
+        alert(getInsertionCapabilityMessage(analysis));
+        return;
+    }
+
+    const insertedNode = typeof LiteGraph !== 'undefined' ? LiteGraph.createNode('LoraLoader') : null;
+    if (!insertedNode) {
+        alert(t('doctorCreateLoraFailed'));
+        return;
+    }
+
+    const modelWidget = findModelComboWidget(insertedNode);
+    if (!modelWidget || getNativeWidgetValues(insertedNode, modelWidget).length === 0) {
+        alert(t('doctorLoraNotReady'));
+        return;
+    }
+
+    this._openGalleryReplacer(insertedNode, modelWidget, {
+        mode: 'insert',
+        direction,
+        anchorNode,
+        analysis,
+        modelTypeLabel: 'LoRA',
+    });
+}
+
+export function diagnoseNode(node, forceRefresh = false) {
+        // This method serves the Node Assistant panel only
+        if (!this.assistantPanelInitialized) {
+            this.initAssistantPanel();
+        }
+        const placeholder = document.getElementById('anomalous-assistant-placeholder');
+        const nodeContent = document.getElementById('anomalous-assistant-node-content');
+        if (!placeholder || !nodeContent || !app.graph || !app.graph._nodes) return;
+
+if (!node) {
+            placeholder.innerHTML = `<div style="font-size:48px;">🤖</div><div style="text-align:center;">${t('assistantSelectNode')}</div>`;
+            placeholder.style.display = 'flex';
+            nodeContent.style.display = 'none';
+            nodeContent.innerHTML = '';
+            return;
+        }
+
+        const modelWidgets = [];
+if (node.widgets) {
+for (const w of node.widgets) {
+                if (w.type === 'combo' && typeof w.value === 'string') {
+                    if (w.value.match(/\.(safetensors|ckpt|pt|bin|pth|sft)$/i)) modelWidgets.push(w);
+                }
+            }
+        }
+
+        const insertionCapabilities = getModelChainInsertionCapabilities(app.graph, node);
+        const canInsert = insertionCapabilities.before.supported || insertionCapabilities.after.supported;
+
+        const hasModelOrInsertion = modelWidgets.length > 0 || canInsert;
+
+        placeholder.style.display = 'none';
+        nodeContent.style.display = 'flex';
+        nodeContent.innerHTML = '';
+
+        const titleBar = document.createElement('div');
+        titleBar.style.cssText = 'margin:14px 16px 0;padding:16px;border:1px solid rgba(255,255,255,0.1);border-radius:12px;background:rgba(255,255,255,0.04);display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 8px 24px rgba(0,0,0,0.25);';
+        titleBar.innerHTML = `<span style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);">🤖</span><span style="display:flex;flex-direction:column;min-width:0;gap:3px;"><span style="font-size:10px;letter-spacing:0.11em;text-transform:uppercase;color:#9ca3af;">${t('assistantSelectedNode')}</span><span class="ast-title" style="font-weight:700;color:#f3f4f6;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span></span><span class="ast-type" style="font-size:10px;color:#d1d5db;margin-left:auto;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);max-width:38%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>`;
+        titleBar.querySelector('.ast-title').textContent = node.title || node.type || 'Node';
+        titleBar.querySelector('.ast-type').textContent = node.type || '';
+
+        const refreshBtn = document.createElement('button');
+        refreshBtn.title = t('refresh') || 'Refresh';
+        refreshBtn.innerHTML = '🔄';
+        refreshBtn.style.cssText = 'background:none; border:none; color:#c9d6ff; cursor:pointer; font-size:14px; padding:4px; margin-left:4px; border-radius:4px; transition:background 0.2s, transform 0.3s; display:flex; align-items:center; justify-content:center;';
+        refreshBtn.onmouseover = () => refreshBtn.style.background = 'rgba(255,255,255,0.1)';
+        refreshBtn.onmouseout = () => refreshBtn.style.background = 'none';
+        refreshBtn.onclick = () => {
+            refreshBtn.style.transform = 'rotate(180deg)';
+            setTimeout(() => this.diagnoseNode(node, true), 150);
+        };
+        titleBar.appendChild(refreshBtn);
+
+        nodeContent.appendChild(titleBar);
+
+        const quickActions = document.createElement('div');
+        quickActions.style.cssText = 'padding:14px 16px 4px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;flex-shrink:0;';
+        const actionsLabel = document.createElement('div');
+        actionsLabel.textContent = t('assistantQuickActions');
+        actionsLabel.style.cssText = 'grid-column:1/-1;color:#8b91a3;font-size:10px;font-weight:750;letter-spacing:0.1em;text-transform:uppercase;padding:0 2px 2px;';
+        quickActions.appendChild(actionsLabel);
+
+        const makeActionButton = ({ icon, label, hint, accent, onClick, capability = null, primary = false }) => {
+            const button = document.createElement('button');
+            const enabled = !capability || capability.supported;
+            button.disabled = !enabled;
+            const gridPlacement = primary ? 'grid-column:1/-1;' : '';
+            button.style.cssText = gridPlacement + (enabled
+                ? `min-width:0;padding:${primary ? '13px 14px' : '11px 10px'};background:${accent};color:#fff;border:1px solid rgba(255,255,255,0.14);border-radius:11px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;transition:transform 0.15s,filter 0.15s,box-shadow 0.15s;box-shadow:0 8px 18px rgba(0,0,0,0.14);`
+                : 'min-width:0;padding:11px 10px;background:rgba(255,255,255,0.035);color:#656b78;border:1px solid rgba(255,255,255,0.055);border-radius:11px;cursor:not-allowed;text-align:left;display:flex;align-items:center;gap:9px;');
+            const iconEl = document.createElement('span');
+            iconEl.textContent = icon;
+            iconEl.style.cssText = `width:${primary ? '34px' : '28px'};height:${primary ? '34px' : '28px'};border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,${enabled ? '0.14' : '0.04'});font-size:${primary ? '17px' : '14px'};flex-shrink:0;`;
+            const copy = document.createElement('span');
+            copy.style.cssText = 'min-width:0;display:flex;flex-direction:column;gap:2px;';
+            const title = document.createElement('span');
+            title.textContent = label;
+            title.style.cssText = `font-weight:750;font-size:${primary ? '13px' : '11px'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
+            const subtitle = document.createElement('span');
+            subtitle.textContent = enabled ? hint : getInsertionCapabilityMessage(capability);
+            subtitle.style.cssText = `font-size:9px;color:${enabled ? 'rgba(255,255,255,0.68)' : '#555b66'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
+            copy.append(title, subtitle);
+            button.append(iconEl, copy);
+            if (enabled) {
+                button.onmouseover = () => { button.style.filter = 'brightness(1.12)'; button.style.transform = 'translateY(-1px)'; };
+                button.onmouseout = () => { button.style.filter = 'brightness(1)'; button.style.transform = 'none'; };
+                button.onclick = onClick;
+            } else if (capability) {
+                button.title = getInsertionCapabilityMessage(capability);
+            }
+            quickActions.appendChild(button);
+        };
+
+        for (const widget of modelWidgets) {
+            const widgetLabel = modelWidgets.length > 1 && widget.name
+                ? t('assistantChangeWidget', { name: widget.name })
+                : t('assistantChangeCurrent');
+            const pickerType = inferPickerModelType(node, widget);
+            makeActionButton({
+                icon: '⇄',
+                label: widgetLabel,
+                hint: t('assistantVisualPicker', { type: pickerType.label }),
+                accent: 'linear-gradient(135deg,rgba(245,124,0,0.96),rgba(255,82,82,0.82))',
+                onClick: () => this._openGalleryReplacer(node, widget),
+                primary: true,
+            });
+        }
+        makeActionButton({
+            icon: '←',
+            label: t('assistantInsertBefore'),
+            hint: t('assistantConnectInputs'),
+            accent: 'linear-gradient(135deg,rgba(25,118,210,0.9),rgba(80,110,230,0.82))',
+            onClick: () => this.openLoraInsertionPicker(node, 'before'),
+            capability: insertionCapabilities.before,
+        });
+        makeActionButton({
+            icon: '→',
+            label: t('assistantInsertAfter'),
+            hint: t('assistantConnectOutputs'),
+            accent: 'linear-gradient(135deg,rgba(0,137,123,0.92),rgba(67,160,71,0.82))',
+            onClick: () => this.openLoraInsertionPicker(node, 'after'),
+            capability: insertionCapabilities.after,
+        });
+        const tabsRow = document.createElement('div');
+        tabsRow.style.cssText = 'display:flex; padding: 10px 16px 0; gap: 8px; flex-shrink:0;';
+
+        const btnActions = document.createElement('button');
+        btnActions.textContent = t('assistantTabActions') || '🛠️ Quick Actions';
+        btnActions.style.cssText = 'flex:1; padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; border: none; font-size: 11px; font-weight: bold; transition: background 0.2s;';
+
+        const btnPresets = document.createElement('button');
+        btnPresets.textContent = t('assistantTabPresets') || '📚 Parameter Presets';
+        btnPresets.style.cssText = 'flex:1; padding: 8px; border-radius: 8px; background: transparent; color: #aaa; cursor: pointer; border: none; font-size: 11px; font-weight: bold; transition: background 0.2s;';
+
+        tabsRow.append(btnActions, btnPresets);
+        nodeContent.appendChild(tabsRow);
+
+        const actionsContainer = document.createElement('div');
+        actionsContainer.style.cssText = 'display:flex; flex-direction:column; flex:1; overflow-y:auto; min-height:0;';
+
+        const presetsContainer = document.createElement('div');
+        presetsContainer.style.cssText = 'display:none; flex-direction:column; flex:1; overflow-y:auto; min-height:0;';
+
+        nodeContent.append(actionsContainer, presetsContainer);
+
+        btnActions.onclick = () => {
+            btnActions.style.background = 'rgba(255,255,255,0.1)';
+            btnActions.style.color = '#fff';
+            btnPresets.style.background = 'transparent';
+            btnPresets.style.color = '#aaa';
+            actionsContainer.style.display = 'flex';
+            presetsContainer.style.display = 'none';
+        };
+
+        btnPresets.onclick = () => {
+            btnPresets.style.background = 'rgba(255,255,255,0.1)';
+            btnPresets.style.color = '#fff';
+            btnActions.style.background = 'transparent';
+            btnActions.style.color = '#aaa';
+            presetsContainer.style.display = 'flex';
+            actionsContainer.style.display = 'none';
+        };
+
+        if (hasModelOrInsertion) {
+            actionsContainer.appendChild(quickActions);
+            for (const w of modelWidgets) {
+                this.renderAssistantModelCard(node, w, actionsContainer);
+            }
+        } else {
+            const noModelWarning = document.createElement('div');
+            noModelWarning.style.cssText = 'display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 30px 20px;';
+            noModelWarning.innerHTML = `<div style="font-size:36px;margin-bottom:10px;">⚠️</div><div style="text-align:center;color:#aaa;font-size:12px;">${t('assistantNoModelParameter')}</div><div style="font-size:10px;color:#555;margin-top:6px;">${escapeHtml(node.type || '')}</div>`;
+            actionsContainer.appendChild(noModelWarning);
+
+            btnPresets.onclick(); // switch to presets by default if no model actions
+        }
+
+        renderParameterPresets.call(this, node, presetsContainer, forceRefresh);
+    }

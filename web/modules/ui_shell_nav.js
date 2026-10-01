@@ -19,7 +19,6 @@ const AUDIO_PAGES = new Set(['voices', 'audio-gallery']);
 // Pages with a list column, and where each remembers whether you closed it.
 const LIST_KEYS = {
     models: 'anomalous_user_sidebar_closed',
-    doctor: 'anomalous_user_sidebar_closed',
     voices: 'anomalous_audio_list_closed',
     'audio-gallery': 'anomalous_audio_list_closed',
 };

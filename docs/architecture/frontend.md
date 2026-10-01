@@ -76,9 +76,11 @@ The main surfaces are:
   discovery/pagination, cards, detail, and node application are separated across
   `ui_materials.js`, `ui_material_cards.js`, `ui_material_detail.js`, and
   `ui_material_application.js`.
-- Node Assistant/Model Doctor: selected-node actions, diagnostics, parameter
-  presets, and missing-model recovery. `ui_doctor.js` coordinates diagnosis and
-  global scans, `ui_node_assistant.js` owns assistant history, `ui_node_model_picker.js`
+- Node Assistant/Model Doctor: selected-node actions, parameter presets, and
+  missing-model recovery. `model_check.js` decides each workflow model's state and
+  applies fixes; `ui_doctor.js` (the page) and `ui_doctor_banner.js` (the bar shown
+  after a workflow opens) only render it and call it on a press.
+  `ui_node_assistant.js` owns the selected-node panel and history, `ui_node_model_picker.js`
   owns the native-widget model replacer, and `ui_node_presets.js` owns parameter
   preset previews and application.
 
@@ -218,9 +220,9 @@ widget objects.
 
 ## Optional capabilities
 
-`web/hash_resolver.js` may hook a compatible graph serializer to carry model
-provenance. If the host API is unavailable, it disables only that integration
-with a useful warning. It must not prevent `main.js` from registering or remove
+`web/hash_resolver.js` keeps the local hash cache and may hook a compatible graph
+serializer to carry model provenance. If the host API is unavailable, it disables
+only that integration with a useful warning. It must not prevent `main.js` from registering or remove
 the visible browser entry.
 
 Network-backed enrichment is explicit and recoverable. An unavailable Civitai

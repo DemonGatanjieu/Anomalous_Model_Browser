@@ -16,9 +16,9 @@ Allowed automatic evidence is:
 3. the model category required by the target widget.
 
 Without a hash, one unique in-category size match is only a candidate. Model
-Doctor may show it during an explicit manual check, but it cannot redirect the
-node until the user confirms that candidate. Confirmation applies to the current
-node only; it does not create a persistent binding. If both hash and size are
+Doctor shows it, but it cannot redirect the node until the user takes that
+candidate. Confirmation applies to the current node only; it does not create a
+persistent binding. If both hash and size are
 present and point to conflicting physical files (both match distinct local files),
 resolution reports an identity conflict and is rejected. When a requested model hash
 simply does not exist in any local file, it returns `{"found": False}` cleanly without
@@ -91,7 +91,7 @@ position is not identity.
 
 ## Deep scanning
 
-Deep Hash Scan runs outside the aiohttp event loop and identifies a model through
+A scan (the scan page) runs outside the aiohttp event loop and identifies a model through
 the established fallback sequence:
 
 1. use existing valid file SHA-256 metadata when the scan does not request refresh;
@@ -131,8 +131,15 @@ may write offline metadata for later reuse.
 After a hash match—or explicit confirmation of a size-only candidate—the
 frontend refreshes ComfyUI's native combo definitions and accepts the returned
 path only if it is present in the target widget's choices. Then it updates the
-dropdown and clears the missing-model presentation. Background checks may
-surface size candidates but never prompt for or apply them.
+dropdown through the node's widget hooks, which also clears ComfyUI's
+missing-model mark.
+
+Checking never changes the workflow (`model_check.js`). Every opened workflow is
+checked without reloading ComfyUI's model lists; when models are missing, a bar
+over the canvas says how many and how many hash matches can be put in. Only a
+press puts them in: the bar's or the doctor page's for hash matches, the page's
+per-row button for a size-only candidate. A scan with "fix the open workflow"
+on puts hash matches in when it ends.
 
 Provenance-rich workflows skip the redundant full filename-to-hash cache refresh.
 Legacy workflows without injected provenance may refresh it for compatibility.

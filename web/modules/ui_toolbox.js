@@ -59,17 +59,7 @@ export function createToolbox(owner, {
                 owner.openScanPage();
                 break;
             case 'doctor':
-                owner.enterToolPage?.('doctor');
-                owner.hideAllPanels();
-                owner.doctorPanel.style.display = 'flex';
-                if (!owner.doctorPanelInitialized) {
-                    owner.initDoctorPanel();
-                }
-                if (window.anomalous_reload_hashes) await window.anomalous_reload_hashes();
-                if (window.anomalous_resolve_all_missing_nodes) {
-                    await window.anomalous_resolve_all_missing_nodes(true, false);
-                }
-                owner.renderGlobalDashboard();
+                owner.openDoctorPage();
                 break;
             case 'assistant':
                 owner.enterToolPage?.('assistant');

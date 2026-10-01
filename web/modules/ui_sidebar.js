@@ -18,6 +18,7 @@ import { installShellNavigation } from './ui_shell_nav.js';
 import { bindShellDrag, bindShellResize } from './ui_shell_frame.js';
 import { watchScans } from './ui_scan_watch.js';
 import { watchCanvasChanges } from './activity_canvas.js';
+import { watchWorkflowLoads } from './ui_doctor_banner.js';
 import { settleModelScope } from './ui_model_types.js';
 
 const t = (key, params) => translate(key, params);
@@ -165,11 +166,6 @@ export function createDOM() {
         this.activityPanel = panel('anomalous-activity-panel');
         this.scanPanel = panel('anomalous-scan-panel');
         this.doctorPanel = panel('anomalous-doctor-panel');
-        this.doctorPanel.style.flexDirection = 'column';
-        this.doctorPanel.style.flex = '1';
-        this.doctorPanel.style.overflowY = 'auto';
-        this.doctorPanel.style.boxSizing = 'border-box';
-        this.doctorPanelInitialized = false;
         this.assistantPanel = panel('anomalous-assistant-panel');
         this.assistantPanel.style.flexDirection = 'column';
         this.assistantPanel.style.flex = '1';
@@ -226,6 +222,7 @@ export function createDOM() {
 
         installShellNavigation(this, { container, rail, listToggle, title: pageTitle });
         watchCanvasChanges(this);
+        watchWorkflowLoads(this);
 
         const isScanning = watchScans(this);
         let settingsHubControl = null;

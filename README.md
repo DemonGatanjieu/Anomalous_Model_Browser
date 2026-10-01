@@ -46,7 +46,7 @@ Every page has an icon on the rail at the left of the window.
 Tools on the rail:
 
 * **Scan** reads your model folders and fetches covers, trigger words and base models from Civitai (by file hash, no extra Python packages).
-* **Model Doctor** finds your local copy of each model a workflow is missing, by hash and file size, and swaps it in.
+* **Model Doctor** checks each workflow you open: when models are missing, a bar over the canvas says so and puts back, with one press, the ones you have under another name or folder (recognised by hash and file size); its page lists the rest with what you can do.
 * **Node Assistant** shows the model of the node you select, lets you swap it from the covers or insert a LoRA, and applies saved parameters.
 * **Toolbox** holds the rest: workflow share codes (import / export), Prompt Studio, the prompt translator, Model Sources (where each model can be downloaded) and Prompt Notes.
 * **Settings** (at the bottom): language, font size, thumbnails, video covers, which model folders to show, and feedback.
@@ -105,7 +105,7 @@ The first time you open it, start on **Home**: **Scan model folders** fills in c
 图标栏上的工具：
 
 * **扫描**：读取模型文件夹，按文件哈希从 C 站获取封面、触发词和底模。不需要额外安装 Python 包。
-* **模型医生**：工作流里缺的模型，按哈希和文件大小在本地找到对应的那个并替换。
+* **模型医生**：打开工作流时自动检查，缺模型就在画布上方提示；本地改过名、换过文件夹的同一个文件（按哈希和文件大小认）一键换上，其余的在医生页里自己挑或去 Civitai 找。
 * **节点助手**：选中画布上的节点，查看它用的模型。可以看图换模型、插入 LoRA，或套用保存过的参数。
 * **工具箱**：其余工具都在这里，包括工作流分享码（导入导出）、提示词工坊、翻译助手、模型来源（每个模型去哪下载）和提示词笔记。
 * **设置**（最下面）：语言、字号、缩略图、视频封面、显示哪些模型文件夹，以及提交反馈。
