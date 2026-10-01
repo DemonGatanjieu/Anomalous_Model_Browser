@@ -14,7 +14,10 @@ injection, host saving, and ordinary image downloads remain unchanged.
 ComfyUI loads JavaScript in the extension `WEB_DIRECTORY` as ES modules.
 `web/main.js` registers `Anomalous.ModelBrowser` and coordinates host hooks.
 `browser.js` defines the browser class and binds extracted feature methods;
-`browser_entry.js` owns the single browser instance and all entry presentation;
+`browser_entry.js` owns the single browser instance and all entry presentation,
+including `window.anomalous_open_voice(character)`, which the Anomalous_TTS node's
+character menu calls to open one character's voice card (`browser.openVoice`; the
+node pack documents it in its `docs/INTERFACE.md` §6);
 `interface_settings.js` owns locale and theme preferences. A syntax error or duplicate
 top-level declaration in any imported module can prevent registration and make
 the entire entry disappear. For affected modules, validate syntax and module linking

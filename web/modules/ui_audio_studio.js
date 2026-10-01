@@ -408,19 +408,14 @@ function renderInstallCard() {
     desc.textContent = t('audioEngineDesc');
     const how = document.createElement('div');
     how.className = 'anomalous-audio-install-how';
-    how.textContent = TTS_ENGINE.repoUrl
-        ? t('audioEngineInstallHow', { search: TTS_ENGINE.managerSearch })
-        : t('audioEngineNotPublished', { pack: TTS_ENGINE.pack });
-    card.append(title, desc, how);
-    if (TTS_ENGINE.repoUrl) {
-        const link = document.createElement('a');
-        link.className = 'anomalous-audio-install-link';
-        link.href = TTS_ENGINE.repoUrl;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.textContent = t('audioEngineOpenRepo');
-        card.append(link);
-    }
+    how.textContent = t('audioEngineInstallHow', { search: TTS_ENGINE.managerSearch });
+    const link = document.createElement('a');
+    link.className = 'anomalous-audio-install-link';
+    link.href = TTS_ENGINE.repoUrl;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = t('audioEngineOpenRepo');
+    card.append(title, desc, how, link);
     return card;
 }
 

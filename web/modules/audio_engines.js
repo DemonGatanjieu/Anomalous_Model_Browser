@@ -14,10 +14,14 @@ import { TTS_NODE_CLASS } from './audio_script.js';
 export const TTS_ENGINE = Object.freeze({
     label: 'GPT-SoVITS',
     pack: 'Anomalous_TTS',
-    // Not published yet: the install card explains instead of linking.
-    repoUrl: '',
+    repoUrl: 'https://github.com/DemonGatanjieu/Anomalous_TTS',
     managerSearch: 'Anomalous TTS',
 });
+
+/** The voice group (and audio-page filter value) of a GPT-SoVITS character. */
+export function voiceGroupKey(name) {
+    return `gpt_sovits:${name}`;
+}
 
 // ---------- normalisation ----------
 
@@ -52,7 +56,7 @@ export function gptSovitsGroups(payload) {
             if (emotion !== 'main' && ref?.audio) slices.push(ttsSlice(name, emotion, ref, false));
         }
         return {
-            group: `gpt_sovits:${name}`,
+            group: voiceGroupKey(name),
             character: name,
             language: item.language || '',
             aliases: Array.isArray(item.aliases) ? item.aliases : [],

@@ -24,6 +24,7 @@ import { _openGalleryReplacer } from './ui_node_model_picker.js';
 import { renderAudioStudio, stopAudioStudioPlayback } from './ui_audio_studio.js';
 import { renderAudioGallery, stopGalleryAudio } from './ui_audio_gallery.js';
 import { getActiveAudioFilter, setActiveAudioFilter, syncAudioSidebarSelection } from './ui_audio_sidebar.js';
+import { voiceGroupKey } from './audio_engines.js';
 import { getActiveDomain } from './ui_domain_switcher.js';
 import { startPage } from './ui_shell_nav.js';
 
@@ -89,6 +90,17 @@ export class AnomalousBrowser {
             renderAudioStudio(this.audioStudioPanel, { owner: this });
         }
         syncAudioSidebarSelection(this);
+    }
+
+    /** One character's voice card: the Anomalous_TTS node's "import or edit characters". */
+    openVoice(character) {
+        const filter = character ? { type: 'group', value: voiceGroupKey(character), character } : null;
+        if (this.currentShellPage() === 'voices') {
+            this.switchAudioTab('presets', filter);
+            return;
+        }
+        if (filter) setActiveAudioFilter(filter);
+        this.goTo('voices'); // keeps the filter just set
     }
 
     close() {

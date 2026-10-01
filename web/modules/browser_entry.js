@@ -436,6 +436,14 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         syncVisibility();
         ensureBrowser();
         installMaterialsShortcutFallback();
+        // For the Anomalous_TTS node's character menu (its docs/INTERFACE.md §6).
+        window.anomalous_open_voice = (character) => {
+            const browser = ensureBrowser();
+            if (!browser) return false;
+            browser.show();
+            browser.openVoice(String(character || ''));
+            return true;
+        };
 
         // Reveal smoothly on first animation frame without any positional jump or flicker
         requestAnimationFrame(() => {
