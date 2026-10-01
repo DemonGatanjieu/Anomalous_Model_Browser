@@ -254,7 +254,8 @@ def _query_materials(materials_dir, query):
     if len(node_type) > 200:
         raise ValueError("Invalid node type")
     if len(search) > 200 or len(tag) > 60 or kind not in (
-        "", "image_workflow_snapshot", "image_node_selection", "recipe_parameter_selection", "prompt_note_bundle", "prompt_text", "prompt_plan"
+        "", "image_workflow_snapshot", "image_node_selection", "recipe_parameter_selection", "node_parameter_selection",
+        "prompt_note_bundle", "prompt_text", "prompt_plan"
     ):
         raise ValueError("Invalid material filter")
     materials = [material for material in materials

@@ -2109,34 +2109,6 @@
 }
 
 /* ==========================================================================
-   Node Assistant Hover Parameter Popover Card
-   ========================================================================== */
-.anomalous-param-popover {
-    position: fixed;
-    z-index: 1000002;
-    width: 330px;
-    max-height: 480px;
-    display: flex;
-    flex-direction: column;
-    background: rgba(22, 22, 27, 0.96);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 12px;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
-    color: #f3f4f6;
-    padding: 14px;
-    box-sizing: border-box;
-    pointer-events: auto;
-    animation: anomalous-popover-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes anomalous-popover-in {
-    from { opacity: 0; transform: translateY(4px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* ==========================================================================
    Prompt Composer & Paper Note Studio / Material Drag System
    ========================================================================== */
 

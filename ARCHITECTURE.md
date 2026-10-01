@@ -105,6 +105,8 @@ covered by the `styles.css` manifest.
 - `api/material_schema.py`, `api/material_assets.py`, and `api/material_store.py`
   own curated material shaping, private assets, persistence/cache, search and
   lifecycle; `api/materials.py` owns HTTP mapping and compatibility entry points.
+  `api/node_material.py` saves one canvas node's current values as a
+  `node_parameter_selection` material (the current-node panel's "save").
 - `api/media_routes.py`, `api/gallery_routes.py`, `api/translation_routes.py`, and
   `api/folder_types.py` own the formerly mixed utility route families.
 - `model_policies.py` owns shared backend rename and protected-category policy.
@@ -404,10 +406,12 @@ covered by the `styles.css` manifest.
 - `model_check.js` checks the open workflow's models against this computer (Model
   Doctor's verdicts, no DOM) and puts a found file into its node; `ui_doctor.js` is the
   doctor page and `ui_doctor_banner.js` the bar over the canvas when an opened workflow
-  misses models. `ui_node_assistant.js` owns the selected-node assistant (actions, LoRA
-  insertion, history), `ui_node_model_picker.js` owns native combo
-  replacement, and `ui_node_presets.js` owns parameter preset rendering and
-  application. `model_picker.js`, `node_material_actions.js`, and `graph_splice.js`
+  misses models. `ui_node_assistant.js` owns the current-node panel (model actions, LoRA
+  insertion, model cards and history), `ui_node_model_picker.js` owns native combo
+  replacement, `ui_node_parameters.js` renders the panel's parameters section, and
+  `node_parameter_sets.js` merges the node type's saved values (materials and recipe
+  parameter sets) and works out what each would change on the node, keeping seeds,
+  model files and missing choices. `model_picker.js`, `node_material_actions.js`, and `graph_splice.js`
   own the remaining explicit graph changes.
 - `ui_model_sources.js` owns the Model Source Hub (模型来源统一中控中心), providing dual-scope
   (Workflow and Library) source inspection, external platform jumping, canvas `Note` node generation,

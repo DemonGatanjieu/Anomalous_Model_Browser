@@ -355,7 +355,7 @@ function buildMaterialMediaStage(owner, material, sourceNameElement) {
     sourceCopy.className = 'anomalous-library-detail-source-copy';
     text(sourceCopy, 'span', isPromptMaterial(material) ? t('materialPromptNoteBundle') : material.kind === 'recipe_parameter_selection'
         ? t('materialSourceParameters')
-        : t('materialSourceImage'));
+        : t(material.kind === 'node_parameter_selection' ? 'materialSourceCanvasNode' : 'materialSourceImage'));
     sourceCopy.appendChild(sourceNameElement);
     sourceMeta.appendChild(sourceCopy);
 

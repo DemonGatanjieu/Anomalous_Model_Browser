@@ -13,7 +13,8 @@ export function selectedMaterialNode(app) {
     return graph?.getNodeById(node.id) === node ? node : null;
 }
 
-function volatile(node, widget, index) {
+/** Seeds and the like: values that change on every run and are never applied from a material. */
+export function isVolatileWidget(node, widget, index) {
     return /(^|[_\s-])(seed|noise_seed|random_seed|variation_seed|last_seed)([_\s-]|$)/i.test(widget?.name || '')
         || (node.type === 'KSampler' && index === 0) || (node.type === 'KSamplerAdvanced' && index === 1);
 }
@@ -33,7 +34,7 @@ function replaceHashes(graph, id, records) {
 export function applyNodeMaterialValues(app, node, entries, options = {}) {
     const graph = app.graph?.getNodeById(node?.id) === node ? app.graph : (node?.graph || app.canvas?.graph || app.graph);
     if (!node || graph?.getNodeById(node.id) !== node || !Array.isArray(node.widgets)) throw new Error('materialTargetChanged');
-    const changes = entries.filter(({ index }) => !volatile(node, node.widgets[index], index));
+    const changes = entries.filter(({ index }) => !isVolatileWidget(node, node.widgets[index], index));
     if (!changes.length) throw new Error('materialNoCompatibleValues');
     for (const { index, value } of changes) {
         const widget = node.widgets[index];

@@ -1,13 +1,12 @@
-/** Node Assistant panel: the selected node's actions (change its model, insert a LoRA),
- * model history cards and parameter presets. */
+/** The current-node panel (Node Assistant): the selected node's model actions (change it,
+ * insert a LoRA), model cards with their history, and its parameters (ui_node_parameters.js). */
 
 import { app } from "../../../scripts/app.js";
 import { translate } from "./locales.js";
 import { analyzeModelChainInsertion, getModelChainInsertionCapabilities } from "./graph_splice.js";
 import { formatModelTypeLabel, inferPickerModelType } from "./model_picker.js";
-import { escapeHtml } from "./safe_dom.js";
 import { findModelComboWidget, getNativeWidgetValues } from "./ui_node_model_picker.js";
-import { renderParameterPresets } from "./ui_node_presets.js";
+import { renderNodeParameters } from "./ui_node_parameters.js";
 
 const t = (key, params) => translate(key, params);
 
@@ -333,8 +332,7 @@ export function openLoraInsertionPicker(anchorNode, direction) {
     });
 }
 
-export function diagnoseNode(node, forceRefresh = false) {
-        // This method serves the Node Assistant panel only
+export function diagnoseNode(node) {
         if (!this.assistantPanelInitialized) {
             this.initAssistantPanel();
         }
@@ -382,7 +380,7 @@ for (const w of node.widgets) {
         refreshBtn.onmouseout = () => refreshBtn.style.background = 'none';
         refreshBtn.onclick = () => {
             refreshBtn.style.transform = 'rotate(180deg)';
-            setTimeout(() => this.diagnoseNode(node, true), 150);
+            setTimeout(() => this.diagnoseNode(node), 150);
         };
         titleBar.appendChild(refreshBtn);
 
@@ -456,59 +454,12 @@ for (const w of node.widgets) {
             onClick: () => this.openLoraInsertionPicker(node, 'after'),
             capability: insertionCapabilities.after,
         });
-        const tabsRow = document.createElement('div');
-        tabsRow.style.cssText = 'display:flex; padding: 10px 16px 0; gap: 8px; flex-shrink:0;';
-
-        const btnActions = document.createElement('button');
-        btnActions.textContent = t('assistantTabActions') || '🛠️ Quick Actions';
-        btnActions.style.cssText = 'flex:1; padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; border: none; font-size: 11px; font-weight: bold; transition: background 0.2s;';
-
-        const btnPresets = document.createElement('button');
-        btnPresets.textContent = t('assistantTabPresets') || '📚 Parameter Presets';
-        btnPresets.style.cssText = 'flex:1; padding: 8px; border-radius: 8px; background: transparent; color: #aaa; cursor: pointer; border: none; font-size: 11px; font-weight: bold; transition: background 0.2s;';
-
-        tabsRow.append(btnActions, btnPresets);
-        nodeContent.appendChild(tabsRow);
-
-        const actionsContainer = document.createElement('div');
-        actionsContainer.style.cssText = 'display:flex; flex-direction:column; flex:1; overflow-y:auto; min-height:0;';
-
-        const presetsContainer = document.createElement('div');
-        presetsContainer.style.cssText = 'display:none; flex-direction:column; flex:1; overflow-y:auto; min-height:0;';
-
-        nodeContent.append(actionsContainer, presetsContainer);
-
-        btnActions.onclick = () => {
-            btnActions.style.background = 'rgba(255,255,255,0.1)';
-            btnActions.style.color = '#fff';
-            btnPresets.style.background = 'transparent';
-            btnPresets.style.color = '#aaa';
-            actionsContainer.style.display = 'flex';
-            presetsContainer.style.display = 'none';
-        };
-
-        btnPresets.onclick = () => {
-            btnPresets.style.background = 'rgba(255,255,255,0.1)';
-            btnPresets.style.color = '#fff';
-            btnActions.style.background = 'transparent';
-            btnActions.style.color = '#aaa';
-            presetsContainer.style.display = 'flex';
-            actionsContainer.style.display = 'none';
-        };
-
+        const body = document.createElement('div');
+        body.className = 'anomalous-node-body';
+        nodeContent.appendChild(body);
         if (hasModelOrInsertion) {
-            actionsContainer.appendChild(quickActions);
-            for (const w of modelWidgets) {
-                this.renderAssistantModelCard(node, w, actionsContainer);
-            }
-        } else {
-            const noModelWarning = document.createElement('div');
-            noModelWarning.style.cssText = 'display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 30px 20px;';
-            noModelWarning.innerHTML = `<div style="font-size:36px;margin-bottom:10px;">⚠️</div><div style="text-align:center;color:#aaa;font-size:12px;">${t('assistantNoModelParameter')}</div><div style="font-size:10px;color:#555;margin-top:6px;">${escapeHtml(node.type || '')}</div>`;
-            actionsContainer.appendChild(noModelWarning);
-
-            btnPresets.onclick(); // switch to presets by default if no model actions
+            body.appendChild(quickActions);
+            for (const w of modelWidgets) this.renderAssistantModelCard(node, w, body);
         }
-
-        renderParameterPresets.call(this, node, presetsContainer, forceRefresh);
+        renderNodeParameters(node, body);
     }

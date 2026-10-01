@@ -70,7 +70,7 @@ export function createSettingsHub(owner, {
                 const selectedNode = Object.values(app.canvas?.selected_nodes || {})[0] || null;
                 b.assistantPanelInitialized = false;
                 b.initAssistantPanel();
-                b.diagnoseNode(selectedNode, true);
+                b.diagnoseNode(selectedNode);
             }
             if (b.notebookNotesTab) b.notebookNotesTab.textContent = t('promptNotes');
             if (b.notebookRecipesTab) b.notebookRecipesTab.textContent = t('recipeTitle');

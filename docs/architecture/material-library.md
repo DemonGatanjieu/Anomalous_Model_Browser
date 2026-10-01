@@ -95,8 +95,13 @@ parameter rendering; the workbench does not import the library UI.
 Gallery image clicks open the focused pan/zoom viewer, while the dedicated
 parameter action opens the Image Detail Studio. Drag, delete, and cover-selection
 behavior remains independent of those two entry points.
-`ui_node_presets.js` presents Node Assistant presets; it shares node application
-with the library through `ui_material_application.js` and `node_material_actions.js`.
+The current-node panel lists, for the selected node's type, the material blocks and the
+recipes' parameter sets as one list (`node_parameter_sets.js`); identical values from both
+are one entry naming both sources. Each entry shows exactly what it would change on the
+node; applying writes only those values through `node_material_actions.js` (one undo),
+never seeds, model files or choices this computer lacks. "Save these values" stores the
+node's current values as a `node_parameter_selection` material (`api/node_material.py`),
+which the library lists under parameters.
 
 `ui_recipe_detail.js` can publish the active Recipe parameters or the selected
 Parameter Notebook as `recipe_parameter_selection`. The primary panel saves all

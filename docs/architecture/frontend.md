@@ -76,13 +76,13 @@ The main surfaces are:
   discovery/pagination, cards, detail, and node application are separated across
   `ui_materials.js`, `ui_material_cards.js`, `ui_material_detail.js`, and
   `ui_material_application.js`.
-- Node Assistant/Model Doctor: selected-node actions, parameter presets, and
+- Current node (Node Assistant)/Model Doctor: selected-node actions, saved parameters, and
   missing-model recovery. `model_check.js` decides each workflow model's state and
   applies fixes; `ui_doctor.js` (the page) and `ui_doctor_banner.js` (the bar shown
   after a workflow opens) only render it and call it on a press.
-  `ui_node_assistant.js` owns the selected-node panel and history, `ui_node_model_picker.js`
-  owns the native-widget model replacer, and `ui_node_presets.js` owns parameter
-  preset previews and application.
+  `ui_node_assistant.js` owns the current-node panel and model history, `ui_node_model_picker.js`
+  owns the native-widget model replacer, and `ui_node_parameters.js` with
+  `node_parameter_sets.js` own the panel's one list of saved values for the node type.
 
 `ui_dom.js` owns generic `text` and `jsonResponse` helpers.
 `material_inspector.js` shares image metadata helpers and node-parameter rendering
