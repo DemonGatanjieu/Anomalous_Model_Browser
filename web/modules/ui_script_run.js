@@ -14,13 +14,14 @@ import { fetchGptSovitsCharacter, loadGptSovitsStatus, saveGptSovitsSettings } f
  *
  * The director owns the lines; this section owns the job, the options and the
  * result, which live for the page session like the director's panel. It has two
- * parts that the director places together: `settings` (one folded line) and `bar`
- * (generate / retake / cancel and the result).
+ * parts that the director places together: `bar` (generate / retake / cancel and the
+ * result, with a way to the audio gallery) and `settings` (language and speed in
+ * view, the sampling numbers folded under "fine-tuning").
  */
 
 const LANGUAGES = ['auto', 'zh', 'ja', 'en'];
 const MIN_FORMAT = 11; // Anomalous_TTS interface with [take:N] and `defaults`
-// Folded under "Advanced"; ranges and defaults come from the node's own input spec.
+// Folded under "fine-tuning"; ranges and defaults come from the node's own input spec.
 const SAMPLING = ['top_k', 'top_p', 'temperature', 'repetition_penalty'];
 const NUMBERS = ['speed', ...SAMPLING];
 const OPEN_KEY = 'anomalous_script_run_settings_open';
@@ -66,16 +67,17 @@ async function loadNodeSpec() {
  * `getScript()` -> `{ group, pkg }` for the chosen character (pkg from buildScriptPackage
  * with takes); `onPlay()` when the result starts playing;
  * `resetTakes()` when a new take of the whole script starts; `onBusyChange()` when a job
- * starts or ends (the director re-renders its line cards, whose retake buttons depend on it).
+ * starts or ends (the director re-renders its line cards, whose retake buttons depend on it);
+ * `openGallery()` for the result's "saved to the audio gallery".
  */
-export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }) {
+export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange, openGallery }) {
     const state = {
         seed: newSeed(),
         spec: null,           // node input ranges/defaults; null until loaded
         options: new Map(),   // character -> options being edited
         saved: new Map(),     // character -> options saved in this session
         job: null,
-        status: null,         // { state: 'queued' | 'running' | 'done' | 'cancelled', value?, max?, summary? }
+        status: null,         // { state: 'queued' | 'running' | 'done' | 'cancelled', value?, max?, seconds? }
         result: null,         // { audio, url, warnings, character }
         supported: null,      // TTS interface >= MIN_FORMAT; null while unknown
     };
@@ -83,46 +85,69 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
     const bar = el('div', 'anomalous-sd-run');
     const hint = el('div', 'anomalous-sd-run-hint is-warning', t('scriptRunNeedsUpdate'));
 
-    const settings = el('details', 'anomalous-sd-run-settings');
-    const settingsSummary = el('summary');
-    try { settings.open = localStorage.getItem(OPEN_KEY) === '1'; } catch (_) { /* folded by default */ }
-    settings.addEventListener('toggle', () => {
-        try { localStorage.setItem(OPEN_KEY, settings.open ? '1' : '0'); } catch (_) { /* convenience only */ }
-    });
-    const language = el('select', 'anomalous-sd-run-select');
-    for (const code of LANGUAGES) {
-        const option = el('option', '', t(`scriptRunLang_${code}`));
-        option.value = code;
-        language.appendChild(option);
-    }
+    // How it is read: language and speed, always in view, one per row.
+    const settings = el('div', 'anomalous-sd-run-settings');
     const fields = {};
-    const numberField = name => {
+    /** A number the user set: clamped to the node's range and kept for this character. */
+    const commit = (name, raw) => {
+        const script = getScript();
+        const range = state.spec?.[name];
+        let value = Number(raw);
+        if (!Number.isFinite(value) || !range) value = range?.default ?? 1;
+        value = Math.min(range?.max ?? value, Math.max(range?.min ?? value, name === 'top_k' ? Math.round(value) : value));
+        if (script?.group) currentOptions(script.group)[name] = value;
+        render();
+    };
+
+    const languageRow = el('div', 'anomalous-sd-run-row');
+    const languageChoices = el('div', 'anomalous-sd-run-segment');
+    languageChoices.setAttribute('role', 'radiogroup');
+    const languageButtons = new Map();
+    for (const code of LANGUAGES) {
+        const choice = button('anomalous-sd-run-choice', t(`scriptRunLang_${code}`), () => {
+            const script = getScript();
+            if (script?.group) currentOptions(script.group).language = code;
+            render();
+        });
+        choice.setAttribute('role', 'radio');
+        languageButtons.set(code, choice);
+        languageChoices.append(choice);
+    }
+    languageRow.append(el('span', 'anomalous-sd-run-label', t('scriptRunLanguage')), languageChoices);
+
+    const speedRow = el('label', 'anomalous-sd-run-row');
+    const speed = el('input', 'anomalous-sd-run-slider');
+    speed.type = 'range';
+    speed.title = t('scriptRunParamHint_speed');
+    const speedValue = el('span', 'anomalous-sd-run-value');
+    speed.oninput = () => { speedValue.textContent = speed.value; };
+    speed.onchange = () => commit('speed', speed.value);
+    fields.speed = speed;
+    speedRow.append(el('span', 'anomalous-sd-run-label', t('scriptRunSpeed')), speed, speedValue);
+
+    // The sampling numbers, folded: a plain name with the node's own name under it.
+    const fine = el('details', 'anomalous-sd-run-fine');
+    const fineSummary = el('summary');
+    try { fine.open = localStorage.getItem(OPEN_KEY) === '1'; } catch (_) { /* folded by default */ }
+    fine.addEventListener('toggle', () => {
+        try { localStorage.setItem(OPEN_KEY, fine.open ? '1' : '0'); } catch (_) { /* convenience only */ }
+    });
+    fine.append(fineSummary);
+    for (const name of SAMPLING) {
+        const row = el('label', 'anomalous-sd-run-row');
+        const label = el('span', 'anomalous-sd-run-label');
+        label.append(el('span', '', t(`scriptRunParamName_${name}`)), el('code', 'anomalous-sd-run-code', name));
         const input = el('input', 'anomalous-sd-run-number');
         input.type = 'number';
         input.title = t(`scriptRunParamHint_${name}`);
-        input.onchange = () => {
-            const script = getScript();
-            const range = state.spec?.[name];
-            let value = Number(input.value);
-            if (!Number.isFinite(value) || !range) value = range?.default ?? 1;
-            value = Math.min(range?.max ?? value, Math.max(range?.min ?? value, name === 'top_k' ? Math.round(value) : value));
-            if (script?.group) currentOptions(script.group)[name] = value;
-            render();
-        };
+        input.onchange = () => commit(name, input.value);
         fields[name] = input;
-        return input;
-    };
-    const grid = el('div', 'anomalous-sd-run-grid');
-    const param = (label, control) => {
-        const row = el('label', 'anomalous-sd-run-param');
-        row.append(el('span', '', label), control);
-        grid.appendChild(row);
-    };
-    param(t('scriptRunLanguage'), language);
-    param(t('scriptRunSpeed'), numberField('speed'));
-    for (const name of SAMPLING) param(name, numberField(name));
+        row.append(label, input);
+        fine.append(row);
+    }
+    fine.append(el('div', 'anomalous-sd-run-note', t('scriptRunAdvancedNote')));
     const saveDefaults = button('anomalous-sd-link-btn', t('scriptRunSaveDefaults'), () => storeDefaults(), t('scriptRunSaveDefaultsHint'));
-    settings.append(settingsSummary, grid, el('div', 'anomalous-sd-run-note', t('scriptRunAdvancedNote')), saveDefaults);
+    settings.append(el('div', 'anomalous-sd-run-heading', t('scriptRunHow')), languageRow, speedRow, fine, saveDefaults);
 
     const actions = el('div', 'anomalous-sd-run-actions');
     const generateBtn = button('anomalous-sd-btn accent', t('scriptRunGenerate'), () => generate());
@@ -139,7 +164,7 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
     player.controls = true;
     player.preload = 'auto';
     player.addEventListener('play', () => onPlay?.());
-    const savedTo = el('div', 'anomalous-sd-run-saved');
+    const savedTo = button('anomalous-sd-link-btn anomalous-sd-run-saved', t('scriptRunSavedLink'), () => openGallery?.());
     const warnings = el('div', 'anomalous-sd-run-warnings');
 
     bar.append(hint, actions, player, savedTo, warnings);
@@ -162,12 +187,6 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
 
     const sameOptions = (a, b) => ['language', ...NUMBERS].every(name => a[name] === b[name]);
 
-    language.onchange = () => {
-        const script = getScript();
-        if (script?.group) currentOptions(script.group).language = language.value;
-        render();
-    };
-
     async function checkSupport() {
         try {
             const [status, spec] = await Promise.all([loadGptSovitsStatus(), loadNodeSpec()]);
@@ -187,6 +206,7 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
         const { language: lang, ...numbers } = currentOptions(script.group);
         const prompt = buildTtsPrompt({ character, speech: script.pkg.speech, seed: state.seed, language: lang, ...numbers });
         state.status = { state: 'queued' };
+        const started = Date.now();
         state.job = startPromptJob(prompt, {
             onStatus: next => {
                 state.status = next;
@@ -198,9 +218,10 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
             const { outputs } = await state.job.result;
             const audio = outputs['2']?.audio?.[0];
             if (!audio) throw new Error(t('scriptRunNoAudio'));
-            const [summary = '', ...rest] = String(outputs['1']?.text?.[0] || '').split('\n');
+            // The first line is the node's own count (its sentences, batches, cache), not the reader's lines.
+            const [, ...rest] = String(outputs['1']?.text?.[0] || '').split('\n');
             state.result = { audio, url: `${audioUrl(audio)}&t=${Date.now()}`, warnings: rest.filter(Boolean), character };
-            state.status = { state: 'done', summary };
+            state.status = { state: 'done', seconds: Math.max(1, Math.round((Date.now() - started) / 1000)) };
             state.job = null;
             onBusyChange?.();
             player.play().catch(() => {});
@@ -247,7 +268,7 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
         let text = '';
         if (s?.state === 'queued') text = t('scriptRunQueued');
         else if (s?.state === 'running') text = s.max ? t('scriptRunProgress', { value: s.value, max: s.max }) : t('scriptRunRunning');
-        else if (s?.state === 'done') text = t('scriptRunDone', { summary: s.summary });
+        else if (s?.state === 'done') text = t('scriptRunDone', { seconds: s.seconds });
         else if (s?.state === 'cancelled') text = t('scriptRunCancelled');
         status.textContent = text;
         status.hidden = !text;
@@ -269,18 +290,18 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
         if (ready) {
             const opts = currentOptions(group);
             const tuned = SAMPLING.some(name => opts[name] !== state.spec[name].default);
-            settingsSummary.textContent = t('scriptRunSettingsSummary', {
-                language: t(`scriptRunLang_${opts.language}`),
-                speed: opts.speed,
-            }) + (tuned ? t('scriptRunSettingsTuned') : '');
-            language.value = opts.language;
+            fineSummary.textContent = t('scriptRunFineTune') + (tuned ? t('scriptRunFineTuned') : '');
+            for (const [code, choice] of languageButtons) {
+                choice.setAttribute('aria-checked', String(opts.language === code));
+                choice.disabled = busy;
+            }
             for (const name of NUMBERS) {
                 const range = state.spec[name];
                 Object.assign(fields[name], { min: String(range.min), max: String(range.max), step: String(range.step ?? 1) });
                 fields[name].value = String(opts[name]);
                 fields[name].disabled = busy;
             }
-            language.disabled = busy;
+            speedValue.textContent = String(opts.speed);
             saveDefaults.hidden = sameOptions(opts, storedOptions(group));
         } else {
             saveDefaults.hidden = true;
@@ -298,7 +319,7 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange }
         savedTo.hidden = !hasResult;
         if (hasResult) {
             const folder = String(state.result.audio.subfolder || '').replace(/\\/g, '/');
-            savedTo.textContent = t('scriptRunSavedTo', { path: `output/${folder}/${state.result.audio.filename}` });
+            savedTo.title = `output/${folder}/${state.result.audio.filename}`;
         }
         warnings.hidden = !hasResult || !state.result.warnings.length;
         if (hasResult) warnings.textContent = state.result.warnings.join('\n');

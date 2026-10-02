@@ -7,8 +7,8 @@ import { openTtsSetup, setupAttention } from './ui_tts_setup.js';
 
 /**
  * Audio sidebar: All Voices, the GPT-SoVITS characters (grouped by language; each
- * group folds, each character unfolds into its clips), the generated-audio history,
- * and a settings entry at the bottom. Owns the active audio filter. Characters drag
+ * group folds, each character unfolds into its clips) and a settings entry at the
+ * bottom. On Voice-over, picking a character makes it the one who speaks. Owns the active audio filter. Characters drag
  * onto canvas nodes like the studio cards; files dropped on a character open the
  * import form for it.
  */
@@ -33,7 +33,6 @@ const SIDEBAR_SVG = {
     MIC: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>`,
     ALL_VOICES: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
     USER: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
-    DISC: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>`,
     REFRESH: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>`,
     CHEVRON: `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>`,
     PLAY: `<svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
@@ -173,7 +172,8 @@ async function playClip(owner, group, slice) {
     if (!btn) {
         activeFilter = { type: 'group', value: group.group, character: group.character };
         syncAudioSidebarSelection(owner);
-        owner.switchAudioTab?.('presets', activeFilter);
+        // The filter is set already; without it as an argument, Voice-over does not take it as "who speaks".
+        owner.switchAudioTab?.('presets');
         const until = performance.now() + 4000;
         while (!(btn = visible()) && performance.now() < until) await new Promise(requestAnimationFrame);
     }
@@ -324,12 +324,6 @@ export async function renderAudioSidebar(owner) {
         listContainer.append(allVoices(owner, totalSlices), createSectionLabel(t('audioSectionCharactersOf', { engine: TTS_ENGINE.label })));
         renderCharacters(owner, listContainer, groups, { canImport, term: '' });
     }
-
-    listContainer.appendChild(createSectionLabel(t('audioSectionHistory')));
-    listContainer.appendChild(createNavItem(owner, {
-        label: t('audioGalleryTab'), iconSvg: SIDEBAR_SVG.DISC, count: null,
-        filter: { type: 'gallery', value: null }, tab: 'gallery',
-    }));
 
     if (status) {
         const languages = groups.map(group => group.language);

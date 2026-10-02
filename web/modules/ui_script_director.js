@@ -9,8 +9,8 @@ import { createRunSection } from './ui_script_run.js';
 import { recordCanvasStep } from './canvas_history.js';
 
 /**
- * The script director, the body of the Voice-over page (ui_script_page.js): pick one
- * character, paste a script, choose an emotion per line on the line cards, then
+ * The script director, the body of the Voices page's Voice-over view (ui_script_page.js):
+ * pick one character, paste a script, choose an emotion per line on the line cards, then
  * generate it right here (ui_script_run.js), or put the tagged script into the
  * workflow: push it to a GPT-SoVITS node, drag it onto one (supported nodes:
  * audio_node_targets.js) or copy it. The panel and its lines live for the page
@@ -21,7 +21,7 @@ import { recordCanvasStep } from './canvas_history.js';
 const WIDE_FROM = 760;
 
 const ICONS = {
-    PLAY: `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`,
+    SPEAKER: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>`,
     STOP: `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>`,
     GRIP: `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>`,
 };
@@ -46,9 +46,26 @@ const dragOwner = { get modal() { return hooks.owner?.modal; } };
 
 // ---------- public API ----------
 
-/** `{ owner, onPreviewStart() }` from the page. */
+/** `{ owner, onPreviewStart(), onCharacterChange(), openGallery() }` from the page. */
 export function setScriptDirectorHooks(next) {
     hooks = next || {};
+}
+
+/** The voice group key of who speaks. */
+export function scriptCharacter() {
+    return state.groupKey;
+}
+
+/** Lines to voice again (a generated file's `{ emotion, text }` segments): one card per line. */
+export function loadScriptLines(segments) {
+    const lines = segments.flatMap(segment => String(segment.text || '').split(/\n+/)
+        .map(text => ({ text: text.trim(), emotion: segment.emotion || 'main', take: 1 })))
+        .filter(line => line.text);
+    if (!lines.length) return;
+    stopScriptDirectorPreview();
+    state.lines = lines;
+    state.editing = false;
+    if (panel) renderAll();
 }
 
 /** Puts the director into `parentContainer` (the Voice-over page). */
@@ -88,7 +105,7 @@ function stopLinePreview() {
         previewAudio = null;
     }
     if (previewButton) {
-        previewButton.innerHTML = ICONS.PLAY;
+        previewButton.innerHTML = ICONS.SPEAKER;
         previewButton.classList.remove('is-playing');
         previewButton = null;
     }
@@ -138,9 +155,8 @@ function createPanel() {
     panel = el('div', 'anomalous-script-director-panel');
 
     const header = el('div', 'anomalous-sd-header');
-    const title = el('h1', 'anomalous-sd-title');
     const subtitle = el('p', 'anomalous-sd-subtitle');
-    header.append(title, subtitle);
+    header.append(subtitle);
 
     const characterBar = el('label', 'anomalous-sd-character-bar');
     const characterSelect = el('select', 'anomalous-sd-character-select');
@@ -148,6 +164,7 @@ function createPanel() {
         state.groupKey = characterSelect.value;
         stopScriptDirectorPreview();
         renderAll();
+        hooks.onCharacterChange?.();
     };
     const characterHint = el('div', 'anomalous-sd-character-hint');
     characterBar.append(el('span', 'anomalous-sd-step', t('scriptDirectorCharacter')), characterSelect);
@@ -184,6 +201,8 @@ function createPanel() {
 
     const linesContainer = el('div', 'anomalous-sd-lines-container');
     const scroll = el('div', 'anomalous-sd-scroll');
+    // One voice only: emotion chips would all say "main", so one line says how to get more.
+    const onlyMain = el('div', 'anomalous-sd-only-main');
 
     const footer = el('div', 'anomalous-sd-footer');
     const summary = el('div', 'anomalous-sd-package-summary');
@@ -207,6 +226,7 @@ function createPanel() {
         },
         resetTakes: () => state.lines.forEach(line => { line.take = 1; }),
         onBusyChange: () => renderAll(),
+        openGallery: () => hooks.openGallery?.(),
     });
     scroll.append(linesContainer);
     footer.append(summary, runSection.bar);
@@ -214,7 +234,7 @@ function createPanel() {
     // Cards on one side, everything about generating on the other: below the cards
     // on a narrow page (docked browser), beside them once the page is wide.
     const main = el('div', 'anomalous-sd-main');
-    main.append(linesBar, scroll);
+    main.append(linesBar, onlyMain, scroll);
     const side = el('div', 'anomalous-sd-side');
     side.append(footer, runSection.settings, workflow);
     const body = el('div', 'anomalous-sd-body');
@@ -223,13 +243,12 @@ function createPanel() {
     new ResizeObserver(([entry]) => panel.classList.toggle('is-wide', entry.contentRect.width >= WIDE_FROM)).observe(panel);
 
     panel.append(header, characterBar, characterHint, inputArea, body);
-    refs = { title, subtitle, characterSelect, characterHint, inputArea, textarea, cancelEdit, body, linesCount, linesContainer, summary, workflowTitle, dragHandle, copyBtn, pushBtn };
+    refs = { subtitle, characterSelect, characterHint, inputArea, textarea, cancelEdit, body, linesCount, onlyMain, linesContainer, summary, workflowTitle, dragHandle, copyBtn, pushBtn };
 }
 
 function renderAll() {
     if (!panel) return;
     const node = TTS_ENGINE.label;
-    refs.title.textContent = t('scriptDirectorTitle');
     refs.subtitle.textContent = t('scriptDirectorSubtitle');
     refs.workflowTitle.textContent = t('scriptDirectorWorkflowTitle');
     refs.dragHandle.title = t('scriptDirectorDragHint', { node });
@@ -268,29 +287,31 @@ function renderLines() {
     const group = selectedGroup();
     const emotions = usableEmotions(group);
     const slices = new Map((group?.slices || []).map(slice => [slice.emotion, slice]));
+    // Chips only when there is a choice, or a line still asks for an emotion this character lacks.
+    const showChips = emotions.length > 1 || state.lines.some(line => !emotions.includes(line.emotion));
+    refs.onlyMain.hidden = showChips;
+    refs.onlyMain.textContent = t('scriptDirectorOnlyMain');
     const addLine = button('anomalous-sd-add-line', t('scriptDirectorAddLine'), () => {
         state.lines.push({ text: '', emotion: state.lines.at(-1)?.emotion || 'main', take: 1 });
         state.focusIndex = state.lines.length - 1;
         renderAll();
     });
-    refs.linesContainer.replaceChildren(...state.lines.map((line, index) => renderLineCard(line, index, emotions, slices)), addLine);
+    refs.linesContainer.replaceChildren(...state.lines.map((line, index) => renderLineCard(line, index, emotions, slices, showChips)), addLine);
     if (state.focusIndex !== null) {
         refs.linesContainer.querySelectorAll('.anomalous-sd-line-text')[state.focusIndex]?.focus();
         state.focusIndex = null;
     }
 }
 
-function renderLineCard(line, index, emotions, slices) {
+function renderLineCard(line, index, emotions, slices, showChips) {
     const card = el('div', 'anomalous-sd-line-card');
 
+    // Editing buttons (.is-edit) show on hover; another take of this line stays visible.
     const head = el('div', 'anomalous-sd-line-head');
-    const previewBtn = button('anomalous-sd-icon-btn', '', () => previewLine(line, slices, previewBtn), t('scriptDirectorPreview'));
-    previewBtn.innerHTML = ICONS.PLAY;
     head.append(
         el('span', 'anomalous-sd-line-no', `#${index + 1}`),
-        previewBtn,
         // Split at the text caret (the textarea keeps its caret after losing focus to this button).
-        button('anomalous-sd-icon-btn', '✂', async () => {
+        button('anomalous-sd-icon-btn is-edit', '✂', async () => {
             const parts = splitSegmentAt(line.text, text.selectionStart);
             if (!parts) {
                 await anomalousAlert(t('scriptDirectorSplitHint'));
@@ -306,7 +327,7 @@ function renderLineCard(line, index, emotions, slices) {
     );
     if (index < state.lines.length - 1) {
         // Merge keeps this card's emotion: one card = one segment spoken with one voice.
-        head.append(button('anomalous-sd-icon-btn', '↧', () => {
+        head.append(button('anomalous-sd-icon-btn is-edit', '↧', () => {
             line.text = joinSegments(line.text, state.lines[index + 1].text);
             state.lines.splice(index + 1, 1);
             stopScriptDirectorPreview();
@@ -322,7 +343,7 @@ function renderLineCard(line, index, emotions, slices) {
         head.append(retake);
     }
     head.append(
-        button('anomalous-sd-icon-btn is-danger', '×', () => {
+        button('anomalous-sd-icon-btn is-edit is-danger', '×', () => {
             state.lines.splice(index, 1);
             stopScriptDirectorPreview();
             renderAll();
@@ -337,14 +358,25 @@ function renderLineCard(line, index, emotions, slices) {
         renderPackage();
     };
 
+    if (!showChips) {
+        card.append(head, text);
+        return card;
+    }
     const chips = el('div', 'anomalous-sd-emotion-row');
+    // The reference clip of the chosen emotion: how this voice sounds, not this line's result.
+    const reference = button('anomalous-sd-ref-btn', '', () => previewLine(line, slices, reference),
+        t('scriptDirectorPreviewEmotion', { emotion: emotionLabel(line.emotion) }));
+    reference.innerHTML = ICONS.SPEAKER;
     // A choice this character cannot voice stays visible (and blocks the bundle) instead of being silently reset.
     const choices = emotions.includes(line.emotion) ? emotions : [...emotions, line.emotion];
     for (const emotion of choices) {
         const chip = button('anomalous-sd-emotion-chip', emotionLabel(emotion), () => {
             line.emotion = emotion;
             chips.querySelectorAll('.anomalous-sd-emotion-chip').forEach(item => item.classList.toggle('active', item === chip));
-            if (previewButton === previewBtn) stopScriptDirectorPreview();
+            if (previewButton === reference) stopScriptDirectorPreview();
+            reference.title = t('scriptDirectorPreviewEmotion', { emotion: emotionLabel(emotion) });
+            reference.setAttribute('aria-label', reference.title);
+            reference.disabled = !slices.get(emotion)?.audio_url;
             renderPackage();
         });
         chip.classList.toggle('active', line.emotion === emotion);
@@ -357,6 +389,8 @@ function renderLineCard(line, index, emotions, slices) {
         if (sample?.text) chip.title = sample.text;
         chips.appendChild(chip);
     }
+    reference.disabled = !slices.get(line.emotion)?.audio_url;
+    chips.appendChild(reference);
 
     card.append(head, text, chips);
     return card;

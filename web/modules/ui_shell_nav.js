@@ -18,15 +18,19 @@ const REMEMBERED = new Set(['home', 'activity', 'models', 'gallery', 'voices', '
 const AUDIO_PAGES = new Set(['voices', 'script', 'audio-gallery']);
 // The audio tab (browser.switchAudioTab) of each audio page.
 const AUDIO_TABS = { voices: 'presets', script: 'script', 'audio-gallery': 'gallery' };
+// Voice-over is a view of the Voices page: same rail entry, same list column.
+const RAIL_OF = { script: 'voices' };
+const railOf = page => RAIL_OF[page] || page;
 // Pages with a list column, and where each remembers whether you closed it.
 const LIST_KEYS = {
     models: 'anomalous_user_sidebar_closed',
     voices: 'anomalous_audio_list_closed',
+    script: 'anomalous_audio_list_closed',
     'audio-gallery': 'anomalous_audio_list_closed',
 };
 const TITLE_KEYS = {
     home: 'shellHome', activity: 'activityTitle', models: 'shellTitleModels', gallery: 'gallery', recipes: 'recipeTitle',
-    materials: 'materialLibrary', voices: 'shellVoices', script: 'shellScript', 'audio-gallery': 'shellAudioGallery',
+    materials: 'materialLibrary', voices: 'shellVoices', script: 'shellVoices', 'audio-gallery': 'shellAudioGallery',
     doctor: 'sidebarDoctor', assistant: 'sidebarAssistant', scan: 'scanPageTitle',
 };
 // Below this width the list covers the page instead of sitting beside it, and starts closed.
@@ -51,6 +55,7 @@ export function startPage() {
  */
 export function installShellNavigation(owner, { container, rail, listToggle, title }) {
     let current = null;
+    let lastVoiceView = 'voices'; // the rail's Voices entry reopens the view used last
     const narrow = () => container.clientWidth > 0 && container.clientWidth < NARROW_PX;
 
     const setTitle = (page) => { title.textContent = page ? t(TITLE_KEYS[page]) : ''; };
@@ -98,10 +103,15 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         }).observe(container);
     }
 
+    // The side the list column was last drawn for. The stored side survives a reload, so it
+    // cannot tell whether the list was drawn yet (opening straight onto an audio page left it empty).
+    let listDomain = null;
+
     /** Switches the domain the list column and the "!" guide follow; loads the model list once. */
     const useDomain = (domain) => {
-        const changed = getActiveDomain() !== domain;
-        if (changed) setActiveDomain(domain);
+        if (getActiveDomain() !== domain) setActiveDomain(domain);
+        const changed = listDomain !== domain;
+        listDomain = domain;
         if (domain === 'audio') {
             if (changed) owner.renderSidebar();
             return;
@@ -115,8 +125,9 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
 
     const enter = (page) => {
         current = page;
+        if (railOf(page) === 'voices') lastVoiceView = page;
         if (REMEMBERED.has(page)) write(LAST_PAGE_KEY, page);
-        rail.setActive(page);
+        rail.setActive(railOf(page));
         setTitle(page);
     };
 
@@ -162,10 +173,11 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         // The rail entry of the page you are on opens or closes its list; from a model's
         // detail it goes back to the grid instead.
         const atRoot = page !== 'models' || owner.grid.style.display !== 'none';
-        if (fromRail && page === current && !inWorkspace && atRoot && LIST_KEYS[page]) {
+        if (fromRail && railOf(page) === railOf(current) && !inWorkspace && atRoot && LIST_KEYS[page]) {
             toggleList();
             return;
         }
+        if (fromRail && page === 'voices') page = lastVoiceView;
         if (page === 'recipes' || page === 'materials') {
             // Workspaces belong to the image side: from an audio page they open over the models.
             if (AUDIO_PAGES.has(current)) owner.goTo('models');
@@ -218,7 +230,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
     const closeWorkspace = owner.closeWorkspace;
     owner.closeWorkspace = function (...args) {
         const result = closeWorkspace.apply(this, args);
-        rail.setActive(REMEMBERED.has(current) ? current : null);
+        rail.setActive(REMEMBERED.has(current) ? railOf(current) : null);
         setTitle(current);
         return result;
     };

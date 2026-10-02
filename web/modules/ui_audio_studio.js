@@ -8,12 +8,13 @@ import { openPronunciationEditor } from './ui_tts_pronunciation.js';
 import { bindTtsFileDrop } from './ui_tts_file_drop.js';
 import { openTtsImport } from './ui_tts_import.js';
 import { stopScriptDirectorPreview } from './ui_script_director.js';
+import { renderVoiceTabs } from './ui_voice_tabs.js';
 
 /**
- * The Voices page: GPT-SoVITS character cards (Anomalous_TTS, detected at runtime),
- * preview playback, tag copying, dropping a character onto a TTS node, the editors,
- * and each card's way to the Voice-over page (ui_script_page.js), where scripts are
- * written and generated.
+ * The Voices page's Characters view: GPT-SoVITS character cards (Anomalous_TTS, detected
+ * at runtime), preview playback, tag copying, dropping a character onto a TTS node, the
+ * editors, and each card's way to the Voice-over view (ui_script_page.js), where scripts
+ * are written and generated.
  */
 
 const renderTokens = new WeakMap();
@@ -229,7 +230,7 @@ function renderCharacterCard(group, owner, { onChanged, canImport = false } = {}
 
     const countBadge = document.createElement('span');
     countBadge.className = 'anomalous-character-voice-count';
-    countBadge.textContent = `${group.total_slices} ${t('audioVoicePresets')}`;
+    countBadge.textContent = t('audioVoiceClipCount', { count: group.total_slices });
 
     // Only a draggable header shows a grip; without a main voice there is nothing to drag.
     titleGroup.append(...(group.has_main ? [gripIcon()] : []), avatar, nameBox);
@@ -294,30 +295,9 @@ function createRefreshButton(onRefresh) {
     return btn;
 }
 
-function renderStudioToolbar({ onSearch, onRefresh }) {
+function renderStudioToolbar({ onSearch, onRefresh, owner }) {
     const toolbar = document.createElement('div');
     toolbar.className = 'anomalous-audio-toolbar';
-
-    const titleGroup = document.createElement('div');
-    titleGroup.className = 'anomalous-audio-title-group';
-
-    const iconBox = document.createElement('div');
-    iconBox.className = 'anomalous-audio-icon-box';
-    iconBox.innerHTML = SVG.MIC;
-
-    const textGroup = document.createElement('div');
-    textGroup.className = 'anomalous-audio-title-stack';
-
-    const title = document.createElement('span');
-    title.className = 'anomalous-audio-title-text';
-    title.textContent = t('audioStudioTitle');
-
-    const desc = document.createElement('span');
-    desc.className = 'anomalous-audio-sub-text';
-    desc.textContent = t('audioStudioSubtitle');
-
-    textGroup.append(title, desc);
-    titleGroup.append(iconBox, textGroup);
 
     const rightActions = document.createElement('div');
     rightActions.className = 'anomalous-audio-right-actions';
@@ -330,13 +310,13 @@ function renderStudioToolbar({ onSearch, onRefresh }) {
 
     const searchInput = document.createElement('input');
     searchInput.type = 'search';
-    searchInput.placeholder = t('audioVoicePresets');
+    searchInput.placeholder = t('audioSearchCharacters');
     searchInput.oninput = (e) => onSearch(e.target.value.trim().toLowerCase());
 
     searchWrap.append(searchIcon, searchInput);
     rightActions.append(createRefreshButton(onRefresh), searchWrap);
 
-    toolbar.append(titleGroup, rightActions);
+    toolbar.append(renderVoiceTabs(owner, 'voices'), rightActions);
     return toolbar;
 }
 
@@ -428,6 +408,7 @@ export async function renderAudioStudio(container, { filter = null, owner = null
             });
         },
         onRefresh: () => { invalidateEngineCache({ rescan: true }); rerender(); if (owner) renderAudioSidebar(owner); },
+        owner,
     });
     studioWrapper.append(toolbar, renderStatus('anomalous-audio-status', t('audioLoading')));
     container.replaceChildren(studioWrapper);

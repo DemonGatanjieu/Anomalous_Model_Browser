@@ -18,7 +18,7 @@ export const AUDIO_TOUR_STEPS = Object.freeze([
     { targetSelector: '.anomalous-character-voice-header.is-draggable', icon: '🧲', titleKey: 'audioTourDragTitle', bodyKey: 'audioTourDragBody', position: 'bottom' },
     { targetSelector: '.anomalous-character-voice-actions', icon: '🎭', titleKey: 'audioTourEditTitle', bodyKey: 'audioTourEditBody', position: 'bottom' },
     { targetSelector: '.anomalous-voice-copy-btn', icon: '🏷️', titleKey: 'audioTourTagTitle', bodyKey: 'audioTourTagBody', position: 'bottom' },
-    { targetSelector: '#anomalous-script-btn', icon: '📜', titleKey: 'audioTourScriptTitle', bodyKey: 'audioTourScriptBody', position: 'right' },
+    { targetSelector: '[data-tour="voice-tab-script"]', icon: '📜', titleKey: 'audioTourScriptTitle', bodyKey: 'audioTourScriptBody', position: 'bottom' },
     { targetSelector: '#anomalous-audio-gallery-btn', icon: '🎧', titleKey: 'audioTourGalleryTitle', bodyKey: 'audioTourGalleryBody', position: 'right' },
     { targetSelector: '.anomalous-audio-sidebar-settings', icon: '⚙️', titleKey: 'audioTourSettingsTitle', bodyKey: 'audioTourSettingsBody', position: 'top' },
 ]);

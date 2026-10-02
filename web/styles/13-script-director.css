@@ -1,10 +1,22 @@
-/* The Voice-over page (ui_script_page.js) and the script director it holds. */
+/* The Voices page's Voice-over view (ui_script_page.js) and the script director it holds. */
 #anomalous-script-panel {
     flex: 1;
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
     background: var(--amb-bg-page);
+}
+
+/* Characters | Voice-over, where the Characters view has its toolbar. */
+.anomalous-script-topbar {
+    margin: 20px 20px 0;
+}
+
+.anomalous-script-host {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .anomalous-script-director-panel {
@@ -51,6 +63,7 @@
 .anomalous-sd-side {
     flex-shrink: 0;
     max-height: 55%;
+    overflow-x: hidden;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -74,18 +87,11 @@
 }
 
 .anomalous-sd-header {
-    padding: 20px 16px 6px;
-}
-
-.anomalous-sd-title {
-    margin: 0;
-    color: var(--amb-text-main);
-    font-size: 1.35em;
-    font-weight: 600;
+    padding: 12px 16px 2px;
 }
 
 .anomalous-sd-subtitle {
-    margin: 6px 0 0;
+    margin: 0;
     color: var(--amb-text-muted);
     font-size: 13px;
     line-height: 1.6;
@@ -268,6 +274,31 @@
     gap: 4px;
 }
 
+/* Split, merge and delete show on the card you are on; another take of a line stays in view. */
+.anomalous-sd-line-head .anomalous-sd-icon-btn.is-edit {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.anomalous-sd-line-card:hover .anomalous-sd-icon-btn.is-edit,
+.anomalous-sd-line-card:focus-within .anomalous-sd-icon-btn.is-edit {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .anomalous-sd-line-head .anomalous-sd-icon-btn.is-edit {
+        opacity: 1;
+    }
+}
+
+/* One voice only: instead of a row of "main voice" chips on every card. */
+.anomalous-sd-only-main {
+    padding: 0 16px 8px;
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
+    line-height: 1.5;
+}
+
 .anomalous-sd-line-no {
     flex: 1;
     font-size: 11px;
@@ -327,7 +358,33 @@
 .anomalous-sd-emotion-row {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 5px;
+}
+
+/* The chosen emotion's reference clip: how the voice sounds, beside the chips it belongs to. */
+.anomalous-sd-ref-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--amb-text-dim);
+    cursor: pointer;
+}
+
+.anomalous-sd-ref-btn:hover:not(:disabled),
+.anomalous-sd-ref-btn.is-playing {
+    color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+}
+
+.anomalous-sd-ref-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
 }
 
 .anomalous-sd-emotion-chip {
@@ -482,20 +539,6 @@
     color: #fbbf24;
 }
 
-.anomalous-sd-run-settings {
-    flex-shrink: 0;
-    padding: 6px 10px;
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--amb-link) 6%, transparent);
-    border: 1px solid color-mix(in srgb, var(--amb-link) 18%, transparent);
-}
-
-.anomalous-sd-run-settings summary {
-    cursor: pointer;
-    font-size: 12px;
-    color: var(--amb-text-soft);
-}
-
 .anomalous-sd-run-actions {
     display: flex;
     align-items: center;
@@ -503,54 +546,150 @@
     gap: 8px;
 }
 
-.anomalous-sd-run-select,
-.anomalous-sd-run-number {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--amb-border-strong);
-    color: var(--amb-text-main);
+/* How it is read: one setting per row; the sampling numbers folded under fine-tuning. */
+.anomalous-sd-run-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--amb-border);
+}
+
+.anomalous-sd-run-heading {
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
+}
+
+.anomalous-sd-run-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.anomalous-sd-run-label {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 44px;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.anomalous-sd-run-code {
+    color: var(--amb-text-dim);
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-sd-run-segment {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.anomalous-sd-run-choice {
+    padding: 3px 10px;
+    border: none;
     border-radius: 6px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-sd-run-choice:hover:not(:disabled) {
+    color: var(--amb-text-main);
+}
+
+.anomalous-sd-run-choice[aria-checked="true"] {
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
+    color: var(--amb-text-main);
+    font-weight: 600;
+}
+
+.anomalous-sd-run-choice:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.anomalous-sd-run-slider {
+    flex: 1;
+    min-width: 0;
+    accent-color: var(--amb-link);
+}
+
+.anomalous-sd-run-value {
+    width: 32px;
+    color: var(--amb-text-main);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.anomalous-sd-run-fine > summary {
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-sd-run-fine[open] > summary {
+    margin-bottom: 4px;
+}
+
+.anomalous-sd-run-fine > .anomalous-sd-run-row {
+    padding: 4px 0 4px 14px;
+}
+
+.anomalous-sd-run-fine .anomalous-sd-run-label {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+}
+
+/* The pronunciation editor's language picker (ui_tts_pronunciation.js). */
+.anomalous-sd-run-select {
     padding: 4px 6px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--amb-text-main);
     font-size: 12px;
 }
 
 .anomalous-sd-run-number {
+    flex-shrink: 0;
     width: 64px;
-}
-
-.anomalous-sd-run-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px 12px;
-    margin-top: 8px;
-}
-
-.anomalous-sd-run-param {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--amb-text-soft);
-    font-family: ui-monospace, monospace;
+    padding: 4px 6px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--amb-text-main);
+    font-size: 12px;
 }
 
 .anomalous-sd-run-note {
-    margin: 6px 0 4px;
+    margin: 6px 0 4px 14px;
     font-size: 11px;
     line-height: 1.5;
     color: var(--amb-text-muted);
 }
 
-.anomalous-sd-run-status,
-.anomalous-sd-run-saved {
+.anomalous-sd-run-status {
     font-size: 12px;
     color: var(--amb-text-soft);
-    word-break: break-all;
 }
 
+/* "Saved to the audio gallery ›": the file's path is its tooltip. */
 .anomalous-sd-run-saved {
-    color: var(--amb-text-muted);
-    font-size: 11px;
+    align-self: flex-start;
 }
 
 .anomalous-sd-run-warnings {

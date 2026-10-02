@@ -23,6 +23,7 @@ const SVG = {
     PAUSE: `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`,
     DOWNLOAD: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
     TRASH: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+    AGAIN: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>`,
     COPY: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
     SAVE: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,
     AUDIO_WAVE: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10v4"/><path d="M6 7v10"/><path d="M10 4v16"/><path d="M14 8v8"/><path d="M18 5v14"/><path d="M22 10v4"/></svg>`,
@@ -211,7 +212,8 @@ function renderSpeech(generation) {
     return box;
 }
 
-function createTrackRow(item, { mode, onDeleted, onSaved }) {
+/** `onVoiceAgain(item)`: open the file's lines on Voice-over (saved files only). */
+function createTrackRow(item, { mode, onDeleted, onSaved, onVoiceAgain }) {
     const generation = item.generation || null;
     const row = el('div', 'anomalous-audio-track-item');
     row.draggable = true;
@@ -250,6 +252,7 @@ function createTrackRow(item, { mode, onDeleted, onSaved }) {
     const timeLabel = el('span', 'anomalous-track-time', '--:--');
 
     const actions = el('div', 'anomalous-track-actions');
+    if (generation?.speech && onVoiceAgain) actions.appendChild(iconButton('', SVG.AGAIN, t('audioVoiceAgain'), () => onVoiceAgain(item)));
     if (generation) actions.appendChild(iconButton('', SVG.COPY, t('audioCopySpeech'), btn => copySpeech(generation.speech, btn)));
     if (mode === 'preview') {
         const saveBtn = el('button', 'anomalous-audio-tool-btn anomalous-track-save', t('audioSavePreview'));
@@ -344,7 +347,8 @@ async function renderPreviewSection(section, isCurrent, onSaved) {
 }
 
 /** Only the latest render for a container may write into it. */
-export async function renderAudioGallery(container) {
+/** `owner`: the browser, for "voice it again" (Voice-over). */
+export async function renderAudioGallery(container, { owner = null } = {}) {
     const token = {};
     renderTokens.set(container, token);
     const isCurrent = () => renderTokens.get(container) === token;
@@ -355,7 +359,7 @@ export async function renderAudioGallery(container) {
     const listSection = el('div', 'anomalous-track-list-section');
     let loadList = () => {};
     const { bar, countBadge } = renderGalleryToolbar({
-        onRefresh: () => renderAudioGallery(container),
+        onRefresh: () => renderAudioGallery(container, { owner }),
         onSearch: query => loadList(query),
     });
     wrapper.append(bar, previewSection, listSection);
@@ -402,7 +406,10 @@ export async function renderAudioGallery(container) {
             page = data.page;
             total = data.total;
             const audios = data.audios || [];
-            audios.forEach(item => trackList.appendChild(createTrackRow(item, { mode: 'output', onDeleted })));
+            const onVoiceAgain = owner?.openScript
+                ? item => owner.openScript(null, { speech: item.generation.speech, subfolder: item.subfolder })
+                : null;
+            audios.forEach(item => trackList.appendChild(createTrackRow(item, { mode: 'output', onDeleted, onVoiceAgain })));
             shown += audios.length;
             updateCount();
 

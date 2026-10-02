@@ -48,6 +48,38 @@
     flex-shrink: 0;
 }
 
+/* Characters | Voice-over: the Voices page's two views (ui_voice_tabs.js). */
+.anomalous-voice-tabs {
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.anomalous-voice-tab {
+    padding: 6px 18px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font: inherit;
+    font-size: 13px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.anomalous-voice-tab:hover {
+    color: var(--amb-text-main);
+}
+
+.anomalous-voice-tab[aria-selected="true"] {
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
+    color: var(--amb-text-main);
+    font-weight: 600;
+}
+
 .anomalous-audio-title-group {
     display: flex;
     align-items: center;
@@ -515,6 +547,11 @@
     border-radius: 6px;
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid var(--amb-border);
+}
+
+/* Folded until the summary is clicked (display: flex above would show it anyway). */
+.anomalous-track-speech-full[hidden] {
+    display: none;
 }
 
 .anomalous-track-speech-line {
@@ -1160,11 +1197,14 @@
 }
 
 /* ---------- GPT-SoVITS cards ---------- */
+/* Wraps in a narrow card instead of pushing the page sideways. */
 .anomalous-character-voice-actions {
     display: inline-flex;
-    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     align-items: center;
-    gap: 8px;
+    gap: 6px 8px;
+    min-width: 0;
     margin-left: auto;
 }
 

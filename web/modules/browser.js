@@ -80,18 +80,22 @@ export class AnomalousBrowser {
 
     /** Single entry for audio-domain navigation: the rail, the audio list's entries and the domain switch. */
     switchAudioTab(tabName, filter = null) {
-        this.hideAllPanels();
+        if (!(tabName === 'presets' && filter?.type === 'group' && this.currentShellPage() === 'script')) this.hideAllPanels();
         if (tabName === 'gallery') {
             setActiveAudioFilter({ type: 'gallery', value: null });
             this.markShellPage?.('audio-gallery');
             this.audioGalleryPanel.style.display = 'block';
-            renderAudioGallery(this.audioGalleryPanel);
+            renderAudioGallery(this.audioGalleryPanel, { owner: this });
         } else if (tabName === 'script') {
             this.markShellPage?.('script');
             this.scriptPanel.style.display = 'flex';
-            const character = this.pendingScriptCharacter;
-            this.pendingScriptCharacter = null;
-            renderScriptPage(this.scriptPanel, this, { character });
+            const pending = this.pendingScript || {};
+            this.pendingScript = null;
+            renderScriptPage(this.scriptPanel, this, pending);
+        } else if (filter?.type === 'group' && this.currentShellPage() === 'script') {
+            // A character picked in the list while on Voice-over: it speaks there.
+            this.openScript(filter.value);
+            return;
         } else {
             if (filter) setActiveAudioFilter(filter);
             else if (getActiveAudioFilter().type === 'gallery') setActiveAudioFilter(null);
@@ -113,9 +117,12 @@ export class AnomalousBrowser {
         this.goTo('voices'); // keeps the filter just set
     }
 
-    /** The Voice-over page, with `group` (a voice group key) chosen when given: a character card's button. */
-    openScript(group = null) {
-        this.pendingScriptCharacter = group;
+    /**
+     * The Voices page's Voice-over view. `group`: a voice group key to choose (a card, the list);
+     * `script`: `{ speech, subfolder }` of a generated file to voice again (the audio gallery).
+     */
+    openScript(group = null, script = null) {
+        this.pendingScript = { character: group, script };
         if (this.currentShellPage() === 'script') this.switchAudioTab('script');
         else this.goTo('script');
     }

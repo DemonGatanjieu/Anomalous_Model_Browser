@@ -164,7 +164,7 @@ covered by the `styles.css` manifest.
   the separate Anomalous_TTS node pack (docs/decisions AD-016), detected at runtime
   through `/object_info/<node class>`. Characters are normalised into one
   voice-group shape (`node_value` = what the node's `character` widget takes), so
-  cards, sidebar and the Voice-over page share one implementation. While the pack is
+  cards, sidebar and the Voice-over view share one implementation. While the pack is
   missing the studio shows install steps instead of cards; nothing else depends on it.
   Its data comes only from the node's HTTP contract, version 11
   (`/anomalous_tts/characters`, `/audio`, `/settings`, `/status`, the storage,
@@ -241,26 +241,34 @@ covered by the `styles.css` manifest.
   `planVoiceDrop` decides every character drop and names the reason for each refusal;
   unlisted nodes are refused, never matched by widget name. Supporting a node
   means adding one entry plus a test.
-- `ui_audio_studio.js` owns the Voices page: the character cards, preview playback,
+- The rail's Voices entry has two views, switched by `ui_voice_tabs.js` at the top of
+  each and sharing the character list: Characters (shell page `voices`) and Voice-over
+  (shell page `script`; `ui_shell_nav.js` keeps the rail on Voices and reopens the view
+  used last).
+  `ui_audio_studio.js` owns the Characters view: the character cards, preview playback,
   tag copying, dragging a card header onto a node through the shared `bindMaterialDrag`
   with `targetHint`/`rejectHint` telling the user what releasing does, and each card's
   "Voice-over" button (`owner.openScript(group)`).
-  `ui_script_page.js` owns the Voice-over page (rail page `script`, between Voices and
-  Audio): it loads the characters and mounts the script director, or shows the install
-  steps or the way to Voices when there is nothing to voice yet.
+  `ui_script_page.js` owns the Voice-over view: it loads the characters and mounts the
+  script director, or shows the install steps or the way to import one when there is
+  nothing to voice yet. A character picked in the list speaks there; the audio
+  gallery's "voice it again" opens a file's lines with its character
+  (`owner.openScript(null, { speech, subfolder })`).
   `audio_script.js` holds the pure script rules: splitting, bundling
   (`buildScriptPackage`, with `[take:N]` for retakes), combo value
   matching, and `buildTtsPrompt` (a GPT-SoVITS script as a ComfyUI API prompt
   saving to `output/audio/<character>/`).
-  `ui_script_director.js` owns the script director, the Voice-over page's body: one
-  character, an emotion chip row per line card, and a bundle that is generated on the
-  page, or, under "Into your own workflow", pushed to the selected/only target node,
+  `ui_script_director.js` owns the script director, the Voice-over view's body: one
+  character, an emotion chip row per line card (with the chosen emotion's reference clip;
+  none when the character has only its main voice), editing buttons shown on hover, and a
+  bundle that is generated in the view, or, under "Into your own workflow", pushed to the selected/only target node,
   dragged onto one (writing the character and script widgets together, one Ctrl+Z
   step) or copied. The page feeds it the voice groups after each fetch.
   It puts the cards on one side and generating on the other: beside
   them once the page is wide, below them when it is narrow (docked browser).
-  `ui_script_run.js` is the director's "Generate" section (a folded settings line
-  and a short bar): it runs
+  `ui_script_run.js` is the director's "Generate" section (the bar with the result and
+  a way to the audio gallery; language and speed in view, the sampling numbers folded
+  under "fine-tuning" with plain names): it runs
   the script without the canvas, plays the result, retakes the whole script
   (new seed) or one line (`[take:N]`, the node caches the rest), and saves a
   character's language, speed and folded sampling parameters to its `defaults`
