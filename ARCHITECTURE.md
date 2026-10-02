@@ -94,7 +94,8 @@ covered by the `styles.css` manifest.
   model located so the browser can open it (`/anomalous/scan_model`).
   `api/scan_summary.py` counts models matched on Civitai, unmatched and not yet scanned
   for the scan page and lists the last two, by the same sidecar rules the scraper uses
-  (`sidecar_info`, `is_unmatched`, `unmatched_reason` in `model_identity.py`).
+  (`sidecar_info`, `is_unmatched`, `unmatched_reason` in `model_identity.py`); it also
+  lists the model files in other formats, which scans never read, so the page can say so.
 - `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
   `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
   integrity receipts; `api/recipes.py` is the HTTP facade. `api/recipe_constants.py`

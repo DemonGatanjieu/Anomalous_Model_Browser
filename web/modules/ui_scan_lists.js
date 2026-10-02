@@ -1,6 +1,7 @@
 /**
  * The scan page's model lists: the last scan's result (what each model got, why Civitai had
- * nothing) and the models still unmatched or not scanned, from GET /anomalous/scan_summary.
+ * nothing), the models still unmatched or not scanned, and the model files a scan never reads
+ * (other formats), from GET /anomalous/scan_summary.
  * Every row opens its model; rows offer "scan" / "look up again" and a Civitai search.
  * The page passes what the buttons do (`actions`); this module only renders.
  */
@@ -131,7 +132,9 @@ export function renderModelLists(summary, actions, state) {
     const unmatched = [...(summary?.unmatched_models || [])]
         .sort((a, b) => Number(isPending(b.reason)) - Number(isPending(a.reason)));
     const tabs = [['new', t('scanListNew', { count: summary?.new || 0 }), summary?.new_models || []],
-        ['unmatched', t('scanListUnmatched', { count: summary?.unmatched || 0 }), unmatched]];
+        ['unmatched', t('scanListUnmatched', { count: summary?.unmatched || 0 }), unmatched],
+        ['skipped', t('scanListSkipped', { count: summary?.skipped || 0 }), summary?.skipped_models || []]];
+    if (!tabs[2][2].length) tabs.pop(); // "other formats" only when there are some
     if (!tabs.some(([, , items]) => items.length)) return null;
     if (!tabs.some(([key, , items]) => key === state.tab && items.length)) state.tab = tabs.find(([, , items]) => items.length)[0];
 
@@ -151,9 +154,14 @@ export function renderModelLists(summary, actions, state) {
                 [t('scanRowOpen'), () => actions.open(item)],
                 [t('scanRowScan'), () => actions.scan([item]), actions.busy],
             ]), SHOWN_ROWS);
+        } else if (key === 'skipped') {
+            hint.textContent = t('scanListSkippedHint');
+            fillRows(list, items, item => row(item, '', [[t('scanRowOpen'), () => actions.open(item)]]), SHOWN_ROWS);
         } else {
             hint.textContent = t(actions.offline ? 'scanListUnmatchedHintOffline' : 'scanListUnmatchedHint');
-            fillRows(list, items, item => row(item, [reasonText(item.reason), item.base ? `≈ ${item.base}` : ''].filter(Boolean).join(' · '),
+            // Civitai does not know it and the file is no known image model: say what it may be.
+            const guess = item => (item.base ? `≈ ${item.base}` : item.reason === 'not_found' ? t('scanReasonNotImage') : '');
+            fillRows(list, items, item => row(item, [reasonText(item.reason), guess(item)].filter(Boolean).join(' · '),
                 unmatchedButtons(item, actions), '≈'), SHOWN_ROWS);
         }
     };
@@ -169,7 +177,7 @@ export function renderModelLists(summary, actions, state) {
     return box;
 }
 
-/** A count on the page that opens its list (unmatched, not scanned). */
+/** A count on the page that opens its list (unmatched, not scanned, other formats). */
 export function showList(page, state, key) {
     state.tab = key;
     const lists = page.querySelector('#anomalous-scan-lists');

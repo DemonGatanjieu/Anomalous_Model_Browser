@@ -30,6 +30,23 @@
     line-height: 1.6;
 }
 
+/* "N files in other formats are not scanned": a quiet link under the counts. */
+.anomalous-scan-skipped-note {
+    align-self: flex-start;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--amb-text-muted);
+    font-size: 0.85em;
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.anomalous-scan-skipped-note:hover {
+    color: var(--amb-text-main);
+}
+
 .anomalous-scan-stats {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));

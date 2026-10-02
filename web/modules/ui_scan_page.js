@@ -206,6 +206,10 @@ export async function renderScanPage(owner, panel) {
             summary?.new ? () => showList(page, listState, 'new') : null),
     );
     page.append(stats);
+    if (summary?.skipped) {
+        page.append(button('anomalous-scan-skipped-note', t('scanPageSkippedNote', { count: summary.skipped }),
+            () => showList(page, listState, 'skipped')));
+    }
     if (!summary) page.append(el('p', 'anomalous-scan-muted', t('scanPageSummaryFailed')));
 
     const busy = isScanRunning();
