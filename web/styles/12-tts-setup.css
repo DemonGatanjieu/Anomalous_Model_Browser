@@ -11,7 +11,7 @@
     flex-direction: column;
     gap: 16px;
     margin-top: 12px;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 12px;
 }
 
@@ -28,7 +28,7 @@
 .anomalous-tts-reminder-text {
     flex: 1 1 260px;
     min-width: 0;
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     line-height: 1.5;
 }
 
@@ -66,14 +66,14 @@
     flex: 1;
     min-width: 0;
     overflow: hidden;
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .anomalous-tts-setup-meta {
     flex-shrink: 0;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
 }
 
 .anomalous-tts-setup-command {
@@ -82,7 +82,7 @@
     padding: 4px 8px;
     border-radius: 6px;
     background: rgba(0, 0, 0, 0.3);
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     overflow-wrap: anywhere;
 }
@@ -104,8 +104,8 @@
     flex-shrink: 0;
     padding: 1px 6px;
     border-radius: 4px;
-    background: rgba(129, 140, 248, 0.12);
-    color: #a5b4fc;
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+    color: var(--amb-link);
     font-size: 10.5px;
     white-space: nowrap;
 }
@@ -117,7 +117,7 @@
 }
 
 .anomalous-tts-state.is-ok { color: #34d399; }
-.anomalous-tts-state.is-busy { color: #38bdf8; }
+.anomalous-tts-state.is-busy { color: var(--amb-link); }
 .anomalous-tts-state.is-missing { color: #f59e0b; }
 .anomalous-tts-state.is-error { color: #f87171; cursor: help; }
 
@@ -131,7 +131,7 @@
     padding: 0;
     border: none;
     background: none;
-    color: #a5b4fc;
+    color: var(--amb-link);
     font: inherit;
     font-size: 12px;
     text-decoration: underline;
@@ -172,7 +172,7 @@
     align-items: center;
     gap: 8px;
     min-width: 0;
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 12px;
 }
 
@@ -191,7 +191,7 @@
     justify-content: center;
     width: 22px;
     height: 22px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 50%;
     font-size: 11px;
     font-weight: 700;
@@ -202,19 +202,19 @@
 }
 
 .anomalous-tts-step.is-current {
-    color: #e0e7ff;
+    color: var(--amb-text-main);
     font-weight: 600;
 }
 
 .anomalous-tts-step.is-current .anomalous-tts-step-no {
     border-color: transparent;
-    background: linear-gradient(135deg, #6366f1, #38bdf8);
-    color: #fff;
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
+    background: linear-gradient(135deg, var(--amb-link), var(--amb-link));
+    color: var(--amb-text-main);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--amb-link) 18%, transparent);
 }
 
 .anomalous-tts-step.is-done {
-    color: #94a3b8;
+    color: var(--amb-text-muted);
 }
 
 .anomalous-tts-step.is-done .anomalous-tts-step-no {
@@ -248,10 +248,10 @@
     width: 26px;
     height: 26px;
     padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 50%;
     background: transparent;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font: inherit;
     font-size: 13px;
     font-weight: 700;
@@ -259,8 +259,8 @@
 }
 
 .anomalous-tts-help:hover {
-    border-color: #818cf8;
-    color: #e0e7ff;
+    border-color: var(--amb-link);
+    color: var(--amb-text-main);
 }
 
 .anomalous-tts-choose {
@@ -274,7 +274,7 @@
 
 .anomalous-tts-choose-title {
     margin-bottom: 6px;
-    color: #f1f5f9;
+    color: var(--amb-text-main);
     font-size: 19px;
     font-weight: 700;
     text-align: center;
@@ -285,10 +285,10 @@
     align-items: center;
     gap: 16px;
     padding: 16px 18px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.03);
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font: inherit;
     text-align: left;
     cursor: pointer;
@@ -296,8 +296,8 @@
 }
 
 .anomalous-tts-mode:hover:not(:disabled) {
-    border-color: rgba(129, 140, 248, 0.55);
-    background: rgba(99, 102, 241, 0.1);
+    border-color: color-mix(in srgb, var(--amb-link) 55%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 10%, transparent);
     transform: translateY(-1px);
 }
 
@@ -314,8 +314,8 @@
     width: 48px;
     height: 48px;
     border-radius: 12px;
-    background: rgba(99, 102, 241, 0.16);
-    color: #a5b4fc;
+    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
+    color: var(--amb-link);
 }
 
 .anomalous-tts-mode-words {
@@ -332,13 +332,13 @@
 }
 
 .anomalous-tts-mode-desc {
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 12px;
     line-height: 1.5;
 }
 
 .anomalous-tts-mode-go {
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 22px;
 }
 
@@ -347,7 +347,7 @@
     flex-direction: column;
     gap: 8px;
     padding: 12px 14px;
-    border: 1px dashed rgba(129, 140, 248, 0.35);
+    border: 1px dashed color-mix(in srgb, var(--amb-link) 35%, transparent);
     border-radius: 12px;
 }
 
@@ -356,7 +356,7 @@
 }
 
 .anomalous-tts-pick-character-title {
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 12px;
     font-weight: 600;
 }
@@ -371,22 +371,22 @@
 
 .anomalous-tts-pick-character-item {
     padding: 5px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.2);
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
 }
 
 .anomalous-tts-pick-character-item:hover {
-    border-color: #818cf8;
-    background: rgba(99, 102, 241, 0.16);
+    border-color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
 }
 
 .anomalous-tts-toolbar-hint {
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 11.5px;
 }
 
@@ -403,10 +403,10 @@
     justify-content: center;
     gap: 14px;
     padding: 32px 24px;
-    border: 2px dashed rgba(129, 140, 248, 0.35);
+    border: 2px dashed color-mix(in srgb, var(--amb-link) 35%, transparent);
     border-radius: 18px;
     background:
-        radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.12), transparent 60%),
+        radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--amb-link) 12%, transparent), transparent 60%),
         rgba(255, 255, 255, 0.015);
     text-align: center;
     transition: border-color 0.15s ease, background 0.15s ease;
@@ -419,12 +419,12 @@
     width: 72px;
     height: 72px;
     border-radius: 50%;
-    background: rgba(99, 102, 241, 0.16);
-    color: #a5b4fc;
+    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
+    color: var(--amb-link);
 }
 
 .anomalous-tts-hero-title {
-    color: #f1f5f9;
+    color: var(--amb-text-main);
     font-size: 19px;
     font-weight: 700;
 }
@@ -441,21 +441,21 @@
     align-items: baseline;
     gap: 6px;
     padding: 5px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.25);
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 11.5px;
 }
 
 .anomalous-tts-hero-need b {
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font-weight: 600;
 }
 
 .anomalous-tts-hero-desc {
     max-width: 540px;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 12.5px;
     line-height: 1.7;
 }
@@ -477,19 +477,19 @@
     justify-content: center;
     align-items: baseline;
     gap: 8px;
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 12px;
 }
 
 .anomalous-tts-hero-dot {
-    color: #475569;
+    color: var(--amb-text-dim);
 }
 
 /* Suggested folder layout under the batch drop area. */
 .anomalous-tts-layout {
     width: 100%;
     max-width: 540px;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 12px;
     text-align: left;
 }
@@ -497,7 +497,7 @@
 .anomalous-tts-layout summary {
     width: fit-content;
     margin: 0 auto;
-    color: #a5b4fc;
+    color: var(--amb-link);
     cursor: pointer;
 }
 
@@ -507,19 +507,19 @@
     gap: 4px 18px;
     margin-top: 10px;
     padding: 10px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.25);
 }
 
 .anomalous-tts-layout-name {
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font-family: ui-monospace, Consolas, monospace;
     white-space: nowrap;
 }
 
 .anomalous-tts-layout-note {
-    color: #64748b;
+    color: var(--amb-text-dim);
 }
 
 .anomalous-tts-layout-foot {
@@ -535,10 +535,10 @@
     display: none;
     align-items: center;
     justify-content: center;
-    border: 2px dashed #818cf8;
+    border: 2px dashed var(--amb-link);
     border-radius: 14px;
     background: rgba(20, 23, 34, 0.88);
-    color: #e0e7ff;
+    color: var(--amb-text-main);
     font-size: 18px;
     font-weight: 700;
     pointer-events: none;
@@ -557,17 +557,17 @@
 
 .anomalous-tts-toolbar-title {
     margin-right: auto;
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font-size: 13px;
     font-weight: 700;
 }
 
 .anomalous-tts-ghost {
     padding: 6px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.04);
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font: inherit;
     font-size: 12px;
     cursor: pointer;
@@ -575,9 +575,9 @@
 }
 
 .anomalous-tts-ghost:hover {
-    border-color: rgba(129, 140, 248, 0.45);
-    background: rgba(99, 102, 241, 0.12);
-    color: #e0e7ff;
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+    color: var(--amb-text-main);
 }
 
 .anomalous-tts-ghost.is-large {
@@ -598,9 +598,9 @@
     flex-direction: column;
     min-width: 240px;
     padding: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 12px;
-    background: #1b1f2e;
+    background: var(--amb-bg-card);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
 }
 
@@ -616,7 +616,7 @@
     border: none;
     border-radius: 8px;
     background: none;
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font: inherit;
     font-size: 12.5px;
     text-align: left;
@@ -624,16 +624,16 @@
 }
 
 .anomalous-tts-menu-item:hover {
-    background: rgba(99, 102, 241, 0.16);
+    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
 }
 
 .anomalous-tts-menu-hint {
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 11px;
 }
 
 .anomalous-tts-note {
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 11.5px;
 }
 
@@ -650,20 +650,20 @@
 
 .anomalous-tts-card {
     flex-shrink: 0;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.025);
     transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .anomalous-tts-card.is-open {
-    border-color: rgba(129, 140, 248, 0.35);
-    background: rgba(99, 102, 241, 0.04);
+    border-color: color-mix(in srgb, var(--amb-link) 35%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 4%, transparent);
 }
 
 .anomalous-tts-card.is-drop-target {
-    border-color: #818cf8;
-    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.35);
+    border-color: var(--amb-link);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--amb-link) 35%, transparent);
 }
 
 .anomalous-tts-card[data-tone="done"] {
@@ -693,7 +693,7 @@
     padding: 0;
     border: none;
     background: none;
-    color: #64748b;
+    color: var(--amb-text-dim);
     cursor: pointer;
 }
 
@@ -719,8 +719,8 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1, #38bdf8);
-    color: #fff;
+    background: linear-gradient(135deg, var(--amb-link), var(--amb-link));
+    color: var(--amb-text-main);
     font-size: 14px;
     font-weight: 700;
 }
@@ -737,7 +737,7 @@
     gap: 8px;
     min-width: 0;
     overflow: hidden;
-    color: #f1f5f9;
+    color: var(--amb-text-main);
     font-size: 14px;
     font-weight: 700;
     text-overflow: ellipsis;
@@ -745,7 +745,7 @@
 }
 
 .anomalous-tts-card-addto {
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 12px;
     font-weight: 500;
 }
@@ -758,18 +758,18 @@
     border: 1px solid transparent;
     border-radius: 7px;
     background: transparent;
-    color: #f1f5f9;
+    color: var(--amb-text-main);
     font: inherit;
     font-size: 14px;
     font-weight: 700;
 }
 
 .anomalous-tts-card-name-input:hover {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--amb-border);
 }
 
 .anomalous-tts-card-name-input:focus {
-    border-color: rgba(129, 140, 248, 0.6);
+    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
     background: rgba(0, 0, 0, 0.25);
     outline: none;
 }
@@ -784,7 +784,7 @@
     padding: 2px 9px;
     border-radius: 999px;
     background: rgba(148, 163, 184, 0.12);
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 11px;
     font-weight: 600;
     white-space: nowrap;
@@ -793,11 +793,11 @@
 .anomalous-tts-card[data-tone="ready"] .anomalous-tts-card-pill { background: rgba(52, 211, 153, 0.14); color: #34d399; }
 .anomalous-tts-card[data-tone="needed"] .anomalous-tts-card-pill { background: rgba(251, 191, 36, 0.14); color: #fbbf24; }
 .anomalous-tts-card[data-tone="error"] .anomalous-tts-card-pill { background: rgba(248, 113, 113, 0.14); color: #f87171; }
-.anomalous-tts-card[data-tone="busy"] .anomalous-tts-card-pill { background: rgba(56, 189, 248, 0.14); color: #38bdf8; }
+.anomalous-tts-card[data-tone="busy"] .anomalous-tts-card-pill { background: color-mix(in srgb, var(--amb-link) 14%, transparent); color: var(--amb-link); }
 
 .anomalous-tts-card-meta {
     flex-shrink: 0;
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 11px;
     white-space: nowrap;
 }
@@ -811,7 +811,7 @@
     border: none;
     border-radius: 6px;
     background: none;
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 15px;
     line-height: 1;
     cursor: pointer;
@@ -838,10 +838,10 @@
 
 .anomalous-tts-pick {
     padding: 6px 14px;
-    border: 1px solid rgba(129, 140, 248, 0.4);
+    border: 1px solid color-mix(in srgb, var(--amb-link) 40%, transparent);
     border-radius: 8px;
-    background: rgba(99, 102, 241, 0.14);
-    color: #e0e7ff;
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+    color: var(--amb-text-main);
     font: inherit;
     font-size: 12px;
     font-weight: 600;
@@ -849,7 +849,7 @@
 }
 
 .anomalous-tts-pick:hover {
-    background: rgba(99, 102, 241, 0.26);
+    background: color-mix(in srgb, var(--amb-link) 26%, transparent);
 }
 
 .anomalous-tts-card-section {
@@ -860,13 +860,13 @@
 }
 
 .anomalous-tts-card-section-title {
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 12px;
     font-weight: 700;
 }
 
 .anomalous-tts-card-section-hint {
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 11px;
 }
 
@@ -882,7 +882,7 @@
 
 /* ---- folded rows: files left out, and the unassigned files of one folder ---- */
 .anomalous-tts-card-fold {
-    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border: 1px dashed var(--amb-border);
     border-radius: 10px;
 }
 
@@ -891,7 +891,7 @@
     align-items: center;
     gap: 10px;
     padding: 7px 10px;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 12px;
     cursor: pointer;
 }
@@ -927,7 +927,7 @@
     padding: 5px 8px;
     border: 1px solid transparent;
     border-radius: 8px;
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 12.5px;
 }
 
@@ -938,7 +938,7 @@
     justify-content: center;
     width: 22px;
     height: 22px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 50%;
     font-size: 11px;
     font-weight: 700;
@@ -968,7 +968,7 @@
 }
 
 .anomalous-tts-check-item.is-done {
-    color: #94a3b8;
+    color: var(--amb-text-muted);
 }
 
 .anomalous-tts-check-item.is-done .anomalous-tts-check-mark {
@@ -978,17 +978,17 @@
 }
 
 .anomalous-tts-check-item.is-next {
-    border-color: rgba(129, 140, 248, 0.5);
-    background: rgba(99, 102, 241, 0.12);
-    color: #e0e7ff;
+    border-color: color-mix(in srgb, var(--amb-link) 50%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+    color: var(--amb-text-main);
     font-weight: 600;
 }
 
 .anomalous-tts-check-item.is-next .anomalous-tts-check-mark {
     border-color: transparent;
-    background: linear-gradient(135deg, #6366f1, #38bdf8);
-    color: #fff;
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
+    background: linear-gradient(135deg, var(--amb-link), var(--amb-link));
+    color: var(--amb-text-main);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--amb-link) 18%, transparent);
 }
 
 .anomalous-tts-card[data-tone="error"] .anomalous-tts-check-item.is-next {
@@ -1015,7 +1015,7 @@
     align-items: stretch;
     gap: 6px;
     padding: 8px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--amb-border);
     border-left: 3px solid rgba(52, 211, 153, 0.7);
     border-radius: 9px;
     background: rgba(0, 0, 0, 0.18);
@@ -1023,12 +1023,12 @@
 
 .anomalous-tts-card-files > .anomalous-tts-file:not(.is-audio) {
     padding: 6px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--amb-border);
     border-radius: 9px;
     background: rgba(0, 0, 0, 0.18);
 }
 
-.anomalous-tts-file[data-tone="busy"] { border-left-color: #38bdf8; }
+.anomalous-tts-file[data-tone="busy"] { border-left-color: var(--amb-link); }
 .anomalous-tts-file[data-tone="skip"] { border-left-color: #64748b; opacity: 0.7; }
 .anomalous-tts-file[data-tone="idle"] { border-left-color: #475569; }
 
@@ -1062,30 +1062,30 @@
     width: 26px;
     height: 26px;
     padding: 0 0 0 2px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.04);
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 9px;
     cursor: pointer;
 }
 
 .anomalous-tts-file-play:hover {
-    border-color: #818cf8;
-    color: #fff;
+    border-color: var(--amb-link);
+    color: var(--amb-text-main);
 }
 
 /* The clip being listened to: its button is "stop". */
 .anomalous-tts-file.is-playing {
-    border-color: rgba(129, 140, 248, 0.45);
-    background: rgba(129, 140, 248, 0.08);
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 8%, transparent);
 }
 
 .anomalous-tts-file.is-playing .anomalous-tts-file-play {
     padding: 0;
-    border-color: #818cf8;
-    background: #818cf8;
-    color: #fff;
+    border-color: var(--amb-link);
+    background: var(--amb-btn-primary-bg);
+    color: var(--amb-btn-primary-text);
 }
 
 .anomalous-tts-file-play.is-failed {
@@ -1103,7 +1103,7 @@
 
 .anomalous-tts-file-name {
     overflow: hidden;
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font-size: 12.5px;
     font-weight: 600;
     text-overflow: ellipsis;
@@ -1112,7 +1112,7 @@
 
 .anomalous-tts-file-meta {
     flex-shrink: 0;
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 11px;
 }
 
@@ -1128,7 +1128,7 @@
     flex-shrink: 1;
     max-width: 180px;
     overflow: hidden;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 11px;
     font-weight: 600;
     text-overflow: ellipsis;
@@ -1139,17 +1139,17 @@
     display: none;
 }
 
-.anomalous-tts-file[data-tone="busy"] .anomalous-tts-file-state { color: #38bdf8; }
+.anomalous-tts-file[data-tone="busy"] .anomalous-tts-file-state { color: var(--amb-link); }
 .anomalous-tts-file[data-tone="merge"] .anomalous-tts-file-state { color: #34d399; }
 .anomalous-tts-file[data-tone="error"] .anomalous-tts-file-state { color: #f87171; }
 
 .anomalous-tts-file-main {
     flex-shrink: 0;
     padding: 3px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 999px;
     background: transparent;
-    color: #64748b;
+    color: var(--amb-text-dim);
     font: inherit;
     font-size: 11px;
     cursor: pointer;
@@ -1185,17 +1185,17 @@
 .anomalous-tts-card-language {
     min-width: 0;
     padding: 5px 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     border-radius: 7px;
     background: rgba(0, 0, 0, 0.25);
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font: inherit;
     font-size: 12px;
 }
 
 .anomalous-tts-file input:focus,
 .anomalous-tts-card-language:focus {
-    border-color: rgba(129, 140, 248, 0.6);
+    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
     outline: none;
 }
 
@@ -1223,8 +1223,8 @@
 }
 
 .anomalous-tts-file-text.dragover {
-    border-color: #818cf8;
-    background: rgba(99, 102, 241, 0.12);
+    border-color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
 }
 
 .anomalous-tts-file-move {
@@ -1233,7 +1233,7 @@
     padding: 3px 6px;
     border-color: transparent;
     background: transparent;
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 11px;
     cursor: pointer;
 }
@@ -1242,9 +1242,9 @@
 .anomalous-tts-file:hover .anomalous-tts-file-move,
 .anomalous-tts-file-move:focus,
 .anomalous-tts-card.is-tray .anomalous-tts-file-move {
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: var(--amb-border-strong);
     background: rgba(0, 0, 0, 0.25);
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
 }
 
 .anomalous-tts-card.is-tray .anomalous-tts-file-move {
@@ -1260,7 +1260,7 @@
     justify-content: space-between;
     gap: 10px 20px;
     padding-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--amb-border);
 }
 
 .anomalous-tts-card-lines,
@@ -1274,7 +1274,7 @@
 
 .anomalous-tts-card-lines > .anomalous-tts-file {
     padding: 2px 4px 2px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.2);
 }
@@ -1285,13 +1285,13 @@
 }
 
 .anomalous-tts-card-extra-label {
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 12px;
     font-weight: 600;
 }
 
 .anomalous-tts-card-note {
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 11.5px;
     line-height: 1.6;
 }
@@ -1359,7 +1359,7 @@
 
 .anomalous-tts-footer-path {
     overflow: hidden;
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 11px;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1400,10 +1400,10 @@
     flex: 1;
     min-width: 0;
     padding: 6px 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     border-radius: 6px;
     background: rgba(0, 0, 0, 0.25);
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font-size: 12px;
 }
 
@@ -1412,7 +1412,7 @@
     flex-direction: column;
     height: 320px;
     overflow-y: auto;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.2);
 }
@@ -1424,9 +1424,9 @@
     gap: 8px;
     padding: 6px 10px;
     border: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--amb-border);
     background: none;
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font: inherit;
     font-size: 12px;
     text-align: left;
@@ -1435,7 +1435,7 @@
 
 .anomalous-tts-picker-item:hover,
 .anomalous-tts-picker-item:focus-visible {
-    background: rgba(129, 140, 248, 0.1);
+    background: color-mix(in srgb, var(--amb-link) 10%, transparent);
 }
 
 .anomalous-tts-picker-icon {
@@ -1453,7 +1453,7 @@
 
 .anomalous-tts-picker-meta {
     flex-shrink: 0;
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 11px;
 }
 
@@ -1464,7 +1464,7 @@
 /* ---------- Dropping files on the studio ---------- */
 .anomalous-audio-studio-wrapper.is-file-dragover {
     position: relative;
-    outline: 2px dashed rgba(129, 140, 248, 0.6);
+    outline: 2px dashed color-mix(in srgb, var(--amb-link) 60%, transparent);
     outline-offset: -2px;
     border-radius: 12px;
 }
@@ -1477,8 +1477,8 @@
     z-index: 2;
     padding: 6px 14px;
     border-radius: 999px;
-    background: #4f46e5;
-    color: #fff;
+    background: var(--amb-btn-primary-bg);
+    color: var(--amb-btn-primary-text);
     font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
@@ -1496,6 +1496,6 @@
 }
 
 .anomalous-character-voice-card.is-file-target {
-    outline: 2px solid #818cf8;
+    outline: 2px solid var(--amb-link);
     outline-offset: 1px;
 }

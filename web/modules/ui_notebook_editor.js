@@ -599,7 +599,7 @@ export function fillNotebookGalleries(baseModel, mainGallery, loraGallery, data)
             if (isVid) return `<video src="${m.preview_url}" muted loop playsinline></video>`;
             return `<img src="${m.preview_url}" />`;
         }
-        return `<div style="width:30px; height:30px; background:#222; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#555;">?</div>`;
+        return `<div style="width:30px; height:30px; background:var(--amb-bg-card); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--amb-text-dim);">?</div>`;
     };
 
     fetch(`/anomalous/compatible_models?base_model=${encodeURIComponent(baseModel)}&target_type=checkpoints,unet,diffusion_models`)
@@ -650,7 +650,7 @@ export function fillNotebookGalleries(baseModel, mainGallery, loraGallery, data)
 
                         let badgeHtml = '';
                         if (isSelected) {
-                            badgeHtml = `<div style="position:absolute; top:-5px; right:-5px; background:linear-gradient(135deg, #f59e0b, #d97706); color:#180808; border-radius:50%; width:20px; height:20px; font-size:12px; display:flex; align-items:center; justify-content:center; font-weight:bold; z-index:10; box-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 0 6px rgba(245,158,11,0.4); border: 1px solid rgba(255,255,255,0.3);">${loraIndex + 1}</div>`;
+                            badgeHtml = `<div style="position:absolute; top:-5px; right:-5px; background:linear-gradient(135deg, #f59e0b, #d97706); color:#180808; border-radius:50%; width:20px; height:20px; font-size:12px; display:flex; align-items:center; justify-content:center; font-weight:bold; z-index:10; box-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 0 6px rgba(245,158,11,0.4); border: 1px solid var(--amb-border-strong);">${loraIndex + 1}</div>`;
                         }
 
                         card.innerHTML = `${badgeHtml}${buildThumbHtml(m)}<div class="anomalous-nb-minilora-name" title="${escapeHtml(m.filename)}">${escapeHtml(m.filename)}</div>`;

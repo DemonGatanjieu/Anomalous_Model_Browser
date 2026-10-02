@@ -39,9 +39,9 @@ function createNotebookSidebar(ctx) {
     createInput.style.display = 'none';
     createInput.style.flex = '1';
     createInput.style.padding = '4px';
-    createInput.style.background = '#222';
+    createInput.style.background = 'var(--amb-bg-card)';
     createInput.style.color = '#fff';
-    createInput.style.border = '1px solid #555';
+    createInput.style.border = '1px solid var(--amb-border-strong)';
     createInput.style.borderRadius = '4px';
 
     createBtn.onclick = () => {

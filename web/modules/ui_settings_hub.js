@@ -122,7 +122,7 @@ export function createSettingsHub(owner, {
 
     const styleHubBtn = (btn) => {
         btn.style.background = 'transparent';
-        btn.style.border = '1px solid rgba(255,255,255,0.05)';
+        btn.style.border = '1px solid var(--amb-border)';
         btn.style.color = '#ccc';
         btn.style.textAlign = 'left';
         btn.style.padding = '8px 10px';
@@ -266,7 +266,7 @@ modelSettingsNote.textContent = t('sidebarModelSettingsNote');
     viewModeContainer.style.background = 'rgba(255, 255, 255, 0.03)';
     viewModeContainer.style.padding = '8px 10px';
     viewModeContainer.style.borderRadius = '8px';
-    viewModeContainer.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+    viewModeContainer.style.border = '1px solid var(--amb-border)';
     viewModeContainer.style.marginBottom = '4px';
 
     const viewModeHeader = document.createElement('div');
@@ -289,7 +289,7 @@ modelSettingsNote.textContent = t('sidebarModelSettingsNote');
     viewModeGroup.style.background = 'rgba(0, 0, 0, 0.35)';
     viewModeGroup.style.padding = '3px';
     viewModeGroup.style.borderRadius = '6px';
-    viewModeGroup.style.border = '1px solid rgba(255, 255, 255, 0.06)';
+    viewModeGroup.style.border = '1px solid var(--amb-border)';
 
     const modeDefinitions = [
         { id: 'compact', key: 'sidebarViewModeCompact' },
@@ -349,7 +349,7 @@ modelSettingsNote.textContent = t('sidebarModelSettingsNote');
     scaleContainer.style.background = 'rgba(255, 255, 255, 0.03)';
     scaleContainer.style.padding = '8px 10px';
     scaleContainer.style.borderRadius = '8px';
-    scaleContainer.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+    scaleContainer.style.border = '1px solid var(--amb-border)';
     scaleContainer.style.marginBottom = '4px';
 
     const scaleLabel = document.createElement('span');
@@ -375,9 +375,9 @@ modelSettingsNote.textContent = t('sidebarModelSettingsNote');
     const createScaleBtn = (text, delta) => {
         const btn = document.createElement('button');
         btn.innerText = text;
-        btn.style.background = '#333';
+        btn.style.background = 'var(--amb-bg-card-hover)';
         btn.style.color = '#fff';
-        btn.style.border = '1px solid #555';
+        btn.style.border = '1px solid var(--amb-border-strong)';
         btn.style.borderRadius = '4px';
         btn.style.width = '24px';
         btn.style.height = '24px';
@@ -385,8 +385,8 @@ modelSettingsNote.textContent = t('sidebarModelSettingsNote');
         btn.style.display = 'flex';
         btn.style.alignItems = 'center';
         btn.style.justifyContent = 'center';
-        btn.onmouseover = () => btn.style.background = '#444';
-        btn.onmouseout = () => btn.style.background = '#333';
+        btn.onmouseover = () => btn.style.background = 'var(--amb-bg-card-hover)';
+        btn.onmouseout = () => btn.style.background = 'var(--amb-bg-card-hover)';
         btn.onclick = () => {
             currentScale = Math.max(0.5, Math.min(1.5, currentScale + delta));
             scaleVal.innerText = `${Math.round(currentScale * 100)}%`;
@@ -413,7 +413,7 @@ modelSettingsNote.textContent = t('sidebarModelSettingsNote');
     bgOpacityContainer.style.background = 'rgba(255, 255, 255, 0.03)';
     bgOpacityContainer.style.padding = '8px 10px';
     bgOpacityContainer.style.borderRadius = '8px';
-    bgOpacityContainer.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+    bgOpacityContainer.style.border = '1px solid var(--amb-border)';
     bgOpacityContainer.style.marginBottom = '4px';
 
     const bgOpacityLabel = document.createElement('span');
@@ -439,9 +439,9 @@ modelSettingsNote.textContent = t('sidebarModelSettingsNote');
     const createBgBtn = (text, delta) => {
         const btn = document.createElement('button');
         btn.innerText = text;
-        btn.style.background = '#333';
+        btn.style.background = 'var(--amb-bg-card-hover)';
         btn.style.color = '#fff';
-        btn.style.border = '1px solid #555';
+        btn.style.border = '1px solid var(--amb-border-strong)';
         btn.style.borderRadius = '4px';
         btn.style.width = '24px';
         btn.style.height = '24px';
@@ -449,8 +449,8 @@ modelSettingsNote.textContent = t('sidebarModelSettingsNote');
         btn.style.display = 'flex';
         btn.style.alignItems = 'center';
         btn.style.justifyContent = 'center';
-        btn.onmouseover = () => btn.style.background = '#444';
-        btn.onmouseout = () => btn.style.background = '#333';
+        btn.onmouseover = () => btn.style.background = 'var(--amb-bg-card-hover)';
+        btn.onmouseout = () => btn.style.background = 'var(--amb-bg-card-hover)';
         btn.onclick = () => {
             currentBgOpacity = Math.max(0, Math.min(1, Math.round((currentBgOpacity + delta) * 100) / 100));
             bgOpacityVal.innerText = `${Math.round(currentBgOpacity * 100)}%`;

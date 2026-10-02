@@ -4,7 +4,7 @@
     flex: 1;
     flex-direction: column;
     overflow-y: auto;
-    background: var(--amb-bg-page, #131315);
+    background: var(--amb-bg-page, var(--amb-bg-page));
 }
 
 .anomalous-scan-stat.is-bad .anomalous-scan-stat-value { color: #fca5a5; }
@@ -15,19 +15,19 @@
 
 .anomalous-doctor-row .anomalous-scan-row-mark { margin-top: 1px; }
 .anomalous-doctor-row.is-ready .anomalous-scan-row-mark { color: #86efac; }
-.anomalous-doctor-row.is-fixable .anomalous-scan-row-mark { color: #a5b4fc; }
+.anomalous-doctor-row.is-fixable .anomalous-scan-row-mark { color: var(--amb-link); }
 .anomalous-doctor-row.is-conflict .anomalous-scan-row-mark,
 .anomalous-doctor-row.is-missing .anomalous-scan-row-mark { color: #fca5a5; }
 
 .anomalous-doctor-why {
-    color: #9ca3af;
+    color: var(--amb-text-muted);
     font-size: 12px;
     line-height: 1.5;
     overflow-wrap: anywhere;
 }
 
 .anomalous-doctor-proof {
-    color: #6b7280;
+    color: var(--amb-text-dim);
     font-size: 11.5px;
 }
 
@@ -44,9 +44,9 @@
 }
 
 .anomalous-scan-row-btn.is-main {
-    border-color: rgba(165, 180, 252, 0.45);
-    background: rgba(165, 180, 252, 0.12);
-    color: #e5e7eb;
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+    color: var(--amb-text-main);
 }
 
 .anomalous-doctor-to-scan {
@@ -73,7 +73,7 @@
     border-radius: 12px;
     background: rgba(24, 24, 27, 0.96);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-    color: #e5e7eb;
+    color: var(--amb-text-main);
     font-size: 13px;
     transform: translateX(-50%);
     box-sizing: border-box;
@@ -93,10 +93,10 @@
 
 .anomalous-doctor-banner-btn {
     padding: 5px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.05);
-    color: #e5e7eb;
+    color: var(--amb-text-main);
     font-size: 12.5px;
     white-space: nowrap;
     cursor: pointer;
@@ -104,8 +104,8 @@
 
 .anomalous-doctor-banner-btn.is-main {
     border-color: transparent;
-    background: #e5e7eb;
-    color: #111827;
+    background: var(--amb-btn-primary-bg);
+    color: var(--amb-btn-primary-text);
     font-weight: 600;
 }
 
@@ -117,13 +117,13 @@
     border: none;
     border-radius: 6px;
     background: transparent;
-    color: #9ca3af;
+    color: var(--amb-text-muted);
     cursor: pointer;
 }
 
 .anomalous-doctor-banner-close:hover {
     background: rgba(255, 255, 255, 0.08);
-    color: #ffffff;
+    color: var(--amb-text-main);
 }
 
 @media (max-width: 640px) {

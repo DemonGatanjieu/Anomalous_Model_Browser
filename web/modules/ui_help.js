@@ -24,8 +24,8 @@ export function showHelp() {
         this.helpModal.style.justifyContent = 'center';
 
         const box = document.createElement('div');
-        box.style.background = 'var(--bg-color, #222)';
-        box.style.border = '1px solid var(--border-color, #444)';
+        box.style.background = 'var(--bg-color, var(--amb-bg-card))';
+        box.style.border = '1px solid var(--border-color, var(--amb-border-strong))';
         box.style.borderRadius = '8px';
         box.style.width = '550px';
         box.style.maxWidth = '90%';
@@ -36,8 +36,8 @@ export function showHelp() {
 
         const header = document.createElement('div');
         header.style.padding = '15px 20px';
-        header.style.borderBottom = '1px solid #444';
-        header.style.background = '#333';
+        header.style.borderBottom = '1px solid var(--amb-border-strong)';
+        header.style.background = 'var(--amb-bg-card-hover)';
         header.style.display = 'flex';
         header.style.alignItems = 'center';
         header.style.justifyContent = 'space-between';
@@ -69,7 +69,7 @@ export function showHelp() {
 
         const footer = document.createElement('div');
         footer.style.padding = '15px';
-        footer.style.borderTop = '1px solid #444';
+        footer.style.borderTop = '1px solid var(--amb-border-strong)';
         footer.style.display = 'flex';
         footer.style.alignItems = 'center';
         footer.style.justifyContent = 'space-between';
@@ -95,7 +95,7 @@ export function showHelp() {
         replayGuideBtn.style.padding = '8px 12px';
         replayGuideBtn.style.background = 'transparent';
         replayGuideBtn.style.color = '#cbd5e1';
-        replayGuideBtn.style.border = '1px solid rgba(255,255,255,0.2)';
+        replayGuideBtn.style.border = '1px solid var(--amb-border-strong)';
         replayGuideBtn.style.borderRadius = '4px';
         replayGuideBtn.style.cursor = 'pointer';
         replayGuideBtn.onclick = () => {
@@ -109,7 +109,7 @@ export function showHelp() {
         const closeBtn = document.createElement('button');
         closeBtn.innerHTML = t('closeHelp');
         closeBtn.style.padding = '8px 16px';
-        closeBtn.style.background = '#444';
+        closeBtn.style.background = 'var(--amb-bg-card-hover)';
         closeBtn.style.color = '#fff';
         closeBtn.style.border = 'none';
         closeBtn.style.borderRadius = '4px';

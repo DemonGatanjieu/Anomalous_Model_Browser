@@ -73,8 +73,8 @@ export function showDetail(model) {
         const header = document.createElement('div');
         header.style.width = '100%';
         header.style.padding = '8px 15px';
-        header.style.background = 'var(--comfy-menu-bg, #333)';
-        header.style.borderBottom = '1px solid var(--border-color, #444)';
+        header.style.background = 'var(--comfy-menu-bg, var(--amb-bg-card-hover))';
+        header.style.borderBottom = '1px solid var(--border-color, var(--amb-border-strong))';
         header.style.display = 'flex';
         header.style.alignItems = 'center';
         header.style.boxSizing = 'border-box';
@@ -101,7 +101,7 @@ export function showDetail(model) {
             backBtn.style.color = '#111827';
         } else {
             backBtn.innerHTML = this.historyStack.length > 0 ? t('backToPrev') : t('back');
-            backBtn.style.background = '#444';
+            backBtn.style.background = 'var(--amb-bg-card-hover)';
             backBtn.style.color = '#fff';
         }
         backBtn.style.padding = '6px 12px';
@@ -210,7 +210,7 @@ export function showDetail(model) {
         jumpBtn.innerHTML = '⬇️';
         jumpBtn.title = t('detailJumpToBottom');
         jumpBtn.style.padding = '6px 12px';
-        jumpBtn.style.background = '#444';
+        jumpBtn.style.background = 'var(--amb-bg-card-hover)';
         jumpBtn.style.color = '#fff';
         jumpBtn.style.border = 'none';
         jumpBtn.style.borderRadius = '4px';
@@ -277,7 +277,7 @@ export function showDetail(model) {
                     leftPanel.appendChild(img);
                 }
             } else {
-                leftPanel.innerHTML = `<div style="color:#aaa; text-align:center; margin-top:50px;">${t('noPreview')}</div>`;
+                leftPanel.innerHTML = `<div style="color:var(--amb-text-muted); text-align:center; margin-top:50px;">${t('noPreview')}</div>`;
             }
         };
 
@@ -339,7 +339,7 @@ export function showDetail(model) {
         topRow.style.gap = '10px';
         topRow.style.paddingBottom = '10px';
         topRow.style.marginBottom = '10px';
-        topRow.style.borderBottom = '1px solid #444';
+        topRow.style.borderBottom = '1px solid var(--amb-border-strong)';
 
         const titleEl = document.createElement('h3');
         titleEl.style.margin = '0';
@@ -363,7 +363,7 @@ export function showDetail(model) {
             cBtn.style.marginLeft = 'auto';
             cBtn.style.padding = '4px 8px';
             cBtn.style.background = 'rgba(255, 255, 255, 0.1)';
-            cBtn.style.border = '1px solid rgba(255, 255, 255, 0.15)';
+            cBtn.style.border = '1px solid var(--amb-border-strong)';
             cBtn.style.color = '#fff';
             cBtn.style.textDecoration = 'none';
             cBtn.style.borderRadius = '4px';
@@ -376,7 +376,7 @@ export function showDetail(model) {
         editMetaBtn.textContent = t('detailEdit');
         editMetaBtn.style.marginLeft = m.civitai_url ? '10px' : 'auto';
         editMetaBtn.style.padding = '4px 8px';
-        editMetaBtn.style.background = '#444';
+        editMetaBtn.style.background = 'var(--amb-bg-card-hover)';
         editMetaBtn.style.color = '#fff';
         editMetaBtn.style.border = 'none';
         editMetaBtn.style.borderRadius = '4px';
@@ -398,8 +398,8 @@ export function showDetail(model) {
             notesCard.style.marginBottom = '15px';
             notesCard.style.padding = '12px 16px';
             // Dark yellowish/khaki paper background for dark mode notebook feel
-            notesCard.style.background = 'linear-gradient(135deg, #262522 0%, #202124 100%)';
-            notesCard.style.border = '1px solid #3c4043';
+            notesCard.style.background = 'linear-gradient(135deg, var(--amb-bg-card-hover) 0%, var(--amb-bg-card) 100%)';
+            notesCard.style.border = '1px solid var(--amb-border-strong)';
             notesCard.style.borderLeft = '4px solid #a38d53';
             notesCard.style.borderRadius = '4px 8px 8px 4px';
             notesCard.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
@@ -473,11 +473,11 @@ export function showDetail(model) {
         galleryBtn.style.alignItems = 'center';
         galleryBtn.style.gap = '8px';
         galleryBtn.style.padding = '10px';
-        galleryBtn.style.background = '#2a2b2f';
-        galleryBtn.style.border = '1px solid #3c4043';
+        galleryBtn.style.background = 'var(--amb-bg-card-hover)';
+        galleryBtn.style.border = '1px solid var(--amb-border-strong)';
         galleryBtn.textContent = t('detailGeneratedGallery');
-        galleryBtn.onmouseover = () => { galleryBtn.style.background = '#3c4043'; galleryBtn.style.borderColor = 'rgba(255, 255, 255, 0.3)'; };
-        galleryBtn.onmouseout = () => { galleryBtn.style.background = '#2a2b2f'; galleryBtn.style.borderColor = '#3c4043'; };
+        galleryBtn.onmouseover = () => { galleryBtn.style.background = 'var(--amb-bg-card-hover)'; galleryBtn.style.borderColor = 'var(--amb-border-strong)'; };
+        galleryBtn.onmouseout = () => { galleryBtn.style.background = 'var(--amb-bg-card-hover)'; galleryBtn.style.borderColor = 'var(--amb-border-strong)'; };
 
         galleryBtn.onclick = () => {
             this.showGeneratedGallery(model);
@@ -504,7 +504,7 @@ export function showDetail(model) {
             copyAll.innerText = t('copyAll');
             copyAll.style.marginLeft = '10px';
             copyAll.style.padding = '2px 6px';
-            copyAll.style.background = '#444';
+            copyAll.style.background = 'var(--amb-bg-card-hover)';
             copyAll.style.color = '#fff';
             copyAll.style.border = 'none';
             copyAll.style.borderRadius = '3px';
@@ -529,17 +529,17 @@ export function showDetail(model) {
             m.trainedWords.forEach(w => {
                 const tag = document.createElement('span');
                 tag.innerText = w;
-                tag.style.background = '#333';
+                tag.style.background = 'var(--amb-bg-card-hover)';
                 tag.style.padding = '2px 6px';
                 tag.style.borderRadius = '4px';
                 tag.style.fontSize = '0.85em';
                 tag.style.cursor = 'pointer';
-                tag.style.border = '1px solid #555';
+                tag.style.border = '1px solid var(--amb-border-strong)';
                 tag.title = t('clickToCopy') + w;
                 tag.onclick = () => {
                     navigator.clipboard.writeText(w).then(() => {
                         tag.style.background = '#28a745';
-                        setTimeout(() => { tag.style.background = '#333'; }, 500);
+                        setTimeout(() => { tag.style.background = 'var(--amb-bg-card-hover)'; }, 500);
                     });
                 };
                 tagsCont.appendChild(tag);
@@ -564,10 +564,10 @@ export function showDetail(model) {
             const descText = document.createElement('div');
             descText.style.flex = 'none';
 
-            descText.style.background = '#222';
+            descText.style.background = 'var(--amb-bg-card)';
             descText.style.padding = '10px';
             descText.style.borderRadius = '6px';
-            descText.style.border = '1px solid #333';
+            descText.style.border = '1px solid var(--amb-border-strong)';
             descText.style.fontSize = '0.95em';
             descText.style.lineHeight = '1.4';
             setSafeRichHtml(descText, m.description);
@@ -610,7 +610,7 @@ export function showDetail(model) {
 
             const compList = document.createElement('div');
             compList.className = 'anomalous-compatible-list';
-            compList.innerHTML = `<span style="color:#888;">${t('loadingCompatible') || 'Loading...'}</span>`;
+            compList.innerHTML = `<span style="color:var(--amb-text-muted);">${t('loadingCompatible') || 'Loading...'}</span>`;
 
             compSec.appendChild(compTitle);
             compSec.appendChild(compList);
@@ -642,7 +642,7 @@ export function showDetail(model) {
                             if (isVid) thumb = `<video src="${m_comp.preview_url}" muted loop playsinline></video>`;
                             else thumb = `<img src="${m_comp.preview_url}" />`;
                         } else {
-                            thumb = `<div style="width:30px; height:30px; background:#222; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#555;">?</div>`;
+                            thumb = `<div style="width:30px; height:30px; background:var(--amb-bg-card); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--amb-text-dim);">?</div>`;
                         }
 
                         mItem.innerHTML = `${thumb}<div class="anomalous-compatible-item-name">${escapeHtml(m_comp.filename)}</div>`;

@@ -235,7 +235,7 @@ const AMB_WorkflowShare = {
         const toast = document.createElement('div');
         toast.textContent = message;
         toast.style.cssText = `
-            position: fixed; bottom: 30px; right: 30px; background: #2a2a2b; color: ${color || '#fff'};
+            position: fixed; bottom: 30px; right: 30px; background: var(--amb-bg-card-hover); color: ${color || '#fff'};
             padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             font-family: Arial, sans-serif; font-size: 14px; z-index: 9999999;
             opacity: 0; transition: opacity 0.3s ease; border-left: 4px solid ${color || '#fff'};
@@ -248,141 +248,99 @@ const AMB_WorkflowShare = {
         }, 3000);
     },
 
-    showExportModal() {
+    /** A dimmed overlay with one dialog box; looks come from .anomalous-share-* in the styles. */
+    createShareDialog(id, titleText, variant = '') {
         const overlay = document.createElement('div');
-        overlay.id = 'amb-export-modal';
-        overlay.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
-            z-index: 999999; display: flex; justify-content: center; align-items: center;
-            font-family: Arial, sans-serif;
-        `;
-        
+        if (id) overlay.id = id;
+        overlay.className = 'anomalous-share-overlay';
         const content = document.createElement('div');
-        content.style.cssText = `
-            background: #2a2a2b; color: #fff; padding: 30px; border-radius: 12px;
-            width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; gap: 20px;
-        `;
-        
+        content.className = `anomalous-share-dialog${variant ? ` ${variant}` : ''}`;
         const title = document.createElement('h2');
-        title.style.margin = '0';
-        title.textContent = t('mainExportTitle');
-        
+        title.className = 'anomalous-share-title';
+        title.textContent = titleText;
+        content.appendChild(title);
+        overlay.appendChild(content);
+        return { overlay, content };
+    },
+
+    shareButton(label, variant = '') {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `anomalous-share-btn${variant ? ` ${variant}` : ''}`;
+        button.textContent = label;
+        return button;
+    },
+
+    showExportModal() {
+        const { overlay, content } = this.createShareDialog('amb-export-modal', t('mainExportTitle'));
+
         const typeSelectContainer = document.createElement('div');
+        typeSelectContainer.className = 'anomalous-share-options';
         typeSelectContainer.innerHTML = `
-            <label style="display: block; margin-bottom: 8px; cursor: pointer;">
+            <label>
                 <input type="radio" name="amb-share-type" value="skeleton" checked />
                 ${t('mainSkeletonOption')}
             </label>
-            <label style="display: block; cursor: pointer;">
+            <label>
                 <input type="radio" name="amb-share-type" value="full" />
                 ${t('mainFullOption')}
             </label>
         `;
-        
+
         const textArea = document.createElement('textarea');
-        textArea.style.cssText = `
-            width: 100%; height: 150px; background: #1e1e1f; color: #eee;
-            border: 1px solid #444; border-radius: 6px; padding: 10px;
-            font-family: monospace; font-size: 12px; resize: none; box-sizing: border-box;
-        `;
+        textArea.className = 'anomalous-share-code';
         textArea.readOnly = true;
-        
+
         const btnGroup = document.createElement('div');
-        btnGroup.style.cssText = `display: flex; gap: 10px; justify-content: flex-end;`;
-        
-        const generateBtn = document.createElement('button');
-        generateBtn.textContent = t('mainGenerate');
-        generateBtn.style.cssText = `padding: 8px 16px; background: #4a90e2; color: #fff; border: none; border-radius: 6px; cursor: pointer;`;
-        
-        const copyBtn = document.createElement('button');
-        copyBtn.textContent = t('mainCopyClipboard');
-        copyBtn.style.cssText = `padding: 8px 16px; background: #5cb85c; color: #fff; border: none; border-radius: 6px; cursor: pointer; display: none;`;
-        
-        const closeBtn = document.createElement('button');
-        closeBtn.textContent = t('mainClose');
-        closeBtn.style.cssText = `padding: 8px 16px; background: #555; color: #fff; border: none; border-radius: 6px; cursor: pointer;`;
-        
+        btnGroup.className = 'anomalous-share-actions';
+        const generateBtn = this.shareButton(t('mainGenerate'), 'is-primary');
+        const copyBtn = this.shareButton(t('mainCopyClipboard'));
+        copyBtn.hidden = true;
+        const closeBtn = this.shareButton(t('mainClose'), 'is-quiet');
+
         closeBtn.onclick = () => overlay.remove();
-        
+
         generateBtn.onclick = async () => {
             const isSkeleton = document.querySelector('input[name="amb-share-type"]:checked').value === 'skeleton';
-            
+
             // Get current workflow from app graph
             const p = await app.graphToPrompt();
             const workflowJson = p.workflow;
-            
+
             try {
                 const code = await AMB_WorkflowShare.encodeShareCode(workflowJson, isSkeleton);
                 textArea.value = code;
-                copyBtn.style.display = 'block';
+                copyBtn.hidden = false;
             } catch (err) {
                 textArea.value = 'Error generating code: ' + err.message;
             }
         };
-        
+
         copyBtn.onclick = () => {
             textArea.select();
             document.execCommand('copy');
             AMB_WorkflowShare.showToast(t('mainCopied'), '#5cb85c');
         };
-        
-        btnGroup.appendChild(generateBtn);
-        btnGroup.appendChild(copyBtn);
-        btnGroup.appendChild(closeBtn);
-        
-        content.appendChild(title);
-        content.appendChild(typeSelectContainer);
-        content.appendChild(textArea);
-        content.appendChild(btnGroup);
-        overlay.appendChild(content);
-        
+
+        btnGroup.append(generateBtn, copyBtn, closeBtn);
+        content.append(typeSelectContainer, textArea, btnGroup);
         document.body.appendChild(overlay);
     },
-    
+
     showImportModal() {
-        const overlay = document.createElement('div');
-        overlay.id = 'amb-import-modal';
-        overlay.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
-            z-index: 999999; display: flex; justify-content: center; align-items: center;
-            font-family: Arial, sans-serif;
-        `;
-        
-        const content = document.createElement('div');
-        content.style.cssText = `
-            background: #2a2a2b; color: #fff; padding: 30px; border-radius: 12px;
-            width: 600px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; gap: 20px;
-        `;
-        
-        const title = document.createElement('h2');
-        title.style.margin = '0';
-        title.textContent = t('mainImportTitle');
-        
+        const { overlay, content } = this.createShareDialog('amb-import-modal', t('mainImportTitle'), 'is-wide');
+
         const inputArea = document.createElement('textarea');
+        inputArea.className = 'anomalous-share-code is-input';
         inputArea.placeholder = t('mainSharePlaceholder');
-        inputArea.style.cssText = `
-            width: 100%; height: 100px; background: #1e1e1f; color: #eee;
-            border: 1px solid #444; border-radius: 6px; padding: 10px;
-            font-family: monospace; font-size: 12px; resize: none; box-sizing: border-box;
-        `;
-        
+
         const btnGroup = document.createElement('div');
-        btnGroup.style.cssText = `display: flex; gap: 10px; justify-content: flex-end;`;
-        
-        const loadBtn = document.createElement('button');
-        loadBtn.textContent = t('mainImportLoad');
-        loadBtn.style.cssText = `padding: 8px 16px; background: #e07a5f; color: #fff; border: none; border-radius: 6px; cursor: pointer;`;
-        
-        const closeBtn = document.createElement('button');
-        closeBtn.textContent = t('mainCancel');
-        closeBtn.style.cssText = `padding: 8px 16px; background: #555; color: #fff; border: none; border-radius: 6px; cursor: pointer;`;
-        
+        btnGroup.className = 'anomalous-share-actions';
+        const loadBtn = this.shareButton(t('mainImportLoad'), 'is-primary');
+        const closeBtn = this.shareButton(t('mainCancel'), 'is-quiet');
+
         closeBtn.onclick = () => overlay.remove();
-        
+
         loadBtn.onclick = async () => {
             const code = inputArea.value.trim();
             if (!code) {
@@ -393,10 +351,10 @@ const AMB_WorkflowShare = {
                 const pendingWorkflow = await AMB_WorkflowShare.decodeShareCode(code);
                 app.loadGraphData(pendingWorkflow);
                 overlay.remove();
-                
+
                 const nodesCount = pendingWorkflow.nodes ? pendingWorkflow.nodes.length : 0;
                 AMB_WorkflowShare.showToast(t('mainImportedNodes', { count: nodesCount }), '#5cb85c');
-                
+
                 // Auto close the main browser panel
                 const mainCloseBtn = document.getElementById('anomalous-close');
                 if (mainCloseBtn) mainCloseBtn.click();
@@ -404,58 +362,24 @@ const AMB_WorkflowShare = {
                 AMB_WorkflowShare.showToast(t('mainDecodeFailed') + err.message, '#ff6b6b');
             }
         };
-        
-        btnGroup.appendChild(loadBtn);
-        btnGroup.appendChild(closeBtn);
-        
-        content.appendChild(title);
-        content.appendChild(inputArea);
-        content.appendChild(btnGroup);
-        overlay.appendChild(content);
-        
+
+        btnGroup.append(loadBtn, closeBtn);
+        content.append(inputArea, btnGroup);
         document.body.appendChild(overlay);
     },
     showUnifiedModal() {
-        const overlay = document.createElement('div');
-        overlay.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
-            z-index: 999999; display: flex; justify-content: center; align-items: center;
-            font-family: Arial, sans-serif;
-        `;
-        
-        const content = document.createElement('div');
-        content.style.cssText = `
-            background: #2a2a2b; color: #fff; padding: 30px; border-radius: 12px;
-            width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; gap: 20px; text-align: center;
-        `;
-        
-        const title = document.createElement('h2');
-        title.style.margin = '0';
-        title.textContent = t('mainUnifiedTitle');
-        
-        const exportBtn = document.createElement('button');
-        exportBtn.textContent = t('mainExportWorkflow');
-        exportBtn.style.cssText = `padding: 12px; background: #4a90e2; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;`;
+        const { overlay, content } = this.createShareDialog('', t('mainUnifiedTitle'), 'is-menu');
+
+        const exportBtn = this.shareButton(t('mainExportWorkflow'), 'is-primary is-large');
         exportBtn.onclick = () => { overlay.remove(); this.showExportModal(); };
-        
-        const importBtn = document.createElement('button');
-        importBtn.textContent = t('mainImportWorkflow');
-        importBtn.style.cssText = `padding: 12px; background: #e07a5f; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;`;
+
+        const importBtn = this.shareButton(t('mainImportWorkflow'), 'is-large');
         importBtn.onclick = () => { overlay.remove(); this.showImportModal(); };
-        
-        const closeBtn = document.createElement('button');
-        closeBtn.textContent = t('mainClose');
-        closeBtn.style.cssText = `padding: 8px; background: #555; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; margin-top: 10px;`;
+
+        const closeBtn = this.shareButton(t('mainClose'), 'is-quiet');
         closeBtn.onclick = () => overlay.remove();
-        
-        content.appendChild(title);
-        content.appendChild(exportBtn);
-        content.appendChild(importBtn);
-        content.appendChild(closeBtn);
-        overlay.appendChild(content);
-        
+
+        content.append(exportBtn, importBtn, closeBtn);
         document.body.appendChild(overlay);
     }
 };

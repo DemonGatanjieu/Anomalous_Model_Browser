@@ -270,13 +270,13 @@ export function renderSidebar() {
         collapseAllBtn.style.padding = '4px 9px';
         collapseAllBtn.style.background = 'rgba(255, 255, 255, 0.08)';
         collapseAllBtn.style.color = '#e2e8f0';
-        collapseAllBtn.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+        collapseAllBtn.style.border = '1px solid var(--amb-border-strong)';
         collapseAllBtn.style.borderRadius = '3px 8px 3px 8px';
         collapseAllBtn.style.cursor = 'pointer';
         collapseAllBtn.style.fontSize = '0.82em';
         collapseAllBtn.style.transition = 'all 0.2s ease';
-        collapseAllBtn.onmouseover = () => { collapseAllBtn.style.background = 'rgba(255, 255, 255, 0.15)'; collapseAllBtn.style.borderColor = 'rgba(255, 255, 255, 0.25)'; };
-        collapseAllBtn.onmouseout = () => { collapseAllBtn.style.background = 'rgba(255, 255, 255, 0.08)'; collapseAllBtn.style.borderColor = 'rgba(255, 255, 255, 0.12)'; };
+        collapseAllBtn.onmouseover = () => { collapseAllBtn.style.background = 'rgba(255, 255, 255, 0.15)'; collapseAllBtn.style.borderColor = 'var(--amb-border-strong)'; };
+        collapseAllBtn.onmouseout = () => { collapseAllBtn.style.background = 'rgba(255, 255, 255, 0.08)'; collapseAllBtn.style.borderColor = 'var(--amb-border-strong)'; };
         collapseAllBtn.onclick = () => {
             if (isAllCollapsed) {
                 (this.foldersData || []).forEach(typeGroup => {
@@ -304,14 +304,14 @@ export function renderSidebar() {
         searchInput.style.width = '100%';
         searchInput.style.padding = '8px 12px';
         searchInput.style.borderRadius = '8px';
-        searchInput.style.border = '1px solid rgba(255,255,255,0.1)';
+        searchInput.style.border = '1px solid var(--amb-border)';
         searchInput.style.background = 'rgba(0,0,0,0.2)';
         searchInput.style.color = '#fff';
         searchInput.style.boxSizing = 'border-box';
         searchInput.style.outline = 'none';
         searchInput.style.transition = 'border-color 0.2s';
         searchInput.onfocus = () => searchInput.style.border = '1px solid #007aff';
-        searchInput.onblur = () => searchInput.style.border = '1px solid rgba(255,255,255,0.1)';
+        searchInput.onblur = () => searchInput.style.border = '1px solid var(--amb-border)';
 
         searchInput.oninput = (e) => {
             if (this.currentDetailModel) {
@@ -382,12 +382,12 @@ export function renderSidebar() {
 
                 let toggleIcon = '';
                 if (hasChildren) {
-                    toggleIcon = `<span class="anomalous-folder-toggle" style="margin-right: 8px; width: 12px; display: inline-block; font-size: 0.8em; color: #888;">${isExpanded ? '▼' : '▶'}</span>`;
+                    toggleIcon = `<span class="anomalous-folder-toggle" style="margin-right: 8px; width: 12px; display: inline-block; font-size: 0.8em; color: var(--amb-text-muted);">${isExpanded ? '▼' : '▶'}</span>`;
                 } else {
                     toggleIcon = `<span style="margin-right: 8px; width: 12px; display: inline-block;"></span>`;
                 }
 
-                item.innerHTML = `${toggleIcon}<span class="anomalous-folder-name" style="color: #ddd;">${escapeHtml(info.name)}</span> <span style="opacity:0.4; font-size:0.8em; margin-left: 5px;">${escapeHtml(info.model_count)}</span>`;
+                item.innerHTML = `${toggleIcon}<span class="anomalous-folder-name" style="color: var(--amb-text-soft);">${escapeHtml(info.name)}</span> <span style="opacity:0.4; font-size:0.8em; margin-left: 5px;">${escapeHtml(info.model_count)}</span>`;
 
                 const scope = this.modelScope;
                 if (scope?.subfolder === path && scope.type === typeGroup.type && scope.path_idx === typeGroup.path_idx) {

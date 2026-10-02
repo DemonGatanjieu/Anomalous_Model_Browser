@@ -4,7 +4,7 @@
     flex: 1;
     flex-direction: column;
     overflow-y: auto;
-    background: var(--amb-bg-page, #131315);
+    background: var(--amb-bg-page, var(--amb-bg-page));
 }
 
 .anomalous-scan-page {
@@ -19,14 +19,14 @@
 
 .anomalous-scan-title {
     margin: 0;
-    color: #f3f4f6;
+    color: var(--amb-text-main);
     font-size: 1.6em;
     font-weight: 600;
 }
 
 .anomalous-scan-lead {
     margin: 0;
-    color: #9ca3af;
+    color: var(--amb-text-muted);
     line-height: 1.6;
 }
 
@@ -58,7 +58,7 @@
     flex-direction: column;
     gap: 4px;
     padding: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.03);
     font: inherit;
@@ -71,24 +71,24 @@ button.anomalous-scan-stat {
 }
 
 button.anomalous-scan-stat:hover {
-    border-color: rgba(165, 180, 252, 0.4);
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
     background: rgba(255, 255, 255, 0.06);
 }
 
 .anomalous-scan-stat-value {
-    color: #f3f4f6;
+    color: var(--amb-text-main);
     font-size: 1.5em;
     font-variant-numeric: tabular-nums;
 }
 
 .anomalous-scan-stat-label {
-    color: #9ca3af;
+    color: var(--amb-text-muted);
     font-size: 12px;
 }
 
 .anomalous-scan-stat.is-ok .anomalous-scan-stat-value { color: #86efac; }
 .anomalous-scan-stat.is-warn .anomalous-scan-stat-value { color: #fcd34d; }
-.anomalous-scan-stat.is-new .anomalous-scan-stat-value { color: #a5b4fc; }
+.anomalous-scan-stat.is-new .anomalous-scan-stat-value { color: var(--amb-link); }
 
 .anomalous-scan-actions {
     display: flex;
@@ -109,8 +109,8 @@ button.anomalous-scan-stat:hover {
 
 .anomalous-scan-primary {
     border: 1px solid transparent;
-    background: #e5e7eb;
-    color: #111827;
+    background: var(--amb-btn-primary-bg);
+    color: var(--amb-btn-primary-text);
 }
 
 .anomalous-scan-primary:hover:not(:disabled) {
@@ -118,13 +118,13 @@ button.anomalous-scan-stat:hover {
 }
 
 .anomalous-scan-secondary {
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    border: 1px solid var(--amb-border-strong);
     background: rgba(255, 255, 255, 0.04);
-    color: #e5e7eb;
+    color: var(--amb-text-main);
 }
 
 .anomalous-scan-secondary:hover:not(:disabled) {
-    border-color: rgba(165, 180, 252, 0.4);
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
     background: rgba(255, 255, 255, 0.08);
 }
 
@@ -136,7 +136,7 @@ button.anomalous-scan-stat:hover {
 
 .anomalous-scan-muted {
     margin: 0;
-    color: #9ca3af;
+    color: var(--amb-text-muted);
     font-size: 12.5px;
     line-height: 1.6;
 }
@@ -155,20 +155,20 @@ button.anomalous-scan-stat:hover {
 }
 
 .anomalous-scan-advanced {
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.02);
 }
 
 .anomalous-scan-advanced > summary {
     padding: 12px 16px;
-    color: #d1d5db;
+    color: var(--amb-text-soft);
     font-weight: 600;
     cursor: pointer;
 }
 
 .anomalous-scan-advanced[open] > summary {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--amb-border);
 }
 
 .anomalous-scan-advanced > :not(summary) {
@@ -178,7 +178,7 @@ button.anomalous-scan-stat:hover {
 .anomalous-scan-group-title {
     margin-top: 14px;
     margin-bottom: 6px;
-    color: #9ca3af;
+    color: var(--amb-text-muted);
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -189,7 +189,7 @@ button.anomalous-scan-stat:hover {
     align-items: center;
     gap: 8px;
     padding: 4px 0;
-    color: #e5e7eb;
+    color: var(--amb-text-main);
     cursor: pointer;
 }
 
@@ -221,13 +221,13 @@ button.anomalous-scan-stat:hover {
 }
 
 .anomalous-scan-option-copy strong {
-    color: #e5e7eb;
+    color: var(--amb-text-main);
     font-size: 13.5px;
     font-weight: 600;
 }
 
 .anomalous-scan-option-copy small {
-    color: #9ca3af;
+    color: var(--amb-text-muted);
     font-size: 12px;
     line-height: 1.55;
 }
@@ -239,7 +239,7 @@ button.anomalous-scan-stat:hover {
 .anomalous-scan-advanced > .anomalous-scan-online {
     margin-left: 42px;
     padding-left: 12px;
-    border-left: 2px solid rgba(255, 255, 255, 0.06);
+    border-left: 2px solid var(--amb-border);
 }
 
 .anomalous-scan-online.is-disabled {
@@ -254,7 +254,7 @@ button.anomalous-scan-stat:hover {
     gap: 12px;
     margin: 6px 16px 16px;
     padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--amb-border);
 }
 
 /* The scan page's cards: the last scan's result and the model lists. */
@@ -263,18 +263,18 @@ button.anomalous-scan-stat:hover {
     flex-direction: column;
     gap: 8px;
     padding: 14px 16px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.02);
 }
 
 .anomalous-scan-card-title {
-    color: #9ca3af;
+    color: var(--amb-text-muted);
     font-size: 12.5px;
 }
 
 .anomalous-scan-result-counts {
-    color: #f3f4f6;
+    color: var(--amb-text-main);
     font-size: 15px;
     font-weight: 600;
 }
@@ -305,18 +305,18 @@ button.anomalous-scan-stat:hover {
 
 .anomalous-scan-tab {
     padding: 5px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     border-radius: 999px;
     background: transparent;
-    color: #9ca3af;
+    color: var(--amb-text-muted);
     font-size: 13px;
     cursor: pointer;
 }
 
 .anomalous-scan-tab[aria-selected="true"] {
-    border-color: rgba(165, 180, 252, 0.45);
-    background: rgba(165, 180, 252, 0.12);
-    color: #e5e7eb;
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+    color: var(--amb-text-main);
 }
 
 .anomalous-scan-tab:disabled {
@@ -334,7 +334,7 @@ button.anomalous-scan-stat:hover {
     align-items: center;
     gap: 10px;
     padding: 8px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid var(--amb-border);
 }
 
 .anomalous-scan-row-mark {
@@ -346,7 +346,7 @@ button.anomalous-scan-stat:hover {
 
 .anomalous-scan-row.is-matched .anomalous-scan-row-mark { color: #86efac; }
 .anomalous-scan-row.is-failed .anomalous-scan-row-mark { color: #fca5a5; }
-.anomalous-scan-row.is-unchanged .anomalous-scan-row-mark { color: #9ca3af; }
+.anomalous-scan-row.is-unchanged .anomalous-scan-row-mark { color: var(--amb-text-muted); }
 
 .anomalous-scan-row-copy {
     display: flex;
@@ -365,18 +365,18 @@ button.anomalous-scan-stat:hover {
 }
 
 .anomalous-scan-row-name {
-    color: #e5e7eb;
+    color: var(--amb-text-main);
     font-size: 13px;
     font-weight: 600;
 }
 
 .anomalous-scan-row-where {
-    color: #6b7280;
+    color: var(--amb-text-dim);
     font-size: 11.5px;
 }
 
 .anomalous-scan-row-detail {
-    color: #9ca3af;
+    color: var(--amb-text-muted);
     font-size: 12px;
 }
 
@@ -389,18 +389,18 @@ button.anomalous-scan-stat:hover {
 .anomalous-scan-row-btn,
 .anomalous-scan-more {
     padding: 3px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 999px;
     background: transparent;
-    color: #d1d5db;
+    color: var(--amb-text-soft);
     font-size: 12px;
     cursor: pointer;
 }
 
 .anomalous-scan-row-btn:hover:not(:disabled),
 .anomalous-scan-more:hover {
-    border-color: rgba(165, 180, 252, 0.45);
-    color: #ffffff;
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+    color: var(--amb-text-main);
 }
 
 .anomalous-scan-row-btn:disabled {

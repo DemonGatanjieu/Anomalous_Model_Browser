@@ -247,7 +247,7 @@ function openMaterialChoiceDialog(owner, node, blocks, payload, droppedNode, gra
     for (const block of blocks) {
         const itemCard = document.createElement('div');
         itemCard.className = 'anomalous-material-choice-card';
-        itemCard.style.cssText = 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;transition:border-color 0.2s;';
+        itemCard.style.cssText = 'background:rgba(255,255,255,0.04);border:1px solid var(--amb-border);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;transition:border-color 0.2s;';
 
         const headerRow = document.createElement('div');
         headerRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;';
@@ -259,8 +259,8 @@ function openMaterialChoiceDialog(owner, node, blocks, payload, droppedNode, gra
         }[block.promptRole] || '';
 
         const heading = document.createElement('div');
-        heading.style.cssText = 'font-weight:700;font-size:13px;color:#f3f4f6;display:flex;align-items:center;gap:6px;';
-        heading.innerHTML = `${roleBadge}<span>${escapeHtml(materialNodeHeading(block))} <small style="color:#9ca3af;font-size:11px;">#${block.node_id}</small></span>`;
+        heading.style.cssText = 'font-weight:700;font-size:13px;color:var(--amb-text-main);display:flex;align-items:center;gap:6px;';
+        heading.innerHTML = `${roleBadge}<span>${escapeHtml(materialNodeHeading(block))} <small style="color:var(--amb-text-muted);font-size:11px;">#${block.node_id}</small></span>`;
         headerRow.appendChild(heading);
         itemCard.appendChild(headerRow);
 
@@ -277,7 +277,7 @@ function openMaterialChoiceDialog(owner, node, blocks, payload, droppedNode, gra
         if (textContent) {
             const previewBox = document.createElement('div');
             previewBox.className = 'anomalous-material-snippet-box';
-            previewBox.style.cssText = 'background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:8px 10px;font-size:11px;color:#d1d5db;line-height:1.5;white-space:pre-wrap;word-break:break-word;max-height:80px;overflow:hidden;position:relative;transition:max-height 0.25s ease;';
+            previewBox.style.cssText = 'background:rgba(0,0,0,0.3);border:1px solid var(--amb-border);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--amb-text-soft);line-height:1.5;white-space:pre-wrap;word-break:break-word;max-height:80px;overflow:hidden;position:relative;transition:max-height 0.25s ease;';
 
             const textSpan = document.createElement('span');
             textSpan.textContent = textContent;
@@ -287,7 +287,7 @@ function openMaterialChoiceDialog(owner, node, blocks, payload, droppedNode, gra
             if (textContent.length > 80 || textContent.includes('\n')) {
                 const toggleBtn = document.createElement('button');
                 toggleBtn.type = 'button';
-                toggleBtn.style.cssText = 'background:none;border:none;color:#60a5fa;cursor:pointer;font-size:11px;padding:2px 0;align-self:flex-start;text-decoration:underline;';
+                toggleBtn.style.cssText = 'background:none;border:none;color:var(--amb-link);cursor:pointer;font-size:11px;padding:2px 0;align-self:flex-start;text-decoration:underline;';
                 toggleBtn.textContent = t('expandText') || '展开全部 ▾';
                 let expanded = false;
                 toggleBtn.onclick = (e) => {
@@ -307,7 +307,7 @@ function openMaterialChoiceDialog(owner, node, blocks, payload, droppedNode, gra
             }
         } else if (Array.isArray(block.widgets_values) && block.widgets_values.length > 0) {
             const paramsSummary = document.createElement('div');
-            paramsSummary.style.cssText = 'font-size:11px;color:#9ca3af;background:rgba(0,0,0,0.2);padding:6px 8px;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+            paramsSummary.style.cssText = 'font-size:11px;color:var(--amb-text-muted);background:rgba(0,0,0,0.2);padding:6px 8px;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
             paramsSummary.textContent = block.widgets_values.slice(0, 5).join(' · ');
             itemCard.appendChild(paramsSummary);
         }

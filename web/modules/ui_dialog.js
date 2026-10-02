@@ -21,7 +21,7 @@ export function anomalousAlert(message, title = 'Anomalous') {
         
         const dialog = document.createElement('div');
         dialog.style.background = 'linear-gradient(145deg, rgba(48, 49, 55, 0.98), rgba(27, 28, 33, 0.98))';
-        dialog.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+        dialog.style.border = '1px solid var(--amb-border-strong)';
         dialog.style.borderRadius = '16px';
         dialog.style.padding = '24px';
         dialog.style.maxWidth = '400px';
@@ -88,7 +88,7 @@ export function anomalousConfirm(message, title = 'Anomalous', options = {}) {
         
         const dialog = document.createElement('div');
         dialog.style.background = 'linear-gradient(145deg, rgba(48, 49, 55, 0.98), rgba(27, 28, 33, 0.98))';
-        dialog.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+        dialog.style.border = '1px solid var(--amb-border-strong)';
         dialog.style.borderRadius = '16px';
         dialog.style.padding = '24px';
         dialog.style.maxWidth = '400px';
@@ -172,7 +172,7 @@ export function anomalousPrompt(message, defaultValue = '', title = 'Anomalous',
 
         const dialog = document.createElement('div');
         dialog.style.background = 'linear-gradient(145deg, rgba(48, 49, 55, 0.98), rgba(27, 28, 33, 0.98))';
-        dialog.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+        dialog.style.border = '1px solid var(--amb-border-strong)';
         dialog.style.borderRadius = '16px';
         dialog.style.padding = '24px';
         dialog.style.maxWidth = '420px';
@@ -202,7 +202,7 @@ export function anomalousPrompt(message, defaultValue = '', title = 'Anomalous',
         input.style.width = '100%';
         input.style.padding = '10px 14px';
         input.style.borderRadius = '8px';
-        input.style.border = '1px solid rgba(255, 255, 255, 0.18)';
+        input.style.border = '1px solid var(--amb-border-strong)';
         input.style.background = 'rgba(0, 0, 0, 0.35)';
         input.style.color = '#fff';
         input.style.fontSize = '14px';
@@ -210,7 +210,7 @@ export function anomalousPrompt(message, defaultValue = '', title = 'Anomalous',
         input.style.outline = 'none';
         if (options.multiline) input.style.resize = 'vertical';
         input.onfocus = () => input.style.borderColor = '#1a73e8';
-        input.onblur = () => input.style.borderColor = 'rgba(255, 255, 255, 0.18)';
+        input.onblur = () => input.style.borderColor = 'var(--amb-border-strong)';
 
         const footer = document.createElement('div');
         footer.style.display = 'flex';

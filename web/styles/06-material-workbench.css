@@ -23,7 +23,7 @@
     padding: 9px 10px;
     border-radius: 9px;
     background: rgba(255, 255, 255, 0.035);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--amb-border);
 }
 
 .anomalous-material-metric-card.is-wide {
@@ -47,17 +47,17 @@
 .anomalous-material-prompt-card {
     position: relative;
     padding: 10px 12px 10px 13px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-left-width: 3px;
     border-radius: 9px;
     background: rgba(255, 255, 255, 0.03);
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 0.8rem;
     line-height: 1.5;
 }
 
 .anomalous-material-prompt-card.is-positive {
-    border-left-color: #8b5cf6;
+    border-left-color: var(--amb-link);
 }
 
 .anomalous-material-prompt-card.is-negative {
@@ -89,7 +89,7 @@
 .anomalous-material-prompt-bar-label {
     font-size: 0.75rem;
     font-weight: 600;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
 }
 
 .anomalous-material-prompt-bar-btns {
@@ -102,8 +102,8 @@
     padding: 2px 7px;
     border-radius: 5px;
     background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #cbd5e1;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-soft);
     font-size: 0.7rem;
     cursor: pointer;
     transition: all 0.15s;
@@ -111,7 +111,7 @@
 
 .anomalous-material-mini-btn:hover {
     background: rgba(255, 255, 255, 0.14);
-    color: #fff;
+    color: var(--amb-text-main);
 }
 
 .anomalous-material-model-peek {
@@ -122,7 +122,7 @@
 
 .anomalous-material-model-card-item.is-primary {
     padding: 9px 11px;
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: var(--amb-border-strong);
     background: rgba(255, 255, 255, 0.04);
 }
 
@@ -147,7 +147,7 @@
 .anomalous-material-accordion {
     border-radius: 9px;
     background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--amb-border);
 }
 
 .anomalous-material-accordion > summary {
@@ -158,7 +158,7 @@
     padding: 9px 12px;
     font-size: 0.78rem;
     font-weight: 500;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     cursor: pointer;
     user-select: none;
     list-style: none;
@@ -184,11 +184,11 @@
 
 .anomalous-material-accordion > summary:hover {
     background: rgba(255, 255, 255, 0.05);
-    color: #f1f5f9;
+    color: var(--amb-text-main);
 }
 
 .anomalous-material-accordion[open] > summary {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--amb-border);
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
 }
@@ -216,8 +216,8 @@
     padding: 3px 8px;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #94a3b8;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-muted);
     font-size: 0.73rem;
 }
 
@@ -236,14 +236,14 @@
 
 .anomalous-material-node-detail {
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--amb-border);
     border-radius: 7px;
     background: rgba(5, 7, 11, 0.22);
 }
 
 .anomalous-material-node-detail.is-selected {
-    border-color: rgba(139, 92, 246, 0.34);
-    background: rgba(139, 92, 246, 0.045);
+    border-color: color-mix(in srgb, var(--amb-link) 34%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 4%, transparent);
 }
 
 .anomalous-material-node-select {
@@ -254,7 +254,7 @@
     flex: 0 0 16px;
     margin: 0;
     border-radius: 4px;
-    border: 1.5px solid rgba(255, 255, 255, 0.22);
+    border: 1.5px solid var(--amb-border-strong);
     background-color: rgba(20, 10, 16, 0.6);
     cursor: pointer;
     position: relative;
@@ -266,22 +266,22 @@
 }
 
 .anomalous-material-node-select:hover {
-    border-color: rgba(139, 92, 246, 0.6);
-    background-color: rgba(139, 92, 246, 0.08);
+    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
+    background-color: color-mix(in srgb, var(--amb-link) 8%, transparent);
 }
 
 .anomalous-material-node-select:checked {
-    background-color: #8b5cf6;
-    border-color: #8b5cf6;
+    background-color: var(--amb-btn-primary-bg);
+    border-color: var(--amb-link);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230b0f17' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-6'/%3E%3C/svg%3E");
     background-size: 11px 11px;
     background-position: center;
     background-repeat: no-repeat;
-    box-shadow: 0 0 8px rgba(139, 92, 246, 0.35);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--amb-link) 35%, transparent);
 }
 
 .anomalous-material-node-select:focus-visible {
-    outline: 2px solid #8b5cf6;
+    outline: 2px solid var(--amb-link);
     outline-offset: 2px;
 }
 
@@ -302,7 +302,7 @@
 }
 
 .anomalous-material-node-detail > summary:hover { background: rgba(255, 255, 255, 0.035); }
-.anomalous-material-node-detail[open] > summary { border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+.anomalous-material-node-detail[open] > summary { border-bottom: 1px solid var(--amb-border); }
 
 .anomalous-material-node-heading {
     display: flex;
@@ -336,9 +336,9 @@
 .anomalous-workbench-save-selected-btn {
     flex: 0 0 auto;
     padding: 5px 9px;
-    border: 1px solid rgba(139, 92, 246, 0.24);
+    border: 1px solid color-mix(in srgb, var(--amb-link) 24%, transparent);
     border-radius: 6px;
-    background: rgba(139, 92, 246, 0.08);
+    background: color-mix(in srgb, var(--amb-link) 8%, transparent);
     color: #8fe1d4;
     font-size: 0.66rem;
     cursor: pointer;
@@ -346,8 +346,8 @@
 
 .anomalous-material-node-save:hover,
 .anomalous-workbench-save-selected-btn:hover:not(:disabled) {
-    border-color: rgba(139, 92, 246, 0.42);
-    background: rgba(139, 92, 246, 0.14);
+    border-color: color-mix(in srgb, var(--amb-link) 42%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
     color: #d8fff8;
 }
 
@@ -415,7 +415,7 @@
     overflow: auto;
     margin: 0;
     padding: 6px 8px;
-    border: 1px solid rgba(255, 255, 255, 0.055);
+    border: 1px solid var(--amb-border);
     border-radius: 5px;
     background: rgba(0, 0, 0, 0.18);
     color: #d5dae4;
@@ -444,10 +444,10 @@
 
 .anomalous-material-toggle-all-btn {
     padding: 3px 9px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.04);
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 0.68rem;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -456,7 +456,7 @@
 .anomalous-material-toggle-all-btn:hover {
     border-color: rgba(81, 221, 190, 0.35);
     background: rgba(81, 221, 190, 0.08);
-    color: #e2e8f0;
+    color: var(--amb-text-main);
 }
 
 /* Material Prompt Station */
@@ -491,7 +491,7 @@
 
 .anomalous-material-prompt-count {
     font-size: 0.68rem;
-    color: #64748b;
+    color: var(--amb-text-dim);
 }
 
 .anomalous-material-copy-prompt-btn {
@@ -508,7 +508,7 @@
 .anomalous-material-copy-prompt-btn:hover {
     background: rgba(81, 221, 190, 0.22);
     border-color: rgba(81, 221, 190, 0.5);
-    color: #fff;
+    color: var(--amb-text-main);
 }
 
 .anomalous-material-prompt-body {
@@ -517,13 +517,13 @@
     font-family: inherit;
     font-size: 0.74rem;
     line-height: 1.45;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     white-space: pre-wrap;
     word-break: break-word;
     padding: 7px 9px;
     background: rgba(0, 0, 0, 0.28);
     border-radius: 5px;
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--amb-border);
 }
 
 /* Model Categorized Groups */
@@ -544,9 +544,9 @@
     gap: 6px;
     font-size: 0.72rem;
     font-weight: 600;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     padding-bottom: 3px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--amb-border);
 }
 
 .anomalous-material-model-card-item {
@@ -557,7 +557,7 @@
     padding: 6px 10px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.025);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--amb-border);
 }
 
 .anomalous-material-model-card-item.is-clickable {
@@ -565,8 +565,8 @@
 }
 
 .anomalous-material-model-card-item.is-active {
-    border-color: rgba(56, 189, 248, 0.45);
-    background: rgba(56, 189, 248, 0.08);
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 8%, transparent);
 }
 
 .theme-abyssal-scarlet .anomalous-material-model-card-item.is-active {
@@ -579,9 +579,9 @@
     width: 48px;
     height: 48px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 7px;
-    background: #0b0c10;
+    background: var(--amb-bg-page);
 }
 
 .anomalous-material-model-thumb img,
@@ -619,7 +619,7 @@
 }
 
 .anomalous-material-model-filename {
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font-size: 0.79rem;
     font-weight: 500;
     overflow: hidden;
@@ -632,7 +632,7 @@
     align-items: center;
     gap: 8px;
     font-size: 0.71rem;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
 }
 
 .anomalous-material-model-tag-badge {
@@ -645,8 +645,8 @@
 
 .anomalous-tag-base {
     background: rgba(255, 255, 255, 0.08);
-    color: #cbd5e1;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--amb-text-soft);
+    border: 1px solid var(--amb-border-strong);
 }
 
 .theme-abyssal-scarlet .anomalous-tag-base {
@@ -668,14 +668,14 @@
 }
 
 .anomalous-tag-clip {
-    background: rgba(139, 92, 246, 0.12);
-    color: #8b5cf6;
-    border: 1px solid rgba(139, 92, 246, 0.25);
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+    color: var(--amb-link);
+    border: 1px solid color-mix(in srgb, var(--amb-link) 25%, transparent);
 }
 
 .anomalous-tag-other {
     background: rgba(148, 163, 184, 0.12);
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
@@ -711,9 +711,9 @@
     flex-direction: column;
     width: min(1600px, 96vw);
     height: min(940px, 94vh);
-    background: #0b0d14;
+    background: var(--amb-bg-page);
     border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     box-shadow: 0 32px 96px rgba(0, 0, 0, 0.88), 0 0 0 1px rgba(255, 255, 255, 0.05);
     overflow: hidden;
 }
@@ -726,8 +726,8 @@
     flex-shrink: 0;
     height: 54px;
     padding: 0 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    background: #0f121a;
+    border-bottom: 1px solid var(--amb-border);
+    background: var(--amb-bg-page);
     gap: 16px;
 }
 
@@ -746,9 +746,9 @@
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     background: rgba(255, 255, 255, 0.04);
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 20px;
     cursor: pointer;
     transition: all 0.15s;
@@ -757,8 +757,8 @@
 
 .anomalous-workbench-back-btn:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--amb-text-main);
+    border-color: var(--amb-border-strong);
 }
 
 .anomalous-workbench-title-box {
@@ -772,7 +772,7 @@
 .anomalous-workbench-title-filename {
     font-size: 0.92rem;
     font-weight: 600;
-    color: #f1f5f9;
+    color: var(--amb-text-main);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -789,16 +789,16 @@
     padding: 2px 7px;
     border-radius: 5px;
     background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #94a3b8;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-muted);
     font-size: 0.68rem;
     font-weight: 500;
 }
 
 .anomalous-workbench-tag.is-ext {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.16);
-    color: #cbd5e1;
+    border-color: var(--amb-border-strong);
+    color: var(--amb-text-soft);
     font-weight: 700;
 }
 
@@ -817,7 +817,7 @@
     background: rgba(0, 0, 0, 0.35);
     padding: 3px 8px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
 }
 
 .anomalous-workbench-nav-btn {
@@ -829,7 +829,7 @@
     border-radius: 50%;
     border: none;
     background: transparent;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 18px;
     cursor: pointer;
     transition: all 0.15s;
@@ -838,7 +838,7 @@
 
 .anomalous-workbench-nav-btn:not(:disabled):hover {
     background: rgba(255, 255, 255, 0.12);
-    color: #fff;
+    color: var(--amb-text-main);
 }
 
 .anomalous-workbench-nav-btn:disabled {
@@ -849,7 +849,7 @@
 .anomalous-workbench-counter {
     font-size: 0.8rem;
     font-weight: 600;
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font-variant-numeric: tabular-nums;
     padding: 0 4px;
 }
@@ -869,9 +869,9 @@
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     background: rgba(255, 255, 255, 0.04);
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 15px;
     cursor: pointer;
     transition: all 0.15s;
@@ -879,9 +879,9 @@
 
 .anomalous-workbench-tool-btn:hover,
 .anomalous-workbench-tool-btn.is-active {
-    background: rgba(139, 92, 246, 0.15);
-    border-color: rgba(139, 92, 246, 0.35);
-    color: #8b5cf6;
+    background: color-mix(in srgb, var(--amb-link) 15%, transparent);
+    border-color: color-mix(in srgb, var(--amb-link) 35%, transparent);
+    color: var(--amb-link);
 }
 
 .anomalous-workbench-close-btn {
@@ -891,7 +891,7 @@
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     background: rgba(239, 68, 68, 0.1);
     color: #fca5a5;
     font-size: 20px;
@@ -902,7 +902,7 @@
 
 .anomalous-workbench-close-btn:hover {
     background: rgba(239, 68, 68, 0.25);
-    color: #fff;
+    color: var(--amb-text-main);
     border-color: rgba(239, 68, 68, 0.4);
     transform: scale(1.05);
 }
@@ -962,8 +962,8 @@
     border-radius: 12px;
     background: rgba(15, 18, 26, 0.55);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #e2e8f0;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-main);
     font-size: 32px;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -976,11 +976,11 @@
 
 .anomalous-workbench-float-nav:hover {
     opacity: 1;
-    background: rgba(139, 92, 246, 0.2);
-    border-color: rgba(139, 92, 246, 0.45);
-    color: #fff;
+    background: color-mix(in srgb, var(--amb-link) 20%, transparent);
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+    color: var(--amb-text-main);
     transform: translateY(-50%) scale(1.08);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(139, 92, 246, 0.25);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px color-mix(in srgb, var(--amb-link) 25%, transparent);
 }
 
 /* Floating Zoom Bar */
@@ -996,7 +996,7 @@
     border-radius: 9px;
     background: rgba(14, 17, 24, 0.85);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 
@@ -1005,7 +1005,7 @@
     border-radius: 5px;
     border: 1px solid transparent;
     background: transparent;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 0.72rem;
     font-weight: 500;
     cursor: pointer;
@@ -1014,7 +1014,7 @@
 
 .anomalous-workbench-zoom-bar button:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: var(--amb-text-main);
 }
 
 /* Left Filmstrip Rail */
@@ -1023,8 +1023,8 @@
     height: 100%;
     min-height: 0;
     padding: 12px 10px;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    background: #080a0f;
+    border-right: 1px solid var(--amb-border);
+    background: var(--amb-bg-page);
     overflow-x: hidden;
     overflow-y: auto;
     box-sizing: border-box;
@@ -1057,7 +1057,7 @@
 }
 
 .anomalous-workbench-filmstrip::-webkit-scrollbar-thumb:hover {
-    background: rgba(139, 92, 246, 0.45);
+    background: color-mix(in srgb, var(--amb-link) 45%, transparent);
 }
 
 .anomalous-workbench-filmstrip-track {
@@ -1075,8 +1075,8 @@
     height: 92px;
     border-radius: 10px;
     overflow: hidden;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    background: #12151e;
+    border: 2px solid var(--amb-border);
+    background: var(--amb-bg-panel);
     cursor: pointer;
     box-sizing: border-box;
     transition: border-color 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
@@ -1095,8 +1095,8 @@
 }
 
 .anomalous-workbench-filmstrip-thumb.is-active {
-    border-color: #8b5cf6;
-    box-shadow: 0 0 8px rgba(139, 92, 246, 0.35), inset 0 0 0 1px #8b5cf6;
+    border-color: var(--amb-link);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--amb-link) 35%, transparent), inset 0 0 0 1px var(--amb-link);
     transform: scale(1.04);
 }
 
@@ -1107,7 +1107,7 @@
     font-size: 10px;
     font-weight: 700;
     line-height: 1;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     background: rgba(10, 13, 20, 0.82);
     backdrop-filter: blur(4px);
     padding: 2px 5px;
@@ -1117,7 +1117,7 @@
 }
 
 .anomalous-workbench-filmstrip-thumb.is-active .anomalous-workbench-thumb-index {
-    color: #8b5cf6;
+    color: var(--amb-link);
     background: rgba(13, 23, 27, 0.92);
     font-weight: 800;
 }
@@ -1128,8 +1128,8 @@
     flex-direction: column;
     min-height: 0;
     height: 100%;
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
-    background: #0e1118;
+    border-left: 1px solid var(--amb-border);
+    background: var(--amb-bg-page);
 }
 
 .anomalous-workbench-inspector-body {
@@ -1160,9 +1160,9 @@
     height: 36px;
     padding: 0 14px;
     border-radius: 3px 10px 3px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     background: rgba(255, 255, 255, 0.05);
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
@@ -1188,8 +1188,8 @@
 
 .anomalous-workbench-action-btn:hover {
     background: rgba(255, 255, 255, 0.09);
-    color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.22);
+    color: var(--amb-text-main);
+    border-color: var(--amb-border-strong);
 }
 
 .anomalous-workbench-action-btn.is-primary {
@@ -1212,25 +1212,25 @@
 
 .anomalous-workbench-action-btn.is-save {
     background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: var(--amb-border-strong);
     box-shadow: none;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     flex: 0 0 auto;
 }
 
 .anomalous-workbench-action-btn.is-save:hover {
     background: rgba(255, 255, 255, 0.09);
-    color: #ffffff;
-    border-color: rgba(165, 180, 252, 0.4);
+    color: var(--amb-text-main);
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
     box-shadow: none;
     transform: translateY(-1px);
 }
 
 .anomalous-workbench-action-btn.is-save.is-active,
 .anomalous-workbench-action-btn.is-save[aria-expanded="true"] {
-    background: rgba(99, 102, 241, 0.2);
-    border-color: rgba(129, 140, 248, 0.5);
-    color: #c7d2fe;
+    background: color-mix(in srgb, var(--amb-link) 20%, transparent);
+    border-color: color-mix(in srgb, var(--amb-link) 50%, transparent);
+    color: var(--amb-text-main);
     box-shadow: none;
 }
 
@@ -1244,7 +1244,7 @@
     background: rgba(0, 0, 0, 0.38);
     padding: 3px;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     gap: 3px;
     flex-shrink: 0;
 }
@@ -1255,7 +1255,7 @@
     border-radius: 7px;
     border: none;
     background: transparent;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 0.74rem;
     font-weight: 600;
     cursor: pointer;
@@ -1265,13 +1265,13 @@
 }
 
 .anomalous-workbench-tab-btn:hover {
-    color: #f1f5f9;
+    color: var(--amb-text-main);
     background: rgba(255, 255, 255, 0.04);
 }
 
 .anomalous-workbench-tab-btn.is-active {
     background: rgba(255, 255, 255, 0.09);
-    color: #8b5cf6;
+    color: var(--amb-link);
     box-shadow: none;
 }
 
@@ -1299,16 +1299,16 @@
     gap: 5px;
     padding: 8px 10px;
     border-radius: var(--amb-radius-control, 6px);
-    background: var(--amb-bg-card, #24262E);
-    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.08));
+    background: var(--amb-bg-card, var(--amb-bg-card-hover));
+    border: 1px solid var(--amb-border, var(--amb-border));
     transition: background-color 0.15s ease, border-color 0.15s ease;
     position: relative;
     user-select: text;
 }
 
 .anomalous-workbench-spec-card:hover {
-    background: var(--amb-bg-card-hover, #2d303a);
-    border-color: var(--amb-border-hover, rgba(255, 255, 255, 0.16));
+    background: var(--amb-bg-card-hover, var(--amb-bg-card-hover));
+    border-color: var(--amb-border-hover, var(--amb-border-strong));
 }
 
 .anomalous-workbench-spec-card.is-wide {
@@ -1326,8 +1326,8 @@
 }
 
 .anomalous-workbench-spec-card.is-res {
-    border-color: rgba(56, 189, 248, 0.25);
-    background: rgba(56, 189, 248, 0.035);
+    border-color: color-mix(in srgb, var(--amb-link) 25%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 4%, transparent);
 }
 
 .theme-abyssal-scarlet .anomalous-workbench-spec-card.is-res {
@@ -1349,9 +1349,9 @@
 }
 
 .anomalous-workbench-spec-card.is-copied {
-    border-color: rgba(139, 92, 246, 0.6) !important;
-    background: rgba(139, 92, 246, 0.08) !important;
-    box-shadow: 0 0 14px rgba(139, 92, 246, 0.25) !important;
+    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent) !important;
+    background: color-mix(in srgb, var(--amb-link) 8%, transparent) !important;
+    box-shadow: 0 0 14px color-mix(in srgb, var(--amb-link) 25%, transparent) !important;
 }
 
 .anomalous-workbench-spec-header {
@@ -1376,7 +1376,7 @@
     gap: 4px;
     opacity: 0;
     transition: opacity 0.15s ease, transform 0.15s ease;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     pointer-events: none;
 }
 
@@ -1387,7 +1387,7 @@
 }
 
 .anomalous-workbench-spec-card.is-copyable:focus-visible {
-    outline: 2px solid rgba(139, 92, 246, 0.55);
+    outline: 2px solid color-mix(in srgb, var(--amb-link) 55%, transparent);
     outline-offset: 1px;
 }
 
@@ -1398,7 +1398,7 @@
 }
 
 .anomalous-workbench-spec-copy-icon.is-success {
-    stroke: #8b5cf6;
+    stroke: var(--amb-link);
 }
 
 .anomalous-workbench-spec-copy-icon.is-error {
@@ -1408,7 +1408,7 @@
 .anomalous-workbench-copy-badge {
     font-size: 10px;
     font-weight: 600;
-    color: #8b5cf6;
+    color: var(--amb-link);
     animation: anomalous-fade-in 0.15s ease forwards;
 }
 
@@ -1427,7 +1427,7 @@
 }
 
 .anomalous-workbench-spec-val {
-    color: #f1f5f9;
+    color: var(--amb-text-main);
     font-size: 0.94rem;
     font-weight: 600;
     line-height: 1.25;
@@ -1448,16 +1448,16 @@
     gap: 12px;
     padding: 10px 14px;
     border-radius: 10px;
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.06) 0%, rgba(56, 189, 248, 0.04) 100%);
-    border: 1px solid rgba(139, 92, 246, 0.2);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--amb-link) 6%, transparent) 0%, color-mix(in srgb, var(--amb-link) 4%, transparent) 100%);
+    border: 1px solid color-mix(in srgb, var(--amb-link) 20%, transparent);
     margin-top: 4px;
     transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .anomalous-workbench-generation-save:hover {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(56, 189, 248, 0.08) 100%);
-    border-color: rgba(139, 92, 246, 0.35);
-    box-shadow: 0 3px 12px rgba(139, 92, 246, 0.08);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--amb-link) 10%, transparent) 0%, color-mix(in srgb, var(--amb-link) 8%, transparent) 100%);
+    border-color: color-mix(in srgb, var(--amb-link) 35%, transparent);
+    box-shadow: 0 3px 12px color-mix(in srgb, var(--amb-link) 8%, transparent);
 }
 
 .anomalous-workbench-generation-info {
@@ -1474,13 +1474,13 @@
     gap: 6px;
     font-size: 0.78rem;
     font-weight: 700;
-    color: #f1f5f9;
+    color: var(--amb-text-main);
 }
 
 .anomalous-workbench-generation-icon {
     width: 13px;
     height: 13px;
-    stroke: #8b5cf6;
+    stroke: var(--amb-link);
     flex-shrink: 0;
 }
 
@@ -1495,7 +1495,7 @@
     padding: 6px 13px;
     border-radius: 7px;
     background: var(--amb-btn-primary-bg);
-    border: 1px solid rgba(139, 92, 246, 0.45);
+    border: 1px solid color-mix(in srgb, var(--amb-link) 45%, transparent);
     color: var(--amb-btn-primary-text);
     font-size: 0.74rem;
     font-weight: 600;
@@ -1537,13 +1537,13 @@
     padding: 12px 14px;
     border-radius: 11px;
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-left-width: 3.5px;
 }
 
 .anomalous-workbench-prompt-card.is-positive {
-    border-left-color: #8b5cf6;
-    background: linear-gradient(90deg, rgba(139, 92, 246, 0.04) 0%, rgba(255, 255, 255, 0.02) 40%);
+    border-left-color: var(--amb-link);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--amb-link) 4%, transparent) 0%, rgba(255, 255, 255, 0.02) 40%);
 }
 
 .anomalous-workbench-prompt-card.is-negative {
@@ -1567,7 +1567,7 @@
 .anomalous-workbench-prompt-title {
     font-size: 0.78rem;
     font-weight: 700;
-    color: #e2e8f0;
+    color: var(--amb-text-main);
 }
 
 .anomalous-workbench-prompt-count {
@@ -1586,9 +1586,9 @@
 .anomalous-workbench-mini-action-btn {
     padding: 3px 8px;
     border-radius: 5px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     background: rgba(255, 255, 255, 0.04);
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 0.7rem;
     font-weight: 500;
     cursor: pointer;
@@ -1597,14 +1597,14 @@
 
 .anomalous-workbench-mini-action-btn:hover {
     background: rgba(255, 255, 255, 0.12);
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.22);
+    color: var(--amb-text-main);
+    border-color: var(--amb-border-strong);
 }
 
 .anomalous-workbench-mini-action-btn.is-copied {
-    background: rgba(139, 92, 246, 0.2);
-    color: #8b5cf6;
-    border-color: #8b5cf6;
+    background: color-mix(in srgb, var(--amb-link) 20%, transparent);
+    color: var(--amb-link);
+    border-color: var(--amb-link);
 }
 
 .anomalous-workbench-prompt-content {
@@ -1640,7 +1640,7 @@
 .anomalous-workbench-model-group-title {
     font-size: 0.72rem;
     font-weight: 700;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     margin-bottom: 2px;
 }
 
@@ -1651,13 +1651,13 @@
     padding: 8px 10px;
     border-radius: 9px;
     background: rgba(255, 255, 255, 0.025);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--amb-border);
     transition: all 0.15s;
 }
 
 .anomalous-workbench-model-card:hover {
     background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: var(--amb-border-strong);
 }
 
 .anomalous-workbench-model-thumb {
@@ -1666,8 +1666,8 @@
     height: 46px;
     border-radius: 7px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: #090b10;
+    border: 1px solid var(--amb-border);
+    background: var(--amb-bg-page);
 }
 
 .anomalous-workbench-model-thumb img,
@@ -1688,7 +1688,7 @@
 .anomalous-workbench-model-name {
     font-size: 0.8rem;
     font-weight: 600;
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1732,8 +1732,8 @@
 
 .anomalous-workbench-model-tag.is-base {
     background: rgba(255, 255, 255, 0.08);
-    color: #cbd5e1;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--amb-text-soft);
+    border: 1px solid var(--amb-border-strong);
 }
 
 .theme-abyssal-scarlet .anomalous-workbench-model-tag.is-base {
@@ -1749,9 +1749,9 @@
 }
 
 .anomalous-workbench-model-tag.is-clip {
-    background: rgba(139, 92, 246, 0.12);
-    color: #8b5cf6;
-    border: 1px solid rgba(139, 92, 246, 0.25);
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+    color: var(--amb-link);
+    border: 1px solid color-mix(in srgb, var(--amb-link) 25%, transparent);
 }
 
 .anomalous-workbench-model-tag.is-vae {
@@ -1762,7 +1762,7 @@
 
 .anomalous-workbench-model-tag.is-other {
     background: rgba(148, 163, 184, 0.12);
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
@@ -1790,9 +1790,9 @@
     flex-wrap: wrap;
     gap: 7px;
     padding: 8px 10px;
-    border: 1px solid rgba(139, 92, 246, 0.14);
+    border: 1px solid color-mix(in srgb, var(--amb-link) 14%, transparent);
     border-radius: 8px;
-    background: rgba(139, 92, 246, 0.035);
+    background: color-mix(in srgb, var(--amb-link) 4%, transparent);
 }
 
 .anomalous-workbench-node-selection-count {
@@ -1809,8 +1809,8 @@
 .anomalous-workbench-inspector-footer {
     flex-shrink: 0;
     padding: 12px 18px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    background: #0c0e14;
+    border-top: 1px solid var(--amb-border);
+    background: var(--amb-bg-page);
 }
 
 .anomalous-workbench-save-row {
@@ -1842,14 +1842,14 @@
     border: 1px solid rgba(148, 163, 184, 0.24);
     border-radius: 999px;
     background: rgba(148, 163, 184, 0.08);
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 0.65rem;
     white-space: nowrap;
 }
 
 .anomalous-material-scope-badge.is-workflow {
-    border-color: rgba(96, 165, 250, 0.24);
-    background: rgba(96, 165, 250, 0.08);
+    border-color: color-mix(in srgb, var(--amb-link) 24%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 8%, transparent);
     color: #9cc7ff;
 }
 
@@ -1862,7 +1862,7 @@
 .anomalous-material-scope-badge.is-nodes {
     border-color: rgba(148, 163, 184, 0.24);
     background: rgba(148, 163, 184, 0.08);
-    color: #94a3b8;
+    color: var(--amb-text-muted);
 }
 
 .anomalous-material-card-title-row {
@@ -1877,7 +1877,7 @@
     margin: 0;
     font-size: 0.94rem;
     font-weight: 600;
-    color: #f1f5f9;
+    color: var(--amb-text-main);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1890,7 +1890,7 @@
     border: none;
     padding: 3px;
     cursor: pointer;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     border-radius: 4px;
     display: inline-flex;
     align-items: center;
@@ -1910,7 +1910,7 @@
 }
 
 .anomalous-material-card-edit-btn:hover {
-    color: #ffffff;
+    color: var(--amb-text-main);
     background: rgba(255, 255, 255, 0.1);
 }
 
@@ -1920,11 +1920,11 @@
     padding: 4px 8px;
     font-size: 0.88rem;
     background: rgba(10, 12, 18, 0.92);
-    border: 1px solid rgba(139, 92, 246, 0.55);
+    border: 1px solid color-mix(in srgb, var(--amb-link) 55%, transparent);
     border-radius: 6px;
-    color: #ffffff;
+    color: var(--amb-text-main);
     outline: none;
-    box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--amb-link) 20%, transparent);
 }
 
 .anomalous-material-card-subinfo {
@@ -1933,12 +1933,12 @@
     gap: 8px;
     flex-wrap: wrap;
     font-size: 0.68rem;
-    color: #64748b;
+    color: var(--amb-text-dim);
     margin-top: -2px;
 }
 
 .anomalous-material-card-date {
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 0.68rem;
 }
 
@@ -1953,17 +1953,17 @@
     box-sizing: border-box;
     padding: 8px 12px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     background: rgba(0, 0, 0, 0.35);
-    color: #f1f5f9;
+    color: var(--amb-text-main);
     font-size: 0.82rem;
     outline: none;
     transition: all 0.15s;
 }
 
 .anomalous-workbench-save-input-wrap input:focus {
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+    border-color: var(--amb-link);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--amb-link) 20%, transparent);
 }
 
 /* Loading & Error Box */
@@ -1974,7 +1974,7 @@
     justify-content: center;
     gap: 14px;
     padding: 40px 20px;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 0.82rem;
     text-align: center;
 }
@@ -1983,8 +1983,8 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    border: 3px solid rgba(139, 92, 246, 0.15);
-    border-top-color: #8b5cf6;
+    border: 3px solid color-mix(in srgb, var(--amb-link) 15%, transparent);
+    border-top-color: var(--amb-link);
     animation: anomalous-spin 0.8s linear infinite;
 }
 
@@ -2000,7 +2000,7 @@
 }
 
 .anomalous-workbench-muted {
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 0.78rem;
     font-style: italic;
 }
@@ -2019,8 +2019,8 @@
 .anomalous-material-receipt button { cursor: pointer; color: inherit; background: transparent; border: 0; white-space: nowrap; }
 .anomalous-material-receipt button:first-of-type { text-decoration: underline; }
 .anomalous-notebook-fold, .anomalous-secondary-actions { padding: 8px; }
-.anomalous-notebook-fold > summary, .anomalous-secondary-actions > summary { cursor: pointer; color: var(--input-text, #ddd); padding: 4px; }
-.anomalous-notebook-fold > p { color: #aaa; font-size: 13px; }
+.anomalous-notebook-fold > summary, .anomalous-secondary-actions > summary { cursor: pointer; color: var(--input-text, var(--amb-text-soft)); padding: 4px; }
+.anomalous-notebook-fold > p { color: var(--amb-text-muted); font-size: 13px; }
 .anomalous-notebook-fold > button { margin: 6px 8px 0 0; }
 /* duplicate workbench-generation-save selector cleaned up */
 .anomalous-material-note-text { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.7; }
@@ -2057,10 +2057,10 @@
     box-sizing: border-box;
     max-width: 100%;
     padding: 8px 10px;
-    border: 1px solid var(--border-color, #454545);
+    border: 1px solid var(--border-color, var(--amb-border-strong));
     border-radius: 6px;
-    background: var(--comfy-input-bg, #222);
-    color: var(--input-text, #ddd);
+    background: var(--comfy-input-bg, var(--amb-bg-card));
+    color: var(--input-text, var(--amb-text-soft));
     font: inherit;
 }
 .anomalous-prompt-composer textarea { width: 100%; resize: vertical; min-height: 72px; }
@@ -2068,26 +2068,26 @@
 .anomalous-prompt-parts { display: flex; flex-direction: column; gap: 10px; }
 .anomalous-prompt-part {
     padding: 12px;
-    border: 1px solid var(--border-color, #454545);
+    border: 1px solid var(--border-color, var(--amb-border-strong));
     border-radius: 8px;
 }
 .anomalous-prompt-part > *:not(summary) { margin-top: 10px; }
 .anomalous-prompt-part summary { cursor: pointer; overflow-wrap: anywhere; }
 .anomalous-prompt-part summary input { margin-right: 8px; }
-.anomalous-prompt-part summary small { margin-left: 10px; color: var(--descrip-text, #aaa); }
-.anomalous-material-target-context { padding: 12px 16px; border-bottom: 1px solid var(--border-color, #454545); }
+.anomalous-prompt-part summary small { margin-left: 10px; color: var(--descrip-text, var(--amb-text-muted)); }
+.anomalous-material-target-context { padding: 12px 16px; border-bottom: 1px solid var(--border-color, var(--amb-border-strong)); }
 .anomalous-material-target-context > button { margin-left: 10px; }
-.anomalous-material-target-context > small { display: block; margin-top: 6px; color: var(--descrip-text, #aaa); }
+.anomalous-material-target-context > small { display: block; margin-top: 6px; color: var(--descrip-text, var(--amb-text-muted)); }
 .anomalous-material-application-result { margin-top: 10px; }
 .anomalous-material-choice {
     max-width: min(560px, calc(100vw - 32px));
     max-height: 80vh;
     overflow-y: auto;
-    border: 1px solid var(--border-color, #454545);
+    border: 1px solid var(--border-color, var(--amb-border-strong));
     border-radius: 10px;
     padding: 20px;
-    background: var(--comfy-menu-bg, #222);
-    color: var(--input-text, #ddd);
+    background: var(--comfy-menu-bg, var(--amb-bg-card));
+    color: var(--input-text, var(--amb-text-soft));
 }
 .anomalous-material-choice > button { display: block; margin: 10px 0; }
 .anomalous-material-choice::backdrop { background: rgba(0, 0, 0, .55); }
@@ -2104,8 +2104,8 @@
     padding: 10px 14px;
     border: 1px solid #68cdb9;
     border-radius: 8px;
-    background: #202428;
-    color: #eee;
+    background: var(--amb-bg-card-hover);
+    color: var(--amb-text-main);
 }
 
 /* ==========================================================================
@@ -2150,10 +2150,10 @@
     gap: 8px;
     padding: 6px 12px;
     border-radius: var(--amb-radius-control, 6px);
-    background: var(--amb-bg-panel, #18191e);
-    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.15));
+    background: var(--amb-bg-panel, var(--amb-bg-panel));
+    border: 1px solid var(--amb-border, var(--amb-border-strong));
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    color: var(--amb-text-main, #f1f5f9);
+    color: var(--amb-text-main, var(--amb-text-main));
     font-size: 0.8rem;
     font-weight: 500;
     line-height: 1.2;
@@ -2162,10 +2162,10 @@
 }
 
 .anomalous-material-drag-hint.is-target-valid {
-    border-color: var(--amb-border-hover, rgba(255, 255, 255, 0.3));
-    background: var(--amb-bg-card-hover, #282a34);
+    border-color: var(--amb-border-hover, var(--amb-border-strong));
+    background: var(--amb-bg-card-hover, var(--amb-bg-card-hover));
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6);
-    color: #ffffff;
+    color: var(--amb-text-main);
 }
 
 .anomalous-material-drag-hint.is-target-refused {

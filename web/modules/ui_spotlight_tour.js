@@ -114,8 +114,8 @@ export function ensureTourStyles() {
             position: absolute;
             border-radius: 10px;
             box-shadow: 0 0 0 9999px rgba(10, 12, 18, 0.78),
-                        0 0 0 2px rgba(96, 165, 250, 0.9),
-                        0 0 22px rgba(59, 130, 246, 0.45);
+                        0 0 0 2px color-mix(in srgb, var(--amb-link) 90%, transparent),
+                        0 0 22px color-mix(in srgb, var(--amb-link) 45%, transparent);
             transition: all 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
             pointer-events: none;
             box-sizing: border-box;
@@ -124,11 +124,11 @@ export function ensureTourStyles() {
             position: absolute;
             width: 330px;
             max-width: calc(100vw - 32px);
-            background: #18181f;
-            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: var(--amb-bg-panel);
+            border: 1px solid var(--amb-border-strong);
             border-radius: 12px;
             box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 1px rgba(255, 255, 255, 0.2);
-            color: #f1f5f9;
+            color: var(--amb-text-main);
             padding: 16px 18px;
             display: flex;
             flex-direction: column;
@@ -151,16 +151,16 @@ export function ensureTourStyles() {
             gap: 5px;
             font-size: 11px;
             font-weight: 600;
-            color: #60a5fa;
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: var(--amb-link);
+            background: color-mix(in srgb, var(--amb-link) 15%, transparent);
+            border: 1px solid color-mix(in srgb, var(--amb-link) 30%, transparent);
             border-radius: 9999px;
             padding: 2px 8px;
         }
         .anomalous-spotlight-card-close {
             background: transparent;
             border: none;
-            color: #94a3b8;
+            color: var(--amb-text-muted);
             font-size: 16px;
             cursor: pointer;
             padding: 2px 6px;
@@ -168,14 +168,14 @@ export function ensureTourStyles() {
             transition: color 0.15s, background 0.15s;
         }
         .anomalous-spotlight-card-close:hover {
-            color: #fff;
+            color: var(--amb-text-main);
             background: rgba(255, 255, 255, 0.1);
         }
         .anomalous-spotlight-card-title {
             margin: 0;
             font-size: 15px;
             font-weight: 700;
-            color: #f8fafc;
+            color: var(--amb-text-main);
             display: flex;
             align-items: center;
             gap: 6px;
@@ -185,7 +185,7 @@ export function ensureTourStyles() {
             margin: 0;
             font-size: 13px;
             line-height: 1.55;
-            color: #cbd5e1;
+            color: var(--amb-text-soft);
         }
         .anomalous-spotlight-card-footer {
             display: flex;
@@ -194,7 +194,7 @@ export function ensureTourStyles() {
             gap: 8px;
             margin-top: 4px;
             padding-top: 10px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid var(--amb-border);
         }
         .anomalous-spotlight-dots {
             display: flex;
@@ -210,7 +210,7 @@ export function ensureTourStyles() {
         }
         .anomalous-spotlight-dot.active {
             width: 14px;
-            background: #3b82f6;
+            background: var(--amb-btn-primary-bg);
         }
         .anomalous-spotlight-btn-group {
             display: flex;
@@ -228,20 +228,20 @@ export function ensureTourStyles() {
         }
         .anomalous-spotlight-btn-secondary {
             background: rgba(255, 255, 255, 0.08);
-            color: #cbd5e1;
+            color: var(--amb-text-soft);
         }
         .anomalous-spotlight-btn-secondary:hover:not(:disabled) {
             background: rgba(255, 255, 255, 0.15);
-            color: #fff;
+            color: var(--amb-text-main);
         }
         .anomalous-spotlight-btn-secondary:disabled {
             opacity: 0.35;
             cursor: not-allowed;
         }
         .anomalous-spotlight-btn-primary {
-            background: #2563eb;
-            color: #fff;
-            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+            background: var(--amb-btn-primary-bg);
+            color: var(--amb-btn-primary-text);
+            box-shadow: 0 2px 8px color-mix(in srgb, var(--amb-link) 40%, transparent);
         }
         .anomalous-spotlight-btn-primary:hover {
             background: #1d4ed8;
@@ -251,9 +251,9 @@ export function ensureTourStyles() {
             align-items: center;
             justify-content: center;
             gap: 6px;
-            background: #2563eb;
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: var(--amb-btn-primary-bg);
+            color: var(--amb-btn-primary-text);
+            border: 1px solid var(--amb-border-strong);
             border-radius: 6px;
             padding: 7px 16px;
             font-size: 12px;
@@ -273,9 +273,9 @@ export function ensureTourStyles() {
             margin: 2px auto 14px auto;
             padding: 6px 16px;
             background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--amb-border);
             border-radius: 20px;
-            color: #94a3b8;
+            color: var(--amb-text-muted);
             font-size: 11.5px;
             font-weight: 500;
             cursor: pointer;
@@ -289,15 +289,15 @@ export function ensureTourStyles() {
             display: none;
         }
         .anomalous-update-guide-tour-banner:hover {
-            background: rgba(59, 130, 246, 0.12);
-            border-color: rgba(96, 165, 250, 0.4);
-            color: #93c5fd;
+            background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+            border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
+            color: var(--amb-link);
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
         }
         .anomalous-update-guide-tour-banner:active {
             transform: translateY(0);
-            background: rgba(59, 130, 246, 0.2);
+            background: color-mix(in srgb, var(--amb-link) 20%, transparent);
         }
     `;
     (document.head || document.body)?.appendChild(style);

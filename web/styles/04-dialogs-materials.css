@@ -1,8 +1,8 @@
 /* Modal Gallery Dialog Styling */
 .anomalous-recipe-gallery-dialog {
-    background: #1e1e1e;
-    color: #eee;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--amb-bg-card);
+    color: var(--amb-text-main);
+    border: 1px solid var(--amb-border);
     border-radius: 12px;
     padding: 24px;
     width: 90vw;
@@ -95,7 +95,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background: #111317;
+    background: var(--amb-bg-page);
 }
 
 /* 1. 一体化 Studio 顶栏 (精简纯净，杜绝层层大框堆叠) */
@@ -109,8 +109,8 @@
     min-height: 48px;
     padding: 9px 16px;
     box-sizing: border-box;
-    background: #16181f;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    background: var(--amb-bg-panel);
+    border-bottom: 1px solid var(--amb-border);
     flex-shrink: 0;
     z-index: 10;
 }
@@ -129,14 +129,14 @@
     background: rgba(0, 0, 0, 0.32);
     padding: 3px 4px;
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--amb-border);
 }
 
 .anomalous-material-pill {
     padding: 3px 11px;
     border-radius: 14px;
     font-size: 12px;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     background: transparent;
     border: none;
     cursor: pointer;
@@ -145,12 +145,12 @@
 }
 
 .anomalous-material-pill:hover {
-    color: #e2e8f0;
+    color: var(--amb-text-main);
 }
 
 .anomalous-material-pill.is-active {
-    background: rgba(139, 92, 246, 0.18);
-    color: #8b5cf6;
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
+    color: var(--amb-link);
     font-weight: 600;
     box-shadow: none;
 }
@@ -175,7 +175,7 @@
     position: absolute;
     left: 10px;
     pointer-events: none;
-    color: #64748b;
+    color: var(--amb-text-dim);
     display: flex;
     align-items: center;
     font-size: 13px;
@@ -186,16 +186,16 @@
     height: 30px;
     padding: 0 12px 0 30px;
     background: rgba(0, 0, 0, 0.28);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 16px;
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font-size: 12px;
     outline: none;
     transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .anomalous-material-search-input:focus {
-    border-color: rgba(139, 92, 246, 0.45);
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
     background: rgba(0, 0, 0, 0.4);
 }
 
@@ -203,9 +203,9 @@
     height: 30px;
     padding: 0 10px;
     background: rgba(0, 0, 0, 0.28);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 16px;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 12px;
     outline: none;
     cursor: pointer;
@@ -213,7 +213,7 @@
 }
 
 .anomalous-material-tag-select:hover {
-    border-color: rgba(255, 255, 255, 0.18);
+    border-color: var(--amb-border-strong);
 }
 
 .anomalous-material-topbar-right {
@@ -228,7 +228,7 @@
     display: inline-flex;
     align-items: center;
     background: rgba(0, 0, 0, 0.32);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--amb-border);
     border-radius: 8px;
     padding: 2px;
 }
@@ -241,19 +241,19 @@
     justify-content: center;
     border: none;
     background: transparent;
-    color: #64748b;
+    color: var(--amb-text-dim);
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .anomalous-material-view-btn:hover {
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
 }
 
 .anomalous-material-view-btn.is-active {
     background: rgba(255, 255, 255, 0.09);
-    color: #8b5cf6;
+    color: var(--amb-link);
 }
 
 .anomalous-material-topbar-btn {
@@ -268,33 +268,33 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s ease;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     background: rgba(255, 255, 255, 0.03);
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
 }
 
 .anomalous-material-topbar-btn:hover {
     background: rgba(255, 255, 255, 0.08);
-    color: #fff;
+    color: var(--amb-text-main);
 }
 
 .anomalous-material-studio-toggle {
-    border-color: rgba(139, 92, 246, 0.3);
-    color: #8b5cf6;
-    background: rgba(139, 92, 246, 0.08);
+    border-color: color-mix(in srgb, var(--amb-link) 30%, transparent);
+    color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 8%, transparent);
 }
 
 .anomalous-material-studio-toggle:hover {
-    background: rgba(139, 92, 246, 0.16);
-    border-color: rgba(139, 92, 246, 0.5);
+    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
+    border-color: color-mix(in srgb, var(--amb-link) 50%, transparent);
     color: #fca5a5;
 }
 
 .anomalous-material-studio-toggle.is-active {
     background: linear-gradient(135deg, rgba(20, 184, 166, 0.35), rgba(13, 148, 136, 0.45));
-    border-color: rgba(139, 92, 246, 0.6);
-    color: #ffffff;
-    box-shadow: 0 0 12px rgba(139, 92, 246, 0.25);
+    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
+    color: var(--amb-text-main);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--amb-link) 25%, transparent);
 }
 
 /* 2. 主区域分屏容器 */
@@ -324,8 +324,8 @@
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
-    background: #13151b;
+    border-left: 1px solid var(--amb-border);
+    background: var(--amb-bg-panel);
     transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
     pointer-events: none;
     z-index: 5;
@@ -403,8 +403,8 @@
     display: flex;
     min-width: 0;
     overflow: hidden;
-    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.08));
-    background: var(--amb-bg-card, #24262E);
+    border: 1px solid var(--amb-border, var(--amb-border));
+    background: var(--amb-bg-card, var(--amb-bg-card-hover));
     border-radius: var(--amb-radius-card, 10px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     cursor: pointer;
@@ -413,12 +413,12 @@
 }
 
 .anomalous-material-card:hover {
-    border-color: var(--amb-border-hover, rgba(255, 255, 255, 0.2));
+    border-color: var(--amb-border-hover, var(--amb-border-strong));
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .anomalous-material-card:focus-visible {
-    outline: 2px solid var(--amb-accent-gold, #8b5cf6);
+    outline: 2px solid var(--amb-accent-gold, var(--amb-link));
     outline-offset: 2px;
 }
 
@@ -460,7 +460,7 @@
 }
 
 .anomalous-material-list.is-grid .anomalous-material-card:hover {
-    border-color: var(--amb-border-hover, rgba(255, 255, 255, 0.22));
+    border-color: var(--amb-border-hover, var(--amb-border-strong));
 }
 
 .anomalous-material-list.is-grid .anomalous-material-card-preview {
@@ -471,7 +471,7 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    background: #0d0f14;
+    background: var(--amb-bg-page);
     position: relative;
 }
 
@@ -553,7 +553,7 @@
     overflow-wrap: anywhere;
     font-size: 13px;
     line-height: 17px;
-    color: var(--amb-text-main, #f1f5f9);
+    color: var(--amb-text-main, var(--amb-text-main));
     font-weight: 500;
 }
 
@@ -571,12 +571,12 @@
     justify-content: space-between;
     gap: 6px;
     font-size: 11px;
-    color: #64748b;
+    color: var(--amb-text-dim);
 }
 
 .anomalous-material-list.is-grid .anomalous-material-card-date {
     font-size: 11px;
-    color: #64748b;
+    color: var(--amb-text-dim);
     white-space: nowrap;
 }
 
@@ -604,7 +604,7 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    background: #0d0f14;
+    background: var(--amb-bg-page);
 }
 
 .anomalous-material-list.is-list .anomalous-material-card-preview img {
@@ -642,7 +642,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 13px;
-    color: #f1f5f9;
+    color: var(--amb-text-main);
 }
 
 .anomalous-material-list.is-list .anomalous-material-card-meta {
@@ -681,9 +681,9 @@
     align-items: center;
     justify-content: center;
     border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     background: rgba(18, 20, 26, 0.85);
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     cursor: pointer;
     font-size: 12px;
     backdrop-filter: blur(6px);
@@ -717,8 +717,8 @@
     top: 8px;
     left: 8px;
     z-index: 5;
-    color: #8b5cf6;
-    border-color: rgba(139, 92, 246, 0.3);
+    color: var(--amb-link);
+    border-color: color-mix(in srgb, var(--amb-link) 30%, transparent);
     opacity: 0;
 }
 
@@ -727,8 +727,8 @@
 }
 
 .anomalous-material-card-quick-load:hover {
-    background: rgba(139, 92, 246, 0.28);
-    border-color: rgba(139, 92, 246, 0.6);
+    background: color-mix(in srgb, var(--amb-link) 28%, transparent);
+    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
     color: #fca5a5;
 }
 
@@ -737,8 +737,8 @@
     top: 8px;
     left: 38px;
     z-index: 5;
-    color: #cbd5e1;
-    border-color: rgba(255, 255, 255, 0.2);
+    color: var(--amb-text-soft);
+    border-color: var(--amb-border-strong);
     opacity: 0;
 }
 
@@ -749,7 +749,7 @@
 .anomalous-material-card-send-studio:hover {
     background: rgba(255, 255, 255, 0.15);
     border-color: rgba(255, 255, 255, 0.4);
-    color: #ffffff;
+    color: var(--amb-text-main);
 }
 
 .theme-abyssal-scarlet .anomalous-material-card-send-studio {
@@ -775,9 +775,9 @@
     margin-top: 5px;
     font-size: 11px;
     font-weight: 600;
-    color: #ffffff;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.9) 0%, rgba(79, 70, 229, 0.95) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--amb-text-main);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--amb-link) 90%, transparent) 0%, color-mix(in srgb, var(--amb-link) 95%, transparent) 100%);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 6px;
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
@@ -786,9 +786,9 @@
 }
 
 .anomalous-material-card-apply-btn:hover {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 1) 0%, rgba(67, 56, 202, 1) 100%);
+    background: linear-gradient(135deg, var(--amb-link) 0%, rgba(67, 56, 202, 1) 100%);
     transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 4px 10px color-mix(in srgb, var(--amb-link) 40%, transparent);
 }
 
 .anomalous-material-card-apply-btn:disabled {
@@ -805,7 +805,7 @@
 
 .anomalous-material-header-apply-btn {
     font-weight: 600 !important;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--amb-link) 35%, transparent);
 }
 
 /* 徽标、标签与来源标记通用定义 */
@@ -813,17 +813,17 @@
     max-width: 100%;
     overflow: hidden;
     padding: 2px 6px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.035);
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 0.65rem;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .anomalous-material-source-mark.is-current {
-    border-color: rgba(139, 92, 246, 0.25);
+    border-color: color-mix(in srgb, var(--amb-link) 25%, transparent);
     color: #fca5a5;
 }
 
@@ -836,17 +836,17 @@
 
 .anomalous-material-meta-pill {
     padding: 2px 6px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.035);
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 0.65rem;
     white-space: nowrap;
 }
 
 .anomalous-material-types {
     overflow: hidden;
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 0.72rem;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -866,8 +866,8 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     border-radius: 4px;
-    background: #232731;
-    color: #94a3b8;
+    background: var(--amb-bg-card-hover);
+    color: var(--amb-text-muted);
     padding: 1px 6px;
     font-size: 11px;
 }
@@ -880,10 +880,10 @@
     justify-content: center;
     gap: 12px;
     padding: 8px 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    background: #14161c;
+    border-top: 1px solid var(--amb-border);
+    background: var(--amb-bg-panel);
     font-size: 12px;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
 }
 
 .anomalous-material-pager button:disabled {
@@ -895,7 +895,7 @@
     grid-column: 1 / -1;
     padding: 48px 16px;
     text-align: center;
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-size: 14px;
 }
 
@@ -919,9 +919,9 @@
     box-sizing: border-box;
     min-width: 0;
     max-width: 100%;
-    border: 1px solid #3d4350;
+    border: 1px solid var(--amb-border-strong);
     border-radius: 8px;
-    background: #1d2028;
+    background: var(--amb-bg-card);
     color: #e5e9f0;
     padding: 8px 10px;
     font: inherit;
@@ -937,7 +937,7 @@
     flex: 1;
     flex-direction: column;
     overflow: hidden;
-    background: #111318;
+    background: var(--amb-bg-page);
 }
 
 .anomalous-library-detail-header {
@@ -946,21 +946,21 @@
     gap: 14px;
     min-height: 72px;
     padding: 12px 18px;
-    border-bottom: 1px solid rgba(255,255,255,.08);
+    border-bottom: 1px solid var(--amb-border);
     background: rgba(25,27,33,.96);
 }
 
 .anomalous-library-detail-back {
     flex: 0 0 auto;
     padding: 8px 11px;
-    border: 1px solid rgba(255,255,255,.1);
+    border: 1px solid var(--amb-border);
     border-radius: 8px;
     background: rgba(255,255,255,.04);
     color: #c9cfda;
     cursor: pointer;
 }
 
-.anomalous-library-detail-back:hover { border-color: rgba(81,221,190,.42); color: #fff; }
+.anomalous-library-detail-back:hover { border-color: rgba(81,221,190,.42); color: var(--amb-text-main); }
 .anomalous-library-detail-heading { display: flex; min-width: 0; flex: 1; align-items: center; gap: 10px; }
 .anomalous-library-detail-heading h2 {
     margin: 0;
@@ -986,8 +986,8 @@
 
 .anomalous-library-detail-layout.is-parameter .anomalous-library-detail-image-stage {
     flex: 0 0 180px;
-    border-color: rgba(139, 92, 246, 0.18);
-    background: radial-gradient(circle at 50% 45%, rgba(139, 92, 246, 0.12), rgba(13, 15, 20, 0.9) 72%);
+    border-color: color-mix(in srgb, var(--amb-link) 18%, transparent);
+    background: radial-gradient(circle at 50% 45%, color-mix(in srgb, var(--amb-link) 12%, transparent), rgba(13, 15, 20, 0.9) 72%);
     cursor: default;
 }
 
@@ -998,7 +998,7 @@
     flex-direction: column;
     gap: 12px;
     padding: 18px;
-    border-right: 1px solid rgba(255,255,255,.08);
+    border-right: 1px solid var(--amb-border);
     background: radial-gradient(circle at 50% 35%, #242a35, #0d0f14 72%);
 }
 
@@ -1010,9 +1010,9 @@
     justify-content: center;
     overflow: hidden;
     padding: 0;
-    border: 1px solid rgba(255,255,255,.1);
+    border: 1px solid var(--amb-border);
     border-radius: 12px;
-    background: #090a0d;
+    background: var(--amb-bg-page);
     color: #647083;
     font-size: 42px;
     cursor: zoom-in;
@@ -1031,7 +1031,7 @@
     justify-content: space-between;
     gap: 4px;
     padding: 10px 12px;
-    border: 1px solid rgba(255,255,255,.07);
+    border: 1px solid var(--amb-border);
     border-radius: 9px;
     background: rgba(0,0,0,.24);
 }
@@ -1141,7 +1141,7 @@
     flex-wrap: wrap;
     gap: 6px;
     padding-top: 6px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--amb-border);
 }
 
 #anomalous-container.anomalous-docked .anomalous-library-detail-actions .anomalous-btn-primary,
@@ -1166,7 +1166,7 @@
     padding: 10px;
     gap: 8px;
     min-height: 0;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    border-right: 1px solid var(--amb-border);
 }
 
 #anomalous-container.anomalous-docked .anomalous-library-detail-image-stage {
@@ -1251,7 +1251,7 @@
         flex-wrap: wrap;
         gap: 6px;
         padding-top: 6px;
-        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        border-top: 1px solid var(--amb-border);
     }
     .anomalous-library-detail-layout {
         grid-template-columns: clamp(180px, 30%, 205px) minmax(0, 1fr) !important;
@@ -1280,7 +1280,7 @@
     .anomalous-library-detail-media {
         min-height: 220px;
         border-right: 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        border-bottom: 1px solid var(--amb-border);
     }
     .anomalous-library-detail-inspector {
         overflow: visible;
@@ -1291,7 +1291,7 @@
     .anomalous-library-detail-header { align-items: flex-start; flex-wrap: wrap; }
     .anomalous-library-detail-heading { order: -1; flex-basis: 100%; }
     .anomalous-library-detail-layout { grid-template-columns: 1fr; overflow-y: auto; }
-    .anomalous-library-detail-media { min-height: 390px; border-right: 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .anomalous-library-detail-media { min-height: 390px; border-right: 0; border-bottom: 1px solid var(--amb-border); }
     .anomalous-library-detail-layout.is-parameter .anomalous-library-detail-media { min-height: 260px; }
     .anomalous-library-detail-inspector { overflow: visible; }
 }
@@ -1310,7 +1310,7 @@
     justify-content: space-between;
     gap: 8px;
     padding: 7px 9px;
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--amb-border);
     border-radius: 7px;
     background: rgba(0, 0, 0, 0.16);
 }
@@ -1354,9 +1354,9 @@
     width: min(1420px, 96vw);
     height: min(900px, 92vh);
     max-height: 92vh;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     border-radius: 16px;
-    background: #101217;
+    background: var(--amb-bg-page);
     box-shadow: 0 28px 80px rgba(0, 0, 0, 0.72);
     overflow: hidden;
 }
@@ -1368,10 +1368,10 @@
     z-index: 10;
     width: 34px;
     height: 34px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 50%;
     background: rgba(18, 20, 26, 0.7);
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 20px;
     line-height: 1;
     display: flex;
@@ -1384,7 +1384,7 @@
 
 .anomalous-material-detail-close:hover {
     background: rgba(255, 255, 255, 0.18);
-    color: #fff;
+    color: var(--amb-text-main);
     transform: scale(1.06);
 }
 
@@ -1423,8 +1423,8 @@
     flex-direction: column;
     gap: 8px;
     padding: 10px 12px 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    background: #0c0e13;
+    border-top: 1px solid var(--amb-border);
+    background: var(--amb-bg-page);
 }
 
 .anomalous-material-filmstrip {
@@ -1444,9 +1444,9 @@
     width: 56px;
     height: 56px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     border-radius: 8px;
-    background: #111318;
+    background: var(--amb-bg-page);
 }
 
 .anomalous-material-film-thumb.is-clickable {
@@ -1500,7 +1500,7 @@
     gap: 10px;
     min-width: 0;
     font-size: 0.76rem;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
 }
 
 .anomalous-material-media-bar > span {
@@ -1522,13 +1522,13 @@
     flex-direction: column;
     height: 100%;
     min-height: 0;
-    background: #14161c;
-    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--amb-bg-panel);
+    border-left: 1px solid var(--amb-border);
 }
 
 .anomalous-material-side-header {
     padding: 20px 52px 14px 22px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--amb-border);
     flex-shrink: 0;
 }
 
@@ -1551,7 +1551,7 @@
     max-width: 100%;
     overflow: hidden;
     padding: 3px 8px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.04);
     color: #b4becc;
@@ -1585,8 +1585,8 @@
 /* Sticky Footer */
 .anomalous-material-side-footer {
     padding: 12px 22px 16px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    background: #111318;
+    border-top: 1px solid var(--amb-border);
+    background: var(--amb-bg-page);
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -1604,17 +1604,17 @@
 .anomalous-material-side-footer label {
     display: grid;
     gap: 6px;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 0.78rem;
     font-weight: 600;
 }
 
 .anomalous-material-side-footer input {
     padding: 9px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.04);
-    color: #ffffff;
+    color: var(--amb-text-main);
     font-size: 0.82rem;
     outline: none;
     transition: border-color 0.15s;
@@ -1706,8 +1706,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     display: flex;
     min-width: 0;
     overflow: hidden;
-    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.08));
-    background: var(--amb-bg-card, #24262E);
+    border: 1px solid var(--amb-border, var(--amb-border));
+    background: var(--amb-bg-card, var(--amb-bg-card-hover));
     border-radius: var(--amb-radius-card, 10px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     cursor: pointer;
@@ -1716,12 +1716,12 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-card:hover {
-    border-color: var(--amb-border-hover, rgba(255, 255, 255, 0.22));
+    border-color: var(--amb-border-hover, var(--amb-border-strong));
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .anomalous-recipe-card:focus-visible {
-    outline: 2px solid var(--amb-accent-gold, #818cf8);
+    outline: 2px solid var(--amb-accent-gold, var(--amb-link));
     outline-offset: 2px;
 }
 
@@ -1757,7 +1757,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     width: 100%;
     height: 136px;
     flex-shrink: 0;
-    background: #0d0f14;
+    background: var(--amb-bg-page);
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -1817,10 +1817,10 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: rgba(12, 14, 20, 0.78);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     font-size: 0.65rem;
     font-weight: 500;
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     white-space: nowrap;
     box-shadow: none;
 }
@@ -1828,7 +1828,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-recipe-readiness-text {
     font-size: 0.64rem;
     line-height: 1;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
 }
 
 .anomalous-recipe-cover-pill {
@@ -1838,8 +1838,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: rgba(12, 14, 18, 0.82);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: #e2e8f0;
+    border: 1px solid var(--amb-border-strong);
+    color: var(--amb-text-main);
     font-size: 0.66rem;
     font-weight: 500;
     max-width: 140px;
@@ -1860,8 +1860,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     font-weight: 600;
     background: rgba(10, 12, 16, 0.85);
     backdrop-filter: blur(6px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: #94a3b8;
+    border: 1px solid var(--amb-border-strong);
+    color: var(--amb-text-muted);
     pointer-events: none;
 }
 
@@ -1871,8 +1871,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-scope-pill.is-complete {
-    border-color: rgba(99, 102, 241, 0.4);
-    color: #a5b4fc;
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
+    color: var(--amb-link);
 }
 
 /* 网格卡片信息区 */
@@ -1904,7 +1904,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     overflow-wrap: anywhere;
     font-size: 13px;
     line-height: 17px;
-    color: var(--amb-text-main, #f1f5f9);
+    color: var(--amb-text-main, var(--amb-text-main));
     font-weight: 500;
 }
 
@@ -1950,15 +1950,15 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 1px 5px;
     border-radius: 4px;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    color: #94a3b8;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-muted);
     white-space: nowrap;
 }
 
 .anomalous-recipe-spec-tag.is-lora {
-    color: #93c5fd;
-    background: rgba(59, 130, 246, 0.08);
-    border-color: rgba(59, 130, 246, 0.2);
+    color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 8%, transparent);
+    border-color: color-mix(in srgb, var(--amb-link) 20%, transparent);
 }
 
 .anomalous-recipe-spec-tag.is-step {
@@ -1988,8 +1988,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 2px 6px;
     border-radius: 4px;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #94a3b8;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-muted);
     cursor: pointer;
     transition: all 0.15s ease;
     flex-shrink: 0;
@@ -1997,7 +1997,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-recipe-badge-tag:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #f1f5f9;
+    color: var(--amb-text-main);
 }
 
 /* 网格卡片底部主动作与悬浮微操作 */
@@ -2008,7 +2008,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     gap: 6px;
     margin-top: 2px;
     padding-top: 6px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid var(--amb-border);
 }
 
 .anomalous-recipe-btn-primary-action {
@@ -2019,7 +2019,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     border-radius: var(--amb-radius-control, 6px);
     background: var(--amb-btn-primary-bg, #D7D9E0);
     color: var(--amb-btn-primary-text, #15171C);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--amb-border-strong);
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.2px;
@@ -2037,7 +2037,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-btn-primary-action:hover {
-    background: var(--amb-btn-primary-hover, #E5E7EB);
+    background: var(--amb-btn-primary-hover, var(--amb-btn-primary-bg));
     border-color: rgba(255, 255, 255, 0.4);
     box-shadow: none;
 }
@@ -2068,8 +2068,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     justify-content: center;
     border-radius: 5px;
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    color: #94a3b8;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-muted);
     cursor: pointer;
     font-size: 11px;
     transition: all 0.15s ease;
@@ -2077,7 +2077,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-recipe-card-mini-btn:hover {
     background: rgba(255, 255, 255, 0.12);
-    color: #fff;
+    color: var(--amb-text-main);
     transform: translateY(-1px);
 }
 
@@ -2108,7 +2108,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     border-radius: 6px;
     flex-shrink: 0;
     overflow: hidden;
-    background: #0d0f14;
+    background: var(--amb-bg-page);
 }
 
 .anomalous-recipe-list.is-list .anomalous-recipe-cover-pill,
@@ -2142,7 +2142,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 13px;
-    color: #f1f5f9;
+    color: var(--amb-text-main);
 }
 
 .anomalous-recipe-list.is-list .anomalous-recipe-card-footer {
@@ -2229,12 +2229,12 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 10px 12px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--amb-border);
 }
 
 .anomalous-recipe-metric-label {
     font-size: 0.74rem;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -2242,7 +2242,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-recipe-metric-value {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #f8fafc;
+    color: var(--amb-text-main);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2253,8 +2253,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 10px 14px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #93c5fd;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-link);
     cursor: pointer;
     user-select: none;
     font-size: 0.85rem;
@@ -2272,8 +2272,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 9px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #cbd5e1;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-soft);
     font-size: 0.82rem;
     cursor: pointer;
     transition: background 0.2s, border-color 0.2s;
@@ -2281,7 +2281,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-recipe-lazy-expand-btn:hover {
     background: rgba(255, 255, 255, 0.09);
-    border-color: rgba(255, 255, 255, 0.18);
+    border-color: var(--amb-border-strong);
 }
 
 .anomalous-recipe-readiness-pill.is-ready {
@@ -2309,7 +2309,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     gap: 8px;
     margin-top: auto;
     padding-top: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--amb-border);
 }
 
 .anomalous-recipe-btn-primary-action {
@@ -2317,8 +2317,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 8px 14px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    color: #f1f5f9;
+    border: 1px solid var(--amb-border-strong);
+    color: var(--amb-text-main);
     font-size: 0.82rem;
     font-weight: 500;
     cursor: pointer;
@@ -2328,8 +2328,8 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-recipe-btn-primary-action:hover {
     background: rgba(255, 255, 255, 0.16);
-    border-color: rgba(255, 255, 255, 0.28);
-    color: #ffffff;
+    border-color: var(--amb-border-strong);
+    color: var(--amb-text-main);
 }
 
 .anomalous-recipe-card-mini-actions {
@@ -2342,8 +2342,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 6px 8px;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #94a3b8;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-muted);
     cursor: pointer;
     font-size: 0.85rem;
     line-height: 1;
@@ -2352,20 +2352,20 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-recipe-card-mini-btn:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--amb-text-main);
+    border-color: var(--amb-border-strong);
 }
 
 
 .anomalous-recipe-banner-btn.is-match-all {
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    color: #e2e8f0;
+    border: 1px solid var(--amb-border-strong);
+    color: var(--amb-text-main);
 }
 
 .anomalous-recipe-banner-btn.is-match-all:hover {
     background: rgba(255, 255, 255, 0.14);
-    color: #ffffff;
+    color: var(--amb-text-main);
 }
 
 /* Metric Cards for Sampling Parameters */
@@ -2383,12 +2383,12 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 10px 12px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--amb-border);
 }
 
 .anomalous-recipe-metric-label {
     font-size: 0.74rem;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -2396,7 +2396,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-recipe-metric-value {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #f8fafc;
+    color: var(--amb-text-main);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2407,8 +2407,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 10px 14px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #93c5fd;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-link);
     cursor: pointer;
     user-select: none;
     font-size: 0.85rem;
@@ -2426,8 +2426,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 9px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #cbd5e1;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-soft);
     font-size: 0.82rem;
     cursor: pointer;
     transition: all 0.2s;
@@ -2435,6 +2435,6 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-recipe-lazy-expand-btn:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: var(--amb-text-main);
 }
 

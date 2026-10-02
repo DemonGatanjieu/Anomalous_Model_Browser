@@ -5,8 +5,8 @@
     right: 12px;
     bottom: 12px;
     width: min(1000px, calc(100% - 24px));
-    background: var(--amb-bg-panel, #1e1e24);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--amb-bg-panel, var(--amb-bg-card));
+    border: 1px solid var(--amb-border);
     border-radius: 12px;
     display: flex;
     flex-direction: column;
@@ -45,7 +45,7 @@
     flex-direction: column;
     gap: 8px;
     padding: 8px 16px 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--amb-border);
     background: rgba(0, 0, 0, 0.2);
 }
 
@@ -59,7 +59,7 @@
     max-height: none;
     padding: 12px 14px;
     border-top: none;
-    border-left: 1px solid rgba(255, 255, 255, 0.06);
+    border-left: 1px solid var(--amb-border);
 }
 
 .anomalous-sd-header {
@@ -69,32 +69,32 @@
     gap: 8px;
     padding: 12px 16px;
     background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--amb-border);
 }
 
 .anomalous-sd-title {
     font-size: 14px;
     font-weight: 600;
-    color: #f1f5f9;
+    color: var(--amb-text-main);
 }
 
 .anomalous-sd-subtitle {
     font-size: 11px;
-    color: #64748b;
+    color: var(--amb-text-dim);
     margin-top: 2px;
 }
 
 .anomalous-sd-close-btn {
     background: transparent;
     border: none;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 20px;
     line-height: 1;
     cursor: pointer;
 }
 
 .anomalous-sd-close-btn:hover {
-    color: #f1f5f9;
+    color: var(--amb-text-main);
 }
 
 /* Character */
@@ -108,7 +108,7 @@
 .anomalous-sd-step {
     font-size: 12px;
     font-weight: 600;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     flex-shrink: 0;
 }
 
@@ -116,9 +116,9 @@
     flex: 1;
     min-width: 0;
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 6px;
-    color: #f1f5f9;
+    color: var(--amb-text-main);
     font-size: 13px;
     padding: 5px 8px;
 }
@@ -127,8 +127,8 @@
     padding: 0 16px 10px;
     font-size: 11px;
     line-height: 1.5;
-    color: #64748b;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--amb-text-dim);
+    border-bottom: 1px solid var(--amb-border);
 }
 
 .anomalous-sd-character-hint.is-warning {
@@ -150,10 +150,10 @@
     flex: 1;
     min-height: 160px;
     background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     border-radius: 6px;
     padding: 10px;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 13px;
     line-height: 1.6;
     resize: none;
@@ -169,8 +169,8 @@
 
 .anomalous-sd-btn {
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #e2e8f0;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-main);
     padding: 6px 12px;
     border-radius: 6px;
     cursor: pointer;
@@ -189,24 +189,24 @@
 }
 
 .anomalous-sd-btn.primary {
-    background: rgba(56, 189, 248, 0.1);
-    color: #38bdf8;
-    border-color: rgba(56, 189, 248, 0.25);
+    background: color-mix(in srgb, var(--amb-link) 10%, transparent);
+    color: var(--amb-link);
+    border-color: color-mix(in srgb, var(--amb-link) 25%, transparent);
 }
 
 .anomalous-sd-btn.primary:hover:not(:disabled) {
-    background: rgba(56, 189, 248, 0.2);
+    background: color-mix(in srgb, var(--amb-link) 20%, transparent);
 }
 
 .anomalous-sd-btn.accent {
-    background: rgba(99, 102, 241, 0.18);
-    color: #a5b4fc;
-    border-color: rgba(99, 102, 241, 0.35);
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
+    color: var(--amb-link);
+    border-color: color-mix(in srgb, var(--amb-link) 35%, transparent);
     font-weight: 600;
 }
 
 .anomalous-sd-btn.accent:hover:not(:disabled) {
-    background: rgba(99, 102, 241, 0.3);
+    background: color-mix(in srgb, var(--amb-link) 30%, transparent);
 }
 
 .anomalous-sd-btn.is-success {
@@ -222,14 +222,14 @@
     justify-content: space-between;
     padding: 10px 16px 0;
     font-size: 12px;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
 }
 
 .anomalous-sd-link-btn {
     background: none;
     border: none;
     padding: 0;
-    color: #38bdf8;
+    color: var(--amb-link);
     font-size: 12px;
     cursor: pointer;
 }
@@ -256,7 +256,7 @@
 
 .anomalous-sd-line-card {
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--amb-border);
     border-radius: 8px;
     padding: 8px 10px 10px;
     display: flex;
@@ -265,7 +265,7 @@
 }
 
 .anomalous-sd-line-card:focus-within {
-    border-color: rgba(56, 189, 248, 0.35);
+    border-color: color-mix(in srgb, var(--amb-link) 35%, transparent);
 }
 
 .anomalous-sd-line-head {
@@ -278,7 +278,7 @@
     flex: 1;
     font-size: 11px;
     font-family: monospace;
-    color: #64748b;
+    color: var(--amb-text-dim);
 }
 
 .anomalous-sd-icon-btn {
@@ -288,9 +288,9 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     background: rgba(255, 255, 255, 0.04);
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 14px;
     line-height: 1;
     cursor: pointer;
@@ -298,8 +298,8 @@
 
 .anomalous-sd-icon-btn:hover,
 .anomalous-sd-icon-btn.is-playing {
-    color: #38bdf8;
-    border-color: rgba(56, 189, 248, 0.4);
+    color: var(--amb-link);
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
 }
 
 .anomalous-sd-icon-btn.is-danger:hover {
@@ -316,7 +316,7 @@
     border: 1px solid transparent;
     border-radius: 4px;
     padding: 2px 4px;
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font: inherit;
     font-size: 13px;
     line-height: 1.6;
@@ -325,7 +325,7 @@
 
 .anomalous-sd-line-text:hover,
 .anomalous-sd-line-text:focus {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--amb-border);
     background: rgba(0, 0, 0, 0.2);
     outline: none;
 }
@@ -339,23 +339,23 @@
 .anomalous-sd-emotion-chip {
     padding: 2px 9px;
     border-radius: 999px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     background: rgba(255, 255, 255, 0.04);
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 11px;
     cursor: pointer;
     transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .anomalous-sd-emotion-chip:hover {
-    color: #e2e8f0;
-    border-color: rgba(129, 140, 248, 0.4);
+    color: var(--amb-text-main);
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
 }
 
 .anomalous-sd-emotion-chip.active {
-    background: rgba(99, 102, 241, 0.3);
-    border-color: #818cf8;
-    color: #fff;
+    background: color-mix(in srgb, var(--amb-link) 30%, transparent);
+    border-color: var(--amb-link);
+    color: var(--amb-text-main);
     font-weight: 600;
 }
 
@@ -373,7 +373,7 @@
 
 .anomalous-sd-package-summary {
     font-size: 12px;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
 }
 
 .anomalous-sd-package-summary.is-error {
@@ -400,9 +400,9 @@
     gap: 6px;
     padding: 3px 8px;
     border-radius: 6px;
-    border: 1px dashed rgba(129, 140, 248, 0.5);
-    background: rgba(99, 102, 241, 0.08);
-    color: #a5b4fc;
+    border: 1px dashed color-mix(in srgb, var(--amb-link) 50%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 8%, transparent);
+    color: var(--amb-link);
     font-size: 11px;
     cursor: grab;
     user-select: none;
@@ -428,9 +428,9 @@
     margin-right: auto;
     min-width: 0;
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 6px;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 12px;
     padding: 5px 6px;
 }
@@ -439,16 +439,16 @@
     align-self: stretch;
     padding: 7px;
     border-radius: 8px;
-    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border: 1px dashed var(--amb-border-strong);
     background: transparent;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 12px;
     cursor: pointer;
 }
 
 .anomalous-sd-add-line:hover {
-    color: #e2e8f0;
-    border-color: rgba(56, 189, 248, 0.45);
+    color: var(--amb-text-main);
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
 }
 
 /* Generate here (GPT-SoVITS): ui_script_run.js */
@@ -471,14 +471,14 @@
     flex-shrink: 0;
     padding: 6px 10px;
     border-radius: 8px;
-    background: rgba(99, 102, 241, 0.06);
-    border: 1px solid rgba(99, 102, 241, 0.18);
+    background: color-mix(in srgb, var(--amb-link) 6%, transparent);
+    border: 1px solid color-mix(in srgb, var(--amb-link) 18%, transparent);
 }
 
 .anomalous-sd-run-settings summary {
     cursor: pointer;
     font-size: 12px;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
 }
 
 .anomalous-sd-run-actions {
@@ -491,8 +491,8 @@
 .anomalous-sd-run-select,
 .anomalous-sd-run-number {
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    color: #e2e8f0;
+    border: 1px solid var(--amb-border-strong);
+    color: var(--amb-text-main);
     border-radius: 6px;
     padding: 4px 6px;
     font-size: 12px;
@@ -515,7 +515,7 @@
     justify-content: space-between;
     gap: 6px;
     font-size: 11px;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-family: ui-monospace, monospace;
 }
 
@@ -523,18 +523,18 @@
     margin: 6px 0 4px;
     font-size: 11px;
     line-height: 1.5;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
 }
 
 .anomalous-sd-run-status,
 .anomalous-sd-run-saved {
     font-size: 12px;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     word-break: break-all;
 }
 
 .anomalous-sd-run-saved {
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 11px;
 }
 
@@ -554,5 +554,5 @@
 .anomalous-sd-take-no {
     margin-left: 2px;
     font-size: 10px;
-    color: #a5b4fc;
+    color: var(--amb-link);
 }

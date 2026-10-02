@@ -237,7 +237,7 @@ export async function loadGalleryImages(page = 1, reset = false, { refresh = res
 
                         const cancelBtn = document.createElement('button');
                         cancelBtn.textContent = t('galleryCancel');
-                        cancelBtn.style.background = '#444';
+                        cancelBtn.style.background = 'var(--amb-bg-card-hover)';
                         cancelBtn.style.color = '#fff';
                         cancelBtn.style.border = 'none';
                         cancelBtn.style.padding = '10px 16px';
@@ -245,7 +245,7 @@ export async function loadGalleryImages(page = 1, reset = false, { refresh = res
                         cancelBtn.style.cursor = 'pointer';
                         cancelBtn.style.transition = 'background 0.2s';
                         cancelBtn.onmouseover = () => cancelBtn.style.background = '#666';
-                        cancelBtn.onmouseout = () => cancelBtn.style.background = '#444';
+                        cancelBtn.onmouseout = () => cancelBtn.style.background = 'var(--amb-bg-card-hover)';
 
                         cancelBtn.onclick = (ce) => {
                             ce.stopPropagation();
@@ -360,7 +360,7 @@ export async function showGeneratedGallery(model) {
             modalBox.id = 'anomalous-generated-gallery-modal';
             modalBox.style.width = '95%';
             modalBox.style.maxHeight = '95%';
-            modalBox.style.backgroundColor = 'var(--comfy-menu-bg, #222)';
+            modalBox.style.backgroundColor = 'var(--comfy-menu-bg, var(--amb-bg-card))';
             modalBox.style.borderRadius = '12px';
             modalBox.style.display = 'flex';
             modalBox.style.flexDirection = 'column';
@@ -369,11 +369,11 @@ export async function showGeneratedGallery(model) {
 
             const header = document.createElement('div');
             header.style.padding = '15px 25px';
-            header.style.background = '#333';
+            header.style.background = 'var(--amb-bg-card-hover)';
             header.style.display = 'flex';
             header.style.justifyContent = 'space-between';
             header.style.alignItems = 'center';
-            header.style.borderBottom = '1px solid #444';
+            header.style.borderBottom = '1px solid var(--amb-border-strong)';
 
             const title = document.createElement('h2');
             title.id = 'anomalous-generated-gallery-title';
@@ -491,7 +491,7 @@ export async function showGeneratedGallery(model) {
                 setCoverBtn.style.right = '5px';
                 setCoverBtn.style.background = 'rgba(40, 167, 69, 0.85)';
                 setCoverBtn.style.color = '#fff';
-                setCoverBtn.style.border = '1px solid rgba(255,255,255,0.3)';
+                setCoverBtn.style.border = '1px solid var(--amb-border-strong)';
                 setCoverBtn.style.borderRadius = '4px';
                 setCoverBtn.style.padding = '4px 8px';
                 setCoverBtn.style.cursor = 'pointer';

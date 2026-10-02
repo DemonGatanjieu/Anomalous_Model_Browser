@@ -252,7 +252,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
 
     async function setup() {
         removeLegacyTriggerPosition();
-        const cssUrl = '/extensions/Anomalous_Model_Browser/styles.css?v=20260926-canvas-perf-1';
+        const cssUrl = '/extensions/Anomalous_Model_Browser/styles.css?v=20261002-theme-1';
         if (!document.querySelector('link[href^="/extensions/Anomalous_Model_Browser/styles.css"]')) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';

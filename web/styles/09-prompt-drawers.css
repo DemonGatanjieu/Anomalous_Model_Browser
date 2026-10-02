@@ -6,8 +6,8 @@
 
 .anomalous-mixer-block-btn.is-translate:hover {
     opacity: 1;
-    color: #38bdf8;
-    background: rgba(56, 189, 248, 0.18);
+    color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
 }
 
 /* ==========================================================================
@@ -31,8 +31,8 @@
     width: 580px;
     max-width: 90vw;
     height: 100vh;
-    background: var(--amb-bg-page, #121316);
-    border-left: 1px solid var(--amb-border, rgba(255, 255, 255, 0.12));
+    background: var(--amb-bg-page, var(--amb-bg-page));
+    border-left: 1px solid var(--amb-border, var(--amb-border-strong));
     box-shadow: -8px 0 32px rgba(0, 0, 0, 0.6);
     pointer-events: auto;
     display: flex;
@@ -45,7 +45,7 @@
     right: auto;
     left: 0;
     border-left: none;
-    border-right: 1px solid var(--amb-border, rgba(255, 255, 255, 0.12));
+    border-right: 1px solid var(--amb-border, var(--amb-border-strong));
     box-shadow: 8px 0 32px rgba(0, 0, 0, 0.6);
 }
 
@@ -68,8 +68,8 @@
 
 .anomalous-studio-resize-handle:hover,
 .anomalous-studio-resize-handle.is-resizing {
-    background: #38bdf8;
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+    background: var(--amb-btn-primary-hover);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--amb-link) 60%, transparent);
 }
 
 /* Drawer Workbench Base */
@@ -115,7 +115,7 @@
 
 .anomalous-prompt-studio-drawer.is-dock-left .anomalous-workbench-left-panel {
     order: 1 !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-right: 1px solid var(--amb-border) !important;
 }
 
 .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-workbench-left-panel {
@@ -141,7 +141,7 @@
 
 .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-workbench-right-panel {
     order: 1 !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-right: 1px solid var(--amb-border) !important;
     border-left: none !important;
 }
 
@@ -162,13 +162,13 @@
     gap: 5px;
     font-size: 0.84rem;
     font-weight: 600;
-    color: #f1f5f9;
+    color: var(--amb-text-main);
     white-space: nowrap;
 }
 
 .anomalous-workbench-col-title .anomalous-sub-counter {
     font-size: 0.72rem;
-    color: #64748b;
+    color: var(--amb-text-dim);
     font-weight: normal;
 }
 
@@ -187,17 +187,17 @@
     height: 24px;
     padding: 0;
     border-radius: 5px;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     cursor: pointer;
     transition: all 0.15s ease;
 }
 
 .anomalous-workbench-header-actions button.anomalous-icon-btn:hover {
-    color: #ffffff;
-    background: rgba(56, 189, 248, 0.18);
-    border-color: rgba(56, 189, 248, 0.4);
+    color: var(--amb-text-main);
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
 }
 
 /* Category Pills: 5 equal 2-char chips */
@@ -214,9 +214,9 @@
     text-align: center;
     padding: 3px 0;
     border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     background: rgba(255, 255, 255, 0.03);
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 0.72rem;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -225,14 +225,14 @@
 }
 
 .anomalous-workbench-pill:hover {
-    color: #f1f5f9;
+    color: var(--amb-text-main);
     background: rgba(255, 255, 255, 0.08);
 }
 
 .anomalous-workbench-pill.is-active {
-    color: #38bdf8;
-    background: rgba(56, 189, 248, 0.15);
-    border-color: rgba(56, 189, 248, 0.4);
+    color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 15%, transparent);
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
     font-weight: 600;
 }
 
@@ -252,7 +252,7 @@
     gap: 7px;
     padding: 6px 9px;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-left: 3px solid #64748b;
     border-radius: 6px;
     cursor: pointer;
@@ -263,7 +263,7 @@
 }
 
 .anomalous-source-card-compact.is-cat-base {
-    border-left-color: #38bdf8 !important;
+    border-left-color: var(--amb-link) !important;
 }
 
 .anomalous-source-card-compact.is-cat-style {
@@ -281,15 +281,15 @@
 .anomalous-source-card-compact:hover,
 .anomalous-source-card-compact.is-preview-active {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.22);
+    border-color: var(--amb-border-strong);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
     transform: translateX(2px);
 }
 
 .anomalous-source-card-compact.is-cat-base:hover,
 .anomalous-source-card-compact.is-cat-base.is-preview-active {
-    border-color: rgba(56, 189, 248, 0.4);
-    background: rgba(56, 189, 248, 0.12);
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
 }
 
 .anomalous-source-card-compact.is-cat-style:hover,
@@ -326,7 +326,7 @@
 
 .anomalous-source-origin,
 .anomalous-source-sync-status {
-    color: var(--amb-text-muted, #94a3b8);
+    color: var(--amb-text-muted, var(--amb-text-muted));
     font-size: 0.68rem;
     overflow-wrap: anywhere;
 }
@@ -338,7 +338,7 @@
 .anomalous-source-card-name {
     font-size: 0.76rem;
     font-weight: 500;
-    color: #f1f5f9;
+    color: var(--amb-text-main);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -347,12 +347,12 @@
 
 .anomalous-source-card-compact:hover .anomalous-source-card-name,
 .anomalous-source-card-compact.is-preview-active .anomalous-source-card-name {
-    color: #ffffff;
+    color: var(--amb-text-main);
 }
 
 .anomalous-source-card-add-icon {
     font-size: 0.72rem;
-    color: #64748b;
+    color: var(--amb-text-dim);
     opacity: 0;
     transition: opacity 0.15s;
     flex-shrink: 0;
@@ -363,8 +363,8 @@
 .anomalous-source-card-compact:hover .anomalous-source-card-add-icon,
 .anomalous-source-card-compact.is-preview-active .anomalous-source-card-add-icon {
     opacity: 1;
-    color: #38bdf8;
-    background: rgba(56, 189, 248, 0.18);
+    color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
 }
 
 /* Eye-Catching Prompt Card Hover Preview Popover (Replaces unstyled browser tooltip) */
@@ -376,9 +376,9 @@
     background: rgba(18, 20, 26, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(56, 189, 248, 0.35);
+    border: 1px solid color-mix(in srgb, var(--amb-link) 35%, transparent);
     border-radius: 10px;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.18);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 20px color-mix(in srgb, var(--amb-link) 18%, transparent);
     display: flex;
     flex-direction: column;
     overflow: visible;
@@ -392,17 +392,17 @@
 }
 
 .anomalous-card-preview-popover.is-pinned {
-    border-color: #38bdf8 !important;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 24px rgba(56, 189, 248, 0.35) !important;
+    border-color: var(--amb-link) !important;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 24px color-mix(in srgb, var(--amb-link) 35%, transparent) !important;
 }
 
 .anomalous-popover-copy-btn,
 .anomalous-popover-pin-btn,
 .anomalous-popover-add-btn {
     background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 4px;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     font-size: 0.7rem;
     font-weight: 500;
     padding: 2px 7px;
@@ -413,22 +413,22 @@
 
 .anomalous-popover-copy-btn:hover,
 .anomalous-popover-pin-btn:hover {
-    background: rgba(56, 189, 248, 0.15);
-    border-color: rgba(56, 189, 248, 0.4);
-    color: #38bdf8;
+    background: color-mix(in srgb, var(--amb-link) 15%, transparent);
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
+    color: var(--amb-link);
 }
 
 .anomalous-popover-pin-btn.is-active {
-    background: rgba(56, 189, 248, 0.25) !important;
-    border-color: #38bdf8 !important;
-    color: #38bdf8 !important;
+    background: color-mix(in srgb, var(--amb-link) 25%, transparent) !important;
+    border-color: var(--amb-link) !important;
+    color: var(--amb-link) !important;
     font-weight: 600;
 }
 
 .anomalous-popover-close-btn {
     background: transparent;
     border: 1px solid transparent;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 0.75rem;
     padding: 1px 6px;
     cursor: pointer;
@@ -444,15 +444,15 @@
 }
 
 .anomalous-popover-add-btn {
-    background: rgba(56, 189, 248, 0.15);
-    border-color: rgba(56, 189, 248, 0.35);
-    color: #38bdf8;
+    background: color-mix(in srgb, var(--amb-link) 15%, transparent);
+    border-color: color-mix(in srgb, var(--amb-link) 35%, transparent);
+    color: var(--amb-link);
 }
 
 .anomalous-popover-add-btn:hover {
-    background: rgba(56, 189, 248, 0.28);
-    border-color: rgba(56, 189, 248, 0.6);
-    color: #ffffff;
+    background: color-mix(in srgb, var(--amb-link) 28%, transparent);
+    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
+    color: var(--amb-text-main);
 }
 
 @keyframes anmPopoverIn {
@@ -463,7 +463,7 @@
 .anomalous-popover-header {
     padding: 10px 12px 6px;
     background: rgba(255, 255, 255, 0.02);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--amb-border);
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -493,9 +493,9 @@
 }
 
 .anomalous-popover-role.is-positive {
-    background: rgba(56, 189, 248, 0.15);
-    color: #38bdf8;
-    border: 1px solid rgba(56, 189, 248, 0.35);
+    background: color-mix(in srgb, var(--amb-link) 15%, transparent);
+    color: var(--amb-link);
+    border: 1px solid color-mix(in srgb, var(--amb-link) 35%, transparent);
 }
 
 .anomalous-popover-role.is-negative {
@@ -507,7 +507,7 @@
 .anomalous-popover-title {
     font-size: 0.86rem;
     font-weight: 600;
-    color: #f8fafc;
+    color: var(--amb-text-main);
     line-height: 1.35;
     word-break: break-word;
 }
@@ -520,9 +520,9 @@
     margin: 0;
     padding: 8px 10px;
     background: rgba(0, 0, 0, 0.45);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 6px;
-    color: #38bdf8;
+    color: var(--amb-link);
     font-family: Consolas, Monaco, "Courier New", monospace;
     font-size: 0.76rem;
     line-height: 1.45;
@@ -535,11 +535,11 @@
 .anomalous-popover-footer {
     padding: 6px 12px 7px;
     font-size: 0.7rem;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     display: flex;
     align-items: center;
     background: rgba(0, 0, 0, 0.25);
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    border-top: 1px solid var(--amb-border);
 }
 
 /* Assembly Dropzone Notice */
@@ -551,10 +551,10 @@
     flex: 1;
     min-height: 260px;
     padding: 40px 20px;
-    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border: 1px dashed var(--amb-border);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.015);
-    color: #64748b;
+    color: var(--amb-text-dim);
     text-align: center;
     box-sizing: border-box;
     transition: all 0.2s ease;
@@ -562,8 +562,8 @@
 
 .anomalous-assembly-dropzone:hover,
 .anomalous-assembly-dropzone.is-drag-over {
-    border-color: rgba(56, 189, 248, 0.4);
-    background: rgba(56, 189, 248, 0.04);
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 4%, transparent);
 }
 
 /* Weight Wheel Pill in Assembled Blocks */
@@ -571,12 +571,12 @@
     display: inline-flex;
     align-items: center;
     background: rgba(0, 0, 0, 0.45);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 12px;
     padding: 0 4px;
     font-size: 0.72rem;
     font-family: monospace, sans-serif;
-    color: #38bdf8;
+    color: var(--amb-link);
     cursor: ns-resize;
     user-select: none;
     gap: 2px;
@@ -584,14 +584,14 @@
 }
 
 .anomalous-block-weight-pill:hover {
-    border-color: #38bdf8;
-    box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+    border-color: var(--amb-link);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--amb-link) 30%, transparent);
 }
 
 .anomalous-block-weight-btn {
     background: transparent;
     border: none;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     cursor: pointer;
     font-size: 0.7rem;
     padding: 0 2px;
@@ -600,7 +600,7 @@
 }
 
 .anomalous-block-weight-btn:hover {
-    color: #fff;
+    color: var(--amb-text-main);
 }
 
 /* Floating Action Dock (Slides up only when blocks exist) */
@@ -612,9 +612,9 @@
     height: 38px;
     background: rgba(22, 25, 32, 0.94);
     backdrop-filter: blur(16px);
-    border: 1px solid rgba(56, 189, 248, 0.35);
+    border: 1px solid color-mix(in srgb, var(--amb-link) 35%, transparent);
     border-radius: 20px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65), 0 0 12px rgba(56, 189, 248, 0.18);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65), 0 0 12px color-mix(in srgb, var(--amb-link) 18%, transparent);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -629,7 +629,7 @@
     align-items: center;
     gap: 6px;
     font-size: 0.72rem;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     white-space: nowrap;
 }
 
@@ -660,8 +660,8 @@
     max-width: 92vw;
     height: 520px;
     max-height: 88vh;
-    background: var(--amb-bg-panel, #181a20);
-    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.16));
+    background: var(--amb-bg-panel, var(--amb-bg-panel));
+    border: 1px solid var(--amb-border, var(--amb-border-strong));
     border-radius: 14px;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 1px rgba(255, 255, 255, 0.2);
     display: flex;
@@ -676,7 +676,7 @@
     justify-content: space-between;
     padding: 10px 16px;
     background: rgba(255, 255, 255, 0.03);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--amb-border);
 }
 
 .anomalous-inspector-body {
@@ -693,9 +693,9 @@
     width: 100%;
     box-sizing: border-box;
     background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     border-radius: 8px;
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font-family: Consolas, Monaco, "Courier New", monospace;
     font-size: 0.88rem;
     line-height: 1.6;
@@ -706,8 +706,8 @@
 }
 
 .anomalous-inspector-textarea:focus {
-    border-color: #38bdf8;
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    border-color: var(--amb-link);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--amb-link) 25%, transparent);
 }
 
 .anomalous-inspector-footer {
@@ -716,7 +716,7 @@
     justify-content: space-between;
     padding: 10px 16px;
     background: rgba(255, 255, 255, 0.03);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--amb-border);
 }
 
 @keyframes anmScaleUp {
@@ -742,9 +742,9 @@
 }
 
 .anomalous-card-role-tag.is-positive {
-    color: #38bdf8;
-    background: rgba(56, 189, 248, 0.14);
-    border: 1px solid rgba(56, 189, 248, 0.28);
+    color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--amb-link) 28%, transparent);
 }
 
 .anomalous-card-role-tag.is-negative {
@@ -754,10 +754,10 @@
 }
 
 .anomalous-mixer-tab-btn.is-role-positive.is-active {
-    background: rgba(56, 189, 248, 0.16) !important;
-    color: #38bdf8 !important;
-    border: 1px solid rgba(56, 189, 248, 0.35) !important;
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.15) !important;
+    background: color-mix(in srgb, var(--amb-link) 16%, transparent) !important;
+    color: var(--amb-link) !important;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 35%, transparent) !important;
+    box-shadow: 0 0 10px color-mix(in srgb, var(--amb-link) 15%, transparent) !important;
 }
 
 .anomalous-mixer-tab-btn.is-role-negative.is-active {
@@ -774,8 +774,8 @@
 }
 
 .anomalous-mixer-block.is-role-positive.is-cross-role {
-    border-color: rgba(56, 189, 248, 0.45);
-    background: rgba(56, 189, 248, 0.05);
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 5%, transparent);
 }
 
 .anomalous-mixer-role-badge {
@@ -808,9 +808,9 @@
 }
 
 .anomalous-mixer-role-badge.is-positive {
-    color: #38bdf8;
-    background: rgba(56, 189, 248, 0.14);
-    border-color: rgba(56, 189, 248, 0.28);
+    color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+    border-color: color-mix(in srgb, var(--amb-link) 28%, transparent);
 }
 
 .anomalous-mixer-role-badge.is-negative {
@@ -830,8 +830,8 @@
 }
 
 .anomalous-mixer-block-btn.is-transfer:hover {
-    color: #38bdf8;
-    background: rgba(56, 189, 248, 0.15);
+    color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 15%, transparent);
 }
 
 /* ========================================================================= */

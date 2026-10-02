@@ -41,7 +41,7 @@ if (!this._assistantPanelHooked) {
 
         const placeholder = document.createElement('div');
         placeholder.id = 'anomalous-assistant-placeholder';
-        placeholder.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:#666;font-size:15px;gap:12px;padding:40px;text-align:center;';
+        placeholder.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--amb-text-dim);font-size:15px;gap:12px;padding:40px;text-align:center;';
         placeholder.innerHTML = `<div style="font-size:48px;">🤖</div><div>${t('assistantSelectNode')}</div>`;
         this.assistantPanel.appendChild(placeholder);
 
@@ -57,11 +57,11 @@ export function renderAssistantModelCard(node, w, container) {
         const pickerType = inferPickerModelType(node, w);
 
         const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'margin:12px 16px 16px;padding:10px;border:1px solid rgba(255,255,255,0.075);border-radius:14px;background:linear-gradient(160deg,rgba(31,33,42,0.96),rgba(20,21,27,0.96));display:flex;flex-direction:column;gap:12px;box-shadow:0 16px 35px rgba(0,0,0,0.2);';
+        wrapper.style.cssText = 'margin:12px 16px 16px;padding:10px;border:1px solid var(--amb-border);border-radius:14px;background:linear-gradient(160deg,rgba(31,33,42,0.96),rgba(20,21,27,0.96));display:flex;flex-direction:column;gap:12px;box-shadow:0 16px 35px rgba(0,0,0,0.2);';
 
         // Preview image
         const previewBox = document.createElement('div');
-        previewBox.style.cssText = 'width:100%;aspect-ratio:1.65;max-height:260px;background:radial-gradient(circle at 50% 20%,#252a3b,#0b0c10 70%);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid rgba(255,255,255,0.05);';
+        previewBox.style.cssText = 'width:100%;aspect-ratio:1.65;max-height:260px;background:radial-gradient(circle at 50% 20%,#252a3b,var(--amb-bg-page) 70%);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--amb-border);';
         previewBox.innerHTML = `<span style="color:#444;font-size:13px;">${t('doctorLoadingPreview')}</span>`;
         wrapper.appendChild(previewBox);
 
@@ -80,7 +80,7 @@ export function renderAssistantModelCard(node, w, container) {
         pathEl.innerText = val;
         const modelTypeBadge = document.createElement('span');
         modelTypeBadge.textContent = pickerType.label;
-        modelTypeBadge.style.cssText = 'padding:5px 8px;border-radius:999px;background:rgba(138,180,248,0.1);border:1px solid rgba(138,180,248,0.22);color:#a9c7ff;font-size:9px;font-weight:750;white-space:nowrap;';
+        modelTypeBadge.style.cssText = 'padding:5px 8px;border-radius:999px;background:color-mix(in srgb, var(--amb-link) 10%, transparent);border:1px solid color-mix(in srgb, var(--amb-link) 22%, transparent);color:var(--amb-link);font-size:9px;font-weight:750;white-space:nowrap;';
         identityCopy.append(nameEl, pathEl);
         identityRow.append(identityCopy, modelTypeBadge);
         wrapper.appendChild(identityRow);
@@ -95,7 +95,7 @@ export function renderAssistantModelCard(node, w, container) {
         actionRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
         const profileBtn = document.createElement('button');
         profileBtn.textContent = t('doctorProfile');
-        profileBtn.style.cssText = 'flex:1;padding:10px 12px;background:rgba(138,180,248,0.09);color:#a9c7ff;border:1px solid rgba(138,180,248,0.22);border-radius:9px;cursor:pointer;font-size:12px;font-weight:700;transition:filter 0.2s;';
+        profileBtn.style.cssText = 'flex:1;padding:10px 12px;background:color-mix(in srgb, var(--amb-link) 9%, transparent);color:var(--amb-link);border:1px solid color-mix(in srgb, var(--amb-link) 22%, transparent);border-radius:9px;cursor:pointer;font-size:12px;font-weight:700;transition:filter 0.2s;';
         profileBtn.onmouseover = () => profileBtn.style.filter = 'brightness(1.2)';
         profileBtn.onmouseout = () => profileBtn.style.filter = 'brightness(1)';
 
@@ -163,7 +163,7 @@ if (triggers && triggers.length > 0) {
                         const trigSection = document.createElement('div');
                         trigSection.style.cssText = 'background:rgba(255,255,255,0.04);border-radius:6px;padding:10px 12px;';
                         const trigTitle = document.createElement('div');
-                        trigTitle.style.cssText = 'color:#aaa;font-size:11px;margin-bottom:8px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;';
+                        trigTitle.style.cssText = 'color:var(--amb-text-muted);font-size:11px;margin-bottom:8px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;';
                         trigTitle.textContent = t('doctorTriggerWords');
                         const tagList = document.createElement('div');
                         tagList.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;';
@@ -179,7 +179,7 @@ if (triggers && triggers.length > 0) {
                             tagList.appendChild(tag);
                         });
                         const copyAll = document.createElement('button');
-                        copyAll.style.cssText = 'background:transparent;border:1px solid #444;color:#888;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;margin-top:4px;';
+                        copyAll.style.cssText = 'background:transparent;border:1px solid var(--amb-border-strong);color:var(--amb-text-muted);border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;margin-top:4px;';
                         copyAll.textContent = t('doctorCopyAll');
                         copyAll.onclick = () => {
                             navigator.clipboard.writeText(words.join(', ')).then(() => { copyAll.textContent = '✅'; setTimeout(() => copyAll.textContent = t('doctorCopyAll'), 1500); });
@@ -194,7 +194,7 @@ if (triggers && triggers.length > 0) {
                     const textNotes = meta.custom_notes || meta.notes;
 if (textNotes) {
                         const notesCard = document.createElement('div');
-                        notesCard.style.cssText = 'background:linear-gradient(135deg,#262522 0%,#202124 100%);border:1px solid #3c4043;border-left:4px solid #a38d53;border-radius:4px 8px 8px 4px;padding:12px 14px;';
+                        notesCard.style.cssText = 'background:linear-gradient(135deg,var(--amb-bg-card-hover) 0%,var(--amb-bg-card) 100%);border:1px solid var(--amb-border-strong);border-left:4px solid #a38d53;border-radius:4px 8px 8px 4px;padding:12px 14px;';
                         const notesTitle = document.createElement('div');
                         notesTitle.style.cssText = 'color:#a38d53;font-size:11px;font-weight:bold;margin-bottom:6px;';
                         notesTitle.textContent = t('doctorNotes');
@@ -232,7 +232,7 @@ export function _loadAssistantHistory(filename, container, model) {
                 const sectionHeader = document.createElement('div');
                 sectionHeader.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
                 const sectionTitle = document.createElement('div');
-                sectionTitle.style.cssText = 'color:#aaa;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;';
+                sectionTitle.style.cssText = 'color:var(--amb-text-muted);font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;';
                 sectionTitle.textContent = t('assistantHistoryTitle', { count: images.length });
                 sectionHeader.appendChild(sectionTitle);
 
@@ -240,7 +240,7 @@ export function _loadAssistantHistory(filename, container, model) {
 if (model) {
                     const viewAllBtn = document.createElement('button');
                     viewAllBtn.textContent = t('assistantViewAll');
-                    viewAllBtn.style.cssText = 'background:transparent;border:1px solid rgba(255,255,255,0.2);color:#e5e7eb;font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;transition:all 0.2s;';
+                    viewAllBtn.style.cssText = 'background:transparent;border:1px solid var(--amb-border-strong);color:var(--amb-text-main);font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;transition:all 0.2s;';
                     viewAllBtn.onmouseover = () => { viewAllBtn.style.background = 'rgba(255,255,255,0.1)'; };
                     viewAllBtn.onmouseout = () => { viewAllBtn.style.background = 'transparent'; };
                     viewAllBtn.onclick = () => this.showGeneratedGallery(model);
@@ -252,7 +252,7 @@ if (model) {
                 grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:6px;';
                 images.slice(0, 16).forEach(img => {
                     const card = document.createElement('div');
-                    card.style.cssText = 'border-radius:6px;overflow:hidden;aspect-ratio:1;background:#111;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;';
+                    card.style.cssText = 'border-radius:6px;overflow:hidden;aspect-ratio:1;background:var(--amb-bg-page);cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;';
                     card.onmouseover = () => { 
                         card.style.transform = 'scale(1.05)'; card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)'; 
                         const v = card.querySelector('video'); if (v) v.play().catch(()=>{}); 
@@ -378,8 +378,8 @@ for (const w of node.widgets) {
         nodeContent.innerHTML = '';
 
         const titleBar = document.createElement('div');
-        titleBar.style.cssText = 'margin:14px 16px 0;padding:16px;border:1px solid rgba(255,255,255,0.1);border-radius:12px;background:rgba(255,255,255,0.04);display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 8px 24px rgba(0,0,0,0.25);';
-        titleBar.innerHTML = `<span style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);">🤖</span><span style="display:flex;flex-direction:column;min-width:0;gap:3px;"><span style="font-size:10px;letter-spacing:0.11em;text-transform:uppercase;color:#9ca3af;">${t('assistantSelectedNode')}</span><span class="ast-title" style="font-weight:700;color:#f3f4f6;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span></span><span class="ast-type" style="font-size:10px;color:#d1d5db;margin-left:auto;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);max-width:38%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>`;
+        titleBar.style.cssText = 'margin:14px 16px 0;padding:16px;border:1px solid var(--amb-border);border-radius:12px;background:rgba(255,255,255,0.04);display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 8px 24px rgba(0,0,0,0.25);';
+        titleBar.innerHTML = `<span style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(255,255,255,0.08);border:1px solid var(--amb-border-strong);">🤖</span><span style="display:flex;flex-direction:column;min-width:0;gap:3px;"><span style="font-size:10px;letter-spacing:0.11em;text-transform:uppercase;color:var(--amb-text-muted);">${t('assistantSelectedNode')}</span><span class="ast-title" style="font-weight:700;color:var(--amb-text-main);font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span></span><span class="ast-type" style="font-size:10px;color:var(--amb-text-soft);margin-left:auto;padding:4px 8px;border-radius:999px;border:1px solid var(--amb-border-strong);background:rgba(255,255,255,0.06);max-width:38%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>`;
         titleBar.querySelector('.ast-title').textContent = node.title || node.type || 'Node';
         titleBar.querySelector('.ast-type').textContent = node.type || '';
 
@@ -410,8 +410,8 @@ for (const w of node.widgets) {
             button.disabled = !enabled;
             const gridPlacement = primary ? 'grid-column:1/-1;' : '';
             button.style.cssText = gridPlacement + (enabled
-                ? `min-width:0;padding:${primary ? '13px 14px' : '11px 10px'};background:${accent};color:#fff;border:1px solid rgba(255,255,255,0.14);border-radius:11px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;transition:transform 0.15s,filter 0.15s,box-shadow 0.15s;box-shadow:0 8px 18px rgba(0,0,0,0.14);`
-                : 'min-width:0;padding:11px 10px;background:rgba(255,255,255,0.035);color:#656b78;border:1px solid rgba(255,255,255,0.055);border-radius:11px;cursor:not-allowed;text-align:left;display:flex;align-items:center;gap:9px;');
+                ? `min-width:0;padding:${primary ? '13px 14px' : '11px 10px'};background:${accent};color:#fff;border:1px solid var(--amb-border-strong);border-radius:11px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;transition:transform 0.15s,filter 0.15s,box-shadow 0.15s;box-shadow:0 8px 18px rgba(0,0,0,0.14);`
+                : 'min-width:0;padding:11px 10px;background:rgba(255,255,255,0.035);color:#656b78;border:1px solid var(--amb-border);border-radius:11px;cursor:not-allowed;text-align:left;display:flex;align-items:center;gap:9px;');
             const iconEl = document.createElement('span');
             iconEl.textContent = icon;
             iconEl.style.cssText = `width:${primary ? '34px' : '28px'};height:${primary ? '34px' : '28px'};border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,${enabled ? '0.14' : '0.04'});font-size:${primary ? '17px' : '14px'};flex-shrink:0;`;

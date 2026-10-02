@@ -303,13 +303,22 @@ guards the unique ordered list and byte-for-byte reconstructed bundle. Shared `-
 tokens express surfaces, text, borders and control shapes; theme overrides must
 be scoped to `.theme-abyssal-scarlet` rather than changing unrelated surfaces.
 
+Colours come from the tokens in `00-foundation-models.css`, which both themes define:
+surfaces (`--amb-bg-page`, `-panel`, `-card`, `-card-hover`, `-input`), text
+(`--amb-text-main`, `-soft`, `-muted`, `-dim`), borders (`--amb-border`, `-strong`,
+`-hover`), the primary button (`--amb-btn-primary-*`) and one accent, `--amb-link`, for
+links, selection and focus; its tints are `color-mix(in srgb, var(--amb-link) N%,
+transparent)`. CSS injected from JS and inline styles use the same tokens. Literal
+colours stay only where the colour is the meaning: status (red, green, amber), prompt
+roles, voice emotions, canvas node colours and translucent shadows or overlays.
+
 Studio drawer rules keep the source deck at the screen edge and the assembly
 track next to the canvas. Common geometry is shared between dock directions;
 direction-specific rules set column order and separators. The removed embedded
 composer's `#anomalous-container.anomalous-docked` overrides must not return.
 Before adding an override or `!important`, locate and edit the owning rule.
-Older component and theme overrides elsewhere in the ordered bundle still need a
-separate, visually verified consolidation.
+Older theme overrides in `08-theme-gallery-overrides.css` predate the tokens; many are
+now redundant and can go as the rules they override are touched.
 
 ## Verification
 

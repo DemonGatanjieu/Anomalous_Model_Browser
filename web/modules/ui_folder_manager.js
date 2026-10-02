@@ -23,7 +23,7 @@ export async function openFolderManager() {
     modal.style.fontFamily = 'Roboto, "Segoe UI", sans-serif';
 
     const content = document.createElement('div');
-    content.style.background = '#1e1e1e';
+    content.style.background = 'var(--amb-bg-card)';
     content.style.borderRadius = '12px';
     content.style.padding = '24px';
     content.style.width = '500px';
@@ -54,10 +54,10 @@ export async function openFolderManager() {
     toggleContainer.style.justifyContent = 'center';
     toggleContainer.style.marginBottom = '15px';
     toggleContainer.style.gap = '20px';
-    toggleContainer.style.background = '#222';
+    toggleContainer.style.background = 'var(--amb-bg-card)';
     toggleContainer.style.padding = '10px';
     toggleContainer.style.borderRadius = '8px';
-    toggleContainer.style.border = '1px solid #444';
+    toggleContainer.style.border = '1px solid var(--amb-border-strong)';
 
     const abstractRadio = document.createElement('input');
     abstractRadio.type = 'radio';
@@ -104,9 +104,9 @@ export async function openFolderManager() {
     const listContainer = document.createElement('div');
     listContainer.style.flex = '1';
     listContainer.style.overflowY = 'auto';
-    listContainer.style.border = '1px solid #444';
+    listContainer.style.border = '1px solid var(--amb-border-strong)';
     listContainer.style.borderRadius = '8px';
-    listContainer.style.background = '#2a2a2a';
+    listContainer.style.background = 'var(--amb-bg-card-hover)';
     listContainer.style.padding = '8px';
 
     content.appendChild(listContainer);
@@ -173,7 +173,7 @@ export async function openFolderManager() {
             row.style.justifyContent = 'space-between';
             row.style.padding = '10px 12px';
             row.style.margin = '4px 0';
-            row.style.background = '#333';
+            row.style.background = 'var(--amb-bg-card-hover)';
             row.style.borderRadius = '6px';
             row.style.cursor = 'grab';
             row.style.border = '1px solid transparent';
@@ -275,7 +275,7 @@ export async function openFolderManager() {
     cancelBtn.style.padding = '8px 16px';
     cancelBtn.style.background = 'transparent';
     cancelBtn.style.color = '#ccc';
-    cancelBtn.style.border = '1px solid #555';
+    cancelBtn.style.border = '1px solid var(--amb-border-strong)';
     cancelBtn.style.borderRadius = '6px';
     cancelBtn.style.cursor = 'pointer';
     cancelBtn.onclick = () => modal.remove();

@@ -77,7 +77,7 @@ function openOriginEditDialog(owner, recipe, reference, finish) {
     
     const dialog = document.createElement('div');
     dialog.style.background = 'linear-gradient(145deg, rgba(48, 49, 55, 0.98), rgba(27, 28, 33, 0.98))';
-    dialog.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+    dialog.style.border = '1px solid var(--amb-border-strong)';
     dialog.style.borderRadius = '16px';
     dialog.style.padding = '24px';
     dialog.style.maxWidth = '400px';
@@ -133,15 +133,15 @@ function openOriginEditDialog(owner, recipe, reference, finish) {
         input.type = 'text';
         input.value = value || '';
         input.style.background = 'rgba(0, 0, 0, 0.2)';
-        input.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+        input.style.border = '1px solid var(--amb-border)';
         input.style.padding = '10px 12px';
         input.style.borderRadius = '8px';
         input.style.color = '#fff';
         input.style.fontSize = '14px';
         input.style.outline = 'none';
         input.style.transition = 'border-color 0.2s';
-        input.onfocus = () => input.style.borderColor = 'var(--anomalous-accent, #6366f1)';
-        input.onblur = () => input.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+        input.onfocus = () => input.style.borderColor = 'var(--anomalous-accent, var(--amb-link))';
+        input.onblur = () => input.style.borderColor = 'var(--amb-border)';
         group.appendChild(label);
         group.appendChild(input);
         return { group, input };
@@ -411,7 +411,7 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
         editOriginBtn.title = t('recipeOriginDialogTitle');
         editOriginBtn.style.marginLeft = '8px';
         editOriginBtn.style.background = 'transparent';
-        editOriginBtn.style.border = '1px solid rgba(255,255,255,0.1)';
+        editOriginBtn.style.border = '1px solid var(--amb-border)';
         editOriginBtn.style.color = 'rgba(255,255,255,0.7)';
         editOriginBtn.onclick = (e) => {
             e.stopPropagation();
@@ -534,7 +534,7 @@ function renderModelComposition(container, owner, recipe, references, finish, pa
         if (container.children.length > 1) { // Skip divider for the very first section
             const divider = document.createElement('hr');
             divider.className = 'anomalous-recipe-model-divider';
-            divider.style.borderTop = '1px solid rgba(255, 255, 255, 0.1)';
+            divider.style.borderTop = '1px solid var(--amb-border)';
             divider.style.margin = '20px 0 16px 0';
             container.appendChild(divider);
         }

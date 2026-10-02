@@ -15,7 +15,7 @@
     gap: 2px;
     padding: 10px 0;
     box-sizing: border-box;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    border-right: 1px solid var(--amb-border);
     background: rgba(16, 16, 19, 0.92);
 }
 
@@ -24,10 +24,10 @@
     width: 32px;
     height: 32px;
     margin-bottom: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 9px;
     background: linear-gradient(135deg, #3a3a42, #1c1c22);
-    color: #e5e7eb;
+    color: var(--amb-text-main);
     font-size: 15px;
     font-weight: 700;
     cursor: pointer;
@@ -66,7 +66,7 @@
     border: none;
     border-radius: 9px;
     background: transparent;
-    color: #8b8f98;
+    color: var(--amb-text-muted);
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
 }
@@ -88,18 +88,18 @@
 .anomalous-rail-tools button:hover,
 .anomalous-rail-foot button:hover {
     background: rgba(255, 255, 255, 0.06);
-    color: #e5e7eb;
+    color: var(--amb-text-main);
 }
 
 .anomalous-rail-item.active,
 .anomalous-rail-tools button.is-active,
 .anomalous-rail-foot button.is-active {
     background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    color: var(--amb-text-main);
 }
 
 .anomalous-rail-item.active {
-    box-shadow: inset 2px 0 0 #a5b4fc;
+    box-shadow: inset 2px 0 0 var(--amb-link);
 }
 
 .anomalous-rail-label {
@@ -128,7 +128,7 @@
 
 #anomalous-rail #anomalous-materials-btn.active {
     background: rgba(255, 255, 255, 0.1) !important;
-    color: #fff !important;
+    color: var(--amb-text-main) !important;
 }
 
 /* List column: beside the page, or gone when closed. It also steps aside while a workspace
@@ -199,7 +199,7 @@
 
 .anomalous-page-title {
     overflow: hidden;
-    color: #e5e7eb;
+    color: var(--amb-text-main);
     font-size: 0.92em;
     font-weight: 600;
     white-space: nowrap;
@@ -225,7 +225,7 @@
 
 .anomalous-home-title {
     margin: 0;
-    color: #f3f4f6;
+    color: var(--amb-text-main);
     font-size: 1.75em;
     font-weight: 600;
     text-align: center;
@@ -234,7 +234,7 @@
 .anomalous-home-lead {
     max-width: 540px;
     margin: 0 auto;
-    color: #9ca3af;
+    color: var(--amb-text-muted);
     font-size: 0.88em;
     line-height: 1.7;
     text-align: center;
@@ -252,7 +252,7 @@
     align-items: flex-start;
     gap: 12px;
     padding: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.03);
     color: inherit;
@@ -262,7 +262,7 @@
 }
 
 .anomalous-home-card:hover {
-    border-color: rgba(165, 180, 252, 0.35);
+    border-color: color-mix(in srgb, var(--amb-link) 35%, transparent);
     background: rgba(255, 255, 255, 0.07);
     transform: translateY(-1px);
 }
@@ -274,8 +274,8 @@
     justify-content: center;
     height: 34px;
     border-radius: 9px;
-    background: rgba(165, 180, 252, 0.12);
-    color: #c7d2fe;
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+    color: var(--amb-text-main);
 }
 
 .anomalous-home-card-icon svg {
@@ -291,13 +291,13 @@
 }
 
 .anomalous-home-card-title {
-    color: #f3f4f6;
+    color: var(--amb-text-main);
     font-size: 0.92em;
     font-weight: 600;
 }
 
 .anomalous-home-card-body {
-    color: #8b8f98;
+    color: var(--amb-text-muted);
     font-size: 0.8em;
     line-height: 1.55;
 }
@@ -309,7 +309,7 @@
     justify-content: center;
     gap: 6px 14px;
     margin-top: 6px;
-    color: #6b7280;
+    color: var(--amb-text-dim);
     font-size: 0.85em;
 }
 
@@ -317,7 +317,7 @@
     padding: 2px 0;
     border: none;
     background: none;
-    color: #a5b4fc;
+    color: var(--amb-link);
     font-size: inherit;
     cursor: pointer;
 }

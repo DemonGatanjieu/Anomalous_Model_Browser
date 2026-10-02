@@ -161,7 +161,7 @@ function ensureMaterialGuideStyles() {
             margin: 32px auto;
             padding: 28px 24px;
             background: rgba(255, 255, 255, 0.025);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--amb-border);
             border-radius: 16px;
             text-align: center;
             box-sizing: border-box;
@@ -174,8 +174,8 @@ function ensureMaterialGuideStyles() {
             width: 52px;
             height: 52px;
             border-radius: 50%;
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.25);
+            background: color-mix(in srgb, var(--amb-link) 10%, transparent);
+            border: 1px solid color-mix(in srgb, var(--amb-link) 25%, transparent);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -186,14 +186,14 @@ function ensureMaterialGuideStyles() {
             margin: 0;
             font-size: 16px;
             font-weight: 600;
-            color: #f1f5f9;
+            color: var(--amb-text-main);
             letter-spacing: 0.2px;
         }
         .anomalous-material-empty-subtitle {
             margin: 0;
             font-size: 12.5px;
             line-height: 1.55;
-            color: #94a3b8;
+            color: var(--amb-text-muted);
             max-width: 440px;
         }
         .anomalous-material-empty-steps {
@@ -206,7 +206,7 @@ function ensureMaterialGuideStyles() {
         }
         .anomalous-material-empty-step {
             background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--amb-border);
             border-radius: 10px;
             padding: 14px 14px;
             display: flex;
@@ -216,7 +216,7 @@ function ensureMaterialGuideStyles() {
         }
         .anomalous-material-empty-step:hover {
             background: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.12);
+            border-color: var(--amb-border-strong);
         }
         .anomalous-material-step-icon {
             font-size: 20px;
@@ -225,14 +225,14 @@ function ensureMaterialGuideStyles() {
         }
         .anomalous-material-empty-step strong {
             font-size: 13px;
-            color: #e2e8f0;
+            color: var(--amb-text-main);
             font-weight: 600;
         }
         .anomalous-material-empty-step p {
             margin: 0;
             font-size: 11.5px;
             line-height: 1.5;
-            color: #94a3b8;
+            color: var(--amb-text-muted);
         }
         .anomalous-material-card {
             cursor: grab !important;

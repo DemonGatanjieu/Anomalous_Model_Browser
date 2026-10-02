@@ -7,7 +7,7 @@
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 10px;
     display: flex;
     flex-direction: column;
@@ -19,21 +19,21 @@
 
 #anomalous-doctor-panel,
 #anomalous-assistant-panel {
-    background: var(--amb-bg-page, #131315) !important;
+    background: var(--amb-bg-page, var(--amb-bg-page)) !important;
     position: relative;
     z-index: 2;
 }
 
 #anomalous-sidebar input[type="text"] {
     background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    border: 1px solid var(--amb-border) !important;
     backdrop-filter: blur(8px) !important;
-    color: #f3f4f6 !important;
+    color: var(--amb-text-main) !important;
     transition: all 0.2s ease !important;
 }
 
 #anomalous-sidebar input[type="text"]:focus {
-    border-color: rgba(255, 255, 255, 0.3) !important;
+    border-color: var(--amb-border-strong) !important;
     background: rgba(255, 255, 255, 0.08) !important;
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.06) !important;
 }
@@ -59,7 +59,7 @@
     background: rgba(24, 24, 28, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 10px;
     padding: 12px;
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
@@ -99,35 +99,35 @@ button:active::after,
 }
 
 #anomalous-settings {
-    border-top: 1px solid var(--border-color, #444);
-    background: var(--bg-color, #111);
+    border-top: 1px solid var(--border-color, var(--amb-border-strong));
+    background: var(--bg-color, var(--amb-bg-page));
 }
 
 .anomalous-lang-btn {
     width: 100% !important;
-    border: 2px solid #555 !important;
+    border: 2px solid var(--amb-border-strong) !important;
     padding: 12px !important;
     font-weight: bold;
     border-radius: 4px !important;
-    background: #1a1a1a !important;
+    background: var(--amb-bg-panel) !important;
     cursor: pointer;
-    color: #fff;
+    color: var(--amb-text-main);
     margin-bottom: 15px;
 }
 
 .anomalous-type-header {
     padding: 10px 15px;
     background: rgba(255, 255, 255, 0.03);
-    color: var(--fg-color, #fff);
+    color: var(--fg-color, var(--amb-text-main));
     font-weight: bold;
     font-size: 0.9em;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid var(--amb-border);
+    border-bottom: 1px solid var(--amb-border);
 }
 
 .anomalous-folder-item {
     padding: 8px 15px;
-    color: var(--fg-color, #cbd5e1);
+    color: var(--fg-color, var(--amb-text-soft));
     cursor: pointer;
     font-size: 0.9em;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -136,13 +136,13 @@ button:active::after,
 
 .anomalous-folder-item:hover {
     background: rgba(255, 255, 255, 0.06);
-    color: #fff;
+    color: var(--amb-text-main);
 }
 
 /* Clean Neutral Active Indicator on Selected Menu (Normal Mode) */
 .anomalous-folder-item.active {
     background: rgba(255, 255, 255, 0.08);
-    color: #fff;
+    color: var(--amb-text-main);
     font-weight: 600;
     border-left: 2px solid #e5e7eb;
     box-shadow: inset 3px 0 6px rgba(255, 255, 255, 0.03);
@@ -150,7 +150,7 @@ button:active::after,
 }
 
 .anomalous-folder-item.active .anomalous-folder-name {
-    color: #fff !important;
+    color: var(--amb-text-main) !important;
     text-shadow: none;
 }
 
@@ -169,7 +169,7 @@ button:active::after,
 /* Sidebar Icons & Actions - Normal Mode (Neutral & Clean) */
 .anomalous-folder-item svg,
 #anomalous-sidebar h3 svg {
-    color: #94a3b8 !important;
+    color: var(--amb-text-muted) !important;
     filter: none;
 }
 
@@ -184,7 +184,7 @@ button:active::after,
 #anomalous-doctor-btn,
 #anomalous-assistant-btn,
 #anomalous-global-settings-btn {
-    color: #94a3b8 !important;
+    color: var(--amb-text-muted) !important;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -193,7 +193,7 @@ button:active::after,
 #anomalous-doctor-btn:hover,
 #anomalous-assistant-btn:hover,
 #anomalous-global-settings-btn:hover {
-    color: #f8fafc !important;
+    color: var(--amb-text-main) !important;
     filter: none !important;
     background: rgba(255, 255, 255, 0.08) !important;
 }
@@ -249,7 +249,7 @@ button:active::after,
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background: var(--bg-color, #222);
+    background: var(--bg-color, var(--amb-bg-card));
 }
 
 .anomalous-split-container {
@@ -264,13 +264,13 @@ button:active::after,
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #000;
+    background: var(--amb-bg-page);
     overflow: hidden;
 }
 
 .anomalous-resizer {
     width: 5px;
-    background: var(--border-color, #444);
+    background: var(--border-color, var(--amb-bg-card-hover));
     cursor: col-resize;
     transition: background 0.2s;
 }
@@ -285,7 +285,7 @@ button:active::after,
 
 .anomalous-split-right {
     width: 60%;
-    background: var(--bg-color, #222);
+    background: var(--bg-color, var(--amb-bg-card));
     overflow: auto;
 }
 
@@ -299,9 +299,9 @@ button:active::after,
 }
 
 #anomalous-api-key {
-    background: #333;
-    border: 1px solid #555;
-    color: #fff;
+    background: var(--amb-bg-card-hover);
+    border: 1px solid var(--amb-border-strong);
+    color: var(--amb-text-main);
     padding: 8px;
     border-radius: 4px;
     width: 150px;
@@ -309,7 +309,7 @@ button:active::after,
 }
 
 #anomalous-api-key::placeholder {
-    color: #999;
+    color: var(--amb-text-muted);
 }
 
 @container (max-width: 750px) {
@@ -373,11 +373,11 @@ button:active::after,
 .anomalous-compatible-section {
     margin-top: 20px;
     padding-top: 20px;
-    border-top: 1px solid var(--border-color, #444);
+    border-top: 1px solid var(--border-color, var(--amb-border-strong));
 }
 
 .anomalous-compatible-title {
-    color: var(--fg-color, #fff);
+    color: var(--fg-color, var(--amb-text-main));
     font-size: 1.1em;
     margin-bottom: 10px;
     display: flex;
@@ -392,8 +392,8 @@ button:active::after,
 }
 
 .anomalous-compatible-item {
-    background: var(--comfy-menu-bg, #333);
-    border: 1px solid var(--border-color, #555);
+    background: var(--comfy-menu-bg, var(--amb-bg-card-hover));
+    border: 1px solid var(--border-color, var(--amb-border-strong));
     border-radius: 6px;
     padding: 6px 10px;
     display: flex;
@@ -405,8 +405,8 @@ button:active::after,
 }
 
 .anomalous-compatible-item:hover {
-    border-color: rgba(255, 255, 255, 0.3);
-    background: var(--bg-color, #444);
+    border-color: var(--amb-border-strong);
+    background: var(--bg-color, var(--amb-bg-card-hover));
     transform: translateY(-2px);
 }
 
@@ -423,7 +423,7 @@ button:active::after,
 }
 
 .anomalous-compatible-item-name {
-    color: var(--fg-color, #fff);
+    color: var(--fg-color, var(--amb-text-main));
     font-size: 0.85em;
     white-space: nowrap;
     overflow: hidden;

@@ -34,25 +34,25 @@
 
 .anomalous-node-section-btn {
     padding: 4px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    border: 1px solid var(--amb-border-strong);
     border-radius: 999px;
     background: transparent;
-    color: #d1d5db;
+    color: var(--amb-text-soft);
     font-size: 11.5px;
     cursor: pointer;
 }
 
 .anomalous-node-section-btn:hover {
-    border-color: rgba(165, 180, 252, 0.45);
-    color: #ffffff;
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+    color: var(--amb-text-main);
 }
 
 .anomalous-node-param-search {
     padding: 7px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--amb-border);
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.25);
-    color: #e5e7eb;
+    color: var(--amb-text-main);
     font-size: 12px;
 }
 
@@ -67,7 +67,7 @@
     flex-direction: column;
     gap: 6px;
     padding: 10px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 10px;
     background: rgba(255, 255, 255, 0.035);
 }
@@ -81,7 +81,7 @@
 
 .anomalous-node-param-name {
     overflow: hidden;
-    color: #f3f4f6;
+    color: var(--amb-text-main);
     font-size: 12.5px;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -92,7 +92,7 @@
     padding: 1px 7px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.06);
-    color: #c4b5fd;
+    color: var(--amb-link);
     font-size: 10px;
 }
 
@@ -107,9 +107,9 @@
 
 .anomalous-node-param-sources span {
     padding: 1px 7px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 999px;
-    color: #9ca3af;
+    color: var(--amb-text-muted);
     font-size: 10px;
 }
 
@@ -120,7 +120,7 @@
     margin: 0;
     padding: 0;
     list-style: none;
-    color: #d1d5db;
+    color: var(--amb-text-soft);
     font-size: 11.5px;
 }
 
@@ -144,19 +144,19 @@
 .anomalous-node-param-apply {
     align-self: flex-end;
     padding: 5px 12px;
-    border: 1px solid rgba(165, 180, 252, 0.45);
+    border: 1px solid color-mix(in srgb, var(--amb-link) 45%, transparent);
     border-radius: 7px;
-    background: rgba(165, 180, 252, 0.14);
-    color: #e5e7eb;
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+    color: var(--amb-text-main);
     font-size: 11.5px;
     font-weight: 600;
     cursor: pointer;
 }
 
 .anomalous-node-param-apply:disabled {
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: var(--amb-border);
     background: transparent;
-    color: #6b7280;
+    color: var(--amb-text-dim);
     cursor: default;
 }
 
@@ -166,15 +166,15 @@
     flex-direction: column;
     gap: 6px;
     padding: 10px 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     border-radius: 10px;
     background: rgba(255, 255, 255, 0.035);
 }
 
-.anomalous-node-param-role.is-plain { color: #d1d5db; }
+.anomalous-node-param-role.is-plain { color: var(--amb-text-soft); }
 
 .anomalous-node-prompt-name {
-    color: #6b7280;
+    color: var(--amb-text-dim);
     font-size: 10.5px;
 }
 
@@ -183,7 +183,7 @@
     display: -webkit-box;
     margin: 0;
     overflow: hidden;
-    color: #e5e7eb;
+    color: var(--amb-text-main);
     font-size: 12px;
     line-height: 1.5;
     overflow-wrap: anywhere;
@@ -191,13 +191,13 @@
     -webkit-line-clamp: 4;
 }
 
-.anomalous-node-prompt-text.is-empty { color: #6b7280; }
+.anomalous-node-prompt-text.is-empty { color: var(--amb-text-dim); }
 
 .anomalous-node-prompt-note {
     padding: 6px 8px;
     border-radius: 6px;
-    background: rgba(165, 180, 252, 0.08);
-    color: #c7d2fe;
+    background: color-mix(in srgb, var(--amb-link) 8%, transparent);
+    color: var(--amb-text-main);
     -webkit-line-clamp: 8;
 }
 
