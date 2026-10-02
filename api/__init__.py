@@ -1,6 +1,6 @@
 from . import (
     activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
-    model_media, model_metadata, model_resolution, model_type_listing, node_material, recipe_packages, recipes, scan_report, scan_summary,
+    model_media, model_metadata, model_resolution, model_type_listing, node_material, recent_generations, recipe_packages, recipes, scan_report, scan_summary,
     translation_routes, version_manager,
 )
 from .scanner import *
@@ -93,6 +93,7 @@ def setup_routes(app):
     app.router.add_get('/anomalous/gallery_images', gallery_routes.api_get_gallery_images)
     app.router.add_post('/anomalous/delete_gallery_image', gallery_routes.api_delete_gallery_image)
     app.router.add_get('/anomalous/output_thumbnail', gallery_routes.api_output_thumbnail)
+    app.router.add_get('/anomalous/recent_generations', recent_generations.api_recent_generations)
     app.router.add_get('/anomalous/resolve_hash', model_resolution.api_resolve_hash)
     app.router.add_post('/anomalous/resolve_hash_batch', model_resolution.api_resolve_hash_batch)
     app.router.add_get('/anomalous/all_hashes', model_resolution.api_get_all_hashes)

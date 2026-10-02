@@ -230,6 +230,19 @@ metrics appear once with exact-value copy controls. Display wording is Parameter
 Sets (参数方案); existing notebook routes and storage identifiers stay stable.
 
 
+## Recent generations
+
+The first category, Recent (`ui_material_recent.js`), lists the newest output PNGs that
+carry a UI workflow (`GET /anomalous/recent_generations`, `api/recent_generations.py`):
+the gallery's listing (and its search, for the library's search box) read newest first,
+up to 400 images looked at, each summarised from its PNG text chunks only (positive
+prompt by wiring, main loader's model, steps / CFG / sampler / size) and cached by
+path, mtime and size. Starring posts the image to `/anomalous/save_image_material` as a
+whole-workflow snapshot named after the prompt's first tags; an image is "starred" when
+an `image_workflow_snapshot` material has the same `source_sha256`, which is also how the
+save route answers 409 instead of copying it. A starred card opens its material; the
+picture opens the image workbench, where single nodes can be kept instead.
+
 ## Entry points and shared application
 
 The lower-left control opens a standalone Material Library container, with no
