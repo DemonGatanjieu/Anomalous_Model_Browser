@@ -5,6 +5,7 @@ import { translate } from "./locales.js";
 import { analyzeModelChainInsertion, getModelChainInsertionCapabilities, spliceModelChainNode } from "./graph_splice.js";
 import { collectMainModelContextRequests, formatModelTypeLabel, getBaseModelFamily, inferPickerModelType } from "./model_picker.js";
 import { escapeHtml } from "./safe_dom.js";
+import { recordCanvasStep } from "./canvas_history.js";
 
 const t = (key, params) => translate(key, params);
 
@@ -440,6 +441,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
                 if (app.lastNodeErrors?.[node.id]) delete app.lastNodeErrors[node.id];
                 if (typeof app.clearErrors === 'function') app.clearErrors();
                 try { window.dispatchEvent(new CustomEvent('graphChanged')); } catch (error) {}
+                recordCanvasStep(app);
                 closeModal();
                 if (mode === 'insert' && app.canvas?.selectNode) app.canvas.selectNode(node);
                 else if (options.onApplied) options.onApplied();

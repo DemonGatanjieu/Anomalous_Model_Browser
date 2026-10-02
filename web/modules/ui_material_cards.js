@@ -9,6 +9,8 @@ import { materialNodeHeading } from './material_inspector.js';
 import { carriesPrompt, markTargetBox, outlinePromptBoxes, preparePromptDrag, promptBoxAt, promptDropHint, promptRefusal } from './prompt_drop.js';
 import { applyLibraryMaterial, fetchMaterial } from './ui_material_application.js';
 import { extractMaterialPromptEnvelope } from './node_material_actions.js';
+import { recordCanvasStep } from './canvas_history.js';
+import { showWorkbenchToast } from './ui_prompt_toast.js';
 import {
     deleteMaterial,
     getMaterialPlaceholderSvg,
@@ -21,6 +23,17 @@ import {
 } from './ui_material_detail.js';
 
 const t = (key, params) => translate(key, params);
+
+/** Undo for the prompt nodes a drop created: removed while still there and unconnected. */
+function removeMade(graph, nodes) {
+    const loose = node => graph.getNodeById(node.id) === node
+        && !(node.inputs || []).some(input => input?.link != null) && !(node.outputs || []).some(output => output?.links?.length);
+    if (app.graph !== graph || !nodes.every(loose)) { showWorkbenchToast(t('materialUndoChanged')); return; }
+    graph.beforeChange?.();
+    try { for (const node of nodes) graph.remove(node); } finally { graph.afterChange?.(); }
+    graph.setDirtyCanvas?.(true, true);
+    recordCanvasStep(app);
+}
 
 function startInlineTitleEdit(owner, material, titleRow, cardTitle, editBtn) {
     if (titleRow.querySelector('.anomalous-material-inline-input')) return;
@@ -154,7 +167,7 @@ function bindPolymorphicMaterialCardDrag(card, owner, material) {
                 const sides = [['positive', envelope.positive], ['negative', envelope.negative]].filter(([, value]) => value);
                 if (!sides.length && envelope.singleText) sides.push([envelope.primaryRole === 'negative' ? 'negative' : 'positive', envelope.singleText]);
                 if (!sides.length) throw new Error('materialNoCompatibleValues');
-                let created = null;
+                const made = [];
                 sides.forEach(([role, value], index) => {
                     const isNegative = role === 'negative';
                     const node = creator.call(LiteGraph, 'CLIPTextEncode');
@@ -166,17 +179,19 @@ function bindPolymorphicMaterialCardDrag(card, owner, material) {
                     node.bgcolor = isNegative ? '#381616' : '#143818';
                     node.pos = [pos[0], pos[1] + index * 260];
                     graph.add(node);
+                    made.push(node);
                     const box = node.widgets?.find(widget => widget.name === 'text');
                     if (box) {
                         box.value = value;
                         box.callback?.call(box, value, app.canvas, node);
                         node.onWidgetChanged?.(box.name, value, '', box);
                     }
-                    created ||= node;
                 });
-                if (created) app.canvas?.selectNode?.(created);
+                if (made.length) app.canvas?.selectNode?.(made[0]);
                 app.canvas?.setDirty?.(true, true);
                 graph.change?.();
+                recordCanvasStep(app);
+                if (made.length) showWorkbenchToast(t('promptNodesCreated', { count: made.length }), { label: t('activityUndo'), run: () => removeMade(graph, made) });
                 return;
             }
 
@@ -189,6 +204,7 @@ function bindPolymorphicMaterialCardDrag(card, owner, material) {
                     app.canvas?.selectNode?.(node);
                     app.canvas?.setDirty?.(true, true);
                     graph.change?.();
+                    recordCanvasStep(app);
                     try {
                         await applyLibraryMaterial(owner, source, node, graph);
                     } catch (err) {

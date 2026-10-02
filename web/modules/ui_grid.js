@@ -7,6 +7,7 @@ import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { focusModel, modelListUrl, renderTypeBar } from './ui_model_types.js';
 import { renderSourceBadge } from './model_source.js';
+import { recordCanvasStep } from './canvas_history.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -257,6 +258,7 @@ export function applyModelToCanvas(type, subfolder, model) {
         const relPath = sub ? `${sub}/${model.filename}` : model.filename;
 
         this.setWidgetValuePath(node, relPath);
+        recordCanvasStep(app);
 
         const isDocked = this.container?.classList.contains('anomalous-docked');
         if (!isDocked) {

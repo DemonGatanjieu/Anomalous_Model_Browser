@@ -2,6 +2,7 @@
 
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
+import { recordCanvasStep } from './canvas_history.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -85,6 +86,7 @@ export function sendNotebookToCanvas() {
             }
         }
 
+        recordCanvasStep(app);
         this.nbPanel.style.display = 'none';
         this.close();
 

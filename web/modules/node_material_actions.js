@@ -1,5 +1,6 @@
 import { composePromptPlan } from './prompt_composition.js';
 import { planPromptFill, typeTakesPrompt } from './prompt_boxes.js';
+import { recordCanvasStep } from './canvas_history.js';
 
 // Shared by Node Assistant and Material Library. No node creation or link edits.
 const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
@@ -91,6 +92,8 @@ export function applyNodeMaterialValues(app, node, entries, options = {}) {
         notify();
         throw error;
     } finally { graph.afterChange?.(); }
+    // `record: false`: the caller makes one Ctrl+Z step of several writes.
+    if (options.record !== false) recordCanvasStep(app);
     const appliedSerialized = clone(node.widgets_values);
     const applied = node.widgets.map(widget => clone(widget.value));
     const appliedHashes = clone(hashesFor(graph, node.id));
@@ -105,6 +108,7 @@ export function applyNodeMaterialValues(app, node, entries, options = {}) {
             graph.beforeChange?.();
             try { restore(); notify(); undone = true; }
             finally { graph.afterChange?.(); }
+            if (options.record !== false) recordCanvasStep(app);
         },
     };
 }

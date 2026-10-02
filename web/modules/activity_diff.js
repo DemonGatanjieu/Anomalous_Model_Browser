@@ -4,7 +4,7 @@
  */
 
 /** Text form of a widget value, so values compare and store the same way. */
-function valueText(value) {
+export function valueText(value) {
     if (typeof value === 'string') return value;
     try {
         return JSON.stringify(value) ?? '';
@@ -13,7 +13,10 @@ function valueText(value) {
     }
 }
 
-/** `Map(node id → { type, title, widgets: { name → text } })`; buttons have no value. */
+/**
+ * `Map(node id → { type, title, widgets: { name → text }, links })`; buttons have no value.
+ * `links`: the node's input links, so a rewiring shows (canvas_undo.js uses it).
+ */
 export function snapshotGraph(graph) {
     const nodes = new Map();
     for (const node of graph?._nodes || graph?.nodes || []) {
@@ -23,7 +26,8 @@ export function snapshotGraph(graph) {
             if (!widget?.name || widget.type === 'button') continue;
             widgets[widget.name] = valueText(widget.value);
         }
-        nodes.set(String(node.id), { type: node.type || '', title: node.title || node.type || '', widgets });
+        const links = (node.inputs || []).map(input => input?.link ?? '').join(',');
+        nodes.set(String(node.id), { type: node.type || '', title: node.title || node.type || '', widgets, links });
     }
     return nodes;
 }

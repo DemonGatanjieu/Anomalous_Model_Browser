@@ -14,28 +14,38 @@ import {
 } from './node_material_actions.js';
 import { partnerBox, promptBoxes, typeTakesPrompt } from './prompt_boxes.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
+import { recordCanvasStep } from './canvas_history.js';
 
-export function showMaterialApplication(parent, result, node) {
+/** The receipt with its undo; `toast`: also pop it up (with the same undo) for a drop on the canvas. */
+export function showMaterialApplication(parent, result, node, { toast = '' } = {}) {
     parent.querySelector('.anomalous-material-application-result')?.remove();
     const receipt = text(parent, 'div', '', 'anomalous-material-application-result');
     receipt.setAttribute('role', 'status');
     const status = text(receipt, 'span', node ? t('materialAppliedTarget', { name: materialNodeHeading(node), id: node.id }) : t('materialNodeApplied'));
     const undo = text(receipt, 'button', t('materialUndo'), 'anomalous-btn-ghost');
     undo.type = 'button';
-    undo.onclick = () => {
-        try { result.undo(); status.textContent = t('materialUndone'); undo.remove(); }
-        catch (error) { status.textContent = t(error.message); }
+    let undone = false;
+    const runUndo = () => {
+        if (undone) return;
+        try { result.undo(); undone = true; status.textContent = t('materialUndone'); undo.remove(); }
+        catch (error) { status.textContent = t(error.message); if (toast) showWorkbenchToast(t(error.message)); }
     };
+    undo.onclick = runUndo;
+    if (toast) showWorkbenchToast(toast, { label: t('activityUndo'), run: runUndo });
 }
 
-export function applyMaterialToSelectedNode(node, block, hashes, parent) {
+/** Options that make a drop's receipt pop up by the canvas too. */
+const dropReceipt = (droppedNode, node) => (droppedNode
+    ? { toast: t('materialAppliedTarget', { name: materialNodeHeading(node), id: node.id }) } : {});
+
+export function applyMaterialToSelectedNode(node, block, hashes, parent, receipt = {}) {
     if (selectedMaterialNode(app) !== node) throw new Error('materialTargetChanged');
-    return applyMaterialToNode(node, block, hashes, parent);
+    return applyMaterialToNode(node, block, hashes, parent, receipt);
 }
 
-export function applyMaterialToNode(node, block, hashes, parent) {
+export function applyMaterialToNode(node, block, hashes, parent, receipt = {}) {
     const result = applyMaterialBlock(app, node, block, hashes);
-    showMaterialApplication(parent, result, node);
+    showMaterialApplication(parent, result, node, receipt);
     return result;
 }
 
@@ -118,18 +128,18 @@ export function watchMaterialSelection(owner, showMaterialDetail) {
 function fillDroppedBox(owner, material, payload, node, box) {
     if (node.widgets?.[box.index] !== box.widget) throw new Error('materialTargetChanged');
     const envelope = extractMaterialPromptEnvelope(material, payload);
-    const results = [fillPrompt(app, node, envelope, box)];
+    const results = [fillPrompt(app, node, envelope, box, { record: false })];
     const other = { positive: 'negative', negative: 'positive' }[box.role];
     let partner = other && envelope[box.role] && envelope[other] ? partnerBox(node, box.role) : null;
     if (partner) {
-        try { results.push(fillPrompt(app, partner.node, envelope, partner.box)); }
+        try { results.push(fillPrompt(app, partner.node, envelope, partner.box, { record: false })); }
         catch (error) { partner = null; }
     }
-    const result = { undo() { for (const item of [...results].reverse()) item.undo(); } };
-    showMaterialApplication(owner.materialContext, result, node);
-    showWorkbenchToast(partner
+    recordCanvasStep(app);
+    const result = { undo() { for (const item of [...results].reverse()) item.undo(); recordCanvasStep(app); } };
+    showMaterialApplication(owner.materialContext, result, node, { toast: partner
         ? t('promptFilledTwo', { node: `#${node.id}`, other: `#${partner.node.id}` })
-        : t('promptFilledOne', { node: `#${node.id}` }));
+        : t('promptFilledOne', { node: `#${node.id}` }) });
     return result;
 }
 
@@ -153,7 +163,7 @@ export async function applyLibraryMaterial(owner, material, droppedNode = null, 
 
         if (sameTypeBlocks.length === 1) {
             const apply = droppedNode ? applyMaterialToNode : applyMaterialToSelectedNode;
-            return apply(node, sameTypeBlocks[0], payload.workflow_hashes, owner.materialContext);
+            return apply(node, sameTypeBlocks[0], payload.workflow_hashes, owner.materialContext, dropReceipt(droppedNode, node));
         }
         if (sameTypeBlocks.length > 1) {
             openMaterialChoiceDialog(owner, node, sameTypeBlocks, payload, droppedNode, graph);
@@ -180,7 +190,7 @@ export async function applyLibraryMaterial(owner, material, droppedNode = null, 
         }
 
         const result = fillPrompt(app, node, envelope);
-        showMaterialApplication(owner.materialContext, result, node);
+        showMaterialApplication(owner.materialContext, result, node, dropReceipt(droppedNode, node));
         return result;
     } catch (error) {
         await anomalousAlert(t(error.message) === error.message ? t('materialApplyFailed') : t(error.message));
@@ -193,7 +203,7 @@ function openMaterialChoiceDialog(owner, node, blocks, payload, droppedNode, gra
     const applyTarget = (targetBlock) => {
         if (targetBlock.type === node.type) {
             const apply = droppedNode ? applyMaterialToNode : applyMaterialToSelectedNode;
-            return apply(node, targetBlock, payload.workflow_hashes, owner.materialContext);
+            return apply(node, targetBlock, payload.workflow_hashes, owner.materialContext, dropReceipt(droppedNode, node));
         }
         if (selectedMaterialNode(app) !== node && !droppedNode) throw new Error('materialTargetChanged');
         const boxes = promptBoxes(node);
@@ -217,7 +227,7 @@ function openMaterialChoiceDialog(owner, node, blocks, payload, droppedNode, gra
             sourceNodeId: targetBlock.node_id,
             workflowHashes: payload.workflow_hashes,
         });
-        showMaterialApplication(owner.materialContext, result, node);
+        showMaterialApplication(owner.materialContext, result, node, dropReceipt(droppedNode, node));
         return result;
     };
 

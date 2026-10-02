@@ -4,12 +4,14 @@
  * outside it, or the next press inside) compares the canvas with that snapshot and
  * logs the difference, before the user's own edit happens. So every button, drag and
  * dialog that writes to nodes is covered without each one reporting itself.
- * Opening another workflow meanwhile is logged as that, not as removed nodes.
+ * Opening another workflow meanwhile is logged as that, not as removed nodes. What each
+ * entry did is handed to canvas_undo.js, so the log can undo it.
  */
 
 import { app } from "../../../scripts/app.js";
 import { diffSnapshots, snapshotGraph } from './activity_diff.js';
 import { postCanvasActivity } from './activity_log.js';
+import { keepUndo, workflowKey as openWorkflowKey } from './canvas_undo.js';
 
 const AMB_UI = '#anomalous-modal, [id^="anomalous-"], [class*="anomalous-"]';
 const MAX_SENT = 60;
@@ -20,10 +22,7 @@ const workflowName = () => {
     const workflow = activeWorkflow();
     return String(workflow?.filename || workflow?.path || '');
 };
-const workflowKey = () => {
-    const workflow = activeWorkflow();
-    return String(workflow?.key || workflow?.path || workflow?.filename || '');
-};
+const workflowKey = () => openWorkflowKey(app);
 
 // <html> carries Anomalous classes too (the floating entry setting); it is not our interface.
 const insideAnomalous = (target) => {
@@ -42,15 +41,14 @@ export function watchCanvasChanges(owner) {
         const now = currentGraph();
         if (!now || now !== graph) return; // moved into or out of a subgraph meanwhile
         const after = snapshotGraph(now);
-        let changes;
-        if (workflowKey() !== workflow) {
-            changes = [{ kind: 'opened', node: workflowName(), after: String(after.size) }];
-        } else {
-            changes = diffSnapshots(nodes, after);
-        }
+        const opened = workflowKey() !== workflow;
+        const changes = opened ? [{ kind: 'opened', node: workflowName(), after: String(after.size) }] : diffSnapshots(nodes, after);
         if (!changes.length) return;
         postCanvasActivity({ changes: changes.slice(0, MAX_SENT), total: changes.length, workflow: workflowName() })
-            .then(() => owner.onActivityRecorded?.())
+            .then((data) => {
+                if (!opened) keepUndo(data?.entry?.id, workflow, nodes, after);
+                owner.onActivityRecorded?.();
+            })
             .catch((error) => console.warn('[AMB] Activity log: canvas change not recorded.', error));
     };
 

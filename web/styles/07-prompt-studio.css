@@ -1056,6 +1056,29 @@
     transform: translateY(0);
 }
 
+/* A toast with an action (undo) can be clicked. */
+.anomalous-mixer-toast.has-action {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    pointer-events: auto;
+}
+
+.anomalous-mixer-toast-action {
+    padding: 3px 12px;
+    border: 1px solid var(--amb-border-hover);
+    border-radius: var(--amb-radius-control);
+    background: var(--amb-btn-primary-bg);
+    color: var(--amb-btn-primary-text);
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.anomalous-mixer-toast-action:hover {
+    background: var(--amb-btn-primary-hover);
+}
+
 /* ==========================================================================
    Prompt Studio Dual-Column Workbench (提示词工坊左右双分栏工作台)
    ========================================================================== */

@@ -10,6 +10,7 @@ import { changeLine, clearActivity, dayLabel, entrySummary, fetchActivity, fileD
 import { openListedModel } from './ui_scan_lists.js';
 import { changeNodeId } from './activity_diff.js';
 import { anomalousConfirm } from './ui_dialog.js';
+import { canUndo, undoEntry } from './canvas_undo.js';
 
 const FILTERS = [['', 'activityAll'], ['canvas', 'activityCanvas'], ['file', 'activityFiles']];
 const PAGE_SIZE = 300;
@@ -71,6 +72,17 @@ function renderEntry(entry, { compact = false, owner = null } = {}) {
     head.title = summary;
     row.appendChild(head);
     if (compact) return row;
+    // Only what can still be undone offers it (canvas_undo.js).
+    if (entry.source === 'canvas' && canUndo(app, entry)) {
+        const undo = button('anomalous-activity-undo', t('activityUndo'), (event) => {
+            event.stopPropagation();
+            let done = t('activityUndone');
+            try { undoEntry(app, entry); } catch (error) { done = t('activityUndoGone'); }
+            undo.replaceWith(el('span', 'anomalous-activity-undone', done));
+        });
+        undo.onkeydown = (event) => event.stopPropagation();
+        head.appendChild(undo);
+    }
     const note = el('div', 'anomalous-activity-note');
     const lines = entryLines(entry, owner, note);
     if (!lines.length) return row;

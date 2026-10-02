@@ -294,7 +294,10 @@ covered by the `styles.css` manifest.
   snapshot taken when the user presses inside Anomalous with the canvas when they
   next press or type outside it (`activity_diff.js` holds the pure snapshot and
   difference); `activity_log.js` is the client and the words for each entry;
-  `ui_activity.js` renders the activity page and the home page's recent list.
+  `ui_activity.js` renders the activity page and the home page's recent list;
+  `canvas_undo.js` keeps what each canvas entry did, in full, while the page stays open,
+  and undoes an entry from the log while nothing has changed it since (entries that
+  removed nodes or rewired existing ones are never offered).
   `ui_settings_hub.js` owns settings and model-card preferences;
   `ui_rail_tools.js` owns the rail's tool buttons (scan, doctor, current node);
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,
@@ -397,8 +400,11 @@ covered by the `styles.css` manifest.
   request cancellation and resize cleanup. Translation requests go through `translation_service.js`.
 - `ui_dialog.js` owns the plugin's own alert / confirm / prompt dialogs
   (`anomalousAlert`, `anomalousConfirm`, `anomalousPrompt`), used instead of the
-  browser's native ones. `ui_prompt_toast.js` is the short toast shared by the
-  Prompt Studio views and the Model Source Hub.
+  browser's native ones. `ui_prompt_toast.js` is the short toast (optionally with an
+  action, such as Undo after a drop) shared across the plugin.
+- `canvas_history.js` asks ComfyUI's Ctrl+Z history for a step after each canvas write
+  Anomalous makes (applied values, drops, created or inserted nodes, recipes): ComfyUI
+  takes steps on mouse-up and key-up, and a drag-and-drop ends in neither.
 - `model_policies.js` mirrors `model_policies.py` for the frontend: which folder
   types a loader widget holds, which are never physically renamed, and which
   need a workflow-carried hash before Model Doctor recovers them.
