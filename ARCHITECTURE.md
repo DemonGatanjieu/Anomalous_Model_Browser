@@ -308,7 +308,8 @@ covered by the `styles.css` manifest.
   including Esc on the workspace panel (`nbPanel`, below the header and right of the
   rail; the list column steps aside while it is open).
   `ui_scan_page.js` is the scan page (a tool page like the doctor): counts, the scan
-  button, the last scan's summary, advanced options; each count and the summary open a
+  button, a card for how the next scan goes (opening the scan settings page), the last
+  scan's summary; each count and the summary open a
   list page from `ui_scan_lists.js` (not scanned, unmatched, other formats, the last scan's
   models) with Back, a button for the whole list (scan these / look them up again) and rows
   that open a model, whose Back returns to the list, or scan it;

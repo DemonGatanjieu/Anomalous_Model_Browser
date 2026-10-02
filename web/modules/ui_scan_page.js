@@ -1,8 +1,9 @@
 /**
  * The scan page: how many models are matched on Civitai, unmatched or not scanned
- * (GET /anomalous/scan_summary), one button to scan, progress in the page, the last scan
- * in one card, and the rarer choices folded under "Advanced". Each count, and the last
- * scan, opens its list as a page of its own (ui_scan_lists.js) with a way back.
+ * (GET /anomalous/scan_summary), one button to scan, how the next scan goes, progress in
+ * the page and the last scan in one card. Each count and the last scan open their list
+ * as a page of its own (ui_scan_lists.js), the settings card the settings page; each
+ * has a way back.
  * Scans run through scan_runner.js; the progress box is scan_progress.js's panel,
  * hosted here while the page is shown.
  */
@@ -22,7 +23,7 @@ const options = {
     forceOverwrite: false,
     autoFix: true,
 };
-// The view shown: '' the page itself, or a list: 'new' | 'unmatched' | 'skipped' | 'result'.
+// The view shown: '' the page itself, 'settings', or a list: 'new' | 'unmatched' | 'skipped' | 'result'.
 // `scroll`: where to put a list shown again after a model's Back.
 const pageState = { view: '', scroll: 0 };
 
@@ -85,32 +86,44 @@ function toggle(key, titleKey, helpKey, { tag = '', onChange = null } = {}) {
     return row;
 }
 
-/** A titled block of the advanced section. */
+/** A titled card of the settings page. */
 function group(title, ...children) {
-    const box = el('section', 'anomalous-scan-group');
+    const box = el('section', 'anomalous-scan-card anomalous-scan-group');
     box.append(el('h3', 'anomalous-scan-group-title', title), ...children);
     return box;
 }
 
-/** The choices that differ from the usual, shown on the folded section so they are not forgotten. */
-function changedChoices() {
+/** How the next scan will go, in short words; `true` marks the ones that change files or take long. */
+function currentChoices(hasKey) {
+    const online = !options.offline;
     return [
-        options.scope === 'picked' && t('scanPageScopePicked'),
-        options.offline && t('scanPageOffline'),
-        options.physicalRename && t('scanPageFileRename'),
-        options.forceOverwrite && t('scanPageForce'),
-    ].filter(Boolean).join(' · ');
+        [options.scope === 'picked' ? t('scanChipPicked', { count: pickedCount() }) : t('scanPageScopeAll')],
+        [t(online ? 'scanChipOnline' : 'scanPageOffline')],
+        online && options.virtualRename && [t('scanChipDisplayName')],
+        online && options.physicalRename && [t('scanChipFileRename'), true],
+        online && options.forceOverwrite && [t('scanChipForce'), true],
+        options.autoFix && [t('scanChipAutoFix')],
+        [t(hasKey ? 'scanChipKeyOn' : 'scanChipKeyOff')],
+    ].filter(Boolean);
 }
 
-function renderAdvanced(owner, panel, hasKey) {
-    const details = el('details', 'anomalous-scan-advanced');
-    details.open = Boolean(panel._scanAdvancedOpen);
-    details.ontoggle = () => { panel._scanAdvancedOpen = details.open; };
-    const summary = el('summary', '', t('scanPageAdvanced'));
-    const changed = changedChoices();
-    if (changed) summary.append(el('span', 'anomalous-scan-advanced-changed', changed));
-    details.append(summary);
-    const refresh = () => go(owner, panel, pageState.view);
+/** The scan page's card for the settings: how the next scan goes, and a way to change it. */
+function settingsCard(owner, panel, hasKey) {
+    const card = button('anomalous-scan-card anomalous-scan-settings-card', undefined, () => go(owner, panel, 'settings'));
+    const head = el('span', 'anomalous-scan-settings-head');
+    head.append(el('span', 'anomalous-scan-card-title', t('scanSettingsTitle')), el('span', 'anomalous-scan-settings-change', t('scanSettingsChange')));
+    const chips = el('span', 'anomalous-scan-chips');
+    for (const [text, warn] of currentChoices(hasKey)) chips.append(el('span', `anomalous-scan-chip${warn ? ' is-warn' : ''}`, text));
+    card.append(head, chips);
+    return card;
+}
+
+/** The settings as a page of their own, like the lists: back, then one card per question. */
+function settingsPage(owner, panel, hasKey, progressHost) {
+    const refresh = () => go(owner, panel, 'settings');
+    const page = el('div', 'anomalous-scan-page');
+    page.append(button('anomalous-scan-back', t('scanBack'), () => go(owner, panel, '')),
+        el('h1', 'anomalous-scan-title', t('scanSettingsTitle')), el('p', 'anomalous-scan-lead', t('scanSettingsLead')), progressHost);
 
     // Which models: two choices side by side; "picked" shows the picker.
     const segment = el('div', 'anomalous-scan-segment');
@@ -141,8 +154,8 @@ function renderAdvanced(owner, panel, hasKey) {
     online.append(
         el('div', 'anomalous-scan-subtitle', t(options.offline ? 'scanPageOnlineOff' : 'scanPageOnline')),
         toggle('virtualRename', 'scanPageDisplayName', 'scanPageDisplayNameHelp'),
-        toggle('physicalRename', 'scanPageFileRename', 'scanPageFileRenameHelp', { tag: 'scanPageTagFiles', onChange: refresh }),
-        toggle('forceOverwrite', 'scanPageForce', 'scanPageForceHelp', { tag: 'scanPageTagSlow', onChange: refresh }),
+        toggle('physicalRename', 'scanPageFileRename', 'scanPageFileRenameHelp', { tag: 'scanPageTagFiles' }),
+        toggle('forceOverwrite', 'scanPageForce', 'scanPageForceHelp', { tag: 'scanPageTagSlow' }),
     );
 
     const key = el('div', 'anomalous-scan-setting');
@@ -154,15 +167,13 @@ function renderAdvanced(owner, panel, hasKey) {
         if (await saveApiKey()) renderScanPage(owner, panel);
     }));
 
-    const body = el('div', 'anomalous-scan-advanced-body');
-    body.append(
+    page.append(
         group(t('scanPageScope'), segment, scopeNote),
         group(t('scanPageHow'), toggle('offline', 'scanPageOffline', 'scanPageOfflineHelp', { onChange: refresh }), online),
         group(t('scanPageAfter'), toggle('autoFix', 'scanPageAutoFix', 'scanPageAutoFixHelp')),
         group(t('scanPageAccount'), key),
     );
-    details.append(body);
-    return details;
+    return page;
 }
 
 /** Asks for the key and saves it; true when saved. */
@@ -259,11 +270,10 @@ function mainPage(owner, panel, { summary, config, last }, busy, progressHost) {
     actions.append(primary);
     page.append(actions);
     const hint = picked ? t('scanPageHintPicked') : t(options.offline ? 'scanPageHintOffline' : 'scanPageHint');
-    page.append(el('p', 'anomalous-scan-muted', hint), progressHost);
+    page.append(el('p', 'anomalous-scan-muted', hint), settingsCard(owner, panel, Boolean(config?.has_api_key)), progressHost);
 
     const result = renderLastScan(last, open('result'));
     if (result) page.append(result);
-    page.append(renderAdvanced(owner, panel, Boolean(config?.has_api_key)));
     return page;
 }
 
@@ -274,8 +284,8 @@ function paint(owner, panel, data) {
     pageState.scroll = 0;
     const busy = isScanRunning();
     const progressHost = el('div', 'anomalous-scan-progress-host');
-    const page = view
-        ? renderListPage(view, data.summary, data.last, listActions(owner, panel, busy), progressHost)
+    const page = view === 'settings' ? settingsPage(owner, panel, Boolean(data.config?.has_api_key), progressHost)
+        : view ? renderListPage(view, data.summary, data.last, listActions(owner, panel, busy), progressHost)
         : mainPage(owner, panel, data, busy, progressHost);
     panel.replaceChildren(page);
     panel._scanView = view;

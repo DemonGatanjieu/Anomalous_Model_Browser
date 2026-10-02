@@ -159,6 +159,7 @@ button.anomalous-scan-stat:hover {
     background: rgba(255, 255, 255, 0.03);
 }
 
+/* A folded list (Model Check's models that are fine). */
 .anomalous-scan-advanced {
     border: 1px solid var(--amb-border);
     border-radius: 12px;
@@ -176,28 +177,56 @@ button.anomalous-scan-stat:hover {
     border-bottom: 1px solid var(--amb-border);
 }
 
-/* What is set differently from the usual, beside the folded title. */
-.anomalous-scan-advanced-changed {
-    margin-left: 10px;
-    color: #fcd34d;
+/* The scan page's settings card: how the next scan goes; it opens the settings page. */
+.anomalous-scan-settings-card {
+    width: 100%;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.anomalous-scan-settings-card:hover {
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.anomalous-scan-settings-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.anomalous-scan-settings-change {
+    color: var(--amb-link);
+    font-size: 12.5px;
+    white-space: nowrap;
+}
+
+.anomalous-scan-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.anomalous-scan-chip {
+    padding: 3px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    color: var(--amb-text-soft);
     font-size: 12px;
-    font-weight: 400;
 }
 
-.anomalous-scan-advanced-body {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 16px;
+.anomalous-scan-chip.is-warn {
+    border-color: rgba(252, 211, 77, 0.35);
+    color: #fcd34d;
 }
 
-.anomalous-scan-group {
-    display: flex;
-    flex-direction: column;
-}
-
+/* The settings page: one card per question. */
 .anomalous-scan-group-title {
-    margin: 0 0 8px;
+    margin: 0 0 2px;
     color: var(--amb-text-muted);
     font-size: 12px;
     font-weight: 600;

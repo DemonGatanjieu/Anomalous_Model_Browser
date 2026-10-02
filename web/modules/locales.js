@@ -307,8 +307,18 @@ export const i18n = {
         scanPageScanning: "正在扫描…",
         scanPageRetry: "把 {count} 个没查到的再联网查一遍",
         scanPageHint: "联网扫描先去 Civitai 查，查不到的从文件本身猜底模；连不上 Civitai 时自动改成只看文件，下次联网再补查。扫描在后台进行，可以关掉这个窗口继续用 ComfyUI。",
-        scanPageHintPicked: "只扫描在高级选项里挑选的模型。",
-        scanPageAdvanced: "高级选项",
+        scanPageHintPicked: "只扫描在扫描设置里挑选的模型。",
+        scanSettingsTitle: "扫描设置",
+        scanSettingsChange: "更改 ›",
+        scanSettingsLead: "下一次扫描按这里的设置进行。刷新页面后恢复默认；“修改文件名”和“重新获取”扫完一次就自动关掉。",
+        scanChipPicked: "只扫挑选的 {count} 个",
+        scanChipOnline: "联网查 Civitai",
+        scanChipDisplayName: "用 Civitai 名称显示",
+        scanChipFileRename: "会改文件名",
+        scanChipForce: "全部重新获取",
+        scanChipAutoFix: "扫完修复工作流",
+        scanChipKeyOn: "API Key 已设置",
+        scanChipKeyOff: "没设 API Key",
         scanPageScope: "扫描哪些模型",
         scanPageScopeAll: "全部模型",
         scanPageScopePicked: "只扫我挑的",
@@ -444,7 +454,7 @@ export const i18n = {
     <h3 style="color:#f59e0b; margin-top:0;">📖 使用说明</h3>
     <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 测试功能与数据保护</strong><br>工作流配方、素材库和“当前节点”的参数仍在测试阶段。更新插件、导入别人的配方、恢复版本、删除配方或应用参数前，请先保存当前画布，并备份 ComfyUI 用户目录里的 <code>workflows/anomalous_recipes</code>、<code>workflows/anomalous_materials</code> 与 <code>workflows/anomalous_parameters</code>。</div>
     <p><strong>1. 🧭 左侧图标栏</strong><br>每个页面一个图标：主页、记录、模型、图库、工作流、素材，以及角色语音和音频库。再点一下当前页的图标，或顶栏最左边的按钮，可以收起、展开旁边的列表；窗口较窄时，列表会变成从左边滑出的抽屉。图标栏下半部分是工具：扫描、模型检查和当前节点，最下面是设置。</p>
-    <p><strong>2. 🔄 先扫描一次</strong><br>点图标栏的 <strong>扫描</strong>（或主页的“扫描模型文件夹”）。插件按文件哈希从 C 站获取封面、触发词和底模，需要联网；没匹配上的模型可以在扫描页“重新联网查找”，部分限制级模型需要在扫描页的“高级选项”里填写 C 站 API Key。扫描在后台进行，可以关掉窗口。扫描完成后，其余功能才有完整的模型信息。</p>
+    <p><strong>2. 🔄 先扫描一次</strong><br>点图标栏的 <strong>扫描</strong>（或主页的“扫描模型文件夹”）。插件按文件哈希从 C 站获取封面、触发词和底模，需要联网；没匹配上的模型可以在扫描页“重新联网查找”，部分限制级模型需要在扫描页的“扫描设置”里填写 C 站 API Key。扫描在后台进行，可以关掉窗口。扫描完成后，其余功能才有完整的模型信息。</p>
     <p><strong>3. 📦 模型</strong><br>顶部标签按类型（Checkpoint、LoRA、VAE…）切换，连同子文件夹一起列出；在左侧列表点某个文件夹只看那一个，点标签末尾的 ✕ 回到整个类型。卡片上的 <strong>+</strong> 在画布上创建加载节点，铅笔编辑名称、备注和封面，雷达图标只扫描这一个模型。</p>
     <p><strong>4. 🩺 模型检查</strong><br>每打开一个工作流都会自动检查：缺的模型如果本地有同一个文件（改过名、换过文件夹也认得出），画布上方一键换上；其余的在这里自己挑，或看“模型去哪下载”。</p>
     <p><strong>5. 🤖 当前节点</strong><br>在画布上选中节点后，上面可以看图换模型，或在兼容的 MODEL + CLIP 链前后插入 LoRA；下面的“参数”列出这类节点存过的所有参数（素材库和配方里的合在一起），每条都写明会改哪几项，点“套用”只改这几项（种子和模型不跟着换）；“存下当前参数”把这个节点现在的值存进素材库。</p>
@@ -2217,8 +2227,18 @@ export const i18n = {
         scanPageScanning: "Scanning…",
         scanPageRetry: "Look up the {count} not found again",
         scanPageHint: "An online scan asks Civitai first and guesses the base model from the file for what Civitai does not know; when Civitai cannot be reached it only reads the files and looks again next time. Scans run in the background; you can close this window and keep using ComfyUI.",
-        scanPageHintPicked: "Only the models picked under Advanced are scanned.",
-        scanPageAdvanced: "Advanced",
+        scanPageHintPicked: "Only the models picked in the scan settings are scanned.",
+        scanSettingsTitle: "Scan settings",
+        scanSettingsChange: "Change ›",
+        scanSettingsLead: "The next scan follows these settings. Reloading the page resets them; renaming files and fetching again turn themselves off after one scan.",
+        scanChipPicked: "Only the {count} picked",
+        scanChipOnline: "Online, asks Civitai",
+        scanChipDisplayName: "Civitai names shown",
+        scanChipFileRename: "Renames files",
+        scanChipForce: "Fetches everything again",
+        scanChipAutoFix: "Fixes the workflow after",
+        scanChipKeyOn: "API key set",
+        scanChipKeyOff: "No API key",
         scanPageScope: "Which models",
         scanPageScopeAll: "All models",
         scanPageScopePicked: "Only ones I pick",
@@ -2354,7 +2374,7 @@ export const i18n = {
     <h3 style="color:#f59e0b; margin-top:0;">📖 How to use</h3>
     <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 Preview features and your data</strong><br>Workflow recipes, the Material Library and Current node's parameters are still in preview. Before updating the plugin, importing someone else's recipe, restoring a version, deleting a recipe or applying parameters, save your canvas and back up <code>workflows/anomalous_recipes</code>, <code>workflows/anomalous_materials</code> and <code>workflows/anomalous_parameters</code> in your ComfyUI user folder.</div>
     <p><strong>1. 🧭 The rail on the left</strong><br>One icon per page: Home, Activity, Models, Gallery, Workflows, Materials, then Voices and Audio. Click the current page's icon again, or the button at the far left of the header, to hide or show its list; in a narrow window the list slides in as a drawer. Below the pages are the tools: Scan, Model Check and Current node, with Settings at the bottom.</p>
-    <p><strong>2. 🔄 Scan once first</strong><br>Click <strong>Scan</strong> on the rail (or "Scan model folders" on Home). The plugin fetches covers, trigger words and base models from Civitai by file hash, so it needs the internet; models that were not matched can be looked up again from the scan page, and some restricted models need a Civitai API key, entered under Advanced on the scan page. The scan runs in the background, so you can close the window. Once scanned, every other feature has full model information.</p>
+    <p><strong>2. 🔄 Scan once first</strong><br>Click <strong>Scan</strong> on the rail (or "Scan model folders" on Home). The plugin fetches covers, trigger words and base models from Civitai by file hash, so it needs the internet; models that were not matched can be looked up again from the scan page, and some restricted models need a Civitai API key, entered in the scan settings on the scan page. The scan runs in the background, so you can close the window. Once scanned, every other feature has full model information.</p>
     <p><strong>3. 📦 Models</strong><br>The chips at the top switch between types (Checkpoint, LoRA, VAE…) and list the whole type, subfolders included; click a folder in the list to see only that one, and the ✕ at the end of the chips to go back. On a card, <strong>+</strong> adds a loader node to the canvas, the pencil edits name, notes and cover, and the radar icon scans just that model.</p>
     <p><strong>4. 🩺 Model Check</strong><br>Every workflow you open is checked: a missing model you have under another name or folder (recognised by hash and file size) is put back with one press from the bar over the canvas; pick the rest here, or see where to download them.</p>
     <p><strong>5. 🤖 Current node</strong><br>Select a node on the canvas. On top, swap its model from the covers or insert a LoRA before or after a compatible MODEL + CLIP chain; below, <b>Parameters</b> lists every set of values saved for this kind of node (material library and recipes together), each saying what it would change; <b>Apply</b> changes only those (seeds and models stay). <b>Save these values</b> keeps the node's current values in the material library.</p>
