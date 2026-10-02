@@ -6,16 +6,18 @@ import { targetForNode } from './audio_node_targets.js';
 import { TTS_ENGINE } from './audio_engines.js';
 import { bindMaterialDrag } from './material_drag.js';
 import { createRunSection } from './ui_script_run.js';
+import { recordCanvasStep } from './canvas_history.js';
 
 /**
- * Script Director: paste a script, pick one character, choose an emotion per
- * line on the line cards, then generate it right here (ui_script_run.js), or push
- * the tagged script to a GPT-SoVITS node or drag it onto one (supported nodes:
- * audio_node_targets.js). The panel and its lines live for the page session; the
- * studio re-attaches it.
+ * The script director, the body of the Voice-over page (ui_script_page.js): pick one
+ * character, paste a script, choose an emotion per line on the line cards, then
+ * generate it right here (ui_script_run.js), or put the tagged script into the
+ * workflow: push it to a GPT-SoVITS node, drag it onto one (supported nodes:
+ * audio_node_targets.js) or copy it. The panel and its lines live for the page
+ * session; the page mounts it again each time it is shown.
  */
 
-// From this drawer width on, the cards get the full height and the generate side sits beside them.
+// From this width on, the cards get the full height and the generate side sits beside them.
 const WIDE_FROM = 760;
 
 const ICONS = {
@@ -44,34 +46,29 @@ const dragOwner = { get modal() { return hooks.owner?.modal; } };
 
 // ---------- public API ----------
 
-/** `{ owner, onStateChange(open), onPreviewStart() }` from the studio. */
+/** `{ owner, onPreviewStart() }` from the page. */
 export function setScriptDirectorHooks(next) {
     hooks = next || {};
 }
 
-export function openScriptDirector(parentContainer) {
+/** Puts the director into `parentContainer` (the Voice-over page). */
+export function mountScriptDirector(parentContainer) {
     if (!panel) createPanel();
     if (panel.parentNode !== parentContainer) parentContainer.appendChild(panel);
-    panel.hidden = false;
     renderAll();
-    hooks.onStateChange?.(true);
 }
 
-export function closeScriptDirector() {
-    stopScriptDirectorPreview();
-    if (panel) panel.hidden = true;
-    hooks.onStateChange?.(false);
-}
-
-export function isScriptDirectorActive() {
-    return Boolean(panel && !panel.hidden && panel.isConnected);
-}
-
-/** Called by the studio after each voice fetch; keeps the chosen character when it still exists. */
-export function updateScriptDirectorVoices(groups, preferredGroup = null) {
+/**
+ * The characters, after each voice fetch. Keeps the chosen character while it exists;
+ * `choose`: switch to `preferredGroup` (a character card's "Voice-over").
+ */
+export function updateScriptDirectorVoices(groups, preferredGroup = null, { choose = false } = {}) {
     state.groups = Array.isArray(groups) ? groups : [];
     const exists = key => state.groups.some(group => group.group === key);
-    if (!exists(state.groupKey)) {
+    if (choose && exists(preferredGroup)) {
+        if (state.groupKey !== preferredGroup) stopScriptDirectorPreview();
+        state.groupKey = preferredGroup;
+    } else if (!exists(state.groupKey)) {
         state.groupKey = (preferredGroup && exists(preferredGroup) ? preferredGroup : null)
             || state.groups.find(group => usableEmotions(group).includes('main'))?.group
             || state.groups[0]?.group
@@ -139,13 +136,11 @@ function button(className, label, onClick, title) {
 
 function createPanel() {
     panel = el('div', 'anomalous-script-director-panel');
-    panel.hidden = true;
 
     const header = el('div', 'anomalous-sd-header');
-    const titleGroup = el('div');
-    const subtitle = el('div', 'anomalous-sd-subtitle');
-    titleGroup.append(el('div', 'anomalous-sd-title', t('scriptDirectorTitle')), subtitle);
-    header.append(titleGroup, button('anomalous-sd-close-btn', '×', closeScriptDirector, t('scriptDirectorClose')));
+    const title = el('h1', 'anomalous-sd-title');
+    const subtitle = el('p', 'anomalous-sd-subtitle');
+    header.append(title, subtitle);
 
     const characterBar = el('label', 'anomalous-sd-character-bar');
     const characterSelect = el('select', 'anomalous-sd-character-select');
@@ -198,8 +193,12 @@ function createPanel() {
     dragHandle.append(el('span', '', t('scriptDirectorDragHandle')));
     bindPackageDrag(dragHandle);
     const copyBtn = button('anomalous-sd-btn', t('scriptDirectorCopy'), copyScript);
-    const pushBtn = button('anomalous-sd-btn accent', t('scriptDirectorInject'), pushToNode);
-    actions.append(dragHandle, copyBtn, pushBtn);
+    const pushBtn = button('anomalous-sd-btn', t('scriptDirectorInject'), pushToNode);
+    actions.append(dragHandle, pushBtn, copyBtn);
+    // Into your own workflow: second to generating here, so it sits below it, quieter.
+    const workflow = el('div', 'anomalous-sd-workflow');
+    const workflowTitle = el('div', 'anomalous-sd-workflow-title');
+    workflow.append(workflowTitle, actions);
     runSection = createRunSection({
         getScript: runScript,
         onPlay: () => {
@@ -210,27 +209,29 @@ function createPanel() {
         onBusyChange: () => renderAll(),
     });
     scroll.append(linesContainer);
-    footer.append(summary, runSection.bar, actions);
+    footer.append(summary, runSection.bar);
 
     // Cards on one side, everything about generating on the other: below the cards
-    // in a narrow drawer (docked browser), beside them once the drawer is wide.
+    // on a narrow page (docked browser), beside them once the page is wide.
     const main = el('div', 'anomalous-sd-main');
     main.append(linesBar, scroll);
     const side = el('div', 'anomalous-sd-side');
-    side.append(runSection.settings, footer);
+    side.append(footer, runSection.settings, workflow);
     const body = el('div', 'anomalous-sd-body');
     body.append(main, side);
     // The panel lives for the page session, so the observer does too.
     new ResizeObserver(([entry]) => panel.classList.toggle('is-wide', entry.contentRect.width >= WIDE_FROM)).observe(panel);
 
     panel.append(header, characterBar, characterHint, inputArea, body);
-    refs = { subtitle, characterSelect, characterHint, inputArea, textarea, cancelEdit, body, linesCount, linesContainer, summary, dragHandle, copyBtn, pushBtn };
+    refs = { title, subtitle, characterSelect, characterHint, inputArea, textarea, cancelEdit, body, linesCount, linesContainer, summary, workflowTitle, dragHandle, copyBtn, pushBtn };
 }
 
 function renderAll() {
     if (!panel) return;
     const node = TTS_ENGINE.label;
+    refs.title.textContent = t('scriptDirectorTitle');
     refs.subtitle.textContent = t('scriptDirectorSubtitle');
+    refs.workflowTitle.textContent = t('scriptDirectorWorkflowTitle');
     refs.dragHandle.title = t('scriptDirectorDragHint', { node });
     refs.pushBtn.title = t('scriptDirectorPushHint', { node });
     refs.pushBtn.setAttribute('aria-label', refs.pushBtn.title);
@@ -481,6 +482,7 @@ async function applyPackageToNode(node, pkg) {
     speechWidget.value = pkg.speech;
     speechWidget.callback?.(pkg.speech, app.canvas, node);
     node.setDirtyCanvas?.(true, true);
+    recordCanvasStep(app);
     return true;
 }
 

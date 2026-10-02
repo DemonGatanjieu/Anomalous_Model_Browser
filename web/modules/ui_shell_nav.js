@@ -3,7 +3,7 @@
  * domain switch; which page shows its list column (and whether that list is open); the
  * page title in the header; the page reopened next time.
  *
- * Pages: home, models, gallery, voices, audio-gallery (base pages); recipes, materials
+ * Pages: home, models, gallery, voices, script, audio-gallery (base pages); recipes, materials
  * (workspaces over the base page, closed with `closeWorkspace()`); doctor, assistant
  * (tool pages, entered through `owner.enterToolPage`).
  */
@@ -14,8 +14,10 @@ import { renderHome } from './ui_home.js';
 import { renderActivityPage } from './ui_activity.js';
 
 const LAST_PAGE_KEY = 'anomalous_last_page';
-const REMEMBERED = new Set(['home', 'activity', 'models', 'gallery', 'voices', 'audio-gallery']);
-const AUDIO_PAGES = new Set(['voices', 'audio-gallery']);
+const REMEMBERED = new Set(['home', 'activity', 'models', 'gallery', 'voices', 'script', 'audio-gallery']);
+const AUDIO_PAGES = new Set(['voices', 'script', 'audio-gallery']);
+// The audio tab (browser.switchAudioTab) of each audio page.
+const AUDIO_TABS = { voices: 'presets', script: 'script', 'audio-gallery': 'gallery' };
 // Pages with a list column, and where each remembers whether you closed it.
 const LIST_KEYS = {
     models: 'anomalous_user_sidebar_closed',
@@ -24,7 +26,7 @@ const LIST_KEYS = {
 };
 const TITLE_KEYS = {
     home: 'shellHome', activity: 'activityTitle', models: 'shellTitleModels', gallery: 'gallery', recipes: 'recipeTitle',
-    materials: 'materialLibrary', voices: 'shellVoices', 'audio-gallery': 'shellAudioGallery',
+    materials: 'materialLibrary', voices: 'shellVoices', script: 'shellScript', 'audio-gallery': 'shellAudioGallery',
     doctor: 'sidebarDoctor', assistant: 'sidebarAssistant', scan: 'scanPageTitle',
 };
 // Below this width the list covers the page instead of sitting beside it, and starts closed.
@@ -145,7 +147,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
                 ['grid', owner.grid], ['detail', owner.detailPanel], ['gallery', owner.galleryPanel],
                 ['doctor', owner.doctorPanel], ['assistant', owner.assistantPanel], ['home', owner.homePanel],
                 ['activity', owner.activityPanel], ['scan', owner.scanPanel],
-                ['audioStudio', owner.audioStudioPanel], ['audioGallery', owner.audioGalleryPanel],
+                ['audioStudio', owner.audioStudioPanel], ['script', owner.scriptPanel], ['audioGallery', owner.audioGalleryPanel],
             ].filter(([, panel]) => panel).map(([key, panel]) => [key, panel.style.display || 'none']));
         } else if (!owner.workspaceReturnState) {
             owner.workspaceReturnState = { grid: 'grid' };
@@ -178,7 +180,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         if (AUDIO_PAGES.has(page)) {
             useDomain('audio');
             applyList(page);
-            owner.switchAudioTab(page === 'voices' ? 'presets' : 'gallery');
+            owner.switchAudioTab(AUDIO_TABS[page]);
             return;
         }
         useDomain('visual');

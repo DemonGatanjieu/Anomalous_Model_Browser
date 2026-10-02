@@ -176,6 +176,7 @@ export function createDOM() {
         this.audioStudioPanel.style.height = '100%';
         this.audioStudioPanel.style.overflow = 'hidden';
         this.audioStudioPanel.style.position = 'relative';
+        this.scriptPanel = panel('anomalous-script-panel');
         this.audioGalleryPanel = panel('anomalous-audio-gallery-panel');
         this.audioGalleryPanel.style.flex = '1';
         this.audioGalleryPanel.style.height = '100%';
@@ -215,7 +216,7 @@ export function createDOM() {
         bindWorkspaceEscape(this);
 
         content.append(header, this.grid, this.detailPanel, this.galleryPanel, this.homePanel, this.activityPanel, this.scanPanel, this.doctorPanel,
-            this.assistantPanel, this.audioStudioPanel, this.audioGalleryPanel);
+            this.assistantPanel, this.audioStudioPanel, this.scriptPanel, this.audioGalleryPanel);
         container.append(rail.root, this.sidebarWrapper, content, this.nbPanel);
         this.modal.appendChild(container);
 

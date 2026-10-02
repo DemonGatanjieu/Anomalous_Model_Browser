@@ -14,6 +14,7 @@ function restoreWorkspaceReturnPanel(owner) {
         ['doctor', owner.doctorPanel],
         ['assistant', owner.assistantPanel],
         ['audioStudio', owner.audioStudioPanel],
+        ['script', owner.scriptPanel],
         ['audioGallery', owner.audioGalleryPanel],
         ['home', owner.homePanel],
         ['activity', owner.activityPanel],
@@ -102,6 +103,7 @@ export function hideAllPanels() {
     if (this.assistantPanel) this.assistantPanel.style.display = 'none';
     if (this.paramPanel) this.paramPanel.style.display = 'none';
     if (this.audioStudioPanel) this.audioStudioPanel.style.display = 'none';
+    if (this.scriptPanel) this.scriptPanel.style.display = 'none';
     if (this.audioGalleryPanel) this.audioGalleryPanel.style.display = 'none';
     if (this.homePanel) this.homePanel.style.display = 'none';
     if (this.activityPanel) this.activityPanel.style.display = 'none';

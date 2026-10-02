@@ -132,7 +132,9 @@
     border-color: var(--amb-border-strong);
 }
 
-.anomalous-audio-tool-btn.active {
+/* .is-accent: a card's way to the Voice-over page. */
+.anomalous-audio-tool-btn.active,
+.anomalous-audio-tool-btn.is-accent {
     background: color-mix(in srgb, var(--amb-link) 15%, transparent);
     color: var(--amb-link);
     border-color: color-mix(in srgb, var(--amb-link) 30%, transparent);

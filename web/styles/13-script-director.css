@@ -1,31 +1,42 @@
-/* Script Director: drawer inside the Audio Studio panel */
-.anomalous-script-director-panel {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    bottom: 12px;
-    width: min(1000px, calc(100% - 24px));
-    background: var(--amb-bg-panel, var(--amb-bg-card));
-    border: 1px solid var(--amb-border);
-    border-radius: 12px;
-    display: flex;
+/* The Voice-over page (ui_script_page.js) and the script director it holds. */
+#anomalous-script-panel {
+    flex: 1;
     flex-direction: column;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    z-index: 5;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--amb-bg-page);
+}
+
+.anomalous-script-director-panel {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
     overflow: hidden;
 }
 
-.anomalous-script-director-panel[hidden],
 .anomalous-script-director-panel [hidden] {
     display: none;
 }
 
-/* Docked browser: the studio column is narrow, so the drawer covers all of it. */
-#anomalous-container.anomalous-docked .anomalous-script-director-panel {
-    top: 8px;
-    right: 8px;
-    bottom: 8px;
-    width: calc(100% - 16px);
+/* Instead of the director: loading, no node pack, no characters yet. */
+.anomalous-script-page-note {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 40px 24px;
+    color: var(--amb-text-muted);
+    font-size: 13.5px;
+    text-align: center;
+}
+
+.anomalous-script-page-note p {
+    max-width: 420px;
+    margin: 0;
+    line-height: 1.6;
 }
 
 .anomalous-sd-body,
@@ -63,38 +74,21 @@
 }
 
 .anomalous-sd-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 16px;
-    background: rgba(0, 0, 0, 0.2);
-    border-bottom: 1px solid var(--amb-border);
+    padding: 20px 16px 6px;
 }
 
 .anomalous-sd-title {
-    font-size: 14px;
-    font-weight: 600;
+    margin: 0;
     color: var(--amb-text-main);
+    font-size: 1.35em;
+    font-weight: 600;
 }
 
 .anomalous-sd-subtitle {
-    font-size: 11px;
-    color: var(--amb-text-dim);
-    margin-top: 2px;
-}
-
-.anomalous-sd-close-btn {
-    background: transparent;
-    border: none;
+    margin: 6px 0 0;
     color: var(--amb-text-muted);
-    font-size: 20px;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.anomalous-sd-close-btn:hover {
-    color: var(--amb-text-main);
+    font-size: 13px;
+    line-height: 1.6;
 }
 
 /* Character */
@@ -362,6 +356,27 @@
 .anomalous-sd-emotion-chip.is-main.active {
     background: rgba(16, 185, 129, 0.22);
     border-color: rgba(52, 211, 153, 0.7);
+}
+
+/* Generating here is the main way: its button stands out. */
+.anomalous-sd-run-actions > .anomalous-sd-btn.accent:first-child {
+    padding: 7px 18px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Into your own workflow: below generating, quieter. */
+.anomalous-sd-workflow {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 10px;
+    border-top: 1px solid var(--amb-border);
+}
+
+.anomalous-sd-workflow-title {
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
 }
 
 /* Bundle */

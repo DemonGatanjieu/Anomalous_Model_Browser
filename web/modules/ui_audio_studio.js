@@ -7,19 +7,13 @@ import { openGptSovitsEditor } from './ui_audio_tts_editor.js';
 import { openPronunciationEditor } from './ui_tts_pronunciation.js';
 import { bindTtsFileDrop } from './ui_tts_file_drop.js';
 import { openTtsImport } from './ui_tts_import.js';
-import {
-    openScriptDirector,
-    closeScriptDirector,
-    isScriptDirectorActive,
-    setScriptDirectorHooks,
-    stopScriptDirectorPreview,
-    updateScriptDirectorVoices,
-} from './ui_script_director.js';
+import { stopScriptDirectorPreview } from './ui_script_director.js';
 
 /**
- * Audio & Voice Studio workspace: GPT-SoVITS character cards (Anomalous_TTS,
- * detected at runtime), preview playback, tag copying, dropping a character onto
- * a TTS node, and toolbar entry points.
+ * The Voices page: GPT-SoVITS character cards (Anomalous_TTS, detected at runtime),
+ * preview playback, tag copying, dropping a character onto a TTS node, the editors,
+ * and each card's way to the Voice-over page (ui_script_page.js), where scripts are
+ * written and generated.
  */
 
 const renderTokens = new WeakMap();
@@ -241,6 +235,12 @@ function renderCharacterCard(group, owner, { onChanged, canImport = false } = {}
     titleGroup.append(...(group.has_main ? [gripIcon()] : []), avatar, nameBox);
     const headerRight = document.createElement('div');
     headerRight.className = 'anomalous-character-voice-actions';
+    if (group.has_main && owner?.openScript) {
+        const voiceOver = createToolButton(SVG.SCRIPT, t('scriptDirectorUseCharacter'), 'is-compact is-accent');
+        voiceOver.title = t('scriptDirectorUseCharacterHint', { character: group.character });
+        voiceOver.onclick = () => owner.openScript(group.group);
+        headerRight.append(voiceOver);
+    }
     if (!group.raw.error) {
         const edit = createToolButton(SVG.EDIT, t('ttsEditorOpen'), 'is-compact');
         edit.onclick = () => openGptSovitsEditor(group, { onSaved: () => onChanged?.() });
@@ -294,26 +294,7 @@ function createRefreshButton(onRefresh) {
     return btn;
 }
 
-function createScriptDirectorButton(container, owner) {
-    const btn = createToolButton(SVG.SCRIPT, t('scriptDirectorOpen'));
-    btn.dataset.tour = 'audio-script';
-    btn.classList.toggle('active', isScriptDirectorActive());
-    setScriptDirectorHooks({
-        owner,
-        onStateChange: open => btn.classList.toggle('active', open),
-        onPreviewStart: () => {
-            stopAudioStudioPlayback();
-            stopGalleryAudio();
-        },
-    });
-    btn.onclick = () => {
-        if (isScriptDirectorActive()) closeScriptDirector();
-        else openScriptDirector(container);
-    };
-    return btn;
-}
-
-function renderStudioToolbar({ onSearch, onRefresh, container, owner }) {
+function renderStudioToolbar({ onSearch, onRefresh }) {
     const toolbar = document.createElement('div');
     toolbar.className = 'anomalous-audio-toolbar';
 
@@ -353,7 +334,7 @@ function renderStudioToolbar({ onSearch, onRefresh, container, owner }) {
     searchInput.oninput = (e) => onSearch(e.target.value.trim().toLowerCase());
 
     searchWrap.append(searchIcon, searchInput);
-    rightActions.append(createScriptDirectorButton(container, owner), createRefreshButton(onRefresh), searchWrap);
+    rightActions.append(createRefreshButton(onRefresh), searchWrap);
 
     toolbar.append(titleGroup, rightActions);
     return toolbar;
@@ -396,8 +377,8 @@ function resolveFilter(filter) {
     return active?.type === 'group' && active.value ? active : null;
 }
 
-/** Shown instead of the cards when the Anomalous_TTS node pack is missing. */
-function renderInstallCard() {
+/** Shown instead of the cards (and the Voice-over page) when the Anomalous_TTS node pack is missing. */
+export function renderInstallCard() {
     const card = document.createElement('div');
     card.className = 'anomalous-audio-install-card';
     const title = document.createElement('div');
@@ -427,7 +408,6 @@ function renderInstallCard() {
 export async function renderAudioStudio(container, { filter = null, owner = null } = {}) {
     const token = {};
     renderTokens.set(container, token);
-    const directorWasOpen = isScriptDirectorActive();
     stopAudioStudioPlayback();
 
     const installed = await isTtsInstalled();
@@ -448,15 +428,11 @@ export async function renderAudioStudio(container, { filter = null, owner = null
             });
         },
         onRefresh: () => { invalidateEngineCache({ rescan: true }); rerender(); if (owner) renderAudioSidebar(owner); },
-        container,
-        owner,
     });
     studioWrapper.append(toolbar, renderStatus('anomalous-audio-status', t('audioLoading')));
     container.replaceChildren(studioWrapper);
-    if (directorWasOpen) openScriptDirector(container);
 
     if (!installed) {
-        updateScriptDirectorVoices([]);
         studioWrapper.lastChild.replaceWith(renderInstallCard());
         return;
     }
@@ -468,7 +444,6 @@ export async function renderAudioStudio(container, { filter = null, owner = null
         return;
     }
     let characters = result.groups;
-    updateScriptDirectorVoices(characters, characterFilter?.value || null);
 
     const onChanged = () => { rerender(); if (owner) renderAudioSidebar(owner); };
     const canImport = Boolean(ttsStatus) && ttsStatus.local !== false;

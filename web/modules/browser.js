@@ -24,6 +24,7 @@ import { initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, di
 import { _openGalleryReplacer } from './ui_node_model_picker.js';
 import { renderAudioStudio, stopAudioStudioPlayback } from './ui_audio_studio.js';
 import { renderAudioGallery, stopGalleryAudio } from './ui_audio_gallery.js';
+import { renderScriptPage } from './ui_script_page.js';
 import { getActiveAudioFilter, setActiveAudioFilter, syncAudioSidebarSelection } from './ui_audio_sidebar.js';
 import { voiceGroupKey } from './audio_engines.js';
 import { getActiveDomain } from './ui_domain_switcher.js';
@@ -61,7 +62,8 @@ export class AnomalousBrowser {
         }
         // Opened again: stay on the page, refresh what may have changed meanwhile.
         if (getActiveDomain() === 'audio') {
-            this.switchAudioTab(this.currentShellPage() === 'audio-gallery' ? 'gallery' : 'presets');
+            const audioTabs = { 'audio-gallery': 'gallery', script: 'script' };
+            this.switchAudioTab(audioTabs[this.currentShellPage()] || 'presets');
         } else if (!this.foldersData) {
             this.loadFolders();
         } else {
@@ -84,6 +86,12 @@ export class AnomalousBrowser {
             this.markShellPage?.('audio-gallery');
             this.audioGalleryPanel.style.display = 'block';
             renderAudioGallery(this.audioGalleryPanel);
+        } else if (tabName === 'script') {
+            this.markShellPage?.('script');
+            this.scriptPanel.style.display = 'flex';
+            const character = this.pendingScriptCharacter;
+            this.pendingScriptCharacter = null;
+            renderScriptPage(this.scriptPanel, this, { character });
         } else {
             if (filter) setActiveAudioFilter(filter);
             else if (getActiveAudioFilter().type === 'gallery') setActiveAudioFilter(null);
@@ -103,6 +111,13 @@ export class AnomalousBrowser {
         }
         if (filter) setActiveAudioFilter(filter);
         this.goTo('voices'); // keeps the filter just set
+    }
+
+    /** The Voice-over page, with `group` (a voice group key) chosen when given: a character card's button. */
+    openScript(group = null) {
+        this.pendingScriptCharacter = group;
+        if (this.currentShellPage() === 'script') this.switchAudioTab('script');
+        else this.goTo('script');
     }
 
     close() {
