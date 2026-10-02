@@ -76,7 +76,7 @@ The main surfaces are:
   discovery/pagination, cards, detail, and node application are separated across
   `ui_materials.js`, `ui_material_cards.js`, `ui_material_detail.js`, and
   `ui_material_application.js`.
-- Current node (Node Assistant)/Model Doctor: selected-node actions, saved parameters, and
+- Current node (Node Assistant)/Model Check: selected-node actions, saved parameters, and
   missing-model recovery. `model_check.js` decides each workflow model's state and
   applies fixes; `ui_doctor.js` (the page) and `ui_doctor_banner.js` (the bar shown
   after a workflow opens) only render it and call it on a press.

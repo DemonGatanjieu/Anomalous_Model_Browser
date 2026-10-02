@@ -1,7 +1,7 @@
 # Material Library
 
 The Material Library is a user-curated reuse layer. It does not replace
-Workflow Recipes, Prompt Notes, Node Assistant, or Model Doctor. The initial
+Workflow Recipes, Prompt Notes, Node Assistant, or Model Check. The initial
 material kind is an image workflow snapshot captured from a generated PNG that
 contains a complete ComfyUI UI workflow.
 
@@ -172,7 +172,7 @@ or clears these overrides, and choosing Automatic restores the topology result.
 Material storage preserves the workflow's existing `extra.anomalous_hashes`.
 When one node block is applied, records scoped to the source node ID are copied
 to the target node ID. This is evidence transport, not identity resolution.
-Model Doctor remains the authority that decides whether a missing model may be
+Model Check remains the authority that decides whether a missing model may be
 repaired. A material name, preview, saved path, or size is never promoted to
 cryptographic identity.
 

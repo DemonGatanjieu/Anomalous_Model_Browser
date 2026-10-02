@@ -1,5 +1,5 @@
 /**
- * Model Doctor, the tool page: the models the open workflow uses and what is wrong with each
+ * Model Check, the tool page: the models the open workflow uses and what is wrong with each
  * (model_check.js), with what can be done about it: put in the same file found under
  * another name or folder, take or leave a file of the same size, pick one by hand (the
  * node model picker) or look it up on Civitai. Nothing in the workflow changes without a

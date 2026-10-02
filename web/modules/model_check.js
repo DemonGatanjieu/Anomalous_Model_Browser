@@ -1,5 +1,5 @@
 /**
- * Model Doctor's check: which model files the open workflow uses, whether this computer
+ * Model Check's check: which model files the open workflow uses, whether this computer
  * has each of them, and putting a found file into its node. A file counts as the same
  * model only by the hash (and size) the workflow carries; a file of the same size is only
  * offered (docs/architecture/model-resolution.md). Checking changes nothing; only

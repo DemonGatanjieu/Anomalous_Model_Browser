@@ -311,12 +311,12 @@ export const i18n = {
         scanPageDisplayName: "用 Civitai 上的名称作为显示名",
         scanPageDisplayNameHelp: "只改卡片上显示的名字，不改文件。你在编辑窗口里改过的名字会保留。",
         scanPageFileRename: "同时修改磁盘上的文件名",
-        scanPageFileRenameHelp: "会真的给模型文件改名，用到这些模型的旧工作流要靠模型医生修复；遇到内容完全相同的重复副本，会把其中一个移到回收站；部分文件夹受保护，不会改名。扫描完自动关掉。",
+        scanPageFileRenameHelp: "会真的给模型文件改名，用到这些模型的旧工作流要靠模型检查修复；遇到内容完全相同的重复副本，会把其中一个移到回收站；部分文件夹受保护，不会改名。扫描完自动关掉。",
         scanPageForce: "重新获取已扫描的模型",
         scanPageForceHelp: "每个模型都重新计算哈希并联网获取，很慢。只更新 Civitai 的信息和 Civitai 的封面；你改的名字、备注和自己换的封面都会保留。扫描完自动关掉。",
         scanPageForceConfirm: "重新获取全部已扫描的模型？\n\n每个模型都要重新计算哈希、联网下载信息和封面，模型多时可能要很久。\n你改的名字、备注和自己换的封面都会保留；被替换的只有 Civitai 自己的旧封面。",
         scanPageAutoFix: "扫描完自动修复当前工作流里缺失的模型",
-        scanPageAutoFixHelp: "像模型医生一样，把画布上找不到的模型换成本地对应的那个。",
+        scanPageAutoFixHelp: "像模型检查一样，把画布上找不到的模型换成本地对应的那个。",
         scanPageApiKey: "Civitai API Key",
         scanPageApiKeyOn: "已设置",
         scanPageApiKeyOff: "未设置",
@@ -421,16 +421,16 @@ export const i18n = {
 <div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
     <h3 style="color:#f59e0b; margin-top:0;">📖 使用说明</h3>
     <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 测试功能与数据保护</strong><br>工作流配方、素材库和“当前节点”的参数仍在测试阶段。更新插件、导入别人的配方、恢复版本、删除配方或应用参数前，请先保存当前画布，并备份 ComfyUI 用户目录里的 <code>workflows/anomalous_recipes</code>、<code>workflows/anomalous_materials</code> 与 <code>workflows/anomalous_parameters</code>。</div>
-    <p><strong>1. 🧭 左侧图标栏</strong><br>每个页面一个图标：主页、记录、模型、图库、工作流、素材，以及角色语音和音频库。再点一下当前页的图标，或顶栏最左边的按钮，可以收起、展开旁边的列表；窗口较窄时，列表会变成从左边滑出的抽屉。图标栏下半部分是工具：扫描、模型医生和当前节点，最下面是设置。</p>
+    <p><strong>1. 🧭 左侧图标栏</strong><br>每个页面一个图标：主页、记录、模型、图库、工作流、素材，以及角色语音和音频库。再点一下当前页的图标，或顶栏最左边的按钮，可以收起、展开旁边的列表；窗口较窄时，列表会变成从左边滑出的抽屉。图标栏下半部分是工具：扫描、模型检查和当前节点，最下面是设置。</p>
     <p><strong>2. 🔄 先扫描一次</strong><br>点图标栏的 <strong>扫描</strong>（或主页的“扫描模型文件夹”）。插件按文件哈希从 C 站获取封面、触发词和底模，需要联网；没匹配上的模型可以在扫描页“重新联网查找”，部分限制级模型需要在扫描页的“高级选项”里填写 C 站 API Key。扫描在后台进行，可以关掉窗口。扫描完成后，其余功能才有完整的模型信息。</p>
     <p><strong>3. 📦 模型</strong><br>顶部标签按类型（Checkpoint、LoRA、VAE…）切换，连同子文件夹一起列出；在左侧列表点某个文件夹只看那一个，点标签末尾的 ✕ 回到整个类型。卡片上的 <strong>+</strong> 在画布上创建加载节点，铅笔编辑名称、备注和封面，雷达图标只扫描这一个模型。</p>
-    <p><strong>4. 🩺 模型医生</strong><br>打开别人的工作流或图片、模型报红时点它：按哈希和文件大小在本地找到对应的模型，一键替换。“查看哈希”可以逐项比对。</p>
+    <p><strong>4. 🩺 模型检查</strong><br>每打开一个工作流都会自动检查：缺的模型如果本地有同一个文件（改过名、换过文件夹也认得出），画布上方一键换上；其余的在这里自己挑，或看“模型去哪下载”。</p>
     <p><strong>5. 🤖 当前节点</strong><br>在画布上选中节点后，上面可以看图换模型，或在兼容的 MODEL + CLIP 链前后插入 LoRA；下面的“参数”列出这类节点存过的所有参数（素材库和配方里的合在一起），每条都写明会改哪几项，点“套用”只改这几项（种子和模型不跟着换）；“存下当前参数”把这个节点现在的值存进素材库。</p>
     <p><strong>6. 🪡 工作流配方</strong><br>把当前画布的完整工作流或其中一段，连同模型、封面、标签、备注和参数存成配方。卡片会显示本机模型是否齐全，拖到画布上即可载入；详情页可以匹配本地模型、查看与复制参数、比较历史出图，以及比较或恢复版本。</p>
     <p><strong>7. ✨ 素材</strong><br>在图库或配方里打开一张图的参数详情，可以把原图、完整工作流和节点参数存成素材。拖到画布空白处打开工作流（提示词素材会生成提示词节点），拖到已有节点上则把参数填进去。</p>
     <p><strong>8. 🎙️ 角色语音</strong><br>需要另外安装 Anomalous_TTS 节点包。导入 GPT-SoVITS 角色、设置情绪和读音、在剧本台生成语音；音频页右上角的 <strong>!</strong> 有分步说明和遮罩导览。</p>
     <p><strong>9. 🕘 操作记录</strong><br>按天列出插件改过的东西：画布上节点设置的变化、加删的节点、打开的工作流，以及模型、封面、配方、素材等文件。只记录、不撤销；你自己在画布上的修改不会记进来。</p>
-    <p><strong>10. 🧰 其他工具在哪</strong><br>工作流分享码（AMB0/AMB1 导入导出）在“工作流”页右上角 ⇅；提示词工坊和提示词笔记在“素材”页右上角；模型来源在“模型”页类型标签的最右边，工作流里模型的来源在模型医生里；翻译在“当前节点”的提示词框上。</p>
+    <p><strong>10. 🧰 其他工具在哪</strong><br>工作流分享码（AMB0/AMB1 导入导出）在“工作流”页右上角 ⇅；提示词工坊和提示词笔记在“素材”页右上角；模型来源在“模型”页类型标签的最右边，工作流里模型的来源在模型检查里；翻译在“当前节点”的提示词框上。</p>
     <p><strong>11. ⚙️ 设置</strong><br>语言、字号、缩略图和视频封面。<strong>文件夹管理</strong> 可以隐藏不需要的模型文件夹、调整顺序，隐藏的文件夹不再读取和扫描。<strong>💬 提交反馈 / 报告问题</strong> 直达 GitHub Issues。</p>
 </div>`,
         notebooks: '笔记本',
@@ -626,7 +626,7 @@ export const i18n = {
         gallerySelectingCoverSuffix: ' 选择封面。请点击下方的图片。',
         galleryLoadImagesError: '加载历史图片失败',
         galleryCancel: '取消',
-        detailBackDoctor: '⬅ 返回医生面板',
+        detailBackDoctor: '⬅ 返回模型检查',
         detailBackAssistant: '⬅ 返回助手面板',
         detailJumpToBottom: '跳到底部',
         detailEdit: '编辑',
@@ -903,7 +903,7 @@ export const i18n = {
         homeCardModelsTitle: "找模型，放进节点",
         homeCardModelsBody: "按类型浏览模型和预览图，拖到画布的节点上就换好。",
         homeCardDoctorTitle: "修复缺失的模型",
-        homeCardDoctorBody: "别人的工作流打开报红？模型医生找出你本地对应的模型并替换。",
+        homeCardDoctorBody: "别人的工作流打开报红？模型检查找出你本地对应的模型并换上。",
         homeCardVoicesTitle: "给角色配音",
         homeCardVoicesBody: "导入 GPT-SoVITS 角色，粘贴台词，在剧本台里直接生成语音。",
         homeCardGalleryTitle: "翻看生成的图",
@@ -974,7 +974,7 @@ export const i18n = {
         activityVoiceSettings: "修改角色设置",
         activityVoiceStorage: "更改角色存放位置",
         sidebarToggle: '收起/展开列表',
-        sidebarDoctor: '模型医生',
+        sidebarDoctor: '模型检查',
         sidebarAssistant: '当前节点',
         sidebarPreflight: '预检导入工作流',
         sidebarSettings: '设置中心',
@@ -982,7 +982,7 @@ export const i18n = {
         sidebarScanComplete: '✅ 扫描/重命名已完成！数据已为您更新。',
         sidebarGlobalWizardTitle: '全局扫描向导',
         sidebarProvenance: '在工作流里记下模型指纹',
-        sidebarProvenanceDesc: '生成图片或保存工作流时，把模型的哈希一起存进去。以后模型改名、换电脑，模型医生也能找回来。',
+        sidebarProvenanceDesc: '生成图片或保存工作流时，把模型的哈希一起存进去。以后模型改名、换电脑，模型检查也能找回来。',
         sidebarProvenanceOn: '开启（推荐）',
         sidebarProvenanceOff: '关闭',
         sidebarCancel: '取消',
@@ -2195,12 +2195,12 @@ export const i18n = {
         scanPageDisplayName: "Use Civitai's name as the display name",
         scanPageDisplayNameHelp: "Only the name shown on cards; files keep their names. Names you set in the model editor are kept.",
         scanPageFileRename: "Also rename the files on disk",
-        scanPageFileRenameHelp: "Really renames model files, so older workflows using them need the Model Doctor; of two identical copies one goes to the Recycle Bin; protected folders are never renamed. Turns itself off after the scan.",
+        scanPageFileRenameHelp: "Really renames model files, so older workflows using them need Model Check; of two identical copies one goes to the Recycle Bin; protected folders are never renamed. Turns itself off after the scan.",
         scanPageForce: "Fetch scanned models again",
         scanPageForceHelp: "Every model is hashed and fetched again, which is slow. Only Civitai's information and Civitai's covers are updated; names, notes and covers you set stay. Turns itself off after the scan.",
         scanPageForceConfirm: "Fetch every scanned model again?\n\nEach model is hashed and its information and cover downloaded again, which can take long for a big library.\nNames, notes and covers you set stay; only Civitai's own older covers are replaced.",
         scanPageAutoFix: "Fix missing models in the open workflow afterwards",
-        scanPageAutoFixHelp: "Like the Model Doctor, swaps models the canvas cannot find for your local copies.",
+        scanPageAutoFixHelp: "Like Model Check, swaps models the canvas cannot find for your local copies.",
         scanPageApiKey: "Civitai API key",
         scanPageApiKeyOn: "set",
         scanPageApiKeyOff: "not set",
@@ -2305,16 +2305,16 @@ export const i18n = {
 <div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
     <h3 style="color:#f59e0b; margin-top:0;">📖 How to use</h3>
     <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 Preview features and your data</strong><br>Workflow recipes, the Material Library and Current node's parameters are still in preview. Before updating the plugin, importing someone else's recipe, restoring a version, deleting a recipe or applying parameters, save your canvas and back up <code>workflows/anomalous_recipes</code>, <code>workflows/anomalous_materials</code> and <code>workflows/anomalous_parameters</code> in your ComfyUI user folder.</div>
-    <p><strong>1. 🧭 The rail on the left</strong><br>One icon per page: Home, Activity, Models, Gallery, Workflows, Materials, then Voices and Audio. Click the current page's icon again, or the button at the far left of the header, to hide or show its list; in a narrow window the list slides in as a drawer. Below the pages are the tools: Scan, Model Doctor and Current node, with Settings at the bottom.</p>
+    <p><strong>1. 🧭 The rail on the left</strong><br>One icon per page: Home, Activity, Models, Gallery, Workflows, Materials, then Voices and Audio. Click the current page's icon again, or the button at the far left of the header, to hide or show its list; in a narrow window the list slides in as a drawer. Below the pages are the tools: Scan, Model Check and Current node, with Settings at the bottom.</p>
     <p><strong>2. 🔄 Scan once first</strong><br>Click <strong>Scan</strong> on the rail (or "Scan model folders" on Home). The plugin fetches covers, trigger words and base models from Civitai by file hash, so it needs the internet; models that were not matched can be looked up again from the scan page, and some restricted models need a Civitai API key, entered under Advanced on the scan page. The scan runs in the background, so you can close the window. Once scanned, every other feature has full model information.</p>
     <p><strong>3. 📦 Models</strong><br>The chips at the top switch between types (Checkpoint, LoRA, VAE…) and list the whole type, subfolders included; click a folder in the list to see only that one, and the ✕ at the end of the chips to go back. On a card, <strong>+</strong> adds a loader node to the canvas, the pencil edits name, notes and cover, and the radar icon scans just that model.</p>
-    <p><strong>4. 🩺 Model Doctor</strong><br>When someone else's workflow or image opens with red, missing models, click it: it finds your local copy of each model by hash and file size and swaps it in. "View hash" compares them side by side.</p>
+    <p><strong>4. 🩺 Model Check</strong><br>Every workflow you open is checked: a missing model you have under another name or folder (recognised by hash and file size) is put back with one press from the bar over the canvas; pick the rest here, or see where to download them.</p>
     <p><strong>5. 🤖 Current node</strong><br>Select a node on the canvas. On top, swap its model from the covers or insert a LoRA before or after a compatible MODEL + CLIP chain; below, <b>Parameters</b> lists every set of values saved for this kind of node (material library and recipes together), each saying what it would change; <b>Apply</b> changes only those (seeds and models stay). <b>Save these values</b> keeps the node's current values in the material library.</p>
     <p><strong>6. 🪡 Workflow recipes</strong><br>Save the whole canvas, or a part of it, with its models, cover, tags, notes and parameters. A card shows whether the models are on this computer; drag it onto the canvas to load it. The detail view matches local models, shows and copies parameters, compares past outputs and compares or restores versions.</p>
     <p><strong>7. ✨ Materials</strong><br>Open an image's parameter details in the Gallery or a recipe to save the image, its full workflow and its node settings as a material. Drop it on an empty canvas to open the workflow (prompt materials create prompt nodes), or on a node to fill in its settings.</p>
     <p><strong>8. 🎙️ Character voices</strong><br>Needs the Anomalous_TTS node pack. Import GPT-SoVITS characters, set emotions and pronunciations, and generate speech in the Script Director; the <strong>!</strong> at the top right of the audio page has a step-by-step guide and a spotlight tour.</p>
     <p><strong>9. 🕘 Activity</strong><br>What the plugin changed, by day: node settings on the canvas, nodes added or removed, workflows opened, and files such as models, covers, recipes and materials. It records only and undoes nothing; your own edits on the canvas are not listed.</p>
-    <p><strong>10. 🧰 Where the other tools are</strong><br>Workflow share codes (AMB0/AMB1 import / export): ⇅ at the top right of Workflows. Prompt Studio and Prompt Notes: top right of Materials. Model Sources: at the end of the type chips on Models; the sources of the open workflow's models: in Model Doctor. Translation: on the prompt boxes in Current node.</p>
+    <p><strong>10. 🧰 Where the other tools are</strong><br>Workflow share codes (AMB0/AMB1 import / export): ⇅ at the top right of Workflows. Prompt Studio and Prompt Notes: top right of Materials. Model Sources: at the end of the type chips on Models; the sources of the open workflow's models: in Model Check. Translation: on the prompt boxes in Current node.</p>
     <p><strong>11. ⚙️ Settings</strong><br>Language, font size, thumbnails and video covers. <strong>Folder manager</strong> hides model folders you do not need and orders them; hidden folders are not read or scanned. <strong>💬 Feedback / report an issue</strong> opens GitHub Issues.</p>
 </div>`,
         notebooks: 'Notebooks',
@@ -2510,7 +2510,7 @@ export const i18n = {
         gallerySelectingCoverSuffix: '. Click an image below.',
         galleryLoadImagesError: 'Error loading images',
         galleryCancel: 'Cancel',
-        detailBackDoctor: '⬅ Back to Doctor',
+        detailBackDoctor: '⬅ Back to Model Check',
         detailBackAssistant: '⬅ Back to Assistant',
         detailJumpToBottom: 'Jump to bottom',
         detailEdit: 'Edit',
@@ -2787,7 +2787,7 @@ export const i18n = {
         homeCardModelsTitle: "Find a model, put it on a node",
         homeCardModelsBody: "Browse models by type with previews; drag one onto a canvas node to use it.",
         homeCardDoctorTitle: "Fix missing models",
-        homeCardDoctorBody: "A shared workflow shows red nodes? The Model Doctor finds your matching local models and swaps them in.",
+        homeCardDoctorBody: "A shared workflow shows red nodes? Model Check finds your matching local models and swaps them in.",
         homeCardVoicesTitle: "Give a character a voice",
         homeCardVoicesBody: "Import GPT-SoVITS characters, paste a script and generate speech in the Script Director.",
         homeCardGalleryTitle: "Look through your outputs",
@@ -2858,7 +2858,7 @@ export const i18n = {
         activityVoiceSettings: "Changed character settings",
         activityVoiceStorage: "Changed where characters are kept",
         sidebarToggle: 'Show or hide the list',
-        sidebarDoctor: 'Model Doctor',
+        sidebarDoctor: 'Model Check',
         sidebarAssistant: 'Current node',
         sidebarPreflight: 'Preflight Import',
         sidebarSettings: 'Settings Hub',
@@ -2866,7 +2866,7 @@ export const i18n = {
         sidebarScanComplete: '✅ Scan/Rename completed! Data updated.',
         sidebarGlobalWizardTitle: 'Global Scan Wizard',
         sidebarProvenance: 'Record model fingerprints in workflows',
-        sidebarProvenanceDesc: 'Generated images and saved workflows also store each model\'s hash, so the Model Doctor can find the model after a rename or on another computer.',
+        sidebarProvenanceDesc: 'Generated images and saved workflows also store each model\'s hash, so Model Check can find the model after a rename or on another computer.',
         sidebarProvenanceOn: 'On (recommended)',
         sidebarProvenanceOff: 'Off',
         sidebarCancel: 'Cancel',

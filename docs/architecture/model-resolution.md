@@ -1,11 +1,11 @@
 # Model Identity and Scanning
 
-Read this document for Model Doctor, workflow provenance, missing-model recovery,
+Read this document for Model Check, workflow provenance, missing-model recovery,
 hash caches, Civitai metadata resolution, or model scanning.
 
 ## Identity boundary
 
-Model Doctor recovers the same physical model referenced by provenance embedded
+Model Check recovers the same physical model referenced by provenance embedded
 in a workflow or image. Local renames and path differences are the problem it
 solves, so names cannot also be its proof.
 
@@ -34,14 +34,14 @@ Foundation components—`vae`, `vae_approx`, `clip`, `text_encoders`, and
 cannot automatically repair them. When size provenance is available it may be
 shown as the same explicit manual candidate, but a supplied hash mismatch never
 falls back to a filename or size-only guess.
-This is a Model Doctor confidence boundary, not a scanner-support boundary. The
+This is a Model Check confidence boundary, not a scanner-support boundary. The
 scanner may traverse any active registered model folder and can still
 calculate a local hash when Civitai has no matching record. Sparse or ambiguous
 remote metadata is a reason to require cryptographic identity, not to exclude
 the category from scanning.
 
 An existing native combo value remains loadable even if a foundation component's
-current local hash differs from stored provenance. Model Doctor shows a
+current local hash differs from stored provenance. Model Check shows a
 non-blocking identity-change warning instead of declaring the node missing or
 replacing it. If the value is absent, redirection requires one exact in-category
 hash match. Missing or ambiguous evidence remains unresolved for manual action.

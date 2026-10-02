@@ -1,7 +1,7 @@
 /**
  * The bar over the canvas when the open workflow uses models this computer does not have:
  * how many, how many are here under another name or folder (put in with one press), and
- * a way to Model Doctor's page for the rest. Each opened workflow is checked
+ * a way to Model Check's page for the rest. Each opened workflow is checked
  * (model_check.js, without reloading ComfyUI's model lists); the doctor page updates the
  * bar after its own checks. Closing it hides it for that workflow until the page reloads.
  */

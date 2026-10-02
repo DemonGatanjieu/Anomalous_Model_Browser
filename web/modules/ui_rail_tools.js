@@ -1,5 +1,5 @@
 /**
- * The rail's tool buttons under the pages: scan, Model Doctor and Current node; settings
+ * The rail's tool buttons under the pages: scan, Model Check and Current node; settings
  * at the rail's foot. Each opens its tool page; labels follow the language (the settings
  * hub renders them again when it changes). The other tools live on their pages.
  */

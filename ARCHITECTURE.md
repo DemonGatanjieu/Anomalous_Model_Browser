@@ -21,7 +21,7 @@ list summaries do not contain prompt bodies. See the Material Library contract b
 | Update-guide content/versioning or sidebar hover labels | [`docs/architecture/update-guide.md`](docs/architecture/update-guide.md) |
 | Workflow Recipes, packages, galleries, Parameter Notebooks, or prompt roles | [`docs/architecture/recipes.md`](docs/architecture/recipes.md) |
 | Material Library snapshots, image parameter details, or reusable node blocks | [`docs/architecture/material-library.md`](docs/architecture/material-library.md) |
-| Model Doctor, provenance hashes, missing-model recovery, or model scanning | [`docs/architecture/model-resolution.md`](docs/architecture/model-resolution.md) |
+| Model Check, provenance hashes, missing-model recovery, or model scanning | [`docs/architecture/model-resolution.md`](docs/architecture/model-resolution.md) |
 | Browser audits, E2E functional bug reports, or verification sign-offs | [`docs/audits/README.md`](docs/audits/README.md) |
 | Why a current product boundary exists | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Recurring implementation mistakes and post-mortems | [`.agents/logs/ai_lessons.md`](.agents/logs/ai_lessons.md) |
@@ -410,12 +410,13 @@ covered by the `styles.css` manifest.
   takes steps on mouse-up and key-up, and a drag-and-drop ends in neither.
 - `model_policies.js` mirrors `model_policies.py` for the frontend: which folder
   types a loader widget holds, which are never physically renamed, and which
-  need a workflow-carried hash before Model Doctor recovers them.
+  need a workflow-carried hash before Model Check recovers them.
 - `ui_dom.js` provides small DOM/JSON helpers; `material_inspector.js` owns
   material-specific metadata and parameter rendering.
 - `model_check.js` checks the open workflow's models against this computer (Model
-  Doctor's verdicts, no DOM) and puts a found file into its node; `ui_doctor.js` is the
-  doctor page and `ui_doctor_banner.js` the bar over the canvas when an opened workflow
+  Check's verdicts, no DOM; the feature was called Model Doctor, and code and CSS still
+  say "doctor") and puts a found file into its node; `ui_doctor.js` is the
+  Model Check page and `ui_doctor_banner.js` the bar over the canvas when an opened workflow
   misses models. `ui_node_assistant.js` owns the current-node panel (model actions, LoRA
   insertion, model cards and history), `ui_node_model_picker.js` owns native combo
   replacement, `ui_node_parameters.js` renders the panel's parameters section, and
@@ -440,7 +441,7 @@ covered by the `styles.css` manifest.
 These rules are intentionally summarized here and specified in the linked topic
 documents.
 
-1. **Identity is provenance, not naming.** Model Doctor may use a cryptographic
+1. **Identity is provenance, not naming.** Model Check may use a cryptographic
    hash, exact byte size under the allowed category policy, and target category.
    Paths, filenames, display names, previews, and fuzzy similarity are never
    identity evidence.

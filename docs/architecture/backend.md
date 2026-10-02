@@ -168,7 +168,7 @@ remain browser-cacheable.
 
 Preview lookup tries a contained exact relative path first and recursively walks
 the library only for unresolved basename fallbacks. This locates presentation
-for a model value already supplied by ComfyUI; it is not Model Doctor discovery.
+for a model value already supplied by ComfyUI; it is not Model Check discovery.
 
 Balanced grid thumbnails are derived, longest-edge 512 px WebP files in
 ComfyUI's temporary area. Their cache is keyed by source real path and physical

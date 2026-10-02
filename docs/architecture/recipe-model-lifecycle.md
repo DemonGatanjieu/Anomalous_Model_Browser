@@ -1,7 +1,7 @@
 # Workflow Recipe Model Lifecycle
 
 Read this document before changing Workflow Recipe model cards, local matching,
-partial-canvas append, package export, or Model Doctor integration. UI code may
+partial-canvas append, package export, or Model Check integration. UI code may
 change freely, but the data ownership and transition rules below are contracts.
 
 ## Three representations with different jobs
@@ -12,7 +12,7 @@ A saved recipe keeps model information in three related representations:
    will load into a model widget.
 2. `params.model_references[]` is the structured recipe record used by the UI,
    package system, history, and matching actions.
-3. `workflow.extra.anomalous_hashes` is Model Doctor provenance keyed to the
+3. `workflow.extra.anomalous_hashes` is Model Check provenance keyed to the
    serialized node ID and widget value.
 
 Changing only one representation creates a broken recipe. A path change must
@@ -35,7 +35,7 @@ node ID. Presentation fields must never become identity evidence.
 - `user_note`: optional recipe-scoped personal note, at most 1000 characters.
 
 `user_note` is not global model metadata, is not used for matching, and does not
-change Model Doctor confidence. Enrichment preserves it by the complete model
+change Model Check confidence. Enrichment preserves it by the complete model
 reference key. Package export explicitly asks whether to include it; excluding
 it removes the field only from the exported current/history records.
 
@@ -61,7 +61,7 @@ mutating a recipe.
 Graph serialization prefers current verified local-cache data. When a widget
 value is still missing—or no current cache record exists—it must preserve the
 node-scoped provenance already carried by the graph. Clearing it would make a
-successfully appended partial recipe lose its Model Doctor identity on the next
+successfully appended partial recipe lose its Model Check identity on the next
 save.
 
 An empty Hash with a known size represents unverified provenance. It may produce
@@ -80,7 +80,7 @@ full SHA-256. Normal enrichment does not silently replace imported identity.
 ### Availability and local matching
 
 Availability and previews describe the current computer only. Matching sends
-saved Hash/size/category evidence to Model Doctor:
+saved Hash/size/category evidence to Model Check:
 
 - exact Hash match: may be offered for explicit recipe application;
 - unique size-only match: confirmation-required candidate;
@@ -127,7 +127,7 @@ the same normalization and enrichment boundaries as local recipes.
 
 - `api/recipes.py`: schema validation, enrichment, field preservation, history;
 - `api/recipe_packages.py`: export privacy and package boundaries;
-- `api/models.py`: Model Doctor evidence and candidate policy;
+- `api/models.py`: Model Check evidence and candidate policy;
 - `web/modules/recipe_identity.js`: model-reference adapters for presentation:
   native loaders plus `ALL_IN_ONE_LOADER_SPECS` (verified serialized layouts),
   mirrored by `_model_reference_specs` in `api/recipe_schema.py`. Add a loader

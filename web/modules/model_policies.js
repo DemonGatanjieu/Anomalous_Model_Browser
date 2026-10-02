@@ -7,7 +7,7 @@ const PHYSICAL_RENAME_PROTECTED_TYPES = new Set([
 ]);
 
 // Scanner coverage is separate. These categories may be scanned, but automatic
-// Model Doctor redirection requires workflow-carried cryptographic identity.
+// Model Check redirection requires workflow-carried cryptographic identity.
 const HASH_ONLY_RECOVERY_TYPES = new Set([
     'vae',
     'vae_approx',
