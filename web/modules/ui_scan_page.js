@@ -67,71 +67,101 @@ function stat(value, label, tone, onClick) {
     return box;
 }
 
-/** One switch row of the advanced section. */
-function toggle(key, titleKey, helpKey, { warn = false, disabled = false } = {}) {
-    const row = el('label', `anomalous-scan-option${warn ? ' is-warn' : ''}`);
-    const input = el('input');
+/** One setting: what it is and does on the left, its switch on the right; `tag` warns beside the title. */
+function toggle(key, titleKey, helpKey, { tag = '', onChange = null } = {}) {
+    const row = el('label', 'anomalous-scan-setting');
+    const copy = el('span', 'anomalous-scan-setting-copy');
+    const title = el('span', 'anomalous-scan-setting-title', t(titleKey));
+    if (tag) title.append(el('span', 'anomalous-scan-tag', t(tag)));
+    copy.append(title, el('small', 'anomalous-scan-setting-help', t(helpKey)));
+    const input = el('input', 'anomalous-scan-switch');
     input.type = 'checkbox';
     input.checked = Boolean(options[key]);
-    input.disabled = disabled;
-    input.onchange = () => { options[key] = input.checked; };
-    const copy = el('span', 'anomalous-scan-option-copy');
-    copy.append(el('strong', '', t(titleKey)), el('small', '', t(helpKey)));
-    row.append(input, copy);
+    input.onchange = () => {
+        options[key] = input.checked;
+        onChange?.();
+    };
+    row.append(copy, input);
     return row;
+}
+
+/** A titled block of the advanced section. */
+function group(title, ...children) {
+    const box = el('section', 'anomalous-scan-group');
+    box.append(el('h3', 'anomalous-scan-group-title', title), ...children);
+    return box;
+}
+
+/** The choices that differ from the usual, shown on the folded section so they are not forgotten. */
+function changedChoices() {
+    return [
+        options.scope === 'picked' && t('scanPageScopePicked'),
+        options.offline && t('scanPageOffline'),
+        options.physicalRename && t('scanPageFileRename'),
+        options.forceOverwrite && t('scanPageForce'),
+    ].filter(Boolean).join(' · ');
 }
 
 function renderAdvanced(owner, panel, hasKey) {
     const details = el('details', 'anomalous-scan-advanced');
     details.open = Boolean(panel._scanAdvancedOpen);
     details.ontoggle = () => { panel._scanAdvancedOpen = details.open; };
-    details.append(el('summary', '', t('scanPageAdvanced')));
+    const summary = el('summary', '', t('scanPageAdvanced'));
+    const changed = changedChoices();
+    if (changed) summary.append(el('span', 'anomalous-scan-advanced-changed', changed));
+    details.append(summary);
+    const refresh = () => go(owner, panel, pageState.view);
 
-    const scope = el('div', 'anomalous-scan-scope');
-    const radio = (value, label) => {
-        const row = el('label', 'anomalous-scan-scope-choice');
-        const input = el('input');
-        input.type = 'radio';
-        input.name = 'anomalous-scan-scope';
-        input.checked = options.scope === value;
-        input.onchange = () => { options.scope = value; renderScanPage(owner, panel); };
-        row.append(input, el('span', '', label));
-        return row;
-    };
-    scope.append(el('div', 'anomalous-scan-group-title', t('scanPageScope')),
-        radio('all', t('scanPageScopeAll')), radio('picked', t('scanPageScopePicked')));
+    // Which models: two choices side by side; "picked" shows the picker.
+    const segment = el('div', 'anomalous-scan-segment');
+    segment.setAttribute('role', 'radiogroup');
+    for (const [value, label] of [['all', t('scanPageScopeAll')], ['picked', t('scanPageScopePicked')]]) {
+        const choice = button('anomalous-scan-segment-btn', label, () => {
+            options.scope = value;
+            refresh();
+        });
+        choice.setAttribute('role', 'radio');
+        choice.setAttribute('aria-checked', String(options.scope === value));
+        segment.append(choice);
+    }
+    let scopeNote = el('small', 'anomalous-scan-setting-help', t('scanPageScopeAllHelp'));
     if (options.scope === 'picked') {
-        const pick = el('div', 'anomalous-scan-pick');
-        pick.append(
-            button('anomalous-scan-secondary', t('scanPagePickModels'), () => owner._openAdvancedModelSelector(options.selection, (next) => {
+        scopeNote = el('div', 'anomalous-scan-pick');
+        scopeNote.append(
+            button('anomalous-scan-secondary anomalous-scan-small-btn', t('scanPagePickModels'), () => owner._openAdvancedModelSelector(options.selection, (next) => {
                 options.selection = next;
-                renderScanPage(owner, panel);
+                refresh();
             })),
             el('span', 'anomalous-scan-muted', t('scanPagePickedCount', { count: pickedCount() })),
         );
-        scope.append(pick);
     }
 
-    const offline = toggle('offline', 'scanPageOffline', 'scanPageOfflineHelp');
-    const online = el('div', 'anomalous-scan-online');
+    // What only an online scan does: under its own heading, faded while scanning offline.
+    const online = el('div', `anomalous-scan-online${options.offline ? ' is-disabled' : ''}`);
     online.append(
+        el('div', 'anomalous-scan-subtitle', t(options.offline ? 'scanPageOnlineOff' : 'scanPageOnline')),
         toggle('virtualRename', 'scanPageDisplayName', 'scanPageDisplayNameHelp'),
-        toggle('physicalRename', 'scanPageFileRename', 'scanPageFileRenameHelp', { warn: true }),
-        toggle('forceOverwrite', 'scanPageForce', 'scanPageForceHelp', { warn: true }),
+        toggle('physicalRename', 'scanPageFileRename', 'scanPageFileRenameHelp', { tag: 'scanPageTagFiles', onChange: refresh }),
+        toggle('forceOverwrite', 'scanPageForce', 'scanPageForceHelp', { tag: 'scanPageTagSlow', onChange: refresh }),
     );
-    online.classList.toggle('is-disabled', options.offline);
-    offline.querySelector('input').addEventListener('change', () => renderScanPage(owner, panel));
 
-    const key = el('div', 'anomalous-scan-key');
-    const keyCopy = el('span', 'anomalous-scan-option-copy');
-    keyCopy.append(el('strong', '', `${t('scanPageApiKey')} · ${t(hasKey ? 'scanPageApiKeyOn' : 'scanPageApiKeyOff')}`),
-        el('small', '', t('scanPageApiKeyHelp')));
-    key.append(keyCopy, button('anomalous-scan-secondary', t('scanPageApiKeySet'), async () => {
+    const key = el('div', 'anomalous-scan-setting');
+    const keyCopy = el('span', 'anomalous-scan-setting-copy');
+    const keyTitle = el('span', 'anomalous-scan-setting-title', t('scanPageApiKey'));
+    keyTitle.append(el('span', `anomalous-scan-tag ${hasKey ? 'is-on' : 'is-off'}`, t(hasKey ? 'scanPageApiKeyOn' : 'scanPageApiKeyOff')));
+    keyCopy.append(keyTitle, el('small', 'anomalous-scan-setting-help', t('scanPageApiKeyHelp')));
+    key.append(keyCopy, button('anomalous-scan-secondary anomalous-scan-small-btn', t('scanPageApiKeySet'), async () => {
         if (await saveApiKey()) renderScanPage(owner, panel);
     }));
 
-    details.append(scope, el('div', 'anomalous-scan-group-title', t('scanPageHow')), offline, online,
-        toggle('autoFix', 'scanPageAutoFix', 'scanPageAutoFixHelp'), key);
+    const body = el('div', 'anomalous-scan-advanced-body');
+    body.append(
+        group(t('scanPageScope'), segment, scopeNote),
+        group(t('scanPageHow'), toggle('offline', 'scanPageOffline', 'scanPageOfflineHelp', { onChange: refresh }), online),
+        group(t('scanPageAfter'), toggle('autoFix', 'scanPageAutoFix', 'scanPageAutoFixHelp')),
+        group(t('scanPageAccount'), key),
+    );
+    details.append(body);
     return details;
 }
 
