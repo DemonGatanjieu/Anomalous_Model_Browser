@@ -6,7 +6,10 @@ import { translate } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { text, jsonResponse } from './ui_dom.js';
 import { materialNodeHeading } from './material_inspector.js';
-import { carriesPrompt, markTargetBox, outlinePromptBoxes, preparePromptDrag, promptBoxAt, promptDropHint, promptRefusal } from './prompt_drop.js';
+import {
+    carriesPrompt, clearDropPreview, markTargetBox, outlinePromptBoxes, parameterDropHint, prepareMaterialDrag,
+    previewPromptDrop, promptBoxAt, promptDropHint, promptRefusal,
+} from './prompt_drop.js';
 import { applyLibraryMaterial, fetchMaterial } from './ui_material_application.js';
 import { extractMaterialPromptEnvelope } from './node_material_actions.js';
 import { recordCanvasStep } from './canvas_history.js';
@@ -134,15 +137,21 @@ function bindPolymorphicMaterialCardDrag(card, owner, material) {
         accepts: (node, source, event) => (prompt && !promptRefusal(node, event)) || (source.node_types || []).includes(node.type),
         targetHint: (node, source, event) => {
             const box = prompt ? promptBoxAt(node, event) : null;
-            return box ? promptDropHint(source, node, box) : '';
+            return box ? promptDropHint(source, node, box) : parameterDropHint(source, node);
         },
         rejectHint: (node, source, event) => (prompt ? promptRefusal(node, event) : ''),
         onStart: (source) => {
+            prepareMaterialDrag(source);
             if (!prompt) return null;
-            preparePromptDrag(source);
-            return outlinePromptBoxes(app.graph);
+            const removeOutlines = outlinePromptBoxes(app.graph);
+            return () => { clearDropPreview(); removeOutlines(); };
         },
-        onMove: (node, source, event) => { if (prompt) markTargetBox(node && promptBoxAt(node, event)); },
+        onMove: (node, source, event) => {
+            if (!prompt) return;
+            const box = node && promptBoxAt(node, event);
+            markTargetBox(box);
+            previewPromptDrop(source, node, box);
+        },
         drop: (node, source, graph, event) => applyLibraryMaterial(owner, source, node, graph, { box: prompt ? promptBoxAt(node, event) : null }),
         dropOnCanvas: async (event, source, graph, position) => {
             if (isWorkflow) {

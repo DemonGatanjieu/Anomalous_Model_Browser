@@ -340,6 +340,12 @@ When dropped onto a compatible node:
   fetched when the drag starts so the hint knows its sides; until then it says "if any".
   A box chosen this way takes its role's text, or the material's main text when it has
   none of that role (the hint says so). Both fills are one undo in the receipt.
+- While the pointer is on a box, the text a release would write is laid over that box and
+  its partner (`.anomalous-prompt-preview`, fixed-position, never in the widget's value);
+  leaving the box, the canvas or the drag removes it. Over a node of a type the material
+  holds values for, the hint lists what would change ("steps 12 → 28"), as
+  `applyMaterialBlock` would: seeds stay, and a choice this computer lacks is named as
+  the reason the drop would fail.
 - Parameter blocks are never applied across node types.
 
 When dropped onto blank canvas:

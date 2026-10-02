@@ -2189,3 +2189,35 @@
     box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.12);
 }
 
+/* What a release would write, laid over the target box (and its partner) while the pointer is on it. */
+.anomalous-prompt-preview {
+    position: fixed;
+    z-index: 999998;
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: 6px 8px;
+    border-radius: var(--amb-radius-control);
+    background: var(--amb-bg-input);
+    color: var(--amb-text-main);
+    line-height: 1.35;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    pointer-events: none;
+    opacity: 0.94;
+}
+
+.anomalous-prompt-preview-tag {
+    float: right;
+    margin: 0 0 4px 8px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--amb-bg-card-hover);
+    color: var(--amb-text-muted);
+    font-size: 10px;
+    line-height: 16px;
+}
+
+.anomalous-prompt-preview.is-positive .anomalous-prompt-preview-tag { color: rgba(74, 222, 128, 0.95); }
+.anomalous-prompt-preview.is-negative .anomalous-prompt-preview-tag { color: rgba(248, 113, 113, 0.95); }
+.anomalous-prompt-preview.is-both .anomalous-prompt-preview-tag { color: rgba(192, 132, 252, 0.95); }
+
