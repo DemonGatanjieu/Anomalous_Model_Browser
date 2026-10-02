@@ -7,10 +7,11 @@
  * `owner.modelScope` is what the grid lists: `{type, path_idx}` for a chip, plus
  * `subfolder` for a list folder. `currentType/PathIdx/Subfolder` stay "where the model at
  * hand lives", which the editor, the scanner and "add to canvas" read (see focusModel).
+ * The last chip, Sources, shows where each model is downloaded instead of the cards
+ * (`owner.modelView === 'sources'`, ui_model_sources.js); a type chip goes back.
  */
 
 import { translate as t } from './locales.js';
-import { openModelSourcesModal } from './ui_model_sources.js';
 
 const SCOPE_KEY = 'anomalous_model_scope';
 
@@ -49,6 +50,7 @@ function showType(owner, group) {
 }
 
 function openType(owner, group) {
+    owner.modelView = '';
     showType(owner, group);
     owner.renderSidebar();
     owner.loadModels();
@@ -94,8 +96,9 @@ export function renderTypeBar(owner, listed) {
     bar.setAttribute('aria-label', t('modelTypesLabel'));
     const scope = owner.modelScope;
     const groups = owner.foldersData || [];
+    const inSources = owner.modelView === 'sources';
     for (const group of groups) {
-        const active = sameGroup(group, scope);
+        const active = !inSources && sameGroup(group, scope);
         const whole = active && !scope.subfolder;
         // The folder counts date from the last folder load; the listed type counts what it shows.
         const count = whole ? listed : modelCount(group);
@@ -114,7 +117,7 @@ export function renderTypeBar(owner, listed) {
         chip.onclick = () => { if (!whole) openType(owner, group); };
         bar.appendChild(chip);
     }
-    const group = scope?.subfolder && groups.find(item => sameGroup(item, scope));
+    const group = !inSources && scope?.subfolder && groups.find(item => sameGroup(item, scope));
     if (group) {
         const crumb = document.createElement('button');
         crumb.type = 'button';
@@ -131,13 +134,15 @@ export function renderTypeBar(owner, listed) {
         crumb.onclick = () => openType(owner, group);
         bar.appendChild(crumb);
     }
-    // Where each model can be downloaded (the Model Source Hub, library scope).
+    // Where each model can be downloaded, in place of the cards.
     const sources = document.createElement('button');
     sources.type = 'button';
     sources.className = 'anomalous-model-type-chip is-tool';
+    sources.classList.toggle('is-active', inSources);
+    sources.setAttribute('aria-pressed', String(inSources));
     sources.textContent = t('toolModelSourcesShort');
     sources.title = t('toolModelSourcesTitle');
-    sources.onclick = () => openModelSourcesModal('library');
+    sources.onclick = () => { if (!inSources) owner.showModelSources('library'); };
     bar.appendChild(sources);
     return bar;
 }

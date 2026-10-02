@@ -7,6 +7,7 @@ import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { focusModel, modelListUrl, renderTypeBar } from './ui_model_types.js';
 import { renderSourceBadge } from './model_source.js';
+import { renderModelSourcesView } from './ui_model_sources.js';
 import { recordCanvasStep } from './canvas_history.js';
 
 const t = (key, params) => translate(key, params);
@@ -26,6 +27,13 @@ function modelCardDisplayName(model) {
 export async function loadModels() {
         try {
             if (this._modelLoadController) this._modelLoadController.abort();
+            this.modelSources?.controller?.abort();
+            if (this.modelView === 'sources') { // the type bar, then where each model is downloaded
+                stopMediaInContainer(this.grid);
+                this.grid.replaceChildren(renderTypeBar(this, 0));
+                renderModelSourcesView(this, this.grid);
+                return;
+            }
             this._modelRenderGeneration = (this._modelRenderGeneration || 0) + 1;
             const loadController = new AbortController();
             this._modelLoadController = loadController;

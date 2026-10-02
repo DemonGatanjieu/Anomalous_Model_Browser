@@ -19,6 +19,7 @@ import { openPromptStudio } from './ui_prompt_composer.js';
 import { closeUpdateGuide } from './ui_update_guide.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
 import { openDoctorPage } from './ui_doctor.js';
+import { showModelSources } from './ui_model_sources.js';
 import { initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, diagnoseNode, openCurrentNode, openLoraInsertionPicker } from './ui_node_assistant.js';
 import { _openGalleryReplacer } from './ui_node_model_picker.js';
 import { renderAudioStudio, stopAudioStudioPlayback } from './ui_audio_studio.js';
@@ -137,6 +138,7 @@ export class AnomalousBrowser {
 }
 
 AnomalousBrowser.prototype.openDoctorPage = function () { openDoctorPage(this); };
+AnomalousBrowser.prototype.showModelSources = function (scope) { showModelSources(this, scope); };
 AnomalousBrowser.prototype.diagnoseNode = diagnoseNode;
 AnomalousBrowser.prototype.openCurrentNode = function () { openCurrentNode(this); };
 AnomalousBrowser.prototype.initAssistantPanel = initAssistantPanel;

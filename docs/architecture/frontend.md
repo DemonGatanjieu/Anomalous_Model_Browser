@@ -146,14 +146,15 @@ query parameter.
 
 ## Model source component links
 
-The source hub uses `inferModelFolderTypes` for workflow component labels and
+The Sources view (`ui_model_sources.js`, data in `model_source_links.js`) uses
+`inferModelFolderTypes` for workflow component labels and
 category-scoped, exact-path local metadata reads. Context requests are batched
 to respect the endpoint's 16-item limit. Missing source links and unavailable
 native model choices are independent states; dynamic choices are not treated
 as evidence of absence. Native extensionless component choices and PTH/GGUF
 references remain visible even when the backend cannot locate an individual file.
 
-`model_source_data.js` owns library-result shaping and the source hub's pure
+`model_source_data.js` owns library-result shaping and the Sources view's pure
 main/component grouping and filtering. CLIP, text encoder, CLIP Vision, VAE, and
 preview-VAE entries live in a session-local, default-collapsed disclosure; the
 source-status pills and search affect both main models and components. Collapsed

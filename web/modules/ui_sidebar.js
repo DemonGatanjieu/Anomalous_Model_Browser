@@ -402,6 +402,7 @@ export function renderSidebar() {
                         return;
                     }
                     this.modelScope = { type: typeGroup.type, path_idx: typeGroup.path_idx, subfolder: path };
+                    this.modelView = '';
                     this.currentType = typeGroup.type;
                     this.currentPathIdx = typeGroup.path_idx;
                     this.currentSubfolder = path;

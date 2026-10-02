@@ -318,11 +318,11 @@ covered by the `styles.css` manifest.
   `shortcut_controls.js` owns the open-browser and material-library keyboard
   shortcuts, their fallback when ComfyUI's keybinding does not fire, and the
   settings control that opens ComfyUI's keybinding editor.
-- `ui_model_sources.js` owns the Model Sources Hub, managing workflow-model and global-library source detection, Civitai/HuggingFace URL attribution, sidecar persistence, and resilient scope switching between active workflow and full local library (with cached library state preservation and reliable re-rendering).
+- `ui_model_sources.js` renders the Models page's Sources view (the last type chip): where each model is downloaded, for the open workflow or every model, with each link editable and saved in place; `model_source_links.js` owns its data and actions (collecting the workflow's models, resolving them here, saving a link to the model's information and the workflow, the canvas note and the clipboard list).
 - `ui_materials.js`, `ui_material_cards.js`, and `ui_material_application.js` own the Material Library UI, category navigation, card presentation (with grab cursor affordances, explicit drag tooltips, and polymorphic card dragging via `bindPolymorphicMaterialCardDrag`), context-aware drag guidance, prompt drops into the prompt box under the pointer (`prompt_drop.js`), and the structured empty state onboarding blueprint guiding users through collection, canvas drag, and prompt studio mixing. Drag precedence prioritizes node hits over blank canvas drops; blank canvas drops create `CLIPTextEncode` nodes (one per side the prompt has) or open full workflows. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) shared by detail views, cards and canvas actions.
 - `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn`, the Help modal and Home's "What's new"; the current guide's ID and steps live in `update_guide_data.js`) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across the rail's pages and tools with directional tooltip cards and keyboard navigation; steps whose target is not on screen are skipped. Other views pass their own `steps` (text from locale keys) and an optional `onClose`; the GPT-SoVITS import window does.
 - `tool_registry.js` holds the tool icons shared by the rail and Home.
-- The rail's tool slots (`ui_rail_tools.js`, fixed) hold scan, doctor and current node; settings sits at the rail's bottom. Materials is a rail page. There is no toolbox: the other tools open from their pages (workflow share codes on Workflows, Prompt Studio and Prompt Notes on Materials, Model Sources on Models and in the doctor, translation in Current node).
+- The rail's tool slots (`ui_rail_tools.js`, fixed) hold scan, doctor and current node; settings sits at the rail's bottom. Materials is a rail page. There is no toolbox: the other tools open from their pages (workflow share codes on Workflows, Prompt Studio and Prompt Notes on Materials, Model Sources as a view of Models, opened from the doctor too, translation in Current node).
 - `ui_model_types.js` owns the models page's type chips (one per models folder, with its count) and
   `owner.modelScope`, what the grid lists: a whole type, or one list folder shown as a crumb. The
   grid's cards set `currentType/PathIdx/Subfolder` to their own model's folder (`focusModel`),
@@ -424,12 +424,10 @@ covered by the `styles.css` manifest.
   parameter sets) and works out what each would change on the node, keeping seeds,
   model files and missing choices. `model_picker.js`, `node_material_actions.js`, and `graph_splice.js`
   own the remaining explicit graph changes.
-- `ui_model_sources.js` owns the Model Source Hub (模型来源统一中控中心), providing dual-scope
-  (Workflow and Library) source inspection, external platform jumping, canvas `Note` node generation,
-  `workflow.extra.anomalous_model_sources` metadata synchronization, automated asynchronous model
-  metadata resolution (`resolveWorkflowModelsMetadata`) via `/anomalous/resolve_paths_to_previews` with
-  local sidecar priority detection, and protected read-only link display with deliberate edit-mode
-  unlocking and dirty-state dynamic local persistence (hiding redundant `[Save Local]` buttons until links are modified).
+- A model's download link lives in its user layer (`source_url` in `<model>.anomalous.json`, via
+  `/anomalous/update_metadata`), the same field the model editor edits; for the open workflow's
+  models it is also kept in `workflow.extra.anomalous_model_sources`, so shared workflows carry it.
+  Workflow models are located here through `/anomalous/resolve_paths_to_previews`.
 - `locales.js` is the shared runtime string catalog. Existing inline bilingual
   UI strings remain migration debt; new strings belong in the catalog.
 - `styles.css` is the ordered import manifest for `web/styles/*.css`, which own
