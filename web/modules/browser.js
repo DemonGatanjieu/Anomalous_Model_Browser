@@ -174,7 +174,7 @@ AnomalousBrowser.prototype.showGalleryViewer = showGalleryViewer;
 AnomalousBrowser.prototype.showImageWorkbench = showImageWorkbench;
 
 AnomalousBrowser.prototype.createDOM = createDOM;
-AnomalousBrowser.prototype.openScanPage = function () { openScanPage(this); };
+AnomalousBrowser.prototype.openScanPage = function (view) { openScanPage(this, view); };
 AnomalousBrowser.prototype.scanSingleModel = triggerDirectModelScan;
 AnomalousBrowser.prototype.openFolderManager = openFolderManager;
 AnomalousBrowser.prototype.renderSidebar = renderSidebar;

@@ -307,9 +307,11 @@ covered by the `styles.css` manifest.
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,
   including Esc on the workspace panel (`nbPanel`, below the header and right of the
   rail; the list column steps aside while it is open).
-  `ui_scan_page.js` is the scan page (a tool page like the doctor): counts, scan and
-  look-up-again buttons, advanced options; `ui_scan_lists.js` renders its last-scan result
-  and the unmatched / not-scanned lists, whose rows open a model or scan it;
+  `ui_scan_page.js` is the scan page (a tool page like the doctor): counts, the scan
+  button, the last scan's summary, advanced options; each count and the summary open a
+  list page from `ui_scan_lists.js` (not scanned, unmatched, other formats, the last scan's
+  models) with Back, a button for the whole list (scan these / look them up again) and rows
+  that open a model, whose Back returns to the list, or scan it;
   `scan_results.js` holds the words for scan results, shared with the activity page.
   `scan_runner.js` starts and follows scans (every folder, picked or listed models, or one
   model from its card), shows the result and refreshes node drop-downs, hashes and the

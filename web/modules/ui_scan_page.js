@@ -1,8 +1,8 @@
 /**
  * The scan page: how many models are matched on Civitai, unmatched or not scanned
- * (GET /anomalous/scan_summary), one button to scan, one to look unmatched models up
- * again, progress in the page, the last scan's result and the unmatched / not scanned
- * models (ui_scan_lists.js), and the rarer choices folded under "Advanced".
+ * (GET /anomalous/scan_summary), one button to scan, progress in the page, the last scan
+ * in one card, and the rarer choices folded under "Advanced". Each count, and the last
+ * scan, opens its list as a page of its own (ui_scan_lists.js) with a way back.
  * Scans run through scan_runner.js; the progress box is scan_progress.js's panel,
  * hosted here while the page is shown.
  */
@@ -10,7 +10,7 @@
 import { translate as t } from './locales.js';
 import { isScanRunning, startScan, targetsForItems } from './scan_runner.js';
 import { setScanProgressHost } from './scan_progress.js';
-import { openListedModel, renderLastScan, renderModelLists, showList } from './ui_scan_lists.js';
+import { openListedModel, renderLastScan, renderListPage } from './ui_scan_lists.js';
 
 // Choices kept while the browser is open. The two risky ones go back off after each scan.
 const options = {
@@ -22,7 +22,9 @@ const options = {
     forceOverwrite: false,
     autoFix: true,
 };
-const listState = { tab: '' }; // the open list: 'new' | 'unmatched'
+// The view shown: '' the page itself, or a list: 'new' | 'unmatched' | 'skipped' | 'result'.
+// `scroll`: where to put a list shown again after a model's Back.
+const pageState = { view: '', scroll: 0 };
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -154,7 +156,7 @@ async function saveApiKey() {
 }
 
 /** A scan from this page. `extra`: { retryUnmatched } for every unmatched model, or
- * { targets, retryUnmatched } for the models of a list row. */
+ * { targets, retryUnmatched } for the models of a list row or a whole list. */
 async function run(owner, panel, extra = {}) {
     const whole = !extra.retryUnmatched && !extra.targets;
     if (whole && options.scope === 'picked' && pickedCount() === 0) {
@@ -173,46 +175,47 @@ async function run(owner, panel, extra = {}) {
     if (panel.isConnected && panel.style.display !== 'none') renderScanPage(owner, panel);
 }
 
-/** What the list rows' buttons do. */
+/** To another view of the page ('' is the scan page itself), with what was read last. */
+function go(owner, panel, view) {
+    pageState.view = view;
+    if (panel._scanData) paint(owner, panel, panel._scanData);
+    else renderScanPage(owner, panel);
+}
+
+/** What the list pages' buttons do. */
 function listActions(owner, panel, busy) {
     return {
         busy,
         offline: options.offline,
-        open: item => openListedModel(owner, item, () => openScanPage(owner)),
+        back: () => go(owner, panel, ''),
+        // The model's Back returns to this list where it was.
+        open: (item) => {
+            const view = pageState.view;
+            const scroll = panel.scrollTop;
+            openListedModel(owner, item, () => openScanPage(owner, view, scroll));
+        },
         scan: (items, { retry = false } = {}) => run(owner, panel, { targets: targetsForItems(items), retryUnmatched: retry }),
+        retryAll: () => run(owner, panel, { retryUnmatched: true }),
     };
 }
 
-/** Renders the page into `panel` (again after each scan, so the counts are fresh). */
-export async function renderScanPage(owner, panel) {
-    const token = (panel._scanRender = (panel._scanRender || 0) + 1);
-    const [summary, config, last] = await Promise.all([
-        fetchJson('/anomalous/scan_summary'), fetchJson('/anomalous/config'), fetchJson('/anomalous/last_scan'),
-    ]);
-    if (token !== panel._scanRender) return;
-    // Closed or left meanwhile: the progress box keeps floating instead of hiding in the page.
-    if (panel.style.display === 'none' || !owner.modal?.classList.contains('visible')) return;
-
+/** The scan page itself: what a scan is, the counts (each opening its list), one button, the last scan. */
+function mainPage(owner, panel, { summary, config, last }, busy, progressHost) {
     const page = el('div', 'anomalous-scan-page');
     page.append(el('h1', 'anomalous-scan-title', t('scanPageTitle')), el('p', 'anomalous-scan-lead', t('scanPageLead')));
 
+    const open = view => () => go(owner, panel, view);
     const stats = el('div', 'anomalous-scan-stats');
     stats.append(
         stat(summary?.total, t('scanPageTotal')),
         stat(summary?.matched, t('scanPageMatched'), 'ok'),
-        stat(summary?.unmatched, t('scanPageUnmatched'), summary?.unmatched ? 'warn' : '',
-            summary?.unmatched ? () => showList(page, listState, 'unmatched') : null),
-        stat(summary?.new, t('scanPageNew'), summary?.new ? 'new' : '',
-            summary?.new ? () => showList(page, listState, 'new') : null),
+        stat(summary?.unmatched, t('scanPageUnmatched'), summary?.unmatched ? 'warn' : '', summary?.unmatched ? open('unmatched') : null),
+        stat(summary?.new, t('scanPageNew'), summary?.new ? 'new' : '', summary?.new ? open('new') : null),
     );
     page.append(stats);
-    if (summary?.skipped) {
-        page.append(button('anomalous-scan-skipped-note', t('scanPageSkippedNote', { count: summary.skipped }),
-            () => showList(page, listState, 'skipped')));
-    }
+    if (summary?.skipped) page.append(button('anomalous-scan-skipped-note', t('scanPageSkippedNote', { count: summary.skipped }), open('skipped')));
     if (!summary) page.append(el('p', 'anomalous-scan-muted', t('scanPageSummaryFailed')));
 
-    const busy = isScanRunning();
     const actions = el('div', 'anomalous-scan-actions');
     const picked = options.scope === 'picked';
     // An online scan also looks up the models earlier scans could not ask Civitai about.
@@ -224,31 +227,58 @@ export async function renderScanPage(owner, panel) {
     const primary = button('anomalous-scan-primary', label, () => run(owner, panel));
     primary.disabled = busy;
     actions.append(primary);
-    if (summary?.unmatched && !options.offline) {
-        const retry = button('anomalous-scan-secondary', t('scanPageRetry', { count: summary.unmatched }), () => run(owner, panel, { retryUnmatched: true }));
-        retry.disabled = busy;
-        actions.append(retry);
-    }
     page.append(actions);
     const hint = picked ? t('scanPageHintPicked') : t(options.offline ? 'scanPageHintOffline' : 'scanPageHint');
-    page.append(el('p', 'anomalous-scan-muted', hint));
+    page.append(el('p', 'anomalous-scan-muted', hint), progressHost);
 
+    const result = renderLastScan(last, open('result'));
+    if (result) page.append(result);
+    page.append(renderAdvanced(owner, panel, Boolean(config?.has_api_key)));
+    return page;
+}
+
+/** Puts the current view into `panel`; a view shown again keeps where it was scrolled. */
+function paint(owner, panel, data) {
+    const view = pageState.view;
+    const top = pageState.scroll || (panel._scanView === view ? panel.scrollTop : 0);
+    pageState.scroll = 0;
+    const busy = isScanRunning();
     const progressHost = el('div', 'anomalous-scan-progress-host');
-    page.append(progressHost);
-    const rowActions = listActions(owner, panel, busy);
-    const result = renderLastScan(last, rowActions);
-    const lists = renderModelLists(summary, rowActions, listState);
-    page.append(...[result, lists].filter(Boolean), renderAdvanced(owner, panel, Boolean(config?.has_api_key)));
+    const page = view
+        ? renderListPage(view, data.summary, data.last, listActions(owner, panel, busy), progressHost)
+        : mainPage(owner, panel, data, busy, progressHost);
     panel.replaceChildren(page);
+    panel._scanView = view;
+    panel.scrollTop = top;
     setScanProgressHost(progressHost);
+}
+
+/** Renders the page into `panel` (again after each scan, so the counts are fresh). */
+export async function renderScanPage(owner, panel) {
+    const token = (panel._scanRender = (panel._scanRender || 0) + 1);
+    const [summary, config, last] = await Promise.all([
+        fetchJson('/anomalous/scan_summary'), fetchJson('/anomalous/config'), fetchJson('/anomalous/last_scan'),
+    ]);
+    if (token !== panel._scanRender) return;
+    // Closed or left meanwhile: the progress box keeps floating instead of hiding in the page.
+    if (panel.style.display === 'none' || !owner.modal?.classList.contains('visible')) return;
+    panel._scanData = { summary, config, last };
+    paint(owner, panel, panel._scanData);
     // A scan that ends elsewhere (a card's radar, another tab) refreshes the counts too.
     owner.onScanFinished = () => {
         if (panel.isConnected && panel.style.display !== 'none') renderScanPage(owner, panel);
     };
 }
 
-/** The rail's scan button and Home's "Scan model folders": an image-side tool page. */
-export function openScanPage(owner) {
+/**
+ * The rail's scan button, Home's "Scan model folders" and Model Check: the scan page itself.
+ * `view` opens one of its lists instead ('result' after a scan, a list on a model's Back),
+ * scrolled to `scroll`.
+ */
+export function openScanPage(owner, view = '', scroll = 0) {
+    pageState.view = view;
+    pageState.scroll = scroll;
+    owner.scanPanel._scanView = null; // opened afresh: from the top unless `scroll`
     owner.enterToolPage?.('scan');
     owner.hideAllPanels();
     owner.scanPanel.style.display = 'flex';

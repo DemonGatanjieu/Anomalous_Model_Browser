@@ -1,7 +1,8 @@
 /**
- * The scan page's model lists: the last scan's result (what each model got, why Civitai had
- * nothing), the models still unmatched or not scanned, and the model files a scan never reads
- * (other formats), from GET /anomalous/scan_summary.
+ * The scan page's lists, each a page of its own behind a count on the scan page: the models
+ * not scanned yet, the unmatched ones, the model files a scan never reads (other formats), and
+ * each model the last scan changed (GET /anomalous/scan_summary, /anomalous/last_scan).
+ * On the scan page itself the last scan is one summary card with a way to its list.
  * Every row opens its model; rows offer "scan" / "look up again" and a Civitai search.
  * The page passes what the buttons do (`actions`); this module only renders.
  */
@@ -12,7 +13,6 @@ import { countsLine, fileOutcome, isPending, reasonText, scanScope, STATUS_MARKS
 import { typeLabel } from './ui_model_types.js';
 
 const SHOWN_ROWS = 100; // more behind "show all"
-const RESULT_ROWS = 8;
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -28,7 +28,7 @@ function button(className, label, onClick) {
     return node;
 }
 
-/** Opens a listed model's detail; its back button returns to `onBack` (the scan page). */
+/** Opens a listed model's detail; its back button returns to `onBack` (the list it came from). */
 export async function openListedModel(owner, item, onBack) {
     const params = new URLSearchParams({ type: item.type, path_idx: item.path_idx, rel: item.rel });
     const data = await fetch(`/anomalous/scan_model?${params}`).then(res => res.json()).catch(() => ({}));
@@ -94,93 +94,120 @@ function fillRows(list, items, render, limit) {
     }
 }
 
-/** The last scan: when, what, the counts, and each model it changed. Null before the first scan. */
-export function renderLastScan(result, actions) {
-    if (!result?.counts) return null;
-    const box = el('section', 'anomalous-scan-card anomalous-scan-result');
+/** "Last scan · when · what · how long". */
+function resultTitle(result) {
     const seconds = Math.max(0, Math.round((result.finished || 0) - (result.started || 0)));
     const target = result.kind === 'one' ? result.files?.[0]?.filename : '';
-    box.append(
-        el('div', 'anomalous-scan-card-title', t('scanResultTitle', {
-            when: `${dayLabel(result.finished)} ${timeLabel(result.finished)}`,
-            scope: scanScope(result, target),
-            duration: seconds < 60 ? t('scanSeconds', { count: seconds }) : t('scanMinutes', { count: Math.round(seconds / 60) }),
-        })),
-        el('div', 'anomalous-scan-result-counts', countsLine(result.counts)),
-    );
-    if (result.options?.offline_only) box.append(el('p', 'anomalous-scan-muted', t('scanResultOffline')));
-    if (result.civitai_down) box.append(el('p', 'anomalous-scan-note is-warn', t('scanResultCivitaiDown')));
-    for (const error of result.errors || []) box.append(el('p', 'anomalous-scan-note is-error', error));
+    return t('scanResultTitle', {
+        when: `${dayLabel(result.finished)} ${timeLabel(result.finished)}`,
+        scope: scanScope(result, target),
+        duration: seconds < 60 ? t('scanSeconds', { count: seconds }) : t('scanMinutes', { count: Math.round(seconds / 60) }),
+    });
+}
 
+/** What the reader must know about a scan: offline, Civitai gone mid-way, errors. */
+function resultNotes(result) {
+    const notes = [];
+    if (result.options?.offline_only) notes.push(el('p', 'anomalous-scan-muted', t('scanResultOffline')));
+    if (result.civitai_down) notes.push(el('p', 'anomalous-scan-note is-warn', t('scanResultCivitaiDown')));
+    for (const error of result.errors || []) notes.push(el('p', 'anomalous-scan-note is-error', error));
+    return notes;
+}
+
+/** The last scan on the scan page: when, what, the counts, and a way to each model. Null before the first scan. */
+export function renderLastScan(result, onDetails) {
+    if (!result?.counts) return null;
+    const box = el('section', 'anomalous-scan-card anomalous-scan-result');
+    box.append(el('div', 'anomalous-scan-card-title', resultTitle(result)),
+        el('div', 'anomalous-scan-result-counts', countsLine(result.counts)), ...resultNotes(result));
     const files = result.files || [];
-    if (!files.length) {
-        box.append(el('p', 'anomalous-scan-muted', t('scanResultNothing', { count: result.counts.unchanged || 0 })));
-        return box;
-    }
-    const list = el('div', 'anomalous-scan-rows');
-    const render = item => row(item, fileOutcome(item),
-        item.status === 'inferred' ? unmatchedButtons(item, actions) : [[t('scanRowOpen'), () => actions.open(item)]],
-        STATUS_MARKS[item.status] || '');
-    fillRows(list, files, render, RESULT_ROWS);
-    box.append(list);
-    if (result.counts.unchanged) box.append(el('p', 'anomalous-scan-muted', t('scanResultUnchanged', { count: result.counts.unchanged })));
+    if (files.length) box.append(button('anomalous-scan-more', t('scanResultDetails', { count: files.length }), onDetails));
+    else box.append(el('p', 'anomalous-scan-muted', t('scanResultNothing', { count: result.counts.unchanged || 0 })));
     return box;
 }
 
-/** The models not scanned yet or unmatched, one tab each; `state.tab` remembers the open one. */
-export function renderModelLists(summary, actions, state) {
-    const unmatched = [...(summary?.unmatched_models || [])]
-        .sort((a, b) => Number(isPending(b.reason)) - Number(isPending(a.reason)));
-    const tabs = [['new', t('scanListNew', { count: summary?.new || 0 }), summary?.new_models || []],
-        ['unmatched', t('scanListUnmatched', { count: summary?.unmatched || 0 }), unmatched],
-        ['skipped', t('scanListSkipped', { count: summary?.skipped || 0 }), summary?.skipped_models || []]];
-    if (!tabs[2][2].length) tabs.pop(); // "other formats" only when there are some
-    if (!tabs.some(([, , items]) => items.length)) return null;
-    if (!tabs.some(([key, , items]) => key === state.tab && items.length)) state.tab = tabs.find(([, , items]) => items.length)[0];
-
-    const box = el('section', 'anomalous-scan-card anomalous-scan-lists');
-    box.id = 'anomalous-scan-lists';
-    const bar = el('div', 'anomalous-scan-tabs');
-    bar.setAttribute('role', 'tablist');
-    const hint = el('p', 'anomalous-scan-muted');
-    const list = el('div', 'anomalous-scan-rows');
-    const show = (key) => {
-        state.tab = key;
-        bar.querySelectorAll('button').forEach(tab => tab.setAttribute('aria-selected', String(tab.dataset.tab === key)));
-        const items = tabs.find(([tabKey]) => tabKey === key)[2];
-        if (key === 'new') {
-            hint.textContent = t('scanListNewHint');
-            fillRows(list, items, item => row(item, '', [
+/** A list's models, title, why they are here and the row for one of them. */
+function listOf(view, summary, last, actions) {
+    if (view === 'new') {
+        const items = summary?.new_models || [];
+        return {
+            items,
+            title: t('scanListNew', { count: items.length }),
+            hint: t('scanListNewHint'),
+            all: items.length ? [t('scanListScanAll', { count: items.length }), () => actions.scan(items)] : null,
+            render: item => row(item, '', [
                 [t('scanRowOpen'), () => actions.open(item)],
                 [t('scanRowScan'), () => actions.scan([item]), actions.busy],
-            ]), SHOWN_ROWS);
-        } else if (key === 'skipped') {
-            hint.textContent = t('scanListSkippedHint');
-            fillRows(list, items, item => row(item, '', [[t('scanRowOpen'), () => actions.open(item)]]), SHOWN_ROWS);
-        } else {
-            hint.textContent = t(actions.offline ? 'scanListUnmatchedHintOffline' : 'scanListUnmatchedHint');
-            // Civitai does not know it and the file is no known image model: say what it may be.
-            const guess = item => (item.base ? `≈ ${item.base}` : item.reason === 'not_found' ? t('scanReasonNotImage') : '');
-            fillRows(list, items, item => row(item, [reasonText(item.reason), guess(item)].filter(Boolean).join(' · '),
-                unmatchedButtons(item, actions), '≈'), SHOWN_ROWS);
-        }
-    };
-    for (const [key, label, items] of tabs) {
-        const tab = button('anomalous-scan-tab', label, () => show(key));
-        tab.dataset.tab = key;
-        tab.setAttribute('role', 'tab');
-        tab.disabled = !items.length;
-        bar.append(tab);
+            ]),
+        };
     }
-    box.append(bar, hint, list);
-    show(state.tab);
-    return box;
+    if (view === 'skipped') {
+        const items = summary?.skipped_models || [];
+        return {
+            items,
+            title: t('scanListSkipped', { count: items.length }),
+            hint: t('scanListSkippedHint'),
+            render: item => row(item, '', [[t('scanRowOpen'), () => actions.open(item)]]),
+        };
+    }
+    if (view === 'result') {
+        const items = last?.files || [];
+        return {
+            items,
+            title: t('scanResultList'),
+            render: item => row(item, fileOutcome(item),
+                item.status === 'inferred' ? unmatchedButtons(item, actions) : [[t('scanRowOpen'), () => actions.open(item)]],
+                STATUS_MARKS[item.status] || ''),
+        };
+    }
+    // Unmatched: those the next online scan looks up by itself first.
+    const items = [...(summary?.unmatched_models || [])]
+        .sort((a, b) => Number(isPending(b.reason)) - Number(isPending(a.reason)));
+    // Civitai does not know it and the file is no known image model: say what it may be.
+    const guess = item => (item.base ? `≈ ${item.base}` : item.reason === 'not_found' ? t('scanReasonNotImage') : '');
+    return {
+        items,
+        title: t('scanListUnmatched', { count: items.length }),
+        hint: t(actions.offline ? 'scanListUnmatchedHintOffline' : 'scanListUnmatchedHint'),
+        all: items.length && !actions.offline ? [t('scanPageRetry', { count: items.length }), actions.retryAll] : null,
+        render: item => row(item, [reasonText(item.reason), guess(item)].filter(Boolean).join(' · '),
+            unmatchedButtons(item, actions), '≈'),
+    };
 }
 
-/** A count on the page that opens its list (unmatched, not scanned, other formats). */
-export function showList(page, state, key) {
-    state.tab = key;
-    const lists = page.querySelector('#anomalous-scan-lists');
-    lists?.querySelector(`[data-tab="${key}"]`)?.click();
-    lists?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+/**
+ * One list as a page ('new' | 'unmatched' | 'skipped' | 'result'): back to the scan page, what
+ * these models are and why they are here, a button for all of them, then the rows. A scan
+ * started here shows its progress in `progressHost`, above the rows.
+ */
+export function renderListPage(view, summary, last, actions, progressHost) {
+    const list = listOf(view, summary, last, actions);
+    const page = el('div', 'anomalous-scan-page');
+    page.append(button('anomalous-scan-back', t('scanBack'), actions.back), el('h1', 'anomalous-scan-title', list.title));
+    if (view === 'result' && last?.counts) {
+        page.append(el('div', 'anomalous-scan-card-title', resultTitle(last)),
+            el('div', 'anomalous-scan-result-counts', countsLine(last.counts)), ...resultNotes(last));
+    }
+    if (list.hint) page.append(el('p', 'anomalous-scan-lead', list.hint));
+    if (list.all) {
+        const all = button('anomalous-scan-secondary', actions.busy ? t('scanPageScanning') : list.all[0], list.all[1]);
+        all.disabled = actions.busy;
+        const bar = el('div', 'anomalous-scan-actions');
+        bar.append(all);
+        page.append(bar);
+    }
+    page.append(progressHost);
+    if (!list.items.length) {
+        page.append(el('p', 'anomalous-scan-muted', t('scanListEmpty')));
+        return page;
+    }
+    const card = el('section', 'anomalous-scan-card');
+    const rows = el('div', 'anomalous-scan-rows');
+    fillRows(rows, list.items, list.render, SHOWN_ROWS);
+    card.append(rows);
+    page.append(card);
+    if (view === 'result' && last?.counts?.unchanged) {
+        page.append(el('p', 'anomalous-scan-muted', t('scanResultUnchanged', { count: last.counts.unchanged })));
+    }
+    return page;
 }

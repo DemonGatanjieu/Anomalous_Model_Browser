@@ -137,7 +137,7 @@ export function showScanResult(owner, result) {
         label: t('scanProgressShowResult'),
         onClick: () => {
             owner.show?.();
-            owner.openScanPage?.();
+            owner.openScanPage?.('result');
         },
     });
 }
