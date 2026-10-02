@@ -99,13 +99,16 @@
 }
 
 /* 1. 一体化 Studio 顶栏 (精简纯净，杜绝层层大框堆叠) */
+/* Wraps when narrow (docked, scaled displays): the buttons go to a second row instead of being cut off. */
 .anomalous-material-topbar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    height: 48px;
-    padding: 0 16px;
+    gap: 8px 12px;
+    min-height: 48px;
+    padding: 9px 16px;
+    box-sizing: border-box;
     background: #16181f;
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);
     flex-shrink: 0;
@@ -157,6 +160,7 @@
     align-items: center;
     gap: 8px;
     flex: 1;
+    min-width: 220px;
     max-width: 440px;
 }
 
@@ -217,6 +221,7 @@
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
+    margin-left: auto;
 }
 
 .anomalous-material-view-switch {
@@ -253,6 +258,7 @@
 
 .anomalous-material-topbar-btn {
     height: 30px;
+    white-space: nowrap;
     padding: 0 12px;
     display: inline-flex;
     align-items: center;
