@@ -7,7 +7,6 @@ import { closeWorkspace, hideAllPanels } from './ui_browser_navigation.js';
 import { triggerDirectModelScan } from './scan_runner.js';
 import { openScanPage, renderScanPage, leaveScanPage } from './ui_scan_page.js';
 import { openFolderManager } from './ui_folder_manager.js';
-import { showHelp } from './ui_help.js';
 import { loadGalleryImages, refreshGalleryImages, showGeneratedGallery, showGallerySelectMode, showGalleryViewer } from './ui_gallery.js';
 import { showNotebooks, refreshNotebooks, saveCurrentNotebook, deleteCurrentNotebook } from './ui_notebooks.js';
 import { renderNotebookEditor, fillNotebookGalleries } from './ui_notebook_editor.js';
@@ -204,7 +203,6 @@ AnomalousBrowser.prototype.scanSingleModel = triggerDirectModelScan;
 AnomalousBrowser.prototype.openFolderManager = openFolderManager;
 AnomalousBrowser.prototype.renderSidebar = renderSidebar;
 AnomalousBrowser.prototype.loadFolders = loadFolders;
-AnomalousBrowser.prototype.showHelp = showHelp;
 AnomalousBrowser.prototype.hideAllPanels = hideAllPanels;
 
 AnomalousBrowser.prototype.loadModels = loadModels;

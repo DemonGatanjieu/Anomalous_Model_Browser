@@ -285,23 +285,7 @@
     border-radius: 50%;
     font: 700 12px/1 system-ui, sans-serif;
 }
-#anomalous-help-replay-guide-btn {
-    padding: 8px 14px;
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--amb-text-soft);
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-}
-#anomalous-help-replay-guide-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: var(--amb-border-strong);
-    color: var(--amb-text-main);
-}
 #anomalous-update-notice-btn:focus-visible,
-#anomalous-help-replay-guide-btn:focus-visible,
 .anomalous-update-guide button:focus-visible {
     outline: 2px solid var(--amb-accent, var(--amb-link));
     outline-offset: 2px;

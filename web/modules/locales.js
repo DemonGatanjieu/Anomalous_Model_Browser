@@ -65,7 +65,6 @@ export const i18n = {
         versionError_unknown_tag: "这不是已发布的版本。",
         versionError_no_previous: "没有可以撤销的切换。",
         versionError_no_default_branch: "无法确定默认分支。",
-        updateGuideStartTour: "🎯 界面按键遮罩导览",
         updateGuideTourBanner: "💡 想在主界面实地体验？点击开启按键遮罩导览 ›",
         materialDragGlobalHint: "💡 提示：按住卡片直接拖到画布节点上注入参数，拖到空白处载入工作流",
         materialCardDragHint: "按住可拖拽至画布节点注入参数，或拖至空白处载入工作流",
@@ -447,24 +446,6 @@ export const i18n = {
         backToPrev: '🔙 返回上一层',
         applyToCanvas: '插入节点',
         applySuccess: '✅ 已添加至工作流',
-        help: '帮助',
-        helpTitle: '📖 使用手册',
-        helpContent: `
-<div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
-    <h3 style="color:#f59e0b; margin-top:0;">📖 使用说明</h3>
-    <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 测试功能与数据保护</strong><br>工作流配方、素材库和“当前节点”的参数仍在测试阶段。更新插件、导入别人的配方、恢复版本、删除配方或应用参数前，请先保存当前画布，并备份 ComfyUI 用户目录里的 <code>workflows/anomalous_recipes</code>、<code>workflows/anomalous_materials</code> 与 <code>workflows/anomalous_parameters</code>。</div>
-    <p><strong>1. 🧭 左侧图标栏</strong><br>每个页面一个图标：主页、记录、模型、图库、工作流、素材，以及角色语音和音频库。再点一下当前页的图标，或顶栏最左边的按钮，可以收起、展开旁边的列表；窗口较窄时，列表会变成从左边滑出的抽屉。图标栏下半部分是工具：扫描、模型检查和当前节点，最下面是设置。</p>
-    <p><strong>2. 🔄 先扫描一次</strong><br>点图标栏的 <strong>扫描</strong>（或主页的“扫描模型文件夹”）。插件按文件哈希从 C 站获取封面、触发词和底模，需要联网；没匹配上的模型可以在扫描页“重新联网查找”，部分限制级模型需要在扫描页的“扫描设置”里填写 C 站 API Key。扫描在后台进行，可以关掉窗口。扫描完成后，其余功能才有完整的模型信息。</p>
-    <p><strong>3. 📦 模型</strong><br>顶部标签按类型（Checkpoint、LoRA、VAE…）切换，连同子文件夹一起列出；在左侧列表点某个文件夹只看那一个，点标签末尾的 ✕ 回到整个类型。卡片上的 <strong>+</strong> 在画布上创建加载节点，铅笔编辑名称、备注和封面，雷达图标只扫描这一个模型。</p>
-    <p><strong>4. 🩺 模型检查</strong><br>每打开一个工作流都会自动检查：缺的模型如果本地有同一个文件（改过名、换过文件夹也认得出），画布上方一键换上；其余的在这里自己挑，或看“模型去哪下载”。</p>
-    <p><strong>5. 🤖 当前节点</strong><br>在画布上选中节点后，上面可以看图换模型，或在兼容的 MODEL + CLIP 链前后插入 LoRA；下面的“参数”列出这类节点存过的所有参数（素材库和配方里的合在一起），每条都写明会改哪几项，点“套用”只改这几项（种子和模型不跟着换）；“存下当前参数”把这个节点现在的值存进素材库。</p>
-    <p><strong>6. 🪡 工作流配方</strong><br>把当前画布的完整工作流或其中一段，连同模型、封面、标签、备注和参数存成配方。卡片会显示本机模型是否齐全，拖到画布上即可载入；详情页可以匹配本地模型、查看与复制参数、比较历史出图，以及比较或恢复版本。</p>
-    <p><strong>7. ✨ 素材</strong><br>在图库或配方里打开一张图的参数详情，可以把原图、完整工作流和节点参数存成素材。拖到画布空白处打开工作流（提示词素材会生成提示词节点），拖到已有节点上则把参数填进去。</p>
-    <p><strong>8. 🎙️ 角色语音</strong><br>需要另外安装 Anomalous_TTS 节点包。在“角色语音”页的“角色”里导入 GPT-SoVITS 角色、设置情绪和读音，切到“配音”写台词、直接生成语音；音频页右上角的 <strong>!</strong> 有分步说明和遮罩导览。</p>
-    <p><strong>9. 🕘 操作记录</strong><br>按天列出插件改过的东西：画布上节点设置的变化、加删的节点、打开的工作流，以及模型、封面、配方、素材等文件。只记录、不撤销；你自己在画布上的修改不会记进来。</p>
-    <p><strong>10. 🧰 其他工具在哪</strong><br>工作流分享码（AMB0/AMB1 导入导出）在“工作流”页右上角 ⇅；提示词工坊和提示词笔记在“素材”页右上角；模型来源在“模型”页类型标签的最右边，工作流里模型的来源在模型检查里；翻译在“当前节点”的提示词框上。</p>
-    <p><strong>11. ⚙️ 设置</strong><br>语言、字号、缩略图和视频封面。<strong>文件夹管理</strong> 可以隐藏不需要的模型文件夹、调整顺序，隐藏的文件夹不再读取和扫描。<strong>💬 提交反馈 / 报告问题</strong> 直达 GitHub Issues。</p>
-</div>`,
         notebooks: '笔记本',
         notebookTitle: '笔记本管理',
         workspace: '创作工作台',
@@ -1038,7 +1019,13 @@ export const i18n = {
         settingsLayoutHelp: "窗口位置、大小、停靠、缩放和展示模式恢复默认。",
         settingsReset: "恢复默认",
         settingsHelp: "帮助与反馈",
-        settingsHelpHelp: "每个页面怎么用。",
+        settingsTour: "界面导览",
+        settingsTourHelp: "在界面上一个个指给你看：每个按钮在哪、是做什么的。",
+        settingsNewsHelp: "这个版本改了什么。",
+        settingsGuide: "完整使用说明",
+        settingsGuideHelp: "在 GitHub 上看完整的文字说明，跟着每次更新一起改。",
+        settingsStart: "开始",
+        settingsOpenGuide: "去看看",
         feedbackTitle: "遇到问题，或者有想法？",
         feedbackLead: "在 GitHub 上告诉我，一两句话就行。版本、显卡这些信息会自动附上。",
         feedbackReport: "报告问题",
@@ -1179,7 +1166,6 @@ export const i18n = {
         sidebarHidden: '隐藏',
         sidebarSaveReload: '保存并刷新',
         sidebarSaveConfigError: '保存配置失败: ',
-        closeHelp: '关闭说明',
         delSure: '确认删除？',
         dockTitle: '侧边停靠',
         replaceAll: '全部替换',
@@ -1194,7 +1180,6 @@ export const i18n = {
         closeSettings: '✖ 关闭设置面板',
         importBtn: '导入工作流 (分享码)',
         recipeTitle: '工作流',
-        recipeBetaNotice: '工作流配方仍在测试。更新插件以及导入、恢复、删除或应用参数前，请保存当前画布并备份用户 workflows 目录中的 anomalous_recipes 与 anomalous_parameters。',
         recipeClose: '关闭工作流配方',
         recipeSaveCurrent: '保存当前工作流',
         recipeSaveTitle: '保存为工作流配方',
@@ -2030,7 +2015,6 @@ export const i18n = {
         versionError_unknown_tag: "That is not a published version.",
         versionError_no_previous: "There is no switch to undo.",
         versionError_no_default_branch: "Couldn't determine the default branch.",
-        updateGuideStartTour: "🎯 Spotlight Tour",
         updateGuideTourBanner: "💡 Prefer to see them in action? Start Spotlight Tour ›",
         materialDragGlobalHint: "💡 Tip: Drag cards onto canvas nodes to inject values, or onto empty canvas to load the workflow",
         materialCardDragHint: "Hold and drag onto canvas nodes to inject values, or drop on empty canvas to load workflow",
@@ -2412,24 +2396,6 @@ export const i18n = {
         backToPrev: '🔙 Back to prev',
         applyToCanvas: 'Add Node',
         applySuccess: '✅ Added to workflow',
-        help: 'Help',
-        helpTitle: '📖 User Manual',
-        helpContent: `
-<div style="line-height: 1.6; font-size: 0.95em; color: #eee; padding: 10px;">
-    <h3 style="color:#f59e0b; margin-top:0;">📖 How to use</h3>
-    <div style="margin:0 0 14px;padding:12px 14px;border:1px solid rgba(255,193,7,.55);border-radius:9px;background:rgba(255,193,7,.1);color:#ffe4a3;"><strong>🧪 Preview features and your data</strong><br>Workflow recipes, the Material Library and Current node's parameters are still in preview. Before updating the plugin, importing someone else's recipe, restoring a version, deleting a recipe or applying parameters, save your canvas and back up <code>workflows/anomalous_recipes</code>, <code>workflows/anomalous_materials</code> and <code>workflows/anomalous_parameters</code> in your ComfyUI user folder.</div>
-    <p><strong>1. 🧭 The rail on the left</strong><br>One icon per page: Home, Activity, Models, Gallery, Workflows, Materials, then Voices and Audio. Click the current page's icon again, or the button at the far left of the header, to hide or show its list; in a narrow window the list slides in as a drawer. Below the pages are the tools: Scan, Model Check and Current node, with Settings at the bottom.</p>
-    <p><strong>2. 🔄 Scan once first</strong><br>Click <strong>Scan</strong> on the rail (or "Scan model folders" on Home). The plugin fetches covers, trigger words and base models from Civitai by file hash, so it needs the internet; models that were not matched can be looked up again from the scan page, and some restricted models need a Civitai API key, entered in the scan settings on the scan page. The scan runs in the background, so you can close the window. Once scanned, every other feature has full model information.</p>
-    <p><strong>3. 📦 Models</strong><br>The chips at the top switch between types (Checkpoint, LoRA, VAE…) and list the whole type, subfolders included; click a folder in the list to see only that one, and the ✕ at the end of the chips to go back. On a card, <strong>+</strong> adds a loader node to the canvas, the pencil edits name, notes and cover, and the radar icon scans just that model.</p>
-    <p><strong>4. 🩺 Model Check</strong><br>Every workflow you open is checked: a missing model you have under another name or folder (recognised by hash and file size) is put back with one press from the bar over the canvas; pick the rest here, or see where to download them.</p>
-    <p><strong>5. 🤖 Current node</strong><br>Select a node on the canvas. On top, swap its model from the covers or insert a LoRA before or after a compatible MODEL + CLIP chain; below, <b>Parameters</b> lists every set of values saved for this kind of node (material library and recipes together), each saying what it would change; <b>Apply</b> changes only those (seeds and models stay). <b>Save these values</b> keeps the node's current values in the material library.</p>
-    <p><strong>6. 🪡 Workflow recipes</strong><br>Save the whole canvas, or a part of it, with its models, cover, tags, notes and parameters. A card shows whether the models are on this computer; drag it onto the canvas to load it. The detail view matches local models, shows and copies parameters, compares past outputs and compares or restores versions.</p>
-    <p><strong>7. ✨ Materials</strong><br>Open an image's parameter details in the Gallery or a recipe to save the image, its full workflow and its node settings as a material. Drop it on an empty canvas to open the workflow (prompt materials create prompt nodes), or on a node to fill in its settings.</p>
-    <p><strong>8. 🎙️ Character voices</strong><br>Needs the Anomalous_TTS node pack. On Voices, import GPT-SoVITS characters and set emotions and pronunciations under Characters, and write lines and generate speech under Voice-over; the <strong>!</strong> at the top right of the audio page has a step-by-step guide and a spotlight tour.</p>
-    <p><strong>9. 🕘 Activity</strong><br>What the plugin changed, by day: node settings on the canvas, nodes added or removed, workflows opened, and files such as models, covers, recipes and materials. It records only and undoes nothing; your own edits on the canvas are not listed.</p>
-    <p><strong>10. 🧰 Where the other tools are</strong><br>Workflow share codes (AMB0/AMB1 import / export): ⇅ at the top right of Workflows. Prompt Studio and Prompt Notes: top right of Materials. Model Sources: at the end of the type chips on Models; the sources of the open workflow's models: in Model Check. Translation: on the prompt boxes in Current node.</p>
-    <p><strong>11. ⚙️ Settings</strong><br>Language, font size, thumbnails and video covers. <strong>Folder manager</strong> hides model folders you do not need and orders them; hidden folders are not read or scanned. <strong>💬 Feedback / report an issue</strong> opens GitHub Issues.</p>
-</div>`,
         notebooks: 'Notebooks',
         notebookTitle: 'Notebook Manager',
         workspace: 'Workspace',
@@ -3003,7 +2969,13 @@ export const i18n = {
         settingsLayoutHelp: "Window position, size, docking, scale and view mode back to their defaults.",
         settingsReset: "Reset",
         settingsHelp: "Help and feedback",
-        settingsHelpHelp: "How each page works.",
+        settingsTour: "Interface tour",
+        settingsTourHelp: "Points at each part of the window in turn: where each button is and what it does.",
+        settingsNewsHelp: "What changed in this version.",
+        settingsGuide: "Full guide",
+        settingsGuideHelp: "The complete written guide on GitHub, kept up to date with each release.",
+        settingsStart: "Start",
+        settingsOpenGuide: "Open",
         feedbackTitle: "Found a problem, or have an idea?",
         feedbackLead: "Tell me on GitHub; a sentence or two is enough. Versions and hardware are attached for you.",
         feedbackReport: "Report a problem",
@@ -3144,7 +3116,6 @@ export const i18n = {
         sidebarHidden: 'Hidden',
         sidebarSaveReload: 'Save & Reload',
         sidebarSaveConfigError: 'Error saving config: ',
-        closeHelp: 'Close Manual',
         delSure: 'Confirm Delete?',
         dockTitle: 'Dock to Left',
         replaceAll: 'Replace All',
@@ -3159,7 +3130,6 @@ export const i18n = {
         closeSettings: '✖ Close Settings',
         importBtn: 'Import Workflow (Share Code)',
         recipeTitle: 'Workflows',
-        recipeBetaNotice: 'Workflow Recipes are still in beta. Before updating the plugin or importing, restoring, deleting, or applying parameters, save the canvas and back up anomalous_recipes and anomalous_parameters under your user workflows directory.',
         recipeClose: 'Close Workflow Recipes',
         recipeSaveCurrent: 'Save Current Workflow',
         recipeSaveTitle: 'Save Workflow Recipe',

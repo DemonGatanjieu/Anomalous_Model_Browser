@@ -152,10 +152,6 @@
     border: 1px solid rgba(244, 63, 94, 0.25);
 }
 
-.anomalous-recipe-beta-notice[style*="display: none"] {
-    display: none !important;
-}
-
 /* ========================================================================== */
 /* Modern Studio Presets (Parameter Notebook Overhaul)                        */
 /* ========================================================================== */

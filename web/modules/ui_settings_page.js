@@ -11,10 +11,14 @@ import { translate } from './locales.js';
 import { ABYSSAL_SCARLET_SETTING_ID, LANGUAGE_SETTING_ID, applyLanguagePreference, setAbyssalScarletTheme } from './interface_settings.js';
 import { ENTRY_MODE_SETTING_ID } from './browser_entry.js';
 import { showUpdateGuide } from './ui_update_guide.js';
+import { startSpotlightTour } from './ui_spotlight_tour.js';
 import { copyDiagnostics } from './feedback.js';
 import { openFeedbackDialog } from './ui_feedback_dialog.js';
 
 const t = (key, params) => translate(key, params);
+// The full written guide: the README, at its Chinese half for Chinese.
+const README_URL = 'https://github.com/DemonGatanjieu/Anomalous_Model_Browser#readme';
+const README_ZH_URL = 'https://github.com/DemonGatanjieu/Anomalous_Model_Browser#-视频演示与教程';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -204,8 +208,11 @@ function openingGroup(owner, redraw) {
 function helpGroup(owner) {
     const small = (label, onClick) => button('anomalous-scan-secondary anomalous-scan-small-btn', label, onClick);
     return group('settingsHelp',
-        row('help', 'settingsHelpHelp', small(t('settingsOpen'), () => owner.showHelp())),
-        row('updateGuideReplay', null, small(t('settingsOpen'), () => showUpdateGuide(owner, { force: true }))),
+        row('settingsTour', 'settingsTourHelp', small(t('settingsStart'), () => startSpotlightTour(owner))),
+        row('updateGuideReplay', 'settingsNewsHelp', small(t('settingsOpen'), () => showUpdateGuide(owner, { force: true }))),
+        row('settingsGuide', 'settingsGuideHelp', small(t('settingsOpenGuide'), () => {
+            window.open(window.anomalous_browser_lang === 'zh' ? README_ZH_URL : README_URL, '_blank', 'noopener');
+        })),
         row('feedbackReport', 'settingsReportHelp', small(t('feedbackWrite'), () => openFeedbackDialog(owner, 'bug'))),
         row('feedbackSuggest', 'settingsSuggestHelp', small(t('feedbackWrite'), () => openFeedbackDialog(owner, 'idea'))),
         row('feedbackCopy', 'feedbackCopyHint', (() => {

@@ -52,7 +52,7 @@ did not bring the library forward, so handled shortcuts are not executed twice.
 `ui_browser_navigation.js` owns shared panel hiding, recoverable detail cleanup,
 and workspace return. `ui_scan_page.js` owns the scan page and `scan_runner.js` scan launch and polling,
 `ui_folder_manager.js` owns folder visibility/order and presentation-mode
-changes, and `ui_help.js` owns the help dialog. Public entry functions remain
+changes. Public entry functions remain
 browser-instance methods so existing actions share current browser state.
 
 Update-guide content and UI lifecycle are separate modules. The header and Help

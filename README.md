@@ -69,7 +69,7 @@ Open the browser with **Ctrl + Shift + M**, the floating button on the canvas, o
 The first time you open it, start on **Home**: **Scan model folders** fills in covers and trigger words, and **Tour the interface** points at each part of the window.
 
 > [!WARNING]
-> **Beta data protection:** Workflow Recipes, the Material Library and parameter presets are still in preview. Before updating, back up `workflows/anomalous_recipes`, `workflows/anomalous_materials` and `workflows/anomalous_parameters` in your ComfyUI user folder.
+> **Keep a copy of your own data:** Workflow Recipes, the Material Library and parameter presets live in `workflows/anomalous_recipes`, `workflows/anomalous_materials` and `workflows/anomalous_parameters` in your ComfyUI user folder. A copy of them before updating the plugin is a good habit.
 
 ---
 
@@ -134,7 +134,7 @@ The first time you open it, start on **Home**: **Scan model folders** fills in c
 第一次打开时会停在 **主页**：点 **扫描模型文件夹** 补全封面和触发词；点 **界面导览** 会逐一指给你看窗口的各个部分。
 
 > [!WARNING]
-> **测试功能数据安全提醒：** 工作流配方、素材库与参数预设仍在测试阶段。更新插件前，建议备份 ComfyUI 用户目录下的 `workflows/anomalous_recipes`、`workflows/anomalous_materials` 与 `workflows/anomalous_parameters` 文件夹。
+> **备份自己的数据：** 工作流配方、素材库与参数预设存在 ComfyUI 用户目录下的 `workflows/anomalous_recipes`、`workflows/anomalous_materials` 与 `workflows/anomalous_parameters` 文件夹。更新插件前顺手备份一份，更安心。
 
 ---
 

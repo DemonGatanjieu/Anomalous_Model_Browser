@@ -246,25 +246,6 @@ export function ensureTourStyles() {
         .anomalous-spotlight-btn-primary:hover {
             background: #1d4ed8;
         }
-        .anomalous-btn-tour {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            background: var(--amb-btn-primary-bg);
-            color: var(--amb-btn-primary-text);
-            border: 1px solid var(--amb-border-strong);
-            border-radius: 6px;
-            padding: 7px 16px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-        .anomalous-btn-tour:hover {
-            background: #1d4ed8;
-            border-color: rgba(255, 255, 255, 0.4);
-        }
         .anomalous-update-guide-tour-banner {
             display: flex;
             align-items: center;

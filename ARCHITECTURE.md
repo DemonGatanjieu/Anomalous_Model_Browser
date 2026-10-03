@@ -337,7 +337,7 @@ covered by the `styles.css` manifest.
   `scan_runner.js` starts and follows scans (every folder, picked or listed models, or one
   model from its card), shows the result and refreshes node drop-downs, hashes and the
   grid afterwards; folder visibility/order lives in
-  `ui_folder_manager.js`; and help content lives in `ui_help.js`.
+  `ui_folder_manager.js`.
   `scan_progress.js` owns the scan progress panel
   (`updateScanProgress` / `finishScanProgress` / `failScanProgress`): inside the scan
   page while it is shown (`setScanProgressHost`), floating at the bottom right otherwise.

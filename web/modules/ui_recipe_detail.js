@@ -581,8 +581,6 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     owner.recipeListContainer.style.display = 'none';
     const topbars = owner.recipeView ? Array.from(owner.recipeView.querySelectorAll('.anomalous-recipe-topbar, .anomalous-recipe-actionbar')) : [];
     topbars.forEach(bar => { bar.style.display = 'none'; });
-    const betaNotice = owner.recipeView?.querySelector('.anomalous-recipe-beta-notice');
-    if (betaNotice) betaNotice.style.display = 'none';
     if (owner.recipeDetailView) owner.recipeDetailView.remove();
 
     const view = document.createElement('div');
@@ -602,7 +600,6 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         if (!['canvas', 'append', 'model'].includes(mode)) {
             owner.recipeListContainer.style.display = '';
             topbars.forEach(bar => { bar.style.display = ''; });
-            if (betaNotice) betaNotice.style.display = '';
             owner.renderRecipeList?.(owner.recipeRecords || []);
         }
         if (owner.recipeDetailFinish === finish) owner.recipeDetailFinish = null;
