@@ -40,7 +40,8 @@
     white-space: nowrap;
 }
 
-.anomalous-doctor-level.is-likely { color: #86efac; }
+.anomalous-doctor-level.is-sure { color: #86efac; }
+.anomalous-doctor-level.is-likely { color: var(--amb-link); }
 .anomalous-doctor-level.is-maybe { color: #fcd34d; }
 .anomalous-doctor-level.is-ambiguous,
 .anomalous-doctor-level.is-conflict,

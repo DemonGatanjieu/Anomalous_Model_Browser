@@ -12,9 +12,9 @@ import { updateDoctorBanner } from './ui_doctor_banner.js';
 
 const MODEL_EXT = /\.(safetensors|ckpt|pt|bin|pth|sft|gguf)$/i;
 const CANDIDATE_WHY = { size: 'doctorWhyCandidate', name: 'doctorWhySameName', 'name-size': 'doctorWhyLikely' };
-// How sure a match is, next to the name. A fingerprint match needs none: its button says it.
+// How sure a match is, next to the name: each one waits for a press, so each says how sure.
 const LEVELS = {
-    likely: ['●●○', 'doctorLevelLikely'], maybe: ['●○○', 'doctorLevelMaybe'],
+    sure: ['●●●', 'doctorLevelSure'], likely: ['●●○', 'doctorLevelLikely'], maybe: ['●○○', 'doctorLevelMaybe'],
     ambiguous: ['○○○', 'doctorLevelUnclear'], conflict: ['○○○', 'doctorLevelConflict'], missing: ['○○○', 'doctorLevelNone'],
 };
 const ORDER = ['fixable', 'candidate', 'conflict', 'ambiguous', 'missing', 'changed'];
@@ -55,6 +55,7 @@ function reason(entry) {
 }
 
 function levelOf(entry) {
+    if (entry.state === 'fixable') return 'sure';
     if (entry.state === 'candidate') return entry.via === 'name-size' ? 'likely' : 'maybe';
     return Object.hasOwn(LEVELS, entry.state) ? entry.state : '';
 }
