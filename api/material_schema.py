@@ -371,6 +371,14 @@ def _recipe_link_fingerprint(recipe):
     return hashlib.sha256(payload).hexdigest()
 
 
+def _summary_source_image(source):
+    """The output image a material was taken from, as {filename, subfolder}, or None."""
+    image = source.get("image")
+    if not isinstance(image, dict) or not isinstance(image.get("filename"), str) or not image["filename"]:
+        return None
+    return {"filename": image["filename"], "subfolder": image.get("subfolder") if isinstance(image.get("subfolder"), str) else ""}
+
+
 def _material_summary(filename, material):
     image = material.get("image") or {}
     source = material.get("source") if isinstance(material.get("source"), dict) else {}
@@ -399,6 +407,7 @@ def _material_summary(filename, material):
         },
         "source_fingerprint": str(source.get("parameter_signature") or image.get("source_sha256") or ""),
         "moved_to_recipe": str(material.get("moved_to_recipe") or ""),
+        "source_image": _summary_source_image(source),
     }
     if source.get("recipe_filename"):
         summary["source_recipe"] = {

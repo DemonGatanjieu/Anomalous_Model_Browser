@@ -237,18 +237,20 @@ metrics appear once with exact-value copy controls. Display wording is Parameter
 Sets (参数方案); existing notebook routes and storage identifiers stay stable.
 
 
-## Recent generations
+## Keeping an output image
 
-The first category, Recent (`ui_material_recent.js`), lists the newest output PNGs that
-carry a UI workflow (`GET /anomalous/recent_generations`, `api/recent_generations.py`):
-the gallery's listing (and its search, for the library's search box) read newest first,
-up to 400 images looked at, each summarised from its PNG text chunks only (positive
-prompt by wiring, main loader's model, steps / CFG / sampler / size) and cached by
-path, mtime and size. Starring posts the image to `/anomalous/save_image_material` as a
-whole-workflow snapshot named after the prompt's first tags; an image is "starred" when
-an `image_workflow_snapshot` material has the same `source_sha256`, which is also how the
-save route answers 409 instead of copying it. A starred card opens its material; the
-picture opens the image workbench, where single nodes can be kept instead.
+The gallery's star and the image workbench's Keep (`ui_keep_menu.js`) keep an output PNG
+as one of three things, each recording the image as its source: the whole workflow as a
+Workflow Recipe (`recipe_save.js`, `source_image`), its main model, LoRAs and positive
+prompt as a combo (`image_keep.js`; models are looked up among this computer's files with
+`/anomalous/resolve_paths_to_previews`, missing ones are left out; the notebook file keeps
+`source_image`), or its positive and negative prompts as a `prompt_plan` material
+(`/anomalous/save_prompt_plan` stores `source.image`; the same plan saved again answers 409
+with the existing one). The image's workflow is laid on a detached graph and read with
+`extractRecipeMetadata`, so prompts follow the wiring as in a recipe. `GET
+/anomalous/kept_images` (`api/kept_images.py`) lists each image's recipe, combo and prompt;
+the star is filled when any exists, and a kept row opens it. The Material Library's former
+Recent shelf is gone: the gallery lists the same outputs.
 
 ## Entry points and shared application
 

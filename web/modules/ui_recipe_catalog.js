@@ -256,7 +256,7 @@ export async function showRecipes() {
         modalClose.type = 'button';
         modalClose.className = 'anomalous-recipe-modal-close';
         modalClose.innerHTML = '&times;';
-        modalClose.title = t('workspaceClose') || (window.anomalous_browser_lang === 'zh' ? '关闭' : 'Close');
+        modalClose.title = t('close');
         modalClose.onclick = () => this.closeWorkspace();
         this.recipeContainer.appendChild(modalClose);
         this.nbPanel.appendChild(this.recipeContainer);

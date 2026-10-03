@@ -394,7 +394,7 @@ export async function renderImageInspectorContent(context, data, item) {
         workbench: wb,
         loadWorkflowToComfyCanvas,
         openMaterialLocalModel,
-        renderSaveSnapshotFooter,
+        openKeep,
     } = context;
     if (!wb || !wb.sideBodyEl) return;
 
@@ -493,27 +493,15 @@ export async function renderImageInspectorContent(context, data, item) {
     const saveMaterialBtn = document.createElement('button');
     saveMaterialBtn.type = 'button';
     saveMaterialBtn.className = 'anomalous-workbench-action-btn is-save';
-    const cleanSaveLabel = t('recipeKeepImageShort');
+    const cleanSaveLabel = t('workbenchKeep');
     saveMaterialBtn.innerHTML = `
         <svg class="anomalous-workbench-action-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3.5 2.5h9a1 1 0 0 1 1 1v10.5l-5.5-3-5.5 3V3.5a1 1 0 0 1 1-1z"></path>
         </svg>
         <span>${cleanSaveLabel}</span>
     `;
-    saveMaterialBtn.title = t('materialSaveSnapshotFocusHint');
-    saveMaterialBtn.setAttribute('aria-expanded', 'false');
-    saveMaterialBtn.onclick = () => {
-        const footer = wb?.sideFooterEl;
-        if (!footer) return;
-        footer.hidden = !footer.hidden;
-        saveMaterialBtn.classList.toggle('is-active', !footer.hidden);
-        saveMaterialBtn.setAttribute('aria-expanded', String(!footer.hidden));
-        if (footer.hidden) return;
-        const nameInput = wb?.sideFooterEl?.querySelector('input[type="text"]');
-        wb?.sideFooterEl?.scrollIntoView?.({ behavior: 'smooth', block: 'end' });
-        nameInput?.focus();
-        nameInput?.select();
-    };
+    saveMaterialBtn.title = t('workbenchKeepHint');
+    saveMaterialBtn.onclick = () => openKeep(saveMaterialBtn, item);
     toolbar.appendChild(saveMaterialBtn);
 
     wb.sideBodyEl.appendChild(toolbar);
@@ -602,7 +590,4 @@ export async function renderImageInspectorContent(context, data, item) {
     nodesPanel.appendChild(buildWorkflowNodesSection(blocks, clientWorkflow, item, inspectPayload.suggested_name, context));
     tabPanels.nodes = nodesPanel;
     wb.sideBodyEl.appendChild(nodesPanel);
-
-    // Bottom Snapshot Drawer in Footer
-    renderSaveSnapshotFooter(inspectPayload, item);
 }

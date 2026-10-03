@@ -6,6 +6,7 @@
  */
 
 import { captureRecipeDraft } from './recipe_parser.js';
+import { promptTitle } from './prompt_composition.js';
 import { outputImageUrl, previewIsVideo } from './ui_recipe_media.js';
 import { jsonResponse } from './ui_dom.js';
 
@@ -142,7 +143,7 @@ export async function keepImageAsRecipe(sourceImage, { name = '', tags = [], wor
     const graph = new globalThis.LiteGraph.LGraph();
     graph.configure(JSON.parse(JSON.stringify(workflow)));
     const draft = captureRecipeDraft(graph);
-    const recipeName = String(name || suggested || sourceImage?.filename || 'Workflow').trim().slice(0, 120);
+    const recipeName = String(name || promptTitle(draft.metadata.promptPositive?.[0]) || suggested || sourceImage?.filename || 'Workflow').trim().slice(0, 120);
     const { filename } = await persistRecipe(draft, {
         name: recipeName, tags, notes: '', sourceImage,
         saveModelPreviewSnapshots: true, verifyModelIdentities: false,

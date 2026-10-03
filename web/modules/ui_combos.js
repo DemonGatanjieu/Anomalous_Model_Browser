@@ -7,6 +7,7 @@
 
 import { translate as t } from './locales.js';
 import { anomalousPrompt } from './ui_dialog.js';
+import { freeComboName, listCombos } from './image_keep.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -71,12 +72,13 @@ function comboCard(owner, note) {
 
 /** Asks for a name, saves an empty combo and opens it. */
 export async function newCombo(owner) {
-    const name = String(await anomalousPrompt(t('comboNewName'), '', t('comboNew')) || '').trim();
-    if (!name) return;
+    const wanted = String(await anomalousPrompt(t('comboNewName'), '', t('comboNew')) || '').trim();
+    if (!wanted) return;
+    const name = freeComboName(wanted, await listCombos());
     const note = {
         filename: `${name}.json`,
         name,
-        data: { baseModel: '', mainModel: null, loras: [], promptEn: '', promptZh: '' },
+        data: { name, baseModel: '', mainModel: null, loras: [], promptEn: '', promptZh: '' },
     };
     owner.currentNotebook = note;
     if (await owner.saveCurrentNotebook()) owner.openCombo(note);
@@ -96,9 +98,7 @@ export async function renderComboList(owner, host) {
 
     let combos;
     try {
-        const response = await fetch('/anomalous/notebooks', { cache: 'no-store' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        combos = (await response.json()).notebooks || [];
+        combos = await listCombos();
     } catch (error) {
         console.error('[AMB] Could not list combos:', error);
         grid.replaceChildren(el('p', 'anomalous-combo-empty', t('comboLoadError')));

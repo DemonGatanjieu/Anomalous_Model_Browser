@@ -50,6 +50,18 @@ const STYLE_KEYWORDS = [
 ];
 
 /** Categorize a prompt block based on its keywords and content */
+// Quality words most prompts start with: they say nothing about the picture.
+const QUALITY_TAG = /^(?:masterpiece|best quality|high quality|highest quality|amazing quality|very aesthetic|aesthetic|newest|highres|absurdres|ultra[- ]?detailed|highly detailed|extremely detailed|detailed|8k|4k|hdr|uhd|score_\d+(?:_up)?|source_\w+|rating_\w+)$/i;
+
+/** A short name from a prompt: its first few tags that are not quality words ("" when none). */
+export function promptTitle(text = '') {
+    const tags = String(text).split(/[,\n]/)
+        .map(tag => tag.replace(/^[\s(\[{]+|[\s)\]}]+$/g, '').replace(/:[\d.]+$/, '').trim())
+        .filter(tag => tag && !QUALITY_TAG.test(tag));
+    const title = tags.slice(0, 3).join(', ');
+    return title.length > 48 ? `${title.slice(0, 47)}…` : title;
+}
+
 export function categorizePromptSnippet(text = '') {
     const lower = String(text).toLowerCase();
     if (BASE_QUALITY_KEYWORDS.some(k => lower.includes(k))) return 'base';

@@ -7,7 +7,7 @@ import { closeWorkspace, hideAllPanels } from './ui_browser_navigation.js';
 import { triggerDirectModelScan } from './scan_runner.js';
 import { openScanPage, renderScanPage, leaveScanPage } from './ui_scan_page.js';
 import { loadGalleryImages, refreshGalleryImages, showGeneratedGallery, showGallerySelectMode, showGalleryViewer } from './ui_gallery.js';
-import { showNotebooks, openCombo, refreshNotebooks, saveCurrentNotebook, deleteCurrentNotebook } from './ui_notebooks.js';
+import { showNotebooks, openCombo, openComboByFilename, refreshNotebooks, saveCurrentNotebook, deleteCurrentNotebook } from './ui_notebooks.js';
 import { renderNotebookEditor, fillNotebookGalleries } from './ui_notebook_editor.js';
 import { useNotebook, sendNotebookToCanvas } from './notebook_canvas.js';
 import { showRecipes, refreshRecipes } from './ui_recipe_catalog.js';
@@ -172,6 +172,7 @@ AnomalousBrowser.prototype.openLoraInsertionPicker = openLoraInsertionPicker;
 
 AnomalousBrowser.prototype.showNotebooks = showNotebooks;
 AnomalousBrowser.prototype.openCombo = openCombo;
+AnomalousBrowser.prototype.openComboByFilename = openComboByFilename;
 AnomalousBrowser.prototype.closeWorkspace = closeWorkspace;
 AnomalousBrowser.prototype.refreshNotebooks = refreshNotebooks;
 AnomalousBrowser.prototype.saveCurrentNotebook = saveCurrentNotebook;

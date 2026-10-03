@@ -1,11 +1,14 @@
 /**
  * ui_gallery.js
- * Extracted Gallery Viewer methods.
+ * The output gallery's listing and search (cards: ui_gallery_card.js), a model's generated
+ * images, choosing a cover, and the full-size viewer.
  */
 
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { showImageMaterialDetail } from './ui_materials.js';
+import { createGalleryCard } from './ui_gallery_card.js';
+import { loadKeptImages } from './image_keep.js';
 import { createSearchChips } from './ui_search_chips.js';
 
 const t = (key, params) => translate(key, params);
@@ -73,6 +76,8 @@ export async function loadGalleryImages(page = 1, reset = false, { refresh = res
                 cards.forEach(c => c.remove());
                 this.galleryLoaded = true;
                 this.galleryImagesList = [];
+                // The stars of this listing: what each image was kept as.
+                this.galleryKept = loadKeptImages().catch(() => new Map());
             }
 
             if (data.images && data.images.length > 0) {
@@ -96,222 +101,9 @@ export async function loadGalleryImages(page = 1, reset = false, { refresh = res
                     this.galleryImagesList = [...(this.galleryImagesList || []), ...incomingItems];
                 }
 
-                data.images.forEach(imgData => {
-                    const card = document.createElement('div');
-                    card.className = 'anomalous-gallery-card';
-
-                    const q_sub = encodeURIComponent(imgData.subfolder);
-                    const q_file = encodeURIComponent(imgData.filename);
-                    const imgUrl = `/view?filename=${q_file}&subfolder=${q_sub}&type=output`;
-
-                    const img = document.createElement('img');
-                    img.src = `/anomalous/output_thumbnail?filename=${q_file}&subfolder=${q_sub}`; // drags and the viewer use the original
-                    img.loading = 'lazy';
-                    img.draggable = true;
-                    img.title = t('materialViewOriginal');
-
-                    // Drag and drop support for ComfyUI
-                    img.addEventListener('dragstart', (e) => {
-                        const fullUrl = new URL(imgUrl, window.location.href).href;
-                        e.dataTransfer.setData('text/uri-list', fullUrl);
-                        e.dataTransfer.setData('text/plain', fullUrl);
-
-                        // Fix for Chromium failing to initiate drag for extremely large (Hires Fix) images
-                        if (window.anomalousDragGhostImg) {
-                            e.dataTransfer.setDragImage(window.anomalousDragGhostImg, 40, 40);
-                        }
-                    });
-
-                    const openDetail = () => {
-                        const curIdx = (this.galleryImagesList || []).findIndex(it => it.filename === imgData.filename && it.subfolder === (imgData.subfolder || ''));
-                        void showImageMaterialDetail(this, {
-                            type: 'output',
-                            filename: imgData.filename,
-                            subfolder: imgData.subfolder || '',
-                        }, imgUrl, {
-                            items: this.galleryImagesList || [],
-                            currentIndex: curIdx >= 0 ? curIdx : 0,
-                            loadMore: async () => {
-                                if (this.galleryHasMore && !this.galleryLoading) {
-                                    await this.loadGalleryImages(this.galleryCurrentPage + 1);
-                                }
-                                return this.galleryImagesList || [];
-                            }
-                        });
-                    };
-
-                    // Click to view
-                    img.onclick = () => {
-                        if (this.gallerySelectModel) {
-                            const model = this.gallerySelectModel;
-                            fetch('/anomalous/set_custom_cover', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    type: this.currentType,
-                                    path_idx: this.currentPathIdx,
-                                    subfolder: this.currentSubfolder,
-                                    filename: model.filename,
-                                    source_image: imgData.subfolder ? imgData.subfolder + '/' + imgData.filename : imgData.filename
-                                })
-                            }).then(res => res.json()).then(async data => {
-                                if (data.status === 'success') {
-                                    const tempModel = this.gallerySelectModel;
-                                    this.gallerySelectModel = null;
-                                    const banner = document.getElementById('anomalous-gallery-select-banner');
-                                    if (banner) banner.style.display = 'none';
-                                    this.galleryPanel.classList.remove('is-cover-selecting');
-                                    this.galleryPanel.style.display = 'none';
-
-                                    await this.loadModels();
-                                    const updatedModel = this.models.find(m => m.filename === model.filename);
-
-                                    if (this.currentDetailModel && this.currentDetailModel.filename === model.filename) {
-                                        this.detailPanel.style.display = 'flex';
-                                        if (updatedModel) this.showDetail(updatedModel);
-                                    } else {
-                                        this.grid.style.display = 'grid';
-                                        // Grid was already refreshed by loadModels
-                                    }
-
-
-                                } else {
-                                    alert(t('galleryErrorPrefix') + data.message);
-                                }
-                            });
-                            return;
-                        }
-                        showGalleryViewer(imgUrl);
-                    };
-
-                    const delBtn = document.createElement('button');
-                    delBtn.className = 'anomalous-gallery-delete';
-                    delBtn.innerHTML = '<svg style="width:14px;height:14px;vertical-align:middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>';
-                    delBtn.title = t('galleryDelete');
-
-                    delBtn.onclick = (e) => {
-                        e.stopPropagation();
-
-                        const overlay = document.createElement('div');
-                        overlay.style.position = 'absolute';
-                        overlay.style.top = '0';
-                        overlay.style.left = '0';
-                        overlay.style.width = '100%';
-                        overlay.style.height = '100%';
-                        overlay.style.background = 'rgba(0,0,0,0.85)';
-                        overlay.style.display = 'flex';
-                        overlay.style.flexDirection = 'column';
-                        overlay.style.alignItems = 'center';
-                        overlay.style.justifyContent = 'center';
-                        overlay.style.gap = '15px';
-                        overlay.style.zIndex = '10';
-
-                        const msg = document.createElement('div');
-                        const msgTitle = document.createElement('div');
-                        msgTitle.textContent = t('galleryDeleteConfirm');
-                        const msgHint = document.createElement('div');
-                        msgHint.textContent = t('galleryDeleteConfirmHint');
-                        msgHint.style.fontSize = '0.8em';
-                        msgHint.style.color = '#aaa';
-                        msg.append(msgTitle, msgHint);
-                        msg.style.color = '#fff';
-                        msg.style.fontWeight = 'bold';
-                        msg.style.textAlign = 'center';
-
-                        const btnRow = document.createElement('div');
-                        btnRow.style.display = 'flex';
-                        btnRow.style.gap = '12px';
-
-                        const confirmBtn = document.createElement('button');
-                        confirmBtn.innerHTML = `<svg style="width:14px;height:14px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>${t('galleryDelete')}`;
-                        confirmBtn.style.background = '#dc3545';
-                        confirmBtn.style.color = '#fff';
-                        confirmBtn.style.border = 'none';
-                        confirmBtn.style.padding = '10px 16px';
-                        confirmBtn.style.borderRadius = '6px';
-                        confirmBtn.style.cursor = 'pointer';
-                        confirmBtn.style.fontWeight = 'bold';
-                        confirmBtn.style.transition = 'background 0.2s';
-                        confirmBtn.onmouseover = () => confirmBtn.style.background = '#ff0000';
-                        confirmBtn.onmouseout = () => confirmBtn.style.background = '#dc3545';
-
-                        const cancelBtn = document.createElement('button');
-                        cancelBtn.textContent = t('galleryCancel');
-                        cancelBtn.style.background = 'var(--amb-bg-card-hover)';
-                        cancelBtn.style.color = '#fff';
-                        cancelBtn.style.border = 'none';
-                        cancelBtn.style.padding = '10px 16px';
-                        cancelBtn.style.borderRadius = '6px';
-                        cancelBtn.style.cursor = 'pointer';
-                        cancelBtn.style.transition = 'background 0.2s';
-                        cancelBtn.onmouseover = () => cancelBtn.style.background = '#666';
-                        cancelBtn.onmouseout = () => cancelBtn.style.background = 'var(--amb-bg-card-hover)';
-
-                        cancelBtn.onclick = (ce) => {
-                            ce.stopPropagation();
-                            overlay.remove();
-                        };
-
-                        confirmBtn.onclick = async (ce) => {
-                            ce.stopPropagation();
-                            confirmBtn.textContent = t('galleryDeleting');
-                            confirmBtn.disabled = true;
-                            try {
-                                const dr = await fetch('/anomalous/delete_gallery_image', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ filename: imgData.filename, subfolder: imgData.subfolder })
-                                });
-                                const dd = await dr.json();
-                                if (dd.status === 'success') {
-                                    card.remove();
-                                    if (this.galleryImagesList) {
-                                        this.galleryImagesList = this.galleryImagesList.filter(it => !(it.filename === imgData.filename && it.subfolder === (imgData.subfolder || '')));
-                                    }
-                                } else {
-                                    alert(t('galleryDeleteFailed') + dd.message);
-                                    overlay.remove();
-                                }
-                            } catch (err) {
-                                alert(t('galleryErrorPrefix') + err);
-                                overlay.remove();
-                            }
-                        };
-
-                        btnRow.appendChild(cancelBtn);
-                        btnRow.appendChild(confirmBtn);
-                        overlay.appendChild(msg);
-                        overlay.appendChild(btnRow);
-
-                        card.appendChild(overlay);
-                    };
-
-                    const detailsBtn = document.createElement('button');
-                    detailsBtn.className = 'anomalous-gallery-details';
-                    detailsBtn.type = 'button';
-                    detailsBtn.innerHTML = `
-                        <svg class="anomalous-gallery-details-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
-                            <line x1="2" y1="5" x2="8" y2="5"></line>
-                            <line x1="12" y1="5" x2="14" y2="5"></line>
-                            <circle cx="10" cy="5" r="2"></circle>
-                            <line x1="2" y1="11" x2="4" y2="11"></line>
-                            <line x1="8" y1="11" x2="14" y2="11"></line>
-                            <circle cx="6" cy="11" r="2"></circle>
-                        </svg>
-                        <span>${t('materialViewParameters')}</span>
-                    `;
-                    detailsBtn.title = t('materialViewDetails');
-                    detailsBtn.onclick = (event) => {
-                        event.stopPropagation();
-                        if (this.gallerySelectModel) return;
-                        openDetail();
-                    };
-
-                    card.appendChild(img);
-                    card.appendChild(detailsBtn);
-                    card.appendChild(delBtn);
-                    this.galleryGrid.insertBefore(card, this.gallerySentinel);
-                });
+                for (const imgData of data.images) {
+                    this.galleryGrid.insertBefore(createGalleryCard(this, imgData, { showViewer: showGalleryViewer }), this.gallerySentinel);
+                }
 
                 this.galleryCurrentPage = page;
                 this.galleryHasMore = page < data.pages;

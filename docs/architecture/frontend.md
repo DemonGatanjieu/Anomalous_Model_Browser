@@ -69,6 +69,9 @@ The main surfaces are:
   `ui_detail.js`, metadata editing in `ui_model_editor.js`, and advanced selection
   in `ui_model_selector.js`.
 - Gallery: generated outputs and the full-screen Image Detail Studio Workbench.
+  `ui_gallery_card.js` builds each output's card; its star and the workbench's Keep open
+  `ui_keep_menu.js`, which keeps the image as a Workflow Recipe, a combo or its prompts
+  (`image_keep.js`; `GET /anomalous/kept_images` says what each image was kept as).
   `ui_gallery_detail.js` owns its singleton lifecycle and cache, `ui_image_stage.js`
   owns header/zoom/filmstrip interaction, and `ui_image_inspector.js` owns metadata tabs.
 - Workspace: Combos (搭配, formerly Prompt Notes), Workflow Recipes, and the Material

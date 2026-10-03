@@ -1558,29 +1558,10 @@
     gap: 8px;
 }
 
-.anomalous-workbench-prompt-title-section {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
 .anomalous-workbench-prompt-title {
     font-size: 0.78rem;
     font-weight: 700;
     color: var(--amb-text-main);
-}
-
-.anomalous-workbench-prompt-count {
-    padding: 1px 6px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.06);
-    color: #8b95a5;
-    font-size: 0.65rem;
-}
-
-.anomalous-workbench-prompt-btns {
-    display: flex;
-    gap: 6px;
 }
 
 .anomalous-workbench-mini-action-btn {
@@ -1806,34 +1787,6 @@
 }
 
 /* Sticky Footer Snapshot Drawer */
-.anomalous-workbench-inspector-footer {
-    flex-shrink: 0;
-    padding: 12px 18px;
-    border-top: 1px solid var(--amb-border);
-    background: var(--amb-bg-page);
-}
-
-.anomalous-workbench-save-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-}
-
-.anomalous-workbench-save-input-wrap {
-    display: flex;
-    flex: 1 1 220px;
-    min-width: 0;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.anomalous-workbench-save-hint {
-    min-height: 1em;
-    color: #748196;
-    font-size: 0.62rem;
-    line-height: 1.25;
-}
 
 .anomalous-material-scope-badge {
     flex: 0 0 auto;
@@ -1948,24 +1901,6 @@
     font-size: 0.68rem;
 }
 
-.anomalous-workbench-save-input-wrap input {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--amb-border-strong);
-    background: rgba(0, 0, 0, 0.35);
-    color: var(--amb-text-main);
-    font-size: 0.82rem;
-    outline: none;
-    transition: all 0.15s;
-}
-
-.anomalous-workbench-save-input-wrap input:focus {
-    border-color: var(--amb-link);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--amb-link) 20%, transparent);
-}
-
 /* Loading & Error Box */
 .anomalous-workbench-loading-box {
     display: flex;
@@ -2005,10 +1940,9 @@
     font-style: italic;
 }
 /* Progressive disclosure shared by material capture surfaces. */
-.anomalous-workbench-inspector-footer[hidden],
 .anomalous-recipe-prompt-role-select[hidden],
 .anomalous-recipe-material-selection[hidden],
-.anomalous-recipe-material-node-select[hidden] { display: none !important; }
+.anomalous-recipe-material-node-select[hidden]  { display: none !important; }
 .anomalous-material-receipt {
     position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
     z-index: 1000010; display: flex; align-items: center; gap: 16px;

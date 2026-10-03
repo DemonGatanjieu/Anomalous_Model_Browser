@@ -92,9 +92,8 @@ covered by the `styles.css` manifest.
   `api/scan_report.py` turns the scraper's per-model report lines into one result per
   scan: kept as the last scan (`/anomalous/last_scan`), recorded in the activity log, each
   model located so the browser can open it (`/anomalous/scan_model`).
-  `api/recent_generations.py` lists the newest output PNGs that carry a workflow, each with
-  what made it and the image material it already is (matched by SHA256, as
-  `/anomalous/save_image_material` does), for the Material Library's Recent shelf.
+  `api/kept_images.py` says what each output image was kept as, for the gallery's star: the
+  Workflow Recipe, combo or saved prompt that names it as its source image.
   `api/scan_summary.py` counts models matched on Civitai, unmatched and not yet scanned
   for the scan page and lists the last two, by the same sidecar rules the scraper uses
   (`sidecar_info`, `is_unmatched`, `unmatched_reason` in `model_identity.py`); it also
@@ -347,11 +346,14 @@ covered by the `styles.css` manifest.
   shortcuts, their fallback when ComfyUI's keybinding does not fire, and the
   settings control that opens ComfyUI's keybinding editor.
 - `ui_model_sources.js` renders the Models page's Sources view (the last type chip): where each model is downloaded, for the open workflow or every model, with each link editable and saved in place; `model_source_links.js` owns its data and actions (collecting the workflow's models, resolving them here, saving a link to the model's information and the workflow, the canvas note and the clipboard list).
-- `ui_material_recent.js` renders the Material Library's Recent shelf: the newest generations, starred into Workflow Recipes with one press.
+- `ui_gallery_card.js` builds one output image's gallery card (viewer, workbench, cover pick, drag, star, delete);
+  `ui_keep_menu.js` is the star's keep menu (also the workbench's Keep): the whole workflow, the combo or the prompts,
+  each saying where it goes and opening what was kept already; `image_keep.js` does the keeping (an image as a combo,
+  its prompts as a saved prompt, reading what was kept) without DOM.
 - `ui_combos.js` renders the Combos page's list (搭配: a main model, LoRAs and a prompt, formerly Prompt Notes): search,
   New, and a card per combo with its model's cover and Use; a card opens the combo's editor. Combos keep the notes' files.
-- `recipe_save.js` saves Workflow Recipes for the canvas save and for an output image's workflow (Recent's star, the image
-  workbench, moving whole workflows kept as materials), laying an image's workflow on a canvas of its own to summarise it.
+- `recipe_save.js` saves Workflow Recipes for the canvas save and for an output image's workflow (the gallery's keep menu,
+  moving whole workflows kept as materials), laying an image's workflow on a canvas of its own to summarise it.
 - `ui_materials.js`, `ui_material_cards.js`, and `ui_material_application.js` own the Material Library UI, category navigation, card presentation (with grab cursor affordances, explicit drag tooltips, and polymorphic card dragging via `bindPolymorphicMaterialCardDrag`), context-aware drag guidance, prompt drops into the prompt box under the pointer (`prompt_drop.js`), and the structured empty state onboarding blueprint guiding users through collection, canvas drag, and prompt studio mixing. Drag precedence prioritizes node hits over blank canvas drops; blank canvas drops create `CLIPTextEncode` nodes (one per side the prompt has) or open full workflows. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) shared by detail views, cards and canvas actions.
 - `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn`, the Help modal and Home's "What's new"; the current guide's ID and steps live in `update_guide_data.js`) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across the rail's pages and tools with directional tooltip cards and keyboard navigation; steps whose target is not on screen are skipped. Other views pass their own `steps` (text from locale keys) and an optional `onClose`; the GPT-SoVITS import window does.
 - `tool_registry.js` holds the tool icons shared by the rail and Home.
@@ -369,8 +371,8 @@ covered by the `styles.css` manifest.
   with absolute positioning cascades immune to tooltip target conflicts, vibrant hover affordance,
   safe docked sidebar preservation upon node addition, and multi-type node dispatch; `ui_detail.js`
   coordinates detail display, `ui_model_editor.js` owns metadata editing, and
-  `ui_model_selector.js` owns advanced selection. `ui_gallery.js` and
-  `ui_gallery_detail.js` own generated-image browsing and workbench lifecycle,
+  `ui_model_selector.js` owns advanced selection. `ui_gallery.js` (cards in
+  `ui_gallery_card.js`) and `ui_gallery_detail.js` own generated-image browsing and workbench lifecycle,
   with stage interaction in `ui_image_stage.js` and metadata tabs in
   `ui_image_inspector.js`.
 - `ui_recipes.js` / `ui_recipe_detail.js`, `ui_notebooks.js`, and `ui_materials.js`

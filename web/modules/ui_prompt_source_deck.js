@@ -383,7 +383,7 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
             }
         };
 
-        const cancelBtn = text(formBtnRow, 'button', t('cancel'), 'anomalous-btn-ghost anomalous-btn-sm');
+        const cancelBtn = text(formBtnRow, 'button', t('dialogCancel'), 'anomalous-btn-ghost anomalous-btn-sm');
 
         submitBtn.onclick = async () => {
             const rawContent = contentInput.value.trim();

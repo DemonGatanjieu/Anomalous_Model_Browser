@@ -34,7 +34,7 @@ from .material_schema import (
 from .notebooks import MAX_NOTEBOOK_BYTES
 from .parameters import get_parameters_dir
 from .recipe_constants import MAX_RECIPE_BYTES
-from .recipe_schema import _build_model_references
+from .recipe_schema import _build_model_references, _normalise_source_image
 from .recipe_store import get_recipes_dir
 from .utils import atomic_write_json as _atomic_write_json, require_filename, resolve_within
 
@@ -359,13 +359,16 @@ async def api_save_prompt_plan(request):
         allow_duplicate = payload.get("allow_duplicate", False)
         if not isinstance(allow_duplicate, bool):
             raise ValueError("Invalid duplicate preference")
+        # The output image the prompts were taken from, so the gallery can show it was kept.
+        source_image = _normalise_source_image(payload.get("source_image"))
         signature = hashlib.sha256(json.dumps(plan, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
         material_id = uuid.uuid4().hex
         filename = f"material_{int(time.time())}_{material_id}.json"
         material = {"schema_version": MATERIAL_SCHEMA_VERSION, "id": material_id,
                     "kind": "prompt_plan", "name": name.strip(), "tags": tags,
                     "timestamp": int(time.time() * 1000), "plan": plan,
-                    "source": {"type": "prompt_plan", "parameter_signature": signature},
+                    "source": {"type": "prompt_plan", "parameter_signature": signature,
+                               **({"image": source_image} if source_image else {})},
                     "capabilities": ["compose_prompt"], "selection": {"scope": "prompt_plan"}}
         duplicate = await asyncio.to_thread(_persist_parameter_material, get_materials_dir(), filename, material, allow_duplicate)
         if duplicate:

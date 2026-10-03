@@ -7,6 +7,7 @@
 
 import { translate } from './locales.js';
 import { renderComboList } from './ui_combos.js';
+import { listCombos } from './image_keep.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -85,6 +86,14 @@ export async function showNotebooks({ editor = false } = {}) {
 export function openCombo(note) {
     this.currentNotebook = note;
     return this.showNotebooks({ editor: true });
+}
+
+/** Opens the combo saved as `filename` (from a toast after keeping an image as a combo). */
+export async function openComboByFilename(filename) {
+    this.show?.();
+    const note = (await listCombos()).find(item => item.filename === filename);
+    if (note) await this.openCombo(note);
+    else await this.showNotebooks();
 }
 
 /** Draws the list again when it is the view on screen (after a save). */

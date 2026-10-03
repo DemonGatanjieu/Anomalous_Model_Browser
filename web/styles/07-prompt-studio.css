@@ -506,7 +506,6 @@
     font-weight: 500;
 }
 
-
 /* ==========================================================================
    Prompt Mixer & Lego Assembler Deck (提示词乐高调音台)
    ========================================================================== */
@@ -1163,7 +1162,6 @@
     }
 }
 
-
 /* Left & Right Panels Common */
 .anomalous-workbench-left-panel,
 .anomalous-workbench-right-panel {
@@ -1371,29 +1369,6 @@
 .anomalous-recipe-empty > * {
     position: relative;
     z-index: 1;
-}
-
-/* Tip Banner for Prompt Studio Usage Guidance */
-.anomalous-workbench-tip-banner {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    margin: 2px 0 8px;
-    background: color-mix(in srgb, var(--amb-link) 7%, transparent);
-    border: 1px solid color-mix(in srgb, var(--amb-link) 20%, transparent);
-    border-radius: var(--amb-radius-control, 6px);
-    font-size: 0.72rem;
-    color: var(--amb-link);
-    line-height: 1.35;
-    user-select: none;
-}
-
-.anomalous-workbench-tip-banner .anomalous-tip-icon {
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
-    color: var(--amb-link);
 }
 
 /* Individual Source Prompt Card (Tactile Skewed Glassmorphic Card Aesthetics) */
@@ -1759,21 +1734,6 @@
 .anomalous-assembly-snap-dock.is-drag-over .anomalous-snap-icon,
 .anomalous-assembly-track.is-drag-over-end .anomalous-assembly-snap-dock .anomalous-snap-icon {
     transform: rotate(90deg) scale(1.15);
-}
-
-.anomalous-workbench-sub-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    width: 100%;
-    flex-shrink: 0;
-}
-
-.anomalous-workbench-sub-actions button {
-    flex: 1;
-    white-space: nowrap;
-    justify-content: center;
-    text-align: center;
 }
 
 .anomalous-workbench-header-actions {

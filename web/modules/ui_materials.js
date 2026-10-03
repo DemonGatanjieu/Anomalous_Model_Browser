@@ -8,7 +8,6 @@ import { text, jsonResponse } from './ui_dom.js';
 import { renderMaterialCard } from './ui_material_cards.js';
 import { leaveMaterialDetail, showMaterialDetail } from './ui_material_detail.js';
 import { updateMaterialContext, watchMaterialSelection } from './ui_material_application.js';
-import { renderRecentShelf } from './ui_material_recent.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -27,7 +26,6 @@ function buildMaterialTopbar(owner) {
     const left = text(topbar, 'div', '', 'anomalous-material-topbar-left');
     const pills = text(left, 'div', '', 'anomalous-material-pills');
     const categories = [
-        { id: 'recent', key: 'materialKindPill_recent', kind: '' }, // newest generations, to star
         { id: 'all', key: 'materialKindPill_all', kind: '' },
         { id: 'params', key: 'materialKindPill_params', kind: 'recipe_parameter_selection' },
         { id: 'prompts', key: 'materialKindPill_prompts', kind: 'prompt_plan' },
@@ -273,13 +271,6 @@ export async function refreshMaterials(page = this.materialPage || 1) {
     text(this.materialList, 'p', t('loading'), 'anomalous-material-empty');
     updateMaterialContext(this);
     for (const [key, pill] of Object.entries(this.materialKindPills || {})) pill.classList.toggle('is-active', key === (this.materialKindCategory || 'all'));
-    this.materialList.classList.toggle('is-recent', this.materialKindCategory === 'recent');
-    if (this.materialKindCategory === 'recent') {
-        this.materialPager.replaceChildren();
-        await renderRecentShelf(this, controller.signal);
-        if (this.materialListController === controller) this.materialListController = null;
-        return;
-    }
     const query = new URLSearchParams({
         page,
         limit: 48,
