@@ -12,6 +12,11 @@ import { updateDoctorBanner } from './ui_doctor_banner.js';
 
 const MODEL_EXT = /\.(safetensors|ckpt|pt|bin|pth|sft|gguf)$/i;
 const CANDIDATE_WHY = { size: 'doctorWhyCandidate', name: 'doctorWhySameName', 'name-size': 'doctorWhyLikely' };
+// How sure a match is, next to the name. A fingerprint match needs none: its button says it.
+const LEVELS = {
+    likely: ['●●○', 'doctorLevelLikely'], maybe: ['●○○', 'doctorLevelMaybe'],
+    ambiguous: ['○○○', 'doctorLevelUnclear'], conflict: ['○○○', 'doctorLevelConflict'], missing: ['○○○', 'doctorLevelNone'],
+};
 const ORDER = ['fixable', 'candidate', 'conflict', 'ambiguous', 'missing', 'changed'];
 const MARKS = { fixable: '↻', candidate: '?', conflict: '✕', ambiguous: '?', missing: '✕', changed: '!', ready: '✓' };
 
@@ -47,6 +52,22 @@ function reason(entry) {
         case 'changed': return t('doctorWhyChanged');
         default: return t(entry.record ? 'doctorWhyNotHere' : 'doctorWhyNoRecord');
     }
+}
+
+function levelOf(entry) {
+    if (entry.state === 'candidate') return entry.via === 'name-size' ? 'likely' : 'maybe';
+    return Object.hasOwn(LEVELS, entry.state) ? entry.state : '';
+}
+
+function title(entry) {
+    const line = el('span', 'anomalous-doctor-title');
+    line.append(el('span', 'anomalous-scan-row-name', fileName(entry.value)));
+    const level = levelOf(entry);
+    if (level) {
+        const [dots, key] = LEVELS[level];
+        line.append(el('span', `anomalous-doctor-level is-${level}`, `${dots} ${t(key)}`));
+    }
+    return line;
 }
 
 /** The hashes behind the verdict, folded. */
@@ -95,7 +116,7 @@ function problemRow(owner, panel, entry) {
     const row = el('div', `anomalous-scan-row anomalous-doctor-row is-${entry.state}`);
     const copy = el('div', 'anomalous-scan-row-copy');
     copy.append(
-        el('span', 'anomalous-scan-row-name', fileName(entry.value)),
+        title(entry),
         el('span', 'anomalous-scan-row-where', nodeLabel(entry)),
         el('span', 'anomalous-doctor-why', reason(entry)),
     );
