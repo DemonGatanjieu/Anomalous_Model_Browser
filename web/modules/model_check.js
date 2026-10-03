@@ -8,19 +8,22 @@
  *
  * An entry: { node, widget, value, state, target, via, record, local }, state one of
  * ready · changed (there, but not the file the workflow was saved with) · fixable (target
- * is the same file, via 'hash' or 'spelling') · candidate (target has the same size only)
- * · conflict · ambiguous · missing (`record` says whether the workflow carries a hash).
+ * is the same file, via 'hash' or 'spelling') · candidate (a press decides: via 'size', the
+ * same size; 'name', the one file of that name for a workflow with no record; 'name-size',
+ * both, likely the same) · conflict · ambiguous · missing (`record` says whether the
+ * workflow carries a hash). Foundation components (VAE, CLIP…) never go by name.
  */
 
 import { app } from "../../../scripts/app.js";
 import { findWorkflowHashRecord } from './recipe_provenance.js';
 import { inferModelFolderTypes, requiresHashForModelRecovery } from './model_policies.js';
 
-const MODEL_FILE = /\.(safetensors|ckpt|pt|bin|pth|sft)$/i;
+const MODEL_FILE = /\.(safetensors|ckpt|pt|bin|pth|sft|gguf)$/i;
 const BATCH = 256;
 const PROBLEMS = new Set(['fixable', 'candidate', 'conflict', 'ambiguous', 'missing']);
 
 const slashes = (value) => String(value).replace(/\\/g, '/');
+const fileName = (value) => slashes(value).split('/').pop().toLowerCase();
 const choices = (widget) => (Array.isArray(widget.options?.values) ? widget.options.values : []);
 const nativeValue = (widget, filename) => choices(widget).find(v => typeof v === 'string' && slashes(v) === slashes(filename)) || null;
 
@@ -53,12 +56,12 @@ function localRecord(value) {
 
 const savedRecord = (ref) => asRecord(findWorkflowHashRecord(app.graph, ref.node.id, ref.value));
 
-/** What identifies the model: the workflow's record, or for ordinary models (not the
- * hash-only foundation components) the local cache's entry under the same name. */
-function evidence(ref) {
-    const saved = savedRecord(ref);
-    if (saved || requiresHashForModelRecovery(ref.node, ref.widget)) return saved;
-    return localRecord(ref.value);
+/** Files of the same name (any folder, any case) the node can load. A name is never proof,
+ * only a candidate, and only for ordinary models: foundation components go by hash. */
+function sameNameChoices(ref) {
+    if (requiresHashForModelRecovery(ref.node, ref.widget)) return [];
+    const name = fileName(ref.value);
+    return choices(ref.widget).filter(value => typeof value === 'string' && fileName(value) === name);
 }
 
 function identityChanged(ref) {
@@ -121,7 +124,7 @@ export async function checkWorkflowModels({ refresh = false } = {}) {
     const entries = [];
     const items = [];
     for (const ref of modelRefs()) {
-        const record = evidence(ref);
+        const record = savedRecord(ref);
         const entry = { ...ref, record, local: localRecord(ref.value), state: 'missing', target: null, via: '' };
         entries.push(entry);
         if (choices(ref.widget).includes(ref.value)) {
@@ -134,6 +137,10 @@ export async function checkWorkflowModels({ refresh = false } = {}) {
         } else if (record?.hash || record?.size) {
             const type = inferModelFolderTypes(ref.node, ref.widget).join(',');
             items.push({ key: String(entries.length - 1), hash: record.hash, size: record.size, type });
+        } else {
+            const named = sameNameChoices(ref);
+            if (named.length === 1) Object.assign(entry, { state: 'candidate', target: named[0], via: 'name' });
+            else if (named.length > 1) entry.state = 'ambiguous';
         }
     }
     if (!items.length) return entries;
@@ -156,7 +163,7 @@ export async function checkWorkflowModels({ refresh = false } = {}) {
         if (!target) continue; // not a file this node can load
         Object.assign(entry, result.found
             ? { state: 'fixable', target, via: 'hash' }
-            : { state: 'candidate', target, via: 'size' });
+            : { state: 'candidate', target, via: fileName(target) === fileName(entry.value) ? 'name-size' : 'size' });
     }
     return entries;
 }

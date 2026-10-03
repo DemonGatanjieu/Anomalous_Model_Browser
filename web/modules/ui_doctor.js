@@ -1,7 +1,7 @@
 /**
  * Model Check, the tool page: the models the open workflow uses and what is wrong with each
  * (model_check.js), with what can be done about it: put in the same file found under
- * another name or folder, take or leave a file of the same size, pick one by hand (the
+ * another name or folder, take or leave a file of the same name or size, pick one by hand (the
  * node model picker) or look it up on Civitai. Nothing in the workflow changes without a
  * press here. Uses the scan page's layout classes (18-scan-page.css).
  */
@@ -10,7 +10,8 @@ import { translate as t } from './locales.js';
 import { applyModelFix, checkWorkflowModels, fixWorkflowModels, isProblem, markReplaced, replacedFrom } from './model_check.js';
 import { updateDoctorBanner } from './ui_doctor_banner.js';
 
-const MODEL_EXT = /\.(safetensors|ckpt|pt|bin|pth|sft)$/i;
+const MODEL_EXT = /\.(safetensors|ckpt|pt|bin|pth|sft|gguf)$/i;
+const CANDIDATE_WHY = { size: 'doctorWhyCandidate', name: 'doctorWhySameName', 'name-size': 'doctorWhyLikely' };
 const ORDER = ['fixable', 'candidate', 'conflict', 'ambiguous', 'missing', 'changed'];
 const MARKS = { fixable: '↻', candidate: '?', conflict: '✕', ambiguous: '?', missing: '✕', changed: '!', ready: '✓' };
 
@@ -40,7 +41,7 @@ function stat(value, label, tone) {
 function reason(entry) {
     switch (entry.state) {
         case 'fixable': return t(entry.via === 'spelling' ? 'doctorWhySpelling' : 'doctorWhyFound', { file: entry.target });
-        case 'candidate': return t('doctorWhyCandidate', { file: entry.target });
+        case 'candidate': return t(CANDIDATE_WHY[entry.via], { file: entry.target });
         case 'conflict': return t('doctorWhyConflict');
         case 'ambiguous': return t('doctorWhyAmbiguous');
         case 'changed': return t('doctorWhyChanged');
@@ -166,7 +167,7 @@ export async function renderDoctorPage(owner, panel, { refresh = false } = {}) {
     if (token !== panel._doctorRender || panel.style.display === 'none') return;
 
     const problems = entries.filter(entry => isProblem(entry) || entry.state === 'changed')
-        .sort((a, b) => ORDER.indexOf(a.state) - ORDER.indexOf(b.state));
+        .sort((a, b) => ORDER.indexOf(a.state) - ORDER.indexOf(b.state) || (b.via === 'name-size') - (a.via === 'name-size'));
     const fixable = entries.filter(entry => entry.state === 'fixable');
     const here = entries.filter(entry => entry.state === 'ready' || entry.state === 'changed');
     const replaced = here.filter(entry => replacedFrom(entry.widget));

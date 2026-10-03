@@ -25,13 +25,19 @@ simply does not exist in any local file, it returns `{"found": False}` cleanly w
 falsely flagging a conflict.
 
 Paths, filenames, source filenames, display/custom names, previews, workflow
-fingerprints, and fuzzy/visual similarity are never candidate evidence. They may
+fingerprints, and fuzzy/visual similarity never establish identity. They may
 be used only after identity is established to return a local dropdown value,
 locate presentation media, and verify the value against ComfyUI's native choices.
+One exception, for ordinary models only: when the workflow carries no record at
+all (a workflow saved without the plugin), the single file of the same name
+among the widget's own choices is offered as a candidate (`via: 'name'`); a
+size-only candidate whose name also matches is shown as likely (`via:
+'name-size'`). Both take a press on their row and never count among the files
+put in at once. Several files of that name leave the model ambiguous.
 
 Foundation components—`vae`, `vae_approx`, `clip`, `text_encoders`, and
 `clip_vision`—are hash-only automatic-recovery categories. Byte size alone
-cannot automatically repair them. When size provenance is available it may be
+cannot automatically repair them, and they are never offered by name. When size provenance is available it may be
 shown as the same explicit manual candidate, but a supplied hash mismatch never
 falls back to a filename or size-only guess.
 This is a Model Check confidence boundary, not a scanner-support boundary. The

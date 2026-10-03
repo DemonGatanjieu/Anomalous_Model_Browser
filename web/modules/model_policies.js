@@ -33,6 +33,7 @@ export function inferModelFolderTypes(node, widget) {
     if (widgetName.includes('ckpt') || widgetName.includes('checkpoint') || key.includes('checkpoint')) return ['checkpoints'];
     if (widgetName.includes('unet') || widgetName.includes('diffusion_model') || key.includes('unet loader')) return ['diffusion_models', 'unet'];
     if (widgetName.includes('clip_name') || widgetName.includes('text_encoder') || nodeType.includes('cliploader')) return ['clip', 'text_encoders'];
+    if (nodeType.includes('upscalemodel') || widgetName.includes('upscale_model')) return ['upscale_models'];
     return [];
 }
 

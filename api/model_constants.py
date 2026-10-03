@@ -14,7 +14,7 @@ SIDECAR_SUFFIXES = (
 )
 RESOLVABLE_MODEL_TYPES = (
     'checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet',
-    'vae', 'vae_approx', 'clip', 'text_encoders', 'clip_vision',
+    'vae', 'vae_approx', 'clip', 'text_encoders', 'clip_vision', 'upscale_models',
 )
 
 
