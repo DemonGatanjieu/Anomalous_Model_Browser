@@ -1,6 +1,6 @@
 /**
  * ui_notebook_editor.js
- * Prompt Note editor with unfolded cards, sticky toolbar, and compatible-model galleries.
+ * Combo (搭配) editor with unfolded cards, sticky toolbar, and compatible-model galleries.
  */
 
 import { translate } from './locales.js';
@@ -52,11 +52,9 @@ function createNotebookToolbar(ctx, notebook) {
         }, 1500);
     };
 
-    // Into the open workflow (model, LoRAs, prompt), or as a new group of nodes.
-    const applyBtn = Object.assign(document.createElement('button'), { type: 'button', className: 'anomalous-btn-success', textContent: t('noteApplyButton') });
-    applyBtn.onclick = () => ctx.applyNotebookToWorkflow();
-    const sendBtn = Object.assign(document.createElement('button'), { type: 'button', className: 'anomalous-btn-ghost', textContent: t('sendToCanvas') });
-    sendBtn.onclick = () => ctx.sendNotebookToCanvas();
+    // Use: into the open workflow when it has the model loader, else a new group of nodes.
+    const useBtn = Object.assign(document.createElement('button'), { type: 'button', className: 'anomalous-btn-success', textContent: t('comboUse'), title: t('comboUseHint') });
+    useBtn.onclick = () => ctx.useNotebook();
 
     // Floating More Dropdown Menu
     const moreWrapper = document.createElement('div');
@@ -74,7 +72,7 @@ function createNotebookToolbar(ctx, notebook) {
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.className = 'anomalous-nb-dropdown-item anomalous-nb-dropdown-item-danger';
-    const normalDelHtml = `<span>🗑️</span> <span>${t('deleteNotebook') || (window.anomalous_browser_lang === 'zh' ? '删除笔记' : 'Delete Note')}</span>`;
+    const normalDelHtml = `<span>🗑️</span> <span>${t('deleteNotebook')}</span>`;
     delBtn.innerHTML = normalDelHtml;
 
     const resetDel = () => {
@@ -94,11 +92,13 @@ function createNotebookToolbar(ctx, notebook) {
             resetDel();
             dropdownMenu.classList.remove('show');
             moreBtn.classList.remove('active');
-            ctx.deleteCurrentNotebook(true);
+            ctx.deleteCurrentNotebook();
         }
     };
 
-    dropdownMenu.appendChild(delBtn);
+    const groupBtn = Object.assign(document.createElement('button'), { type: 'button', className: 'anomalous-nb-dropdown-item', textContent: t('sendToCanvas') });
+    groupBtn.onclick = () => ctx.sendNotebookToCanvas();
+    dropdownMenu.append(groupBtn, delBtn);
 
     moreBtn.onclick = (e) => {
         e.stopPropagation();
@@ -117,7 +117,7 @@ function createNotebookToolbar(ctx, notebook) {
     document.addEventListener('click', onDocClick);
 
     moreWrapper.append(moreBtn, dropdownMenu);
-    rightBtns.append(saveBtn, applyBtn, sendBtn, moreWrapper);
+    rightBtns.append(saveBtn, useBtn, moreWrapper);
     tb.append(titleBox, rightBtns);
     return tb;
 }

@@ -55,10 +55,10 @@ nodes; `params` contains other node/recipe selections. `all` (the default) is ev
 category but `workflow`: whole workflows belong to Workflow Recipes. New ones are
 kept as recipes (`recipe_save.js`); a full snapshot kept earlier is saved as a
 recipe on request (`mark_material_moved` records `moved_to_recipe` in the material,
-which then is listed in no category; the file stays). The Prompts page lists the
-Prompt Notes (their own files, `anomalous_notebooks`) above the saved prompts; a
-note is no longer copied into a material (`prompt_note_bundle` / `prompt_text`
-records saved earlier still list and open).
+which then is listed in no category; the file stays). Combos (formerly Prompt
+Notes, their own files in `anomalous_notebooks`) are a page of their own and are
+not copied into materials (`prompt_note_bundle` / `prompt_text` records saved
+earlier still list and open, and can be saved as a new combo).
 Exact `kind` remains compatible. `material_prompt_data.js` reads authoritative
 detail fields for the studio: notes use `note.promptEn`, plans compose saved
 parts, and workflow selections use top-level `prompt_groups`. The import drawer

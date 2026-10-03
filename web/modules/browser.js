@@ -7,9 +7,9 @@ import { closeWorkspace, hideAllPanels } from './ui_browser_navigation.js';
 import { triggerDirectModelScan } from './scan_runner.js';
 import { openScanPage, renderScanPage, leaveScanPage } from './ui_scan_page.js';
 import { loadGalleryImages, refreshGalleryImages, showGeneratedGallery, showGallerySelectMode, showGalleryViewer } from './ui_gallery.js';
-import { showNotebooks, refreshNotebooks, saveCurrentNotebook, deleteCurrentNotebook } from './ui_notebooks.js';
+import { showNotebooks, openCombo, refreshNotebooks, saveCurrentNotebook, deleteCurrentNotebook } from './ui_notebooks.js';
 import { renderNotebookEditor, fillNotebookGalleries } from './ui_notebook_editor.js';
-import { applyNotebookToWorkflow, sendNotebookToCanvas } from './notebook_canvas.js';
+import { useNotebook, sendNotebookToCanvas } from './notebook_canvas.js';
 import { showRecipes, refreshRecipes } from './ui_recipe_catalog.js';
 import { renderRecipeList, handleSaveRecipe, openRecipeByFilename } from './ui_recipes.js';
 import { showMaterials, refreshMaterials, openSavedMaterial, openMaterialLibrary } from './ui_materials.js';
@@ -171,6 +171,7 @@ AnomalousBrowser.prototype._openGalleryReplacer = _openGalleryReplacer;
 AnomalousBrowser.prototype.openLoraInsertionPicker = openLoraInsertionPicker;
 
 AnomalousBrowser.prototype.showNotebooks = showNotebooks;
+AnomalousBrowser.prototype.openCombo = openCombo;
 AnomalousBrowser.prototype.closeWorkspace = closeWorkspace;
 AnomalousBrowser.prototype.refreshNotebooks = refreshNotebooks;
 AnomalousBrowser.prototype.saveCurrentNotebook = saveCurrentNotebook;
@@ -178,7 +179,7 @@ AnomalousBrowser.prototype.deleteCurrentNotebook = deleteCurrentNotebook;
 AnomalousBrowser.prototype.renderNotebookEditor = renderNotebookEditor;
 AnomalousBrowser.prototype.fillNotebookGalleries = fillNotebookGalleries;
 AnomalousBrowser.prototype.sendNotebookToCanvas = sendNotebookToCanvas;
-AnomalousBrowser.prototype.applyNotebookToWorkflow = applyNotebookToWorkflow;
+AnomalousBrowser.prototype.useNotebook = useNotebook;
 
 AnomalousBrowser.prototype.showRecipes = showRecipes;
 AnomalousBrowser.prototype.openRecipeByFilename = openRecipeByFilename;

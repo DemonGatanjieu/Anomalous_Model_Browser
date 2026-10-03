@@ -129,9 +129,7 @@ function renderMaterialInspector(content, payload, owner, material) {
                 const result = await jsonResponse(response, 'notebook restore failed');
                 if (result.status !== 'success') throw new Error('notebook restore failed');
                 leaveMaterialDetail(owner);
-                owner.currentNotebook = notebook;
-                await owner.showNotebooks();
-                owner.renderNotebookEditor();
+                await owner.openCombo(notebook);
             } catch (error) { await anomalousAlert(t('notebookSaveError')); }
             finally { restore.disabled = false; }
         };

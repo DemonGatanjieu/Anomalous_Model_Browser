@@ -1,6 +1,7 @@
 /**
- * The active Prompt Note on the canvas: as a new group of nodes that follows the pointer
- * until a click, or put into the open workflow (notebook_apply.js) after showing what changes.
+ * The active combo (搭配) on the canvas. Use puts it into the open workflow
+ * (notebook_apply.js) after showing what changes, or, when the canvas has no main model
+ * loader, builds a new group of nodes that follows the pointer until a click.
  */
 
 import { app } from '../../../scripts/app.js';
@@ -20,10 +21,8 @@ export function isUnetModel(model) {
     return model?.type === 'unet' || model?.type === 'diffusion_models';
 }
 
-/** Puts the active note into the open workflow after a confirmation listing each change. */
-export async function applyNotebookToWorkflow() {
-    if (!this.currentNotebook) return;
-    const plan = planNoteApply(app, this.currentNotebook.data || {}, selectedMaterialNode(app));
+/** Makes `plan` (planNoteApply) after a confirmation listing each change. */
+async function applyPlan(owner, plan) {
     const say = ([key, params = {}]) => t(key, Object.fromEntries(Object.entries(params).map(([k, v]) => [k, v === '' ? t('noteApplyNone') : v])));
     const reasons = plan.skipped.map(item => t('noteApplySkipped', { reason: say(item) }));
     if (!plan.lines.length) {
@@ -33,8 +32,25 @@ export async function applyNotebookToWorkflow() {
     const message = [...plan.lines.map(say), ...reasons, '', t('noteApplyUndoHint')].join('\n');
     if (!await anomalousConfirm(message, t('noteApplyTitle'), { okLabel: t('noteApplyConfirm') })) return;
     applyNotePlan(app, plan);
-    this.nbPanel.style.display = 'none';
-    this.close();
+    owner.nbPanel.style.display = 'none';
+    owner.close();
+}
+
+/**
+ * Use (用上): into the open workflow when the canvas has a main model loader; with none, a
+ * new group of nodes; with several and none selected, asks before making a new group.
+ */
+export async function useNotebook() {
+    if (!this.currentNotebook) return;
+    const data = this.currentNotebook.data || {};
+    const plan = planNoteApply(app, data, selectedMaterialNode(app));
+    if (!plan.loader && data.mainModel) {
+        const many = plan.skipped.find(([key]) => key === 'noteApplyManyLoaders');
+        if (many && !await anomalousConfirm(t('comboManyLoaders', many[1]), t('noteApplyTitle'), { okLabel: t('sendToCanvas') })) return;
+        this.sendNotebookToCanvas();
+        return;
+    }
+    await applyPlan(this, plan);
 }
 
 /** The one text-encoder output already on the canvas (a loader), for a UNet note's prompts. */
@@ -49,7 +65,7 @@ export function sendNotebookToCanvas() {
         if (!this.currentNotebook) return;
         const data = this.currentNotebook.data || {};
         if (!data.mainModel) {
-            alert(t('notebookSelectMain'));
+            void anomalousAlert(t('notebookSelectMain'));
             return;
         }
 

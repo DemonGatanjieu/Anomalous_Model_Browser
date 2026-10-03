@@ -105,7 +105,7 @@ covered by the `styles.css` manifest.
   holds the size and count limits shared by recipes, parameters and materials.
 - `api/recipe_packages.py` owns bounded inspect-stage-commit package handling.
 - `api/parameters.py` owns Parameter Notebook persistence and lookup.
-- `api/notebooks.py` owns Prompt Note persistence and recoverable legacy copying.
+- `api/notebooks.py` owns combo (搭配, formerly Prompt Note) persistence and recoverable legacy copying.
 - `api/material_schema.py`, `api/material_assets.py`, and `api/material_store.py`
   own curated material shaping, private assets, persistence/cache, search and
   lifecycle; `api/materials.py` owns HTTP mapping and compatibility entry points.
@@ -348,14 +348,14 @@ covered by the `styles.css` manifest.
   settings control that opens ComfyUI's keybinding editor.
 - `ui_model_sources.js` renders the Models page's Sources view (the last type chip): where each model is downloaded, for the open workflow or every model, with each link editable and saved in place; `model_source_links.js` owns its data and actions (collecting the workflow's models, resolving them here, saving a link to the model's information and the workflow, the canvas note and the clipboard list).
 - `ui_material_recent.js` renders the Material Library's Recent shelf: the newest generations, starred into Workflow Recipes with one press.
-- `ui_material_notes.js` puts the Prompt Notes at the head of the Material Library's Prompts page, each with Put into this
-  workflow / New group of nodes; a card opens the note's editor. Notes keep their own files.
+- `ui_combos.js` renders the Combos page's list (搭配: a main model, LoRAs and a prompt, formerly Prompt Notes): search,
+  New, and a card per combo with its model's cover and Use; a card opens the combo's editor. Combos keep the notes' files.
 - `recipe_save.js` saves Workflow Recipes for the canvas save and for an output image's workflow (Recent's star, the image
   workbench, moving whole workflows kept as materials), laying an image's workflow on a canvas of its own to summarise it.
 - `ui_materials.js`, `ui_material_cards.js`, and `ui_material_application.js` own the Material Library UI, category navigation, card presentation (with grab cursor affordances, explicit drag tooltips, and polymorphic card dragging via `bindPolymorphicMaterialCardDrag`), context-aware drag guidance, prompt drops into the prompt box under the pointer (`prompt_drop.js`), and the structured empty state onboarding blueprint guiding users through collection, canvas drag, and prompt studio mixing. Drag precedence prioritizes node hits over blank canvas drops; blank canvas drops create `CLIPTextEncode` nodes (one per side the prompt has) or open full workflows. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) shared by detail views, cards and canvas actions.
 - `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn`, the Help modal and Home's "What's new"; the current guide's ID and steps live in `update_guide_data.js`) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across the rail's pages and tools with directional tooltip cards and keyboard navigation; steps whose target is not on screen are skipped. Other views pass their own `steps` (text from locale keys) and an optional `onClose`; the GPT-SoVITS import window does.
 - `tool_registry.js` holds the tool icons shared by the rail and Home.
-- The rail's tool slots (`ui_rail_tools.js`, fixed) hold scan, doctor and current node; settings sits at the rail's bottom. Materials is a rail page. There is no toolbox: the other tools open from their pages (workflow share codes on Workflows, Prompt Studio and Prompt Notes on Materials, Model Sources as a view of Models, opened from the doctor too, translation in Current node).
+- The rail's tool slots (`ui_rail_tools.js`, fixed) hold scan, doctor and current node; settings sits at the rail's bottom. Materials is a rail page. There is no toolbox: the other tools open from their pages (workflow share codes on Workflows, Prompt Studio on Materials, Model Sources as a view of Models, opened from the doctor too, translation in Current node).
 - `ui_model_types.js` owns the models page's type chips (one per models folder, with its count) and
   `owner.modelScope`, what the grid lists: a whole type, or one list folder shown as a crumb. The
   grid's cards set `currentType/PathIdx/Subfolder` to their own model's folder (`focusModel`),
@@ -378,16 +378,15 @@ covered by the `styles.css` manifest.
   the Workflow Recipe studio catalog workspace with search/filter tags, grid/list layout toggle,
   dedicated top-right modal close anchor (permanently decoupled from the tool button row to prevent wrapping displacement),
   streamlined action header (preserving active workflow saving while pruning unfinished package
-  import entrypoints), and card browsing. `ui_notebooks.js` owns Prompt Note catalog,
-  sidebar dual-group management (note list + floor quick jump anchor navigation with scrollspy active tracking and tooltip hints),
-  and persistence; `ui_notebook_editor.js` owns unfolded card editing (modularized into single-responsibility
+  import entrypoints), and card browsing. `ui_notebooks.js` owns the Combos workspace (its list or one combo's editor,
+  with Back to the list) and combo persistence; `ui_notebook_editor.js` owns unfolded card editing (modularized into single-responsibility
   sub-functions adhering to the 50-line rule: sticky top action toolbar with floating More popover dropdown and timed two-step delete safety guard,
   unfolded companion models card with unconstrained multi-column tile flow eliminating nested gallery scrollbars,
   prompt composer with dynamic field-sizing and compact inline find & replace toolbar, flat material library archiving card with
   clean single-icon feedback, and unified dark slim scrollbar ergonomics with complete bilingual dictionary coverage in `locales.js`), and
-  `notebook_canvas.js` owns LiteGraph creation and putting a note into the open workflow, whose plan
-  (main loader, LoRA chain rebuilt in place, positive prompt box) is `notebook_apply.js`. Prompt Notes open from the Material Library's top bar
-  with defensive workspace return state restoration, TDZ-safe summary initialization, and responsive empty-state fallback rendering. `ui_recipe_detail.js`
+  `notebook_canvas.js` owns Use: putting a combo into the open workflow, whose plan
+  (main loader, LoRA chain rebuilt in place, positive prompt box) is `notebook_apply.js`, or, with no main loader on
+  the canvas, a new group of nodes. Combos are a rail page. `ui_recipe_detail.js`
   coordinates the Workflow Recipe detail session and model composition. `ui_recipe_overview.js`
   owns the Overview prompt showcase (with `entry.text` fallback, guarded non-shrinking primary action CTA, and floating Popover More dropdown menu), and `ui_recipe_parameters.js`
   owns the responsive Parameter Presets workspace (featuring default-expanded raw node parameter inspection,

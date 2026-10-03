@@ -20,6 +20,7 @@ const CARDS = Object.freeze([
     { name: 'Voices', icon: PAGE_ICONS.script, open: owner => owner.goTo('script') },
     { name: 'Gallery', icon: PAGE_ICONS.gallery, open: owner => owner.goTo('gallery') },
     { name: 'Recipes', icon: PAGE_ICONS.recipes, open: owner => owner.goTo('recipes') },
+    { name: 'Combos', icon: PAGE_ICONS.combos, open: owner => owner.goTo('combos') },
     { name: 'Materials', icon: PAGE_ICONS.materials, open: owner => owner.goTo('materials') },
 ]);
 

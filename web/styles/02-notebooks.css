@@ -57,221 +57,137 @@
     container-type: inline-size;
 }
 
-.anomalous-nb-sidebar {
-    width: 250px;
-    background: var(--amb-bg-page);
-    border-right: 1px solid var(--amb-border-strong);
-    display: flex;
-    flex-direction: column;
-    transition: width 0.3s;
-    container-type: inline-size;
-}
-
-.anomalous-nb-create-row {
-    min-width: 0;
-    box-sizing: border-box;
-    align-items: center;
-}
-
-.anomalous-nb-create-input {
-    min-width: 0;
-    width: 0;
-    box-sizing: border-box;
-}
-
-.anomalous-nb-create-row > button {
-    flex: 0 0 auto;
-    min-width: 0;
-}
-
-@container (max-width: 150px) {
-    .anomalous-nb-create-text,
-    .anomalous-nb-nav-header,
-    .anomalous-nb-nav-text {
-        display: none !important;
-    }
-
-    .anomalous-nb-sidebar-nav-group {
-        padding: 8px 4px !important;
-    }
-
-    .anomalous-nb-nav-item {
-        justify-content: center !important;
-        padding: 8px 0 !important;
-    }
-
-    .anomalous-nb-nav-icon {
-        font-size: 1.15rem !important;
-        margin: 0 !important;
-    }
-
-    .anomalous-nb-item {
-        justify-content: center !important;
-        padding: 8px 4px !important;
-    }
-
-    .anomalous-nb-create-row {
-        justify-content: center !important;
-        padding: 8px 4px !important;
-    }
-}
-
-#anomalous-container.anomalous-docked .anomalous-nb-sidebar {
-    width: 64px !important;
-    min-width: 64px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-nb-create-text,
-#anomalous-container.anomalous-docked .anomalous-nb-nav-header,
-#anomalous-container.anomalous-docked .anomalous-nb-nav-text {
-    display: none !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-nb-sidebar-nav-group {
-    padding: 8px 4px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-nb-nav-item {
-    justify-content: center !important;
-    padding: 8px 0 !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-nb-nav-icon {
-    font-size: 1.15rem !important;
-    margin: 0 !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-nb-item {
-    justify-content: center !important;
-    padding: 8px 4px !important;
-}
-
-#anomalous-container.anomalous-docked .anomalous-nb-create-row {
-    justify-content: center !important;
-    padding: 8px 4px !important;
-}
-
-.anomalous-nb-sidebar-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.anomalous-nb-sidebar-notes-group {
+/* The Combos page (ui_combos.js): a bar with the search and New, then a card per combo. */
+.anomalous-combo-page {
     flex: 1;
-    min-height: 120px;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
-}
-
-.anomalous-nb-sidebar-nav-group {
-    flex-shrink: 0;
-    border-top: 1px solid var(--amb-border);
-    padding: 12px 10px;
-    background: rgba(0, 0, 0, 0.2);
-}
-
-.anomalous-nb-nav-header {
-    font-size: 0.74rem;
-    font-weight: 700;
-    color: var(--amb-text-muted);
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    padding-left: 4px;
-    user-select: none;
-}
-
-.anomalous-nb-nav-list {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.anomalous-nb-nav-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 10px;
-    border-radius: 6px;
-    background: transparent;
-    border: 1px solid transparent;
-    color: var(--amb-text-soft);
-    font-size: 0.82rem;
-    cursor: pointer;
-    text-align: left;
-    transition: all 0.15s ease;
-    user-select: none;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.anomalous-nb-nav-item:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--amb-text-main);
-}
-
-.anomalous-nb-nav-item.active {
-    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
-    color: #c084fc;
-    font-weight: 600;
-    border-color: color-mix(in srgb, var(--amb-link) 35%, transparent);
-}
-
-.anomalous-nb-nav-icon {
-    font-size: 0.95rem;
-    flex-shrink: 0;
-}
-
-.anomalous-nb-nav-text {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.anomalous-nb-list {
-    flex: 1;
+    gap: 16px;
+    min-width: 0;
+    padding: 18px 20px;
     overflow-y: auto;
-    padding: 10px;
 }
 
-.anomalous-nb-item {
-    padding: 10px;
-    color: var(--amb-text-soft);
-    cursor: pointer;
-    border-radius: 4px;
-    margin-bottom: 5px;
-    background: var(--amb-bg-card);
+.anomalous-combo-page[hidden],
+.anomalous-nb-editor[hidden],
+.anomalous-nb-back[hidden] {
+    display: none;
+}
+
+.anomalous-combo-bar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    white-space: nowrap;
-    overflow: hidden;
-    font-size: 1.1em;
+    gap: 10px;
 }
 
-.anomalous-nb-item-icon {
-    flex-shrink: 0;
+.anomalous-combo-lead {
+    flex: 1 1 100%;
+    margin: 0;
+    color: var(--amb-text-soft);
+    font-size: 13px;
+    line-height: 1.55;
 }
 
-.anomalous-nb-item-text {
-    flex: 1;
-    text-overflow: ellipsis;
-    overflow: hidden;
-}
-
-.anomalous-nb-item:hover {
-    background: var(--amb-bg-card-hover);
-}
-
-.anomalous-nb-item.active {
-    background: rgba(255, 255, 255, 0.12);
+.anomalous-combo-search {
+    flex: 1 1 220px;
+    min-width: 0;
+    padding: 7px 10px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: var(--amb-radius-control, 8px);
     color: var(--amb-text-main);
-    font-weight: bold;
+    background: var(--amb-bg-card);
+    font-size: 13px;
 }
 
-.theme-abyssal-scarlet .anomalous-nb-item.active {
-    background: #dc143c;
+.anomalous-combo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+}
+
+.anomalous-combo-empty {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--amb-text-muted);
+    font-size: 13px;
+}
+
+.anomalous-combo-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--amb-border);
+    border-radius: var(--amb-radius-card, 10px);
+    background: var(--amb-bg-card);
+    cursor: pointer;
+}
+
+.anomalous-combo-card:hover {
+    border-color: var(--amb-border-strong);
+}
+
+.anomalous-combo-card:focus-visible {
+    outline: 2px solid var(--amb-link);
+    outline-offset: 2px;
+}
+
+.anomalous-combo-cover {
+    flex: none;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--amb-link) 8%, var(--amb-bg-page));
+}
+
+.anomalous-combo-cover img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 25%;
+}
+
+.anomalous-combo-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding: 10px 12px 12px;
+}
+
+.anomalous-combo-name,
+.anomalous-combo-meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-combo-name {
+    color: var(--amb-text-main);
+    font-size: 14px;
+}
+
+.anomalous-combo-meta {
+    color: var(--amb-text-muted);
+    font-size: 12px;
+}
+
+.anomalous-combo-prompt {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+    line-height: 1.5;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.anomalous-combo-use {
+    align-self: flex-start;
+    margin-top: auto;
 }
 
 .anomalous-nb-editor {
@@ -294,18 +210,6 @@
     margin: -20px -20px 16px -20px;
     border-bottom: 1px solid var(--amb-border);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-}
-
-.anomalous-nb-prompt-toolbar {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-#anomalous-container.anomalous-docked .anomalous-nb-prompt-toolbar select {
-    flex: 1 1 100%;
 }
 
 .anomalous-btn-primary {
@@ -506,14 +410,6 @@
     }
 }
 
-.anomalous-nb-section {
-    background: var(--amb-bg-card-hover);
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
-}
-
 .anomalous-nb-row {
     margin-bottom: 10px;
 }
@@ -652,13 +548,6 @@
     color: var(--amb-text-main);
 }
 
-.anomalous-nb-hint {
-    margin: 0 0 12px 0;
-    color: var(--amb-text-muted);
-    font-size: 0.82rem;
-    line-height: 1.4;
-}
-
 .anomalous-nb-tools-bar {
     display: flex;
     gap: 8px;
@@ -728,29 +617,6 @@
     background: rgba(255, 255, 255, 0.03);
 }
 
-.anomalous-nb-fold-summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.04);
-    cursor: pointer;
-    font-size: 0.92rem;
-    font-weight: 600;
-    color: var(--amb-text-main);
-    user-select: none;
-    list-style: none;
-    transition: background 0.18s;
-}
-
-.anomalous-nb-fold-summary::-webkit-details-marker {
-    display: none;
-}
-
-.anomalous-nb-fold-summary:hover {
-    background: rgba(255, 255, 255, 0.07);
-}
-
 .anomalous-nb-models-badge {
     font-size: 0.76rem;
     font-weight: 500;
@@ -761,73 +627,12 @@
     border: 1px solid var(--amb-border);
 }
 
-.anomalous-nb-fold-arrow {
-    color: var(--amb-text-muted);
-    font-size: 0.88rem;
-}
-
-.anomalous-nb-models-fold .anomalous-nb-section {
-    background: transparent;
-    border: none;
-    border-top: 1px solid var(--amb-border);
-    border-radius: 0;
-    padding: 16px;
-    margin-bottom: 0;
-}
-
 .anomalous-nb-prompt-section {
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--amb-border);
     border-radius: 10px;
     padding: 16px;
     margin-bottom: 16px;
-}
-
-.anomalous-nb-capture-fold {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid var(--amb-border);
-    border-radius: 10px;
-    padding: 0;
-    margin-bottom: 16px;
-    overflow: hidden;
-}
-
-.anomalous-nb-capture-fold > summary {
-    padding: 11px 16px;
-    cursor: pointer;
-    font-size: 0.88rem;
-    font-weight: 500;
-    color: var(--amb-text-muted);
-    list-style: none;
-    transition: background 0.18s, color 0.18s;
-}
-
-.anomalous-nb-capture-fold > summary:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--amb-text-main);
-}
-
-.anomalous-nb-capture-content {
-    padding: 12px 16px;
-    border-top: 1px solid var(--amb-border);
-}
-
-.anomalous-nb-tools-fold {
-    margin-top: 12px;
-    padding: 8px 12px;
-    border-radius: 6px;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--amb-border);
-}
-
-.anomalous-nb-tools-fold > summary {
-    font-size: 0.82rem;
-    color: var(--amb-text-muted);
-    cursor: pointer;
-}
-
-.anomalous-nb-tools-fold > summary:hover {
-    color: var(--amb-text-soft);
 }
 
 .anomalous-nb-selected-badge {
@@ -896,36 +701,30 @@
 
 /* Notebook Modern Slim Scrollbars */
 .anomalous-nb-editor,
-.anomalous-nb-list,
-.anomalous-nb-textarea {
+.anomalous-nb-textarea  {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
 
 .anomalous-nb-editor::-webkit-scrollbar,
-.anomalous-nb-list::-webkit-scrollbar,
-.anomalous-nb-textarea::-webkit-scrollbar {
+.anomalous-nb-textarea::-webkit-scrollbar  {
     width: 6px;
     height: 6px;
 }
 
 .anomalous-nb-editor::-webkit-scrollbar-track,
-.anomalous-nb-list::-webkit-scrollbar-track,
-.anomalous-nb-textarea::-webkit-scrollbar-track {
+.anomalous-nb-textarea::-webkit-scrollbar-track  {
     background: transparent;
 }
 
 .anomalous-nb-editor::-webkit-scrollbar-thumb,
-.anomalous-nb-list::-webkit-scrollbar-thumb,
-.anomalous-nb-textarea::-webkit-scrollbar-thumb {
+.anomalous-nb-textarea::-webkit-scrollbar-thumb  {
     background: rgba(255, 255, 255, 0.16);
     border-radius: 3px;
 }
 
 .anomalous-nb-editor::-webkit-scrollbar-thumb:hover,
-.anomalous-nb-list::-webkit-scrollbar-thumb:hover,
-.anomalous-nb-textarea::-webkit-scrollbar-thumb:hover {
+.anomalous-nb-textarea::-webkit-scrollbar-thumb:hover  {
     background: rgba(255, 255, 255, 0.28);
 }
-
 

@@ -3,8 +3,8 @@
  * domain switch; which page shows its list column (and whether that list is open); the
  * page title in the header; the page reopened next time.
  *
- * Pages: home, models, gallery, voices, script, audio-gallery (base pages); recipes, materials
- * (workspaces over the base page, closed with `closeWorkspace()`); doctor, assistant
+ * Pages: home, models, gallery, voices, script, audio-gallery (base pages); recipes, combos,
+ * materials (workspaces over the base page, closed with `closeWorkspace()`); doctor, assistant
  * scan, settings (tool pages, entered through `owner.enterToolPage`).
  */
 
@@ -30,7 +30,7 @@ const LIST_KEYS = {
 };
 const TITLE_KEYS = {
     home: 'shellHome', activity: 'activityTitle', models: 'shellTitleModels', gallery: 'gallery', recipes: 'recipeTitle',
-    materials: 'materialLibrary', voices: 'shellVoices', script: 'shellVoices', 'audio-gallery': 'shellAudioGallery',
+    combos: 'shellCombos', materials: 'materialLibrary', voices: 'shellVoices', script: 'shellVoices', 'audio-gallery': 'shellAudioGallery',
     doctor: 'sidebarDoctor', assistant: 'sidebarAssistant', scan: 'scanPageTitle', settings: 'sidebarSettings',
 };
 // Below this width the list covers the page instead of sitting beside it, and starts closed.
@@ -178,12 +178,13 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
             return;
         }
         if (fromRail && page === 'voices') page = lastVoiceView;
-        if (page === 'recipes' || page === 'materials') {
+        if (page === 'recipes' || page === 'combos' || page === 'materials') {
             // Workspaces belong to the image side: from an audio page they open over the models.
             if (AUDIO_PAGES.has(current)) owner.goTo('models');
             rail.setActive(page);
             setTitle(page);
             if (page === 'recipes') openRecipes();
+            else if (page === 'combos') void owner.showNotebooks();
             else void Promise.resolve(owner.openMaterialLibrary()).then(() => rail.setActive('materials'));
             return;
         }
@@ -220,6 +221,12 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         setTitle(page);
         applyList(page);
         if (page === 'assistant') container.classList.add('anomalous-sidebar-closed');
+    };
+
+    // A workspace opened another way (a combo from elsewhere) marks the rail and title.
+    owner.markWorkspace = (page) => {
+        rail.setActive(page);
+        setTitle(page);
     };
 
     // Other modules mark tabs through these; they map onto the rail now.

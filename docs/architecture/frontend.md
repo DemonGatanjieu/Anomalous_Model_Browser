@@ -71,12 +71,12 @@ The main surfaces are:
 - Gallery: generated outputs and the full-screen Image Detail Studio Workbench.
   `ui_gallery_detail.js` owns its singleton lifecycle and cache, `ui_image_stage.js`
   owns header/zoom/filmstrip interaction, and `ui_image_inspector.js` owns metadata tabs.
-- Workspace: Prompt Notes, Workflow Recipes, and the Material Library. Prompt Note
-  catalog/persistence, editing, and canvas creation are separated across
-  `ui_notebooks.js`, `ui_notebook_editor.js`, and `notebook_canvas.js`;
-  `notebook_apply.js` plans and makes a note's changes to the open workflow
-  (reads the canvas first, writes one Ctrl+Z step). The notes are reached from the
-  Material Library's Prompts page (`ui_material_notes.js`), not a separate button. Material
+- Workspace: Combos (搭配, formerly Prompt Notes), Workflow Recipes, and the Material
+  Library. The combo list, workspace/persistence, editing, and canvas use are separated
+  across `ui_combos.js`, `ui_notebooks.js`, `ui_notebook_editor.js`, and
+  `notebook_canvas.js`; Use puts a combo into the open workflow when the canvas has a
+  main model loader (`notebook_apply.js` plans and makes the change: reads the canvas
+  first, writes one Ctrl+Z step) and builds a new group of nodes when it has none. Material
   discovery/pagination, cards, detail, and node application are separated across
   `ui_materials.js`, `ui_material_cards.js`, `ui_material_detail.js`, and
   `ui_material_application.js`.

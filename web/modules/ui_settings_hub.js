@@ -106,8 +106,6 @@ export function createSettingsHub(owner, {
             owner.initAssistantPanel();
             owner.diagnoseNode(selectedNode);
         }
-        if (owner.notebookNotesTab) owner.notebookNotesTab.textContent = t('promptNotes');
-        if (owner.notebookRecipesTab) owner.notebookRecipesTab.textContent = t('recipeTitle');
         document.querySelectorAll('[data-anomalous-i18n-key]').forEach((element) => {
             const key = element.dataset.anomalousI18nKey;
             if (key) element.textContent = t(key);

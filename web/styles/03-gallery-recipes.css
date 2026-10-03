@@ -209,21 +209,7 @@ dialog.anomalous-gallery-viewer[open] {
     color: var(--amb-text-main);
 }
 
-@container (max-width: 750px) {
-    .anomalous-nb-create-row {
-        padding: 8px 6px !important;
-        gap: 3px !important;
-    }
-
-    .anomalous-nb-create-row > button {
-        width: 34px;
-        min-width: 34px;
-        padding: 8px 4px;
-    }
-}
-
-.anomalous-nb-header-main,
-.anomalous-nb-section-tabs {
+.anomalous-nb-header-main {
     display: flex;
     align-items: center;
 }
@@ -236,31 +222,6 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-nb-header-main h2 {
     margin: 0;
     white-space: nowrap;
-}
-
-.anomalous-nb-section-tabs {
-    gap: 4px;
-    padding: 3px;
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.28);
-}
-
-.anomalous-nb-section-tab {
-    padding: 5px 10px;
-    border: 0;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--amb-text-muted);
-    cursor: pointer;
-}
-
-.anomalous-nb-section-tab.active {
-    background: rgba(255, 255, 255, 0.15);
-    color: var(--amb-text-main);
-}
-
-.theme-abyssal-scarlet .anomalous-nb-section-tab.active {
-    background: #dc143c;
 }
 
 /* Workflow Recipes: Studio Topbar and Modern Layout System */

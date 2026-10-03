@@ -25,7 +25,7 @@ share-code import/export is a separate, verified feature on the Workflows page's
 
 ## Product and data model
 
-Workspace contains Prompt Notes, Workflow Recipes, and the Material Library.
+Workspace contains Combos (formerly Prompt Notes), Workflow Recipes, and the Material Library.
 Recipe Parameter Notebooks are presented as Parameter Sets (参数方案). Internal
 notebook route and property names may remain stable for compatibility even when
 the user-facing presentation changes.

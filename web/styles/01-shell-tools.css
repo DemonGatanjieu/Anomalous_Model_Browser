@@ -290,39 +290,6 @@ button:active::after,
     .anomalous-split-right {
         width: 100% !important;
     }
-
-    .anomalous-nb-sidebar {
-        width: 80px !important;
-        min-width: 80px !important;
-    }
-
-    .anomalous-nb-sidebar .anomalous-nb-item {
-        font-size: 0.8em;
-        padding: 8px 4px;
-        text-align: center;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .anomalous-nb-create-text,
-    .anomalous-nb-nav-header,
-    .anomalous-nb-nav-text {
-        display: none !important;
-    }
-
-    .anomalous-nb-sidebar-nav-group {
-        padding: 8px 4px !important;
-    }
-
-    .anomalous-nb-nav-item {
-        justify-content: center !important;
-        padding: 8px 0 !important;
-    }
-
-    .anomalous-nb-nav-icon {
-        font-size: 1.15rem !important;
-        margin: 0 !important;
-    }
 }
 
 /* English Layout Specific Scaling */

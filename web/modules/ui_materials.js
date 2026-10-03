@@ -1,7 +1,6 @@
 /** Curated image/workflow and Recipe parameter materials. */
 
 import { app } from '../../../scripts/app.js';
-import { noteShelf, savedPromptsHeading } from './ui_material_notes.js';
 import { selectedMaterialNode } from './node_material_actions.js';
 import { translate, resolveLocale } from './locales.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
@@ -18,8 +17,6 @@ function hideSiblingWorkspaceViews(owner) {
     if (owner.notebookBody) owner.notebookBody.style.display = 'none';
     if (owner.recipeView) owner.recipeView.style.display = 'none';
     if (owner.recipeContainer) owner.recipeContainer.style.display = 'none';
-    owner.notebookNotesTab?.classList.remove('active');
-    owner.notebookRecipesTab?.classList.remove('active');
 }
 
 function buildMaterialTopbar(owner) {
@@ -111,7 +108,7 @@ function buildMaterialTopbar(owner) {
         owner.materialList?.classList.add('is-list');
     };
 
-    // Prompts are assembled from these materials; prompt notes head the Prompts page.
+    // Prompts are assembled from these materials.
     const studioBtn = text(right, 'button', t('toolPromptStudioShort'), 'anomalous-material-topbar-btn');
     studioBtn.type = 'button';
     studioBtn.onclick = () => owner.openPromptStudio();
@@ -292,23 +289,14 @@ export async function refreshMaterials(page = this.materialPage || 1) {
         category: this.materialKindCategory || 'all',
     });
     if (this.materialApplyMode && this.materialTarget) query.set('node_type', this.materialTarget.type);
-    const withNotes = this.materialKindCategory === 'prompts' && page <= 1;
-    this.materialList.classList.toggle('has-notes', withNotes);
-    const notes = withNotes ? noteShelf(this, controller.signal).catch(() => null) : null;
     try {
         const response = await fetch(`/anomalous/materials?${query}`, { cache: 'no-store', signal: controller.signal });
         const payload = await jsonResponse(response, 'material list failed');
-        const shelf = await notes;
         if (this.materialListController !== controller) return;
         this.materialPage = payload.page;
         this.materialList.replaceChildren();
         renderMaterialPagination(this, payload);
         const materials = Array.isArray(payload.materials) ? payload.materials : [];
-        if (shelf) {
-            this.materialList.appendChild(shelf);
-            if (materials.length) this.materialList.appendChild(savedPromptsHeading());
-        }
-        if (!materials.length && shelf) return;
         if (!materials.length) {
             ensureMaterialGuideStyles();
             if (this.materialQuery || this.materialTag || this.materialKind) {
