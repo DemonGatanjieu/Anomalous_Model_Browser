@@ -1,7 +1,9 @@
 /* Scan page: counts, the scan button, progress in the page, advanced options, and the
-   list pages behind the counts. */
+   list pages behind the counts. The settings page (ui_settings_page.js) is built from the
+   same page, card, row, choice and switch rules. */
 
-#anomalous-scan-panel {
+#anomalous-scan-panel,
+#anomalous-settings-panel {
     flex: 1;
     flex-direction: column;
     overflow-y: auto;
@@ -236,6 +238,8 @@ button.anomalous-scan-stat:hover {
 /* Which models: two choices side by side. */
 .anomalous-scan-segment {
     display: inline-flex;
+    flex-wrap: wrap;
+    flex-shrink: 0;
     align-self: flex-start;
     gap: 2px;
     padding: 3px;
@@ -405,7 +409,39 @@ label.anomalous-scan-setting {
     white-space: nowrap;
 }
 
-/* A list page's way back to the scan page. */
+/* The settings page's sliders (scale, atmosphere) with their value. */
+.anomalous-settings-slider {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 10px;
+    width: min(220px, 45%);
+}
+
+.anomalous-settings-slider input {
+    flex: 1;
+    min-width: 0;
+    accent-color: var(--amb-link);
+}
+
+.anomalous-settings-slider-value {
+    width: 40px;
+    color: var(--amb-text-main);
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+/* Settings rows: the control drops under the text when the page is too narrow for both. */
+#anomalous-settings-panel .anomalous-scan-setting {
+    flex-wrap: wrap;
+}
+
+#anomalous-settings-panel .anomalous-scan-setting-copy {
+    flex: 1 1 240px;
+}
+
+/* A list page's way back to the scan page (and the settings page's way back). */
 .anomalous-scan-back {
     align-self: flex-start;
     margin: -8px 0 -4px -10px;

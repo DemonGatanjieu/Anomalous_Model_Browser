@@ -19,6 +19,7 @@ function restoreWorkspaceReturnPanel(owner) {
         ['home', owner.homePanel],
         ['activity', owner.activityPanel],
         ['scan', owner.scanPanel],
+        ['settings', owner.settingsPanel],
     ];
     if (state) {
         for (const [key, panel] of panels) {
@@ -108,6 +109,8 @@ export function hideAllPanels() {
     if (this.homePanel) this.homePanel.style.display = 'none';
     if (this.activityPanel) this.activityPanel.style.display = 'none';
     if (this.scanPanel) this.scanPanel.style.display = 'none';
+    if (this.settingsPanel) this.settingsPanel.style.display = 'none';
+    document.getElementById('anomalous-global-settings-btn')?.classList.remove('is-active');
     leaveScanPage();
     stopAudioStudioPlayback();
     stopGalleryAudio();
@@ -115,6 +118,4 @@ export function hideAllPanels() {
         this.currentDetailObserver.disconnect();
         this.currentDetailObserver = null;
     }
-    const setModal = document.getElementById('anomalous-settings-hub-modal');
-    if (setModal) setModal.style.display = 'none';
 }

@@ -5,7 +5,7 @@
  *
  * Pages: home, models, gallery, voices, script, audio-gallery (base pages); recipes, materials
  * (workspaces over the base page, closed with `closeWorkspace()`); doctor, assistant
- * (tool pages, entered through `owner.enterToolPage`).
+ * scan, settings (tool pages, entered through `owner.enterToolPage`).
  */
 
 import { translate as t } from './locales.js';
@@ -31,7 +31,7 @@ const LIST_KEYS = {
 const TITLE_KEYS = {
     home: 'shellHome', activity: 'activityTitle', models: 'shellTitleModels', gallery: 'gallery', recipes: 'recipeTitle',
     materials: 'materialLibrary', voices: 'shellVoices', script: 'shellVoices', 'audio-gallery': 'shellAudioGallery',
-    doctor: 'sidebarDoctor', assistant: 'sidebarAssistant', scan: 'scanPageTitle',
+    doctor: 'sidebarDoctor', assistant: 'sidebarAssistant', scan: 'scanPageTitle', settings: 'sidebarSettings',
 };
 // Below this width the list covers the page instead of sitting beside it, and starts closed.
 const NARROW_PX = 760;
@@ -157,7 +157,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
             owner.workspaceReturnState = Object.fromEntries([
                 ['grid', owner.grid], ['detail', owner.detailPanel], ['gallery', owner.galleryPanel],
                 ['doctor', owner.doctorPanel], ['assistant', owner.assistantPanel], ['home', owner.homePanel],
-                ['activity', owner.activityPanel], ['scan', owner.scanPanel],
+                ['activity', owner.activityPanel], ['scan', owner.scanPanel], ['settings', owner.settingsPanel],
                 ['audioStudio', owner.audioStudioPanel], ['script', owner.scriptPanel], ['audioGallery', owner.audioGalleryPanel],
             ].filter(([, panel]) => panel).map(([key, panel]) => [key, panel.style.display || 'none']));
         } else if (!owner.workspaceReturnState) {

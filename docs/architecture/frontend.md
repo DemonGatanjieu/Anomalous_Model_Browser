@@ -43,7 +43,8 @@ transaction helpers remain in focused modules rather than acquiring DOM state.
 icon rail (`ui_shell_rail.js`), page navigation and the list column's open state
 (`ui_shell_nav.js`), the home page (`ui_home.js`) and the window frame
 (`ui_shell_frame.js`) are their own modules. Every page change goes through
-`owner.goTo(page)`. `ui_settings_hub.js` owns settings and model-card preferences,
+`owner.goTo(page)`. `ui_settings_hub.js` owns the display preferences behind
+`owner.displayPrefs`, which the settings page (`ui_settings_page.js`) changes,
 while `ui_rail_tools.js` owns the rail's tool buttons.
 The Material Library shortcut remains a native ComfyUI command/keybinding; a
 deferred window-key fallback invokes the same command path only when the host

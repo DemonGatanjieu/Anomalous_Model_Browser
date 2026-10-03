@@ -1,7 +1,7 @@
-@import url("./styles/00-foundation-models.css?v=20261002-theme-1");
-@import url("./styles/01-shell-tools.css?v=20261002-theme-1");
+@import url("./styles/00-foundation-models.css?v=20261003-settings-1");
+@import url("./styles/01-shell-tools.css?v=20261003-settings-1");
 @import url("./styles/02-notebooks.css?v=20261002-theme-1");
-@import url("./styles/03-gallery-recipes.css?v=20261002-theme-1");
+@import url("./styles/03-gallery-recipes.css?v=20261003-settings-1");
 @import url("./styles/04-dialogs-materials.css?v=20261002-recent-1");
 @import url("./styles/05-recipe-studio-overrides.css?v=20261002-theme-1");
 @import url("./styles/06-material-workbench.css?v=20261002-theme-1");
@@ -16,6 +16,6 @@
 @import url("./styles/15-shell-rail.css?v=20261002-theme-1");
 @import url("./styles/16-activity.css?v=20261002-theme-1");
 @import url("./styles/17-model-types.css?v=20261002-theme-1");
-@import url("./styles/18-scan-page.css?v=20261002-settings-1");
+@import url("./styles/18-scan-page.css?v=20261003-settings-1");
 @import url("./styles/19-model-doctor.css?v=20261002-theme-1");
 @import url("./styles/20-current-node.css?v=20261002-theme-1");

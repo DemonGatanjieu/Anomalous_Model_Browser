@@ -41,7 +41,8 @@ export class AnomalousBrowser {
         this.currentSubfolder = '/';
         this.foldersData = null;
         this.expandedFolders = new Set(['/', 'checkpoints', 'loras', 'unet', 'diffusion_models']);
-        this.energySaving = localStorage.getItem('anomalous_energy_saving') === 'true';
+        // Video covers play on hover unless you chose "always": fewer videos decoding at once.
+        this.energySaving = localStorage.getItem('anomalous_energy_saving') !== 'false';
         this.cardThumbnailMode = localStorage.getItem('anomalous_card_thumbnail_mode') === 'original'
             ? 'original'
             : 'balanced';

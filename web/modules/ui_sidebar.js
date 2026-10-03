@@ -164,6 +164,7 @@ export function createDOM() {
         this.homePanel = panel('anomalous-home-panel');
         this.activityPanel = panel('anomalous-activity-panel');
         this.scanPanel = panel('anomalous-scan-panel');
+        this.settingsPanel = panel('anomalous-settings-panel');
         this.doctorPanel = panel('anomalous-doctor-panel');
         this.assistantPanel = panel('anomalous-assistant-panel');
         this.assistantPanel.style.flexDirection = 'column';
@@ -215,7 +216,7 @@ export function createDOM() {
         };
         bindWorkspaceEscape(this);
 
-        content.append(header, this.grid, this.detailPanel, this.galleryPanel, this.homePanel, this.activityPanel, this.scanPanel, this.doctorPanel,
+        content.append(header, this.grid, this.detailPanel, this.galleryPanel, this.homePanel, this.activityPanel, this.scanPanel, this.settingsPanel, this.doctorPanel,
             this.assistantPanel, this.audioStudioPanel, this.scriptPanel, this.audioGalleryPanel);
         container.append(rail.root, this.sidebarWrapper, content, this.nbPanel);
         this.modal.appendChild(container);

@@ -17,6 +17,14 @@ export function cardPreviewUrl(previewUrl, thumbnailMode) {
     return `${previewUrl}${previewUrl.includes('?') ? '&' : '?'}variant=card`;
 }
 
+/** A video cover's still first frame (made once on the server), shown until the video plays. */
+function cardPosterUrl(previewUrl) {
+    return `${previewUrl}${previewUrl.includes('?') ? '&' : '?'}variant=poster`;
+}
+
+// The first screen of cards loads first; the rest waits until scrolled near.
+const EAGER_CARDS = 12;
+
 function modelCardDisplayName(model) {
     const metadata = model?.metadata || {};
     return metadata.custom_name || model?.filename || '';
@@ -96,7 +104,9 @@ export async function loadModels() {
                         const video = document.createElement('video');
                         video.dataset.anomalousSrc = model.preview_url;
                         video.muted = true; video.loop = true; video.playsInline = true;
-                        video.preload = 'metadata';
+                        // Nothing of the video is fetched until it plays; the poster shows meanwhile.
+                        video.preload = 'none';
+                        video.poster = cardPosterUrl(model.preview_url);
                         const ensureVideoSource = () => {
                             if (!video.getAttribute('src')) video.src = video.dataset.anomalousSrc;
                         };
@@ -119,7 +129,9 @@ export async function loadModels() {
                         card.appendChild(video);
                     } else {
                         const img = document.createElement('img');
-                        img.loading = 'lazy';
+                        const early = renderIndex < EAGER_CARDS;
+                        img.loading = early ? 'eager' : 'lazy';
+                        if (early) img.fetchPriority = 'high';
                         img.decoding = 'async';
                         img.className = 'anomalous-skeleton-shimmer';
                         img.onload = () => { img.classList.remove('anomalous-skeleton-shimmer'); };

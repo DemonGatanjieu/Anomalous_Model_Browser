@@ -36,6 +36,8 @@ def setup_routes(app):
     app.router.add_get('/anomalous/all_scan_models', model_catalog.api_get_all_scan_models)
     app.router.add_get('/anomalous/batch_select', model_catalog.api_batch_select)
     app.router.add_get('/anomalous/image', media_routes.api_serve_image)
+    app.router.add_get('/anomalous/card_cache', media_routes.api_card_cache)
+    app.router.add_post('/anomalous/card_cache/clear', media_routes.api_clear_card_cache)
     app.router.add_post('/anomalous/scan', api_scan_folder)
     app.router.add_get('/anomalous/scan_status', api_scan_status)
     app.router.add_get('/anomalous/find_model', model_catalog.api_find_model)

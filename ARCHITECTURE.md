@@ -315,7 +315,11 @@ covered by the `styles.css` manifest.
   `canvas_undo.js` keeps what each canvas entry did, in full, while the page stays open,
   and undoes an entry from the log while nothing has changed it since (entries that
   removed nodes or rewired existing ones are never offered).
-  `ui_settings_hub.js` owns settings and model-card preferences;
+  `ui_settings_hub.js` owns the display preferences (view mode, scale, atmosphere, window
+  layout) and their application, the gear and language redraws; `ui_settings_page.js`
+  is the settings page the gear opens (a tool page with Back): look and language, model
+  cards and memory with the card image cache, folders, workflow fingerprints, opening
+  mode and window, help;
   `ui_rail_tools.js` owns the rail's tool buttons (scan, doctor, current node);
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,
   including Esc on the workspace panel (`nbPanel`, below the header and right of the

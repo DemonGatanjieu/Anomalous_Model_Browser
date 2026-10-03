@@ -92,7 +92,8 @@ function refreshRegisteredSettings() {
     }
 }
 
-function applyLanguagePreference(value) {
+/** 'auto' | 'zh' | 'en': the ComfyUI setting's change handler, also used without the settings API. */
+export function applyLanguagePreference(value) {
     const preference = normalizeLanguagePreference(value);
     if (preference === 'auto') localStorage.removeItem('anomalous_lang');
     else localStorage.setItem('anomalous_lang', preference);

@@ -48,37 +48,6 @@
     overflow: hidden;
 }
 
-#anomalous-settings-hub-modal {
-    position: absolute;
-    bottom: 12px;
-    left: 68px;
-    width: 270px;
-    max-height: calc(100% - 32px);
-    overflow-y: auto;
-    box-sizing: border-box;
-    background: rgba(24, 24, 28, 0.98);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 10px;
-    padding: 12px;
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
-    z-index: 999999 !important;
-    transition: left 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-#anomalous-settings-hub-modal button {
-    display: flex !important;
-    align-items: center !important;
-    width: 100% !important;
-    text-align: left !important;
-    box-sizing: border-box !important;
-}
-
-#anomalous-settings-hub-modal button svg {
-    flex-shrink: 0 !important;
-}
-
 /* Suppress all tooltips and action labels on clicked/active elements so they never block vision or interaction */
 button:active::before,
 button:active::after,

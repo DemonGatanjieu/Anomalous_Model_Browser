@@ -171,11 +171,17 @@ the library only for unresolved basename fallbacks. This locates presentation
 for a model value already supplied by ComfyUI; it is not Model Check discovery.
 
 Balanced grid thumbnails are derived, longest-edge 512 px WebP files in
-ComfyUI's temporary area. Their cache is keyed by source real path and physical
-signature and capped at 256 MiB with oldest-accessed eviction. The original mode
+`<user folder>/anomalous/cache/card_thumbnails` (not ComfyUI's temp folder, which
+ComfyUI empties on every start). The cache is keyed by source real path and
+physical signature and capped at 256 MiB with oldest-accessed eviction; the
+settings page reads its size (`GET /anomalous/card_cache`) and empties it
+(`POST /anomalous/card_cache/clear`). A video cover's card image is its first frame
+(`variant=poster`, decoded with PyAV, which ComfyUI ships); the card shows it until
+the video plays. Listing a model type queues the covers without a card image for one
+background thread, one decode at a time, at most 512 waiting. The original mode
 serves source covers, and detail views always use originals. Derived media never
 modifies or sits beside a user's cover; unsupported, animated, or failed inputs
-fall back to the original.
+fall back to the original (a video without a readable frame has no poster).
 
 ## Model sidecar and cover lifecycle
 
