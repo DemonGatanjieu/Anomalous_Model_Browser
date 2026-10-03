@@ -13,14 +13,13 @@ except:
     pass
 import time
 import json
-import hashlib
 import re
 import urllib.request
 import argparse
 import shutil
 from model_policies import is_physical_rename_protected
 from recycle_bin import move_to_trash
-from model_identity import USER_INFO_SUFFIX, computed_file_identity, is_unmatched, scan_info_path, sidecar_file_hash, sidecar_info as read_local_info, unmatched_reason
+from model_identity import USER_INFO_SUFFIX, computed_file_identity, file_sha256, infer_base_model_from_header, is_unmatched, scan_info_path, sidecar_file_hash, sidecar_info as read_local_info, unmatched_reason
 from civitai_client import CIVITAI_API_KEY, CivitaiUnreachable, download_media, fetch_civitai_info, fetch_model_description
 
 
@@ -89,51 +88,8 @@ def count_scan_files(target_folder, target_files_basenames, unmatched_only=False
 
 def calculate_sha256(file_path: str) -> str:
     """计算文件的 SHA256 哈希值 (用于 Civitai 匹配)"""
-    sha256_hash = hashlib.sha256()
     print(f"[*] 正在计算 Hash (大文件可能需要几分钟): {os.path.basename(file_path)}")
-    with open(file_path, "rb") as f:
-        for byte_block in iter(lambda: f.read(4096 * 1024), b""):
-            sha256_hash.update(byte_block)
-    return sha256_hash.hexdigest()
-
-import struct
-
-def infer_base_model_from_header(file_path: str) -> str:
-    """从 safetensors 头文件的张量键名推断底层 Base Model (用于脱机/HuggingFace 兼容)"""
-    try:
-        with open(file_path, "rb") as f:
-            header_size_bytes = f.read(8)
-            if len(header_size_bytes) < 8: return 'Unknown'
-            header_size = struct.unpack('<Q', header_size_bytes)[0]
-            if header_size > 100 * 1024 * 1024: return 'Unknown'
-            
-            header_json = json.loads(f.read(header_size).decode('utf-8'))
-            
-            # 1. 尝试从 __metadata__ 提取
-            metadata = header_json.get('__metadata__', {})
-            arch = metadata.get('modelspec.architecture', '')
-            if 'stable-diffusion-xl' in arch.lower(): return 'SDXL'
-            if 'stable-diffusion-v1' in arch.lower() or 'runwayml/stable-diffusion-v1-5' in arch.lower(): return 'SD 1.5'
-            if 'flux' in arch.lower(): return 'Flux.1 D'
-            if 'sd3' in arch.lower(): return 'SD3'
-            
-            # 2. 暴力张量键名指纹匹配 (Tensor Fingerprinting)
-            # 把前 500 个键拼接成字符串以提高检索效率，大部分核心键都在前面
-            keys_str = " ".join(list(header_json.keys())[:500])
-            
-            # Flux 指纹
-            if 'double_blocks.0.img_attn' in keys_str or 'img_in.weight' in keys_str: return 'Flux.1 D'
-            # SD3 指纹
-            if 'joint_blocks.0.x_block' in keys_str: return 'SD3'
-            # SDXL 指纹 (包含两套 text encoder)
-            if 'conditioner.embedders.1.model' in keys_str or 'label_emb.0.0.weight' in keys_str: return 'SDXL'
-            # SD 1.5 指纹
-            if 'cond_stage_model.transformer.text_model' in keys_str or 'model.diffusion_model.input_blocks.0.0.weight' in keys_str: return 'SD 1.5'
-            
-            return 'Unknown'
-    except Exception as e:
-        print(f"[-] 离线底模推断失败: {e}")
-        return 'Unknown'
+    return file_sha256(file_path)
 
 def sanitize_filename(name: str) -> str:
     """清理文件名中的非法字符"""

@@ -1,4 +1,5 @@
-"""File SHA-256 evidence and the model sidecars, shared by the standalone scanner and API.
+"""File SHA-256 evidence, the base model a safetensors header tells, and the model
+sidecars, shared by the standalone scanner and API.
 
 A model's information comes in three layers, the user's first:
 - <model>.anomalous.json  what the user set in the model editor (only the editor writes it);
@@ -7,9 +8,11 @@ A model's information comes in three layers, the user's first:
 - the model file itself.
 """
 
+import hashlib
 import json
 import os
 import re
+import struct
 
 
 USER_INFO_SUFFIX = ".anomalous.json"
@@ -92,3 +95,50 @@ def sidecar_file_hash(data, path, selected_file):
         return "", ""
     hashes = selected_file.get("hashes", {}) if isinstance(selected_file, dict) else {}
     return normalise_sha256(hashes.get("SHA256")), "sidecar file SHA-256"
+
+
+def file_sha256(path):
+    """The complete file's SHA-256, hex."""
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for block in iter(lambda: handle.read(4096 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def infer_base_model_from_header(file_path: str) -> str:
+    """从 safetensors 头文件的张量键名推断底层 Base Model (用于脱机/HuggingFace 兼容)"""
+    try:
+        with open(file_path, "rb") as f:
+            header_size_bytes = f.read(8)
+            if len(header_size_bytes) < 8: return 'Unknown'
+            header_size = struct.unpack('<Q', header_size_bytes)[0]
+            if header_size > 100 * 1024 * 1024: return 'Unknown'
+            
+            header_json = json.loads(f.read(header_size).decode('utf-8'))
+            
+            # 1. 尝试从 __metadata__ 提取
+            metadata = header_json.get('__metadata__', {})
+            arch = metadata.get('modelspec.architecture', '')
+            if 'stable-diffusion-xl' in arch.lower(): return 'SDXL'
+            if 'stable-diffusion-v1' in arch.lower() or 'runwayml/stable-diffusion-v1-5' in arch.lower(): return 'SD 1.5'
+            if 'flux' in arch.lower(): return 'Flux.1 D'
+            if 'sd3' in arch.lower(): return 'SD3'
+            
+            # 2. 暴力张量键名指纹匹配 (Tensor Fingerprinting)
+            # 把前 500 个键拼接成字符串以提高检索效率，大部分核心键都在前面
+            keys_str = " ".join(list(header_json.keys())[:500])
+            
+            # Flux 指纹
+            if 'double_blocks.0.img_attn' in keys_str or 'img_in.weight' in keys_str: return 'Flux.1 D'
+            # SD3 指纹
+            if 'joint_blocks.0.x_block' in keys_str: return 'SD3'
+            # SDXL 指纹 (包含两套 text encoder)
+            if 'conditioner.embedders.1.model' in keys_str or 'label_emb.0.0.weight' in keys_str: return 'SDXL'
+            # SD 1.5 指纹
+            if 'cond_stage_model.transformer.text_model' in keys_str or 'model.diffusion_model.input_blocks.0.0.weight' in keys_str: return 'SD 1.5'
+            
+            return 'Unknown'
+    except Exception as e:
+        print(f"[-] 离线底模推断失败: {e}")
+        return 'Unknown'

@@ -114,7 +114,9 @@ covered by the `styles.css` manifest.
 - `api/media_routes.py`, `api/gallery_routes.py`, `api/translation_routes.py`, and
   `api/folder_types.py` own the formerly mixed utility route families.
 - `model_policies.py` owns shared backend rename and protected-category policy.
-- `model_identity.py` owns file SHA-256 evidence shared with the standalone scanner.
+- `model_identity.py` owns file SHA-256 evidence and the base model a safetensors header
+  tells, shared with the standalone scanner (which runs as its own process, so the API
+  never imports `scraper.py`).
 - `recycle_bin.py` is the only way the plugin deletes the user's files (models, covers,
   outputs, recipes, materials, notes, audio): to the system Recycle Bin, together, or not
   at all (`TrashUnavailable` on drives without one). `api/trash.py` is the API's import of it

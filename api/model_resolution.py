@@ -3,16 +3,15 @@
 import asyncio
 import json
 import os
-import struct
 import threading
 
 from aiohttp import web
 import folder_paths
 
 try:
-    from ..model_identity import computed_file_identity, normalise_sha256
+    from ..model_identity import computed_file_identity, file_sha256, infer_base_model_from_header, normalise_sha256
 except ImportError:
-    from model_identity import computed_file_identity, normalise_sha256
+    from model_identity import computed_file_identity, file_sha256, infer_base_model_from_header, normalise_sha256
 try:
     from ..model_policies import requires_hash_for_model_recovery
 except ImportError:
@@ -113,7 +112,6 @@ def _compute_and_save_fallback_info(file_path, file_hash):
             with open(info_path, encoding='utf-8') as source:
                 info_data = json.load(source)
         else:
-            from scraper import infer_base_model_from_header
             filename = os.path.basename(file_path)
             inferred_base = infer_base_model_from_header(file_path) if file_path.lower().endswith('.safetensors') else ""
             if inferred_base == 'Unknown':
@@ -159,10 +157,9 @@ def _resolve_from_candidates(candidates, target_hash="", target_size=None, filen
         # dynamically compute their hash on-demand to test against target_hash
         unhashed_size_matches = [c for c in size_matches if not _candidate_hashes(c)]
         if unhashed_size_matches:
-            from scraper import calculate_sha256
             for candidate in unhashed_size_matches:
                 try:
-                    computed_hash = calculate_sha256(candidate["path"]).upper()
+                    computed_hash = file_sha256(candidate["path"]).upper()
                     candidate.setdefault("hashes", set()).add(computed_hash)
                     if computed_hash == target_hash:
                         _compute_and_save_fallback_info(candidate["path"], computed_hash)
