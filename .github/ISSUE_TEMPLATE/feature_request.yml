@@ -1,0 +1,23 @@
+name: 提建议 / Suggestion
+description: 想要的功能、哪里不顺手、希望往什么方向发展 / A feature you want, something awkward, where the plugin should go
+title: "[Idea] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: 想要什么 / What you would like
+      description: 越具体越好；有参考的软件或截图也可以贴上来。 / The more concrete the better; screenshots or other tools for reference are welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: when
+    attributes:
+      label: 用在什么场合 / When you would use it
+      description: 你在做什么的时候会需要它。 / What you are doing when you need it.
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境（可选）/ Environment (optional)
+      description: 设置 → 帮助与反馈 → 复制诊断信息。 / Settings → Help and feedback → Copy diagnostics.
+      render: text

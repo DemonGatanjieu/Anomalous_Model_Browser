@@ -11,9 +11,9 @@ import { translate } from './locales.js';
 import { ABYSSAL_SCARLET_SETTING_ID, LANGUAGE_SETTING_ID, applyLanguagePreference, setAbyssalScarletTheme } from './interface_settings.js';
 import { ENTRY_MODE_SETTING_ID } from './browser_entry.js';
 import { showUpdateGuide } from './ui_update_guide.js';
+import { copyDiagnostics, openBugReport, openSuggestion } from './feedback.js';
 
 const t = (key, params) => translate(key, params);
-const FEEDBACK_URL = 'https://github.com/DemonGatanjieu/Anomalous_Model_Browser/issues';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -205,7 +205,15 @@ function helpGroup(owner) {
     return group('settingsHelp',
         row('help', 'settingsHelpHelp', small(t('settingsOpen'), () => owner.showHelp())),
         row('updateGuideReplay', null, small(t('settingsOpen'), () => showUpdateGuide(owner, { force: true }))),
-        row('settingsFeedback', 'settingsFeedbackHelp', small(t('settingsOpen'), () => window.open(FEEDBACK_URL, '_blank', 'noopener'))),
+        row('feedbackReport', 'settingsReportHelp', small(t('settingsOpenGithub'), () => openBugReport(owner))),
+        row('feedbackSuggest', 'settingsSuggestHelp', small(t('settingsOpenGithub'), () => openSuggestion(owner))),
+        row('feedbackCopy', 'feedbackCopyHint', (() => {
+            const copy = small(t('feedbackCopy'), async () => {
+                copy.textContent = t(await copyDiagnostics(owner) ? 'feedbackCopied' : 'feedbackCopyFailed');
+                setTimeout(() => { copy.textContent = t('feedbackCopy'); }, 1600);
+            });
+            return copy;
+        })()),
     );
 }
 

@@ -10,6 +10,7 @@ import { TOOL_ICONS } from './tool_registry.js';
 import { startSpotlightTour } from './ui_spotlight_tour.js';
 import { showUpdateGuide } from './ui_update_guide.js';
 import { renderRecentActivity } from './ui_activity.js';
+import { copyDiagnostics, openBugReport, openSuggestion } from './feedback.js';
 
 // One card per task: where it goes and its text (`homeCard<Name>Title` / `…Body`).
 const CARDS = Object.freeze([
@@ -35,6 +36,26 @@ function button(className, label, onClick) {
     return node;
 }
 
+/** "Found a problem, or have an idea?": a report or a suggestion on GitHub, or the environment to paste elsewhere. */
+function feedbackBand(owner) {
+    const band = el('section', 'anomalous-home-feedback');
+    const copy = el('div', 'anomalous-home-feedback-copy');
+    copy.append(el('span', 'anomalous-home-feedback-title', t('feedbackTitle')), el('span', 'anomalous-home-feedback-lead', t('feedbackLead')));
+    const actions = el('div', 'anomalous-home-feedback-actions');
+    const copyBtn = button('anomalous-home-feedback-btn', t('feedbackCopy'), async () => {
+        copyBtn.textContent = t(await copyDiagnostics(owner) ? 'feedbackCopied' : 'feedbackCopyFailed');
+        setTimeout(() => { copyBtn.textContent = t('feedbackCopy'); }, 1600);
+    });
+    copyBtn.title = t('feedbackCopyHint');
+    actions.append(
+        button('anomalous-home-feedback-btn is-primary', t('feedbackReport'), () => openBugReport(owner)),
+        button('anomalous-home-feedback-btn', t('feedbackSuggest'), () => openSuggestion(owner)),
+        copyBtn,
+    );
+    band.append(copy, actions);
+    return band;
+}
+
 export function renderHome(owner, panel) {
     const page = el('div', 'anomalous-home');
     page.append(el('h1', 'anomalous-home-title', t('homeTitle')), el('p', 'anomalous-home-lead', t('homeLead')));
@@ -58,7 +79,7 @@ export function renderHome(owner, panel) {
         button('anomalous-home-link', t('homeStartTour'), () => startSpotlightTour(owner)),
         button('anomalous-home-link', t('homeStartNews'), () => showUpdateGuide(owner, { force: true })));
 
-    page.append(grid, start);
+    page.append(grid, start, feedbackBand(owner));
     panel.replaceChildren(page);
     renderRecentActivity(owner, page);
 }

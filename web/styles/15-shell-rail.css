@@ -325,3 +325,65 @@
 .anomalous-home-link:hover {
     text-decoration: underline;
 }
+
+/* "Found a problem, or have an idea?": the way to GitHub, in view on Home. */
+.anomalous-home-feedback {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 18px;
+    margin-top: 18px;
+    padding: 14px 18px;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 30%, transparent);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--amb-link) 7%, transparent);
+}
+
+.anomalous-home-feedback-copy {
+    display: flex;
+    flex: 1 1 260px;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.anomalous-home-feedback-title {
+    color: var(--amb-text-main);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.anomalous-home-feedback-lead {
+    color: var(--amb-text-muted);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.anomalous-home-feedback-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.anomalous-home-feedback-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12.5px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.anomalous-home-feedback-btn:hover {
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+}
+
+.anomalous-home-feedback-btn.is-primary {
+    border-color: transparent;
+    background: var(--amb-btn-primary-bg);
+    color: var(--amb-btn-primary-text);
+    font-weight: 600;
+}
