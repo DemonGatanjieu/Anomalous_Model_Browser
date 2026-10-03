@@ -356,7 +356,7 @@ covered by the `styles.css` manifest.
   New, and a card per combo with its model's cover and Use; a card opens the combo's editor. Combos keep the notes' files.
 - `recipe_save.js` saves Workflow Recipes for the canvas save and for an output image's workflow (the gallery's keep menu,
   moving whole workflows kept as materials), laying an image's workflow on a canvas of its own to summarise it.
-- `ui_apply_receipt.js` is the receipt of values written to a node from a panel (Current node's parameters and prompt boxes, Prompt Studio's write) with its Undo. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) and the node writes shared by those panels and prompt drops.
+- `ui_apply_receipt.js` is the receipt of values written to a node from a panel (Current node's parameters) with its Undo. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) and the node writes shared by those panels and prompt drops.
 - `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn`, the Help modal and Home's "What's new"; the current guide's ID and steps live in `update_guide_data.js`) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across the rail's pages and tools with directional tooltip cards and keyboard navigation; steps whose target is not on screen are skipped. Other views pass their own `steps` (text from locale keys) and an optional `onClose`; the GPT-SoVITS import window does.
 - `tool_registry.js` holds the tool icons shared by the rail and Home.
 - The rail's tool slots (`ui_rail_tools.js`, fixed) hold scan, doctor and current node; settings sits at the rail's bottom. The rail's Prompts entry opens Prompt Studio beside the canvas (the browser folds away and comes back when it closes). There is no toolbox: the other tools open from their pages (workflow share codes on Workflows, Model Sources as a view of Models, opened from the doctor too, translation in Current node).
@@ -421,19 +421,24 @@ covered by the `styles.css` manifest.
   `ui_recipe_catalog.js` owns recipe
   filters, navigation, dismissible topbar drag guidance strip with localStorage persistence, the 3-step empty-state onboarding blueprint (`renderRecipeEmptyGuide`), and background catalog-wide model readiness resolution (`resolveCatalogRecipeReadiness`), `ui_recipe_cards.js` owns cards and card actions
   (including `grab` drag affordance, cover `可拖拽` badge, harmonized multi-state model readiness pill with `getRecipeReadiness` synchronizing available, missing, and pending matches with detail overview, and direct canvas drag-and-drop), `ui_recipe_dialogs.js` owns save/edit dialogs, and `ui_recipe_media.js` owns shared cover helpers. Detail sessions synchronize detected model availability back to `owner.recipeRecords` via `syncRecipeReferencesToCatalog`.
-- `ui_prompt_composer.js` owns the standalone Prompt Studio drawer. Its child
-  views are `ui_prompt_source_deck.js`, `ui_prompt_workbench.js`, and
-  `ui_prompt_inspector.js`. Assembly plan data, track-vs-role separation, and
-  cross-role tail smart-sorting are owned by `prompt_composition.js` and `prompt_studio_data.js`.
-  `ui_prompt_source_deck.js` owns the card list, filters, new-card form, library sync and
-  renaming / deleting a saved prompt; `ui_prompt_card_popover.js` owns the card preview (hover
-  corridor, pin, Copy / Add / Rename / Delete); `prompt_card_drag.js` lets a card be dragged out
-  of the drawer onto a canvas prompt box or empty canvas (through `material_drag.js` and
-  `prompt_drop.js`), passing through inside the drawer so the assembly board still takes it.
-- `ui_node_prompts.js` is the current-node panel's prompt boxes: role, text and
-  translation in place (Chinese to English written back with one undo, or the Chinese
-  meaning shown without writing). The studio uses `ui_lifecycle.js` for global listeners,
-  request cancellation and resize cleanup. Translation requests go through `translation_service.js`.
+- `ui_prompt_composer.js` owns the standalone Prompt Studio drawer (dock side, width, Esc);
+  `ui_prompt_workbench.js` fills it: the top bar (tags or text view, Chinese meanings) and
+  saving a box as a card. `ui_prompt_target.js` decides what is edited, the prompt boxes of
+  the prompt node last selected on the canvas or a positive / negative draft, follows the
+  selection and the boxes' text, and owns the studio's Undo; `ui_prompt_box_editor.js` is one
+  box as tags (select, weight, edit, remove, reorder, drop, type, translate Chinese) or text.
+  `prompt_tags.js` splits and joins a prompt's tags keeping their separators, and
+  `prompt_gloss.js` looks up and keeps the tags' Chinese meanings. `ui_prompt_source_deck.js`
+  owns the card list (three built-in cards and the saved prompts), search, new-card form,
+  library sync and renaming / deleting a saved prompt; `prompt_material_source.js` reads
+  saved prompts as cards and saves one; `ui_prompt_card_popover.js` owns the card preview (hover
+  corridor, pin, Copy / Add / Rename / Delete); `prompt_card_drag.js` lets a card or a box be
+  dragged out of the drawer onto a canvas prompt box or empty canvas (through `material_drag.js`
+  and `prompt_drop.js`), passing through inside the drawer so the boxes still take it.
+  `prompt_composition.js` composes a saved plan's text and names and sorts prompts.
+- `ui_node_prompts.js` is the current-node panel's prompt boxes: role and text, with
+  Edit in Prompt Studio. The studio uses `ui_lifecycle.js` for global listeners, request
+  cancellation and resize cleanup. Translation requests go through `translation_service.js`.
 - `ui_dialog.js` owns the plugin's own alert / confirm / prompt dialogs
   (`anomalousAlert`, `anomalousConfirm`, `anomalousPrompt`), used instead of the
   browser's native ones. `ui_prompt_toast.js` is the short toast (optionally with an

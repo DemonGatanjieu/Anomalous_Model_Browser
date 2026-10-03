@@ -472,6 +472,6 @@ for (const w of node.widgets) {
             body.appendChild(quickActions);
             for (const w of modelWidgets) this.renderAssistantModelCard(node, w, body);
         }
-        renderNodePrompts(node, body);
+        renderNodePrompts(this, node, body);
         renderNodeParameters(node, body);
     }

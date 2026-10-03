@@ -84,8 +84,8 @@ const TOUR_STEPS = Object.freeze([
         icon: '✍️',
         titleZh: '✍️ 提示词 (提示词工坊)',
         titleEn: '✍️ Prompts (Prompt Studio)',
-        bodyZh: '在画布旁边打开提示词工坊：左边是存过的提示词和常用词卡，点一下加入拼装台，拼好写进选中的节点；也可以把词卡直接拖到画布的提示词框里（正面绿框、负面红框）。',
-        bodyEn: 'Opens Prompt Studio beside the canvas: your saved prompts and starter cards on the left; click one to add it to the board and write the result into the selected node, or drag a card straight onto a prompt box on the canvas (green positive, red negative).',
+        bodyZh: '在画布旁边打开提示词工坊：选中的提示词节点在这里按词块直接改，点词卡就加进去，中文会译成英文；词卡也能直接拖到画布的提示词框里（正面绿框、负面红框）。',
+        bodyEn: 'Opens Prompt Studio beside the canvas: the selected prompt node is edited here tag by tag, a clicked card goes in, and Chinese is translated to English; cards also drag straight onto a prompt box on the canvas (green positive, red negative).',
         position: 'right',
     },
     {

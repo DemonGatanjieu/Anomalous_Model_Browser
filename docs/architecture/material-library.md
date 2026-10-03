@@ -152,7 +152,7 @@ may be repaired, and a saved name, preview, path or size is never treated as ide
 Prompt Studio's cards drag onto the canvas (`prompt_card_drag.js` through
 `material_drag.js`). Only an active, same-page drag is trusted; transfer data is a
 marker, not an external mutation command. Over the studio drawer the drag passes
-through to the assembly board. Live node lookup uses ComfyUI canvas coordinate
+through to the studio's prompt boxes. Live node lookup uses ComfyUI canvas coordinate
 conversion, canvas bounds and graph hit-testing; DOM-widget surfaces are accepted,
 and the graph/canvas identities captured at drag start are checked again at drop.
 

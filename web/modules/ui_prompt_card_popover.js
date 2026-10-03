@@ -1,12 +1,11 @@
 /**
- * The preview beside a Prompt Studio library card (ui_prompt_source_deck.js): the card's
- * category, role and full text, with Copy, Pin (keeps it open), Add to the board, and for
+ * The preview beside a Prompt Studio card (ui_prompt_source_deck.js): the card's role and
+ * full text, with Copy, Pin (keeps it open), Add (into the prompt box of its role), and for
  * a saved prompt Rename and Delete. It opens on hover and stays while the pointer is on the
  * card, the preview or the corridor between them; the deck's view scope releases it.
  */
 
 import { translate as t } from './locales.js';
-import { CATEGORY_META } from './prompt_studio_data.js';
 
 const OPEN_DELAY = 100;
 const HIDE_DELAY = 200;
@@ -83,10 +82,7 @@ export function createCardPopover({ drawer, scope, onAdd, onRename, onDelete }) 
         const head = el('div', 'anomalous-popover-header');
         const top = el('div', 'anomalous-popover-top');
         const tags = el('div', 'anomalous-popover-tags');
-        const meta = CATEGORY_META[card.category] || CATEGORY_META.subject;
-        const category = el('span', 'anomalous-popover-cat', window.anomalous_browser_lang === 'zh' ? meta.zh : meta.en);
-        Object.assign(category.style, { color: meta.color, background: meta.bg, borderColor: meta.border }); // the category's own colours
-        tags.append(category, el('span', `anomalous-popover-role is-${card.role}`, t(card.role === 'negative' ? 'promptCardNegative' : 'promptCardPositive')));
+        tags.append(el('span', `anomalous-popover-role is-${card.role}`, t(card.role === 'negative' ? 'promptCardNegative' : 'promptCardPositive')));
 
         const actions = el('div', 'anomalous-popover-top-actions');
         const copy = button('anomalous-popover-copy-btn', `📋 ${t('promptCardCopy')}`, t('promptCardCopyHint'), () => {
@@ -107,7 +103,7 @@ export function createCardPopover({ drawer, scope, onAdd, onRename, onDelete }) 
         actions.append(copy, pin, close);
         top.append(tags, actions);
         head.append(top, el('div', 'anomalous-popover-title', card.title));
-        if (card.sourceKind === 'material') head.append(el('div', 'anomalous-source-origin', t('promptLibrarySource')));
+        if (card.filename) head.append(el('div', 'anomalous-popover-origin', t('promptLibrarySource')));
         return head;
     }
 
@@ -115,7 +111,7 @@ export function createCardPopover({ drawer, scope, onAdd, onRename, onDelete }) 
         const foot = el('div', 'anomalous-popover-footer');
         foot.append(el('span', 'anomalous-popover-hint', t('promptCardAddHint')));
         const actions = el('div', 'anomalous-popover-footer-actions');
-        if (card.sourceKind === 'material') {
+        if (card.filename) {
             actions.append(
                 button('anomalous-popover-text-btn', t('promptCardRename'), t('promptCardRenameHint'), () => { hide(true); onRename(card); }),
                 button('anomalous-popover-text-btn is-danger', t('promptCardDelete'), t('promptCardDeleteHint'), () => { hide(true); onDelete(card); }),

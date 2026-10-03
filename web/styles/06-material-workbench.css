@@ -1512,54 +1512,12 @@
 .anomalous-notebook-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .anomalous-nb-editor .anomalous-nb-textarea { font: inherit; line-height: 1.6; padding: 12px; box-sizing: border-box; }
 /* Material application and prompt composition: structural styling, no animation or blur. */
-.anomalous-prompt-composer {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    gap: 12px;
-    width: 100%;
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 16px;
-    box-sizing: border-box;
-}
-.anomalous-prompt-composer > * { flex-shrink: 0; }
-.anomalous-prompt-actions,
-.anomalous-prompt-target,
 .anomalous-material-application-result {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
 }
-.anomalous-prompt-actions h3 { margin: 0; }
-.anomalous-prompt-field { display: flex; flex-direction: column; gap: 6px; }
-.anomalous-prompt-composer textarea,
-.anomalous-prompt-composer input:not([type="checkbox"]),
-.anomalous-prompt-composer select {
-    box-sizing: border-box;
-    max-width: 100%;
-    padding: 8px 10px;
-    border: 1px solid var(--border-color, var(--amb-border-strong));
-    border-radius: 6px;
-    background: var(--comfy-input-bg, var(--amb-bg-card));
-    color: var(--input-text, var(--amb-text-soft));
-    font: inherit;
-}
-.anomalous-prompt-composer textarea { width: 100%; resize: vertical; min-height: 72px; }
-.anomalous-prompt-composer textarea[readonly] { min-height: 100px; }
-.anomalous-prompt-parts { display: flex; flex-direction: column; gap: 10px; }
-.anomalous-prompt-part {
-    padding: 12px;
-    border: 1px solid var(--border-color, var(--amb-border-strong));
-    border-radius: 8px;
-}
-.anomalous-prompt-part > *:not(summary) { margin-top: 10px; }
-.anomalous-prompt-part summary { cursor: pointer; overflow-wrap: anywhere; }
-.anomalous-prompt-part summary input { margin-right: 8px; }
-.anomalous-prompt-part summary small { margin-left: 10px; color: var(--descrip-text, var(--amb-text-muted)); }
 .anomalous-material-application-result { margin-top: 10px; }
 .anomalous-material-dragging { opacity: 0 !important; }
 .anomalous-material-dragging, .anomalous-material-dragging * { pointer-events: none !important; }

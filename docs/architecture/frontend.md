@@ -235,74 +235,69 @@ browsing, editing, or already stored data.
 
 ## Prompt Studio ownership
 
-The studio supports copying prompt text and saving combinations as saved prompts
-(prompt-plan material files). Standalone prompt-plan JSON export has been removed.
-It opens from the rail's Prompts entry and the Prompt Studio shortcut; the browser
-folds away while it is open and comes back when it closes (not when another studio
-replaces it).
+The studio edits prompts where they are: the prompt boxes of the prompt node last
+selected on the canvas, or, with no such node, a positive and a negative draft
+(`owner.promptStudioDraft`, kept while the page stays open). It opens from the rail's
+Prompts entry, the Prompt Studio shortcut and Current node's "Edit in Prompt Studio";
+the browser folds away while it is open and comes back when it closes (not when
+another studio replaces it). There is no assembly board, block draft or plan loading.
 
-Source cards automatically refresh on studio open, browser focus/visibility, and
-every 30 seconds while the page is visible (scheduled after the previous request).
-Saving a studio combination also refreshes immediately. `sourceKind: 'material'`
-cards are reconciled by filename and role from a complete paginated snapshot;
-renames/content edits replace them and deleted sources disappear. Failed or
-cancelled reads retain existing cards. Equal text from different sources retains
-each source identity. Built-in and unsaved local cards remain independent.
-Library cards are saved prompts: their preview renames one (`update_material`, tags kept)
-or deletes it (`delete_material`, to the Recycle Bin; both of its role cards go), then the
-deck syncs. Any card with text can be dragged out of the drawer onto a canvas prompt box
-or empty canvas (`prompt_card_drag.js`, one undo step); the same drag over the drawer is
-left to the assembly board. Mixer blocks are editable copies; refreshing sources must not
-modify existing drafts.
-The deck owns its refresh timer, listeners and AbortController and releases all
-of them when its view closes. New-card role is supplied by the workbench callback.
+The target (`ui_prompt_target.js`) is polled every 400 ms. Selecting another node with
+prompt boxes switches to it; empty canvas or a node without boxes keeps the current
+one; Draft switches to the draft; a node that leaves the open graph drops back to the
+draft. Each change is one `applyNodeMaterialValues` write (a Ctrl+Z step). The studio's
+Undo takes its own writes back newest first and stops with `materialUndoChanged` when a
+box changed elsewhere; switching target clears it. Box editors re-read their widget on
+each poll and redraw unless a tag is being edited, a translation is pending or the text
+view has focus.
 
-The studio has one standalone drawer; the former embedded side/full composer
-and material import drawer are removed. Existing browser integration continues
-to call `openPromptStudio(owner)`, and external prompt dispatch uses
-`appendPromptToStudio(owner, text, isPositive, title)`.
+`prompt_tags.js` splits a box on top-level commas and line breaks and keeps each
+separator, so editing one tag leaves the rest of the text, line breaks included, as it
+was; a weight is `(tag:w)`. Inserting skips tags the box has already (same words, any
+weight). Typed or edited text with Chinese is translated to English before it is
+written; a box that holds Chinese offers to translate those tags, and the result is
+written only if the box still holds the text the request was made from. Chinese
+meanings (`prompt_gloss.js`, Chinese interface only, off until switched on, remembered
+in local storage with the view) are asked for in batches and kept for the session; a
+failed lookup leaves that box's meanings blank instead of retrying.
+
+The cards are three built-in ones and the saved prompts (prompt-kind material files,
+`prompt_material_source.js`). The saved list is asked for on open, every 30 seconds
+while the page is visible (scheduled after the previous request), on focus/visibility
+and after a save; a newer request cancels the older one and a failed one keeps the
+current cards. List summaries are not prompt bodies: a prompt's text is read through
+`material_prompt_data.js` once per filename and timestamp, since a saved prompt's text
+never changes. A card's role decides its box: a positive card never goes into a
+negative box or the reverse; boxes of unknown or both roles take either. A saved
+card's preview renames it (`update_material`, tags kept) or deletes it
+(`delete_material`, to the Recycle Bin). A card, or a box's handle with the box's text
+at drag start, drags onto the canvas (`prompt_card_drag.js`, one undo step); over the
+drawer the drag passes through to the boxes.
 
 | Module | Owned state and responsibilities |
 | --- | --- |
-| `ui_prompt_composer.js` | Active drawer, docking width/side, trigger visibility and plan-loading request |
-| `ui_prompt_workbench.js` | Owner-backed draft, active role, block editing, ordering, write/copy/save |
-| `ui_prompt_source_deck.js` | Source cards, filters, new-card form, rename/delete of saved prompts and current sync request |
+| `ui_prompt_composer.js` | Active drawer, docking width/side, Esc, trigger visibility and reopening the browser |
+| `ui_prompt_workbench.js` | Top bar, view and meanings switches (remembered), saving a box as a card |
+| `ui_prompt_target.js` | Which node or draft is edited, the poll, node/draft writes and the studio's Undo |
+| `ui_prompt_box_editor.js` | One box: tags or text, selection, weight, edit, remove, reorder, drops, typing, translation |
+| `ui_prompt_source_deck.js` | Built-in and saved cards, search, new-card form, rename/delete and the sync request |
 | `ui_prompt_card_popover.js` | Card preview: hover corridor, pin, copy/add/rename/delete actions |
-| `prompt_card_drag.js` | A card dragged onto the canvas: box fill or new prompt node, passing through the drawer |
-| `ui_prompt_inspector.js` | Full-text inspection window, role tab and its translation lifetime |
-| `prompt_studio_data.js` | Starter cards, display categories, draft/block initialization and synthesis |
-| `prompt_composition.js` | Pure plan conversion, sorting and composition; no DOM ownership |
-| `prompt_material_source.js` | All-page prompt discovery, detail loading and reconciliation by source identity |
+| `prompt_card_drag.js` | A card or box dragged onto the canvas: box fill or new prompt node, passing through the drawer |
+| `prompt_tags.js` | Pure tag split/join, weights, insert/remove/replace/move keeping separators |
+| `prompt_gloss.js` | Session cache and batched lookup of tags' Chinese meanings |
+| `prompt_material_source.js` | Saved prompts as cards (paginated list, text read once) and saving a card |
+| `prompt_composition.js` | Composing a saved plan's text, prompt titles and categories; no DOM |
 | `ui_lifecycle.js` | View-scoped listeners, AbortSignal, cleanup callbacks and resizing |
 
-Child views receive their container and narrow callbacks. The workbench keeps
-`owner.promptPlanDraft` for reopening and exposes only `updateAll` / `addBlock`
-through `owner.sidePromptComposerControl`. The source deck keeps its state local
-and returns extraction/refresh/sync actions instead of assigning new owner fields.
+Every close route (Close, Esc outside a text field, replacement) disposes the same view
+scope: the poll and sync timers, requests, translation and text timers, listeners and
+resize handlers. Esc in a studio text field only leaves the field, and Esc with a pinned
+card preview leaves the studio open. Closing during resize releases move/up listeners
+and restores body cursor and selection styles. A save already sent to the server may
+still complete, but must not reopen or repaint a disposed view.
 
-Draft `plan.parts` is the authoritative editable representation. Full-text
-inspector edits merge the enabled blocks in the edited role into one block,
-preserving disabled blocks and the opposite role. The inspector explains this
-behavior before editing. Copy, save and reopen derive text from the same parts.
-
-Every close route (button, Escape, backdrop, replacement and parent close) must
-dispose the same view scope. Parent close also closes its inspector. An Escape
-handled by an inspector must not close its parent in the same event dispatch.
-Closing during resize releases move/up listeners and restores body cursor and
-selection styles. UI reads are cancelled on close; a save already sent to the
-server may still complete, but must not reopen or repaint a disposed view.
-
-Initial and automatic source synchronization share a paginated loader. List
-summaries are identifiers, not prompt bodies: each unique filename is resolved
-through `material_prompt_data.js`. Reconciliation uses source filename and role,
-so equal text from different materials retains each origin. A newer sync cancels the old
-one and only the current result updates the deck.
-
-Translation in the current-node panel (`ui_node_prompts.js`) captures the node,
-the prompt box's widget and its text before the request, and writes only when the
-same widget still holds the same text; a closed panel or an edited box drops the result.
-Explicit English translation applies to all input languages, including kana
-and Korean. Transport errors and rejected bridge responses remain local errors;
+Explicit English translation applies to all input languages, including kana and
+Korean. Transport errors and rejected bridge responses remain local errors;
 provider-specific validation belongs to the backend translation route.
 
 ## Visual styling and theme architecture
@@ -334,9 +329,6 @@ now redundant and can go as the rules they override are touched.
 
 ## Verification
 
-Use `node --experimental-vm-modules tests/prompt_ui_lifecycle.mjs` for actual
-module open/close, nested Escape, resize cleanup, block insertion and delayed
-node writes. `tests/prompt_material_source.mjs` covers pagination, deduplication
-and cancellation; `tests/translation_service_contracts.mjs` covers the HTTP
-bridge. The UI fixture simulates DOM and ComfyUI APIs and does not replace
+`tests/prompt_tags.mjs` covers splitting, joining, weights and tag edits keeping
+separators. The UI fixture simulates DOM and ComfyUI APIs and does not replace
 checking the real host, layout, focus, drag gestures and theme rendering.

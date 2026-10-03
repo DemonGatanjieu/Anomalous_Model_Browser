@@ -2,7 +2,8 @@
  * Dragging a Prompt Studio card out of the drawer onto the canvas (material_drag.js runs the
  * drag, prompt_drop.js outlines the boxes and shows what lands where): on a prompt box the
  * card's text fills it; on empty canvas it becomes a prompt node of the card's role. Inside
- * the drawer the drag passes through, so the assembly board still takes the card. A fill or
+ * the drawer the drag passes through, so the studio's prompt boxes still take the card. A box's
+ * own handle drags it as a card whose text is the box's text when the drag starts. A fill or
  * new node is one Ctrl+Z step, and the toast's Undo takes it back.
  */
 
@@ -76,20 +77,25 @@ function addPromptNode(graph, position, card) {
 
 /**
  * Lets `element`, the card of `card` ({ id, title, content, role }), be dragged onto the
- * canvas; `drawer` is the studio drawer the drag passes through.
+ * canvas; `drawer` is the studio drawer the drag passes through. The text is read when the
+ * drag starts; an empty one does not drag.
  */
 export function bindPromptCardDrag(element, card, drawer) {
-    const envelope = envelopeOf(card);
-    const source = { filename: `card:${card.id}`, name: card.title, kind: 'prompt_plan', envelope };
+    const key = `card:${card.id}`;
+    let envelope = envelopeOf(card);
     bindMaterialDrag(element, null, {
         effectAllowed: 'copyMove',
         passThrough: event => drawer.contains(event.target),
-        payload: () => ({ ...source, dragHint: t('promptDragHint'), dragTargetHint: t('promptCardDragCanvas') }),
+        payload: () => {
+            envelope = envelopeOf(card);
+            if (!envelope.hasPrompt) return null;
+            return { filename: key, name: card.title, kind: 'prompt_plan', envelope, dragHint: t('promptDragHint'), dragTargetHint: t('promptCardDragCanvas') };
+        },
         accepts: (node, data, event) => !promptRefusal(node, event),
         targetHint: (node, data, event) => promptDropHint(data, node, promptBoxAt(node, event)),
         rejectHint: (node, data, event) => promptRefusal(node, event),
         onStart: () => {
-            prepareTextDrag(source.filename, envelope);
+            prepareTextDrag(key, envelope);
             const removeOutlines = outlinePromptBoxes(app.graph);
             return () => { clearDropPreview(); removeOutlines(); };
         },

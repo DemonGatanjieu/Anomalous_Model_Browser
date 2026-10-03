@@ -1,6 +1,6 @@
 /**
- * The receipt of values written to a node from a panel (Current node's parameters and
- * prompt boxes, Prompt Studio's write): which node took them, with Undo.
+ * The receipt of values written to a node from a panel (Current node's parameters):
+ * which node took them, with Undo.
  */
 
 import { translate as t } from './locales.js';

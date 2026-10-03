@@ -31,10 +31,6 @@ html.theme-abyssal-scarlet,
     z-index: 0 !important;
 }
 
-.theme-abyssal-scarlet .anomalous-prompt-workbench::before {
-    display: none !important;
-}
-
 .theme-abyssal-scarlet #anomalous-sidebar-wrapper {
     background: #100818 !important;
     border-right: 1px solid rgba(220, 20, 60, 0.22) !important;
@@ -94,8 +90,7 @@ html.theme-abyssal-scarlet,
 
 /* 3. Empty State Thematic Illustration (Submerged Scarlet Mansion) */
 .theme-abyssal-scarlet .anomalous-empty-state-container,
-.theme-abyssal-scarlet .anomalous-source-empty,
-.theme-abyssal-scarlet .anomalous-recipe-empty {
+.theme-abyssal-scarlet .anomalous-recipe-empty  {
     background-image: url('assets/abyssal_scarlet_mansion.webp') !important;
     background-size: contain !important;
     background-repeat: no-repeat !important;
@@ -188,22 +183,6 @@ html.theme-abyssal-scarlet,
     color: #f1eaed !important;
 }
 
-.theme-abyssal-scarlet .anomalous-mixer-smart-sort-btn {
-    background-color: rgba(45, 10, 22, 0.95) !important;
-    border: 1px solid rgba(220, 20, 60, 0.5) !important;
-    border-radius: 3px 8px 3px 8px !important;
-    color: #e0d8db !important;
-    box-shadow: none !important;
-}
-
-.theme-abyssal-scarlet .anomalous-mixer-smart-sort-btn:hover {
-    background-color: rgba(65, 14, 28, 0.98) !important;
-    border-color: #dc143c !important;
-    box-shadow: none !important;
-    color: #f1eaed !important;
-    transform: translateY(-1px);
-}
-
 .theme-abyssal-scarlet .anomalous-workbench-generation-btn {
     border-radius: 3px 10px 3px 10px !important;
     background-color: rgba(45, 10, 20, 0.95) !important;
@@ -226,8 +205,7 @@ html.theme-abyssal-scarlet,
 }
 
 .theme-abyssal-scarlet .anomalous-card:hover,
-.theme-abyssal-scarlet .anomalous-recipe-card:hover,
-.theme-abyssal-scarlet .anomalous-source-item:hover {
+.theme-abyssal-scarlet .anomalous-recipe-card:hover {
     border-color: #dc143c !important;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.95), inset 0 0 12px rgba(0, 0, 0, 0.7) !important;
 }
@@ -302,8 +280,7 @@ html.theme-abyssal-scarlet,
 }
 
 /* 6. Active Pills in Deep Velvet Wine (Inner Shadow & Sharp Border) */
-.theme-abyssal-scarlet .anomalous-recipe-pill.is-active,
-.theme-abyssal-scarlet .anomalous-workbench-pill.is-active {
+.theme-abyssal-scarlet .anomalous-recipe-pill.is-active {
     background-color: rgba(60, 10, 20, 0.85) !important;
     border-color: #dc143c !important;
     color: #e0d8db !important;

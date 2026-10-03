@@ -1,94 +1,130 @@
-import { app } from '../../../scripts/app.js';
-import { translate as t } from './locales.js';
-import { text, jsonResponse } from './ui_dom.js';
-import { materialNodeHeading } from './material_inspector.js';
-import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
-import { selectedMaterialNode } from './node_material_actions.js';
-import { promptBoxes } from './prompt_boxes.js';
-import { categorizePromptSnippet } from './prompt_composition.js';
-import { CATEGORY_META, STARTER_SOURCE_PROMPTS } from './prompt_studio_data.js';
-import { createCardPopover } from './ui_prompt_card_popover.js';
-import { bindPromptCardDrag } from './prompt_card_drag.js';
-import { showWorkbenchToast } from './ui_prompt_toast.js';
-import { loadPromptSourceCards, mergePromptSourceCards } from './prompt_material_source.js';
-import { translatePromptText } from './translation_service.js';
+/**
+ * Prompt Studio's cards: three common ones and the prompts you saved (prompt_material_source.js),
+ * with search and a small form for a new card. A card is clicked (or added from its preview,
+ * ui_prompt_card_popover.js) to go into the prompt box of its role, dragged onto a box, or
+ * dragged out onto the canvas (prompt_card_drag.js); a saved one is renamed or deleted from its
+ * preview. The saved list is checked again every 30 seconds and when the window comes back.
+ */
 
-export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCardToMixer, getActiveRole = () => 'positive') {
-    const sourceCards = [...STARTER_SOURCE_PROMPTS];
-    let sourceFilterCategory = 'all';
-    let sourceFilterKeyword = '';
-    let isCreatingNewCard = false;
+import { translate as t } from './locales.js';
+import { bindPromptCardDrag } from './prompt_card_drag.js';
+import { promptTitle } from './prompt_composition.js';
+import { loadPromptSourceCards, savePromptCard } from './prompt_material_source.js';
+import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
+import { jsonResponse } from './ui_dom.js';
+import { createCardPopover } from './ui_prompt_card_popover.js';
+import { showWorkbenchToast } from './ui_prompt_toast.js';
+
+const PRESET_CARDS = [
+    { id: 'preset_quality', titleKey: 'promptPresetQuality', role: 'positive', content: 'masterpiece, best quality, highly detailed' },
+    { id: 'preset_negative', titleKey: 'promptPresetNegative', role: 'negative', content: 'worst quality, low quality, lowres, blurry, jpeg artifacts, watermark, text' },
+    { id: 'preset_anatomy', titleKey: 'promptPresetAnatomy', role: 'negative', content: 'bad anatomy, bad hands, extra fingers, missing fingers, deformed' },
+];
+const SYNC_MS = 30000;
+
+function el(tag, className, content) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (content !== undefined) node.textContent = content;
+    return node;
+}
+
+function button(className, label, title, onClick) {
+    const node = el('button', className, label);
+    node.type = 'button';
+    if (title) node.title = title;
+    node.onclick = onClick;
+    return node;
+}
+
+/** Fills `parent`; `onPick(card)` takes a clicked card. Returns { sync() }. */
+export function createPromptSourceDeck(parent, drawer, scope, onPick) {
+    const presets = PRESET_CARDS.map(card => ({ ...card, title: t(card.titleKey) }));
+    let saved = [];
+    let keyword = '';
     const popover = createCardPopover({
         drawer,
         scope,
-        onAdd: card => addSourceCardToMixer(card),
-        onRename: card => void renameLibraryCard(card),
-        onDelete: card => void deleteLibraryCard(card),
+        onAdd: card => onPick(card),
+        onRename: card => void rename(card),
+        onDelete: card => void remove(card),
     });
-    const leftPanel = text(workbenchGrid, 'section', '', 'anomalous-workbench-left-panel');
-    const leftHeader = text(leftPanel, 'div', '', 'anomalous-workbench-col-header');
-    const leftTitleWrap = text(leftHeader, 'div', '', 'anomalous-workbench-col-title');
-    text(leftTitleWrap, 'strong', window.anomalous_browser_lang === 'zh' ? '词卡库' : 'Prompt Library');
-    const leftCounter = text(leftTitleWrap, 'span', '', 'anomalous-sub-counter');
 
-    // Action button group in leftHeader
-    const leftHeaderActions = text(leftHeader, 'div', '', 'anomalous-workbench-header-actions');
-
-    const syncStatus = text(leftPanel, 'div', t('promptLibraryAutoSync'), 'anomalous-source-sync-status');
-    syncStatus.setAttribute('role', 'status');
-
-    // Button 2: Create New Custom Card
-    const newCardTriggerBtn = text(leftHeaderActions, 'button', '', 'anomalous-btn-ghost anomalous-btn-sm anomalous-icon-btn');
-    newCardTriggerBtn.innerHTML = `<svg style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
-    newCardTriggerBtn.title = window.anomalous_browser_lang === 'zh' ? '新建词卡' : 'Create new prompt card';
-
-    // Search and category filters bar
-    const leftFilterBar = text(leftPanel, 'div', '', 'anomalous-workbench-filter-bar');
-    const leftSearch = text(leftFilterBar, 'input', '', 'anomalous-workbench-search-input');
-    leftSearch.placeholder = window.anomalous_browser_lang === 'zh' ? '搜索词卡...' : 'Search cards...';
-    leftSearch.oninput = () => {
-        sourceFilterKeyword = leftSearch.value.trim().toLowerCase();
-        renderSourceCardsList();
+    const panel = el('section', 'anomalous-ps-deck');
+    const top = el('div', 'anomalous-ps-deck-top');
+    const search = el('input', 'anomalous-ps-search');
+    search.type = 'search';
+    search.placeholder = t('promptDeckSearch');
+    search.oninput = () => {
+        keyword = search.value.trim().toLowerCase();
+        renderList();
     };
+    top.append(search, button('anomalous-ps-icon', '＋', t('promptDeckNew'), () => toggleForm()));
+    const form = el('form', 'anomalous-ps-new');
+    form.hidden = true;
+    const list = el('div', 'anomalous-ps-cards');
+    const status = el('div', 'anomalous-ps-sync');
+    status.setAttribute('role', 'status');
+    panel.append(top, form, list, status);
+    parent.append(panel);
 
-    const leftCategoryPills = text(leftPanel, 'div', '', 'anomalous-workbench-category-pills');
-    const filterCats = [
-        { id: 'all', label: window.anomalous_browser_lang === 'zh' ? '全部' : 'All' },
-        { id: 'base', label: window.anomalous_browser_lang === 'zh' ? '底模' : 'Base' },
-        { id: 'style', label: window.anomalous_browser_lang === 'zh' ? '风格' : 'Style' },
-        { id: 'subject', label: window.anomalous_browser_lang === 'zh' ? '主体' : 'Subject' },
-        { id: 'trigger', label: window.anomalous_browser_lang === 'zh' ? '触发' : 'Trigger' },
-    ];
-    filterCats.forEach(cat => {
-        const pill = text(leftCategoryPills, 'button', cat.label, `anomalous-workbench-pill${sourceFilterCategory === cat.id ? ' is-active' : ''}`);
-        pill.onclick = () => {
-            sourceFilterCategory = cat.id;
-            leftCategoryPills.querySelectorAll('.anomalous-workbench-pill').forEach(el => el.classList.remove('is-active'));
-            pill.classList.add('is-active');
-            renderSourceCardsList();
+    // Blank space of the list lets the preview go.
+    list.addEventListener('pointermove', (event) => {
+        if (event.target === list) popover.leave(event, true);
+    }, { passive: true });
+    list.addEventListener('pointerdown', (event) => {
+        if (event.target === list) popover.hide(true);
+    });
+    list.onscroll = () => popover.hide();
+
+    function toggleForm(open = form.hidden) {
+        form.hidden = !open;
+        form.replaceChildren();
+        if (!open) return;
+        const name = el('input', 'anomalous-ps-input');
+        name.placeholder = t('promptDeckNewName');
+        name.maxLength = 120;
+        const content = el('textarea', 'anomalous-ps-input');
+        content.placeholder = t('promptDeckNewText');
+        content.rows = 3;
+        const roles = el('div', 'anomalous-ps-new-roles');
+        for (const role of ['positive', 'negative']) {
+            const option = el('label', `anomalous-ps-new-role is-${role}`);
+            const radio = el('input');
+            radio.type = 'radio';
+            radio.name = 'anomalous-ps-new-role';
+            radio.value = role;
+            radio.checked = role === 'positive';
+            option.append(radio, el('span', '', t(role === 'negative' ? 'recipePromptRoleNegative' : 'recipePromptRolePositive')));
+            roles.append(option);
+        }
+        const submit = el('button', 'anomalous-ps-mini is-accent', t('promptStudioSave'));
+        submit.type = 'submit';
+        const row = el('div', 'anomalous-ps-new-row');
+        row.append(roles, submit, button('anomalous-ps-mini', t('dialogCancel'), '', () => toggleForm(false)));
+        form.append(name, content, row);
+        form.onsubmit = async (event) => {
+            event.preventDefault();
+            const text = content.value.trim();
+            if (!text) { content.focus(); return; }
+            const role = form.querySelector('input[type="radio"]:checked')?.value || 'positive';
+            const title = name.value.trim() || promptTitle(text) || text.slice(0, 40);
+            submit.disabled = true;
+            try {
+                const result = await savePromptCard({ name: title, content: text, role });
+                showWorkbenchToast(result.status === 'duplicate' ? t('promptStudioSavedBefore', { name: result.name }) : t('promptStudioSaved', { name: title }));
+                if (scope.signal.aborted) return;
+                toggleForm(false);
+                void sync();
+            } catch {
+                showWorkbenchToast(t('promptStudioSaveFailed'));
+                submit.disabled = false;
+            }
         };
-    });
+        name.focus();
+    }
 
-    // Inline New Card Form (Hidden by default, shown on demand)
-    const newCardForm = text(leftPanel, 'div', '', 'anomalous-workbench-new-card-form');
-    newCardForm.style.display = 'none';
-
-    // Source Cards List
-    const sourceCardsList = text(leftPanel, 'div', '', 'anomalous-source-cards-list');
-
-    // Blank space of the list or panel lets the preview go.
-    sourceCardsList.addEventListener('pointermove', (e) => {
-        if (e.target === sourceCardsList) popover.leave(e, true);
-    }, { passive: true });
-    sourceCardsList.addEventListener('pointerdown', (e) => {
-        if (e.target === sourceCardsList) popover.hide(true);
-    });
-    leftPanel.addEventListener('pointermove', (e) => {
-        if ([leftPanel, leftFilterBar, leftCategoryPills].includes(e.target)) popover.leave(e, true);
-    }, { passive: true });
-
-    /** Renames a saved prompt (both of its cards); its tags stay. */
-    async function renameLibraryCard(card) {
+    async function rename(card) {
         const name = String(await anomalousPrompt(t('promptCardRenameAsk'), card.title, t('promptCardRename')) || '').trim();
         if (!name || name === card.title) return;
         try {
@@ -99,14 +135,13 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
                 body: JSON.stringify({ filename: card.filename, name, tags: detail.data?.tags || [] }),
             });
             await jsonResponse(response, 'rename prompt');
-            await syncMaterialsIntoSourceDeck();
-        } catch (error) {
+            await sync();
+        } catch {
             await anomalousAlert(t('promptCardRenameFailed'));
         }
     }
 
-    /** Deletes a saved prompt (both of its cards) to the Recycle Bin, after asking. */
-    async function deleteLibraryCard(card) {
+    async function remove(card) {
         if (!await anomalousConfirm(t('promptCardDeleteConfirm', { name: card.title }), t('promptCardDelete'), { okLabel: t('promptCardDelete') })) return;
         try {
             const response = await fetch('/anomalous/delete_material', {
@@ -115,366 +150,85 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
                 body: JSON.stringify({ filename: card.filename }),
             });
             await jsonResponse(response, 'delete prompt');
-            await syncMaterialsIntoSourceDeck();
-        } catch (error) {
+            await sync();
+        } catch {
             await anomalousAlert(t('promptCardDeleteFailed'));
         }
     }
 
-    // Extract prompts from selected canvas node
-    function extractPromptsFromSelectedNode(intoRightMixer = false) {
-        const node = selectedMaterialNode(app);
-        if (!node) {
-            anomalousAlert(window.anomalous_browser_lang === 'zh'
-                ? '💡 请先在 ComfyUI 画布上点击选中一个提示词节点（例如 CLIPTextEncode 或包含 prompt 文本的节点）！'
-                : '💡 Please select a prompt node (e.g. CLIPTextEncode) on the ComfyUI canvas first!');
-            return;
-        }
-
-        const heading = materialNodeHeading(node) || node.title || node.type || `Node #${node.id}`;
-        const targets = promptBoxes(node);
-        if (!targets.length) {
-            anomalousAlert(window.anomalous_browser_lang === 'zh'
-                ? `⚠️ 选中的节点【${heading}】中未检测到有效的提示词文本输入！`
-                : `⚠️ No valid prompt text found in selected node [${heading}]!`);
-            return;
-        }
-
-        let extractedCount = 0;
-        targets.forEach(t => {
-            const rawVal = String(node.widgets[t.index]?.value || '').trim();
-            if (!rawVal) return;
-            const role = t.role === 'negative' ? 'negative' : 'positive';
-            const cat = role === 'negative' ? 'base' : categorizePromptSnippet(rawVal);
-            const cardTitle = `${heading} · ${t.name}`;
-
-            const newCard = {
-                id: `node_${node.id}_${t.index}_${Date.now()}`,
-                title: cardTitle,
-                content: rawVal,
-                role,
-                category: cat,
-                persisted: false,
-            };
-
-            // Add into left source deck
-            sourceCards.unshift(newCard);
-            extractedCount++;
-
-            // If user clicked right panel, also insert into mixer track directly
-            if (intoRightMixer) {
-                addSourceCardToMixer(newCard);
-            }
-        });
-
-        if (extractedCount > 0) {
-            renderSourceCardsList();
-            showWorkbenchToast(window.anomalous_browser_lang === 'zh'
-                ? `已成功从节点【${heading}】提取 ${extractedCount} 段提示词${intoRightMixer ? '并加入组合' : '并加入左侧词库'}！`
-                : `Successfully extracted ${extractedCount} prompts from [${heading}]!`);
-        } else {
-            anomalousAlert(window.anomalous_browser_lang === 'zh'
-                ? `选中的节点【${heading}】文本内容为空！`
-                : `The text fields in node [${heading}] are empty!`);
-        }
-    }
-
-    let materialSyncController = null;
-    let materialSyncTimer = null;
-    scope.onDispose(() => {
-        clearTimeout(materialSyncTimer);
-        materialSyncController?.abort();
-    });
-    function scheduleMaterialSync() {
-        clearTimeout(materialSyncTimer);
-        if (scope.signal.aborted) return;
-        materialSyncTimer = setTimeout(() => {
-            if (document.hidden) scheduleMaterialSync();
-            else void syncMaterialsIntoSourceDeck();
-        }, 30000);
-    }
-    async function syncMaterialsIntoSourceDeck() {
-        if (scope.signal.aborted) return;
-        clearTimeout(materialSyncTimer);
-        materialSyncController?.abort();
-        const controller = new AbortController();
-        materialSyncController = controller;
-        try {
-            const cards = await loadPromptSourceCards(controller.signal);
-            if (scope.signal.aborted || controller.signal.aborted) return;
-            const previous = JSON.stringify(sourceCards);
-            mergePromptSourceCards(sourceCards, cards);
-            if (previous !== JSON.stringify(sourceCards)) renderSourceCardsList();
-            syncStatus.textContent = t('promptLibraryAutoSync');
-        } catch (error) {
-            if (!scope.signal.aborted && !controller.signal.aborted) {
-                syncStatus.textContent = t('promptLibrarySyncFailed');
-            }
-        } finally {
-            if (materialSyncController === controller) {
-                materialSyncController = null;
-                scheduleMaterialSync();
-            }
-        }
-    }
-    scope.listen(window, 'focus', () => { void syncMaterialsIntoSourceDeck(); });
-    scope.listen(document, 'visibilitychange', () => {
-        if (!document.hidden) void syncMaterialsIntoSourceDeck();
-    });
-    // -------------------------------------------------------------------------
-    // RENDER: Left Panel Cards & Form
-    // -------------------------------------------------------------------------
-    function renderNewCardFormUI() {
-        if (!isCreatingNewCard) {
-            newCardForm.style.display = 'none';
-            newCardForm.replaceChildren();
-            return;
-        }
-        newCardForm.style.display = 'flex';
-        newCardForm.replaceChildren();
-
-        text(newCardForm, 'div', window.anomalous_browser_lang === 'zh' ? '✨ 新建提示词卡片' : '✨ New Prompt Card', 'anomalous-form-title');
-
-        const titleInput = text(newCardForm, 'input', '', 'anomalous-form-input');
-        titleInput.placeholder = window.anomalous_browser_lang === 'zh' ? '卡片名称（如：赛博光影、角色面部）...' : 'Card name...';
-
-        // Role & Category selector row
-        const metaRow = text(newCardForm, 'div', '', 'anomalous-form-meta-row');
-
-        // Role radio group
-        const roleGroup = text(metaRow, 'div', '', 'anomalous-form-role-group');
-        let selectedRole = getActiveRole();
-
-        const posLabel = text(roleGroup, 'label', '', 'anomalous-role-label');
-        const posRadio = text(posLabel, 'input', '');
-        posRadio.type = 'radio';
-        posRadio.name = 'new_card_role';
-        posRadio.value = 'positive';
-        posRadio.checked = selectedRole === 'positive';
-        text(posLabel, 'span', t('promptRolePositive'));
-
-        const negLabel = text(roleGroup, 'label', '', 'anomalous-role-label');
-        const negRadio = text(negLabel, 'input', '');
-        negRadio.type = 'radio';
-        negRadio.name = 'new_card_role';
-        negRadio.value = 'negative';
-        negRadio.checked = selectedRole === 'negative';
-        text(negLabel, 'span', t('promptRoleNegative'));
-
-        posRadio.onchange = () => { if (posRadio.checked) selectedRole = 'positive'; };
-        negRadio.onchange = () => { if (negRadio.checked) selectedRole = 'negative'; };
-
-        // Category dropdown
-        const catWrap = text(metaRow, 'div', '', 'anomalous-form-cat-wrap');
-        text(catWrap, 'span', `${window.anomalous_browser_lang === 'zh' ? '分类' : 'Type'}: `);
-        let selectedCat = 'style';
-        const catSelect = text(catWrap, 'select', '', 'anomalous-form-select');
-        ['base', 'style', 'subject', 'trigger'].forEach(catKey => {
-            const meta = CATEGORY_META[catKey];
-            const opt = text(catSelect, 'option', window.anomalous_browser_lang === 'zh' ? meta.zh : meta.en);
-            opt.value = catKey;
-            if (catKey === selectedCat) opt.selected = true;
-        });
-        catSelect.onchange = () => { selectedCat = catSelect.value; };
-
-        const contentInput = text(newCardForm, 'textarea', '', 'anomalous-form-textarea');
-        contentInput.placeholder = window.anomalous_browser_lang === 'zh' ? '输入提示词内容，多个短语用逗号隔开...' : 'Enter prompt text...';
-        contentInput.rows = 3;
-
-        const formBtnRow = text(newCardForm, 'div', '', 'anomalous-form-btn-row');
-        const submitBtn = text(formBtnRow, 'button', window.anomalous_browser_lang === 'zh' ? '✓ 保存并加入库' : '✓ Save to Library', 'anomalous-btn-primary anomalous-btn-sm');
-
-        const translateBtn = text(formBtnRow, 'button', window.anomalous_browser_lang === 'zh' ? '🌐 翻译' : '🌐 Translate', 'anomalous-btn-ghost anomalous-btn-sm anomalous-btn-card-translate');
-        translateBtn.type = 'button';
-        translateBtn.title = window.anomalous_browser_lang === 'zh' ? '一键双向翻译 (中/英互译)' : 'One-click bilingual translation';
-        translateBtn.onclick = async () => {
-            const raw = contentInput.value.trim();
-            if (!raw) return;
-            const originalText = translateBtn.textContent;
-            translateBtn.disabled = true;
-            translateBtn.textContent = '⏳ ...';
-            try {
-                const res = await translatePromptText(raw, { signal: scope.signal });
-                if (scope.signal.aborted || !contentInput.isConnected || contentInput.value.trim() !== raw) return;
-                if (res.ok && res.translated) {
-                    contentInput.value = res.translated;
-                    showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? `✓ 已翻译为${res.targetLang === 'en' ? '英文' : '中文'}` : `✓ Translated to ${res.targetLang}`);
-                } else {
-                    showWorkbenchToast(window.anomalous_browser_lang === 'zh' ? `翻译失败: ${res.error || '网络错误'}` : `Translation failed: ${res.error || 'Network error'}`);
-                }
-            } finally {
-                translateBtn.disabled = false;
-                translateBtn.textContent = originalText;
-            }
+    function cardElement(card) {
+        const item = el('div', `anomalous-ps-card is-${card.role}`);
+        item.append(el('span', 'anomalous-ps-card-title', card.title), el('span', 'anomalous-ps-card-text', card.content));
+        item.onmouseenter = event => popover.hover(card, item, event);
+        item.onmouseleave = event => popover.leave(event);
+        // Onto a prompt box in the studio (the card itself), or out onto the canvas (prompt_card_drag.js).
+        item.ondragstart = (event) => {
+            popover.hide(true);
+            event.dataTransfer.setData('application/json', JSON.stringify({ title: card.title, content: card.content, role: card.role }));
+            event.dataTransfer.setData('text/plain', card.content);
         };
-
-        const cancelBtn = text(formBtnRow, 'button', t('dialogCancel'), 'anomalous-btn-ghost anomalous-btn-sm');
-
-        submitBtn.onclick = async () => {
-            const rawContent = contentInput.value.trim();
-            if (!rawContent) {
-                contentInput.focus();
-                return;
-            }
-            submitBtn.disabled = true;
-            submitBtn.textContent = '⏳ ...';
-
-            const cardTitle = titleInput.value.trim() || (window.anomalous_browser_lang === 'zh' ? CATEGORY_META[selectedCat].zh : CATEGORY_META[selectedCat].en);
-            const newCard = {
-                id: `usr_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-                title: cardTitle,
-                content: rawContent,
-                role: selectedRole,
-                category: selectedCat,
-                persisted: false,
-            };
-
-            try {
-                const body = {
-                    name: cardTitle,
-                    tags: ['prompt_card', selectedCat, selectedRole],
-                    allow_duplicate: true,
-                    plan: {
-                        version: 2,
-                        positive: selectedRole === 'positive' ? rawContent : '',
-                        negative: selectedRole === 'negative' ? rawContent : '',
-                        parts: [{
-                            id: newCard.id,
-                            name: cardTitle,
-                            category: selectedCat,
-                            role: selectedRole,
-                            positive: selectedRole === 'positive' ? rawContent : '',
-                            negative: selectedRole === 'negative' ? rawContent : '',
-                            enabled: true,
-                        }],
-                    },
-                };
-                const res = await fetch('/anomalous/save_prompt_plan', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body),
-                });
-                const payload = await jsonResponse(res, 'save prompt card');
-                if (scope.signal.aborted) return;
-                if (payload.status === 'success') {
-                    newCard.persisted = true;
-                    newCard.filename = payload.filename;
-                    newCard.sourceKind = 'material';
-                    newCard.id = `mat_${selectedRole}_${payload.filename}`;
-                    showWorkbenchToast(t('promptSaveCardSuccess'));
-                }
-            } catch (err) {
-                if (scope.signal.aborted) return;
-                showWorkbenchToast(t('promptSaveCardFailed'));
-            }
-
-            sourceCards.unshift(newCard);
-            isCreatingNewCard = false;
-            renderNewCardFormUI();
-            renderSourceCardsList();
+        bindPromptCardDrag(item, card, drawer);
+        item.onclick = () => {
+            popover.hide(true);
+            onPick(card);
         };
-
-        cancelBtn.onclick = () => {
-            isCreatingNewCard = false;
-            renderNewCardFormUI();
-        };
-
-        titleInput.focus();
+        return item;
     }
 
-    newCardTriggerBtn.onclick = () => {
-        isCreatingNewCard = !isCreatingNewCard;
-        renderNewCardFormUI();
-    };
+    function group(title, cards, empty) {
+        if (!cards.length && !empty) return;
+        list.append(el('div', 'anomalous-ps-cards-head', title));
+        if (cards.length) list.append(...cards.map(cardElement));
+        else list.append(el('div', 'anomalous-ps-cards-empty', empty));
+    }
 
-    function renderSourceCardsList() {
+    function renderList() {
         popover.hide(true);
-        sourceCardsList.replaceChildren();
-        sourceCardsList.onscroll = () => popover.hide();
-
-        const filtered = sourceCards.filter(card => {
-            if (sourceFilterCategory !== 'all' && card.category !== sourceFilterCategory) return false;
-            if (sourceFilterKeyword) {
-                const matchTitle = card.title.toLowerCase().includes(sourceFilterKeyword);
-                const matchContent = card.content.toLowerCase().includes(sourceFilterKeyword);
-                if (!matchTitle && !matchContent) return false;
-            }
-            return true;
-        });
-
-        leftCounter.textContent = `(${filtered.length})`;
-
-        if (!filtered.length) {
-            const empty = text(sourceCardsList, 'div', '', 'anomalous-source-empty');
-            empty.innerHTML = `
-                <div style="font-size: 24px; margin-bottom: 6px;">🔍</div>
-                <div>${window.anomalous_browser_lang === 'zh' ? '未找到匹配的提示词卡片' : 'No matching prompt cards found'}</div>
-            `;
-            return;
-        }
-
-        filtered.forEach(card => {
-            const catMeta = CATEGORY_META[card.category] || CATEGORY_META.subject;
-            const cardEl = text(sourceCardsList, 'div', '', `anomalous-source-card-compact is-cat-${card.category} is-role-${card.role}`);
-            cardEl.setAttribute('draggable', 'true');
-
-            // The preview beside the card (ui_prompt_card_popover.js) replaces the browser's tooltip.
-            cardEl.onmouseenter = (e) => popover.hover(card, cardEl, e);
-            cardEl.onmouseleave = (e) => popover.leave(e);
-
-            // Into the assembly board, or out of the drawer onto the canvas (prompt_card_drag.js).
-            cardEl.ondragstart = (e) => {
-                popover.hide(true);
-                const payload = {
-                    title: card.title,
-                    content: card.content,
-                    role: card.role,
-                    category: card.category,
-                };
-                e.dataTransfer.setData('application/json', JSON.stringify(payload));
-                e.dataTransfer.setData('text/plain', card.content);
-                e.dataTransfer.effectAllowed = 'copyMove';
-                cardEl.classList.add('is-dragging-source');
-                workbenchGrid.classList.add('is-source-dragging');
-            };
-
-            cardEl.ondragend = () => {
-                cardEl.classList.remove('is-dragging-source');
-                workbenchGrid.classList.remove('is-source-dragging');
-            };
-            if (card.content.trim()) bindPromptCardDrag(cardEl, card, drawer);
-
-            const dot = text(cardEl, 'span', '', 'anomalous-source-card-dot');
-            dot.style.backgroundColor = catMeta.color;
-
-            const roleTag = text(cardEl, 'span', card.role === 'negative' ? (window.anomalous_browser_lang === 'zh' ? '⊖ 负' : '⊖ Neg') : (window.anomalous_browser_lang === 'zh' ? '⊕ 正' : '⊕ Pos'), `anomalous-card-role-tag is-${card.role}`);
-            roleTag.title = card.role === 'negative' ? (window.anomalous_browser_lang === 'zh' ? '负向词卡' : 'Negative card') : (window.anomalous_browser_lang === 'zh' ? '正向词卡' : 'Positive card');
-
-            const nameWrap = text(cardEl, 'div', '', 'anomalous-source-card-label');
-            text(nameWrap, 'span', card.title, 'anomalous-source-card-name');
-            if (card.sourceKind === 'material') {
-                cardEl.dataset.sourceFilename = card.filename;
-                const origin = text(nameWrap, 'span', t('promptLibraryBadge'), 'anomalous-source-origin');
-                origin.title = t('promptLibrarySource');
-            }
-
-            const addIcon = text(cardEl, 'span', '+', 'anomalous-source-card-add-icon');
-
-            cardEl.onclick = () => {
-                popover.hide(true);
-                addSourceCardToMixer(card);
-            };
-        });
+        list.replaceChildren();
+        const matches = card => !keyword || card.title.toLowerCase().includes(keyword) || card.content.toLowerCase().includes(keyword);
+        group(t('promptDeckPresets'), presets.filter(matches));
+        group(t('promptDeckSaved'), saved.filter(matches), t(keyword ? 'promptDeckNoMatch' : 'promptDeckSavedEmpty'));
     }
 
-    renderNewCardFormUI();
-    renderSourceCardsList();
-    void syncMaterialsIntoSourceDeck();
-    return {
-        extractSelected: extractPromptsFromSelectedNode,
-        refresh: renderSourceCardsList,
-        sync: syncMaterialsIntoSourceDeck,
-        hidePreview: (force = false) => popover.hide(force),
-        focusSearch: () => leftSearch.focus(),
-    };
+    let controller = null;
+    let timer = null;
+    scope.onDispose(() => {
+        clearTimeout(timer);
+        controller?.abort();
+    });
+    function schedule() {
+        clearTimeout(timer);
+        if (scope.signal.aborted) return;
+        timer = setTimeout(() => (document.hidden ? schedule() : void sync()), SYNC_MS);
+    }
+    async function sync() {
+        if (scope.signal.aborted) return;
+        clearTimeout(timer);
+        controller?.abort();
+        const mine = new AbortController();
+        controller = mine;
+        try {
+            const cards = await loadPromptSourceCards(mine.signal);
+            if (scope.signal.aborted || mine.signal.aborted) return;
+            const changed = JSON.stringify(cards) !== JSON.stringify(saved);
+            saved = cards;
+            status.textContent = '';
+            if (changed) renderList();
+        } catch {
+            if (!scope.signal.aborted && !mine.signal.aborted) status.textContent = t('promptLibrarySyncFailed');
+        } finally {
+            if (controller === mine) {
+                controller = null;
+                schedule();
+            }
+        }
+    }
+    scope.listen(window, 'focus', () => { void sync(); });
+    scope.listen(document, 'visibilitychange', () => {
+        if (!document.hidden) void sync();
+    });
+
+    renderList();
+    void sync();
+    return { sync };
 }

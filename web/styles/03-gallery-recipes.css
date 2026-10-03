@@ -1977,12 +1977,6 @@ dialog.anomalous-gallery-viewer[open] {
     filter: brightness(0.95);
 }
 
-.anomalous-btn-sm {
-    height: 28px !important;
-    padding: 0 10px !important;
-    font-size: 0.76rem !important;
-}
-
 @keyframes anomalous-parameter-switch {
     0% {
         opacity: 0;
