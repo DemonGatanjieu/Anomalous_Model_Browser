@@ -397,6 +397,94 @@
     padding: 12px 16px;
 }
 
+/* Prompt Notes heading the Prompts page (ui_material_notes.js): rows fit their content. */
+.anomalous-material-list.is-grid.has-notes {
+    grid-auto-rows: max-content;
+}
+
+.anomalous-material-list.has-notes .anomalous-material-card {
+    min-height: 0;
+}
+
+.anomalous-note-shelf-heading,
+.anomalous-note-shelf-empty {
+    grid-column: 1 / -1;
+}
+
+.anomalous-note-shelf-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--amb-text-soft);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.anomalous-note-shelf-empty {
+    margin: 0;
+    color: var(--amb-text-muted);
+    font-size: 12.5px;
+}
+
+.anomalous-note-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--amb-border);
+    border-radius: var(--amb-radius-card, 10px);
+    background: var(--amb-bg-card);
+    cursor: pointer;
+}
+
+.anomalous-note-card:hover {
+    border-color: var(--amb-border-strong);
+}
+
+.anomalous-note-card:focus-visible {
+    outline: 2px solid var(--amb-link);
+    outline-offset: 2px;
+}
+
+.anomalous-note-card-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.anomalous-note-card-head strong,
+.anomalous-note-card-meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-note-card-meta {
+    color: var(--amb-text-muted);
+    font-size: 12px;
+}
+
+.anomalous-note-card-prompt {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+    line-height: 1.5;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.anomalous-note-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: auto;
+}
+
 /* Recent generations (ui_material_recent.js): picture cards in either view mode. */
 .anomalous-material-list.is-recent {
     display: grid;

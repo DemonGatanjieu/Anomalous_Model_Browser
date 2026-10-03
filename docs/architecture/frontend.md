@@ -75,7 +75,8 @@ The main surfaces are:
   catalog/persistence, editing, and canvas creation are separated across
   `ui_notebooks.js`, `ui_notebook_editor.js`, and `notebook_canvas.js`;
   `notebook_apply.js` plans and makes a note's changes to the open workflow
-  (reads the canvas first, writes one Ctrl+Z step). Material
+  (reads the canvas first, writes one Ctrl+Z step). The notes are reached from the
+  Material Library's Prompts page (`ui_material_notes.js`), not a separate button. Material
   discovery/pagination, cards, detail, and node application are separated across
   `ui_materials.js`, `ui_material_cards.js`, `ui_material_detail.js`, and
   `ui_material_application.js`.

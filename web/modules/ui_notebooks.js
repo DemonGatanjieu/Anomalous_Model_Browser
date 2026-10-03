@@ -88,7 +88,6 @@ function createNotebookSidebar(ctx) {
         { id: '#amb-nb-sec-models', icon: '📦', key: 'nbNavModels', zh: '配套模型', en: 'Companion Models' },
         { id: '#amb-nb-sec-prompt', icon: '✍️', key: 'nbNavPrompt', zh: '提示词编辑', en: 'Prompt Editor' },
         { id: '#amb-nb-sec-tools', icon: '🔍', key: 'nbNavTools', zh: '查找替换', en: 'Find & Replace' },
-        { id: '#amb-nb-sec-archive', icon: '💾', key: 'nbNavArchive', zh: '素材归档', en: 'Save to Library' },
     ];
 
     navSections.forEach(sec => {
@@ -155,7 +154,6 @@ function setupNotebookScrollSpy(ctx, navList, navSections) {
 export async function showNotebooks() {
     this.recipeDetailFinish?.('closed');
     this.modal?.classList.add('visible');
-    if (typeof this.setActiveHeaderTab === 'function') this.setActiveHeaderTab(null);
     if (this.nbPanel && this.nbPanel.style.display !== 'flex' && !this.workspaceReturnState) {
         this.workspaceReturnState = Object.fromEntries([
             ['grid', this.grid], ['detail', this.detailPanel], ['gallery', this.galleryPanel],
@@ -190,8 +188,17 @@ export async function showNotebooks() {
     const headerMain = document.createElement('div');
     headerMain.className = 'anomalous-nb-header-main';
     const heading = document.createElement('h2');
-    heading.textContent = t('promptNotes') || (window.anomalous_browser_lang === 'zh' ? '提示词笔记' : 'Prompt Notes');
-    headerMain.append(heading);
+    heading.textContent = t('promptNotes');
+    // Notes live on the library's Prompts page: back goes there.
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'anomalous-btn-ghost anomalous-nb-back';
+    back.textContent = t('noteBackToLibrary');
+    back.onclick = () => {
+        this.materialKindCategory = 'prompts';
+        this.goTo?.('materials');
+    };
+    headerMain.append(back, heading);
     nbHeader.appendChild(headerMain);
     const closeNb = document.createElement('span');
     closeNb.className = 'anomalous-nb-close';

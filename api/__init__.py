@@ -84,7 +84,6 @@ def setup_routes(app):
     app.router.add_post('/anomalous/inspect_image_material', materials.api_inspect_image_material)
     app.router.add_post('/anomalous/save_image_material', materials.api_save_image_material)
     app.router.add_post('/anomalous/save_parameter_material', materials.api_save_parameter_material)
-    app.router.add_post('/anomalous/save_prompt_note_material', materials.api_save_prompt_note_material)
     app.router.add_post('/anomalous/save_prompt_plan', materials.api_save_prompt_plan)
     app.router.add_post('/anomalous/save_node_material', node_material.api_save_node_material)
     app.router.add_post('/anomalous/delete_material', materials.api_delete_material)

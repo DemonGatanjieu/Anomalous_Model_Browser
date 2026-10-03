@@ -348,51 +348,6 @@ async def api_save_parameter_material(request):
     })
 
 
-async def api_save_prompt_note_material(request):
-    try:
-        payload = await request.json()
-        scope = payload.get("scope", "note")
-        if scope not in ("note", "prompt"):
-            raise ValueError("Invalid prompt scope")
-        source_filename = require_filename(payload.get("notebook_filename", ""))
-        if not source_filename.endswith(".json") or source_filename.startswith("."):
-            raise ValueError("Invalid notebook filename")
-        name = payload.get("name", "")
-        if not isinstance(name, str) or not name.strip() or len(name.strip()) > MAX_MATERIAL_NAME_LENGTH:
-            raise ValueError("Invalid material name")
-        note = _normalise_prompt_note(payload.get("note"), scope == "prompt")
-        if scope == "prompt" and not note["promptEn"].strip():
-            raise ValueError("Prompt is empty")
-        tags = _normalise_material_tags(payload.get("tags", []))
-        allow_duplicate = payload.get("allow_duplicate", False)
-        if not isinstance(allow_duplicate, bool):
-            raise ValueError("Invalid duplicate preference")
-        signature = hashlib.sha256(json.dumps(note, ensure_ascii=False, sort_keys=True, allow_nan=False).encode("utf-8")).hexdigest()
-        material_id = uuid.uuid4().hex
-        filename = f"material_{int(time.time())}_{material_id}.json"
-        material = {
-            "schema_version": MATERIAL_SCHEMA_VERSION, "id": material_id,
-            "kind": "prompt_text" if scope == "prompt" else "prompt_note_bundle",
-            "name": name.strip(), "tags": tags, "timestamp": int(time.time() * 1000),
-            "source": {"type": "prompt_note", "notebook_filename": source_filename,
-                       "notebook_name": name.strip(), "parameter_signature": signature},
-            "note": note, "selection": {"scope": scope},
-            "capabilities": ["copy_prompt", "restore_prompt_note"],
-        }
-        duplicate = await asyncio.to_thread(
-            _persist_parameter_material, get_materials_dir(), filename, material, allow_duplicate
-        )
-        if duplicate:
-            return web.json_response({"status": "duplicate", "filename": duplicate["filename"],
-                                      "name": duplicate["name"]}, status=409)
-        return web.json_response({"status": "success", "filename": filename,
-                                  "material": _material_summary(filename, material)})
-    except (AttributeError, TypeError, ValueError):
-        return web.json_response({"status": "error", "message": "Invalid prompt note material"}, status=400)
-    except OSError:
-        return web.json_response({"status": "error", "message": "Could not save prompt note material"}, status=500)
-
-
 async def api_save_prompt_plan(request):
     try:
         payload = await request.json()

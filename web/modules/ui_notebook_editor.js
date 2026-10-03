@@ -5,8 +5,6 @@
 
 import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
-import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
-import { showMaterialSaved } from './material_feedback.js';
 import { isUnetModel, UNLABELED_BASE_MODEL } from './notebook_canvas.js';
 
 const t = (key, params) => translate(key, params);
@@ -485,84 +483,6 @@ function createPromptToolsBar(ctx, data, rawArea, onTagsUpdated) {
 }
 
 /**
- * Flat Material Library archive card (unfolded bottom card).
- */
-function createArchiveCard(ctx, currentNotebook, data) {
-    const card = document.createElement('div');
-    card.id = 'amb-nb-sec-archive';
-    card.className = 'anomalous-nb-card anomalous-nb-archive-card';
-
-    const header = document.createElement('div');
-    header.className = 'anomalous-nb-card-header';
-    const title = document.createElement('span');
-    const rawShort = t('materialSaveSnapshotShort') || (window.anomalous_browser_lang === 'zh' ? '保存到素材库' : 'Save to Library');
-    const cleanShort = rawShort.replace(/^💾\s*/, '');
-    title.innerHTML = `💾 <strong>${cleanShort}</strong>`;
-    header.appendChild(title);
-
-    const hint = document.createElement('p');
-    hint.className = 'anomalous-nb-hint';
-    hint.textContent = t('materialNoteScopeHint') || (window.anomalous_browser_lang === 'zh'
-        ? '将当前笔记归档保存至素材库中，便于随处调用与复用。'
-        : 'Archive this prompt note to the material library for quick reuse.');
-
-    const actions = document.createElement('div');
-    actions.className = 'anomalous-nb-archive-actions';
-    actions.style.display = 'flex';
-    actions.style.gap = '10px';
-    actions.style.flexWrap = 'wrap';
-
-    const sourceFilename = currentNotebook.filename;
-    const sourceName = currentNotebook.name;
-
-    const scopes = [
-        ['note', 'materialSaveNoteBundle', '📦 保存整篇笔记 (含配套模型与提示词)', '📦 Save Note Bundle'],
-        ['prompt', 'materialSavePromptText', '📝 仅保存提示词文本', '📝 Save Prompt Text Only']
-    ];
-
-    for (const [scope, key, defaultZh, defaultEn] of scopes) {
-        const saveMaterial = document.createElement('button');
-        saveMaterial.type = 'button';
-        saveMaterial.className = 'anomalous-btn-primary';
-        saveMaterial.textContent = t(key) || (window.anomalous_browser_lang === 'zh' ? defaultZh : defaultEn);
-        saveMaterial.onclick = async () => {
-            saveMaterial.disabled = true;
-            const body = JSON.parse(JSON.stringify({
-                notebook_filename: sourceFilename,
-                name: String(sourceName || t('notebookPromptTitle')).slice(0, 120),
-                scope,
-                note: data
-            }));
-            const send = () => fetch('/anomalous/save_prompt_note_material', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-            });
-            try {
-                let response = await send();
-                if (response.status === 409) {
-                    const duplicate = await response.json();
-                    if (duplicate.status !== 'duplicate') throw new Error('material conflict');
-                    if (!await anomalousConfirm(t('materialDuplicateConfirm', { name: duplicate.name }))) return;
-                    body.allow_duplicate = true;
-                    response = await send();
-                }
-                const result = await response.json();
-                if (!response.ok || result.status !== 'success') throw new Error('material save failed');
-                showMaterialSaved(ctx, result.material);
-                await ctx.refreshMaterials?.();
-            } catch (error) {
-                await anomalousAlert(t('materialSaveError') || (window.anomalous_browser_lang === 'zh' ? '保存到素材库失败' : 'Failed to save to material library'));
-            } finally {
-                saveMaterial.disabled = false;
-            }
-        };
-        actions.appendChild(saveMaterial);
-    }
-
-    card.append(header, hint, actions);
-    return card;
-}
-
-/**
  * Primary notebook editor render entrypoint.
  */
 export function renderNotebookEditor() {
@@ -576,9 +496,7 @@ export function renderNotebookEditor() {
         const tb = createNotebookToolbar(this, this.currentNotebook);
         const modelsCard = createCompanionModelsCard(this, data);
         const promptSec = createPromptSection(this, data);
-        const archiveCard = createArchiveCard(this, this.currentNotebook, data);
-
-        this.nbEditor.replaceChildren(tb, modelsCard, promptSec, archiveCard);
+        this.nbEditor.replaceChildren(tb, modelsCard, promptSec);
     } catch (err) {
         console.error('[AMB] Error rendering notebook editor:', err);
         if (this.nbEditor) {
