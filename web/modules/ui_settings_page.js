@@ -1,6 +1,7 @@
 /**
  * The settings page (the rail's gear): one card per subject — how the browser looks,
- * model cards and what they cost in memory (with the card image cache), model folders,
+ * model cards and what they cost in memory (with the card image cache), model folders
+ * (a view of its own, ui_folder_manager.js, `owner.settingsView === 'folders'`),
  * workflows, how the browser opens, and help. A tool page like the scan page, with a
  * way back to the page you came from. Display preferences go through `owner.displayPrefs`
  * (ui_settings_hub.js); language, theme and opening mode are ComfyUI settings.
@@ -13,6 +14,7 @@ import { ENTRY_MODE_SETTING_ID } from './browser_entry.js';
 import { showUpdateGuide } from './ui_update_guide.js';
 import { startSpotlightTour } from './ui_spotlight_tour.js';
 import { copyDiagnostics } from './feedback.js';
+import { renderFolderPage } from './ui_folder_manager.js';
 import { openFeedbackDialog } from './ui_feedback_dialog.js';
 
 const t = (key, params) => translate(key, params);
@@ -178,7 +180,10 @@ function cardsGroup(owner, redraw) {
 function foldersGroup(owner) {
     return group('settingsFolders',
         row('sidebarManageFolders', 'settingsFoldersHelp',
-            button('anomalous-scan-secondary anomalous-scan-small-btn', t('settingsOpen'), () => owner.openFolderManager())));
+            button('anomalous-scan-secondary anomalous-scan-small-btn', t('settingsOpen'), () => {
+                owner.settingsView = 'folders';
+                render(owner);
+            })));
 }
 
 function workflowGroup() {
@@ -227,9 +232,20 @@ function helpGroup(owner) {
 
 function render(owner) {
     const panel = owner.settingsPanel;
-    const top = panel.scrollTop;
+    const view = owner.settingsView || '';
+    const top = panel._settingsView === view ? panel.scrollTop : 0;
+    panel._settingsView = view;
     const redraw = () => render(owner);
     const page = el('div', 'anomalous-scan-page');
+    if (view === 'folders') {
+        panel.replaceChildren(page);
+        panel.scrollTop = 0;
+        renderFolderPage(owner, page, () => {
+            owner.settingsView = '';
+            render(owner);
+        });
+        return;
+    }
     page.append(
         button('anomalous-scan-back', t('settingsBack'), () => leaveSettingsPage(owner)),
         el('h1', 'anomalous-scan-title', t('sidebarSettings')),
@@ -250,7 +266,10 @@ export function isSettingsPageOpen(owner) {
 
 /** Opens the page; `keepReturn`: drawn again in place (language change), Back still goes where it went. */
 export function openSettingsPage(owner, { keepReturn = false } = {}) {
-    if (!keepReturn && !isSettingsPageOpen(owner)) owner.settingsReturn = owner.currentShellPage?.() || 'home';
+    if (!keepReturn && !isSettingsPageOpen(owner)) {
+        owner.settingsReturn = owner.currentShellPage?.() || 'home';
+        owner.settingsView = '';
+    }
     owner.enterToolPage?.('settings');
     owner.hideAllPanels();
     owner.settingsPanel.style.display = 'flex';

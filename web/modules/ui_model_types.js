@@ -31,6 +31,11 @@ export function typeLabel(group) {
 const modelCount = group => Object.values(group.folders || {}).reduce((sum, folder) => sum + (folder.model_count || 0), 0);
 const sameGroup = (group, scope) => Boolean(scope) && group.type === scope.type && group.path_idx === scope.path_idx;
 
+/** The model types most libraries use (they have a name of their own); the rest are folded away in folder settings. */
+export function isCommonModelType(type) {
+    return Object.hasOwn(TYPE_NAMES, type);
+}
+
 function readSaved() {
     try {
         return JSON.parse(localStorage.getItem(SCOPE_KEY) || 'null');

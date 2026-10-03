@@ -441,6 +441,49 @@ label.anomalous-scan-setting {
     flex: 1 1 240px;
 }
 
+/* Model folders (ui_folder_manager.js): order buttons and the switch on the right. */
+.anomalous-folder-controls {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 6px;
+}
+
+.anomalous-folder-move {
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--amb-border);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.anomalous-folder-move:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+    color: var(--amb-text-main);
+}
+
+.anomalous-folder-move:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.anomalous-folder-raw {
+    color: var(--amb-text-dim);
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+}
+
+.anomalous-folder-rare > summary {
+    padding: 10px 0 4px;
+    border-top: 1px solid var(--amb-border);
+    color: var(--amb-text-muted);
+    font-size: 12.5px;
+    cursor: pointer;
+}
+
 /* A list page's way back to the scan page (and the settings page's way back). */
 .anomalous-scan-back {
     align-self: flex-start;
