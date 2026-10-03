@@ -413,10 +413,6 @@ function renderRawNodesLazy(parent, source, options = {}) {
                 nodeHeader.appendChild(select);
             }
             appendText(nodeHeader, 'strong', title, 'anomalous-recipe-detail-node-title');
-            if (typeof options.onSaveNodes === 'function' && workflowNode?.id != null) {
-                const saveNode = button(nodeHeader, t('materialSaveToLibraryShort'), 'anomalous-material-node-save');
-                saveNode.onclick = () => options.onSaveNodes([workflowNode.id], title, saveNode);
-            }
             block.appendChild(nodeHeader);
             const widgetsContainer = document.createElement('div');
             widgetsContainer.className = 'anomalous-recipe-detail-node-widgets';

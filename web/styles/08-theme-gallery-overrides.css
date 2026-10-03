@@ -908,21 +908,3 @@ button:hover .anomalous-btn-icon {
     color: #ff6666;
     transform: scale(1.08);
 }
-
-.anomalous-recipe-topbar-close {
-    background: transparent !important;
-    border: 1px solid var(--amb-border-strong) !important;
-    color: var(--amb-text-muted) !important;
-    padding: 4px 10px !important;
-    font-size: 0.88rem !important;
-    cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    margin-left: 6px;
-}
-
-.anomalous-recipe-topbar-close:hover {
-    background: rgba(239, 68, 68, 0.18) !important;
-    border-color: rgba(239, 68, 68, 0.4) !important;
-    color: #f87171 !important;
-}

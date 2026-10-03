@@ -2286,6 +2286,12 @@ dialog.anomalous-gallery-viewer::backdrop {
     backdrop-filter: blur(10px);
 }
 
+.anomalous-recipe-readiness-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
 .anomalous-recipe-readiness-banner.is-ready {
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.08));
     border: 1px solid rgba(16, 185, 129, 0.35);
@@ -2304,61 +2310,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     color: #fecaca;
 }
 
-.anomalous-recipe-banner-btn {
-    padding: 6px 14px;
-    border-radius: 7px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-}
-
-.anomalous-recipe-banner-btn.is-match-all {
-    background: #f59e0b;
-    color: #1a1a1a;
-    box-shadow: none;
-}
-
-.anomalous-recipe-banner-btn.is-match-all:hover {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
-}
-
 /* Metric Cards for Sampling Parameters */
-.anomalous-recipe-metric-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 10px;
-    margin-bottom: 14px;
-}
-
-.anomalous-recipe-metric-card {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--amb-border);
-}
-
-.anomalous-recipe-metric-label {
-    font-size: 0.74rem;
-    color: var(--amb-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.anomalous-recipe-metric-value {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--amb-text-main);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
 
 /* Lazy Loaded Raw Nodes Container */
 .anomalous-recipe-raw-nodes-summary {
@@ -2468,51 +2420,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     border-color: var(--amb-border-strong);
 }
 
-
-.anomalous-recipe-banner-btn.is-match-all {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid var(--amb-border-strong);
-    color: var(--amb-text-main);
-}
-
-.anomalous-recipe-banner-btn.is-match-all:hover {
-    background: rgba(255, 255, 255, 0.14);
-    color: var(--amb-text-main);
-}
-
 /* Metric Cards for Sampling Parameters */
-.anomalous-recipe-metric-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 10px;
-    margin-bottom: 14px;
-}
-
-.anomalous-recipe-metric-card {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--amb-border);
-}
-
-.anomalous-recipe-metric-label {
-    font-size: 0.74rem;
-    color: var(--amb-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.anomalous-recipe-metric-value {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--amb-text-main);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
 
 /* Lazy Loaded Raw Nodes Container */
 .anomalous-recipe-raw-nodes-summary {

@@ -72,29 +72,3 @@ export function mergeRecipeHashRecords(graph, workflow, idMap) {
     return keys.length;
 }
 
-/**
- * Move one model reference's provenance to its new local dropdown value.
- * A size-only confirmation deliberately writes an empty hash plus size; it
- * must never inherit an unproven source hash.
- */
-export function replaceWorkflowModelHashRecord(workflow, nodeId, oldValue, newValue, identity = {}) {
-    if (!workflow || typeof workflow !== 'object' || typeof newValue !== 'string' || !newValue) return false;
-    if (!workflow.extra || typeof workflow.extra !== 'object') workflow.extra = {};
-    if (!workflow.extra.anomalous_hashes || typeof workflow.extra.anomalous_hashes !== 'object') {
-        workflow.extra.anomalous_hashes = {};
-    }
-    const hashes = workflow.extra.anomalous_hashes;
-    for (const key of [...nodeHashKeys(nodeId, oldValue), ...nodeHashKeys(nodeId, newValue)]) delete hashes[key];
-
-    const sha256 = typeof identity.sha256 === 'string' && SHA256_PATTERN.test(identity.sha256)
-        ? identity.sha256.toLowerCase()
-        : '';
-    const numericSize = Number(identity.size);
-    const hasSize = Number.isFinite(numericSize) && numericSize > 0;
-    if (!sha256 && !hasSize) return false;
-    writeNodeHashRecord(hashes, nodeId, newValue, {
-        hash: sha256,
-        size: hasSize ? numericSize : '',
-    });
-    return true;
-}

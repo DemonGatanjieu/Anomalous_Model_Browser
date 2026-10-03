@@ -84,12 +84,7 @@ export function getRecipeReadiness(recipeData) {
     }
     let missing = 0;
     let unverified = 0;
-    let pendingMatch = 0;
     for (const ref of refs) {
-        if (ref?.localMatch && !ref?.localModel) {
-            pendingMatch++;
-            continue;
-        }
         const status = ref?.currentAvailability;
         if (status === 'unavailable' || status === 'missing' || ref?.identity?.status === 'unavailable') {
             missing++;
@@ -103,9 +98,6 @@ export function getRecipeReadiness(recipeData) {
         const tmpl = t('recipeStatusMissing');
         const label = tmpl.includes('{count}') ? tmpl.replace('{count}', String(missing)) : `${missing} ${tmpl}`;
         return { status: 'missing', label };
-    }
-    if (pendingMatch > 0) {
-        return { status: 'warning', label: t('recipeStatusNeedAttention').replace('{count}', String(pendingMatch)) };
     }
     if (unverified > 0) {
         return { status: 'warning', label: `${unverified} ${t('recipeStatusUnverified')}` };

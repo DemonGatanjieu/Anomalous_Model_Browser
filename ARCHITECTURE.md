@@ -408,7 +408,8 @@ covered by the `styles.css` manifest.
   text never crosses roles unless the user picked the box; writes are one undo step.
   Within recipe detail, `ui_recipe_versions.js` owns history comparison/restore,
   `ui_recipe_gallery.js` owns result cards and direct Image Detail Workbench handoff,
-  `ui_recipe_model_matching.js` owns preview resolution and explicit local replacement,
+  `ui_recipe_models.js` owns the overview's model list (preview, presence under the saved name,
+  note, download page; finding missing models is Model Check's) and the recipe cover,
   `ui_recipe_metadata.js` owns inline persistence, and `ui_recipe_detail_dom.js` owns
   the DOM/copy helpers shared by detail subviews. `recipe_identity.js` derives model
   references from native loaders plus a table of verified all-in-one loader layouts

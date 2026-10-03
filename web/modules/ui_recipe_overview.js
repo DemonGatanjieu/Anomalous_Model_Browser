@@ -2,8 +2,7 @@
 
 import { translate } from "./locales.js";
 import { appendCopyButton, appendText, button, dateText } from "./ui_recipe_detail_dom.js";
-import { fingerprintText } from "./ui_recipe_versions.js";
-import { applyAllLocalModelMatches, appendRecipeCover, matchRecipeModels } from "./ui_recipe_model_matching.js";
+import { appendRecipeCover } from "./ui_recipe_models.js";
 import { formatRecipeResolution } from "./ui_recipe_parameter_utils.js";
 import { updateRecipeMetadata } from "./ui_recipe_metadata.js";
 
@@ -158,65 +157,22 @@ function renderInlineTags(parent, owner, recipe) {
     );
 }
 
-function renderReadinessBanner(parent, owner, recipe, references, finish, onRerender) {
-    const banner = document.createElement('div');
-    const hasPendingMatches = (references || []).some((ref) => ref.localMatch && !ref.localModel);
-    const missingCandidates = (references || []).filter((ref) => !ref.localModel && ref.currentAvailability === 'missing' && !ref.localMatch);
+/** Whether every model is here under its saved name; finding the rest is Model Check's job. */
+function renderReadinessBanner(parent, recipe, references) {
+    const checked = references.some((ref) => ref.currentAvailability);
+    const missing = references.filter((ref) => ref.currentAvailability === 'missing').length;
     const missingNodes = missingNodeTypes(recipe);
-
-    let bannerKind = 'is-ready';
-    let statusText = t('recipeStatusReady');
-
-    if (hasPendingMatches) {
-        bannerKind = 'is-warning';
-        const pendingCount = (references || []).filter((ref) => ref.localMatch && !ref.localModel).length;
-        statusText = t('recipeStatusNeedAttention').replace('{count}', String(pendingCount));
-    } else if (missingCandidates.length > 0) {
-        bannerKind = 'is-missing';
-        statusText = t('recipeStatusMissing').replace('{count}', String(missingCandidates.length));
-    }
-
-    banner.className = `anomalous-recipe-readiness-banner ${bannerKind}`;
-
-    const textWrap = document.createElement('div');
-    textWrap.style.display = 'flex';
-    textWrap.style.flexDirection = 'column';
-    textWrap.style.gap = '3px';
-
-    const mainStatus = appendText(textWrap, 'strong', statusText);
+    const banner = document.createElement('div');
+    banner.className = `anomalous-recipe-readiness-banner ${missing ? 'is-missing' : 'is-ready'}`;
+    const copy = document.createElement('div');
+    copy.className = 'anomalous-recipe-readiness-copy';
+    const status = !references.length || !checked ? 'recipeStatusChecking' : missing ? 'recipeStatusMissing' : 'recipeStatusReady';
+    appendText(copy, 'strong', references.length ? t(status, { count: missing }) : t('recipeStatusNoModels'));
+    if (missing) appendText(copy, 'small', t('recipeMissingHint'), 'anomalous-recipe-detail-muted');
     if (missingNodes.length > 0) {
-        appendText(textWrap, 'small', `⚠️ ${t('recipeMissingNodes')}: ${missingNodes.slice(0, 3).join(', ')}${missingNodes.length > 3 ? '…' : ''}`, 'anomalous-recipe-detail-muted');
+        appendText(copy, 'small', `⚠️ ${t('recipeMissingNodes')}: ${missingNodes.slice(0, 3).join(', ')}${missingNodes.length > 3 ? '…' : ''}`, 'anomalous-recipe-detail-muted');
     }
-    banner.appendChild(textWrap);
-
-    const actionWrap = document.createElement('div');
-    actionWrap.style.display = 'flex';
-    actionWrap.style.gap = '8px';
-    actionWrap.style.alignItems = 'center';
-
-    if (hasPendingMatches) {
-        const applyAllBtn = button(actionWrap, t('recipeApplyAllMatches'), 'anomalous-recipe-banner-btn is-match-all');
-        applyAllBtn.onclick = async () => {
-            applyAllBtn.disabled = true;
-            await applyAllLocalModelMatches(owner, recipe, references, mainStatus, onRerender);
-        };
-    } else if (missingCandidates.length > 0) {
-        const matchBtn = button(actionWrap, '🔎 ' + t('recipeMatchRecipeModels'), 'anomalous-btn-ghost');
-        matchBtn.style.padding = '4px 10px';
-        matchBtn.style.fontSize = '0.8rem';
-        matchBtn.onclick = async () => {
-            matchBtn.disabled = true;
-            matchBtn.textContent = t('recipeMatchingRecipeModels');
-            try {
-                await matchRecipeModels(owner, references, mainStatus, onRerender);
-            } finally {
-                matchBtn.disabled = false;
-                matchBtn.textContent = '🔎 ' + t('recipeMatchRecipeModels');
-            }
-        };
-    }
-
-    banner.appendChild(actionWrap);
+    banner.appendChild(copy);
     parent.appendChild(banner);
 }
 
@@ -393,12 +349,7 @@ export function renderOverview(content, owner, recipe, references, finish, servi
     copy.appendChild(titleRow);
 
     // Readiness status banner inside Hero
-    renderReadinessBanner(copy, owner, recipe, references, finish, () => {
-        if (owner.recipeDetailActiveTab === 'overview') {
-            content.replaceChildren();
-            renderOverview(content, owner, recipe, references, finish, services);
-        }
-    });
+    renderReadinessBanner(copy, recipe, references);
 
     // Primary action bar
     copy.appendChild(createRecipeOverviewActionBar(recipe, owner, finish, services));
@@ -446,27 +397,14 @@ export function renderOverview(content, owner, recipe, references, finish, servi
     // Prompt Showcase Section
     renderPromptOverviewSection(overview, recipe, services);
 
-    // Technical details
-    const advanced = document.createElement('details');
-    advanced.className = 'anomalous-recipe-advanced-info';
-    advanced.style.marginBottom = '14px';
-    appendText(advanced, 'summary', t('recipeAdvancedInfo'));
-    const fingerprint = document.createElement('div');
-    fingerprint.className = 'anomalous-recipe-advanced-row';
-    appendText(fingerprint, 'span', `${t('recipeDetailFingerprint')}:`);
-    appendText(fingerprint, 'code', fingerprintText(recipe) || t('recipeDetailNotIndexed'));
-    if (fingerprintText(recipe)) appendCopyButton(fingerprint, fingerprintText(recipe), t('recipeDetailCopyFingerprint'));
-    advanced.appendChild(fingerprint);
-    overview.appendChild(advanced);
-
-    // Model Equipment Summary
+    // The models it uses
     const summary = document.createElement('section');
     summary.className = 'anomalous-recipe-detail-section';
-    appendText(summary, 'h4', t('recipeDetailSummary'));
+    appendText(summary, 'h4', t('recipeDetailModelComposition'));
     const modelComposition = document.createElement('div');
     modelComposition.className = 'anomalous-recipe-model-composition';
     summary.appendChild(modelComposition);
-    services.renderModelComposition(modelComposition, owner, recipe, references, finish, params);
+    services.renderModelComposition(modelComposition, owner, recipe, references, finish);
     overview.appendChild(summary);
 
     content.appendChild(overview);
