@@ -73,6 +73,11 @@ When provenance injection is enabled, the compatible active graph constructor's
 `extraObj.anomalous_hashes[node_id_filename] = {hash, size}` for known model
 widgets. The cache covers ordinary models and foundation categories. A
 foundation component without a recorded hash receives no size-only provenance.
+The same pass writes `extraObj.anomalous_model_sources`: links the workflow keeps
+win; a model present here without one gets its own information's link (the
+editor's first, else Civitai's), marked `auto` so a newer one replaces it; links
+for names no node holds any more are dropped. The live graph is never changed.
+The share-code export may leave the links out.
 A missing compatible graph API disables only injection and recovery integration,
 not the main browser.
 

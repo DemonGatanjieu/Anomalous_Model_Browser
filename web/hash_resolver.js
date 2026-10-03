@@ -1,6 +1,8 @@
 import { app } from "../../scripts/app.js";
 import { findWorkflowHashRecord } from './modules/recipe_provenance.js';
 import { requiresHashForModelRecovery } from './modules/model_policies.js';
+import { detectPlatform, isModelFilename } from './modules/model_source_links.js';
+import { usableSourceUrl } from './modules/model_source_data.js';
 
 // Global cache for hashes: filename -> hash
 window.anomalous_hash_cache = window.anomalous_hash_cache || {};
@@ -18,8 +20,15 @@ window.anomalous_update_hash_cache = function (models) {
     }
 };
 
-function isModelFilename(value) {
-    return typeof value === 'string' && /\.(safetensors|ckpt|pt|bin)$/i.test(value);
+/**
+ * A model's own download link (its information's, the editor's first) for a workflow that
+ * keeps none of its own for it; `auto` marks it as taken, so a newer one replaces it.
+ */
+function addOwnSource(sources, nodeId, value, basename, record) {
+    const url = usableSourceUrl(record?.url);
+    const kept = sources[value] || sources[basename];
+    if (!url || (kept && !kept.auto)) return;
+    sources[value] = { name: value, url, platform: detectPlatform(url)?.name || 'Custom', nodeId, hash: record.hash || '', auto: true };
 }
 
 app.registerExtension({
@@ -81,9 +90,9 @@ app.registerExtension({
             const liveSources = (this.extra && this.extra.anomalous_model_sources) ||
                                 (app.graph?.extra && app.graph.extra.anomalous_model_sources) ||
                                 extraObj.anomalous_model_sources || null;
-            if (liveSources && typeof liveSources === 'object') {
-                extraObj.anomalous_model_sources = JSON.parse(JSON.stringify(liveSources));
-            }
+            // Download links travel with the fingerprints: the workflow's own, else each model's.
+            const sources = liveSources && typeof liveSources === 'object' ? JSON.parse(JSON.stringify(liveSources)) : {};
+            const usedNames = new Set();
             let unscanned_models = [];
 
             if (data.nodes) {
@@ -93,6 +102,9 @@ app.registerExtension({
 
                     if (node.widgets_values && node.widgets_values.length > 0) {
                         for (const val of node.widgets_values) {
+                            if (typeof val === 'string') {
+                                usedNames.add(val).add(val.replace(/\\/g, '/')).add(val.split(/[/\\]/).pop());
+                            }
                             if (isModelFilename(val)) {
                                 const parts = val.split(/[/\\]/);
                                 const basename = parts[parts.length - 1];
@@ -123,6 +135,7 @@ app.registerExtension({
                                         if (normVal !== val) {
                                             extraObj.anomalous_hashes[`${node.id}_${normVal}`] = hashObj;
                                         }
+                                        addOwnSource(sources, node.id, val, basename, { ...hashObj, url: cache_data.url });
                                     } else {
                                         const preserved = findWorkflowHashRecord(existingProvenance, node.id, val);
                                         if (preserved) {
@@ -152,6 +165,10 @@ app.registerExtension({
                     }
                 }
             }
+            // A link for a model no node names any more (replaced, removed) stays behind.
+            for (const name of Object.keys(sources)) if (!usedNames.has(name)) delete sources[name];
+            if (Object.keys(sources).length) extraObj.anomalous_model_sources = sources;
+            else delete extraObj.anomalous_model_sources;
             data.extra = extraObj;
             window.anomalous_unscanned_models = unscanned_models;
             return data;

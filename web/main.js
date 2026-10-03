@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { createBrowserEntry } from "./modules/browser_entry.js";
 import { createInterfaceSettings, getCurrentLanguage, setAbyssalScarletTheme, t } from "./modules/interface_settings.js";
+import { isModelFilename } from "./modules/model_source_links.js";
 
 export { setAbyssalScarletTheme };
 
@@ -271,8 +272,41 @@ const AMB_WorkflowShare = {
         return button;
     },
 
+    /** What a workflow tells others about its models: how many carry a fingerprint, how many links. */
+    provenanceSummary(workflow) {
+        const models = new Set();
+        for (const node of workflow.nodes || []) {
+            for (const value of Array.isArray(node.widgets_values) ? node.widgets_values : []) {
+                if (isModelFilename(value)) models.add(`${node.id}_${value}`);
+            }
+        }
+        const hashes = workflow.extra?.anomalous_hashes || {};
+        const hashed = [...models].filter(key => hashes[key]?.hash).length;
+        return { models: models.size, hashed, links: Object.keys(workflow.extra?.anomalous_model_sources || {}).length };
+    },
+
+    provenanceNote(summary) {
+        if (!summary.models) return '';
+        if (localStorage.getItem('anomalous_inject_hash') === 'false') return t('mainShareProvenanceOff');
+        const missing = summary.models - summary.hashed;
+        return [t('mainShareFingerprints', { hashed: summary.hashed, total: summary.models }),
+            missing ? t('mainShareNoFingerprint', { count: missing }) : ''].filter(Boolean).join(' ');
+    },
+
     showExportModal() {
         const { overlay, content } = this.createShareDialog('amb-export-modal', t('mainExportTitle'));
+        const summary = this.provenanceSummary(app.graph.serialize());
+        const note = document.createElement('p');
+        note.className = 'anomalous-share-note';
+        note.textContent = this.provenanceNote(summary);
+        note.hidden = !note.textContent;
+        const linksLabel = document.createElement('label');
+        linksLabel.className = 'anomalous-share-check';
+        const linksBox = document.createElement('input');
+        linksBox.type = 'checkbox';
+        linksBox.checked = true;
+        linksLabel.append(linksBox, ` ${t('mainShareLinks', { count: summary.links })}`);
+        linksLabel.hidden = !summary.links;
 
         const typeSelectContainer = document.createElement('div');
         typeSelectContainer.className = 'anomalous-share-options';
@@ -306,6 +340,7 @@ const AMB_WorkflowShare = {
             // Get current workflow from app graph
             const p = await app.graphToPrompt();
             const workflowJson = p.workflow;
+            if (!linksBox.checked) delete workflowJson.extra?.anomalous_model_sources;
 
             try {
                 const code = await AMB_WorkflowShare.encodeShareCode(workflowJson, isSkeleton);
@@ -323,7 +358,7 @@ const AMB_WorkflowShare = {
         };
 
         btnGroup.append(generateBtn, copyBtn, closeBtn);
-        content.append(typeSelectContainer, textArea, btnGroup);
+        content.append(typeSelectContainer, note, linksLabel, textArea, btnGroup);
         document.body.appendChild(overlay);
     },
 
