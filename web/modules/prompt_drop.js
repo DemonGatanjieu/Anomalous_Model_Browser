@@ -33,6 +33,11 @@ export function prepareMaterialDrag(material) {
         .catch(() => {}); // hints stay general; the drop fetches again and reports failures
 }
 
+/** A drag whose text is known already (a Prompt Studio card, keyed `key`). */
+export function prepareTextDrag(key, envelope) {
+    dragged = { filename: key, envelope, payload: null };
+}
+
 const known = material => (dragged.filename === material.filename ? dragged : null);
 
 const brief = (value) => {

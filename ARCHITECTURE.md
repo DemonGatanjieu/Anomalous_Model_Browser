@@ -431,8 +431,11 @@ covered by the `styles.css` manifest.
   views are `ui_prompt_source_deck.js`, `ui_prompt_workbench.js`, and
   `ui_prompt_inspector.js`. Assembly plan data, track-vs-role separation, and
   cross-role tail smart-sorting are owned by `prompt_composition.js` and `prompt_studio_data.js`.
-  `ui_prompt_source_deck.js` owns the card preview popover with narrow bridging corridors,
-  differentiated hide timers, and fast dismissal when hovering or clicking library blank space.
+  `ui_prompt_source_deck.js` owns the card list, filters, new-card form, library sync and
+  renaming / deleting a saved prompt; `ui_prompt_card_popover.js` owns the card preview (hover
+  corridor, pin, Copy / Add / Rename / Delete); `prompt_card_drag.js` lets a card be dragged out
+  of the drawer onto a canvas prompt box or empty canvas (through `material_drag.js` and
+  `prompt_drop.js`), passing through inside the drawer so the assembly board still takes it.
 - `ui_node_prompts.js` is the current-node panel's prompt boxes: role, text and
   translation in place (Chinese to English written back with one undo, or the Chinese
   meaning shown without writing). The studio uses `ui_lifecycle.js` for global listeners,

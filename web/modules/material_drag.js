@@ -34,8 +34,10 @@ export function materialDropNode(event, canvas, graph) {
  * accepted node will do; optional `rejectHint(node, data, event)` explains why a hovered
  * node is refused. Optional `onStart(data)` may return what to undo when the drag ends;
  * optional `onMove(node, data, event)` follows the accepted node under the pointer (or null).
+ * Optional `passThrough(event)` leaves events over some part of the page (a drop zone of its
+ * own) alone; `effectAllowed` defaults to 'copy'. `owner` may be null (no browser to fold).
  */
-export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropOnCanvas, targetHint, rejectHint, onStart, onMove }) {
+export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropOnCanvas, targetHint, rejectHint, onStart, onMove, passThrough, effectAllowed = 'copy' }) {
     element.draggable = true;
     element.addEventListener('dragstart', event => {
         if (event.target !== element && event.target?.closest?.('button, input, textarea, select')) { event.preventDefault(); return; }
@@ -46,7 +48,7 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropO
         activeDrag?.();
         event.stopPropagation();
         event.dataTransfer.setData('application/x-anomalous-material', 'local-drag');
-        event.dataTransfer.effectAllowed = 'copy';
+        event.dataTransfer.effectAllowed = effectAllowed;
         const defaultHint = data.dragHint || t('materialDropHint');
         const hint = text(document.body, 'div', defaultHint, 'anomalous-material-drag-hint');
         hint.setAttribute('role', 'status');
@@ -54,7 +56,7 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropO
         const cleanup = () => {
             clearTimeout(reveal);
             stopStart?.();
-            owner.modal?.classList.remove('anomalous-material-dragging');
+            owner?.modal?.classList.remove('anomalous-material-dragging');
             hint.remove();
             for (const [name, fn] of listeners) window.removeEventListener(name, fn, true);
             if (activeDrag === cleanup) activeDrag = null;
@@ -68,6 +70,12 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropO
         };
         const target = event => app.graph === graph && app.canvas === canvas ? materialDropNode(event, canvas, graph) : null;
         const over = event => {
+            if (passThrough?.(event)) {
+                hint.style.visibility = 'hidden';
+                onMove?.(null, data, event);
+                return;
+            }
+            hint.style.visibility = '';
             event.preventDefault(); event.stopImmediatePropagation();
             const node = target(event);
             const validNode = !!node && accepts?.(node, data, event);
@@ -93,6 +101,10 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropO
             hint.style.top = `${Math.max(8, event.clientY - 48)}px`;
         };
         const finish = async event => {
+            if (passThrough?.(event)) {
+                cleanup();
+                return;
+            }
             event.preventDefault(); event.stopImmediatePropagation();
             const node = target(event);
             const validNode = !!node && accepts?.(node, data, event);
@@ -114,7 +126,7 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropO
         const escape = event => { if (event.key === 'Escape') cleanup(); };
         const listeners = [['dragover', over], ['drop', finish], ['dragend', cleanup], ['keydown', escape], ['blur', cleanup]];
         // Let the browser capture the card's drag image before revealing the canvas.
-        const reveal = setTimeout(() => owner.modal?.classList.add('anomalous-material-dragging'), 0);
+        const reveal = setTimeout(() => owner?.modal?.classList.add('anomalous-material-dragging'), 0);
         activeDrag = cleanup;
         for (const [name, fn] of listeners) window.addEventListener(name, fn, true);
     });

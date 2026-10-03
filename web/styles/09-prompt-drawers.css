@@ -538,8 +538,50 @@
     color: var(--amb-text-muted);
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     background: rgba(0, 0, 0, 0.25);
     border-top: 1px solid var(--amb-border);
+}
+
+.anomalous-popover-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.anomalous-popover-top-actions,
+.anomalous-popover-footer-actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 4px;
+}
+
+.anomalous-popover-hint {
+    min-width: 0;
+}
+
+/* Rename / Delete on a saved prompt's preview (ui_prompt_card_popover.js). */
+.anomalous-popover-text-btn {
+    padding: 2px 8px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 4px;
+    color: var(--amb-text-soft);
+    background: transparent;
+    font-size: 0.7rem;
+    cursor: pointer;
+}
+
+.anomalous-popover-text-btn:hover {
+    border-color: var(--amb-link);
+    color: var(--amb-text-main);
+}
+
+.anomalous-popover-text-btn.is-danger:hover {
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #fca5a5;
 }
 
 /* Assembly Dropzone Notice */

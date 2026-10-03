@@ -2,11 +2,13 @@ import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
 import { text, jsonResponse } from './ui_dom.js';
 import { materialNodeHeading } from './material_inspector.js';
-import { anomalousAlert } from './ui_dialog.js';
+import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { selectedMaterialNode } from './node_material_actions.js';
 import { promptBoxes } from './prompt_boxes.js';
 import { categorizePromptSnippet } from './prompt_composition.js';
 import { CATEGORY_META, STARTER_SOURCE_PROMPTS } from './prompt_studio_data.js';
+import { createCardPopover } from './ui_prompt_card_popover.js';
+import { bindPromptCardDrag } from './prompt_card_drag.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { loadPromptSourceCards, mergePromptSourceCards } from './prompt_material_source.js';
 import { translatePromptText } from './translation_service.js';
@@ -16,114 +18,13 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
     let sourceFilterCategory = 'all';
     let sourceFilterKeyword = '';
     let isCreatingNewCard = false;
-    let activeCardPreviewPopover = null;
-    let activeCardAnchorEl = null;
-    let hidePopoverTimer = null;
-    let openPopoverTimer = null;
-    let isPopoverPinned = false;
-
-    let lastPointerX = 0;
-    let lastPointerY = 0;
-
-    function isPointInSafeZone(clientX, clientY) {
-        if (!activeCardPreviewPopover?.isConnected || !activeCardAnchorEl?.isConnected) return false;
-        const popRect = activeCardPreviewPopover.getBoundingClientRect();
-        const cardRect = activeCardAnchorEl.getBoundingClientRect();
-
-        // 1. Inside anchor card with 4px buffer
-        if (
-            clientX >= cardRect.left - 4 &&
-            clientX <= cardRect.right + 4 &&
-            clientY >= cardRect.top - 4 &&
-            clientY <= cardRect.bottom + 4
-        ) {
-            return true;
-        }
-
-        // 2. Inside popover with 6px buffer
-        if (
-            clientX >= popRect.left - 6 &&
-            clientX <= popRect.right + 6 &&
-            clientY >= popRect.top - 6 &&
-            clientY <= popRect.bottom + 6
-        ) {
-            return true;
-        }
-
-        // 3. Narrow bridging corridor strictly between card and popover
-        const isDockLeft = drawer?.classList.contains('is-dock-left') ?? true;
-        let inBridgeX = false;
-        if (isDockLeft) {
-            // Card is on the left, Popover is on the right
-            const bridgeLeft = cardRect.right - 6;
-            const bridgeRight = popRect.left + 6;
-            inBridgeX = clientX >= bridgeLeft && clientX <= bridgeRight;
-        } else {
-            // Card is on the right, Popover is on the left
-            const bridgeLeft = popRect.right - 6;
-            const bridgeRight = cardRect.left + 6;
-            inBridgeX = clientX >= bridgeLeft && clientX <= bridgeRight;
-        }
-
-        if (inBridgeX) {
-            const minY = Math.min(cardRect.top, popRect.top) - 10;
-            const maxY = Math.max(cardRect.bottom, popRect.bottom) + 10;
-            if (clientY >= minY && clientY <= maxY) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    function scheduleHidePopover(fast = false) {
-        if (isPopoverPinned) return;
-        clearTimeout(hidePopoverTimer);
-        const delay = fast ? 90 : 200;
-        hidePopoverTimer = setTimeout(() => {
-            if (isPointInSafeZone(lastPointerX, lastPointerY)) {
-                return;
-            }
-            hideCardPreviewPopover();
-        }, delay);
-    }
-
-    function cancelHidePopover() {
-        clearTimeout(hidePopoverTimer);
-    }
-
-    function hideCardPreviewPopover(force = false) {
-        if (isPopoverPinned && !force) return;
-        clearTimeout(hidePopoverTimer);
-        clearTimeout(openPopoverTimer);
-        activeCardAnchorEl?.classList.remove('is-preview-active');
-        activeCardAnchorEl = null;
-        activeCardPreviewPopover?.remove();
-        activeCardPreviewPopover = null;
-        isPopoverPinned = false;
-    }
-    scope.onDispose(() => hideCardPreviewPopover(true));
-
-    const onPointerMove = (e) => {
-        lastPointerX = e.clientX;
-        lastPointerY = e.clientY;
-        if (!activeCardPreviewPopover || isPopoverPinned) return;
-
-        if (isPointInSafeZone(e.clientX, e.clientY)) {
-            cancelHidePopover();
-        } else {
-            scheduleHidePopover(true);
-        }
-    };
-    scope.listen(window, 'pointermove', onPointerMove, { passive: true });
-
-    const onDocPointerDown = (e) => {
-        if (!activeCardPreviewPopover) return;
-        if (!activeCardPreviewPopover.contains(e.target) && !activeCardAnchorEl?.contains(e.target)) {
-            hideCardPreviewPopover(true);
-        }
-    };
-    scope.listen(document, 'pointerdown', onDocPointerDown);
+    const popover = createCardPopover({
+        drawer,
+        scope,
+        onAdd: card => addSourceCardToMixer(card),
+        onRename: card => void renameLibraryCard(card),
+        onDelete: card => void deleteLibraryCard(card),
+    });
     const leftPanel = text(workbenchGrid, 'section', '', 'anomalous-workbench-left-panel');
     const leftHeader = text(leftPanel, 'div', '', 'anomalous-workbench-col-header');
     const leftTitleWrap = text(leftHeader, 'div', '', 'anomalous-workbench-col-title');
@@ -175,26 +76,50 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
     // Source Cards List
     const sourceCardsList = text(leftPanel, 'div', '', 'anomalous-source-cards-list');
 
-    // Dismiss preview popover when pointer is on blank space of the list or panel
+    // Blank space of the list or panel lets the preview go.
     sourceCardsList.addEventListener('pointermove', (e) => {
-        if (isPopoverPinned || !activeCardPreviewPopover) return;
-        if (e.target === sourceCardsList) {
-            scheduleHidePopover(true);
-        }
+        if (e.target === sourceCardsList) popover.leave(e, true);
     }, { passive: true });
-
     sourceCardsList.addEventListener('pointerdown', (e) => {
-        if (e.target === sourceCardsList) {
-            hideCardPreviewPopover(true);
-        }
+        if (e.target === sourceCardsList) popover.hide(true);
     });
-
     leftPanel.addEventListener('pointermove', (e) => {
-        if (isPopoverPinned || !activeCardPreviewPopover) return;
-        if (e.target === leftPanel || e.target === leftFilterBar || e.target === leftCategoryPills) {
-            scheduleHidePopover(true);
-        }
+        if ([leftPanel, leftFilterBar, leftCategoryPills].includes(e.target)) popover.leave(e, true);
     }, { passive: true });
+
+    /** Renames a saved prompt (both of its cards); its tags stay. */
+    async function renameLibraryCard(card) {
+        const name = String(await anomalousPrompt(t('promptCardRenameAsk'), card.title, t('promptCardRename')) || '').trim();
+        if (!name || name === card.title) return;
+        try {
+            const detail = await jsonResponse(await fetch(`/anomalous/material_full?include_workflow=0&filename=${encodeURIComponent(card.filename)}`), 'read prompt');
+            const response = await fetch('/anomalous/update_material', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename: card.filename, name, tags: detail.data?.tags || [] }),
+            });
+            await jsonResponse(response, 'rename prompt');
+            await syncMaterialsIntoSourceDeck();
+        } catch (error) {
+            await anomalousAlert(t('promptCardRenameFailed'));
+        }
+    }
+
+    /** Deletes a saved prompt (both of its cards) to the Recycle Bin, after asking. */
+    async function deleteLibraryCard(card) {
+        if (!await anomalousConfirm(t('promptCardDeleteConfirm', { name: card.title }), t('promptCardDelete'), { okLabel: t('promptCardDelete') })) return;
+        try {
+            const response = await fetch('/anomalous/delete_material', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename: card.filename }),
+            });
+            await jsonResponse(response, 'delete prompt');
+            await syncMaterialsIntoSourceDeck();
+        } catch (error) {
+            await anomalousAlert(t('promptCardDeleteFailed'));
+        }
+    }
 
     // Extract prompts from selected canvas node
     function extractPromptsFromSelectedNode(intoRightMixer = false) {
@@ -462,188 +387,10 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
         renderNewCardFormUI();
     };
 
-    function showCardPreviewPopover(card, anchorEl) {
-        cancelHidePopover();
-        clearTimeout(openPopoverTimer);
-        if (!anchorEl?.isConnected) return;
-        if (isPopoverPinned) return;
-
-        if (activeCardAnchorEl && activeCardAnchorEl !== anchorEl) {
-            activeCardAnchorEl.classList.remove('is-preview-active');
-        }
-        activeCardAnchorEl = anchorEl;
-        anchorEl.classList.add('is-preview-active');
-
-        if (activeCardPreviewPopover) {
-            activeCardPreviewPopover.remove();
-            activeCardPreviewPopover = null;
-        }
-
-        const catMeta = CATEGORY_META[card.category] || CATEGORY_META.subject;
-        const popover = document.createElement('div');
-        popover.className = 'anomalous-card-preview-popover';
-        popover.__card = card;
-        popover.__anchorEl = anchorEl;
-
-        popover.onmouseenter = (e) => {
-            lastPointerX = e.clientX;
-            lastPointerY = e.clientY;
-            cancelHidePopover();
-            clearTimeout(openPopoverTimer);
-        };
-        popover.onmouseleave = (e) => {
-            lastPointerX = e.clientX;
-            lastPointerY = e.clientY;
-            scheduleHidePopover();
-        };
-
-        const header = document.createElement('div');
-        header.className = 'anomalous-popover-header';
-
-        const topRow = document.createElement('div');
-        topRow.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:6px;';
-
-        const tags = document.createElement('div');
-        tags.className = 'anomalous-popover-tags';
-
-        const catBadge = document.createElement('span');
-        catBadge.className = 'anomalous-popover-cat';
-        catBadge.style.color = catMeta.color;
-        catBadge.style.background = catMeta.bg;
-        catBadge.style.borderColor = catMeta.border;
-        catBadge.textContent = window.anomalous_browser_lang === 'zh' ? catMeta.zh : catMeta.en;
-        tags.appendChild(catBadge);
-
-        const roleBadge = document.createElement('span');
-        roleBadge.className = `anomalous-popover-role is-${card.role}`;
-        roleBadge.textContent = card.role === 'negative'
-            ? (window.anomalous_browser_lang === 'zh' ? '⊖ 负向' : '⊖ Negative')
-            : (window.anomalous_browser_lang === 'zh' ? '⊕ 正向' : '⊕ Positive');
-        tags.appendChild(roleBadge);
-        topRow.appendChild(tags);
-
-        const topActions = document.createElement('div');
-        topActions.style.cssText = 'display:flex;align-items:center;gap:4px;';
-
-        const copyBtn = document.createElement('button');
-        copyBtn.type = 'button';
-        copyBtn.className = 'anomalous-popover-copy-btn';
-        copyBtn.innerHTML = '📋 ' + (window.anomalous_browser_lang === 'zh' ? '复制' : 'Copy');
-        copyBtn.title = window.anomalous_browser_lang === 'zh' ? '复制提示词到剪贴板' : 'Copy prompt text';
-        copyBtn.onclick = (e) => {
-            e.stopPropagation();
-            navigator.clipboard.writeText(card.content).then(() => {
-                copyBtn.innerHTML = '✅ ' + (window.anomalous_browser_lang === 'zh' ? '已复制' : 'Copied');
-                setTimeout(() => {
-                    if (copyBtn.isConnected) copyBtn.innerHTML = '📋 ' + (window.anomalous_browser_lang === 'zh' ? '复制' : 'Copy');
-                }, 1200);
-            });
-        };
-        topActions.appendChild(copyBtn);
-
-        const pinBtn = document.createElement('button');
-        pinBtn.type = 'button';
-        pinBtn.className = 'anomalous-popover-pin-btn';
-        pinBtn.innerHTML = '📌 ' + (window.anomalous_browser_lang === 'zh' ? '固定' : 'Pin');
-        pinBtn.title = window.anomalous_browser_lang === 'zh' ? '固定浮窗防止移动时自动关闭' : 'Pin preview to keep open';
-        pinBtn.onclick = (e) => {
-            e.stopPropagation();
-            isPopoverPinned = !isPopoverPinned;
-            popover.classList.toggle('is-pinned', isPopoverPinned);
-            pinBtn.classList.toggle('is-active', isPopoverPinned);
-            pinBtn.innerHTML = isPopoverPinned
-                ? '📌 ' + (window.anomalous_browser_lang === 'zh' ? '已固定' : 'Pinned')
-                : '📌 ' + (window.anomalous_browser_lang === 'zh' ? '固定' : 'Pin');
-            closeBtn.style.display = isPopoverPinned ? 'inline-flex' : 'none';
-        };
-        topActions.appendChild(pinBtn);
-
-        const closeBtn = document.createElement('button');
-        closeBtn.type = 'button';
-        closeBtn.className = 'anomalous-popover-close-btn';
-        closeBtn.innerHTML = '✕';
-        closeBtn.title = window.anomalous_browser_lang === 'zh' ? '关闭浮窗' : 'Close popover';
-        closeBtn.style.display = 'none';
-        closeBtn.onclick = (e) => {
-            e.stopPropagation();
-            hideCardPreviewPopover(true);
-        };
-        topActions.appendChild(closeBtn);
-
-        topRow.appendChild(topActions);
-        header.appendChild(topRow);
-
-        const titleEl = document.createElement('div');
-        titleEl.className = 'anomalous-popover-title';
-        titleEl.textContent = card.title;
-        header.appendChild(titleEl);
-
-        popover.appendChild(header);
-
-        if (card.sourceKind === 'material') {
-            text(header, 'div', t('promptLibrarySource', { name: card.title, filename: card.filename }), 'anomalous-source-origin');
-            text(header, 'div', t('promptLibraryReadOnly'), 'anomalous-source-origin');
-        }
-
-        const body = document.createElement('div');
-        body.className = 'anomalous-popover-body';
-        const snippet = document.createElement('pre');
-        snippet.className = 'anomalous-popover-snippet';
-        snippet.textContent = card.content;
-        body.appendChild(snippet);
-        popover.appendChild(body);
-
-        const footer = document.createElement('div');
-        footer.className = 'anomalous-popover-footer';
-        footer.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:8px;';
-
-        const hint = document.createElement('span');
-        hint.textContent = window.anomalous_browser_lang === 'zh'
-            ? '💡 点击卡片直接添加'
-            : '💡 Click card to add';
-        footer.appendChild(hint);
-
-        const addBtn = document.createElement('button');
-        addBtn.type = 'button';
-        addBtn.className = 'anomalous-popover-add-btn';
-        addBtn.innerHTML = '＋ ' + (window.anomalous_browser_lang === 'zh' ? '加入台' : 'Add');
-        addBtn.title = window.anomalous_browser_lang === 'zh' ? '将词卡加入右侧拼装台' : 'Add card to track';
-        addBtn.onclick = (e) => {
-            e.stopPropagation();
-            addSourceCardToMixer(card);
-            hideCardPreviewPopover(true);
-        };
-        footer.appendChild(addBtn);
-
-        popover.appendChild(footer);
-
-        document.body.appendChild(popover);
-        activeCardPreviewPopover = popover;
-
-        // Smart Positioning
-        const rect = anchorEl.getBoundingClientRect();
-        const isDockLeft = drawer?.classList.contains('is-dock-left') ?? true;
-        const popoverHeight = popover.offsetHeight || 160;
-        const top = Math.max(12, Math.min(window.innerHeight - popoverHeight - 12, rect.top - 6));
-        popover.style.top = `${top}px`;
-
-        if (isDockLeft) {
-            popover.classList.add('is-dock-left');
-            popover.style.left = `${rect.right + 6}px`;
-        } else {
-            popover.classList.add('is-dock-right');
-            popover.style.left = `${Math.max(12, rect.left - 326)}px`;
-        }
-    }
-
     function renderSourceCardsList() {
-        hideCardPreviewPopover(true);
+        popover.hide(true);
         sourceCardsList.replaceChildren();
-        sourceCardsList.onscroll = () => {
-            if (!isPopoverPinned) {
-                hideCardPreviewPopover(true);
-            }
-        };
+        sourceCardsList.onscroll = () => popover.hide();
 
         const filtered = sourceCards.filter(card => {
             if (sourceFilterCategory !== 'all' && card.category !== sourceFilterCategory) return false;
@@ -671,31 +418,13 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
             const cardEl = text(sourceCardsList, 'div', '', `anomalous-source-card-compact is-cat-${card.category} is-role-${card.role}`);
             cardEl.setAttribute('draggable', 'true');
 
-            // Custom Eye-Catching Hover Preview Popover (replaces native OS browser title tooltip)
-            cardEl.onmouseenter = (e) => {
-                lastPointerX = e.clientX;
-                lastPointerY = e.clientY;
-                cancelHidePopover();
-                clearTimeout(openPopoverTimer);
-                if (activeCardPreviewPopover && activeCardPreviewPopover.__card === card) {
-                    return;
-                }
-                if (isPopoverPinned) return;
+            // The preview beside the card (ui_prompt_card_popover.js) replaces the browser's tooltip.
+            cardEl.onmouseenter = (e) => popover.hover(card, cardEl, e);
+            cardEl.onmouseleave = (e) => popover.leave(e);
 
-                openPopoverTimer = setTimeout(() => {
-                    showCardPreviewPopover(card, cardEl);
-                }, 100);
-            };
-            cardEl.onmouseleave = (e) => {
-                lastPointerX = e.clientX;
-                lastPointerY = e.clientY;
-                clearTimeout(openPopoverTimer);
-                scheduleHidePopover();
-            };
-
-            // Drag Start
+            // Into the assembly board, or out of the drawer onto the canvas (prompt_card_drag.js).
             cardEl.ondragstart = (e) => {
-                hideCardPreviewPopover(true);
+                popover.hide(true);
                 const payload = {
                     title: card.title,
                     content: card.content,
@@ -713,6 +442,7 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
                 cardEl.classList.remove('is-dragging-source');
                 workbenchGrid.classList.remove('is-source-dragging');
             };
+            if (card.content.trim()) bindPromptCardDrag(cardEl, card, drawer);
 
             const dot = text(cardEl, 'span', '', 'anomalous-source-card-dot');
             dot.style.backgroundColor = catMeta.color;
@@ -725,13 +455,13 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
             if (card.sourceKind === 'material') {
                 cardEl.dataset.sourceFilename = card.filename;
                 const origin = text(nameWrap, 'span', t('promptLibraryBadge'), 'anomalous-source-origin');
-                origin.title = t('promptLibrarySource', { name: card.title, filename: card.filename }) + '\n' + t('promptLibraryReadOnly');
+                origin.title = t('promptLibrarySource');
             }
 
             const addIcon = text(cardEl, 'span', '+', 'anomalous-source-card-add-icon');
 
             cardEl.onclick = () => {
-                hideCardPreviewPopover(true);
+                popover.hide(true);
                 addSourceCardToMixer(card);
             };
         });
@@ -744,7 +474,7 @@ export function createPromptSourceDeck(workbenchGrid, drawer, scope, addSourceCa
         extractSelected: extractPromptsFromSelectedNode,
         refresh: renderSourceCardsList,
         sync: syncMaterialsIntoSourceDeck,
-        hidePreview: (force = false) => hideCardPreviewPopover(force),
+        hidePreview: (force = false) => popover.hide(force),
         focusSearch: () => leftSearch.focus(),
     };
 }

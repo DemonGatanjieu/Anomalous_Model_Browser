@@ -250,8 +250,12 @@ cards are reconciled by filename and role from a complete paginated snapshot;
 renames/content edits replace them and deleted sources disappear. Failed or
 cancelled reads retain existing cards. Equal text from different sources retains
 each source identity. Built-in and unsaved local cards remain independent.
-Library cards show their origin and have no delete action in the studio. Mixer
-blocks are editable copies; refreshing sources must not modify existing drafts.
+Library cards are saved prompts: their preview renames one (`update_material`, tags kept)
+or deletes it (`delete_material`, to the Recycle Bin; both of its role cards go), then the
+deck syncs. Any card with text can be dragged out of the drawer onto a canvas prompt box
+or empty canvas (`prompt_card_drag.js`, one undo step); the same drag over the drawer is
+left to the assembly board. Mixer blocks are editable copies; refreshing sources must not
+modify existing drafts.
 The deck owns its refresh timer, listeners and AbortController and releases all
 of them when its view closes. New-card role is supplied by the workbench callback.
 
@@ -264,7 +268,9 @@ to call `openPromptStudio(owner)`, and external prompt dispatch uses
 | --- | --- |
 | `ui_prompt_composer.js` | Active drawer, docking width/side, trigger visibility and plan-loading request |
 | `ui_prompt_workbench.js` | Owner-backed draft, active role, block editing, ordering, write/copy/save |
-| `ui_prompt_source_deck.js` | Source cards, filters, new-card form, preview popover and current sync request |
+| `ui_prompt_source_deck.js` | Source cards, filters, new-card form, rename/delete of saved prompts and current sync request |
+| `ui_prompt_card_popover.js` | Card preview: hover corridor, pin, copy/add/rename/delete actions |
+| `prompt_card_drag.js` | A card dragged onto the canvas: box fill or new prompt node, passing through the drawer |
 | `ui_prompt_inspector.js` | Full-text inspection window, role tab and its translation lifetime |
 | `prompt_studio_data.js` | Starter cards, display categories, draft/block initialization and synthesis |
 | `prompt_composition.js` | Pure plan conversion, sorting and composition; no DOM ownership |
