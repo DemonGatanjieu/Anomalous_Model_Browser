@@ -213,12 +213,16 @@
 
 .anomalous-node-prompt-text.is-empty { color: var(--amb-text-dim); }
 
+/* The meaning is read in full; a line clamp would paint the next line into the padding. */
 .anomalous-node-prompt-note {
     padding: 6px 8px;
     border-radius: 6px;
+    display: block;
+    flex-shrink: 0;
+    max-height: 18em;
+    overflow-y: auto;
     background: color-mix(in srgb, var(--amb-link) 8%, transparent);
     color: var(--amb-text-main);
-    -webkit-line-clamp: 8;
 }
 
 .anomalous-node-prompt-actions {

@@ -79,6 +79,7 @@
 - **Language follows ComfyUI again (语言跟随 ComfyUI)**: with the language left on "Follow ComfyUI" (the default), changing ComfyUI's language now switches the browser the next time it opens; before, it kept the old language until the page was reloaded.
 - **Empty list on the audio pages (音频页左边列表是空的)**: after reloading ComfyUI, a browser that reopened straight onto Voices or Audio showed an empty list column until you switched to the image side and back.
 - Prompt Studio's new card form showed "cancel" instead of 取消 on its Cancel button.
+- Current node's Chinese meaning of a prompt is readable again: a long one was cut after eight lines with half of the next line smeared over the bottom edge; it now shows in full and scrolls when it is long.
 - All-in-one loader recipes and cross-node prompt injection use one verified adapter table; prompt text never crosses between positive and negative.
 - The Workflows and Combos workspace no longer covers the header: the Models / Gallery / Workflows tabs stay clickable while it is open, and **Esc** closes it (back to what was open before) unless a dialog is above it or a text field has focus. Closing the Prompt Translator brings back the browser it folded away.
 
