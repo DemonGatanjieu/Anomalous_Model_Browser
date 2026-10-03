@@ -381,7 +381,8 @@ covered by the `styles.css` manifest.
   unfolded companion models card with unconstrained multi-column tile flow eliminating nested gallery scrollbars,
   prompt composer with dynamic field-sizing and compact inline find & replace toolbar, flat material library archiving card with
   clean single-icon feedback, and unified dark slim scrollbar ergonomics with complete bilingual dictionary coverage in `locales.js`), and
-  `notebook_canvas.js` owns LiteGraph creation. Prompt Notes open from the Material Library's top bar
+  `notebook_canvas.js` owns LiteGraph creation and putting a note into the open workflow, whose plan
+  (main loader, LoRA chain rebuilt in place, positive prompt box) is `notebook_apply.js`. Prompt Notes open from the Material Library's top bar
   with defensive workspace return state restoration, TDZ-safe summary initialization, and responsive empty-state fallback rendering. `ui_recipe_detail.js`
   coordinates the Workflow Recipe detail session and model composition. `ui_recipe_overview.js`
   owns the Overview prompt showcase (with `entry.text` fallback, guarded non-shrinking primary action CTA, and floating Popover More dropdown menu), and `ui_recipe_parameters.js`

@@ -39,7 +39,7 @@ function createNotebookToolbar(ctx, notebook) {
 
     const saveBtn = document.createElement('button');
     saveBtn.type = 'button';
-    saveBtn.innerHTML = `💾 ${t('saveNotebook') || (window.anomalous_browser_lang === 'zh' ? '保存笔记' : 'Save Note')}`;
+    saveBtn.textContent = `💾 ${t('saveNotebook')}`;
     saveBtn.className = 'anomalous-btn-primary';
     saveBtn.onclick = async () => {
         const orig = saveBtn.innerHTML;
@@ -54,10 +54,10 @@ function createNotebookToolbar(ctx, notebook) {
         }, 1500);
     };
 
-    const sendBtn = document.createElement('button');
-    sendBtn.type = 'button';
-    sendBtn.innerHTML = `🚀 ${t('sendToCanvas') || (window.anomalous_browser_lang === 'zh' ? '发送到画布' : 'Send to Canvas')}`;
-    sendBtn.className = 'anomalous-btn-success';
+    // Into the open workflow (model, LoRAs, prompt), or as a new group of nodes.
+    const applyBtn = Object.assign(document.createElement('button'), { type: 'button', className: 'anomalous-btn-success', textContent: t('noteApplyButton') });
+    applyBtn.onclick = () => ctx.applyNotebookToWorkflow();
+    const sendBtn = Object.assign(document.createElement('button'), { type: 'button', className: 'anomalous-btn-ghost', textContent: t('sendToCanvas') });
     sendBtn.onclick = () => ctx.sendNotebookToCanvas();
 
     // Floating More Dropdown Menu
@@ -67,7 +67,7 @@ function createNotebookToolbar(ctx, notebook) {
     const moreBtn = document.createElement('button');
     moreBtn.type = 'button';
     moreBtn.className = 'anomalous-nb-more-btn';
-    moreBtn.innerHTML = `<span>··· ${t('notebookMore') || (window.anomalous_browser_lang === 'zh' ? '更多' : 'More')}</span> <span style="font-size:0.7rem;margin-left:2px;">▾</span>`;
+    moreBtn.innerHTML = `<span>··· ${t('notebookMore')}</span> <span style="font-size:0.7rem;margin-left:2px;">▾</span>`;
 
     const dropdownMenu = document.createElement('div');
     dropdownMenu.className = 'anomalous-nb-dropdown-menu';
@@ -119,7 +119,7 @@ function createNotebookToolbar(ctx, notebook) {
     document.addEventListener('click', onDocClick);
 
     moreWrapper.append(moreBtn, dropdownMenu);
-    rightBtns.append(saveBtn, sendBtn, moreWrapper);
+    rightBtns.append(saveBtn, applyBtn, sendBtn, moreWrapper);
     tb.append(titleBox, rightBtns);
     return tb;
 }

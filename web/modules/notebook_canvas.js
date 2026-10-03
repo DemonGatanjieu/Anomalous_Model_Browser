@@ -1,8 +1,14 @@
-/** Create a movable LiteGraph group from the active Prompt Note. */
+/**
+ * The active Prompt Note on the canvas: as a new group of nodes that follows the pointer
+ * until a click, or put into the open workflow (notebook_apply.js) after showing what changes.
+ */
 
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
 import { recordCanvasStep } from './canvas_history.js';
+import { applyNotePlan, planNoteApply } from './notebook_apply.js';
+import { selectedMaterialNode } from './node_material_actions.js';
+import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -12,6 +18,31 @@ export const UNLABELED_BASE_MODEL = '__unlabeled__';
 /** UNet / diffusion models carry no text encoder, so their LoRAs patch the model only. */
 export function isUnetModel(model) {
     return model?.type === 'unet' || model?.type === 'diffusion_models';
+}
+
+/** Puts the active note into the open workflow after a confirmation listing each change. */
+export async function applyNotebookToWorkflow() {
+    if (!this.currentNotebook) return;
+    const plan = planNoteApply(app, this.currentNotebook.data || {}, selectedMaterialNode(app));
+    const say = ([key, params = {}]) => t(key, Object.fromEntries(Object.entries(params).map(([k, v]) => [k, v === '' ? t('noteApplyNone') : v])));
+    const reasons = plan.skipped.map(item => t('noteApplySkipped', { reason: say(item) }));
+    if (!plan.lines.length) {
+        await anomalousAlert([t('noteApplyNothing'), ...reasons].join('\n'), t('noteApplyTitle'));
+        return;
+    }
+    const message = [...plan.lines.map(say), ...reasons, '', t('noteApplyUndoHint')].join('\n');
+    if (!await anomalousConfirm(message, t('noteApplyTitle'), { okLabel: t('noteApplyConfirm') })) return;
+    applyNotePlan(app, plan);
+    this.nbPanel.style.display = 'none';
+    this.close();
+}
+
+/** The one text-encoder output already on the canvas (a loader), for a UNet note's prompts. */
+function canvasClipSource(exclude) {
+    const sources = (app.graph?._nodes || []).filter(node => !exclude.includes(node)
+        && (node.outputs || []).some(output => output.type === 'CLIP')
+        && !(node.inputs || []).some(input => input.type === 'CLIP' || input.type === 'MODEL'));
+    return sources.length === 1 ? sources[0] : null;
 }
 
 export function sendNotebookToCanvas() {
@@ -68,8 +99,13 @@ export function sendNotebookToCanvas() {
                 const tw = posNode.widgets.find(w => w.name === 'text' || w.type === 'customtext');
                 if (tw) tw.value = data.promptEn;
             }
+            const clipSource = lastClipSlot === null ? canvasClipSource(groupNodes.map(item => item.node)) : null;
             if (lastClipSlot !== null) {
                 lastNode.connect(lastClipSlot, posNode, 0);
+            } else if (clipSource) {
+                clipSource.connect(clipSource.outputs.findIndex(output => output.type === 'CLIP'), posNode, 0);
+            } else {
+                anomalousAlert(t('noteNeedsClip'));
             }
 
             const negNode = LiteGraph.createNode("CLIPTextEncode");
@@ -83,6 +119,8 @@ export function sendNotebookToCanvas() {
             }
             if (lastClipSlot !== null) {
                 lastNode.connect(lastClipSlot, negNode, 0);
+            } else if (clipSource) {
+                clipSource.connect(clipSource.outputs.findIndex(output => output.type === 'CLIP'), negNode, 0);
             }
         }
 
