@@ -29,6 +29,7 @@ import { getActiveAudioFilter, setActiveAudioFilter, syncAudioSidebarSelection }
 import { voiceGroupKey } from './audio_engines.js';
 import { getActiveDomain } from './ui_domain_switcher.js';
 import { startPage } from './ui_shell_nav.js';
+import { followComfyLanguage } from './interface_settings.js';
 
 export class AnomalousBrowser {
     constructor() {
@@ -51,6 +52,7 @@ export class AnomalousBrowser {
     }
 
     show() {
+        followComfyLanguage();
         if (this._idleReleaseTimer) {
             clearTimeout(this._idleReleaseTimer);
             this._idleReleaseTimer = null;

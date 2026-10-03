@@ -110,6 +110,14 @@ export function applyLanguagePreference(value) {
     }
 }
 
+/**
+ * "Follow ComfyUI" (no language chosen here): takes up a ComfyUI language changed since the
+ * page loaded. Called when the browser opens, since ComfyUI switches its language without a reload.
+ */
+export function followComfyLanguage() {
+    if (!localStorage.getItem('anomalous_lang')) applyLanguagePreference('auto');
+}
+
 if (!localStorage.getItem('anomalous_lang')) {
     currentLang = resolveComfyLanguage();
     window.anomalous_browser_lang = currentLang;
