@@ -994,6 +994,25 @@ dialog.anomalous-gallery-viewer[open] {
     to { transform: rotate(360deg); }
 }
 
+/* Moving the whole workflows kept as materials to the recipes. */
+.anomalous-recipe-move-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: var(--amb-radius-control, 8px);
+    color: var(--amb-text-soft);
+    background: var(--amb-bg-card, rgba(255, 255, 255, 0.03));
+    font-size: 12.5px;
+}
+
+.anomalous-recipe-move-strip[hidden] {
+    display: none;
+}
+
 .anomalous-recipe-model-reference-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

@@ -493,7 +493,7 @@ export async function renderImageInspectorContent(context, data, item) {
     const saveMaterialBtn = document.createElement('button');
     saveMaterialBtn.type = 'button';
     saveMaterialBtn.className = 'anomalous-workbench-action-btn is-save';
-    const cleanSaveLabel = (t('materialSaveSnapshotShort') || '保存到素材库').replace(/^[^\w\u4e00-\u9fa5]+/, '').trim();
+    const cleanSaveLabel = t('recipeKeepImageShort');
     saveMaterialBtn.innerHTML = `
         <svg class="anomalous-workbench-action-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3.5 2.5h9a1 1 0 0 1 1 1v10.5l-5.5-3-5.5 3V3.5a1 1 0 0 1 1-1z"></path>

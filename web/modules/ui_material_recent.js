@@ -1,9 +1,9 @@
 /**
  * The Material Library's "Recent" shelf: the newest generated images that carry their
  * workflow (GET /anomalous/recent_generations), each with what made it. The star keeps one
- * as a material through the gallery's route (POST /anomalous/save_image_material) under its
- * suggested name, so a good result is kept with one press; a starred image opens its
- * material. The picture opens the image workbench, where single nodes can be kept instead.
+ * as a Workflow Recipe (recipe_save.js) named after its prompt, so a good result is kept
+ * with one press; a starred image opens its recipe (or, kept before recipes took over, its
+ * material). The picture opens the image workbench, where single nodes can be kept instead.
  */
 
 import { translate as t } from './locales.js';
@@ -11,6 +11,7 @@ import { jsonResponse } from './ui_dom.js';
 import { dayLabel, timeLabel } from './activity_log.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
+import { keepImageAsRecipe } from './recipe_save.js';
 
 const SHOWN = 36;
 
@@ -41,28 +42,20 @@ function keptName(item) {
 }
 
 function paintStar(star, item) {
-    const kept = Boolean(item.material);
+    const kept = Boolean(item.recipe || item.material);
     star.textContent = kept ? '★' : '☆';
     star.classList.toggle('is-on', kept);
     star.setAttribute('aria-pressed', String(kept));
     star.title = t(kept ? 'recentStarredHint' : 'recentStarHint');
 }
 
-async function keep(item, star) {
+async function keep(owner, item, star) {
     star.disabled = true;
     try {
-        const response = await fetch('/anomalous/save_image_material', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                source_image: { type: 'output', filename: item.filename, subfolder: item.subfolder },
-                ...(keptName(item) ? { name: keptName(item) } : {}),
-            }),
-        });
-        // An image kept before comes back as the same material (409), not a copy.
-        const payload = response.status === 409 ? await response.json() : await jsonResponse(response, 'keep recent image');
-        item.material = payload.material || { filename: payload.filename, name: payload.name };
-        showWorkbenchToast(t('recentKept'));
+        // An image kept before gives its recipe back, not a copy.
+        const recipe = await keepImageAsRecipe({ type: 'output', filename: item.filename, subfolder: item.subfolder }, { name: keptName(item) });
+        item.recipe = { filename: recipe.filename, name: recipe.name };
+        showWorkbenchToast(t('recentKept'), { label: t('recentOpenRecipe'), run: () => owner.openRecipeByFilename(recipe.filename) });
     } catch (error) {
         showWorkbenchToast(t('recentKeepFailed', { error: error.message }));
     } finally {
@@ -89,7 +82,8 @@ function renderCard(owner, item, items) {
 
     const star = el('button', 'anomalous-recent-star');
     star.type = 'button';
-    star.onclick = () => (item.material ? owner.openSavedMaterial(item.material) : keep(item, star));
+    star.onclick = () => (item.recipe ? owner.openRecipeByFilename(item.recipe.filename)
+        : item.material ? owner.openSavedMaterial(item.material) : keep(owner, item, star));
     paintStar(star, item);
 
     const body = el('div', 'anomalous-recent-body');

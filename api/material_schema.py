@@ -398,6 +398,7 @@ def _material_summary(filename, material):
             "label": str(source.get("parameter_name") or source.get("recipe_name") or source.get("notebook_name") or "").strip(),
         },
         "source_fingerprint": str(source.get("parameter_signature") or image.get("source_sha256") or ""),
+        "moved_to_recipe": str(material.get("moved_to_recipe") or ""),
     }
     if source.get("recipe_filename"):
         summary["source_recipe"] = {

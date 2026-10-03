@@ -51,7 +51,11 @@ of 60 characters each; older records without tags remain valid.
 
 `category` groups sources before pagination: `workflow` contains full snapshots;
 `prompts` contains note/text/plan kinds and selections consisting only of prompt
-nodes; `params` contains other node/recipe selections. `all` is the default.
+nodes; `params` contains other node/recipe selections. `all` (the default) is every
+category but `workflow`: whole workflows belong to Workflow Recipes. New ones are
+kept as recipes (`recipe_save.js`); a full snapshot kept earlier is saved as a
+recipe on request (`mark_material_moved` records `moved_to_recipe` in the material,
+which then is listed in no category; the file stays).
 Exact `kind` remains compatible. `material_prompt_data.js` reads authoritative
 detail fields for the studio: notes use `note.promptEn`, plans compose saved
 parts, and workflow selections use top-level `prompt_groups`. The import drawer

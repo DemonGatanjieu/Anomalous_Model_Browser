@@ -258,11 +258,13 @@ def _query_materials(materials_dir, query):
         "prompt_note_bundle", "prompt_text", "prompt_plan"
     ):
         raise ValueError("Invalid material filter")
+    # Whole workflows live with the recipes: "all" is the pieces, and one moved there is not listed.
     materials = [material for material in materials
-                 if (not search or search in " ".join([material["name"], *material["node_types"], *material.get("tags", [])]).casefold())
+                 if not material.get("moved_to_recipe")
+                 and (not search or search in " ".join([material["name"], *material["node_types"], *material.get("tags", [])]).casefold())
                  and (not tag or tag in [value.casefold() for value in material.get("tags", [])])
                  and (not kind or material["kind"] == kind)
-                 and (category == "all" or _material_category(material) == category)
+                 and (_material_category(material) == category if category != "all" else _material_category(material) != "workflow")
                  and (not node_type or node_type in material["node_types"])]
     total = len(materials)
     limit = min(100, max(1, int(query.get("limit", 48))))
@@ -288,6 +290,15 @@ def _update_material_details(materials_dir, filename, name, tags, prompt_role_ov
                 material.pop("promptRoleOverrides", None)
         _atomic_write_json(path, material)
         return _with_live_recipe_source(_material_summary(filename, material))
+
+
+def _mark_material_moved(materials_dir, filename, recipe_filename):
+    """Notes that a kept workflow now lives as recipe `recipe_filename`; the material file stays."""
+    with _material_write_lock:
+        path = resolve_within(materials_dir, filename)
+        material = _read_material(path)
+        material["moved_to_recipe"] = recipe_filename
+        _atomic_write_json(path, material)
 
 
 def _delete_material(materials_dir, filename, path):

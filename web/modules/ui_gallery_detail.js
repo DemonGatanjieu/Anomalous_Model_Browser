@@ -8,12 +8,13 @@ import { showMaterialSaved } from './material_feedback.js';
  * - Collapsible left thumbnail rail with smooth vertical auto-centering
  * - High-speed in-memory LRU metadata cache (imageMetadataCache)
  * - Preloading of adjacent images and AbortController request cancellation
- * - Segmented Bento Inspector: Key Specs Bento grid, Prompts Station, Models & LoRA with weight pills, Node structure
- * - One-click actions: load Workflow and save a full or selected-node Material
+ * - Inspector: specs, prompts, models and LoRAs, nodes; load the workflow, keep it as a
+ *   Workflow Recipe (recipe_save.js) or keep selected nodes as a material
  */
-
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
+import { keepImageAsRecipe } from './recipe_save.js';
+import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { text, jsonResponse } from './ui_dom.js';
 import {
@@ -105,12 +106,11 @@ function materialSourceImage(item) {
     };
 }
 
-async function saveImageMaterial(item, name, selectedNodeIds = null, tags = []) {
+async function saveImageMaterial(item, name, selectedNodeIds) {
     const owner = wb?.owner;
     const promptRoleOverrides = wb?.promptRoleOverrides;
     const body = {
-        source_image: materialSourceImage(item), name: String(name || '').trim().slice(0, 120), tags,
-        ...(selectedNodeIds?.length ? { selected_node_ids: selectedNodeIds } : {}),
+        source_image: materialSourceImage(item), name: String(name || '').trim().slice(0, 120), selected_node_ids: selectedNodeIds,
         ...(owner?.recipeDetailFilename ? { recipe_filename: owner.recipeDetailFilename } : {}),
         ...(promptRoleOverrides && typeof promptRoleOverrides === 'object' ? { promptRoleOverrides } : {}),
     };
@@ -403,15 +403,15 @@ function renderSaveSnapshotFooter(inspectPayload, item) {
         saveBtn.textContent = t('materialSaving');
         try {
             const tags = tagsInput.value.split(/[,，]/).map(value => value.trim()).filter(Boolean);
-            const saved = await saveImageMaterial(item, val, null, tags);
-            if (!saved) { saveBtn.disabled = false; renderSaveBtnNormal(); return; }
+            const recipe = await keepImageAsRecipe(materialSourceImage(item), { name: val, tags });
+            showWorkbenchToast(t(recipe.existed ? 'recipeKeptBefore' : 'recentKept', { name: recipe.name }), { label: t('recentOpenRecipe'), run: () => wb?.owner?.openRecipeByFilename(recipe.filename) });
             saveBtn.textContent = t('materialSaved');
             saveBtn.disabled = false;
         } catch (error) {
-            console.error('Could not save image material:', error);
+            console.error('Could not keep the image workflow as a recipe:', error);
             renderSaveBtnNormal();
             saveBtn.disabled = false;
-            await anomalousAlert(t('materialSaveError') || '素材快照保存失败。');
+            await anomalousAlert(t('recipeSaveError'));
         }
     };
 

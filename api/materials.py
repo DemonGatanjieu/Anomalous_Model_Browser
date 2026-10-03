@@ -432,6 +432,24 @@ async def api_get_materials(request):
         return web.json_response({"status": "error", "message": "Could not list materials"}, status=500)
 
 
+async def api_mark_material_moved(request):
+    """POST {filename, recipe}: the kept workflow `filename` was saved as recipe `recipe`."""
+    try:
+        payload = await request.json()
+        filename = require_filename(payload.get("filename", ""))
+        recipe = require_filename(payload.get("recipe", ""))
+        if not filename.endswith(".json") or not recipe.endswith(".json"):
+            raise ValueError("Invalid material")
+        await asyncio.to_thread(_store._mark_material_moved, get_materials_dir(), filename, recipe)
+        return web.json_response({"status": "success"})
+    except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
+        return web.json_response({"status": "error", "message": "Invalid material"}, status=400)
+    except FileNotFoundError:
+        return web.json_response({"status": "error", "message": "Material not found"}, status=404)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not update material"}, status=500)
+
+
 async def api_update_material(request):
     try:
         payload = await request.json()

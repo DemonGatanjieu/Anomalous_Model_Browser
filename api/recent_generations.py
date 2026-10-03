@@ -1,7 +1,7 @@
 """The Material Library's "Recent" shelf (GET /anomalous/recent_generations): the newest
 output PNGs that carry a ComfyUI workflow, each with what made it (start of the positive
-prompt, model, sampler settings) and the material it already is, if any (its summary). Starring one goes
-through /anomalous/save_image_material, which matches images by their SHA256 the same way."""
+prompt, model, sampler settings) and the recipe it was kept as (`recipe`: matched by the recipe's
+source image), or for one kept before recipes took over, the material it is (`material`)."""
 
 import asyncio
 import hashlib
@@ -16,6 +16,7 @@ from .gallery_routes import _gallery_listing
 from .image_search import read_png_text
 from .material_schema import _extract_workflow_params, _prompt_groups_from_roles, _prompt_roles_for_workflow
 from .material_store import _list_materials, get_materials_dir
+from .recipe_store import _list_recipes, get_recipes_dir
 
 MAX_LIMIT = 60
 SCAN_LIMIT = 400  # newest images looked at; older ones are in the gallery
@@ -83,10 +84,22 @@ def _summary(path, mtime):
     return summary
 
 
+def _kept_recipes():
+    kept = {}
+    for recipe in _list_recipes(get_recipes_dir()):
+        image = recipe["data"].get("source_image") or {}
+        if image.get("filename"):
+            kept.setdefault((image.get("subfolder", ""), image["filename"]),
+                            {"filename": recipe["filename"], "name": recipe["data"].get("name", "")})
+    return kept
+
+
 def _recent(limit, query):
     output_dir = folder_paths.get_output_directory()
+    recipes = _kept_recipes()
     starred = {item["source_sha256"]: item for item in _list_materials(get_materials_dir())
-               if item.get("kind") == "image_workflow_snapshot" and item.get("source_sha256")}
+               if item.get("kind") == "image_workflow_snapshot" and item.get("source_sha256")
+               and not item.get("moved_to_recipe")}
     items = []
     for image in _gallery_listing(output_dir, False, query)[:SCAN_LIMIT]:
         if not image["filename"].lower().endswith(".png"):
@@ -97,10 +110,12 @@ def _recent(limit, query):
             continue
         if not summary:
             continue
+        recipe = recipes.get((image["subfolder"], image["filename"]))
         items.append({
             "filename": image["filename"], "subfolder": image["subfolder"], "mtime": image["mtime"],
             "prompt": summary["prompt"], "model": summary["model"], "params": summary["params"],
-            "material": starred.get(summary["sha256"]),
+            "recipe": recipe,
+            "material": None if recipe else starred.get(summary["sha256"]),
         })
         if len(items) >= limit:
             break

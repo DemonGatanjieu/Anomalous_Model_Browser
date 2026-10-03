@@ -31,7 +31,6 @@ function buildMaterialTopbar(owner) {
     const categories = [
         { id: 'recent', key: 'materialKindPill_recent', kind: '' }, // newest generations, to star
         { id: 'all', key: 'materialKindPill_all', kind: '' },
-        { id: 'workflow', key: 'materialKindPill_workflow', kind: 'image_workflow_snapshot' },
         { id: 'params', key: 'materialKindPill_params', kind: 'recipe_parameter_selection' },
         { id: 'prompts', key: 'materialKindPill_prompts', kind: 'prompt_plan' },
     ];

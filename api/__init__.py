@@ -89,6 +89,7 @@ def setup_routes(app):
     app.router.add_post('/anomalous/save_node_material', node_material.api_save_node_material)
     app.router.add_post('/anomalous/delete_material', materials.api_delete_material)
     app.router.add_post('/anomalous/update_material', materials.api_update_material)
+    app.router.add_post('/anomalous/mark_material_moved', materials.api_mark_material_moved)
 
     app.router.add_post('/anomalous/translate', translation_routes.api_translate)
     app.router.add_get('/anomalous/base_models', model_catalog.api_base_models)

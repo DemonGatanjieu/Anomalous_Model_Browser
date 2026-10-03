@@ -3,8 +3,34 @@
 import { translate } from './locales.js';
 import { appendText } from './ui_recipe_detail_dom.js';
 import { createRecipeCard, ensureRecipeGuideStyles } from './ui_recipe_cards.js';
+import { moveWorkflowMaterials, workflowMaterialCount } from './recipe_save.js';
 
 const t = (key, params) => translate(key, params);
+
+/**
+ * A strip offering to move the whole workflows kept as materials (before stars made recipes)
+ * to the recipes; it shows only while there are some.
+ */
+function buildMoveStrip(owner) {
+    const strip = document.createElement('div');
+    strip.className = 'anomalous-recipe-move-strip';
+    strip.hidden = true;
+    const copy = appendText(strip, 'span', '');
+    const move = appendText(strip, 'button', t('recipeMoveKeptButton'), 'anomalous-btn-primary');
+    move.type = 'button';
+    move.onclick = async () => {
+        move.disabled = true;
+        const moved = await moveWorkflowMaterials((done, total) => { move.textContent = `${done} / ${total}`; });
+        copy.textContent = t('recipeMovedKept', { count: moved });
+        move.remove();
+        await owner.refreshRecipes();
+    };
+    workflowMaterialCount().then((count) => {
+        copy.textContent = t('recipeMoveKept', { count });
+        strip.hidden = !count;
+    }).catch(() => {});
+    return strip;
+}
 
 export function updateRecipeFilterControls(owner, recipes) {
     if (!owner.recipeTagSelect) return;
@@ -307,6 +333,7 @@ export async function showRecipes() {
     this.recipeHintStrip.appendChild(hintClose);
 
     this.recipeView.appendChild(this.recipeHintStrip);
+    this.recipeView.appendChild(buildMoveStrip(this));
 
     this.recipeListContainer = document.createElement('div');
     this.recipeListContainer.className = `anomalous-recipe-list ${this.recipeViewMode === 'list' ? 'is-list' : 'is-grid'}`;
