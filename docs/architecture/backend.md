@@ -199,7 +199,9 @@ media.
 - Foundation components—`vae`, `vae_approx`, `clip`, `text_encoders`, and
   `clip_vision`—are never physical-rename targets. UI and all backend entry
   points enforce the same denial.
-- Main model extensions (`.safetensors`, `.ckpt`, `.pt`, `.bin`) are never
+- Model files are `MODEL_EXTENSIONS` in `api/model_constants.py` (`.safetensors`,
+  `.ckpt`, `.pt`, `.pth`, `.bin`, `.sft`, `.gguf`); listing, counting, search and
+  lookups test names with `is_model_file()`, without case. They are never
   sidecar suffixes. Cleanup must not delete a same-stem model with another
   extension. If such a sibling remains, ambiguous stem-keyed sidecars remain.
 - Rename/delete/reset uses centralized immutable suffix tuples and a constant
