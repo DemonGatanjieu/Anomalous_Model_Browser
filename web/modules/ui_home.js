@@ -21,7 +21,7 @@ const CARDS = Object.freeze([
     { name: 'Gallery', icon: PAGE_ICONS.gallery, open: owner => owner.goTo('gallery') },
     { name: 'Recipes', icon: PAGE_ICONS.recipes, open: owner => owner.goTo('recipes') },
     { name: 'Combos', icon: PAGE_ICONS.combos, open: owner => owner.goTo('combos') },
-    { name: 'Materials', icon: PAGE_ICONS.materials, open: owner => owner.goTo('materials') },
+    { name: 'Prompts', icon: PAGE_ICONS.prompts, open: owner => owner.goTo('prompts') },
 ]);
 
 function el(tag, className, text) {

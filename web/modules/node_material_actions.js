@@ -2,7 +2,7 @@ import { composePromptPlan } from './prompt_composition.js';
 import { planPromptFill, typeTakesPrompt } from './prompt_boxes.js';
 import { recordCanvasStep } from './canvas_history.js';
 
-// Shared by Node Assistant and Material Library. No node creation or link edits.
+// Shared by Current node, Prompt Studio and prompt drops. No node creation or link edits.
 const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -111,13 +111,6 @@ export function applyNodeMaterialValues(app, node, entries, options = {}) {
             if (options.record !== false) recordCanvasStep(app);
         },
     };
-}
-
-export function applyMaterialBlock(app, node, block, workflowHashes) {
-    if (node?.type !== block?.type || !Array.isArray(block.widgets_values)
-        || block.widgets_values.length > (node.widgets?.length || 0)) throw new Error('materialNoCompatibleValues');
-    return applyNodeMaterialValues(app, node, block.widgets_values.map((value, index) => ({ index, value })),
-        { sourceNodeId: block.node_id, workflowHashes });
 }
 
 export const MODEL_EXTENSIONS_REGEX = /\.(safetensors|ckpt|pt|bin|pth|sft|onnx|engine|gguf)$/i;
@@ -278,18 +271,6 @@ export function extractMaterialPromptEnvelope(material, payload = {}) {
     }
 
     return formatPromptEnvelope();
-}
-
-export function getMaterialPromptInfo(material) {
-    const env = extractMaterialPromptEnvelope(material);
-    const isNeg = env.primaryRole === 'negative';
-    const text = isNeg
-        ? (env.negative || env.singleText)
-        : (env.positive || env.singleText || env.negative);
-    return {
-        text: (text || '').trim(),
-        role: isNeg ? 'negative' : 'positive',
-    };
 }
 
 /**

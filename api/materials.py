@@ -25,15 +25,12 @@ from .material_schema import (
     _normalise_material_tags,
     _normalise_prompt_role_overrides,
     _normalise_selected_node_ids,
-    _parameter_signature,
     _prompt_excerpt,
     _prompt_groups_from_roles,
     _prompt_roles_for_workflow,
     _workflow_hashes_for_blocks,
 )
 from .notebooks import MAX_NOTEBOOK_BYTES
-from .parameters import get_parameters_dir
-from .recipe_constants import MAX_RECIPE_BYTES
 from .recipe_schema import _build_model_references, _normalise_source_image
 from .recipe_store import get_recipes_dir
 from .utils import atomic_write_json as _atomic_write_json, require_filename, resolve_within
@@ -43,8 +40,6 @@ MATERIAL_SCHEMA_VERSION = 1
 
 _store_get_materials_dir = _store.get_materials_dir
 _store_read_material = _store._read_material
-_store_read_parameter_source = _store._read_parameter_source
-_store_parameter_source_record = _store._parameter_source_record
 _store_snapshot_recipe_source = _store._snapshot_recipe_source
 _store_live_recipe_source = _store._live_recipe_source
 _store_with_live_recipe_source = _store._with_live_recipe_source
@@ -87,16 +82,6 @@ def _read_material(path):
     _store._normalise_prompt_note = _normalise_prompt_note
     _store._normalise_prompt_plan = _normalise_prompt_plan
     return _store_read_material(path)
-
-
-def _read_parameter_source(recipe_filename, parameter_filename=None):
-    _store.get_recipes_dir = get_recipes_dir
-    _store.get_parameters_dir = get_parameters_dir
-    return _store_read_parameter_source(recipe_filename, parameter_filename)
-
-
-def _parameter_source_record(recipe_filename, parameter_filename, recipe, source, workflow):
-    return _store_parameter_source_record(recipe_filename, parameter_filename, recipe, source, workflow)
 
 
 def _snapshot_recipe_source(filename):
@@ -263,91 +248,6 @@ async def api_save_image_material(request):
     })
 
 
-async def api_save_parameter_material(request):
-    try:
-        payload = await request.json()
-        recipe_filename, parameter_filename, recipe, source, workflow = await asyncio.to_thread(
-            _read_parameter_source,
-            payload.get("recipe_filename", ""),
-            payload.get("parameter_filename"),
-        )
-        source_name = str(source.get("name") or recipe.get("name") or "参数素材").strip()
-        name = payload.get("name") or source_name
-        if not isinstance(name, str) or not (name := name.strip()) or len(name) > MAX_MATERIAL_NAME_LENGTH:
-            raise ValueError("Invalid material name")
-        tags = _normalise_material_tags(payload.get("tags", recipe.get("tags") or []))
-        allow_duplicate = payload.get("allow_duplicate", False)
-        if not isinstance(allow_duplicate, bool):
-            raise ValueError("Invalid duplicate preference")
-
-        reusable_ids = [
-            node.get("id") for node in workflow.get("nodes", [])
-            if isinstance(node, dict) and node.get("id") is not None
-            and isinstance(node.get("widgets_values"), list) and node.get("widgets_values")
-        ]
-        raw_selection = payload.get("selected_node_ids")
-        selected_node_ids = _normalise_selected_node_ids(
-            workflow,
-            reusable_ids if raw_selection is None else raw_selection,
-        )
-        reusable_keys = {str(value) for value in reusable_ids}
-        if any(str(value) not in reusable_keys for value in selected_node_ids):
-            raise ValueError("Selected node has no reusable parameters")
-        selected_keys = {str(value) for value in selected_node_ids}
-        blocks = [
-            block for block in _node_blocks(workflow, include_values=False)
-            if str(block.get("node_id")) in selected_keys
-        ]
-        references = [
-            reference for reference in _build_model_references(source, verify_identities=False)
-            if str(reference.get("node_id")) in selected_keys
-        ]
-        source_record = _parameter_source_record(
-            recipe_filename, parameter_filename, recipe, source, workflow
-        )
-        material_id = uuid.uuid4().hex
-        filename = f"material_{int(time.time())}_{material_id}.json"
-        material = {
-            "schema_version": MATERIAL_SCHEMA_VERSION,
-            "id": material_id,
-            "kind": "recipe_parameter_selection",
-            "name": name,
-            "tags": tags,
-            "timestamp": int(time.time() * 1000),
-            "source": source_record,
-            "workflow": workflow,
-            "model_references": references,
-            "capabilities": ["apply_node_parameters"],
-            "selection": {"scope": "nodes", "node_ids": selected_node_ids},
-        }
-        params = source.get("params") if isinstance(source.get("params"), dict) else {}
-        prompt_role_overrides = _normalise_prompt_role_overrides(params.get("promptRoleOverrides"))
-        if prompt_role_overrides:
-            material["promptRoleOverrides"] = prompt_role_overrides
-        materials_dir = get_materials_dir()
-        duplicate = await asyncio.to_thread(
-            _persist_parameter_material, materials_dir, filename, material, allow_duplicate
-        )
-        if duplicate:
-            return web.json_response({
-                "status": "duplicate",
-                "filename": duplicate["filename"],
-                "name": duplicate["name"],
-            }, status=409)
-    except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
-        return web.json_response({"status": "error", "message": "Could not save parameter material"}, status=400)
-    except FileNotFoundError:
-        return web.json_response({"status": "error", "message": "Parameter source not found"}, status=404)
-    except OSError:
-        return web.json_response({"status": "error", "message": "Could not save parameter material"}, status=500)
-    return web.json_response({
-        "status": "success",
-        "filename": filename,
-        "material": _with_live_recipe_source(_material_summary(filename, material)),
-        "node_blocks": blocks,
-    })
-
-
 async def api_save_prompt_plan(request):
     try:
         payload = await request.json()
@@ -490,7 +390,8 @@ async def api_get_materials_by_node_type(request):
     def collect():
         matches = []
         for summary in _list_materials(materials_dir):
-            if node_type not in summary["node_types"]:
+            # A whole workflow moved to a recipe is offered through the recipe's own sets.
+            if node_type not in summary["node_types"] or summary.get("moved_to_recipe"):
                 continue
             try:
                 material = _read_material(resolve_within(materials_dir, summary["filename"]))

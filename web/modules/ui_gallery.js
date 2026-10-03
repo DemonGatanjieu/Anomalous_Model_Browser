@@ -6,7 +6,7 @@
 
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
-import { showImageMaterialDetail } from './ui_materials.js';
+import { showImageWorkbench } from './ui_gallery_detail.js';
 import { createGalleryCard } from './ui_gallery_card.js';
 import { loadKeptImages } from './image_keep.js';
 import { createSearchChips } from './ui_search_chips.js';
@@ -343,7 +343,7 @@ export async function showGeneratedGallery(model) {
                             sourceImage: { type: 'output', filename: fn, subfolder: sub }
                         };
                     });
-                    void showImageMaterialDetail(this, {
+                    void showImageWorkbench(this, {
                         type: 'output',
                         filename: filenameText,
                         subfolder: source_image.includes('/') ? source_image.split('/')[0] : '',

@@ -40,7 +40,6 @@ ROUTE_ACTIONS = {
     '/anomalous/set_recipe_gallery_cover': 'recipe_cover',
     '/anomalous/import_recipe_package_commit': 'recipe_import',
     '/anomalous/save_image_material': 'material_save',
-    '/anomalous/save_parameter_material': 'material_save',
     '/anomalous/save_prompt_plan': 'material_save',
     '/anomalous/update_material': 'material_edit',
     '/anomalous/delete_material': 'material_delete',

@@ -9,7 +9,8 @@ import { translate as t } from './locales.js';
 let activeStudio = null;
 let pendingPlanLoad = null;
 
-export function closePromptStudio(owner) {
+/** Closes the studio; the browser it folded away comes back (not when another studio replaces it). */
+export function closePromptStudio(owner, { replacing = false } = {}) {
     pendingPlanLoad?.abort();
     pendingPlanLoad = null;
     if (!activeStudio) return;
@@ -18,18 +19,16 @@ export function closePromptStudio(owner) {
     previous.scope.dispose();
     previous.owner.sidePromptComposerControl = null;
     document.body.classList.remove('anomalous-prompt-studio-open');
-    if (!previous.owner.modal?.classList.contains('visible')) previous.owner.setTriggerVisible?.(true);
+    if (replacing) return;
+    if (previous.reopenBrowser) previous.owner.show?.();
+    else if (!previous.owner.modal?.classList.contains('visible')) previous.owner.setTriggerVisible?.(true);
 }
 
 export async function openPromptStudio(owner = this) {
-    closePromptStudio(owner);
-
-    // Canvas Focus Mode: If left master browser is visible, auto-collapse it so canvas has 80%+ space
-    if (owner?.modal?.classList.contains('visible')) {
-        if (typeof owner.close === 'function') {
-            owner.close();
-        }
-    }
+    // The browser folds away so the canvas has room, and comes back when the studio closes.
+    const reopenBrowser = Boolean(owner?.modal?.classList.contains('visible') || activeStudio?.reopenBrowser);
+    closePromptStudio(owner, { replacing: true });
+    if (owner?.modal?.classList.contains('visible')) owner.close?.();
 
     // Hide global floating trigger button while Studio Drawer is open
     owner?.setTriggerVisible?.(false);
@@ -38,7 +37,7 @@ export async function openPromptStudio(owner = this) {
     const overlay = document.createElement('div');
     overlay.className = 'anomalous-prompt-studio-overlay';
     const scope = createViewScope();
-    activeStudio = { scope, owner };
+    activeStudio = { scope, owner, reopenBrowser };
     scope.onDispose(() => overlay.remove());
 
     const drawer = document.createElement('aside');

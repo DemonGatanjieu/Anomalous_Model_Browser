@@ -18,7 +18,7 @@ export const PAGE_ICONS = {
     gallery: icon('<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>'),
     recipes: icon('<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v6"/><path d="M9 6h6"/><path d="M7.8 7.8l8.4 8.4"/>'),
     combos: TOOL_ICONS.MATERIALS,
-    materials: icon('<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>'),
+    prompts: icon('<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>'),
     voices: icon('<path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/>'),
     // Not a rail entry (Voice-over is a view of Voices); Home's voice-over card uses it.
     script: icon('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8"/><path d="M8 13h5"/>'),
@@ -33,7 +33,7 @@ export const RAIL_PAGES = Object.freeze([
     { page: 'gallery', id: 'anomalous-gallery-btn', labelKey: 'gallery' },
     { page: 'recipes', id: 'anomalous-notebook-btn', labelKey: 'recipeTitle' },
     { page: 'combos', id: 'anomalous-combos-btn', labelKey: 'shellCombos' },
-    { page: 'materials', id: 'anomalous-materials-btn', labelKey: 'shellMaterials' },
+    { page: 'prompts', id: 'anomalous-prompts-btn', labelKey: 'shellPrompts' }, // opens Prompt Studio by the canvas
     { page: 'voices', id: 'anomalous-voices-btn', labelKey: 'shellVoices', audio: true },
     { page: 'audio-gallery', id: 'anomalous-audio-gallery-btn', labelKey: 'shellAudioGallery', audio: true },
 ]);

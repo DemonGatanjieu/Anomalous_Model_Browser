@@ -2,15 +2,16 @@
  * The current-node panel's parameters: every saved set of values for the node's type
  * (node_parameter_sets.js: materials and recipes, merged), each with exactly what it would
  * change on this node; one press puts those in (seeds and model files stay, the receipt
- * undoes it). "Save these values" keeps the node's current values as a material.
+ * undoes it); saved values (not a recipe's) can be deleted. "Save these values" keeps the
+ * node's current values for the next node of its kind.
  */
 
 import { app } from "../../../scripts/app.js";
 import { translate as t } from './locales.js';
-import { anomalousPrompt } from './ui_dialog.js';
-import { showMaterialApplication } from './ui_material_application.js';
+import { anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
+import { showApplyReceipt } from './ui_apply_receipt.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
-import { applyParameterChanges, loadParameterSets, parameterChanges, saveNodeParameters } from './node_parameter_sets.js';
+import { applyParameterChanges, deleteSavedValues, loadParameterSets, parameterChanges, saveNodeParameters } from './node_parameter_sets.js';
 
 const SHOWN_CHANGES = 4;
 const SEARCH_FROM = 6; // entries before a search box is worth showing
@@ -39,7 +40,7 @@ const sourceLabel = source => (source.kind === 'recipe'
     ? t('currentNodeFromRecipe', { name: source.label })
     : t('currentNodeFromMaterial'));
 
-function entryCard(node, entry, receiptHost, redraw) {
+function entryCard(node, entry, receiptHost, redraw, remove) {
     const changes = parameterChanges(node, entry.values);
     const made = changes.filter(change => !change.keep);
     const card = el('div', 'anomalous-node-param');
@@ -66,14 +67,19 @@ function entryCard(node, entry, receiptHost, redraw) {
     const apply = button('anomalous-node-param-apply', made.length ? t('currentNodeApply', { count: made.length }) : t('currentNodeSame'), () => {
         try {
             const result = applyParameterChanges(app, node, made);
-            showMaterialApplication(receiptHost, { undo() { result.undo(); redraw(); } }, node);
+            showApplyReceipt(receiptHost, { undo() { result.undo(); redraw(); } }, node);
             redraw();
         } catch (error) {
             showWorkbenchToast(t(error.message) === error.message ? t('materialApplyFailed') : t(error.message));
         }
     });
     apply.disabled = !made.length;
-    card.append(apply);
+    const actions = el('div', 'anomalous-node-param-actions');
+    // Values saved here or kept from images can be deleted; a recipe's sets belong to the recipe.
+    const saved = [...new Set(entry.sources.filter(source => source.kind === 'material' && source.filename).map(source => source.filename))];
+    if (saved.length) actions.append(button('anomalous-node-param-delete', t('currentNodeDelete'), () => remove(entry, saved)));
+    actions.append(apply);
+    card.append(actions);
     return card;
 }
 
@@ -97,7 +103,7 @@ export function renderNodeParameters(node, container) {
             || `${entry.name} ${entry.sources.map(source => source.label).join(' ')}`.toLowerCase().includes(query));
         search.hidden = entries.length < SEARCH_FROM;
         list.replaceChildren(...(shown.length
-            ? shown.map(entry => entryCard(node, entry, section, draw))
+            ? shown.map(entry => entryCard(node, entry, section, draw, remove))
             : [el('p', 'anomalous-node-muted', t(entries.length ? 'currentNodeNoMatch' : 'currentNodeNoSets'))]));
     };
     search.oninput = draw;
@@ -112,6 +118,16 @@ export function renderNodeParameters(node, container) {
         } catch (error) {
             if (run === section._load) list.replaceChildren(el('p', 'anomalous-node-muted is-error', t('currentNodeLoadFailed')));
         }
+    };
+
+    const remove = async (entry, filenames) => {
+        if (!await anomalousConfirm(t('currentNodeDeleteConfirm', { name: entry.name }), t('currentNodeDelete'), { okLabel: t('currentNodeDelete') })) return;
+        try {
+            for (const filename of filenames) await deleteSavedValues(filename);
+        } catch (error) {
+            showWorkbenchToast(t('currentNodeDeleteFailed'));
+        }
+        if (section.isConnected) load();
     };
 
     const save = async () => {

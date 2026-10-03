@@ -155,10 +155,11 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         ensureBrowser()?.show();
     }
 
+    // The second shortcut (its ids still say materials) opens Prompt Studio.
     async function openMaterials() {
         const browser = ensureBrowser();
         if (!browser) return;
-        await browser.openMaterialLibrary();
+        await browser.openPromptStudio();
     }
 
     function getMaterialsShortcutCombo() {
@@ -170,9 +171,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
     }
 
     function materialLibraryIsOpen() {
-        return browserInstance?.modal?.classList.contains('visible') === true
-            && browserInstance?.nbPanel?.style.display === 'flex'
-            && browserInstance?.materialContainer?.style.display === 'flex';
+        return document.body.classList.contains('anomalous-prompt-studio-open');
     }
 
     function installMaterialsShortcutFallback() {

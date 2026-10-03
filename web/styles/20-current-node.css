@@ -141,8 +141,28 @@
 
 .anomalous-node-muted.is-error { color: #fca5a5; }
 
+.anomalous-node-param-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.anomalous-node-param-delete {
+    padding: 5px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 11.5px;
+    cursor: pointer;
+}
+
+.anomalous-node-param-delete:hover {
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #fca5a5;
+}
+
 .anomalous-node-param-apply {
-    align-self: flex-end;
     padding: 5px 12px;
     border: 1px solid color-mix(in srgb, var(--amb-link) 45%, transparent);
     border-radius: 7px;

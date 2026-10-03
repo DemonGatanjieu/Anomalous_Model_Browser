@@ -1,4 +1,3 @@
-import { showMaterialSaved } from './material_feedback.js';
 /**
  * ui_gallery_detail.js
  * Professional Image Detail Studio Workbench for ComfyUI.
@@ -14,6 +13,7 @@ import { showMaterialSaved } from './material_feedback.js';
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
 import { openKeepMenu } from './ui_keep_menu.js';
+import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { text, jsonResponse } from './ui_dom.js';
 import {
@@ -126,8 +126,7 @@ async function saveImageMaterial(item, name, selectedNodeIds) {
     }
     const payload = await jsonResponse(response, 'material save failed');
     if (payload.status !== 'success') throw new Error(payload.message || 'material save failed');
-    showMaterialSaved(owner, payload.material, dismissWorkbench);
-    await owner?.refreshMaterials?.();
+    showWorkbenchToast(t('nodeValuesSaved'));
     return payload;
 }
 
@@ -164,7 +163,7 @@ async function saveSelectedBlocks(item, suggestedName, blocks, button) {
         console.error('Could not save selected material nodes:', error);
         button.textContent = defaultLabel;
         button.disabled = false;
-        await anomalousAlert(t('materialSaveError') || '素材快照保存失败。');
+        await anomalousAlert(t('materialSaveError'));
     }
 }
 
@@ -185,7 +184,7 @@ function dismissWorkbench() {
  */
 async function loadWorkflowToComfyCanvas(workflow) {
     if (!workflow || typeof app.loadGraphData !== 'function') {
-        await anomalousAlert(t('materialOpenError') || '无法打开这个素材中的工作流。');
+        await anomalousAlert(t('materialOpenError'));
         return;
     }
     try {

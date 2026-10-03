@@ -1,7 +1,7 @@
 /**
  * The keep menu of an output image (the star on gallery cards, Keep in the image
  * workbench): its whole workflow (Workflows page), its combo (Combos page) or its prompts
- * (saved prompts), each row saying where it goes; one kept already shows ✓ and opens it.
+ * (saved prompts, in Prompt Studio), each row saying where it goes; one kept already shows ✓ and opens it.
  * Keeping runs recipe_save.js / image_keep.js and says what happened in a toast with Open.
  */
 
@@ -16,7 +16,7 @@ const NO_WORKFLOW = 'Image has no reusable UI workflow'; // the inspect route's 
 const KINDS = Object.freeze([
     { kind: 'recipe', icon: '🪡', keep: keepImageAsRecipe, open: (owner, item) => owner.openRecipeByFilename(item.filename) },
     { kind: 'combo', icon: '🧩', keep: keepImageAsCombo, open: (owner, item) => owner.openComboByFilename(item.filename) },
-    { kind: 'prompt', icon: '✍️', keep: keepImagePrompts, open: (owner, item) => owner.openSavedMaterial({ filename: item.filename, name: item.name }) },
+    { kind: 'prompt', icon: '✍️', keep: keepImagePrompts, open: owner => owner.openPromptStudio() },
 ]);
 
 let closeOpenMenu = null;

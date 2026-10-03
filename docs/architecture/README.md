@@ -9,8 +9,8 @@ open only the topic needed for the current task.
   media lifecycle, panel state, and graph mutations.
 - [`recipes.md`](recipes.md): Workflow Recipes, packages, galleries, Parameter
   Notebooks, prompt roles, and recipe-to-model transitions.
-- [`material-library.md`](material-library.md): generated-image snapshots,
-  material assets, node-block reuse, and Model Check handoff.
+- [`material-library.md`](material-library.md): saved prompts and node values
+  (material files), keeping an output image, and dragging prompts onto the canvas.
 - [`recipe-model-lifecycle.md`](recipe-model-lifecycle.md): authoritative model
   fields, Hash synchronization, local matching, partial append, and note privacy.
 - [`model-resolution.md`](model-resolution.md): model provenance, Model Check,

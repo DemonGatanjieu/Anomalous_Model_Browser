@@ -45,7 +45,7 @@ export async function loadParameterSets(type, { signal } = {}) {
                 name: blocks.length > 1 ? `${material.name} · ${block.title || block.type}` : material.name,
                 role: block.role || '',
                 timestamp: material.timestamp || 0,
-                sources: [{ kind: 'material', label: material.name }],
+                sources: [{ kind: 'material', label: material.name, filename: material.filename }],
             });
         }
     }
@@ -93,6 +93,16 @@ export function applyParameterChanges(app, node, changes) {
 }
 
 /** Saves the node's current values as a material; { status: 'success' | 'duplicate', name }. */
+/** Deletes saved values (a material file, with any other nodes saved with them) to the Recycle Bin. */
+export async function deleteSavedValues(filename) {
+    const response = await fetch('/anomalous/delete_material', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+}
+
 export async function saveNodeParameters(node, name) {
     const values = node.serialize?.().widgets_values || node.widgets_values || (node.widgets || []).map(widget => widget.value);
     const response = await fetch('/anomalous/save_node_material', {

@@ -12,7 +12,6 @@ import { renderNotebookEditor, fillNotebookGalleries } from './ui_notebook_edito
 import { useNotebook, sendNotebookToCanvas } from './notebook_canvas.js';
 import { showRecipes, refreshRecipes } from './ui_recipe_catalog.js';
 import { renderRecipeList, handleSaveRecipe, openRecipeByFilename } from './ui_recipes.js';
-import { showMaterials, refreshMaterials, openSavedMaterial, openMaterialLibrary } from './ui_materials.js';
 import { openPromptStudio } from './ui_prompt_composer.js';
 import { closeUpdateGuide } from './ui_update_guide.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
@@ -187,11 +186,7 @@ AnomalousBrowser.prototype.openRecipeByFilename = openRecipeByFilename;
 AnomalousBrowser.prototype.refreshRecipes = refreshRecipes;
 AnomalousBrowser.prototype.renderRecipeList = renderRecipeList;
 AnomalousBrowser.prototype.handleSaveRecipe = handleSaveRecipe;
-AnomalousBrowser.prototype.showMaterials = showMaterials;
-AnomalousBrowser.prototype.openSavedMaterial = openSavedMaterial;
-AnomalousBrowser.prototype.openMaterialLibrary = openMaterialLibrary;
 AnomalousBrowser.prototype.openPromptStudio = openPromptStudio;
-AnomalousBrowser.prototype.refreshMaterials = refreshMaterials;
 
 AnomalousBrowser.prototype.loadGalleryImages = loadGalleryImages;
 AnomalousBrowser.prototype.refreshGalleryImages = refreshGalleryImages;

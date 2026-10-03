@@ -11,8 +11,10 @@ Before implementation, follow [AGENTS.md](AGENTS.md), the canonical development
 and maintenance rules; its section 0 is required for every commit.
 [GEMINI.md](GEMINI.md) and [CLAUDE.md](CLAUDE.md) are reading entry points only.
 
-The prompt studio reads material prompt payloads through `web/modules/material_prompt_data.js`;
-list summaries do not contain prompt bodies. See the Material Library contract below.
+Saved prompts and saved node values are material files (`anomalous_materials`); there is no
+Material Library page any more. Prompt Studio lists the saved prompts (reading each body
+through `web/modules/material_prompt_data.js`; list summaries do not contain prompt bodies)
+and Current node lists the saved values. See the material contract below.
 
 | When changing... | Read... |
 | --- | --- |
@@ -20,7 +22,7 @@ list summaries do not contain prompt bodies. See the Material Library contract b
 | Browser lifecycle, UI state, localization, media, or graph edits | [`docs/architecture/frontend.md`](docs/architecture/frontend.md) |
 | Update-guide content/versioning or sidebar hover labels | [`docs/architecture/update-guide.md`](docs/architecture/update-guide.md) |
 | Workflow Recipes, packages, galleries, Parameter Notebooks, or prompt roles | [`docs/architecture/recipes.md`](docs/architecture/recipes.md) |
-| Material Library snapshots, image parameter details, or reusable node blocks | [`docs/architecture/material-library.md`](docs/architecture/material-library.md) |
+| Saved prompts and node values (material files), image parameter details, keeping an output image | [`docs/architecture/material-library.md`](docs/architecture/material-library.md) |
 | Model Check, provenance hashes, missing-model recovery, or model scanning | [`docs/architecture/model-resolution.md`](docs/architecture/model-resolution.md) |
 | Browser audits, E2E functional bug reports, or verification sign-offs | [`docs/audits/README.md`](docs/audits/README.md) |
 | Why a current product boundary exists | [`docs/decisions/README.md`](docs/decisions/README.md) |
@@ -342,8 +344,8 @@ covered by the `styles.css` manifest.
   `scan_progress.js` owns the scan progress panel
   (`updateScanProgress` / `finishScanProgress` / `failScanProgress`): inside the scan
   page while it is shown (`setScanProgressHost`), floating at the bottom right otherwise.
-  `shortcut_controls.js` owns the open-browser and material-library keyboard
-  shortcuts, their fallback when ComfyUI's keybinding does not fire, and the
+  `shortcut_controls.js` owns the open-browser and Prompt Studio keyboard
+  shortcuts (the second keeps its old "materials" ids), their fallback when ComfyUI's keybinding does not fire, and the
   settings control that opens ComfyUI's keybinding editor.
 - `ui_model_sources.js` renders the Models page's Sources view (the last type chip): where each model is downloaded, for the open workflow or every model, with each link editable and saved in place; `model_source_links.js` owns its data and actions (collecting the workflow's models, resolving them here, saving a link to the model's information and the workflow, the canvas note and the clipboard list).
 - `ui_gallery_card.js` builds one output image's gallery card (viewer, workbench, cover pick, drag, star, delete);
@@ -354,10 +356,10 @@ covered by the `styles.css` manifest.
   New, and a card per combo with its model's cover and Use; a card opens the combo's editor. Combos keep the notes' files.
 - `recipe_save.js` saves Workflow Recipes for the canvas save and for an output image's workflow (the gallery's keep menu,
   moving whole workflows kept as materials), laying an image's workflow on a canvas of its own to summarise it.
-- `ui_materials.js`, `ui_material_cards.js`, and `ui_material_application.js` own the Material Library UI, category navigation, card presentation (with grab cursor affordances, explicit drag tooltips, and polymorphic card dragging via `bindPolymorphicMaterialCardDrag`), context-aware drag guidance, prompt drops into the prompt box under the pointer (`prompt_drop.js`), and the structured empty state onboarding blueprint guiding users through collection, canvas drag, and prompt studio mixing. Drag precedence prioritizes node hits over blank canvas drops; blank canvas drops create `CLIPTextEncode` nodes (one per side the prompt has) or open full workflows. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) shared by detail views, cards and canvas actions.
+- `ui_apply_receipt.js` is the receipt of values written to a node from a panel (Current node's parameters and prompt boxes, Prompt Studio's write) with its Undo. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) and the node writes shared by those panels and prompt drops.
 - `ui_update_guide.js` and `update_guide_data.js` own the non-intrusive update guide modal (accessible via header button `#anomalous-update-notice-btn`, the Help modal and Home's "What's new"; the current guide's ID and steps live in `update_guide_data.js`) with full bilingual localization. `ui_spotlight_tour.js` provides the interactive spotlight mask tour (`startSpotlightTour`), gliding smooth focal box highlights across the rail's pages and tools with directional tooltip cards and keyboard navigation; steps whose target is not on screen are skipped. Other views pass their own `steps` (text from locale keys) and an optional `onClose`; the GPT-SoVITS import window does.
 - `tool_registry.js` holds the tool icons shared by the rail and Home.
-- The rail's tool slots (`ui_rail_tools.js`, fixed) hold scan, doctor and current node; settings sits at the rail's bottom. Materials is a rail page. There is no toolbox: the other tools open from their pages (workflow share codes on Workflows, Prompt Studio on Materials, Model Sources as a view of Models, opened from the doctor too, translation in Current node).
+- The rail's tool slots (`ui_rail_tools.js`, fixed) hold scan, doctor and current node; settings sits at the rail's bottom. The rail's Prompts entry opens Prompt Studio beside the canvas (the browser folds away and comes back when it closes). There is no toolbox: the other tools open from their pages (workflow share codes on Workflows, Model Sources as a view of Models, opened from the doctor too, translation in Current node).
 - `ui_model_types.js` owns the models page's type chips (one per models folder, with its count) and
   `owner.modelScope`, what the grid lists: a whole type, or one list folder shown as a crumb. The
   grid's cards set `currentType/PathIdx/Subfolder` to their own model's folder (`focusModel`),
@@ -375,7 +377,7 @@ covered by the `styles.css` manifest.
   `ui_gallery_card.js`) and `ui_gallery_detail.js` own generated-image browsing and workbench lifecycle,
   with stage interaction in `ui_image_stage.js` and metadata tabs in
   `ui_image_inspector.js`.
-- `ui_recipes.js` / `ui_recipe_detail.js`, `ui_notebooks.js`, and `ui_materials.js`
+- `ui_recipes.js` / `ui_recipe_detail.js` and `ui_notebooks.js`
   own their respective workspace surfaces and persistence flows. `ui_recipes.js` owns
   the Workflow Recipe studio catalog workspace with search/filter tags, grid/list layout toggle,
   dedicated top-right modal close anchor (permanently decoupled from the tool button row to prevent wrapping displacement),
@@ -384,8 +386,7 @@ covered by the `styles.css` manifest.
   with Back to the list) and combo persistence; `ui_notebook_editor.js` owns unfolded card editing (modularized into single-responsibility
   sub-functions adhering to the 50-line rule: sticky top action toolbar with floating More popover dropdown and timed two-step delete safety guard,
   unfolded companion models card with unconstrained multi-column tile flow eliminating nested gallery scrollbars,
-  prompt composer with dynamic field-sizing and compact inline find & replace toolbar, flat material library archiving card with
-  clean single-icon feedback, and unified dark slim scrollbar ergonomics with complete bilingual dictionary coverage in `locales.js`), and
+  prompt composer with dynamic field-sizing and compact inline find & replace toolbar, and unified dark slim scrollbar ergonomics with complete bilingual dictionary coverage in `locales.js`), and
   `notebook_canvas.js` owns Use: putting a combo into the open workflow, whose plan
   (main loader, LoRA chain rebuilt in place, positive prompt box) is `notebook_apply.js`, or, with no main loader on
   the canvas, a new group of nodes. Combos are a rail page. `ui_recipe_detail.js`
@@ -395,21 +396,14 @@ covered by the `styles.css` manifest.
   a `clamp(230px, 24vw, 290px)` sidebar with guarded card actions, uncluttered console action bars with deferred status feedback,
   `minmax(130px, 1fr)` Bento Grid with universal click-to-copy, LoRA cards with flexbox truncation guards,
   and sticky editor headers).
-  `ui_materials.js` owns Material Library discovery and pagination,
-  `ui_material_cards.js` owns catalog cards and drag-and-drop (same-type blocks, or
-  prompt-bearing materials onto nodes with prompt slots), `ui_material_detail.js` owns the
-  full detail surface, and `ui_material_application.js` owns selected-node
-  tracking and explicit material application (same-type block application first,
-  then cross-node prompt injection).
   `prompt_boxes.js` is the one place that finds prompt boxes on the live canvas: a
   multiline STRING input by the node's ComfyUI definition, whatever it is called; its
   role is the box's own name (positive / negative) or else the wiring (outputs followed
   to an input named positive / negative). It also plans which box takes which text and
   finds a box's opposite-role partner on the same sampler. `prompt_drop.js` is the
-  material drag on the canvas: boxes outlined by role, the box under the pointer as the
+  prompt drag on the canvas: boxes outlined by role, the box under the pointer as the
   target, the text a release writes previewed over it (and its partner), and a hint
-  saying what release writes where, or which values it changes on a node of the
-  material's type. `node_material_actions.js`
+  saying what release writes where. `node_material_actions.js`
   extracts prompt envelopes without model file paths and writes them (`fillPrompt`);
   text never crosses roles unless the user picked the box; writes are one undo step.
   Within recipe detail, `ui_recipe_versions.js` owns history comparison/restore,
@@ -450,8 +444,8 @@ covered by the `styles.css` manifest.
 - `model_policies.js` mirrors `model_policies.py` for the frontend: which folder
   types a loader widget holds, which are never physically renamed, and which
   need a workflow-carried hash before Model Check recovers them.
-- `ui_dom.js` provides small DOM/JSON helpers; `material_inspector.js` owns
-  material-specific metadata and parameter rendering.
+- `ui_dom.js` provides small DOM/JSON helpers; `material_inspector.js` owns the image
+  workbench's metadata and node-parameter rendering.
 - `model_check.js` checks the open workflow's models against this computer (Model
   Check's verdicts, no DOM; the feature was called Model Doctor, and code and CSS still
   say "doctor") and puts a found file into its node; `ui_doctor.js` is the
@@ -459,9 +453,9 @@ covered by the `styles.css` manifest.
   misses models. `ui_node_assistant.js` owns the current-node panel (model actions, LoRA
   insertion, model cards and history), `ui_node_model_picker.js` owns native combo
   replacement, `ui_node_parameters.js` renders the panel's parameters section, and
-  `node_parameter_sets.js` merges the node type's saved values (materials and recipe
+  `node_parameter_sets.js` merges the node type's saved values (material files and recipe
   parameter sets) and works out what each would change on the node, keeping seeds,
-  model files and missing choices. `model_picker.js`, `node_material_actions.js`, and `graph_splice.js`
+  model files and missing choices; saved values (not a recipe's) are deleted there. `model_picker.js`, `node_material_actions.js`, and `graph_splice.js`
   own the remaining explicit graph changes.
 - A model's download link lives in its user layer (`source_url` in `<model>.anomalous.json`, via
   `/anomalous/update_metadata`), the same field the model editor edits; for the open workflow's

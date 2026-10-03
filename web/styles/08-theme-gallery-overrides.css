@@ -227,9 +227,7 @@ html.theme-abyssal-scarlet,
 
 .theme-abyssal-scarlet .anomalous-card:hover,
 .theme-abyssal-scarlet .anomalous-recipe-card:hover,
-.theme-abyssal-scarlet .anomalous-material-card:hover,
-.theme-abyssal-scarlet .anomalous-source-item:hover,
-.theme-abyssal-scarlet .anomalous-nb-note-item:hover {
+.theme-abyssal-scarlet .anomalous-source-item:hover {
     border-color: #dc143c !important;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.95), inset 0 0 12px rgba(0, 0, 0, 0.7) !important;
 }

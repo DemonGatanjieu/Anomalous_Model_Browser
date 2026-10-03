@@ -8,7 +8,7 @@ localization, media, or explicit canvas mutations.
 The verified AMB0/AMB1 workflow share-code Import / Export Center is available
 from the Workflows page's top bar (⇅) through `window.AMB_WorkflowShare.showUnifiedModal()`. Both directions
 are enabled by explicit product decision. It is independent of the paused Recipe
-package import/export and closed Material Library file import. Image/workflow hash
+package import/export. Image/workflow hash
 injection, host saving, and ordinary image downloads remain unchanged.
 
 ComfyUI loads JavaScript in the extension `WEB_DIRECTORY` as ES modules.
@@ -46,9 +46,9 @@ icon rail (`ui_shell_rail.js`), page navigation and the list column's open state
 `owner.goTo(page)`. `ui_settings_hub.js` owns the display preferences behind
 `owner.displayPrefs`, which the settings page (`ui_settings_page.js`) changes,
 while `ui_rail_tools.js` owns the rail's tool buttons.
-The Material Library shortcut remains a native ComfyUI command/keybinding; a
-deferred window-key fallback invokes the same command path only when the host
-did not bring the library forward, so handled shortcuts are not executed twice.
+The Prompt Studio shortcut (its command and setting ids still say "materials") is a
+native ComfyUI command/keybinding; a deferred window-key fallback invokes the same
+command path only when the host did not open the studio, so handled shortcuts are not executed twice.
 `ui_browser_navigation.js` owns shared panel hiding, recoverable detail cleanup,
 and workspace return. `ui_scan_page.js` owns the scan page and `scan_runner.js` scan launch and polling,
 `ui_folder_manager.js` is the settings page's Model folders view (grouping mode,
@@ -74,30 +74,26 @@ The main surfaces are:
   (`image_keep.js`; `GET /anomalous/kept_images` says what each image was kept as).
   `ui_gallery_detail.js` owns its singleton lifecycle and cache, `ui_image_stage.js`
   owns header/zoom/filmstrip interaction, and `ui_image_inspector.js` owns metadata tabs.
-- Workspace: Combos (搭配, formerly Prompt Notes), Workflow Recipes, and the Material
-  Library. The combo list, workspace/persistence, editing, and canvas use are separated
+- Workspace: Combos (搭配, formerly Prompt Notes) and Workflow Recipes. The combo list, workspace/persistence, editing, and canvas use are separated
   across `ui_combos.js`, `ui_notebooks.js`, `ui_notebook_editor.js`, and
   `notebook_canvas.js`; Use puts a combo into the open workflow when the canvas has a
   main model loader (`notebook_apply.js` plans and makes the change: reads the canvas
-  first, writes one Ctrl+Z step) and builds a new group of nodes when it has none. Material
-  discovery/pagination, cards, detail, and node application are separated across
-  `ui_materials.js`, `ui_material_cards.js`, `ui_material_detail.js`, and
-  `ui_material_application.js`.
+  first, writes one Ctrl+Z step) and builds a new group of nodes when it has none.
+- Prompts: the rail entry opens Prompt Studio (below); there is no Material Library page.
+  Saved node values are listed, applied and deleted in Current node.
 - Current node (Node Assistant)/Model Check: selected-node actions, saved parameters, and
   missing-model recovery. `model_check.js` decides each workflow model's state and
   applies fixes; `ui_doctor.js` (the page) and `ui_doctor_banner.js` (the bar shown
   after a workflow opens) only render it and call it on a press.
   `ui_node_assistant.js` owns the current-node panel and model history, `ui_node_model_picker.js`
   owns the native-widget model replacer, and `ui_node_parameters.js` with
-  `node_parameter_sets.js` own the panel's one list of saved values for the node type.
+  `node_parameter_sets.js` own the panel's one list of saved values for the node type;
+  `ui_apply_receipt.js` is the receipt with Undo after a panel writes to a node.
 
 `ui_dom.js` owns generic `text` and `jsonResponse` helpers.
-`material_inspector.js` shares image metadata helpers and node-parameter rendering
-between the material and image-inspector modules. The workbench does not import
-the library UI, keeping this dependency chain acyclic. Library discovery uses
-server-side filters and pages with cancellable requests. Detail entry fetches
-metadata and scoped node blocks; the complete workflow loads only on the explicit
-open action. See `material-library.md` for the API and persistence contract.
+`material_inspector.js` holds the image workbench's metadata helpers and
+node-parameter rendering. See `material-library.md` for the material files' API and
+persistence contract.
 
 ## Entry modes and host integration
 
@@ -107,7 +103,7 @@ are mutually exclusive and reuse the same browser instance. The Extensions
 command remains available as a recovery path in every mode.
 
 Native commands own the default `Ctrl + Shift + M` browser binding and the
-`Ctrl + Shift + L` Material Library binding. Shortcut customization delegates
+`Ctrl + Shift + L` Prompt Studio binding. Shortcut customization delegates
 to ComfyUI's command/keybinding panel and recorder; the plugin does not install
 a parallel global keyboard listener or maintain a second shortcut preference.
 
@@ -239,9 +235,11 @@ browsing, editing, or already stored data.
 
 ## Prompt Studio ownership
 
-The studio supports copying prompt text and saving combinations to the local
-Material Library. Standalone prompt-plan JSON export has been removed and the
-Material Library file-import entry is closed.
+The studio supports copying prompt text and saving combinations as saved prompts
+(prompt-plan material files). Standalone prompt-plan JSON export has been removed.
+It opens from the rail's Prompts entry and the Prompt Studio shortcut; the browser
+folds away while it is open and comes back when it closes (not when another studio
+replaces it).
 
 Source cards automatically refresh on studio open, browser focus/visibility, and
 every 30 seconds while the page is visible (scheduled after the previous request).

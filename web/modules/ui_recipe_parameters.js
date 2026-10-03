@@ -1,7 +1,6 @@
 /** Workflow Recipe parameter tabs, prompt roles, raw nodes, and preset saving. */
 
 import { escapeHtml } from "./safe_dom.js";
-import { showMaterialSaved } from "./material_feedback.js";
 import { app } from "../../../scripts/app.js";
 import { translate } from "./locales.js";
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from "./ui_dialog.js";
@@ -131,55 +130,6 @@ function renderParameterField(parent, label, value, options = {}) {
     return true;
 }
 
-async function saveParameterMaterial(owner, recipe, parameterState, nodeIds, name, actionButton) {
-    if (!owner?.recipeDetailFilename || !actionButton || actionButton.disabled) return false;
-    const originalLabel = actionButton.textContent;
-    actionButton.disabled = true;
-    actionButton.textContent = t('materialSaving');
-    const body = {
-        recipe_filename: owner.recipeDetailFilename,
-        ...(parameterState?.selectedFilename ? { parameter_filename: parameterState.selectedFilename } : {}),
-        ...(Array.isArray(nodeIds) && nodeIds.length ? { selected_node_ids: nodeIds } : {}),
-        name: String(name || '').trim().slice(0, 120),
-        tags: Array.isArray(recipe?.tags) ? recipe.tags : [],
-    };
-    const send = () => fetch('/anomalous/save_parameter_material', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-    });
-    try {
-        let response = await send();
-        if (response.status === 409) {
-            const duplicate = await response.json();
-            if (duplicate.status !== 'duplicate') throw new Error('parameter material conflict');
-            if (!await anomalousConfirm(t('materialDuplicateConfirm', { name: duplicate.name }))) return false;
-            body.allow_duplicate = true;
-            response = await send();
-        }
-        const payload = await response.json();
-        if (!response.ok || payload.status !== 'success') throw new Error(payload.message || 'parameter material save failed');
-        actionButton.textContent = t('materialSaved');
-        showMaterialSaved(owner, payload.material);
-        await owner.refreshMaterials?.();
-        window.setTimeout(() => {
-            if (!actionButton.isConnected) return;
-            actionButton.textContent = originalLabel;
-            actionButton.disabled = false;
-        }, 1400);
-        return true;
-    } catch (error) {
-        console.error('Could not save recipe parameter material:', error);
-        await anomalousAlert(t('materialSaveError'));
-        return false;
-    } finally {
-        if (actionButton.isConnected && actionButton.textContent !== t('materialSaved')) {
-            actionButton.textContent = originalLabel;
-            actionButton.disabled = false;
-        }
-    }
-}
-
 function renderParameterNotebookEditor(wrapper, owner, recipe, parameterState, source, selectParameterTab) {
     const editorState = parameterState.editor;
     editorState.draft.params = editorState.draft.params || {};
@@ -303,14 +253,9 @@ function renderParameterNotebookEditor(wrapper, owner, recipe, parameterState, s
     wrapper.appendChild(editor);
 }
 
-function renderRawNodesLazy(parent, source, options = {}) {
+function renderRawNodesLazy(parent, source) {
     const ordered = parameterNodeOrder(source);
     if (!ordered.length) return;
-    const reusable = ordered.filter(({ workflowNode }) =>
-        workflowNode?.id != null && Array.isArray(workflowNode.widgets_values) && workflowNode.widgets_values.length
-    );
-    const selectedIds = new Set();
-
     const details = document.createElement('details');
     details.className = 'anomalous-recipe-advanced-info anomalous-recipe-raw-nodes-details';
     details.open = true;
@@ -323,53 +268,6 @@ function renderRawNodesLazy(parent, source, options = {}) {
     };
     updateSummary();
     details.appendChild(summary);
-
-    let selecting = false;
-    let updateSelection = () => {};
-    if (typeof options.onSaveNodes === 'function' && reusable.length) {
-        const selectionBar = document.createElement('div');
-        selectionBar.className = 'anomalous-recipe-material-selection';
-        selectionBar.hidden = true;
-        const choose = button(details, t('materialChooseParameters'), 'anomalous-btn-ghost');
-        choose.setAttribute('aria-expanded', 'false');
-        choose.onclick = () => {
-            selecting = !selecting;
-            selectionBar.hidden = !selecting;
-            choose.textContent = t(selecting ? 'materialFinishSelection' : 'materialChooseParameters');
-            choose.setAttribute('aria-expanded', String(selecting));
-            if (!selecting) selectedIds.clear();
-            updateSelection();
-        };
-        const selectionText = appendText(selectionBar, 'span', '', 'anomalous-workbench-node-selection-count');
-        const selectAll = button(selectionBar, t('materialSelectAllNodes'), 'anomalous-btn-ghost');
-        const clear = button(selectionBar, t('materialClearNodeSelection'), 'anomalous-btn-ghost');
-        const saveSelected = button(selectionBar, t('materialSaveSelectedAction', { count: 0 }), 'anomalous-preset-btn-primary');
-        updateSelection = () => {
-            const count = selectedIds.size;
-            selectionText.textContent = t('materialSelectedNodeCount', { count });
-            saveSelected.textContent = t('materialSaveSelectedAction', { count });
-            saveSelected.disabled = count === 0;
-            details.querySelectorAll('.anomalous-recipe-material-node-select').forEach(input => {
-                input.hidden = !selecting;
-                input.checked = selectedIds.has(input.dataset.nodeId);
-            });
-        };
-        selectAll.onclick = () => {
-            reusable.forEach(({ workflowNode }) => selectedIds.add(String(workflowNode.id)));
-            updateSelection();
-        };
-        clear.onclick = () => {
-            selectedIds.clear();
-            updateSelection();
-        };
-        saveSelected.onclick = () => options.onSaveNodes(
-            [...selectedIds],
-            t('materialSelectedNodesName', { count: selectedIds.size }),
-            saveSelected,
-        );
-        updateSelection();
-        details.appendChild(selectionBar);
-    }
 
     const nodeList = document.createElement('div');
     nodeList.className = 'anomalous-recipe-detail-parameter-list';
@@ -396,22 +294,6 @@ function renderRawNodesLazy(parent, source, options = {}) {
             const title = [node.title, node.type].filter(Boolean).join(' · ') || t('recipeDetailUnknownNode');
             const nodeHeader = document.createElement('div');
             nodeHeader.className = 'anomalous-recipe-material-node-header';
-            if (typeof options.onSaveNodes === 'function' && workflowNode?.id != null) {
-                const select = document.createElement('input');
-                select.type = 'checkbox';
-                select.hidden = !selecting;
-                select.className = 'anomalous-recipe-material-node-select';
-                select.setAttribute('aria-label', t('materialSelectNodeForSaving'));
-                select.dataset.nodeId = String(workflowNode.id);
-                select.checked = selectedIds.has(select.dataset.nodeId);
-                select.title = t('materialSelectNodeForSaving');
-                select.onchange = () => {
-                    if (select.checked) selectedIds.add(select.dataset.nodeId);
-                    else selectedIds.delete(select.dataset.nodeId);
-                    updateSelection();
-                };
-                nodeHeader.appendChild(select);
-            }
             appendText(nodeHeader, 'strong', title, 'anomalous-recipe-detail-node-title');
             block.appendChild(nodeHeader);
             const widgetsContainer = document.createElement('div');
@@ -435,7 +317,6 @@ function renderRawNodesLazy(parent, source, options = {}) {
             }
         }
         renderedCount += batch.length;
-        updateSelection();
 
         const oldBtn = details.querySelector('.anomalous-recipe-lazy-expand-btn');
         if (oldBtn) oldBtn.remove();
@@ -468,7 +349,7 @@ function renderRawNodesLazy(parent, source, options = {}) {
     }
 }
 
-function renderPromptSection(parent, owner, recipe, source, rerender, onSaveNodes) {
+function renderPromptSection(parent, owner, recipe, source, rerender) {
     const prompts = promptValues(source, recipe);
     if (!prompts.entries.length) {
         appendText(parent, 'p', t('recipeDetailNoPrompts'), 'anomalous-recipe-detail-muted');
@@ -597,19 +478,6 @@ function renderPromptSection(parent, owner, recipe, source, rerender, onSaveNode
         actionTray.style.display = 'flex';
         actionTray.style.alignItems = 'center';
         actionTray.style.gap = '6px';
-
-        if (typeof onSaveNodes === 'function') {
-            const savePromptBtn = document.createElement('button');
-            savePromptBtn.type = 'button';
-            savePromptBtn.className = 'anomalous-recipe-prompt-micro-copy';
-            savePromptBtn.title = t('materialSavePromptAction') || '存入素材库';
-            savePromptBtn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`;
-            savePromptBtn.onclick = (e) => {
-                e.stopPropagation();
-                onSaveNodes([entry.id], entry.title || t('materialPromptNode'), savePromptBtn);
-            };
-            actionTray.appendChild(savePromptBtn);
-        }
 
         const copyPromptBtn = document.createElement('button');
         copyPromptBtn.type = 'button';
@@ -809,21 +677,6 @@ export function renderRecipeParameters(content, owner, recipe, gallery, refreshG
             const actions = document.createElement('div');
             actions.className = 'anomalous-preset-item-actions';
 
-            const saveMaterial = button(actions, '', 'anomalous-preset-item-btn');
-            saveMaterial.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>`;
-            saveMaterial.title = t('materialSaveNotebookHint');
-            saveMaterial.onclick = async (e) => {
-                e.stopPropagation();
-                await saveParameterMaterial(
-                    owner,
-                    recipe,
-                    { ...parameterState, selectedFilename: notebook.filename },
-                    null,
-                    `${notebookName} · ${t('materialAllParameters')}`,
-                    saveMaterial,
-                );
-            };
-
             const rename = button(actions, '', 'anomalous-preset-item-btn');
             rename.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
             rename.title = t('recipeParameterRename');
@@ -923,16 +776,6 @@ export function renderRecipeParameters(content, owner, recipe, gallery, refreshG
     applyButton.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>${t('recipeParameterApply')}`;
     applyButton.style.padding = '8px 16px';
     applyButton.style.fontSize = '0.88rem';
-
-    const saveAllMaterial = button(consoleActions, t('materialSaveAllParameters'), 'anomalous-preset-btn-secondary');
-    saveAllMaterial.onclick = () => saveParameterMaterial(
-        owner,
-        recipe,
-        parameterState,
-        null,
-        `${currentName} · ${t('materialAllParameters')}`,
-        saveAllMaterial,
-    );
 
     if (parameterState?.selectedFilename) {
         const renameHeadingBtn = button(consoleActions, '', 'anomalous-btn-ghost');
@@ -1188,19 +1031,11 @@ export function renderRecipeParameters(content, owner, recipe, gallery, refreshG
 
     const promptWrap = document.createElement('div');
     promptWrap.style.marginBottom = '14px';
-    const saveNamedNodes = (nodeIds, label, actionButton) => saveParameterMaterial(
-        owner,
-        recipe,
-        parameterState,
-        nodeIds,
-        `${currentName} · ${label}`,
-        actionButton,
-    );
-    renderPromptSection(promptWrap, owner, recipe, source, selectParameterTab, saveNamedNodes);
+    renderPromptSection(promptWrap, owner, recipe, source, selectParameterTab);
 
     const nodesSection = document.createElement('section');
     nodesSection.className = 'anomalous-recipe-detail-section';
-    renderRawNodesLazy(nodesSection, source, { onSaveNodes: saveNamedNodes });
+    renderRawNodesLazy(nodesSection, source);
 
     wrapper.append(intro, summary, promptWrap, nodesSection);
     layout.append(sidebar, wrapper);

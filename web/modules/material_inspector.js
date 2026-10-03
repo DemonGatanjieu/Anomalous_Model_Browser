@@ -3,10 +3,6 @@ import { text, jsonResponse } from './ui_dom.js';
 import { translate } from './locales.js';
 const t = (key, params) => translate(key, params);
 
-export function sectionLabel(parent, value) {
-    return text(parent, 'div', value, 'anomalous-material-section-label');
-}
-
 export function fileBaseName(value) {
     return String(value || '').replace(/\\/g, '/').split('/').pop();
 }
@@ -393,44 +389,6 @@ export function mergePromptRoleOverrides(promptRoles, overrides) {
         }
     }
     return roles;
-}
-
-export function promptGroupsFromBlocks(blocks) {
-    const positive = [];
-    const negative = [];
-    for (const block of Array.isArray(blocks) ? blocks : []) {
-        const value = (block.widgets_values || []).find(item => typeof item === 'string' && item.trim());
-        if (!value) continue;
-        const textVal = value.trim();
-        if ((block.promptRole === 'positive' || block.promptRole === 'both') && !positive.includes(textVal)) positive.push(textVal);
-        if ((block.promptRole === 'negative' || block.promptRole === 'both') && !negative.includes(textVal)) negative.push(textVal);
-    }
-    return { positive, negative };
-}
-
-export function renderMaterialPromptGroups(parent, groups, options = {}) {
-    const positive = Array.isArray(groups?.positive) ? groups.positive.filter(Boolean) : [];
-    const negative = Array.isArray(groups?.negative) ? groups.negative.filter(Boolean) : [];
-    if (!positive.length && !negative.length) return false;
-
-    const renderCard = (titleText, promptStr, tone) => {
-        const card = document.createElement('div');
-        card.className = tone ? `anomalous-material-prompt-card is-${tone}` : 'anomalous-material-prompt-card';
-        const bar = document.createElement('div');
-        bar.className = 'anomalous-material-prompt-bar';
-        text(bar, 'span', titleText, 'anomalous-material-prompt-bar-label');
-        const copyBtn = text(bar, 'button', t('materialCopyPrompt'), 'anomalous-material-mini-btn');
-        copyBtn.type = 'button';
-        bindCopyButton(copyBtn, () => promptStr, 'materialCopied');
-        card.appendChild(bar);
-        text(card, 'div', promptStr, 'anomalous-material-prompt-content is-expanded');
-        parent.appendChild(card);
-    };
-
-    if (positive.length) renderCard(t('materialPositivePrompt'), positive.join('\n\n'), 'positive');
-    if (negative.length) renderCard(t('materialNegativePrompt'), negative.join('\n\n'), 'negative');
-    if (options.manual) text(parent, 'p', t('materialPromptRoleFromRecipe'), 'anomalous-material-muted');
-    return true;
 }
 
 function bindCopyButton(button, value, successKey) {

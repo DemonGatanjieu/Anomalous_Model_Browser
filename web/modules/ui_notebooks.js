@@ -60,7 +60,6 @@ export async function showNotebooks({ editor = false } = {}) {
     for (const panel of [this.grid, this.detailPanel, this.galleryPanel, this.doctorPanel, this.assistantPanel, this.homePanel, this.activityPanel, this.scanPanel, this.paramPanel]) {
         if (panel) panel.style.display = 'none';
     }
-    if (this.materialContainer) this.materialContainer.style.display = 'none';
     if (this.recipeContainer) this.recipeContainer.style.display = 'none';
     if (!this.notebookContainer) buildComboWorkspace(this);
     this.nbPanel.style.display = 'flex';

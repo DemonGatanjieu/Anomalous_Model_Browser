@@ -10,7 +10,7 @@ import { translate as t } from './locales.js';
 import { applyNodeMaterialValues } from './node_material_actions.js';
 import { promptBoxes } from './prompt_boxes.js';
 import { hasChinese, translatePromptText } from './translation_service.js';
-import { showMaterialApplication } from './ui_material_application.js';
+import { showApplyReceipt } from './ui_apply_receipt.js';
 
 const ROLE_KEYS = { positive: 'recipePromptRolePositive', negative: 'recipePromptRoleNegative', both: 'recipePromptRoleBoth' };
 
@@ -74,7 +74,7 @@ function boxRow(node, box, receiptHost) {
             return;
         }
         const applied = applyNodeMaterialValues(app, node, [{ index: box.index, value: result.translated }]);
-        showMaterialApplication(receiptHost, { undo() { applied.undo(); draw(); } }, node);
+        showApplyReceipt(receiptHost, { undo() { applied.undo(); draw(); } }, node);
         note.hidden = true;
         draw();
     }

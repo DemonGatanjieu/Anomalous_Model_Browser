@@ -245,7 +245,6 @@ export function renderRecipeList(recipes, services) {
 
 
 export async function showRecipes() {
-    if (this.materialContainer) this.materialContainer.style.display = 'none';
     if (this.notebookContainer) this.notebookContainer.style.display = 'none';
     if (this.nbPanel) this.nbPanel.style.display = 'flex';
 
@@ -270,9 +269,6 @@ export async function showRecipes() {
     }
     this.recipeDetailFinish?.('closed');
     if (this.notebookBody) this.notebookBody.style.display = 'none';
-    if (this.materialView) this.materialView.style.display = 'none';
-    this.notebookNotesTab?.classList.remove('active');
-    this.notebookRecipesTab?.classList.add('active');
 
     if (this.recipeDetailView) {
         this.recipeDetailView.remove();

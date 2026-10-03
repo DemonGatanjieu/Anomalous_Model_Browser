@@ -1,57 +1,32 @@
 /**
- * Dragging a material onto the canvas, and what releasing it would do. While a prompt is
- * dragged, every prompt box on the canvas is outlined in its role's colour; the box under
- * the pointer is the target (or a node's only box), the hint says what releasing writes
- * where, including the opposite-role box on the same sampler, and those boxes show the new
- * text over their own until the pointer leaves. Over a node a material holds values for,
- * the hint lists the values that would change. prompt_boxes.js decides boxes and roles;
- * ui_material_cards.js binds this to the cards.
+ * What dropping a dragged prompt on the canvas would do (prompt_card_drag.js drags Prompt
+ * Studio's cards). While it is dragged, every prompt box on the canvas is outlined in its
+ * role's colour; the box under the pointer is the target (or a node's only box), the hint
+ * says what releasing writes where, including the opposite-role box on the same sampler, and
+ * those boxes show the new text over their own until the pointer leaves. prompt_boxes.js
+ * decides boxes and roles.
  */
 
 import { app } from "../../../scripts/app.js";
 import { translate as t } from './locales.js';
 import { getCanvasPosition } from './material_drag.js';
-import { extractMaterialPromptEnvelope, isModelFilePath, isVolatileWidget } from './node_material_actions.js';
-import { partnerBox, planPromptFill, promptBoxes, typeTakesPrompt } from './prompt_boxes.js';
-import { fetchMaterial } from './ui_material_application.js';
+import { extractMaterialPromptEnvelope } from './node_material_actions.js';
+import { partnerBox, planPromptFill, promptBoxes } from './prompt_boxes.js';
 
 const ROLE_CLASSES = { positive: 'is-positive', negative: 'is-negative', both: 'is-both', '': 'is-unknown' };
 const BOX_LABELS = { positive: 'promptBoxPositive', negative: 'promptBoxNegative', both: 'promptBoxBoth', '': 'promptBoxPlain' };
 const OPPOSITE = { positive: 'negative', negative: 'positive' };
-const SHOWN_CHANGES = 4;
-// The dragged material in full, fetched when its drag starts (list summaries carry neither
-// prompt texts nor node values).
-let dragged = { filename: '', envelope: null, payload: null };
+// The dragged prompt's text, known when its drag starts.
+let dragged = { filename: '', envelope: null };
 let previews = []; // { overlay, element } over the boxes a release would write
 let previewKey = '';
 
-/** Starts fetching the dragged material, so hints and previews can say exactly what changes. */
-export function prepareMaterialDrag(material) {
-    const drag = dragged = { filename: material.filename, envelope: null, payload: null };
-    fetchMaterial(material.filename)
-        .then(payload => { drag.payload = payload; drag.envelope = extractMaterialPromptEnvelope(material, payload); })
-        .catch(() => {}); // hints stay general; the drop fetches again and reports failures
-}
-
 /** A drag whose text is known already (a Prompt Studio card, keyed `key`). */
 export function prepareTextDrag(key, envelope) {
-    dragged = { filename: key, envelope, payload: null };
+    dragged = { filename: key, envelope };
 }
 
 const known = material => (dragged.filename === material.filename ? dragged : null);
-
-const brief = (value) => {
-    if (typeof value !== 'string') return JSON.stringify(value);
-    const text = (isModelFilePath(value) ? value.split(/[\\/]/).pop() : value).replace(/\s+/g, ' ');
-    return text.length > 28 ? `${text.slice(0, 27)}…` : text;
-};
-
-/** Whether a material carries prompt text a prompt box can take. */
-export function carriesPrompt(material, isPromptMaterial) {
-    return isPromptMaterial || material.kind === 'prompt_plan'
-        || (material.capabilities || []).includes('copy_prompt')
-        || (material.node_types || []).some(type => typeTakesPrompt(type));
-}
 
 /** Outlines every prompt box of the open graph by role; returns what removes the outlines. */
 export function outlinePromptBoxes(graph = app.graph) {
@@ -160,26 +135,4 @@ export function previewPromptDrop(material, node, box) {
         element.classList.add('is-previewing');
         previews.push({ overlay, element });
     }
-}
-
-/**
- * What releasing a material on `node`, a node of a type it holds values for, would change,
- * in one line; '' before the material is fetched. Mirrors applyMaterialBlock: every value
- * but seeds, and a choice this computer lacks stops it.
- */
-export function parameterDropHint(material, node) {
-    const blocks = (known(material)?.payload?.node_blocks || []).filter(block => block.type === node.type && block.widgets_values?.length);
-    if (!blocks.length) return '';
-    if (blocks.length > 1) return t('materialDropPickBlock', { node: `#${node.id}` });
-    const changes = [];
-    for (const [index, to] of blocks[0].widgets_values.entries()) {
-        const widget = node.widgets?.[index];
-        if (!widget || isVolatileWidget(node, widget, index) || JSON.stringify(widget.value) === JSON.stringify(to)) continue;
-        const choices = typeof widget.options?.values === 'function' ? widget.options.values() : widget.options?.values;
-        if (Array.isArray(choices) && !choices.includes(to)) return t('materialValueUnavailable');
-        changes.push(`${widget.label || widget.name} ${brief(widget.value)} → ${brief(to)}`);
-    }
-    if (!changes.length) return t('materialDropNoChange', { node: `#${node.id}` });
-    const more = changes.length > SHOWN_CHANGES ? t('materialDropMore', { count: changes.length - SHOWN_CHANGES }) : '';
-    return t('materialDropChanges', { node: `#${node.id}`, changes: changes.slice(0, SHOWN_CHANGES).join(t('modelSourceListSep')) + more });
 }

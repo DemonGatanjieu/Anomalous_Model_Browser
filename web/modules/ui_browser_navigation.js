@@ -31,10 +31,6 @@ function restoreWorkspaceReturnPanel(owner) {
 }
 
 export function closeWorkspace() {
-    clearTimeout(this.materialSearchTimer);
-    this.materialListController?.abort();
-    this.materialListController = null;
-    this.materialDetailController?.abort();
     this.recipeDetailFinish?.('closed');
     const abandonedRecipeModel = typeof this.recipeModelReturn === 'function';
     this.recipeModelReturn = null;
@@ -54,16 +50,14 @@ export function closeWorkspace() {
     }
     if (this.paramPanel) this.paramPanel.style.display = 'none';
     if (this.recipeView) this.recipeView.style.display = 'none';
-    if (this.materialView) this.materialView.style.display = 'none';
     if (this.notebookBody) this.notebookBody.style.display = 'none';
-    if (this.materialContainer) this.materialContainer.style.display = 'none';
     if (this.recipeContainer) this.recipeContainer.style.display = 'none';
     if (this.nbPanel) this.nbPanel.style.display = 'none';
     restoreWorkspaceReturnPanel(this);
 }
 
 /**
- * Esc on the recipe / notes / material workspace does what a click beside it does:
+ * Esc on the recipe / combo workspace does what a click beside it does:
  * `closeWorkspace()`. Not while one of this plugin's dialogs or a ComfyUI dialog sits
  * above it, and not while a text field has the key (Esc there belongs to the field).
  * ComfyUI's own keybindings mark Esc as handled, so `defaultPrevented` says nothing here.

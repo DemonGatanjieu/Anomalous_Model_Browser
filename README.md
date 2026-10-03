@@ -3,7 +3,7 @@
 # 🚀 Anomalous Model Browser
 
 **A model browser and creative workspace for ComfyUI**  
-*模型库 · 出图图库 · 工作流配方 · 搭配 · 素材库 · 角色配音 · 模型检查 · 操作记录*
+*模型库 · 出图图库 · 工作流配方 · 搭配 · 提示词 · 角色配音 · 模型检查 · 操作记录*
 
 <br/>
 
@@ -23,7 +23,7 @@
 
 <h2 id="english">🇬🇧 English</h2>
 
-> **Anomalous Model Browser** takes care of the chores around ComfyUI in one window: browse your models with their Civitai covers and trigger words, look back through your outputs, keep workflows you have tuned, collect prompts and materials, repair workflows whose models are missing, and, with the companion node pack [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS), give your characters a voice. An activity log shows everything the plugin changed.
+> **Anomalous Model Browser** takes care of the chores around ComfyUI in one window: browse your models with their Civitai covers and trigger words, look back through your outputs, keep workflows you have tuned, keep model combos and prompts, repair workflows whose models are missing, and, with the companion node pack [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS), give your characters a voice. An activity log shows everything the plugin changed.
 
 ### 🎬 Video Walkthrough & Demos
 * 📺 **YouTube**: [Watch Quick Walkthrough on YouTube](https://youtu.be/hAvsj7uiaCw)
@@ -41,15 +41,15 @@ Every page has an icon on the rail at the left of the window.
 | **🖼️ Gallery** | Your ComfyUI `output` folder. Search by prompt, model, LoRA, seed, file name or model hash; open an image to see the parameters it was made with, or drag it onto the canvas to get its workflow back. **☆** keeps a good one as a whole workflow, a combo (model, LoRAs, prompt) or just its prompts. |
 | **🪡 Workflows** | Workflow recipes: save a whole workflow or a part of one together with its models, cover, notes and parameters. Each card shows whether the models are on this computer; drag it onto the canvas to load it. Versions can be compared and restored. |
 | **🧩 Combos** | A main model, a few LoRAs and a prompt you like, kept together. **Use** puts them into the open workflow (it replaces the model loader and the LoRAs after it and fills the positive prompt, listing the changes first) or, when the canvas has no model loader, builds a new group of nodes. |
-| **✨ Materials** | Save an output with its workflow and node settings. Drop a material on an empty canvas to open the workflow, drop a prompt to create prompt nodes, or drop it on a node to fill in that node's settings. |
+| **✍️ Prompts** | Opens Prompt Studio beside the canvas: your saved prompts and starter cards on the left, an assembly board on the right that writes into the selected node. Drag a card straight onto a prompt box on the canvas (outlined green for positive, red for negative) or onto empty canvas for a new prompt node; rename or delete saved prompts from their preview. |
 | **🎙️ Voices / 🎧 Audio** | With [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS) installed: import GPT-SoVITS characters, pick a reference clip per emotion, fix pronunciations, write a script under Voice-over on the same page and generate it right there; generated audio is listed in the audio gallery. Without it, the page explains how to install it and nothing else depends on it. |
 
 Tools on the rail:
 
 * **Scan** reads your model folders and fetches covers, trigger words and base models from Civitai (by file hash, no extra Python packages).
 * **Model Check** (formerly Model Doctor) checks each workflow you open: when models are missing, a bar over the canvas says so and puts back, with one press, the ones you have under another name or folder (recognised by hash and file size); its page lists the rest with what you can do.
-* **Current node** (formerly Node Assistant) shows the model of the node you select, lets you swap it from the covers or insert a LoRA, and lists every set of values saved for that kind of node with exactly what applying it would change.
-* **Each tool on its page**: workflow share codes (import / export) on Workflows, Prompt Studio on Materials, Model Sources (where each model can be downloaded) on Models and in Model Check, translation on the prompt boxes in Current node.
+* **Current node** (formerly Node Assistant) shows the model of the node you select, lets you swap it from the covers or insert a LoRA, and lists every set of values saved for that kind of node with exactly what applying it would change; saved values can be deleted there.
+* **Each tool on its page**: workflow share codes (import / export) on Workflows, Model Sources (where each model can be downloaded) on Models and in Model Check, translation on the prompt boxes in Current node.
 * **Settings** (at the bottom): language, font size, thumbnails, video covers, which model folders to show, and feedback. Home and Settings have **Report a problem**, which opens a GitHub issue with your versions and GPU already filled in.
 
 **Light on your computer**: the plugin itself loads no models, so it takes no graphics memory from image generation; the browser shows small thumbnails instead of full images, and its pictures are released a minute and a half after you close it. The voice models of Anomalous_TTS give their graphics memory back whenever ComfyUI needs it for image generation, and all of it on **Unload models**.
@@ -70,7 +70,7 @@ Open the browser with **Ctrl + Shift + M**, the floating button on the canvas, o
 The first time you open it, start on **Home**: **Scan model folders** fills in covers and trigger words, and **Tour the interface** points at each part of the window.
 
 > [!WARNING]
-> **Keep a copy of your own data:** Workflow Recipes, the Material Library and parameter presets live in `workflows/anomalous_recipes`, `workflows/anomalous_materials` and `workflows/anomalous_parameters` in your ComfyUI user folder. A copy of them before updating the plugin is a good habit.
+> **Keep a copy of your own data:** Workflow Recipes, combos, saved prompts and node values, and parameter presets live in `workflows/anomalous_recipes`, `workflows/anomalous_notebooks`, `workflows/anomalous_materials` and `workflows/anomalous_parameters` in your ComfyUI user folder. A copy of them before updating the plugin is a good habit.
 
 ---
 
@@ -79,7 +79,7 @@ The first time you open it, start on **Home**: **Scan model folders** fills in c
 > **Anomalous Model Browser** 在一个窗口里帮你打理 ComfyUI 周边的杂事：
 > - 带 C 站封面和触发词浏览模型；
 > - 翻看以前的出图；
-> - 保存调好的工作流，收藏提示词和素材；
+> - 保存调好的工作流，存下常用的模型搭配和提示词；
 > - 别人的工作流缺模型时自动找回；
 > - 配合配套节点包 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS) 给角色配音。
 >
@@ -101,15 +101,15 @@ The first time you open it, start on **Home**: **Scan model folders** fills in c
 | **🖼️ 图库** | 读取 ComfyUI 的 `output` 文件夹。<br>可以按提示词、模型、LoRA、seed、文件名或模型哈希搜索。<br>点开图片能看到生成参数；拖到画布上可以还原当时的工作流。<br>觉得好就点 **☆**：存成整个工作流、搭配（模型 + LoRA + 提示词），或者只存提示词。 |
 | **🪡 工作流** | 工作流配方：把完整工作流或其中一段，连同模型、封面、备注和参数一起存下来。<br>卡片会显示这台电脑上模型是否齐全；拖到画布上即可载入。<br>可以比较、恢复历史版本。 |
 | **🧩 搭配** | 把常用的主模型、几个 LoRA 和一段提示词存成一个搭配。<br>按 **用上**：画布上有模型加载节点就替换（连同后面的 LoRA 和正向提示词，改之前先列出来），没有就新建一组节点。 |
-| **✨ 素材** | 把一张出图连同工作流和节点参数一起收藏。<br>拖到画布空白处：打开工作流，提示词素材会自动生成提示词节点。<br>拖到已有节点上：把参数填进去。 |
+| **✍️ 提示词** | 在画布旁边打开提示词工坊：左边是存过的提示词和常用词卡，右边的拼装台拼好后写进选中的节点。<br>词卡可以直接拖到画布的提示词框里（正面绿框、负面红框），拖到空白处就新建一个提示词节点；存过的提示词在预览里改名或删除。 |
 | **🎙️ 角色语音 / 🎧 音频库** | 装了 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS) 后可用：<br>导入 GPT-SoVITS 角色，给每种情绪选参考音频，修正读音；切到“配音”写台词并直接生成。<br>生成的音频都在音频库里。没装时，页面会说明怎么安装，其他功能不受影响。 |
 
 图标栏上的工具：
 
 * **扫描**：读取模型文件夹，按文件哈希从 C 站获取封面、触发词和底模。不需要额外安装 Python 包。
 * **模型检查**（原“模型医生”）：打开工作流时自动检查，缺模型就在画布上方提示；本地改过名、换过文件夹的同一个文件（按哈希和文件大小认）一键换上，其余的在检查页里自己挑或去 Civitai 找。
-* **当前节点**（原“节点助手”）：选中画布上的节点，查看它用的模型。可以看图换模型、插入 LoRA；存过的同类节点参数列在一起，每条写明会改哪几项，一键套用。
-* **工具回到各自的页面**：工作流分享码（导入导出）在“工作流”页，提示词工坊在“素材”页，模型来源（每个模型去哪下载）在“模型”页和模型检查里，翻译在“当前节点”的提示词框上。
+* **当前节点**（原“节点助手”）：选中画布上的节点，查看它用的模型。可以看图换模型、插入 LoRA；存过的同类节点参数列在一起，每条写明会改哪几项，一键套用；存下的参数也在这里删除。
+* **工具回到各自的页面**：工作流分享码（导入导出）在“工作流”页，模型来源（每个模型去哪下载）在“模型”页和模型检查里，翻译在“当前节点”的提示词框上。
 * **设置**（最下面）：语言、字号、缩略图、视频封面、显示哪些模型文件夹，以及提交反馈。主页和设置里的 **报告问题** 会打开一个已经填好版本和显卡信息的 GitHub 页面。
 
 **不占你的资源**：
@@ -136,7 +136,7 @@ The first time you open it, start on **Home**: **Scan model folders** fills in c
 第一次打开时会停在 **主页**：点 **扫描模型文件夹** 补全封面和触发词；点 **界面导览** 会逐一指给你看窗口的各个部分。
 
 > [!WARNING]
-> **备份自己的数据：** 工作流配方、素材库与参数预设存在 ComfyUI 用户目录下的 `workflows/anomalous_recipes`、`workflows/anomalous_materials` 与 `workflows/anomalous_parameters` 文件夹。更新插件前顺手备份一份，更安心。
+> **备份自己的数据：** 工作流配方、搭配、存下的提示词和节点参数、参数预设存在 ComfyUI 用户目录下的 `workflows/anomalous_recipes`、`workflows/anomalous_notebooks`、`workflows/anomalous_materials` 与 `workflows/anomalous_parameters` 文件夹。更新插件前顺手备份一份，更安心。
 
 ---
 

@@ -2033,22 +2033,6 @@ dialog.anomalous-gallery-viewer[open] {
     padding-bottom: 8px;
 }
 
-.anomalous-recipe-material-selection {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 10px;
-    padding: 9px 10px;
-    border: 1px solid color-mix(in srgb, var(--amb-link) 16%, transparent);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--amb-link) 4%, transparent);
-}
-
-.anomalous-recipe-material-selection .anomalous-workbench-node-selection-count {
-    margin-right: auto;
-}
-
 .anomalous-recipe-material-node-header {
     display: flex;
     align-items: center;
@@ -2064,45 +2048,6 @@ dialog.anomalous-gallery-viewer[open] {
     margin: 0;
     padding: 0;
     border: 0;
-}
-
-.anomalous-recipe-material-node-select {
-    appearance: none;
-    -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
-    flex: 0 0 16px;
-    margin: 0;
-    border-radius: 4px;
-    border: 1.5px solid var(--amb-border-strong);
-    background-color: rgba(20, 10, 16, 0.6);
-    cursor: pointer;
-    position: relative;
-    outline: none;
-    display: inline-grid;
-    place-content: center;
-    vertical-align: middle;
-    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.anomalous-recipe-material-node-select:hover {
-    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
-    background-color: color-mix(in srgb, var(--amb-link) 8%, transparent);
-}
-
-.anomalous-recipe-material-node-select:checked {
-    background-color: var(--amb-btn-primary-bg);
-    border-color: var(--amb-link);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230b0f17' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-6'/%3E%3C/svg%3E");
-    background-size: 11px 11px;
-    background-position: center;
-    background-repeat: no-repeat;
-    box-shadow: 0 0 8px color-mix(in srgb, var(--amb-link) 35%, transparent);
-}
-
-.anomalous-recipe-material-node-select:focus-visible {
-    outline: 2px solid var(--amb-link);
-    outline-offset: 2px;
 }
 
 /* Grid Layout for Node Widgets */

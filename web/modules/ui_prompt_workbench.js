@@ -5,8 +5,7 @@ import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { joinPromptText, categorizePromptSnippet, smartSortPromptBlocks, workbenchDraftToSavedPlan } from './prompt_composition.js';
 import { applyNodeMaterialValues, selectedMaterialNode } from './node_material_actions.js';
 import { promptBoxes } from './prompt_boxes.js';
-import { showMaterialApplication } from './ui_material_application.js';
-import { showMaterialSaved } from './material_feedback.js';
+import { showApplyReceipt } from './ui_apply_receipt.js';
 import { translatePromptText } from './translation_service.js';
 import { CATEGORY_META, newDraft, normalizeBlock, syncDraftSynthesizedText } from './prompt_studio_data.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
@@ -109,7 +108,7 @@ export function createPromptWorkbench(owner, container, scope, options) {
     };
 
     const saveBtn = text(moreMenu, 'button', `💾 ${t('promptSavePlan')}`, 'anomalous-prompt-more-item');
-    saveBtn.title = t('promptSavePlan') || '保存方案至素材库';
+    saveBtn.title = t('promptSavePlan');
 
     const newBtn = text(moreMenu, 'button', `✨ ${t('promptNewDraft')}`, 'anomalous-prompt-more-item');
 
@@ -238,7 +237,7 @@ export function createPromptWorkbench(owner, container, scope, options) {
         const widgetIndex = (targets.find(box => box.role === role) || targets.find(box => !box.role) || targets[0]).index;
         try {
             const value = joinPromptText(node.widgets[widgetIndex].value, promptContent, posSelect.value);
-            showMaterialApplication(view, applyNodeMaterialValues(app, node, [{ index: widgetIndex, value }]), node);
+            showApplyReceipt(view, applyNodeMaterialValues(app, node, [{ index: widgetIndex, value }]), node);
             if (triggerBtn) {
                 const orig = triggerBtn.textContent;
                 triggerBtn.textContent = '✅ ' + (window.anomalous_browser_lang === 'zh' ? '已写入' : 'Written');
@@ -801,7 +800,7 @@ export function createPromptWorkbench(owner, container, scope, options) {
     // -------------------------------------------------------------------------
     // Target Node Direct Injection Toolbar (Compact sticky bar integrated into Action Dock)
     // -------------------------------------------------------------------------
-    // Save Plan to Material Library
+    // Save the plan to your saved prompts
     saveBtn.onclick = async () => {
         closeMoreMenu();
         if (!draft.name?.trim()) {
@@ -837,7 +836,7 @@ export function createPromptWorkbench(owner, container, scope, options) {
             const payload = await jsonResponse(response, 'prompt save failed');
             if (payload.status !== 'success') throw new Error('prompt save failed');
             if (!scope.signal.aborted) {
-                showMaterialSaved(owner, payload.material);
+                showWorkbenchToast(t('promptSavedToDeck'));
                 void sourceDeck.sync();
             }
         } catch (error) {
