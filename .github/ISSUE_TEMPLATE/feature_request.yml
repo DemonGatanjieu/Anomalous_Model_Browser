@@ -6,18 +6,8 @@ body:
   - type: textarea
     id: idea
     attributes:
-      label: 想要什么 / What you would like
-      description: 越具体越好；有参考的软件或截图也可以贴上来。 / The more concrete the better; screenshots or other tools for reference are welcome.
+      label: 你希望有什么？ / What would you like?
+      description: 随便写，一两句话就行，中文英文都可以。 / Anything goes; a sentence or two is enough, in any language.
+      placeholder: 比如：希望素材库能按标签筛选。 / e.g. Filter the material library by tag.
     validations:
       required: true
-  - type: textarea
-    id: when
-    attributes:
-      label: 用在什么场合 / When you would use it
-      description: 你在做什么的时候会需要它。 / What you are doing when you need it.
-  - type: textarea
-    id: environment
-    attributes:
-      label: 环境（可选）/ Environment (optional)
-      description: 设置 → 帮助与反馈 → 复制诊断信息。 / Settings → Help and feedback → Copy diagnostics.
-      render: text

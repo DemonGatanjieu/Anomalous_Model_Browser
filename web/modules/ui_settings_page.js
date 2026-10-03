@@ -11,7 +11,8 @@ import { translate } from './locales.js';
 import { ABYSSAL_SCARLET_SETTING_ID, LANGUAGE_SETTING_ID, applyLanguagePreference, setAbyssalScarletTheme } from './interface_settings.js';
 import { ENTRY_MODE_SETTING_ID } from './browser_entry.js';
 import { showUpdateGuide } from './ui_update_guide.js';
-import { copyDiagnostics, openBugReport, openSuggestion } from './feedback.js';
+import { copyDiagnostics } from './feedback.js';
+import { openFeedbackDialog } from './ui_feedback_dialog.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -205,8 +206,8 @@ function helpGroup(owner) {
     return group('settingsHelp',
         row('help', 'settingsHelpHelp', small(t('settingsOpen'), () => owner.showHelp())),
         row('updateGuideReplay', null, small(t('settingsOpen'), () => showUpdateGuide(owner, { force: true }))),
-        row('feedbackReport', 'settingsReportHelp', small(t('settingsOpenGithub'), () => openBugReport(owner))),
-        row('feedbackSuggest', 'settingsSuggestHelp', small(t('settingsOpenGithub'), () => openSuggestion(owner))),
+        row('feedbackReport', 'settingsReportHelp', small(t('feedbackWrite'), () => openFeedbackDialog(owner, 'bug'))),
+        row('feedbackSuggest', 'settingsSuggestHelp', small(t('feedbackWrite'), () => openFeedbackDialog(owner, 'idea'))),
         row('feedbackCopy', 'feedbackCopyHint', (() => {
             const copy = small(t('feedbackCopy'), async () => {
                 copy.textContent = t(await copyDiagnostics(owner) ? 'feedbackCopied' : 'feedbackCopyFailed');

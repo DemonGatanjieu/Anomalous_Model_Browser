@@ -1,38 +1,24 @@
 name: 报告问题 / Bug report
-description: 插件哪里坏了、报错，或者和预期不一样 / Something broke, showed an error or did not do what you expected
+description: 哪里坏了、报错了，或者和你想的不一样 / Something broke or did not do what you expected
 title: "[Bug] "
 labels: ["bug"]
 body:
-  - type: markdown
-    attributes:
-      value: |
-        谢谢你花时间反馈！在插件里点 **报告问题**（主页下方，或 设置 → 帮助与反馈）打开这个页面的话，环境信息已经替你填好了。
-        Thanks for taking the time! Opened from the plugin's **Report a problem** (bottom of Home, or Settings → Help and feedback), the environment is already filled in.
   - type: textarea
     id: what
     attributes:
-      label: 发生了什么 / What happened
-      description: 你做了什么、看到了什么、本来以为会怎样。截图或录屏可以直接拖进来。 / What you did, what you saw, what you expected. Drop screenshots or recordings here.
-      placeholder: 例如：在模型页点扫描，进度停在 30% 不动…… / e.g. On the Models page, the scan stops at 30%…
+      label: 遇到了什么问题？ / What went wrong?
+      description: 一两句话就行，中文英文都可以。 / A sentence or two is enough, in any language.
+      placeholder: 比如：在模型页点扫描，进度停在 30% 就不动了。 / e.g. The scan on the Models page stops at 30%.
     validations:
       required: true
   - type: textarea
-    id: steps
+    id: more
     attributes:
-      label: 怎么复现 / Steps to reproduce
-      placeholder: |
-        1.
-        2.
-        3.
-  - type: textarea
-    id: log
-    attributes:
-      label: 报错信息（可选）/ Error messages (optional)
-      description: ComfyUI 命令行窗口里的红字，或浏览器按 F12 后 Console 里的报错。 / Red text in the ComfyUI console, or errors in the browser console (F12).
-      render: text
+      label: 截图或报错（可选） / Screenshots or errors (optional)
+      description: 截图可以直接拖进来。 / Drop screenshots here.
   - type: textarea
     id: environment
     attributes:
-      label: 环境 / Environment
-      description: 设置 → 帮助与反馈 → 复制诊断信息，然后粘贴到这里。 / Settings → Help and feedback → Copy diagnostics, then paste here.
+      label: 环境信息（可选） / Environment (optional)
+      description: 在插件里点 设置 → 帮助与反馈 → 复制诊断信息，粘贴到这里。 / In the plugin, Settings → Help and feedback → Copy diagnostics, then paste here.
       render: text

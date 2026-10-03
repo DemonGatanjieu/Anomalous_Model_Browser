@@ -319,9 +319,10 @@ covered by the `styles.css` manifest.
   layout) and their application, the gear and language redraws; `ui_settings_page.js`
   is the settings page the gear opens (a tool page with Back): look and language, model
   cards and memory with the card image cache, folders, workflow fingerprints, opening
-  mode and window, help; `feedback.js` opens a GitHub issue (problem or suggestion) with
-  the environment written in, or copies it: versions and hardware only, never a path or
-  ComfyUI's command line (Home and the settings page offer it);
+  mode and window, help; `ui_feedback_dialog.js` is the feedback window (Home and the
+  settings page open it): one text box, then `feedback.js` opens a GitHub issue with it in
+  the browser's language, the environment folded at the end when attached (versions and
+  hardware only, never a path or ComfyUI's command line), or copies the environment;
   `ui_rail_tools.js` owns the rail's tool buttons (scan, doctor, current node);
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,
   including Esc on the workspace panel (`nbPanel`, below the header and right of the

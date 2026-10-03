@@ -381,6 +381,136 @@
     border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
 }
 
+/* The feedback window (ui_feedback_dialog.js): one text box, then GitHub. */
+.anomalous-feedback-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    box-sizing: border-box;
+}
+
+.anomalous-feedback-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: min(480px, 100%);
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 22px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 14px;
+    background: var(--amb-bg-panel, var(--amb-bg-card));
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+    box-sizing: border-box;
+}
+
+.anomalous-feedback-title {
+    margin: 0;
+    color: var(--amb-text-main);
+    font-size: 17px;
+}
+
+.anomalous-feedback-lead,
+.anomalous-feedback-hint {
+    margin: 0;
+    color: var(--amb-text-muted);
+    font-size: 12.5px;
+    line-height: 1.6;
+}
+
+.anomalous-feedback-text {
+    width: 100%;
+    min-height: 110px;
+    padding: 10px 12px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.25);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 13.5px;
+    line-height: 1.6;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.anomalous-feedback-text:focus {
+    border-color: color-mix(in srgb, var(--amb-link) 55%, transparent);
+    outline: none;
+}
+
+.anomalous-feedback-attach {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: var(--amb-text-soft);
+    font-size: 12.5px;
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+.anomalous-feedback-attach input {
+    margin-top: 3px;
+    accent-color: var(--amb-link);
+}
+
+.anomalous-feedback-link {
+    align-self: flex-start;
+    padding: 0 0 0 24px;
+    border: none;
+    background: none;
+    color: var(--amb-link);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-feedback-preview {
+    margin: 0 0 0 24px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.25);
+    color: var(--amb-text-muted);
+    font-size: 11.5px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.anomalous-feedback-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.anomalous-feedback-cancel,
+.anomalous-feedback-submit {
+    padding: 8px 16px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 9px;
+    background: transparent;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.anomalous-feedback-submit {
+    border-color: transparent;
+    background: var(--amb-btn-primary-bg);
+    color: var(--amb-btn-primary-text);
+    font-weight: 600;
+}
+
+.anomalous-feedback-submit:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
 .anomalous-home-feedback-btn.is-primary {
     border-color: transparent;
     background: var(--amb-btn-primary-bg);

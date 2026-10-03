@@ -1,12 +1,16 @@
 /**
- * Feedback on GitHub: a bug report or a suggestion opens a new issue with the environment
- * already written in, and the same environment can be copied for other channels.
+ * Feedback on GitHub: what was written in the feedback window (ui_feedback_dialog.js)
+ * opens as a new issue in the browser's language, with the environment folded at the end,
+ * and the same environment can be copied for other channels.
  * The environment is versions and hardware only (plugin, ComfyUI, Python, PyTorch, GPU,
  * browser, page, language): never a path, a file name or ComfyUI's command line.
  * Nothing is sent anywhere; the person reads it in the issue before posting.
  */
 
 import { isTtsInstalled } from './audio_engines.js';
+import { translate } from './locales.js';
+
+const t = (key, params) => translate(key, params);
 
 const REPO = 'https://github.com/DemonGatanjieu/Anomalous_Model_Browser';
 
@@ -58,31 +62,24 @@ export async function collectDiagnostics(owner) {
     return lines.filter(([, value]) => value).map(([name, value]) => `- ${name}: ${value}`).join('\n');
 }
 
-function openIssue(title, body) {
-    const query = new URLSearchParams({ title, body });
+/** "[Bug] the first words of what was written", short enough for a list of issues. */
+function issueTitle(kind, text) {
+    const first = String(text || '').trim().split('\n')[0].trim();
+    const short = first.length > 60 ? `${first.slice(0, 59)}…` : first;
+    return `${t(kind === 'bug' ? 'feedbackIssueBugPrefix' : 'feedbackIssueIdeaPrefix')}${short}`;
+}
+
+/**
+ * Opens a new GitHub issue with what was written, in the browser's language; the
+ * environment, when attached, is folded at the end so the issue reads as the person wrote it.
+ */
+export async function openIssue(owner, kind, text, { environment = true } = {}) {
+    const parts = [String(text || '').trim()];
+    if (environment) {
+        parts.push('', `<details><summary>${t('feedbackIssueEnvironment')}</summary>`, '', await collectDiagnostics(owner), '', '</details>');
+    }
+    const query = new URLSearchParams({ title: issueTitle(kind, text), body: parts.join('\n') });
     window.open(`${REPO}/issues/new?${query}`, '_blank', 'noopener');
-}
-
-/** A new issue for a problem, with headings to fill and the environment under them. */
-export async function openBugReport(owner) {
-    const environment = await collectDiagnostics(owner);
-    openIssue('[Bug] ', [
-        '### 发生了什么 / What happened', '', '',
-        '### 怎么复现 / Steps to reproduce', '1. ', '2. ', '',
-        '### 报错信息（可选）/ Error messages (optional)',
-        '<!-- ComfyUI 命令行窗口里的红字，或浏览器按 F12 后 Console 里的报错 / The ComfyUI console or the browser console (F12) -->', '',
-        '### 环境 / Environment', environment,
-    ].join('\n'));
-}
-
-/** A new issue for an idea. */
-export async function openSuggestion(owner) {
-    const environment = await collectDiagnostics(owner);
-    openIssue('[Idea] ', [
-        '### 想要什么 / What you would like', '', '',
-        '### 用在什么场合 / When you would use it', '', '',
-        '### 环境 / Environment', environment,
-    ].join('\n'));
 }
 
 /** Copies the environment; true when it reached the clipboard. */

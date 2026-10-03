@@ -10,7 +10,8 @@ import { TOOL_ICONS } from './tool_registry.js';
 import { startSpotlightTour } from './ui_spotlight_tour.js';
 import { showUpdateGuide } from './ui_update_guide.js';
 import { renderRecentActivity } from './ui_activity.js';
-import { copyDiagnostics, openBugReport, openSuggestion } from './feedback.js';
+import { copyDiagnostics } from './feedback.js';
+import { openFeedbackDialog } from './ui_feedback_dialog.js';
 
 // One card per task: where it goes and its text (`homeCard<Name>Title` / `…Body`).
 const CARDS = Object.freeze([
@@ -48,8 +49,8 @@ function feedbackBand(owner) {
     });
     copyBtn.title = t('feedbackCopyHint');
     actions.append(
-        button('anomalous-home-feedback-btn is-primary', t('feedbackReport'), () => openBugReport(owner)),
-        button('anomalous-home-feedback-btn', t('feedbackSuggest'), () => openSuggestion(owner)),
+        button('anomalous-home-feedback-btn is-primary', t('feedbackReport'), () => openFeedbackDialog(owner, 'bug')),
+        button('anomalous-home-feedback-btn', t('feedbackSuggest'), () => openFeedbackDialog(owner, 'idea')),
         copyBtn,
     );
     band.append(copy, actions);
