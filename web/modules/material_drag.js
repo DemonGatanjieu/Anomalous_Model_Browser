@@ -3,6 +3,7 @@ import { translate as t } from './locales.js';
 import { text } from './ui_dom.js';
 import { materialNodeHeading } from './material_inspector.js';
 import { anomalousAlert } from './ui_dialog.js';
+import { recordCanvasStep } from './canvas_history.js';
 
 let activeDrag = null;
 
@@ -36,6 +37,8 @@ export function materialDropNode(event, canvas, graph) {
  * optional `onMove(node, data, event)` follows the accepted node under the pointer (or null).
  * Optional `passThrough(event)` leaves events over some part of the page (a drop zone of its
  * own) alone; `effectAllowed` defaults to 'copy'. `owner` may be null (no browser to fold).
+ * After a drop handler finishes the canvas is recorded as a ComfyUI history step, so a drop
+ * survives a reload and Ctrl+Z takes it back even when the handler forgot to.
  */
 export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropOnCanvas, targetHint, rejectHint, onStart, onMove, passThrough, effectAllowed = 'copy' }) {
     element.draggable = true;
@@ -112,13 +115,13 @@ export function bindMaterialDrag(element, owner, { payload, accepts, drop, dropO
             const overCanvas = isOverCanvasSurface(event);
             cleanup();
             if (validNode) {
-                try { await drop(node, data, graph, event); }
+                try { await drop(node, data, graph, event); recordCanvasStep(app); }
                 catch (error) { await anomalousAlert(t(error.message) === error.message ? t('materialApplyFailed') : t(error.message)); }
                 return;
             }
             if (!refused && dropOnCanvas && overCanvas) {
                 const pos = getCanvasPosition(event, canvas);
-                try { await dropOnCanvas(event, data, graph, pos); }
+                try { await dropOnCanvas(event, data, graph, pos); recordCanvasStep(app); }
                 catch (error) { await anomalousAlert(t(error.message) === error.message ? t('recipeOpenError') : t(error.message)); }
                 return;
             }
