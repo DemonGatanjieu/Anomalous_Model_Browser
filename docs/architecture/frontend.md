@@ -85,7 +85,8 @@ The main surfaces are:
 - Current node (Node Assistant)/Model Check: selected-node actions, saved parameters, and
   missing-model recovery. `model_check.js` decides each workflow model's state and
   applies fixes; `ui_doctor.js` (the page) and `ui_doctor_banner.js` (the bar shown
-  after a workflow opens) only render it and call it on a press.
+  after a workflow opens, unless its "Don't show again" or Settings → Workflows turned the
+  check on opening off) only render it and call it on a press.
   `ui_node_assistant.js` owns the current-node panel and model history, `ui_node_model_picker.js`
   owns the native-widget model replacer, and `ui_node_parameters.js` with
   `node_parameter_sets.js` own the panel's one list of saved values for the node type;

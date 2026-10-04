@@ -456,7 +456,8 @@ covered by the `styles.css` manifest.
   Check's verdicts, no DOM; the feature was called Model Doctor, and code and CSS still
   say "doctor") and puts a found file into its node; `ui_doctor.js` is the
   Model Check page and `ui_doctor_banner.js` the bar over the canvas when an opened workflow
-  misses models. `ui_node_assistant.js` owns the current-node panel (model actions, LoRA
+  misses models (it also owns the check-on-open preference that Settings → Workflows and the
+  bar's "Don't show again" set). `ui_node_assistant.js` owns the current-node panel (model actions, LoRA
   insertion, model cards and history), `ui_node_model_picker.js` owns native combo
   replacement, `ui_node_parameters.js` renders the panel's parameters section, and
   `node_parameter_sets.js` merges the node type's saved values (material files and recipe

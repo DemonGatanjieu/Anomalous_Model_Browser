@@ -139,6 +139,28 @@
 
 .anomalous-doctor-banner-btn:hover { filter: brightness(1.15); }
 
+.anomalous-doctor-banner-label {
+    margin-right: 4px;
+    font-weight: 600;
+}
+
+.anomalous-doctor-banner-mute {
+    flex-shrink: 0;
+    padding: 4px 6px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.anomalous-doctor-banner-mute:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--amb-text-main);
+}
+
 .anomalous-doctor-banner-close {
     flex-shrink: 0;
     padding: 4px 8px;

@@ -16,6 +16,7 @@ import { startSpotlightTour } from './ui_spotlight_tour.js';
 import { copyDiagnostics } from './feedback.js';
 import { renderFolderPage } from './ui_folder_manager.js';
 import { openFeedbackDialog } from './ui_feedback_dialog.js';
+import { checkOnOpen, setCheckOnOpen } from './ui_doctor_banner.js';
 
 const t = (key, params) => translate(key, params);
 // The full written guide: the README, at its Chinese half for Chinese.
@@ -186,8 +187,9 @@ function foldersGroup(owner) {
             })));
 }
 
-function workflowGroup() {
+function workflowGroup(owner) {
     return group('settingsWorkflows',
+        row('settingsCheckOnOpen', 'settingsCheckOnOpenHelp', toggleSwitch(checkOnOpen(), on => setCheckOnOpen(owner, on))),
         row('sidebarProvenance', 'sidebarProvenanceDesc', toggleSwitch(localStorage.getItem('anomalous_inject_hash') !== 'false', on => {
             // Read by hash_resolver.js when a workflow is saved.
             localStorage.setItem('anomalous_inject_hash', on ? 'true' : 'false');
@@ -252,7 +254,7 @@ function render(owner) {
         appearanceGroup(owner, redraw),
         cardsGroup(owner, redraw),
         foldersGroup(owner),
-        workflowGroup(),
+        workflowGroup(owner),
         openingGroup(owner, redraw),
         helpGroup(owner),
     );
