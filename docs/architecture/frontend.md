@@ -76,9 +76,9 @@ The main surfaces are:
   owns header/zoom/filmstrip interaction, and `ui_image_inspector.js` owns metadata tabs.
 - Workspace: Combos (搭配, formerly Prompt Notes) and Workflow Recipes. The combo list, workspace/persistence, editing, and canvas use are separated
   across `ui_combos.js`, `ui_notebooks.js`, `ui_notebook_editor.js`, and
-  `notebook_canvas.js`; Use puts a combo into the open workflow when the canvas has a
-  main model loader (`notebook_apply.js` plans and makes the change: reads the canvas
-  first, writes one Ctrl+Z step) and builds a new group of nodes when it has none.
+  `notebook_canvas.js`; Put on canvas lays a combo out as a new wired group of nodes and
+  never changes nodes already on the canvas (values of an existing node are changed in
+  Current node).
 - Prompts: the rail entry opens Prompt Studio (below); there is no Material Library page.
   Saved node values are listed, applied and deleted in Current node.
 - Current node (Node Assistant)/Model Check: selected-node actions, saved parameters, and

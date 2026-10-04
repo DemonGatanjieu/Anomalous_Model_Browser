@@ -354,8 +354,8 @@ covered by the `styles.css` manifest.
   notebook or material delete route); `image_keep.js` does the keeping (an image as a combo,
   its prompts as a saved prompt, reading what was kept) without DOM.
 - `ui_combos.js` renders the Combos page's list (搭配: a main model, LoRAs and a prompt, formerly Prompt Notes): search,
-  New, and a card per combo with its model's cover and Use; a card opens the combo's editor, and dragged onto the canvas
-  (`material_drag.js`) goes into the main model loader it is dropped on or becomes a new group there. Combos keep the notes' files.
+  New, and a card per combo with its model's cover and Put on canvas; a card opens the combo's editor, and dragged onto the
+  canvas (`material_drag.js`) becomes a new group of nodes where it is dropped. Combos keep the notes' files.
 - `recipe_save.js` saves Workflow Recipes for the canvas save and for an output image's workflow (the gallery's keep menu,
   moving whole workflows kept as materials), laying an image's workflow on a canvas of its own to summarise it.
 - `ui_apply_receipt.js` is the receipt of values written to a node from a panel (Current node's parameters) with its Undo. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) and the node writes shared by those panels and prompt drops.
@@ -389,10 +389,8 @@ covered by the `styles.css` manifest.
   sub-functions adhering to the 50-line rule: sticky top action toolbar with floating More popover dropdown and timed two-step delete safety guard,
   unfolded companion models card with unconstrained multi-column tile flow eliminating nested gallery scrollbars,
   prompt composer with dynamic field-sizing and compact inline find & replace toolbar, and unified dark slim scrollbar ergonomics with complete bilingual dictionary coverage in `locales.js`), and
-  `notebook_canvas.js` owns Use: putting a combo into the open workflow, whose plan
-  (main loader, LoRA chain rebuilt in place, positive prompt box) is `notebook_apply.js`, or, with no main loader on
-  the canvas, a new group of nodes (following the pointer, or at a dropped card's position); `applyNotebookTo` is Use for
-  one loader. Combos are a rail page. `ui_recipe_detail.js`
+  `notebook_canvas.js` puts a combo on the canvas as a new wired group of nodes (following the pointer, or at a dropped
+  card's position); it never changes nodes already there. Combos are a rail page. `ui_recipe_detail.js`
   coordinates the Workflow Recipe detail session and model composition. `ui_recipe_overview.js`
   owns the Overview prompt showcase (with `entry.text` fallback, guarded non-shrinking primary action CTA, and floating Popover More dropdown menu), and `ui_recipe_parameters.js`
   owns the responsive Parameter Presets workspace (featuring default-expanded raw node parameter inspection,

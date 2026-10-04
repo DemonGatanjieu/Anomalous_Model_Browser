@@ -52,9 +52,9 @@ function createNotebookToolbar(ctx, notebook) {
         }, 1500);
     };
 
-    // Use: into the open workflow when it has the model loader, else a new group of nodes.
+    // Put on the canvas: the combo as a new group of nodes.
     const useBtn = Object.assign(document.createElement('button'), { type: 'button', className: 'anomalous-btn-success', textContent: t('comboUse'), title: t('comboUseHint') });
-    useBtn.onclick = () => ctx.useNotebook();
+    useBtn.onclick = () => ctx.sendNotebookToCanvas();
 
     // Floating More Dropdown Menu
     const moreWrapper = document.createElement('div');
@@ -96,9 +96,7 @@ function createNotebookToolbar(ctx, notebook) {
         }
     };
 
-    const groupBtn = Object.assign(document.createElement('button'), { type: 'button', className: 'anomalous-nb-dropdown-item', textContent: t('sendToCanvas') });
-    groupBtn.onclick = () => ctx.sendNotebookToCanvas();
-    dropdownMenu.append(groupBtn, delBtn);
+    dropdownMenu.append(delBtn);
 
     moreBtn.onclick = (e) => {
         e.stopPropagation();

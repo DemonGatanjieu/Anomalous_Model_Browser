@@ -1,17 +1,15 @@
 /**
- * The active combo (搭配) on the canvas. Use puts it into the open workflow
- * (notebook_apply.js) after showing what changes, or, when the canvas has no main model
- * loader, builds a new group of nodes that follows the pointer until a click. A combo card
- * dropped on a main model loader goes into that loader's workflow the same way; dropped on
- * empty canvas, its new group is built where it was dropped.
+ * Puts the active combo (搭配) on the canvas as a new group of nodes: its main model loader,
+ * its LoRA chain and a positive and a negative prompt node, wired together. From a button the
+ * group follows the pointer until a click; a card dropped on the canvas builds it where it
+ * was dropped. Nothing already on the canvas changes, except that a UNet combo's prompt nodes
+ * take the canvas's CLIP loader when there is exactly one.
  */
 
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
 import { recordCanvasStep } from './canvas_history.js';
-import { applyNotePlan, planNoteApply } from './notebook_apply.js';
-import { selectedMaterialNode } from './node_material_actions.js';
-import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
+import { anomalousAlert } from './ui_dialog.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -21,46 +19,6 @@ export const UNLABELED_BASE_MODEL = '__unlabeled__';
 /** UNet / diffusion models carry no text encoder, so their LoRAs patch the model only. */
 export function isUnetModel(model) {
     return model?.type === 'unet' || model?.type === 'diffusion_models';
-}
-
-/** Makes `plan` (planNoteApply) after a confirmation listing each change. */
-async function applyPlan(owner, plan) {
-    const say = ([key, params = {}]) => t(key, Object.fromEntries(Object.entries(params).map(([k, v]) => [k, v === '' ? t('noteApplyNone') : v])));
-    const reasons = plan.skipped.map(item => t('noteApplySkipped', { reason: say(item) }));
-    if (!plan.lines.length) {
-        await anomalousAlert([t('noteApplyNothing'), ...reasons].join('\n'), t('noteApplyTitle'));
-        return;
-    }
-    // The activity log undoes changed values only; a LoRA chain is rebuilt (nodes removed and rewired).
-    const undoHint = t(plan.loras ? 'noteApplyUndoCtrlZ' : 'noteApplyUndoHint');
-    const message = [...plan.lines.map(say), ...reasons, '', undoHint].join('\n');
-    if (!await anomalousConfirm(message, t('noteApplyTitle'), { okLabel: t('noteApplyConfirm') })) return;
-    applyNotePlan(app, plan);
-    owner.nbPanel.style.display = 'none';
-    owner.close();
-}
-
-/**
- * Use (用上): into the open workflow when the canvas has a main model loader; with none, a
- * new group of nodes; with several and none selected, asks before making a new group.
- */
-export async function useNotebook() {
-    if (!this.currentNotebook) return;
-    const data = this.currentNotebook.data || {};
-    const plan = planNoteApply(app, data, selectedMaterialNode(app));
-    if (!plan.loader && data.mainModel) {
-        const many = plan.skipped.find(([key]) => key === 'noteApplyManyLoaders');
-        if (many && !await anomalousConfirm(t('comboManyLoaders', many[1]), t('noteApplyTitle'), { okLabel: t('sendToCanvas') })) return;
-        this.sendNotebookToCanvas();
-        return;
-    }
-    await applyPlan(this, plan);
-}
-
-/** A combo dropped on `loader` (a main model loader): Use, for that loader. */
-export async function applyNotebookTo(loader) {
-    if (!this.currentNotebook) return;
-    await applyPlan(this, planNoteApply(app, this.currentNotebook.data || {}, loader));
 }
 
 /** The one text-encoder output already on the canvas (a loader), for a UNet note's prompts. */
