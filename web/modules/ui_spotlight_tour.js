@@ -7,8 +7,9 @@
  * 3. Keyboard navigation (ArrowRight/Enter, ArrowLeft, Escape) & viewport auto-scroll.
  * 4. Zero CSS-bundle modifications (injected scoped stylesheet).
  *
- * The browser tour uses TOUR_STEPS; other views pass their own steps, whose text
- * may come from locale keys (`titleKey` / `bodyKey`) instead of titleZh/titleEn.
+ * The browser tour uses TOUR_STEPS, in the order the pages are used (rail, gallery and what
+ * its ☆ keeps, then the tools); other views pass their own steps. A step's text is the locale
+ * keys `titleKey` / `bodyKey`.
  */
 
 import { translate as t } from './locales.js';
@@ -18,84 +19,84 @@ let activeTourInstance = null;
 
 const TOUR_STEPS = Object.freeze([
     {
-        id: 'workspaces',
+        id: 'rail',
         targetSelector: '.anomalous-rail-nav',
         fallbackSelector: '#anomalous-rail',
         icon: '🏠',
-        titleZh: '左侧图标栏',
-        titleEn: 'The rail',
-        bodyZh: '主页、模型库、图库、工作流、搭配、提示词和角色语音都在这里。再点一下当前页的图标（或顶栏最左边的按钮），可以收起、展开旁边的列表。',
-        bodyEn: 'Home, models, gallery, workflows, combos, prompts and voices live here. Click the current page\'s icon again (or the button at the top left) to show or hide its list.',
+        titleKey: 'tourRailTitle',
+        bodyKey: 'tourRailBody',
         position: 'right',
     },
     {
-        id: 'update-notice',
-        targetSelector: '#anomalous-update-notice-btn',
-        icon: '💡',
-        titleZh: '(!) 更新引导与停靠设置',
-        titleEn: '(!) Update Guide & Docking',
-        bodyZh: '点击 (!) 可查看关键改动说明与本导览；右侧的 ◧ 按钮用于在 ComfyUI 侧边吸附模式与独立浮动窗口之间切换。',
-        bodyEn: 'Click (!) to review changes and launch this tour. The ◧ icon toggles sidebar docking vs a free-floating window.',
-        position: 'bottom',
-    },
-    {
-        id: 'scan',
-        targetSelector: '#anomalous-scan-btn',
-        icon: '🎯',
-        titleZh: '🎯 扫描 (向导与单模型直扫)',
-        titleEn: '🎯 Model Scanning',
-        bodyZh: '点击此按钮可打开扫描向导，对模型目录建立索引与哈希。在模型网格中悬浮卡片点击雷达图标，则仅原地扫描该单个模型。',
-        bodyEn: 'Click to open the scan wizard for folder indexing. You can also hover over any model card and click the radar icon to scan only that model.',
+        id: 'gallery',
+        targetSelector: '#anomalous-gallery-btn',
+        icon: '🖼️',
+        titleKey: 'tourGalleryTitle',
+        bodyKey: 'tourGalleryBody',
         position: 'right',
     },
     {
-        id: 'doctor',
-        targetSelector: '#anomalous-doctor-btn',
-        icon: '🩺',
-        titleZh: '🩺 模型检查 (缺模型)',
-        titleEn: '🩺 Model Check (Missing Models)',
-        bodyZh: '打开工作流时会自动检查，缺模型就在画布上方提示。改过名、换过文件夹的同一个文件（按 SHA256 指纹认）可以一键换上；其余的在这里自己挑，或看模型去哪下载。',
-        bodyEn: 'Each workflow you open is checked; missing models show a bar over the canvas. The same file under another name or folder (recognised by its SHA256) is put back with one press; for the rest, pick one here or see where to download it.',
-        position: 'right',
-    },
-    {
-        id: 'assistant',
-        targetSelector: '#anomalous-assistant-btn',
-        icon: '🤖',
-        titleZh: '🤖 当前节点 (模型、提示词、参数)',
-        titleEn: '🤖 Current node',
-        bodyZh: '选中画布节点后：上面换模型、插 LoRA；提示词框可以翻成英文；下面列出这类节点存过的参数，每条写明会改哪几项，点“套用”只改这几项。',
-        bodyEn: 'Select a canvas node: swap its model or insert a LoRA on top; translate its prompt boxes; below, every saved set of values for this kind of node says what it would change, and Apply changes only that.',
+        id: 'recipes',
+        targetSelector: '#anomalous-notebook-btn',
+        icon: '📚',
+        titleKey: 'tourRecipesTitle',
+        bodyKey: 'tourRecipesBody',
         position: 'right',
     },
     {
         id: 'combos',
         targetSelector: '#anomalous-combos-btn',
         icon: '🧩',
-        titleZh: '🧩 搭配 (模型 + LoRA + 提示词)',
-        titleEn: '🧩 Combos (model + LoRAs + prompt)',
-        bodyZh: '把常用的主模型、几个 LoRA 和一段提示词存成一个搭配。按“用上”：画布上有模型加载节点就替换掉，没有就新建一组节点；改之前先列出要改什么，Ctrl+Z 可以撤销。',
-        bodyEn: 'Keep a main model, a few LoRAs and a prompt you like as a combo. Use puts it into the workflow: it replaces the canvas\'s model loader, or builds a new group of nodes when there is none; it lists the changes first, and Ctrl+Z undoes them.',
+        titleKey: 'tourCombosTitle',
+        bodyKey: 'tourCombosBody',
         position: 'right',
     },
     {
         id: 'prompts',
         targetSelector: '#anomalous-prompts-btn',
         icon: '✍️',
-        titleZh: '✍️ 提示词 (提示词工坊)',
-        titleEn: '✍️ Prompts (Prompt Studio)',
-        bodyZh: '在画布旁边打开提示词工坊：选中的提示词节点在这里按词块直接改，点词卡就加进去，中文会译成英文；词卡也能直接拖到画布的提示词框里（正面绿框、负面红框）。',
-        bodyEn: 'Opens Prompt Studio beside the canvas: the selected prompt node is edited here tag by tag, a clicked card goes in, and Chinese is translated to English; cards also drag straight onto a prompt box on the canvas (green positive, red negative).',
+        titleKey: 'tourPromptsTitle',
+        bodyKey: 'tourPromptsBody',
         position: 'right',
+    },
+    {
+        id: 'node',
+        targetSelector: '#anomalous-assistant-btn',
+        icon: '🤖',
+        titleKey: 'tourNodeTitle',
+        bodyKey: 'tourNodeBody',
+        position: 'right',
+    },
+    {
+        id: 'scan',
+        targetSelector: '#anomalous-scan-btn',
+        icon: '🎯',
+        titleKey: 'tourScanTitle',
+        bodyKey: 'tourScanBody',
+        position: 'right',
+    },
+    {
+        id: 'doctor',
+        targetSelector: '#anomalous-doctor-btn',
+        icon: '🩺',
+        titleKey: 'tourDoctorTitle',
+        bodyKey: 'tourDoctorBody',
+        position: 'right',
+    },
+    {
+        id: 'notice',
+        targetSelector: '#anomalous-update-notice-btn',
+        icon: '💡',
+        titleKey: 'tourNoticeTitle',
+        bodyKey: 'tourNoticeBody',
+        position: 'bottom',
     },
     {
         id: 'settings',
         targetSelector: '#anomalous-global-settings-btn',
         icon: '⚙️',
-        titleZh: '⚙️ 设置',
-        titleEn: '⚙️ Settings',
-        bodyZh: '打开设置页：外观和语言、模型卡片清晰度与内存、文件夹、工作流指纹、打开方式和窗口，以及帮助与反馈。',
-        bodyEn: 'Opens the settings page: look and language, model card quality and memory, folders, workflow fingerprints, how the browser opens, and help.',
+        titleKey: 'tourSettingsTitle',
+        bodyKey: 'tourSettingsBody',
         position: 'right',
     },
 ]);
@@ -382,8 +383,6 @@ export function startSpotlightTour(owner, { steps = TOUR_STEPS, onClose = null }
     overlay.appendChild(card);
     document.body.appendChild(overlay);
 
-    const isZh = () => (window.anomalous_browser_lang === 'zh');
-
     const renderCurrentStep = () => {
         const step = availableSteps[currentIndex];
         const target = resolveStepTarget(step);
@@ -410,8 +409,8 @@ export function startSpotlightTour(owner, { steps = TOUR_STEPS, onClose = null }
         spotlightBox.style.height = `${rect.height + buffer * 2}px`;
 
         // Card content
-        const titleText = step.titleKey ? t(step.titleKey) : isZh() ? step.titleZh : step.titleEn;
-        const bodyText = step.bodyKey ? t(step.bodyKey) : isZh() ? step.bodyZh : step.bodyEn;
+        const titleText = t(step.titleKey);
+        const bodyText = t(step.bodyKey);
         const total = availableSteps.length;
         const stepNum = currentIndex + 1;
 
@@ -420,11 +419,11 @@ export function startSpotlightTour(owner, { steps = TOUR_STEPS, onClose = null }
         const cardHeader = text(card, 'div', '', 'anomalous-spotlight-card-header');
         const badge = text(cardHeader, 'span', '', 'anomalous-spotlight-card-badge');
         text(badge, 'span', step.icon);
-        text(badge, 'span', isZh() ? `第 ${stepNum} / ${total} 步` : `Step ${stepNum} of ${total}`);
+        text(badge, 'span', t('updateGuideProgress', { current: stepNum, total }));
 
         const closeBtn = text(cardHeader, 'button', '×', 'anomalous-spotlight-card-close');
         closeBtn.type = 'button';
-        closeBtn.title = isZh() ? '退出导览 (Esc)' : 'Exit Tour (Esc)';
+        closeBtn.title = t('tourExit');
         closeBtn.onclick = () => closeSpotlightTour();
 
         text(card, 'h4', titleText, 'anomalous-spotlight-card-title');
@@ -437,7 +436,7 @@ export function startSpotlightTour(owner, { steps = TOUR_STEPS, onClose = null }
         }
 
         const btnGroup = text(cardFooter, 'div', '', 'anomalous-spotlight-btn-group');
-        const prevBtn = text(btnGroup, 'button', isZh() ? '‹ 上一步' : '‹ Back', 'anomalous-spotlight-btn anomalous-spotlight-btn-secondary');
+        const prevBtn = text(btnGroup, 'button', `‹ ${t('updateGuideBack')}`, 'anomalous-spotlight-btn anomalous-spotlight-btn-secondary');
         prevBtn.id = 'anomalous-tour-prev';
         prevBtn.type = 'button';
         prevBtn.disabled = currentIndex === 0;
@@ -448,7 +447,7 @@ export function startSpotlightTour(owner, { steps = TOUR_STEPS, onClose = null }
             }
         };
 
-        const nextBtnText = currentIndex === total - 1 ? (isZh() ? '完成体验 ✓' : 'Done ✓') : (isZh() ? '下一步 ›' : 'Next ›');
+        const nextBtnText = currentIndex === total - 1 ? `${t('tourDone')} ✓` : `${t('updateGuideNext')} ›`;
         const nextBtn = text(btnGroup, 'button', nextBtnText, 'anomalous-spotlight-btn anomalous-spotlight-btn-primary');
         nextBtn.id = 'anomalous-tour-next';
         nextBtn.type = 'button';
