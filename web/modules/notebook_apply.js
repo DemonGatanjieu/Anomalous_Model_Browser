@@ -1,7 +1,9 @@
 /**
  * Puts a Prompt Note into the open workflow instead of building new nodes: the main model
  * loader takes the note's model, the LoRA chain right after it is rebuilt with the note's
- * LoRAs (what the chain fed keeps its wiring; a LoRA kept keeps its strengths), and the
+ * LoRAs (what the chain fed keeps its wiring; a LoRA kept keeps its strengths, and a new one
+ * takes the strengths of the LoRA it replaces, in order; one added beyond the old chain has
+ * the node's default, which the confirmation names), and the
  * positive prompt box of the sampler that model reaches takes the note's prompt. A
  * selected loader or prompt node is taken first. planNoteApply() only reads the canvas and
  * says what would change; applyNotePlan() makes the change as one Ctrl+Z step.
@@ -174,6 +176,9 @@ export function planNoteApply(app, note, selected = null) {
             plan.loras = wanted;
             const list = (values) => values.map(modelName).join('、');
             plan.lines.push(['noteApplyLoras', { from: list(current), to: list(wanted) }]);
+            plan.loraValues = loraValues(plan.chain, wanted);
+            const fresh = wanted.filter((value, index) => !plan.loraValues[index]);
+            if (fresh.length) plan.lines.push(['noteApplyLoraDefault', { names: list(fresh) }]);
         }
     }
 
@@ -198,6 +203,22 @@ function setValue(app, node, widget, value) {
     node.onWidgetChanged?.(widget.name, value, before, widget);
 }
 
+/**
+ * The strengths (every value but the LoRA's name) each of `wanted` gets on the canvas: a LoRA
+ * the chain has keeps its own; the others take, in order, those of the chain's LoRAs that go;
+ * null for one with nothing to take over (the node's defaults).
+ */
+function loraValues(chain, wanted) {
+    const valuesOf = node => {
+        const name = modelWidget(node, ['loras']);
+        return Object.fromEntries((node.widgets || []).filter(widget => widget !== name).map(widget => [widget.name, widget.value]));
+    };
+    const keep = new Set(wanted.map(slashes));
+    const byLora = new Map(chain.map(node => [slashes(modelWidget(node, ['loras']).value), valuesOf(node)]));
+    const replaced = chain.filter(node => !keep.has(slashes(modelWidget(node, ['loras']).value))).map(valuesOf);
+    return wanted.map(value => byLora.get(slashes(value)) || replaced.shift() || null);
+}
+
 function rebuildChain(plan) {
     const { graph, loader, chain } = plan;
     const last = chain.at(-1) || loader;
@@ -205,9 +226,6 @@ function rebuildChain(plan) {
     const takesClip = Boolean(globalThis.LiteGraph.registered_node_types?.[plan.loraType]?.nodeData?.input?.required?.clip);
     const path = takesClip && outSlot(loader, 'CLIP') >= 0 ? clipPath(graph, loader, chain) : null;
     const clipTargets = path ? linksFrom(graph, path.end, outSlot(path.end, 'CLIP')).filter(target => !chain.includes(target.node)) : [];
-    // A LoRA the note keeps keeps its strengths.
-    const kept = new Map(chain.map(node => [slashes(modelWidget(node, ['loras']).value),
-        Object.fromEntries((node.widgets || []).map(widget => [widget.name, widget.value]))]));
     const spots = chain.map(node => [...node.pos]);
     const base = spots.at(-1) || [loader.pos[0], loader.pos[1] + (loader.size?.[1] || 100) + 40];
     for (const node of chain) graph.remove(node);
@@ -218,7 +236,7 @@ function rebuildChain(plan) {
         const node = globalThis.LiteGraph.createNode(plan.loraType);
         node.pos = spots[index] || [base[0], base[1] + (index - spots.length + (spots.length ? 1 : 0)) * 130];
         graph.add(node);
-        const values = kept.get(slashes(value)) || {};
+        const values = plan.loraValues?.[index] || {};
         for (const widget of node.widgets || []) {
             if (widget === modelWidget(node, ['loras'])) widget.value = value;
             else if (values[widget.name] !== undefined) widget.value = values[widget.name];
