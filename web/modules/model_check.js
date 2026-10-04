@@ -15,6 +15,7 @@
  */
 
 import { app } from "../../../scripts/app.js";
+import { recordCanvasStep } from './canvas_history.js';
 import { findWorkflowHashRecord } from './recipe_provenance.js';
 import { inferModelFolderTypes, requiresHashForModelRecovery } from './model_policies.js';
 
@@ -180,10 +181,11 @@ export function replacedFrom(widget) {
 }
 
 /**
- * Puts `target` (by default the found file) into the entry's node. False when the node
- * or its value changed since the check, or there is nothing to put in.
+ * Puts `target` (by default the found file) into the entry's node, as one Ctrl+Z step
+ * unless `step` is false (the caller takes one for several). False when the node or its
+ * value changed since the check, or there is nothing to put in.
  */
-export function applyModelFix(entry, target = entry.target) {
+export function applyModelFix(entry, target = entry.target, { step = true } = {}) {
     const { node, widget, value } = entry;
     if (!target || app.graph?.getNodeById?.(node.id) !== node || widget.value !== value) return false;
     widget.value = target;
@@ -194,6 +196,8 @@ export function applyModelFix(entry, target = entry.target) {
     node.onWidgetChanged?.(widget.name, target, value, widget);
     if (app.lastNodeErrors?.[node.id]) delete app.lastNodeErrors[node.id];
     markReplaced(widget, value, target);
+    // Without a step ComfyUI keeps the old name: a reload or Ctrl+Z brings the missing model back.
+    if (step) recordCanvasStep(app);
     return true;
 }
 
@@ -202,8 +206,11 @@ export function fixWorkflowModels(entries) {
     const fixable = entries.filter(entry => entry.state === 'fixable');
     if (!fixable.length) return 0;
     app.graph?.beforeChange?.();
-    const count = fixable.filter(entry => applyModelFix(entry)).length;
+    const count = fixable.filter(entry => applyModelFix(entry, entry.target, { step: false })).length;
     app.graph?.afterChange?.();
-    if (count) app.graph?.setDirtyCanvas?.(true, true);
+    if (count) {
+        app.graph?.setDirtyCanvas?.(true, true);
+        recordCanvasStep(app);
+    }
     return count;
 }
