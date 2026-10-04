@@ -254,12 +254,17 @@ view has focus.
 `prompt_tags.js` splits a box on top-level commas and line breaks and keeps each
 separator, so editing one tag leaves the rest of the text, line breaks included, as it
 was; a weight is `(tag:w)`. Inserting skips tags the box has already (same words, any
-weight). Typed or edited text with Chinese is translated to English before it is
-written; a box that holds Chinese offers to translate those tags, and the result is
-written only if the box still holds the text the request was made from. Chinese
-meanings (`prompt_gloss.js`, Chinese interface only, off until switched on, remembered
-in local storage with the view) are asked for in batches and kept for the session; a
-failed lookup leaves that box's meanings blank instead of retrying.
+weight). Typed or edited text with letters that are not plain English (`needsEnglish`:
+Chinese, kana, hangul, Cyrillic, accented Latin) is translated to English before it is
+written; a box that holds such tags offers to translate them, a translation the box
+has already removes the tag instead, and the result is written only if the box still
+holds the text the request was made from. Meanings (`prompt_gloss.js`) are shown in the
+language picked in the top bar (one of `GLOSS_LANGUAGES`, none by default, remembered in
+local storage with the view; an older "Chinese on" setting reads as Simplified Chinese).
+They are asked for in batches, kept for the session per language, and a failed lookup
+leaves that box's meanings in that language blank instead of retrying. The backend
+skips DeepL for a target it does not take and lets MyMemory detect a source that is
+neither English nor Chinese.
 
 The cards are three built-in ones and the saved prompts (prompt-kind material files,
 `prompt_material_source.js`). The saved list is asked for on open, every 30 seconds
@@ -284,7 +289,7 @@ drawer the drag passes through to the boxes.
 | `ui_prompt_card_popover.js` | Card preview: hover corridor, pin, copy/add/rename/delete actions |
 | `prompt_card_drag.js` | A card or box dragged onto the canvas: box fill or new prompt node, passing through the drawer |
 | `prompt_tags.js` | Pure tag split/join, weights, insert/remove/replace/move keeping separators |
-| `prompt_gloss.js` | Session cache and batched lookup of tags' Chinese meanings |
+| `prompt_gloss.js` | Meaning languages, session cache and batched lookup of tags' meanings |
 | `prompt_material_source.js` | Saved prompts as cards (paginated list, text read once) and saving a card |
 | `prompt_composition.js` | Composing a saved plan's text, prompt titles and categories; no DOM |
 | `ui_lifecycle.js` | View-scoped listeners, AbortSignal, cleanup callbacks and resizing |

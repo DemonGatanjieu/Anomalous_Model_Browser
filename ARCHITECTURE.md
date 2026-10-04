@@ -422,13 +422,13 @@ covered by the `styles.css` manifest.
   filters, navigation, dismissible topbar drag guidance strip with localStorage persistence, the 3-step empty-state onboarding blueprint (`renderRecipeEmptyGuide`), and background catalog-wide model readiness resolution (`resolveCatalogRecipeReadiness`), `ui_recipe_cards.js` owns cards and card actions
   (including `grab` drag affordance, cover `可拖拽` badge, harmonized multi-state model readiness pill with `getRecipeReadiness` synchronizing available, missing, and pending matches with detail overview, and direct canvas drag-and-drop), `ui_recipe_dialogs.js` owns save/edit dialogs, and `ui_recipe_media.js` owns shared cover helpers. Detail sessions synchronize detected model availability back to `owner.recipeRecords` via `syncRecipeReferencesToCatalog`.
 - `ui_prompt_composer.js` owns the standalone Prompt Studio drawer (dock side, width, Esc);
-  `ui_prompt_workbench.js` fills it: the top bar (tags or text view, Chinese meanings) and
+  `ui_prompt_workbench.js` fills it: the top bar (tags or text view, the meanings' language) and
   saving a box as a card. `ui_prompt_target.js` decides what is edited, the prompt boxes of
   the prompt node last selected on the canvas or a positive / negative draft, follows the
   selection and the boxes' text, and owns the studio's Undo; `ui_prompt_box_editor.js` is one
-  box as tags (select, weight, edit, remove, reorder, drop, type, translate Chinese) or text.
+  box as tags (select, weight, edit, remove, reorder, drop, type, translate to English) or text.
   `prompt_tags.js` splits and joins a prompt's tags keeping their separators, and
-  `prompt_gloss.js` looks up and keeps the tags' Chinese meanings. `ui_prompt_source_deck.js`
+  `prompt_gloss.js` looks up and keeps the tags' meanings in the picked language. `ui_prompt_source_deck.js`
   owns the card list (three built-in cards and the saved prompts), search, new-card form,
   library sync and renaming / deleting a saved prompt; `prompt_material_source.js` reads
   saved prompts as cards and saves one; `ui_prompt_card_popover.js` owns the card preview (hover

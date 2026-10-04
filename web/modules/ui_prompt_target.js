@@ -47,7 +47,7 @@ function refusal(card, boxRole) {
 }
 
 /**
- * Fills `parent`. `owner` keeps the draft; `prefs` is the studio's { view, gloss };
+ * Fills `parent`. `owner` keeps the draft; `prefs` is the studio's { view, glossLang };
  * `onSave(text, role)` keeps a box's text as a card. Returns { addCard(card), render() }.
  */
 export function createPromptTarget(parent, { owner, drawer, scope, prefs, onSave }) {

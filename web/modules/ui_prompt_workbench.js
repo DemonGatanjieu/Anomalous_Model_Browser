@@ -1,13 +1,14 @@
 /**
  * Prompt Studio's content (the drawer around it is ui_prompt_composer.js): a top bar with the
- * view switch (tags or the whole text), the Chinese meanings switch (Chinese interface only),
+ * view switch (tags or the whole text), the language tags' meanings are shown in (or none),
  * the dock side and Close; the cards on the drawer's outer side (ui_prompt_source_deck.js) and
  * the prompt boxes beside the canvas (ui_prompt_target.js). A clicked card goes into the box of
- * its role; Save on a box keeps its text as a card under My prompts. The two switches are
- * remembered in this browser.
+ * its role; Save on a box keeps its text as a card under My prompts. The view and the meaning
+ * language are remembered in this browser.
  */
 
-import { resolveLocale, translate as t } from './locales.js';
+import { translate as t } from './locales.js';
+import { GLOSS_LANGUAGES } from './prompt_gloss.js';
 import { promptTitle } from './prompt_composition.js';
 import { savePromptCard } from './prompt_material_source.js';
 import { anomalousPrompt } from './ui_dialog.js';
@@ -37,9 +38,11 @@ function button(className, label, title, onClick) {
 function loadPrefs() {
     try {
         const saved = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
-        return { view: saved.view === 'text' ? 'text' : 'tags', gloss: saved.gloss === true };
+        // An older switch kept only "Chinese on".
+        const lang = saved.glossLang ?? (saved.gloss === true ? 'zh-CN' : '');
+        return { view: saved.view === 'text' ? 'text' : 'tags', glossLang: GLOSS_LANGUAGES.some(([code]) => code === lang) ? lang : '' };
     } catch {
-        return { view: 'tags', gloss: false };
+        return { view: 'tags', glossLang: '' };
     }
 }
 
@@ -50,8 +53,6 @@ function savePrefs(prefs) {
 /** Fills `drawer`. `onToggleDockSide()` moves the drawer and returns whether it is now on the left. */
 export function createPromptWorkbench(owner, drawer, scope, { onClose, onToggleDockSide }) {
     const prefs = loadPrefs();
-    const chineseUi = resolveLocale() === 'zh';
-    if (!chineseUi) prefs.gloss = false;
 
     const view = el('section', 'anomalous-ps');
     const top = el('header', 'anomalous-ps-top');
@@ -74,13 +75,18 @@ export function createPromptWorkbench(owner, drawer, scope, { onClose, onToggleD
     viewSwitch.append(...viewButtons);
     controls.append(viewSwitch);
 
-    const glossButton = button('anomalous-ps-toggle', t('promptStudioGloss'), t('promptStudioGlossHint'), () => {
-        prefs.gloss = !prefs.gloss;
+    const glossPicker = el('select', 'anomalous-ps-gloss');
+    glossPicker.title = t('promptStudioGlossHint');
+    glossPicker.setAttribute('aria-label', t('promptStudioGlossHint'));
+    glossPicker.append(new Option(t('promptStudioGlossOff'), ''),
+        ...GLOSS_LANGUAGES.map(([code, name]) => new Option(t('promptStudioGlossIn', { language: name }), code)));
+    glossPicker.onchange = () => {
+        prefs.glossLang = glossPicker.value;
         savePrefs(prefs);
         drawSwitches();
         target.render();
-    });
-    if (chineseUi) controls.append(glossButton);
+    };
+    controls.append(glossPicker);
 
     const dock = button('anomalous-ps-icon', '', '', () => {
         onToggleDockSide();
@@ -97,8 +103,8 @@ export function createPromptWorkbench(owner, drawer, scope, { onClose, onToggleD
 
     function drawSwitches() {
         for (const item of viewButtons) item.classList.toggle('is-active', item.dataset.mode === prefs.view);
-        glossButton.classList.toggle('is-active', prefs.gloss);
-        glossButton.setAttribute('aria-pressed', String(prefs.gloss));
+        glossPicker.value = prefs.glossLang;
+        glossPicker.classList.toggle('is-active', Boolean(prefs.glossLang));
     }
     drawSwitches();
 

@@ -45,7 +45,7 @@
 }
 
 .anomalous-ps-switch-btn,
-.anomalous-ps-toggle,
+.anomalous-ps-gloss,
 .anomalous-ps-icon,
 .anomalous-ps-mini {
     font-family: inherit;
@@ -66,7 +66,7 @@
     color: var(--amb-text-main);
 }
 
-.anomalous-ps-toggle,
+.anomalous-ps-gloss,
 .anomalous-ps-mini {
     border: 1px solid var(--amb-border);
     background: transparent;
@@ -74,10 +74,16 @@
     white-space: nowrap;
 }
 
-.anomalous-ps-toggle {
-    padding: 4px 10px;
+.anomalous-ps-gloss {
+    max-width: 150px;
+    padding: 4px 6px;
     border-radius: 8px;
     font-size: 12px;
+}
+
+.anomalous-ps-gloss option {
+    background: var(--amb-bg-panel);
+    color: var(--amb-text-main);
 }
 
 .anomalous-ps-mini {
@@ -86,7 +92,7 @@
     font-size: 11.5px;
 }
 
-.anomalous-ps-toggle.is-active,
+.anomalous-ps-gloss.is-active,
 .anomalous-ps-mini.is-accent {
     border-color: color-mix(in srgb, var(--amb-link) 55%, transparent);
     background: color-mix(in srgb, var(--amb-link) 14%, transparent);
@@ -112,7 +118,7 @@
 }
 
 .anomalous-ps-icon:hover,
-.anomalous-ps-toggle:hover,
+.anomalous-ps-gloss:hover,
 .anomalous-ps-mini:hover:not(:disabled) {
     border-color: var(--amb-border-hover);
     color: var(--amb-text-main);
@@ -406,7 +412,7 @@
     color: var(--amb-text-main);
 }
 
-.anomalous-ps-chinese {
+.anomalous-ps-foreign {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -453,7 +459,7 @@
     background: color-mix(in srgb, var(--amb-link) 14%, transparent);
 }
 
-.anomalous-ps-tag.is-chinese {
+.anomalous-ps-tag.is-foreign {
     border-color: rgba(251, 191, 36, 0.55);
 }
 
@@ -518,9 +524,11 @@
     color: #fca5a5;
 }
 
+/* The meaning reads as text of its own, one step quieter than the tag. */
 .anomalous-ps-tag-gloss {
-    color: var(--amb-text-dim);
-    font-size: 10.5px;
+    margin-top: 1px;
+    color: var(--amb-text-muted);
+    font-size: 11.5px;
     line-height: 1.35;
 }
 
@@ -595,7 +603,7 @@
 /* These blocks set their own display, which would outrank the hidden attribute. */
 .anomalous-ps-new[hidden],
 .anomalous-ps-target-note[hidden],
-.anomalous-ps-chinese[hidden],
+.anomalous-ps-foreign[hidden],
 .anomalous-ps-tags[hidden],
 .anomalous-ps-tools[hidden],
 .anomalous-ps-text[hidden] {

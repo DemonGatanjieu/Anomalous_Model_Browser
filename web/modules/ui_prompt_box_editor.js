@@ -1,10 +1,11 @@
 /**
  * One prompt box in Prompt Studio (ui_prompt_target.js makes one per box of the selected node,
- * or two for the draft). Its text shows as tags (prompt_tags.js) or as the whole text; with the
- * meanings on, each tag has its Chinese meaning under it (prompt_gloss.js). A tag is clicked to
+ * or two for the draft). Its text shows as tags (prompt_tags.js) or as the whole text; with a
+ * meaning language picked, each tag has its meaning under it (prompt_gloss.js). A tag is clicked to
  * select it (weight − / +, edit, remove; Delete and + / − on the keyboard), double-clicked to
  * edit, dragged to move. Cards dropped on the box go in where they land, typed text at the end;
- * Chinese is translated to English first, and tags the box has already are not added twice.
+ * text that is not English is translated to English first, and tags the box has already are
+ * not added twice.
  * Every change goes through `write`, which the target turns into a node write or a draft edit.
  */
 
@@ -12,7 +13,7 @@ import { translate as t } from './locales.js';
 import { bindPromptCardDrag } from './prompt_card_drag.js';
 import { fetchGlosses, glossOf } from './prompt_gloss.js';
 import { insertTags, moveTag, promptTagsOf, removeTag, replaceTag, splitPrompt, tagWeight, withWeight } from './prompt_tags.js';
-import { hasChinese, translatePromptText } from './translation_service.js';
+import { needsEnglish, translatePromptText } from './translation_service.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 
 const TAG_TYPE = 'application/x-anomalous-prompt-tag';
@@ -41,7 +42,7 @@ const asTag = text => (/^[A-Z][a-z]/.test(text) ? text[0].toLowerCase() + text.s
 
 /**
  * `role` and `name` label the box; `getValue()` reads its text and `write(value)` changes it
- * (false when it did not). `prefs` is the studio's { view: 'tags' | 'text', gloss }. `refuse(card)`
+ * (false when it did not). `prefs` is the studio's { view: 'tags' | 'text', glossLang }. `refuse(card)`
  * says why a card may not go in ('' when it may); `onSave(value)` keeps the text as a card.
  * `drawer` is the studio drawer, for the handle that drags the text onto the canvas.
  * Returns { element, role, render(), refresh(), addText(text) }.
@@ -53,7 +54,7 @@ export function createPromptBoxEditor({ role, name, getValue, write, prefs, refu
     let editing = false;
     let busy = false;
     let glossTimer = null;
-    let glossFailed = false;
+    let glossFailed = ''; // the meaning language the service failed for
     let textTimer = null;
     scope.onDispose(() => { clearTimeout(glossTimer); clearTimeout(textTimer); });
 
@@ -82,9 +83,9 @@ export function createPromptBoxEditor({ role, name, getValue, write, prefs, refu
     actions.append(copy, save, handle);
     head.append(actions);
 
-    const chineseBar = el('div', 'anomalous-ps-chinese');
-    chineseBar.append(el('span', '', t('promptStudioHasChinese')),
-        button('anomalous-ps-mini is-accent', t('promptStudioToEnglish'), '', () => void translateChinese()));
+    const foreignBar = el('div', 'anomalous-ps-foreign');
+    foreignBar.append(el('span', '', t('promptStudioHasForeign')),
+        button('anomalous-ps-mini is-accent', t('promptStudioToEnglish'), '', () => void translateForeign()));
 
     const tagsEl = el('div', 'anomalous-ps-tags');
     const addInput = el('input', 'anomalous-ps-add');
@@ -104,7 +105,7 @@ export function createPromptBoxEditor({ role, name, getValue, write, prefs, refu
         textTimer = setTimeout(flushText, 500);
     };
     textArea.onblur = () => flushText();
-    element.append(head, chineseBar, tagsEl, tools, textArea);
+    element.append(head, foreignBar, tagsEl, tools, textArea);
 
     const toast = message => showWorkbenchToast(message);
 
@@ -133,7 +134,7 @@ export function createPromptBoxEditor({ role, name, getValue, write, prefs, refu
     }
 
     async function toEnglish(text) {
-        if (!hasChinese(text)) return text;
+        if (!needsEnglish(text)) return text;
         setBusy(true);
         const result = await translatePromptText(text, { targetLang: 'en', signal: scope.signal });
         setBusy(false);
@@ -159,11 +160,11 @@ export function createPromptBoxEditor({ role, name, getValue, write, prefs, refu
         return true;
     }
 
-    async function translateChinese() {
+    async function translateForeign() {
         if (busy) return;
         const now = getValue();
         const targets = splitPrompt(now).items.map((item, index) => ({ index, ...tagWeight(item.text) }))
-            .filter(item => hasChinese(item.core));
+            .filter(item => needsEnglish(item.core));
         if (!targets.length) return;
         setBusy(true);
         const results = await Promise.all(targets.map(item => translatePromptText(item.core, { targetLang: 'en', signal: scope.signal })));
@@ -171,10 +172,19 @@ export function createPromptBoxEditor({ role, name, getValue, write, prefs, refu
         if (scope.signal.aborted || !element.isConnected) return;
         if (getValue() !== now) { toast(t('currentNodeChangedMeanwhile')); render(); return; }
         let next = now;
+        // A translation the box has already (by its words) goes instead of in twice.
+        const wordsOf = tag => tagWeight(tag).core.trim().toLowerCase();
+        const have = new Set(splitPrompt(now).items.map(item => wordsOf(item.text)));
         // From the last tag back, so a translation that splits into several tags moves nothing before it.
         for (let position = targets.length - 1; position >= 0; position--) {
             const result = results[position];
-            if (result.ok && result.translated) next = replaceTag(next, targets[position].index, withWeight(asTag(result.translated), targets[position].weight));
+            if (!result.ok || !result.translated) continue;
+            const english = withWeight(asTag(result.translated), targets[position].weight);
+            if (have.has(wordsOf(english))) next = removeTag(next, targets[position].index);
+            else {
+                have.add(wordsOf(english));
+                next = replaceTag(next, targets[position].index, english);
+            }
         }
         if (results.some(result => !result.ok)) toast(t('promptStudioTranslateFailed'));
         if (next !== now) commit(next);
@@ -225,8 +235,8 @@ export function createPromptBoxEditor({ role, name, getValue, write, prefs, refu
     }
 
     function glossText(tag) {
-        const meaning = glossOf(tag);
-        return meaning === undefined ? (glossFailed ? '' : '…') : meaning;
+        const meaning = glossOf(tag, prefs.glossLang);
+        return meaning === undefined ? (glossFailed === prefs.glossLang ? '' : '…') : meaning;
     }
 
     function showGlosses() {
@@ -235,11 +245,12 @@ export function createPromptBoxEditor({ role, name, getValue, write, prefs, refu
 
     function wantGlosses(tags) {
         clearTimeout(glossTimer);
-        if (!prefs.gloss || glossFailed || tags.every(tag => glossOf(tag) !== undefined)) return;
+        const lang = prefs.glossLang;
+        if (!lang || glossFailed === lang || tags.every(tag => glossOf(tag, lang) !== undefined)) return;
         glossTimer = setTimeout(async () => {
-            const ok = await fetchGlosses(tags, scope.signal);
+            const ok = await fetchGlosses(tags, lang, scope.signal);
             if (scope.signal.aborted || !element.isConnected) return;
-            if (!ok) glossFailed = true;
+            if (!ok) glossFailed = lang;
             showGlosses();
         }, 250);
     }
@@ -248,7 +259,7 @@ export function createPromptBoxEditor({ role, name, getValue, write, prefs, refu
         const { core, weight } = tagWeight(item.text);
         const chip = el('span', 'anomalous-ps-tag');
         chip.classList.toggle('is-selected', index === selected);
-        chip.classList.toggle('is-chinese', hasChinese(core));
+        chip.classList.toggle('is-foreign', needsEnglish(core));
         chip.classList.toggle('is-up', weight > 1);
         chip.classList.toggle('is-down', weight < 1);
         chip.draggable = true;
@@ -263,7 +274,7 @@ export function createPromptBoxEditor({ role, name, getValue, write, prefs, refu
             remove(index);
         }));
         chip.append(main);
-        if (prefs.gloss) {
+        if (prefs.glossLang) {
             const gloss = el('span', 'anomalous-ps-tag-gloss', glossText(item.text));
             gloss.dataset.tag = item.text;
             chip.append(gloss);
@@ -319,7 +330,7 @@ export function createPromptBoxEditor({ role, name, getValue, write, prefs, refu
         lastValue = value;
         card.content = value;
         card.title = name || t(ROLE_KEYS[role] || 'currentNodePromptPlain');
-        chineseBar.hidden = !hasChinese(value);
+        foreignBar.hidden = !needsEnglish(value);
         const asText = prefs.view === 'text';
         element.classList.toggle('is-text-view', asText);
         tagsEl.hidden = asText;

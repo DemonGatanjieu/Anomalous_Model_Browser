@@ -9,9 +9,17 @@ import urllib.request
 from aiohttp import web
 
 
+_DEEPL_TARGETS = {
+    "zh": "ZH", "zh-CN": "ZH", "zh-TW": "ZH-HANT", "en": "EN", "ja": "JA", "ko": "KO",
+    "fr": "FR", "de": "DE", "es": "ES", "ru": "RU", "pt": "PT-BR",
+}
+
+
 def _translate_with_deepl(text, tl, deepl_key):
-    deepl_map = { "zh-CN": "ZH", "en": "EN", "ja": "JA", "ko": "KO", "fr": "FR", "de": "DE", "es": "ES", "ru": "RU" }
-    d_tl = deepl_map.get(tl, "EN")
+    """None for a target DeepL does not take: the other providers are asked instead."""
+    d_tl = _DEEPL_TARGETS.get(tl)
+    if not d_tl:
+        return None
     url = "https://api-free.deepl.com/v2/translate" if ":fx" in deepl_key else "https://api.deepl.com/v2/translate"
     payload = urllib.parse.urlencode({
         "auth_key": deepl_key,
@@ -50,8 +58,9 @@ def _translate_with_google(text, tl):
 
 def _translate_with_mymemory(text, tl):
     has_cn = any('\u4e00' <= char <= '\u9fa5' for char in text)
-    sl = 'zh-CN' if has_cn else 'en'
-    pair_tl = 'en' if has_cn else ('zh-CN' if tl in ('zh', 'zh-CN') else tl)
+    # Text that is not plain English and not Chinese (kana, hangul, accents...) is left to its detection.
+    sl = 'zh-CN' if has_cn else ('en' if text.isascii() else 'Autodetect')
+    pair_tl = 'zh-CN' if tl in ('zh', 'zh-CN') else tl
     url = f"https://api.mymemory.translated.net/get?q={urllib.parse.quote(text)}&langpair={sl}|{pair_tl}"
     req = urllib.request.Request(url, headers={
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
