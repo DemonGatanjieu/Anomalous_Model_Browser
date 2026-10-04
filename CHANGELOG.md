@@ -81,6 +81,7 @@
 - **Language follows ComfyUI again (语言跟随 ComfyUI)**: with the language left on "Follow ComfyUI" (the default), changing ComfyUI's language now switches the browser the next time it opens; before, it kept the old language until the page was reloaded.
 - **Empty list on the audio pages (音频页左边列表是空的)**: after reloading ComfyUI, a browser that reopened straight onto Voices or Audio showed an empty list column until you switched to the image side and back.
 - Prompt Studio's new card form showed "cancel" instead of 取消 on its Cancel button.
+- A combo's **Use** confirmation no longer says the activity log can undo it when the LoRA chain is rebuilt: the log only undoes changed values, so it now says Ctrl+Z (the activity log is still mentioned when only the model or prompt changes).
 - All-in-one loader recipes and cross-node prompt injection use one verified adapter table; prompt text never crosses between positive and negative.
 - The Workflows and Combos workspace no longer covers the header: the Models / Gallery / Workflows tabs stay clickable while it is open, and **Esc** closes it (back to what was open before) unless a dialog is above it or a text field has focus. Closing the Prompt Translator brings back the browser it folded away.
 

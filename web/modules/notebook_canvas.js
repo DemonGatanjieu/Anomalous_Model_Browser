@@ -31,7 +31,9 @@ async function applyPlan(owner, plan) {
         await anomalousAlert([t('noteApplyNothing'), ...reasons].join('\n'), t('noteApplyTitle'));
         return;
     }
-    const message = [...plan.lines.map(say), ...reasons, '', t('noteApplyUndoHint')].join('\n');
+    // The activity log undoes changed values only; a LoRA chain is rebuilt (nodes removed and rewired).
+    const undoHint = t(plan.loras ? 'noteApplyUndoCtrlZ' : 'noteApplyUndoHint');
+    const message = [...plan.lines.map(say), ...reasons, '', undoHint].join('\n');
     if (!await anomalousConfirm(message, t('noteApplyTitle'), { okLabel: t('noteApplyConfirm') })) return;
     applyNotePlan(app, plan);
     owner.nbPanel.style.display = 'none';
