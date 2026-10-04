@@ -244,7 +244,7 @@ another studio replaces it). There is no assembly board, block draft or plan loa
 
 The target (`ui_prompt_target.js`) is polled every 400 ms. Selecting another node with
 prompt boxes switches to it; empty canvas or a node without boxes keeps the current
-one; Draft switches to the draft; a node that leaves the open graph drops back to the
+one; the ✕ beside the node's name switches to the draft; a node that leaves the open graph drops back to the
 draft. Each change is one `applyNodeMaterialValues` write (a Ctrl+Z step). The studio's
 Undo takes its own writes back newest first and stops with `materialUndoChanged` when a
 box changed elsewhere; switching target clears it. Box editors re-read their widget on

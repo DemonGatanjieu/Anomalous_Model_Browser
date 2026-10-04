@@ -325,13 +325,40 @@
 }
 
 .anomalous-ps-target-label {
+    display: flex;
     flex: 1;
+    align-items: center;
+    gap: 4px;
     min-width: 0;
-    overflow: hidden;
     font-size: 13px;
     font-weight: 600;
+}
+
+.anomalous-ps-target-name {
+    min-width: 0;
+    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* Beside the node's name: stop editing it and use the draft. */
+.anomalous-ps-target-x {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--amb-text-dim);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-ps-target-x:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--amb-text-main);
 }
 
 .anomalous-ps-target-note {

@@ -4,7 +4,7 @@
  * studio's own changes back one by one), or a positive and a negative draft when there is no
  * such node, kept while ComfyUI stays open. The node stays the target when the selection moves
  * to empty canvas or another kind of node; selecting another prompt node switches to it, and
- * "Draft" switches to the draft. The boxes follow edits made on the canvas.
+ * the ✕ beside the node's name switches to the draft. The boxes follow edits made on the canvas.
  */
 
 import { app } from '../../../scripts/app.js';
@@ -55,9 +55,12 @@ export function createPromptTarget(parent, { owner, drawer, scope, prefs, onSave
     const panel = el('section', 'anomalous-ps-target');
     const head = el('header', 'anomalous-ps-target-head');
     const label = el('div', 'anomalous-ps-target-label');
-    const toDraft = button('anomalous-ps-mini', t('promptStudioUseDraft'), t('promptStudioUseDraftHint'), () => show(null));
+    const labelText = el('span', 'anomalous-ps-target-name');
+    const toDraft = button('anomalous-ps-target-x', '✕', t('promptStudioUseDraftHint'), () => show(null));
+    toDraft.setAttribute('aria-label', t('promptStudioUseDraftHint'));
+    label.append(labelText, toDraft);
     const undoButton = button('anomalous-ps-mini', t('promptStudioUndo'), t('promptStudioUndoHint'), undo);
-    head.append(label, toDraft, undoButton);
+    head.append(label, undoButton);
     const note = el('p', 'anomalous-ps-target-note', t('promptStudioDraftHint'));
     const boxesEl = el('div', 'anomalous-ps-boxes');
     panel.append(head, note, boxesEl);
@@ -136,7 +139,7 @@ export function createPromptTarget(parent, { owner, drawer, scope, prefs, onSave
         panel.classList.toggle('is-draft', !node);
         toDraft.hidden = !node;
         note.hidden = Boolean(node);
-        label.textContent = node
+        labelText.textContent = node
             ? t('promptStudioEditing', { node: `${materialNodeHeading(node) || node.type} #${node.id}` })
             : t('promptStudioDraft');
         editors = node ? boxes.map(box => nodeEditor(node, box, boxes.length > 1)) : ['positive', 'negative'].map(draftEditor);
