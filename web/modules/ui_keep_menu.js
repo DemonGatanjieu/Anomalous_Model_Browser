@@ -1,12 +1,14 @@
 /**
  * The keep menu of an output image (the star on gallery cards, Keep in the image
  * workbench): its whole workflow (Workflows page), its combo (Combos page) or its prompts
- * (saved prompts, in Prompt Studio), each row saying where it goes; one kept already shows ✓ and opens it.
+ * (saved prompts, in Prompt Studio), each row saying where it goes; one kept already shows ✓ and
+ * opens it, and its Remove moves what was kept to the Recycle Bin after a confirmation.
  * Keeping runs recipe_save.js / image_keep.js and says what happened in a toast with Open.
  */
 
 import { translate as t } from './locales.js';
-import { anomalousAlert } from './ui_dialog.js';
+import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
+import { jsonResponse } from './ui_dom.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { keepImageAsRecipe } from './recipe_save.js';
 import { keepImageAsCombo, keepImagePrompts, keptKey, loadKeptImages } from './image_keep.js';
@@ -14,9 +16,9 @@ import { keepImageAsCombo, keepImagePrompts, keptKey, loadKeptImages } from './i
 const NO_WORKFLOW = 'Image has no reusable UI workflow'; // the inspect route's message
 
 const KINDS = Object.freeze([
-    { kind: 'recipe', icon: '🪡', keep: keepImageAsRecipe, open: (owner, item) => owner.openRecipeByFilename(item.filename) },
-    { kind: 'combo', icon: '🧩', keep: keepImageAsCombo, open: (owner, item) => owner.openComboByFilename(item.filename) },
-    { kind: 'prompt', icon: '✍️', keep: keepImagePrompts, open: owner => owner.openPromptStudio() },
+    { kind: 'recipe', icon: '🪡', keep: keepImageAsRecipe, open: (owner, item) => owner.openRecipeByFilename(item.filename), remove: '/anomalous/delete_recipe' },
+    { kind: 'combo', icon: '🧩', keep: keepImageAsCombo, open: (owner, item) => owner.openComboByFilename(item.filename), remove: '/anomalous/delete_notebook' },
+    { kind: 'prompt', icon: '✍️', keep: keepImagePrompts, open: owner => owner.openPromptStudio(), remove: '/anomalous/delete_material' },
 ]);
 
 let closeOpenMenu = null;
@@ -63,6 +65,27 @@ async function keep(owner, spec, sourceImage, kept, { name, onKept, beforeOpen }
     } catch (error) {
         console.error(`[AMB] Could not keep the image as ${spec.kind}:`, error);
         await anomalousAlert(t(error?.message === NO_WORKFLOW ? 'keepNoWorkflow' : 'keepFailed'));
+    }
+}
+
+/** Un-keeps `item`: what was kept as `spec` goes to the Recycle Bin, after asking. */
+async function unkeep(spec, kept, item, { onKept }) {
+    const what = t(`keepNoun_${spec.kind}`);
+    if (!await anomalousConfirm(t('keepRemoveConfirm', { what, name: item.name }), t('keepRemove'), { okLabel: t('keepRemove') })) return;
+    try {
+        const response = await fetch(spec.remove, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: item.filename }),
+        });
+        const payload = await jsonResponse(response, 'remove kept');
+        if (payload.status !== 'success') throw new Error(payload.message || 'remove kept');
+        kept[spec.kind] = null;
+        onKept?.(kept);
+        showWorkbenchToast(t('keepRemoved', { what, name: item.name }));
+    } catch (error) {
+        console.error(`[AMB] Could not remove the kept ${spec.kind}:`, error);
+        await anomalousAlert(t('keepRemoveFailed'));
     }
 }
 
@@ -129,7 +152,20 @@ export async function openKeepMenu(owner, anchor, sourceImage, options = {}) {
             options.beforeOpen?.();
             spec.open(owner, item);
         };
-        menu.append(row);
+        if (!item) {
+            menu.append(row);
+            continue;
+        }
+        const line = el('div', 'anomalous-keep-line');
+        const remove = el('button', 'anomalous-keep-remove', t('keepRemove'));
+        remove.type = 'button';
+        remove.title = t('keepRemoveHint');
+        remove.onclick = () => {
+            close();
+            void unkeep(spec, kept, item, options);
+        };
+        line.append(row, remove);
+        menu.append(line);
     }
     place(menu, anchor);
 }

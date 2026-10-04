@@ -1,7 +1,9 @@
 /**
  * The active combo (搭配) on the canvas. Use puts it into the open workflow
  * (notebook_apply.js) after showing what changes, or, when the canvas has no main model
- * loader, builds a new group of nodes that follows the pointer until a click.
+ * loader, builds a new group of nodes that follows the pointer until a click. A combo card
+ * dropped on a main model loader goes into that loader's workflow the same way; dropped on
+ * empty canvas, its new group is built where it was dropped.
  */
 
 import { app } from '../../../scripts/app.js';
@@ -53,6 +55,12 @@ export async function useNotebook() {
     await applyPlan(this, plan);
 }
 
+/** A combo dropped on `loader` (a main model loader): Use, for that loader. */
+export async function applyNotebookTo(loader) {
+    if (!this.currentNotebook) return;
+    await applyPlan(this, planNoteApply(app, this.currentNotebook.data || {}, loader));
+}
+
 /** The one text-encoder output already on the canvas (a loader), for a UNet note's prompts. */
 function canvasClipSource(exclude) {
     const sources = (app.graph?._nodes || []).filter(node => !exclude.includes(node)
@@ -61,7 +69,8 @@ function canvasClipSource(exclude) {
     return sources.length === 1 ? sources[0] : null;
 }
 
-export function sendNotebookToCanvas() {
+/** Builds the combo as a new group of nodes: at `position` (canvas coordinates), or following the pointer. */
+export function sendNotebookToCanvas(position = null) {
         if (!this.currentNotebook) return;
         const data = this.currentNotebook.data || {};
         if (!data.mainModel) {
@@ -140,9 +149,14 @@ export function sendNotebookToCanvas() {
             }
         }
 
+        if (position) {
+            groupNodes.forEach(item => { item.node.pos = [position[0] + item.relX, position[1] + item.relY]; });
+            app.graph.setDirtyCanvas?.(true, true);
+        }
         recordCanvasStep(app);
         this.nbPanel.style.display = 'none';
         this.close();
+        if (position) return;
 
         // Magnetic Sticking Logic
         let isSticking = true;

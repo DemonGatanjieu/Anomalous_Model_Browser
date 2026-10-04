@@ -270,6 +270,34 @@
     font-weight: 700;
 }
 
+/* A kept row with its Remove beside it. */
+.anomalous-keep-line {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.anomalous-keep-line .anomalous-keep-row {
+    flex: 1;
+    min-width: 0;
+}
+
+.anomalous-keep-remove {
+    flex: none;
+    padding: 4px 8px;
+    border: 1px solid var(--amb-border);
+    border-radius: var(--amb-radius-control, 8px);
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 11.5px;
+    cursor: pointer;
+}
+
+.anomalous-keep-remove:hover {
+    border-color: rgba(248, 113, 113, 0.6);
+    color: #fca5a5;
+}
+
 .anomalous-gallery-delete:hover {
     background: #ff0000;
     transform: scale(1.1);

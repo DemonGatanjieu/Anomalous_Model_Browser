@@ -2,12 +2,15 @@
  * The Combos page (搭配): each saved combo of a main model, LoRAs and a prompt (the files
  * GET /anomalous/notebooks keeps, formerly Prompt Notes) as a card with its model's cover
  * and one Use button (notebook_canvas.js useNotebook). A card opens the combo in its editor
- * (ui_notebook_editor.js); New names one and opens it there.
+ * (ui_notebook_editor.js); dragged onto the canvas, it goes into the main model loader it is
+ * dropped on, or becomes a new group of nodes on empty canvas. New names one and opens it.
  */
 
 import { translate as t } from './locales.js';
 import { anomalousPrompt } from './ui_dialog.js';
 import { freeComboName, listCombos } from './image_keep.js';
+import { bindMaterialDrag } from './material_drag.js';
+import { isMainLoader } from './notebook_apply.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -67,6 +70,21 @@ function comboCard(owner, note) {
     use.title = t('comboUseHint');
     body.append(use);
     card.append(cover(data.mainModel), body);
+    bindMaterialDrag(card, owner, {
+        payload: () => ({ type: 'combo', filename: note.filename, dragHint: t('comboDragHint'), dragTargetHint: t('comboDragCanvas') }),
+        accepts: node => isMainLoader(node),
+        targetHint: node => t('comboDragLoader', { node: `#${node.id}` }),
+        rejectHint: () => t('comboDragNotLoader'),
+        drop: async (node) => {
+            owner.currentNotebook = note;
+            await owner.applyNotebookTo(node);
+        },
+        dropOnCanvas: async (event, dragData, graph, position) => {
+            if (!position) throw new Error('materialTargetChanged');
+            owner.currentNotebook = note;
+            owner.sendNotebookToCanvas(position);
+        },
+    });
     return card;
 }
 

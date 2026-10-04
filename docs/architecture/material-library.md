@@ -119,7 +119,9 @@ prompt as a combo (`image_keep.js`; models are looked up among this computer's f
 with the existing one). The image's workflow is laid on a detached graph and read with
 `extractRecipeMetadata`, so prompts follow the wiring as in a recipe. `GET
 /anomalous/kept_images` (`api/kept_images.py`) lists each image's recipe, combo and prompt;
-the star is filled when any exists, and a kept row opens it.
+the star is filled when any exists, and a kept row opens it or removes it: what was kept goes to
+the Recycle Bin through its own delete route (`delete_recipe`, `delete_notebook`,
+`delete_material`) after a confirmation, and the star follows.
 
 ## Prompt plans
 

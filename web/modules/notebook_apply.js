@@ -38,6 +38,11 @@ function choiceFor(values, path) {
 
 const outSlot = (node, type) => (node.outputs || []).findIndex(output => output.type === type);
 const inSlot = (node, type) => (node.inputs || []).findIndex(input => input.type === type);
+
+/** Whether `node` is a main model loader a combo can go into. */
+export function isMainLoader(node) {
+    return Boolean(modelWidget(node, MAIN_TYPES)) && outSlot(node, 'MODEL') >= 0;
+}
 const linkOf = (graph, id) => (id == null ? null : graph.getLink?.(id) ?? graph.links?.[id] ?? null);
 
 function linksFrom(graph, node, slot) {
@@ -135,7 +140,7 @@ export function planNoteApply(app, note, selected = null) {
     const graph = app.canvas?.graph || app.graph;
     const plan = { graph, lines: [], skipped: [], loras: null, prompt: null, modelTo: null };
     if (!graph) return plan;
-    const loaders = (graph._nodes || []).filter(node => modelWidget(node, MAIN_TYPES) && outSlot(node, 'MODEL') >= 0);
+    const loaders = (graph._nodes || []).filter(isMainLoader);
     const loader = selected && loaders.includes(selected) ? selected : loaders.length === 1 ? loaders[0] : null;
     if (!loader) plan.skipped.push(loaders.length ? ['noteApplyManyLoaders', { count: loaders.length }] : ['noteApplyNoLoader']);
 

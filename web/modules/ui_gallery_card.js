@@ -97,7 +97,11 @@ async function deleteImage(owner, image, card) {
 /** The star: ☆, or ★ once the image is kept as anything. */
 function keepButton(owner, image) {
     const star = button('anomalous-gallery-keep', t('galleryKeep'), () => openKeepMenu(owner, star, image, {
-        onKept: kept => mark(kept),
+        onKept: (kept) => {
+            mark(kept);
+            // Cards drawn later (another page) read the same list.
+            owner.galleryKept?.then(map => map.set(keptKey(image), { ...kept })).catch(() => {});
+        },
     }));
     const mark = (kept) => {
         const done = Boolean(kept?.recipe || kept?.combo || kept?.prompt);

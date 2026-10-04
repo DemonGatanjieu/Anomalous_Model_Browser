@@ -9,7 +9,7 @@ import { openScanPage, renderScanPage, leaveScanPage } from './ui_scan_page.js';
 import { loadGalleryImages, refreshGalleryImages, showGeneratedGallery, showGallerySelectMode, showGalleryViewer } from './ui_gallery.js';
 import { showNotebooks, openCombo, openComboByFilename, refreshNotebooks, saveCurrentNotebook, deleteCurrentNotebook } from './ui_notebooks.js';
 import { renderNotebookEditor, fillNotebookGalleries } from './ui_notebook_editor.js';
-import { useNotebook, sendNotebookToCanvas } from './notebook_canvas.js';
+import { useNotebook, sendNotebookToCanvas, applyNotebookTo } from './notebook_canvas.js';
 import { showRecipes, refreshRecipes } from './ui_recipe_catalog.js';
 import { renderRecipeList, handleSaveRecipe, openRecipeByFilename } from './ui_recipes.js';
 import { openPromptStudio } from './ui_prompt_composer.js';
@@ -180,6 +180,7 @@ AnomalousBrowser.prototype.renderNotebookEditor = renderNotebookEditor;
 AnomalousBrowser.prototype.fillNotebookGalleries = fillNotebookGalleries;
 AnomalousBrowser.prototype.sendNotebookToCanvas = sendNotebookToCanvas;
 AnomalousBrowser.prototype.useNotebook = useNotebook;
+AnomalousBrowser.prototype.applyNotebookTo = applyNotebookTo;
 
 AnomalousBrowser.prototype.showRecipes = showRecipes;
 AnomalousBrowser.prototype.openRecipeByFilename = openRecipeByFilename;
