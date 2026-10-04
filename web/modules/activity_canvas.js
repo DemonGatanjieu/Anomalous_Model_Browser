@@ -35,7 +35,8 @@ export function watchCanvasChanges(owner) {
     let baseline = null;
 
     const flush = () => {
-        if (!baseline) return;
+        // A combo group following the pointer is logged once it is put down; Esc removes it.
+        if (!baseline || owner.placingCombo) return;
         const { graph, workflow, nodes } = baseline;
         baseline = null;
         const now = currentGraph();

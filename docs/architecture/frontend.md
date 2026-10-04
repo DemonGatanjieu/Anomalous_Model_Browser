@@ -76,7 +76,8 @@ The main surfaces are:
   owns header/zoom/filmstrip interaction, and `ui_image_inspector.js` owns metadata tabs.
 - Workspace: Combos (搭配, formerly Prompt Notes) and Workflow Recipes. The combo list, workspace/persistence, editing, and canvas use are separated
   across `ui_combos.js`, `ui_notebooks.js`, `ui_notebook_editor.js`, and
-  `notebook_canvas.js`; Put on canvas lays a combo out as a new wired group of nodes and
+  `notebook_canvas.js`; Put on canvas lays a combo out as a new wired group of nodes (Esc while it
+  follows the pointer removes it; the activity log holds back while `owner.placingCombo` is set) and
   never changes nodes already on the canvas (values of an existing node are changed in
   Current node).
 - Prompts: the rail entry opens Prompt Studio (below); there is no Material Library page.
@@ -291,7 +292,7 @@ drawer the drag passes through to the boxes.
 | `prompt_tags.js` | Pure tag split/join, weights, insert/remove/replace/move keeping separators |
 | `prompt_gloss.js` | Meaning languages, session cache and batched lookup of tags' meanings |
 | `prompt_material_source.js` | Saved prompts as cards (paginated list, text read once) and saving a card |
-| `prompt_composition.js` | Composing a saved plan's text, prompt titles and categories; no DOM |
+| `prompt_composition.js` | Starter cards (`PROMPT_PRESETS`, also the combo group's negative), composing a saved plan's text, prompt titles and categories; no DOM |
 | `ui_lifecycle.js` | View-scoped listeners, AbortSignal, cleanup callbacks and resizing |
 
 Every close route (Close, Esc outside a text field, replacement) disposes the same view

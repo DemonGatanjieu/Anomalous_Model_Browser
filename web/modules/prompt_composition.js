@@ -1,3 +1,10 @@
+/** Prompt Studio's starter cards; a combo put on the canvas takes the common negative one. */
+export const PROMPT_PRESETS = [
+    { id: 'preset_quality', titleKey: 'promptPresetQuality', role: 'positive', content: 'masterpiece, best quality, highly detailed' },
+    { id: 'preset_negative', titleKey: 'promptPresetNegative', role: 'negative', content: 'worst quality, low quality, lowres, blurry, jpeg artifacts, watermark, text' },
+    { id: 'preset_anatomy', titleKey: 'promptPresetAnatomy', role: 'negative', content: 'bad anatomy, bad hands, extra fingers, missing fingers, deformed' },
+];
+
 export function composePromptPlan(plan) {
     if (!plan) return { positive: '', negative: '' };
     const parts = Array.isArray(plan.parts) ? plan.parts : [];

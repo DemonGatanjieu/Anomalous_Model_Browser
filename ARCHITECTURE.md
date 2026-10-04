@@ -390,7 +390,7 @@ covered by the `styles.css` manifest.
   unfolded companion models card with unconstrained multi-column tile flow eliminating nested gallery scrollbars,
   prompt composer with dynamic field-sizing and compact inline find & replace toolbar, and unified dark slim scrollbar ergonomics with complete bilingual dictionary coverage in `locales.js`), and
   `notebook_canvas.js` puts a combo on the canvas as a new wired group of nodes (following the pointer, or at a dropped
-  card's position); it never changes nodes already there. Combos are a rail page. `ui_recipe_detail.js`
+  card's position; Esc takes a following group off again); it never changes nodes already there. Combos are a rail page. `ui_recipe_detail.js`
   coordinates the Workflow Recipe detail session and model composition. `ui_recipe_overview.js`
   owns the Overview prompt showcase (with `entry.text` fallback, guarded non-shrinking primary action CTA, and floating Popover More dropdown menu), and `ui_recipe_parameters.js`
   owns the responsive Parameter Presets workspace (featuring default-expanded raw node parameter inspection,
@@ -436,7 +436,7 @@ covered by the `styles.css` manifest.
   corridor, pin, Copy / Add / Rename / Delete); `prompt_card_drag.js` lets a card or a box be
   dragged out of the drawer onto a canvas prompt box or empty canvas (through `material_drag.js`
   and `prompt_drop.js`), passing through inside the drawer so the boxes still take it.
-  `prompt_composition.js` composes a saved plan's text and names and sorts prompts.
+  `prompt_composition.js` holds the starter cards, composes a saved plan's text and names and sorts prompts.
 - `ui_node_prompts.js` is the current-node panel's prompt boxes: role and text, with
   Edit in Prompt Studio. The studio uses `ui_lifecycle.js` for global listeners, request
   cancellation and resize cleanup. Translation requests go through `translation_service.js`.

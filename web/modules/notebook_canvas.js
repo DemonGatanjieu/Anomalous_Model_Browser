@@ -1,17 +1,22 @@
 /**
  * Puts the active combo (搭配) on the canvas as a new group of nodes: its main model loader,
- * its LoRA chain and a positive and a negative prompt node, wired together. From a button the
- * group follows the pointer until a click; a card dropped on the canvas builds it where it
- * was dropped. Nothing already on the canvas changes, except that a UNet combo's prompt nodes
- * take the canvas's CLIP loader when there is exactly one.
+ * its LoRA chain and a positive and a negative prompt node (the positive holds the combo's
+ * prompt, the negative the common negative starter card), wired together. From a button the
+ * group follows the pointer until a click, and Esc takes it off again; a card dropped on the
+ * canvas builds it where it was dropped. Nothing already on the canvas changes, except that a
+ * UNet combo's prompt nodes take the canvas's CLIP loader when there is exactly one.
  */
 
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
 import { recordCanvasStep } from './canvas_history.js';
+import { PROMPT_PRESETS } from './prompt_composition.js';
 import { anomalousAlert } from './ui_dialog.js';
 
 const t = (key, params) => translate(key, params);
+
+const NEGATIVE_PROMPT = PROMPT_PRESETS.find(card => card.id === 'preset_negative').content;
+const STEP_X = 350;
 
 /** Base-model value the backend uses for models whose metadata names no base model. */
 export const UNLABELED_BASE_MODEL = '__unlabeled__';
@@ -29,134 +34,128 @@ function canvasClipSource(exclude) {
     return sources.length === 1 ? sources[0] : null;
 }
 
+const modelPath = (model) => {
+    const sub = String(model.subfolder || '').replace(/^\/+/, '').replace(/\/+$/, '');
+    return sub ? `${sub}/${model.filename}` : model.filename;
+};
+
+/** The pointer's position in canvas coordinates. */
+function canvasPoint(event) {
+    const canvas = app.canvas;
+    if (canvas.convertEventToCanvasOffset) return canvas.convertEventToCanvasOffset(event);
+    const rect = canvas.canvas.getBoundingClientRect();
+    return [
+        (event.clientX - rect.left - canvas.ds.offset[0]) / canvas.ds.scale,
+        (event.clientY - rect.top - canvas.ds.offset[1]) / canvas.ds.scale,
+    ];
+}
+
+/**
+ * The group follows the pointer until a click puts it down (then `placed()`); Esc removes it
+ * again. While it follows, `owner.placingCombo` holds back the activity log, which is told once
+ * the group is down (after Esc there is nothing to log).
+ */
+function followPointer(owner, groupNodes, placed) {
+    const half = (groupNodes[0].node.size?.[0] || 200) / 2;
+    const move = (event) => {
+        if (!app.canvas) return;
+        const [x, y] = canvasPoint(event);
+        groupNodes.forEach(item => { item.node.pos = [x - half + item.relX, y - 20 + item.relY]; });
+        app.canvas.setDirty(true, true);
+    };
+    let armTimer = 0;
+    const stop = (event) => {
+        owner.placingCombo = false;
+        clearTimeout(armTimer);
+        window.removeEventListener('mousemove', move, true);
+        window.removeEventListener('keydown', cancel, true);
+        ['pointerdown', 'mousedown', 'click'].forEach(type => window.removeEventListener(type, drop, true));
+        event.preventDefault();
+        event.stopPropagation();
+    };
+    const drop = (event) => {
+        stop(event);
+        placed();
+        owner.flushCanvasActivity?.();
+    };
+    const cancel = (event) => {
+        if (event.key !== 'Escape') return;
+        stop(event);
+        groupNodes.forEach(item => app.graph.remove(item.node));
+        app.graph.setDirtyCanvas?.(true, true);
+    };
+
+    owner.placingCombo = true;
+    window.addEventListener('mousemove', move, true);
+    window.addEventListener('keydown', cancel, true);
+    // Later than the click that pressed the button, so that click does not put the group down.
+    armTimer = setTimeout(() => {
+        ['pointerdown', 'mousedown', 'click'].forEach(type => window.addEventListener(type, drop, true));
+    }, 100);
+}
+
 /** Builds the combo as a new group of nodes: at `position` (canvas coordinates), or following the pointer. */
 export function sendNotebookToCanvas(position = null) {
-        if (!this.currentNotebook) return;
-        const data = this.currentNotebook.data || {};
-        if (!data.mainModel) {
-            void anomalousAlert(t('notebookSelectMain'));
-            return;
-        }
-
-        const groupNodes = [];
-        const isUnet = isUnetModel(data.mainModel);
-
-        const ckptNode = LiteGraph.createNode(isUnet ? "UNETLoader" : "CheckpointLoaderSimple");
-        app.graph.add(ckptNode);
-        groupNodes.push({ node: ckptNode, relX: 0, relY: 0 });
-
-        const sub = data.mainModel.subfolder.replace(/^\/+/, '').replace(/\/+$/, '');
-        const relPath = sub ? `${sub}/${data.mainModel.filename}` : data.mainModel.filename;
-        this.setWidgetValuePath(ckptNode, relPath);
-
-        let lastNode = ckptNode;
-        let lastModelSlot = 0;
-        let lastClipSlot = isUnet ? null : 1;
-
-        let relX = 350;
-        let relY = 0;
-
-        data.loras.forEach((lora, idx) => {
-            const loraNode = LiteGraph.createNode(isUnet ? "LoraLoaderModelOnly" : "LoraLoader");
-            app.graph.add(loraNode);
-            groupNodes.push({ node: loraNode, relX: relX, relY: relY });
-
-            const lsub = lora.subfolder.replace(/^\/+/, '').replace(/\/+$/, '');
-            const lrelPath = lsub ? `${lsub}/${lora.filename}` : lora.filename;
-            this.setWidgetValuePath(loraNode, lrelPath);
-
-            lastNode.connect(lastModelSlot, loraNode, 0);
-            if (lastClipSlot !== null) lastNode.connect(lastClipSlot, loraNode, 1);
-
-            lastNode = loraNode;
-            lastModelSlot = 0;
-            if (!isUnet) lastClipSlot = 1;
-            relX += 350;
-        });
-
-        if (data.promptEn) {
-            const posNode = LiteGraph.createNode("CLIPTextEncode");
-            posNode.title = "CLIP Text Encode (Positive)";
-            app.graph.add(posNode);
-            groupNodes.push({ node: posNode, relX: relX, relY: 0 });
-
-            if (posNode.widgets && posNode.widgets.length > 0) {
-                const tw = posNode.widgets.find(w => w.name === 'text' || w.type === 'customtext');
-                if (tw) tw.value = data.promptEn;
-            }
-            const clipSource = lastClipSlot === null ? canvasClipSource(groupNodes.map(item => item.node)) : null;
-            if (lastClipSlot !== null) {
-                lastNode.connect(lastClipSlot, posNode, 0);
-            } else if (clipSource) {
-                clipSource.connect(clipSource.outputs.findIndex(output => output.type === 'CLIP'), posNode, 0);
-            } else {
-                anomalousAlert(t('noteNeedsClip'));
-            }
-
-            const negNode = LiteGraph.createNode("CLIPTextEncode");
-            negNode.title = "CLIP Text Encode (Negative)";
-            app.graph.add(negNode);
-            groupNodes.push({ node: negNode, relX: relX, relY: 250 });
-
-            if (negNode.widgets && negNode.widgets.length > 0) {
-                const tw = negNode.widgets.find(w => w.name === 'text' || w.type === 'customtext');
-                if (tw) tw.value = "text, watermark, ugly, bad anatomy";
-            }
-            if (lastClipSlot !== null) {
-                lastNode.connect(lastClipSlot, negNode, 0);
-            } else if (clipSource) {
-                clipSource.connect(clipSource.outputs.findIndex(output => output.type === 'CLIP'), negNode, 0);
-            }
-        }
-
-        if (position) {
-            groupNodes.forEach(item => { item.node.pos = [position[0] + item.relX, position[1] + item.relY]; });
-            app.graph.setDirtyCanvas?.(true, true);
-        }
-        recordCanvasStep(app);
-        this.nbPanel.style.display = 'none';
-        this.close();
-        if (position) return;
-
-        // Magnetic Sticking Logic
-        let isSticking = true;
-        const stickHandler = (e) => {
-            if (!isSticking || !app.canvas) return;
-            const canvas = app.canvas;
-
-            let canvasX, canvasY;
-            if (canvas.convertEventToCanvasOffset) {
-                const pos = canvas.convertEventToCanvasOffset(e);
-                canvasX = pos[0];
-                canvasY = pos[1];
-            } else {
-                const rect = canvas.canvas.getBoundingClientRect();
-                canvasX = (e.clientX - rect.left - canvas.ds.offset[0]) / canvas.ds.scale;
-                canvasY = (e.clientY - rect.top - canvas.ds.offset[1]) / canvas.ds.scale;
-            }
-
-            groupNodes.forEach(item => {
-                const w = (item.node.size && item.node.size[0]) ? item.node.size[0] : 200;
-                item.node.pos = [canvasX - (w / 2) + item.relX, canvasY - 20 + item.relY];
-            });
-            canvas.setDirty(true, true);
-        };
-
-        const dropHandler = (e) => {
-            if (!isSticking) return;
-            isSticking = false;
-            window.removeEventListener('mousemove', stickHandler, true);
-            window.removeEventListener('pointerdown', dropHandler, true);
-            window.removeEventListener('mousedown', dropHandler, true);
-            window.removeEventListener('click', dropHandler, true);
-            e.preventDefault();
-            e.stopPropagation();
-        };
-
-        window.addEventListener('mousemove', stickHandler, true);
-        setTimeout(() => {
-            window.addEventListener('pointerdown', dropHandler, true);
-            window.addEventListener('mousedown', dropHandler, true);
-            window.addEventListener('click', dropHandler, true);
-        }, 100);
+    if (!this.currentNotebook) return;
+    const data = this.currentNotebook.data || {};
+    if (!data.mainModel) {
+        void anomalousAlert(t('notebookSelectMain'));
+        return;
     }
+
+    const groupNodes = [];
+    const add = (type, relX, relY) => {
+        const node = LiteGraph.createNode(type);
+        app.graph.add(node);
+        groupNodes.push({ node, relX, relY });
+        return node;
+    };
+    const isUnet = isUnetModel(data.mainModel);
+
+    const loader = add(isUnet ? 'UNETLoader' : 'CheckpointLoaderSimple', 0, 0);
+    this.setWidgetValuePath(loader, modelPath(data.mainModel));
+    let last = loader;
+    const clipSlot = isUnet ? null : 1; // a checkpoint loader and a LoraLoader both give CLIP second
+    let relX = STEP_X;
+    (data.loras || []).forEach(lora => {
+        const node = add(isUnet ? 'LoraLoaderModelOnly' : 'LoraLoader', relX, 0);
+        this.setWidgetValuePath(node, modelPath(lora));
+        last.connect(0, node, 0);
+        if (clipSlot !== null) last.connect(clipSlot, node, 1);
+        last = node;
+        relX += STEP_X;
+    });
+
+    const promptNode = (title, text, relY) => {
+        const node = add('CLIPTextEncode', relX, relY);
+        node.title = title;
+        const box = node.widgets?.find(w => w.name === 'text' || w.type === 'customtext');
+        if (box) box.value = text;
+        return node;
+    };
+    const prompts = [
+        promptNode('CLIP Text Encode (Positive)', String(data.promptEn || ''), 0),
+        promptNode('CLIP Text Encode (Negative)', NEGATIVE_PROMPT, 250),
+    ];
+    let clip = clipSlot === null ? null : { node: last, slot: clipSlot };
+    if (!clip) {
+        const source = canvasClipSource(groupNodes.map(item => item.node));
+        if (source) clip = { node: source, slot: source.outputs.findIndex(output => output.type === 'CLIP') };
+    }
+    if (clip) prompts.forEach(node => clip.node.connect(clip.slot, node, 0));
+
+    const placed = () => {
+        recordCanvasStep(app);
+        if (!clip) void anomalousAlert(t('noteNeedsClip'));
+    };
+    this.nbPanel.style.display = 'none';
+    if (!position) {
+        followPointer(this, groupNodes, placed); // first, so closing does not log the group yet
+        this.close();
+        return;
+    }
+    this.close();
+    groupNodes.forEach(item => { item.node.pos = [position[0] + item.relX, position[1] + item.relY]; });
+    app.graph.setDirtyCanvas?.(true, true);
+    placed();
+}

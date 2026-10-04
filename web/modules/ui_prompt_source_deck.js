@@ -8,18 +8,13 @@
 
 import { translate as t } from './locales.js';
 import { bindPromptCardDrag } from './prompt_card_drag.js';
-import { promptTitle } from './prompt_composition.js';
+import { PROMPT_PRESETS, promptTitle } from './prompt_composition.js';
 import { loadPromptSourceCards, savePromptCard } from './prompt_material_source.js';
 import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { jsonResponse } from './ui_dom.js';
 import { createCardPopover } from './ui_prompt_card_popover.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 
-const PRESET_CARDS = [
-    { id: 'preset_quality', titleKey: 'promptPresetQuality', role: 'positive', content: 'masterpiece, best quality, highly detailed' },
-    { id: 'preset_negative', titleKey: 'promptPresetNegative', role: 'negative', content: 'worst quality, low quality, lowres, blurry, jpeg artifacts, watermark, text' },
-    { id: 'preset_anatomy', titleKey: 'promptPresetAnatomy', role: 'negative', content: 'bad anatomy, bad hands, extra fingers, missing fingers, deformed' },
-];
 const SYNC_MS = 30000;
 
 function el(tag, className, content) {
@@ -39,7 +34,7 @@ function button(className, label, title, onClick) {
 
 /** Fills `parent`; `onPick(card)` takes a clicked card. Returns { sync() }. */
 export function createPromptSourceDeck(parent, drawer, scope, onPick) {
-    const presets = PRESET_CARDS.map(card => ({ ...card, title: t(card.titleKey) }));
+    const presets = PROMPT_PRESETS.map(card => ({ ...card, title: t(card.titleKey) }));
     let saved = [];
     let keyword = '';
     const popover = createCardPopover({
