@@ -101,6 +101,9 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 | run_workflow | 像按“运行”一样把工作流加入队列 |
 | open_in_anomalous | 在插件里打开某个模型的详情页给你看 |
 | scan_models | 扫描新模型、重新查找没匹配上的，或扫描指定的模型（会联网访问 Civitai） |
+| download_missing_models | 下载当前工作流缺的模型：只下能确定来源的（C 站按指纹找到、或工作流带着文件链接），放在设置里“模型下载”说的位置，核对指纹后自动换上 |
+| download_model | 按链接（C 站模型版本、Hugging Face / GitHub 文件）或 C 站指纹下载一个模型到指定类型的文件夹，不覆盖已有文件 |
+| download_status | 看下载进度和结果 |
 | list_voices / speak | 列出 Anomalous TTS 的角色；让某个角色读一段台词并保存（最多等两分钟） |
 
 ## 5. 注意

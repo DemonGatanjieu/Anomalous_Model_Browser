@@ -10,12 +10,14 @@
 
 import { app } from "../../../scripts/app.js";
 import { translate as t } from './locales.js';
-import { applyModelFix } from './model_check.js';
+import { applyModelFix, checkWorkflowModels } from './model_check.js';
+import { destinationFor, expandFolder } from './download_places.js';
 import { inferModelFolderTypes } from './model_policies.js';
 import { startScan, targetsForItems } from './scan_runner.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 
 const POLL_MS = 1000;
+const ROOT_KEY = 'anomalous_download_root_';
 const ACTIVE = new Set(['queued', 'running', 'verifying']);
 
 const slashes = (value) => String(value || '').replace(/\\/g, '/');
@@ -110,6 +112,81 @@ export function downloadFor(value) {
     let latest = null;
     for (const job of jobs.values()) if (job.value === value) latest = job;
     return latest;
+}
+
+/** The models folder of a type a download goes to unless changed: the one picked last, else
+ * the first that exists (ComfyUI also lists folders that do not, such as output/loras). */
+export function defaultRoot(type, roots = []) {
+    const existing = roots.filter(root => root.exists);
+    const usable = existing.length ? existing : roots.slice(0, 1);
+    let index = -1;
+    try { index = Number(localStorage.getItem(ROOT_KEY + type) ?? -1); } catch { /* the first one */ }
+    return usable.find(root => root.index === index) || usable[0] || null;
+}
+
+export function rememberRoot(type, index) {
+    try { localStorage.setItem(ROOT_KEY + type, String(index)); } catch { /* not kept */ }
+}
+
+/**
+ * For AI apps (MCP download_missing_models): starts the download of every missing model of the
+ * open workflow whose source is certain (or of those named in `names`), where the download
+ * settings put it. Returns what started and why the others did not.
+ */
+export async function downloadMissing(owner, names = []) {
+    const wanted = new Set((names || []).map(name => fileName(name).toLowerCase()));
+    const entries = (await checkWorkflowModels()).filter(entry => entry.state === 'missing'
+        && (!wanted.size || wanted.has(fileName(entry.value).toLowerCase())));
+    const once = [...new Map(entries.map(entry => [entry.value, entry])).values()]; // one per model
+    const { found, settings } = once.length ? await lookupDownloads(once) : { found: new Map(), settings: null };
+    const started = [];
+    const notStarted = [];
+    for (const entry of once) {
+        const info = found.get(entry);
+        if (ACTIVE.has(downloadFor(entry.value)?.state)) {
+            notStarted.push({ model: entry.value, reason: 'already downloading' });
+        } else if (!info?.found) {
+            notStarted.push({ model: entry.value, reason: info?.reason || (entry.record?.hash || workflowLink(entry) ? 'not_found' : 'no_source') });
+        } else {
+            const root = defaultRoot(info.type, info.roots);
+            const rel = destinationFor(entry, info, settings, root?.subfolders || []);
+            try {
+                await startDownload(owner, entry, info, { root: root?.index ?? 0, rel });
+                started.push({ model: entry.value, to: rel, models_folder: root?.path || '', size: info.size || null,
+                    source: info.mirror ? 'huggingface (mirror)' : info.source, page: info.page || '', checked: Boolean(info.sha256 || entry.record?.hash) });
+            } catch (error) {
+                notStarted.push({ model: entry.value, reason: error.code || String(error.message || error) });
+            }
+        }
+    }
+    return { started, not_started: notStarted };
+}
+
+/**
+ * For AI apps (MCP download_model): downloads one model named by a Civitai / Hugging Face /
+ * GitHub file link or a Civitai hash into the `type` folder: `folder` (relative) when given,
+ * else the download settings' folder ({base} filled in); `name` (the site's when empty).
+ */
+export async function downloadFrom(owner, { url = '', hash = '', type = '', folder = null, name = '' }) {
+    const settings = await fetchDownloadSettings();
+    const data = await post('/anomalous/download/lookup', {
+        items: [{ key: '0', hash: String(hash || ''), url: String(url || ''), value: String(name || ''), types: [String(type)] }],
+        hf_mirror: hfMirrorOn(settings),
+    });
+    const result = data.results?.[0] || {};
+    if (!result.type) throw new Error(`"${type}" is not a model folder type of this ComfyUI (loras, checkpoints, vae…).`);
+    if (!result.found) throw new Error(`No file to download: ${result.reason || 'not_found'}.`);
+    const info = { ...result, roots: data.roots?.[result.type] || [] };
+    const root = defaultRoot(info.type, info.roots);
+    const file = fileName(name || info.file_name);
+    const dir = folder !== null && folder !== undefined
+        ? slashes(folder).split('/').filter(Boolean).join('/')
+        : expandFolder(settings.folder ?? 'Downloads', info.base_model, root?.subfolders || []);
+    const rel = dir ? `${dir}/${file}` : file;
+    const job = await startDownload(owner, { value: '', record: { hash: String(hash || '') } }, info, { root: root?.index ?? 0, rel });
+    return { started: true, id: job.id, to: rel, models_folder: root?.path || '', size: info.size || null,
+        source: info.mirror ? 'huggingface (mirror)' : info.source, model: [info.model_name, info.version_name].filter(Boolean).join(' — '),
+        base_model: info.base_model || '', checked: Boolean(info.sha256 || hash) };
 }
 
 export const downloadsActive = () => [...jobs.values()].some(job => ACTIVE.has(job.state));

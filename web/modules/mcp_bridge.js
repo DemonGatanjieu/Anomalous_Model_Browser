@@ -15,6 +15,7 @@ import { keepUndo, workflowKey } from './canvas_undo.js';
 import { recordCanvasStep } from './canvas_history.js';
 import { chainEnd, mainModelLoaders, planLoraInsertion, spliceLora } from './graph_splice.js';
 import { checkWorkflowModels, fixWorkflowModels, isProblem } from './model_check.js';
+import { downloadFrom, downloadMissing } from './model_download.js';
 import { promptBoxes } from './prompt_boxes.js';
 import { findModelComboWidget, getNativeWidgetValues, setWidgetValue } from './ui_node_model_picker.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
@@ -245,6 +246,18 @@ async function fixModels(_args, getOwner) {
     });
 }
 
+/** Downloads run on the server; each finished file is put into its nodes like a press in Model Check. */
+async function downloadMissingModels({ names }, getOwner) {
+    currentGraph();
+    const result = await downloadMissing(getOwner(), names);
+    return { ...result, note: 'Downloads run one at a time in the background; download_status follows them. Each finished file '
+        + 'is checked against its fingerprint and put into the nodes that use it.' };
+}
+
+async function downloadModel(args, getOwner) {
+    return { ...await downloadFrom(getOwner(), args), note: 'download_status follows it.' };
+}
+
 async function runWorkflow({ batch }) {
     currentGraph();
     await app.queuePrompt(0, batch || 1);
@@ -268,6 +281,8 @@ const ACTIONS = {
     place_combo: placeCombo,
     check_models: checkModels,
     fix_models: fixModels,
+    download_missing: downloadMissingModels,
+    download_model: downloadModel,
     run_workflow: runWorkflow,
     open_model: openModel,
 };

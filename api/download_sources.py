@@ -81,7 +81,9 @@ def _civitai_page(version):
 
 
 def _pick_civitai_file(files, file_hash="", name=""):
-    """The version's file with this hash (SHA-256 or a prefix such as AutoV2), else this name; None if neither."""
+    """The version's file with this hash (SHA-256 or a prefix such as AutoV2; None if it has
+    none such). Without a hash: the file of this name, else the version's primary model file —
+    the link names that version, and people rename their files."""
     files = [item for item in files or [] if isinstance(item, dict) and item.get("downloadUrl")]
     wanted = str(file_hash or "").upper()
     if wanted:
@@ -95,7 +97,8 @@ def _pick_civitai_file(files, file_hash="", name=""):
         for item in files:
             if str(item.get("name", "")).lower() == name.lower():
                 return item
-    return None
+    models = [item for item in files if item.get("type", "Model") == "Model"]
+    return next((item for item in models if item.get("primary")), models[0] if models else None)
 
 
 def _from_civitai_version(version, file_hash="", name=""):

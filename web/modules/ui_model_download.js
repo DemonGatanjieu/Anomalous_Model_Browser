@@ -11,12 +11,12 @@
 import { translate as t } from './locales.js';
 import { destinationFor, unsafeFormat } from './download_places.js';
 import {
-    cancelDownload, doneCount, downloadFor, lookupDownloads, startDownload, syncDownloads, watchDownloads,
+    cancelDownload, defaultRoot, doneCount, downloadFor, lookupDownloads, rememberRoot, startDownload, syncDownloads,
+    watchDownloads,
 } from './model_download.js';
 import { saveApiKey } from './ui_scan_page.js';
 import { openSettingsPage } from './ui_settings_page.js';
 
-const ROOT_KEY = 'anomalous_download_root_';
 const ACTIVE = ['queued', 'running', 'verifying'];
 const SOURCES = { civitai: 'Civitai', huggingface: 'Hugging Face', link: 'GitHub' };
 const NOT_FOUND = { network: 'downloadNoNetwork', different_file: 'downloadDifferentFile', gated: 'downloadGated' };
@@ -44,15 +44,6 @@ export function formatSize(bytes) {
 
 const fileName = (value) => String(value).split(/[\\/]/).pop();
 
-function rememberedRoot(type, roots) {
-    let index = 0;
-    try { index = Number(localStorage.getItem(ROOT_KEY + type) || 0); } catch { /* the first one */ }
-    return roots.some(root => root.index === index) ? index : (roots.find(root => root.exists)?.index ?? 0);
-}
-
-function rememberRoot(type, index) {
-    try { localStorage.setItem(ROOT_KEY + type, String(index)); } catch { /* not kept */ }
-}
 
 const joinPath = (root, rel) => `${String(root).replace(/[\\/]+$/, '')}${String(root).includes('\\') ? '\\' : '/'}${
     String(root).includes('\\') ? rel.replace(/\//g, '\\') : rel}`;
@@ -71,7 +62,7 @@ function dialogItem(entry, info, settings) {
     box.append(head);
     if (info.model_name) box.append(el('div', 'anomalous-download-model', [info.model_name, info.version_name].filter(Boolean).join(' — ')));
 
-    let root = roots.find(item => item.index === rememberedRoot(info.type, roots)) || roots[0] || { index: 0, path: '', subfolders: [] };
+    let root = defaultRoot(info.type, roots) || { index: 0, path: '', subfolders: [] };
     const line = el('label', 'anomalous-download-where');
     line.append(el('span', 'anomalous-download-label', t('downloadSaveTo')));
     if (roots.length > 1) {

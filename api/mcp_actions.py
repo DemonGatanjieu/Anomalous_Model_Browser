@@ -96,6 +96,31 @@ def fix_workflow_models(ctx):
     return _page("fix_models", timeout=90)
 
 
+def download_missing_models(ctx, names=None):
+    return _page("download_missing", {"names": [str(name) for name in names or []]}, timeout=120)
+
+
+def download_model(ctx, type, url="", hash="", folder=None, name=""):
+    if not (url or hash):
+        raise ToolError("Give url (a Civitai, Hugging Face or GitHub link to the file or model version) or hash.")
+    return _page("download_model", {"url": str(url), "hash": str(hash), "type": str(type),
+                                    "folder": None if folder is None else str(folder), "name": str(name or "")}, timeout=90)
+
+
+def download_status(ctx):
+    status, data = _local(ctx, "GET", "/anomalous/download/status")
+    if status != 200:
+        raise ToolError(f"Download status unavailable ({status}).")
+    jobs = []
+    for job in (data or {}).get("jobs", []):
+        total = job.get("total") or 0
+        jobs.append({"file": job.get("rel"), "type": job.get("type"), "state": job.get("state"), "error": job.get("error") or None,
+                     "percent": round(job["received"] * 100 / total) if total else None, "size": total or None,
+                     "checked": job.get("verified"), "for_model": job.get("value") or None})
+    return {"downloads": jobs, "meaning": "state: queued, running, verifying, done (checked: its fingerprint matched), "
+                                          "failed (error says why; starting it again continues it), cancelled."}
+
+
 def run_workflow(ctx, batch=1):
     batch = max(1, min(8, int(batch)))
     return _page("run_workflow", {"batch": batch})
@@ -238,6 +263,23 @@ ACTIONS = dict([
             "Puts back every missing model that Anomalous found with certainty (same file by hash). "
             "Likely candidates are left for the user. One Ctrl+Z step.",
             fix_workflow_models, destructive=True),
+    _action("download_missing_models", "Download missing models",
+            "Downloads the models the open workflow is missing whose source is certain: Civitai found by the "
+            "workflow's fingerprint, or a file link the workflow carries. A file name alone is never used. Files go "
+            "where the user's download settings say and are checked against the fingerprint before use; finished "
+            "ones are put into their nodes. names limits it to those files. Large files take a while.",
+            download_missing_models, {"names": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_LIMIT,
+                                                "description": "Only these model file names (default: all missing)."}},
+            open_world=True),
+    _action("download_model", "Download a model",
+            "Downloads one model into this computer's models folder of `type` (loras, checkpoints, vae, "
+            "diffusion_models, text_encoders, upscale_models…): from url (a Civitai model-version link, or a Hugging "
+            "Face / GitHub link to the file) or by its Civitai hash. folder is a subfolder inside that type's folder "
+            "(default: the user's download settings); name the file name (default: the site's). Never replaces a file.",
+            download_model, {"type": {"type": "string"}, "url": {"type": "string"}, "hash": {"type": "string"},
+                             "folder": {"type": "string"}, "name": {"type": "string"}}, ["type"], open_world=True),
+    _action("download_status", "Downloads", "How the downloads of this ComfyUI run are going.", download_status,
+            read_only=True),
     _action("run_workflow", "Run the workflow",
             "Queues the open workflow in ComfyUI, like pressing Run. Uses the GPU; results appear in the output folder.",
             run_workflow, {"batch": {"type": "integer", "minimum": 1, "maximum": 8, "default": 1}}),
