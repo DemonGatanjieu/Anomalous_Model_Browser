@@ -100,6 +100,12 @@ covered by the `styles.css` manifest.
   for the scan page and lists the last two, by the same sidecar rules the scraper uses
   (`sidecar_info`, `is_unmatched`, `unmatched_reason` in `model_identity.py`); it also
   lists the model files in other formats, which scans never read, so the page can say so.
+- `api/mcp_server.py` serves `/anomalous/mcp`, the Model Context Protocol endpoint AI apps
+  connect to (Streamable HTTP; the 2026-07-28 stateless protocol and the earlier
+  `initialize`-based ones; this computer only, Host and Origin checked against DNS
+  rebinding). `api/mcp_tools.py` holds its tools: read-only, summarised views over the same
+  stores the pages use (models, scans, output images, combos, recipes, saved prompts,
+  generated audio, activity log). User guide: `docs/guides/mcp.md`.
 - `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
   `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
   integrity receipts; `api/recipes.py` is the HTTP facade. `api/recipe_constants.py`

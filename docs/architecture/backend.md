@@ -145,6 +145,28 @@ wait for "look up again". After `CIVITAI_DOWN_AFTER` models in a row without an 
 a scan stops asking (`--civitai-down` carries this to the next folders) and infers the
 rest from the files, instead of waiting for every timeout.
 
+## MCP endpoint
+
+`POST /anomalous/mcp` (`api/mcp_server.py`) answers one JSON-RPC message per POST with
+one JSON object; GET and DELETE get 405, and nothing is sent unasked. A request whose
+`params._meta` carries `io.modelcontextprotocol/protocolVersion` is served as 2026-07-28:
+the `MCP-Protocol-Version`, `Mcp-Method` and (for `tools/call`) `Mcp-Name` headers must
+match the body, or 400 with -32020; an unknown version gets 400 with -32022 and the
+supported list. `initialize` selects the legacy shape (2025-03-26 to 2025-11-25); no
+session id is minted, so both eras are stateless. Unknown methods are -32601 (404 for
+modern requests).
+
+The peer must be loopback with no proxy header (`Forwarded`, `X-Forwarded-*`,
+`X-Real-IP`), and the Host and any Origin must name a loopback host; anything else is
+403. ComfyUI's own origin middleware also applies.
+
+Tools (`api/mcp_tools.py`) only read and run in worker threads, four at a time. Model ids
+are `type:path_idx:relative/path` and images are paths under the output folder; both are
+resolved with `resolve_folder_subdir` / `resolve_within`, so an id cannot leave its root.
+A tool's own failure (bad id, missing file, unexpected error) is a result with
+`isError: true`, not a protocol error. Pictures attached on request are the gallery's
+512 px thumbnails (at most 1.5 MB).
+
 ## Metadata and cache behavior
 
 The output gallery keeps one ordered directory snapshot for at most ten seconds

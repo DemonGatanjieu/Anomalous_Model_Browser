@@ -52,6 +52,8 @@ Tools on the rail:
 * **Each tool on its page**: workflow share codes (import / export) on Workflows, Model Sources (where each model can be downloaded) on Models and in Model Check, translation on the prompt boxes in Current node.
 * **Settings** (at the bottom): language, font size, thumbnails, video covers, which model folders to show, and feedback. Home and Settings have **Report a problem**, which opens a GitHub issue with your versions and GPU already filled in.
 
+**AI apps (MCP)**: Claude, Cursor, Cherry Studio and other apps that support MCP can read your library through `http://127.0.0.1:8188/anomalous/mcp`, to answer questions about your models, outputs and saved prompts. Read-only and local; setup in [docs/guides/mcp.md](docs/guides/mcp.md).
+
 **Light on your computer**: the plugin itself loads no models, so it takes no graphics memory from image generation; the browser shows small thumbnails instead of full images, and its pictures are released a minute and a half after you close it. The voice models of Anomalous_TTS give their graphics memory back whenever ComfyUI needs it for image generation, and all of it on **Unload models**.
 
 ### 📦 Quick Installation
@@ -111,6 +113,8 @@ The first time you open it, start on **Home**: **Scan model folders** fills in c
 * **当前节点**（原“节点助手”）：选中画布上的节点，查看它用的模型。可以看图换模型、插入 LoRA；存过的同类节点参数列在一起，每条写明会改哪几项，一键套用；存下的参数也在这里删除。
 * **工具回到各自的页面**：工作流分享码（导入导出）在“工作流”页，模型来源（每个模型去哪下载）在“模型”页和模型检查里，翻译在“当前节点”的提示词框上。
 * **设置**（最下面）：语言、字号、缩略图、视频封面、显示哪些模型文件夹，以及提交反馈。主页和设置里的 **报告问题** 会打开一个已经填好版本和显卡信息的 GitHub 页面。
+
+**接入 AI 软件（MCP）**：Claude、Cursor、Cherry Studio 等支持 MCP 的 AI 软件，可以通过 `http://127.0.0.1:8188/anomalous/mcp` 读取你的模型、出图和存下的提示词，回答相关问题。只读，只限本机。设置方法见 [docs/guides/mcp.md](docs/guides/mcp.md)。
 
 **不占你的资源**：
 - 插件本身不加载任何模型，不和生图抢显存。
