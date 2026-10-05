@@ -106,7 +106,14 @@ function dialogItem(entry, info, settings) {
     box.append(line, full);
 
     if (unsafeFormat(entry.value) || unsafeFormat(info.file_name)) box.append(el('div', 'anomalous-download-note is-warn', t('downloadUnsafeFormat')));
-    if (!info.sha256 && !(entry.record?.hash?.length >= 10)) box.append(el('div', 'anomalous-download-note', t('downloadNoCheck')));
+    if (info.by_name) {
+        box.append(el('div', 'anomalous-download-note is-warn', t('downloadByName', { name: info.list_name || '' })));
+    } else if (info.via === 'manager_list') {
+        box.append(el('div', 'anomalous-download-note', t('downloadViaManager', { name: info.list_name || '' })));
+    }
+    if (!info.by_name && !info.sha256 && !(entry.record?.hash?.length >= 10)) {
+        box.append(el('div', 'anomalous-download-note', t('downloadNoCheck')));
+    }
     const error = el('div', 'anomalous-download-note is-bad');
     error.hidden = true;
     box.append(error);
@@ -242,11 +249,18 @@ export async function fillDownloads(owner, panel, slots, pageActions, rerender) 
             const start = () => openDownloadDialog(owner, [{ entry, info }], settings);
             if (job && job.state !== 'cancelled' && job.state !== 'done') {
                 slot.replaceChildren(jobView(owner, job, start));
+            } else if (info?.found && info.by_name) {
+                // Only a file of the same name: its own wording, never the main button.
+                slot.replaceChildren(button('anomalous-scan-row-btn', info.size
+                    ? t('downloadOneByName', { size: formatSize(info.size) }) : t('downloadOneByNameNoSize'), start));
             } else if (info?.found) {
                 slot.replaceChildren(button('anomalous-scan-row-btn is-main', info.size
                     ? t('downloadOne', { size: formatSize(info.size) }) : t('downloadOneNoSize'), start));
             } else if (info && NOT_FOUND[info.reason]) {
                 slot.replaceChildren(el('span', 'anomalous-download-text', t(NOT_FOUND[info.reason])));
+                if (info.reason === 'gated' && /^https:\/\//.test(info.page || '')) {
+                    slot.append(button('anomalous-scan-row-btn', t('downloadOpenPage'), () => window.open(info.page, '_blank', 'noopener')));
+                }
             } else {
                 slot.replaceChildren();
             }
@@ -255,7 +269,8 @@ export async function fillDownloads(owner, panel, slots, pageActions, rerender) 
     // Not downloading now (an earlier, ended download of the same name does not count).
     const idle = (entry) => !ACTIVE.includes(downloadFor(entry.value)?.state);
     for (const [entry] of slots) {
-        if (found.get(entry)?.found && idle(entry)) ready.push({ entry, info: found.get(entry) });
+        // "Download all" takes only the files known to be the right ones.
+        if (found.get(entry)?.found && !found.get(entry).by_name && idle(entry)) ready.push({ entry, info: found.get(entry) });
     }
     if (ready.length > 1) {
         const size = ready.reduce((sum, item) => sum + (Number(item.info.size) || 0), 0);

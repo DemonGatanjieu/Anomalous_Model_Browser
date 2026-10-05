@@ -118,7 +118,8 @@ covered by the `styles.css` manifest.
   an interruption, checked against the SHA-256 before it gets its name, never over an
   existing file; also where downloads go by default (`download_settings.json`).
   `api/download_sources.py` finds the one exact file: Civitai by hash, a Civitai version
-  link, or a Hugging Face / GitHub file link the workflow carries.
+  link, or a Hugging Face / GitHub file link the workflow carries, else a file of the same
+  name in ComfyUI-Manager's model list (`api/manager_catalog.py`), checked by the hash.
 - `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
   `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
   integrity receipts; `api/recipes.py` is the HTTP facade. `api/recipe_constants.py`

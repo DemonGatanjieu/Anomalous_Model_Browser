@@ -1,11 +1,13 @@
 """Where a model the open workflow is missing can be downloaded from, for Model Check's
 "Download" (api/model_download.py fetches it).
 
-Only sources that name one exact file count: Civitai by the file's hash (the workflow's
-fingerprint), a Civitai model version or file link, or a direct file link on Hugging Face
-(or its mirror) or GitHub, as a shared workflow carries them (AMB's model links, ComfyUI's own
-`properties.models`). A file name alone is never a source. Each answer says the file's size
-and SHA-256 when the site gives them, so the download can be checked.
+Sources that name one exact file: Civitai by the file's hash (the workflow's fingerprint), a
+Civitai model version or file link, or a direct file link on Hugging Face (or its mirror) or
+GitHub, as a shared workflow carries them (AMB's model links, ComfyUI's own `properties.models`).
+Then ComfyUI-Manager's model list by file name (manager_catalog.py): with the fingerprint, only
+the entry whose file has it; without, the one entry of that name, marked `by_name` because a
+name is no proof (the page asks before it downloads one). Each answer says the file's size and
+SHA-256 when the site gives them, so the download can be checked.
 """
 
 import json
@@ -18,6 +20,7 @@ try:
     from ..civitai_client import USER_AGENT, _load_api_key
 except ImportError:  # loaded outside the package (tests)
     from civitai_client import USER_AGENT, _load_api_key
+from . import manager_catalog
 
 CIVITAI_HOSTS = ("civitai.com", "civitai.red")
 HF_HOSTS = ("huggingface.co", "hf-mirror.com")
@@ -197,7 +200,9 @@ def hugging_face_file(url, host=""):
     if answer is None:
         return None
     if answer == "gated":
-        return {"found": False, "reason": "gated", "page": url}
+        # The repository's page, where the user logs in and accepts its terms.
+        parts = urllib.parse.urlsplit(file_url).path.strip("/").split("/")
+        return {"found": False, "reason": "gated", "page": f"https://huggingface.co/{'/'.join(parts[:2])}"}
     headers, redirected = answer
     etag = str(headers.get("x-linked-etag") or headers.get("etag") or "").strip('"').replace("W/", "").strip('"')
     # A redirect's own length is not the file's: without x-linked-size (small files kept
@@ -220,41 +225,106 @@ def hugging_face_file(url, host=""):
 
 
 def plain_link(url):
-    """A direct file link elsewhere (a GitHub release asset): no size or hash to check against."""
-    path = urllib.parse.urlsplit(url).path
-    if "/releases/download/" not in path:
+    """A direct file link on GitHub (a release asset, or a file in a repository, fetched raw): no
+    size or hash to check against."""
+    parsed = urllib.parse.urlsplit(url)
+    path = parsed.path
+    if "/blob/" in path:  # the page about the file; its raw form is the file
+        path = path.replace("/blob/", "/raw/", 1)
+    if "/releases/download/" not in path and "/raw/" not in path:
         return None
     return {
-        "found": True, "source": "link", "download_url": url,
+        "found": True, "source": "link", "download_url": urllib.parse.urlunsplit(("https", parsed.netloc, path, "", "")),
         "file_name": urllib.parse.unquote(path.rsplit("/", 1)[-1]), "size": 0, "sha256": "",
         "format": "", "base_model": "", "model_name": "", "version_name": "", "page": url,
     }
 
 
-def find_source(file_hash="", url="", name="", hf_mirror=False):
+def same_file(expected, sha256):
+    """Whether a fingerprint (full SHA-256 or a prefix of 10+, AutoV2) names this SHA-256."""
+    expected, sha256 = str(expected or "").lower(), str(sha256 or "").lower()
+    return len(expected) >= 10 and sha256.startswith(expected)
+
+
+def _is_sha_prefix(value):
+    return len(value) >= 10 and bool(re.fullmatch(r"[0-9a-fA-F]+", value))
+
+
+class _Sites:
+    """Which sites stopped answering during one lookup, so the next models skip only those
+    (offline in mainland China, Civitai fails while Hugging Face through its mirror works)."""
+
+    def __init__(self, down=None):
+        self.down = down if down is not None else set()
+        self.missed = False
+
+    def ask(self, site, call, *args):
+        if site in self.down:
+            self.missed = True
+            return None
+        try:
+            return call(*args)
+        except SourceUnreachable:
+            self.down.add(site)
+            self.missed = True
+            return None
+
+
+def _by_link(sites, url, name, file_hash, hf_host):
+    host = host_of(url)
+    if _site(host, CIVITAI_HOSTS):
+        return sites.ask("civitai", civitai_by_link, url, name, file_hash)
+    if _site(host, HF_HOSTS):
+        return sites.ask("huggingface", hugging_face_file, url, hf_host)
+    if _site(host, OTHER_HOSTS):
+        return plain_link(url)
+    return None
+
+
+def _from_manager_list(sites, name, folder_type, file_hash, hf_host):
+    """A file of this name in ComfyUI-Manager's model list. With the workflow's fingerprint,
+    only an entry whose file has that SHA-256 (several of the same name are each asked); without,
+    the one entry of that name, marked `by_name` (nothing can tell it is the same file)."""
+    entries = manager_catalog.candidates(name, folder_type)
+    if not entries:
+        return None
+    if _is_sha_prefix(file_hash):
+        for entry in entries[:6]:
+            found = _by_link(sites, entry["url"], name, "", hf_host)
+            if found and found.get("found") and same_file(file_hash, found.get("sha256")):
+                return {**found, "via": "manager_list", "list_name": entry["name"], "by_name": False}
+        return None
+    if len(entries) != 1:
+        return None  # several files of that name: which one is unknowable
+    found = _by_link(sites, entries[0]["url"], name, "", hf_host)
+    if found and found.get("found"):
+        return {**found, "via": "manager_list", "list_name": entries[0]["name"], "by_name": True,
+                "base_model": found.get("base_model") or entries[0]["base"]}
+    return found
+
+
+def find_source(file_hash="", url="", name="", hf_mirror=False, folder_type="", down=None):
     """Where one missing model can come from: {found, source, download_url, file_name, size,
-    sha256, base_model, model_name, version_name, page}, or {found: False, reason}. With
-    `hf_mirror`, Hugging Face files come from its mirror (and without, never from it)."""
+    sha256, base_model, model_name, version_name, page}, or {found: False, reason}. Asked in
+    turn: Civitai by the fingerprint, the workflow's link, ComfyUI-Manager's model list by file
+    name. With `hf_mirror`, Hugging Face files come from its mirror (and without, never from it).
+    `down` (a set kept across one lookup) names the sites that stopped answering."""
+    sites = _Sites(down)
+    hf_host = HF_MIRROR if hf_mirror else "huggingface.co"
     looked = False
-    try:
-        if file_hash:
-            looked = True
-            found = civitai_by_hash(file_hash)
-            if found:
-                return found
-        if url and host_of(url):
-            looked = True
-            host = host_of(url)
-            if _site(host, CIVITAI_HOSTS):
-                found = civitai_by_link(url, name, file_hash)
-            elif _site(host, HF_HOSTS):
-                found = hugging_face_file(url, HF_MIRROR if hf_mirror else "huggingface.co")
-            elif _site(host, OTHER_HOSTS):
-                found = plain_link(url)
-            else:
-                found = None
-            if found:
-                return found
-    except SourceUnreachable as error:
-        return {"found": False, "reason": "network", "error": str(error)}
+    found = None
+    if file_hash:
+        looked = True
+        found = sites.ask("civitai", civitai_by_hash, file_hash)
+    if not found and url and host_of(url):
+        looked = True
+        found = _by_link(sites, url, name, file_hash, hf_host)
+    if not (found and found.get("found")) and name:
+        listed = _from_manager_list(sites, name, folder_type, file_hash, hf_host)
+        looked = looked or listed is not None or bool(manager_catalog.candidates(name, folder_type))
+        found = listed or found
+    if found:
+        return found
+    if sites.missed:
+        return {"found": False, "reason": "network"}
     return {"found": False, "reason": "not_found" if looked else "no_source"}

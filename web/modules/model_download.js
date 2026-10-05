@@ -87,8 +87,9 @@ export async function lookupDownloads(entries) {
         const item = items.find(candidate => candidate.key === result.key);
         if (!item) continue;
         let info = item.known ? lookups.get(lookupKey(item)) : result;
-        if (!item.known && result.reason !== 'network' && (item.hash || item.url)) lookups.set(lookupKey(item), result);
-        if (!info || (!item.hash && !item.url)) continue;
+        // A name alone is looked up too (ComfyUI-Manager's model list); a network failure is asked again.
+        if (!item.known && result.reason !== 'network') lookups.set(lookupKey(item), result);
+        if (!info) continue;
         info = { ...info, type: result.type, roots: data.roots?.[result.type] || [], link: item.url };
         found.set(entries[Number(item.key)], info);
     }
@@ -147,6 +148,10 @@ export async function downloadMissing(owner, names = []) {
             notStarted.push({ model: entry.value, reason: 'already downloading' });
         } else if (!info?.found) {
             notStarted.push({ model: entry.value, reason: info?.reason || (entry.record?.hash || workflowLink(entry) ? 'not_found' : 'no_source') });
+        } else if (info.by_name) {
+            // Only a file of the same name: the user decides (download_model with this url, if they agree).
+            notStarted.push({ model: entry.value, reason: 'same name only (ComfyUI-Manager model list); the workflow has no fingerprint to check it',
+                url: info.download_url, list_name: info.list_name || '' });
         } else {
             const root = defaultRoot(info.type, info.roots);
             const rel = destinationFor(entry, info, settings, root?.subfolders || []);
