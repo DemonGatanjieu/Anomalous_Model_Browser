@@ -213,8 +213,11 @@ until they have a complete remapping path. Complete recipes use
 `loadGraphData` intentionally so ComfyUI owns new-workflow canvas creation.
 
 `graph_splice.js` handles deliberate MODEL/CLIP insertion. It analyzes declared
-port types rather than slot indexes or display names. Ambiguous downstream
-fan-out is rejected until a user can choose a branch. Picker candidates come
+port types rather than slot indexes or display names. In the picker's insertion
+(`spliceModelChainNode`) ambiguous downstream fan-out is rejected until a user can
+choose a branch. `spliceAfterOutputs` (the MCP `add_lora`) instead puts a node after
+outputs that may sit on different nodes (a UNet loader's MODEL, a CLIP loader's CLIP)
+and moves every link each output had, so one CLIP feeding both prompts stays whole. Picker candidates come
 from the target widget's native combo values; metadata may filter or decorate
 that set but may not introduce foreign category values.
 

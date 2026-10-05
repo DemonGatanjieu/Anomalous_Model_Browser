@@ -95,7 +95,7 @@ claude mcp add --transport http anomalous http://127.0.0.1:8188/anomalous/mcp
 | describe_canvas | 读当前工作流：每个节点的编号、类型、设置，哪个是正向/反向提示词框 |
 | set_prompt | 改写或追加正向/反向提示词 |
 | set_model | 换某个加载器节点里的模型 |
-| add_lora | 在模型链里插入一个 LoRA（默认接在主模型加载器和已有 LoRA 后面），UNet / Flux 类模型会用仅模型的 LoRA 节点 |
+| add_lora | 插入一个 LoRA，默认接在主模型加载器和已有的 LoRA 后面。LoRA 文件里练过文本编码器的（SD1.5、SDXL、Illustrious 的大多是），CLIP 线也接上：从 checkpoint 接，或者从 UNet 工作流里单独的 CLIP 加载器接，正反向提示词一起改接到它后面；没练过的（多数 Flux、Anima 的 LoRA）只接模型线 |
 | place_combo | 把一个搭配作为一组新节点摆到画布上，原有节点不动 |
 | check_workflow_models / fix_workflow_models | 检查缺失的模型；把能确定找回的（同一个文件）放回去，“可能是”的留给你在模型检查里确认 |
 | run_workflow | 像按“运行”一样把工作流加入队列 |

@@ -13,7 +13,7 @@ import { diffSnapshots, snapshotGraph } from './activity_diff.js';
 import { postCanvasActivity } from './activity_log.js';
 import { keepUndo, workflowKey } from './canvas_undo.js';
 import { recordCanvasStep } from './canvas_history.js';
-import { analyzeModelChainInsertion, spliceModelChainNode } from './graph_splice.js';
+import { spliceAfterOutputs } from './graph_splice.js';
 import { checkWorkflowModels, fixWorkflowModels, isProblem } from './model_check.js';
 import { promptBoxes } from './prompt_boxes.js';
 import { findModelComboWidget, getNativeWidgetValues, setWidgetValue } from './ui_node_model_picker.js';
@@ -25,6 +25,7 @@ const MAX_NODES = 150;
 const MAX_VALUE = 400;
 const MAX_LOGGED = 60;
 const MAIN_LOADER = /checkpointloader|unetloader|unetloadergguf|diffusionmodelloader/i;
+const outputType = (node, type) => (node?.outputs || []).some(output => String(output.type).toUpperCase() === type);
 
 const graph = () => app.canvas?.graph || app.graph || null;
 const workflowName = () => {
@@ -164,30 +165,47 @@ function setModel({ node_id: nodeId, model }, getOwner) {
     });
 }
 
-/** The loader `add_lora` goes after by default: the one main model loader, past the LoRAs already chained to it. */
-function defaultLoraAnchor(g) {
-    const loaders = (g._nodes || []).filter(node => MAIN_LOADER.test(node.type) && node.mode !== 4);
-    if (loaders.length !== 1) throw new Error(loaders.length ? 'Several model loaders; give after_node_id.' : 'No model loader on the canvas; give after_node_id.');
-    let anchor = loaders[0];
+/** Follows `type` from `node` through the LoRA loaders chained after it: the last of them. */
+function chainEnd(g, node, type) {
+    let end = node;
     for (let hop = 0; hop < 20; hop++) {
-        const output = (anchor.outputs || []).find(item => String(item.type).toUpperCase() === 'MODEL');
+        const output = (end.outputs || []).find(item => String(item.type).toUpperCase() === type);
         const targets = (output?.links || []).map(id => g.getLink?.(id) ?? g.links?.[id]).filter(Boolean)
             .map(link => g.getNodeById(link.target_id));
         if (targets.length !== 1 || !/lora/i.test(targets[0]?.type || '')) break;
-        anchor = targets[0];
+        end = targets[0];
     }
-    return anchor;
+    return end;
 }
 
-function addLora({ model, after_node_id: afterId, strength_model: strengthModel, strength_clip: strengthClip }, getOwner) {
+/** The workflow's one main model loader, past the LoRAs already chained to it. */
+function defaultModelEnd(g) {
+    const loaders = (g._nodes || []).filter(node => MAIN_LOADER.test(node.type) && node.mode !== 4);
+    if (loaders.length !== 1) throw new Error(loaders.length ? 'Several model loaders; give after_node_id.' : 'No model loader on the canvas; give after_node_id.');
+    return chainEnd(g, loaders[0], 'MODEL');
+}
+
+/** Where the text encoder comes from when the model node has none (a UNet's own CLIP loader): the one source, or null. */
+function separateClipEnd(g) {
+    const sources = (g._nodes || []).filter(node => node.mode !== 4 && outputType(node, 'CLIP')
+        && !(node.inputs || []).some(input => ['CLIP', 'MODEL'].includes(String(input.type).toUpperCase())));
+    return sources.length === 1 ? chainEnd(g, sources[0], 'CLIP') : null;
+}
+
+/**
+ * A LoRA goes after the model line's end (the main loader or the last LoRA on it). Its CLIP
+ * line is wired only when the file carries text-encoder weights (`textEncoder`, read from its
+ * header by the server): from the same node (a checkpoint, a full LoRA loader) or, for a UNet,
+ * from the canvas's one CLIP source. Otherwise a model-only LoRA loader patches just the model.
+ * Every node the outputs fed (both prompts on one CLIP) now hangs after the LoRA.
+ */
+function addLora({ model, text_encoder: textEncoder, after_node_id: afterId, strength_model: strengthModel, strength_clip: strengthClip }, getOwner) {
     return recorded(getOwner, 'mcpDidLora', (g) => {
-        const anchor = afterId != null ? nodeById(afterId) : defaultLoraAnchor(g);
-        // A loader with a CLIP output takes a full LoRA loader; a UNet one (model only) a model-only one.
-        const withClip = (anchor.outputs || []).some(output => String(output.type).toUpperCase() === 'CLIP');
-        const types = withClip ? ['MODEL', 'CLIP'] : ['MODEL'];
-        const analysis = analyzeModelChainInsertion(g, anchor, 'after', types);
-        if (!analysis.supported) throw new Error(`A LoRA cannot go after node ${anchor.id} (${anchor.type}): ${analysis.code}.`);
-        const node = LiteGraph.createNode(withClip ? 'LoraLoader' : 'LoraLoaderModelOnly');
+        const modelEnd = afterId != null ? nodeById(afterId) : defaultModelEnd(g);
+        if (!outputType(modelEnd, 'MODEL')) throw new Error(`Node ${modelEnd.id} (${modelEnd.type}) has no MODEL output.`);
+        const clipEnd = !textEncoder ? null : outputType(modelEnd, 'CLIP') ? modelEnd : separateClipEnd(g);
+        const outputs = [{ node: modelEnd, type: 'MODEL' }, ...(clipEnd ? [{ node: clipEnd, type: 'CLIP' }] : [])];
+        const node = LiteGraph.createNode(clipEnd ? 'LoraLoader' : 'LoraLoaderModelOnly');
         const widget = node && findModelComboWidget(node);
         const value = widget && modelChoice(node, widget, model.path);
         if (!value) throw new Error(`ComfyUI does not list ${model.path} as a LoRA yet; refresh ComfyUI's model lists (R).`);
@@ -196,9 +214,13 @@ function addLora({ model, after_node_id: afterId, strength_model: strengthModel,
             const item = node.widgets?.find(w => w.name === name);
             if (item && Number.isFinite(strength)) setWidgetValue(node, item, strength);
         }
-        spliceModelChainNode({ graph: g, anchorNode: anchor, insertedNode: node, direction: 'after', types });
+        spliceAfterOutputs({ graph: g, insertedNode: node, outputs });
         recordCanvasStep(app);
-        return { node_id: node.id, after_node_id: anchor.id, node_type: node.type, lora: value, toast: { name: value.split(/[\\/]/).pop() } };
+        return {
+            node_id: node.id, node_type: node.type, lora: value, model_from: modelEnd.id, ...(clipEnd ? { clip_from: clipEnd.id } : {}),
+            ...(textEncoder && !clipEnd ? { note: 'The LoRA has text-encoder weights but no single CLIP source was found; only the model is patched.' } : {}),
+            toast: { name: value.split(/[\\/]/).pop() },
+        };
     });
 }
 
