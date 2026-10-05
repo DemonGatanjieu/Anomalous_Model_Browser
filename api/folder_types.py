@@ -1,4 +1,9 @@
-"""Configured model-folder visibility and scan-scope helpers."""
+"""Configured model-folder visibility and scan-scope helpers.
+
+Shown folders are also the ones scans read, so a workflow can carry each model's fingerprint
+only for them. Text encoders, CLIP vision and upscalers are shown by default since
+2026-10 (FOLDER_DEFAULTS_VERSION 2); an older config.json gets them turned on once.
+"""
 
 import json
 import os
@@ -6,10 +11,42 @@ import os
 from aiohttp import web
 import folder_paths
 
+from .path_utils import atomic_write_json
+
+DEFAULT_TYPES = ['checkpoints', 'loras', 'diffusion_models', 'unet', 'controlnet', 'vae',
+                 'text_encoders', 'clip', 'clip_vision', 'upscale_models']
+# Added to the defaults in version 2 (the components a workflow's fingerprints need most).
+ADDED_IN_2 = {'text_encoders', 'clip', 'clip_vision', 'upscale_models'}
+FOLDER_DEFAULTS_VERSION = 2
 
 DEFAULT_PHYSICAL_FOLDER_NAMES = {
-    'checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae'
+    'checkpoints', 'loras', 'unet', 'diffusion_models', 'controlnet', 'vae',
+    'text_encoders', 'clip', 'clip_vision', 'upscale_models',
 }
+
+
+def config_path():
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+
+
+def upgrade_folder_defaults(path=None):
+    """Once per config.json: the folders added to the defaults are shown (and scanned) even
+    where an earlier version saved them as hidden. True when the file changed."""
+    path = path or config_path()
+    try:
+        with open(path, encoding='utf-8') as source:
+            cfg = json.load(source)
+    except (OSError, ValueError):
+        return False  # no config yet: the defaults apply as they are
+    if not isinstance(cfg, dict) or int(cfg.get("folder_defaults_version") or 1) >= FOLDER_DEFAULTS_VERSION:
+        return False
+    for key in ("folder_types_config", "physical_folders_config"):
+        for item in cfg.get(key) or []:
+            if isinstance(item, dict) and item.get("type") in ADDED_IN_2:
+                item["visible"] = True
+    cfg["folder_defaults_version"] = FOLDER_DEFAULTS_VERSION
+    atomic_write_json(path, cfg)
+    return True
 
 
 def get_folder_view_mode():
@@ -149,7 +186,7 @@ def get_active_folder_types():
     config_path = os.path.join(script_dir, "config.json")
     
     all_types = list(folder_paths.folder_names_and_paths.keys())
-    default_types = ['checkpoints', 'loras', 'diffusion_models', 'unet', 'controlnet', 'vae']
+    default_types = DEFAULT_TYPES
     
     try:
         if os.path.exists(config_path):
@@ -215,7 +252,7 @@ async def api_get_all_folder_types(request):
     else:
         # Abstract mode
         all_types = list(folder_paths.folder_names_and_paths.keys())
-        default_types = ['checkpoints', 'loras', 'diffusion_models', 'controlnet', 'vae']
+        default_types = DEFAULT_TYPES
         configured_types = set()
         try:
             if os.path.exists(config_path):

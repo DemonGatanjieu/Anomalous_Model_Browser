@@ -99,3 +99,44 @@
 .anomalous-model-type-chip.is-tool {
     margin-left: auto;
 }
+
+/* The models search in the header (ui_model_search.js); shown on the models page only. */
+.anomalous-model-search {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    width: min(360px, 100%);
+    min-width: 120px;
+    padding: 0 10px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    background: var(--amb-bg-input, rgba(0, 0, 0, 0.25));
+    box-sizing: border-box;
+}
+
+[data-page="models"] .anomalous-model-search {
+    display: flex;
+}
+
+.anomalous-model-search:focus-within {
+    border-color: var(--amb-link);
+}
+
+.anomalous-model-search-icon {
+    color: var(--amb-text-muted);
+    font-size: 15px;
+    line-height: 1;
+}
+
+.anomalous-model-search input {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    padding: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 13px;
+}

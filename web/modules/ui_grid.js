@@ -6,6 +6,7 @@
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { focusModel, modelListUrl, renderTypeBar } from './ui_model_types.js';
+import { matchesModelQuery } from './ui_model_search.js';
 import { renderSourceBadge } from './model_source.js';
 import { renderModelSourcesView } from './ui_model_sources.js';
 import { recordCanvasStep } from './canvas_history.js';
@@ -81,10 +82,12 @@ export async function loadModels() {
             stopMediaInContainer(this.grid);
             this.grid.replaceChildren(renderTypeBar(this, (data.models || []).length));
 
+            const query = this.modelQuery || '';
+            if (data.models?.length && query) data.models = data.models.filter(model => matchesModelQuery(model, query));
             if (!data.models || data.models.length === 0) {
                 const empty = document.createElement('div');
                 empty.className = 'anomalous-grid-empty';
-                empty.textContent = t('noModels');
+                empty.textContent = query && this.models.length ? t('modelSearchNone', { query }) : t('noModels');
                 this.grid.appendChild(empty);
                 return;
             }

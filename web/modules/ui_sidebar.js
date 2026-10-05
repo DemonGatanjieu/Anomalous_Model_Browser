@@ -20,6 +20,7 @@ import { watchScans } from './ui_scan_watch.js';
 import { watchCanvasChanges } from './activity_canvas.js';
 import { watchWorkflowLoads } from './ui_doctor_banner.js';
 import { settleModelScope } from './ui_model_types.js';
+import { createModelSearch } from './ui_model_search.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -156,6 +157,7 @@ export function createDOM() {
         closeBtn.onclick = () => this.close();
 
         rightGroup.append(updateNoticeBtn, dockBtn, closeBtn);
+        centerGroup.append(createModelSearch(this));
         header.append(leftGroup, centerGroup, rightGroup);
 
         this.grid = panel('anomalous-grid', '');
@@ -297,48 +299,6 @@ export function renderSidebar() {
         topBar.appendChild(collapseAllBtn);
         this.sidebar.appendChild(topBar);
 
-        const searchBox = document.createElement('div');
-        searchBox.style.padding = '0 15px 15px 15px';
-
-        const searchInput = document.createElement('input');
-        searchInput.type = 'text';
-        searchInput.placeholder = t('sidebarSearchModels');
-        searchInput.style.width = '100%';
-        searchInput.style.padding = '8px 12px';
-        searchInput.style.borderRadius = '8px';
-        searchInput.style.border = '1px solid var(--amb-border)';
-        searchInput.style.background = 'rgba(0,0,0,0.2)';
-        searchInput.style.color = '#fff';
-        searchInput.style.boxSizing = 'border-box';
-        searchInput.style.outline = 'none';
-        searchInput.style.transition = 'border-color 0.2s';
-        searchInput.onfocus = () => searchInput.style.border = '1px solid #007aff';
-        searchInput.onblur = () => searchInput.style.border = '1px solid var(--amb-border)';
-
-        searchInput.oninput = (e) => {
-            if (this.currentDetailModel) {
-                this.detailPanel.style.display = 'none';
-                this.stopMediaInContainer(this.detailPanel);
-                this.detailPanel.innerHTML = '';
-                this.currentDetailModel = null;
-                this.grid.style.display = 'grid';
-            }
-            const val = e.target.value.toLowerCase();
-            const cards = this.grid.querySelectorAll('.anomalous-card');
-            cards.forEach(card => {
-                const titleEl = card.querySelector('.anomalous-card-title');
-                if (!titleEl) return;
-                const titleText = titleEl.innerText.toLowerCase();
-                if (titleText.includes(val)) {
-                    card.style.display = 'flex';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        };
-
-        searchBox.appendChild(searchInput);
-        this.sidebar.appendChild(searchBox);
 
         (this.foldersData || []).forEach(typeGroup => {
             const header = document.createElement('div');

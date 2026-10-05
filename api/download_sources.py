@@ -303,6 +303,26 @@ def _from_manager_list(sites, name, folder_type, file_hash, hf_host):
     return found
 
 
+def _same_file_on_hugging_face(sites, civitai, url, name, folder_type, hf_host):
+    """With the mirror on (mainland China, where Civitai is slow or out of reach and some of its
+    files need a login), the same file (same SHA-256) on Hugging Face, from the workflow's link
+    or ComfyUI-Manager's list, is fetched there instead. Civitai's name, base model and page stay."""
+    sha = civitai.get("sha256") or ""
+    if not SHA256.match(sha):
+        return civitai
+    other = None
+    if url and _site(host_of(url), HF_HOSTS):
+        other = _by_link(sites, url, name, "", hf_host)
+        if not (other and other.get("found") and same_file(sha, other.get("sha256"))):
+            other = None
+    if other is None and name:
+        other = _from_manager_list(sites, name, folder_type, sha, hf_host)
+    if not other:
+        return civitai
+    keep = {key: civitai[key] for key in ("base_model", "model_name", "version_name", "page") if civitai.get(key)}
+    return {**other, **keep, "via": other.get("via", ""), "also_on": "civitai"}
+
+
 def find_source(file_hash="", url="", name="", hf_mirror=False, folder_type="", down=None):
     """Where one missing model can come from: {found, source, download_url, file_name, size,
     sha256, base_model, model_name, version_name, page}, or {found: False, reason}. Asked in
@@ -323,6 +343,8 @@ def find_source(file_hash="", url="", name="", hf_mirror=False, folder_type="", 
         listed = _from_manager_list(sites, name, folder_type, file_hash, hf_host)
         looked = looked or listed is not None or bool(manager_catalog.candidates(name, folder_type))
         found = listed or found
+    if found and found.get("found") and found.get("source") == "civitai" and hf_mirror:
+        found = _same_file_on_hugging_face(sites, found, url, name, folder_type, hf_host)
     if found:
         return found
     if sites.missed:

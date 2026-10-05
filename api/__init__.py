@@ -29,6 +29,10 @@ async def no_cache_extension_middleware(request, handler):
 def setup_routes(app):
     if hasattr(app, 'middlewares') and no_cache_extension_middleware not in app.middlewares:
         app.middlewares.append(no_cache_extension_middleware)
+    try:
+        folder_types.upgrade_folder_defaults()
+    except Exception as error:
+        print(f"[Anomalous Browser] Could not update the shown model folders: {error}")
     app.router.add_get('/anomalous/folders', model_catalog.api_get_folders)
     app.router.add_get('/anomalous/all_folder_types', folder_types.api_get_all_folder_types)
     app.router.add_get('/anomalous/models', model_catalog.api_get_models)

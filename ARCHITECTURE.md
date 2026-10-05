@@ -120,6 +120,8 @@ covered by the `styles.css` manifest.
   `api/download_sources.py` finds the one exact file: Civitai by hash, a Civitai version
   link, or a Hugging Face / GitHub file link the workflow carries, else a file of the same
   name in ComfyUI-Manager's model list (`api/manager_catalog.py`), checked by the hash.
+  `api/hf_card.py` gives a model downloaded from Hugging Face its model card's example image
+  as cover and its trigger words and example prompts as notes (never over the user's).
 - `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
   `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
   integrity receipts; `api/recipes.py` is the HTTP facade. `api/recipe_constants.py`
@@ -385,7 +387,9 @@ covered by the `styles.css` manifest.
 - `ui_model_types.js` owns the models page's type chips (one per models folder, with its count) and
   `owner.modelScope`, what the grid lists: a whole type, or one list folder shown as a crumb. The
   grid's cards set `currentType/PathIdx/Subfolder` to their own model's folder (`focusModel`),
-  which the editor, the scanner and "add to canvas" read.
+  which the editor, the scanner and "add to canvas" read. `ui_model_search.js` is the models
+  search in the header (shown on the models page through the shell's `data-page`): the grid
+  lists the models of its type matching every word (`owner.modelQuery`).
 - `model_source.js` shows where a model's information came from: the card badge (marked only
   when inferred from the file, ≈, or not scanned yet) and the detail header's source line with
   the fields the user set.

@@ -59,7 +59,10 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
     let lastVoiceView = 'voices'; // the rail's Voices entry reopens the view used last
     const narrow = () => container.clientWidth > 0 && container.clientWidth < NARROW_PX;
 
-    const setTitle = (page) => { title.textContent = page ? t(TITLE_KEYS[page]) : ''; };
+    const setTitle = (page) => {
+        title.textContent = page ? t(TITLE_KEYS[page]) : '';
+        container.dataset.page = page || ''; // what the header shows per page (the models search)
+    };
 
     const applyList = (page) => {
         const key = LIST_KEYS[page];

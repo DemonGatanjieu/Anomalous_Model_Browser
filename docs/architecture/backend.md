@@ -206,7 +206,11 @@ file storage the download redirects to. An HTML answer (a login page) fails as
 `not_a_file`, 401/403 as `needs_key` or `forbidden`. The finished file must match the
 source's SHA-256 (else the workflow's hash) or it is removed as `hash_mismatch`; then it
 is renamed into place, ComfyUI's file-list caches are cleared and the activity log gets
-a `model_download` entry. `GET /anomalous/download/status` lists the jobs of this run,
+a `model_download` entry. A file from Hugging Face first gets its repository's model card
+(`api/hf_card.py`, `/api/models/<repo>` on the same host): the first example image (else
+the repository's first picture) as `<model>.preview.<ext>` when the model has no cover, and
+its base model, trigger words (`instance_prompt`) and example prompts as notes plus the
+repository as link in the user layer, only where those are empty. `GET /anomalous/download/status` lists the jobs of this run,
 `POST /anomalous/download/cancel` stops one (its `.part` goes). The default place is
 `user/anomalous/download_settings.json` (`{place: workflow | folder, folder, hf_mirror}`).
 With `hf_mirror` (the lookup's flag; the page sends the setting, or for a Chinese interface

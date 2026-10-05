@@ -29,6 +29,7 @@ import uuid
 from aiohttp import web
 import folder_paths
 
+from . import hf_card
 from .activity_log import add_entry, log_path
 from .download_sources import (
     SHA256, USER_AGENT, allowed_download_url, find_source, host_of, is_civitai, same_file, _load_api_key,
@@ -312,6 +313,11 @@ def _finish(job, part, sha256):
     if os.path.exists(job["dest"]):
         raise DownloadError("exists")
     os.replace(part, job["dest"])
+    if host_of(job["url"]) in ("huggingface.co", "hf-mirror.com"):
+        try:  # the model card's example image as cover, its words as notes (never over the user's)
+            job["card"] = hf_card.enrich(job["dest"], job["url"])
+        except Exception as error:
+            print(f"[Anomalous Browser] Download: the Hugging Face model card was not read: {error}")
     # ComfyUI's file lists and the browser's model metadata see the new file.
     for cache in (getattr(folder_paths, "filename_list_cache", None), getattr(folder_paths, "cache_helper", None)):
         try:
@@ -329,7 +335,7 @@ def _record(job, sha256):
     add_entry("file", "model_download", job["rel"], {"download": {
         "type": job["type"], "path_idx": job["root"], "rel": job["rel"], "file": job["file"],
         "size": job["received"], "sha256": sha256, "verified": job["verified"],
-        "source": job["source"], "page": job["page"], "value": job["value"],
+        "source": job["source"], "page": job["page"], "value": job["value"], "card": job.get("card"),
     }})
 
 
