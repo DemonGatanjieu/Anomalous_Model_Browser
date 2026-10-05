@@ -1,7 +1,7 @@
 from . import (
     activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
     model_media, model_metadata, model_resolution, model_type_listing, kept_images, node_material, recipe_packages, recipes, scan_report, scan_summary,
-    mcp_server, translation_routes, version_manager,
+    lora_info, mcp_server, translation_routes, version_manager,
 )
 from .scanner import *
 from .config import *
@@ -109,6 +109,7 @@ def setup_routes(app):
     app.router.add_get('/anomalous/scan_summary', scan_summary.api_scan_summary)
     app.router.add_get('/anomalous/last_scan', scan_report.api_last_scan)
     app.router.add_get('/anomalous/scan_model', scan_report.api_scan_model)
+    app.router.add_get('/anomalous/lora_info', lora_info.api_lora_info)
 
     # Audio & Voice Studio Routes
     app.router.add_get('/anomalous/audio_stream', audio_catalog.api_serve_audio)

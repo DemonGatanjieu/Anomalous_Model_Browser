@@ -1,4 +1,13 @@
-const MODEL_CHAIN_TYPES = Object.freeze(['MODEL', 'CLIP']);
+/**
+ * Where a LoRA loader goes into a workflow, and putting it there (Current node's "Insert LoRA"
+ * and the MCP add_lora). A LoRA patches the model line (MODEL) and, when its file also trains
+ * the text encoder, the CLIP line. The two lines may come from one node (a checkpoint, a full
+ * LoRA loader) or from two (a UNet loader and its own CLIP loader). Every link moved keeps
+ * going, now through the LoRA. Slots are found by declared type, never by index or name.
+ */
+
+const MAIN_LOADER = /checkpointloader|unetloader|unetloadergguf|diffusionmodelloader/i;
+const BYPASSED = 4;
 
 function normalizeSlotType(type) {
     return String(type ?? '').trim().toUpperCase();
@@ -13,7 +22,7 @@ function findSlotIndex(slots, requiredType) {
 
 function getGraphLink(graph, linkId) {
     if (linkId === null || linkId === undefined) return null;
-    return graph?.links?.[linkId] || graph?._links?.[linkId] || null;
+    return graph?.getLink?.(linkId) || graph?.links?.[linkId] || graph?._links?.[linkId] || null;
 }
 
 function getGraphNode(graph, nodeId) {
@@ -23,82 +32,120 @@ function getGraphNode(graph, nodeId) {
         : null;
 }
 
-function unsupported(direction, code, details = {}) {
-    return { supported: false, direction, code, channels: [], ...details };
+/** The nodes an output feeds: [{ targetNode, targetSlot }]. */
+function outputLinks(graph, node, slot) {
+    return (node.outputs?.[slot]?.links || [])
+        .map(id => getGraphLink(graph, id))
+        .filter(Boolean)
+        .map(link => ({ targetNode: getGraphNode(graph, link.target_id), targetSlot: link.target_slot }))
+        .filter(link => link.targetNode);
 }
 
-export function analyzeModelChainInsertion(graph, anchorNode, direction) {
-    if (!graph || !anchorNode) {
-        return unsupported(direction, 'missing_graph_or_node');
+/** The output an input is connected to: { node, slot }, or null. */
+function inputSource(graph, node, slot) {
+    const link = getGraphLink(graph, node.inputs?.[slot]?.link);
+    const origin = link && getGraphNode(graph, link.origin_id);
+    return origin ? { node: origin, slot: link.origin_slot } : null;
+}
+
+/** Follows `type` from `node` through the LoRA loaders chained after it: the last of them. */
+export function chainEnd(graph, node, type) {
+    let end = node;
+    for (let hop = 0; hop < 20; hop++) {
+        const slot = findSlotIndex(end.outputs, type);
+        const targets = slot < 0 ? [] : outputLinks(graph, end, slot);
+        if (targets.length !== 1 || !/lora/i.test(targets[0].targetNode.type || '')) break;
+        end = targets[0].targetNode;
     }
-    if (direction !== 'before' && direction !== 'after') {
+    return end;
+}
+
+/** The workflow's main model loaders (checkpoint, UNet), bypassed ones left out. */
+export function mainModelLoaders(graph) {
+    return (graph?._nodes || []).filter(node => MAIN_LOADER.test(node.type || '') && node.mode !== BYPASSED);
+}
+
+/** The canvas's one CLIP source (a loader taking no MODEL or CLIP), past its LoRAs; null unless exactly one. */
+function soleClipEnd(graph) {
+    const sources = (graph?._nodes || []).filter(node => node.mode !== BYPASSED && findSlotIndex(node.outputs, 'CLIP') >= 0
+        && findSlotIndex(node.inputs, 'CLIP') < 0 && findSlotIndex(node.inputs, 'MODEL') < 0);
+    if (sources.length !== 1) return null;
+    const end = chainEnd(graph, sources[0], 'CLIP');
+    return { node: end, slot: findSlotIndex(end.outputs, 'CLIP') };
+}
+
+/**
+ * The CLIP that goes through a LoRA inserted before `anchor`: its own CLIP input, or, for a
+ * sampler (none), the CLIP inputs of the prompt nodes wired into it when one source feeds them all.
+ */
+function clipBefore(graph, anchor) {
+    const own = findSlotIndex(anchor.inputs, 'CLIP');
+    if (own >= 0) {
+        const source = inputSource(graph, anchor, own);
+        return source && { ...source, links: [{ targetNode: anchor, targetSlot: own }] };
+    }
+    const prompts = new Set((anchor.inputs || []).map((_input, index) => inputSource(graph, anchor, index)?.node)
+        .filter(node => node && findSlotIndex(node.inputs, 'CLIP') >= 0));
+    const links = [];
+    const sources = new Map();
+    for (const node of prompts) {
+        const slot = findSlotIndex(node.inputs, 'CLIP');
+        const source = inputSource(graph, node, slot);
+        if (!source) continue;
+        sources.set(`${source.node.id}:${source.slot}`, source);
+        links.push({ targetNode: node, targetSlot: slot });
+    }
+    return sources.size === 1 ? { ...[...sources.values()][0], links } : null;
+}
+
+function unsupported(direction, code) {
+    return { supported: false, direction, code, outputs: [], clip: false };
+}
+
+/**
+ * Where a LoRA loader goes before or after `anchorNode`: { supported, code, direction,
+ * outputs, clip }. Each of `outputs` ({ node, slot, type, links }) feeds the LoRA's input of
+ * `type`, and its `links` ({ targetNode, targetSlot }) then come from the LoRA's output.
+ * After: every link of the anchor's MODEL output; with `textEncoder`, also every link of its
+ * CLIP output, or of the canvas's one CLIP source when it has none (a UNet loader).
+ * Before: only the anchor's own MODEL input; with `textEncoder`, the CLIP from clipBefore.
+ * `clip` says whether the CLIP line goes through (a full LoRA loader, else a model-only one).
+ */
+export function planLoraInsertion(graph, anchorNode, direction, { textEncoder = true } = {}) {
+    if (!graph || !anchorNode) return unsupported(direction, 'missing_graph_or_node');
+    const outputs = [];
+    if (direction === 'after') {
+        const slot = findSlotIndex(anchorNode.outputs, 'MODEL');
+        if (slot < 0) return unsupported(direction, 'missing_chain_outputs');
+        outputs.push({ node: anchorNode, slot, type: 'MODEL', links: outputLinks(graph, anchorNode, slot) });
+        if (textEncoder) {
+            const own = findSlotIndex(anchorNode.outputs, 'CLIP');
+            const clip = own >= 0 ? { node: anchorNode, slot: own } : soleClipEnd(graph);
+            if (clip) outputs.push({ ...clip, type: 'CLIP', links: outputLinks(graph, clip.node, clip.slot) });
+        }
+    } else if (direction === 'before') {
+        const slot = findSlotIndex(anchorNode.inputs, 'MODEL');
+        if (slot < 0) return unsupported(direction, 'missing_chain_inputs');
+        const source = inputSource(graph, anchorNode, slot);
+        if (!source) return unsupported(direction, 'unconnected_chain_inputs');
+        outputs.push({ ...source, type: 'MODEL', links: [{ targetNode: anchorNode, targetSlot: slot }] });
+        const clip = textEncoder ? clipBefore(graph, anchorNode) : null;
+        if (clip) outputs.push({ ...clip, type: 'CLIP' });
+    } else {
         return unsupported(direction, 'invalid_direction');
     }
-
-    const channels = [];
-    for (const type of MODEL_CHAIN_TYPES) {
-        const anchorSlot = direction === 'before'
-            ? findSlotIndex(anchorNode.inputs, type)
-            : findSlotIndex(anchorNode.outputs, type);
-        if (anchorSlot < 0) {
-            return unsupported(direction, direction === 'before' ? 'missing_chain_inputs' : 'missing_chain_outputs', { missingType: type });
-        }
-
-        if (direction === 'before') {
-            const linkId = anchorNode.inputs[anchorSlot]?.link;
-            const link = getGraphLink(graph, linkId);
-            const sourceNode = link ? getGraphNode(graph, link.origin_id) : null;
-            if (!link || !sourceNode) {
-                return unsupported(direction, 'unconnected_chain_inputs', { missingType: type });
-            }
-            channels.push({
-                type,
-                anchorSlot,
-                originalLinks: [{
-                    originNode: sourceNode,
-                    originSlot: link.origin_slot,
-                    targetNode: anchorNode,
-                    targetSlot: anchorSlot,
-                }],
-            });
-            continue;
-        }
-
-        const linkIds = Array.isArray(anchorNode.outputs[anchorSlot]?.links)
-            ? anchorNode.outputs[anchorSlot].links.filter(id => id !== null && id !== undefined)
-            : [];
-        if (linkIds.length > 1) {
-            return unsupported(direction, 'ambiguous_downstream_branches', { ambiguousType: type, branchCount: linkIds.length });
-        }
-
-        const originalLinks = [];
-        for (const linkId of linkIds) {
-            const link = getGraphLink(graph, linkId);
-            const targetNode = link ? getGraphNode(graph, link.target_id) : null;
-            if (!link || !targetNode) {
-                return unsupported(direction, 'invalid_downstream_link', { invalidType: type });
-            }
-            originalLinks.push({
-                originNode: anchorNode,
-                originSlot: anchorSlot,
-                targetNode,
-                targetSlot: link.target_slot,
-            });
-        }
-        channels.push({ type, anchorSlot, originalLinks });
-    }
-
-    return { supported: true, direction, code: 'ready', channels };
+    return { supported: true, direction, code: 'ready', outputs, clip: outputs.length > 1 };
 }
 
-export function getModelChainInsertionCapabilities(graph, anchorNode) {
+/** Whether a LoRA can go before / after the node (the model line decides). */
+export function loraInsertionCapabilities(graph, anchorNode) {
     return {
-        before: analyzeModelChainInsertion(graph, anchorNode, 'before'),
-        after: analyzeModelChainInsertion(graph, anchorNode, 'after'),
+        before: planLoraInsertion(graph, anchorNode, 'before', { textEncoder: false }),
+        after: planLoraInsertion(graph, anchorNode, 'after', { textEncoder: false }),
     };
 }
 
-function assertInsertedNodeSlots(insertedNode, types = MODEL_CHAIN_TYPES) {
+function assertInsertedNodeSlots(insertedNode, types) {
     const slots = {};
     for (const type of types) {
         const input = findSlotIndex(insertedNode?.inputs, type);
@@ -167,89 +214,32 @@ function placeInsertedNode(graph, anchorNode, insertedNode, direction) {
 }
 
 /**
- * Puts `insertedNode` after several outputs at once, e.g. a LoRA loader after a UNet loader's
- * MODEL and a CLIP loader's CLIP. For each `{ node, type }`, that output feeds the inserted
- * node's input of the type, and every link the output had (a CLIP feeding both the positive
- * and the negative prompt) now comes from the inserted node's output of the type instead.
- * All or nothing: on a failed connection the original links come back.
+ * Puts `insertedNode` (a LoRA loader of the plan's kind) where `plan` (planLoraInsertion) says,
+ * as one graph change. All or nothing: on a failed connection the node goes and the original
+ * links come back.
  */
-export function spliceAfterOutputs({ graph, insertedNode, outputs }) {
-    const types = outputs.map(output => output.type);
-    const plan = outputs.map(({ node, type }) => {
-        const slot = findSlotIndex(node?.outputs, type);
-        if (slot < 0) throw Object.assign(new Error(`Node has no ${type} output.`), { code: 'missing_chain_outputs' });
-        const links = (node.outputs[slot].links || []).map(id => getGraphLink(graph, id)).filter(Boolean)
-            .map(link => ({ originNode: node, originSlot: slot, targetNode: getGraphNode(graph, link.target_id), targetSlot: link.target_slot }))
-            .filter(link => link.targetNode);
-        return { node, type, slot, links };
-    });
-    const slots = assertInsertedNodeSlots(insertedNode, types);
-    const originalConnections = plan.flatMap(item => item.links);
-    let added = false;
-    graph.beforeChange?.(outputs[0].node);
-    try {
-        graph.add(insertedNode);
-        added = true;
-        placeInsertedNode(graph, outputs[0].node, insertedNode, 'after');
-        for (const item of plan) {
-            connectOrThrow(item.node, item.slot, insertedNode, slots[item.type].input, item.type);
-            for (const link of item.links) connectOrThrow(insertedNode, slots[item.type].output, link.targetNode, link.targetSlot, item.type);
-        }
-        return insertedNode;
-    } catch (error) {
-        if (added) graph.remove?.(insertedNode);
-        restoreConnections(originalConnections);
-        throw error;
-    } finally {
-        graph.afterChange?.(outputs[0].node);
-        graph.change?.();
-        graph.setDirtyCanvas?.(true, true);
-    }
-}
-
-export function spliceModelChainNode({ graph, anchorNode, insertedNode, direction }) {
-    const analysis = analyzeModelChainInsertion(graph, anchorNode, direction);
-    if (!analysis.supported) {
-        const error = new Error(`Model-chain insertion is not available: ${analysis.code}`);
-        error.code = analysis.code;
-        error.analysis = analysis;
-        throw error;
-    }
-
-    const insertedSlots = assertInsertedNodeSlots(insertedNode);
-    const originalConnections = analysis.channels.flatMap(channel => channel.originalLinks);
+export function spliceLora({ graph, plan, anchorNode, insertedNode }) {
+    const slots = assertInsertedNodeSlots(insertedNode, plan.outputs.map(output => output.type));
+    const original = plan.outputs.flatMap(output => output.links.map(link => ({ originNode: output.node, originSlot: output.slot, ...link })));
     let added = false;
     graph.beforeChange?.(anchorNode);
     try {
         graph.add(insertedNode);
         added = true;
-        placeInsertedNode(graph, anchorNode, insertedNode, direction);
-
-        for (const channel of analysis.channels) {
-            const slots = insertedSlots[channel.type];
-            if (direction === 'before') {
-                const original = channel.originalLinks[0];
-                connectOrThrow(original.originNode, original.originSlot, insertedNode, slots.input, channel.type);
-                connectOrThrow(insertedNode, slots.output, anchorNode, channel.anchorSlot, channel.type);
-                continue;
-            }
-
-            connectOrThrow(anchorNode, channel.anchorSlot, insertedNode, slots.input, channel.type);
-            for (const original of channel.originalLinks) {
-                connectOrThrow(insertedNode, slots.output, original.targetNode, original.targetSlot, channel.type);
-            }
+        placeInsertedNode(graph, anchorNode, insertedNode, plan.direction);
+        for (const output of plan.outputs) {
+            const { input, output: out } = slots[output.type];
+            connectOrThrow(output.node, output.slot, insertedNode, input, output.type);
+            for (const link of output.links) connectOrThrow(insertedNode, out, link.targetNode, link.targetSlot, output.type);
         }
-
-        graph.afterChange?.(anchorNode);
-        graph.change?.();
-        graph.setDirtyCanvas?.(true, true);
         return insertedNode;
     } catch (error) {
         if (added) graph.remove?.(insertedNode);
-        restoreConnections(originalConnections);
+        restoreConnections(original);
+        throw error;
+    } finally {
         graph.afterChange?.(anchorNode);
         graph.change?.();
         graph.setDirtyCanvas?.(true, true);
-        throw error;
     }
 }

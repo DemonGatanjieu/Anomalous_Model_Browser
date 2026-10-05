@@ -2,7 +2,7 @@
 
 import { app } from "../../../scripts/app.js";
 import { translate } from "./locales.js";
-import { analyzeModelChainInsertion, getModelChainInsertionCapabilities, spliceModelChainNode } from "./graph_splice.js";
+import { planLoraInsertion, spliceLora } from "./graph_splice.js";
 import { collectMainModelContextRequests, formatModelTypeLabel, getBaseModelFamily, inferPickerModelType } from "./model_picker.js";
 import { escapeHtml } from "./safe_dom.js";
 import { recordCanvasStep } from "./canvas_history.js";
@@ -23,6 +23,16 @@ export function getNativeWidgetValues(node, widget) {
     return Array.isArray(values)
         ? [...new Set(values.filter(value => typeof value === 'string'))]
         : [];
+}
+
+/** Whether the LoRA ComfyUI lists as `name` trains the text encoder (api/lora_info.py); yes when unknown. */
+async function loraTrainsTextEncoder(name) {
+    try {
+        const data = await (await fetch(`/anomalous/lora_info?name=${encodeURIComponent(name)}`)).json();
+        return data.text_encoder !== false;
+    } catch {
+        return true;
+    }
 }
 
 export function findModelComboWidget(node) {
@@ -405,20 +415,30 @@ export function _openGalleryReplacer(node, w, options = {}) {
             }
         };
 
-        confirmBtn.onclick = () => {
+        confirmBtn.onclick = async () => {
             if (!selectedPath || applying) return;
             applying = true;
             updateSelection();
             const oldValue = w.value;
             try {
                 if (mode === 'insert') {
-                    setWidgetValue(node, w, selectedPath);
-                    spliceModelChainNode({ graph: app.graph, anchorNode: options.anchorNode, insertedNode: node, direction: options.direction });
+                    // The CLIP line goes through the LoRA only when the file trains the text encoder.
+                    const textEncoder = await loraTrainsTextEncoder(selectedPath);
+                    const plan = planLoraInsertion(app.graph, options.anchorNode, options.direction, { textEncoder });
+                    if (!plan.supported) throw new Error(plan.code);
+                    const inserted = plan.clip ? node : LiteGraph.createNode('LoraLoaderModelOnly');
+                    const loraWidget = plan.clip ? w : findModelComboWidget(inserted);
+                    setWidgetValue(inserted, loraWidget, selectedPath);
+                    spliceLora({ graph: app.graph, plan, anchorNode: options.anchorNode, insertedNode: inserted });
                     try {
-                        if (typeof w.callback === 'function') w.callback(w.value, app.canvas, node, app.canvas?.graph_mouse, null);
+                        loraWidget.callback?.(loraWidget.value, app.canvas, inserted, app.canvas?.graph_mouse, null);
                     } catch (error) {
                         console.warn('[Anomalous] LoRA widget callback failed:', error);
                     }
+                    recordCanvasStep(app);
+                    closeModal();
+                    app.canvas?.selectNode?.(inserted);
+                    return;
                 } else {
                     app.graph?.beforeChange?.(node);
                     try {
@@ -443,8 +463,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
                 try { window.dispatchEvent(new CustomEvent('graphChanged')); } catch (error) {}
                 recordCanvasStep(app);
                 closeModal();
-                if (mode === 'insert' && app.canvas?.selectNode) app.canvas.selectNode(node);
-                else if (options.onApplied) options.onApplied();
+                if (options.onApplied) options.onApplied();
                 else this.diagnoseNode(node);
             } catch (error) {
                 setWidgetValue(node, w, oldValue);

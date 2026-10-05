@@ -4,7 +4,7 @@
 
 import { app } from "../../../scripts/app.js";
 import { translate } from "./locales.js";
-import { analyzeModelChainInsertion, getModelChainInsertionCapabilities } from "./graph_splice.js";
+import { loraInsertionCapabilities, planLoraInsertion } from "./graph_splice.js";
 import { formatModelTypeLabel, inferPickerModelType } from "./model_picker.js";
 import { findModelComboWidget, getNativeWidgetValues } from "./ui_node_model_picker.js";
 import { renderNodeParameters } from "./ui_node_parameters.js";
@@ -300,16 +300,15 @@ function getInsertionCapabilityMessage(capability) {
         missing_chain_inputs: 'doctorMissingChainInputs',
         unconnected_chain_inputs: 'doctorUnconnectedChainInputs',
         missing_chain_outputs: 'doctorMissingChainOutputs',
-        ambiguous_downstream_branches: 'doctorAmbiguousBranches',
-        invalid_downstream_link: 'doctorInvalidDownstream',
     };
     return t(messages[capability?.code] || 'doctorUnsupportedInsertion');
 }
 
+/** Picks a LoRA to insert before / after `anchorNode`; the picker wires it in (graph_splice.js). */
 export function openLoraInsertionPicker(anchorNode, direction) {
-    const analysis = analyzeModelChainInsertion(app.graph, anchorNode, direction);
-    if (!analysis.supported) {
-        alert(getInsertionCapabilityMessage(analysis));
+    const plan = planLoraInsertion(app.graph, anchorNode, direction, { textEncoder: false });
+    if (!plan.supported) {
+        alert(getInsertionCapabilityMessage(plan));
         return;
     }
 
@@ -329,7 +328,6 @@ export function openLoraInsertionPicker(anchorNode, direction) {
         mode: 'insert',
         direction,
         anchorNode,
-        analysis,
         modelTypeLabel: 'LoRA',
     });
 }
@@ -368,7 +366,7 @@ for (const w of node.widgets) {
             }
         }
 
-        const insertionCapabilities = getModelChainInsertionCapabilities(app.graph, node);
+        const insertionCapabilities = loraInsertionCapabilities(app.graph, node);
         const canInsert = insertionCapabilities.before.supported || insertionCapabilities.after.supported;
 
         const hasModelOrInsertion = modelWidgets.length > 0 || canInsert;

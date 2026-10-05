@@ -111,6 +111,8 @@ covered by the `styles.css` manifest.
   ComfyUI's websocket and waits for its answer; `web/modules/mcp_bridge.js` is the page
   side, doing it with Anomalous's canvas code (one Ctrl+Z step each, logged as the AI's).
   User guide: `docs/guides/mcp.md`.
+- `api/lora_info.py` reads a LoRA's safetensors header to tell whether it trains the text
+  encoder (`/anomalous/lora_info`), so inserting it wires the CLIP line only then.
 - `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
   `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
   integrity receipts; `api/recipes.py` is the HTTP facade. `api/recipe_constants.py`

@@ -11,17 +11,15 @@ import json
 import os
 import re
 import ssl
-import struct
 import time
 import urllib.error
 import urllib.request
 
+from .lora_info import trains_text_encoder
 from .mcp_bridge import PageRefused, PageUnavailable, ask_page
 from .mcp_tools import MAX_LIMIT, ToolError, _resolve_model, _schema
 
 SPEAK_WAIT_SECONDS = 120
-# Key prefixes of a LoRA's text-encoder weights (kohya lora_te / lora_te1 / lora_te2, diffusers text_encoder).
-TEXT_ENCODER_KEYS = ("lora_te", "te_", "te1", "te2", "text_encoder")
 HISTORY_POLL_SECONDS = 1.5
 
 
@@ -77,28 +75,12 @@ def set_model(ctx, node_id, model_id):
     return _page("set_model", {"node_id": node_id, "model": _model_ref(model_id)})
 
 
-def _has_text_encoder(path):
-    """Whether a .safetensors LoRA also trains the text encoder (from its header only);
-    other formats are assumed to, as SD 1.5 / SDXL LoRAs mostly do."""
-    if not path.lower().endswith(".safetensors"):
-        return True
-    try:
-        with open(path, "rb") as source:
-            size = struct.unpack("<Q", source.read(8))[0]
-            if size > 100 * 1024 * 1024:
-                return True
-            keys = json.loads(source.read(size))
-    except (OSError, ValueError, struct.error):
-        return True
-    return any(key.startswith(TEXT_ENCODER_KEYS) for key in keys if key != "__metadata__")
-
-
 def add_lora(ctx, model_id, after_node_id=None, strength_model=1.0, strength_clip=1.0):
     folder_type, _idx, base_dir, file_path = _resolve_model(model_id)
     if folder_type != "loras":
         raise ToolError("add_lora takes a model from the loras folder.")
     return _page("add_lora", {"model": {"type": folder_type, "path": _rel(base_dir, file_path)},
-                              "text_encoder": _has_text_encoder(file_path), "after_node_id": after_node_id,
+                              "text_encoder": trains_text_encoder(file_path), "after_node_id": after_node_id,
                               "strength_model": float(strength_model), "strength_clip": float(strength_clip)})
 
 
