@@ -34,6 +34,7 @@ const ACTION_KEYS = {
     voice_import: 'activityVoiceImport',
     voice_settings: 'activityVoiceSettings',
     voice_storage: 'activityVoiceStorage',
+    model_download: 'activityModelDownload',
 };
 
 async function request(url, options) {
@@ -80,6 +81,11 @@ export function entrySummary(entry) {
     return entry.target ? t('activityWithTarget', { action: words, target: entry.target }) : words;
 }
 
+function formatSize(bytes) {
+    const value = Number(bytes) || 0;
+    return value >= 1024 ** 3 ? `${(value / 1024 ** 3).toFixed(2)} GB` : `${Math.max(0.1, value / 1024 ** 2).toFixed(1)} MB`;
+}
+
 const FIELD_KEYS = {
     custom_name: 'modelSourceFieldName', custom_notes: 'modelSourceFieldNotes',
     source_url: 'modelSourceFieldLink', filename: 'activityFieldFilename',
@@ -95,6 +101,15 @@ export function fileDetailLines(entry) {
     const lines = [];
     if (detail.scan?.civitai_down) lines.push({ text: t('scanResultCivitaiDown') });
     for (const error of detail.scan?.errors || []) lines.push({ text: error });
+    const download = detail.download;
+    if (download) {
+        lines.push({
+            text: t('activityDownloadLine', { file: download.rel || download.file, size: formatSize(download.size), source: download.source || '?' }),
+            model: { type: download.type, path_idx: download.path_idx, rel: download.rel, filename: download.file },
+        });
+        lines.push({ text: t(download.verified ? 'activityDownloadChecked' : 'activityDownloadUnchecked') });
+        if (download.value && download.value !== download.rel) lines.push({ text: t('activityDownloadFor', { value: download.value }) });
+    }
     for (const item of detail.files || []) {
         if (typeof item === 'string') lines.push({ text: t('activityFileMoved', { name: item }) });
         else lines.push({ text: `${STATUS_MARKS[item.status] || '·'} ${item.filename}: ${fileOutcome(item)}`, model: item.rel ? item : null });

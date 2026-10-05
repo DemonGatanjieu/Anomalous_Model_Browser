@@ -195,6 +195,7 @@ export function applyModelFix(entry, target = entry.target, { step = true } = {}
     // ComfyUI clears its own missing-model mark through this hook.
     node.onWidgetChanged?.(widget.name, target, value, widget);
     if (app.lastNodeErrors?.[node.id]) delete app.lastNodeErrors[node.id];
+    if (target === value) return true; // the same name, now found (a download): nothing to undo
     markReplaced(widget, value, target);
     // Without a step ComfyUI keeps the old name: a reload or Ctrl+Z brings the missing model back.
     if (step) recordCanvasStep(app);

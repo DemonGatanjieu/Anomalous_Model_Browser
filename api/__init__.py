@@ -1,7 +1,7 @@
 from . import (
     activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
     model_media, model_metadata, model_resolution, model_type_listing, kept_images, node_material, recipe_packages, recipes, scan_report, scan_summary,
-    lora_info, mcp_server, translation_routes, version_manager,
+    lora_info, mcp_server, model_download, translation_routes, version_manager,
 )
 from .scanner import *
 from .config import *
@@ -120,3 +120,4 @@ def setup_routes(app):
     version_manager.register_routes(app)
     activity_log.register_routes(app)
     mcp_server.register_routes(app)
+    model_download.register_routes(app)

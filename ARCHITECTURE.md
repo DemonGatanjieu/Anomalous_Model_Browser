@@ -113,6 +113,12 @@ covered by the `styles.css` manifest.
   User guide: `docs/guides/mcp.md`.
 - `api/lora_info.py` reads a LoRA's safetensors header to tell whether it trains the text
   encoder (`/anomalous/lora_info`), so inserting it wires the CLIP line only then.
+- `api/model_download.py` downloads the models a workflow misses (Model Check's
+  "Download", `/anomalous/download/*`): one at a time into `<file>.part`, continued after
+  an interruption, checked against the SHA-256 before it gets its name, never over an
+  existing file; also where downloads go by default (`download_settings.json`).
+  `api/download_sources.py` finds the one exact file: Civitai by hash, a Civitai version
+  link, or a Hugging Face / GitHub file link the workflow carries.
 - `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
   `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
   integrity receipts; `api/recipes.py` is the HTTP facade. `api/recipe_constants.py`
@@ -470,7 +476,12 @@ covered by the `styles.css` manifest.
   say "doctor") and puts a found file into its node; `ui_doctor.js` is the
   Model Check page and `ui_doctor_banner.js` the bar over the canvas when an opened workflow
   misses models (it also owns the check-on-open preference that Settings → Workflows and the
-  bar's "Don't show again" set). `ui_node_assistant.js` owns the current-node panel (model actions, LoRA
+  bar's "Don't show again" set). `model_download.js` finds a missing model's source,
+  decides where its file goes (the download settings, `{base}` = its base model's folder),
+  follows the downloads and puts each finished file into its nodes (the placement rules
+  are `download_places.js`, without imports so they are tested alone); `ui_model_download.js`
+  is the page's Download buttons, progress and the dialog that shows and changes where
+  each file goes. `ui_node_assistant.js` owns the current-node panel (model actions, LoRA
   insertion, model cards and history), `ui_node_model_picker.js` owns native combo
   replacement, `ui_node_parameters.js` renders the panel's parameters section, and
   `node_parameter_sets.js` merges the node type's saved values (material files and recipe

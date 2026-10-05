@@ -177,6 +177,32 @@ server's own `/anomalous/scan_all`, `/anomalous_tts/characters`, `/prompt` and
 `/history` over loopback, so they run exactly as from the UI (speech waits up to two
 minutes for the file). Canvas changes are posted to the activity log with `via: "mcp"`.
 
+## Model downloads
+
+`api/model_download.py` serves Model Check's downloads. `POST /anomalous/download/lookup`
+asks `api/download_sources.py` where each missing model comes from: Civitai by the
+workflow's hash (the version's file with that SHA-256 or AutoV2), else a link the
+workflow carries — a Civitai link naming a model version, a Hugging Face or hf-mirror
+file link (size and SHA-256 from the site's headers), a GitHub release asset. A file
+name alone is never a source, and a link whose file has another SHA-256 than the
+workflow's hash is refused (`different_file`). Once a site does not answer, the rest of
+the lookup is skipped (`network`). It also returns each type's model folders with free
+space and subfolders (two levels).
+
+`POST /anomalous/download/start` takes the source, type, root index and a relative path
+and refuses: a non-https link or one off Civitai, Hugging Face, hf-mirror or GitHub; a
+path leaving the root (`resolve_within`) or not ending in a model extension; a file that
+exists; not enough space. Jobs run one at a time in a worker thread into
+`<file>.part`; a new start for the same file continues it with a Range request. The
+Civitai key is sent to Civitai only, as an unredirected header, so it never reaches the
+file storage the download redirects to. An HTML answer (a login page) fails as
+`not_a_file`, 401/403 as `needs_key` or `forbidden`. The finished file must match the
+source's SHA-256 (else the workflow's hash) or it is removed as `hash_mismatch`; then it
+is renamed into place, ComfyUI's file-list caches are cleared and the activity log gets
+a `model_download` entry. `GET /anomalous/download/status` lists the jobs of this run,
+`POST /anomalous/download/cancel` stops one (its `.part` goes). The default place is
+`user/anomalous/download_settings.json` (`{place: workflow | folder, folder}`).
+
 ## Metadata and cache behavior
 
 The output gallery keeps one ordered directory snapshot for at most ten seconds

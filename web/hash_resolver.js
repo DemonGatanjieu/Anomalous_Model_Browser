@@ -3,6 +3,7 @@ import { findWorkflowHashRecord } from './modules/recipe_provenance.js';
 import { requiresHashForModelRecovery } from './modules/model_policies.js';
 import { detectPlatform, isModelFilename } from './modules/model_source_links.js';
 import { usableSourceUrl } from './modules/model_source_data.js';
+import { absorbFingerprintChange } from './modules/canvas_history.js';
 
 // Global cache for hashes: filename -> hash
 window.anomalous_hash_cache = window.anomalous_hash_cache || {};
@@ -47,6 +48,7 @@ app.registerExtension({
                 window.anomalous_is_empty_state = true;
                 console.warn("[Anomalous] Failed to fetch hashes", e);
             }
+            absorbFingerprintChange(app);
         };
 
         // Pre-fetch all hashes on startup so that dragging generated images (without opening UI) still intercepts

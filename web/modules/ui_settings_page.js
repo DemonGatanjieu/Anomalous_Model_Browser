@@ -2,7 +2,7 @@
  * The settings page (the rail's gear): one card per subject — how the browser looks,
  * model cards and what they cost in memory (with the card image cache), model folders
  * (a view of its own, ui_folder_manager.js, `owner.settingsView === 'folders'`),
- * workflows, how the browser opens, and help. A tool page like the scan page, with a
+ * workflows, where Model Check's downloads go, how the browser opens, and help. A tool page like the scan page, with a
  * way back to the page you came from. Display preferences go through `owner.displayPrefs`
  * (ui_settings_hub.js); language, theme and opening mode are ComfyUI settings.
  */
@@ -17,6 +17,8 @@ import { copyDiagnostics } from './feedback.js';
 import { renderFolderPage } from './ui_folder_manager.js';
 import { openFeedbackDialog } from './ui_feedback_dialog.js';
 import { checkOnOpen, setCheckOnOpen } from './ui_doctor_banner.js';
+import { fetchDownloadSettings, saveDownloadSettings } from './model_download.js';
+import { saveApiKey } from './ui_scan_page.js';
 
 const t = (key, params) => translate(key, params);
 // The full written guide: the README, at its Chinese half for Chinese.
@@ -196,6 +198,30 @@ function workflowGroup(owner) {
         })));
 }
 
+/** Where Model Check's downloads go (model_download.js); filled once the settings are read. */
+function downloadGroup(owner, redraw) {
+    const box = group('settingsDownloads');
+    fetchDownloadSettings().then(settings => {
+        const folder = el('input', 'anomalous-download-folder');
+        folder.type = 'text';
+        folder.spellcheck = false;
+        folder.value = settings.folder;
+        folder.placeholder = t('settingsDownloadFolderRoot');
+        folder.onchange = () => saveDownloadSettings({ folder: folder.value })
+            .then(saved => { folder.value = saved.folder; folder.classList.remove('is-bad'); })
+            .catch(() => folder.classList.add('is-bad'));
+        box.append(
+            row('settingsDownloadPlace', 'settingsDownloadPlaceHelp', segment(
+                [['workflow', 'settingsDownloadPlaceWorkflow'], ['folder', 'settingsDownloadPlaceFolder']], settings.place,
+                value => saveDownloadSettings({ place: value }).then(redraw).catch(() => {}))),
+            row('settingsDownloadFolder', 'settingsDownloadFolderHelp', folder),
+            row('settingsDownloadKey', 'settingsDownloadKeyHelp', button('anomalous-scan-secondary anomalous-scan-small-btn',
+                t('settingsDownloadKeySet'), () => saveApiKey())),
+        );
+    }).catch(error => console.warn('[AMB] Settings: download settings unavailable.', error));
+    return box;
+}
+
 function openingGroup(owner, redraw) {
     const mode = comfySetting(ENTRY_MODE_SETTING_ID) || 'floating';
     return group('settingsOpening',
@@ -255,6 +281,7 @@ function render(owner) {
         cardsGroup(owner, redraw),
         foldersGroup(owner),
         workflowGroup(owner),
+        downloadGroup(owner, redraw),
         openingGroup(owner, redraw),
         helpGroup(owner),
     );

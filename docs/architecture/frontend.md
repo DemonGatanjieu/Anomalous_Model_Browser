@@ -86,7 +86,15 @@ The main surfaces are:
   missing-model recovery. `model_check.js` decides each workflow model's state and
   applies fixes; `ui_doctor.js` (the page) and `ui_doctor_banner.js` (the bar shown
   after a workflow opens, unless its "Don't show again" or Settings → Workflows turned the
-  check on opening off) only render it and call it on a press.
+  check on opening off) only render it and call it on a press. A missing model with a
+  certain source gets Download (`ui_model_download.js`; `model_download.js` holds the
+  logic): the dialog names, per file, the type's folder (a choice when there are several,
+  remembered per type in `localStorage`) and the subfolder from Settings → Model downloads
+  — where the workflow says (so the node needs no change) or a set folder, `{base}` there
+  being the model's base model, matched to an existing folder in any spelling — and the
+  file keeps the workflow's name. When a download ends, the model lists reload, nodes
+  still naming that model get the file (one Ctrl+Z step each), and once nothing is
+  downloading the new files are scanned in one targeted scan.
   `ui_node_assistant.js` owns the current-node panel and model history, `ui_node_model_picker.js`
   owns the native-widget model replacer, and `ui_node_parameters.js` with
   `node_parameter_sets.js` own the panel's one list of saved values for the node type;

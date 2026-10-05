@@ -152,6 +152,12 @@ press puts them in: the bar's or the doctor page's for hash matches, the page's
 per-row button for a size-only candidate. A scan with "fix the open workflow"
 on puts hash matches in when it ends.
 
+A model that is not here can be downloaded from the page when its source names one
+exact file: Civitai by the workflow's hash, or a file link the workflow carries. The
+download is checked against the SHA-256 before it gets its name, so a wrong file never
+lands in a models folder; the file keeps the workflow's name, and nodes are pointed at
+it only when it went to another folder than the workflow says.
+
 Provenance-rich workflows skip the redundant full filename-to-hash cache refresh.
 Legacy workflows without injected provenance may refresh it for compatibility.
 This is an I/O optimization only and does not change identity evidence.

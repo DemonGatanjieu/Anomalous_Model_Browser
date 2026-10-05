@@ -176,8 +176,8 @@ function settingsPage(owner, panel, hasKey, progressHost) {
     return page;
 }
 
-/** Asks for the key and saves it; true when saved. */
-async function saveApiKey() {
+/** Asks for the Civitai key and saves it; true when saved (also Model Check's downloads). */
+export async function saveApiKey() {
     const value = prompt(t('scanPageApiKeyPrompt'), '');
     if (value === null) return false;
     try {

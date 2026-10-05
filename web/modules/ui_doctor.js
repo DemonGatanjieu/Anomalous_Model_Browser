@@ -2,13 +2,14 @@
  * Model Check, the tool page: the models the open workflow uses and what is wrong with each
  * (model_check.js), with what can be done about it: put in the same file found under
  * another name or folder, take or leave a file of the same name or size, pick one by hand (the
- * node model picker) or look it up on Civitai. Nothing in the workflow changes without a
- * press here. Uses the scan page's layout classes (18-scan-page.css).
+ * node model picker), download it when its source is known (ui_model_download.js) or look it
+ * up on Civitai. Nothing in the workflow changes without a press here. Uses the scan page's layout classes (18-scan-page.css).
  */
 
 import { translate as t } from './locales.js';
 import { applyModelFix, checkWorkflowModels, fixWorkflowModels, isProblem, markReplaced, replacedFrom } from './model_check.js';
 import { updateDoctorBanner } from './ui_doctor_banner.js';
+import { fillDownloads } from './ui_model_download.js';
 
 const MODEL_EXT = /\.(safetensors|ckpt|pt|bin|pth|sft|gguf)$/i;
 const CANDIDATE_WHY = { size: 'doctorWhyCandidate', name: 'doctorWhySameName', 'name-size': 'doctorWhyLikely' };
@@ -113,7 +114,7 @@ function pickByHand(owner, panel, entry) {
     });
 }
 
-function problemRow(owner, panel, entry) {
+function problemRow(owner, panel, entry, downloads) {
     const row = el('div', `anomalous-scan-row anomalous-doctor-row is-${entry.state}`);
     const copy = el('div', 'anomalous-scan-row-copy');
     copy.append(
@@ -127,6 +128,12 @@ function problemRow(owner, panel, entry) {
         if (!applyModelFix(entry)) alert(t('doctorChangedMeanwhile'));
         renderDoctorPage(owner, panel);
     });
+    if (entry.state === 'missing') {
+        // Filled once its source is known (ui_model_download.js).
+        const slot = el('span', 'anomalous-download-slot');
+        downloads.set(entry, slot);
+        actions.append(slot);
+    }
     if (entry.state === 'fixable') actions.append(put('doctorPutIn'));
     if (entry.state === 'candidate') actions.append(put('doctorUseCandidate'));
     if (entry.state !== 'fixable') {
@@ -221,7 +228,8 @@ export async function renderDoctorPage(owner, panel, { refresh = false } = {}) {
             : t('doctorHowItWorks');
     page.append(el('p', 'anomalous-scan-muted', verdict));
 
-    if (problems.length) page.append(card(t('doctorToHandle'), problems.map(entry => problemRow(owner, panel, entry))));
+    const downloads = new Map();
+    if (problems.length) page.append(card(t('doctorToHandle'), problems.map(entry => problemRow(owner, panel, entry, downloads))));
     if (hint) page.append(hint);
     if (replaced.length) {
         page.append(card(t('doctorReplaced'), replaced.map(entry => simpleRow(entry, t('doctorWas', { file: replacedFrom(entry.widget) })))));
@@ -235,6 +243,8 @@ export async function renderDoctorPage(owner, panel, { refresh = false } = {}) {
         page.append(fold);
     }
     panel.replaceChildren(page);
+    fillDownloads(owner, panel, downloads, actions, () => renderDoctorPage(owner, panel))
+        .catch(error => console.warn('[AMB] Doctor: downloads unavailable.', error));
 }
 
 /** The rail's doctor button, Home's card and the canvas banner's "Show". */
