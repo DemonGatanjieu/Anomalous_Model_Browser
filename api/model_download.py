@@ -30,7 +30,7 @@ from aiohttp import web
 import folder_paths
 
 from .activity_log import add_entry, log_path
-from .download_sources import SHA256, USER_AGENT, allowed_download_url, find_source, is_civitai, _load_api_key
+from .download_sources import SHA256, USER_AGENT, allowed_download_url, find_source, host_of, is_civitai, _load_api_key
 from .path_utils import atomic_write_json, resolve_within
 
 MODEL_EXTENSIONS = (".safetensors", ".ckpt", ".pt", ".pth", ".bin", ".sft", ".gguf")
@@ -38,7 +38,8 @@ CHUNK = 1024 * 1024
 SPACE_MARGIN = 200 * 1024 * 1024
 MAX_SUBFOLDERS = 300
 KEEP_FINISHED = 50
-DEFAULT_SETTINGS = {"place": "workflow", "folder": "Downloads"}
+# hf_mirror None: not chosen yet (the page takes the mirror for a Chinese interface).
+DEFAULT_SETTINGS = {"place": "workflow", "folder": "Downloads", "hf_mirror": None}
 
 _lock = threading.Lock()
 _jobs = {}  # id -> job dict, in the order started
@@ -76,6 +77,8 @@ def read_settings():
             settings["place"] = saved["place"]
         if isinstance(saved.get("folder"), str):
             settings["folder"] = saved["folder"]
+        if isinstance(saved.get("hf_mirror"), bool):
+            settings["hf_mirror"] = saved["hf_mirror"]
     except (OSError, ValueError, AttributeError):
         pass
     return settings
@@ -96,6 +99,8 @@ async def api_settings(request):
         settings = read_settings()
         if data.get("place") in ("workflow", "folder"):
             settings["place"] = data["place"]
+        if isinstance(data.get("hf_mirror"), bool):
+            settings["hf_mirror"] = data["hf_mirror"]
         if "folder" in data:
             try:
                 # {base} is filled with the model's base model when a download starts.
@@ -152,10 +157,10 @@ def same_file(expected, sha256):
     return len(expected) >= 10 and sha256.startswith(expected)
 
 
-def lookup_item(item):
+def lookup_item(item, hf_mirror=False):
     file_hash = str(item.get("hash") or "").strip()
     name = os.path.basename(str(item.get("value") or "").replace("\\", "/"))
-    found = find_source(file_hash, str(item.get("url") or "").strip(), name)
+    found = find_source(file_hash, str(item.get("url") or "").strip(), name, hf_mirror)
     if found.get("found") and file_hash and found.get("sha256") and len(file_hash) >= 10 \
             and all(c in "0123456789abcdefABCDEF" for c in file_hash) and not same_file(file_hash, found["sha256"]):
         # The link names another file than the one the workflow was saved with.
@@ -166,7 +171,8 @@ def lookup_item(item):
 async def api_lookup(request):
     """Items already looked up (`known`) or with nothing to look up by only get their type and
     folders. Once a site does not answer, the rest are not asked (offline: no wait per model)."""
-    items = (await _body(request)).get("items")
+    data = await _body(request)
+    items, hf_mirror = data.get("items"), data.get("hf_mirror") is True
     if not isinstance(items, list):
         return web.json_response({"error": "items must be a list"}, status=400)
     results, types, offline = [], {}, False
@@ -181,7 +187,7 @@ async def api_lookup(request):
         elif offline:
             result = {"found": False, "reason": "network"}
         else:
-            result = await asyncio.to_thread(lookup_item, item)
+            result = await asyncio.to_thread(lookup_item, item, hf_mirror)
             offline = result.get("reason") == "network"
         result.update(key=item.get("key"), type=folder_type)
         if folder_type and folder_type not in types:
@@ -193,8 +199,10 @@ async def api_lookup(request):
 # --- downloads --------------------------------------------------------------------------
 
 def _public(job):
-    return {key: job[key] for key in ("id", "key", "state", "error", "received", "total", "rel", "type",
-                                      "root", "value", "file", "source", "verified")}
+    public = {key: job[key] for key in ("id", "key", "state", "error", "received", "total", "rel", "type",
+                                        "root", "value", "file", "source", "verified")}
+    public["host"] = host_of(job["url"])
+    return public
 
 
 def plan_job(data):

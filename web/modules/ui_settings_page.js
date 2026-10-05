@@ -17,7 +17,7 @@ import { copyDiagnostics } from './feedback.js';
 import { renderFolderPage } from './ui_folder_manager.js';
 import { openFeedbackDialog } from './ui_feedback_dialog.js';
 import { checkOnOpen, setCheckOnOpen } from './ui_doctor_banner.js';
-import { fetchDownloadSettings, saveDownloadSettings } from './model_download.js';
+import { fetchDownloadSettings, hfMirrorOn, saveDownloadSettings } from './model_download.js';
 import { saveApiKey } from './ui_scan_page.js';
 
 const t = (key, params) => translate(key, params);
@@ -215,6 +215,8 @@ function downloadGroup(owner, redraw) {
                 [['workflow', 'settingsDownloadPlaceWorkflow'], ['folder', 'settingsDownloadPlaceFolder']], settings.place,
                 value => saveDownloadSettings({ place: value }).then(redraw).catch(() => {}))),
             row('settingsDownloadFolder', 'settingsDownloadFolderHelp', folder),
+            row('settingsHfMirror', 'settingsHfMirrorHelp', toggleSwitch(hfMirrorOn(settings),
+                on => saveDownloadSettings({ hf_mirror: on }).catch(() => redraw()))),
             row('settingsDownloadKey', 'settingsDownloadKeyHelp', button('anomalous-scan-secondary anomalous-scan-small-btn',
                 t('settingsDownloadKeySet'), () => saveApiKey())),
         );

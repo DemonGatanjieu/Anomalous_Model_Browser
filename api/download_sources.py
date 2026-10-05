@@ -21,6 +21,7 @@ except ImportError:  # loaded outside the package (tests)
 
 CIVITAI_HOSTS = ("civitai.com", "civitai.red")
 HF_HOSTS = ("huggingface.co", "hf-mirror.com")
+HF_MIRROR = "hf-mirror.com"  # Hugging Face's mirror for mainland China (it sends other networks back)
 OTHER_HOSTS = ("github.com",)
 TIMEOUT = 15
 SHA256 = re.compile(r"^[0-9a-fA-F]{64}$")
@@ -145,8 +146,9 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def _hf_file_url(url):
-    """https://<hf>/<repo>/resolve/<rev>/<path> for a blob or resolve link to a file, else ''."""
+def _hf_file_url(url, host=""):
+    """https://<hf>/<repo>/resolve/<rev>/<path> for a blob or resolve link to a file, else '';
+    on `host` (Hugging Face or its mirror) when given."""
     parsed = urllib.parse.urlsplit(url)
     parts = [part for part in parsed.path.split("/") if part]
     for marker in ("resolve", "blob"):
@@ -154,30 +156,46 @@ def _hf_file_url(url):
             at = parts.index(marker)
             if at >= 2 and len(parts) > at + 2:
                 parts[at] = "resolve"
-                return urllib.parse.urlunsplit(("https", parsed.netloc, "/" + "/".join(parts), "", ""))
+                return urllib.parse.urlunsplit(("https", host or parsed.netloc, "/" + "/".join(parts), "", ""))
     return ""
 
 
-def hugging_face_file(url):
-    """A Hugging Face file link: its size and SHA-256 from the site's headers."""
-    file_url = _hf_file_url(url)
-    if not file_url:
-        return None
+def _head(url):
+    """(headers, redirected) of a HEAD request that does not follow redirects; None on 404,
+    "gated" on 401/403."""
     opener = urllib.request.build_opener(_NoRedirect)
-    request = urllib.request.Request(file_url, method="HEAD", headers={"User-Agent": USER_AGENT})
+    request = urllib.request.Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
     try:
-        response = opener.open(request, timeout=TIMEOUT)
-        headers, redirected = response.headers, False
+        return opener.open(request, timeout=TIMEOUT).headers, False
     except urllib.error.HTTPError as error:
         if error.code in (401, 403):
-            return {"found": False, "reason": "gated", "page": url}
+            return "gated"
         if error.code == 404:
             return None
         if error.code not in (301, 302, 303, 307, 308):
             raise SourceUnreachable(f"HTTP {error.code}") from error
-        headers, redirected = error.headers, True
+        return error.headers, True
     except (urllib.error.URLError, OSError) as error:
         raise SourceUnreachable(str(error)) from error
+
+
+def hugging_face_file(url, host=""):
+    """A Hugging Face file link, fetched from `host` (huggingface.co or the mirror; the link's
+    own when empty): its size and SHA-256 from the site's headers."""
+    file_url = _hf_file_url(url, host)
+    if not file_url:
+        return None
+    answer = _head(file_url)
+    if isinstance(answer, tuple) and answer[1] and not answer[0].get("x-linked-size"):
+        # Sent on to the other Hugging Face host (the mirror does that outside China): ask there.
+        location = urllib.parse.urljoin(file_url, answer[0].get("Location") or "")
+        if _site(host_of(location), HF_HOSTS) and host_of(location) != host_of(file_url):
+            answer = _head(location)
+    if answer is None:
+        return None
+    if answer == "gated":
+        return {"found": False, "reason": "gated", "page": url}
+    headers, redirected = answer
     etag = str(headers.get("x-linked-etag") or headers.get("etag") or "").strip('"').replace("W/", "").strip('"')
     # A redirect's own length is not the file's: without x-linked-size (small files kept
     # outside large-file storage) the size is unknown.
@@ -185,6 +203,7 @@ def hugging_face_file(url):
     return {
         "found": True,
         "source": "huggingface",
+        "mirror": host_of(file_url) == HF_MIRROR,
         "download_url": file_url,
         "file_name": urllib.parse.unquote(file_url.rsplit("/", 1)[-1]),
         "size": int(size) if str(size).isdigit() else 0,
@@ -209,9 +228,10 @@ def plain_link(url):
     }
 
 
-def find_source(file_hash="", url="", name=""):
+def find_source(file_hash="", url="", name="", hf_mirror=False):
     """Where one missing model can come from: {found, source, download_url, file_name, size,
-    sha256, base_model, model_name, version_name, page}, or {found: False, reason}."""
+    sha256, base_model, model_name, version_name, page}, or {found: False, reason}. With
+    `hf_mirror`, Hugging Face files come from its mirror (and without, never from it)."""
     looked = False
     try:
         if file_hash:
@@ -225,7 +245,7 @@ def find_source(file_hash="", url="", name=""):
             if _site(host, CIVITAI_HOSTS):
                 found = civitai_by_link(url, name, file_hash)
             elif _site(host, HF_HOSTS):
-                found = hugging_face_file(url)
+                found = hugging_face_file(url, HF_MIRROR if hf_mirror else "huggingface.co")
             elif _site(host, OTHER_HOSTS):
                 found = plain_link(url)
             else:

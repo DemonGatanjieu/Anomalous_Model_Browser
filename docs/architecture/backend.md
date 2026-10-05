@@ -201,7 +201,12 @@ source's SHA-256 (else the workflow's hash) or it is removed as `hash_mismatch`;
 is renamed into place, ComfyUI's file-list caches are cleared and the activity log gets
 a `model_download` entry. `GET /anomalous/download/status` lists the jobs of this run,
 `POST /anomalous/download/cancel` stops one (its `.part` goes). The default place is
-`user/anomalous/download_settings.json` (`{place: workflow | folder, folder}`).
+`user/anomalous/download_settings.json` (`{place: workflow | folder, folder, hf_mirror}`).
+With `hf_mirror` (the lookup's flag; the page sends the setting, or for a Chinese interface
+true while it is unset) Hugging Face files are looked up and fetched on hf-mirror.com, and
+without it on huggingface.co, whichever host the link names. The mirror sends networks
+outside China back to huggingface.co; the lookup follows such a redirect once for the size
+and SHA-256.
 
 ## Metadata and cache behavior
 

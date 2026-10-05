@@ -65,7 +65,8 @@ function dialogItem(entry, info, settings) {
     const box = el('div', 'anomalous-download-item');
     const head = el('div', 'anomalous-download-head');
     head.append(el('strong', 'anomalous-download-name', fileName(entry.value)));
-    const facts = [SOURCES[info.source] || info.source, info.size ? formatSize(info.size) : '', info.base_model].filter(Boolean);
+    const source = info.mirror ? t('downloadSourceMirror') : SOURCES[info.source] || info.source;
+    const facts = [source, info.size ? formatSize(info.size) : '', info.base_model].filter(Boolean);
     head.append(el('span', 'anomalous-download-facts', facts.join(' · ')));
     box.append(head);
     if (info.model_name) box.append(el('div', 'anomalous-download-model', [info.model_name, info.version_name].filter(Boolean).join(' — ')));
@@ -208,6 +209,9 @@ function jobView(owner, job, retry) {
             button('anomalous-scan-row-btn', t('dialogCancel'), () => cancelDownload(job.id)));
     } else if (job.state === 'failed') {
         box.append(el('span', 'anomalous-download-text is-bad', errorText(job.error)));
+        if (job.host === 'huggingface.co' && ['network', 'unknown'].includes(job.error)) {
+            box.append(el('span', 'anomalous-download-text', t('downloadTryMirror')));
+        }
         if (job.error === 'needs_key') {
             box.append(button('anomalous-scan-row-btn is-main', t('downloadSetKey'), async () => {
                 if (await saveApiKey()) retry();

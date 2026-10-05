@@ -60,7 +60,12 @@ export function workflowLink(entry) {
     return native.find(model => String(model?.name || '').split(/[\\/]/).pop().toLowerCase() === name)?.url || '';
 }
 
-const lookupKey = (item) => `${item.hash}|${item.url}|${item.value}`;
+const lookupKey = (item) => `${item.hash}|${item.url}|${item.value}|${item.mirror}`;
+
+/** Whether Hugging Face files come from its mirror: as set, else for a Chinese interface. */
+export function hfMirrorOn(settings) {
+    return typeof settings?.hf_mirror === 'boolean' ? settings.hf_mirror : window.anomalous_browser_lang === 'zh';
+}
 
 /**
  * Where each entry can be downloaded from: { found: Map entry -> { found, source, size, sha256,
@@ -68,11 +73,13 @@ const lookupKey = (item) => `${item.hash}|${item.url}|${item.value}`;
  * (a network failure again next time); the model folders (free space, subfolders) every time.
  */
 export async function lookupDownloads(entries) {
+    const settings = await fetchDownloadSettings().catch(() => ({ place: 'workflow', folder: 'Downloads', hf_mirror: null }));
+    const mirror = hfMirrorOn(settings);
     const items = entries.map((entry, index) => {
-        const item = { key: String(index), hash: entry.record?.hash || '', url: workflowLink(entry), value: entry.value };
+        const item = { key: String(index), hash: entry.record?.hash || '', url: workflowLink(entry), value: entry.value, mirror };
         return { ...item, types: inferModelFolderTypes(entry.node, entry.widget), known: lookups.has(lookupKey(item)) };
     });
-    const data = await post('/anomalous/download/lookup', { items });
+    const data = await post('/anomalous/download/lookup', { items, hf_mirror: mirror });
     const found = new Map();
     for (const result of data.results || []) {
         const item = items.find(candidate => candidate.key === result.key);
@@ -83,7 +90,7 @@ export async function lookupDownloads(entries) {
         info = { ...info, type: result.type, roots: data.roots?.[result.type] || [], link: item.url };
         found.set(entries[Number(item.key)], info);
     }
-    return { found, settings: data.settings || { place: 'workflow', folder: 'Downloads' } };
+    return { found, settings };
 }
 
 function notify() {
