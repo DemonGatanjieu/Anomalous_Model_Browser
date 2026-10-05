@@ -67,6 +67,11 @@
 - **Hugging Face through the China mirror (Hugging Face 国内镜像)**: Settings → Model downloads can send Hugging Face downloads through hf-mirror.com, which is on by default for the Chinese interface. When a download from Hugging Face itself fails, the row suggests the mirror.
 - **Ctrl+Z after a scan (扫描后的 Ctrl+Z)**: after any scan, the first Ctrl+Z used to seem to do nothing: the workflow's saved fingerprints had changed, which ComfyUI counted as a step. A change of fingerprints alone no longer takes a step.
 
+### 🧱 Combos from your own nodes (按自己的节点结构做搭配)
+- A combo is no longer only "a main model, LoRAs and a prompt". Pick nodes on the canvas (a Flux UNet with its two text encoders and VAE, a video model, a node pack's loader…), choose **New → From the nodes picked on the canvas**, and the combo keeps those nodes and how they are wired. Its editor then lists the **slots**: each model drop-down (a node with several has several) to change with a picker that shows that folder's models with covers, filtered by base model, and each prompt box to write in. **Put on canvas** lays the nodes out wired as saved, with your choices in them.
+- Only certain things are kept: nodes that pick model files and nodes that hold text, and the links between them. Other picked nodes (samplers, latents…) are left out and their ports stay open for you to wire, as before. Every other value of the kept nodes (strengths, CLIP type…) is stored by name and put back untouched. When the dialog saves, you see what is kept and what is not, and can rename slots or untick the ones that should stay as they are.
+- On another computer, missing nodes are named with their node pack before anything is placed; a box or link a node pack has since renamed is reported after placing, never guessed. **New → Same structure as …** starts another combo from a structure you already saved.
+
 ### 🔎 Model search in the header (模型搜索放到顶栏)
 - The models page's search sits in the header now, instead of inside the folder list you had to open first. It matches the name, file name, folder, trigger words, base model and notes, every word you type, in the type you are looking at; Esc clears it. It also searches all the models of the type, where the old box only filtered the cards on screen.
 

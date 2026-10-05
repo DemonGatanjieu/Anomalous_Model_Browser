@@ -1,6 +1,7 @@
 /**
  * The Combos page (搭配): each saved combo of a main model, LoRAs and a prompt (the files
- * GET /anomalous/notebooks keeps, formerly Prompt Notes) as a card with its model's cover
+ * GET /anomalous/notebooks keeps, formerly Prompt Notes), or of the model and text nodes saved
+ * from the canvas with their links (ui_combo_structure.js), as a card with its model's cover
  * and Put on canvas (notebook_canvas.js: a new group of nodes that follows the pointer). A card
  * opens the combo in its editor (ui_notebook_editor.js), and dragged onto the canvas becomes a
  * new group of nodes where it is dropped. New names one and opens it.
@@ -10,6 +11,8 @@ import { translate as t } from './locales.js';
 import { anomalousPrompt } from './ui_dialog.js';
 import { freeComboName, listCombos } from './image_keep.js';
 import { bindMaterialDrag } from './material_drag.js';
+import { STRUCTURED } from './combo_slots.js';
+import { chooseNewCombo, structuredComboMeta } from './ui_combo_structure.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -56,10 +59,13 @@ function comboCard(owner, note) {
     };
     const body = el('div', 'anomalous-combo-body');
     const loras = (data.loras || []).length;
+    // A combo with its own node structure (ui_combo_structure.js) says its slots instead.
+    const structured = data.kind === STRUCTURED ? structuredComboMeta(data) : null;
     body.append(
         el('strong', 'anomalous-combo-name', note.name),
-        el('span', 'anomalous-combo-meta', [modelName(data.mainModel) || t('comboNoModel'), loras ? t('comboLoraCount', { count: loras }) : ''].filter(Boolean).join(' · ')),
-        el('p', 'anomalous-combo-prompt', String(data.promptEn || '').trim() || t('comboNoPrompt')),
+        el('span', 'anomalous-combo-meta', structured ? structured.meta
+            : [modelName(data.mainModel) || t('comboNoModel'), loras ? t('comboLoraCount', { count: loras }) : ''].filter(Boolean).join(' · ')),
+        el('p', 'anomalous-combo-prompt', (structured ? structured.prompt : String(data.promptEn || '').trim()) || t('comboNoPrompt')),
     );
     const use = button('anomalous-btn-primary anomalous-combo-use', t('comboUse'), (event) => {
         event.stopPropagation();
@@ -68,7 +74,7 @@ function comboCard(owner, note) {
     });
     use.title = t('comboUseHint');
     body.append(use);
-    card.append(cover(data.mainModel), body);
+    card.append(cover(structured ? { preview_url: structured.cover } : data.mainModel), body);
     bindMaterialDrag(card, owner, {
         payload: () => ({ type: 'combo', filename: note.filename, dragHint: t('comboDragHint'), dragTargetHint: t('comboDragCanvas') }),
         accepts: () => false,
@@ -102,7 +108,8 @@ export async function renderComboList(owner, host) {
     search.type = 'search';
     search.placeholder = t('comboSearch');
     search.value = owner.comboQuery || '';
-    bar.append(el('p', 'anomalous-combo-lead', t('comboLead')), search, button('anomalous-btn-primary', t('comboNew'), () => void newCombo(owner)));
+    bar.append(el('p', 'anomalous-combo-lead', t('comboLead')), search,
+        button('anomalous-btn-primary', t('comboNew'), () => void chooseNewCombo(owner, () => newCombo(owner))));
     const grid = el('div', 'anomalous-combo-grid');
     host.replaceChildren(bar, grid);
     grid.append(el('p', 'anomalous-combo-empty', t('loading')));

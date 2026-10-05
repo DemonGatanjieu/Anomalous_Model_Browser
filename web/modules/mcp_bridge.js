@@ -207,7 +207,7 @@ async function placeCombo({ name }, getOwner) {
     const combo = combos.find(item => item.name === name)
         || combos.find(item => String(item.name).toLowerCase() === String(name).toLowerCase());
     if (!combo) throw new Error(`No combo called ${name}; list_combos names them.`);
-    if (!combo.data?.mainModel) throw new Error(`The combo ${combo.name} has no main model yet.`);
+    if (!combo.data?.mainModel && combo.data?.kind !== 'nodes') throw new Error(`The combo ${combo.name} has no main model yet.`);
     const owner = getOwner();
     if (!owner) throw new Error('Anomalous is not ready on this page yet.');
     return recorded(getOwner, 'mcpDidCombo', (g) => {

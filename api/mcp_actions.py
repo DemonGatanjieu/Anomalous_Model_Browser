@@ -253,7 +253,8 @@ ACTIONS = dict([
             ["model_id"]),
     _action("place_combo", "Place a combo",
             "Adds one of the user's combos (list_combos) to the canvas as a new wired group: model loader, LoRAs, "
-            "positive and negative prompt. Nothing already there changes.",
+            "positive and negative prompt, or a node-structure combo's own nodes and links. Nothing already there "
+            "changes; ports to nodes outside the combo (sampler…) stay open.",
             place_combo, {"name": {"type": "string", "description": "Combo name from list_combos."}}, ["name"]),
     _action("check_workflow_models", "Check missing models",
             "Which models the open workflow needs that this computer does not have under that name, and which "

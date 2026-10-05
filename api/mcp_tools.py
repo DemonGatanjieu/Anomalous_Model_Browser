@@ -336,10 +336,24 @@ def list_combos(query="", limit=20):
     terms, found = _terms(query), []
     for note in _list_notebooks():
         data = note.get("data") or {}
-        loras = [_model_name(lora) for lora in data.get("loras") or []]
-        combo = {"name": note.get("name"), "base_model": data.get("baseModel") or "",
-                 "main_model": _model_name(data.get("mainModel")), "loras": loras,
-                 "prompt": _text(data.get("promptEn"), 800)}
+        if data.get("kind") == "nodes":  # its own node structure: model and text slots by their names
+            structure = data.get("structure") or {}
+            values = data.get("values") or {}
+            slots = structure.get("slots") or []
+            models = [{"slot": s.get("label") or s.get("widget"), "folder": s.get("folder") or "",
+                       "file": os.path.basename(str(values.get(s["id"]) or "").replace("\\", "/"))}
+                      for s in slots if s.get("kind") == "model"]
+            texts = [{"slot": s.get("label") or s.get("widget"), "text": _text(values.get(s["id"]), 400)}
+                     for s in slots if s.get("kind") == "text"]
+            combo = {"name": note.get("name"), "kind": "node structure", "models": models, "texts": texts,
+                     "nodes": [n.get("name") or n.get("type") for n in structure.get("nodes") or []],
+                     "main_model": models[0]["file"] if models else "", "prompt": texts[0]["text"] if texts else ""}
+            loras = [model["file"] for model in models[1:]] + [text["text"] for text in texts[1:]]
+        else:
+            loras = [_model_name(lora) for lora in data.get("loras") or []]
+            combo = {"name": note.get("name"), "base_model": data.get("baseModel") or "",
+                     "main_model": _model_name(data.get("mainModel")), "loras": loras,
+                     "prompt": _text(data.get("promptEn"), 800)}
         if not _matches(terms, combo["name"], combo["main_model"], combo["prompt"], " ".join(loras)):
             continue
         found.append(combo)
@@ -435,7 +449,8 @@ TOOLS = dict([
           get_image_info, {"image": {"type": "string", "description": "From search_images, e.g. 'ComfyUI_00012_.png'."},
                            "include_image": {"type": "boolean", "default": False}}, ["image"]),
     _tool("list_combos", "Combos",
-          "The user's combos (搭配): a main model, LoRAs and a prompt kept together.", list_combos,
+          "The user's combos (搭配): a main model, LoRAs and a prompt kept together, or (kind \"node "
+          "structure\") model nodes and text nodes saved from the canvas with their links, listed by slot.", list_combos,
           {"query": _QUERY, "limit": _LIMIT}),
     _tool("list_workflows", "Workflow recipes",
           "The user's saved workflow recipes with tags, notes and their main settings.", list_workflows,

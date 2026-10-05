@@ -1,0 +1,265 @@
+/* Combos with a node structure: the save dialog, the slot editor, the model picker (ui_combo_structure.js). */
+
+.anomalous-structure-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.anomalous-structure-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(620px, 100%);
+    max-height: 90vh;
+    padding: 22px 24px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 16px;
+    background: var(--amb-bg-panel, #24252b);
+    color: var(--amb-text-main);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+}
+
+.anomalous-structure-dialog.is-picker {
+    width: min(860px, 100%);
+    height: min(720px, 90vh);
+}
+
+.anomalous-structure-title {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.anomalous-structure-note {
+    margin: 0;
+    color: var(--amb-text-soft, var(--amb-text-main));
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.anomalous-structure-note.is-muted { color: var(--amb-text-muted); }
+.anomalous-structure-note.is-bad { color: #fca5a5; }
+
+.anomalous-structure-name,
+.anomalous-structure-search,
+.anomalous-structure-slot-label,
+.anomalous-structure-text {
+    padding: 7px 10px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 8px;
+    background: var(--amb-bg-input, rgba(0, 0, 0, 0.25));
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.anomalous-structure-slots {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anomalous-structure-slot {
+    display: grid;
+    grid-template-columns: auto minmax(120px, 180px) 1fr;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+}
+
+.anomalous-structure-slot-where {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--amb-text-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-structure-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.anomalous-structure-option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    padding: 12px 14px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: var(--amb-bg-card);
+    color: var(--amb-text-main);
+    text-align: left;
+    cursor: pointer;
+}
+
+.anomalous-structure-option:hover:not(:disabled) { border-color: var(--amb-link); }
+.anomalous-structure-option:disabled { opacity: 0.5; cursor: default; }
+
+.anomalous-structure-bases {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.anomalous-structure-base {
+    padding: 3px 10px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-soft, var(--amb-text-main));
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-structure-base.is-active {
+    border-color: var(--amb-link);
+    color: var(--amb-link);
+}
+
+.anomalous-structure-models {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.anomalous-structure-model {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: var(--amb-bg-card);
+    color: var(--amb-text-main);
+    text-align: left;
+    cursor: pointer;
+}
+
+.anomalous-structure-model:hover,
+.anomalous-structure-model.is-current { border-color: var(--amb-link); }
+
+.anomalous-structure-model img {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.anomalous-structure-model-name {
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-structure-model-base {
+    color: var(--amb-text-muted);
+    font-size: 11px;
+}
+
+.anomalous-structure-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--amb-border);
+    border-radius: 12px;
+    background: var(--amb-bg-card);
+}
+
+.anomalous-structure-heading {
+    margin: 0;
+    font-size: 14px;
+}
+
+.anomalous-structure-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.anomalous-structure-row.is-model {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.anomalous-structure-row.is-text {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anomalous-structure-thumb {
+    flex-shrink: 0;
+    width: 48px;
+    height: 64px;
+    overflow: hidden;
+    border-radius: 6px;
+    background: var(--amb-bg-input, rgba(0, 0, 0, 0.25));
+}
+
+.anomalous-structure-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anomalous-structure-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.anomalous-structure-label {
+    color: var(--amb-text-muted);
+    font-size: 12px;
+}
+
+.anomalous-structure-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-structure-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 6px;
+}
+
+.anomalous-structure-text {
+    width: 100%;
+    resize: vertical;
+}
+
+.anomalous-structure-about {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 8px;
+    border-top: 1px solid var(--amb-border);
+}
+
+@media (max-width: 560px) {
+    .anomalous-structure-slot { grid-template-columns: auto 1fr; }
+    .anomalous-structure-slot-where { grid-column: 2; }
+}

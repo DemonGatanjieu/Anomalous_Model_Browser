@@ -378,6 +378,12 @@ covered by the `styles.css` manifest.
 - `ui_combos.js` renders the Combos page's list (搭配: a main model, LoRAs and a prompt, formerly Prompt Notes): search,
   New, and a card per combo with its model's cover and Put on canvas; a card opens the combo's editor, and dragged onto the
   canvas (`material_drag.js`) becomes a new group of nodes where it is dropped. Combos keep the notes' files.
+  A combo can instead hold a node structure (`data.kind === 'nodes'`): `combo_structure.js`
+  captures the canvas's picked model nodes and text nodes with the links between them and puts
+  them back (other boxes stored by name and restored untouched, slots = model drop-downs and
+  text boxes, the folder a drop-down lists read from ComfyUI's own `/models` lists);
+  `combo_slots.js` holds its rules that need no canvas; `ui_combo_structure.js` is the save
+  dialog, the slot editor, the slot model picker and "New".
 - `recipe_save.js` saves Workflow Recipes for the canvas save and for an output image's workflow (the gallery's keep menu,
   moving whole workflows kept as materials), laying an image's workflow on a canvas of its own to summarise it.
 - `ui_apply_receipt.js` is the receipt of values written to a node from a panel (Current node's parameters) with its Undo. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) and the node writes shared by those panels and prompt drops.

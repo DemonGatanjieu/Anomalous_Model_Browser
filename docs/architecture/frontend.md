@@ -79,7 +79,15 @@ The main surfaces are:
   `notebook_canvas.js`; Put on canvas lays a combo out as a new wired group of nodes (Esc while it
   follows the pointer removes it; the activity log holds back while `owner.placingCombo` is set) and
   never changes nodes already on the canvas (values of an existing node are changed in
-  Current node).
+  Current node). A combo with a node structure (`combo_structure.js`, `ui_combo_structure.js`)
+  keeps only model nodes (a drop-down of model files) and text nodes (a multiline text box by
+  the node's definition) and the links between them; picked nodes of other kinds and links to
+  them are left out (their ports stay open on the canvas). Slots are per box, so a node with
+  several model drop-downs has several; a box fed by a link is none. Each slot's models folder
+  is the one whose files hold all the drop-down's options. Putting it down needs every node
+  type installed (missing ones and their packs are named first), restores the other boxes by
+  name in their order, fills the slots by name, then links by port name and type; a slot or
+  link that cannot be restored is reported after placing, never guessed.
 - Prompts: the rail entry opens Prompt Studio (below); there is no Material Library page.
   Saved node values are listed, applied and deleted in Current node.
 - Current node (Node Assistant)/Model Check: selected-node actions, saved parameters, and

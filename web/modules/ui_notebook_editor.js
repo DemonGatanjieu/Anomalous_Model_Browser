@@ -6,13 +6,15 @@
 import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
 import { isUnetModel, UNLABELED_BASE_MODEL } from './notebook_canvas.js';
+import { STRUCTURED } from './combo_slots.js';
+import { renderStructuredCombo } from './ui_combo_structure.js';
 
 const t = (key, params) => translate(key, params);
 
 /**
  * Sticky top action toolbar for the active notebook with floating dropdown menu.
  */
-function createNotebookToolbar(ctx, notebook) {
+export function createNotebookToolbar(ctx, notebook) {
     const tb = document.createElement('div');
     tb.className = 'anomalous-nb-toolbar';
 
@@ -489,6 +491,7 @@ export function renderNotebookEditor() {
         if (!this.currentNotebook) return;
 
         const data = this.currentNotebook.data || (this.currentNotebook.data = {});
+        if (data.kind === STRUCTURED) return renderStructuredCombo(this, this.nbEditor, this.currentNotebook, createNotebookToolbar(this, this.currentNotebook));
         if (!data.loras) data.loras = [];
 
         const tb = createNotebookToolbar(this, this.currentNotebook);

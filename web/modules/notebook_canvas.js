@@ -4,7 +4,8 @@
  * prompt, the negative the common negative starter card), wired together. From a button the
  * group follows the pointer until a click, and Esc takes it off again; a card dropped on the
  * canvas builds it where it was dropped. Nothing already on the canvas changes, except that a
- * UNet combo's prompt nodes take the canvas's CLIP loader when there is exactly one.
+ * UNet combo's prompt nodes take the canvas's CLIP loader when there is exactly one. A combo with
+ * its own node structure is put down the same way (combo_structure.js builds it).
  */
 
 import { app } from '../../../scripts/app.js';
@@ -12,6 +13,8 @@ import { translate } from './locales.js';
 import { recordCanvasStep } from './canvas_history.js';
 import { PROMPT_PRESETS } from './prompt_composition.js';
 import { anomalousAlert } from './ui_dialog.js';
+import { STRUCTURED } from './combo_slots.js';
+import { buildStructure } from './combo_structure.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -94,10 +97,50 @@ function followPointer(owner, groupNodes, placed) {
     }, 100);
 }
 
+/** What went wrong putting a structure down, for the alert after it is placed. */
+function problemLines(problems) {
+    return problems.map(problem => (problem.kind === 'slot_missing'
+        ? t('comboPlaceSlotMissing', { label: problem.label, widget: problem.widget, node: problem.type })
+        : t('comboPlaceLinkMissing', { from: problem.from, to: problem.to, type: problem.type }))).join('\n');
+}
+
+/** A combo with a node structure: its nodes and links, its slots filled (combo_structure.js). */
+function placeStructure(owner, data, position) {
+    let built;
+    try {
+        built = buildStructure(data.structure, data.values);
+    } catch (error) {
+        if (error.code !== 'missing_nodes') throw error;
+        void anomalousAlert(t('comboPlaceMissingNodes', {
+            nodes: error.missing.map(item => (item.pack ? `${item.type}（${item.pack}）` : item.type)).join('、'),
+        }));
+        return;
+    }
+    if (!built.made.length) return;
+    const placed = () => {
+        recordCanvasStep(app);
+        if (built.problems.length) void anomalousAlert(`${t('comboPlaceProblems')}\n${problemLines(built.problems)}`);
+    };
+    owner.nbPanel.style.display = 'none';
+    if (!position) {
+        followPointer(owner, built.made, placed);
+        owner.close();
+        return;
+    }
+    owner.close();
+    built.made.forEach(item => { item.node.pos = [position[0] + item.relX, position[1] + item.relY]; });
+    app.graph.setDirtyCanvas?.(true, true);
+    placed();
+}
+
 /** Builds the combo as a new group of nodes: at `position` (canvas coordinates), or following the pointer. */
 export function sendNotebookToCanvas(position = null) {
     if (!this.currentNotebook) return;
     const data = this.currentNotebook.data || {};
+    if (data.kind === STRUCTURED) {
+        placeStructure(this, data, position);
+        return;
+    }
     if (!data.mainModel) {
         void anomalousAlert(t('notebookSelectMain'));
         return;
