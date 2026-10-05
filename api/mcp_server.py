@@ -7,8 +7,9 @@ POST /anomalous/mcp speaks the Model Context Protocol's Streamable HTTP transpor
   (sessions are optional there), so both eras are served the same stateless way.
 Only this computer may connect: the peer must be loopback, no proxy header may be present,
 and Host and Origin (when sent) must name a loopback host, which stops DNS rebinding.
-Answers are always one JSON object; there are no server-initiated messages. The tools
-themselves are in mcp_tools.py.
+Answers are always one JSON object; there are no server-initiated messages. The tools are
+in mcp_tools.py (reading) and mcp_actions.py (acting); POST /anomalous/mcp/bridge is where
+the open ComfyUI page claims and answers canvas actions (mcp_bridge.py).
 """
 
 import asyncio
@@ -18,7 +19,11 @@ import urllib.parse
 
 from aiohttp import web
 
-from .mcp_tools import TOOLS, call_tool
+from . import mcp_bridge
+from .mcp_actions import ACTIONS
+from .mcp_tools import TOOLS as READ_TOOLS, call_tool
+
+TOOLS = {**READ_TOOLS, **ACTIONS}
 
 MODERN_VERSIONS = ("2026-07-28",)
 LEGACY_VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26")
@@ -27,9 +32,12 @@ INSTRUCTIONS = (
     "Tools over the user's ComfyUI library as Anomalous Model Browser keeps it: model files with "
     "their Civitai information, output images with their generation settings, combos (a model, "
     "LoRAs and a prompt), workflow recipes, saved prompts, generated audio, the scan status and "
-    "the activity log. All tools only read. To change something, tell the user where to do it "
-    "in Anomalous (the rail on the left: Models, Gallery, Workflows, Combos, Prompts, Voices). "
-    "Ids returned by one tool (model_id, image) are what the detail tools take."
+    "the activity log; and tools that act on the workflow open in ComfyUI (read it with "
+    "describe_canvas first), scan models, or have an Anomalous TTS voice speak. Canvas changes "
+    "are single Ctrl+Z steps and are logged as the AI's; nothing deletes files. Ids returned by "
+    "one tool (model_id, image, node ids) are what the others take. For what no tool does, tell "
+    "the user where in Anomalous to do it (the rail on the left: Models, Gallery, Workflows, "
+    "Combos, Prompts, Voices)."
 )
 LIST_TTL_MS = 300000
 # Requests run tools in threads; a few at a time is plenty for one person's AI app.
@@ -135,13 +143,14 @@ def _modern_header_problem(request, method, params, version):
     return None
 
 
-async def _call(params):
+async def _call(params, request):
     name = params.get("name")
     arguments = params.get("arguments") or {}
     if name not in TOOLS or not isinstance(arguments, dict):
         return None
+    ctx = {"base_url": f"{request.scheme}://{request.host}"}  # loopback, checked in api_mcp
     async with _slots:
-        result = await asyncio.to_thread(call_tool, name, arguments)
+        result = await asyncio.to_thread(call_tool, TOOLS, name, arguments, ctx)
     return result
 
 
@@ -187,12 +196,29 @@ async def api_mcp(request):
     if method == "tools/list":
         return _result(id_, _tool_list(modern), modern)
     if method == "tools/call":
-        result = await _call(params)
+        result = await _call(params, request)
         if result is None:
             return _error(id_, INVALID_PARAMS, f"Unknown tool or bad arguments: {params.get('name')}")
         return _result(id_, result, modern)
     return _error(id_, METHOD_NOT_FOUND, f"Method not found: {method}", status=404 if modern else 200)
 
 
+async def api_mcp_bridge(request):
+    """POST /anomalous/mcp/bridge - the open page claims a canvas action ({id, claim: true} ->
+    {granted}) and then answers it ({id, outcome: {ok, value} | {ok: false, error}})."""
+    if not _is_local(request) or not _origin_ok(request):
+        return web.json_response({"error": "This computer only"}, status=403)
+    try:
+        body = await request.json()
+    except (ValueError, UnicodeDecodeError):
+        body = None
+    if not isinstance(body, dict) or not isinstance(body.get("id"), str):
+        return web.json_response({"error": "Expected {id, claim} or {id, outcome}"}, status=400)
+    if body.get("claim") is True:
+        return web.json_response({"granted": mcp_bridge.claim(body["id"])})
+    return web.json_response({"accepted": mcp_bridge.resolve(body["id"], body.get("outcome"))})
+
+
 def register_routes(app):
     app.router.add_route("*", "/anomalous/mcp", api_mcp)
+    app.router.add_post("/anomalous/mcp/bridge", api_mcp_bridge)

@@ -1,5 +1,6 @@
 import { app } from '../../../scripts/app.js';
 import { AnomalousBrowser } from './browser.js';
+import { watchMcpActions } from './mcp_bridge.js';
 import {
     clampFloatingTriggerPosition,
     clearSavedTriggerPosition,
@@ -436,6 +437,8 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         ensureBrowser();
         installMaterialsShortcutFallback();
         // For the Anomalous_TTS node's character menu (its docs/INTERFACE.md §6).
+        // Canvas actions asked for by AI apps through the MCP endpoint (api/mcp_bridge.py).
+        watchMcpActions(ensureBrowser);
         window.anomalous_open_voice = (character) => {
             const browser = ensureBrowser();
             if (!browser) return false;

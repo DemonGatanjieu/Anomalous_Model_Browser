@@ -1,4 +1,6 @@
-"""The tools the MCP endpoint (mcp_server.py) offers: read-only views of the library.
+"""The MCP endpoint's (mcp_server.py) reading tools: views of the library (mcp_actions.py acts).
+
+`call_tool` runs any tool of a registry, these and mcp_actions.py's.
 
 Each tool is a plain function over the same stores the browser's pages use (model catalog
 and sidecars, output gallery, combos, workflow recipes, saved prompts, generated audio, scan
@@ -450,15 +452,17 @@ TOOLS = dict([
 ])
 
 
-def call_tool(name, arguments):
-    """An MCP tools/call result for one tool (run in a worker thread)."""
-    spec = TOOLS[name]["spec"]["inputSchema"]
+def call_tool(tools, name, arguments, ctx=None):
+    """An MCP tools/call result for tool `name` of `tools` (run in a worker thread). Tools marked
+    `context` get `ctx` ({base_url} of this server) first."""
+    tool = tools[name]
+    spec = tool["spec"]["inputSchema"]
     unknown = set(arguments) - set(spec["properties"])
     missing = [key for key in spec.get("required", []) if key not in arguments]
     if unknown or missing:
         return _failure(f"Unknown arguments {sorted(unknown)}" if unknown else f"Missing arguments {missing}")
     try:
-        value = TOOLS[name]["run"](**arguments)
+        value = tool["run"](ctx, **arguments) if tool.get("context") else tool["run"](**arguments)
     except ToolError as error:
         return _failure(str(error))
     except Exception as error:  # noqa: BLE001 - an AI app gets a readable failure, never a dropped request

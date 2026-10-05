@@ -103,9 +103,14 @@ covered by the `styles.css` manifest.
 - `api/mcp_server.py` serves `/anomalous/mcp`, the Model Context Protocol endpoint AI apps
   connect to (Streamable HTTP; the 2026-07-28 stateless protocol and the earlier
   `initialize`-based ones; this computer only, Host and Origin checked against DNS
-  rebinding). `api/mcp_tools.py` holds its tools: read-only, summarised views over the same
-  stores the pages use (models, scans, output images, combos, recipes, saved prompts,
-  generated audio, activity log). User guide: `docs/guides/mcp.md`.
+  rebinding). `api/mcp_tools.py` holds the reading tools (summarised views over the same
+  stores the pages use: models, scans, output images, combos, recipes, saved prompts,
+  generated audio, activity log) and `call_tool`; `api/mcp_actions.py` the acting ones:
+  canvas actions done by the open page, scans and Anomalous TTS speech through this
+  server's own routes. `api/mcp_bridge.py` hands a canvas action to the page over
+  ComfyUI's websocket and waits for its answer; `web/modules/mcp_bridge.js` is the page
+  side, doing it with Anomalous's canvas code (one Ctrl+Z step each, logged as the AI's).
+  User guide: `docs/guides/mcp.md`.
 - `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
   `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
   integrity receipts; `api/recipes.py` is the HTTP facade. `api/recipe_constants.py`

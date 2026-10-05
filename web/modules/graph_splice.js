@@ -27,7 +27,12 @@ function unsupported(direction, code, details = {}) {
     return { supported: false, direction, code, channels: [], ...details };
 }
 
-export function analyzeModelChainInsertion(graph, anchorNode, direction) {
+/**
+ * Whether a node can go into the model chain before / after `anchorNode`, and the links it
+ * would take over. `types`: the chain's slot types, MODEL and CLIP (a LoRA loader), or MODEL
+ * alone (a model-only LoRA loader, for UNet models that carry no text encoder).
+ */
+export function analyzeModelChainInsertion(graph, anchorNode, direction, types = MODEL_CHAIN_TYPES) {
     if (!graph || !anchorNode) {
         return unsupported(direction, 'missing_graph_or_node');
     }
@@ -36,7 +41,7 @@ export function analyzeModelChainInsertion(graph, anchorNode, direction) {
     }
 
     const channels = [];
-    for (const type of MODEL_CHAIN_TYPES) {
+    for (const type of types) {
         const anchorSlot = direction === 'before'
             ? findSlotIndex(anchorNode.inputs, type)
             : findSlotIndex(anchorNode.outputs, type);
@@ -98,9 +103,9 @@ export function getModelChainInsertionCapabilities(graph, anchorNode) {
     };
 }
 
-function assertInsertedNodeSlots(insertedNode) {
+function assertInsertedNodeSlots(insertedNode, types) {
     const slots = {};
-    for (const type of MODEL_CHAIN_TYPES) {
+    for (const type of types) {
         const input = findSlotIndex(insertedNode?.inputs, type);
         const output = findSlotIndex(insertedNode?.outputs, type);
         if (input < 0 || output < 0) {
@@ -166,8 +171,8 @@ function placeInsertedNode(graph, anchorNode, insertedNode, direction) {
     insertedNode.pos = [x, y];
 }
 
-export function spliceModelChainNode({ graph, anchorNode, insertedNode, direction }) {
-    const analysis = analyzeModelChainInsertion(graph, anchorNode, direction);
+export function spliceModelChainNode({ graph, anchorNode, insertedNode, direction, types = MODEL_CHAIN_TYPES }) {
+    const analysis = analyzeModelChainInsertion(graph, anchorNode, direction, types);
     if (!analysis.supported) {
         const error = new Error(`Model-chain insertion is not available: ${analysis.code}`);
         error.code = analysis.code;
@@ -175,7 +180,7 @@ export function spliceModelChainNode({ graph, anchorNode, insertedNode, directio
         throw error;
     }
 
-    const insertedSlots = assertInsertedNodeSlots(insertedNode);
+    const insertedSlots = assertInsertedNodeSlots(insertedNode, types);
     const originalConnections = analysis.channels.flatMap(channel => channel.originalLinks);
     let added = false;
     graph.beforeChange?.(anchorNode);

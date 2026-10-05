@@ -69,7 +69,8 @@ export function entrySummary(entry) {
         const changes = entry.detail?.changes || [];
         const opened = changes.find(change => change.kind === 'opened');
         if (opened) return t('activityCanvasOpened', { name: opened.node || '—', count: opened.after || '?' });
-        return t('activityCanvasChanged', { count: entry.detail?.total || changes.length });
+        const changed = t('activityCanvasChanged', { count: entry.detail?.total || changes.length });
+        return entry.detail?.via === 'mcp' ? t('activityByAi', { summary: changed }) : changed;
     }
     if (entry.action === 'scan_done') {
         const scan = entry.detail?.scan || {};

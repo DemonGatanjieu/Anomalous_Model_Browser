@@ -225,7 +225,8 @@ async def api_get_activity(request):
 
 
 async def api_post_activity(request):
-    """Canvas changes from the browser: {changes: [...], total, workflow}."""
+    """Canvas changes from the browser: {changes: [...], total, workflow, via?}; via "mcp" marks
+    changes an AI app made through the MCP endpoint."""
     try:
         body = await request.json()
     except ValueError:
@@ -237,6 +238,8 @@ async def api_post_activity(request):
         return web.json_response({'error': 'No recognizable changes'}, status=400)
     total = body.get('total') if isinstance(body.get('total'), int) else len(changes)
     detail = {'changes': changes, 'total': max(total, len(changes))}
+    if body.get('via') == 'mcp':
+        detail['via'] = 'mcp'
     entry = await asyncio.get_running_loop().run_in_executor(
         None, add_entry, 'canvas', 'canvas', body.get('workflow') if isinstance(body.get('workflow'), str) else '', detail)
     return web.json_response({'entry': entry})
