@@ -177,6 +177,30 @@ server's own `/anomalous/scan_all`, `/anomalous/download/status`, `/anomalous_tt
 minutes for the file). Downloads go through the page (`model_download.js` downloadMissing /
 downloadFrom), so the placement rules and the put-in after a download are the UI's own. Canvas changes are posted to the activity log with `via: "mcp"`.
 
+## Backups
+
+`api/backup.py` packs the user's data into one .zip (`POST /anomalous/backup/export`, then
+`GET /anomalous/backup/file`) in the temp folder (the newest three are kept): the stores
+under `stores/<part>/` (recipes, combos, materials, parameters, and `comfy_workflows` =
+`user/default/workflows` when chosen; the notebooks' legacy-migration marker stays out),
+`settings/config.json` without `CIVITAI_API_KEY` plus `download_settings.json`, and for each
+model with a user layer or a user cover `models/<id>/user.json` and `cover<suffix>`, listed
+in `manifest.json` with type, relative path, size and SHA-256 (from its sidecars; none is
+computed). A cover is the user's when it is not byte-identical to `<model>.civitai_bak.*`,
+as in the scanner.
+
+`POST /anomalous/backup/inspect` receives the .zip into the temp folder, refuses anything
+that is not this plugin's backup, too large, or has an unsafe member path, and reports per
+store how many files are new, the same or different, and how many models it finds here.
+`POST /anomalous/backup/apply` then writes only the chosen parts: new files are added, the
+same skipped, different ones replaced only with `replace` (the file here goes to the
+Recycle Bin first). Models are found by SHA-256, else by models folder, path and equal
+size. Their user layer is merged field by field (empty fields filled; `replace` takes the
+backup's, the old file to the Recycle Bin); the backup's cover replaces a Civitai cover
+(whose `civitai_bak` copy stays) but not another user cover unless `replace`. Settings
+are written only when chosen, keeping this computer's Civitai key. Export and import are
+activity entries (`backup_export`, `backup_import`).
+
 ## Model downloads
 
 `api/model_download.py` serves Model Check's downloads. `POST /anomalous/download/lookup`

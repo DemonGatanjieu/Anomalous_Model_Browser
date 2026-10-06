@@ -111,6 +111,12 @@ covered by the `styles.css` manifest.
   ComfyUI's websocket and waits for its answer; `web/modules/mcp_bridge.js` is the page
   side, doing it with Anomalous's canvas code (one Ctrl+Z step each, logged as the AI's).
   User guide: `docs/guides/mcp.md`.
+- `api/backup.py` is Settings → Backup (`/anomalous/backup/*`): one .zip of the user's stores
+  (recipes, combos, materials, parameters, optionally ComfyUI's saved workflows), the plugin
+  settings without the Civitai key, and each model's user layer and own cover; putting it
+  back adds what is missing, replaces differing files only on request (Recycle Bin first)
+  and finds models again by SHA-256, else by folder, path and size. `ui_backup.js` is its
+  export and import dialogs.
 - `api/lora_info.py` reads a LoRA's safetensors header to tell whether it trains the text
   encoder (`/anomalous/lora_info`), so inserting it wires the CLIP line only then.
 - `api/model_download.py` downloads the models a workflow misses (Model Check's
@@ -343,8 +349,8 @@ covered by the `styles.css` manifest.
   `ui_settings_hub.js` owns the display preferences (view mode, scale, atmosphere, window
   layout) and their application, the gear and language redraws; `ui_settings_page.js`
   is the settings page the gear opens (a tool page with Back): look and language, model
-  cards and memory with the card image cache, folders, workflow fingerprints, opening
-  mode and window, help; `ui_feedback_dialog.js` is the feedback window (Home and the
+  cards and memory with the card image cache, folders, workflow fingerprints, downloads,
+  backup (`ui_backup.js`), opening mode and window, help; `ui_feedback_dialog.js` is the feedback window (Home and the
   settings page open it): one text box, then `feedback.js` opens a GitHub issue with it in
   the browser's language, the environment folded at the end when attached (versions and
   hardware only, never a path or ComfyUI's command line), or copies the environment;

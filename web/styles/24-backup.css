@@ -1,0 +1,105 @@
+/* Settings -> Backup: the export and import dialogs (ui_backup.js). */
+
+.anomalous-backup-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.anomalous-backup-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: min(560px, 100%);
+    max-height: 90vh;
+    padding: 22px 24px;
+    box-sizing: border-box;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 16px;
+    background: var(--amb-bg-panel, #24252b);
+    color: var(--amb-text-main);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+}
+
+.anomalous-backup-title {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.anomalous-backup-subtitle {
+    margin: 4px 0 0;
+    color: var(--amb-text-muted);
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.anomalous-backup-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.anomalous-backup-text {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.anomalous-backup-note {
+    margin: 0;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.anomalous-backup-note.is-bad { color: #fca5a5; }
+
+.anomalous-backup-choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.anomalous-backup-choice input { margin-top: 3px; }
+
+.anomalous-backup-choice-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.anomalous-backup-mode {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anomalous-backup-failed {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.anomalous-backup-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+@media (max-width: 560px) {
+    .anomalous-backup-dialog { padding: 16px; }
+}

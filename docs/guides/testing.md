@@ -41,7 +41,7 @@ node tests/combo_slots.mjs
 ../../../python_embeded/python.exe -B -m unittest discover -s tests -p "test_*.py"
 
 # 一个 Python 测试文件
-../../../python_embeded/python.exe -B -m unittest tests.test_model_download
+../../../python_embeded/python.exe -B -m unittest discover -s tests -p "test_model_download.py"
 ```
 
 ## 4. 写新测试

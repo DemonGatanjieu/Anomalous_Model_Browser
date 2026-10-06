@@ -2,7 +2,7 @@
  * The settings page (the rail's gear): one card per subject — how the browser looks,
  * model cards and what they cost in memory (with the card image cache), model folders
  * (a view of its own, ui_folder_manager.js, `owner.settingsView === 'folders'`),
- * workflows, where Model Check's downloads go, how the browser opens, and help. A tool page like the scan page, with a
+ * workflows, where Model Check's downloads go, backups (ui_backup.js), how the browser opens, and help. A tool page like the scan page, with a
  * way back to the page you came from. Display preferences go through `owner.displayPrefs`
  * (ui_settings_hub.js); language, theme and opening mode are ComfyUI settings.
  */
@@ -19,6 +19,7 @@ import { openFeedbackDialog } from './ui_feedback_dialog.js';
 import { checkOnOpen, setCheckOnOpen } from './ui_doctor_banner.js';
 import { fetchDownloadSettings, hfMirrorOn, saveDownloadSettings } from './model_download.js';
 import { saveApiKey } from './ui_scan_page.js';
+import { exportBackup, importBackup } from './ui_backup.js';
 
 const t = (key, params) => translate(key, params);
 // The full written guide: the README, at its Chinese half for Chinese.
@@ -224,6 +225,14 @@ function downloadGroup(owner, redraw) {
     return box;
 }
 
+/** One .zip of the user's data to keep anywhere, and putting one back (ui_backup.js). */
+function backupGroup(owner) {
+    const small = (label, onClick) => button('anomalous-scan-secondary anomalous-scan-small-btn', label, onClick);
+    return group('settingsBackup',
+        row('settingsBackupExport', 'settingsBackupExportHelp', small(t('settingsBackupExportButton'), () => exportBackup())),
+        row('settingsBackupImport', 'settingsBackupImportHelp', small(t('settingsBackupImportButton'), () => importBackup(owner))));
+}
+
 function openingGroup(owner, redraw) {
     const mode = comfySetting(ENTRY_MODE_SETTING_ID) || 'floating';
     return group('settingsOpening',
@@ -284,6 +293,7 @@ function render(owner) {
         foldersGroup(owner),
         workflowGroup(owner),
         downloadGroup(owner, redraw),
+        backupGroup(owner),
         openingGroup(owner, redraw),
         helpGroup(owner),
     );

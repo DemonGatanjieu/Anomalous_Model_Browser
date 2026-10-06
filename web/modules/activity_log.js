@@ -35,6 +35,8 @@ const ACTION_KEYS = {
     voice_settings: 'activityVoiceSettings',
     voice_storage: 'activityVoiceStorage',
     model_download: 'activityModelDownload',
+    backup_export: 'activityBackupExport',
+    backup_import: 'activityBackupImport',
 };
 
 async function request(url, options) {
