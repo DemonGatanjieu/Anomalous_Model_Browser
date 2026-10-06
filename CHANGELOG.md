@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### 🧪 Tests in the repository (测试公开)
+- The plugin's tests are now part of the repository: `tests/` (Python tests for the backend, `.mjs` tests for the frontend rules), `node tools/run_tests.mjs` runs them all with the structure check, and [docs/guides/testing.md](docs/guides/testing.md) says how to run and write them. They need no network or GPU and only touch temporary folders. Developer notes no longer point at tests that were removed earlier.
+
 ### 🧭 New layout (新布局)
 - **Icon rail (左侧图标栏)**: every page now has one place on the left: Home, Models, Gallery, Workflows, Combos, Prompts, then Voices and Audio for the audio side, then scan, Model Check, Node Assistant and the toolbox, with settings at the bottom. It replaces the tabs at the top, the image/audio switch and the tool bar under the folder list.
 - **Folder list opens and closes per page (列表按页面收放)**: click the current page's icon again, or the button at the top left, to hide or show its list; each page remembers your choice. Pages without a list (Home, Gallery) give the space to the content. In a narrow or docked window the list starts closed and opens as a drawer against the rail, over a dimmed page; picking a folder or character, pressing the dimmed page or Esc closes it.

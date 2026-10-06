@@ -9,9 +9,8 @@ recipe persistence, or filesystem-facing routes.
 package. `api/__init__.py` registers `aiohttp` routes, all prefixed with
 `/anomalous/`. Changes to Python modules require a full ComfyUI restart; a
 frontend reload alone does not replace registered handlers or module state.
-Route registration uses explicit module references. `tests/test_route_manifest.py`
-locks the HTTP method/path pairs so internal ownership changes cannot silently
-drop, duplicate, or rename an endpoint.
+Route registration uses explicit module references, so moving a handler between
+modules cannot silently drop, duplicate, or rename an endpoint.
 
 The backend owns filesystem authority. A browser-supplied path, filename,
 category, output reference, recipe asset, or archive member is untrusted until
@@ -294,5 +293,5 @@ Keep product wording precise: deletion cleans sidecars; rename migrates them.
   a one-field object.
 - Large input collections use a JSON `POST` body. Do not place them in a query
   string or pass them as command-line arguments on Windows.
-- The private local `tests/` directory is ignored and is not imported by runtime
-  code or shipped in the installable plugin.
+- `tests/` holds the plugin's tests (how to run them: `docs/guides/testing.md`,
+  `tools/run_tests.mjs`). Runtime code never imports it.

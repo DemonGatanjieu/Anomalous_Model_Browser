@@ -117,11 +117,10 @@ UX 请求默认允许调整布局、交互和文案，不代表允许改变文�
 | 修改范围 | 至少验证 |
 | --- | --- |
 | 导入、导出、模块拆分 | JS 语法、模块链接，以及受影响按钮的真实执行路径 |
-| 工坊状态与生命周期 | `node --experimental-vm-modules tests/prompt_ui_lifecycle.mjs` |
-| 词卡读取、分页 | `node tests/prompt_material_source.mjs` |
-| 翻译桥接 | `node tests/translation_service_contracts.mjs`，异步节点写入另跑工坊生命周期测试 |
-| 素材应用、笔记隔离 | `node --experimental-vm-modules tests/material_workspace_flow.mjs` |
-| 素材提示词协议、配方筛选、拖拽清理 | `node --experimental-vm-modules tests/studio_contracts.mjs` |
+| 提示词工坊、词块 | `node tests/prompt_tags.mjs`、`node tests/prompt_boxes.mjs` |
+| 素材提示词、节点参数 | `node tests/material_prompt_cross_node.mjs`、`node tests/node_material_actions.mjs`、`node tests/node_parameter_sets.mjs` |
+| 搭配、往画布插节点、撤销 | `node tests/combo_slots.mjs`、`node tests/graph_splice.mjs`、`node tests/canvas_undo.mjs` |
+| 提交前全部跑一遍 | `node tools/run_tests.mjs`（说明见 `docs/guides/testing.md`） |
 | CSS、布局、交互 | 实际浏览器验证受影响状态；涉及宿主行为时验证 ComfyUI |
 | 文件修改、导入、存储 | 对应 Python 测试，至少覆盖成功、冲突和中途失败保留旧数据 |
 | 仅文档 | 检查链接、命令、实际代码一致性和 Git 差异 |

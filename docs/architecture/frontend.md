@@ -341,8 +341,7 @@ provider-specific validation belongs to the backend translation route.
 `styles.css` is the single external entry and ordered import manifest for current
 visual values. Its `web/styles/00-*.css` through `10-*.css` children preserve the
 original cascade order; every child import carries the same cache version so an
-entry-cache hit cannot leave stale child rules. `tests/css_bundle_order.mjs`
-guards the unique ordered list and byte-for-byte reconstructed bundle. Shared `--amb-*`
+entry-cache hit cannot leave stale child rules. Shared `--amb-*`
 tokens express surfaces, text, borders and control shapes; theme overrides must
 be scoped to `.theme-abyssal-scarlet` rather than changing unrelated surfaces.
 

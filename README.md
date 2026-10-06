@@ -210,6 +210,11 @@ The first time you open it, start on **Home**: **Scan model folders** fills in c
 
 ---
 
+### 🧪 Tests (测试)
+
+The plugin's tests are in `tests/`; run them all with `node tools/run_tests.mjs` from the plugin folder. See [docs/guides/testing.md](docs/guides/testing.md).
+插件的测试在 `tests/` 里，在插件文件夹运行 `node tools/run_tests.mjs` 一次跑完。改代码或提 PR 之前跑一遍，说明见 [docs/guides/testing.md](docs/guides/testing.md)。
+
 ### 📝 License & Branding (开源与品牌声明)
 
 * **Code License (代码授权)**: The source code is released under the [MIT License](LICENSE). 本项目源代码基于 MIT 许可证开源，可自由使用、修改与分发。
