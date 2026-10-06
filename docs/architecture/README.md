@@ -21,4 +21,4 @@ open only the topic needed for the current task.
 These documents describe current contracts rather than implementation history.
 For exact changes, use Git history. For user-visible releases, use
 `CHANGELOG.md`. For recurring implementation traps, use
-`.agents/logs/ai_lessons.md`.
+[`lessons.md`](lessons.md).

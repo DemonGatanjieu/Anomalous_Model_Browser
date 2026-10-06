@@ -26,7 +26,7 @@ and Current node lists the saved values. See the material contract below.
 | Model Check, provenance hashes, missing-model recovery, or model scanning | [`docs/architecture/model-resolution.md`](docs/architecture/model-resolution.md) |
 | Browser audits, E2E functional bug reports, or verification sign-offs | [`docs/audits/README.md`](docs/audits/README.md) |
 | Why a current product boundary exists | [`docs/decisions/README.md`](docs/decisions/README.md) |
-| Recurring implementation mistakes and post-mortems | [`.agents/logs/ai_lessons.md`](.agents/logs/ai_lessons.md) |
+| Recurring implementation mistakes and post-mortems | [`docs/architecture/lessons.md`](docs/architecture/lessons.md) |
 
 `README.md` is user-facing documentation and `CHANGELOG.md` is user-facing
 release history. Neither is the source of truth for internal architecture.

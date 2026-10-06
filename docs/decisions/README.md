@@ -105,7 +105,7 @@ Notebook application.
 Architecture documents change only when an owner, data flow, interface contract,
 persistence format, security boundary, or critical invariant changes. Ordinary
 fixes do not append “unchanged” entries. Git is the implementation history;
-`CHANGELOG.md` is user-facing release history; `.agents/logs/ai_lessons.md` holds
+`CHANGELOG.md` is user-facing release history; `docs/architecture/lessons.md` holds
 only durable recurring traps.
 
 ## AD-015 — Recipe model mutations update all identity representations
