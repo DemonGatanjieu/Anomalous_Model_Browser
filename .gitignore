@@ -71,6 +71,10 @@ docs/audits/*
 !docs/guides/
 docs/guides/*
 !docs/guides/*.md
+# The README's pictures (small WebP from the isolated demo ComfyUI).
+!docs/images/
+docs/images/*
+!docs/images/*.webp
 AI_SYSTEM_TEMPLATE.md
 
 # AI Agents Directory

@@ -17,6 +17,10 @@
 
 [**English**](#english) | [**中文说明**](#中文)
 
+<br/>
+
+<img src="docs/images/models.webp" width="900" alt="Models with their Civitai covers, base model and real names">
+
 </div>
 
 ---
@@ -29,6 +33,38 @@
 * 📺 **YouTube**: [Watch Quick Walkthrough on YouTube](https://youtu.be/hAvsj7uiaCw)
 * 📺 **Bilibili**: [Watch Video Demo on Bilibili (在哔哩哔哩观看)](https://www.bilibili.com/video/BV1a1bv68EuA/)
 
+### 👀 See it in action
+
+*The pictures show the Chinese interface; English is one switch away in Settings.*
+
+**1. Scan once, then pick models by their covers.** Press **Scan** and every model is looked up on Civitai by its file hash, so even a file called `下载 (3).safetensors` gets its real name, cover, trigger words and base model.
+
+<p align="center"><img src="docs/images/scan.webp" width="520" alt="Scan results: each file matched on Civitai"></p>
+
+**2. Open someone else's workflow without hunting for models.** When models are missing, a bar over the canvas says so. One press puts back the ones you already have under another name or in another folder; the red outlines go away.
+
+<p align="center"><img src="docs/images/model-check.webp" width="760" alt="Model Check puts back three missing models with one press"></p>
+
+**3. Find an old image and get its workflow back.** Search the gallery by prompt words, model or LoRA, then drag the image onto the canvas.
+
+<p align="center"><img src="docs/images/gallery.webp" width="760" alt="Gallery search, then drag an image onto the canvas"></p>
+
+**4. Keep a model + LoRA + prompt combo and lay it down in one move.** Drag a combo card onto empty canvas: a wired group of nodes appears, and nothing already on the canvas changes.
+
+<p align="center"><img src="docs/images/combo.webp" width="760" alt="A combo card dragged onto the canvas becomes wired nodes"></p>
+
+**5. Edit prompts as tags.** Select a prompt node and Prompt Studio opens its text as tags: click to weight, drag to reorder, type to add (Chinese and other languages become English).
+
+<p align="center"><img src="docs/images/prompt-studio.webp" width="760" alt="Prompt Studio editing a prompt node as tags"></p>
+
+**6. See what the plugin changed, and undo it.** Every change the plugin makes is listed in Activity, with **Undo** and **Find on canvas**.
+
+<p align="center"><img src="docs/images/activity.webp" width="560" alt="Activity log with an undo button"></p>
+
+**7. Give characters a voice** (with [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)): GPT-SoVITS characters with a reference clip per emotion, and a script page to voice them.
+
+<p align="center"><img src="docs/images/voices.webp" width="760" alt="Character voices page"></p>
+
 ### 🌟 What it does
 
 Every page has an icon on the rail at the left of the window.
@@ -36,7 +72,7 @@ Every page has an icon on the rail at the left of the window.
 | Page | What you do there |
 | :--- | :--- |
 | **🏠 Home** | Pick what you want to do: a card per task, first steps (scan your model folders, a guided tour of the interface) and your latest activity. |
-| **🕘 Activity** | Everything the plugin changed, by day: on the canvas (which node settings changed from what to what, nodes added or removed, workflows opened) and in files (models, covers, recipes, materials, notes, images, audio). **Find on canvas** jumps to the node. It records only; your own edits are not listed. |
+| **🕘 Activity** | Everything the plugin changed, by day: on the canvas (which node settings changed from what to what, nodes added or removed, workflows opened) and in files (models, covers, recipes, materials, notes, images, audio). **Find on canvas** jumps to the node; a canvas change can be undone with **Undo** until something changes it again, the rest is recorded only. Your own edits are not listed. |
 | **📦 Models** | Your models with covers, trigger words and base model. Chips at the top switch between types (Checkpoint, LoRA, VAE…) and list a whole type, subfolders included; the folder list narrows it to one folder. **+** adds a loader node to the canvas; edit a model's name, notes and cover, or scan just that model. |
 | **🖼️ Gallery** | Your ComfyUI `output` folder. Search by prompt, model, LoRA, seed, file name or model hash; open an image to see the parameters it was made with, or drag it onto the canvas to get its workflow back. **☆** keeps a good one as a whole workflow, a combo (model, LoRAs, prompt) or just its prompts. |
 | **🪡 Workflows** | Workflow recipes: save a whole workflow or a part of one together with its models, cover, notes and parameters. Each card shows whether the models are on this computer; drag it onto the canvas to load it. Versions can be compared and restored. |
@@ -89,6 +125,36 @@ The first time you open it, start on **Home**: **Scan model folders** fills in c
 * 📺 **哔哩哔哩 (Bilibili)**：[在 B 站观看快速上手与使用演示](https://www.bilibili.com/video/BV1a1bv68EuA/)
 * 📺 **YouTube**：[在 YouTube 观看视频演示](https://youtu.be/hAvsj7uiaCw)
 
+### 👀 看图上手
+
+**1. 扫描一次，以后看封面挑模型。** 点 **扫描**，每个模型都按文件哈希去 C 站认一遍。就算文件叫 `下载 (3).safetensors`，也能显示出它真正的名字、封面、触发词和底模。
+
+<p align="center"><img src="docs/images/scan.webp" width="520" alt="扫描结果：每个文件都在 C 站认出来了"></p>
+
+**2. 打开别人的工作流，不用自己找模型。** 缺模型时画布上方会提示。你电脑里其实有、只是改了名或换了文件夹的，点一下就换上，红框随之消失。
+
+<p align="center"><img src="docs/images/model-check.webp" width="760" alt="模型检查一键换上 3 个缺失的模型"></p>
+
+**3. 找到以前的图，拿回当时的工作流。** 在图库里按提示词、模型或 LoRA 搜，再把图拖到画布上。
+
+<p align="center"><img src="docs/images/gallery.webp" width="760" alt="图库搜索后把图拖到画布"></p>
+
+**4. 存下“模型 + LoRA + 提示词”的搭配，一拖就用。** 把搭配卡片拖到画布空白处，就放出一组连好线的节点，画布上原有的东西不动。
+
+<p align="center"><img src="docs/images/combo.webp" width="760" alt="搭配卡片拖到画布变成连好线的节点"></p>
+
+**5. 像搭积木一样改提示词。** 选中提示词节点，提示词工坊把它拆成词块：点一下调权重，拖动换位置，输入就加（中文会自动译成英文）。
+
+<p align="center"><img src="docs/images/prompt-studio.webp" width="760" alt="提示词工坊按词块编辑提示词节点"></p>
+
+**6. 插件改过什么都查得到，还能撤销。** 插件做的每一处改动都列在“操作记录”里，带 **撤销** 和 **在画布上找到**。
+
+<p align="center"><img src="docs/images/activity.webp" width="560" alt="操作记录和撤销按钮"></p>
+
+**7. 给角色配音**（需要 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)）：导入 GPT-SoVITS 角色，每种情绪一段参考音频，在配音页写台词直接生成。
+
+<p align="center"><img src="docs/images/voices.webp" width="760" alt="角色语音页面"></p>
+
 ### 🌟 能做什么
 
 窗口左侧的图标栏，每个页面一个图标。
@@ -96,7 +162,7 @@ The first time you open it, start on **Home**: **Scan model folders** fills in c
 | 页面 | 在这里做什么 |
 | :--- | :--- |
 | **🏠 主页** | 想做什么就点哪张卡片。还有上手第一步（扫描模型文件夹、界面导览）和最近的操作记录。 |
-| **🕘 记录** | 按天列出插件做过的每一处改动。<br>画布上：哪个节点的设置从什么改成了什么、加了或删了哪些节点、打开了哪个工作流。<br>文件上：模型、封面、配方、素材、笔记、图片、音频。<br>**在画布上找到** 可以直接跳到那个节点。只记录、不撤销；你自己在画布上的修改不会记进来。 |
+| **🕘 记录** | 按天列出插件做过的每一处改动。<br>画布上：哪个节点的设置从什么改成了什么、加了或删了哪些节点、打开了哪个工作流。<br>文件上：模型、封面、配方、素材、笔记、图片、音频。<br>**在画布上找到** 可以直接跳到那个节点；画布上的改动在没被再改过之前可以点 **撤销**，其余只记录。你自己在画布上的修改不会记进来。 |
 | **📦 模型** | 模型带封面、触发词和底模信息。<br>顶部标签切换类型（Checkpoint、LoRA、VAE…），连同子文件夹一起列出；左侧文件夹列表可以只看某个文件夹。<br>**+** 一键在画布上创建加载节点；也可以改名、写备注、换封面，或只扫描这一个模型。 |
 | **🖼️ 图库** | 读取 ComfyUI 的 `output` 文件夹。<br>可以按提示词、模型、LoRA、seed、文件名或模型哈希搜索。<br>点开图片能看到生成参数；拖到画布上可以还原当时的工作流。<br>觉得好就点 **☆**：存成整个工作流、搭配（模型 + LoRA + 提示词），或者只存提示词。 |
 | **🪡 工作流** | 工作流配方：把完整工作流或其中一段，连同模型、封面、备注和参数一起存下来。<br>卡片会显示这台电脑上模型是否齐全；拖到画布上即可载入。<br>可以比较、恢复历史版本。 |
