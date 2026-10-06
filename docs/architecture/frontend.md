@@ -5,11 +5,17 @@ localization, media, or explicit canvas mutations.
 
 ## Bootstrap and module ownership
 
-The verified AMB0/AMB1 workflow share-code Import / Export Center is available
-from the Workflows page's top bar (⇅) through `window.AMB_WorkflowShare.showUnifiedModal()`. Both directions
-are enabled by explicit product decision. It is independent of the paused Recipe
-package import/export. Image/workflow hash
-injection, host saving, and ordinary image downloads remain unchanged.
+Share and import is the Workflows page's ⇅ (`ui_share.js`). Its share code
+(`share_code.js`, no DOM) is AMB2: the workflow's lean form — node id, type, widget values,
+position to 10 px, and only what differs from a fresh node of the type (`LiteGraph.createNode`
+serialized as the template; a node pack's node always keeps its ports, so its links survive on
+a computer still lacking the pack), links by slot, groups, the `anomalous_*` extras — deflated
+and spelled as Chinese characters (14 bits each, U+4E00..U+8DFF, a first byte marking the
+padding) or base64url. Encoding rebuilds the workflow from the lean form and compares
+(`sameWorkflow`); subgraphs, native reroutes or any difference make the code hold the whole
+workflow. AMB0/AMB1 codes still decode. The same dialog imports a pasted code or workflow JSON,
+a dropped or chosen workflow file or image (`app.handleFile`), or a backup .zip
+(`ui_backup.js`). It is independent of the paused Recipe package import/export.
 
 ComfyUI loads JavaScript in the extension `WEB_DIRECTORY` as ES modules.
 `web/main.js` registers `Anomalous.ModelBrowser` and coordinates host hooks.

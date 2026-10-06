@@ -123,12 +123,13 @@ export function importBackup(owner) {
     input.accept = '.zip,application/zip';
     input.onchange = () => {
         const file = input.files?.[0];
-        if (file) void inspect(owner, file);
+        if (file) void importBackupFile(owner, file);
     };
     input.click();
 }
 
-async function inspect(owner, file) {
+/** Reads a backup .zip and offers to put it back (also from the share dialog, ui_share.js). */
+export async function importBackupFile(owner, file) {
     const { dialog, footer, close } = openDialog(t('backupImportTitle'));
     const status = el('p', 'anomalous-backup-note', t('backupReading', { name: file.name }));
     dialog.append(status);

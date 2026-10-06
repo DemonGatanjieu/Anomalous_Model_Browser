@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### 🔗 Short share codes, one place to import (短分享码与统一导入)
+- **Share codes are 5–10 times shorter (AMB2)**: only what a workflow needs is kept — node types, values, links, positions, titles, groups and the models' fingerprints — and ComfyUI fills in the rest when it opens. A Chinese-character spelling ("汉字码") is the shortest; a letter spelling ("字母码") posts anywhere, for chats or comment sections whose word filters stop the characters. Before a code is given, it is opened once and compared with the canvas; a workflow it cannot hold exactly (subgraphs, for one) is shared whole. Nodes from node packs keep their links on a computer that has not installed the pack yet. AMB0 and AMB1 codes still open.
+- **Share and import in one place**: the Workflows page's ⇅ makes the code as soon as it opens (with the fingerprint and download-link notes), and takes anything in: a pasted share code or workflow JSON, or a dropped or chosen workflow file, an image with a workflow, or a backup .zip.
+
 ### 💾 Backup and restore (备份与恢复)
 - **Settings → Backup → Export** packs your Workflow Recipes, combos, materials and saved prompts, parameter sets, the plugin settings and the names, notes and covers you gave your models into one .zip, optionally with ComfyUI's own saved workflows. Keep it on a cloud drive or a USB stick. The Civitai API key is never included.
 - **Import** first lists what is in the backup next to what this computer has (new, the same, different), and the models it finds again by file hash, even after they were renamed or moved. By default it only adds what is missing; "take the backup's" replaces differing files and puts this computer's in the Recycle Bin. A model's name and notes are filled in where empty, and your own cover takes the place of the Civitai one. Nothing is deleted.
