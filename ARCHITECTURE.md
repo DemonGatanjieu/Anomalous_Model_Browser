@@ -383,7 +383,8 @@ covered by the `styles.css` manifest.
   them back (other boxes stored by name and restored untouched, slots = model drop-downs and
   text boxes, the folder a drop-down lists read from ComfyUI's own `/models` lists);
   `combo_slots.js` holds its rules that need no canvas; `ui_combo_structure.js` is the save
-  dialog, the slot editor, the slot model picker and "New".
+  dialog, the slot editor, the slot model picker and "New"; `ui_translation_peek.js` is the
+  read-only translation panel beside its prompts.
 - `recipe_save.js` saves Workflow Recipes for the canvas save and for an output image's workflow (the gallery's keep menu,
   moving whole workflows kept as materials), laying an image's workflow on a canvas of its own to summarise it.
 - `ui_apply_receipt.js` is the receipt of values written to a node from a panel (Current node's parameters) with its Undo. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) and the node writes shared by those panels and prompt drops.

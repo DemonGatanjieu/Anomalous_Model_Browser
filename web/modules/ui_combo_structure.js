@@ -16,6 +16,7 @@ import { captureStructure } from './combo_structure.js';
 import { freeComboName, listCombos } from './image_keep.js';
 import { anomalousAlert, anomalousPrompt } from './ui_dialog.js';
 import { typeLabel } from './ui_model_types.js';
+import { showTranslation, translationTarget } from './ui_translation_peek.js';
 
 const SAVE_WAIT_MS = 500;
 const MAX_PATHS = 4; // models folders a type may have (extra_model_paths)
@@ -24,9 +25,14 @@ const FIXED_MAX_CHARS = 40; // longer saved values are not listed beside a model
 // Slot names by models folder; other folders use the models page's name.
 const SLOT_NAMES = { diffusion_models: 'comboSlotMainModel', checkpoints: 'comboSlotMainModel', unet: 'comboSlotMainModel',
     text_encoders: 'comboSlotTextEncoder', clip: 'comboSlotTextEncoder' };
-// Saved values shown beside a model, by box name.
-const FIXED_NAMES = { strength_model: 'comboFixedStrength', strength: 'comboFixedStrength', strength_clip: 'comboFixedClipStrength',
-    weight_dtype: 'comboFixedDtype', type: 'comboFixedType', device: 'comboFixedDevice' };
+// Saved values shown beside a model, named by their box ("strength_02", "lora_3_clip_strength", "model_weight_1"…).
+const FIXED_NAMES = [
+    [/^(lora_)?strength_?clip$|^lora_(\d+_)?clip_strength$|^clip_weight_\d+$|^strength_clip_\d+$/i, 'comboFixedClipStrength'],
+    [/^(lora_)?strength(_?model)?(_\d+)?$|^lora_(\d+_)?(model_)?strength$|^model_weight_\d+$/i, 'comboFixedStrength'],
+    [/^weight_dtype$/i, 'comboFixedDtype'], [/^type$/i, 'comboFixedType'], [/^device$/i, 'comboFixedDevice'],
+];
+const FIXED_SHOWN = 4; // more saved values fold behind "+N"
+const numberIn = (name) => { const found = String(name).match(/(\d+)(?!.*\d)/); return found ? Number(found[1]) : null; };
 // A model without a cover shows its kind in the empty frame.
 const SHORT_TYPES = { loras: 'LoRA', vae: 'VAE', text_encoders: 'CLIP', clip: 'CLIP', clip_vision: 'CLIP-V', diffusion_models: 'UNet',
     unet: 'UNet', checkpoints: 'CKPT', controlnet: 'CN', upscale_models: 'UP' };
@@ -69,12 +75,26 @@ function isDefaultLabel(slot) {
     return names.some(name => new RegExp(`^${escapeRe(name)}( \\d+)?$`).test(label));
 }
 
-/** A saved node's other values ("强度 0.85"), the short ones, without its slots and plain defaults. */
-function fixedValues(node, slots) {
-    const own = new Set(slots.filter(slot => slot.node === node?.key).map(slot => slot.widget));
-    return (node?.widgets || []).filter(([name, value]) => !own.has(name) && value !== null && value !== ''
-        && !/^(default|none)$/i.test(String(value)) && String(value).length <= FIXED_MAX_CHARS)
-        .map(([name, value]) => `${FIXED_NAMES[name] ? t(FIXED_NAMES[name]) : name} ${typeof value === 'number' ? Number(value.toFixed(3)) : value}`);
+/**
+ * The saved values ("强度 0.85") shown on `slot`'s row: the short ones of its node, without slots
+ * and plain defaults. On a node with several models a value goes to the row with its number
+ * (strength_02 → lora_02); one without a number goes to the node's first model row, one whose
+ * row is no slot is not shown.
+ */
+function fixedValues(node, slots, slot) {
+    const own = slots.filter(item => item.node === node?.key);
+    const models = own.filter(item => item.kind === 'model');
+    const taken = new Set(own.map(item => item.widget));
+    const rowOf = (name) => {
+        if (models.length < 2 || numberIn(name) === null) return models[0];
+        return models.find(item => numberIn(item.widget) === numberIn(name));
+    };
+    return (node?.widgets || []).filter(([name, value]) => !taken.has(name) && value !== null && value !== ''
+        && !/^(default|none)$/i.test(String(value)) && String(value).length <= FIXED_MAX_CHARS && rowOf(name) === slot)
+        .map(([name, value]) => {
+            const known = FIXED_NAMES.find(([pattern]) => pattern.test(name));
+            return `${known ? t(known[1]) : name} ${typeof value === 'number' ? Number(value.toFixed(3)) : value}`;
+        });
 }
 
 /** An overlay with `dialog` in it; Esc or a click beside it calls `onClose`. */
@@ -164,7 +184,8 @@ export async function saveSelectionAsCombo(owner, nodes = null) {
         const row = el('label', 'anomalous-structure-slot');
         const keep = el('input');
         keep.type = 'checkbox';
-        keep.checked = true;
+        // An empty row of a stack node (a LoRA stack's ten rows) is no slot unless ticked.
+        keep.checked = !(slot.optional && isNone(values[slot.id]));
         const label = el('input', 'anomalous-structure-slot-label');
         label.value = slot.label;
         const node = structure.nodes.find(item => item.key === slot.node);
@@ -306,7 +327,16 @@ export function renderStructuredCombo(owner, host, note, toolbar) {
         seen[slot.folder] = (seen[slot.folder] || 0) + 1;
         return [slot.id, slotLabel({ ...slot, index: counts[slot.folder] > 1 ? seen[slot.folder] : 0 })];
     }));
-    const firstOfNode = new Set(structure.nodes.map(item => sorted.find(slot => slot.node === item.key && slot.kind === 'model')?.id).filter(Boolean));
+    // Which node a slot is on, and its node pack when it is not ComfyUI's own.
+    const labelLine = (slot) => {
+        const line = el('span', 'anomalous-structure-label', labels.get(slot.id));
+        const node = nodeOf.get(slot.node);
+        if (node) {
+            line.append(el('span', 'anomalous-structure-node', ` · ${node.title || node.name || node.type}${node.pack ? `（${node.pack}）` : ''}`));
+            line.title = node.pack ? `${node.type} · ${node.pack}` : node.type;
+        }
+        return line;
+    };
 
     const drawThumb = (slot) => {
         const thumb = el('div', 'anomalous-structure-thumb');
@@ -334,15 +364,21 @@ export function renderStructuredCombo(owner, host, note, toolbar) {
         row.dataset.slot = slot.id;
         const value = data.values[slot.id];
         const copy = el('div', 'anomalous-structure-copy');
-        copy.append(el('span', 'anomalous-structure-label', labels.get(slot.id)),
+        copy.append(labelLine(slot),
             el('strong', 'anomalous-structure-value', isNone(value) ? t('comboSlotEmpty') : shortName(value)));
         if (!isNone(value)) copy.title = value;
         // The node's other values, as saved: shown, not changed here (a combo puts down exactly what was saved).
-        const fixed = firstOfNode.has(slot.id) ? fixedValues(nodeOf.get(slot.node), structure.slots) : [];
+        const fixed = fixedValues(nodeOf.get(slot.node), structure.slots, slot);
         if (fixed.length) {
             const line = el('span', 'anomalous-structure-fixed');
             line.title = t('comboFixedHint');
-            line.append(...fixed.map(text => el('span', 'anomalous-structure-chip', text)));
+            line.append(...fixed.slice(0, FIXED_SHOWN).map(text => el('span', 'anomalous-structure-chip', text)));
+            if (fixed.length > FIXED_SHOWN) {
+                const more = button('anomalous-structure-chip is-more', `+${fixed.length - FIXED_SHOWN}`, () => {
+                    more.replaceWith(...fixed.slice(FIXED_SHOWN).map(text => el('span', 'anomalous-structure-chip', text)));
+                });
+                line.append(more);
+            }
             copy.append(line);
         }
         const actions = el('div', 'anomalous-structure-actions');
@@ -366,7 +402,7 @@ export function renderStructuredCombo(owner, host, note, toolbar) {
     };
     const fits = [];
     const drawText = (slot) => {
-        const row = el('label', 'anomalous-structure-row is-text');
+        const row = el('div', 'anomalous-structure-row is-text');
         const box = el('textarea', 'anomalous-structure-text');
         box.value = String(data.values[slot.id] ?? '');
         box.rows = 3;
@@ -381,7 +417,17 @@ export function renderStructuredCombo(owner, host, note, toolbar) {
             fit();
             save();
         };
-        row.append(el('span', 'anomalous-structure-label', labels.get(slot.id)), box);
+        const head = el('div', 'anomalous-structure-text-head');
+        head.append(labelLine(slot));
+        // A quick look at what the prompt says; Prompt Studio is where prompts are worked on.
+        if (translationTarget(box.value) || window.anomalous_browser_lang === 'zh') {
+            const translateBtn = button('anomalous-structure-translate', t('comboTranslate'), () => {
+                if (box.value.trim()) void showTranslation(translateBtn, box.value);
+            });
+            translateBtn.title = t('comboTranslateHint');
+            head.append(translateBtn);
+        }
+        row.append(head, box);
         return row;
     };
 

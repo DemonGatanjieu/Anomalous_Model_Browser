@@ -93,7 +93,9 @@ The main surfaces are:
   right-clicked node when it is not among them, when any of them is a model or text node.
   Nodes are kept in flow order (`chainOrder`, combo_slots.js) so slot numbers read along the
   chain; the editor groups slots into models, LoRAs and prompts in that order, renumbers names
-  it made itself, and lists each model node's other saved values read-only.
+  it made itself, and lists each model node's other saved values read-only (on a node with
+  several models, by the number in the box name). Prompts get a read-only translation panel
+  (translation_service.js); empty optional slots start unticked in the save dialog.
 - Prompts: the rail entry opens Prompt Studio (below); there is no Material Library page.
   Saved node values are listed, applied and deleted in Current node.
 - Current node (Node Assistant)/Model Check: selected-node actions, saved parameters, and

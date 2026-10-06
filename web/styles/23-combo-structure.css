@@ -301,6 +301,91 @@
     gap: 6px;
 }
 
+.anomalous-structure-chip.is-more {
+    background: transparent;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.anomalous-structure-chip.is-more:hover { color: var(--amb-link); border-color: var(--amb-link); }
+
+.anomalous-structure-node {
+    color: var(--amb-text-muted);
+    opacity: 0.75;
+}
+
+.anomalous-structure-text-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.anomalous-structure-translate {
+    flex-shrink: 0;
+    min-width: 28px;
+    height: 22px;
+    padding: 0 8px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-structure-translate:hover,
+.anomalous-structure-translate.is-active {
+    border-color: var(--amb-link);
+    color: var(--amb-link);
+}
+
+.anomalous-structure-translation {
+    position: fixed;
+    z-index: 1000002;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: min(420px, 70vh);
+    padding: 10px 12px;
+    box-sizing: border-box;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 10px;
+    background: var(--amb-bg-panel, #24252b);
+    color: var(--amb-text-main);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+.anomalous-structure-translation-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+}
+
+.anomalous-structure-translation-head strong { flex: 1; }
+
+.anomalous-structure-translation-close {
+    border: none;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.anomalous-structure-translation-text {
+    overflow-y: auto;
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+    user-select: text;
+}
+
+.anomalous-structure-translation-text.is-bad { color: #fca5a5; }
+
 .anomalous-structure-text {
     width: 100%;
     min-height: 64px;
