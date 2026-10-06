@@ -195,7 +195,7 @@
     justify-content: space-between;
     align-items: center;
     position: sticky;
-    top: 0;
+    top: -20px; /* the editor's padding: stick to its very top, not 20px down with content showing above */
     z-index: 20;
     background: var(--amb-bg-page, var(--amb-bg-panel));
     padding: 12px 20px;

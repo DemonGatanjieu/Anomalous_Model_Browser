@@ -73,9 +73,39 @@ export function findPort(ports, name, index, type) {
     return ofType.length === 1 ? ofType[0] : -1;
 }
 
-/** A short line for a structure: its node types in order, e.g. "UNETLoader + DualCLIPLoader + …". */
+/** A short line for a structure: its nodes by name, repeats counted, e.g. "UNet加载器 + CLIP文本编码 ×2 + 加载LoRA ×4". */
 export function structureSummary(structure) {
-    return (structure?.nodes || []).map(item => item.title || item.name || item.type).join(' + ');
+    const counts = new Map();
+    for (const item of structure?.nodes || []) {
+        const name = item.title || item.name || item.type;
+        counts.set(name, (counts.get(name) || 0) + 1);
+    }
+    return [...counts].map(([name, count]) => (count > 1 ? `${name} ×${count}` : name)).join(' + ');
+}
+
+/**
+ * `ids` in the order things flow through `edges` ([from, to]): a loader before what it feeds,
+ * LoRAs along their chain. Ties keep their given order; anything in a loop comes last as given.
+ */
+export function chainOrder(ids, edges) {
+    const known = new Set(ids);
+    const waiting = new Map(ids.map(id => [id, 0]));
+    const next = new Map(ids.map(id => [id, []]));
+    for (const [from, to] of edges) {
+        if (!known.has(from) || !known.has(to) || from === to) continue;
+        next.get(from).push(to);
+        waiting.set(to, waiting.get(to) + 1);
+    }
+    const order = [];
+    const done = new Set();
+    while (order.length < ids.length) {
+        const ready = ids.find(id => !done.has(id) && waiting.get(id) === 0);
+        if (ready === undefined) break;
+        done.add(ready);
+        order.push(ready);
+        for (const to of next.get(ready)) waiting.set(to, waiting.get(to) - 1);
+    }
+    return [...order, ...ids.filter(id => !done.has(id))];
 }
 
 /** Two structures with the same nodes, boxes and links (for "a new combo like this one"). */

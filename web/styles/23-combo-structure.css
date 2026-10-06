@@ -176,29 +176,46 @@
 .anomalous-structure-card {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 16px;
-    border: 1px solid var(--amb-border);
-    border-radius: 12px;
-    background: var(--amb-bg-card);
+    gap: 18px;
+}
+
+.anomalous-structure-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .anomalous-structure-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 0;
-    font-size: 14px;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
 }
 
-.anomalous-structure-rows {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+.anomalous-structure-count {
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--amb-bg-input, rgba(255, 255, 255, 0.08));
+    font-size: 11px;
+    line-height: 18px;
 }
 
 .anomalous-structure-row.is-model {
     display: flex;
     align-items: center;
     gap: 12px;
+    padding: 8px 10px 8px 8px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: var(--amb-bg-card);
 }
+
+.anomalous-structure-row.is-pickable { cursor: pointer; }
+.anomalous-structure-row.is-pickable:hover { border-color: var(--amb-link); }
 
 .anomalous-structure-row.is-text {
     display: flex;
@@ -207,6 +224,7 @@
 }
 
 .anomalous-structure-thumb {
+    position: relative;
     flex-shrink: 0;
     width: 48px;
     height: 64px;
@@ -214,6 +232,22 @@
     border-radius: 6px;
     background: var(--amb-bg-input, rgba(0, 0, 0, 0.25));
 }
+
+/* No cover: the kind of model, faintly. */
+.anomalous-structure-thumb::before {
+    content: attr(data-kind);
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--amb-text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.6;
+}
+
+.anomalous-structure-thumb img { position: relative; }
 
 .anomalous-structure-thumb img {
     width: 100%;
@@ -235,8 +269,29 @@
 }
 
 .anomalous-structure-value {
+    display: -webkit-box;
     overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 14px;
+    line-height: 1.35;
+    word-break: break-word;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.anomalous-structure-fixed {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 3px;
+}
+
+.anomalous-structure-chip {
+    padding: 1px 7px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    color: var(--amb-text-muted);
+    font-size: 11px;
+    line-height: 16px;
     white-space: nowrap;
 }
 
@@ -248,6 +303,8 @@
 
 .anomalous-structure-text {
     width: 100%;
+    min-height: 64px;
+    line-height: 1.5;
     resize: vertical;
 }
 

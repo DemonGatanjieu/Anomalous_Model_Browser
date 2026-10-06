@@ -91,6 +91,9 @@ The main surfaces are:
   the slots cannot be edited: a combo puts down exactly what was saved. The canvas's node menu
   (`getNodeMenuItems`, browser_entry.js) offers "Save as combo" for the picked nodes, or the
   right-clicked node when it is not among them, when any of them is a model or text node.
+  Nodes are kept in flow order (`chainOrder`, combo_slots.js) so slot numbers read along the
+  chain; the editor groups slots into models, LoRAs and prompts in that order, renumbers names
+  it made itself, and lists each model node's other saved values read-only.
 - Prompts: the rail entry opens Prompt Studio (below); there is no Material Library page.
   Saved node values are listed, applied and deleted in Current node.
 - Current node (Node Assistant)/Model Check: selected-node actions, saved parameters, and

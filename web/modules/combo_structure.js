@@ -19,7 +19,7 @@ import { app } from '../../../scripts/app.js';
 import { api } from '../../../scripts/api.js';
 import { promptBoxes } from './prompt_boxes.js';
 import {
-    NONE, STRUCTURE_VERSION, findPort, folderFor, fedByLink, isModelWidget, missingTypes, optionValues, packOf, slashes,
+    NONE, STRUCTURE_VERSION, chainOrder, findPort, folderFor, fedByLink, isModelWidget, missingTypes, optionValues, packOf, slashes,
 } from './combo_slots.js';
 
 let folderLists = null;
@@ -56,6 +56,12 @@ export async function captureStructure(picked, { labelFor } = {}) {
         else dropped.push(node);
     }
     if (!kept.length) return { structure: null, values: {}, dropped };
+    const graph = picked[0]?.graph || app.graph;
+    const linkOf = (input) => (input.link != null ? (graph.getLink?.(input.link) ?? graph.links?.[input.link]) : null);
+    // In the order things flow (loaders, then LoRAs from the model outwards), so the numbers read along the chain.
+    const byId = new Map(kept.map(item => [item.node.id, item]));
+    const edges = kept.flatMap(({ node }) => (node.inputs || []).map(linkOf).filter(Boolean).map(link => [link.origin_id, node.id]));
+    kept.splice(0, kept.length, ...chainOrder([...byId.keys()], edges).map(id => byId.get(id)));
 
     const left = Math.min(...kept.map(({ node }) => node.pos?.[0] || 0));
     const top = Math.min(...kept.map(({ node }) => node.pos?.[1] || 0));
@@ -101,10 +107,9 @@ export async function captureStructure(picked, { labelFor } = {}) {
     }
 
     const links = [];
-    const graph = picked[0]?.graph || app.graph;
     for (const { node } of kept) {
         (node.inputs || []).forEach((input, slot) => {
-            const link = input.link != null ? (graph.getLink?.(input.link) ?? graph.links?.[input.link]) : null;
+            const link = linkOf(input);
             if (!link || !keys.has(link.origin_id)) return;
             const origin = graph.getNodeById(link.origin_id);
             const output = origin?.outputs?.[link.origin_slot];

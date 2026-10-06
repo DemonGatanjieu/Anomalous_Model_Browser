@@ -1,15 +1,16 @@
 /**
  * Combos with a node structure (combo_structure.js), on the Combos page: saving the canvas's
  * picked nodes as one (a dialog listing what is kept and its slots, which can be renamed or
- * dropped), its editor (a row per slot: a model chosen from that slot's models folder, filtered
- * by base model; a text box), and "New" offering the default combo, the picked nodes, or the
+ * dropped), its editor (models, LoRAs and prompts in the order they flow: a model chosen from
+ * that slot's models folder, filtered by base model, with its node's saved values shown; a text
+ * box), and "New" offering the default combo, the picked nodes, or the
  * structure of a combo already saved. The canvas's node menu has "Save as combo" too
  * (browser_entry.js). Putting one on the canvas is notebook_canvas.js.
  */
 
 import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
-import { STRUCTURED, isModelWidget, missingTypes, structureKey, structureSummary } from './combo_slots.js';
+import { STRUCTURED, chainOrder, isModelWidget, missingTypes, structureKey, structureSummary } from './combo_slots.js';
 import { typeTakesPrompt } from './prompt_boxes.js';
 import { captureStructure } from './combo_structure.js';
 import { freeComboName, listCombos } from './image_keep.js';
@@ -18,6 +19,17 @@ import { typeLabel } from './ui_model_types.js';
 
 const SAVE_WAIT_MS = 500;
 const MAX_PATHS = 4; // models folders a type may have (extra_model_paths)
+const TEXT_MAX_PX = 260; // a prompt box grows with its text up to this, then scrolls
+const FIXED_MAX_CHARS = 40; // longer saved values are not listed beside a model
+// Slot names by models folder; other folders use the models page's name.
+const SLOT_NAMES = { diffusion_models: 'comboSlotMainModel', checkpoints: 'comboSlotMainModel', unet: 'comboSlotMainModel',
+    text_encoders: 'comboSlotTextEncoder', clip: 'comboSlotTextEncoder' };
+// Saved values shown beside a model, by box name.
+const FIXED_NAMES = { strength_model: 'comboFixedStrength', strength: 'comboFixedStrength', strength_clip: 'comboFixedClipStrength',
+    weight_dtype: 'comboFixedDtype', type: 'comboFixedType', device: 'comboFixedDevice' };
+// A model without a cover shows its kind in the empty frame.
+const SHORT_TYPES = { loras: 'LoRA', vae: 'VAE', text_encoders: 'CLIP', clip: 'CLIP', clip_vision: 'CLIP-V', diffusion_models: 'UNet',
+    unet: 'UNet', checkpoints: 'CKPT', controlnet: 'CN', upscale_models: 'UP' };
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -38,12 +50,31 @@ const shortName = (value) => fileName(value).replace(/\.[^.]+$/, '');
 const isNone = (value) => /^\s*(none)?\s*$/i.test(String(value ?? ''));
 const modelRel = (model) => [String(model.subfolder || '').replace(/^\/+|\/+$/g, ''), model.filename].filter(Boolean).join('/');
 const sameRel = (a, b) => String(a || '').replace(/\\/g, '/') === String(b || '').replace(/\\/g, '/');
+const escapeRe = (text) => String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const shortType = (folder) => SHORT_TYPES[folder] || '';
 
 /** A slot's default name: the model type ("LoRA 2") or the prompt's role. */
 export function slotLabel({ kind, folder, index, role }) {
     if (kind === 'text') return t(role === 'negative' ? 'comboSlotNegative' : role === 'positive' ? 'comboSlotPositive' : 'comboSlotText');
-    const name = folder ? typeLabel({ type: folder }) : t('comboSlotModel');
+    const name = SLOT_NAMES[folder] ? t(SLOT_NAMES[folder]) : folder ? typeLabel({ type: folder }) : t('comboSlotModel');
     return index ? `${name} ${index}` : name;
+}
+
+/** Whether a slot still has a name made for it (now or by an older version), not one the user gave. */
+function isDefaultLabel(slot) {
+    const label = String(slot.label || '').trim();
+    if (!label || label === slot.widget) return true;
+    if (slot.kind === 'text') return ['comboSlotPositive', 'comboSlotNegative', 'comboSlotText'].some(key => label === t(key));
+    const names = [slotLabel({ kind: 'model', folder: slot.folder }), slot.folder ? typeLabel({ type: slot.folder }) : t('comboSlotModel')];
+    return names.some(name => new RegExp(`^${escapeRe(name)}( \\d+)?$`).test(label));
+}
+
+/** A saved node's other values ("强度 0.85"), the short ones, without its slots and plain defaults. */
+function fixedValues(node, slots) {
+    const own = new Set(slots.filter(slot => slot.node === node?.key).map(slot => slot.widget));
+    return (node?.widgets || []).filter(([name, value]) => !own.has(name) && value !== null && value !== ''
+        && !/^(default|none)$/i.test(String(value)) && String(value).length <= FIXED_MAX_CHARS)
+        .map(([name, value]) => `${FIXED_NAMES[name] ? t(FIXED_NAMES[name]) : name} ${typeof value === 'number' ? Number(value.toFixed(3)) : value}`);
 }
 
 /** An overlay with `dialog` in it; Esc or a click beside it calls `onClose`. */
@@ -152,8 +183,8 @@ export async function saveSelectionAsCombo(owner, nodes = null) {
         const kept = choices.filter(choice => choice.keep.checked);
         const slots = kept.map(({ slot, label }) => ({ ...slot, label: label.value.trim() || slot.label }));
         const keptValues = Object.fromEntries(slots.map(slot => [slot.id, values[slot.id]]));
-        const firstModel = slots.find(slot => slot.kind === 'model' && !isNone(keptValues[slot.id]));
-        const covers = firstModel ? { [firstModel.id]: await coverOf(keptValues[firstModel.id]) } : {};
+        const models = slots.filter(slot => slot.kind === 'model' && !isNone(keptValues[slot.id]));
+        const covers = Object.fromEntries(await Promise.all(models.map(async slot => [slot.id, await coverOf(keptValues[slot.id])])));
         const finalName = freeComboName(nameInput.value.trim() || name, await listCombos());
         close();
         await saveAndOpen(owner, {
@@ -241,45 +272,84 @@ function pickModel(slot, current) {
     });
 }
 
-/** The editor of a combo with a structure: one row per slot, and what the structure needs. */
+/** The editor of a combo with a structure: models, LoRAs and prompts in the order they flow, and what the structure needs. */
 export function renderStructuredCombo(owner, host, note, toolbar) {
     const data = note.data;
     data.values ||= {};
     data.covers ||= {};
     const structure = data.structure || { nodes: [], links: [], slots: [] };
+    const nodeOf = new Map(structure.nodes.map(item => [item.key, item]));
     let timer = 0;
     const save = (now = false) => {
         clearTimeout(timer);
         if (now) void owner.saveCurrentNotebook();
         else timer = setTimeout(() => void owner.saveCurrentNotebook(), SAVE_WAIT_MS);
     };
-    const card = el('section', 'anomalous-structure-card');
-    const rows = el('div', 'anomalous-structure-rows');
-    const drawModel = (slot) => {
-        const row = el('div', 'anomalous-structure-row is-model');
-        const value = data.values[slot.id];
+
+    // Slots in flow order: by node along the links, then by their place on the node.
+    const order = chainOrder(structure.nodes.map(item => item.key), structure.links.map(link => [link.from, link.to]));
+    const rank = (slot) => order.indexOf(slot.node) * 1000 + structure.slots.indexOf(slot);
+    const sorted = [...structure.slots].sort((a, b) => rank(a) - rank(b));
+    const textRank = (slot) => ({ positive: 0, '': 1, negative: 2 }[slot.role || ''] ?? 1);
+    const groups = [
+        ['comboGroupModels', sorted.filter(slot => slot.kind === 'model' && slot.folder !== 'loras')],
+        ['comboGroupLoras', sorted.filter(slot => slot.kind === 'model' && slot.folder === 'loras')],
+        ['comboGroupPrompts', sorted.filter(slot => slot.kind === 'text').sort((a, b) => textRank(a) - textRank(b) || rank(a) - rank(b))],
+    ];
+    // Names left as they were made ("LoRA 3") are renumbered along the chain; names the user gave stay.
+    const counts = {};
+    const seen = {};
+    for (const slot of sorted) if (slot.kind === 'model') counts[slot.folder] = (counts[slot.folder] || 0) + 1;
+    const labels = new Map(sorted.map(slot => {
+        if (!isDefaultLabel(slot)) return [slot.id, slot.label];
+        if (slot.kind === 'text') return [slot.id, slotLabel(slot)];
+        seen[slot.folder] = (seen[slot.folder] || 0) + 1;
+        return [slot.id, slotLabel({ ...slot, index: counts[slot.folder] > 1 ? seen[slot.folder] : 0 })];
+    }));
+    const firstOfNode = new Set(structure.nodes.map(item => sorted.find(slot => slot.node === item.key && slot.kind === 'model')?.id).filter(Boolean));
+
+    const drawThumb = (slot) => {
         const thumb = el('div', 'anomalous-structure-thumb');
-        if (data.covers[slot.id]) {
+        thumb.dataset.kind = shortType(slot.folder);
+        const url = data.covers[slot.id];
+        if (url) {
             const img = el('img');
             img.alt = '';
-            img.src = data.covers[slot.id];
+            img.src = url;
             img.onerror = () => img.remove();
             thumb.append(img);
         }
+        return thumb;
+    };
+    const pick = async (slot, row) => {
+        const chosen = await pickModel({ ...slot, label: labels.get(slot.id) }, data.values[slot.id]);
+        if (!chosen) return;
+        data.values[slot.id] = chosen.rel;
+        data.covers[slot.id] = chosen.cover;
+        save(true);
+        row.replaceWith(drawModel(slot));
+    };
+    const drawModel = (slot) => {
+        const row = el('div', 'anomalous-structure-row is-model');
+        row.dataset.slot = slot.id;
+        const value = data.values[slot.id];
         const copy = el('div', 'anomalous-structure-copy');
-        copy.append(el('span', 'anomalous-structure-label', slot.label),
+        copy.append(el('span', 'anomalous-structure-label', labels.get(slot.id)),
             el('strong', 'anomalous-structure-value', isNone(value) ? t('comboSlotEmpty') : shortName(value)));
         if (!isNone(value)) copy.title = value;
+        // The node's other values, as saved: shown, not changed here (a combo puts down exactly what was saved).
+        const fixed = firstOfNode.has(slot.id) ? fixedValues(nodeOf.get(slot.node), structure.slots) : [];
+        if (fixed.length) {
+            const line = el('span', 'anomalous-structure-fixed');
+            line.title = t('comboFixedHint');
+            line.append(...fixed.map(text => el('span', 'anomalous-structure-chip', text)));
+            copy.append(line);
+        }
         const actions = el('div', 'anomalous-structure-actions');
         if (slot.folder) {
-            actions.append(button('anomalous-scan-row-btn is-main', t('comboPick'), async () => {
-                const chosen = await pickModel(slot, value);
-                if (!chosen) return;
-                data.values[slot.id] = chosen.rel;
-                data.covers[slot.id] = chosen.cover;
-                save(true);
-                row.replaceWith(drawModel(slot));
-            }));
+            actions.append(button('anomalous-scan-row-btn is-main', t('comboPick'), () => pick(slot, row)));
+            row.classList.add('is-pickable');
+            row.onclick = (event) => { if (!event.target.closest('button')) void pick(slot, row); };
         } else {
             copy.append(el('span', 'anomalous-structure-note is-muted', t('comboSlotUnknownFolder')));
         }
@@ -291,26 +361,44 @@ export function renderStructuredCombo(owner, host, note, toolbar) {
                 row.replaceWith(drawModel(slot));
             }));
         }
-        row.append(thumb, copy, actions);
+        row.append(drawThumb(slot), copy, actions);
         return row;
     };
+    const fits = [];
     const drawText = (slot) => {
         const row = el('label', 'anomalous-structure-row is-text');
         const box = el('textarea', 'anomalous-structure-text');
         box.value = String(data.values[slot.id] ?? '');
-        box.rows = slot.role === 'negative' ? 3 : 5;
+        box.rows = 3;
+        // As tall as its text, up to a limit; then it scrolls.
+        const fit = () => {
+            box.style.height = 'auto';
+            box.style.height = `${Math.min(box.scrollHeight + 2, TEXT_MAX_PX)}px`;
+        };
+        fits.push(fit);
         box.oninput = () => {
             data.values[slot.id] = box.value;
+            fit();
             save();
         };
-        row.append(el('span', 'anomalous-structure-label', slot.label), box);
+        row.append(el('span', 'anomalous-structure-label', labels.get(slot.id)), box);
         return row;
     };
-    rows.append(...structure.slots.map(slot => (slot.kind === 'text' ? drawText(slot) : drawModel(slot))));
-    if (!structure.slots.length) rows.append(el('p', 'anomalous-structure-note', t('comboFromSelectionNoSlots')));
+
+    const card = el('section', 'anomalous-structure-card');
+    for (const [key, slots] of groups) {
+        if (!slots.length) continue;
+        const section = el('div', 'anomalous-structure-group');
+        const heading = el('h4', 'anomalous-structure-heading', t(key));
+        if (slots.length > 1) heading.append(el('span', 'anomalous-structure-count', String(slots.length)));
+        section.append(heading, ...slots.map(slot => (slot.kind === 'text' ? drawText(slot) : drawModel(slot))));
+        card.append(section);
+    }
+    if (!structure.slots.length) card.append(el('p', 'anomalous-structure-note', t('comboFromSelectionNoSlots')));
 
     const about = el('div', 'anomalous-structure-about');
-    about.append(el('p', 'anomalous-structure-note is-muted', t('comboStructureNodes', { nodes: structureSummary(structure) })));
+    about.append(el('p', 'anomalous-structure-note is-muted', t('comboStructureNodes', { nodes: structureSummary(structure) })),
+        el('p', 'anomalous-structure-note is-muted', t('comboFixedHint')));
     const packs = [...new Set(structure.nodes.map(item => item.pack).filter(Boolean))];
     if (packs.length) about.append(el('p', 'anomalous-structure-note is-muted', t('comboStructurePacks', { packs: packs.join('、') })));
     const missing = missingTypes(structure);
@@ -319,8 +407,22 @@ export function renderStructuredCombo(owner, host, note, toolbar) {
             nodes: missing.map(item => (item.pack ? `${item.type}（${item.pack}）` : item.type)).join('、'),
         })));
     }
-    card.append(el('h4', 'anomalous-structure-heading', t('comboSlots')), rows, about);
+    card.append(about);
     host.replaceChildren(toolbar, card);
+    for (const fit of fits) fit();
+
+    // Covers of models chosen on the canvas, looked up once and kept with the combo.
+    const lacking = structure.slots.filter(slot => slot.kind === 'model' && !data.covers[slot.id] && !isNone(data.values[slot.id]));
+    if (lacking.length) {
+        void Promise.all(lacking.map(async (slot) => {
+            const url = await coverOf(data.values[slot.id]);
+            if (!url || owner.currentNotebook !== note) return false;
+            data.covers[slot.id] = url;
+            const thumb = host.querySelector(`[data-slot="${slot.id}"] .anomalous-structure-thumb`);
+            thumb?.replaceWith(drawThumb(slot));
+            return true;
+        })).then(found => { if (found.some(Boolean) && owner.currentNotebook === note) save(true); });
+    }
 }
 
 /** "New": the default combo, the canvas's picked nodes, or a structure a saved combo has. */
