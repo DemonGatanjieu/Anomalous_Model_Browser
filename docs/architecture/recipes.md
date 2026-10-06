@@ -4,24 +4,26 @@ Read this document for recipe schemas, cards/detail behavior, package handling,
 result galleries, Parameter Notebooks, prompt roles, and the recipe-powered Node
 Assistant.
 
-## Package import/export availability
+## Recipe packages
 
-Recipe package import and export are temporarily closed pending validation.
-Topbar/card/detail buttons are disabled with a localized explanation. The registered
-`POST /anomalous/export_recipe_package` route returns HTTP 503 with code
-`recipe_export_disabled` before reading request JSON or recipe files.
-`RECIPE_PACKAGE_EXPORT_ENABLED` in `api/recipe_packages.py` is a release gate,
-not a user setting. `RECIPE_PACKAGE_IMPORT_ENABLED` likewise gates both
-`POST /anomalous/import_recipe_package_inspect` and
-`POST /anomalous/import_recipe_package_commit`: each returns HTTP 503 with code
-`recipe_import_disabled` before reading uploaded bytes, request JSON, inspection
-tokens or writing files. Package format helpers remain for compatibility tests;
-local saves are unaffected.
+A recipe package (配方包) gives one recipe to someone else; a backup (`api/backup.py`) is
+for the user's own data and a share code (`share_code.js`) for a workflow alone. Reopened
+by the user's decision on 2026-10-07 after round-trip and failure tests.
 
-Reopening requires an explicit release decision, package round-trip and failure
-validation, then restoring the frontend export action and enabling the backend
-gates together. Do not reopen package transfers as a side effect of UX work. Workflow
-share-code import/export is a separate, verified feature on the Workflows page's top bar (⇅).
+`POST /anomalous/export_recipe_package` (`api/recipe_packages.py`) returns a .zip named
+after the recipe: `recipe.json` (its `source_image` cleared), the cover and the models'
+thumbnails as WebP assets (`include_snapshots`, on by default), its versions only with
+`include_history`, and `manifest.json` listing every entry with size and SHA-256. The card's
+export button and the detail's More menu open `ui_recipe_package.js`.
+
+Importing goes through the Workflows page's ⇅ (`ui_share.js`): a dropped .zip is tried as a
+recipe package, else as a backup. `POST /anomalous/import_recipe_package_inspect` checks
+entry names, count, sizes, compression ratio, the manifest's checksums, the schema and that
+every referenced asset is a WebP and nothing unreferenced is there, then keeps it for ten
+minutes under a token. `POST /anomalous/import_recipe_package_commit` always writes a new
+recipe: a taken name gets " (2)", nothing is replaced. Assets and versions are moved in
+first and the recipe file last; a failure removes this import's own new folders and leaves
+no half recipe.
 
 ## Product and data model
 

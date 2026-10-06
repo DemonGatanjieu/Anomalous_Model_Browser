@@ -401,7 +401,8 @@ covered by the `styles.css` manifest.
 - The rail's tool slots (`ui_rail_tools.js`, fixed) hold scan, doctor and current node; settings sits at the rail's bottom. The rail's Prompts entry opens Prompt Studio beside the canvas (the browser folds away and comes back when it closes). There is no toolbox: the other tools open from their pages (share and import on Workflows, Model Sources as a view of Models, opened from the doctor too, translation in Current node).
 - `ui_share.js` is share and import (the Workflows page's ⇅): the canvas workflow as a share
   code in Chinese characters or letters, and one place to paste a code or workflow JSON or drop
-  a workflow file, an image or a backup .zip. `share_code.js` is the AMB2 code (lean workflow
+  a workflow file, an image, a recipe package or a backup .zip. `ui_recipe_package.js` exports
+  a recipe package from a card or the detail's More menu and takes one in as a new card. `share_code.js` is the AMB2 code (lean workflow
   checked by rebuilding it, else the whole workflow; AMB0/AMB1 still open); details in
   `docs/architecture/frontend.md`.
 - `ui_model_types.js` owns the models page's type chips (one per models folder, with its count) and

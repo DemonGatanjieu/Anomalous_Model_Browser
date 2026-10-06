@@ -5,6 +5,7 @@ import { appendCopyButton, appendText, button, dateText } from "./ui_recipe_deta
 import { appendRecipeCover } from "./ui_recipe_models.js";
 import { formatRecipeResolution } from "./ui_recipe_parameter_utils.js";
 import { updateRecipeMetadata } from "./ui_recipe_metadata.js";
+import { exportRecipePackage } from "./ui_recipe_package.js";
 
 const t = (key, params) => translate(key, params);
 
@@ -294,9 +295,14 @@ function createRecipeOverviewActionBar(recipe, owner, finish, services) {
     const heroExport = button(dropdownMenu, '', 'anomalous-recipe-dropdown-item');
     heroExport.type = 'button';
     heroExport.innerHTML = `<svg style="width:14px;height:14px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>${t('recipeExport')}</span>`;
-    heroExport.title = t('recipeExportUnavailable');
-    heroExport.setAttribute('aria-label', t('recipeExportUnavailable'));
-    heroExport.disabled = true;
+    heroExport.title = t('recipeExport');
+    heroExport.setAttribute('aria-label', t('recipeExport'));
+    heroExport.onclick = (e) => {
+        e.stopPropagation();
+        dropdownMenu.classList.remove('show');
+        moreBtn.classList.remove('active');
+        exportRecipePackage({ filename: owner.recipeDetailFilename, data: recipe });
+    };
 
     moreBtn.onclick = (e) => {
         e.stopPropagation();

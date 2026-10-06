@@ -5,6 +5,7 @@ import { translate } from "./locales.js";
 import { anomalousAlert, anomalousConfirm } from "./ui_dialog.js";
 import { bindMaterialDrag } from "./material_drag.js";
 import { applyRecipeToCanvas, showRecipeDetail } from "./ui_recipe_detail.js";
+import { exportRecipePackage } from "./ui_recipe_package.js";
 import { appendText } from "./ui_recipe_detail_dom.js";
 import { appendRecipeCover, outputImageUrl, previewIsVideo, recipeAssetUrl, safeThumbnail } from "./ui_recipe_media.js";
 
@@ -490,10 +491,13 @@ export function createRecipeCard(owner, recipe, services) {
     exportBtn.className = 'anomalous-recipe-card-mini-btn anomalous-tooltip-target';
     exportBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
     exportBtn.removeAttribute('title');
-    exportBtn.setAttribute('data-tooltip', t('recipeExportUnavailable'));
-    exportBtn.setAttribute('aria-label', t('recipeExportUnavailable'));
-    exportBtn.disabled = true;
+    exportBtn.setAttribute('data-tooltip', t('recipeExport'));
+    exportBtn.setAttribute('aria-label', t('recipeExport'));
     exportBtn.setAttribute('data-tooltip-pos', 'top');
+    exportBtn.onclick = (e) => {
+        e.stopPropagation();
+        exportRecipePackage(recipe);
+    };
 
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button';

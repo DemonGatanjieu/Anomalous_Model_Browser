@@ -1,4 +1,7 @@
-"""Bounded import/export for self-contained Workflow Recipe packages."""
+"""Recipe packages (配方包): one Workflow Recipe as a .zip to give to someone else — the recipe,
+its cover, its models' thumbnails and, when asked, its versions — and taking one in as a new
+recipe card. Bounded: entry names, count, sizes, compression ratio and checksums are checked
+before anything is written; an import never replaces a recipe (a taken name gets " (2)")."""
 
 import hashlib
 import io
@@ -9,6 +12,7 @@ import shutil
 import stat
 import tempfile
 import time
+import urllib.parse
 import uuid
 import zipfile
 
@@ -19,10 +23,6 @@ from .recipe_store import get_recipes_dir
 from .utils import require_filename, resolve_within
 
 
-# Release gates: package transfers stay closed until validation is complete.
-# Keep the format implementation for compatibility testing.
-RECIPE_PACKAGE_EXPORT_ENABLED = False
-RECIPE_PACKAGE_IMPORT_ENABLED = False
 PACKAGE_VERSION = 1
 MAX_UPLOAD_BYTES = 32 * 1024 * 1024
 MAX_ENTRY_COUNT = 256
@@ -212,7 +212,7 @@ def _recipe_history_files(recipes_dir, filename):
 
 
 def _build_export(raw_recipe, recipes_dir, filename, options):
-    include_snapshots = options.get("include_snapshots") is True
+    include_snapshots = options.get("include_snapshots", True) is True
     include_history = options.get("include_history") is True
     include_identity = options.get("include_identity", True) is True
     include_model_notes = options.get("include_model_notes", True) is True
@@ -372,42 +372,26 @@ def _write_staged_json(path, value):
 
 
 def _commit_import(record, payload):
+    """Writes the inspected package as a new recipe (never over one): (filename, name)."""
     recipes_dir = get_recipes_dir()
     package_recipe = json.loads(json.dumps(record["recipe"], ensure_ascii=False))
-    collision = payload.get("collision", "rename")
     name_override = payload.get("name")
     if name_override is not None:
         if not isinstance(name_override, str) or not name_override.strip():
             raise ValueError("Invalid imported recipe name")
         package_recipe["name"] = name_override.strip()
-
-    existing_names = _existing_recipe_names(recipes_dir)
-    target_filename = None
-    if collision == "replace":
-        target_filename = require_filename(payload.get("target_filename", ""))
-        if not target_filename.endswith(".json"):
-            raise ValueError("Invalid replacement target")
-        if not os.path.isfile(resolve_within(recipes_dir, target_filename)):
-            raise FileNotFoundError
-    elif collision != "rename":
-        raise ValueError("Unsupported collision choice")
-    else:
-        package_recipe["name"] = _unique_name(package_recipe.get("name", ""), existing_names)
+    package_recipe["name"] = _unique_name(package_recipe.get("name", ""), _existing_recipe_names(recipes_dir))
 
     normalized = recipe_schema._normalise_recipe(package_recipe)
     normalized["presentation"]["imported"] = True
-    filename = target_filename or f"recipe_{int(time.time())}_{uuid.uuid4().hex[:8]}.json"
+    filename = f"recipe_{int(time.time())}_{uuid.uuid4().hex[:8]}.json"
     normalized = recipe_schema._enrich_recipe(normalized)
 
     staging = tempfile.mkdtemp(prefix=".recipe-import-", dir=recipes_dir)
     final_path = resolve_within(recipes_dir, filename)
     final_assets = recipe_images._recipe_assets_dir(recipes_dir, filename)
     final_history = recipe_store._history_dir(recipes_dir, filename)
-    backup_recipe = None
-    backup_assets = None
-    backup_history = None
-    installed_assets = False
-    installed_history = False
+    installed = []
     try:
         archive, _ = _validate_zip(record["raw"])
         with archive:
@@ -419,54 +403,33 @@ def _commit_import(record, payload):
                 for name in record["history_names"]:
                     history = _parse_json(_read_zip_entry(archive, name), "historical recipe")
                     _write_staged_json(os.path.join(history_stage, require_filename(name.split("/", 1)[1])), history)
-
-        if collision == "replace":
-            backup_recipe = os.path.join(staging, "old-recipe.json")
-            os.replace(final_path, backup_recipe)
-            if os.path.isdir(final_assets):
-                backup_assets = os.path.join(staging, "old-assets")
-                shutil.move(final_assets, backup_assets)
-            if record["history_names"] and os.path.isdir(final_history):
-                backup_history = os.path.join(staging, "old-history")
-                shutil.move(final_history, backup_history)
-
-        os.replace(os.path.join(staging, "recipe.json"), final_path)
+        # The images first, the recipe last: a recipe card never shows without its pictures.
         staged_assets = os.path.join(staging, "assets")
-        if os.path.isdir(staged_assets):
+        if os.listdir(staged_assets):
+            os.makedirs(os.path.dirname(final_assets), exist_ok=True)
             os.replace(staged_assets, final_assets)
-            installed_assets = True
+            installed.append(final_assets)
         if record["history_names"]:
-            history_stage = os.path.join(staging, "history")
-            if os.path.isdir(final_history):
-                shutil.rmtree(final_history)
-            os.replace(history_stage, final_history)
-            installed_history = True
+            os.makedirs(os.path.dirname(final_history), exist_ok=True)
+            os.replace(os.path.join(staging, "history"), final_history)
+            installed.append(final_history)
+        os.replace(os.path.join(staging, "recipe.json"), final_path)
     except Exception:
-        if collision == "replace" and backup_recipe and os.path.isfile(backup_recipe):
-            if installed_assets and os.path.isdir(final_assets):
-                shutil.rmtree(final_assets, ignore_errors=True)
-            if installed_history and os.path.isdir(final_history):
-                shutil.rmtree(final_history, ignore_errors=True)
-            if os.path.isfile(final_path):
-                os.remove(final_path)
-            os.replace(backup_recipe, final_path)
-            if backup_assets and os.path.isdir(backup_assets):
-                shutil.move(backup_assets, final_assets)
-            if backup_history and os.path.isdir(backup_history):
-                shutil.move(backup_history, final_history)
+        for path in installed:  # this import's own new folders; nothing of the user's
+            shutil.rmtree(path, ignore_errors=True)
         raise
     finally:
         shutil.rmtree(staging, ignore_errors=True)
     return filename, normalized.get("name", "")
 
 
+def _download_name(recipe, filename):
+    """The .zip's name for the browser: the recipe's name, safe on every system."""
+    name = "".join("_" if char in '<>:"/\\|?*' or ord(char) < 32 else char for char in str(recipe.get("name") or "")).strip(" .")
+    return f"{name or os.path.splitext(filename)[0]}.anomalous-recipe.zip"
+
+
 async def api_export_recipe_package(request):
-    if not RECIPE_PACKAGE_EXPORT_ENABLED:
-        return web.json_response({
-            "status": "error",
-            "code": "recipe_export_disabled",
-            "message": "Recipe package export is temporarily unavailable",
-        }, status=503)
     try:
         payload = await request.json()
         filename = require_filename(payload.get("filename", ""))
@@ -481,19 +444,13 @@ async def api_export_recipe_package(request):
         return web.json_response({"status": "error", "message": "Recipe not found"}, status=404)
     except OSError:
         return web.json_response({"status": "error", "message": "Could not export recipe"}, status=500)
-    return web.Response(
-        body=package,
-        content_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="{os.path.splitext(filename)[0]}.anomalous-recipe.zip"'},
-    )
+    name = _download_name(recipe, filename)
+    return web.Response(body=package, content_type="application/zip", headers={
+        "Content-Disposition": f"attachment; filename=\"recipe.anomalous-recipe.zip\"; filename*=UTF-8''{urllib.parse.quote(name)}",
+    })
 
 
 async def api_import_recipe_package_inspect(request):
-    if not RECIPE_PACKAGE_IMPORT_ENABLED:
-        return web.json_response({
-            "status": "error", "code": "recipe_import_disabled",
-            "message": "Recipe package import is temporarily unavailable",
-        }, status=503)
     try:
         raw = await request.content.read(MAX_UPLOAD_BYTES + 1)
         report = await asyncio.to_thread(_inspect_package, raw)
@@ -509,15 +466,11 @@ async def api_import_recipe_package_inspect(request):
         "asset_count": len(report["asset_names"]),
         "history_count": len(report["history_names"]),
         "existing_names": _existing_recipe_names(get_recipes_dir()),
+        "imported_name": _unique_name(report["recipe"].get("name", ""), _existing_recipe_names(get_recipes_dir())),
     })
 
 
 async def api_import_recipe_package_commit(request):
-    if not RECIPE_PACKAGE_IMPORT_ENABLED:
-        return web.json_response({
-            "status": "error", "code": "recipe_import_disabled",
-            "message": "Recipe package import is temporarily unavailable",
-        }, status=503)
     try:
         payload = await request.json()
         token = payload.get("token")
@@ -529,8 +482,6 @@ async def api_import_recipe_package_commit(request):
         filename, name = await asyncio.to_thread(_commit_import, record, payload)
     except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
         return web.json_response({"status": "error", "message": "Could not commit recipe package"}, status=400)
-    except FileNotFoundError:
-        return web.json_response({"status": "error", "message": "Replacement recipe not found"}, status=404)
     except OSError:
         return web.json_response({"status": "error", "message": "Could not commit recipe package"}, status=500)
     return web.json_response({"status": "success", "filename": filename, "name": name})

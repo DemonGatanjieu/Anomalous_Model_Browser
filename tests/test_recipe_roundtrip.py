@@ -348,35 +348,83 @@ class RecipePackageBoundaryTests(unittest.TestCase):
         self.assertNotIn("user_note", exported["params"]["model_references"][0])
         self.assertEqual(recipe["params"]["model_references"][0]["user_note"], "private tuning note")
 
-    def test_replace_failure_restores_previous_recipe(self):
-        with tempfile.TemporaryDirectory() as directory:
-            filename = "target.json"
-            old_recipe = recipe_payload(valid_workflow())
-            old_recipe["name"] = "Old recipe"
-            Path(directory, filename).write_text(json.dumps(old_recipe), encoding="utf-8")
-            package = recipe_packages._build_export(self._package_recipe("missing.webp"), directory, filename, {})
-            record = recipe_packages._inspect_package(package)
-            record["raw"] = package
-            previous_get_dir = recipe_packages.get_recipes_dir
-            previous_replace = recipe_packages.os.replace
-            calls = {"count": 0}
+    def _import_into(self, directory, package, fail_on=None):
+        record = recipe_packages._inspect_package(package)
+        record["raw"] = package
+        previous_get_dir = recipe_packages.get_recipes_dir
+        previous_replace = recipe_packages.os.replace
+        calls = {"count": 0}
 
-            def fail_once(source, target):
-                calls["count"] += 1
-                if calls["count"] == 2:
-                    raise OSError("simulated commit failure")
-                return previous_replace(source, target)
+        def replace(source, target):
+            calls["count"] += 1
+            if fail_on and str(target).endswith(fail_on):
+                raise OSError("simulated commit failure")
+            return previous_replace(source, target)
 
-            recipe_packages.get_recipes_dir = lambda: directory
-            recipe_packages.os.replace = fail_once
-            try:
-                with self.assertRaises(OSError):
-                    recipe_packages._commit_import(record, {"collision": "replace", "target_filename": filename})
-            finally:
-                recipe_packages.get_recipes_dir = previous_get_dir
-                recipe_packages.os.replace = previous_replace
-            restored = json.loads(Path(directory, filename).read_text(encoding="utf-8"))
-            self.assertEqual(restored["name"], "Old recipe")
+        recipe_packages.get_recipes_dir = lambda: directory
+        recipe_packages.os.replace = replace
+        try:
+            return recipe_packages._commit_import(record, {})
+        finally:
+            recipe_packages.get_recipes_dir = previous_get_dir
+            recipe_packages.os.replace = previous_replace
+
+    def _shared_package(self, source_dir):
+        filename = "recipe_shared.json"
+        assets_dir = Path(recipes._recipe_assets_dir(source_dir, filename, create=True))
+        assets_dir.joinpath("cover-result.webp").write_bytes(b"RIFF0000WEBP")
+        assets_dir.joinpath("model-preview.webp").write_bytes(b"RIFF1111WEBP")
+        recipe = self._package_recipe("model-preview.webp")
+        recipe["name"] = "Portrait"
+        recipe["presentation"]["cover_asset_id"] = "cover-result.webp"
+        return recipe_packages._build_export(recipe, source_dir, filename, {})
+
+    def test_import_makes_a_new_card_and_never_replaces_one(self):
+        with tempfile.TemporaryDirectory() as source, tempfile.TemporaryDirectory() as directory:
+            package = self._shared_package(source)
+            mine = recipe_payload(valid_workflow())
+            mine["name"] = "Portrait"
+            Path(directory, "mine.json").write_text(json.dumps(mine), encoding="utf-8")
+            filename, name = self._import_into(directory, package)
+            self.assertEqual(name, "Portrait (2)")
+            self.assertEqual(json.loads(Path(directory, "mine.json").read_text(encoding="utf-8"))["name"], "Portrait")
+            imported = json.loads(Path(directory, filename).read_text(encoding="utf-8"))
+            self.assertTrue(imported["presentation"]["imported"])
+            assets = Path(recipes._recipe_assets_dir(directory, filename))
+            self.assertTrue(assets.joinpath("cover-result.webp").is_file())
+            self.assertTrue(assets.joinpath("model-preview.webp").is_file())  # model thumbnails by default
+            _, again = self._import_into(directory, package)
+            self.assertEqual(again, "Portrait (3)")
+
+    def test_a_failed_import_leaves_nothing_behind(self):
+        with tempfile.TemporaryDirectory() as source, tempfile.TemporaryDirectory() as directory:
+            package = self._shared_package(source)
+            with self.assertRaises(OSError):
+                self._import_into(directory, package, fail_on=".json")
+            self.assertEqual([name for name in os.listdir(directory) if name.endswith(".json")], [])
+            assets_root = Path(directory, ".assets")
+            self.assertEqual(list(assets_root.iterdir()) if assets_root.exists() else [], [])
+            self.assertFalse([name for name in os.listdir(directory) if name.startswith(".recipe-import-")])
+
+    def test_a_tampered_package_is_refused(self):
+        with tempfile.TemporaryDirectory() as source:
+            package = self._shared_package(source)
+            with zipfile.ZipFile(io.BytesIO(package)) as archive:
+                entries = {name: archive.read(name) for name in archive.namelist()}
+            entries["recipe.json"] = entries["recipe.json"].replace(b"Portrait", b"Changed!")
+            tampered = io.BytesIO()
+            with zipfile.ZipFile(tampered, "w") as archive:
+                for name, data in entries.items():
+                    archive.writestr(name, data)
+            with self.assertRaises(ValueError):
+                recipe_packages._inspect_package(tampered.getvalue())
+            escaping = io.BytesIO()
+            with zipfile.ZipFile(escaping, "w") as archive:
+                for name, data in entries.items():
+                    archive.writestr(name, data)
+                archive.writestr("../evil.json", b"{}")
+            with self.assertRaises(ValueError):
+                recipe_packages._inspect_package(escaping.getvalue())
 
     def test_export_includes_gallery_cover_without_model_snapshots(self):
         with tempfile.TemporaryDirectory() as directory:

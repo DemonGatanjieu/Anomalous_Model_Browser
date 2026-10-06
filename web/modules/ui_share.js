@@ -2,8 +2,8 @@
  * Share and import (the Workflows page's ⇅): the canvas workflow as a short share code
  * (share_code.js) in two spellings, Chinese characters (shortest) and letters (passes any
  * filter); and one place to bring anything in: a pasted share code (AMB2/AMB1/AMB0) or
- * workflow JSON, a dropped or chosen workflow file or image (ComfyUI's own loader), or a backup
- * .zip (ui_backup.js).
+ * workflow JSON, a dropped or chosen workflow file or image (ComfyUI's own loader), or a .zip:
+ * a recipe package (ui_recipe_package.js) or a backup (ui_backup.js).
  */
 
 import { app } from '../../../scripts/app.js';
@@ -12,6 +12,7 @@ import { decodeShareCode, encodeShareCode } from './share_code.js';
 import { packOf } from './combo_slots.js';
 import { isModelFilename } from './model_source_links.js';
 import { importBackupFile } from './ui_backup.js';
+import { importRecipePackageFile } from './ui_recipe_package.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 
 const templates = new Map();
@@ -176,6 +177,11 @@ function importSection(owner, done) {
     };
     const fromFile = async (file) => {
         if (/\.zip$/i.test(file.name)) {
+            // A recipe package, else a backup (the backup's own dialog says when it is neither).
+            if (!/^AMB-backup-/i.test(file.name) && await importRecipePackageFile(owner, file)) {
+                done();
+                return;
+            }
             done();
             await importBackupFile(owner, file);
             return;
