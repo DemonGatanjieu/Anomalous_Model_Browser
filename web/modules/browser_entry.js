@@ -1,6 +1,7 @@
 import { app } from '../../../scripts/app.js';
 import { AnomalousBrowser } from './browser.js';
 import { watchMcpActions } from './mcp_bridge.js';
+import { hasComboNodes, menuNodes, saveSelectionAsCombo } from './ui_combo_structure.js';
 import {
     clampFloatingTriggerPosition,
     clearSavedTriggerPosition,
@@ -480,6 +481,18 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
             commands: [OPEN_BROWSER_COMMAND_ID, OPEN_MATERIALS_COMMAND_ID, RESET_TRIGGER_POSITION_COMMAND_ID]
         }],
         setup,
+        // The canvas's node menu: the picked nodes (or this one) as a combo, when it could keep any.
+        getNodeMenuItems(node) {
+            const nodes = menuNodes(node);
+            if (!hasComboNodes(nodes)) return [];
+            return [null, {
+                content: nodes.length > 1 ? t('comboMenuSaveMany', { count: nodes.length }) : t('comboMenuSave'),
+                callback: () => {
+                    const owner = ensureBrowser();
+                    if (owner) void saveSelectionAsCombo(owner, nodes);
+                },
+            }];
+        },
         open,
         openMaterials,
         ensureBrowser,

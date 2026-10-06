@@ -3,12 +3,14 @@
  * picked nodes as one (a dialog listing what is kept and its slots, which can be renamed or
  * dropped), its editor (a row per slot: a model chosen from that slot's models folder, filtered
  * by base model; a text box), and "New" offering the default combo, the picked nodes, or the
- * structure of a combo already saved. Putting one on the canvas is notebook_canvas.js.
+ * structure of a combo already saved. The canvas's node menu has "Save as combo" too
+ * (browser_entry.js). Putting one on the canvas is notebook_canvas.js.
  */
 
 import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
-import { STRUCTURED, missingTypes, structureKey, structureSummary } from './combo_slots.js';
+import { STRUCTURED, isModelWidget, missingTypes, structureKey, structureSummary } from './combo_slots.js';
+import { typeTakesPrompt } from './prompt_boxes.js';
 import { captureStructure } from './combo_structure.js';
 import { freeComboName, listCombos } from './image_keep.js';
 import { anomalousAlert, anomalousPrompt } from './ui_dialog.js';
@@ -77,12 +79,25 @@ async function coverOf(value) {
 
 async function saveAndOpen(owner, note) {
     owner.currentNotebook = note;
-    if (await owner.saveCurrentNotebook()) await owner.openCombo(note);
+    if (!(await owner.saveCurrentNotebook())) return;
+    owner.show?.(); // from the canvas's menu the browser may be closed
+    await owner.openCombo(note);
 }
 
-/** Saves the canvas's picked nodes as a new combo, after a dialog showing what is kept. */
-export async function saveSelectionAsCombo(owner) {
+/** The nodes a canvas menu acts on: the picked ones when the node is one of them, else that node. */
+export function menuNodes(node) {
     const picked = Object.values(app.canvas?.selected_nodes || {});
+    return picked.includes(node) ? picked : [node];
+}
+
+/** Whether a combo could keep any of these nodes (a model drop-down or a prompt box). */
+export function hasComboNodes(nodes) {
+    return nodes.some(node => (node.widgets || []).some(isModelWidget) || typeTakesPrompt(node.type));
+}
+
+/** Saves the canvas's picked nodes (or `nodes`, from the canvas menu) as a new combo, after a dialog showing what is kept. */
+export async function saveSelectionAsCombo(owner, nodes = null) {
+    const picked = nodes || Object.values(app.canvas?.selected_nodes || {});
     if (!picked.length) {
         await anomalousAlert(t('comboFromSelectionNone'));
         return;

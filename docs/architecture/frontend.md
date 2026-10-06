@@ -87,7 +87,10 @@ The main surfaces are:
   is the one whose files hold all the drop-down's options. Putting it down needs every node
   type installed (missing ones and their packs are named first), restores the other boxes by
   name in their order, fills the slots by name, then links by port name and type; a slot or
-  link that cannot be restored is reported after placing, never guessed.
+  link that cannot be restored is reported after placing, never guessed. Values other than
+  the slots cannot be edited: a combo puts down exactly what was saved. The canvas's node menu
+  (`getNodeMenuItems`, browser_entry.js) offers "Save as combo" for the picked nodes, or the
+  right-clicked node when it is not among them, when any of them is a model or text node.
 - Prompts: the rail entry opens Prompt Studio (below); there is no Material Library page.
   Saved node values are listed, applied and deleted in Current node.
 - Current node (Node Assistant)/Model Check: selected-node actions, saved parameters, and
