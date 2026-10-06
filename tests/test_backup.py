@@ -112,6 +112,25 @@ class BackupTests(unittest.TestCase):
         settings = json.loads(zipfile.ZipFile(path).read("settings/config.json"))
         self.assertNotIn("CIVITAI_API_KEY", settings)  # the key never leaves the computer
 
+    def test_scan_results_and_civitai_covers_come_back_where_missing(self):
+        civitai = os.path.splitext(os.path.join(self.a.models, "plain.safetensors"))[0]
+        self.a.write(civitai + ".info", '{"id": 7, "name": "Plain"}')
+        path, manifest = self.export(include_civitai_covers=True)
+        plain = [m for m in manifest["models"] if m["rel"] == "plain.safetensors"][0]
+        self.assertEqual((plain["info"], plain["civitai_cover"], plain["civitai_bak"]), (".info", ".preview.png", ".civitai_bak.png"))
+        base = self.b.model("plain.safetensors", sha="cd" * 32)
+        _summary, result = self.put_back(path)
+        self.assertEqual((result["model_infos"], result["model_civitai_covers"]), (1, 1))
+        self.assertEqual(Path(base + ".info").read_text(encoding="utf-8"), '{"id": 7, "name": "Plain"}')
+        self.assertEqual(Path(base + ".preview.png").read_bytes(), b"civitai image")
+        self.assertEqual(Path(base + ".civitai_bak.png").read_bytes(), b"civitai image")  # still Civitai's, not the user's
+        self.b.write(base + ".info", '{"id": 7, "name": "Newer scan"}')
+        _summary, kept = self.put_back(path)
+        self.assertEqual(kept["model_infos"], 0)
+        self.assertIn("Newer scan", Path(base + ".info").read_text(encoding="utf-8"))
+        _path, small = self.export()  # Civitai's covers only when asked
+        self.assertNotIn("civitai_cover", [m for m in small["models"] if m["rel"] == "plain.safetensors"][0])
+
     def test_the_model_list_names_what_a_new_computer_lacks(self):
         path, manifest = self.export()
         self.assertEqual(sorted(m["rel"] for m in manifest["library"]), ["Style/cute.safetensors", "plain.safetensors"])

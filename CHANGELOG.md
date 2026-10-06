@@ -5,6 +5,7 @@
 ### 💾 Backup and restore (备份与恢复)
 - **Settings → Backup → Export** packs your Workflow Recipes, combos, materials and saved prompts, parameter sets, the plugin settings and the names, notes and covers you gave your models into one .zip, optionally with ComfyUI's own saved workflows. Keep it on a cloud drive or a USB stick. The Civitai API key is never included.
 - **Import** first lists what is in the backup next to what this computer has (new, the same, different), and the models it finds again by file hash, even after they were renamed or moved. By default it only adds what is missing; "take the backup's" replaces differing files and puts this computer's in the Recycle Bin. A model's name and notes are filled in where empty, and your own cover takes the place of the Civitai one. Nothing is deleted.
+- Models' scan results (.info: names, trigger words, base models from Civitai) are in the backup too, so they survive Civitai removing a model; Civitai's covers can be added (they can be hundreds of MB). Both are put back only where this computer has none.
 - **Download what the new computer lacks**: the backup also keeps a model list (each model's place, size, fingerprint and link). Importing says how many of those models this computer lacks; **Find downloads…** looks them up like Model Check (Civitai by hash, the saved link, Hugging Face), shows sizes and sources, and downloads the ticked ones one by one into the folder and file name they had, each checked against its fingerprint and scanned after.
 
 ### 🧪 Tests in the repository (测试公开)

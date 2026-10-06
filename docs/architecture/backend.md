@@ -184,7 +184,9 @@ downloadFrom), so the placement rules and the put-in after a download are the UI
 under `stores/<part>/` (recipes, combos, materials, parameters, and `comfy_workflows` =
 `user/default/workflows` when chosen; the notebooks' legacy-migration marker stays out),
 `settings/config.json` without `CIVITAI_API_KEY` plus `download_settings.json`, and for each
-model with a user layer or a user cover `models/<id>/user.json` and `cover<suffix>`, listed
+model with a user layer or a user cover `models/<id>/user.json` and `cover<suffix>` (and,
+unless left out, its scan file `scan<.info|.civitai.info>`; Civitai's cover only when asked,
+stored once as `civitai<.civitai_bak suffix>`), listed
 in `manifest.json` with type, relative path, size and SHA-256 (from its sidecars; none is
 computed). The manifest's `library` lists every model the same way plus its download page;
 inspecting a backup returns the ones this computer lacks, which the frontend looks up and
@@ -197,7 +199,9 @@ store how many files are new, the same or different, and how many models it find
 `POST /anomalous/backup/apply` then writes only the chosen parts: new files are added, the
 same skipped, different ones replaced only with `replace` (the file here goes to the
 Recycle Bin first). Models are found by SHA-256, else by models folder, path and equal
-size. Their user layer is merged field by field (empty fields filled; `replace` takes the
+size. A scan file is written where the model has none (replaced only with `replace`);
+Civitai's cover where it has no cover at all, with its `civitai_bak` copy so it stays
+Civitai's. Their user layer is merged field by field (empty fields filled; `replace` takes the
 backup's, the old file to the Recycle Bin); the backup's cover replaces a Civitai cover
 (whose `civitai_bak` copy stays) but not another user cover unless `replace`. Settings
 are written only when chosen, keeping this computer's Civitai key. Export and import are

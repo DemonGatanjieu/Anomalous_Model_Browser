@@ -4,7 +4,8 @@ drive, a USB stick), and putting it back on this or another computer.
 A backup holds the plugin's stores (Workflow Recipes, combos, materials and saved prompts,
 parameter sets), optionally ComfyUI's own saved workflows, the plugin settings without the
 Civitai key, what the user set on models: <model>.anomalous.json (name, notes, link) and
-the user's cover (any cover that is not a copy of Civitai's <model>.civitai_bak.*), and the
+the user's cover (any cover that is not a copy of Civitai's <model>.civitai_bak.*), what a
+scan found (<model>.info; Civitai's cover only when asked, it can be hundreds of MB), and the
 model list (each model's folder, path, size, SHA-256 and link) so the models a new computer
 lacks can be downloaded again. Models are found again by SHA-256, else by models folder, path
 and size, so they match after a move.
@@ -42,14 +43,15 @@ from .trash import TrashUnavailable, move_to_trash, trash_failure
 from . import version_manager
 
 try:
-    from ..model_identity import USER_INFO_SUFFIX, read_json
+    from ..model_identity import USER_INFO_SUFFIX, read_json, scan_info_path
 except ImportError:
-    from model_identity import USER_INFO_SUFFIX, read_json
+    from model_identity import USER_INFO_SUFFIX, read_json, scan_info_path
 
 FORMAT = 1
 APP = "Anomalous Model Browser"
 ACTIVE_COVER_SUFFIXES = PREVIEW_SUFFIXES + MEDIA_EXTENSIONS  # as scraper.py: <model>.preview.png or <model>.png
 SECRET_KEYS = {"CIVITAI_API_KEY"}  # never leaves this computer
+SCAN_INFO_SUFFIXES = (".info", ".civitai.info")
 SKIP_FILES = {".legacy_imported.json"}  # this computer's own migration marker
 MAX_BACKUP_BYTES = 4 * 1024 ** 3  # unpacked size of a backup that is still read
 MAX_MEMBERS = 200_000
@@ -170,7 +172,7 @@ def _version():
 
 # ---------- export ----------
 
-def build_backup(include_models=True, include_comfy=True, include_library=True):
+def build_backup(include_models=True, include_comfy=True, include_library=True, include_scan=True, include_civitai_covers=False):
     """Writes the backup .zip into the temp folder: (path, manifest)."""
     stamp = time.strftime("%Y%m%d-%H%M%S")
     path = os.path.join(work_dir(), f"AMB-backup-{stamp}.zip")
@@ -203,16 +205,27 @@ def build_backup(include_models=True, include_comfy=True, include_library=True):
                     base = os.path.splitext(model_path)[0]
                     user_file = base + USER_INFO_SUFFIX
                     user_data = read_json(user_file) if os.path.isfile(user_file) else None
-                    covers = cover_owners(base)[1]
-                    if not user_data and not covers:
+                    civitai, covers = cover_owners(base)
+                    scan_info = scan_info_path(base) if include_scan else None
+                    backups = [base + suffix for suffix in CIVITAI_BACKUP_SUFFIXES if os.path.isfile(base + suffix)]
+                    civitai_cover = civitai[0] if include_civitai_covers and civitai and backups else None
+                    if not user_data and not covers and not scan_info and not civitai_cover:
                         continue
                     entry = {"id": len(manifest["models"]), "type": folder_type, "rel": rel,
                              "size": os.path.getsize(model_path), "sha256": _model_hash(model_path), "user": bool(user_data), "cover": ""}
+                    folder = f"models/{entry['id']}/"
                     if user_data:
-                        archive.writestr(f"models/{entry['id']}/user.json", json.dumps(user_data, ensure_ascii=False))
+                        archive.writestr(folder + "user.json", json.dumps(user_data, ensure_ascii=False))
                     if covers:
                         entry["cover"] = covers[0][len(base):]
-                        archive.write(covers[0], f"models/{entry['id']}/cover{entry['cover']}")
+                        archive.write(covers[0], f"{folder}cover{entry['cover']}")
+                    if scan_info:
+                        entry["info"] = scan_info[len(base):]
+                        archive.write(scan_info, f"{folder}scan{entry['info']}")
+                    if civitai_cover:
+                        # One copy: it is both the cover and Civitai's saved image (<model>.civitai_bak.*).
+                        entry["civitai_cover"], entry["civitai_bak"] = civitai_cover[len(base):], backups[0][len(base):]
+                        archive.write(backups[0], f"{folder}civitai{entry['civitai_bak']}")
                     manifest["models"].append(entry)
             archive.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=1))
         os.replace(temporary, path)
@@ -393,9 +406,38 @@ def _restore_stores(archive, wanted, replace, result):
         _write_member(archive, info, target)
 
 
+def _restore_scan(archive, entry, base, folder, replace, result):
+    """What a scan found: the scan file where there is none (or replaced on request), and
+    Civitai's cover where the model has no cover at all."""
+    suffix = str(entry.get("info") or "")
+    if suffix:
+        if suffix not in SCAN_INFO_SUFFIXES:
+            raise BackupError(f"unknown scan file name: {suffix}")
+        info = archive.getinfo(folder + "scan" + suffix)
+        local = scan_info_path(base)
+        if not local or (replace and _sha256_file(local) != _member_sha256(archive, info)):
+            if local:
+                move_to_trash(local)
+            _write_member(archive, info, base + suffix)
+            result["model_infos"] += 1
+    cover, saved = str(entry.get("civitai_cover") or ""), str(entry.get("civitai_bak") or "")
+    if cover and saved:
+        if cover not in ACTIVE_COVER_SUFFIXES or saved not in CIVITAI_BACKUP_SUFFIXES:
+            raise BackupError(f"unknown cover name: {cover}")
+        info = archive.getinfo(folder + "civitai" + saved)
+        civitai, mine = cover_owners(base)
+        has_saved = any(os.path.isfile(base + suffix) for suffix in CIVITAI_BACKUP_SUFFIXES)
+        if not has_saved:
+            _write_member(archive, info, base + saved)
+        if not civitai and not mine and not entry.get("cover"):
+            _write_member(archive, info, base + cover)
+            result["model_civitai_covers"] += 1
+
+
 def _restore_model(archive, entry, model_path, replace, result):
     base = os.path.splitext(model_path)[0]
     folder = f"models/{int(entry['id'])}/"
+    _restore_scan(archive, entry, base, folder, replace, result)
     if entry.get("user"):
         backup = json.loads(archive.read(folder + "user.json"))
         user_file = base + USER_INFO_SUFFIX
@@ -445,8 +487,8 @@ def _restore_settings(archive, result):
 def apply_backup(path, parts=PART_ORDER, models=True, settings=False, replace=False):
     """Puts the backup back as chosen; returns the counts for the user and the activity log."""
     archive, manifest = open_backup(path)
-    result = {"added": 0, "replaced": 0, "skipped": 0, "model_notes": 0, "model_covers": 0,
-              "covers_kept": 0, "models_missing": 0, "settings": False, "failed": []}
+    result = {"added": 0, "replaced": 0, "skipped": 0, "model_notes": 0, "model_covers": 0, "model_infos": 0,
+              "model_civitai_covers": 0, "covers_kept": 0, "models_missing": 0, "settings": False, "failed": []}
     with archive:
         _restore_stores(archive, set(parts) & set(PART_ORDER), replace, result)
         if models and manifest.get("models"):
@@ -479,7 +521,8 @@ async def api_export(request):
     except Exception:  # noqa: BLE001 - no body: the defaults
         body = {}
     path, manifest = await asyncio.to_thread(build_backup, body.get("models", True) is not False,
-                                             body.get("comfy_workflows", True) is not False, body.get("library", True) is not False)
+                                             body.get("comfy_workflows", True) is not False, body.get("library", True) is not False,
+                                             body.get("scan", True) is not False, body.get("civitai_covers") is True)
     counts = {**manifest["parts"], "models": len(manifest["models"]), "library": len(manifest.get("library") or [])}
     await asyncio.to_thread(add_entry, "file", "backup_export", os.path.basename(path), {"backup": counts})
     return web.json_response({"status": "success", "name": os.path.basename(path), "size": os.path.getsize(path), "counts": counts})

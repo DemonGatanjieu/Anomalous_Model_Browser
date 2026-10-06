@@ -85,10 +85,12 @@ function download(name) {
 export function exportBackup() {
     const { dialog, footer, close } = openDialog(t('backupExportTitle'));
     const models = checkbox(t('backupExportModels'), true, t('backupExportModelsHint'));
+    const scan = checkbox(t('backupExportScan'), true, t('backupExportScanHint'));
+    const covers = checkbox(t('backupExportCivitaiCovers'), false, t('backupExportCivitaiCoversHint'));
     const comfy = checkbox(t('backupPart_comfy_workflows'), true, t('backupExportComfyHint'));
     const library = checkbox(t('backupExportLibrary'), true, t('backupExportLibraryHint'));
     const status = el('p', 'anomalous-backup-note');
-    dialog.append(el('p', 'anomalous-backup-text', t('backupExportIntro')), models.line, library.line, comfy.line,
+    dialog.append(el('p', 'anomalous-backup-text', t('backupExportIntro')), models.line, scan.line, covers.line, library.line, comfy.line,
         el('p', 'anomalous-backup-note', t('backupExportKey')), status);
     const go = button('anomalous-scan-primary', t('backupExportStart'), async () => {
         go.disabled = true;
@@ -96,7 +98,8 @@ export function exportBackup() {
         status.textContent = t('backupExporting');
         try {
             const data = await postJson('/anomalous/backup/export', {
-                models: models.box.checked, library: library.box.checked, comfy_workflows: comfy.box.checked,
+                models: models.box.checked, scan: scan.box.checked, civitai_covers: covers.box.checked,
+                library: library.box.checked, comfy_workflows: comfy.box.checked,
             });
             download(data.name);
             status.textContent = t('backupExported', { name: data.name, size: formatSize(data.size) });
@@ -217,7 +220,7 @@ function showChoices(owner, name, summary, { dialog, footer, close }) {
             if (again && summary.library.missing.length) dialog.append(again);
             go.remove();
             cancel.textContent = t('dialogOk');
-            if (result.model_notes || result.model_covers || result.settings) owner?.loadModels?.();
+            if (result.model_notes || result.model_covers || result.model_infos || result.model_civitai_covers || result.settings) owner?.loadModels?.();
         } catch (error) {
             status.textContent = t('backupFailed', { error: error.message });
             status.classList.add('is-bad');
@@ -231,6 +234,7 @@ function showChoices(owner, name, summary, { dialog, footer, close }) {
 function showResult(dialog, result) {
     const lines = [t('backupDone', result)];
     if (result.model_notes || result.model_covers || result.covers_kept || result.models_missing) lines.push(t('backupDoneModels', result));
+    if (result.model_infos || result.model_civitai_covers) lines.push(t('backupDoneScan', result));
     if (result.settings) lines.push(t('backupDoneSettings'));
     dialog.replaceChildren(...lines.map(line => el('p', 'anomalous-backup-text', line)));
     if (result.failed?.length) {
