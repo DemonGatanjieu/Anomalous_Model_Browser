@@ -689,6 +689,7 @@ dialog.anomalous-gallery-viewer[open] {
 
 .anomalous-recipe-dialog-preview {
     max-height: 180px;
+    object-fit: contain; /* the chosen cover as it is, not stretched to the dialog's width */
 }
 
 .anomalous-recipe-save-section {

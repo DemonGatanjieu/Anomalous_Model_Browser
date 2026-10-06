@@ -94,7 +94,11 @@ export async function importRecipePackageFile(owner, file) {
     if (!response.ok) throw await errorOf(response);
     const info = await response.json();
     const { dialog, footer, close } = openDialog(t('recipePackageImportTitle'));
-    const lines = [t('recipePackageImportWhat', { name: info.recipe?.name || '?', pictures: info.asset_count })];
+    const lines = [t('recipePackageImportWhat', {
+        name: info.recipe?.name || '?',
+        cover: t(info.has_cover ? 'recipePackageImportCover' : 'recipePackageImportNoCover'),
+        pictures: info.model_pictures ?? info.asset_count,
+    })];
     if (info.history_count) lines.push(t('recipePackageImportHistory', { count: info.history_count }));
     if (info.imported_name && info.imported_name !== info.recipe?.name) lines.push(t('recipePackageImportRenamed', { name: info.imported_name }));
     dialog.append(...lines.map(line => el('p', 'anomalous-backup-text', line)),

@@ -348,6 +348,14 @@ class RecipePackageBoundaryTests(unittest.TestCase):
         self.assertNotIn("user_note", exported["params"]["model_references"][0])
         self.assertEqual(recipe["params"]["model_references"][0]["user_note"], "private tuning note")
 
+    def test_the_receiver_is_told_about_the_cover_and_the_model_thumbnails(self):
+        recipe = self._package_recipe("model-preview.webp")
+        recipe["thumbnail"] = "data:image/jpeg;base64,AAAA"
+        self.assertEqual(recipe_packages._picture_summary(recipe), (True, 1))
+        recipe["thumbnail"] = None
+        recipe["params"]["model_references"][0].pop("preview", None)
+        self.assertEqual(recipe_packages._picture_summary(recipe), (False, 0))
+
     def _import_into(self, directory, package, fail_on=None):
         record = recipe_packages._inspect_package(package)
         record["raw"] = package

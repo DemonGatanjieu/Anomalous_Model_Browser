@@ -134,6 +134,18 @@ def _cover_asset_id(recipe):
     return require_filename(asset_id)
 
 
+def _picture_summary(recipe):
+    """What a package shows the receiver: (has a cover, how many model thumbnails). The cover
+    is usually the small image inside recipe.json (`thumbnail`), not an asset file."""
+    thumbnail = recipe.get("thumbnail")
+    has_cover = bool(_cover_asset_id(recipe)) or (
+        isinstance(thumbnail, str) and thumbnail.lower().startswith(recipe_schema.SAFE_THUMBNAIL_PREFIXES))
+    references = recipe.get("params", {}).get("model_references", [])
+    models = {_asset_id_from_reference(item) for item in references if isinstance(item, dict)} if isinstance(references, list) else set()
+    models.discard(None)
+    return has_cover, len(models)
+
+
 def _validate_manifest(manifest, archive, names):
     if not isinstance(manifest, dict) or manifest.get("package_version") != PACKAGE_VERSION:
         raise ValueError("Unsupported recipe package version")
@@ -464,6 +476,8 @@ async def api_import_recipe_package_inspect(request):
         "token": token,
         "recipe": {"name": report["recipe"].get("name", ""), "tags": report["recipe"].get("tags", [])},
         "asset_count": len(report["asset_names"]),
+        "has_cover": _picture_summary(report["recipe"])[0],
+        "model_pictures": _picture_summary(report["recipe"])[1],
         "history_count": len(report["history_names"]),
         "existing_names": _existing_recipe_names(get_recipes_dir()),
         "imported_name": _unique_name(report["recipe"].get("name", ""), _existing_recipe_names(get_recipes_dir())),
