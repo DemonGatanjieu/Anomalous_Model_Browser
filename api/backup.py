@@ -50,7 +50,7 @@ except ImportError:
 FORMAT = 1
 APP = "Anomalous Model Browser"
 ACTIVE_COVER_SUFFIXES = PREVIEW_SUFFIXES + MEDIA_EXTENSIONS  # as scraper.py: <model>.preview.png or <model>.png
-SECRET_KEYS = {"CIVITAI_API_KEY"}  # never leaves this computer
+SECRET_KEYS = {"CIVITAI_API_KEY", "DEEPL_API_KEY"}  # never leave this computer
 SCAN_INFO_SUFFIXES = (".info", ".civitai.info")
 SKIP_FILES = {".legacy_imported.json"}  # this computer's own migration marker
 MAX_BACKUP_BYTES = 4 * 1024 ** 3  # unpacked size of a backup that is still read

@@ -9,6 +9,10 @@
 ### 📦 Recipe packages are back (配方包重新开放)
 - A recipe card's export button (and Export in the recipe's More menu) makes a **recipe package**: one .zip with the recipe's workflow, name, notes, tags, parameters, cover and model thumbnails (its versions only when ticked), to give to someone. Dropped into the ⇅ of their Workflows page, it becomes a new recipe card, optionally opened on the canvas; a recipe of the same name is never replaced (the new one is kept as "Name (2)"). Packages are checked for size, paths and checksums before anything is written, and a failed import leaves nothing half done. Send it as a file in chat apps.
 
+### 🌐 Your own DeepL key for translation (DeepL 翻译密钥)
+- **Settings → Translation → DeepL key**: prompts are translated with Google's free endpoint (MyMemory when Google cannot be reached); with your own DeepL API key, DeepL comes first. Saving the key translates one sentence to show it works, or says why not (a key DeepL refuses, a used-up month). The Free plan gives 500,000 characters a month. The key stays on this computer and is never put in a backup.
+- A DeepL key saved by hand in `config.json` before did not work any more: DeepL stopped taking the key as a request parameter in 2025. It now goes in the Authorization header.
+
 ### 💾 Backup and restore (备份与恢复)
 - **Settings → Backup → Export** packs your Workflow Recipes, combos, materials and saved prompts, parameter sets, the plugin settings and the names, notes and covers you gave your models into one .zip, optionally with ComfyUI's own saved workflows. Keep it on a cloud drive or a USB stick. The Civitai API key is never included.
 - **Import** first lists what is in the backup next to what this computer has (new, the same, different), and the models it finds again by file hash, even after they were renamed or moved. By default it only adds what is missing; "take the backup's" replaces differing files and puts this computer's in the Recycle Bin. A model's name and notes are filled in where empty, and your own cover takes the place of the Civitai one. Nothing is deleted.

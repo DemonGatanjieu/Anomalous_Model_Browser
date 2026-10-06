@@ -300,8 +300,12 @@ language picked in the top bar (one of `GLOSS_LANGUAGES`, none by default, remem
 local storage with the view; an older "Chinese on" setting reads as Simplified Chinese).
 They are asked for in batches, kept for the session per language, and a failed lookup
 leaves that box's meanings in that language blank instead of retrying. The backend
-skips DeepL for a target it does not take and lets MyMemory detect a source that is
-neither English nor Chinese.
+(`api/translation_routes.py`) asks DeepL first when Settings → Translation has a key
+(`DEEPL_API_KEY` in config.json, sent in the Authorization header, never in a backup),
+then Google's free endpoint, then MyMemory; when DeepL failed, the answer carries
+`deepl_error` (bad_key, quota, busy or the error) beside the other provider's translation,
+which Settings shows after a key is saved. It skips DeepL for a target it does not take and
+lets MyMemory detect a source that is neither English nor Chinese.
 
 The cards are three built-in ones and the saved prompts (prompt-kind material files,
 `prompt_material_source.js`). The saved list is asked for on open, every 30 seconds

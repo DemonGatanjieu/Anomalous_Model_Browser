@@ -31,7 +31,14 @@ async def api_get_config(request):
                 has_key = bool(legacy_cfg.get("CIVITAI_API_KEY", "").strip())
             except Exception:
                 pass
-    return web.json_response({"has_api_key": has_key, "folder_types_config": folder_types})
+    deepl_key = ""
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            deepl_key = json.load(f).get("DEEPL_API_KEY", "")
+    except (OSError, ValueError, AttributeError):
+        pass
+    return web.json_response({"has_api_key": has_key, "has_deepl_key": bool(isinstance(deepl_key, str) and deepl_key.strip()),
+                              "folder_types_config": folder_types})
 
 async def api_save_config(request):
     try:
@@ -50,8 +57,11 @@ async def api_save_config(request):
             except:
                 pass
                 
+        deepl_key = data.get("deepl_key")
         if api_key is not None and not isinstance(api_key, str):
             return web.json_response({"status": "error", "message": "Invalid API key"}, status=400)
+        if deepl_key is not None and not isinstance(deepl_key, str):
+            return web.json_response({"status": "error", "message": "Invalid DeepL key"}, status=400)
         if folder_types_config is not None and not isinstance(folder_types_config, list):
             return web.json_response({"status": "error", "message": "Invalid folder configuration"}, status=400)
         if "physical_folders_config" in data and not isinstance(data.get("physical_folders_config"), list):
@@ -61,6 +71,9 @@ async def api_save_config(request):
 
         if api_key is not None:
             cfg["CIVITAI_API_KEY"] = api_key.strip()
+
+        if deepl_key is not None:  # Settings -> Translation (translation_routes.py)
+            cfg["DEEPL_API_KEY"] = deepl_key.strip()
             
         if folder_types_config is not None:
             cfg["folder_types_config"] = folder_types_config

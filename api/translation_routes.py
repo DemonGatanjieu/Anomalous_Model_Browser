@@ -1,8 +1,11 @@
-"""Bounded translation-provider HTTP route."""
+"""Prompt translation (POST /anomalous/translate): DeepL when the user saved a key in Settings
+-> Translation, else Google's free endpoint, else MyMemory. When DeepL was asked and failed, the
+answer says why (`deepl_error`) while another provider still translates."""
 
 import asyncio
 import json
 import os
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -10,7 +13,7 @@ from aiohttp import web
 
 
 _DEEPL_TARGETS = {
-    "zh": "ZH", "zh-CN": "ZH", "zh-TW": "ZH-HANT", "en": "EN", "ja": "JA", "ko": "KO",
+    "zh": "ZH-HANS", "zh-CN": "ZH-HANS", "zh-TW": "ZH-HANT", "en": "EN-US", "ja": "JA", "ko": "KO",
     "fr": "FR", "de": "DE", "es": "ES", "ru": "RU", "pt": "PT-BR",
 }
 
@@ -20,16 +23,41 @@ def _translate_with_deepl(text, tl, deepl_key):
     d_tl = _DEEPL_TARGETS.get(tl)
     if not d_tl:
         return None
-    url = "https://api-free.deepl.com/v2/translate" if ":fx" in deepl_key else "https://api.deepl.com/v2/translate"
-    payload = urllib.parse.urlencode({
-        "auth_key": deepl_key,
-        "text": text,
-        "target_lang": d_tl
-    }).encode('utf-8')
-    req = urllib.request.Request(url, data=payload)
-    with urllib.request.urlopen(req, timeout=5) as resp:
+    # A Free account's key ends in ":fx". The key goes in the Authorization header: DeepL no
+    # longer takes it as an auth_key parameter (2025).
+    url = "https://api-free.deepl.com/v2/translate" if deepl_key.endswith(":fx") else "https://api.deepl.com/v2/translate"
+    payload = json.dumps({"text": [text], "target_lang": d_tl}).encode("utf-8")
+    req = urllib.request.Request(url, data=payload, method="POST", headers={
+        "Authorization": f"DeepL-Auth-Key {deepl_key}",
+        "Content-Type": "application/json",
+    })
+    with urllib.request.urlopen(req, timeout=8) as resp:
         result = json.loads(resp.read().decode('utf-8'))
         return result["translations"][0]["text"]
+
+
+def _deepl_error(error):
+    """Why DeepL did not translate, for Settings: bad_key, quota, busy, or the error's own words."""
+    if isinstance(error, urllib.error.HTTPError):
+        if error.code in (401, 403):
+            return "bad_key"
+        if error.code == 456:
+            return "quota"
+        if error.code == 429:
+            return "busy"
+        return f"HTTP {error.code}"
+    return str(error) or type(error).__name__
+
+
+def _deepl_key():
+    """The DeepL key saved in Settings -> Translation (config.json), or ""."""
+    config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            key = json.load(f).get("DEEPL_API_KEY", "")
+    except (OSError, ValueError, AttributeError):
+        return ""
+    return key.strip() if isinstance(key, str) else ""
 
 
 def _translate_with_google(text, tl):
@@ -92,31 +120,24 @@ async def api_translate(request):
         if not text:
             return web.json_response({"translated": "", "status": "success"})
             
-        # 1. Try DeepL if configured
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        config_path = os.path.join(script_dir, "config.json")
-        deepl_key = ""
-        if os.path.exists(config_path):
-            try:
-                with open(config_path, 'r', encoding='utf-8') as f:
-                    cfg = json.load(f)
-                    deepl_key = cfg.get("DEEPL_API_KEY", "").strip()
-            except Exception:
-                pass
-                
+        # 1. DeepL, when a key is saved
+        deepl_key = _deepl_key()
+        deepl_error = None
         if deepl_key:
             try:
                 translated = await asyncio.to_thread(_translate_with_deepl, text, tl, deepl_key)
                 if translated:
                     return web.json_response({"translated": translated, "status": "success", "engine": "deepl"})
             except Exception as e:
-                print(f"[Anomalous] DeepL translate failed: {e}")
+                deepl_error = _deepl_error(e)
+                print(f"[Anomalous] DeepL translate failed: {deepl_error}")
+        why = {"deepl_error": deepl_error} if deepl_error else {}
 
         # 2. Try Google Translate (client=dict-chrome-ex)
         try:
             translated = await asyncio.to_thread(_translate_with_google, text, tl)
             if translated:
-                return web.json_response({"translated": translated, "status": "success", "engine": "google"})
+                return web.json_response({"translated": translated, "status": "success", "engine": "google", **why})
         except Exception as e:
             print(f"[Anomalous] Google translate failed: {e}")
 
@@ -124,7 +145,7 @@ async def api_translate(request):
         try:
             translated = await asyncio.to_thread(_translate_with_mymemory, text, tl)
             if translated:
-                return web.json_response({"translated": translated, "status": "success", "engine": "mymemory"})
+                return web.json_response({"translated": translated, "status": "success", "engine": "mymemory", **why})
         except Exception as e:
             print(f"[Anomalous] MyMemory translate failed: {e}")
             raise e
