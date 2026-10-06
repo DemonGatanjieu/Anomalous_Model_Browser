@@ -115,8 +115,10 @@ covered by the `styles.css` manifest.
   (recipes, combos, materials, parameters, optionally ComfyUI's saved workflows), the plugin
   settings without the Civitai key, and each model's user layer and own cover; putting it
   back adds what is missing, replaces differing files only on request (Recycle Bin first)
-  and finds models again by SHA-256, else by folder, path and size. `ui_backup.js` is its
-  export and import dialogs.
+  and finds models again by SHA-256, else by folder, path and size. Its model list (every
+  model's folder, path, size, SHA-256, link) names the models a new computer lacks.
+  `ui_backup.js` is its export and import dialogs; `ui_backup_downloads.js` downloads the
+  lacking models again through Model Check's downloads, into the path they had.
 - `api/lora_info.py` reads a LoRA's safetensors header to tell whether it trains the text
   encoder (`/anomalous/lora_info`), so inserting it wires the CLIP line only then.
 - `api/model_download.py` downloads the models a workflow misses (Model Check's

@@ -94,6 +94,42 @@
     word-break: break-all;
 }
 
+.anomalous-backup-note.is-warn { color: #fcd34d; }
+
+.anomalous-backup-missing {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+}
+
+.anomalous-backup-downloads {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 46vh;
+    overflow-y: auto;
+}
+
+.anomalous-backup-download {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 4px 10px;
+    align-items: start;
+    padding: 8px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+.anomalous-backup-download input { margin-top: 3px; }
+.anomalous-backup-download .anomalous-backup-choice-copy strong { overflow-wrap: anywhere; }
+.anomalous-backup-download-state { grid-column: 2; }
+.anomalous-backup-download-state:empty { display: none; }
+
 .anomalous-backup-footer {
     display: flex;
     justify-content: flex-end;

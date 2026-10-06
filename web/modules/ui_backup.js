@@ -4,10 +4,13 @@
  * .zip, shows what is in it next to what this computer has (per store, the models found by
  * hash), lets the user pick the parts and whether differing files are replaced, then puts it
  * back and says what happened. Nothing is erased: replaced files go to the Recycle Bin.
+ * The models the backup's computer had and this one lacks can be downloaded again
+ * (ui_backup_downloads.js).
  */
 
 import { translate as t } from './locales.js';
 import { formatSize } from './ui_model_download.js';
+import { openRestoreDownloads } from './ui_backup_downloads.js';
 
 const PARTS = ['recipes', 'combos', 'materials', 'parameters', 'comfy_workflows'];
 
@@ -37,8 +40,8 @@ function checkbox(label, checked, hint = '') {
     return { line, box };
 }
 
-/** A dialog over the page; Esc or a click beside it closes it. Returns { dialog, footer, close }. */
-function openDialog(title) {
+/** A dialog over the page; Esc or a click beside it closes it (then `onClose`). Returns { dialog, footer, close }. */
+export function openDialog(title, onClose = null) {
     const overlay = el('div', 'anomalous-dialog-overlay anomalous-backup-overlay');
     const dialog = el('div', 'anomalous-backup-dialog');
     dialog.setAttribute('role', 'dialog');
@@ -54,6 +57,7 @@ function openDialog(title) {
     const close = () => {
         overlay.remove();
         document.removeEventListener('keydown', onKey, true);
+        onClose?.();
     };
     overlay.onclick = (event) => { if (event.target === overlay) close(); };
     document.addEventListener('keydown', onKey, true);
@@ -82,15 +86,18 @@ export function exportBackup() {
     const { dialog, footer, close } = openDialog(t('backupExportTitle'));
     const models = checkbox(t('backupExportModels'), true, t('backupExportModelsHint'));
     const comfy = checkbox(t('backupPart_comfy_workflows'), true, t('backupExportComfyHint'));
+    const library = checkbox(t('backupExportLibrary'), true, t('backupExportLibraryHint'));
     const status = el('p', 'anomalous-backup-note');
-    dialog.append(el('p', 'anomalous-backup-text', t('backupExportIntro')), models.line, comfy.line,
+    dialog.append(el('p', 'anomalous-backup-text', t('backupExportIntro')), models.line, library.line, comfy.line,
         el('p', 'anomalous-backup-note', t('backupExportKey')), status);
     const go = button('anomalous-scan-primary', t('backupExportStart'), async () => {
         go.disabled = true;
         status.classList.remove('is-bad');
         status.textContent = t('backupExporting');
         try {
-            const data = await postJson('/anomalous/backup/export', { models: models.box.checked, comfy_workflows: comfy.box.checked });
+            const data = await postJson('/anomalous/backup/export', {
+                models: models.box.checked, library: library.box.checked, comfy_workflows: comfy.box.checked,
+            });
             download(data.name);
             status.textContent = t('backupExported', { name: data.name, size: formatSize(data.size) });
             go.remove();
@@ -138,6 +145,21 @@ async function inspect(owner, file) {
     showChoices(owner, file.name, summary, { dialog, footer, close });
 }
 
+/** The models the backup's computer had and this one lacks, with the way to download them again. */
+function missingModels(owner, summary) {
+    const library = summary.library;
+    if (!library) return null;
+    const line = el('div', 'anomalous-backup-missing');
+    if (!library.missing.length) {
+        line.append(el('span', 'anomalous-backup-note', t('backupLibraryAllHere', { total: library.total })));
+        return line;
+    }
+    const size = library.missing.reduce((sum, entry) => sum + (Number(entry.size) || 0), 0);
+    line.append(el('span', 'anomalous-backup-text', t('backupLibraryMissing', { count: library.missing.length, size: formatSize(size) })),
+        button('anomalous-scan-secondary anomalous-scan-small-btn', t('backupLibraryDownload'), () => openRestoreDownloads(owner, library.missing)));
+    return line;
+}
+
 function showChoices(owner, name, summary, { dialog, footer, close }) {
     const created = summary.created ? new Date(summary.created * 1000).toLocaleString() : '?';
     dialog.replaceChildren(el('p', 'anomalous-backup-text', t('backupFrom', { name, date: created, version: summary.version || '?' })));
@@ -158,6 +180,8 @@ function showChoices(owner, name, summary, { dialog, footer, close }) {
     }
     const settings = summary.settings ? checkbox(t('backupSettings'), false, t('backupSettingsHint')) : null;
     if (settings) dialog.append(settings.line);
+    const missing = missingModels(owner, summary);
+    if (missing) dialog.append(missing);
     if (!parts.length && !models && !settings) dialog.append(el('p', 'anomalous-backup-note', t('backupNothing')));
 
     const mode = el('div', 'anomalous-backup-mode');
@@ -189,6 +213,8 @@ function showChoices(owner, name, summary, { dialog, footer, close }) {
                 models: Boolean(models?.box.checked), settings: Boolean(settings?.box.checked), replace: replace.checked,
             });
             showResult(dialog, result);
+            const again = missingModels(owner, summary);
+            if (again && summary.library.missing.length) dialog.append(again);
             go.remove();
             cancel.textContent = t('dialogOk');
             if (result.model_notes || result.model_covers || result.settings) owner?.loadModels?.();

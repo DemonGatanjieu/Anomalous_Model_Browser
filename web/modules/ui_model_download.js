@@ -124,7 +124,7 @@ function dialogItem(entry, info, settings) {
     };
 }
 
-function errorText(code) {
+export function errorText(code) {
     const key = `downloadError_${code}`;
     const text = t(key);
     return text === key ? t('downloadError_unknown') : text;
@@ -194,7 +194,7 @@ export function openDownloadDialog(owner, items, settings) {
 }
 
 /** What a row shows for its model's download: progress, a failure, or nothing yet. */
-function jobView(owner, job, retry) {
+export function jobView(owner, job, retry) {
     const box = el('span', 'anomalous-download-status');
     if (ACTIVE.includes(job.state)) {
         const percent = job.total ? Math.floor((job.received / job.total) * 100) : 0;

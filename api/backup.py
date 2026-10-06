@@ -3,9 +3,11 @@ drive, a USB stick), and putting it back on this or another computer.
 
 A backup holds the plugin's stores (Workflow Recipes, combos, materials and saved prompts,
 parameter sets), optionally ComfyUI's own saved workflows, the plugin settings without the
-Civitai key, and what the user set on models: <model>.anomalous.json (name, notes, link) and
-the user's cover (any cover that is not a copy of Civitai's <model>.civitai_bak.*). Models are
-found again by SHA-256, else by models folder, path and size, so they match after a move.
+Civitai key, what the user set on models: <model>.anomalous.json (name, notes, link) and
+the user's cover (any cover that is not a copy of Civitai's <model>.civitai_bak.*), and the
+model list (each model's folder, path, size, SHA-256 and link) so the models a new computer
+lacks can be downloaded again. Models are found again by SHA-256, else by models folder, path
+and size, so they match after a move.
 
 Putting back never erases: a file missing here is added; a file that differs stays unless
 "replace" is chosen, and then the one here goes to the Recycle Bin first. A model's user file
@@ -141,11 +143,17 @@ def cover_owners(base):
     return civitai, [cover for cover in covers if cover not in civitai]
 
 
-def _model_hash(path):
+def _model_facts(path):
+    """(SHA-256, download page) from the model's sidecars; nothing is computed."""
     try:
-        return str((get_metadata(path) or {}).get("hash") or "").lower()
+        meta = get_metadata(path) or {}
     except Exception:  # noqa: BLE001 - an unreadable sidecar only means "match by path"
-        return ""
+        return "", ""
+    return str(meta.get("hash") or "").lower(), str(meta.get("source_url") or meta.get("civitai_url") or "")
+
+
+def _model_hash(path):
+    return _model_facts(path)[0]
 
 
 def _settings_for_backup():
@@ -162,7 +170,7 @@ def _version():
 
 # ---------- export ----------
 
-def build_backup(include_models=True, include_comfy=True):
+def build_backup(include_models=True, include_comfy=True, include_library=True):
     """Writes the backup .zip into the temp folder: (path, manifest)."""
     stamp = time.strftime("%Y%m%d-%H%M%S")
     path = os.path.join(work_dir(), f"AMB-backup-{stamp}.zip")
@@ -182,8 +190,16 @@ def build_backup(include_models=True, include_comfy=True):
             if os.path.isfile(download_settings_path()):
                 archive.write(download_settings_path(), "settings/download_settings.json")
             manifest["settings"] = True
-            if include_models:
+            if include_library:
+                manifest["library"] = []
+            if include_models or include_library:
                 for folder_type, _root, model_path, rel in _models():
+                    if include_library:
+                        digest, page = _model_facts(model_path)
+                        manifest["library"].append({"type": folder_type, "rel": rel, "size": os.path.getsize(model_path),
+                                                    "sha256": digest, "url": page})
+                    if not include_models:
+                        continue
                     base = os.path.splitext(model_path)[0]
                     user_file = base + USER_INFO_SUFFIX
                     user_data = read_json(user_file) if os.path.isfile(user_file) else None
@@ -314,16 +330,31 @@ def inspect_backup(path):
             counts = parts.setdefault(part, {"new": 0, "same": 0, "differs": 0})
             counts[_file_state(archive, info, resolve_within(dirs[part], *rel.split("/")))] += 1
         models = {"total": len(manifest.get("models") or []), "matched": 0, "missing": []}
-        if models["total"]:
+        library = manifest.get("library") if isinstance(manifest.get("library"), list) else None
+        summary = {"created": manifest.get("created"), "version": manifest.get("version") or "",
+                   "parts": {part: parts[part] for part in PART_ORDER if part in parts},
+                   "settings": bool(manifest.get("settings")), "models": models}
+        if models["total"] or library:
             by_hash, by_rel = _local_models()
-            for entry in manifest["models"]:
+            for entry in manifest.get("models") or []:
                 if _match(entry, by_hash, by_rel):
                     models["matched"] += 1
                 else:
                     models["missing"].append(entry.get("rel") or "")
-        return {"created": manifest.get("created"), "version": manifest.get("version") or "",
-                "parts": {part: parts[part] for part in PART_ORDER if part in parts},
-                "settings": bool(manifest.get("settings")), "models": models}
+            if library is not None:
+                # The models the old computer had and this one lacks: what can be downloaded again
+                # (two copies of one file there are one download here).
+                missing, seen = [], set()
+                for entry in library:
+                    if not isinstance(entry, dict) or _match(entry, by_hash, by_rel):
+                        continue
+                    digest = str(entry.get("sha256") or "").lower()
+                    if digest and digest in seen:
+                        continue
+                    seen.add(digest)
+                    missing.append({key: entry.get(key) for key in ("type", "rel", "size", "sha256", "url")})
+                summary["library"] = {"total": len(library), "missing": missing}
+        return summary
 
 
 # ---------- putting back ----------
@@ -447,8 +478,9 @@ async def api_export(request):
         body = await request.json()
     except Exception:  # noqa: BLE001 - no body: the defaults
         body = {}
-    path, manifest = await asyncio.to_thread(build_backup, body.get("models", True) is not False, body.get("comfy_workflows", True) is not False)
-    counts = {**manifest["parts"], "models": len(manifest["models"])}
+    path, manifest = await asyncio.to_thread(build_backup, body.get("models", True) is not False,
+                                             body.get("comfy_workflows", True) is not False, body.get("library", True) is not False)
+    counts = {**manifest["parts"], "models": len(manifest["models"]), "library": len(manifest.get("library") or [])}
     await asyncio.to_thread(add_entry, "file", "backup_export", os.path.basename(path), {"backup": counts})
     return web.json_response({"status": "success", "name": os.path.basename(path), "size": os.path.getsize(path), "counts": counts})
 

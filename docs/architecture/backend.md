@@ -186,7 +186,9 @@ under `stores/<part>/` (recipes, combos, materials, parameters, and `comfy_workf
 `settings/config.json` without `CIVITAI_API_KEY` plus `download_settings.json`, and for each
 model with a user layer or a user cover `models/<id>/user.json` and `cover<suffix>`, listed
 in `manifest.json` with type, relative path, size and SHA-256 (from its sidecars; none is
-computed). A cover is the user's when it is not byte-identical to `<model>.civitai_bak.*`,
+computed). The manifest's `library` lists every model the same way plus its download page;
+inspecting a backup returns the ones this computer lacks, which the frontend looks up and
+downloads with the model download routes (into the same folder and path). A cover is the user's when it is not byte-identical to `<model>.civitai_bak.*`,
 as in the scanner.
 
 `POST /anomalous/backup/inspect` receives the .zip into the temp folder, refuses anything

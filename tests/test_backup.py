@@ -112,6 +112,19 @@ class BackupTests(unittest.TestCase):
         settings = json.loads(zipfile.ZipFile(path).read("settings/config.json"))
         self.assertNotIn("CIVITAI_API_KEY", settings)  # the key never leaves the computer
 
+    def test_the_model_list_names_what_a_new_computer_lacks(self):
+        path, manifest = self.export()
+        self.assertEqual(sorted(m["rel"] for m in manifest["library"]), ["Style/cute.safetensors", "plain.safetensors"])
+        self.a.model("copy/cute_again.safetensors", sha="ab" * 32)  # a second copy: one download
+        path, manifest = self.export()
+        self.b.model("somewhere/plain_renamed.safetensors", sha="cd" * 32)  # this one is here under another name
+        with self.b.patches():
+            summary = backup.inspect_backup(path)
+        self.assertEqual(summary["library"]["total"], 3)
+        self.assertEqual([(m["rel"], m["sha256"]) for m in summary["library"]["missing"]], [("Style/cute.safetensors", "ab" * 32)])
+        _path, without = self.export(include_library=False)
+        self.assertNotIn("library", without)
+
     def test_comfy_workflows_can_be_left_out(self):
         _path, manifest = self.export(include_comfy=False)
         self.assertNotIn("comfy_workflows", manifest["parts"])
