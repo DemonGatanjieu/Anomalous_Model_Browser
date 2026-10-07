@@ -11,6 +11,7 @@
 
 ### 🎯 Opens where your node is; number keys for the pages (按节点打开、数字键切页)
 - **Opening follows the selected node**: open the browser with a text node selected on the canvas and Prompt Studio opens on that node; with a KSampler, a model loader or any other node, Current node opens. With nothing selected it reopens the page you used last, as before. It can be turned off in Settings → Opening and window.
+- **Prompt Studio's own shortcut is gone** (Ctrl+Shift+L, and its row in ComfyUI's settings and the Extensions menu): it opens from the rail, with 7 while the browser is open, or by opening the browser with a text node selected. The browser's shortcut (Ctrl+Shift+M) stays.
 - **1–9 go to the pages on the left** while the browser is open (Home, Activity, Models, Gallery, Workflows, Combos, Prompts, Voices, Audio library). Numbers typed into a box stay in the box, and the rail's tooltips show each number. W/S were not used because W is ComfyUI's own Workflows key.
 
 ### 🌐 Your own DeepL key for translation (DeepL 翻译密钥)
