@@ -1603,14 +1603,10 @@ dialog.anomalous-gallery-viewer[open] {
 
 .anomalous-recipe-prompt-role-badge.is-positive {
     background: rgba(16, 185, 129, 0.12);
-    border-color: rgba(16, 185, 129, 0.3);
-    color: var(--amb-ok);
 }
 
 .anomalous-recipe-prompt-role-badge.is-negative {
     background: rgba(244, 63, 94, 0.12);
-    border-color: rgba(244, 63, 94, 0.3);
-    color: #fb7185;
 }
 
 .anomalous-recipe-prompt-card-node-title {
@@ -1657,9 +1653,9 @@ dialog.anomalous-gallery-viewer[open] {
     font-size: 0.72rem;
 }
 
-.anomalous-recipe-prompt-role-badge.is-positive { color: #9af0d0; border-color: rgba(110, 231, 183, 0.35); }
-.anomalous-recipe-prompt-role-badge.is-negative { color: #f2a8b3; border-color: rgba(223, 141, 154, 0.38); }
-.anomalous-recipe-prompt-role-badge.is-both { color: #d6c4ff; border-color: rgba(196, 167, 255, 0.4); }
+.anomalous-recipe-prompt-role-badge.is-positive { color: var(--amb-lt-ok, #9af0d0); border-color: rgba(110, 231, 183, 0.35); }
+.anomalous-recipe-prompt-role-badge.is-negative { color: var(--amb-lt-danger, #f2a8b3); border-color: rgba(223, 141, 154, 0.38); }
+.anomalous-recipe-prompt-role-badge.is-both { color: var(--amb-lt-violet, #d6c4ff); border-color: rgba(196, 167, 255, 0.4); }
 
 .anomalous-recipe-prompt-role-select {
     width: 100%;

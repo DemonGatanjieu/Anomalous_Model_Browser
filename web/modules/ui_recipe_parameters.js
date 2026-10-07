@@ -373,7 +373,7 @@ function renderPromptSection(parent, owner, recipe, source, rerender) {
     const infoIcon = document.createElement('span');
     infoIcon.className = 'anomalous-recipe-info-bubble';
     infoIcon.title = noticeTooltip;
-    infoIcon.innerHTML = `ⓘ <span style="font-size:0.75rem;font-weight:normal;opacity:0.75;">${window.anomalous_browser_lang === 'zh' ? '支持说明' : 'Notice'}</span>`;
+    infoIcon.innerHTML = `ⓘ <span style="font-size:0.75rem;font-weight:normal;">${window.anomalous_browser_lang === 'zh' ? '支持说明' : 'Notice'}</span>`;
     infoIcon.style.cursor = 'help';
     headingLeft.appendChild(infoIcon);
     heading.appendChild(headingLeft);

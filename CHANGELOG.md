@@ -17,8 +17,8 @@
 
 ### ☀️ Light theme (浅色主题)
 - **Settings → Appearance → Theme**: **Follow ComfyUI** (the default), **Dark**, **Light** or **Abyssal Scarlet**. Following ComfyUI switches with ComfyUI's color palette at once, light with a light palette and dark with a dark one. The same choice is in ComfyUI's settings under Anomalous Model Browser (it replaces the Abyssal Scarlet on/off switch; Abyssal Scarlet stays chosen if it was on).
-- Every page, the Prompt Studio drawer and the dialogs follow the theme. The image viewer stays dark, like ComfyUI's own, and the labels over cover images stay dark so their text reads on any picture. The dark themes look as before.
-- The "all models are here" banner on a recipe now reads green instead of pink.
+- Every page, the Prompt Studio drawer and the dialogs follow the theme. The image viewer stays dark, like ComfyUI's own, and so do the labels and buttons over pictures (a model card's name, a recipe's cover labels, the gallery's View parameters button), so their text reads on any picture. Grey hint and secondary text is darker in the light theme so it reads clearly. The dark themes look as before.
+- The "all models are here" banner on a recipe now reads green instead of pink, and the voice page's **Import character** button has dark text on its light blue in the dark themes.
 
 ### 🌐 Your own DeepL key for translation (DeepL 翻译密钥)
 - **Settings → Translation → DeepL key**: prompts are translated with Google's free endpoint (MyMemory when Google cannot be reached); with your own DeepL API key, DeepL comes first. Saving the key translates one sentence to show it works, or says why not (a key DeepL refuses, a used-up month). The Free plan gives 500,000 characters a month. The key stays on this computer and is never put in a backup.

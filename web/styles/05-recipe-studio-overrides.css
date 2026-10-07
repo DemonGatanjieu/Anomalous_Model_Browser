@@ -142,13 +142,13 @@
 
 .anomalous-recipe-prompt-badge.is-positive {
     background: rgba(16, 185, 129, 0.12);
-    color: var(--amb-ok);
+    color: var(--amb-lt-ok, var(--amb-ok));
     border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .anomalous-recipe-prompt-badge.is-negative {
     background: rgba(244, 63, 94, 0.12);
-    color: #fb7185;
+    color: var(--amb-lt-danger, #fb7185);
     border: 1px solid rgba(244, 63, 94, 0.25);
 }
 

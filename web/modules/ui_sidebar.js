@@ -350,7 +350,7 @@ export function renderSidebar() {
                     toggleIcon = `<span style="margin-right: 8px; width: 12px; display: inline-block;"></span>`;
                 }
 
-                item.innerHTML = `${toggleIcon}<span class="anomalous-folder-name" style="color: var(--amb-text-soft);">${escapeHtml(info.name)}</span> <span style="opacity:0.4; font-size:0.8em; margin-left: 5px;">${escapeHtml(info.model_count)}</span>`;
+                item.innerHTML = `${toggleIcon}<span class="anomalous-folder-name" style="color: var(--amb-text-soft);">${escapeHtml(info.name)}</span> <span style="color: var(--amb-text-dim); font-size:0.8em; margin-left: 5px;">${escapeHtml(info.model_count)}</span>`;
 
                 const scope = this.modelScope;
                 if (scope?.subfolder === path && scope.type === typeGroup.type && scope.path_idx === typeGroup.path_idx) {

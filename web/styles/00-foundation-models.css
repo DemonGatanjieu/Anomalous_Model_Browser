@@ -78,8 +78,8 @@ html.amb-theme-light {
     --amb-bg-input: #ffffff;
     --amb-text-main: #111827;
     --amb-text-soft: #374151;
-    --amb-text-muted: #6b7280;
-    --amb-text-dim: #9ca3af;
+    --amb-text-muted: #4b5563;
+    --amb-text-dim: #5f6673;
     --amb-border: rgba(0, 0, 0, 0.09);
     --amb-border-strong: rgba(0, 0, 0, 0.16);
     --amb-border-hover: rgba(0, 0, 0, 0.22);
@@ -96,7 +96,7 @@ html.amb-theme-light {
     --amb-warn: #d97706;
     --amb-warn-text: #b45309;
     --amb-ok: #059669;
-    --amb-ok-text: #15803d;
+    --amb-ok-text: #166534;
     --amb-ok-soft: #047857;
     --amb-warn-soft: #92400e;
     --amb-bg-tooltip: rgba(255, 255, 255, 0.98);
@@ -113,12 +113,12 @@ html.amb-theme-light {
        their exact colors and only the light theme defines these. */
     --amb-lt-text: #111827;
     --amb-lt-soft: #374151;
-    --amb-lt-muted: #6b7280;
+    --amb-lt-muted: #4b5563;
     --amb-lt-surface: #ffffff;
     --amb-lt-page: #f3f4f6;
     --amb-lt-card-hover: #e5e7eb;
     --amb-lt-accent-text: #4338ca;
-    --amb-lt-ok: #047857;
+    --amb-lt-ok: #065f46;
     --amb-lt-chip: #eef2ff;
     --amb-lt-ok-chip: #ecfdf5;
     --amb-lt-warn: #b45309;
@@ -133,9 +133,13 @@ html.amb-theme-light {
     --amb-lt-scrim: rgba(15, 23, 42, 0.35);
 }
 
-/* The image viewer (the gallery's workbench) stays dark in the light theme, like ComfyUI's own:
-   the dark tokens again, and no light-only ones. */
-html.amb-theme-light :is(.anomalous-workbench-overlay, .anomalous-gallery-viewer) {
+/* The image viewer (the gallery's workbench) stays dark in the light theme, like ComfyUI's own,
+   and so do the labels and buttons laid over pictures: the dark tokens again, no light-only ones. */
+html.amb-theme-light :is(.anomalous-workbench-overlay, .anomalous-gallery-viewer,
+    .anomalous-card-labels, .anomalous-card-action-btn, .anomalous-card-badge.is-unscanned,
+    .anomalous-gallery-details, .anomalous-gallery-keep,
+    .anomalous-recipe-readiness-pill, .anomalous-recipe-cover-pill, .anomalous-recipe-scope-pill,
+    .anomalous-recipe-drag-badge, .anomalous-recipe-model-preview small, .anomalous-preset-compact-gallery-badge) {
     --amb-bg-page: #131315;
     --amb-bg-panel: #1a1a1d;
     --amb-bg-card: #202024;
@@ -185,6 +189,14 @@ html.amb-theme-light :is(.anomalous-workbench-overlay, .anomalous-gallery-viewer
     --amb-lt-scrim: initial;
     --amb-lt-brand: initial;
     --amb-lt-shimmer: initial;
+    --bg-color: var(--amb-bg-card);
+    --comfy-menu-bg: var(--amb-bg-card-hover);
+    --comfy-input-bg: var(--amb-bg-input);
+    --input-text: var(--amb-text-main);
+    --fg-color: var(--amb-text-main);
+    --descrip-text: var(--amb-text-muted);
+    --border-color: var(--amb-border-strong);
+    --error-text: var(--amb-danger);
     color-scheme: dark;
 }
 

@@ -1118,7 +1118,7 @@
 .anomalous-voice-modal-submit {
     background: linear-gradient(135deg, var(--amb-link), var(--amb-link));
     border: none;
-    color: var(--amb-text-main);
+    color: var(--amb-lt-surface, #111827); /* --amb-link is a light tint in the dark themes */
     font-weight: 600;
     padding: 8px 20px;
     border-radius: 8px;

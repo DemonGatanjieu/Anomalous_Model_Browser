@@ -395,7 +395,6 @@ export function renderOverview(content, owner, recipe, references, finish, servi
     const updatedSmall = appendText(copy, 'small', `${t('recipeDetailUpdated')}: ${dateText(recipe.updated_timestamp || recipe.timestamp)}`, 'anomalous-recipe-detail-muted');
     updatedSmall.style.marginTop = '6px';
     updatedSmall.style.display = 'block';
-    updatedSmall.style.opacity = '0.75';
 
     hero.appendChild(copy);
     overview.appendChild(hero);

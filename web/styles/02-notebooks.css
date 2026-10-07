@@ -39,7 +39,7 @@
 .anomalous-nb-close {
     font-size: 2em;
     cursor: pointer;
-    color: #ff4444;
+    color: var(--amb-lt-danger, #ff4444);
 }
 
 .anomalous-nb-body {

@@ -869,7 +869,7 @@ button:hover .anomalous-btn-icon {
     justify-content: center;
     background: transparent;
     border: none;
-    color: #ff4444;
+    color: var(--amb-lt-danger, #ff4444);
     font-size: 1.8rem;
     line-height: 1;
     cursor: pointer;
