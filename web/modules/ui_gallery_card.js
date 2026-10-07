@@ -125,9 +125,12 @@ export function createGalleryCard(owner, imgData, { showViewer }) {
     const img = document.createElement('img');
     img.src = `/anomalous/output_thumbnail?${query}`; // drags and the viewer use the original
     img.loading = 'lazy';
-    img.draggable = true;
     img.title = t('materialViewOriginal');
-    img.addEventListener('dragstart', (event) => {
+    // The card is dragged, not the <img>: Chrome adds a dragged <img> as a file, and ComfyUI
+    // would load that thumbnail (no workflow in it) instead of fetching the original's link.
+    img.draggable = false;
+    card.draggable = true;
+    card.addEventListener('dragstart', (event) => {
         const fullUrl = new URL(url, window.location.href).href;
         event.dataTransfer.setData('text/uri-list', fullUrl);
         event.dataTransfer.setData('text/plain', fullUrl);

@@ -153,6 +153,8 @@
 - Prompt Studio's new card form showed "cancel" instead of 取消 on its Cancel button.
 - All-in-one loader recipes and cross-node prompt injection use one verified adapter table; prompt text never crosses between positive and negative.
 - The Workflows and Combos workspace no longer covers the header: the Models / Gallery / Workflows tabs stay clickable while it is open, and **Esc** closes it (back to what was open before) unless a dialog is above it or a text field has focus. Closing the Prompt Translator brings back the browser it folded away.
+- **Gallery pictures dragged to the canvas open their workflow again (图库拖到画布又能直接打开工作流)**: since the gallery shows small thumbnails, Chrome handed ComfyUI the thumbnail, which has no workflow in it, so only a Load Image node appeared. The original is dragged now: on an empty spot it opens the workflow, on a Load Image node it becomes that node's picture (full size, not the thumbnail).
+- **The picture details' thumbnail rail keeps its place (查看参数左边的缩略图不再重新翻一遍)**: picking a picture near the end loads the next gallery page; the rail used to be rebuilt and scroll down again from the top, now the new pictures are added below.
 
 ## v1.57.3 Beta (Hotfix: Offline Scan, Prompt Workshop) — 2026-09-29
 
