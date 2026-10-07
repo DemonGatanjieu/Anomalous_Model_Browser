@@ -1,7 +1,8 @@
 /**
  * Page navigation for the shell: `owner.goTo(page)` for the rail, the home cards and the
  * domain switch; which page shows its list column (and whether that list is open); the
- * page title in the header; the page reopened next time.
+ * page title in the header; the page reopened next time; the number keys 1-9 to the rail's
+ * pages while the browser is open (shell_open_rules.js).
  *
  * Pages: home, models, gallery, voices, script, audio-gallery (base pages); recipes, combos
  * (workspaces over the base page, closed with `closeWorkspace()`); prompts opens Prompt
@@ -13,6 +14,8 @@ import { translate as t } from './locales.js';
 import { getActiveDomain, setActiveDomain } from './ui_domain_switcher.js';
 import { renderHome } from './ui_home.js';
 import { renderActivityPage } from './ui_activity.js';
+import { RAIL_PAGES } from './ui_shell_rail.js';
+import { railPageForKey } from './shell_open_rules.js';
 
 const LAST_PAGE_KEY = 'anomalous_last_page';
 const REMEMBERED = new Set(['home', 'activity', 'models', 'gallery', 'voices', 'script', 'audio-gallery']);
@@ -86,6 +89,18 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         if (e.key !== 'Escape' || !drawerOpen() || !owner.modal?.classList.contains('visible')) return;
         if (e.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
         closeDrawer();
+    });
+
+    // 1-9: the rail's pages from the top, while the browser is open and no dialog is over it.
+    // ComfyUI binds no plain digits; a number typed into a box stays in the box.
+    const dialogOpen = () => [...document.querySelectorAll('[aria-modal="true"], [role="dialog"]')]
+        .some(node => node.getClientRects().length > 0);
+    window.addEventListener('keydown', (e) => {
+        if (!owner.modal?.classList.contains('visible')) return;
+        const page = railPageForKey(e, RAIL_PAGES);
+        if (!page || dialogOpen()) return;
+        e.preventDefault();
+        owner.goTo(page);
     });
 
     const toggleList = () => {

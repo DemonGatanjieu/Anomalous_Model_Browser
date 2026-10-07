@@ -1,3 +1,4 @@
+import { app } from "../../../scripts/app.js";
 import { showDetail } from './ui_detail.js';
 import { showEditModal } from './ui_model_editor.js';
 import { _openAdvancedModelSelector, setWidgetValuePath } from './ui_model_selector.js';
@@ -18,7 +19,9 @@ import { showImageWorkbench } from './ui_gallery_detail.js';
 import { openDoctorPage } from './ui_doctor.js';
 import { showModelSources } from './ui_model_sources.js';
 import { initAssistantPanel, renderAssistantModelCard, _loadAssistantHistory, diagnoseNode, openCurrentNode, openLoraInsertionPicker } from './ui_node_assistant.js';
-import { _openGalleryReplacer } from './ui_node_model_picker.js';
+import { _openGalleryReplacer, findModelComboWidget } from './ui_node_model_picker.js';
+import { promptBoxes } from './prompt_boxes.js';
+import { followsSelection, pageForNode } from './shell_open_rules.js';
 import { renderAudioStudio, stopAudioStudioPlayback } from './ui_audio_studio.js';
 import { renderAudioGallery, stopGalleryAudio } from './ui_audio_gallery.js';
 import { renderScriptPage } from './ui_script_page.js';
@@ -27,6 +30,13 @@ import { voiceGroupKey } from './audio_engines.js';
 import { getActiveDomain } from './ui_domain_switcher.js';
 import { startPage } from './ui_shell_nav.js';
 import { followComfyLanguage } from './interface_settings.js';
+
+// What a selected node holds, for the page opening the browser shows (shell_open_rules.js).
+const NODE_KINDS = {
+    takesPrompt: node => promptBoxes(node).length > 0,
+    hasModel: node => Boolean(findModelComboWidget(node)),
+};
+const selectedCanvasNode = () => Object.values(app.canvas?.selected_nodes || {})[0] || null;
 
 export class AnomalousBrowser {
     constructor() {
@@ -48,14 +58,28 @@ export class AnomalousBrowser {
         this.createDOM();
     }
 
-    show() {
+    /**
+     * Opens the browser. `followSelection`: opened by the user (button, shortcut, menu), so a
+     * node selected on the canvas picks the page: a text node opens Prompt Studio on it, any
+     * other node Current node (Settings -> Opening and window can turn this off).
+     */
+    show({ followSelection = false } = {}) {
         followComfyLanguage();
         if (this._idleReleaseTimer) {
             clearTimeout(this._idleReleaseTimer);
             this._idleReleaseTimer = null;
         }
+        const page = followSelection && followsSelection() ? pageForNode(selectedCanvasNode(), NODE_KINDS) : null;
+        if (page === 'prompts') {
+            void this.openPromptStudio(); // beside the canvas, in place of the browser
+            return;
+        }
         this.setTriggerVisible(false);
         this.modal.classList.add('visible');
+        if (page === 'assistant') {
+            this.openCurrentNode();
+            return;
+        }
         if (!this.currentShellPage()) {
             this.goTo(startPage());
             return;

@@ -76,29 +76,23 @@ export function createShellRail(owner) {
     owner.railFoot = div('anomalous-rail-foot');
     root.append(brand, nav, div('anomalous-rail-sep'), owner.railTools, div('anomalous-rail-spacer'), owner.railFoot);
 
+    // The tooltip names the entry and its number key (1-9 from the top, ui_shell_nav.js).
     const refreshLanguage = () => {
-        for (const entry of RAIL_PAGES) {
+        RAIL_PAGES.forEach((entry, index) => {
             const button = items.get(entry.page);
             const text = t(entry.labelKey);
             button.querySelector('.anomalous-rail-label').textContent = text;
             button.setAttribute('aria-label', text);
-        }
+            button.dataset.tooltip = t('shellRailKey', { name: text, key: index + 1 });
+            button.dataset.tooltipPos = 'right';
+        });
         syncCompact();
     };
 
-    // A short window drops the labels under the icons; tooltips name the entries instead.
+    // A short window drops the labels under the icons; the tooltips still name the entries.
     const syncCompact = () => {
         root.classList.remove('is-compact');
-        const compact = root.clientHeight > 0 && root.scrollHeight > root.clientHeight + 1;
-        root.classList.toggle('is-compact', compact);
-        for (const button of items.values()) {
-            if (compact) {
-                button.dataset.tooltip = button.getAttribute('aria-label');
-                button.dataset.tooltipPos = 'right';
-            } else {
-                delete button.dataset.tooltip;
-            }
-        }
+        root.classList.toggle('is-compact', root.clientHeight > 0 && root.scrollHeight > root.clientHeight + 1);
     };
     if (typeof ResizeObserver === 'function') new ResizeObserver(syncCompact).observe(root);
     refreshLanguage();

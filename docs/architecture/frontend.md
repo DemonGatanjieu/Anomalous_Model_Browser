@@ -139,6 +139,18 @@ Native commands own the default `Ctrl + Shift + M` browser binding and the
 to ComfyUI's command/keybinding panel and recorder; the plugin does not install
 a parallel global keyboard listener or maintain a second shortcut preference.
 
+Opening the browser from the trigger, the action-bar button, the menu or its shortcut
+(`show({ followSelection: true })`) follows the node selected on the canvas unless Settings
+→ Opening and window turns it off (`shell_open_rules.js`, a localStorage preference): a node
+with prompt boxes and no model drop-down opens Prompt Studio, which targets that node; any
+other node opens Current node; nothing selected reopens the page used last. Other callers
+(Prompt Studio closing, the doctor banner, MCP actions) open the browser as it was.
+
+While the browser is visible, the plain keys 1–9 go to the rail's pages from the top
+(`ui_shell_nav.js`; ComfyUI binds no plain digits). They are ignored in text fields, while
+an input method is composing, and while a dialog is open; the rail's tooltips show each
+number. This is in-page navigation, not a second shortcut for opening anything.
+
 Language changes replace the registered Interface setting descriptors with
 freshly translated copies. ComfyUI's reactive settings tree therefore updates
 the open category heading, labels, tooltips, custom controls, and combo options

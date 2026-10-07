@@ -153,8 +153,9 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         }
     }
 
+    // Opened by the user: the selected node may pick the page (browser.show).
     function open() {
-        ensureBrowser()?.show();
+        ensureBrowser()?.show({ followSelection: true });
     }
 
     // The second shortcut (its ids still say materials) opens Prompt Studio.

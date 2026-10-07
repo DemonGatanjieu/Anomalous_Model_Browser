@@ -20,6 +20,7 @@ import { checkOnOpen, setCheckOnOpen } from './ui_doctor_banner.js';
 import { fetchDownloadSettings, hfMirrorOn, saveDownloadSettings } from './model_download.js';
 import { saveApiKey } from './ui_scan_page.js';
 import { exportBackup, importBackup } from './ui_backup.js';
+import { followsSelection, setFollowsSelection } from './shell_open_rules.js';
 
 const t = (key, params) => translate(key, params);
 // The full written guide: the README, at its Chinese half for Chinese.
@@ -309,6 +310,7 @@ function openingGroup(owner, redraw) {
                 await setComfySetting(ENTRY_MODE_SETTING_ID, value);
                 redraw();
             })),
+        row('settingsFollowNode', 'settingsFollowNodeHelp', toggleSwitch(followsSelection(), setFollowsSelection)),
         row('settingsLayout', 'settingsLayoutHelp', button('anomalous-scan-secondary anomalous-scan-small-btn', t('settingsReset'), () => {
             if (!confirm(t('sidebarResetConfirm'))) return;
             owner.displayPrefs.resetLayout();

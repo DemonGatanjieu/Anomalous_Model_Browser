@@ -9,6 +9,10 @@
 ### 📦 Recipe packages are back (配方包重新开放)
 - A recipe card's export button (and Export in the recipe's More menu) makes a **recipe package**: one .zip with the recipe's workflow, name, notes, tags, parameters, cover and model thumbnails (its versions only when ticked), to give to someone. Dropped into the ⇅ of their Workflows page, it becomes a new recipe card, optionally opened on the canvas; a recipe of the same name is never replaced (the new one is kept as "Name (2)"). Packages are checked for size, paths and checksums before anything is written, and a failed import leaves nothing half done. Send it as a file in chat apps.
 
+### 🎯 Opens where your node is; number keys for the pages (按节点打开、数字键切页)
+- **Opening follows the selected node**: open the browser with a text node selected on the canvas and Prompt Studio opens on that node; with a KSampler, a model loader or any other node, Current node opens. With nothing selected it reopens the page you used last, as before. It can be turned off in Settings → Opening and window.
+- **1–9 go to the pages on the left** while the browser is open (Home, Activity, Models, Gallery, Workflows, Combos, Prompts, Voices, Audio library). Numbers typed into a box stay in the box, and the rail's tooltips show each number. W/S were not used because W is ComfyUI's own Workflows key.
+
 ### 🌐 Your own DeepL key for translation (DeepL 翻译密钥)
 - **Settings → Translation → DeepL key**: prompts are translated with Google's free endpoint (MyMemory when Google cannot be reached); with your own DeepL API key, DeepL comes first. Saving the key translates one sentence to show it works, or says why not (a key DeepL refuses, a used-up month). The Free plan gives 500,000 characters a month. The key stays on this computer and is never put in a backup.
 - A DeepL key saved by hand in `config.json` before did not work any more: DeepL stopped taking the key as a request parameter in 2025. It now goes in the Authorization header.
