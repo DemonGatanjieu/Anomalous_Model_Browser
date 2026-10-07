@@ -20,6 +20,7 @@ import {
     buildWorkbenchHeader,
     setupStagePanZoom,
     buildFilmstripRail,
+    extendFilmstripRail,
     preloadAdjacentImages,
 } from './ui_image_stage.js';
 import { renderImageInspectorContent } from './ui_image_inspector.js';
@@ -252,17 +253,8 @@ async function loadWorkbenchImage(index) {
             wb.loadMore().then(newItems => {
                 if (Array.isArray(newItems) && newItems.length > wb.items.length) {
                     wb.items = newItems;
-                    // Rebuild filmstrip track
-                    if (wb.filmstripEl && wb.filmstripEl.parentElement) {
-                        const newRail = buildFilmstripRail(
-                            wb.items,
-                            wb.currentIndex,
-                            (idx) => loadWorkbenchImage(idx),
-                            wb,
-                        );
-                        wb.filmstripEl.replaceWith(newRail);
-                        wb.filmstripEl = newRail;
-                    }
+                    // Only the new thumbnails are added, so the rail keeps its place.
+                    if (wb.filmstripEl) extendFilmstripRail(wb.filmstripEl, wb.items, (idx) => loadWorkbenchImage(idx), wb);
                 }
             }).catch(() => {});
         } catch (_) {}
