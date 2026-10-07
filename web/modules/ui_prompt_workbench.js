@@ -1,7 +1,8 @@
 /**
- * Prompt Studio's content (the drawer around it is ui_prompt_composer.js): a top bar with the
- * view switch (tags or the whole text), the language tags' meanings are shown in (or none),
- * the dock side and Close; the cards on the drawer's outer side (ui_prompt_source_deck.js) and
+ * Prompt Studio's content (the Prompts page or the drawer beside the canvas, ui_prompt_composer.js):
+ * a top bar with the view switch (tags or the whole text), the language tags' meanings are shown
+ * in (or none), and on the page "Beside the canvas", in the drawer its dock side, "Back to the
+ * window" and Close; the cards on the drawer's outer side (ui_prompt_source_deck.js) and
  * the prompt boxes beside the canvas (ui_prompt_target.js). A clicked card goes into the box of
  * its role; Save on a box keeps its text as a card under My prompts. The view and the meaning
  * language are remembered in this browser.
@@ -50,13 +51,18 @@ function savePrefs(prefs) {
     try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch { /* remembered for this visit only */ }
 }
 
-/** Fills `drawer`. `onToggleDockSide()` moves the drawer and returns whether it is now on the left. */
-export function createPromptWorkbench(owner, drawer, scope, { onClose, onToggleDockSide }) {
+/**
+ * Fills `drawer` (the page's host or the drawer). `mode`: 'page' (`onDock()` moves it beside the
+ * canvas) or 'docked' (`onToggleDockSide()` moves the drawer and returns whether it is now on the
+ * left, `onUndock()` brings it back to the page, `onClose()` closes it).
+ */
+export function createPromptWorkbench(owner, drawer, scope, { mode = 'docked', onClose, onToggleDockSide, onDock, onUndock }) {
     const prefs = loadPrefs();
 
     const view = el('section', 'anomalous-ps');
     const top = el('header', 'anomalous-ps-top');
-    top.append(el('h3', 'anomalous-ps-title', t('promptStudioTitle')));
+    // On the page the browser's header already names it.
+    if (mode === 'docked') top.append(el('h3', 'anomalous-ps-title', t('promptStudioTitle')));
     const controls = el('div', 'anomalous-ps-top-controls');
 
     const viewSwitch = el('div', 'anomalous-ps-switch');
@@ -88,17 +94,22 @@ export function createPromptWorkbench(owner, drawer, scope, { onClose, onToggleD
     };
     controls.append(glossPicker);
 
-    const dock = button('anomalous-ps-icon', '', '', () => {
-        onToggleDockSide();
+    if (mode === 'page') {
+        controls.append(button('anomalous-ps-mini', t('promptStudioDock'), t('promptStudioDockHint'), onDock));
+    } else {
+        const dock = button('anomalous-ps-icon', '', '', () => {
+            onToggleDockSide();
+            drawDock();
+        });
+        const drawDock = () => {
+            const left = drawer.classList.contains('is-dock-left');
+            dock.innerHTML = left ? ARROW_RIGHT : ARROW_LEFT;
+            dock.title = t(left ? 'promptStudioDockRight' : 'promptStudioDockLeft');
+        };
         drawDock();
-    });
-    const drawDock = () => {
-        const left = drawer.classList.contains('is-dock-left');
-        dock.innerHTML = left ? ARROW_RIGHT : ARROW_LEFT;
-        dock.title = t(left ? 'promptStudioDockRight' : 'promptStudioDockLeft');
-    };
-    drawDock();
-    controls.append(dock, button('anomalous-ps-icon anomalous-ps-close', '✕', t('close'), onClose));
+        controls.append(dock, button('anomalous-ps-mini', t('promptStudioUndock'), t('promptStudioUndockHint'), onUndock),
+            button('anomalous-ps-icon anomalous-ps-close', '✕', t('close'), onClose));
+    }
     top.append(controls);
 
     function drawSwitches() {

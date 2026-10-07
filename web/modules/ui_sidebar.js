@@ -165,6 +165,7 @@ export function createDOM() {
         this.galleryPanel = panel('anomalous-gallery-panel', '');
         this.homePanel = panel('anomalous-home-panel');
         this.activityPanel = panel('anomalous-activity-panel');
+        this.promptPanel = panel('anomalous-prompt-panel'); // Prompt Studio as a page (ui_prompt_composer.js)
         this.scanPanel = panel('anomalous-scan-panel');
         this.settingsPanel = panel('anomalous-settings-panel');
         this.doctorPanel = panel('anomalous-doctor-panel');
@@ -218,7 +219,7 @@ export function createDOM() {
         };
         bindWorkspaceEscape(this);
 
-        content.append(header, this.grid, this.detailPanel, this.galleryPanel, this.homePanel, this.activityPanel, this.scanPanel, this.settingsPanel, this.doctorPanel,
+        content.append(header, this.grid, this.detailPanel, this.galleryPanel, this.homePanel, this.activityPanel, this.promptPanel, this.scanPanel, this.settingsPanel, this.doctorPanel,
             this.assistantPanel, this.audioStudioPanel, this.scriptPanel, this.audioGalleryPanel);
         container.append(rail.root, this.sidebarWrapper, content, this.nbPanel);
         this.modal.appendChild(container);

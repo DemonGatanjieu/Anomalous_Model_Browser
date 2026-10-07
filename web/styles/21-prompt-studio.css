@@ -1,6 +1,25 @@
 /* Prompt Studio's content: ui_prompt_workbench.js, the cards (ui_prompt_source_deck.js) and the
    prompt boxes (ui_prompt_target.js, ui_prompt_box_editor.js). The drawer is 09-prompt-drawers.css. */
 
+/* The browser's Prompts page (ui_prompt_composer.js). */
+#anomalous-prompt-panel {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.anomalous-prompt-page {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+.anomalous-prompt-page .anomalous-ps-grid {
+    grid-template-columns: 240px minmax(0, 1fr);
+}
+
 .anomalous-ps {
     container: anomalous-ps / inline-size;
     display: flex;

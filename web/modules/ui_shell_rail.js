@@ -33,7 +33,7 @@ export const RAIL_PAGES = Object.freeze([
     { page: 'gallery', id: 'anomalous-gallery-btn', labelKey: 'gallery' },
     { page: 'recipes', id: 'anomalous-notebook-btn', labelKey: 'recipeTitle' },
     { page: 'combos', id: 'anomalous-combos-btn', labelKey: 'shellCombos' },
-    { page: 'prompts', id: 'anomalous-prompts-btn', labelKey: 'shellPrompts' }, // opens Prompt Studio by the canvas
+    { page: 'prompts', id: 'anomalous-prompts-btn', labelKey: 'shellPrompts' }, // Prompt Studio as a page
     { page: 'voices', id: 'anomalous-voices-btn', labelKey: 'shellVoices', audio: true },
     { page: 'audio-gallery', id: 'anomalous-audio-gallery-btn', labelKey: 'shellAudioGallery', audio: true },
 ]);

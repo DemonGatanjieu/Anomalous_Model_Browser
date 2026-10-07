@@ -4,21 +4,22 @@
  * page title in the header; the page reopened next time; the number keys 1-9 to the rail's
  * pages while the browser is open (shell_open_rules.js).
  *
- * Pages: home, models, gallery, voices, script, audio-gallery (base pages); recipes, combos
- * (workspaces over the base page, closed with `closeWorkspace()`); prompts opens Prompt
- * Studio beside the canvas (the browser folds away and comes back when it closes); doctor, assistant
- * scan, settings (tool pages, entered through `owner.enterToolPage`).
+ * Pages: home, activity, models, gallery, prompts (Prompt Studio, which can also move beside the
+ * canvas), voices, script, audio-gallery (base pages); recipes, combos (workspaces over the base
+ * page, closed with `closeWorkspace()`); doctor, assistant, scan, settings (tool pages, entered
+ * through `owner.enterToolPage`).
  */
 
 import { translate as t } from './locales.js';
 import { getActiveDomain, setActiveDomain } from './ui_domain_switcher.js';
 import { renderHome } from './ui_home.js';
 import { renderActivityPage } from './ui_activity.js';
+import { showPromptPage } from './ui_prompt_composer.js';
 import { RAIL_PAGES } from './ui_shell_rail.js';
 import { railPageForKey } from './shell_open_rules.js';
 
 const LAST_PAGE_KEY = 'anomalous_last_page';
-const REMEMBERED = new Set(['home', 'activity', 'models', 'gallery', 'voices', 'script', 'audio-gallery']);
+const REMEMBERED = new Set(['home', 'activity', 'models', 'gallery', 'prompts', 'voices', 'script', 'audio-gallery']);
 const AUDIO_PAGES = new Set(['voices', 'script', 'audio-gallery']);
 // The audio tab (browser.switchAudioTab) of each audio page.
 const AUDIO_TABS = { voices: 'presets', script: 'script', 'audio-gallery': 'gallery' };
@@ -33,7 +34,7 @@ const LIST_KEYS = {
     'audio-gallery': 'anomalous_audio_list_closed',
 };
 const TITLE_KEYS = {
-    home: 'shellHome', activity: 'activityTitle', models: 'shellTitleModels', gallery: 'gallery', recipes: 'recipeTitle',
+    home: 'shellHome', activity: 'activityTitle', models: 'shellTitleModels', gallery: 'gallery', prompts: 'shellPrompts', recipes: 'recipeTitle',
     combos: 'shellCombos', voices: 'shellVoices', script: 'shellVoices', 'audio-gallery': 'shellAudioGallery',
     doctor: 'sidebarDoctor', assistant: 'sidebarAssistant', scan: 'scanPageTitle', settings: 'sidebarSettings',
 };
@@ -197,10 +198,6 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
             return;
         }
         if (fromRail && page === 'voices') page = lastVoiceView;
-        if (page === 'prompts') {
-            void owner.openPromptStudio();
-            return;
-        }
         if (page === 'recipes' || page === 'combos') {
             // Workspaces belong to the image side: from an audio page they open over the models.
             if (AUDIO_PAGES.has(current)) owner.goTo('models');
@@ -229,6 +226,8 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
             renderActivityPage(owner, owner.activityPanel);
         } else if (page === 'gallery') {
             showGallery();
+        } else if (page === 'prompts') {
+            showPromptPage(owner);
         } else {
             showModels();
         }
@@ -261,6 +260,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
         const result = closeWorkspace.apply(this, args);
         rail.setActive(REMEMBERED.has(current) ? railOf(current) : null);
         setTitle(current);
+        if (current === 'prompts') owner.goTo('prompts'); // its studio stopped when the workspace opened
         return result;
     };
 

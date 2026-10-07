@@ -13,7 +13,7 @@ import { renderNotebookEditor, fillNotebookGalleries } from './ui_notebook_edito
 import { sendNotebookToCanvas } from './notebook_canvas.js';
 import { showRecipes, refreshRecipes } from './ui_recipe_catalog.js';
 import { renderRecipeList, handleSaveRecipe, openRecipeByFilename } from './ui_recipes.js';
-import { openPromptStudio } from './ui_prompt_composer.js';
+import { leavePromptPage, openPromptStudio } from './ui_prompt_composer.js';
 import { closeUpdateGuide } from './ui_update_guide.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
 import { openDoctorPage } from './ui_doctor.js';
@@ -60,7 +60,7 @@ export class AnomalousBrowser {
 
     /**
      * Opens the browser. `followSelection`: opened by the user (button, shortcut, menu), so a
-     * node selected on the canvas picks the page: a text node opens Prompt Studio on it, any
+     * node selected on the canvas picks the page: a text node opens the Prompts page on it, any
      * other node Current node (Settings -> Opening and window can turn this off).
      */
     show({ followSelection = false } = {}) {
@@ -70,12 +70,12 @@ export class AnomalousBrowser {
             this._idleReleaseTimer = null;
         }
         const page = followSelection && followsSelection() ? pageForNode(selectedCanvasNode(), NODE_KINDS) : null;
-        if (page === 'prompts') {
-            void this.openPromptStudio(); // beside the canvas, in place of the browser
-            return;
-        }
         this.setTriggerVisible(false);
         this.modal.classList.add('visible');
+        if (page === 'prompts') {
+            this.goTo('prompts');
+            return;
+        }
         if (page === 'assistant') {
             this.openCurrentNode();
             return;
@@ -94,6 +94,7 @@ export class AnomalousBrowser {
             this.loadModels();
         }
         if (this.currentShellPage() === 'gallery') void this.refreshGalleryImages();
+        if (this.currentShellPage() === 'prompts') this.goTo('prompts'); // its studio stopped when the browser closed
         if (this.currentShellPage() === 'scan') void renderScanPage(this, this.scanPanel);
     }
 
@@ -153,6 +154,7 @@ export class AnomalousBrowser {
 
     close() {
         this.flushCanvasActivity?.();
+        leavePromptPage();
         closeUpdateGuide(this);
         leaveScanPage(); // a running scan's progress floats over the canvas
         this.modal.classList.remove('visible');

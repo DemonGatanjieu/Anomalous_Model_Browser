@@ -3,6 +3,7 @@
 import { stopAudioStudioPlayback } from './ui_audio_studio.js';
 import { stopGalleryAudio } from './ui_audio_gallery.js';
 import { leaveScanPage } from './ui_scan_page.js';
+import { leavePromptPage } from './ui_prompt_composer.js';
 
 function restoreWorkspaceReturnPanel(owner) {
     const state = owner.workspaceReturnState;
@@ -18,6 +19,7 @@ function restoreWorkspaceReturnPanel(owner) {
         ['audioGallery', owner.audioGalleryPanel],
         ['home', owner.homePanel],
         ['activity', owner.activityPanel],
+        ['prompt', owner.promptPanel],
         ['scan', owner.scanPanel],
         ['settings', owner.settingsPanel],
     ];
@@ -102,6 +104,8 @@ export function hideAllPanels() {
     if (this.audioGalleryPanel) this.audioGalleryPanel.style.display = 'none';
     if (this.homePanel) this.homePanel.style.display = 'none';
     if (this.activityPanel) this.activityPanel.style.display = 'none';
+    if (this.promptPanel) this.promptPanel.style.display = 'none';
+    leavePromptPage();
     if (this.scanPanel) this.scanPanel.style.display = 'none';
     if (this.settingsPanel) this.settingsPanel.style.display = 'none';
     document.getElementById('anomalous-global-settings-btn')?.classList.remove('is-active');

@@ -287,10 +287,14 @@ browsing, editing, or already stored data.
 
 The studio edits prompts where they are: the prompt boxes of the prompt node last
 selected on the canvas, or, with no such node, a positive and a negative draft
-(`owner.promptStudioDraft`, kept while the page stays open). It opens from the rail's
-Prompts entry, the Prompt Studio shortcut and Current node's "Edit in Prompt Studio";
-the browser folds away while it is open and comes back when it closes (not when
-another studio replaces it). There is no assembly board, block draft or plan loading.
+(`owner.promptStudioDraft`, kept while the page stays open). It is the browser's Prompts
+page (`owner.promptPanel`, `ui_prompt_composer.js`): the rail's Prompts entry, the 7 key,
+opening the browser with a text node selected, Current node's "Edit in Prompt Studio" and
+a kept prompt all go there. "Beside the canvas" moves it into a drawer docked by the canvas
+(side and width remembered) with the browser folded away; "Back to the window" returns it to
+the page and Close or Esc closes the drawer. Only one studio is shown at a time; the page's
+studio stops when another page is shown or the browser closes (its 400 ms poll with it) and
+is made again when the page is shown. There is no assembly board, block draft or plan loading.
 
 The target (`ui_prompt_target.js`) is polled every 400 ms. Selecting another node with
 prompt boxes switches to it; empty canvas or a node without boxes keeps the current

@@ -1,7 +1,10 @@
 /**
- * The Prompt Studio drawer beside the canvas: docked left or right (remembered), resizable by its
- * edge (double-click resets), closed with Close or Esc. The browser folds away while it is open
- * and comes back when it closes. Its content is ui_prompt_workbench.js.
+ * Where Prompt Studio is shown. Normally it is the browser's Prompts page (`owner.promptPanel`),
+ * like any other page: the rail's Prompts entry, the 7 key, opening the browser with a text node
+ * selected and the other ways in all lead there. "Beside the canvas" moves it into a drawer
+ * docked left or right of the canvas (remembered), resizable by its edge (double-click resets),
+ * with the browser folded away; "Back to the window" returns it to the page, and Close or Esc
+ * closes the drawer. Its content is ui_prompt_workbench.js, made again each time it is shown.
  */
 
 import { createViewScope, bindDrawerResize } from './ui_lifecycle.js';
@@ -9,6 +12,7 @@ import { createPromptWorkbench } from './ui_prompt_workbench.js';
 import { translate as t } from './locales.js';
 
 const DEFAULT_WIDTH = 620;
+// The studio being shown: { mode: 'page' | 'docked', scope }.
 let activeStudio = null;
 
 function stored(key, fallback) {
@@ -19,22 +23,50 @@ function store(key, value) {
     try { localStorage.setItem(key, value); } catch { /* remembered for this visit only */ }
 }
 
-/** Closes the studio; the browser it folded away comes back (not when another studio replaces it). */
-export function closePromptStudio(owner, { replacing = false } = {}) {
-    if (!activeStudio) return;
+function dispose() {
     const previous = activeStudio;
     activeStudio = null;
-    previous.scope.dispose();
+    previous?.scope.dispose();
     document.body.classList.remove('anomalous-prompt-studio-open');
-    if (replacing) return;
-    if (previous.reopenBrowser) previous.owner.show?.();
-    else if (!previous.owner.modal?.classList.contains('visible')) previous.owner.setTriggerVisible?.(true);
 }
 
-export async function openPromptStudio(owner = this) {
-    // The browser folds away so the canvas has room, and comes back when the studio closes.
-    const reopenBrowser = Boolean(owner?.modal?.classList.contains('visible') || activeStudio?.reopenBrowser);
-    closePromptStudio(owner, { replacing: true });
+/** Whether the studio is in the drawer beside the canvas. */
+export function promptStudioDocked() {
+    return activeStudio?.mode === 'docked';
+}
+
+/** Closes the drawer beside the canvas; the browser stays closed and its button comes back. */
+export function closePromptStudio(owner) {
+    if (!promptStudioDocked()) return;
+    dispose();
+    if (!owner?.modal?.classList.contains('visible')) owner?.setTriggerVisible?.(true);
+}
+
+/** Leaving the Prompts page (another page, or the browser closing) stops its studio. */
+export function leavePromptPage() {
+    if (activeStudio?.mode === 'page') dispose();
+}
+
+/** Fills the Prompts page (called by owner.goTo('prompts')); a docked drawer comes back into it. */
+export function showPromptPage(owner) {
+    dispose();
+    const host = document.createElement('div');
+    // The page lays out like the drawer docked left: the cards first, then the prompt boxes.
+    host.className = 'anomalous-prompt-page is-dock-left';
+    owner.promptPanel.replaceChildren(host);
+    owner.promptPanel.style.display = 'flex';
+    const scope = createViewScope();
+    activeStudio = { mode: 'page', scope };
+    scope.onDispose(() => host.remove());
+    createPromptWorkbench(owner, host, scope, {
+        mode: 'page',
+        onDock: () => dockPromptStudio(owner),
+    });
+}
+
+/** Moves the studio beside the canvas: the browser folds away so the canvas has room. */
+export function dockPromptStudio(owner) {
+    dispose();
     if (owner?.modal?.classList.contains('visible')) owner.close?.();
     owner?.setTriggerVisible?.(false);
     document.body.classList.add('anomalous-prompt-studio-open');
@@ -42,7 +74,7 @@ export async function openPromptStudio(owner = this) {
     const overlay = document.createElement('div');
     overlay.className = 'anomalous-prompt-studio-overlay';
     const scope = createViewScope();
-    activeStudio = { scope, owner, reopenBrowser };
+    activeStudio = { mode: 'docked', scope };
     scope.onDispose(() => overlay.remove());
 
     const drawer = document.createElement('aside');
@@ -76,7 +108,13 @@ export async function openPromptStudio(owner = this) {
     });
 
     createPromptWorkbench(owner, drawer, scope, {
+        mode: 'docked',
         onClose: () => closePromptStudio(owner),
+        onUndock: () => {
+            dispose();
+            owner.show?.();
+            owner.goTo?.('prompts');
+        },
         onToggleDockSide: () => {
             const isLeft = drawer.classList.toggle('is-dock-left');
             store('anomalous_studio_dock_side', isLeft ? 'left' : 'right');
@@ -84,4 +122,14 @@ export async function openPromptStudio(owner = this) {
         },
     });
     document.body.appendChild(overlay);
+}
+
+/**
+ * Opens Prompt Studio for the other ways in (a kept prompt, a node's prompt button): the
+ * Prompts page, or the drawer when it is already beside the canvas.
+ */
+export async function openPromptStudio(owner = this) {
+    if (promptStudioDocked()) return;
+    if (!owner?.modal?.classList.contains('visible')) owner.show?.();
+    owner.goTo?.('prompts');
 }

@@ -11,6 +11,7 @@
 
 ### 🎯 Opens where your node is; number keys for the pages (按节点打开、数字键切页)
 - **Opening follows the selected node**: open the browser with a text node selected on the canvas and Prompt Studio opens on that node; with a KSampler, a model loader or any other node, Current node opens. With nothing selected it reopens the page you used last, as before. It can be turned off in Settings → Opening and window.
+- **Prompts is a page like the others (提示词变成普通页面)**: the rail's Prompts entry (and 7) now shows Prompt Studio inside the browser window instead of folding the window away. **Beside the canvas** on the page moves it next to the canvas as before, to see the canvas while you edit (its side and width are remembered); **Back to the window** returns it.
 - **Prompt Studio's own shortcut is gone** (Ctrl+Shift+L, and its row in ComfyUI's settings and the Extensions menu): it opens from the rail, with 7 while the browser is open, or by opening the browser with a text node selected. The browser's shortcut (Ctrl+Shift+M) stays.
 - **1–9 go to the pages on the left** while the browser is open (Home, Activity, Models, Gallery, Workflows, Combos, Prompts, Voices, Audio library). Numbers typed into a box stay in the box, and the rail's tooltips show each number. W/S were not used because W is ComfyUI's own Workflows key.
 
