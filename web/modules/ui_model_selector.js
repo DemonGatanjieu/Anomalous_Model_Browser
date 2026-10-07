@@ -62,7 +62,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
         const title = document.createElement('h2');
         title.textContent = t('detailSelectModels');
         title.style.margin = '0';
-        title.style.color = '#e8eaed';
+        title.style.color = 'var(--amb-text-main)';
         title.style.fontSize = '20px';
         title.style.fontWeight = '500';
         
@@ -71,7 +71,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
         const closeBtn = document.createElement('button');
         closeBtn.innerHTML = '✕';
         closeBtn.style.background = 'transparent';
-        closeBtn.style.color = '#9aa0a6';
+        closeBtn.style.color = 'var(--amb-text-muted)';
         closeBtn.style.border = 'none';
         closeBtn.style.fontSize = '18px';
         closeBtn.style.cursor = 'pointer';
@@ -99,7 +99,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
         leftTitle.textContent = t('detailFolders');
         leftTitle.style.padding = '16px 24px';
         leftTitle.style.fontWeight = '500';
-        leftTitle.style.color = '#9aa0a6';
+        leftTitle.style.color = 'var(--amb-text-muted)';
         leftTitle.style.fontSize = '14px';
         leftTitle.style.letterSpacing = '0.5px';
         leftPanel.appendChild(leftTitle);
@@ -130,19 +130,19 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
             const b = document.createElement('button');
             b.innerText = text;
             b.style.padding = '6px 16px';
-            b.style.background = primary ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255,255,255,0.04)';
-            b.style.color = primary ? '#ffffff' : '#e8eaed';
-            b.style.border = primary ? '1px solid rgba(255, 255, 255, 0.25)' : '1px solid #5f6368';
+            b.style.background = primary ? 'rgba(var(--amb-ink-rgb), 0.12)' : 'rgba(var(--amb-ink-rgb), 0.04)';
+            b.style.color = 'var(--amb-text-main)';
+            b.style.border = primary ? '1px solid rgba(var(--amb-ink-rgb), 0.25)' : '1px solid var(--amb-border-strong)';
             b.style.borderRadius = '4px';
             b.style.cursor = 'pointer';
             b.style.fontSize = '14px';
             b.style.fontWeight = '500';
             b.style.transition = 'background-color 0.15s, box-shadow 0.15s';
             b.onmouseover = () => {
-                b.style.background = primary ? 'rgba(138,180,248,0.25)' : 'rgba(255,255,255,0.1)';
+                b.style.background = primary ? 'rgba(138,180,248,0.25)' : 'rgba(var(--amb-ink-rgb), 0.1)';
             };
             b.onmouseout = () => {
-                b.style.background = primary ? 'rgba(138,180,248,0.15)' : 'rgba(255,255,255,0.04)';
+                b.style.background = primary ? 'rgba(138,180,248,0.15)' : 'rgba(var(--amb-ink-rgb), 0.04)';
             };
             b.onclick = onClick;
             return b;
@@ -162,7 +162,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
             if (total > 0) {
                 const countLabel = document.createElement('span');
                 countLabel.textContent = total;
-                countLabel.style.color = '#e5e7eb';
+                countLabel.style.color = 'var(--amb-text-main)';
                 countLabel.style.fontSize = '16px';
                 countLabel.style.fontWeight = '500';
                 summaryText.replaceChildren(
@@ -213,19 +213,19 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                 if (isChecked) {
 
                 
-                    card.style.border = '2px solid #ffffff';
+                    card.style.border = '2px solid var(--amb-text-main)';
 
                 
-                    card.style.background = 'rgba(255, 255, 255, 0.1)';
+                    card.style.background = 'rgba(var(--amb-ink-rgb), 0.1)';
 
                 
-                    cbWrapper.style.background = '#ffffff';
+                    cbWrapper.style.background = 'var(--amb-text-main)';
 
                 
-                    cbWrapper.style.border = '2px solid #ffffff';
+                    cbWrapper.style.border = '2px solid var(--amb-text-main)';
 
                 
-                    cbWrapper.querySelector('span').style.color = '#202124';
+                    cbWrapper.querySelector('span').style.color = 'var(--amb-bg-card)';
 
                 
                 } else {
@@ -237,10 +237,10 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                     card.style.background = 'var(--amb-bg-card-hover)';
 
                 
-                    cbWrapper.style.background = 'rgba(0,0,0,0.3)';
+                    cbWrapper.style.background = 'var(--amb-bg-sunken)';
 
                 
-                    cbWrapper.style.border = '2px solid #5f6368';
+                    cbWrapper.style.border = '2px solid var(--amb-border-strong)';
 
                 
                     cbWrapper.querySelector('span').style.color = 'transparent';
@@ -305,7 +305,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
 
         const summaryText = document.createElement('div');
         summaryText.style.marginLeft = 'auto';
-        summaryText.style.color = '#9aa0a6';
+        summaryText.style.color = 'var(--amb-text-muted)';
         summaryText.style.fontWeight = '400';
         toolbar.appendChild(summaryText);
         
@@ -339,29 +339,29 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
         cancelBtn.textContent = t('detailCancel');
         cancelBtn.style.padding = '8px 24px';
         cancelBtn.style.background = 'transparent';
-        cancelBtn.style.color = '#9ca3af';
+        cancelBtn.style.color = 'var(--amb-text-muted)';
         cancelBtn.style.border = 'none';
         cancelBtn.style.borderRadius = '4px';
         cancelBtn.style.cursor = 'pointer';
         cancelBtn.style.fontWeight = '500';
         cancelBtn.style.fontSize = '14px';
-        cancelBtn.onmouseover = () => cancelBtn.style.background = 'rgba(255, 255, 255, 0.08)';
+        cancelBtn.onmouseover = () => cancelBtn.style.background = 'rgba(var(--amb-ink-rgb), 0.08)';
         cancelBtn.onmouseout = () => cancelBtn.style.background = 'transparent';
         cancelBtn.onclick = () => document.body.removeChild(modal);
 
         const confirmBtn = document.createElement('button');
         confirmBtn.textContent = t('detailConfirm');
         confirmBtn.style.padding = '8px 24px';
-        confirmBtn.style.background = '#e5e7eb';
-        confirmBtn.style.color = '#111827'; // dark text on bright accent button
+        confirmBtn.style.background = 'var(--amb-btn-primary-bg)';
+        confirmBtn.style.color = 'var(--amb-btn-primary-text)';
         confirmBtn.style.border = 'none';
         confirmBtn.style.borderRadius = '4px';
         confirmBtn.style.cursor = 'pointer';
         confirmBtn.style.fontWeight = '600';
         confirmBtn.style.fontSize = '14px';
         confirmBtn.style.boxShadow = '0 1px 2px 0 rgba(0,0,0,.3), 0 1px 3px 1px rgba(0,0,0,.15)';
-        confirmBtn.onmouseover = () => { confirmBtn.style.background = '#ffffff'; confirmBtn.style.boxShadow = '0 1px 3px 0 rgba(0,0,0,.3), 0 4px 8px 3px rgba(0,0,0,.15)'; };
-        confirmBtn.onmouseout = () => { confirmBtn.style.background = '#e5e7eb'; confirmBtn.style.boxShadow = '0 1px 2px 0 rgba(0,0,0,.3), 0 1px 3px 1px rgba(0,0,0,.15)'; };
+        confirmBtn.onmouseover = () => { confirmBtn.style.background = 'var(--amb-btn-primary-hover)'; confirmBtn.style.boxShadow = '0 1px 3px 0 rgba(0,0,0,.3), 0 4px 8px 3px rgba(0,0,0,.15)'; };
+        confirmBtn.onmouseout = () => { confirmBtn.style.background = 'var(--amb-btn-primary-bg)'; confirmBtn.style.boxShadow = '0 1px 2px 0 rgba(0,0,0,.3), 0 1px 3px 1px rgba(0,0,0,.15)'; };
         confirmBtn.onclick = () => {
             onConfirm(localSelection);
             document.body.removeChild(modal);
@@ -480,7 +480,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                 nameBar.style.padding = '12px';
                 nameBar.style.background = 'var(--amb-bg-card-hover)';
                 nameBar.style.fontSize = '13px';
-                nameBar.style.color = '#e8eaed';
+                nameBar.style.color = 'var(--amb-text-main)';
                 nameBar.style.whiteSpace = 'nowrap';
                 nameBar.style.overflow = 'hidden';
                 nameBar.style.textOverflow = 'ellipsis';
@@ -496,8 +496,8 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                 cbWrapper.style.width = '20px';
                 cbWrapper.style.height = '20px';
                 cbWrapper.style.borderRadius = '50%';
-                cbWrapper.style.background = 'rgba(0,0,0,0.3)';
-                cbWrapper.style.border = '2px solid #5f6368';
+                cbWrapper.style.background = 'var(--amb-bg-sunken)';
+                cbWrapper.style.border = '2px solid var(--amb-border-strong)';
                 cbWrapper.style.display = 'flex';
                 cbWrapper.style.justifyContent = 'center';
                 cbWrapper.style.alignItems = 'center';
@@ -545,7 +545,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
             loadingIndicator.style.gridColumn = '1 / -1';
             loadingIndicator.style.padding = '40px';
             loadingIndicator.style.textAlign = 'center';
-            loadingIndicator.style.color = '#9aa0a6';
+            loadingIndicator.style.color = 'var(--amb-text-muted)';
             loadingIndicator.style.fontSize = '16px';
             loadingIndicator.textContent = t('detailLoading');
             grid.appendChild(loadingIndicator);
@@ -560,7 +560,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                      apiError.style.gridColumn = '1 / -1';
                      apiError.style.padding = '60px';
                      apiError.style.textAlign = 'center';
-                     apiError.style.color = '#f28b82';
+                     apiError.style.color = 'var(--amb-danger-text)';
                      apiError.style.fontSize = '16px';
                      apiError.style.whiteSpace = 'pre-line';
                      apiError.textContent = t('detailApiRestart');
@@ -591,7 +591,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                      emptyModels.style.gridColumn = '1 / -1';
                      emptyModels.style.padding = '60px';
                      emptyModels.style.textAlign = 'center';
-                     emptyModels.style.color = '#9aa0a6';
+                     emptyModels.style.color = 'var(--amb-text-muted)';
                      emptyModels.style.fontSize = '16px';
                      emptyModels.textContent = t('detailNoModels');
                      grid.replaceChildren(emptyModels);
@@ -605,7 +605,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                      statusText.style.gridColumn = '1 / -1';
                      statusText.style.padding = '20px';
                      statusText.style.textAlign = 'center';
-                     statusText.style.color = '#5f6368';
+                     statusText.style.color = 'var(--amb-text-dim)';
                      statusText.style.fontSize = '14px';
                      if (currentModels.length >= currentTotal) {
                          statusText.textContent = t('detailAllLoaded');
@@ -640,7 +640,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
             allBtn.dataset.folderKey = 'ALL';
             allBtn.style.padding = '10px 16px';
             allBtn.style.cursor = 'pointer';
-            allBtn.style.color = '#e8eaed';
+            allBtn.style.color = 'var(--amb-text-main)';
             allBtn.style.fontSize = '14px';
             allBtn.style.fontWeight = '500';
             allBtn.style.borderRadius = '0 16px 16px 0';
@@ -653,11 +653,11 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
             let loadFolder = async (fBtn, folderKey, fetchUrl) => {
                 treeContainer.querySelectorAll('.folder-item').forEach(d => {
                     d.style.background = 'transparent';
-                    d.style.color = '#9aa0a6';
+                    d.style.color = 'var(--amb-text-muted)';
                     d.style.fontWeight = '400';
                 });
-                fBtn.style.background = 'rgba(255, 255, 255, 0.1)';
-                fBtn.style.color = '#ffffff';
+                fBtn.style.background = 'rgba(var(--amb-ink-rgb), 0.1)';
+                fBtn.style.color = 'var(--amb-text-main)';
                 fBtn.style.fontWeight = '500';
                 
                 currentFolderKey = folderKey;
@@ -684,7 +684,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                 
                 const tTitle = document.createElement('div');
                 tTitle.innerText = tData.label;
-                tTitle.style.color = '#9aa0a6';
+                tTitle.style.color = 'var(--amb-text-muted)';
                 tTitle.style.fontWeight = '500';
                 tTitle.style.padding = '8px 16px';
                 tTitle.style.fontSize = '12px';
@@ -702,7 +702,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                     const depth = path.split('/').length - 1;
                     fBtn.style.padding = `8px 16px 8px ${16 + depth * 16}px`;
                     fBtn.style.cursor = 'pointer';
-                    fBtn.style.color = '#9aa0a6';
+                    fBtn.style.color = 'var(--amb-text-muted)';
                     fBtn.style.fontSize = '14px';
                     fBtn.style.borderRadius = '0 16px 16px 0';
                     fBtn.style.display = 'flex';
@@ -713,12 +713,12 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                     leftPart.style.display = 'flex';
                     leftPart.style.alignItems = 'center';
                     leftPart.style.gap = '8px';
-                    leftPart.innerHTML = `<span style="display:inline-flex;align-items:center;color:#9aa0a6"><svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span> <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">${escapeHtml(fData.name)}</span> <span style="color:#5f6368;font-size:12px">(${escapeHtml(fData.model_count)})</span>`;
+                    leftPart.innerHTML = `<span style="display:inline-flex;align-items:center;color:var(--amb-text-muted)"><svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span> <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">${escapeHtml(fData.name)}</span> <span style="color:var(--amb-text-dim);font-size:12px">(${escapeHtml(fData.model_count)})</span>`;
                     
                     const badge = document.createElement('div');
                     badge.className = 'selection-badge';
-                    badge.style.background = '#e5e7eb';
-                    badge.style.color = '#111827';
+                    badge.style.background = 'var(--amb-btn-primary-bg)';
+                    badge.style.color = 'var(--amb-btn-primary-text)';
                     badge.style.fontSize = '11px';
                     badge.style.fontWeight = '500';
                     badge.style.padding = '1px 6px';
@@ -728,7 +728,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                     fBtn.appendChild(leftPart);
                     fBtn.appendChild(badge);
                     
-                    fBtn.onmouseover = () => { if (currentFolderKey !== folderKey) fBtn.style.background = 'rgba(255,255,255,0.04)'; };
+                    fBtn.onmouseover = () => { if (currentFolderKey !== folderKey) fBtn.style.background = 'rgba(var(--amb-ink-rgb), 0.04)'; };
                     fBtn.onmouseout = () => { if (currentFolderKey !== folderKey) fBtn.style.background = 'transparent'; };
                     
                     fBtn.onclick = () => {

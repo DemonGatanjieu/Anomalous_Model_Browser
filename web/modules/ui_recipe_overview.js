@@ -232,7 +232,7 @@ function renderPromptOverviewSection(parent, recipe, services) {
         text.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
         text.style.fontSize = '0.82rem';
         text.style.lineHeight = '1.6';
-        text.style.color = '#cbd5e1';
+        text.style.color = 'var(--amb-lt-soft, #cbd5e1)';
 
         wrap.appendChild(box);
     }

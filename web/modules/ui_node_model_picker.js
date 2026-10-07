@@ -86,7 +86,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
         let applying = false;
 
         const modal = document.createElement('div');
-        modal.style.cssText = 'position:fixed;inset:0;background:radial-gradient(circle at 15% 0%,rgba(53,73,118,0.34),transparent 35%),rgba(7,8,12,0.965);z-index:999999;display:flex;flex-direction:column;padding:22px 24px;box-sizing:border-box;color:#fff;font-family:Inter,Arial,sans-serif;';
+        modal.style.cssText = 'position:fixed;inset:0;background:var(--amb-lt-page,radial-gradient(circle at 15% 0%,rgba(53,73,118,0.34),transparent 35%),rgba(7,8,12,0.965));z-index:999999;display:flex;flex-direction:column;padding:22px 24px;box-sizing:border-box;color:var(--amb-lt-text,#fff);font-family:Inter,Arial,sans-serif;';
         const stopMedia = container => container?.querySelectorAll?.('video,audio').forEach(media => {
             media.pause();
             media.removeAttribute('src');
@@ -107,7 +107,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
         headerCopy.style.cssText = 'display:flex;flex-direction:column;gap:3px;';
         const eyebrow = document.createElement('div');
         eyebrow.textContent = t('pickerEyebrow');
-        eyebrow.style.cssText = 'font-size:10px;color:#8fa8da;letter-spacing:0.12em;text-transform:uppercase;font-weight:750;';
+        eyebrow.style.cssText = 'font-size:10px;color:var(--amb-lt-accent-text,#8fa8da);letter-spacing:0.12em;text-transform:uppercase;font-weight:750;';
         const title = document.createElement('h2');
         title.style.cssText = 'margin:0;font-size:19px;line-height:1.15;';
         title.textContent = mode === 'insert'
@@ -118,20 +118,20 @@ export function _openGalleryReplacer(node, w, options = {}) {
         typeBadge.style.cssText = 'padding:5px 10px;border-radius:20px;background:color-mix(in srgb, var(--amb-link) 10%, transparent);border:1px solid color-mix(in srgb, var(--amb-link) 25%, transparent);color:var(--amb-link);font-size:10px;font-weight:750;';
         const closeBtn = document.createElement('button');
         closeBtn.textContent = '✕';
-        closeBtn.style.cssText = 'margin-left:auto;width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid var(--amb-border);color:var(--amb-text-muted);font-size:20px;cursor:pointer;';
+        closeBtn.style.cssText = 'margin-left:auto;width:38px;height:38px;border-radius:10px;background:rgba(var(--amb-ink-rgb), 0.04);border:1px solid var(--amb-border);color:var(--amb-text-muted);font-size:20px;cursor:pointer;';
         closeBtn.onclick = closeModal;
         headerCopy.append(eyebrow, title);
         header.append(headerIcon, headerCopy, typeBadge, closeBtn);
         modal.appendChild(header);
 
         const compatibilityHint = document.createElement('div');
-        compatibilityHint.style.cssText = 'display:none;align-items:center;gap:8px;margin:0 0 12px;padding:9px 12px;border-radius:10px;background:rgba(0,200,160,0.075);border:1px solid rgba(0,220,180,0.13);color:#8edfd0;font-size:11px;flex-shrink:0;';
+        compatibilityHint.style.cssText = 'display:none;align-items:center;gap:8px;margin:0 0 12px;padding:9px 12px;border-radius:10px;background:rgba(0,200,160,0.075);border:1px solid rgba(0,220,180,0.13);color:var(--amb-lt-ok,#8edfd0);font-size:11px;flex-shrink:0;';
         modal.appendChild(compatibilityHint);
 
         const body = document.createElement('div');
         body.style.cssText = 'display:grid;grid-template-columns:minmax(190px,250px) minmax(0,1fr);gap:14px;min-height:0;flex:1;';
         const folderPanel = document.createElement('aside');
-        folderPanel.style.cssText = 'background:rgba(20,22,29,0.92);border:1px solid var(--amb-border);border-radius:13px;overflow:auto;padding:10px;box-shadow:0 14px 35px rgba(0,0,0,0.18);';
+        folderPanel.style.cssText = 'background:var(--amb-lt-surface,rgba(20,22,29,0.92));border:1px solid var(--amb-border);border-radius:13px;overflow:auto;padding:10px;box-shadow:0 14px 35px rgba(0,0,0,0.18);';
         const folderTitle = document.createElement('div');
         folderTitle.textContent = t('pickerFolders');
         folderTitle.style.cssText = 'font-size:13px;font-weight:700;color:var(--amb-text-soft);padding:8px 10px 10px;';
@@ -140,21 +140,21 @@ export function _openGalleryReplacer(node, w, options = {}) {
         folderPanel.append(folderTitle, folderList);
 
         const content = document.createElement('section');
-        content.style.cssText = 'display:flex;flex-direction:column;min-width:0;min-height:0;background:rgba(18,20,27,0.92);border:1px solid var(--amb-border);border-radius:13px;overflow:hidden;box-shadow:0 14px 35px rgba(0,0,0,0.18);';
+        content.style.cssText = 'display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--amb-lt-surface,rgba(18,20,27,0.92));border:1px solid var(--amb-border);border-radius:13px;overflow:hidden;box-shadow:0 14px 35px rgba(0,0,0,0.18);';
         const toolbar = document.createElement('div');
         toolbar.style.cssText = 'display:flex;gap:10px;padding:12px;border-bottom:1px solid var(--amb-border-strong);flex-wrap:wrap;align-items:center;';
         const searchInput = document.createElement('input');
         searchInput.type = 'search';
         searchInput.placeholder = t('pickerSearch');
-        searchInput.style.cssText = 'flex:1;min-width:220px;padding:10px 12px;border-radius:9px;border:1px solid var(--amb-border);background:var(--amb-bg-card-hover);color:#fff;font-size:13px;outline:none;';
+        searchInput.style.cssText = 'flex:1;min-width:220px;padding:10px 12px;border-radius:9px;border:1px solid var(--amb-border);background:var(--amb-bg-card-hover);color:var(--amb-lt-text,#fff);font-size:13px;outline:none;';
         const baseFilterSelect = document.createElement('select');
-        baseFilterSelect.style.cssText = `display:${pickerType.isLora ? 'block' : 'none'};padding:10px 12px;border-radius:9px;border:1px solid rgba(0,220,180,0.2);background:var(--amb-bg-card-hover);color:#9be8d9;font-size:12px;max-width:230px;`;
+        baseFilterSelect.style.cssText = `display:${pickerType.isLora ? 'block' : 'none'};padding:10px 12px;border-radius:9px;border:1px solid rgba(0,220,180,0.2);background:var(--amb-bg-card-hover);color:var(--amb-lt-ok,#9be8d9);font-size:12px;max-width:230px;`;
         const allBaseOption = document.createElement('option');
         allBaseOption.value = '';
         allBaseOption.textContent = t('pickerMainAll');
         baseFilterSelect.appendChild(allBaseOption);
         const sortSelect = document.createElement('select');
-        sortSelect.style.cssText = 'padding:10px 12px;border-radius:9px;border:1px solid var(--amb-border);background:var(--amb-bg-card-hover);color:#fff;font-size:12px;';
+        sortSelect.style.cssText = 'padding:10px 12px;border-radius:9px;border:1px solid var(--amb-border);background:var(--amb-bg-card-hover);color:var(--amb-lt-text,#fff);font-size:12px;';
         [
             ['name-asc', t('pickerNameAsc')],
             ['name-desc', t('pickerNameDesc')],
@@ -287,7 +287,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
                     : '<svg style="width:13px;height:13px;vertical-align:-2px;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>';
                 button.innerHTML = `${iconSvg}${escapeHtml(label)} (${folderCounts.get(folderPath) || 0})`;
                 button.title = folderPath || label;
-                button.style.cssText = `text-align:left;padding:7px 8px 7px ${8 + depth * 14}px;border-radius:6px;border:none;cursor:pointer;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${selectedFolder === folderPath ? '#fff' : '#aaa'};background:${selectedFolder === folderPath ? 'rgba(25,118,210,0.45)' : 'transparent'};`;
+                button.style.cssText = `text-align:left;padding:7px 8px 7px ${8 + depth * 14}px;border-radius:6px;border:none;cursor:pointer;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${selectedFolder === folderPath ? 'var(--amb-lt-text,#fff)' : 'var(--amb-lt-muted,#aaa)'};background:${selectedFolder === folderPath ? 'rgba(25,118,210,0.45)' : 'transparent'};`;
                 button.onclick = () => {
                     selectedFolder = folderPath;
                     renderFolders();
@@ -328,9 +328,9 @@ export function _openGalleryReplacer(node, w, options = {}) {
                     const card = document.createElement('div');
                     card.tabIndex = 0;
                     card.setAttribute('role', 'button');
-                    card.style.cssText = `position:relative;background:linear-gradient(160deg,var(--amb-bg-card-hover),var(--amb-bg-card));border-radius:11px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;border:1px solid ${isSelected ? '#6ea8ff' : isCurrent ? '#e9b949' : 'rgba(255,255,255,0.09)'};box-shadow:${isSelected ? '0 0 0 2px rgba(88,151,255,0.22),0 14px 28px rgba(0,0,0,0.28)' : '0 8px 20px rgba(0,0,0,0.16)'};transition:transform 0.12s,box-shadow 0.12s;min-width:0;`;
+                    card.style.cssText = `position:relative;background:linear-gradient(160deg,var(--amb-bg-card-hover),var(--amb-bg-card));border-radius:11px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;border:1px solid ${isSelected ? '#6ea8ff' : isCurrent ? '#e9b949' : 'rgba(var(--amb-ink-rgb), 0.09)'};box-shadow:${isSelected ? '0 0 0 2px rgba(88,151,255,0.22),0 14px 28px rgba(0,0,0,0.28)' : '0 8px 20px rgba(0,0,0,0.16)'};transition:transform 0.12s,box-shadow 0.12s;min-width:0;`;
                     const previewBox = document.createElement('div');
-                    previewBox.style.cssText = 'height:150px;background:radial-gradient(circle at 50% 15%,#2b3041,var(--amb-bg-page) 72%);display:flex;align-items:center;justify-content:center;font-size:30px;position:relative;overflow:hidden;';
+                    previewBox.style.cssText = 'height:150px;background:radial-gradient(circle at 50% 15%,var(--amb-lt-card-hover,#2b3041),var(--amb-bg-page) 72%);display:flex;align-items:center;justify-content:center;font-size:30px;position:relative;overflow:hidden;';
                     const previewUrl = info.preview_url || previews[path];
                     if (/\.(mp4|webm)(?:$|\?|&|#)/i.test(previewUrl || '')) {
                         const video = document.createElement('video');
@@ -362,24 +362,24 @@ export function _openGalleryReplacer(node, w, options = {}) {
                     badgeStack.style.cssText = 'position:absolute;top:6px;right:6px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;max-width:76%;';
                     const categoryBadge = document.createElement('span');
                     categoryBadge.textContent = formatModelTypeLabel(info.type, pickerType.label);
-                    categoryBadge.style.cssText = 'padding:3px 6px;border-radius:5px;background:rgba(25,34,54,0.9);border:1px solid color-mix(in srgb, var(--amb-link) 28%, transparent);color:#b8d0ff;font-size:9px;font-weight:800;box-shadow:0 3px 8px rgba(0,0,0,0.22);';
+                    categoryBadge.style.cssText = 'padding:3px 6px;border-radius:5px;background:var(--amb-lt-chip,rgba(25,34,54,0.9));border:1px solid color-mix(in srgb, var(--amb-link) 28%, transparent);color:var(--amb-lt-accent-text,#b8d0ff);font-size:9px;font-weight:800;box-shadow:0 3px 8px rgba(0,0,0,0.22);';
                     badgeStack.appendChild(categoryBadge);
                     if (baseModel) {
                         const baseBadge = document.createElement('span');
                         baseBadge.textContent = baseModel;
                         baseBadge.title = `${t('pickerBaseModel')}: ${baseModel}`;
-                        baseBadge.style.cssText = 'max-width:100%;padding:3px 6px;border-radius:5px;background:rgba(7,50,43,0.9);border:1px solid rgba(70,220,185,0.25);color:#8ce1cf;font-size:9px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 3px 8px rgba(0,0,0,0.22);';
+                        baseBadge.style.cssText = 'max-width:100%;padding:3px 6px;border-radius:5px;background:var(--amb-lt-ok-chip,rgba(7,50,43,0.9));border:1px solid rgba(70,220,185,0.25);color:var(--amb-lt-ok,#8ce1cf);font-size:9px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 3px 8px rgba(0,0,0,0.22);';
                         badgeStack.appendChild(baseBadge);
                     }
                     previewBox.appendChild(badgeStack);
                     const name = document.createElement('div');
                     name.textContent = getName(path);
                     name.title = normalizePath(path);
-                    name.style.cssText = 'padding:9px 9px 3px;font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;';
+                    name.style.cssText = 'padding:9px 9px 3px;font-size:12px;color:var(--amb-lt-text,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;';
                     const folder = document.createElement('div');
                     folder.textContent = getFolder(path) || t('pickerRoot');
                     folder.title = getFolder(path);
-                    folder.style.cssText = 'padding:0 9px 9px;font-size:9px;color:#747b8b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+                    folder.style.cssText = 'padding:0 9px 9px;font-size:9px;color:var(--amb-text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
                     card.append(previewBox, name, folder);
                     const choose = () => {
                         selectedPath = path;

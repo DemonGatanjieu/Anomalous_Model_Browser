@@ -7,17 +7,17 @@
     background: var(--amb-bg-page, var(--amb-bg-page));
 }
 
-.anomalous-scan-stat.is-bad .anomalous-scan-stat-value { color: #fca5a5; }
+.anomalous-scan-stat.is-bad .anomalous-scan-stat-value { color: var(--amb-danger-text); }
 
 .anomalous-doctor-row {
     align-items: flex-start;
 }
 
 .anomalous-doctor-row .anomalous-scan-row-mark { margin-top: 1px; }
-.anomalous-doctor-row.is-ready .anomalous-scan-row-mark { color: #86efac; }
+.anomalous-doctor-row.is-ready .anomalous-scan-row-mark { color: var(--amb-ok-text); }
 .anomalous-doctor-row.is-fixable .anomalous-scan-row-mark { color: var(--amb-link); }
 .anomalous-doctor-row.is-conflict .anomalous-scan-row-mark,
-.anomalous-doctor-row.is-missing .anomalous-scan-row-mark { color: #fca5a5; }
+.anomalous-doctor-row.is-missing .anomalous-scan-row-mark { color: var(--amb-danger-text); }
 
 .anomalous-doctor-title {
     display: flex;
@@ -40,12 +40,12 @@
     white-space: nowrap;
 }
 
-.anomalous-doctor-level.is-sure { color: #86efac; }
+.anomalous-doctor-level.is-sure { color: var(--amb-ok-text); }
 .anomalous-doctor-level.is-likely { color: var(--amb-link); }
-.anomalous-doctor-level.is-maybe { color: #fcd34d; }
+.anomalous-doctor-level.is-maybe { color: var(--amb-warn-text); }
 .anomalous-doctor-level.is-ambiguous,
 .anomalous-doctor-level.is-conflict,
-.anomalous-doctor-level.is-missing { color: #fca5a5; }
+.anomalous-doctor-level.is-missing { color: var(--amb-danger-text); }
 
 .anomalous-doctor-why {
     color: var(--amb-text-muted);
@@ -99,7 +99,7 @@
     padding: 8px 8px 8px 14px;
     border: 1px solid rgba(252, 211, 77, 0.35);
     border-radius: 12px;
-    background: rgba(24, 24, 27, 0.96);
+    background: var(--amb-lt-surface, rgba(24, 24, 27, 0.96));
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
     color: var(--amb-text-main);
     font-size: 13px;
@@ -123,7 +123,7 @@
     padding: 5px 12px;
     border: 1px solid var(--amb-border-strong);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     color: var(--amb-text-main);
     font-size: 12.5px;
     white-space: nowrap;
@@ -157,7 +157,7 @@
 }
 
 .anomalous-doctor-banner-mute:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--amb-ink-rgb), 0.08);
     color: var(--amb-text-main);
 }
 
@@ -172,7 +172,7 @@
 }
 
 .anomalous-doctor-banner-close:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--amb-ink-rgb), 0.08);
     color: var(--amb-text-main);
 }
 

@@ -21,7 +21,7 @@
 .anomalous-version-line-open {
     margin-left: auto;
     padding: 4px 10px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     border: 1px solid var(--amb-border-strong);
     border-radius: 6px;
     color: var(--amb-text-main);
@@ -31,7 +31,7 @@
 }
 
 .anomalous-version-line-open:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--amb-ink-rgb), 0.1);
 }
 
 .anomalous-version-overlay {
@@ -43,7 +43,7 @@
     justify-content: center;
     padding: 20px;
     box-sizing: border-box;
-    background: rgba(0, 0, 0, 0.55);
+    background: var(--amb-lt-scrim, rgba(0, 0, 0, 0.55));
     backdrop-filter: blur(3px);
 }
 
@@ -130,7 +130,7 @@
 
 .anomalous-version-warning {
     padding: 8px 10px;
-    color: #fcd34d;
+    color: var(--amb-warn-text);
     background: rgba(245, 158, 11, 0.1);
     border: 1px solid rgba(245, 158, 11, 0.35);
     border-radius: var(--amb-radius-control, 6px);
@@ -148,7 +148,7 @@
 .anomalous-version-action {
     height: 30px;
     padding: 0 12px;
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--amb-ink-rgb), 0.04);
     color: var(--amb-text-main, var(--amb-text-main));
     border: 1px solid var(--amb-border-hover, var(--amb-border-strong));
     border-radius: var(--amb-radius-control, 6px);
@@ -158,7 +158,7 @@
 }
 
 .anomalous-version-action:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--amb-ink-rgb), 0.1);
 }
 
 .anomalous-version-action.primary {
@@ -189,7 +189,7 @@
 }
 
 .anomalous-version-status.is-error {
-    color: #fca5a5;
+    color: var(--amb-danger-text);
 }
 
 .anomalous-version-prerelease {
@@ -274,12 +274,12 @@
 }
 
 .anomalous-version-badge.is-latest {
-    color: #86efac;
+    color: var(--amb-ok-text);
     border-color: rgba(34, 197, 94, 0.45);
 }
 
 .anomalous-version-badge.is-pre {
-    color: #fcd34d;
+    color: var(--amb-warn-text);
     border-color: rgba(245, 158, 11, 0.45);
 }
 

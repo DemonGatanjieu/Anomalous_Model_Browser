@@ -151,7 +151,7 @@ export async function loadModels() {
                     ph.style.justifyContent = 'center';
                     ph.style.height = '100%';
                     ph.style.minHeight = '180px';
-                    ph.style.color = '#888';
+                    ph.style.color = 'var(--amb-lt-muted, #888)';
                     ph.style.userSelect = 'none';
                     ph.innerHTML = `
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.35;margin-bottom:6px;">

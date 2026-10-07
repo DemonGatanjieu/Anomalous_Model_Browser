@@ -14,13 +14,13 @@ export function anomalousAlert(message, title = 'Anomalous') {
         overlay.style.display = 'flex';
         overlay.style.alignItems = 'center';
         overlay.style.justifyContent = 'center';
-        overlay.style.background = 'rgba(0, 0, 0, 0.6)';
+        overlay.style.background = 'var(--amb-scrim)';
         overlay.style.backdropFilter = 'blur(4px)';
         overlay.style.padding = '20px';
         overlay.style.boxSizing = 'border-box';
         
         const dialog = document.createElement('div');
-        dialog.style.background = 'linear-gradient(145deg, rgba(48, 49, 55, 0.98), rgba(27, 28, 33, 0.98))';
+        dialog.style.background = 'var(--amb-bg-dialog)';
         dialog.style.border = '1px solid var(--amb-border-strong)';
         dialog.style.borderRadius = '16px';
         dialog.style.padding = '24px';
@@ -29,7 +29,7 @@ export function anomalousAlert(message, title = 'Anomalous') {
         dialog.style.maxHeight = '90vh';
         dialog.style.overflowY = 'auto';
         dialog.style.boxShadow = '0 24px 70px rgba(0, 0, 0, 0.55)';
-        dialog.style.color = '#f3f4f6';
+        dialog.style.color = 'var(--amb-text-main)';
         dialog.style.display = 'flex';
         dialog.style.flexDirection = 'column';
         dialog.style.gap = '16px';
@@ -44,7 +44,7 @@ export function anomalousAlert(message, title = 'Anomalous') {
         text.style.margin = '0';
         text.style.lineHeight = '1.5';
         text.style.whiteSpace = 'pre-wrap';
-        text.style.color = '#ccc';
+        text.style.color = 'var(--amb-text-soft)';
         
         const footer = document.createElement('div');
         footer.style.display = 'flex';
@@ -81,13 +81,13 @@ export function anomalousConfirm(message, title = 'Anomalous', options = {}) {
         overlay.style.display = 'flex';
         overlay.style.alignItems = 'center';
         overlay.style.justifyContent = 'center';
-        overlay.style.background = 'rgba(0, 0, 0, 0.6)';
+        overlay.style.background = 'var(--amb-scrim)';
         overlay.style.backdropFilter = 'blur(4px)';
         overlay.style.padding = '20px';
         overlay.style.boxSizing = 'border-box';
         
         const dialog = document.createElement('div');
-        dialog.style.background = 'linear-gradient(145deg, rgba(48, 49, 55, 0.98), rgba(27, 28, 33, 0.98))';
+        dialog.style.background = 'var(--amb-bg-dialog)';
         dialog.style.border = '1px solid var(--amb-border-strong)';
         dialog.style.borderRadius = '16px';
         dialog.style.padding = '24px';
@@ -96,7 +96,7 @@ export function anomalousConfirm(message, title = 'Anomalous', options = {}) {
         dialog.style.maxHeight = '90vh';
         dialog.style.overflowY = 'auto';
         dialog.style.boxShadow = '0 24px 70px rgba(0, 0, 0, 0.55)';
-        dialog.style.color = '#f3f4f6';
+        dialog.style.color = 'var(--amb-text-main)';
         dialog.style.display = 'flex';
         dialog.style.flexDirection = 'column';
         dialog.style.gap = '16px';
@@ -111,7 +111,7 @@ export function anomalousConfirm(message, title = 'Anomalous', options = {}) {
         text.style.margin = '0';
         text.style.lineHeight = '1.5';
         text.style.whiteSpace = 'pre-wrap';
-        text.style.color = '#ccc';
+        text.style.color = 'var(--amb-text-soft)';
         
         const footer = document.createElement('div');
         footer.style.display = 'flex';
@@ -165,20 +165,20 @@ export function anomalousPrompt(message, defaultValue = '', title = 'Anomalous',
         overlay.style.display = 'flex';
         overlay.style.alignItems = 'center';
         overlay.style.justifyContent = 'center';
-        overlay.style.background = 'rgba(0, 0, 0, 0.6)';
+        overlay.style.background = 'var(--amb-scrim)';
         overlay.style.backdropFilter = 'blur(4px)';
         overlay.style.padding = '20px';
         overlay.style.boxSizing = 'border-box';
 
         const dialog = document.createElement('div');
-        dialog.style.background = 'linear-gradient(145deg, rgba(48, 49, 55, 0.98), rgba(27, 28, 33, 0.98))';
+        dialog.style.background = 'var(--amb-bg-dialog)';
         dialog.style.border = '1px solid var(--amb-border-strong)';
         dialog.style.borderRadius = '16px';
         dialog.style.padding = '24px';
         dialog.style.maxWidth = '420px';
         dialog.style.width = '100%';
         dialog.style.boxShadow = '0 24px 70px rgba(0, 0, 0, 0.55)';
-        dialog.style.color = '#f3f4f6';
+        dialog.style.color = 'var(--amb-text-main)';
         dialog.style.display = 'flex';
         dialog.style.flexDirection = 'column';
         dialog.style.gap = '16px';
@@ -192,7 +192,7 @@ export function anomalousPrompt(message, defaultValue = '', title = 'Anomalous',
         text.textContent = message;
         text.style.margin = '0';
         text.style.lineHeight = '1.5';
-        text.style.color = '#ccc';
+        text.style.color = 'var(--amb-text-soft)';
 
         const input = document.createElement(options.multiline ? 'textarea' : 'input');
         if (!options.multiline) input.type = 'text';
@@ -203,8 +203,8 @@ export function anomalousPrompt(message, defaultValue = '', title = 'Anomalous',
         input.style.padding = '10px 14px';
         input.style.borderRadius = '8px';
         input.style.border = '1px solid var(--amb-border-strong)';
-        input.style.background = 'rgba(0, 0, 0, 0.35)';
-        input.style.color = '#fff';
+        input.style.background = 'var(--amb-bg-sunken)';
+        input.style.color = 'var(--amb-text-main)';
         input.style.fontSize = '14px';
         input.style.boxSizing = 'border-box';
         input.style.outline = 'none';

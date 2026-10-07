@@ -15,6 +15,11 @@
 - **Prompt Studio's own shortcut is gone** (Ctrl+Shift+L, and its row in ComfyUI's settings and the Extensions menu): it opens from the rail, with 7 while the browser is open, or by opening the browser with a text node selected. The browser's shortcut (Ctrl+Shift+M) stays.
 - **1–9 go to the pages on the left** while the browser is open (Home, Activity, Models, Gallery, Workflows, Combos, Prompts, Voices, Audio library). Numbers typed into a box stay in the box, and the rail's tooltips show each number. W/S were not used because W is ComfyUI's own Workflows key.
 
+### ☀️ Light theme (浅色主题)
+- **Settings → Appearance → Theme**: **Follow ComfyUI** (the default), **Dark**, **Light** or **Abyssal Scarlet**. Following ComfyUI switches with ComfyUI's color palette at once, light with a light palette and dark with a dark one. The same choice is in ComfyUI's settings under Anomalous Model Browser (it replaces the Abyssal Scarlet on/off switch; Abyssal Scarlet stays chosen if it was on).
+- Every page, the Prompt Studio drawer and the dialogs follow the theme. The image viewer stays dark, like ComfyUI's own, and the labels over cover images stay dark so their text reads on any picture. The dark themes look as before.
+- The "all models are here" banner on a recipe now reads green instead of pink.
+
 ### 🌐 Your own DeepL key for translation (DeepL 翻译密钥)
 - **Settings → Translation → DeepL key**: prompts are translated with Google's free endpoint (MyMemory when Google cannot be reached); with your own DeepL API key, DeepL comes first. Saving the key translates one sentence to show it works, or says why not (a key DeepL refuses, a used-up month). The Free plan gives 500,000 characters a month. The key stays on this computer and is never put in a backup.
 - A DeepL key saved by hand in `config.json` before did not work any more: DeepL stopped taking the key as a request parameter in 2025. It now goes in the Authorization header.

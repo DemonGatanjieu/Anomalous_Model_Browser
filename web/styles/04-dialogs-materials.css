@@ -13,7 +13,7 @@
 }
 
 .anomalous-recipe-gallery-dialog::backdrop {
-    background: rgba(0, 0, 0, 0.7);
+    background: var(--amb-lt-scrim, rgba(0, 0, 0, 0.7));
     backdrop-filter: blur(4px);
 }
 
@@ -50,7 +50,7 @@
     position: relative;
     border-radius: 8px;
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.2));
     aspect-ratio: 1;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -149,8 +149,8 @@ dialog.anomalous-gallery-viewer::backdrop {
     padding: 16px;
     background-image: 
         radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.06) 1px, transparent 1px),
-        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+        linear-gradient(rgba(var(--amb-ink-rgb), 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(var(--amb-ink-rgb), 0.015) 1px, transparent 1px);
     background-size: 24px 24px, 48px 48px, 48px 48px;
 }
 
@@ -328,7 +328,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-recipe-scope-pill.is-partial {
     border-color: rgba(245, 158, 11, 0.4);
-    color: #fbbf24;
+    color: var(--amb-warn);
 }
 
 .anomalous-recipe-scope-pill.is-complete {
@@ -410,7 +410,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     gap: 2px;
     padding: 1px 5px;
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--amb-ink-rgb), 0.04);
     border: 1px solid var(--amb-border);
     color: var(--amb-text-muted);
     white-space: nowrap;
@@ -423,7 +423,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-spec-tag.is-step {
-    color: #86efac;
+    color: var(--amb-ok-text);
     background: rgba(16, 185, 129, 0.08);
     border-color: rgba(16, 185, 129, 0.2);
 }
@@ -448,7 +448,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     font-size: 0.66rem;
     padding: 2px 6px;
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--amb-ink-rgb), 0.04);
     border: 1px solid var(--amb-border);
     color: var(--amb-text-muted);
     cursor: pointer;
@@ -457,7 +457,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-badge-tag:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--amb-ink-rgb), 0.1);
     color: var(--amb-text-main);
 }
 
@@ -499,7 +499,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 .anomalous-recipe-btn-primary-action:hover {
     background: var(--amb-btn-primary-hover, var(--amb-btn-primary-bg));
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: rgba(var(--amb-ink-rgb), 0.4);
     box-shadow: none;
 }
 
@@ -528,7 +528,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     align-items: center;
     justify-content: center;
     border-radius: 5px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     border: 1px solid var(--amb-border);
     color: var(--amb-text-muted);
     cursor: pointer;
@@ -537,7 +537,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-card-mini-btn:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(var(--amb-ink-rgb), 0.12);
     color: var(--amb-text-main);
     transform: translateY(-1px);
 }
@@ -545,7 +545,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-recipe-card-mini-btn.is-delete:hover {
     background: rgba(239, 68, 68, 0.3);
     border-color: rgba(239, 68, 68, 0.5);
-    color: #fca5a5;
+    color: var(--amb-danger-text);
 }
 
 /* 2. 紧凑行列表模式 (44px 极速视图) */
@@ -644,19 +644,19 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-recipe-readiness-banner.is-ready {
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.08));
     border: 1px solid rgba(16, 185, 129, 0.35);
-    color: #fda4af;
+    color: var(--amb-ok-soft); /* was pink on the green banner */
 }
 
 .anomalous-recipe-readiness-banner.is-warning {
     background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.08));
     border: 1px solid rgba(245, 158, 11, 0.4);
-    color: #fde68a;
+    color: var(--amb-warn-soft);
 }
 
 .anomalous-recipe-readiness-banner.is-missing {
     background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(185, 28, 28, 0.08));
     border: 1px solid rgba(239, 68, 68, 0.4);
-    color: #fecaca;
+    color: var(--amb-lt-danger, #fecaca);
 }
 
 /* Metric Cards for Sampling Parameters */
@@ -665,7 +665,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-recipe-raw-nodes-summary {
     padding: 10px 14px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--amb-ink-rgb), 0.03);
     border: 1px solid var(--amb-border);
     color: var(--amb-link);
     cursor: pointer;
@@ -676,7 +676,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-raw-nodes-summary:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--amb-ink-rgb), 0.06);
 }
 
 .anomalous-recipe-lazy-expand-btn {
@@ -684,7 +684,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     margin-top: 10px;
     padding: 9px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     border: 1px solid var(--amb-border);
     color: var(--amb-text-soft);
     font-size: 0.82rem;
@@ -693,26 +693,26 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-lazy-expand-btn:hover {
-    background: rgba(255, 255, 255, 0.09);
+    background: rgba(var(--amb-ink-rgb), 0.09);
     border-color: var(--amb-border-strong);
 }
 
 .anomalous-recipe-readiness-pill.is-ready {
     background: rgba(16, 185, 129, 0.16);
     border-color: rgba(16, 185, 129, 0.45);
-    color: #6ee7b7;
+    color: var(--amb-ok-soft);
 }
 
 .anomalous-recipe-readiness-pill.is-warning {
     background: rgba(245, 158, 11, 0.16);
     border-color: rgba(245, 158, 11, 0.45);
-    color: #fcd34d;
+    color: var(--amb-warn-text);
 }
 
 .anomalous-recipe-readiness-pill.is-missing {
     background: rgba(239, 68, 68, 0.16);
     border-color: rgba(239, 68, 68, 0.45);
-    color: #fca5a5;
+    color: var(--amb-danger-text);
 }
 
 .anomalous-recipe-card-footer {
@@ -729,7 +729,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     flex: 1;
     padding: 8px 14px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--amb-ink-rgb), 0.1);
     border: 1px solid var(--amb-border-strong);
     color: var(--amb-text-main);
     font-size: 0.82rem;
@@ -740,7 +740,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-btn-primary-action:hover {
-    background: rgba(255, 255, 255, 0.16);
+    background: rgba(var(--amb-ink-rgb), 0.16);
     border-color: var(--amb-border-strong);
     color: var(--amb-text-main);
 }
@@ -754,7 +754,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-recipe-card-mini-btn {
     padding: 6px 8px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--amb-ink-rgb), 0.04);
     border: 1px solid var(--amb-border);
     color: var(--amb-text-muted);
     cursor: pointer;
@@ -764,7 +764,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-card-mini-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--amb-ink-rgb), 0.1);
     color: var(--amb-text-main);
     border-color: var(--amb-border-strong);
 }
@@ -775,7 +775,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-recipe-raw-nodes-summary {
     padding: 10px 14px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--amb-ink-rgb), 0.03);
     border: 1px solid var(--amb-border);
     color: var(--amb-link);
     cursor: pointer;
@@ -786,7 +786,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-raw-nodes-summary:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--amb-ink-rgb), 0.06);
 }
 
 .anomalous-recipe-lazy-expand-btn {
@@ -794,7 +794,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     margin-top: 10px;
     padding: 9px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     border: 1px solid var(--amb-border);
     color: var(--amb-text-soft);
     font-size: 0.82rem;
@@ -803,7 +803,7 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 .anomalous-recipe-lazy-expand-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--amb-ink-rgb), 0.1);
     color: var(--amb-text-main);
 }
 

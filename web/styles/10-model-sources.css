@@ -131,7 +131,7 @@
 
 .anomalous-msrc-tag.is-missing {
     border-color: rgba(248, 113, 113, 0.45);
-    color: #f87171;
+    color: var(--amb-danger);
 }
 
 .anomalous-msrc-link {
@@ -273,7 +273,7 @@
     color: var(--amb-text-primary, var(--amb-text-main)) !important;
 }
 #anomalous-header button.anomalous-update-notice-btn:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
+    background: rgba(var(--amb-ink-rgb), 0.08) !important;
 }
 .anomalous-update-notice-icon {
     display: inline-flex;
@@ -314,10 +314,10 @@ dialog.anomalous-update-guide {
     padding: 0;
     border: 1px solid var(--amb-border-strong);
     border-radius: 16px;
-    background: linear-gradient(145deg, rgba(28, 30, 38, 0.98), rgba(16, 18, 24, 0.98));
+    background: var(--amb-lt-surface, linear-gradient(145deg, rgba(28, 30, 38, 0.98), rgba(16, 18, 24, 0.98)));
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(255, 255, 255, 0.12);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(var(--amb-ink-rgb), 0.12);
     color: var(--amb-text-main);
     outline: none;
     overflow-y: auto;
@@ -340,7 +340,7 @@ dialog.anomalous-update-guide > * { flex-shrink: 0; }
 }
 
 dialog.anomalous-update-guide::backdrop {
-    background: rgba(0, 0, 0, 0.65);
+    background: var(--amb-lt-scrim, rgba(0, 0, 0, 0.65));
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     animation: anomalous-fade-in 0.2s ease;
@@ -356,7 +356,7 @@ dialog.anomalous-update-guide::backdrop {
     align-items: center;
     justify-content: space-between;
     padding: 14px 20px;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(var(--amb-ink-rgb), 0.02);
     border-bottom: 1px solid var(--amb-border);
     font-size: 12px;
     font-weight: 600;
@@ -378,7 +378,7 @@ dialog.anomalous-update-guide::backdrop {
 
 .anomalous-update-guide-close:hover {
     color: var(--amb-text-main);
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--amb-ink-rgb), 0.1);
 }
 
 .anomalous-update-guide-icon {
@@ -386,7 +386,7 @@ dialog.anomalous-update-guide::backdrop {
     height: 58px;
     margin: 24px auto 14px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     border: 1px solid var(--amb-border-strong);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     display: flex;
@@ -431,7 +431,7 @@ dialog.anomalous-update-guide::backdrop {
     justify-content: space-between;
     flex-wrap: wrap;
     padding: 14px 20px;
-    background: rgba(0, 0, 0, 0.28);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.28));
     border-top: 1px solid var(--amb-border);
     gap: 10px;
 }
@@ -449,7 +449,7 @@ dialog.anomalous-update-guide::backdrop {
 
 .anomalous-update-guide-footer .anomalous-btn-ghost:hover:not(:disabled) {
     color: var(--amb-text-main);
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--amb-ink-rgb), 0.08);
     border-color: var(--amb-border-strong);
 }
 
@@ -473,6 +473,6 @@ dialog.anomalous-update-guide::backdrop {
 
 .anomalous-update-guide-footer .anomalous-btn-primary:hover {
     background: #ffffff;
-    box-shadow: 0 4px 14px rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 14px rgba(var(--amb-ink-rgb), 0.25);
     transform: translateY(-1px);
 }

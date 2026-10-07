@@ -172,7 +172,7 @@ export function ensureRecipeGuideStyles() {
             border-color: rgba(16, 185, 129, 0.5) !important;
         }
         .anomalous-recipe-readiness-pill.is-ready .anomalous-recipe-readiness-text {
-            color: #6ee7b7 !important;
+            color: var(--amb-ok-soft) !important;
             font-weight: 600 !important;
         }
         .anomalous-recipe-readiness-pill.is-warning {
@@ -180,7 +180,7 @@ export function ensureRecipeGuideStyles() {
             border-color: rgba(245, 158, 11, 0.6) !important;
         }
         .anomalous-recipe-readiness-pill.is-warning .anomalous-recipe-readiness-text {
-            color: #fde68a !important;
+            color: var(--amb-warn-soft) !important;
             font-weight: 600 !important;
         }
         .anomalous-recipe-readiness-pill.is-missing {
@@ -188,7 +188,7 @@ export function ensureRecipeGuideStyles() {
             border-color: rgba(239, 68, 68, 0.6) !important;
         }
         .anomalous-recipe-readiness-pill.is-missing .anomalous-recipe-readiness-text {
-            color: #fca5a5 !important;
+            color: var(--amb-danger-text) !important;
             font-weight: 600 !important;
         }
         .anomalous-recipe-readiness-dot {
@@ -206,7 +206,7 @@ export function ensureRecipeGuideStyles() {
             border-radius: 8px;
             font-size: 12px;
             color: var(--amb-text-muted);
-            background: rgba(30, 41, 59, 0.5);
+            background: var(--amb-lt-chip, rgba(30, 41, 59, 0.5));
             border: 1px solid var(--amb-border);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
             flex-shrink: 0;
@@ -244,14 +244,14 @@ export function ensureRecipeGuideStyles() {
         }
         .anomalous-recipe-drag-hint-close:hover {
             color: var(--amb-text-main);
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(var(--amb-ink-rgb), 0.08);
         }
         .anomalous-recipe-empty-guide {
             grid-column: 1 / -1;
             max-width: 580px;
             margin: 32px auto;
             padding: 28px 24px;
-            background: rgba(255, 255, 255, 0.025);
+            background: rgba(var(--amb-ink-rgb), 0.025);
             border: 1px solid var(--amb-border);
             border-radius: 16px;
             text-align: center;
@@ -296,7 +296,7 @@ export function ensureRecipeGuideStyles() {
             text-align: left;
         }
         .anomalous-recipe-empty-step {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(var(--amb-ink-rgb), 0.03);
             border: 1px solid var(--amb-border);
             border-radius: 10px;
             padding: 14px 14px;
@@ -306,7 +306,7 @@ export function ensureRecipeGuideStyles() {
             transition: background 0.15s ease, border-color 0.15s ease;
         }
         .anomalous-recipe-empty-step:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(var(--amb-ink-rgb), 0.05);
             border-color: var(--amb-border-strong);
         }
         .anomalous-recipe-step-icon {

@@ -127,7 +127,7 @@
 .anomalous-gallery-details:hover {
     background: rgba(20, 29, 44, 0.94);
     border-color: color-mix(in srgb, var(--amb-link) 55%, transparent);
-    color: #fca5a5;
+    color: var(--amb-danger-text);
     box-shadow: 0 4px 16px color-mix(in srgb, var(--amb-link) 25%, transparent);
     transform: translateY(-1px);
 }
@@ -187,7 +187,7 @@
 }
 
 .anomalous-gallery-keep.is-kept {
-    color: #fcd34d;
+    color: var(--amb-warn-text);
 }
 
 .anomalous-gallery-keep:hover {
@@ -266,7 +266,7 @@
 
 .anomalous-keep-row-mark {
     flex: none;
-    color: #86efac;
+    color: var(--amb-ok-text);
     font-weight: 700;
 }
 
@@ -295,7 +295,7 @@
 
 .anomalous-keep-remove:hover {
     border-color: rgba(248, 113, 113, 0.6);
-    color: #fca5a5;
+    color: var(--amb-danger-text);
 }
 
 .anomalous-gallery-delete:hover {
@@ -389,7 +389,7 @@ dialog.anomalous-gallery-viewer[open] {
     min-height: 48px;
     height: auto;
     padding: 8px 52px 8px 16px;
-    background: rgba(18, 22, 32, 0.65);
+    background: var(--amb-lt-panel, rgba(18, 22, 32, 0.65));
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--amb-border);
@@ -410,7 +410,7 @@ dialog.anomalous-gallery-viewer[open] {
     display: inline-flex;
     align-items: center;
     gap: 3px;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(var(--amb-ink-rgb), 0.02);
     padding: 3px 4px;
     border-radius: 20px;
     border: 1px solid var(--amb-border);
@@ -430,7 +430,7 @@ dialog.anomalous-gallery-viewer[open] {
 
 .anomalous-recipe-pill:hover {
     color: var(--amb-text-main);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
 }
 
 .anomalous-recipe-pill.is-active {
@@ -473,7 +473,7 @@ dialog.anomalous-gallery-viewer[open] {
     width: 100%;
     height: 30px;
     padding: 0 12px 0 30px;
-    background: rgba(0, 0, 0, 0.28);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.28));
     border: 1px solid var(--amb-border);
     border-radius: 16px;
     color: var(--amb-text-main);
@@ -484,13 +484,13 @@ dialog.anomalous-gallery-viewer[open] {
 
 .anomalous-recipe-search-input:focus {
     border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.4));
 }
 
 .anomalous-recipe-tag-select {
     height: 30px;
     padding: 0 10px;
-    background: rgba(0, 0, 0, 0.28);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.28));
     border: 1px solid var(--amb-border);
     border-radius: 16px;
     color: var(--amb-text-muted);
@@ -515,7 +515,7 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-recipe-view-switch {
     display: inline-flex;
     align-items: center;
-    background: rgba(0, 0, 0, 0.32);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.32));
     border: 1px solid var(--amb-border);
     border-radius: 8px;
     padding: 2px;
@@ -540,7 +540,7 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-view-btn.is-active {
-    background: rgba(255, 255, 255, 0.09);
+    background: rgba(var(--amb-ink-rgb), 0.09);
     color: var(--amb-link);
 }
 
@@ -556,12 +556,12 @@ dialog.anomalous-gallery-viewer[open] {
     cursor: pointer;
     transition: all 0.15s ease;
     border: 1px solid var(--amb-border);
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--amb-ink-rgb), 0.03);
     color: var(--amb-text-soft);
 }
 
 .anomalous-recipe-topbar-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--amb-ink-rgb), 0.08);
     color: var(--amb-text-main);
 }
 
@@ -600,13 +600,13 @@ dialog.anomalous-gallery-viewer[open] {
     padding: 8px;
     border: 1px solid var(--amb-border-strong);
     border-radius: 7px;
-    background: rgba(0, 0, 0, 0.18);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.18));
 }
 
 .anomalous-recipe-copy-param {
     border: 1px solid var(--amb-border);
-    background: rgba(255, 255, 255, 0.05);
-    color: #9ec8ff;
+    background: rgba(var(--amb-ink-rgb), 0.05);
+    color: var(--amb-lt-accent-text, #9ec8ff);
     cursor: pointer;
     font-size: 1.15rem;
     padding: 6px;
@@ -620,7 +620,7 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-recipe-copy-param:hover {
     background: rgba(158, 200, 255, 0.15);
     border-color: rgba(158, 200, 255, 0.3);
-    color: #cce0ff;
+    color: var(--amb-lt-accent-text, #cce0ff);
 }
 
 .anomalous-recipe-copy-param:active {
@@ -657,7 +657,7 @@ dialog.anomalous-gallery-viewer[open] {
     align-items: center;
     justify-content: center;
     padding: 18px;
-    background: rgba(0, 0, 0, 0.62);
+    background: var(--amb-lt-scrim, rgba(0, 0, 0, 0.62));
 }
 
 .anomalous-recipe-dialog {
@@ -741,7 +741,7 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-recipe-cover-choice.selected {
     border-color: #e5e7eb;
     color: var(--amb-text-main);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+    box-shadow: inset 0 0 0 1px rgba(var(--amb-ink-rgb), 0.35);
 }
 
 .theme-abyssal-scarlet .anomalous-recipe-cover-choice.selected {
@@ -765,7 +765,7 @@ dialog.anomalous-gallery-viewer[open] {
     padding: 7px;
     border: 1px solid var(--amb-border-strong);
     border-radius: 7px;
-    color: #c9c9c9;
+    color: var(--amb-lt-soft, #c9c9c9);
     font-size: 0.82rem;
 }
 
@@ -820,7 +820,7 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-recipe-detail-tab.active {
     border-color: var(--amb-border-strong);
     color: var(--amb-text-main);
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--amb-ink-rgb), 0.1);
 }
 
 .theme-abyssal-scarlet .anomalous-recipe-detail-tab.active {
@@ -940,7 +940,7 @@ dialog.anomalous-gallery-viewer[open] {
     overflow: hidden;
     padding: 0;
     border: 0;
-    color: #f1f1f1;
+    color: var(--amb-lt-text, #f1f1f1);
     background: transparent;
     cursor: text;
     font: inherit;
@@ -963,7 +963,7 @@ dialog.anomalous-gallery-viewer[open] {
     padding: 7px 9px;
     border: 1px solid rgba(112, 178, 255, 0.7);
     border-radius: 7px;
-    color: #f4f4f4;
+    color: var(--amb-lt-text, #f4f4f4);
     background: var(--amb-bg-panel);
     font: inherit;
 }
@@ -1001,7 +1001,7 @@ dialog.anomalous-gallery-viewer[open] {
     cursor: pointer;
     user-select: none;
     padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     border: 1px solid var(--amb-border);
     border-radius: 8px;
     transition: background-color 0.2s, color 0.2s, border-color 0.2s;
@@ -1013,12 +1013,12 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-recipe-advanced-info > summary:focus-visible {
     background: color-mix(in srgb, var(--amb-link) 15%, transparent);
     border-color: color-mix(in srgb, var(--amb-link) 30%, transparent);
-    color: #cce0ff;
+    color: var(--amb-lt-accent-text, #cce0ff);
 }
 
 .anomalous-recipe-detail-hero-copy h3 {
     margin: 0;
-    color: #f1f1f1;
+    color: var(--amb-lt-text, #f1f1f1);
     font-size: 1.35rem;
 }
 
@@ -1049,7 +1049,7 @@ dialog.anomalous-gallery-viewer[open] {
     padding: 9px 10px;
     border: 1px solid var(--amb-border-strong);
     border-radius: 8px;
-    background: rgba(0, 0, 0, 0.16);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.16));
 }
 
 .anomalous-recipe-detail-stat-label,
@@ -1064,7 +1064,7 @@ dialog.anomalous-gallery-viewer[open] {
     color: var(--amb-text-main);
 }
 
-.anomalous-recipe-detail-stat-good { color: #6ee7b7 !important; }
+.anomalous-recipe-detail-stat-good { color: var(--amb-ok-soft) !important; }
 .anomalous-recipe-detail-stat-warn { color: #ffd493 !important; }
 
 .anomalous-recipe-model-composition {
@@ -1112,7 +1112,7 @@ dialog.anomalous-gallery-viewer[open] {
     border: 1px solid var(--amb-border-strong);
     border-radius: var(--amb-radius-control, 8px);
     color: var(--amb-text-soft);
-    background: var(--amb-bg-card, rgba(255, 255, 255, 0.03));
+    background: var(--amb-bg-card, rgba(var(--amb-ink-rgb), 0.03));
     font-size: 12.5px;
 }
 
@@ -1159,7 +1159,7 @@ dialog.anomalous-gallery-viewer[open] {
     padding: 12px;
     border: 1px solid var(--amb-border);
     border-radius: 12px;
-    background: linear-gradient(180deg, rgba(28, 30, 36, 0.75), rgba(18, 19, 23, 0.85));
+    background: var(--amb-lt-panel, linear-gradient(180deg, rgba(28, 30, 36, 0.75), rgba(18, 19, 23, 0.85)));
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     overflow: hidden;
@@ -1186,7 +1186,7 @@ dialog.anomalous-gallery-viewer[open] {
     padding: 10px 12px;
     border: 1px solid var(--border-color, var(--amb-border-strong));
     border-radius: 7px;
-    background: rgba(255, 255, 255, 0.025);
+    background: rgba(var(--amb-ink-rgb), 0.025);
 }
 
 .anomalous-model-location-row {
@@ -1198,13 +1198,13 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-model-location-label {
-    color: #9aa0a6;
+    color: var(--amb-lt-muted, #9aa0a6);
     font-size: 0.78em;
 }
 
 .anomalous-model-location code {
     min-width: 0;
-    color: #d7dbe5;
+    color: var(--amb-lt-soft, #d7dbe5);
     font-size: 0.76em;
     white-space: nowrap;
     overflow: hidden;
@@ -1216,7 +1216,7 @@ dialog.anomalous-gallery-viewer[open] {
     padding: 4px 9px;
     border: 1px solid var(--amb-border-strong);
     border-radius: 5px;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--amb-ink-rgb), 0.06);
     color: var(--amb-text-main);
     cursor: pointer;
     font-size: 0.75em;
@@ -1303,7 +1303,7 @@ dialog.anomalous-gallery-viewer[open] {
     padding: 9px 10px;
     border: 1px solid var(--amb-border-strong);
     border-radius: 8px;
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.15));
 }
 
 .anomalous-recipe-model-reference {
@@ -1417,7 +1417,7 @@ dialog.anomalous-gallery-viewer[open] {
 
 .anomalous-recipe-model-name.is-resolved {
     border-color: rgba(110, 231, 183, 0.42);
-    color: #b8f5d8;
+    color: var(--amb-lt-ok, #b8f5d8);
     background: rgba(110, 231, 183, 0.08);
     cursor: pointer;
 }
@@ -1425,12 +1425,12 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-recipe-model-name.is-unresolved {
     border-color: var(--amb-border);
     color: var(--amb-text-muted);
-    background: rgba(0, 0, 0, 0.12);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.12));
 }
 
 .anomalous-recipe-model-subtitle {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--amb-lt-muted, rgba(255, 255, 255, 0.4));
     word-break: break-all;
     padding-left: 2px;
 }
@@ -1497,8 +1497,8 @@ dialog.anomalous-gallery-viewer[open] {
     padding: 6px 8px;
     border: 1px solid var(--amb-border);
     border-radius: 6px;
-    color: #e7e7e7;
-    background: rgba(0, 0, 0, 0.18);
+    color: var(--amb-lt-text, #e7e7e7);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.18));
     overflow-wrap: anywhere;
     white-space: pre-wrap;
 }
@@ -1516,7 +1516,7 @@ dialog.anomalous-gallery-viewer[open] {
     justify-self: start;
     padding: 2px 0;
     border: 0;
-    color: #9fc4ff;
+    color: var(--amb-lt-accent-text, #9fc4ff);
     background: transparent;
     cursor: pointer;
     font-size: 0.78rem;
@@ -1540,13 +1540,13 @@ dialog.anomalous-gallery-viewer[open] {
     border: 1px solid var(--amb-border);
     border-left: 4px solid #7d8796;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.025);
+    background: rgba(var(--amb-ink-rgb), 0.025);
     transition: opacity 0.18s ease, border-color 0.18s ease, background 0.18s ease;
     margin-bottom: 8px;
 }
 
 .anomalous-recipe-detail-prompt:hover {
-    background: rgba(255, 255, 255, 0.035);
+    background: rgba(var(--amb-ink-rgb), 0.035);
     border-color: var(--amb-border-strong);
 }
 
@@ -1590,13 +1590,13 @@ dialog.anomalous-gallery-viewer[open] {
     padding: 3px 8px;
     font-size: 0.74rem;
     font-weight: 600;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     color: var(--amb-text-main);
     transition: all 0.15s ease;
 }
 
 .anomalous-recipe-prompt-role-badge.is-interactive:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(var(--amb-ink-rgb), 0.12);
     border-color: var(--amb-border-strong);
     transform: translateY(-1px);
 }
@@ -1604,7 +1604,7 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-recipe-prompt-role-badge.is-positive {
     background: rgba(16, 185, 129, 0.12);
     border-color: rgba(16, 185, 129, 0.3);
-    color: #34d399;
+    color: var(--amb-ok);
 }
 
 .anomalous-recipe-prompt-role-badge.is-negative {
@@ -1638,7 +1638,7 @@ dialog.anomalous-gallery-viewer[open] {
     box-sizing: border-box;
     padding: 12px 14px;
     border-radius: 8px;
-    background: rgba(0, 0, 0, 0.22);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.22));
     border: 1px solid var(--amb-border);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: 0.84rem;
@@ -1653,7 +1653,7 @@ dialog.anomalous-gallery-viewer[open] {
     border: 1px solid var(--amb-border-strong);
     border-radius: 999px;
     color: var(--amb-text-soft);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     font-size: 0.72rem;
 }
 
@@ -1667,7 +1667,7 @@ dialog.anomalous-gallery-viewer[open] {
     padding: 6px 28px 6px 8px;
     border: 1px solid rgba(159, 196, 255, 0.3);
     border-radius: 7px;
-    color: var(--input-text, #e8eef7);
+    color: var(--amb-lt-text, var(--input-text, #e8eef7));
     background: var(--comfy-input-bg, var(--amb-bg-card-hover));
     cursor: pointer;
 }
@@ -1690,7 +1690,7 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-version-row.current {
-    border-color: rgba(255, 255, 255, 0.35);
+    border-color: rgba(var(--amb-ink-rgb), 0.35);
 }
 
 .theme-abyssal-scarlet .anomalous-recipe-version-row.current {
@@ -1725,7 +1725,7 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-filter-summary {
-    color: #9caec4;
+    color: var(--amb-lt-muted, #9caec4);
     white-space: nowrap;
 }
 
@@ -1739,7 +1739,7 @@ dialog.anomalous-gallery-viewer[open] {
     margin-top: 8px;
     padding: 9px;
     border-left: 2px solid color-mix(in srgb, var(--amb-link) 42%, transparent);
-    background: rgba(0, 0, 0, 0.14);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.14));
 }
 
 .anomalous-recipe-diff-group {
@@ -1748,7 +1748,7 @@ dialog.anomalous-gallery-viewer[open] {
 
 .anomalous-recipe-diff-group h5 {
     margin: 4px 0;
-    color: #cfe1ff;
+    color: var(--amb-lt-accent-text, #cfe1ff);
 }
 
 .anomalous-recipe-diff-row {
@@ -1761,7 +1761,7 @@ dialog.anomalous-gallery-viewer[open] {
     min-width: 0;
     border: 1px solid var(--amb-border);
     border-radius: 7px;
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.1));
 }
 
 .anomalous-recipe-diff-marker {
@@ -1771,7 +1771,7 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-diff-added .anomalous-recipe-diff-marker,
-.anomalous-recipe-diff-added .anomalous-recipe-diff-after { color: #6ee7b7; }
+.anomalous-recipe-diff-added .anomalous-recipe-diff-after { color: var(--amb-ok-soft); }
 .anomalous-recipe-diff-removed .anomalous-recipe-diff-marker,
 .anomalous-recipe-diff-removed .anomalous-recipe-diff-before { color: #ff9a9a; }
 .anomalous-recipe-diff-changed .anomalous-recipe-diff-marker { color: #ffd493; }
@@ -1795,7 +1795,7 @@ dialog.anomalous-gallery-viewer[open] {
     min-width: 0;
     padding: 7px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.025);
+    background: rgba(var(--amb-ink-rgb), 0.025);
 }
 
 .anomalous-recipe-diff-value-before { border-left: 2px solid rgba(255, 154, 154, 0.66); }
@@ -1834,7 +1834,7 @@ dialog.anomalous-gallery-viewer[open] {
 
 .anomalous-recipe-more-btn {
     position: relative;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--amb-ink-rgb), 0.06);
     color: var(--amb-text-soft);
     border: 1px solid var(--amb-border-strong);
     height: 32px;
@@ -1854,7 +1854,7 @@ dialog.anomalous-gallery-viewer[open] {
 
 .anomalous-recipe-more-btn:hover,
 .anomalous-recipe-more-btn.active {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(var(--amb-ink-rgb), 0.12);
     border-color: var(--amb-border-strong);
     color: var(--amb-text-main);
 }
@@ -1866,7 +1866,7 @@ dialog.anomalous-gallery-viewer[open] {
     right: 0;
     z-index: 100;
     min-width: 140px;
-    background: rgba(24, 24, 28, 0.96);
+    background: var(--amb-lt-surface, rgba(24, 24, 28, 0.96));
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--amb-border-strong);
@@ -1913,7 +1913,7 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-recipe-dropdown-item:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--amb-ink-rgb), 0.08);
     color: var(--amb-text-main);
 }
 
@@ -1924,7 +1924,7 @@ dialog.anomalous-gallery-viewer[open] {
 
 .anomalous-recipe-header-status {
     max-width: 190px;
-    color: rgba(190, 205, 225, 0.78);
+    color: var(--amb-lt-muted, rgba(190, 205, 225, 0.78));
     font-size: 0.75rem;
     line-height: 1.25;
     white-space: normal;
@@ -1941,7 +1941,7 @@ dialog.anomalous-gallery-viewer[open] {
     padding: 0;
     border: 1px solid var(--amb-border, var(--amb-border));
     border-radius: var(--amb-radius-control, 6px);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--amb-ink-rgb), 0.04);
     color: var(--amb-text-muted, #A7AAB5);
     cursor: pointer;
     font-size: 14px;
@@ -1950,19 +1950,19 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-btn-icon:hover {
-    background: rgba(255, 255, 255, 0.10);
+    background: rgba(var(--amb-ink-rgb), 0.10);
     border-color: var(--amb-border-hover, var(--amb-border-strong));
     color: var(--amb-text-main, #E7E8ED);
 }
 
 .anomalous-btn-icon.anomalous-btn-edit:hover {
-    color: #34d399;
+    color: var(--amb-ok);
     border-color: rgba(52, 211, 153, 0.35);
     background: rgba(52, 211, 153, 0.1);
 }
 
 .anomalous-btn-icon.anomalous-btn-delete:hover {
-    color: #f87171;
+    color: var(--amb-danger);
     border-color: rgba(248, 113, 113, 0.35);
     background: rgba(248, 113, 113, 0.1);
 }
@@ -1976,7 +1976,7 @@ dialog.anomalous-gallery-viewer[open] {
 /* Ghost Button (secondary text button) */
 .anomalous-btn-ghost {
     position: relative;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     color: var(--amb-text-main, #E7E8ED);
     border: 1px solid var(--amb-border, var(--amb-border-strong));
     border-radius: var(--amb-radius-control, 6px);
@@ -1996,7 +1996,7 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 .anomalous-btn-ghost:hover {
-    background: rgba(255, 255, 255, 0.09);
+    background: rgba(var(--amb-ink-rgb), 0.09);
     border-color: var(--amb-border-hover, var(--amb-border-strong));
     color: var(--amb-text-main);
 }
@@ -2041,7 +2041,7 @@ dialog.anomalous-gallery-viewer[open] {
     position: relative;
     padding: 16px;
     margin-bottom: 16px;
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.25));
     border: 1px solid var(--amb-border);
     border-radius: 8px;
     transition: max-height 0.3s ease;
@@ -2094,7 +2094,7 @@ dialog.anomalous-gallery-viewer[open] {
     margin-bottom: 24px;
     border-radius: 8px;
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.2));
 }
 
 /* Search blocks (ui_search_chips.js); used above the output gallery */
@@ -2106,7 +2106,7 @@ dialog.anomalous-gallery-viewer[open] {
     padding: 5px 10px;
     border-radius: 8px;
     border: 1px solid var(--amb-border);
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.25));
     color: var(--amb-text-muted);
     cursor: text;
 }
@@ -2151,14 +2151,14 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-search-chip.is-hash {
     border-color: rgba(251, 191, 36, 0.5);
     background: rgba(245, 158, 11, 0.14);
-    color: #fde68a;
+    color: var(--amb-warn-soft);
     font-family: monospace;
 }
 
 .anomalous-search-chip.is-number {
     border-color: rgba(52, 211, 153, 0.45);
     background: rgba(16, 185, 129, 0.14);
-    color: #a7f3d0;
+    color: var(--amb-lt-ok, #a7f3d0);
 }
 
 .anomalous-search-chip-kind {
@@ -2194,7 +2194,7 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-search-chip-remove:hover,
 .anomalous-search-chips-clear:hover {
     opacity: 1;
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(var(--amb-ink-rgb), 0.12);
 }
 
 .anomalous-search-chips-clear[hidden] {
@@ -2224,7 +2224,7 @@ dialog.anomalous-gallery-viewer[open] {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--amb-lt-scrim, rgba(0, 0, 0, 0.6));
     backdrop-filter: blur(5px);
 }
 
@@ -2273,7 +2273,7 @@ dialog.anomalous-gallery-viewer[open] {
     font-size: 12.5px;
 }
 
-.anomalous-share-note.is-bad { color: #fca5a5; }
+.anomalous-share-note.is-bad { color: var(--amb-danger-text); }
 
 .anomalous-share-dialog.is-menu {
     width: min(400px, calc(100vw - 32px));

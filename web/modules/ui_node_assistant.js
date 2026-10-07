@@ -57,12 +57,12 @@ export function renderAssistantModelCard(node, w, container) {
         const pickerType = inferPickerModelType(node, w);
 
         const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'margin:12px 16px 16px;padding:10px;border:1px solid var(--amb-border);border-radius:14px;background:linear-gradient(160deg,rgba(31,33,42,0.96),rgba(20,21,27,0.96));display:flex;flex-direction:column;gap:12px;box-shadow:0 16px 35px rgba(0,0,0,0.2);';
+        wrapper.style.cssText = 'margin:12px 16px 16px;padding:10px;border:1px solid var(--amb-border);border-radius:14px;background:var(--amb-lt-surface,linear-gradient(160deg,rgba(31,33,42,0.96),rgba(20,21,27,0.96)));display:flex;flex-direction:column;gap:12px;box-shadow:0 16px 35px rgba(0,0,0,0.2);';
 
         // Preview image
         const previewBox = document.createElement('div');
-        previewBox.style.cssText = 'width:100%;aspect-ratio:1.65;max-height:260px;background:radial-gradient(circle at 50% 20%,#252a3b,var(--amb-bg-page) 70%);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--amb-border);';
-        previewBox.innerHTML = `<span style="color:#444;font-size:13px;">${t('doctorLoadingPreview')}</span>`;
+        previewBox.style.cssText = 'width:100%;aspect-ratio:1.65;max-height:260px;background:radial-gradient(circle at 50% 20%,var(--amb-lt-card-hover,#252a3b),var(--amb-bg-page) 70%);border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:1px solid var(--amb-border);';
+        previewBox.innerHTML = `<span style="color:var(--amb-lt-muted,#444);font-size:13px;">${t('doctorLoadingPreview')}</span>`;
         wrapper.appendChild(previewBox);
 
         // Name and path
@@ -71,11 +71,11 @@ export function renderAssistantModelCard(node, w, container) {
         const identityCopy = document.createElement('div');
         identityCopy.style.cssText = 'display:flex;flex-direction:column;gap:4px;min-width:0;flex:1;';
         const nameEl = document.createElement('div');
-        nameEl.style.cssText = 'color:#fff;font-weight:750;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        nameEl.style.cssText = 'color:var(--amb-lt-text,#fff);font-weight:750;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
         nameEl.title = filename;
         nameEl.innerText = filename;
         const pathEl = document.createElement('div');
-        pathEl.style.cssText = 'color:#646b7a;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        pathEl.style.cssText = 'color:var(--amb-text-dim);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
         pathEl.title = val;
         pathEl.innerText = val;
         const modelTypeBadge = document.createElement('span');
@@ -124,7 +124,7 @@ if (isVid) {
                         previewBox.appendChild(img);
                     }
                 } else {
-                    previewBox.innerHTML = `<span style="color:#444;font-size:13px;">${t('doctorNoPreview')}</span>`;
+                    previewBox.innerHTML = `<span style="color:var(--amb-lt-muted,#444);font-size:13px;">${t('doctorNoPreview')}</span>`;
                 }
 
                 // Profile button links to detail
@@ -151,7 +151,7 @@ if (isVid) {
                         const badgeRow = document.createElement('div');
                         badgeRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
                         const b = document.createElement('span');
-                        b.style.cssText = 'background:rgba(0,255,204,0.08);border:1px solid rgba(0,255,204,0.15);color:#77e6cf;padding:4px 8px;border-radius:999px;font-size:10px;';
+                        b.style.cssText = 'background:rgba(0,255,204,0.08);border:1px solid rgba(0,255,204,0.15);color:var(--amb-lt-ok,#77e6cf);padding:4px 8px;border-radius:999px;font-size:10px;';
                         b.textContent = `${t('doctorBase')} · ${meta.baseModel}`;
                         badgeRow.appendChild(b);
                         metaZone.appendChild(badgeRow);
@@ -161,7 +161,7 @@ if (isVid) {
                     const triggers = meta.trainedWords || meta.trigger_words || meta.trained_words;
 if (triggers && triggers.length > 0) {
                         const trigSection = document.createElement('div');
-                        trigSection.style.cssText = 'background:rgba(255,255,255,0.04);border-radius:6px;padding:10px 12px;';
+                        trigSection.style.cssText = 'background:rgba(var(--amb-ink-rgb), 0.04);border-radius:6px;padding:10px 12px;';
                         const trigTitle = document.createElement('div');
                         trigTitle.style.cssText = 'color:var(--amb-text-muted);font-size:11px;margin-bottom:8px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;';
                         trigTitle.textContent = t('doctorTriggerWords');
@@ -170,7 +170,7 @@ if (triggers && triggers.length > 0) {
                         const words = Array.isArray(triggers) ? triggers : [triggers];
                         words.forEach(word => {
                             const tag = document.createElement('span');
-                            tag.style.cssText = 'background:rgba(255,193,7,0.12);color:#ffc107;padding:3px 8px;border-radius:4px;font-size:12px;cursor:pointer;';
+                            tag.style.cssText = 'background:rgba(255,193,7,0.12);color:var(--amb-lt-warn,#ffc107);padding:3px 8px;border-radius:4px;font-size:12px;cursor:pointer;';
                             tag.innerText = word;
                             tag.title = t('doctorClickCopy');
                             tag.onclick = () => {
@@ -194,12 +194,12 @@ if (triggers && triggers.length > 0) {
                     const textNotes = meta.custom_notes || meta.notes;
 if (textNotes) {
                         const notesCard = document.createElement('div');
-                        notesCard.style.cssText = 'background:linear-gradient(135deg,var(--amb-bg-card-hover) 0%,var(--amb-bg-card) 100%);border:1px solid var(--amb-border-strong);border-left:4px solid #a38d53;border-radius:4px 8px 8px 4px;padding:12px 14px;';
+                        notesCard.style.cssText = 'background:linear-gradient(135deg,var(--amb-bg-card-hover) 0%,var(--amb-bg-card) 100%);border:1px solid var(--amb-border-strong);border-left:4px solid var(--amb-note-accent);border-radius:4px 8px 8px 4px;padding:12px 14px;';
                         const notesTitle = document.createElement('div');
-                        notesTitle.style.cssText = 'color:#a38d53;font-size:11px;font-weight:bold;margin-bottom:6px;';
+                        notesTitle.style.cssText = 'color:var(--amb-note-accent);font-size:11px;font-weight:bold;margin-bottom:6px;';
                         notesTitle.textContent = t('doctorNotes');
                         const notesText = document.createElement('div');
-                        notesText.style.cssText = 'color:#d4c4a0;font-size:13px;line-height:1.6;white-space:pre-wrap;';
+                        notesText.style.cssText = 'color:var(--amb-note-text);font-size:13px;line-height:1.6;white-space:pre-wrap;';
                         notesText.innerText = textNotes;
                         notesCard.appendChild(notesTitle);
                         notesCard.appendChild(notesText);
@@ -211,7 +211,7 @@ if (textNotes) {
                 const resolvedFilename = (d.status === 'success' && d.model) ? (d.model.filename || filename) : filename;
                 this._loadAssistantHistory(resolvedFilename, metaZone, d.status === 'success' ? d.model : null);
             }).catch(() => {
-                previewBox.innerHTML = `<span style="color:#444;font-size:13px;">${t('assistantPreviewFailed')}</span>`;
+                previewBox.innerHTML = `<span style="color:var(--amb-lt-muted,#444);font-size:13px;">${t('assistantPreviewFailed')}</span>`;
 
                 // Still try to load history gallery by filename
                 this._loadAssistantHistory(filename, metaZone, null);
@@ -241,7 +241,7 @@ if (model) {
                     const viewAllBtn = document.createElement('button');
                     viewAllBtn.textContent = t('assistantViewAll');
                     viewAllBtn.style.cssText = 'background:transparent;border:1px solid var(--amb-border-strong);color:var(--amb-text-main);font-size:11px;padding:3px 8px;border-radius:4px;cursor:pointer;transition:all 0.2s;';
-                    viewAllBtn.onmouseover = () => { viewAllBtn.style.background = 'rgba(255,255,255,0.1)'; };
+                    viewAllBtn.onmouseover = () => { viewAllBtn.style.background = 'rgba(var(--amb-ink-rgb), 0.1)'; };
                     viewAllBtn.onmouseout = () => { viewAllBtn.style.background = 'transparent'; };
                     viewAllBtn.onclick = () => this.showGeneratedGallery(model);
                     sectionHeader.appendChild(viewAllBtn);
@@ -376,16 +376,16 @@ for (const w of node.widgets) {
         nodeContent.innerHTML = '';
 
         const titleBar = document.createElement('div');
-        titleBar.style.cssText = 'margin:14px 16px 0;padding:16px;border:1px solid var(--amb-border);border-radius:12px;background:rgba(255,255,255,0.04);display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 8px 24px rgba(0,0,0,0.25);';
-        titleBar.innerHTML = `<span style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(255,255,255,0.08);border:1px solid var(--amb-border-strong);">🤖</span><span style="display:flex;flex-direction:column;min-width:0;gap:3px;"><span style="font-size:10px;letter-spacing:0.11em;text-transform:uppercase;color:var(--amb-text-muted);">${t('assistantSelectedNode')}</span><span class="ast-title" style="font-weight:700;color:var(--amb-text-main);font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span></span><span class="ast-type" style="font-size:10px;color:var(--amb-text-soft);margin-left:auto;padding:4px 8px;border-radius:999px;border:1px solid var(--amb-border-strong);background:rgba(255,255,255,0.06);max-width:38%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>`;
+        titleBar.style.cssText = 'margin:14px 16px 0;padding:16px;border:1px solid var(--amb-border);border-radius:12px;background:rgba(var(--amb-ink-rgb), 0.04);display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 8px 24px rgba(0,0,0,0.25);';
+        titleBar.innerHTML = `<span style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(var(--amb-ink-rgb), 0.08);border:1px solid var(--amb-border-strong);">🤖</span><span style="display:flex;flex-direction:column;min-width:0;gap:3px;"><span style="font-size:10px;letter-spacing:0.11em;text-transform:uppercase;color:var(--amb-text-muted);">${t('assistantSelectedNode')}</span><span class="ast-title" style="font-weight:700;color:var(--amb-text-main);font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span></span><span class="ast-type" style="font-size:10px;color:var(--amb-text-soft);margin-left:auto;padding:4px 8px;border-radius:999px;border:1px solid var(--amb-border-strong);background:rgba(var(--amb-ink-rgb), 0.06);max-width:38%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>`;
         titleBar.querySelector('.ast-title').textContent = node.title || node.type || 'Node';
         titleBar.querySelector('.ast-type').textContent = node.type || '';
 
         const refreshBtn = document.createElement('button');
         refreshBtn.title = t('refresh') || 'Refresh';
         refreshBtn.innerHTML = '🔄';
-        refreshBtn.style.cssText = 'background:none; border:none; color:#c9d6ff; cursor:pointer; font-size:14px; padding:4px; margin-left:4px; border-radius:4px; transition:background 0.2s, transform 0.3s; display:flex; align-items:center; justify-content:center;';
-        refreshBtn.onmouseover = () => refreshBtn.style.background = 'rgba(255,255,255,0.1)';
+        refreshBtn.style.cssText = 'background:none; border:none; color:var(--amb-text-soft); cursor:pointer; font-size:14px; padding:4px; margin-left:4px; border-radius:4px; transition:background 0.2s, transform 0.3s; display:flex; align-items:center; justify-content:center;';
+        refreshBtn.onmouseover = () => refreshBtn.style.background = 'rgba(var(--amb-ink-rgb), 0.1)';
         refreshBtn.onmouseout = () => refreshBtn.style.background = 'none';
         refreshBtn.onclick = () => {
             refreshBtn.style.transform = 'rotate(180deg)';
@@ -399,7 +399,7 @@ for (const w of node.widgets) {
         quickActions.style.cssText = 'padding:14px 16px 4px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;flex-shrink:0;';
         const actionsLabel = document.createElement('div');
         actionsLabel.textContent = t('assistantQuickActions');
-        actionsLabel.style.cssText = 'grid-column:1/-1;color:#8b91a3;font-size:10px;font-weight:750;letter-spacing:0.1em;text-transform:uppercase;padding:0 2px 2px;';
+        actionsLabel.style.cssText = 'grid-column:1/-1;color:var(--amb-text-muted);font-size:10px;font-weight:750;letter-spacing:0.1em;text-transform:uppercase;padding:0 2px 2px;';
         quickActions.appendChild(actionsLabel);
 
         const makeActionButton = ({ icon, label, hint, accent, onClick, capability = null, primary = false }) => {
@@ -409,7 +409,7 @@ for (const w of node.widgets) {
             const gridPlacement = primary ? 'grid-column:1/-1;' : '';
             button.style.cssText = gridPlacement + (enabled
                 ? `min-width:0;padding:${primary ? '13px 14px' : '11px 10px'};background:${accent};color:#fff;border:1px solid var(--amb-border-strong);border-radius:11px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;transition:transform 0.15s,filter 0.15s,box-shadow 0.15s;box-shadow:0 8px 18px rgba(0,0,0,0.14);`
-                : 'min-width:0;padding:11px 10px;background:rgba(255,255,255,0.035);color:#656b78;border:1px solid var(--amb-border);border-radius:11px;cursor:not-allowed;text-align:left;display:flex;align-items:center;gap:9px;');
+                : 'min-width:0;padding:11px 10px;background:rgba(var(--amb-ink-rgb), 0.035);color:var(--amb-text-dim);border:1px solid var(--amb-border);border-radius:11px;cursor:not-allowed;text-align:left;display:flex;align-items:center;gap:9px;');
             const iconEl = document.createElement('span');
             iconEl.textContent = icon;
             iconEl.style.cssText = `width:${primary ? '34px' : '28px'};height:${primary ? '34px' : '28px'};border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,${enabled ? '0.14' : '0.04'});font-size:${primary ? '17px' : '14px'};flex-shrink:0;`;
@@ -420,7 +420,7 @@ for (const w of node.widgets) {
             title.style.cssText = `font-weight:750;font-size:${primary ? '13px' : '11px'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
             const subtitle = document.createElement('span');
             subtitle.textContent = enabled ? hint : getInsertionCapabilityMessage(capability);
-            subtitle.style.cssText = `font-size:9px;color:${enabled ? 'rgba(255,255,255,0.68)' : '#555b66'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
+            subtitle.style.cssText = `font-size:9px;color:${enabled ? 'rgba(255, 255, 255, 0.68)' : 'var(--amb-lt-muted,#555b66)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;`;
             copy.append(title, subtitle);
             button.append(iconEl, copy);
             if (enabled) {

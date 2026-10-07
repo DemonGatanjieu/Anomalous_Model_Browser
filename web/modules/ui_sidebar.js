@@ -260,7 +260,7 @@ export function renderSidebar() {
 
         const title = document.createElement('h3');
         title.innerHTML = `${SIDEBAR_ICONS.FOLDER}<span>${t('folders')}</span>`;
-        title.style.color = '#fff';
+        title.style.color = 'var(--amb-lt-text, #fff)';
         title.style.margin = '0';
         title.style.display = 'inline-flex';
         title.style.alignItems = 'center';
@@ -273,15 +273,15 @@ export function renderSidebar() {
         collapseAllBtn.style.display = 'inline-flex';
         collapseAllBtn.style.alignItems = 'center';
         collapseAllBtn.style.padding = '4px 9px';
-        collapseAllBtn.style.background = 'rgba(255, 255, 255, 0.08)';
-        collapseAllBtn.style.color = '#e2e8f0';
+        collapseAllBtn.style.background = 'rgba(var(--amb-ink-rgb), 0.08)';
+        collapseAllBtn.style.color = 'var(--amb-lt-soft, #e2e8f0)';
         collapseAllBtn.style.border = '1px solid var(--amb-border-strong)';
         collapseAllBtn.style.borderRadius = '3px 8px 3px 8px';
         collapseAllBtn.style.cursor = 'pointer';
         collapseAllBtn.style.fontSize = '0.82em';
         collapseAllBtn.style.transition = 'all 0.2s ease';
-        collapseAllBtn.onmouseover = () => { collapseAllBtn.style.background = 'rgba(255, 255, 255, 0.15)'; collapseAllBtn.style.borderColor = 'var(--amb-border-strong)'; };
-        collapseAllBtn.onmouseout = () => { collapseAllBtn.style.background = 'rgba(255, 255, 255, 0.08)'; collapseAllBtn.style.borderColor = 'var(--amb-border-strong)'; };
+        collapseAllBtn.onmouseover = () => { collapseAllBtn.style.background = 'rgba(var(--amb-ink-rgb), 0.15)'; collapseAllBtn.style.borderColor = 'var(--amb-border-strong)'; };
+        collapseAllBtn.onmouseout = () => { collapseAllBtn.style.background = 'rgba(var(--amb-ink-rgb), 0.08)'; collapseAllBtn.style.borderColor = 'var(--amb-border-strong)'; };
         collapseAllBtn.onclick = () => {
             if (isAllCollapsed) {
                 (this.foldersData || []).forEach(typeGroup => {

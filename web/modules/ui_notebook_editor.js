@@ -150,11 +150,11 @@ function createCompanionModelsCard(ctx, data) {
 
     const mainSelectedBadge = document.createElement('span');
     mainSelectedBadge.className = 'anomalous-nb-selected-badge';
-    mainSelectedBadge.style.color = '#c084fc';
+    mainSelectedBadge.style.color = 'var(--amb-lt-violet, #c084fc)';
 
     const loraSelectedBadge = document.createElement('span');
     loraSelectedBadge.className = 'anomalous-nb-selected-badge';
-    loraSelectedBadge.style.color = '#fbbf24';
+    loraSelectedBadge.style.color = 'var(--amb-warn)';
 
     const updateSummary = () => {
         const baseInfo = data.baseModel === UNLABELED_BASE_MODEL ? t('notebookUnlabeledBase') : (data.baseModel || 'SDXL');
@@ -177,7 +177,7 @@ function createCompanionModelsCard(ctx, data) {
     const baseTitle = document.createElement('span');
     baseTitle.style.fontWeight = '600';
     baseTitle.style.fontSize = '0.88rem';
-    baseTitle.style.color = '#cbd5e1';
+    baseTitle.style.color = 'var(--amb-lt-soft, #cbd5e1)';
     baseTitle.textContent = `${t('baseModel') || (window.anomalous_browser_lang === 'zh' ? '基础模型' : 'Base Model')}:`;
     baseRow.appendChild(baseTitle);
 
@@ -526,7 +526,7 @@ export function fillNotebookGalleries(baseModel, mainGallery, loraGallery, data)
             const buildMainDOM = (models) => {
                 mainGallery.innerHTML = '';
                 if (!models || !models.length) {
-                    mainGallery.innerHTML = `<span style="color:#666;">${window.anomalous_browser_lang === 'zh' ? '未找到兼容的主模型。' : 'No compatible main models found.'}</span>`;
+                    mainGallery.innerHTML = `<span style="color:var(--amb-lt-muted,#666);">${window.anomalous_browser_lang === 'zh' ? '未找到兼容的主模型。' : 'No compatible main models found.'}</span>`;
                 } else {
                     models.forEach(m => {
                         const isSelected = (data.mainModel && data.mainModel.filename === m.filename);
@@ -558,7 +558,7 @@ export function fillNotebookGalleries(baseModel, mainGallery, loraGallery, data)
             const buildLoraDOM = (models) => {
                 loraGallery.innerHTML = '';
                 if (!models || !models.length) {
-                    loraGallery.innerHTML = `<span style="color:#666;">${window.anomalous_browser_lang === 'zh' ? '未找到兼容的 LoRA。' : 'No compatible Loras found.'}</span>`;
+                    loraGallery.innerHTML = `<span style="color:var(--amb-lt-muted,#666);">${window.anomalous_browser_lang === 'zh' ? '未找到兼容的 LoRA。' : 'No compatible Loras found.'}</span>`;
                 } else {
                     models.forEach(m => {
                         const loraIndex = data.loras.findIndex(l => l.filename === m.filename);

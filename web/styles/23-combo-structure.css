@@ -9,7 +9,7 @@
     justify-content: center;
     padding: 20px;
     box-sizing: border-box;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--amb-lt-scrim, rgba(0, 0, 0, 0.6));
     backdrop-filter: blur(4px);
 }
 
@@ -47,7 +47,7 @@
 }
 
 .anomalous-structure-note.is-muted { color: var(--amb-text-muted); }
-.anomalous-structure-note.is-bad { color: #fca5a5; }
+.anomalous-structure-note.is-bad { color: var(--amb-danger-text); }
 
 .anomalous-structure-name,
 .anomalous-structure-search,
@@ -199,7 +199,7 @@
 .anomalous-structure-count {
     padding: 0 7px;
     border-radius: 999px;
-    background: var(--amb-bg-input, rgba(255, 255, 255, 0.08));
+    background: var(--amb-bg-input, rgba(var(--amb-ink-rgb), 0.08));
     font-size: 11px;
     line-height: 18px;
 }
@@ -384,7 +384,7 @@
     user-select: text;
 }
 
-.anomalous-structure-translation-text.is-bad { color: #fca5a5; }
+.anomalous-structure-translation-text.is-bad { color: var(--amb-danger-text); }
 
 .anomalous-structure-text {
     width: 100%;

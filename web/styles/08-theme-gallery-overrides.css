@@ -454,7 +454,7 @@ button:hover .anomalous-btn-icon {
     left: 50%;
     transform: translateX(-50%) translateY(4px);
     padding: 6px 12px;
-    background: rgba(18, 20, 26, 0.98);
+    background: var(--amb-bg-tooltip);
     color: var(--amb-text-main);
     font-size: 12px;
     font-weight: 500;
@@ -479,7 +479,7 @@ button:hover .anomalous-btn-icon {
     transform: translateX(-50%) translateY(4px);
     border-width: 5px 5px 0 5px;
     border-style: solid;
-    border-color: rgba(18, 20, 26, 0.98) transparent transparent transparent;
+    border-color: var(--amb-bg-tooltip) transparent transparent transparent;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s ease, transform 0.15s ease;
@@ -514,7 +514,7 @@ button:hover .anomalous-btn-icon {
     left: calc(100% + 5px);
     transform: translateY(-50%) translateX(-6px);
     border-width: 5px 5px 5px 0;
-    border-color: transparent rgba(18, 20, 26, 0.98) transparent transparent;
+    border-color: transparent var(--amb-bg-tooltip) transparent transparent;
 }
 
 [data-tooltip-pos="right"]:hover::after,
@@ -539,7 +539,7 @@ button:hover .anomalous-btn-icon {
     left: 50%;
     transform: translateX(-50%) translateY(-6px);
     border-width: 0 5px 5px 5px;
-    border-color: transparent transparent rgba(18, 20, 26, 0.98) transparent;
+    border-color: transparent transparent var(--amb-bg-tooltip) transparent;
 }
 
 [data-tooltip-pos="bottom"]:hover::after,
@@ -581,7 +581,7 @@ button:hover .anomalous-btn-icon {
     right: calc(100% + 5px);
     transform: translateY(-50%) translateX(6px);
     border-width: 5px 0 5px 5px;
-    border-color: transparent transparent transparent rgba(18, 20, 28, 0.95);
+    border-color: transparent transparent transparent var(--amb-bg-tooltip);
 }
 
 [data-tooltip-pos="left"]:hover::after,
@@ -608,7 +608,7 @@ button:hover .anomalous-btn-icon {
     transform: translateX(-50%) translateY(4px);
     border-width: 5px 5px 0 5px;
     border-style: solid;
-    border-color: rgba(18, 20, 28, 0.95) transparent transparent transparent;
+    border-color: var(--amb-bg-tooltip) transparent transparent transparent;
 }
 
 [data-tooltip-pos="top"]:hover::after,
@@ -659,7 +659,7 @@ button:hover .anomalous-btn-icon {
 /* 1. Normal Mode Master Header (Neutral Charcoal Frosted Glass) */
 #anomalous-header {
     height: 48px !important;
-    background: rgba(20, 20, 23, 0.85) !important;
+    background: var(--amb-lt-panel, rgba(20, 20, 23, 0.85)) !important;
     backdrop-filter: blur(20px) !important;
     -webkit-backdrop-filter: blur(20px) !important;
     display: flex !important;
@@ -708,8 +708,8 @@ button:hover .anomalous-btn-icon {
     padding: 0 10px !important;
     height: 28px !important;
     box-sizing: border-box !important;
-    background: rgba(255, 255, 255, 0.04) !important;
-    color: #c0c4cc !important;
+    background: rgba(var(--amb-ink-rgb), 0.04) !important;
+    color: var(--amb-lt-muted, #c0c4cc) !important;
     border: 1px solid var(--amb-border) !important;
     border-radius: 6px !important;
     cursor: pointer;
@@ -726,7 +726,7 @@ button:hover .anomalous-btn-icon {
 }
 
 #anomalous-header button:hover {
-    background: rgba(255, 255, 255, 0.09) !important;
+    background: rgba(var(--amb-ink-rgb), 0.09) !important;
     border-color: var(--amb-border-strong) !important;
     color: var(--amb-text-main) !important;
     transform: translateY(-1px);
@@ -734,7 +734,7 @@ button:hover .anomalous-btn-icon {
 }
 
 #anomalous-header button.active {
-    background: rgba(255, 255, 255, 0.14) !important;
+    background: rgba(var(--amb-ink-rgb), 0.14) !important;
     border-color: var(--amb-border-strong) !important;
     color: var(--amb-text-main) !important;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35) !important;
@@ -757,12 +757,12 @@ button:hover .anomalous-btn-icon {
     align-items: center !important;
     justify-content: center !important;
     border-radius: 6px !important;
-    background: rgba(255, 255, 255, 0.04) !important;
+    background: rgba(var(--amb-ink-rgb), 0.04) !important;
     border: 1px solid var(--amb-border) !important;
 }
 
 #anomalous-dock-btn:hover {
-    background: rgba(255, 255, 255, 0.09) !important;
+    background: rgba(var(--amb-ink-rgb), 0.09) !important;
     border-color: var(--amb-border-strong) !important;
     color: var(--amb-text-main) !important;
 }

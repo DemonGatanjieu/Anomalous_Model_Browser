@@ -16,7 +16,7 @@
     line-height: 1.4;
 }
 
-.anomalous-download-text.is-bad { color: #fca5a5; }
+.anomalous-download-text.is-bad { color: var(--amb-danger-text); }
 
 .anomalous-download-bar {
     position: relative;
@@ -45,7 +45,7 @@
     justify-content: center;
     padding: 20px;
     box-sizing: border-box;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--amb-lt-scrim, rgba(0, 0, 0, 0.6));
     backdrop-filter: blur(4px);
 }
 
@@ -134,7 +134,7 @@
 .anomalous-download-root { max-width: 100%; }
 .anomalous-download-rel { flex: 1 1 240px; }
 .anomalous-download-folder { width: 220px; }
-.anomalous-download-folder.is-bad { border-color: #fca5a5; }
+.anomalous-download-folder.is-bad { border-color: var(--amb-danger-text); }
 
 .anomalous-download-path {
     color: var(--amb-text-dim, var(--amb-text-muted));
@@ -148,15 +148,15 @@
     line-height: 1.5;
 }
 
-.anomalous-download-note.is-warn { color: #fcd34d; }
-.anomalous-download-note.is-bad { color: #fca5a5; }
+.anomalous-download-note.is-warn { color: var(--amb-warn-text); }
+.anomalous-download-note.is-bad { color: var(--amb-danger-text); }
 
 .anomalous-download-space {
     color: var(--amb-text-muted);
     font-size: 12.5px;
 }
 
-.anomalous-download-space.is-bad { color: #fca5a5; }
+.anomalous-download-space.is-bad { color: var(--amb-danger-text); }
 
 .anomalous-download-rules {
     align-self: flex-start;

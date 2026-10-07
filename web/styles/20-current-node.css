@@ -51,7 +51,7 @@
     padding: 7px 10px;
     border: 1px solid var(--amb-border);
     border-radius: 8px;
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.25));
     color: var(--amb-text-main);
     font-size: 12px;
 }
@@ -69,7 +69,7 @@
     padding: 10px 12px;
     border: 1px solid var(--amb-border);
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.035);
+    background: rgba(var(--amb-ink-rgb), 0.035);
 }
 
 .anomalous-node-param-head {
@@ -91,13 +91,13 @@
     flex-shrink: 0;
     padding: 1px 7px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--amb-ink-rgb), 0.06);
     color: var(--amb-link);
     font-size: 10px;
 }
 
-.anomalous-node-param-role.is-positive { color: #86efac; }
-.anomalous-node-param-role.is-negative { color: #fca5a5; }
+.anomalous-node-param-role.is-positive { color: var(--amb-ok-text); }
+.anomalous-node-param-role.is-negative { color: var(--amb-danger-text); }
 
 .anomalous-node-param-sources {
     display: flex;
@@ -139,7 +139,7 @@
     line-height: 1.5;
 }
 
-.anomalous-node-muted.is-error { color: #fca5a5; }
+.anomalous-node-muted.is-error { color: var(--amb-danger-text); }
 
 .anomalous-node-param-actions {
     display: flex;
@@ -159,7 +159,7 @@
 
 .anomalous-node-param-delete:hover {
     border-color: rgba(239, 68, 68, 0.5);
-    color: #fca5a5;
+    color: var(--amb-danger-text);
 }
 
 .anomalous-node-param-apply {
@@ -188,7 +188,7 @@
     padding: 10px 12px;
     border: 1px solid var(--amb-border);
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.035);
+    background: rgba(var(--amb-ink-rgb), 0.035);
 }
 
 .anomalous-node-param-role.is-plain { color: var(--amb-text-soft); }

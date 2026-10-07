@@ -14,7 +14,7 @@ export function showEditModal(model) {
         modal.style.left = '0';
         modal.style.width = '100vw';
         modal.style.height = '100vh';
-        modal.style.background = 'rgba(0,0,0,0.6)';
+        modal.style.background = 'var(--amb-scrim)';
         modal.style.backdropFilter = 'blur(4px)';
         modal.style.zIndex = '10000';
         modal.style.display = 'flex';
@@ -98,7 +98,7 @@ export function showEditModal(model) {
             }
         } else {
             const noCover = document.createElement('div');
-            noCover.style.color = '#9aa0a6';
+            noCover.style.color = 'var(--amb-text-muted)';
             noCover.style.fontSize = '0.9em';
             noCover.style.textAlign = 'center';
             noCover.textContent = t('detailNoCover');
@@ -114,8 +114,8 @@ export function showEditModal(model) {
         galleryBtn.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>${t('detailPickGallery')}`;
         galleryBtn.style.padding = '8px';
         galleryBtn.style.background = 'var(--amb-bg-card-hover)';
-        galleryBtn.style.color = '#e5e7eb';
-        galleryBtn.style.border = '1px solid #5f6368';
+        galleryBtn.style.color = 'var(--amb-text-main)';
+        galleryBtn.style.border = '1px solid var(--amb-border-strong)';
         galleryBtn.style.borderRadius = '6px';
         galleryBtn.style.cursor = 'pointer';
         galleryBtn.style.fontWeight = '500';
@@ -131,8 +131,8 @@ export function showEditModal(model) {
         localBtn.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${t('detailUploadLocal')}`;
         localBtn.style.padding = '8px';
         localBtn.style.background = 'var(--amb-bg-card-hover)';
-        localBtn.style.color = '#e5e7eb';
-        localBtn.style.border = '1px solid #5f6368';
+        localBtn.style.color = 'var(--amb-text-main)';
+        localBtn.style.border = '1px solid var(--amb-border-strong)';
         localBtn.style.borderRadius = '6px';
         localBtn.style.cursor = 'pointer';
         localBtn.style.fontWeight = '500';
@@ -189,16 +189,16 @@ export function showEditModal(model) {
         const title = document.createElement('h2');
         title.textContent = t('detailModelInfo');
         title.style.margin = '0';
-        title.style.color = '#e8eaed';
+        title.style.color = 'var(--amb-text-main)';
         title.style.fontSize = '1.25em';
         title.style.fontWeight = '500';
 
         const filenameLabel = document.createElement('div');
         const filenamePrefix = document.createElement('span');
-        filenamePrefix.style.color = '#9aa0a6';
+        filenamePrefix.style.color = 'var(--amb-text-muted)';
         filenamePrefix.textContent = t('detailFile');
         filenameLabel.append(filenamePrefix, document.createTextNode(` ${model.filename}`));
-        filenameLabel.style.color = '#e8eaed';
+        filenameLabel.style.color = 'var(--amb-text-main)';
         filenameLabel.style.fontSize = '0.9em';
         filenameLabel.style.wordBreak = 'break-all';
 
@@ -206,8 +206,8 @@ export function showEditModal(model) {
             width: 100%;
             padding: 12px 14px;
             background: var(--amb-bg-card-hover);
-            color: #e8eaed;
-            border: 1px solid #5f6368;
+            color: var(--amb-text-main);
+            border: 1px solid var(--amb-border-strong);
             border-radius: 6px;
             box-sizing: border-box;
             outline: none;
@@ -219,8 +219,8 @@ export function showEditModal(model) {
         nameInput.placeholder = t('detailCustomNamePlaceholder');
         nameInput.value = (model.metadata && model.metadata.custom_name) ? model.metadata.custom_name : '';
         nameInput.style.cssText = inputStyle;
-        nameInput.onfocus = () => nameInput.style.borderColor = 'rgba(255, 255, 255, 0.4)';
-        nameInput.onblur = () => nameInput.style.borderColor = '#5f6368';
+        nameInput.onfocus = () => nameInput.style.borderColor = 'rgba(var(--amb-ink-rgb), 0.4)';
+        nameInput.onblur = () => nameInput.style.borderColor = 'var(--amb-text-dim)';
 
         const notesInput = document.createElement('textarea');
         notesInput.placeholder = t('detailNotesPlaceholder');
@@ -234,16 +234,16 @@ export function showEditModal(model) {
         notesInput.style.backgroundImage = 'repeating-linear-gradient(transparent, transparent 23px, rgba(163, 141, 83, 0.04) 23px, rgba(163, 141, 83, 0.04) 24px)';
         notesInput.style.backgroundAttachment = 'local';
         notesInput.style.border = '1px solid var(--amb-border-strong)';
-        notesInput.style.borderLeft = '4px solid #a38d53';
+        notesInput.style.borderLeft = '4px solid var(--amb-note-accent)';
         notesInput.style.borderRadius = '4px 8px 8px 4px';
-        notesInput.style.color = '#d1c9b4';
+        notesInput.style.color = 'var(--amb-note-text)';
         notesInput.style.fontFamily = '"Consolas", "Courier New", monospace';
         notesInput.style.lineHeight = '24px';
         // Removed text shadow for cleaner look
 
         notesInput.onfocus = () => {
             notesInput.style.boxShadow = '0 0 0 2px rgba(163, 141, 83, 0.2)';
-            notesInput.style.borderColor = '#a38d53';
+            notesInput.style.borderColor = 'var(--amb-note-accent)';
         };
         notesInput.onblur = () => {
             notesInput.style.boxShadow = 'none';
@@ -271,7 +271,7 @@ export function showEditModal(model) {
         const physicalLabel = document.createElement('label');
         physicalLabel.htmlFor = 'anomalous-physical-rename-checkbox';
         physicalLabel.textContent = t('detailPhysicalRename');
-        physicalLabel.style.color = '#e8eaed';
+        physicalLabel.style.color = 'var(--amb-text-main)';
         physicalLabel.style.fontSize = '0.9em';
         physicalLabel.style.cursor = physicalRenameProtected ? 'not-allowed' : 'pointer';
         physicalLabel.style.opacity = physicalRenameProtected ? '0.6' : '1';
@@ -281,7 +281,7 @@ export function showEditModal(model) {
 
         const physicalDesc = document.createElement('div');
         physicalDesc.style.fontSize = '0.8em';
-        physicalDesc.style.color = '#9aa0a6';
+        physicalDesc.style.color = 'var(--amb-text-muted)';
         physicalDesc.style.marginLeft = '22px';
         physicalDesc.textContent = t(physicalRenameProtected
             ? 'detailPhysicalRenameProtectedDesc'
@@ -303,8 +303,8 @@ export function showEditModal(model) {
         resetBtn.textContent = t('detailResetAll');
         resetBtn.style.padding = '8px 16px';
         resetBtn.style.background = 'transparent';
-        resetBtn.style.color = '#f28b82';
-        resetBtn.style.border = '1px solid #f28b82';
+        resetBtn.style.color = 'var(--amb-danger-text)';
+        resetBtn.style.border = '1px solid var(--amb-danger-text)';
         resetBtn.style.borderRadius = '4px';
         resetBtn.style.cursor = 'pointer';
         resetBtn.style.fontWeight = '500';
@@ -352,7 +352,7 @@ export function showEditModal(model) {
         cancelBtn.textContent = t('detailCancel');
         cancelBtn.style.padding = '8px 16px';
         cancelBtn.style.background = 'transparent';
-        cancelBtn.style.color = '#9ca3af';
+        cancelBtn.style.color = 'var(--amb-text-muted)';
         cancelBtn.style.border = 'none';
         cancelBtn.style.borderRadius = '4px';
         cancelBtn.style.cursor = 'pointer';
@@ -365,8 +365,8 @@ export function showEditModal(model) {
         const saveBtn = document.createElement('button');
         saveBtn.textContent = t('detailSaveChanges');
         saveBtn.style.padding = '8px 24px';
-        saveBtn.style.background = '#e5e7eb';
-        saveBtn.style.color = '#111827';
+        saveBtn.style.background = 'var(--amb-btn-primary-bg)';
+        saveBtn.style.color = 'var(--amb-btn-primary-text)';
         saveBtn.style.border = 'none';
         saveBtn.style.borderRadius = '4px';
         saveBtn.style.cursor = 'pointer';

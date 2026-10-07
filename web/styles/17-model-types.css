@@ -21,7 +21,7 @@
     padding: 0 11px;
     border: 1px solid var(--amb-border);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--amb-ink-rgb), 0.03);
     color: var(--amb-text-soft);
     font-size: 12.5px;
     font-weight: 500;
@@ -33,7 +33,7 @@
 .anomalous-model-type-chip:hover,
 .anomalous-model-type-crumb:hover {
     border-color: color-mix(in srgb, var(--amb-link) 35%, transparent);
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(var(--amb-ink-rgb), 0.07);
     color: var(--amb-text-main);
 }
 
@@ -48,7 +48,7 @@
 }
 
 .anomalous-model-type-count {
-    color: rgba(203, 213, 225, 0.55);
+    color: var(--amb-lt-muted, rgba(203, 213, 225, 0.55));
     font-variant-numeric: tabular-nums;
 }
 

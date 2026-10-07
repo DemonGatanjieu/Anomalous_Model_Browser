@@ -9,7 +9,7 @@
 
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
-import { ABYSSAL_SCARLET_SETTING_ID, LANGUAGE_SETTING_ID, applyLanguagePreference, setAbyssalScarletTheme } from './interface_settings.js';
+import { LANGUAGE_SETTING_ID, applyLanguagePreference, setThemePreference, themePreference } from './interface_settings.js';
 import { ENTRY_MODE_SETTING_ID } from './browser_entry.js';
 import { showUpdateGuide } from './ui_update_guide.js';
 import { startSpotlightTour } from './ui_spotlight_tour.js';
@@ -140,7 +140,6 @@ function cacheRow(owner) {
 function appearanceGroup(owner, redraw) {
     const prefs = owner.displayPrefs.get();
     const language = localStorage.getItem('anomalous_lang') || 'auto';
-    const abyssal = localStorage.getItem('anomalous_theme_abyssal_scarlet') === 'true';
     const rows = [
         row('sidebarViewMode', 'settingsViewModeHelp', segment(
             [['compact', 'sidebarViewModeCompact'], ['standard', 'sidebarViewModeStandard'], ['aesthetic', 'sidebarViewModeAesthetic']],
@@ -152,8 +151,9 @@ function appearanceGroup(owner, redraw) {
     }
     rows.push(
         row('sidebarUiScale', 'settingsScaleHelp', slider(prefs.scale, { min: 0.5, max: 1.5, step: 0.1 }, value => owner.displayPrefs.setScale(value))),
-        row('settingsTheme', 'settingsThemeHelp', segment([['default', 'settingsThemeDefault'], ['abyssal', 'settingsThemeAbyssal']],
-            abyssal ? 'abyssal' : 'default', value => { setAbyssalScarletTheme(value === 'abyssal', true); redraw(); })),
+        row('settingsTheme', 'settingsThemeHelp', segment(
+            [['auto', 'settingsThemeAuto'], ['dark', 'settingsThemeDark'], ['light', 'settingsThemeLight'], ['abyssal', 'settingsThemeAbyssal']],
+            themePreference(), value => { setThemePreference(value, true); redraw(); })),
         row('mainLanguageSetting', null, segment([['auto', 'mainLanguageAuto'], ['zh', 'mainLanguageChinese'], ['en', 'mainLanguageEnglish']],
             language, async value => {
                 // The ComfyUI setting's own change handler switches the language; without it, switch here.

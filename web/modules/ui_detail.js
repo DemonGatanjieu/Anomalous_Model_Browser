@@ -93,16 +93,16 @@ export function showDetail(model) {
 
         if (isFromDoctor) {
             backBtn.textContent = t('detailBackDoctor');
-            backBtn.style.background = '#e5e7eb';
-            backBtn.style.color = '#111827';
+            backBtn.style.background = 'var(--amb-btn-primary-bg)';
+            backBtn.style.color = 'var(--amb-btn-primary-text)';
         } else if (isFromAssistant) {
             backBtn.textContent = t('detailBackAssistant');
-            backBtn.style.background = '#e5e7eb';
-            backBtn.style.color = '#111827';
+            backBtn.style.background = 'var(--amb-btn-primary-bg)';
+            backBtn.style.color = 'var(--amb-btn-primary-text)';
         } else {
             backBtn.innerHTML = this.historyStack.length > 0 ? t('backToPrev') : t('back');
             backBtn.style.background = 'var(--amb-bg-card-hover)';
-            backBtn.style.color = '#fff';
+            backBtn.style.color = 'var(--amb-text-main)';
         }
         backBtn.style.padding = '6px 12px';
         backBtn.style.border = 'none';
@@ -156,7 +156,7 @@ export function showDetail(model) {
         const title = document.createElement('h2');
         title.textContent = model.filename;
         title.style.margin = '0 20px 0 20px';
-        title.style.color = '#fff';
+        title.style.color = 'var(--amb-text-main)';
         title.style.fontSize = '1.2em';
         // 强制单行并溢出显示省略号
         title.style.whiteSpace = 'nowrap';
@@ -211,7 +211,7 @@ export function showDetail(model) {
         jumpBtn.title = t('detailJumpToBottom');
         jumpBtn.style.padding = '6px 12px';
         jumpBtn.style.background = 'var(--amb-bg-card-hover)';
-        jumpBtn.style.color = '#fff';
+        jumpBtn.style.color = 'var(--amb-text-main)';
         jumpBtn.style.border = 'none';
         jumpBtn.style.borderRadius = '4px';
         jumpBtn.style.cursor = 'pointer';
@@ -326,7 +326,7 @@ export function showDetail(model) {
         rightPanel.style.boxSizing = 'border-box';
         rightPanel.style.overflow = 'auto';
         rightPanel.style.padding = '15px';
-        rightPanel.style.color = '#eee';
+        rightPanel.style.color = 'var(--amb-text-main)';
 
         const m = model.metadata || {};
 
@@ -350,7 +350,7 @@ export function showDetail(model) {
 
         const metaSpan = document.createElement('span');
         metaSpan.style.fontSize = '0.9em';
-        metaSpan.style.color = '#aaa';
+        metaSpan.style.color = 'var(--amb-text-muted)';
         renderSourceLine(metaSpan, model, m);
         topRow.appendChild(metaSpan);
 
@@ -362,9 +362,9 @@ export function showDetail(model) {
             cBtn.innerHTML = '🌐 Civitai';
             cBtn.style.marginLeft = 'auto';
             cBtn.style.padding = '4px 8px';
-            cBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+            cBtn.style.background = 'rgba(var(--amb-ink-rgb), 0.1)';
             cBtn.style.border = '1px solid var(--amb-border-strong)';
-            cBtn.style.color = '#fff';
+            cBtn.style.color = 'var(--amb-text-main)';
             cBtn.style.textDecoration = 'none';
             cBtn.style.borderRadius = '4px';
             cBtn.style.fontSize = '0.85em';
@@ -377,7 +377,7 @@ export function showDetail(model) {
         editMetaBtn.style.marginLeft = m.civitai_url ? '10px' : 'auto';
         editMetaBtn.style.padding = '4px 8px';
         editMetaBtn.style.background = 'var(--amb-bg-card-hover)';
-        editMetaBtn.style.color = '#fff';
+        editMetaBtn.style.color = 'var(--amb-text-main)';
         editMetaBtn.style.border = 'none';
         editMetaBtn.style.borderRadius = '4px';
         editMetaBtn.style.fontSize = '0.85em';
@@ -400,7 +400,7 @@ export function showDetail(model) {
             // Dark yellowish/khaki paper background for dark mode notebook feel
             notesCard.style.background = 'linear-gradient(135deg, var(--amb-bg-card-hover) 0%, var(--amb-bg-card) 100%)';
             notesCard.style.border = '1px solid var(--amb-border-strong)';
-            notesCard.style.borderLeft = '4px solid #a38d53';
+            notesCard.style.borderLeft = '4px solid var(--amb-note-accent)';
             notesCard.style.borderRadius = '4px 8px 8px 4px';
             notesCard.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
             notesCard.style.position = 'relative';
@@ -417,7 +417,7 @@ export function showDetail(model) {
 
             const notesTitle = document.createElement('div');
             notesTitle.textContent = t('detailNotesTitle');
-            notesTitle.style.color = '#a38d53';
+            notesTitle.style.color = 'var(--amb-note-accent)';
             notesTitle.style.fontWeight = '600';
             notesTitle.style.fontSize = '0.85em';
             notesTitle.style.letterSpacing = '0.5px';
@@ -427,7 +427,7 @@ export function showDetail(model) {
             notesEditBtn.title = t('detailEditNotes');
             notesEditBtn.style.background = 'transparent';
             notesEditBtn.style.border = 'none';
-            notesEditBtn.style.color = '#a38d53';
+            notesEditBtn.style.color = 'var(--amb-note-accent)';
             notesEditBtn.style.cursor = 'pointer';
             notesEditBtn.style.padding = '2px';
             notesEditBtn.style.fontSize = '1em';
@@ -447,7 +447,7 @@ export function showDetail(model) {
 
             const notesContent = document.createElement('div');
             notesContent.innerText = m.custom_notes;
-            notesContent.style.color = '#d1c9b4'; // Warm off-white
+            notesContent.style.color = 'var(--amb-note-text)'; // Warm off-white
 
             notesContent.style.fontSize = '0.95em';
             notesContent.style.lineHeight = '24px'; // Matches the repeating gradient exactly
@@ -505,7 +505,7 @@ export function showDetail(model) {
             copyAll.style.marginLeft = '10px';
             copyAll.style.padding = '2px 6px';
             copyAll.style.background = 'var(--amb-bg-card-hover)';
-            copyAll.style.color = '#fff';
+            copyAll.style.color = 'var(--amb-text-main)';
             copyAll.style.border = 'none';
             copyAll.style.borderRadius = '3px';
             copyAll.style.cursor = 'pointer';
@@ -587,11 +587,11 @@ export function showDetail(model) {
             notesCont.appendChild(notesLabel);
 
             const notesText = document.createElement('div');
-            notesText.style.background = '#332b00';
+            notesText.style.background = 'var(--amb-note-bg)';
             notesText.style.padding = '8px';
             notesText.style.borderRadius = '6px';
             notesText.style.marginTop = '5px';
-            notesText.style.border = '1px solid #554400';
+            notesText.style.border = '1px solid var(--amb-note-border)';
             notesText.style.fontSize = '0.9em';
             setSafeRichHtml(notesText, m.notes);
             notesCont.appendChild(notesText);
@@ -626,7 +626,7 @@ export function showDetail(model) {
                     }
                     if (!d.models || d.models.length === 0) {
                         const noCompatible = document.createElement('span');
-                        noCompatible.style.color = '#888';
+                        noCompatible.style.color = 'var(--amb-text-muted)';
                         noCompatible.textContent = t('detailNoCompatibleModels');
                         compList.replaceChildren(noCompatible);
                         return;

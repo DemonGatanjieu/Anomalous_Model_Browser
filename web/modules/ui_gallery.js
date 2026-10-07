@@ -152,7 +152,7 @@ export async function showGeneratedGallery(model) {
             modalBox.id = 'anomalous-generated-gallery-modal';
             modalBox.style.width = '95%';
             modalBox.style.maxHeight = '95%';
-            modalBox.style.backgroundColor = 'var(--comfy-menu-bg, var(--amb-bg-card))';
+            modalBox.style.backgroundColor = 'var(--amb-lt-surface, var(--comfy-menu-bg, var(--amb-bg-card)))';
             modalBox.style.borderRadius = '12px';
             modalBox.style.display = 'flex';
             modalBox.style.flexDirection = 'column';
@@ -170,7 +170,7 @@ export async function showGeneratedGallery(model) {
             const title = document.createElement('h2');
             title.id = 'anomalous-generated-gallery-title';
             title.style.margin = '0';
-            title.style.color = '#fff';
+            title.style.color = 'var(--amb-lt-text, #fff)';
 
             const closeBtn = document.createElement('button');
             closeBtn.textContent = `✖ ${t('galleryClose')}`;
@@ -218,7 +218,7 @@ export async function showGeneratedGallery(model) {
         loading.style.textAlign = 'center';
         loading.style.gridColumn = '1 / -1';
         loading.style.padding = '50px';
-        loading.style.color = '#aaa';
+        loading.style.color = 'var(--amb-lt-muted, #aaa)';
         contentCont.appendChild(loading);
 
         overlay.style.display = 'flex';
@@ -234,7 +234,7 @@ export async function showGeneratedGallery(model) {
                 emptyMsg.style.textAlign = 'center';
                 emptyMsg.style.gridColumn = '1 / -1';
                 emptyMsg.style.padding = '50px';
-                emptyMsg.style.color = '#888';
+                emptyMsg.style.color = 'var(--amb-lt-muted, #888)';
                 contentCont.appendChild(emptyMsg);
                 return;
             }

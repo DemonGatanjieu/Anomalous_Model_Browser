@@ -63,7 +63,7 @@
     padding: 14px;
     border: 1px solid var(--amb-border);
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--amb-ink-rgb), 0.03);
     font: inherit;
     text-align: left;
 }
@@ -79,7 +79,7 @@ button.anomalous-scan-stat .anomalous-scan-stat-label::after {
 
 button.anomalous-scan-stat:hover {
     border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--amb-ink-rgb), 0.06);
 }
 
 .anomalous-scan-stat-value {
@@ -93,8 +93,8 @@ button.anomalous-scan-stat:hover {
     font-size: 12px;
 }
 
-.anomalous-scan-stat.is-ok .anomalous-scan-stat-value { color: #86efac; }
-.anomalous-scan-stat.is-warn .anomalous-scan-stat-value { color: #fcd34d; }
+.anomalous-scan-stat.is-ok .anomalous-scan-stat-value { color: var(--amb-ok-text); }
+.anomalous-scan-stat.is-warn .anomalous-scan-stat-value { color: var(--amb-warn-text); }
 .anomalous-scan-stat.is-new .anomalous-scan-stat-value { color: var(--amb-link); }
 
 .anomalous-scan-actions {
@@ -126,13 +126,13 @@ button.anomalous-scan-stat:hover {
 
 .anomalous-scan-secondary {
     border: 1px solid var(--amb-border-strong);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--amb-ink-rgb), 0.04);
     color: var(--amb-text-main);
 }
 
 .anomalous-scan-secondary:hover:not(:disabled) {
     border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--amb-ink-rgb), 0.08);
 }
 
 .anomalous-scan-primary:disabled,
@@ -158,14 +158,14 @@ button.anomalous-scan-stat:hover {
     z-index: auto;
     box-shadow: none;
     backdrop-filter: none;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--amb-ink-rgb), 0.03);
 }
 
 /* A folded list (Model Check's models that are fine). */
 .anomalous-scan-advanced {
     border: 1px solid var(--amb-border);
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(var(--amb-ink-rgb), 0.02);
 }
 
 .anomalous-scan-advanced > summary {
@@ -191,7 +191,7 @@ button.anomalous-scan-stat:hover {
 
 .anomalous-scan-settings-card:hover {
     border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--amb-ink-rgb), 0.04);
 }
 
 .anomalous-scan-settings-head {
@@ -223,7 +223,7 @@ button.anomalous-scan-stat:hover {
 
 .anomalous-scan-chip.is-warn {
     border-color: rgba(252, 211, 77, 0.35);
-    color: #fcd34d;
+    color: var(--amb-warn-text);
 }
 
 /* The settings page: one card per question. */
@@ -245,7 +245,7 @@ button.anomalous-scan-stat:hover {
     padding: 3px;
     border: 1px solid var(--amb-border);
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--amb-ink-rgb), 0.03);
 }
 
 .anomalous-scan-segment-btn {
@@ -330,18 +330,18 @@ label.anomalous-scan-setting {
     padding: 1px 8px;
     border-radius: 999px;
     background: rgba(252, 211, 77, 0.12);
-    color: #fcd34d;
+    color: var(--amb-warn-text);
     font-size: 11px;
     font-weight: 600;
 }
 
 .anomalous-scan-tag.is-on {
     background: rgba(134, 239, 172, 0.12);
-    color: #86efac;
+    color: var(--amb-ok-text);
 }
 
 .anomalous-scan-tag.is-off {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--amb-ink-rgb), 0.06);
     color: var(--amb-text-muted);
 }
 
@@ -499,7 +499,7 @@ label.anomalous-scan-setting {
 }
 
 .anomalous-scan-back:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     color: var(--amb-text-main);
 }
 
@@ -511,7 +511,7 @@ label.anomalous-scan-setting {
     padding: 14px 16px;
     border: 1px solid var(--amb-border);
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(var(--amb-ink-rgb), 0.02);
 }
 
 .anomalous-scan-card-title {
@@ -535,12 +535,12 @@ label.anomalous-scan-setting {
 
 .anomalous-scan-note.is-warn {
     background: rgba(252, 211, 77, 0.08);
-    color: #fcd34d;
+    color: var(--amb-warn-text);
 }
 
 .anomalous-scan-note.is-error {
     background: rgba(248, 113, 113, 0.08);
-    color: #fca5a5;
+    color: var(--amb-danger-text);
 }
 
 .anomalous-scan-rows {
@@ -563,12 +563,12 @@ label.anomalous-scan-setting {
 .anomalous-scan-row-mark {
     flex-shrink: 0;
     width: 16px;
-    color: #fcd34d;
+    color: var(--amb-warn-text);
     text-align: center;
 }
 
-.anomalous-scan-row.is-matched .anomalous-scan-row-mark { color: #86efac; }
-.anomalous-scan-row.is-failed .anomalous-scan-row-mark { color: #fca5a5; }
+.anomalous-scan-row.is-matched .anomalous-scan-row-mark { color: var(--amb-ok-text); }
+.anomalous-scan-row.is-failed .anomalous-scan-row-mark { color: var(--amb-danger-text); }
 .anomalous-scan-row.is-unchanged .anomalous-scan-row-mark { color: var(--amb-text-muted); }
 
 .anomalous-scan-row-copy {

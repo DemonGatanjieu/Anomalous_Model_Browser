@@ -11,7 +11,7 @@
 .anomalous-material-mini-btn {
     padding: 2px 7px;
     border-radius: 5px;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--amb-ink-rgb), 0.06);
     border: 1px solid var(--amb-border);
     color: var(--amb-text-soft);
     font-size: 0.7rem;
@@ -20,7 +20,7 @@
 }
 
 .anomalous-material-mini-btn:hover {
-    background: rgba(255, 255, 255, 0.14);
+    background: rgba(var(--amb-ink-rgb), 0.14);
     color: var(--amb-text-main);
 }
 
@@ -37,7 +37,7 @@
     gap: 4px;
     padding: 3px 8px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--amb-ink-rgb), 0.04);
     border: 1px solid var(--amb-border);
     color: var(--amb-text-muted);
     font-size: 0.73rem;
@@ -60,7 +60,7 @@
     overflow: hidden;
     border: 1px solid var(--amb-border);
     border-radius: 7px;
-    background: rgba(5, 7, 11, 0.22);
+    background: var(--amb-lt-sunken, rgba(5, 7, 11, 0.22));
 }
 
 .anomalous-material-node-detail.is-selected {
@@ -77,7 +77,7 @@
     margin: 0;
     border-radius: 4px;
     border: 1.5px solid var(--amb-border-strong);
-    background-color: rgba(20, 10, 16, 0.6);
+    background-color: var(--amb-lt-surface, rgba(20, 10, 16, 0.6));
     cursor: pointer;
     position: relative;
     outline: none;
@@ -113,7 +113,7 @@
     justify-content: space-between;
     gap: 10px;
     padding: 8px 10px;
-    color: #d8dee9;
+    color: var(--amb-lt-soft, #d8dee9);
     cursor: pointer;
     user-select: none;
     list-style: none;
@@ -123,7 +123,7 @@
     display: none;
 }
 
-.anomalous-material-node-detail > summary:hover { background: rgba(255, 255, 255, 0.035); }
+.anomalous-material-node-detail > summary:hover { background: rgba(var(--amb-ink-rgb), 0.035); }
 .anomalous-material-node-detail[open] > summary { border-bottom: 1px solid var(--amb-border); }
 
 .anomalous-material-node-heading {
@@ -170,7 +170,7 @@
 .anomalous-workbench-save-selected-btn:hover:not(:disabled) {
     border-color: color-mix(in srgb, var(--amb-link) 42%, transparent);
     background: color-mix(in srgb, var(--amb-link) 14%, transparent);
-    color: #d8fff8;
+    color: var(--amb-lt-ok, #d8fff8);
 }
 
 .anomalous-material-node-save:disabled,
@@ -204,7 +204,7 @@
     align-items: start;
     padding: 7px 8px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.025);
+    background: rgba(var(--amb-ink-rgb), 0.025);
 }
 
 .anomalous-material-parameter-label {
@@ -214,7 +214,7 @@
     flex-wrap: wrap;
     gap: 5px;
     padding-top: 2px;
-    color: #aab3c2;
+    color: var(--amb-lt-muted, #aab3c2);
     font-size: 0.7rem;
 }
 
@@ -239,8 +239,8 @@
     padding: 6px 8px;
     border: 1px solid var(--amb-border);
     border-radius: 5px;
-    background: rgba(0, 0, 0, 0.18);
-    color: #d5dae4;
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.18));
+    color: var(--amb-lt-soft, #d5dae4);
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
     font-size: 0.67rem;
     line-height: 1.4;
@@ -260,7 +260,7 @@
     padding: 10px 12px;
     border: 1px solid rgba(81, 221, 190, 0.2);
     border-radius: 8px;
-    background: rgba(13, 17, 23, 0.65);
+    background: var(--amb-lt-surface, rgba(13, 17, 23, 0.65));
 }
 
 .anomalous-material-prompt-bar {
@@ -279,7 +279,7 @@
 .anomalous-material-prompt-title {
     font-size: 0.76rem;
     font-weight: 600;
-    color: #6ee7b7;
+    color: var(--amb-ok-soft);
 }
 
 .anomalous-material-prompt-count {
@@ -314,7 +314,7 @@
     white-space: pre-wrap;
     word-break: break-word;
     padding: 7px 9px;
-    background: rgba(0, 0, 0, 0.28);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.28));
     border-radius: 5px;
     border: 1px solid var(--amb-border);
 }
@@ -322,7 +322,7 @@
 /* Model Categorized Groups */
 
 .anomalous-tag-base {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--amb-ink-rgb), 0.08);
     color: var(--amb-text-soft);
     border: 1px solid var(--amb-border-strong);
 }
@@ -392,7 +392,7 @@
     background: var(--amb-bg-page);
     border-radius: 16px;
     border: 1px solid var(--amb-border);
-    box-shadow: 0 32px 96px rgba(0, 0, 0, 0.88), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    box-shadow: 0 32px 96px rgba(0, 0, 0, 0.88), 0 0 0 1px rgba(var(--amb-ink-rgb), 0.05);
     overflow: hidden;
 }
 
@@ -425,7 +425,7 @@
     height: 32px;
     border-radius: 8px;
     border: 1px solid var(--amb-border);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--amb-ink-rgb), 0.04);
     color: var(--amb-text-soft);
     font-size: 20px;
     cursor: pointer;
@@ -434,7 +434,7 @@
 }
 
 .anomalous-workbench-back-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--amb-ink-rgb), 0.1);
     color: var(--amb-text-main);
     border-color: var(--amb-border-strong);
 }
@@ -466,7 +466,7 @@
 .anomalous-workbench-tag {
     padding: 2px 7px;
     border-radius: 5px;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--amb-ink-rgb), 0.06);
     border: 1px solid var(--amb-border);
     color: var(--amb-text-muted);
     font-size: 0.68rem;
@@ -474,7 +474,7 @@
 }
 
 .anomalous-workbench-tag.is-ext {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--amb-ink-rgb), 0.08);
     border-color: var(--amb-border-strong);
     color: var(--amb-text-soft);
     font-weight: 700;
@@ -492,7 +492,7 @@
     align-items: center;
     gap: 10px;
     flex-shrink: 0;
-    background: rgba(0, 0, 0, 0.35);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.35));
     padding: 3px 8px;
     border-radius: 999px;
     border: 1px solid var(--amb-border);
@@ -515,7 +515,7 @@
 }
 
 .anomalous-workbench-nav-btn:not(:disabled):hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(var(--amb-ink-rgb), 0.12);
     color: var(--amb-text-main);
 }
 
@@ -548,7 +548,7 @@
     height: 32px;
     border-radius: 8px;
     border: 1px solid var(--amb-border);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--amb-ink-rgb), 0.04);
     color: var(--amb-text-soft);
     font-size: 15px;
     cursor: pointer;
@@ -571,7 +571,7 @@
     border-radius: 8px;
     border: 1px solid var(--amb-border);
     background: rgba(239, 68, 68, 0.1);
-    color: #fca5a5;
+    color: var(--amb-danger-text);
     font-size: 20px;
     cursor: pointer;
     transition: all 0.15s;
@@ -601,7 +601,7 @@
     flex-direction: column;
     min-height: 0;
     height: 100%;
-    background: radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0.035) 0%, transparent 68%), #07080c;
+    background: radial-gradient(ellipse at 50% 50%, rgba(var(--amb-ink-rgb), 0.035) 0%, transparent 68%), #07080c;
     overflow: hidden;
 }
 
@@ -691,7 +691,7 @@
 }
 
 .anomalous-workbench-zoom-bar button:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--amb-ink-rgb), 0.1);
     color: var(--amb-text-main);
 }
 
@@ -730,7 +730,7 @@
 }
 
 .anomalous-workbench-filmstrip::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.14);
+    background: rgba(var(--amb-ink-rgb), 0.14);
     border-radius: 4px;
 }
 
@@ -768,7 +768,7 @@
 }
 
 .anomalous-workbench-filmstrip-thumb:hover {
-    border-color: rgba(255, 255, 255, 0.45);
+    border-color: rgba(var(--amb-ink-rgb), 0.45);
     transform: scale(1.04);
 }
 
@@ -839,7 +839,7 @@
     padding: 0 14px;
     border-radius: 3px 10px 3px 10px;
     border: 1px solid var(--amb-border-strong);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     color: var(--amb-text-main);
     font-size: 0.8rem;
     font-weight: 600;
@@ -865,7 +865,7 @@
 }
 
 .anomalous-workbench-action-btn:hover {
-    background: rgba(255, 255, 255, 0.09);
+    background: rgba(var(--amb-ink-rgb), 0.09);
     color: var(--amb-text-main);
     border-color: var(--amb-border-strong);
 }
@@ -889,7 +889,7 @@
 }
 
 .anomalous-workbench-action-btn.is-save {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--amb-ink-rgb), 0.04);
     border-color: var(--amb-border-strong);
     box-shadow: none;
     color: var(--amb-text-soft);
@@ -897,7 +897,7 @@
 }
 
 .anomalous-workbench-action-btn.is-save:hover {
-    background: rgba(255, 255, 255, 0.09);
+    background: rgba(var(--amb-ink-rgb), 0.09);
     color: var(--amb-text-main);
     border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
     box-shadow: none;
@@ -919,7 +919,7 @@
 /* Segmented Tabs Bar */
 .anomalous-workbench-tabs-bar {
     display: flex;
-    background: rgba(0, 0, 0, 0.38);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.38));
     padding: 3px;
     border-radius: 10px;
     border: 1px solid var(--amb-border);
@@ -944,11 +944,11 @@
 
 .anomalous-workbench-tab-btn:hover {
     color: var(--amb-text-main);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--amb-ink-rgb), 0.04);
 }
 
 .anomalous-workbench-tab-btn.is-active {
-    background: rgba(255, 255, 255, 0.09);
+    background: rgba(var(--amb-ink-rgb), 0.09);
     color: var(--amb-link);
     box-shadow: none;
 }
@@ -1080,7 +1080,7 @@
 }
 
 .anomalous-workbench-spec-copy-icon.is-error {
-    stroke: #f87171;
+    stroke: var(--amb-danger);
 }
 
 .anomalous-workbench-copy-badge {
@@ -1091,7 +1091,7 @@
 }
 
 .anomalous-workbench-copy-badge.is-error {
-    color: #f87171;
+    color: var(--amb-danger);
 }
 
 .anomalous-workbench-spec-card.is-copy-failed {
@@ -1214,19 +1214,19 @@
     gap: 8px;
     padding: 12px 14px;
     border-radius: 11px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--amb-ink-rgb), 0.03);
     border: 1px solid var(--amb-border);
     border-left-width: 3.5px;
 }
 
 .anomalous-workbench-prompt-card.is-positive {
     border-left-color: var(--amb-link);
-    background: linear-gradient(90deg, color-mix(in srgb, var(--amb-link) 4%, transparent) 0%, rgba(255, 255, 255, 0.02) 40%);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--amb-link) 4%, transparent) 0%, rgba(var(--amb-ink-rgb), 0.02) 40%);
 }
 
 .anomalous-workbench-prompt-card.is-negative {
     border-left-color: #f43f5e;
-    background: linear-gradient(90deg, rgba(244, 63, 94, 0.04) 0%, rgba(255, 255, 255, 0.02) 40%);
+    background: linear-gradient(90deg, rgba(244, 63, 94, 0.04) 0%, rgba(var(--amb-ink-rgb), 0.02) 40%);
 }
 
 .anomalous-workbench-prompt-bar {
@@ -1246,7 +1246,7 @@
     padding: 3px 8px;
     border-radius: 5px;
     border: 1px solid var(--amb-border);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--amb-ink-rgb), 0.04);
     color: var(--amb-text-soft);
     font-size: 0.7rem;
     font-weight: 500;
@@ -1255,7 +1255,7 @@
 }
 
 .anomalous-workbench-mini-action-btn:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(var(--amb-ink-rgb), 0.12);
     color: var(--amb-text-main);
     border-color: var(--amb-border-strong);
 }
@@ -1309,13 +1309,13 @@
     gap: 10px;
     padding: 8px 10px;
     border-radius: 9px;
-    background: rgba(255, 255, 255, 0.025);
+    background: rgba(var(--amb-ink-rgb), 0.025);
     border: 1px solid var(--amb-border);
     transition: all 0.15s;
 }
 
 .anomalous-workbench-model-card:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     border-color: var(--amb-border-strong);
 }
 
@@ -1390,7 +1390,7 @@
 }
 
 .anomalous-workbench-model-tag.is-base {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--amb-ink-rgb), 0.08);
     color: var(--amb-text-soft);
     border: 1px solid var(--amb-border-strong);
 }
@@ -1493,7 +1493,7 @@
 .anomalous-workbench-error-box {
     padding: 24px;
     text-align: center;
-    color: #f87171;
+    color: var(--amb-danger);
     font-size: 0.82rem;
 }
 
@@ -1590,7 +1590,7 @@
 
 .anomalous-material-drag-hint.is-target-refused {
     border-color: rgba(245, 158, 11, 0.55);
-    color: #fcd34d;
+    color: var(--amb-warn-text);
 }
 
 /* Prompt boxes on the canvas while a prompt is dragged: outlined by role, the target solid. */
@@ -1606,7 +1606,7 @@
 .anomalous-prompt-box.is-hover {
     outline-style: solid;
     outline-width: 3px;
-    box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 0 5px rgba(var(--amb-ink-rgb), 0.12);
 }
 
 /* What a release would write, laid over the target box (and its partner) while the pointer is on it. */

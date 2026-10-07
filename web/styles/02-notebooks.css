@@ -228,7 +228,7 @@
 
 .anomalous-btn-primary:hover {
     background: var(--amb-btn-primary-hover, var(--amb-btn-primary-bg));
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: rgba(var(--amb-ink-rgb), 0.4);
     box-shadow: none;
 }
 
@@ -240,7 +240,7 @@
 .anomalous-btn-danger {
     position: relative;
     background: #7f1d1d;
-    color: #fecaca;
+    color: var(--amb-lt-danger, #fecaca);
     border: 1px solid rgba(239, 68, 68, 0.35);
     height: 32px;
     padding: 0 14px;
@@ -295,7 +295,7 @@
 
 .anomalous-nb-more-btn {
     position: relative;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--amb-ink-rgb), 0.06);
     color: var(--amb-text-soft);
     border: 1px solid var(--amb-border-strong);
     height: 32px;
@@ -314,7 +314,7 @@
 
 .anomalous-nb-more-btn:hover,
 .anomalous-nb-more-btn.active {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(var(--amb-ink-rgb), 0.12);
     border-color: var(--amb-border-strong);
     color: var(--amb-text-main);
 }
@@ -326,7 +326,7 @@
     right: 0;
     z-index: 100;
     min-width: 140px;
-    background: rgba(24, 24, 28, 0.96);
+    background: var(--amb-lt-surface, rgba(24, 24, 28, 0.96));
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--amb-border-strong);
@@ -373,17 +373,17 @@
 }
 
 .anomalous-nb-dropdown-item:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--amb-ink-rgb), 0.08);
     color: var(--amb-text-main);
 }
 
 .anomalous-nb-dropdown-item-danger {
-    color: #fca5a5;
+    color: var(--amb-danger-text);
 }
 
 .anomalous-nb-dropdown-item-danger:hover {
     background: rgba(239, 68, 68, 0.18);
-    color: #fecaca;
+    color: var(--amb-lt-danger, #fecaca);
 }
 
 .anomalous-nb-dropdown-item-danger.confirming {
@@ -451,7 +451,7 @@
 .anomalous-nb-minicheck:hover,
 .anomalous-nb-minilora:hover {
     border-color: var(--amb-border-strong);
-    background: #2a3140;
+    background: var(--amb-lt-card-hover, #2a3140);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     transition-delay: 0.04s;
@@ -522,7 +522,7 @@
 
 /* Flat Card Containers */
 .anomalous-nb-card {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(var(--amb-ink-rgb), 0.02);
     border: 1px solid var(--amb-border);
     border-radius: 10px;
     padding: 16px;
@@ -547,7 +547,7 @@
     align-items: center;
     flex-wrap: wrap;
     padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.22);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.22));
     border: 1px solid var(--amb-border);
     border-radius: 8px;
     scroll-margin-top: 70px;
@@ -558,7 +558,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    background: rgba(22, 26, 35, 0.95);
+    background: var(--amb-lt-panel, rgba(22, 26, 35, 0.95));
     padding: 10px;
     border-radius: 8px;
     border: 1px solid var(--amb-border);
@@ -595,7 +595,7 @@
 
 /* Notebook Model Fold & Sections Enhancement */
 .anomalous-nb-models-fold {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(var(--amb-ink-rgb), 0.02);
     border: 1px solid var(--amb-border);
     border-radius: 10px;
     padding: 0;
@@ -606,21 +606,21 @@
 
 .anomalous-nb-models-fold[open] {
     border-color: color-mix(in srgb, var(--amb-link) 35%, transparent);
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--amb-ink-rgb), 0.03);
 }
 
 .anomalous-nb-models-badge {
     font-size: 0.76rem;
     font-weight: 500;
     color: var(--amb-text-muted);
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--amb-ink-rgb), 0.06);
     padding: 2px 8px;
     border-radius: 999px;
     border: 1px solid var(--amb-border);
 }
 
 .anomalous-nb-prompt-section {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(var(--amb-ink-rgb), 0.02);
     border: 1px solid var(--amb-border);
     border-radius: 10px;
     padding: 16px;
@@ -631,7 +631,7 @@
     font-size: 0.78rem;
     padding: 2px 8px;
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--amb-ink-rgb), 0.06);
     border: 1px solid var(--amb-border);
 }
 
@@ -652,7 +652,7 @@
 }
 
 .anomalous-nb-visual-tag.hover {
-    background: #2a3140;
+    background: var(--amb-lt-card-hover, #2a3140);
     border-color: color-mix(in srgb, var(--amb-link) 50%, transparent);
     color: var(--amb-text-main);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -680,7 +680,7 @@
 }
 
 .anomalous-nb-tag-edit {
-    background: #111827;
+    background: var(--amb-lt-surface, #111827);
     color: var(--amb-text-main);
     border: 1px solid color-mix(in srgb, var(--amb-link) 60%, transparent);
     border-radius: 4px;
@@ -695,7 +695,7 @@
 .anomalous-nb-editor,
 .anomalous-nb-textarea  {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+    scrollbar-color: rgba(var(--amb-ink-rgb), 0.18) transparent;
 }
 
 .anomalous-nb-editor::-webkit-scrollbar,
@@ -711,12 +711,12 @@
 
 .anomalous-nb-editor::-webkit-scrollbar-thumb,
 .anomalous-nb-textarea::-webkit-scrollbar-thumb  {
-    background: rgba(255, 255, 255, 0.16);
+    background: rgba(var(--amb-ink-rgb), 0.16);
     border-radius: 3px;
 }
 
 .anomalous-nb-editor::-webkit-scrollbar-thumb:hover,
 .anomalous-nb-textarea::-webkit-scrollbar-thumb:hover  {
-    background: rgba(255, 255, 255, 0.28);
+    background: rgba(var(--amb-ink-rgb), 0.28);
 }
 

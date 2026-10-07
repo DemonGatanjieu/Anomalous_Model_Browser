@@ -17,7 +17,7 @@
     display: flex;
     flex-direction: column;
     border-radius: 12px;
-    background: linear-gradient(175deg, #1c2028 0%, #15181f 100%);
+    background: var(--amb-lt-surface, linear-gradient(175deg, #1c2028 0%, #15181f 100%));
     border: 1px solid var(--amb-border);
     box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.4), 0 4px 10px -2px rgba(0, 0, 0, 0.25);
     overflow: hidden;
@@ -65,11 +65,11 @@
 }
 
 .anomalous-paper-note.is-positive .anomalous-paper-note-title {
-    color: #fca5a5;
+    color: var(--amb-danger-text);
 }
 
 .anomalous-paper-note.is-negative .anomalous-paper-note-title {
-    color: #fda4af;
+    color: var(--amb-lt-danger, #fda4af);
 }
 
 .anomalous-paper-note-actions {
@@ -83,7 +83,7 @@
     color: var(--amb-text-dim);
     font-family: monospace;
     padding: 2px 6px;
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.25));
     border-radius: 4px;
 }
 
@@ -91,7 +91,7 @@
     padding: 3px 8px;
     border-radius: 5px;
     border: 1px solid var(--amb-border-strong);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     color: var(--amb-text-soft);
     font-size: 0.74rem;
     cursor: pointer;
@@ -99,7 +99,7 @@
 }
 
 .anomalous-paper-note-btn:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(var(--amb-ink-rgb), 0.12);
     color: var(--amb-text-main);
     border-color: var(--amb-border-strong);
 }
@@ -118,7 +118,7 @@
     resize: vertical;
     border: none;
     outline: none;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.2));
     color: var(--amb-text-main);
     font-size: 0.85rem;
     line-height: 1.5;
@@ -130,7 +130,7 @@
 }
 
 .anomalous-paper-note-textarea:focus {
-    background: rgba(0, 0, 0, 0.35);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.35));
 }
 
 /* Note Footer Drag Hint */
@@ -157,7 +157,7 @@
     font-size: 0.72rem;
     font-weight: 500;
     color: var(--amb-text-muted);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     border: 1px solid var(--amb-border);
     padding: 2px 6px;
     border-radius: 4px;
@@ -199,7 +199,7 @@
     box-sizing: border-box;
     padding: 7px 12px;
     border-radius: 6px;
-    background: rgba(22, 10, 18, 0.65);
+    background: var(--amb-lt-surface, rgba(22, 10, 18, 0.65));
     border: 1px solid var(--amb-border-strong);
     color: var(--amb-text-main);
     font-size: 0.82rem;
@@ -222,7 +222,7 @@
 .anomalous-drawer-item {
     padding: 12px;
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.035);
+    background: rgba(var(--amb-ink-rgb), 0.035);
     border: 1px solid var(--amb-border);
     display: flex;
     flex-direction: column;
@@ -231,7 +231,7 @@
 }
 
 .anomalous-drawer-item:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--amb-ink-rgb), 0.06);
     border-color: color-mix(in srgb, var(--amb-link) 30%, transparent);
 }
 
@@ -249,7 +249,7 @@
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.2));
     padding: 6px 8px;
     border-radius: 4px;
 }
@@ -266,7 +266,7 @@
     padding: 4px 9px;
     border-radius: 4px;
     border: 1px solid var(--amb-border-strong);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     color: var(--amb-text-soft);
     font-size: 0.72rem;
     cursor: pointer;
@@ -274,7 +274,7 @@
 }
 
 .anomalous-drawer-item-btn:hover {
-    background: var(--amb-bg-card-hover, rgba(255, 255, 255, 0.12));
+    background: var(--amb-bg-card-hover, rgba(var(--amb-ink-rgb), 0.12));
     color: var(--amb-text-main);
     border-color: var(--amb-border-hover, var(--amb-border-strong));
     font-weight: 500;
@@ -365,7 +365,7 @@
     text-align: center;
     color: var(--amb-text-muted, var(--amb-text-muted));
     font-size: 0.82rem;
-    background: rgba(0, 0, 0, 0.18);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.18));
     border-radius: var(--amb-radius-control, 6px);
     border: 1px dashed var(--amb-border, var(--amb-border));
     overflow: hidden;
@@ -420,7 +420,7 @@
 
 .anomalous-btn-extract-node {
     position: relative;
-    background-color: rgba(255, 255, 255, 0.04) !important;
+    background-color: rgba(var(--amb-ink-rgb), 0.04) !important;
     border: 1px solid var(--amb-border, var(--amb-border-strong)) !important;
     border-radius: var(--amb-radius-control, 6px) !important;
     color: var(--amb-text-main, var(--amb-text-main)) !important;
@@ -438,7 +438,7 @@
 }
 
 .anomalous-btn-extract-node:hover {
-    background-color: var(--amb-bg-card-hover, rgba(255, 255, 255, 0.1)) !important;
+    background-color: var(--amb-bg-card-hover, rgba(var(--amb-ink-rgb), 0.1)) !important;
     border-color: var(--amb-border-hover, var(--amb-border-strong)) !important;
     color: var(--amb-text-main) !important;
 }
@@ -459,7 +459,7 @@
     z-index: 1000000;
     padding: 10px 24px;
     border-radius: 24px;
-    background: rgba(18, 22, 34, 0.94);
+    background: var(--amb-lt-surface, rgba(18, 22, 34, 0.94));
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--amb-border-strong);

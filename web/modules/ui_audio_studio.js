@@ -104,18 +104,18 @@ function copySyntax(tag, btn, label) {
 function getEmotionStyle(emotion) {
     const raw = String(emotion || '').toLowerCase();
     if (raw.includes('happy') || raw.includes('joy')) {
-        return { color: '#fbbf24', bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.3)' };
+        return { color: 'var(--amb-warn)', bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.3)' };
     }
     if (raw.includes('sad') || raw.includes('cry')) {
-        return { color: '#60a5fa', bg: 'rgba(59, 130, 246, 0.12)', border: 'rgba(59, 130, 246, 0.3)' };
+        return { color: 'var(--amb-lt-blue, #60a5fa)', bg: 'rgba(59, 130, 246, 0.12)', border: 'rgba(59, 130, 246, 0.3)' };
     }
     if (raw.includes('surpris') || raw.includes('shock')) {
-        return { color: '#f472b6', bg: 'rgba(244, 114, 182, 0.12)', border: 'rgba(244, 114, 182, 0.3)' };
+        return { color: 'var(--amb-lt-pink, #f472b6)', bg: 'rgba(244, 114, 182, 0.12)', border: 'rgba(244, 114, 182, 0.3)' };
     }
     if (raw.includes('normal') || raw.includes('calm')) {
-        return { color: '#34d399', bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.3)' };
+        return { color: 'var(--amb-ok)', bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.3)' };
     }
-    return { color: '#a78bfa', bg: 'rgba(167, 139, 250, 0.12)', border: 'rgba(167, 139, 250, 0.3)' };
+    return { color: 'var(--amb-lt-violet, #a78bfa)', bg: 'rgba(167, 139, 250, 0.12)', border: 'rgba(167, 139, 250, 0.3)' };
 }
 
 function renderEqIndicator() {

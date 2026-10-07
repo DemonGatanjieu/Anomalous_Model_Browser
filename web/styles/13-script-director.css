@@ -70,7 +70,7 @@
     gap: 8px;
     padding: 8px 16px 10px;
     border-top: 1px solid var(--amb-border);
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.2));
 }
 
 /* Wide: cards take the full height, the generate side is a column beside them. */
@@ -115,7 +115,7 @@
 .anomalous-sd-character-select {
     flex: 1;
     min-width: 0;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.3));
     border: 1px solid var(--amb-border-strong);
     border-radius: 6px;
     color: var(--amb-text-main);
@@ -132,7 +132,7 @@
 }
 
 .anomalous-sd-character-hint.is-warning {
-    color: #fbbf24;
+    color: var(--amb-warn);
 }
 
 /* Script input */
@@ -149,7 +149,7 @@
     width: 100%;
     flex: 1;
     min-height: 160px;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.2));
     border: 1px solid var(--amb-border);
     border-radius: 6px;
     padding: 10px;
@@ -168,7 +168,7 @@
 }
 
 .anomalous-sd-btn {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--amb-ink-rgb), 0.05);
     border: 1px solid var(--amb-border);
     color: var(--amb-text-main);
     padding: 6px 12px;
@@ -180,7 +180,7 @@
 }
 
 .anomalous-sd-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--amb-ink-rgb), 0.1);
 }
 
 .anomalous-sd-btn:disabled {
@@ -212,7 +212,7 @@
 .anomalous-sd-btn.is-success {
     background: rgba(16, 185, 129, 0.2);
     border-color: rgba(16, 185, 129, 0.45);
-    color: #6ee7b7;
+    color: var(--amb-ok-soft);
 }
 
 /* Lines */
@@ -255,7 +255,7 @@
 }
 
 .anomalous-sd-line-card {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--amb-ink-rgb), 0.03);
     border: 1px solid var(--amb-border);
     border-radius: 8px;
     padding: 8px 10px 10px;
@@ -314,7 +314,7 @@
     justify-content: center;
     border-radius: 50%;
     border: 1px solid var(--amb-border);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--amb-ink-rgb), 0.04);
     color: var(--amb-text-muted);
     font-size: 14px;
     line-height: 1;
@@ -328,7 +328,7 @@
 }
 
 .anomalous-sd-icon-btn.is-danger:hover {
-    color: #f87171;
+    color: var(--amb-danger);
     border-color: rgba(248, 113, 113, 0.4);
 }
 
@@ -351,7 +351,7 @@
 .anomalous-sd-line-text:hover,
 .anomalous-sd-line-text:focus {
     border-color: var(--amb-border);
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.2));
     outline: none;
 }
 
@@ -391,7 +391,7 @@
     padding: 2px 9px;
     border-radius: 999px;
     border: 1px solid var(--amb-border);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--amb-ink-rgb), 0.04);
     color: var(--amb-text-muted);
     font-size: 11px;
     cursor: pointer;
@@ -449,7 +449,7 @@
 }
 
 .anomalous-sd-package-summary.is-error {
-    color: #fbbf24;
+    color: var(--amb-warn);
 }
 
 .anomalous-sd-package-actions {
@@ -492,14 +492,14 @@
 .anomalous-sd-emotion-chip.is-missing {
     border-style: dashed;
     border-color: rgba(251, 191, 36, 0.7);
-    color: #fbbf24;
+    color: var(--amb-warn);
     background: rgba(245, 158, 11, 0.1);
 }
 
 .anomalous-sd-split-mode {
     margin-right: auto;
     min-width: 0;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.3));
     border: 1px solid var(--amb-border-strong);
     border-radius: 6px;
     color: var(--amb-text-soft);
@@ -536,7 +536,7 @@
 }
 
 .anomalous-sd-run-hint.is-warning {
-    color: #fbbf24;
+    color: var(--amb-warn);
 }
 
 .anomalous-sd-run-actions {
@@ -591,7 +591,7 @@
     padding: 2px;
     border: 1px solid var(--amb-border);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--amb-ink-rgb), 0.03);
 }
 
 .anomalous-sd-run-choice {
@@ -659,7 +659,7 @@
     padding: 4px 6px;
     border: 1px solid var(--amb-border-strong);
     border-radius: 6px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.3));
     color: var(--amb-text-main);
     font-size: 12px;
 }
@@ -670,7 +670,7 @@
     padding: 4px 6px;
     border: 1px solid var(--amb-border-strong);
     border-radius: 6px;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.3));
     color: var(--amb-text-main);
     font-size: 12px;
 }
@@ -696,7 +696,7 @@
     max-height: 60px;
     overflow-y: auto;
     font-size: 11px;
-    color: #fbbf24;
+    color: var(--amb-warn);
     white-space: pre-wrap;
 }
 

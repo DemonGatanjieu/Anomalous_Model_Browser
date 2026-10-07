@@ -138,7 +138,7 @@ export function ensureTourStyles() {
             background: var(--amb-bg-panel);
             border: 1px solid var(--amb-border-strong);
             border-radius: 12px;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 1px rgba(255, 255, 255, 0.2);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 1px rgba(var(--amb-ink-rgb), 0.2);
             color: var(--amb-text-main);
             padding: 16px 18px;
             display: flex;
@@ -180,7 +180,7 @@ export function ensureTourStyles() {
         }
         .anomalous-spotlight-card-close:hover {
             color: var(--amb-text-main);
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(var(--amb-ink-rgb), 0.1);
         }
         .anomalous-spotlight-card-title {
             margin: 0;
@@ -216,7 +216,7 @@ export function ensureTourStyles() {
             width: 6px;
             height: 6px;
             border-radius: 9999px;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(var(--amb-ink-rgb), 0.2);
             transition: all 0.2s;
         }
         .anomalous-spotlight-dot.active {
@@ -238,11 +238,11 @@ export function ensureTourStyles() {
             border: none;
         }
         .anomalous-spotlight-btn-secondary {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(var(--amb-ink-rgb), 0.08);
             color: var(--amb-text-soft);
         }
         .anomalous-spotlight-btn-secondary:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(var(--amb-ink-rgb), 0.15);
             color: var(--amb-text-main);
         }
         .anomalous-spotlight-btn-secondary:disabled {
@@ -264,7 +264,7 @@ export function ensureTourStyles() {
             gap: 6px;
             margin: 2px auto 14px auto;
             padding: 6px 16px;
-            background: rgba(255, 255, 255, 0.04);
+            background: rgba(var(--amb-ink-rgb), 0.04);
             border: 1px solid var(--amb-border);
             border-radius: 20px;
             color: var(--amb-text-muted);

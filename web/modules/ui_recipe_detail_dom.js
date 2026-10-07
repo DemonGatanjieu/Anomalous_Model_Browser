@@ -56,7 +56,7 @@ export async function copyTextWithFeedback(buttonElement, value) {
             : `! ${t('recipeCopyFailed')}`;
     }
 
-    buttonElement.style.color = copied ? '#6ee7b7' : '#fca5a5';
+    buttonElement.style.color = copied ? 'var(--amb-ok-soft)' : 'var(--amb-danger-text)';
     buttonElement.style.borderColor = copied ? 'rgba(110, 231, 183, 0.7)' : 'rgba(252, 165, 165, 0.7)';
     buttonElement.style.transition = 'all 0.2s ease';
 

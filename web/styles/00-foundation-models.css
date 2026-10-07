@@ -42,6 +42,171 @@
     --amb-radius-control: 6px;
     --amb-radius-card: 8px;
     --amb-radius-panel: 10px;
+
+    /* Tints over the page: rgba(var(--amb-ink-rgb), a) lightens a dark page and darkens a light one. */
+    --amb-ink-rgb: 255, 255, 255;
+    /* Status colors for text and marks; the light theme has darker ones that read on white. */
+    --amb-danger: #f87171;
+    --amb-danger-text: #fca5a5;
+    --amb-warn: #fbbf24;
+    --amb-warn-text: #fcd34d;
+    --amb-ok: #34d399;
+    --amb-ok-text: #86efac;
+    --amb-ok-soft: #6ee7b7;
+    --amb-warn-soft: #fde68a;
+    /* Surfaces that float: tooltips, menus, popovers; and the dim layer behind a dialog. */
+    --amb-bg-tooltip: rgba(18, 20, 26, 0.98);
+    --amb-bg-float: rgba(30, 32, 40, 0.9);
+    --amb-scrim: rgba(0, 0, 0, 0.6);
+    --amb-shadow-rgb: 0, 0, 0;
+    /* A dialog's own surface, and a field or well sunk into it. */
+    --amb-bg-dialog: linear-gradient(145deg, rgba(48, 49, 55, 0.98), rgba(27, 28, 33, 0.98));
+    --amb-bg-sunken: rgba(0, 0, 0, 0.35);
+    /* Notes written on a model or recipe: a warm paper look. */
+    --amb-note-accent: #a38d53;
+    --amb-note-text: #d1c9b4;
+    --amb-note-bg: #332b00;
+    --amb-note-border: #554400;
+}
+
+/* Light theme (interface_settings.js): chosen, or following a light ComfyUI palette. */
+html.amb-theme-light {
+    --amb-bg-page: #f3f4f6;
+    --amb-bg-panel: #fafafa;
+    --amb-bg-card: #ffffff;
+    --amb-bg-card-hover: #f1f2f5;
+    --amb-bg-input: #ffffff;
+    --amb-text-main: #111827;
+    --amb-text-soft: #374151;
+    --amb-text-muted: #6b7280;
+    --amb-text-dim: #9ca3af;
+    --amb-border: rgba(0, 0, 0, 0.09);
+    --amb-border-strong: rgba(0, 0, 0, 0.16);
+    --amb-border-hover: rgba(0, 0, 0, 0.22);
+    --amb-link: #4f46e5;
+    --amb-btn-primary-bg: #1f2937;
+    --amb-btn-primary-hover: #111827;
+    --amb-btn-primary-text: #ffffff;
+    --amb-accent-gold: rgba(161, 98, 7, 0.85);
+    --amb-accent-line: rgba(17, 24, 39, 0.3);
+    --amb-accent: #d97706;
+    --amb-ink-rgb: 0, 0, 0;
+    --amb-danger: #dc2626;
+    --amb-danger-text: #b91c1c;
+    --amb-warn: #d97706;
+    --amb-warn-text: #b45309;
+    --amb-ok: #059669;
+    --amb-ok-text: #15803d;
+    --amb-ok-soft: #047857;
+    --amb-warn-soft: #92400e;
+    --amb-bg-tooltip: rgba(255, 255, 255, 0.98);
+    --amb-bg-float: rgba(255, 255, 255, 0.96);
+    --amb-scrim: rgba(15, 23, 42, 0.35);
+    --amb-shadow-rgb: 15, 23, 42;
+    --amb-bg-dialog: #ffffff;
+    --amb-bg-sunken: rgba(0, 0, 0, 0.04);
+    --amb-note-accent: #8a6d1f;
+    --amb-note-text: #4a3d1c;
+    --amb-note-bg: #fdf6e3;
+    --amb-note-border: #e9d9a6;
+    /* Light-only: inline styles write var(--amb-lt-*, <dark color>), so the dark themes keep
+       their exact colors and only the light theme defines these. */
+    --amb-lt-text: #111827;
+    --amb-lt-soft: #374151;
+    --amb-lt-muted: #6b7280;
+    --amb-lt-surface: #ffffff;
+    --amb-lt-page: #f3f4f6;
+    --amb-lt-card-hover: #e5e7eb;
+    --amb-lt-accent-text: #4338ca;
+    --amb-lt-ok: #047857;
+    --amb-lt-chip: #eef2ff;
+    --amb-lt-ok-chip: #ecfdf5;
+    --amb-lt-warn: #b45309;
+    --amb-lt-blue: #1d4ed8;
+    --amb-lt-pink: #be185d;
+    --amb-lt-violet: #6d28d9;
+    --amb-lt-panel: #fafafa;
+    --amb-lt-sunken: rgba(0, 0, 0, 0.03);
+    --amb-lt-danger: #b91c1c;
+    --amb-lt-brand: linear-gradient(135deg, #ffffff, #e5e7eb);
+    --amb-lt-shimmer: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+    --amb-lt-scrim: rgba(15, 23, 42, 0.35);
+}
+
+/* The image viewer (the gallery's workbench) stays dark in the light theme, like ComfyUI's own:
+   the dark tokens again, and no light-only ones. */
+html.amb-theme-light :is(.anomalous-workbench-overlay, .anomalous-gallery-viewer) {
+    --amb-bg-page: #131315;
+    --amb-bg-panel: #1a1a1d;
+    --amb-bg-card: #202024;
+    --amb-bg-card-hover: #28282d;
+    --amb-bg-input: #151517;
+    --amb-text-main: #f3f4f6;
+    --amb-text-soft: #d1d5db;
+    --amb-text-muted: #9ca3af;
+    --amb-text-dim: #6b7280;
+    --amb-border: rgba(255, 255, 255, 0.08);
+    --amb-border-strong: rgba(255, 255, 255, 0.16);
+    --amb-border-hover: rgba(255, 255, 255, 0.16);
+    --amb-link: #a5b4fc;
+    --amb-btn-primary-bg: #e5e7eb;
+    --amb-btn-primary-hover: #ffffff;
+    --amb-btn-primary-text: #111827;
+    --amb-ink-rgb: 255, 255, 255;
+    --amb-danger: #f87171;
+    --amb-danger-text: #fca5a5;
+    --amb-warn: #fbbf24;
+    --amb-warn-text: #fcd34d;
+    --amb-ok: #34d399;
+    --amb-ok-text: #86efac;
+    --amb-ok-soft: #6ee7b7;
+    --amb-warn-soft: #fde68a;
+    --amb-bg-tooltip: rgba(18, 20, 26, 0.98);
+    --amb-bg-float: rgba(30, 32, 40, 0.9);
+    --amb-bg-dialog: linear-gradient(145deg, rgba(48, 49, 55, 0.98), rgba(27, 28, 33, 0.98));
+    --amb-bg-sunken: rgba(0, 0, 0, 0.35);
+    --amb-lt-text: initial;
+    --amb-lt-soft: initial;
+    --amb-lt-muted: initial;
+    --amb-lt-surface: initial;
+    --amb-lt-page: initial;
+    --amb-lt-card-hover: initial;
+    --amb-lt-accent-text: initial;
+    --amb-lt-ok: initial;
+    --amb-lt-chip: initial;
+    --amb-lt-ok-chip: initial;
+    --amb-lt-warn: initial;
+    --amb-lt-blue: initial;
+    --amb-lt-pink: initial;
+    --amb-lt-violet: initial;
+    --amb-lt-panel: initial;
+    --amb-lt-sunken: initial;
+    --amb-lt-danger: initial;
+    --amb-lt-scrim: initial;
+    --amb-lt-brand: initial;
+    --amb-lt-shimmer: initial;
+    color-scheme: dark;
+}
+
+/* Some rules ask ComfyUI's own palette first (--bg-color, --fg-color …). Inside the plugin's
+   windows those follow the plugin's theme when it differs from ComfyUI's: light here with a dark
+   ComfyUI (or ComfyUI's grey light palette), dark here with a light ComfyUI. */
+html.amb-theme-light :is(#anomalous-modal, .anomalous-prompt-studio-drawer, body > [id^="anomalous-"], body > [class*="anomalous-"]),
+html:not(.dark-theme):not(.amb-theme-light) :is(#anomalous-modal, .anomalous-prompt-studio-drawer, body > [id^="anomalous-"], body > [class*="anomalous-"]) {
+    --bg-color: var(--amb-bg-card);
+    --comfy-menu-bg: var(--amb-bg-card-hover);
+    --comfy-input-bg: var(--amb-bg-input);
+    --input-text: var(--amb-text-main);
+    --fg-color: var(--amb-text-main);
+    --descrip-text: var(--amb-text-muted);
+    --border-color: var(--amb-border-strong);
+    --error-text: var(--amb-danger);
+}
+
+/* Native controls and scrollbars inside the plugin's own windows follow its theme, not ComfyUI's. */
+html.amb-theme-light #anomalous-modal,
+html.amb-theme-light .anomalous-prompt-studio-drawer {
+    color-scheme: light;
 }
 
 /* Abyssal Scarlet Gothic Theme Overrides */
@@ -70,7 +235,7 @@ html.theme-abyssal-scarlet,
 
 /* Skeleton Shimmer Loading Placeholder */
 .anomalous-skeleton-shimmer {
-    background: linear-gradient(90deg, #15171e 25%, #232733 50%, #15171e 75%) !important;
+    background: var(--amb-lt-shimmer, linear-gradient(90deg, #15171e 25%, #232733 50%, #15171e 75%)) !important;
     background-size: 200% 100% !important;
     animation: anomalousSkeletonShimmer 1.8s infinite ease-in-out !important;
 }
@@ -92,7 +257,7 @@ html.theme-abyssal-scarlet,
     width: var(--anomalous-trigger-size);
     height: var(--anomalous-trigger-size);
     border-radius: 50%;
-    background: rgba(18, 21, 30, 0.85);
+    background: var(--amb-lt-surface, rgba(18, 21, 30, 0.85));
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     color: var(--fg-color, var(--amb-text-main));
@@ -100,7 +265,7 @@ html.theme-abyssal-scarlet,
     font-size: var(--anomalous-trigger-font-size);
     cursor: pointer;
     z-index: 2147483000 !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(var(--amb-ink-rgb), 0.12);
     display: flex !important;
     visibility: visible !important;
     opacity: 1;
@@ -180,9 +345,9 @@ html.theme-abyssal-scarlet #anomalous-trigger-btn:hover {
 
 #anomalous-trigger-btn:hover {
     transform: scale(1.08) translateY(-4px);
-    background: rgba(25, 29, 42, 0.94);
+    background: var(--amb-lt-surface, rgba(25, 29, 42, 0.94));
     border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 18px color-mix(in srgb, var(--amb-link) 22%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 18px color-mix(in srgb, var(--amb-link) 22%, transparent), inset 0 1px 0 rgba(var(--amb-ink-rgb), 0.2);
     color: var(--amb-text-main);
 }
 
@@ -396,8 +561,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     padding: 0 10px;
     height: 28px;
     box-sizing: border-box;
-    background: rgba(255, 255, 255, 0.04);
-    color: #c0c4cc;
+    background: rgba(var(--amb-ink-rgb), 0.04);
+    color: var(--amb-lt-muted, #c0c4cc);
     border: 1px solid var(--amb-border);
     border-radius: 6px;
     cursor: pointer;
@@ -413,7 +578,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 #anomalous-header button:hover {
-    background: rgba(255, 255, 255, 0.09);
+    background: rgba(var(--amb-ink-rgb), 0.09);
     border-color: var(--amb-border-strong);
     color: var(--amb-text-main);
     transform: translateY(-1px);
@@ -421,7 +586,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 #anomalous-header button.active {
-    background: rgba(255, 255, 255, 0.14) !important;
+    background: rgba(var(--amb-ink-rgb), 0.14) !important;
     border-color: var(--amb-border-strong) !important;
     color: var(--amb-text-main) !important;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35) !important;
@@ -468,18 +633,18 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 #anomalous-grid::-webkit-scrollbar-track {
-    background: rgba(20, 20, 26, 0.8);
+    background: var(--amb-lt-page, rgba(20, 20, 26, 0.8));
 }
 
 #anomalous-grid::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.16);
+    background: rgba(var(--amb-ink-rgb), 0.16);
     border-radius: 4px;
     border: 1px solid var(--amb-border);
 }
 
 #anomalous-grid::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 0 6px rgba(255, 255, 255, 0.18);
+    background: rgba(var(--amb-ink-rgb), 0.3);
+    box-shadow: 0 0 6px rgba(var(--amb-ink-rgb), 0.18);
 }
 
 .anomalous-card {
@@ -491,7 +656,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     display: flex;
     flex-direction: column;
     height: 340px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(var(--amb-ink-rgb), 0.04);
     transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
     will-change: transform, box-shadow;
     cursor: pointer;
@@ -500,7 +665,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 .anomalous-card:hover {
     transform: translateY(-2px);
     border-color: var(--amb-border-strong);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(var(--amb-ink-rgb), 0.08);
 }
 
 .theme-abyssal-scarlet .anomalous-card {
@@ -648,14 +813,14 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 #anomalous-container.view-mode-aesthetic .anomalous-card {
     height: 360px;
     border-radius: 8px;
-    background: rgba(28, 28, 32, 0.85);
+    background: var(--amb-lt-surface, rgba(28, 28, 32, 0.85));
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--amb-border);
 }
 
 #anomalous-container.view-mode-aesthetic .anomalous-card:hover {
-    background: rgba(34, 34, 38, 0.92);
+    background: var(--amb-lt-surface, rgba(34, 34, 38, 0.92));
     border-color: var(--amb-border-strong);
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
 }
@@ -738,25 +903,25 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-card-badge.badge-gold {
     color: var(--amb-text-main);
-    background: rgba(30, 32, 40, 0.9);
+    background: var(--amb-bg-float);
     border-color: var(--amb-border-strong);
 }
 
 .anomalous-card-badge.badge-amber {
     color: var(--amb-text-soft);
-    background: rgba(30, 32, 40, 0.9);
+    background: var(--amb-bg-float);
     border-color: var(--amb-border-strong);
 }
 
 .anomalous-card-badge.badge-flux {
     color: var(--amb-text-soft);
-    background: rgba(30, 32, 40, 0.9);
+    background: var(--amb-bg-float);
     border-color: var(--amb-border-strong);
 }
 
 .anomalous-card-badge.badge-rose {
     color: var(--amb-text-soft);
-    background: rgba(30, 32, 40, 0.9);
+    background: var(--amb-bg-float);
     border-color: var(--amb-border-strong);
 }
 
@@ -805,8 +970,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 }
 
 .anomalous-card-action-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(var(--amb-ink-rgb), 0.2);
+    border-color: rgba(var(--amb-ink-rgb), 0.4);
     color: var(--amb-text-main);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
@@ -835,8 +1000,8 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     padding: 16px;
     border: 1px solid color-mix(in srgb, var(--amb-link) 35%, transparent);
     border-radius: 12px;
-    background: rgba(24, 24, 27, 0.96);
-    color: #f1f3f4;
+    background: var(--amb-lt-surface, rgba(24, 24, 27, 0.96));
+    color: var(--amb-lt-text, #f1f3f4);
     box-shadow: 0 14px 38px rgba(0, 0, 0, 0.42);
     backdrop-filter: blur(12px);
 }
@@ -860,7 +1025,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     height: 6px;
     overflow: hidden;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(var(--amb-ink-rgb), 0.12);
 }
 
 .anomalous-scan-progress-fill {
@@ -876,13 +1041,13 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
 
 .anomalous-scan-progress-detail {
     margin-top: 10px;
-    color: #d7dde8;
+    color: var(--amb-lt-soft, #d7dde8);
     font-size: 12px;
 }
 
 .anomalous-scan-progress-item {
     margin-top: 4px;
-    color: #9aa0a6;
+    color: var(--amb-lt-muted, #9aa0a6);
     font-size: 11px;
 }
 
@@ -892,7 +1057,7 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     border: 1px solid color-mix(in srgb, var(--amb-link) 45%, transparent);
     border-radius: 999px;
     background: transparent;
-    color: #d7dde8;
+    color: var(--amb-lt-soft, #d7dde8);
     font-size: 12px;
     cursor: pointer;
 }

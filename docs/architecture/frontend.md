@@ -370,9 +370,17 @@ visual values. Its `web/styles/00-*.css` through `10-*.css` children preserve th
 original cascade order; every child import carries the same cache version so an
 entry-cache hit cannot leave stale child rules. Shared `--amb-*`
 tokens express surfaces, text, borders and control shapes; theme overrides must
-be scoped to `.theme-abyssal-scarlet` rather than changing unrelated surfaces.
+be scoped to `.theme-abyssal-scarlet` or `html.amb-theme-light` rather than changing
+unrelated surfaces.
 
-Colours come from the tokens in `00-foundation-models.css`, which both themes define:
+Themes (`interface_settings.js`, Settings → Appearance → Theme and the ComfyUI setting
+`Anomalous.ModelBrowser.Theme`): follow ComfyUI (default), dark, light, or Abyssal Scarlet.
+Following ComfyUI reads `dark-theme` on `<html>`, which ComfyUI sets for a dark palette and
+removes for a light one, and repaints when it changes. The light theme is the class
+`amb-theme-light` on `<html>`; Abyssal Scarlet keeps `theme-abyssal-scarlet`. An older
+Abyssal Scarlet switch (`anomalous_theme_abyssal_scarlet`) reads as the Abyssal choice.
+
+Colours come from the tokens in `00-foundation-models.css`, which every theme defines:
 surfaces (`--amb-bg-page`, `-panel`, `-card`, `-card-hover`, `-input`), text
 (`--amb-text-main`, `-soft`, `-muted`, `-dim`), borders (`--amb-border`, `-strong`,
 `-hover`), the primary button (`--amb-btn-primary-*`) and one accent, `--amb-link`, for
@@ -380,6 +388,19 @@ links, selection and focus; its tints are `color-mix(in srgb, var(--amb-link) N%
 transparent)`. CSS injected from JS and inline styles use the same tokens. Literal
 colours stay only where the colour is the meaning: status (red, green, amber), prompt
 roles, voice emotions, canvas node colours and translucent shadows or overlays.
+
+Tokens added for the light theme keep the dark themes exactly as they were:
+`rgba(var(--amb-ink-rgb), a)` for tints over the page (white on dark, black on light),
+`--amb-danger/-warn/-ok` and their `-text`/`-soft` shades for status text, `--amb-bg-tooltip`,
+`--amb-bg-float`, `--amb-bg-dialog`, `--amb-bg-sunken`, `--amb-scrim` and `--amb-note-*`.
+Older rules and inline styles that wrote a dark colour now write
+`var(--amb-lt-<role>, <that colour>)`: the `--amb-lt-*` tokens exist only in the light theme,
+so every other theme falls back to the original colour. Use them when a dark literal cannot
+become a shared token. Inside the plugin's windows ComfyUI's own palette variables
+(`--bg-color`, `--fg-color`, `--input-text` …) are mapped to the plugin's tokens whenever the
+two themes differ. Surfaces over images (card labels, cover pills) stay dark, and the image
+viewer (`.anomalous-workbench-overlay`, `.anomalous-gallery-viewer`) gets the dark tokens back
+in the light theme.
 
 Studio drawer rules keep the source deck at the screen edge and the assembly
 track next to the canvas. Common geometry is shared between dock directions;

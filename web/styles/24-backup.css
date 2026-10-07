@@ -9,7 +9,7 @@
     justify-content: center;
     padding: 20px;
     box-sizing: border-box;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--amb-lt-scrim, rgba(0, 0, 0, 0.6));
     backdrop-filter: blur(4px);
 }
 
@@ -61,7 +61,7 @@
     line-height: 1.5;
 }
 
-.anomalous-backup-note.is-bad { color: #fca5a5; }
+.anomalous-backup-note.is-bad { color: var(--amb-danger-text); }
 
 .anomalous-backup-choice {
     display: flex;
@@ -94,7 +94,7 @@
     word-break: break-all;
 }
 
-.anomalous-backup-note.is-warn { color: #fcd34d; }
+.anomalous-backup-note.is-warn { color: var(--amb-warn-text); }
 
 .anomalous-backup-missing {
     display: flex;
