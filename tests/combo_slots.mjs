@@ -1,6 +1,6 @@
 // The rules of combo structures that need no canvas (web/modules/combo_slots.js).
 import assert from 'node:assert/strict';
-import { chainOrder, findPort, fedByLink, folderFor, isModelWidget, missingTypes, packOf, structureKey, structureSummary } from '../web/modules/combo_slots.js';
+import { chainOrder, findPort, fedByLink, fixedNodes, folderFor, isModelWidget, missingTypes, packOf, structureKey, structureSummary } from '../web/modules/combo_slots.js';
 
 const combo = (value, values) => ({ type: 'combo', value, options: { values } });
 
@@ -65,5 +65,16 @@ assert.deepEqual(chainOrder(['p1', 'p2', 'l1', 'l2', 'l3', 'l4', 'unet', 'clip']
     [['l3', 'l1'], ['l1', 'p1'], ['l1', 'p2'], ['unet', 'l2'], ['clip', 'l2'], ['l4', 'l3'], ['l2', 'l4']]),
     ['unet', 'clip', 'l2', 'l4', 'l3', 'l1', 'p1', 'p2']);
 assert.deepEqual(chainOrder(['a', 'b', 'c'], [['a', 'b'], ['b', 'a'], ['x', 'c']]), ['c', 'a', 'b']);
+
+// Nodes without slots are put back as saved, listed in flow order: an upscale model's loader with a slot,
+// the node using it and a saver without.
+const upscale = {
+    nodes: [{ key: 'n1', type: 'SaveImage' }, { key: 'n2', type: 'ImageUpscaleWithModel' }, { key: 'n3', type: 'UpscaleModelLoader' }],
+    links: [{ from: 'n3', to: 'n2' }, { from: 'n2', to: 'n1' }],
+    slots: [{ node: 'n3', widget: 'model_name' }],
+};
+assert.deepEqual(fixedNodes(upscale).map(item => item.type), ['ImageUpscaleWithModel', 'SaveImage']);
+assert.deepEqual(fixedNodes({ ...upscale, slots: [] }).map(item => item.key), ['n3', 'n2', 'n1']);
+assert.deepEqual(fixedNodes({}), []);
 
 console.log('combo_slots: ok');

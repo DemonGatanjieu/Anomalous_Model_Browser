@@ -108,6 +108,15 @@ export function chainOrder(ids, edges) {
     return [...order, ...ids.filter(id => !done.has(id))];
 }
 
+/** The structure's nodes that hold no slot (put back exactly as saved), in the order things flow. */
+export function fixedNodes(structure) {
+    const nodes = structure?.nodes || [];
+    const withSlots = new Set((structure?.slots || []).map(slot => slot.node));
+    const byKey = new Map(nodes.map(item => [item.key, item]));
+    return chainOrder(nodes.map(item => item.key), (structure?.links || []).map(link => [link.from, link.to]))
+        .filter(key => !withSlots.has(key)).map(key => byKey.get(key));
+}
+
 /** Two structures with the same nodes, boxes and links (for "a new combo like this one"). */
 export function structureKey(structure) {
     return JSON.stringify([(structure?.nodes || []).map(item => item.type), (structure?.links || []).map(link => [link.from, link.fromName, link.to, link.toName]),

@@ -67,6 +67,7 @@ function comboCard(owner, note) {
             : [modelName(data.mainModel) || t('comboNoModel'), loras ? t('comboLoraCount', { count: loras }) : ''].filter(Boolean).join(' · ')),
         el('p', 'anomalous-combo-prompt', (structured ? structured.prompt : String(data.promptEn || '').trim()) || t('comboNoPrompt')),
     );
+    if (structured?.hint) body.append(el('span', 'anomalous-combo-hint', structured.hint));
     const use = button('anomalous-btn-primary anomalous-combo-use', t('comboUse'), (event) => {
         event.stopPropagation();
         owner.currentNotebook = note;

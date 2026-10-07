@@ -1,18 +1,20 @@
 /**
- * A combo's node structure (搭配的节点结构): the model nodes and text nodes picked on the canvas
- * and the links between them, with the boxes a combo fills in (slots). No DOM.
+ * A combo's node structure (搭配的节点结构): the nodes picked on the canvas and the links between
+ * them, with the boxes a combo fills in (slots). No DOM.
  *
- * Only certain things are kept. A model node has a drop-down listing model files; a text node
- * a multiline text box by its own definition (prompt_boxes.js). Other picked nodes are left out,
- * and so are links to them. Every box of a kept node is stored by its name, not its position,
- * and put back untouched; the slots are its model drop-downs and text boxes (one node may hold
- * several), each with the models folder its drop-down lists (not guessed from names). A box
- * fed by a link is no slot. Putting a structure back makes the nodes first, restores the other
- * boxes in their order (a count box adds its rows), then fills the slots by name, then links;
- * whatever cannot be found is reported, never guessed.
+ * Every picked node is kept but a subgraph (a graph of its own, left out with its links). Every
+ * box of a kept node is stored by its name, not its position, and put back untouched; the slots
+ * are its model drop-downs (a drop-down listing model files) and text boxes (a multiline text box
+ * by its own definition, prompt_boxes.js), one node may hold several, each model slot with the
+ * models folder its drop-down lists (not guessed from names). A box fed by a link is no slot, and
+ * a node without slots is put back exactly as saved. A link coming in from a node that was not
+ * picked cannot be kept; its input is remembered (`open`) to say it needs wiring. Putting a
+ * structure back makes the nodes first, restores the other boxes in their order (a count box adds
+ * its rows), then fills the slots by name, then links; whatever cannot be found is reported,
+ * never guessed.
  *
- * A combo with a structure: data = { kind: 'nodes', structure: { version, nodes, links, slots },
- * values: { slotId: value }, covers: { slotId: url } }.
+ * A combo with a structure: data = { kind: 'nodes', structure: { version, nodes, links, slots,
+ * open: [{ node, name, type }] }, values: { slotId: value }, covers: { slotId: url } }.
  */
 
 import { app } from '../../../scripts/app.js';
@@ -43,17 +45,15 @@ const storable = (value) => value === null || ['string', 'number', 'boolean'].in
 
 /**
  * The structure of the picked canvas nodes: { structure, values, dropped } — `dropped` the
- * picked nodes that are neither model nor text nodes. Null structure when none is.
+ * picked subgraphs. Null structure when nothing else was picked.
  */
 export async function captureStructure(picked, { labelFor } = {}) {
     const lists = await loadFolderLists();
     const kept = [];
     const dropped = [];
     for (const node of picked) {
-        const models = (node.widgets || []).filter(isModelWidget);
-        const texts = promptBoxes(node);
-        if (models.length || texts.length) kept.push({ node, models, texts });
-        else dropped.push(node);
+        if (node.isSubgraphNode?.()) dropped.push(node);
+        else kept.push({ node, models: (node.widgets || []).filter(isModelWidget), texts: promptBoxes(node) });
     }
     if (!kept.length) return { structure: null, values: {}, dropped };
     const graph = picked[0]?.graph || app.graph;
@@ -107,10 +107,16 @@ export async function captureStructure(picked, { labelFor } = {}) {
     }
 
     const links = [];
+    const open = [];
     for (const { node } of kept) {
         (node.inputs || []).forEach((input, slot) => {
             const link = linkOf(input);
-            if (!link || !keys.has(link.origin_id)) return;
+            if (!link) return;
+            if (!keys.has(link.origin_id)) {
+                // A box turned into an input keeps its saved value; any other input waits for a wire.
+                if (!input.widget) open.push({ node: keys.get(node.id), name: input.name || '', type: String(link.type ?? input.type ?? '') });
+                return;
+            }
             const origin = graph.getNodeById(link.origin_id);
             const output = origin?.outputs?.[link.origin_slot];
             links.push({
@@ -119,7 +125,7 @@ export async function captureStructure(picked, { labelFor } = {}) {
             });
         });
     }
-    return { structure: { version: STRUCTURE_VERSION, nodes, links, slots }, values, dropped };
+    return { structure: { version: STRUCTURE_VERSION, nodes, links, slots, open }, values, dropped };
 }
 
 /** The drop-down's own spelling of a model path (folders with \ on Windows), else the path as given. */

@@ -204,7 +204,8 @@
     line-height: 18px;
 }
 
-.anomalous-structure-row.is-model {
+.anomalous-structure-row.is-model,
+.anomalous-structure-row.is-fixed {
     display: flex;
     align-items: center;
     gap: 12px;

@@ -3,15 +3,15 @@
  * picked nodes as one (a dialog listing what is kept and its slots, which can be renamed or
  * dropped), its editor (models, LoRAs and prompts in the order they flow: a model chosen from
  * that slot's models folder, filtered by base model, with its node's saved values shown; a text
- * box), and "New" offering the default combo, the picked nodes, or the
+ * box; then the nodes without slots, shown with their saved values, and the inputs to wire after
+ * it is put down), and "New" offering the default combo, the picked nodes, or the
  * structure of a combo already saved. The canvas's node menu has "Save as combo" too
  * (browser_entry.js). Putting one on the canvas is notebook_canvas.js.
  */
 
 import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
-import { STRUCTURED, chainOrder, isModelWidget, missingTypes, structureKey, structureSummary } from './combo_slots.js';
-import { typeTakesPrompt } from './prompt_boxes.js';
+import { STRUCTURED, chainOrder, fixedNodes, missingTypes, structureKey, structureSummary } from './combo_slots.js';
 import { captureStructure } from './combo_structure.js';
 import { freeComboName, listCombos } from './image_keep.js';
 import { anomalousAlert, anomalousPrompt } from './ui_dialog.js';
@@ -75,9 +75,16 @@ function isDefaultLabel(slot) {
     return names.some(name => new RegExp(`^${escapeRe(name)}( \\d+)?$`).test(label));
 }
 
+// A saved value worth showing (short, not empty or a plain default), and how it reads ("强度 0.85").
+const showable = ([, value]) => value !== null && value !== '' && !/^(default|none)$/i.test(String(value)) && String(value).length <= FIXED_MAX_CHARS;
+const valueText = ([name, value]) => {
+    const known = FIXED_NAMES.find(([pattern]) => pattern.test(name));
+    return `${known ? t(known[1]) : name} ${typeof value === 'number' ? Number(value.toFixed(3)) : value}`;
+};
+
 /**
- * The saved values ("强度 0.85") shown on `slot`'s row: the short ones of its node, without slots
- * and plain defaults. On a node with several models a value goes to the row with its number
+ * The saved values shown on `slot`'s row: the short ones of its node, without slots and plain
+ * defaults. On a node with several models a value goes to the row with its number
  * (strength_02 → lora_02); one without a number goes to the node's first model row, one whose
  * row is no slot is not shown.
  */
@@ -89,12 +96,30 @@ function fixedValues(node, slots, slot) {
         if (models.length < 2 || numberIn(name) === null) return models[0];
         return models.find(item => numberIn(item.widget) === numberIn(name));
     };
-    return (node?.widgets || []).filter(([name, value]) => !taken.has(name) && value !== null && value !== ''
-        && !/^(default|none)$/i.test(String(value)) && String(value).length <= FIXED_MAX_CHARS && rowOf(name) === slot)
-        .map(([name, value]) => {
-            const known = FIXED_NAMES.find(([pattern]) => pattern.test(name));
-            return `${known ? t(known[1]) : name} ${typeof value === 'number' ? Number(value.toFixed(3)) : value}`;
+    return (node?.widgets || []).filter(entry => !taken.has(entry[0]) && showable(entry) && rowOf(entry[0]) === slot).map(valueText);
+}
+
+/** Saved values as chips, the first few shown and the rest behind "+N". */
+function chipLine(values) {
+    const line = el('span', 'anomalous-structure-fixed');
+    line.title = t('comboFixedHint');
+    line.append(...values.slice(0, FIXED_SHOWN).map(text => el('span', 'anomalous-structure-chip', text)));
+    if (values.length > FIXED_SHOWN) {
+        const more = button('anomalous-structure-chip is-more', `+${values.length - FIXED_SHOWN}`, () => {
+            more.replaceWith(...values.slice(FIXED_SHOWN).map(text => el('span', 'anomalous-structure-chip', text)));
         });
+        line.append(more);
+    }
+    return line;
+}
+
+/** The inputs that links from unpicked nodes fed, to wire after the structure is put down. */
+function openInputs(structure) {
+    const nodeOf = new Map((structure?.nodes || []).map(item => [item.key, item]));
+    return (structure?.open || []).map((input) => {
+        const node = nodeOf.get(input.node);
+        return t('comboOpenInput', { node: node?.title || node?.name || node?.type || '', input: input.name, type: input.type });
+    });
 }
 
 /** An overlay with `dialog` in it; Esc or a click beside it calls `onClose`. */
@@ -141,9 +166,9 @@ export function menuNodes(node) {
     return picked.includes(node) ? picked : [node];
 }
 
-/** Whether a combo could keep any of these nodes (a model drop-down or a prompt box). */
+/** Whether a combo could keep any of these nodes (any but subgraphs). */
 export function hasComboNodes(nodes) {
-    return nodes.some(node => (node.widgets || []).some(isModelWidget) || typeTakesPrompt(node.type));
+    return nodes.some(node => !node.isSubgraphNode?.());
 }
 
 /** Saves the canvas's picked nodes (or `nodes`, from the canvas menu) as a new combo, after a dialog showing what is kept. */
@@ -179,6 +204,8 @@ export async function saveSelectionAsCombo(owner, nodes = null) {
             count: dropped.length, nodes: dropped.map(node => node.title || node.type).join('、'),
         })));
     }
+    const open = openInputs(structure);
+    if (open.length) dialog.append(el('p', 'anomalous-structure-note is-muted', t('comboFromSelectionOpen', { inputs: open.join('、') })));
     const rows = el('div', 'anomalous-structure-slots');
     const choices = structure.slots.map((slot) => {
         const row = el('label', 'anomalous-structure-slot');
@@ -195,8 +222,8 @@ export async function saveSelectionAsCombo(owner, nodes = null) {
         rows.append(row);
         return { slot, keep, label };
     });
-    dialog.append(el('p', 'anomalous-structure-note', t('comboFromSelectionSlots')), rows);
-    if (!structure.slots.length) rows.append(el('p', 'anomalous-structure-note is-muted', t('comboFromSelectionNoSlots')));
+    if (structure.slots.length) dialog.append(el('p', 'anomalous-structure-note', t('comboFromSelectionSlots')), rows);
+    else dialog.append(el('p', 'anomalous-structure-note is-muted', t('comboFromSelectionNoSlots')));
 
     const footer = el('div', 'anomalous-structure-footer');
     const close = overlay(dialog);
@@ -369,18 +396,7 @@ export function renderStructuredCombo(owner, host, note, toolbar) {
         if (!isNone(value)) copy.title = value;
         // The node's other values, as saved: shown, not changed here (a combo puts down exactly what was saved).
         const fixed = fixedValues(nodeOf.get(slot.node), structure.slots, slot);
-        if (fixed.length) {
-            const line = el('span', 'anomalous-structure-fixed');
-            line.title = t('comboFixedHint');
-            line.append(...fixed.slice(0, FIXED_SHOWN).map(text => el('span', 'anomalous-structure-chip', text)));
-            if (fixed.length > FIXED_SHOWN) {
-                const more = button('anomalous-structure-chip is-more', `+${fixed.length - FIXED_SHOWN}`, () => {
-                    more.replaceWith(...fixed.slice(FIXED_SHOWN).map(text => el('span', 'anomalous-structure-chip', text)));
-                });
-                line.append(more);
-            }
-            copy.append(line);
-        }
+        if (fixed.length) copy.append(chipLine(fixed));
         const actions = el('div', 'anomalous-structure-actions');
         if (slot.folder) {
             actions.append(button('anomalous-scan-row-btn is-main', t('comboPick'), () => pick(slot, row)));
@@ -440,9 +456,30 @@ export function renderStructuredCombo(owner, host, note, toolbar) {
         section.append(heading, ...slots.map(slot => (slot.kind === 'text' ? drawText(slot) : drawModel(slot))));
         card.append(section);
     }
+    // Nodes without slots go down exactly as saved: their name and saved values, nothing to change here.
+    const fixedRows = fixedNodes(structure).map((item) => {
+        const row = el('div', 'anomalous-structure-row is-fixed');
+        const copy = el('div', 'anomalous-structure-copy');
+        const name = el('strong', 'anomalous-structure-value', item.title || item.name || item.type);
+        name.title = item.pack ? `${item.type} · ${item.pack}` : item.type;
+        copy.append(name);
+        const values = (item.widgets || []).filter(showable).map(valueText);
+        if (values.length) copy.append(chipLine(values));
+        row.append(copy);
+        return row;
+    });
+    if (fixedRows.length) {
+        const section = el('div', 'anomalous-structure-group');
+        const heading = el('h4', 'anomalous-structure-heading', t('comboGroupFixed'));
+        if (fixedRows.length > 1) heading.append(el('span', 'anomalous-structure-count', String(fixedRows.length)));
+        section.append(heading, ...fixedRows);
+        card.append(section);
+    }
     if (!structure.slots.length) card.append(el('p', 'anomalous-structure-note', t('comboFromSelectionNoSlots')));
 
     const about = el('div', 'anomalous-structure-about');
+    const open = openInputs(structure);
+    if (open.length) about.append(el('p', 'anomalous-structure-note', t('comboOpenInputs', { inputs: open.join('、') })));
     about.append(el('p', 'anomalous-structure-note is-muted', t('comboStructureNodes', { nodes: structureSummary(structure) })),
         el('p', 'anomalous-structure-note is-muted', t('comboFixedHint')));
     const packs = [...new Set(structure.nodes.map(item => item.pack).filter(Boolean))];
@@ -517,9 +554,12 @@ export function structuredComboMeta(data) {
     const slots = data.structure?.slots || [];
     const models = slots.filter(slot => slot.kind === 'model' && !isNone(data.values?.[slot.id])).map(slot => shortName(data.values[slot.id]));
     const text = slots.find(slot => slot.kind === 'text' && String(data.values?.[slot.id] || '').trim());
+    const open = (data.structure?.open || []).length;
     return {
         cover: Object.values(data.covers || {}).find(Boolean) || '',
-        meta: models.length ? models.slice(0, 3).join(' · ') + (models.length > 3 ? ' …' : '') : t('comboNoModel'),
+        // Without models the card names its nodes.
+        meta: models.length ? models.slice(0, 3).join(' · ') + (models.length > 3 ? ' …' : '') : structureSummary(data.structure) || t('comboNoModel'),
         prompt: text ? String(data.values[text.id]).trim() : '',
+        hint: open ? t('comboOpenInputsCount', { count: open }) : '',
     };
 }

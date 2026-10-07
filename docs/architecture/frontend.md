@@ -86,9 +86,11 @@ The main surfaces are:
   follows the pointer removes it; the activity log holds back while `owner.placingCombo` is set) and
   never changes nodes already on the canvas (values of an existing node are changed in
   Current node). A combo with a node structure (`combo_structure.js`, `ui_combo_structure.js`)
-  keeps only model nodes (a drop-down of model files) and text nodes (a multiline text box by
-  the node's definition) and the links between them; picked nodes of other kinds and links to
-  them are left out (their ports stay open on the canvas). Slots are per box, so a node with
+  keeps every picked node but subgraphs, and the links between them. Its slots are the model
+  drop-downs (a drop-down of model files) and text boxes (a multiline text box by the node's
+  definition); a node without slots goes back exactly as saved. A link from a node that was not
+  picked cannot be kept: its input is stored in `structure.open`, and the save dialog, the
+  editor and the card say it needs wiring. Slots are per box, so a node with
   several model drop-downs has several; a box fed by a link is none. Each slot's models folder
   is the one whose files hold all the drop-down's options. Putting it down needs every node
   type installed (missing ones and their packs are named first), restores the other boxes by
@@ -96,11 +98,12 @@ The main surfaces are:
   link that cannot be restored is reported after placing, never guessed. Values other than
   the slots cannot be edited: a combo puts down exactly what was saved. The canvas's node menu
   (`getNodeMenuItems`, browser_entry.js) offers "Save as combo" for the picked nodes, or the
-  right-clicked node when it is not among them, when any of them is a model or text node.
+  right-clicked node when it is not among them, when any of them is not a subgraph.
   Nodes are kept in flow order (`chainOrder`, combo_slots.js) so slot numbers read along the
   chain; the editor groups slots into models, LoRAs and prompts in that order, renumbers names
   it made itself, and lists each model node's other saved values read-only (on a node with
-  several models, by the number in the box name). Prompts get a read-only translation panel
+  several models, by the number in the box name); nodes without slots follow under "put back as
+  saved" with their saved values, read-only. Prompts get a read-only translation panel
   (translation_service.js); empty optional slots start unticked in the save dialog.
 - Prompts: the rail entry opens Prompt Studio (below); there is no Material Library page.
   Saved node values are listed, applied and deleted in Current node.

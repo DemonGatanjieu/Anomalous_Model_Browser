@@ -387,9 +387,10 @@ covered by the `styles.css` manifest.
   New, and a card per combo with its model's cover and Put on canvas; a card opens the combo's editor, and dragged onto the
   canvas (`material_drag.js`) becomes a new group of nodes where it is dropped. Combos keep the notes' files.
   A combo can instead hold a node structure (`data.kind === 'nodes'`): `combo_structure.js`
-  captures the canvas's picked model nodes and text nodes with the links between them and puts
+  captures the canvas's picked nodes (subgraphs aside) with the links between them and puts
   them back (other boxes stored by name and restored untouched, slots = model drop-downs and
-  text boxes, the folder a drop-down lists read from ComfyUI's own `/models` lists);
+  text boxes, the folder a drop-down lists read from ComfyUI's own `/models` lists, inputs fed
+  from unpicked nodes noted to wire);
   `combo_slots.js` holds its rules that need no canvas; `ui_combo_structure.js` is the save
   dialog, the slot editor, the slot model picker and "New"; `ui_translation_peek.js` is the
   read-only translation panel beside its prompts.
