@@ -22,11 +22,19 @@ const post = (url, body) => json(url, { method: 'POST', headers: { 'Content-Type
 /** { misplaced, duplicates, unchecked }; `deep` also reads same-size files never scanned. */
 export const checkPlacement = (deep = false, signal) => json(`/anomalous/placement/check${deep ? '?deep=1' : ''}`, { signal });
 
-/** How many things the Tidy view has to show: misplaced models that do not load where they
- * are, and groups of identical files. */
+/** The misplaced models the Tidy tab lists: not those that load where they are, nor an extra
+ * copy of a file that is in the right folder (the identical files step has it). */
+export function tidyMisplaced(data) {
+    const key = (item) => `${item.type}|${item.root}|${item.rel}`;
+    const extra = new Set(data.duplicates.filter(group => group.files.some(file => file.fits))
+        .flatMap(group => group.files.filter(file => !file.fits).map(key)));
+    return data.misplaced.filter(item => !item.works && !extra.has(key(item)));
+}
+
+/** How many things the Tidy tab has to show: listed misplaced models and groups of identical files. */
 export function tidyCount() {
     counted ||= checkPlacement()
-        .then(data => data.misplaced.filter(item => !item.works).length + data.duplicates.length)
+        .then(data => tidyMisplaced(data).length + data.duplicates.length)
         .catch(() => 0);
     return counted;
 }

@@ -5,7 +5,8 @@
 
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
-import { focusModel, modelListUrl, renderTypeBar } from './ui_model_types.js';
+import { focusModel, modelListUrl, renderBaseBar, renderModelTabs, renderTypeBar } from './ui_model_types.js';
+import { countBases, inFamily } from './model_bases.js';
 import { matchesModelQuery } from './ui_model_search.js';
 import { renderSourceBadge } from './model_source.js';
 import { renderModelSourcesView } from './ui_model_sources.js';
@@ -41,15 +42,15 @@ export async function loadModels() {
             this.modelTidy?.controller?.abort();
             // Cards of an earlier load still being drawn in chunks stop here.
             this._modelRenderGeneration = (this._modelRenderGeneration || 0) + 1;
-            if (this.modelView === 'tidy') { // the type bar, then what is in the wrong folder or twice
+            if (this.modelView === 'tidy') { // the tabs, then what is in the wrong folder or twice
                 stopMediaInContainer(this.grid);
-                this.grid.replaceChildren(renderTypeBar(this, 0));
+                this.grid.replaceChildren(renderModelTabs(this));
                 renderModelTidyView(this, this.grid);
                 return;
             }
-            if (this.modelView === 'sources') { // the type bar, then where each model is downloaded
+            if (this.modelView === 'sources') { // the tabs, then where each model is downloaded
                 stopMediaInContainer(this.grid);
-                this.grid.replaceChildren(renderTypeBar(this, 0));
+                this.grid.replaceChildren(renderModelTabs(this));
                 renderModelSourcesView(this, this.grid);
                 return;
             }
@@ -89,10 +90,15 @@ export async function loadModels() {
                 }, { rootMargin: '300px' })
                 : null;
             stopMediaInContainer(this.grid);
-            this.grid.replaceChildren(renderTypeBar(this, (data.models || []).length));
+            this.grid.replaceChildren(renderModelTabs(this), renderTypeBar(this, (data.models || []).length));
 
             const query = this.modelQuery || '';
             if (data.models?.length && query) data.models = data.models.filter(model => matchesModelQuery(model, query));
+            const bases = renderBaseBar(this, countBases(data.models));
+            if (bases) {
+                this.grid.appendChild(bases);
+                data.models = data.models.filter(model => inFamily(model, this.modelBase));
+            }
             if (!data.models || data.models.length === 0) {
                 const empty = document.createElement('div');
                 empty.className = 'anomalous-grid-empty';

@@ -5,8 +5,9 @@ GET  /anomalous/placement/check[?deep=1] -> {misplaced, duplicates, unchecked}
     misplaced: models whose header (model_kind.py, only when sure) names another type than
     the folder they are in, with where they belong (the same subfolder in a folder of that
     type, on the same drive when there is one) and whether they still load where they are.
-    duplicates: files with the same SHA-256 — known from scans, or (deep) read now for files
-    of the same size. unchecked: the same-size files a deep check would still read.
+    duplicates: files with the same SHA-256 — known from scans, else read now for files of
+    the same size (small ones always, large ones with deep). unchecked: the same-size large
+    files a deep check would still read.
 POST /anomalous/placement/move {type, root, rel, to_type, to_root, to_rel} -> moves a model
     and its sidecars (covers, info, the user's notes); never over a file (" (2)").
 
@@ -17,6 +18,7 @@ SHA-256s are kept in memory per file (path, size, time).
 import asyncio
 import os
 import threading
+import urllib.parse
 
 from aiohttp import web
 import folder_paths
@@ -29,13 +31,15 @@ except ImportError:  # loaded outside the package (tests)
     from model_kind import inspect_file
 from .activity_log import add_entry
 from .metadata import get_metadata
-from .model_constants import SIDECAR_SUFFIXES
+from .model_constants import MEDIA_EXTENSIONS, PREVIEW_SUFFIXES, SIDECAR_SUFFIXES
 from .model_download import MODEL_EXTENSIONS, clean_folder, forget_file_lists
 from .model_import import Refused, destination, import_types, move_into
 from .path_utils import resolve_within
 
 # (folder type, what the file is): it loads there all the same.
 WORKS_ANYWAY = {("diffusion_models", "checkpoints")}
+# Same-size files up to this are read at once (LoRAs, embeddings); larger ones on "Compare".
+AUTO_HASH = 256 * 1024 * 1024
 CACHE_LIMIT = 5000
 
 _lock = threading.Lock()
@@ -84,6 +88,30 @@ def library():
     return files
 
 
+def _card(item):
+    """What the page shows of a file: its name (the user's, else Civitai's, else the file's),
+    Civitai version and cover URL."""
+    try:
+        meta = get_metadata(item["path"])
+    except Exception:
+        meta = {}
+    folder, name = os.path.split(item["path"])
+    stem = os.path.splitext(name)[0]
+    cover = next((stem + suffix for suffix in PREVIEW_SUFFIXES + MEDIA_EXTENSIONS
+                  if os.path.isfile(os.path.join(folder, stem + suffix))), "")
+    sub = item["rel"].rpartition("/")[0]
+    url = ""
+    if cover:
+        url = (f"/anomalous/image?type={urllib.parse.quote(item['type'])}&path_idx={item['root']}"
+               f"&subfolder={urllib.parse.quote(sub)}&filename={urllib.parse.quote(cover)}")
+    version = meta.get("version_name") or ""
+    name = meta.get("custom_name") or ""
+    if not name and meta.get("model_id"):  # Civitai's "Model - Version": the model's part
+        full = meta.get("name") or ""
+        name = full[:-len(" - " + version)] if version and full.endswith(" - " + version) else full
+    return {"name": name or stem, "version": version, "preview_url": url}
+
+
 def _home_for(item, kind):
     """Where a file of `kind` goes: its own subfolder and name, in a folder of that type,
     preferably on its drive (a move is then a rename)."""
@@ -108,7 +136,7 @@ def misplaced(files):
         if home:
             found.append({"type": item["type"], "root": item["root"], "rel": item["rel"], "size": item["size"],
                           "kind": kind, "base": result.get("base", ""), "works": (item["type"], kind) in WORKS_ANYWAY,
-                          "to": home})
+                          "to": home, **_card(item)})
     return found
 
 
@@ -124,6 +152,14 @@ def _known_hash(item):
     return hit[2] if hit and hit[:2] == (item["stat"].st_size, item["stat"].st_mtime_ns) else ""
 
 
+def _copy(item):
+    """One of identical files: where it is, how it shows, whether its folder fits what it is
+    (the copy to keep, when only one does)."""
+    kind = _cached(_heads, item["path"], item["stat"], inspect_file).get("kind")
+    return {"type": item["type"], "root": item["root"], "rel": item["rel"],
+            "fits": not kind or kind == item["type"], **_card(item)}
+
+
 def duplicates(files, deep=False):
     """(groups of identical files, {groups, bytes} still to read for a deep check)."""
     by_size = {}
@@ -135,17 +171,17 @@ def duplicates(files, deep=False):
         if len(items) < 2:
             continue
         unknown = [item for item in items if not _known_hash(item)]
-        if unknown and not deep:
+        read = deep or size <= AUTO_HASH
+        if unknown and not read:
             unchecked["groups"] += 1
             unchecked["bytes"] += size * len(unknown)
         for item in items:
             sha = _known_hash(item)
-            if not sha and deep:
+            if not sha and read:
                 sha = _cached(_hashes, item["path"], item["stat"], file_sha256)
             if sha:
                 groups.setdefault(sha, []).append(item)
-    found = [{"sha256": sha, "size": items[0]["size"],
-              "files": [{"type": item["type"], "root": item["root"], "rel": item["rel"]} for item in items]}
+    found = [{"sha256": sha, "size": items[0]["size"], "files": [_copy(item) for item in items]}
              for sha, items in groups.items() if len(items) > 1]
     return found, unchecked
 
@@ -153,7 +189,7 @@ def duplicates(files, deep=False):
 def check(deep=False):
     files = library()
     found, unchecked = duplicates(files, deep)
-    return {"misplaced": misplaced(files), "duplicates": found, "unchecked": unchecked}
+    return {"misplaced": misplaced(files), "duplicates": found, "unchecked": unchecked, "checked": len(files)}
 
 
 def _sidecars(path):

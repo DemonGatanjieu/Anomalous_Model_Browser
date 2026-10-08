@@ -422,10 +422,13 @@ covered by the `styles.css` manifest.
   which the editor, the scanner and "add to canvas" read. Its Import chip and files dropped on
   the grid open `ui_model_import.js`, the import window (one card per file: type, base model,
   where it goes, warnings, progress); `model_import.js` reads each file's header and asks,
-  moves or uploads it, then scans the new files. Its Tidy chip (with how many things it found)
-  opens `ui_model_tidy.js` in the grid (`owner.modelView === 'tidy'`): models in the wrong
-  folder with Move there, identical copies with Recycle; `model_placement.js` does its
-  requests and keeps the chip's count. `ui_model_search.js` is the models
+  moves or uploads it, then scans the new files. The page's tabs (All models, Tidy with how
+  many things it found, Sources) head the grid; under All models the type chips and the base
+  model chips (`owner.modelBase`; `model_bases.js` names each model's family from its scanned
+  base model or its header's guess). The Tidy tab is `ui_model_tidy.js` (`owner.modelView ===
+  'tidy'`): cards with covers in two steps — models in a folder whose loader cannot read them
+  (from → to, Move there), identical copies (pick the one to keep, recycle the rest);
+  `model_placement.js` does its requests and keeps the tab's count. `ui_model_search.js` is the models
   search in the header (shown on the models page through the shell's `data-page`): the grid
   lists the models of its type matching every word (`owner.modelQuery`).
 - `model_source.js` shows where a model's information came from: the card badge (marked only

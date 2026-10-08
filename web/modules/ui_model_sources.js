@@ -4,7 +4,7 @@
  * found automatically, opened, and saved (model_source_links.js keeps it in the model's
  * information and, for the workflow's models, in the workflow). The workflow's list can go
  * on the canvas as a note or to the clipboard. It is drawn in the models grid under the
- * type bar while `owner.modelView === 'sources'`; `owner.modelSources` keeps scope, filter
+ * page's tabs while `owner.modelView === 'sources'`; `owner.modelSources` keeps scope, filter
  * and search across redraws.
  */
 

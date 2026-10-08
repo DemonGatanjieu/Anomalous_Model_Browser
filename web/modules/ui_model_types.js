@@ -1,17 +1,17 @@
 /**
- * The models page's type bar: one chip per models folder (Checkpoint, LoRA, …) with its
- * model count, first in the grid. A chip lists that whole folder, subfolders included; a
- * folder picked in the list narrows the grid to that folder alone, shown as a crumb whose
- * ✕ leads back to the whole type.
+ * The models page's bars, first in the grid. The tabs: All models (the cards), Tidy (with how
+ * many things it found; models in the wrong folder and identical copies, `owner.modelView ===
+ * 'tidy'`, ui_model_tidy.js) and Sources (where each model is downloaded, `'sources'`,
+ * ui_model_sources.js). Under All models, the type bar: one chip per models folder
+ * (Checkpoint, LoRA, …) with its model count — a chip lists that whole folder, subfolders
+ * included; a folder picked in the list narrows the grid to that folder alone, shown as a
+ * crumb whose ✕ leads back to the whole type — and Import (ui_model_import.js); then the base
+ * model bar, one chip per base model family the listed models have (`owner.modelBase`, null =
+ * all; model_bases.js), shown when there are two or more.
  *
  * `owner.modelScope` is what the grid lists: `{type, path_idx}` for a chip, plus
  * `subfolder` for a list folder. `currentType/PathIdx/Subfolder` stay "where the model at
  * hand lives", which the editor, the scanner and "add to canvas" read (see focusModel).
- * The last chip, Sources, shows where each model is downloaded instead of the cards
- * (`owner.modelView === 'sources'`, ui_model_sources.js); a type chip goes back. Import, before
- * it, puts model files into the right folders (ui_model_import.js); Tidy, with how many things
- * it found, shows models in the wrong folder and identical copies (`owner.modelView === 'tidy'`,
- * ui_model_tidy.js).
  */
 
 import { translate as t } from './locales.js';
@@ -62,6 +62,7 @@ function showType(owner, group) {
 
 function openType(owner, group) {
     owner.modelView = '';
+    owner.modelBase = null; // another type has other base models
     showType(owner, group);
     owner.renderSidebar();
     owner.loadModels();
@@ -107,10 +108,8 @@ export function renderTypeBar(owner, listed) {
     bar.setAttribute('aria-label', t('modelTypesLabel'));
     const scope = owner.modelScope;
     const groups = owner.foldersData || [];
-    const inSources = owner.modelView === 'sources';
-    const inTidy = owner.modelView === 'tidy';
     for (const group of groups) {
-        const active = !inSources && !inTidy && sameGroup(group, scope);
+        const active = sameGroup(group, scope);
         const whole = active && !scope.subfolder;
         // The folder counts date from the last folder load; the listed type counts what it shows.
         const count = whole ? listed : modelCount(group);
@@ -129,7 +128,7 @@ export function renderTypeBar(owner, listed) {
         chip.onclick = () => { if (!whole) openType(owner, group); };
         bar.appendChild(chip);
     }
-    const group = !inSources && !inTidy && scope?.subfolder && groups.find(item => sameGroup(item, scope));
+    const group = scope?.subfolder && groups.find(item => sameGroup(item, scope));
     if (group) {
         const crumb = document.createElement('button');
         crumb.type = 'button';
@@ -153,32 +152,71 @@ export function renderTypeBar(owner, listed) {
     importer.title = t('importChipTitle');
     importer.onclick = () => pickModelFiles(owner);
     bar.appendChild(importer);
-    const tidy = document.createElement('button');
-    tidy.type = 'button';
-    tidy.className = 'anomalous-model-type-chip is-tool';
-    tidy.classList.toggle('is-active', inTidy);
-    tidy.setAttribute('aria-pressed', String(inTidy));
-    tidy.append(document.createElement('span'));
-    tidy.firstChild.textContent = t('tidyChip');
-    tidy.title = t('tidyChipTitle');
-    tidy.onclick = () => { if (!inTidy) showModelTidy(owner); };
-    tidyCount().then(count => {
-        if (!count || !tidy.isConnected) return;
+    return bar;
+}
+
+/** The page's tabs: All models, Tidy (with its count), Sources. */
+export function renderModelTabs(owner) {
+    const bar = document.createElement('div');
+    bar.className = 'anomalous-model-tabs';
+    bar.setAttribute('role', 'tablist');
+    const current = ['tidy', 'sources'].includes(owner.modelView) ? owner.modelView : '';
+    const tabs = [
+        ['', 'modelTabAll', () => { owner.modelView = ''; owner.loadModels(); }],
+        ['tidy', 'tidyChip', () => showModelTidy(owner)],
+        ['sources', 'toolModelSourcesShort', () => owner.showModelSources('library')],
+    ];
+    for (const [view, labelKey, open] of tabs) {
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = 'anomalous-model-tab';
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-selected', String(view === current));
+        const name = document.createElement('span');
+        name.textContent = t(labelKey);
+        tab.append(name);
+        tab.onclick = () => { if (view !== current) open(); };
+        if (view === 'tidy') {
+            tab.title = t('tidyChipTitle');
+            tidyCount().then(count => {
+                if (!count || !tab.isConnected) return;
+                const number = document.createElement('span');
+                number.className = 'anomalous-model-tab-count';
+                number.textContent = String(count);
+                tab.append(number);
+            });
+        }
+        bar.appendChild(tab);
+    }
+    return bar;
+}
+
+/** The base model chips for `counts` ([[family, n]], model_bases.countBases); null when fewer than two. */
+export function renderBaseBar(owner, counts) {
+    if (counts.length < 2) return null;
+    const total = counts.reduce((sum, [, count]) => sum + count, 0);
+    const bar = document.createElement('div');
+    bar.className = 'anomalous-model-bases';
+    bar.setAttribute('role', 'toolbar');
+    bar.setAttribute('aria-label', t('modelBasesLabel'));
+    const current = counts.some(([family]) => family === owner.modelBase) ? owner.modelBase : null;
+    for (const [family, count] of [[null, total], ...counts]) {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'anomalous-model-base-chip';
+        chip.setAttribute('aria-pressed', String(family === current));
+        const name = document.createElement('span');
+        name.textContent = family === null ? t('modelBasesAll') : family || t('modelBasesUnknown');
         const number = document.createElement('span');
-        number.className = 'anomalous-model-type-count is-alert';
+        number.className = 'anomalous-model-type-count';
         number.textContent = String(count);
-        tidy.append(number);
-    });
-    bar.appendChild(tidy);
-    // Where each model can be downloaded, in place of the cards.
-    const sources = document.createElement('button');
-    sources.type = 'button';
-    sources.className = 'anomalous-model-type-chip is-tool';
-    sources.classList.toggle('is-active', inSources);
-    sources.setAttribute('aria-pressed', String(inSources));
-    sources.textContent = t('toolModelSourcesShort');
-    sources.title = t('toolModelSourcesTitle');
-    sources.onclick = () => { if (!inSources) owner.showModelSources('library'); };
-    bar.appendChild(sources);
+        chip.append(name, number);
+        chip.onclick = () => {
+            if (family === current) return;
+            owner.modelBase = family;
+            owner.loadModels();
+        };
+        bar.appendChild(chip);
+    }
     return bar;
 }

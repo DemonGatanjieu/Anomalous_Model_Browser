@@ -14,6 +14,10 @@ try:
     from ..model_identity import USER_INFO_SUFFIX, is_unmatched, read_json, sidecar_file_hash, sidecar_info, unmatched_reason
 except ImportError:
     from model_identity import USER_INFO_SUFFIX, is_unmatched, read_json, sidecar_file_hash, sidecar_info, unmatched_reason
+try:
+    from ..model_kind import inspect_file
+except ImportError:
+    from model_kind import inspect_file
 
 # Fields the model editor sets: <model>.anomalous.json key -> metadata key.
 USER_FIELDS = {"custom_name": "custom_name", "custom_notes": "custom_notes", "source_url": "source_url"}
@@ -102,6 +106,7 @@ def _read_metadata(file_path):
         "custom_name": "",
         "custom_notes": "",
         "version_name": "",  # the Civitai version ("v2.0", "Illustrious"…), told apart on the card
+        "base_guess": "",  # no base model known yet (not scanned): what the file's header tells
         # "civitai" (matched), "local" (only what the file tells: no match, or offline) or "" (not scanned)
         "info_source": "",
         "unmatched_reason": "",  # for "local": not_found | network | offline | "" (scanned before this was kept)
@@ -169,6 +174,8 @@ def _read_metadata(file_path):
     if scan is not None:
         metadata["info_source"] = "local" if is_unmatched(scan) else "civitai"
         metadata["unmatched_reason"] = unmatched_reason(scan)
+    if not metadata["baseModel"] and scan is None:
+        metadata["base_guess"] = inspect_file(file_path).get("base") or ""
     # The user's own layer comes last and wins, also when a field was cleared on purpose ("").
     user = read_json(base_path + USER_INFO_SUFFIX) or {}
     for key, field in USER_FIELDS.items():

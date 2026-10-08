@@ -121,57 +121,6 @@
 
 .anomalous-download-folder-choice .anomalous-download-folder[hidden] { display: none; }
 
-/* Tidy view (ui_model_tidy.js), in the models grid like the Sources view. */
-.anomalous-tidy {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    min-width: 0;
-    max-width: 860px;
-    padding: 4px 2px 12px;
-}
-
-.anomalous-tidy-heading {
-    margin: 10px 0 0;
-    font-size: 14px;
-}
-
-.anomalous-tidy-is {
-    color: var(--amb-text-main);
-    font-size: 12.5px;
-    font-weight: 600;
-}
-
-.anomalous-tidy-note {
-    padding: 8px 12px;
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--amb-ok-text) 12%, transparent);
-    color: var(--amb-text-main);
-    font-size: 12.5px;
-    line-height: 1.5;
-}
-
-.anomalous-tidy-copy,
-.anomalous-tidy-unchecked {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-}
-
-.anomalous-tidy-copy-path {
-    flex: 1 1 240px;
-    min-width: 0;
-    font-size: 12.5px;
-    overflow-wrap: anywhere;
-}
-
-.anomalous-model-type-count.is-alert {
-    background: color-mix(in srgb, var(--amb-warn-text) 30%, transparent);
-    color: var(--amb-text-main);
-}
-
 .anomalous-download-folder-example {
     color: var(--amb-text-dim, var(--amb-text-muted));
     font-size: 11.5px;

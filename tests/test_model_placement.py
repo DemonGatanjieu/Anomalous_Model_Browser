@@ -65,11 +65,14 @@ class PlacementTests(unittest.TestCase):
         self.put("diffusion_models", "Flux/flux-fp8.safetensors", FLUX_WHOLE)
         self.put("loras", "ok.safetensors", LORA)
         self.put("checkpoints", "unknown.safetensors", safetensors("something.weight"))
-        found = {item["rel"]: item for item in model_placement.check()["misplaced"]}
+        data = model_placement.check()
+        self.assertEqual(data["checked"], 4)
+        found = {item["rel"]: item for item in data["misplaced"]}
         self.assertEqual(set(found), {"Anima/realskin.safetensors", "Flux/flux-fp8.safetensors"})
         anima = found["Anima/realskin.safetensors"]
         self.assertEqual((anima["kind"], anima["base"], anima["works"]), ("diffusion_models", "Anima", False))
         self.assertEqual(anima["to"], {"type": "diffusion_models", "root": 0, "rel": "Anima/realskin.safetensors"})
+        self.assertEqual((anima["name"], anima["version"], anima["preview_url"]), ("realskin", "", ""))
         # A whole checkpoint in the diffusion models folder still loads there.
         self.assertTrue(found["Flux/flux-fp8.safetensors"]["works"])
 
@@ -77,18 +80,24 @@ class PlacementTests(unittest.TestCase):
         first = self.put("loras", "a.safetensors", LORA)
         self.put("vae", "copy.safetensors", LORA)
         self.put("loras", "other.safetensors", LORA + b"x")
-        # Not scanned: only counted until a deep check reads them.
-        data = model_placement.check()
+        # Large files never scanned are only counted until a deep check reads them.
+        with mock.patch.object(model_placement, "AUTO_HASH", 10):
+            data = model_placement.check()
         self.assertEqual(data["duplicates"], [])
         self.assertEqual(data["unchecked"], {"groups": 1, "bytes": 2 * len(LORA)})
+        model_placement._hashes.clear()
+        self.assertEqual(len(model_placement.check()["duplicates"]), 1)  # small ones are read at once
         deep = model_placement.check(deep=True)["duplicates"]
         self.assertEqual(len(deep), 1)
         self.assertEqual({item["rel"] for item in deep[0]["files"]}, {"a.safetensors", "copy.safetensors"})
         self.assertEqual(deep[0]["sha256"], hashlib.sha256(LORA).hexdigest())
+        # The copy in the folder that fits what it is is the one to keep.
+        self.assertEqual({item["rel"]: item["fits"] for item in deep[0]["files"]}, {"a.safetensors": True, "copy.safetensors": False})
         # Hashes from scans count without reading.
         model_placement._hashes.clear()
         self.hashes[first] = hashlib.sha256(LORA).hexdigest()
-        self.assertEqual(model_placement.check()["unchecked"]["groups"], 1)  # the copy is still unknown
+        with mock.patch.object(model_placement, "AUTO_HASH", 10):
+            self.assertEqual(model_placement.check()["unchecked"]["groups"], 1)  # the copy is still unknown
 
     def test_move_takes_covers_and_info_along(self):
         source = self.put("checkpoints", "Anima/realskin.safetensors", ANIMA)
