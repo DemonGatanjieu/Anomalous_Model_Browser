@@ -1,12 +1,10 @@
 import { t } from './interface_settings.js';
-import { previewUrl } from './tts_setup_api.js';
 
 /**
  * Listening to clips in the import window, while they upload or wait unassigned:
  * one clip at a time, its row marked and its button turned into "stop"; clicking
- * another clip switches to it, so clips can be compared one after another. Browser
- * files play from memory (`row.url`, an object URL the window revokes with the row);
- * local paths play through the node (`/anomalous_tts/import/preview`).
+ * another clip switches to it, so clips can be compared one after another. Files play
+ * from memory (`row.url`, an object URL the window revokes with the row).
  */
 export function createImportPlayer() {
     let audio = null;
@@ -33,9 +31,9 @@ export function createImportPlayer() {
     function toggle(row) {
         if (current === row) { stop(); return; }
         stop();
-        if (!row.file && !row.path) return;
-        if (row.file) row.url = row.url || URL.createObjectURL(row.file);
-        const mine = new Audio(row.file ? row.url : previewUrl(row.path));
+        if (!row.file) return;
+        row.url = row.url || URL.createObjectURL(row.file);
+        const mine = new Audio(row.url);
         audio = mine;
         current = row;
         mark(row, true);

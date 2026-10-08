@@ -54,7 +54,6 @@ ROUTE_ACTIONS = {
     '/anomalous/clear_cache': 'cache_clear',
     '/anomalous_tts/import/commit': 'voice_import',
     '/anomalous_tts/settings': 'voice_settings',
-    '/anomalous_tts/storage': 'voice_storage',
 }
 # Request fields that name what was changed, in order of preference.
 TARGET_FIELDS = ('name', 'character', 'filename', 'target_filename', 'recipe_filename',

@@ -33,7 +33,6 @@ const ACTION_KEYS = {
     cache_clear: 'activityCacheClear',
     voice_import: 'activityVoiceImport',
     voice_settings: 'activityVoiceSettings',
-    voice_storage: 'activityVoiceStorage',
     model_download: 'activityModelDownload',
     model_import: 'activityModelImport',
     model_move: 'activityModelMove',

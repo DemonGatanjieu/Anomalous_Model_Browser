@@ -88,7 +88,7 @@ export function renderChooseScreen(existing, on) {
     return choose;
 }
 
-/** Batch mode before any file: what to bring, and where from. `on`: `{ folder, files, localFolder, localFiles, back }`. */
+/** Batch mode before any file: what to bring, and where from. `on`: `{ folder, files, back }`. */
 export function renderBatchHero(on) {
     const hero = el('div', 'anomalous-tts-hero');
     const heroIcon = el('div', 'anomalous-tts-hero-icon');
@@ -102,11 +102,8 @@ export function renderBatchHero(on) {
     const buttons = el('div', 'anomalous-tts-hero-buttons');
     buttons.append(button('anomalous-voice-modal-submit', t('ttsBatchPickFolder'), on.folder),
         button('anomalous-tts-ghost is-large', t('ttsImportPickFiles'), on.files));
-    const local = el('div', 'anomalous-tts-hero-local');
-    local.append(el('span', '', t('ttsHeroLocal')), button('anomalous-tts-link', t('ttsHeroLocalFolder'), on.localFolder),
-        el('span', 'anomalous-tts-hero-dot', '·'), button('anomalous-tts-link', t('ttsHeroLocalFiles'), on.localFiles));
     hero.append(heroIcon, el('div', 'anomalous-tts-hero-title', t('ttsHeroTitle')), needs,
-        el('div', 'anomalous-tts-hero-desc', t('ttsHeroDesc')), buttons, local, renderFolderLayout(),
+        el('div', 'anomalous-tts-hero-desc', t('ttsHeroDesc')), buttons, renderFolderLayout(),
         button('anomalous-tts-link', t('ttsChooseAgain'), on.back));
     return hero;
 }
@@ -136,7 +133,7 @@ function renderFolderLayout() {
 
 /**
  * "Add more": one button with a small menu, so the list stays the main thing.
- * `on`: `{ files, folder, localFiles, localFolder }`. Returns `{ root, menu }`; the
+ * `on`: `{ files, folder }`. Returns `{ root, menu }`; the
  * window closes the menu on an outside click or Escape (`menu` loses `is-open`).
  */
 export function renderAddMenu(on) {
@@ -147,9 +144,7 @@ export function renderAddMenu(on) {
         return node;
     };
     menu.append(item(t('ttsImportPickFiles'), t('ttsMenuUploadHint'), on.files),
-        item(t('ttsBatchPickFolder'), t('ttsMenuUploadHint'), on.folder),
-        item(t('ttsMenuLocalFiles'), t('ttsMenuLocalHint'), on.localFiles),
-        item(t('ttsBatchPickLocalFolder'), t('ttsMenuLocalHint'), on.localFolder));
+        item(t('ttsBatchPickFolder'), t('ttsMenuUploadHint'), on.folder));
     const root = el('div', 'anomalous-tts-menu-wrap');
     root.append(button('anomalous-tts-ghost', t('ttsAddMore'), () => menu.classList.toggle('is-open')), menu);
     return { root, menu };

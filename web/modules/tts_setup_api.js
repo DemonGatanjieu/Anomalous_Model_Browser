@@ -1,10 +1,12 @@
 import { invalidateEngineCache } from './audio_engines.js';
 
 /**
- * GPT-SoVITS setup and import through the Anomalous_TTS node (interface v9, §5.2–5.3).
+ * GPT-SoVITS setup and import through the Anomalous_TTS node (interface v13, §5.2–5.3).
  * The node owns every file: the storage place, pretrained files and imported
- * characters. This module only calls its API and holds the pure rules the import
- * form needs; it has no DOM.
+ * characters. Where they are is set only in the node's settings file, never through
+ * the API, and imported files are always uploaded: no call names a path on the
+ * computer. This module only calls the API and holds the pure rules the import form
+ * needs; it has no DOM.
  */
 
 export const UPLOAD_CHUNK = 8 * 1024 * 1024; // under ComfyUI's default 100 MB request limit
@@ -46,47 +48,18 @@ async function request(url, { method = 'POST', body, raw, signal, keepalive } = 
     return data;
 }
 
-// ---------- storage place, pretrained files ----------
-
-/** Make `path` the storage place; `move` moves the current characters there (in the background). */
-export async function changeStorage(path, move) {
-    const status = await request('/anomalous_tts/storage', { body: { path, move } });
-    invalidateEngineCache();
-    return status;
+export function formatSize(bytes) {
+    if (bytes >= 1024 ** 3) return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
+    if (bytes >= 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+    return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
-/** Stop reading an earlier storage place; its files stay. */
-export async function forgetLibrary(path) {
-    const status = await request('/anomalous_tts/libraries', { body: { path, remove: true } });
-    invalidateEngineCache();
-    return status;
-}
-
-/** Use (or stop using) a GPT-SoVITS package as a pretrained source. Returns the new status. */
-export async function changePretrainedSource(path, remove = false) {
-    const status = await request('/anomalous_tts/pretrained/source', { body: { path, remove } });
-    invalidateEngineCache();
-    return status;
-}
+// ---------- pretrained files ----------
 
 /** Start background downloads; progress shows up in the status. */
 export async function startPretrainedDownload(ids) {
     await request('/anomalous_tts/pretrained/download', { body: { ids } });
     invalidateEngineCache();
-}
-
-export function browseFolder(path, signal) {
-    return request(`/anomalous_tts/browse${path ? `?path=${encodeURIComponent(path)}` : ''}`, { method: 'GET', signal });
-}
-
-/** Every usable file a few levels under `path`, each with its folder relative to it (batch import). */
-export function scanFolder(path, signal) {
-    return request(`/anomalous_tts/browse?recursive=1&path=${encodeURIComponent(path)}`, { method: 'GET', signal });
-}
-
-/** Where the browser can play a local audio file picked by path (the node serves it). */
-export function previewUrl(path) {
-    return `/anomalous_tts/import/preview?path=${encodeURIComponent(path)}`;
 }
 
 // ---------- import ----------
@@ -134,7 +107,7 @@ export function discardUploads(ids) {
 
 /**
  * The commit request for the import form. `rows` are in file order:
- * { spec: {upload}|{path} (plus `name` when renamed), kind, emotion, text }. `language` '' = let the node decide.
+ * { spec: {upload} (plus `name` when renamed), kind, emotion, text }. `language` '' = let the node decide.
  */
 export function buildImportBody({ target = null, library = '', character = '', rows, referenceIndex = null, language = '' }) {
     const settings = {};
@@ -286,8 +259,7 @@ export function setupSummary(status) {
     const missing = (status?.pretrained || []).filter(item => item.state !== 'ok');
     const packages = Object.values(status?.dependencies || {}).reduce((sum, dep) => sum + (dep.missing?.length || 0), 0);
     const downloading = missing.some(item => item.state === 'queued' || item.state === 'downloading');
-    const moving = status?.move?.state === 'moving';
     const requiredMissing = missing.filter(item => item.required).length;
-    return { characters, missing: missing.length, requiredMissing, packages, downloading, moving,
-        ready: characters > 0 && requiredMissing === 0 && packages === 0 && !moving };
+    return { characters, missing: missing.length, requiredMissing, packages, downloading,
+        ready: characters > 0 && requiredMissing === 0 && packages === 0 };
 }
