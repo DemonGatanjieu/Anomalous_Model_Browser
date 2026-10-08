@@ -8,10 +8,12 @@
  * `subfolder` for a list folder. `currentType/PathIdx/Subfolder` stay "where the model at
  * hand lives", which the editor, the scanner and "add to canvas" read (see focusModel).
  * The last chip, Sources, shows where each model is downloaded instead of the cards
- * (`owner.modelView === 'sources'`, ui_model_sources.js); a type chip goes back.
+ * (`owner.modelView === 'sources'`, ui_model_sources.js); a type chip goes back. Import, before
+ * it, puts model files into the right folders (ui_model_import.js).
  */
 
 import { translate as t } from './locales.js';
+import { pickModelFiles } from './ui_model_import.js';
 
 const SCOPE_KEY = 'anomalous_model_scope';
 
@@ -139,6 +141,13 @@ export function renderTypeBar(owner, listed) {
         crumb.onclick = () => openType(owner, group);
         bar.appendChild(crumb);
     }
+    const importer = document.createElement('button');
+    importer.type = 'button';
+    importer.className = 'anomalous-model-type-chip is-tool';
+    importer.textContent = t('importChip');
+    importer.title = t('importChipTitle');
+    importer.onclick = () => pickModelFiles(owner);
+    bar.appendChild(importer);
     // Where each model can be downloaded, in place of the cards.
     const sources = document.createElement('button');
     sources.type = 'button';

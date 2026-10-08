@@ -101,6 +101,7 @@ def _read_metadata(file_path):
         "hash_source": "",
         "custom_name": "",
         "custom_notes": "",
+        "version_name": "",  # the Civitai version ("v2.0", "Illustrious"…), told apart on the card
         # "civitai" (matched), "local" (only what the file tells: no match, or offline) or "" (not scanned)
         "info_source": "",
         "unmatched_reason": "",  # for "local": not_found | network | offline | "" (scanned before this was kept)
@@ -155,6 +156,8 @@ def _read_metadata(file_path):
                     if civitai_url: metadata["civitai_url"] = civitai_url
                     if model_id is not None: metadata["model_id"] = model_id
                     if version_id is not None: metadata["version_id"] = version_id
+                    if version_id is not None and isinstance(data.get("model"), dict) and isinstance(data.get("name"), str):
+                        metadata["version_name"] = data["name"].strip()
                     if hash_val: metadata["hash"] = hash_val
                     if "anomalous_custom_name" in data and data["anomalous_custom_name"]: metadata["custom_name"] = data["anomalous_custom_name"]
                     if "anomalous_custom_notes" in data and data["anomalous_custom_notes"]: metadata["custom_notes"] = data["anomalous_custom_notes"]

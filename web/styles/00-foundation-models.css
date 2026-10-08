@@ -877,6 +877,23 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     line-height: 1.3;
 }
 
+.anomalous-card-version {
+    align-self: flex-start;
+    max-width: 100%;
+    padding: 1px 7px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.45);
+    color: var(--amb-text-main);
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+}
+
 .anomalous-card-filename {
     font-size: 0.72rem;
     color: var(--amb-text-muted);

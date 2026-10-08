@@ -1,10 +1,12 @@
 /**
- * The settings page (the rail's gear): one card per subject — how the browser looks,
- * model cards and what they cost in memory (with the card image cache), model folders
- * (a view of its own, ui_folder_manager.js, `owner.settingsView === 'folders'`),
- * workflows, where Model Check's downloads go, prompt translation (a DeepL key), backups (ui_backup.js), how the browser opens, and help. A tool page like the scan page, with a
- * way back to the page you came from. Display preferences go through `owner.displayPrefs`
- * (ui_settings_hub.js); language, theme and opening mode are ComfyUI settings.
+ * The settings page (the rail's gear), in tabs (`owner.settingsTab`, kept while the page is
+ * away): Look (how the browser looks, model cards and what they cost in memory with the card
+ * image cache, how the browser opens), Models (model folders — a view of its own,
+ * ui_folder_manager.js, `owner.settingsView === 'folders'` — and where downloads and imported
+ * models go), Workflows, Prompts (translation with a DeepL key), Backup (ui_backup.js) and
+ * Help. A tool page like the scan page, with a way back to the page you came from. Display
+ * preferences go through `owner.displayPrefs` (ui_settings_hub.js); language, theme and opening
+ * mode are ComfyUI settings.
  */
 
 import { app } from "../../../scripts/app.js";
@@ -21,6 +23,7 @@ import { fetchDownloadSettings, hfMirrorOn, saveDownloadSettings } from './model
 import { saveApiKey } from './ui_scan_page.js';
 import { exportBackup, importBackup } from './ui_backup.js';
 import { followsSelection, setFollowsSelection } from './shell_open_rules.js';
+import { FOLDER_PRESETS, expandFolder } from './download_places.js';
 
 const t = (key, params) => translate(key, params);
 // The full written guide: the README, at its Chinese half for Chinese.
@@ -200,23 +203,59 @@ function workflowGroup(owner) {
         })));
 }
 
-/** Where Model Check's downloads go (model_download.js); filled once the settings are read. */
+/** The download folder: a ready-made choice, or one typed by hand; an example path below. */
+function folderChoice(current) {
+    const box = el('div', 'anomalous-download-folder-choice');
+    const select = el('select', 'anomalous-download-root');
+    FOLDER_PRESETS.forEach((value, index) => {
+        const option = el('option', '', t(`settingsDownloadFolderPreset${index}`));
+        option.value = value;
+        select.append(option);
+    });
+    const custom = el('option', '', t('settingsDownloadFolderCustom'));
+    custom.value = '*'; // never a folder name
+    select.append(custom);
+    const input = el('input', 'anomalous-download-folder');
+    input.type = 'text';
+    input.spellcheck = false;
+    input.placeholder = t('settingsDownloadFolderRoot');
+    const example = el('small', 'anomalous-download-folder-example');
+    const show = (folder) => {
+        const preset = FOLDER_PRESETS.includes(folder);
+        select.value = preset && !input.dataset.typing ? folder : custom.value;
+        input.hidden = select.value !== custom.value;
+        input.value = folder;
+        const sub = expandFolder(folder, 'SDXL 1.0', []);
+        example.textContent = t('settingsDownloadFolderExample', { path: `loras/${sub ? `${sub}/` : ''}model.safetensors` });
+    };
+    const save = (folder) => saveDownloadSettings({ folder })
+        .then(saved => { input.classList.remove('is-bad'); show(saved.folder); })
+        .catch(() => input.classList.add('is-bad'));
+    select.onchange = () => {
+        if (select.value === custom.value) {
+            input.dataset.typing = '1';
+            input.hidden = false;
+            input.focus();
+        } else {
+            delete input.dataset.typing;
+            save(select.value);
+        }
+    };
+    input.onchange = () => save(input.value);
+    show(current);
+    box.append(select, input, example);
+    return box;
+}
+
+/** Where downloads and imported models go (model_download.js); filled once the settings are read. */
 function downloadGroup(owner, redraw) {
     const box = group('settingsDownloads');
     fetchDownloadSettings().then(settings => {
-        const folder = el('input', 'anomalous-download-folder');
-        folder.type = 'text';
-        folder.spellcheck = false;
-        folder.value = settings.folder;
-        folder.placeholder = t('settingsDownloadFolderRoot');
-        folder.onchange = () => saveDownloadSettings({ folder: folder.value })
-            .then(saved => { folder.value = saved.folder; folder.classList.remove('is-bad'); })
-            .catch(() => folder.classList.add('is-bad'));
         box.append(
             row('settingsDownloadPlace', 'settingsDownloadPlaceHelp', segment(
                 [['workflow', 'settingsDownloadPlaceWorkflow'], ['folder', 'settingsDownloadPlaceFolder']], settings.place,
                 value => saveDownloadSettings({ place: value }).then(redraw).catch(() => {}))),
-            row('settingsDownloadFolder', 'settingsDownloadFolderHelp', folder),
+            row('settingsDownloadFolder', 'settingsDownloadFolderHelp', folderChoice(settings.folder)),
             row('settingsHfMirror', 'settingsHfMirrorHelp', toggleSwitch(hfMirrorOn(settings),
                 on => saveDownloadSettings({ hf_mirror: on }).catch(() => redraw()))),
             row('settingsDownloadKey', 'settingsDownloadKeyHelp', button('anomalous-scan-secondary anomalous-scan-small-btn',
@@ -339,14 +378,42 @@ function helpGroup(owner) {
     );
 }
 
+// Tab -> its title and its cards, in order.
+const TABS = [
+    ['look', 'settingsTabLook', (owner, redraw) => [appearanceGroup(owner, redraw), cardsGroup(owner, redraw), openingGroup(owner, redraw)]],
+    ['models', 'settingsTabModels', (owner, redraw) => [foldersGroup(owner), downloadGroup(owner, redraw)]],
+    ['workflows', 'settingsTabWorkflows', (owner) => [workflowGroup(owner)]],
+    ['prompts', 'settingsTabPrompts', () => [translationGroup()]],
+    ['backup', 'settingsTabBackup', (owner) => [backupGroup(owner)]],
+    ['help', 'settingsTabHelp', (owner) => [helpGroup(owner)]],
+];
+
+function tabBar(owner, current) {
+    const bar = el('div', 'anomalous-settings-tabs');
+    bar.setAttribute('role', 'tablist');
+    for (const [id, labelKey] of TABS) {
+        const tab = button('anomalous-settings-tab', t(labelKey), () => {
+            if (owner.settingsTab === id) return;
+            owner.settingsTab = id;
+            render(owner);
+        });
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-selected', String(id === current));
+        bar.append(tab);
+    }
+    return bar;
+}
+
 function render(owner) {
     const panel = owner.settingsPanel;
-    const view = owner.settingsView || '';
+    const tab = TABS.find(([id]) => id === owner.settingsTab) || TABS[0];
+    owner.settingsTab = tab[0];
+    const view = `${owner.settingsView || ''}|${tab[0]}`;
     const top = panel._settingsView === view ? panel.scrollTop : 0;
     panel._settingsView = view;
     const redraw = () => render(owner);
     const page = el('div', 'anomalous-scan-page');
-    if (view === 'folders') {
+    if (owner.settingsView === 'folders') {
         panel.replaceChildren(page);
         panel.scrollTop = 0;
         renderFolderPage(owner, page, () => {
@@ -358,15 +425,8 @@ function render(owner) {
     page.append(
         button('anomalous-scan-back', t('settingsBack'), () => leaveSettingsPage(owner)),
         el('h1', 'anomalous-scan-title', t('sidebarSettings')),
-        appearanceGroup(owner, redraw),
-        cardsGroup(owner, redraw),
-        foldersGroup(owner),
-        workflowGroup(owner),
-        downloadGroup(owner, redraw),
-        translationGroup(),
-        backupGroup(owner),
-        openingGroup(owner, redraw),
-        helpGroup(owner),
+        tabBar(owner, tab[0]),
+        ...tab[2](owner, redraw),
     );
     panel.replaceChildren(page);
     panel.scrollTop = top;
@@ -376,10 +436,15 @@ export function isSettingsPageOpen(owner) {
     return Boolean(owner.settingsPanel && owner.settingsPanel.style.display !== 'none');
 }
 
-/** Opens the page; `keepReturn`: drawn again in place (language change), Back still goes where it went. */
-export function openSettingsPage(owner, { keepReturn = false } = {}) {
+/** Opens the page (at `tab`, else the tab seen last); `keepReturn`: drawn again in place
+ * (language change), Back still goes where it went. */
+export function openSettingsPage(owner, { keepReturn = false, tab = '' } = {}) {
     if (!keepReturn && !isSettingsPageOpen(owner)) {
         owner.settingsReturn = owner.currentShellPage?.() || 'home';
+        owner.settingsView = '';
+    }
+    if (tab) {
+        owner.settingsTab = tab;
         owner.settingsView = '';
     }
     owner.enterToolPage?.('settings');

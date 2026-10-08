@@ -45,7 +45,7 @@ export function formatSize(bytes) {
 const fileName = (value) => String(value).split(/[\\/]/).pop();
 
 
-const joinPath = (root, rel) => `${String(root).replace(/[\\/]+$/, '')}${String(root).includes('\\') ? '\\' : '/'}${
+export const joinPath = (root, rel) => `${String(root).replace(/[\\/]+$/, '')}${String(root).includes('\\') ? '\\' : '/'}${
     String(root).includes('\\') ? rel.replace(/\//g, '\\') : rel}`;
 
 /** One file's part of the dialog; `read()` gives { root, rel } as chosen. */
@@ -154,7 +154,7 @@ export function openDownloadDialog(owner, items, settings) {
         dialog.addEventListener('change', showSpace);
         const rules = button('anomalous-download-rules', t('downloadRules'), () => {
             close();
-            openSettingsPage(owner);
+            openSettingsPage(owner, { tab: 'models' });
         });
         dialog.append(space, rules);
 

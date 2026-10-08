@@ -95,8 +95,9 @@
     opacity: 0.5;
 }
 
-/* The Model Source Hub's entry, at the end of the chip row. */
-.anomalous-model-type-chip.is-tool {
+/* The tools (Import, Sources) sit together at the end of the bar. */
+.anomalous-model-type-chip:not(.is-tool) + .anomalous-model-type-chip.is-tool,
+.anomalous-model-type-crumb + .anomalous-model-type-chip.is-tool {
     margin-left: auto;
 }
 

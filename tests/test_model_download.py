@@ -255,7 +255,7 @@ class DownloadTests(unittest.TestCase):
         self.assertFalse(Path(self.root, "Flux", "cool.safetensors.part").exists())
 
     def test_settings(self):
-        self.assertEqual(model_download.read_settings(), {"place": "workflow", "folder": "Downloads", "hf_mirror": None})
+        self.assertEqual(model_download.read_settings(), {"place": "workflow", "folder": "{base}", "hf_mirror": None})
         def call(body):
             request = make_mocked_request("POST", "/anomalous/download/settings")
             request.json = lambda: asyncio.sleep(0, body)

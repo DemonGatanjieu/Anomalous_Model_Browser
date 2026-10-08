@@ -7,7 +7,7 @@ POST /anomalous/download/start   {download_url, type, root, rel, sha256, size, .
 GET  /anomalous/download/status  -> {jobs}
 POST /anomalous/download/cancel  {id}
 GET/POST /anomalous/download/settings -> where downloads go ({place, folder}), kept in
-    user/anomalous/download_settings.json.
+    user/anomalous/download_settings.json; imported models (model_import.py) follow the same folder.
 
 One download runs at a time, into "<file>.part" next to where the file goes; an interrupted one
 continues from there. The finished file is checked against the SHA-256 the workflow or the site
@@ -42,7 +42,7 @@ SPACE_MARGIN = 200 * 1024 * 1024
 MAX_SUBFOLDERS = 300
 KEEP_FINISHED = 50
 # hf_mirror None: not chosen yet (the page takes the mirror for a Chinese interface).
-DEFAULT_SETTINGS = {"place": "workflow", "folder": "Downloads", "hf_mirror": None}
+DEFAULT_SETTINGS = {"place": "workflow", "folder": "{base}", "hf_mirror": None}
 
 _lock = threading.Lock()
 _jobs = {}  # id -> job dict, in the order started
@@ -318,7 +318,12 @@ def _finish(job, part, sha256):
             job["card"] = hf_card.enrich(job["dest"], job["url"])
         except Exception as error:
             print(f"[Anomalous Browser] Download: the Hugging Face model card was not read: {error}")
-    # ComfyUI's file lists and the browser's model metadata see the new file.
+    forget_file_lists()
+
+
+def forget_file_lists():
+    """ComfyUI's file lists and the browser's model metadata see a file that just arrived
+    (a download, an import)."""
     for cache in (getattr(folder_paths, "filename_list_cache", None), getattr(folder_paths, "cache_helper", None)):
         try:
             cache.clear()
@@ -328,7 +333,7 @@ def _finish(job, part, sha256):
         from .metadata import clear_metadata_cache
         clear_metadata_cache()
     except Exception as error:
-        print(f"[Anomalous Browser] Download: could not clear the model cache: {error}")
+        print(f"[Anomalous Browser] Could not clear the model cache: {error}")
 
 
 def _record(job, sha256):

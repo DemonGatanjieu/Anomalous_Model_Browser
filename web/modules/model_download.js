@@ -11,7 +11,7 @@
 import { app } from "../../../scripts/app.js";
 import { translate as t } from './locales.js';
 import { applyModelFix, checkWorkflowModels } from './model_check.js';
-import { destinationFor, expandFolder } from './download_places.js';
+import { DEFAULT_FOLDER, destinationFor, expandFolder } from './download_places.js';
 import { inferModelFolderTypes } from './model_policies.js';
 import { startScan, targetsForItems } from './scan_runner.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
@@ -75,7 +75,7 @@ export function hfMirrorOn(settings) {
  * (a network failure again next time); the model folders (free space, subfolders) every time.
  */
 export async function lookupDownloads(entries) {
-    const settings = await fetchDownloadSettings().catch(() => ({ place: 'workflow', folder: 'Downloads', hf_mirror: null }));
+    const settings = await fetchDownloadSettings().catch(() => ({ place: 'workflow', folder: DEFAULT_FOLDER, hf_mirror: null }));
     const mirror = hfMirrorOn(settings);
     const items = entries.map((entry, index) => {
         const item = { key: String(index), hash: entry.record?.hash || '', url: workflowLink(entry), value: entry.value, mirror };
@@ -186,7 +186,7 @@ export async function downloadFrom(owner, { url = '', hash = '', type = '', fold
     const file = fileName(name || info.file_name);
     const dir = folder !== null && folder !== undefined
         ? slashes(folder).split('/').filter(Boolean).join('/')
-        : expandFolder(settings.folder ?? 'Downloads', info.base_model, root?.subfolders || []);
+        : expandFolder(settings.folder ?? DEFAULT_FOLDER, info.base_model, root?.subfolders || []);
     const rel = dir ? `${dir}/${file}` : file;
     const job = await startDownload(owner, { value: '', record: { hash: String(hash || '') } }, info, { root: root?.index ?? 0, rel });
     return { started: true, id: job.id, to: rel, models_folder: root?.path || '', size: info.size || null,

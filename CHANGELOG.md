@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### 📥 Drop a model in, it goes to the right folder (拖进来自动归位)
+- **Models page → + Import**, or drop model files anywhere on the models page: each file gets a card saying what it is — Checkpoint, LoRA, VAE, text encoder, diffusion model, ControlNet, Embedding, CLIP Vision, upscale model — with its base model, how sure that is, and one line on what such a model is for. It is read from the file's header only; .ckpt/.pt files, which can carry code, are never opened (you pick their type).
+- Where it will go is shown and can be changed; by default it follows the download setting (by base model, such as loras/Illustrious). A file found in your Downloads folder or on the Desktop is **moved** there (instant on the same drive; tick "Keep the original" to copy); any other file is sent as a copy.
+- While you look, the whole file is checked against Civitai: SDXL-family LoRAs get their exact base model (Pony, Illustrious, NoobAI cannot be told apart from the file alone) and the model and version name. **A file you already have** (identical content) is pointed out and left out unless you tick it; a different file of the same name is saved as "name (2)". Nothing is ever replaced. The new files are scanned right after.
+
+### 🏷️ Version labels on model cards (卡片显示版本号)
+- A scanned model's card shows its Civitai version ("v2.0", "Illustrious", "fp8"…) as a small label above the name, so versions of one model that share a file name can be told apart.
+
+### ⚙️ Settings in tabs (设置分组)
+- The settings page is split into tabs: **Look, Models, Workflows, Prompts, Backup, Help**. "Change where downloads go" opens Models directly.
+- **Where downloads (and now imports) go is a choice**: by base model (the new default), in Downloads then by base model, all in a Downloads folder, straight in the type's folder, or your own folder typed by hand; an example path shows the result. Without a saved setting, downloads now go by base model instead of into a Downloads folder.
+- The scanner's offline guess of a base model (for models Civitai does not know) now also recognizes LoRAs, Qwen-Image, Wan, Chroma and Hunyuan Video files.
+
 ### 🔗 Short share codes, one place to import (短分享码与统一导入)
 - **Share codes are 5–10 times shorter (AMB2)**: only what a workflow needs is kept — node types, values, links, positions, titles, groups and the models' fingerprints — and ComfyUI fills in the rest when it opens. A Chinese-character spelling ("汉字码") is the shortest; a letter spelling ("字母码") posts anywhere, for chats or comment sections whose word filters stop the characters. Before a code is given, it is opened once and compared with the canvas; a workflow it cannot hold exactly (subgraphs, for one) is shared whole. Nodes from node packs keep their links on a computer that has not installed the pack yet. AMB0 and AMB1 codes still open.
 - **Share and import in one place**: the Workflows page's ⇅ makes the code as soon as it opens (with the fingerprint and download-link notes), and takes anything in: a pasted share code or workflow JSON, or a dropped or chosen workflow file, an image with a workflow, or a backup .zip.

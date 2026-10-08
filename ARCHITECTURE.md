@@ -130,6 +130,10 @@ covered by the `styles.css` manifest.
   name in ComfyUI-Manager's model list (`api/manager_catalog.py`), checked by the hash.
   `api/hf_card.py` gives a model downloaded from Hugging Face its model card's example image
   as cover and its trigger words and example prompts as notes (never over the user's).
+- `api/model_import.py` puts model files the user drops on the models page into the right
+  models folder (`/anomalous/import/*`): finds the dropped file in this computer's Downloads
+  or Desktop and moves it (or uploads a copy), tells what it is, checks it against Civitai
+  and the scanned models, never replaces a file (" (2)").
 - `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
   `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
   integrity receipts; `api/recipes.py` is the HTTP facade. `api/recipe_constants.py`
@@ -147,7 +151,9 @@ covered by the `styles.css` manifest.
 - `model_policies.py` owns shared backend rename and protected-category policy.
 - `model_identity.py` owns file SHA-256 evidence and the base model a safetensors header
   tells, shared with the standalone scanner (which runs as its own process, so the API
-  never imports `scraper.py`).
+  never imports `scraper.py`). `model_kind.py` reads a .safetensors / .gguf header (never
+  formats that can carry code) and says which models folder the file belongs in and its base
+  model; model import and the scanner's offline base model use it.
 - `recycle_bin.py` is the only way the plugin deletes the user's files (models, covers,
   outputs, recipes, materials, notes, audio): to the system Recycle Bin, together, or not
   at all (`TrashUnavailable` on drives without one). `api/trash.py` is the API's import of it
@@ -350,9 +356,10 @@ covered by the `styles.css` manifest.
   removed nodes or rewired existing ones are never offered).
   `ui_settings_hub.js` owns the display preferences (view mode, scale, atmosphere, window
   layout) and their application, the gear and language redraws; `ui_settings_page.js`
-  is the settings page the gear opens (a tool page with Back): look and language, model
-  cards and memory with the card image cache, folders, workflow fingerprints, downloads,
-  backup (`ui_backup.js`), opening mode and window, help; `ui_feedback_dialog.js` is the feedback window (Home and the
+  is the settings page the gear opens (a tool page with Back), in tabs: Look (look and
+  language, model cards and memory with the card image cache, opening mode and window),
+  Models (folders, where downloads and imports go), Workflows (fingerprints), Prompts
+  (translation), Backup (`ui_backup.js`), Help; `ui_feedback_dialog.js` is the feedback window (Home and the
   settings page open it): one text box, then `feedback.js` opens a GitHub issue with it in
   the browser's language, the environment folded at the end when attached (versions and
   hardware only, never a path or ComfyUI's command line), or copies the environment;
@@ -409,7 +416,10 @@ covered by the `styles.css` manifest.
 - `ui_model_types.js` owns the models page's type chips (one per models folder, with its count) and
   `owner.modelScope`, what the grid lists: a whole type, or one list folder shown as a crumb. The
   grid's cards set `currentType/PathIdx/Subfolder` to their own model's folder (`focusModel`),
-  which the editor, the scanner and "add to canvas" read. `ui_model_search.js` is the models
+  which the editor, the scanner and "add to canvas" read. Its Import chip and files dropped on
+  the grid open `ui_model_import.js`, the import window (one card per file: type, base model,
+  where it goes, warnings, progress); `model_import.js` reads each file's header and asks,
+  moves or uploads it, then scans the new files. `ui_model_search.js` is the models
   search in the header (shown on the models page through the shell's `data-page`): the grid
   lists the models of its type matching every word (`owner.modelQuery`).
 - `model_source.js` shows where a model's information came from: the card badge (marked only

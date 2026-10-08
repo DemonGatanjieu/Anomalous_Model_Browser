@@ -1,6 +1,6 @@
 // Where a downloaded model goes (web/modules/download_places.js).
 import assert from 'node:assert/strict';
-import { baseFolder, destinationFor, expandFolder, unsafeFormat } from '../web/modules/download_places.js';
+import { DEFAULT_FOLDER, FOLDER_PRESETS, baseFolder, destinationFor, expandFolder, unsafeFormat } from '../web/modules/download_places.js';
 
 const entry = (value) => ({ value });
 const workflow = { place: 'workflow', folder: 'Downloads' };
@@ -29,6 +29,13 @@ assert.equal(expandFolder('downloads/{base}', 'SDXL 1.0', ['Downloads', 'Downloa
 assert.equal(expandFolder('{base}', 'NoobAI', subfolders), 'NoobAI');
 assert.equal(expandFolder('{base}/loras', '', subfolders), 'loras'); // unknown base: the part goes
 assert.equal(destinationFor(entry('a.safetensors'), { base_model: 'Pony' }, { place: 'folder', folder: '{base}' }), 'Pony/a.safetensors');
+
+// Without settings: by base model, the first of the settings' ready-made folders.
+assert.equal(DEFAULT_FOLDER, FOLDER_PRESETS[0]);
+assert.equal(destinationFor(entry('a.safetensors'), { base_model: 'Illustrious' }, { place: 'workflow' }), 'Illustrious/a.safetensors');
+assert.equal(destinationFor(entry('a.safetensors'), {}, { place: 'workflow' }), 'a.safetensors');
+assert.equal(baseFolder('SD 2.1'), 'SD2');
+assert.ok(FOLDER_PRESETS.every(folder => !folder.includes('*'))); // '*' marks "typed by hand" in the settings
 
 assert.equal(unsafeFormat('x.ckpt'), true);
 assert.equal(unsafeFormat('x.PT'), true);

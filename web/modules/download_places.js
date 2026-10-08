@@ -4,13 +4,17 @@
  * says (its own subfolder, so the node needs no change; a bare name goes into the settings'
  * folder) or always the settings' folder, `{base}` there standing for the model's base model
  * (an existing folder of that name, in any spelling, is used). The file keeps the workflow's
- * name. No imports, so it is tested on its own.
+ * name. Imported models (model_import.js) follow the same folder. No imports, so it is tested
+ * on its own.
  */
 
 const UNSAFE_FORMATS = /\.(ckpt|pt|pth|bin)$/i;
+/** Ready-made download folders for the settings (anything else is typed there); the first is the default. */
+export const FOLDER_PRESETS = ['{base}', 'Downloads/{base}', 'Downloads', ''];
+export const DEFAULT_FOLDER = FOLDER_PRESETS[0];
 // Civitai's base models -> the folder name most people use for them.
 const BASE_FAMILIES = [
-    [/^sd ?1\.[45]/i, 'SD1.5'], [/^sdxl/i, 'SDXL'], [/^sd ?3/i, 'SD3'], [/^pony/i, 'Pony'],
+    [/^sd ?1\.[45]/i, 'SD1.5'], [/^sd ?2/i, 'SD2'], [/^sdxl/i, 'SDXL'], [/^sd ?3/i, 'SD3'], [/^pony/i, 'Pony'],
     [/^illustrious/i, 'Illustrious'], [/^noob/i, 'NoobAI'], [/^flux/i, 'Flux'], [/^hunyuan/i, 'Hunyuan'],
     [/^wan/i, 'Wan'], [/^qwen/i, 'Qwen'], [/^hidream/i, 'HiDream'], [/^chroma/i, 'Chroma'],
 ];
@@ -51,7 +55,7 @@ export function destinationFor(entry, info, settings, subfolders = []) {
     const name = fileName(entry.value);
     const own = dirName(entry.value);
     if (settings?.place !== 'folder' && own) return `${own}/${name}`;
-    const folder = expandFolder(settings?.folder ?? 'Downloads', info?.base_model, subfolders);
+    const folder = expandFolder(settings?.folder ?? DEFAULT_FOLDER, info?.base_model, subfolders);
     return folder ? `${folder}/${name}` : name;
 }
 

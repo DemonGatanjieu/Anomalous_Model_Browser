@@ -149,3 +149,14 @@ user's own edits are never attributed to the plugin. Opening another workflow is
 logged as that, not as removed nodes. The log is bounded and never fails the action
 it records. Undo comes later and only for changes that can be reversed safely
 (canvas values, renames); deletions go through their own confirmations instead.
+
+## AD-019 — No Civitai browser inside Anomalous; imported files are put in place
+
+New users' trouble is not finding models but knowing which folder a downloaded file goes
+in. A Civitai browser inside the plugin would not reach many users (Civitai is often
+unreachable from mainland China, where most models come from LiblibAI, cloud drives and
+chat groups), would mirror a large site's search, filters and content rating, and would
+show its picture feed inside the plugin. Instead the plugin takes a file from wherever it
+came from: dropped on the models page, it is told apart by its header (never by running
+it), checked against Civitai when that answers, and moved into the folder its type and
+base model call for, with every guess shown and changeable before anything moves.

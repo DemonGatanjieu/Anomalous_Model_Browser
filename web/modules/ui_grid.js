@@ -167,6 +167,13 @@ export async function loadModels() {
                 if (badge) card.appendChild(badge);
                 const labels = document.createElement('div');
                 labels.className = 'anomalous-card-labels';
+                // Civitai's version name: versions of one model often share a file name.
+                if (model.metadata?.version_name) {
+                    const version = document.createElement('span');
+                    version.className = 'anomalous-card-version';
+                    version.textContent = model.metadata.version_name;
+                    labels.appendChild(version);
+                }
                 const title = document.createElement('div');
                 title.className = 'anomalous-card-title';
                 title.textContent = modelCardDisplayName(model);

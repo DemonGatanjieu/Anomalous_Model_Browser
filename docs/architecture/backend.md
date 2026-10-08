@@ -248,6 +248,31 @@ without it on huggingface.co, whichever host the link names. The mirror sends ne
 outside China back to huggingface.co; the lookup follows such a redirect once for the size
 and SHA-256.
 
+## Model import
+
+`api/model_import.py` takes model files the user drops on the models page. A browser gives a
+dropped file's name, size, time and bytes but never its path, so `POST
+/anomalous/import/inspect` gets the name, size and time with the file's header bytes, and,
+asked from this computer (`mcp_server._is_local`), looks for the same file (name, size, time
+within 2 s) in the Downloads and Desktop known folders and two subfolder levels below. A
+found file gets an in-memory token; the client never sends a path. What the file is comes
+from `model_kind.py`: the safetensors header's tensor names, shapes and kohya/modelspec
+metadata, or a GGUF's `general.architecture` and tensor names; `.ckpt/.pt/.pth/.bin` are never
+opened (the user picks the type). Types without a folder in this ComfyUI are not offered.
+Files of the same name already in that type's folders are listed. `POST
+/anomalous/import/identify` hashes a found file in a thread and asks Civitai by SHA-256 (base
+model, model and version name) and the scanned-model hash index for an identical copy.
+
+`POST /anomalous/import/place` (local only) moves the found file into `{type, root, rel}`:
+a rename on the same drive, else a copy through `<dest>.part` checked by size, then the
+original is removed (or kept with `keep`). `PUT /anomalous/import/upload` streams the request
+body (not limited by ComfyUI's upload size) into `<dest>.part` and renames it when the size
+matches. Both check the destination like downloads (`resolve_within`, model extension, free
+space) and never replace a file: a taken name becomes `name (2).ext`. A failed copy or
+upload removes only its own `.part`. Each import clears the file-list caches and adds a
+`model_import` activity entry; the page then scans the new files. The destination the page
+proposes follows the download settings' folder (`{base}` = the base model's folder).
+
 ## Metadata and cache behavior
 
 The output gallery keeps one ordered directory snapshot for at most ten seconds

@@ -21,6 +21,7 @@ import { watchCanvasChanges } from './activity_canvas.js';
 import { watchWorkflowLoads } from './ui_doctor_banner.js';
 import { settleModelScope } from './ui_model_types.js';
 import { createModelSearch } from './ui_model_search.js';
+import { attachModelDrop } from './ui_model_import.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -161,6 +162,7 @@ export function createDOM() {
         header.append(leftGroup, centerGroup, rightGroup);
 
         this.grid = panel('anomalous-grid', '');
+        attachModelDrop(this, this.grid); // model files dropped on the models page are imported
         this.detailPanel = panel('anomalous-detail');
         this.galleryPanel = panel('anomalous-gallery-panel', '');
         this.homePanel = panel('anomalous-home-panel');
