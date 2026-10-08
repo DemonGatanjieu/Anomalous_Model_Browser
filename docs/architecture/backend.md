@@ -273,6 +273,22 @@ upload removes only its own `.part`. Each import clears the file-list caches and
 `model_import` activity entry; the page then scans the new files. The destination the page
 proposes follows the download settings' folder (`{base}` = the base model's folder).
 
+## Tidy check
+
+`api/model_placement.py` serves the models page's Tidy view. `GET /anomalous/placement/check`
+walks every import type's folders once (a folder listed under two types counts for the first;
+real paths deduplicated) and reads each header through `model_kind.inspect_file`, kept in
+memory per path, size and time. A file whose header names another type than its folder, only
+when `sure`, is misplaced; it goes to the same relative path in a folder of that type, on the
+same drive when one exists. `works` marks a whole checkpoint in the diffusion models folder,
+which still loads there. Identical files are grouped by SHA-256: the scan's (metadata) hash, or
+one computed earlier this run; files of one size whose hash is unknown are only counted
+(`unchecked`) unless `deep=1` reads them. `POST /anomalous/placement/move` moves the model with
+`model_import.destination` and `move_into` (never over a file: " (2)") and then its sidecars
+(`SIDECAR_SUFFIXES`; none when another model in the folder shares the stem), reports those that
+could not follow (`left`), clears the file-list caches and logs `model_move`. Removing a copy is
+`/anomalous/delete_model` (Recycle Bin, sidecars along).
+
 ## Metadata and cache behavior
 
 The output gallery keeps one ordered directory snapshot for at most ten seconds

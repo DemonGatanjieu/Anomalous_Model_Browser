@@ -36,6 +36,7 @@ const ACTION_KEYS = {
     voice_storage: 'activityVoiceStorage',
     model_download: 'activityModelDownload',
     model_import: 'activityModelImport',
+    model_move: 'activityModelMove',
     backup_export: 'activityBackupExport',
     backup_import: 'activityBackupImport',
 };

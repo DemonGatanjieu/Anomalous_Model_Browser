@@ -7,6 +7,11 @@
 - Where it will go is shown and can be changed; by default it follows the download setting (by base model, such as loras/Illustrious). A file found in your Downloads folder or on the Desktop is **moved** there (instant on the same drive; tick "Keep the original" to copy); any other file is sent as a copy.
 - While you look, the whole file is checked against Civitai: SDXL-family LoRAs get their exact base model (Pony, Illustrious, NoobAI cannot be told apart from the file alone) and the model and version name. **A file you already have** (identical content) is pointed out and left out unless you tick it; a different file of the same name is saved as "name (2)". Nothing is ever replaced. The new files are scanned right after.
 
+### 🧹 Tidy: models in the wrong folder, files you have twice (整理模型)
+- **Models page → Tidy** (with a count when it found something) reads every model's header and lists the ones in the wrong folder: what the file really is, why it matters (for example an Anima, Flux or Wan diffusion model in the checkpoints folder, which "Load Checkpoint" cannot read — Civitai labels all of these "Checkpoint"), and where it belongs. **Move there** takes the model with its cover, info and your notes, keeping its subfolder; nothing is replaced. Afterwards it says which loader node your workflows need instead.
+- A whole checkpoint in the diffusion models folder is shown as optional to move: it loads there too.
+- **Identical files** (same content under any name or folder) are grouped; each copy has **Recycle** (to the Recycle Bin, with its cover and info). Scanned models are compared at once; same-size files never scanned are compared when you press **Compare** (it reads them).
+
 ### 🏷️ Version labels on model cards (卡片显示版本号)
 - A scanned model's card shows its Civitai version ("v2.0", "Illustrious", "fp8"…) as a small label above the name, so versions of one model that share a file name can be told apart.
 

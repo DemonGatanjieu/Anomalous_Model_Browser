@@ -134,6 +134,9 @@ covered by the `styles.css` manifest.
   models folder (`/anomalous/import/*`): finds the dropped file in this computer's Downloads
   or Desktop and moves it (or uploads a copy), tells what it is, checks it against Civitai
   and the scanned models, never replaces a file (" (2)").
+- `api/model_placement.py` is the models page's Tidy check (`/anomalous/placement/*`): models
+  whose header names another type than their folder, identical files (by SHA-256), and moving
+  a model with its sidecars to where it belongs.
 - `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
   `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
   integrity receipts; `api/recipes.py` is the HTTP facade. `api/recipe_constants.py`
@@ -419,7 +422,10 @@ covered by the `styles.css` manifest.
   which the editor, the scanner and "add to canvas" read. Its Import chip and files dropped on
   the grid open `ui_model_import.js`, the import window (one card per file: type, base model,
   where it goes, warnings, progress); `model_import.js` reads each file's header and asks,
-  moves or uploads it, then scans the new files. `ui_model_search.js` is the models
+  moves or uploads it, then scans the new files. Its Tidy chip (with how many things it found)
+  opens `ui_model_tidy.js` in the grid (`owner.modelView === 'tidy'`): models in the wrong
+  folder with Move there, identical copies with Recycle; `model_placement.js` does its
+  requests and keeps the chip's count. `ui_model_search.js` is the models
   search in the header (shown on the models page through the shell's `data-page`): the grid
   lists the models of its type matching every word (`owner.modelQuery`).
 - `model_source.js` shows where a model's information came from: the card badge (marked only

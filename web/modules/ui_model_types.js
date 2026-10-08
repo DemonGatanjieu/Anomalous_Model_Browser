@@ -9,11 +9,15 @@
  * hand lives", which the editor, the scanner and "add to canvas" read (see focusModel).
  * The last chip, Sources, shows where each model is downloaded instead of the cards
  * (`owner.modelView === 'sources'`, ui_model_sources.js); a type chip goes back. Import, before
- * it, puts model files into the right folders (ui_model_import.js).
+ * it, puts model files into the right folders (ui_model_import.js); Tidy, with how many things
+ * it found, shows models in the wrong folder and identical copies (`owner.modelView === 'tidy'`,
+ * ui_model_tidy.js).
  */
 
 import { translate as t } from './locales.js';
 import { pickModelFiles } from './ui_model_import.js';
+import { showModelTidy } from './ui_model_tidy.js';
+import { tidyCount } from './model_placement.js';
 
 const SCOPE_KEY = 'anomalous_model_scope';
 
@@ -104,8 +108,9 @@ export function renderTypeBar(owner, listed) {
     const scope = owner.modelScope;
     const groups = owner.foldersData || [];
     const inSources = owner.modelView === 'sources';
+    const inTidy = owner.modelView === 'tidy';
     for (const group of groups) {
-        const active = !inSources && sameGroup(group, scope);
+        const active = !inSources && !inTidy && sameGroup(group, scope);
         const whole = active && !scope.subfolder;
         // The folder counts date from the last folder load; the listed type counts what it shows.
         const count = whole ? listed : modelCount(group);
@@ -124,7 +129,7 @@ export function renderTypeBar(owner, listed) {
         chip.onclick = () => { if (!whole) openType(owner, group); };
         bar.appendChild(chip);
     }
-    const group = !inSources && scope?.subfolder && groups.find(item => sameGroup(item, scope));
+    const group = !inSources && !inTidy && scope?.subfolder && groups.find(item => sameGroup(item, scope));
     if (group) {
         const crumb = document.createElement('button');
         crumb.type = 'button';
@@ -148,6 +153,23 @@ export function renderTypeBar(owner, listed) {
     importer.title = t('importChipTitle');
     importer.onclick = () => pickModelFiles(owner);
     bar.appendChild(importer);
+    const tidy = document.createElement('button');
+    tidy.type = 'button';
+    tidy.className = 'anomalous-model-type-chip is-tool';
+    tidy.classList.toggle('is-active', inTidy);
+    tidy.setAttribute('aria-pressed', String(inTidy));
+    tidy.append(document.createElement('span'));
+    tidy.firstChild.textContent = t('tidyChip');
+    tidy.title = t('tidyChipTitle');
+    tidy.onclick = () => { if (!inTidy) showModelTidy(owner); };
+    tidyCount().then(count => {
+        if (!count || !tidy.isConnected) return;
+        const number = document.createElement('span');
+        number.className = 'anomalous-model-type-count is-alert';
+        number.textContent = String(count);
+        tidy.append(number);
+    });
+    bar.appendChild(tidy);
     // Where each model can be downloaded, in place of the cards.
     const sources = document.createElement('button');
     sources.type = 'button';

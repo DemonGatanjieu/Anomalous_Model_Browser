@@ -9,6 +9,7 @@ import { focusModel, modelListUrl, renderTypeBar } from './ui_model_types.js';
 import { matchesModelQuery } from './ui_model_search.js';
 import { renderSourceBadge } from './model_source.js';
 import { renderModelSourcesView } from './ui_model_sources.js';
+import { renderModelTidyView } from './ui_model_tidy.js';
 import { recordCanvasStep } from './canvas_history.js';
 
 const t = (key, params) => translate(key, params);
@@ -37,13 +38,21 @@ export async function loadModels() {
         try {
             if (this._modelLoadController) this._modelLoadController.abort();
             this.modelSources?.controller?.abort();
+            this.modelTidy?.controller?.abort();
+            // Cards of an earlier load still being drawn in chunks stop here.
+            this._modelRenderGeneration = (this._modelRenderGeneration || 0) + 1;
+            if (this.modelView === 'tidy') { // the type bar, then what is in the wrong folder or twice
+                stopMediaInContainer(this.grid);
+                this.grid.replaceChildren(renderTypeBar(this, 0));
+                renderModelTidyView(this, this.grid);
+                return;
+            }
             if (this.modelView === 'sources') { // the type bar, then where each model is downloaded
                 stopMediaInContainer(this.grid);
                 this.grid.replaceChildren(renderTypeBar(this, 0));
                 renderModelSourcesView(this, this.grid);
                 return;
             }
-            this._modelRenderGeneration = (this._modelRenderGeneration || 0) + 1;
             const loadController = new AbortController();
             this._modelLoadController = loadController;
             const res = await fetch(modelListUrl(this), { signal: loadController.signal });

@@ -12,6 +12,7 @@
 import { app } from "../../../scripts/app.js";
 import { expandFolder } from './download_places.js';
 import { startScan, targetsForItems } from './scan_runner.js';
+import { forgetTidyCount } from './model_placement.js';
 
 export const MODEL_FILE = /\.(safetensors|sft|gguf|ckpt|pt|pth|bin)$/i;
 const MAX_HEADER = 100 * 1024 * 1024;
@@ -97,6 +98,7 @@ export function uploadFile(file, choice, onProgress) {
 /** After a batch was put in place: ComfyUI's model lists, the models page, then one scan of the new files. */
 export async function afterImport(owner, placed) {
     if (!placed.length) return;
+    forgetTidyCount();
     try {
         await app.refreshComboInNodes?.();
     } catch (error) {
