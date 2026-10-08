@@ -1,6 +1,5 @@
 import { t } from './interface_settings.js';
-import { formatSize } from './ui_tts_path_picker.js';
-import { importKind, missingForLanguage, rowState, textFromFile, usableAsReference } from './tts_setup_api.js';
+import { formatSize, importKind, missingForLanguage, rowState, textFromFile, usableAsReference } from './tts_setup_api.js';
 
 /**
  * One character card of the import window (and the card of files nobody claims).
@@ -57,7 +56,7 @@ export function updateRow(row) {
     const info = row.info || {};
     const from = [row.dir, row.original].filter(Boolean).join('/');
     row.els.name.textContent = row.name;
-    row.els.name.title = row.name !== row.original ? t('ttsImportRenamedFrom', { file: row.path || from }) : row.path || from;
+    row.els.name.title = row.name !== row.original ? t('ttsImportRenamedFrom', { file: from }) : from;
     const parts = row.size ? [formatSize(row.size)] : [];
     if (info.version) parts.push(info.supported ? info.version : t('ttsImportUnsupported', { version: info.version }));
     if (info.seconds !== undefined) parts.push(t('ttsImportSeconds', { seconds: info.seconds }));
@@ -199,10 +198,9 @@ function checkActions(item, isNext, draft, view, ctx, parts) {
     const side = el('span', 'anomalous-tts-check-actions');
     if (item.id in PICKS && !item.done) {
         if (isNext) {
-            side.append(button('anomalous-tts-pick', t('ttsCardPickFile'), () => ctx.pick(draft, PICKS[item.id], false)),
-                button('anomalous-tts-link', t('ttsCardFromThisPc'), () => ctx.pick(draft, PICKS[item.id], true)));
+            side.append(button('anomalous-tts-pick', t('ttsCardPickFile'), () => ctx.pick(draft, PICKS[item.id])));
         } else {
-            side.append(button('anomalous-tts-link', t('ttsCardPickShort'), () => ctx.pick(draft, PICKS[item.id], false)));
+            side.append(button('anomalous-tts-link', t('ttsCardPickShort'), () => ctx.pick(draft, PICKS[item.id])));
         }
     } else if (item.id === 'main' && !item.done && isNext) {
         side.append(button('anomalous-tts-pick', t('ttsCheckMainGo'), () => parts.clips.scrollIntoView({ block: 'nearest', behavior: 'smooth' })));
@@ -312,7 +310,7 @@ export function renderDraftCard(draft, view, ctx, { solo = false } = {}) {
         const audioHead = el('div', 'anomalous-tts-card-section');
         audioHead.append(el('span', 'anomalous-tts-card-section-title', t('ttsCardClipsTitle', { count: audioRows.length })),
             el('span', 'anomalous-tts-card-section-hint', t('ttsCardClipsHint')),
-            button('anomalous-tts-link', t('ttsCardAddClips'), () => ctx.pick(draft, ['audio'], false)));
+            button('anomalous-tts-link', t('ttsCardAddClips'), () => ctx.pick(draft, ['audio'])));
         const audioList = el('div', 'anomalous-tts-card-files');
         const shown = draft.showAll ? audioRows : audioRows.filter((row, i) => i < LIST_LIMIT || row.key === draft.referenceKey);
         for (const row of shown) audioList.append(showRow(row, draft, ctx));
@@ -333,7 +331,7 @@ export function renderDraftCard(draft, view, ctx, { solo = false } = {}) {
     const lines = el('div', 'anomalous-tts-card-lines');
     lines.append(el('span', 'anomalous-tts-card-extra-label', t('ttsCardLineFiles')));
     for (const row of textRows) lines.append(showRow(row, draft, ctx));
-    lines.append(button('anomalous-tts-link', t('ttsCardAddLineFile'), () => ctx.pick(draft, ['text'], false)));
+    lines.append(button('anomalous-tts-link', t('ttsCardAddLineFile'), () => ctx.pick(draft, ['text'])));
     extras.append(lines);
     if (!draft.target) {
         const languageSelect = el('select', 'anomalous-tts-card-language');

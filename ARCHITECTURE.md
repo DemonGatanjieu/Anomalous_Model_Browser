@@ -199,11 +199,13 @@ covered by the `styles.css` manifest.
   voice-group shape (`node_value` = what the node's `character` widget takes), so
   cards, sidebar and the Voice-over view share one implementation. While the pack is
   missing the studio shows install steps instead of cards; nothing else depends on it.
-  Its data comes only from the node's HTTP contract, version 11
-  (`/anomalous_tts/characters`, `/audio`, `/settings`, `/status`, the storage,
-  library, pretrained, browse, import and import preview routes; the node repo's `docs/INTERFACE.md`,
+  Its data comes only from the node's HTTP contract, version 13
+  (`/anomalous_tts/characters`, `/audio`, `/settings`, `/status`, the pretrained
+  download and import routes; the node repo's `docs/INTERFACE.md`,
   mirrored as the project doc `anomalous-tts-interface.md`); Anomalous never
-  reads or writes its model folders. `loadGptSovitsStatus` caches the setup status
+  reads or writes its model folders. No call names a path on the computer: the
+  storage place, other folders and package sources are set only in the node's
+  settings file (`status.settings_file`), and imported files are always uploaded. `loadGptSovitsStatus` caches the setup status
   with the engine data (null for a node without `/status`, which hides setup and import). The character list is a
   summary without file lists; `fetchGptSovitsCharacter` gets one character's files.
   Engine presence and loaded voice groups are cached (`MAX_AGE_MS`) so re-renders
@@ -214,19 +216,19 @@ covered by the `styles.css` manifest.
   `ui_audio_tts_editor.js` edits a character's emotion references through that API:
   it opens at once, loads the character's audio list in the background (save waits
   for it), and keeps settings fields it does not know.
-  `tts_setup_api.js` holds the other calls (storage place and moving, forgetting
-  an earlier place, pretrained sources and downloads, folder browse, chunked
+  `tts_setup_api.js` holds the other calls (pretrained downloads, chunked
   upload, inspect, commit, discard) and the pure import-form rules (`importKind`,
   `pickWeights`, `nameConflict`, `textFromFile`, `buildImportBody`, `importProblem`,
   `rowState` / `sectionState` for the form's colours,
-  `setupSummary`, `pretrainedReminder`, `missingForLanguage`); no DOM.
+  `setupSummary`, `pretrainedReminder`, `missingForLanguage`, `formatSize`); no DOM.
   `ui_tts_setup.js` is the GPT-SoVITS settings dialog, opened from the sidebar
   footer (`setupAttention` gives that entry its dot). Missing pretrained files only get a dismissable dot
   when the studio's characters need them (dismissed ids in `localStorage`; a newly
-  needed file brings it back); missing packages get a red one. Inside: one storage place (changing it asks whether the characters
-  move along), other places still read, pretrained files, packages. It polls the
-  status only while a download or move runs and it is open, and redraws the
-  studio when a move ends. `ui_tts_import.js` is the import window. It first asks
+  needed file brings it back); missing packages get a red one. Inside: the storage
+  place and other places with characters (shown, not changed), pretrained files
+  and package sources, packages, and the settings file where folders are changed.
+  It polls the status only while a download runs and it is open.
+  `ui_tts_import.js` is the import window. It first asks
   what the user has (`mode`: `single` = one card led by its checklist, `batch` = a
   drop area then one card per draft, one unfolded at a time, `add` = files for an
   existing character, also opened straight from a card's "Add files"), and runs a
@@ -241,12 +243,11 @@ covered by the `styles.css` manifest.
   changes, `refresh()` only repaints status, so typing never loses focus.
   `ui_tts_import_uploads.js` sends browser files in chunks, three at a time, once
   they are in a draft (tray files wait); `ui_tts_import_player.js` plays one clip
-  at a time for comparing (browser files from memory, local paths through the
-  node's preview route).
+  at a time for comparing (from memory).
   `tts_import_groups.js` holds the pure rules: which folders are never taken
-  (`skipFolder` / `isPackage`, the same rules as the node's scan: Python
-  environments and base models anywhere, a package's program and training folders
-  only inside a package, never the chosen folder), which draft a file goes to
+  (`skipFolder` / `isPackage`: Python environments and base models anywhere, a
+  package's program and training folders only inside a package, never the chosen
+  folder), which draft a file goes to
   (`groupFiles`: a folder with one character's weights and clips is that character;
   other weights by stem; other files follow the character folder, the weights in
   their nearest folder, then folder names or file-name prefixes; unclaimed `.list`
@@ -255,9 +256,8 @@ covered by the `styles.css` manifest.
   character (`clashFreeNames`), which files are left out (`leftOut`: clips outside
   3–10 s and their line files), where a draft stands, and its checklist (the next
   step first). `ui_tts_import_sources.js` brings files in: the browser's dialogs and
-  drops (uploaded), the node's picker (paths); every source gives folders starting
-  with the chosen one, says which folders were left out or too deep, and offers the
-  picker before a very large upload. `ui_tts_import_draft.js` draws a draft's card
+  drops, all uploaded; every source gives folders starting with the chosen one,
+  says which folders were left out, and confirms a very large upload. `ui_tts_import_draft.js` draws a draft's card
   (name in the header, steps left, the checklist with the next step's button and
   the chosen weights, one line per clip with its owner picker, the first clips with
   "show all", left-out files folded, line files, language) and the unassigned card
@@ -266,8 +266,7 @@ covered by the `styles.css` manifest.
   screens (the first question, the batch drop area, the "add more" menu) and the
   tour steps. `ui_tts_file_drop.js` reads OS drops (walking dropped folders, only
   files an import can use, up to 5000) for the studio, the sidebar and the
-  workbench. `ui_tts_path_picker.js` picks server-side folders or files
-  through the node's browse route, since the browser cannot see local paths.
+  workbench.
 - `audio_node_targets.js` is the single table of canvas nodes the audio studio
   writes into (the character widget and the script widget of
   `AnomalousTTS_CharacterSpeech`).

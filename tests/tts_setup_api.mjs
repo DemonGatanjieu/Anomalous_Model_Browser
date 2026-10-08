@@ -25,10 +25,9 @@ globalThis.fetch = async (url, opts = {}) => {
         return reply({ received });
     }
     if (url === '/anomalous_tts/import/commit') return reply({ ok: true, character: { name: 'X' } });
-    if (url === '/anomalous_tts/libraries') return reply({ error: '只能移除以前的存放位置' }, 400);
-    if (url === '/anomalous_tts/storage') {
+    if (url === '/anomalous_tts/pretrained/download') {
         const body = JSON.parse(opts.body);
-        return body.path === 'D:/v/inner' ? reply({ error: '新位置不能在现在的位置里面' }, 400) : reply({ format: 4, storage: body.path, move: body.move ? { state: 'moving' } : null });
+        return body.ids.includes('nope') ? reply({ error: '不认识的底模：nope' }, 400) : reply({ ok: true });
     }
     return reply(null, 404);
 };
@@ -46,7 +45,7 @@ await api.commitImport({ files: [] });
 await engines.loadGptSovitsStatus();
 assert.equal(statusCalls, 3);
 
-// File kinds match the node's browse.kind_of.
+// File kinds match the node's importer.kind_of.
 assert.deepEqual(['a.CKPT', 'b.pth', 'c.Wav', 'd.list', 'e.txt', 'f.md', 'noext'].map(api.importKind),
     ['gpt', 'sovits', 'audio', 'text', 'text', null, null]);
 
@@ -66,19 +65,24 @@ const offsets = calls.filter(c => c.url.includes('offset=')).map(c => Number(new
 assert.deepEqual(offsets, [0, 3, 3 + api.UPLOAD_CHUNK, 3 + 2 * api.UPLOAD_CHUNK]);
 
 // Errors carry the node's message.
-await assert.rejects(api.forgetLibrary('D:/v'), /只能移除以前的存放位置/);
-await assert.rejects(api.changeStorage('D:/v/inner', true), /不能在现在的位置里面/);
+await assert.rejects(api.startPretrainedDownload(['nope']), /不认识的底模：nope/);
 const before = statusCalls;
-assert.deepEqual(await api.changeStorage('E:/voices', true), { format: 4, storage: 'E:/voices', move: { state: 'moving' } });
+await api.startPretrainedDownload(['g2pw']);
 await engines.loadGptSovitsStatus();
-assert.equal(statusCalls, before + 1); // a storage change drops the cached status
-assert.deepEqual(JSON.parse(calls.find(c => c.url === '/anomalous_tts/storage' && c.opts.body.includes('E:/voices')).opts.body),
-    { path: 'E:/voices', move: true });
+assert.equal(statusCalls, before + 1); // a download drops the cached status
+assert.deepEqual(JSON.parse(calls.findLast(c => c.url === '/anomalous_tts/pretrained/download').opts.body), { ids: ['g2pw'] });
+
+// Interface 13: nothing here sends a folder or file path on the computer to the node.
+for (const name of ['changeStorage', 'forgetLibrary', 'changePretrainedSource', 'browseFolder', 'scanFolder', 'previewUrl']) {
+    assert.equal(name in api, false, name);
+}
+assert.ok(calls.every(c => !/\/anomalous_tts\/(storage|libraries|browse|pretrained\/source|import\/preview)/.test(c.url)));
+assert.deepEqual([1536, 5 * 1024 ** 2, 3 * 1024 ** 3].map(api.formatSize), ['2 KB', '5.0 MB', '3.0 GB']);
 
 // Commit body: file indexes, main voice, emotions; the main row's emotion is ignored.
 const rows = [
     { spec: { upload: 'g' }, kind: 'gpt', emotion: '', text: '' },
-    { spec: { path: 'D:/s.pth' }, kind: 'sovits', emotion: '', text: '' },
+    { spec: { upload: 's' }, kind: 'sovits', emotion: '', text: '' },
     { spec: { upload: 'a' }, kind: 'audio', emotion: 'ignored', text: '台词' },
     { spec: { upload: 'b' }, kind: 'audio', emotion: '开心', text: '' },
     { spec: { upload: 'c' }, kind: 'audio', emotion: '', text: 'x' },
@@ -137,10 +141,7 @@ assert.equal(api.textFromFile(list, 'missing.wav'), null);
 
 // Setup summary: ready needs characters, required pretrained files and packages.
 const status = await engines.loadGptSovitsStatus();
-assert.deepEqual(api.setupSummary(status), { characters: 2, missing: 1, requiredMissing: 0, packages: 0, downloading: false, moving: false, ready: true });
-const moving = api.setupSummary({ ...status, move: { state: 'moving', done: 1, total: 3 } });
-assert.equal(moving.moving, true);
-assert.equal(moving.ready, false); // not collapsed while characters are moving
+assert.deepEqual(api.setupSummary(status), { characters: 2, missing: 1, requiredMissing: 0, packages: 0, downloading: false, ready: true });
 assert.equal(api.setupSummary({ ...status, libraries: [] }).ready, false);
 assert.equal(api.setupSummary({ ...status, pretrained: [{ id: 'hubert', state: 'downloading', required: true }] }).downloading, true);
 
