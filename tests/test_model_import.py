@@ -245,6 +245,18 @@ class ImportTests(unittest.TestCase):
         self.assertEqual((short_status, short_body["error"]), (400, "incomplete"))
         self.assertEqual(sorted(os.listdir(os.path.join(self.loras, "up"))), ["new.safetensors"])
 
+    def test_upload_only_from_this_computer(self):
+        async def run():
+            app = web.Application()
+            model_import.register_routes(app)
+            async with TestClient(TestServer(app)) as client:  # through a proxy: not this computer
+                resp = await client.put("/anomalous/import/upload", headers={"X-Forwarded-For": "192.168.1.20"},
+                                        params={"type": "loras", "root": "0", "rel": "far.safetensors", "size": str(len(self.data))},
+                                        data=self.data)
+                return resp.status, await resp.json()
+        self.assertEqual(asyncio.run(run()), (403, {"error": "not_local"}))
+        self.assertFalse(Path(self.loras, "far.safetensors").exists())
+
     def test_identify_reports_civitai_and_a_copy_already_there(self):
         path, mtime = self.dropped("cool.safetensors")
         token = model_import.inspect("cool.safetensors", len(self.data), mtime, b"", local=True)["token"]

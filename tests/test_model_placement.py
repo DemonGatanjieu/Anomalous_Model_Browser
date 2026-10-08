@@ -1,5 +1,6 @@
 """The models page's Tidy check (api/model_placement.py): models in the wrong folder, identical
 copies, and moving a model with its covers and info. Files go to temporary folders."""
+import asyncio
 import hashlib
 import json
 import os
@@ -9,6 +10,9 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
+
+from aiohttp import web
+from aiohttp.test_utils import TestClient, TestServer
 
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
@@ -132,6 +136,19 @@ class PlacementTests(unittest.TestCase):
             with self.assertRaises(model_placement.Refused) as refused:
                 model_placement.move(data)
             self.assertEqual(refused.exception.code, code)
+        self.assertTrue(Path(self.roots["checkpoints"][0], "m.safetensors").exists())
+
+    def test_move_only_from_this_computer(self):
+        self.put("checkpoints", "m.safetensors", ANIMA)
+        move = {"type": "checkpoints", "root": 0, "rel": "m.safetensors", "to_type": "loras", "to_root": 0, "to_rel": "m.safetensors"}
+
+        async def run():
+            app = web.Application()
+            model_placement.register_routes(app)
+            async with TestClient(TestServer(app)) as client:  # through a proxy: not this computer
+                resp = await client.post("/anomalous/placement/move", json=move, headers={"X-Forwarded-For": "192.168.1.20"})
+                return resp.status, await resp.json()
+        self.assertEqual(asyncio.run(run()), (403, {"error": "not_local"}))
         self.assertTrue(Path(self.roots["checkpoints"][0], "m.safetensors").exists())
 
 

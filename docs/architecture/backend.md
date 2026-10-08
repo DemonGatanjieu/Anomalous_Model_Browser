@@ -265,7 +265,7 @@ model, model and version name) and the scanned-model hash index for an identical
 
 `POST /anomalous/import/place` (local only) moves the found file into `{type, root, rel}`:
 a rename on the same drive, else a copy through `<dest>.part` checked by size, then the
-original is removed (or kept with `keep`). `PUT /anomalous/import/upload` streams the request
+original is removed (or kept with `keep`). `PUT /anomalous/import/upload` (local only) streams the request
 body (not limited by ComfyUI's upload size) into `<dest>.part` and renames it when the size
 matches. Both check the destination like downloads (`resolve_within`, model extension, free
 space) and never replace a file: a taken name becomes `name (2).ext`. A failed copy or
@@ -283,7 +283,7 @@ when `sure`, is misplaced; it goes to the same relative path in a folder of that
 same drive when one exists. `works` marks a whole checkpoint in the diffusion models folder,
 which still loads there. Identical files are grouped by SHA-256: the scan's (metadata) hash, or
 one computed earlier this run; files of one size whose hash is unknown are only counted
-(`unchecked`) unless `deep=1` reads them. `POST /anomalous/placement/move` moves the model with
+(`unchecked`) unless `deep=1` reads them. `POST /anomalous/placement/move` (local only) moves the model with
 `model_import.destination` and `move_into` (never over a file: " (2)") and then its sidecars
 (`SIDECAR_SUFFIXES`; none when another model in the folder shares the stem), reports those that
 could not follow (`left`), clears the file-list caches and logs `model_move`. Removing a copy is

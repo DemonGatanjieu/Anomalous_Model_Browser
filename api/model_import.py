@@ -12,6 +12,7 @@ POST /anomalous/import/identify {token} -> its SHA-256, what Civitai knows of it
 POST /anomalous/import/place {token, type, root, rel, keep} -> moves that file there (a copy
     when `keep`); same drive = a rename, another drive = copy, then the original goes.
 PUT  /anomalous/import/upload?type&root&rel&size  body: the whole file -> written there.
+identify, place and upload answer only the computer ComfyUI runs on (mcp_server._is_local).
 
 A file already at the destination is never replaced: the new one gets " (2)". Each import is
 one activity log entry (model_import).
@@ -352,6 +353,8 @@ async def api_place(request):
 
 
 async def api_upload(request):
+    if not _is_local(request):
+        return _error("not_local", 403)
     try:
         size = int(request.query.get("size") or 0)
         folder_type, root_index, root, dest = await asyncio.to_thread(destination, dict(request.query), size)

@@ -9,7 +9,8 @@ GET  /anomalous/placement/check[?deep=1] -> {misplaced, duplicates, unchecked}
     the same size (small ones always, large ones with deep). unchecked: the same-size large
     files a deep check would still read.
 POST /anomalous/placement/move {type, root, rel, to_type, to_root, to_rel} -> moves a model
-    and its sidecars (covers, info, the user's notes); never over a file (" (2)").
+    and its sidecars (covers, info, the user's notes); never over a file (" (2)"). Only for
+    the computer ComfyUI runs on (mcp_server._is_local).
 
 Removing a copy goes through /anomalous/delete_model (Recycle Bin). Headers and computed
 SHA-256s are kept in memory per file (path, size, time).
@@ -30,6 +31,7 @@ except ImportError:  # loaded outside the package (tests)
     from model_identity import file_sha256
     from model_kind import inspect_file
 from .activity_log import add_entry
+from .mcp_server import _is_local
 from .metadata import get_metadata
 from .model_constants import MEDIA_EXTENSIONS, PREVIEW_SUFFIXES, SIDECAR_SUFFIXES
 from .model_download import MODEL_EXTENSIONS, clean_folder, forget_file_lists
@@ -248,6 +250,8 @@ async def api_check(request):
 
 
 async def api_move(request):
+    if not _is_local(request):
+        return web.json_response({"error": "not_local"}, status=403)
     try:
         data = await request.json()
         if not isinstance(data, dict):
