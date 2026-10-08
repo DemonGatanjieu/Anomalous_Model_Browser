@@ -61,6 +61,13 @@ class KindTests(unittest.TestCase):
         self.assertEqual((sd15["kind"], sd15["base"]), ("loras", "SD 1.5"))
         flux = kind_of(tensors("lora_unet_double_blocks_0_img_attn_proj.lora_up.weight"))
         self.assertEqual((flux["kind"], flux["base"]), ("loras", "Flux.1 D"))
+        # Anima (Cosmos-Predict2 with a Qwen3 adapter): Civitai calls it a Checkpoint, it goes in diffusion models.
+        anima = kind_of(tensors("net.blocks.0.self_attn.q_proj.weight", "net.blocks.0.cross_attn.k_proj.weight",
+                                "net.x_embedder.proj.1.weight", "net.llm_adapter.blocks.0.mlp.0.weight"))
+        self.assertEqual((anima["kind"], anima["base"], anima["sure"]), ("diffusion_models", "Anima", True))
+        bare = kind_of(tensors("blocks.0.self_attn.q_proj.weight", "blocks.0.cross_attn.k_proj.weight",
+                               "blocks.0.adaln_modulation_self_attn.1.weight", "llm_adapter.blocks.0.mlp.0.weight"))
+        self.assertEqual((bare["kind"], bare["base"]), ("diffusion_models", "Anima"))
         wan = kind_of(tensors("diffusion_model.blocks.0.self_attn.q.lora_A.weight", "diffusion_model.blocks.0.cross_attn.k.lora_B.weight"))
         self.assertEqual(wan["base"], "Wan Video")
         # SDXL's families only show in what it was trained on.
@@ -74,6 +81,9 @@ class KindTests(unittest.TestCase):
         checkpoint = kind_of(tensors("model.diffusion_model.input_blocks.0.0.weight", "model.diffusion_model.label_emb.0.0.weight",
                                      "first_stage_model.encoder.down.0.block.0.conv1.weight", "conditioner.embedders.1.model.ln_final.weight"))
         self.assertEqual((checkpoint["kind"], checkpoint["base"]), ("checkpoints", "SDXL"))
+        merged = kind_of(tensors("model.diffusion_model.input_blocks.0.0.weight", "first_stage_model.decoder.up.0.block.0.conv1.weight",
+                                 "lora_te_text_model_encoder_layers_0_mlp_fc1.lora_down.weight"))
+        self.assertEqual(merged["kind"], "checkpoints")  # a merge that kept a LoRA's keys
         flux = kind_of(tensors("double_blocks.0.img_attn.qkv.weight", "img_in.weight", "single_blocks.0.linear1.weight"))
         self.assertEqual((flux["kind"], flux["base"]), ("diffusion_models", "Flux.1 D"))
         # Qwen-Image also has img_in: not taken for Flux.

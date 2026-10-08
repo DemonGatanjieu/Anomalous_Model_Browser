@@ -31,7 +31,7 @@ LORA_MARKS = ("lora_up.", "lora_down.", "lora_a.", "lora_b.", "lora.up.", "lora.
 CONTROL_MARKS = ("control_model_", "input_hint_block", "controlnet_cond_embedding", "controlnet_blocks",
                  "controlnet_x_embedder", "zero_convs", "controlnet_mid_block")
 DIFFUSION_STARTS = ("double_blocks.", "single_blocks.", "joint_blocks.", "transformer_blocks.",
-                    "single_transformer_blocks.", "input_blocks.", "blocks.0.self_attn")
+                    "single_transformer_blocks.", "input_blocks.", "blocks.0.self_attn", "net.blocks.", "net.x_embedder.")
 
 
 def parse_safetensors(data):
@@ -167,6 +167,12 @@ def _base_from_keys(header, text):
     """(base, sure) from tensor names; ("", False) when they do not tell."""
     if "individual_token_refiner" in text:
         return "Hunyuan Video", True
+    # Cosmos-Predict2 (with or without "net."); Anima adds an adapter for its Qwen3 text
+    # encoder. Before Wan: their blocks' attention names look alike.
+    if "llm_adapter" in text:
+        return "Anima", True
+    if "adaln_modulation_self_attn" in text:
+        return "Cosmos", True
     if "distilled_guidance_layer" in text:
         return "Chroma", True
     if "img_mod_1" in text or "txt_norm" in text or "img_mlp_net" in text:
@@ -206,11 +212,12 @@ def _kind(keys, raw, text):
         return "embeddings", True
     if any(mark in text for mark in CONTROL_MARKS):
         return "controlnet", True
-    if any(mark in raw for mark in LORA_MARKS):
-        return "loras", True
     diffusion = any(key.startswith(("model.diffusion_model.", "diffusion_model.") + DIFFUSION_STARTS) for key in keys)
+    # A whole model first: some merged checkpoints still carry a LoRA's keys.
     if diffusion and any(key.startswith(("first_stage_model.", "vae.")) for key in keys):
         return "checkpoints", True
+    if any(mark in raw for mark in LORA_MARKS):
+        return "loras", True
     if diffusion:
         return "diffusion_models", True
     if any(key.startswith(("image_proj.", "ip_adapter.")) for key in keys):
