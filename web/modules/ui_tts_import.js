@@ -7,7 +7,6 @@ import {
 } from './tts_setup_api.js';
 import { clashFreeNames, draftChecklist, draftState, groupKey, leftOut, planGroups, splitBatch } from './tts_import_groups.js';
 import { TRAY, renderDraftCard, renderTrayCard, showSource, syncReference, updateRow } from './ui_tts_import_draft.js';
-import { PICKER_OVERLAY_CLASS } from './ui_tts_path_picker.js';
 import { readDroppedFiles } from './ui_tts_file_drop.js';
 import { createFileSources } from './ui_tts_import_sources.js';
 import { createImportPlayer } from './ui_tts_import_player.js';
@@ -23,9 +22,9 @@ import { TOURS, markTourSeen, renderAddMenu, renderBatchHero, renderChooseScreen
  * or files for an existing character (`add`, also opened straight from a
  * character's "Add files"). A spotlight tour explains each screen the first time.
  *
- * Files come from a drop (folders too), the browser's file or folder dialog
- * (uploaded in chunks, a few files at a time, once they are in a character) or the
- * node's folder picker (sent as paths); see ui_tts_import_sources.js. A large add
+ * Files come from a drop (folders too) or the browser's file or folder dialog, and
+ * are uploaded in chunks, a few files at a time, once they are in a character (see
+ * ui_tts_import_sources.js). A large add
  * opens a batch of characters at a time; the rest waits for "next batch" (and opens
  * by itself once the batch is imported). Files that would clash by name inside a
  * character get their folder's name in front. Every clip can be listened to at any
@@ -123,7 +122,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
     });
     // No close on a backdrop click: a stray click would throw away the files and uploads.
     scope.listen(window, 'keydown', (e) => {
-        if (e.key !== 'Escape' || isSpotlightTourActive() || document.querySelector(`.anomalous-dialog-overlay, .${PICKER_OVERLAY_CLASS}`)) return;
+        if (e.key !== 'Escape' || isSpotlightTourActive() || document.querySelector('.anomalous-dialog-overlay')) return;
         e.stopPropagation();
         if (menu.classList.contains('is-open')) { menu.classList.remove('is-open'); return; }
         close();
@@ -263,8 +262,8 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
             group.items.forEach((item, i) => {
                 if (skip.has(i)) return;
                 const row = {
-                    key: nextRow++, kind: item.kind, name: item.name, original: item.name, dir: item.dir || '', path: item.path || '',
-                    file: item.file || null, size: item.file?.size ?? item.size ?? 0, spec: item.path ? { path: item.path } : null,
+                    key: nextRow++, kind: item.kind, name: item.name, original: item.name, dir: item.dir || '',
+                    file: item.file, size: item.file.size, spec: null,
                     queued: false, uploadId: null, progress: 0, error: '', info: null, emotion: '', text: '', textEdited: false,
                     committed: false, controller: new AbortController(),
                 };
@@ -362,7 +361,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         add: (items, into) => addItems(items, into),
         note: (text) => { noteLine.textContent = `${noteLine.textContent} ${text}`.trim(); },
     });
-    const { chooseFiles, chooseLocalFiles, chooseLocalFolder } = sources;
+    const { chooseFiles } = sources;
 
     // ---- layout: header, steps, content, footer ----
     const header = el('div', 'anomalous-voice-modal-header');
@@ -390,7 +389,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
     });
 
     const { root: menuWrap, menu } = renderAddMenu({
-        files: () => chooseFiles(), folder: sources.chooseFolder, localFiles: () => chooseLocalFiles(), localFolder: chooseLocalFolder,
+        files: () => chooseFiles(), folder: sources.chooseFolder,
     });
     scope.listen(document, 'mousedown', (e) => { if (!menuWrap.contains(e.target)) menu.classList.remove('is-open'); });
     const newBtn = button('anomalous-tts-ghost', t('ttsBatchNewDraft'), () => {
@@ -414,8 +413,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
 
     // Batch mode before any file: the drop area says what to bring.
     const hero = renderBatchHero({
-        folder: sources.chooseFolder, files: () => chooseFiles(), localFolder: chooseLocalFolder,
-        localFiles: () => chooseLocalFiles(), back: () => { mode = null; draw(); },
+        folder: sources.chooseFolder, files: () => chooseFiles(), back: () => { mode = null; draw(); },
     });
 
     const saveTo = el('span', 'anomalous-tts-footer-path');
@@ -436,7 +434,7 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         signal: scope.signal,
         places,
         play: row => player.toggle(row),
-        pick: (draft, kinds, local) => (local ? chooseLocalFiles(kinds, draft) : chooseFiles(kinds, draft)),
+        pick: (draft, kinds) => chooseFiles(kinds, draft),
         onToggle: (draft) => {
             if (draft.done) return;
             if (draft.expanded && openDrafts().length > 1) draft.expanded = false;
