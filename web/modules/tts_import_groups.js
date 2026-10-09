@@ -19,8 +19,8 @@ const VERSION_DIR = /^v\d/i; // `v2`, `v2Pro`: named with the folder above (`派
  * Folders never walked: Python environments and base models, anywhere; the program
  * and training folders of a GPT-SoVITS package (checkpoints, dataset slices, tool
  * models) only inside a package, since users name their own folders `output` or
- * `GPT_SoVITS` too. The same rules as the node's folder scan (Anomalous_TTS
- * `core/browse.py`, `skip_folder` / `is_package`).
+ * `GPT_SoVITS` too. They decide which files of a picked or dropped folder are uploaded;
+ * the node no longer reads folders on this computer (Anomalous_TTS interface 13).
  */
 const ALWAYS_SKIP = new Set(['runtime', 'pretrained_models', '__pycache__', 'site-packages', 'venv', 'node_modules']);
 const PACKAGE_SKIP = new Set(['gpt_sovits', 'logs', 'output', 'temp', 'tools']);
