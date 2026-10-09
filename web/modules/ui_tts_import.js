@@ -72,12 +72,10 @@ export async function openTtsImport({ files = [], target = null, onDone } = {}) 
         await anomalousAlert(t('ttsSetupRemote'));
         return;
     }
-    // New characters always go to the storage place (changed in GPT-SoVITS settings).
+    // New characters go to the storage place. The status is kept a minute (a fresh install's folder may be there by now): ask again before refusing.
+    if (!target && !status.libraries.find(lib => lib.storage)?.writable) status = await loadGptSovitsStatus({ force: true }).catch(() => status) || status;
     const home = status.libraries.find(lib => lib.storage);
-    if (!target && !home?.writable) {
-        await anomalousAlert(t('ttsImportNoLibrary', { path: status.storage }));
-        return;
-    }
+    if (!target && !home?.writable) return anomalousAlert(t('ttsImportNoLibrary', { path: status.storage }));
 
     activeScope?.dispose();
     const scope = createViewScope();

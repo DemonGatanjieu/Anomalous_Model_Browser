@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### 🎙️ Importing a character right after installing (装好就能导入角色)
+- The first "Import character" on a fresh install no longer says the storage place cannot be written to: the voices page asks GPT-SoVITS again before refusing, instead of trusting what it heard up to a minute earlier.
+
 ### 🧭 New layout (新布局)
 - **Icon rail (左侧图标栏)**: every page now has one place on the left: Home, Models, Gallery, Workflows, Combos, Prompts, then Voices and Audio for the audio side, then scan, Model Check, Node Assistant and the toolbox, with settings at the bottom. It replaces the tabs at the top, the image/audio switch and the tool bar under the folder list.
 - **Folder list opens and closes per page (列表按页面收放)**: click the current page's icon again, or the button at the top left, to hide or show its list; each page remembers your choice. Pages without a list (Home, Gallery) give the space to the content. In a narrow or docked window the list starts closed and opens as a drawer against the rail, over a dimmed page; picking a folder or character, pressing the dimmed page or Esc closes it.
