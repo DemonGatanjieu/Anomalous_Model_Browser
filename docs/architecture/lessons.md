@@ -71,3 +71,21 @@ body:has(#anomalous-toolbox-modal[style*="display: flex"]) #anomalous-sidebar-to
 - 拆模块后跑 `tests/test_backend_names.py`：后端文件读到却从没绑定的名字，它都会列出来。
 - 行为测试要走默认路径。`recipe_payload` 默认关着快照，新测试 `test_saving_with_preview_snapshots_captures_the_model_cover` 专门走默认的“开着快照”。
 - 真实按钮至少点一次：在隔离的 ComfyUI 里点“保存当前工作流”，一眼就能看出问题。
+
+---
+
+## 2026-10-08 · ComfyUI-Manager 审核 Anomalous_TTS：三类安全口子
+
+**现象**：Anomalous_TTS 申请收录进 ComfyUI-Manager（Comfy-Org/ComfyUI-Manager#3342），维护者两轮审核退回，先后指出：
+
+1. **下载来的东西被当代码执行**：中文多音字模型从个人 ModelScope 账号的 `master` 下载，不核对指纹，解压后执行包里的 `config.py`；英文词典读 pickle。而网页请求还能改“去哪个文件夹找这些文件”，等于网页能决定运行什么代码。
+2. **网页请求决定删改哪里**：`POST /anomalous_tts/storage` 从请求里取新的存放位置，跨盘移动后对旧位置 `rmtree`。只检查“是不是本机请求”不够：本机网页也不该决定在哪里建、删文件夹。
+3. **按请求里的路径读任意文件**：导入预览、导入检查会返回请求点名的任何文件内容。
+
+**根因**：这些接口最初是为了方便（在界面里选文件夹、试听本机音频、一键挪角色），没有把“网页请求是不可信的输入”当成前提；“只接受本机请求”被当成了足够的保护。
+
+**怎么改的**（接口版本 13）：配置文件当数据解析，词典从文本建，不读写 pickle，测试拦住 `pickle.load` / `exec_module` / `eval(`；下载锁定版本并先核对 SHA-256 再解压；存放位置、角色文件夹、底模来源只从用户手写的设置文件读；导入只收上传的文件，没有接口再接受本机路径。
+
+**以后怎么做**
+- 两个仓库的规范都写了安全底线（本仓库 AGENTS.md 第 5 节“安全底线”，Anomalous_TTS 的 ARCHITECTURE.md“不能破的规矩”）。新接口按它写，审查时逐条对照。
+- 本仓库的现状（2026-10-09 统计）：55 个会写文件的接口，只有 MCP、模型导入、整理三处检查了本机请求；删除模型、改模型信息、开始下载、导入备份等在 `--listen` 时局域网里的其他设备也能调用。计划在 10 号版本发布后逐个补上；没有执行下载内容、pickle、eval 的代码。
