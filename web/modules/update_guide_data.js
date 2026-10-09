@@ -4,10 +4,10 @@ export const CURRENT_UPDATE_GUIDE = Object.freeze({
     id: '2026-10-rail-and-voices',
     steps: Object.freeze([
         { id: 'layout', icon: '🧭', titleKey: 'updateGuideLayoutTitle', bodyKey: 'updateGuideLayoutBody' },
-        { id: 'model-types', icon: '📦', titleKey: 'updateGuideModelTypesTitle', bodyKey: 'updateGuideModelTypesBody' },
-        { id: 'activity', icon: '🕘', titleKey: 'updateGuideActivityTitle', bodyKey: 'updateGuideActivityBody' },
+        { id: 'keep', icon: '⭐', titleKey: 'updateGuideKeepTitle', bodyKey: 'updateGuideKeepBody' },
+        { id: 'prompts', icon: '✍️', titleKey: 'updateGuidePromptsTitle', bodyKey: 'updateGuidePromptsBody' },
+        { id: 'model-check', icon: '🩺', titleKey: 'updateGuideCheckTitle', bodyKey: 'updateGuideCheckBody' },
         { id: 'voices', icon: '🎙️', titleKey: 'updateGuideVoicesTitle', bodyKey: 'updateGuideVoicesBody' },
-        { id: 'memory', icon: '🪶', titleKey: 'updateGuideMemoryTitle', bodyKey: 'updateGuideMemoryBody' },
     ]),
 });
 
