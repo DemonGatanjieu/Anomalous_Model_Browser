@@ -1,13 +1,13 @@
 // Content only. Maintenance checklist: docs/architecture/update-guide.md.
 // Change the ID only when users should see a new guide, never for typo fixes.
 export const CURRENT_UPDATE_GUIDE = Object.freeze({
-    id: '2026-10-rail-and-voices',
+    id: '2026-10-downloads-and-backup',
     steps: Object.freeze([
-        { id: 'layout', icon: '🧭', titleKey: 'updateGuideLayoutTitle', bodyKey: 'updateGuideLayoutBody' },
-        { id: 'model-types', icon: '📦', titleKey: 'updateGuideModelTypesTitle', bodyKey: 'updateGuideModelTypesBody' },
-        { id: 'activity', icon: '🕘', titleKey: 'updateGuideActivityTitle', bodyKey: 'updateGuideActivityBody' },
-        { id: 'voices', icon: '🎙️', titleKey: 'updateGuideVoicesTitle', bodyKey: 'updateGuideVoicesBody' },
-        { id: 'memory', icon: '🪶', titleKey: 'updateGuideMemoryTitle', bodyKey: 'updateGuideMemoryBody' },
+        { id: 'download', icon: '⬇️', titleKey: 'updateGuideDownloadTitle', bodyKey: 'updateGuideDownloadBody' },
+        { id: 'backup', icon: '💾', titleKey: 'updateGuideBackupTitle', bodyKey: 'updateGuideBackupBody' },
+        { id: 'node-combos', icon: '🧱', titleKey: 'updateGuideNodeCombosTitle', bodyKey: 'updateGuideNodeCombosBody' },
+        { id: 'theme', icon: '☀️', titleKey: 'updateGuideThemeTitle', bodyKey: 'updateGuideThemeBody' },
+        { id: 'mcp', icon: '🤖', titleKey: 'updateGuideMcpTitle', bodyKey: 'updateGuideMcpBody' },
     ]),
 });
 
