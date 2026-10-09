@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### 🎙️ Importing a character right after installing (装好就能导入角色)
+- The first "Import character" on a fresh install no longer says the storage place cannot be written to: the voices page asks GPT-SoVITS again before refusing, instead of trusting what it heard up to a minute earlier.
+
 ### 🔗 Short share codes, one place to import (短分享码与统一导入)
 - **Share codes are 5–10 times shorter (AMB2)**: only what a workflow needs is kept — node types, values, links, positions, titles, groups and the models' fingerprints — and ComfyUI fills in the rest when it opens. A Chinese-character spelling ("汉字码") is the shortest; a letter spelling ("字母码") posts anywhere, for chats or comment sections whose word filters stop the characters. Before a code is given, it is opened once and compared with the canvas; a workflow it cannot hold exactly (subgraphs, for one) is shared whole. Nodes from node packs keep their links on a computer that has not installed the pack yet. AMB0 and AMB1 codes still open.
 - **Share and import in one place**: the Workflows page's ⇅ makes the code as soon as it opens (with the fingerprint and download-link notes), and takes anything in: a pasted share code or workflow JSON, or a dropped or chosen workflow file, an image with a workflow, or a backup .zip.
