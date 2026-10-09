@@ -46,7 +46,7 @@ function ttsSlice(name, emotion, ref, isMain) {
     };
 }
 
-/** Anomalous_TTS `GET /anomalous_tts/characters` → voice groups (docs: claude/anomalous-tts-interface.md). */
+/** Anomalous_TTS `GET /anomalous_tts/characters` → voice groups (docs: the node repo's docs/INTERFACE.md). */
 export function gptSovitsGroups(payload) {
     return (payload?.characters || []).filter(item => item && typeof item.name === 'string').map(item => {
         const name = item.name;

@@ -210,8 +210,7 @@ covered by the `styles.css` manifest.
   missing the studio shows install steps instead of cards; nothing else depends on it.
   Its data comes only from the node's HTTP contract, version 13
   (`/anomalous_tts/characters`, `/audio`, `/settings`, `/status`, the pretrained
-  download and import routes; the node repo's `docs/INTERFACE.md`,
-  mirrored as the project doc `anomalous-tts-interface.md`); Anomalous never
+  download and import routes; the node repo's `docs/INTERFACE.md`); Anomalous never
   reads or writes its model folders. No call names a path on the computer: the
   storage place, other folders and package sources are set only in the node's
   settings file (`status.settings_file`), and imported files are always uploaded. `loadGptSovitsStatus` caches the setup status
