@@ -432,8 +432,6 @@
     flex-wrap: wrap;
     padding: 10px 0;
     overflow: visible;
-    content-visibility: auto;
-    contain-intrinsic-size: 70px;
 }
 
 .anomalous-nb-minicheck,
@@ -449,8 +447,6 @@
     flex: 1 1 220px;
     max-width: 320px;
     transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-    content-visibility: auto;
-    contain-intrinsic-size: 70px;
 }
 
 .anomalous-nb-minicheck:hover,
