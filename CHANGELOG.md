@@ -196,6 +196,7 @@
 - The Workflows and Combos workspace no longer covers the header: the Models / Gallery / Workflows tabs stay clickable while it is open, and **Esc** closes it (back to what was open before) unless a dialog is above it or a text field has focus. Closing the Prompt Translator brings back the browser it folded away.
 - **Gallery pictures dragged to the canvas open their workflow again (图库拖到画布又能直接打开工作流)**: since the gallery shows small thumbnails, Chrome handed ComfyUI the thumbnail, which has no workflow in it, so only a Load Image node appeared. The original is dragged now: on an empty spot it opens the workflow, on a Load Image node it becomes that node's picture (full size, not the thumbnail).
 - **The picture details' thumbnail rail keeps its place (查看参数左边的缩略图不再重新翻一遍)**: picking a picture near the end loads the next gallery page; the rail used to be rebuilt and scroll down again from the top, now the new pictures are added below.
+- **Back and the tabs work on a scrolled page (页面往下滚后，返回和顶部标签点得动)**: on a combo's page and on a Workflow Recipe's details, once the content was scrolled under the header, clicks on **‹ All combos**, **← Back to recipes** and the recipe's tabs went to the model tiles or the cover hidden behind them (Chrome still counted those as being there). Both pages now give the click to what you see.
 
 ## v1.57.3 Beta (Hotfix: Offline Scan, Prompt Workshop) — 2026-09-29
 

@@ -833,6 +833,9 @@ dialog.anomalous-gallery-viewer[open] {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    /* Chrome hit-tests the cover (overflow: hidden inside) above this box once it scrolls
+       under the tabs, so Back and the tabs got its clicks; clip-path makes the clip count. */
+    clip-path: inset(0);
     padding: 16px 20px 48px 20px;
     box-sizing: border-box;
 }
