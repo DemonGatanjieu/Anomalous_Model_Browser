@@ -226,7 +226,7 @@ to another main panel or closing Workspace abandons the transition and clears
 stale media/DOM/return state. Opening Workspace during the transition must not
 overwrite the earlier outer-panel return state.
 
-Workflow Recipes and recipe-powered Assistant parameter presets remain beta
-surfaces until an explicit stability decision changes that status. Localized
+Workflow Recipes and recipe-powered Assistant parameter presets were beta
+surfaces until v1.60.0, the first release not marked beta (2026-10-09). Localized
 notices identify their data directories and distinguish single-node preset apply
 from full-skeleton Parameter Notebook apply.

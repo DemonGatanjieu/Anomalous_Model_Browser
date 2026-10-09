@@ -1,6 +1,6 @@
 # 📈 Anomalous Model Browser Changelog
 
-## v1.60.0 Beta (Model Import, Tidy, Base Model Filter, Settings Tabs) — unreleased
+## v1.60.0 (Model Import, Tidy, Base Model Filter, Settings Tabs) — unreleased
 
 ### 📥 Drop a model in, it goes to the right folder (拖进来自动归位)
 - **Models page → + Import**, or drop model files anywhere on the models page: each file gets a card saying what it is — Checkpoint, LoRA, VAE, text encoder, diffusion model, ControlNet, Embedding, CLIP Vision, upscale model — with its base model, how sure that is, and one line on what such a model is for. It is read from the file's header only; .ckpt/.pt files, which can carry code, are never opened (you pick their type).

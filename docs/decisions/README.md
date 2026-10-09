@@ -100,6 +100,9 @@ Node Assistant model replacement and LoRA insertion are outside that warning.
 Notices distinguish single-node preset application from full-skeleton Parameter
 Notebook application.
 
+Status (2026-10-09): ended with v1.60.0, the first release not marked beta. The
+in-app beta notices had already been removed.
+
 ## AD-014 — Architecture documentation is state, not history
 
 Architecture documents change only when an owner, data flow, interface contract,
