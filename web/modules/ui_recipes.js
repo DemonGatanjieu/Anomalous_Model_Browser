@@ -15,6 +15,7 @@ import {
     captureRecipeDraft,
 } from './recipe_parser.js';
 import { persistRecipe } from './recipe_save.js';
+import { focusEntries } from './recipe_focus.js';
 import { showRecipeDetail } from './ui_recipe_detail.js';
 import {
     canVerifyRecipeModelReference,
@@ -171,6 +172,9 @@ export async function handleSaveRecipe() {
         }
         if (Object.keys(retained).length) draft.metadata.promptRoleOverrides = retained;
     }
+    // Focus values (重点参数) stay while their node is still there as the same type.
+    const focus = focusEntries(editing?.data?.params, draft.workflow);
+    if (focus.length) draft.metadata.focusParams = focus;
 
     const saveButton = this.recipeView?.querySelector('[data-recipe-save-current]');
     if (saveButton) {

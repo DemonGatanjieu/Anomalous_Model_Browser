@@ -57,7 +57,7 @@ function compareValues(left, right, isKey, includeSame) {
         const equal = other.text === widget.text;
         if (equal) same += 1;
         const row = { name: widget.name, index: other.index, a: widget.value, b: other.value, aText: widget.text, bText: other.text, volatile: widget.volatile || other.volatile, role: other.role || widget.role, same: equal };
-        if (isKey(right.type, widget.name)) keys.push(row);
+        if (isKey(right.type, widget.name, right.id, left.id)) keys.push(row);
         else if (!equal || includeSame) rows.push(row);
     }
     return { rows, keys, same };
@@ -80,7 +80,7 @@ function pairsByType(leftovers, others) {
  * over pair by type when each side has one node of it. Returns { sameStructure, nodes: [{ id,
  * aId, bId, type, title, rows }], keys, onlyA, onlyB, rewired, sameCount, compared } (`id` is `bId`):
  * a row is { name, index, a, b, aText, bText, volatile, role, same } or, for a node bypassed or
- * muted on one side only, { name: '', mode: true, a, b }. Values `isKey(type, widget)` stars are
+ * muted on one side only, { name: '', mode: true, a, b }. Values `isKey(type, widget, bId, aId)` stars are
  * not in `nodes` but in `keys` ([{ node, row }], equal ones too); with `includeSame` the other
  * equal values are in `nodes` too (`same: true`). `sameCount` counts the values equal on both
  * sides, `compared` all values set side by side (none: nothing could be paired).

@@ -220,6 +220,18 @@ ID and guarded by saved node type. Values are `positive`, `negative`, `both`,
 it restores the saved automatic result. Updates retain it only while ID and type
 still match.
 
+## Focus values
+
+A workflow's focus values (重点参数) live in `params.focusParams`: at most 12
+`{ node, type, widget, note }`, all strings (node ID, saved node type, widget
+name, a note of at most 120 characters). `api/recipe_schema.py` refuses any other
+shape and drops repeats. They are shown, compared and kept only while a node of
+that ID and type is still in the workflow (`recipe_focus.js focusEntries`); an
+update from the canvas keeps the ones still true. Its parameter sets, the canvas
+it opens and its pictures share the node IDs, so comparisons among them
+(`compareParams`' `isKey(type, widget, bId, aId)`) list the focus values first
+with the starred key parameters, which hold for every workflow instead.
+
 ## Recipe-to-model navigation
 
 Opening a resolved local model from Recipe Overview keeps the outer browser open

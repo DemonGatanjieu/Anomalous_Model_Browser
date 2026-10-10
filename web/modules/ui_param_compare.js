@@ -119,8 +119,11 @@ function starButton(node, row, starred) {
     return star;
 }
 
-/** A value's line: its name (with the star, the tick, the node's title for a key value), then A and B. */
-function rowLine(row, tick, { node = null, starred = false, prefix = '' } = {}) {
+/**
+ * A value's line: its name (with the star, the tick, the node's title for a key value, and the
+ * workflow's mark with its note for a focus value), then A and B.
+ */
+function rowLine(row, tick, { node = null, starred = false, prefix = '', focus = null } = {}) {
     const line = el('div', `anomalous-compare-row${row.same ? ' is-same' : ''}`);
     const name = el('div', 'anomalous-compare-name');
     if (node && !row.mode) name.append(starButton(node, row, starred));
@@ -129,6 +132,7 @@ function rowLine(row, tick, { node = null, starred = false, prefix = '' } = {}) 
     if (prefix) label.append(el('span', 'anomalous-compare-prefix', prefix));
     label.append(document.createTextNode(row.mode ? t('compareState') : row.name));
     name.append(label);
+    if (focus) line.append(el('div', 'anomalous-compare-focus', `◆ ${focus.note ? `${t('focusBadge')} · ${focus.note}` : t('focusBadge')}`));
     if (ROLE_KEYS[row.role]) name.append(el('span', `anomalous-compare-role is-${row.role}`, t(ROLE_KEYS[row.role])));
     line.append(name);
     if (!row.mode && isLongText(row)) {
@@ -164,11 +168,15 @@ function nodeBlock(node, rows, ticks) {
     return block;
 }
 
-/** The starred values first, equal ones too (dimmed), each with its node's title. */
-function keyBlock(keys, ticks) {
+/** The focus and starred values first (the workflow's focus values leading), equal ones too (dimmed), each with its node's title. */
+function keyBlock(keys, ticks, starred, focus) {
     const block = el('div', 'anomalous-compare-node is-keys');
     block.append(el('div', 'anomalous-compare-node-title', t('compareKeys')));
-    for (const { node, row } of keys) block.append(rowLine(row, ticks.get(row), { node, starred: true, prefix: node.title }));
+    const marked = keys.map(key => ({ ...key, mark: focus?.(key.node.type, key.row.name, key.node.bId, key.node.aId) || null }));
+    marked.sort((x, y) => Boolean(y.mark) - Boolean(x.mark));
+    for (const { node, row, mark } of marked) {
+        block.append(rowLine(row, ticks.get(row), { node, starred: starred(node.type, row.name), prefix: node.title, focus: mark }));
+    }
     return block;
 }
 
@@ -219,9 +227,10 @@ function applyRows(entries, fromKey) {
 
 /**
  * Opens the comparison of `left` and `right`, each { image: { filename, subfolder, type? } },
- * { workflow, label } (a recipe or one of its parameter sets) or { canvas: true }.
+ * { workflow, label } (a recipe or one of its parameter sets) or { canvas: true }. `focus`: a
+ * workflow's focus values (recipe_focus.js focusTest), listed first with the starred ones.
  */
-export function openParamCompare(left, right) {
+export function openParamCompare(left, right, { focus = null } = {}) {
     openWindow?.close();
     const controller = new AbortController();
     const sides = [left, right];
@@ -254,7 +263,9 @@ export function openParamCompare(left, right) {
 
     const render = () => {
         const [a, b] = read;
-        const result = compareParams(a, b, { isKey: keyParamTest(), includeSame: showSame });
+        const starred = keyParamTest();
+        const isKey = (type, widget, ...ids) => starred(type, widget) || Boolean(focus?.(type, widget, ...ids));
+        const result = compareParams(a, b, { isKey, includeSame: showSame });
         const canvasKey = sides[0].canvas ? 'a' : (sides[1].canvas ? 'b' : null);
         const fromKey = canvasKey === 'a' ? 'b' : 'a';
         sidesRow.replaceChildren(sideCard(sides[0], 'A'), button('anomalous-compare-swap', '⇄', () => {
@@ -282,7 +293,7 @@ export function openParamCompare(left, right) {
             diffCount += 1;
             if (canvasKey && !row.volatile) tickFor(node, row);
         }
-        if (result.keys.length) body.append(keyBlock(result.keys, ticks));
+        if (result.keys.length) body.append(keyBlock(result.keys, ticks, starred, focus));
         else body.append(el('div', 'anomalous-compare-key-hint', t('compareKeyHint')));
         for (const node of result.nodes) {
             const rows = node.rows.filter(row => !row.volatile);
@@ -409,13 +420,13 @@ function clearPick(owner) {
 }
 
 /** The bar under the pictures: what is picked, then the canvas and any `others` ({ label, side }) to compare it with. */
-function showPickBar(owner, host, others) {
+function showPickBar(owner, host, others, focus) {
     owner.comparePickBar?.remove();
     const image = owner.comparePick;
     const bar = el('div', 'anomalous-compare-bar');
     const sideButton = (label, side) => button('anomalous-compare-bar-btn', label, () => {
         clearPick(owner);
-        openParamCompare({ image }, side);
+        openParamCompare({ image }, side, { focus });
     });
     bar.append(
         el('span', 'anomalous-compare-bar-text', t('comparePicked', { name: image.filename })),
@@ -429,9 +440,10 @@ function showPickBar(owner, host, others) {
 
 /**
  * The ⇄ of a picture's card: the first press picks it, a second picture's opens the comparison.
- * `host`: where the bar goes (the gallery by default); `others`: more sides the bar offers.
+ * `host`: where the bar goes (the gallery by default); `others`: more sides the bar offers;
+ * `focus`: the workflow's focus values, for pictures of one workflow.
  */
-export function pressCompare(owner, image, card, { host = owner.galleryPanel, others = [] } = {}) {
+export function pressCompare(owner, image, card, { host = owner.galleryPanel, others = [], focus = null } = {}) {
     if (isComparePicked(owner, image)) {
         clearPick(owner);
         return;
@@ -439,10 +451,10 @@ export function pressCompare(owner, image, card, { host = owner.galleryPanel, ot
     if (owner.comparePick) {
         const first = owner.comparePick;
         clearPick(owner);
-        openParamCompare({ image: first }, { image });
+        openParamCompare({ image: first }, { image }, { focus });
         return;
     }
     owner.comparePick = { filename: image.filename, subfolder: image.subfolder || '' };
     card.classList.add('is-compare-picked');
-    showPickBar(owner, host, others);
+    showPickBar(owner, host, others, focus);
 }

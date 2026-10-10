@@ -370,6 +370,16 @@
     color: var(--amb-text-muted);
 }
 
+/* A focus value's mark and note, on its own line under the value (the grid's full width). */
+.anomalous-compare-focus {
+    grid-column: 1 / -1;
+    order: 1;
+    margin-top: -4px;
+    color: var(--amb-link);
+    font-size: 11.5px;
+    overflow-wrap: anywhere;
+}
+
 .anomalous-compare-role.is-positive { color: var(--amb-ok-text); }
 .anomalous-compare-role.is-negative { color: var(--amb-danger-text); }
 
@@ -545,6 +555,8 @@
     background: color-mix(in srgb, var(--amb-warn) 18%, transparent);
     color: var(--amb-warn-text);
 }
+
+.anomalous-preset-key-chip.is-focus { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--amb-link) 55%, transparent); }
 
 .anomalous-preset-key-count {
     color: var(--amb-text-dim);

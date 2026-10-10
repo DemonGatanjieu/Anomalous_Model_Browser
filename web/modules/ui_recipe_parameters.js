@@ -258,7 +258,8 @@ export function renderParameterNotebookEditor(wrapper, owner, recipe, parameterS
 }
 
 /** Every node's values of `source`, drawn 15 nodes at a time (Show more for the rest). */
-export function renderRawNodesLazy(parent, source) {
+/** Every node's values of `source`, 15 nodes at a time. `star(node, widget)`: a button put before each named value. */
+export function renderRawNodesLazy(parent, source, { star = null } = {}) {
     const ordered = parameterNodeOrder(source);
     if (!ordered.length) {
         appendText(parent, 'p', t('recipeDetailNoSavedParameters'), 'anomalous-wfd-muted');
@@ -277,7 +278,7 @@ export function renderRawNodesLazy(parent, source) {
                 ? node.widgets
                 : (Array.isArray(workflowNode?.widgets_values)
                     ? workflowNode.widgets_values.map((value, index) => ({
-                        name: comfyWidgetLabels(node?.type)[index] || `${t('recipeDetailWidget')} ${index + 1}`,
+                        name: comfyWidgetLabels(node?.type)[index] || '',
                         index,
                         value,
                     }))
@@ -300,10 +301,15 @@ export function renderRawNodesLazy(parent, source) {
                     : widget.value;
                 const label = widget.name || `${t('recipeDetailWidget')} ${index + 1}`;
                 const volatile = isVolatileParameter(node, widget, index);
-                renderParameterField(widgetsContainer, label, volatile ? 0 : value, {
+                const shown = renderParameterField(widgetsContainer, label, volatile ? 0 : value, {
                     redact: volatile,
                     collapse: false,
                 });
+                const id = workflowNode?.id ?? node?.id;
+                if (shown && star && widget.name && !volatile && id !== undefined) {
+                    widgetsContainer.lastElementChild.querySelector('.anomalous-recipe-detail-label')
+                        ?.prepend(star({ id, type: workflowNode?.type || node?.type || '' }, widget.name));
+                }
             }
             if (widgetsContainer.childElementCount) {
                 block.appendChild(widgetsContainer);

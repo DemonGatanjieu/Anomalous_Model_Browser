@@ -277,6 +277,31 @@ def _normalise_source_image(value):
     }
 
 
+def _normalise_focus_params(entries):
+    """A workflow's focus values (重点参数): [{node, type, widget, note}], all short text; anything else is refused."""
+    if not isinstance(entries, list) or len(entries) > MAX_FOCUS_PARAMS:
+        raise ValueError("Invalid recipe focus values")
+    kept = []
+    seen = set()
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValueError("Invalid recipe focus value")
+        node, node_type, widget, note = (entry.get(key, "") for key in ("node", "type", "widget", "note"))
+        if not all(isinstance(value, str) for value in (node, node_type, widget, note)):
+            raise ValueError("Invalid recipe focus value")
+        if (
+            not node or not widget or len(node) > 32
+            or max(len(node_type), len(widget)) > MAX_FOCUS_NAME_LENGTH
+            or len(note) > MAX_FOCUS_NOTE_LENGTH
+        ):
+            raise ValueError("Invalid recipe focus value")
+        if (node, widget) in seen:
+            continue
+        seen.add((node, widget))
+        kept.append({"node": node, "type": node_type, "widget": widget, "note": note.strip()})
+    return kept
+
+
 def _normalise_recipe(payload):
     if not isinstance(payload, dict):
         raise ValueError("Invalid recipe")
@@ -324,6 +349,8 @@ def _normalise_recipe(payload):
                 reference["user_note"] = user_note.strip()
             else:
                 reference.pop("user_note", None)
+    if "focusParams" in params:
+        params["focusParams"] = _normalise_focus_params(params["focusParams"])
     _validate_workflow(workflow)
     workflow_scope = payload.get("workflow_scope", "complete")
     if workflow_scope not in {"partial", "complete"}:

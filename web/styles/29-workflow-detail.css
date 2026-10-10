@@ -369,6 +369,83 @@
 
 .anomalous-wfd-fold-note.is-warn { color: var(--amb-danger-text); }
 
+/* The workflow's focus values (重点参数, ui_recipe_focus.js) and their ☆ under every node's values. */
+.anomalous-wfd-focus-slot { display: contents; }
+.anomalous-wfd-focus-hint { margin-top: -4px; font-size: 12px; }
+.anomalous-wfd-focus { border-color: color-mix(in srgb, var(--amb-link) 45%, var(--amb-border)); }
+
+.anomalous-wfd-focus-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+}
+
+.anomalous-wfd-focus-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+    padding: 9px 12px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: var(--amb-radius-card);
+    background: color-mix(in srgb, var(--amb-link) 6%, transparent);
+}
+
+.anomalous-wfd-focus-tile.is-differs { border-color: color-mix(in srgb, var(--amb-warn) 60%, transparent); }
+.anomalous-wfd-focus-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-width: 0; }
+
+.anomalous-wfd-focus-name,
+.anomalous-wfd-focus-node,
+.anomalous-wfd-focus-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-wfd-focus-name { color: var(--amb-text-soft); font-size: 12px; font-weight: 600; }
+.anomalous-wfd-focus-node { margin-top: -3px; color: var(--amb-text-dim); font-size: 11px; }
+.anomalous-wfd-focus-value { color: var(--amb-text-main); font-size: 20px; line-height: 1.3; }
+.anomalous-wfd-focus-tile.is-differs .anomalous-wfd-focus-value { color: var(--amb-warn-text); }
+.anomalous-wfd-focus-default { color: var(--amb-text-muted); font-size: 11.5px; }
+
+.anomalous-wfd-focus-note {
+    align-self: flex-start;
+    max-width: 100%;
+    margin-top: 2px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: left;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+}
+
+.anomalous-wfd-focus-note:hover { color: var(--amb-text-main); }
+.anomalous-wfd-focus-note.is-empty { color: var(--amb-text-dim); }
+
+.anomalous-wfd-focus-star {
+    flex: 0 0 auto;
+    width: 20px;
+    height: 20px;
+    margin-right: 4px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--amb-text-dim);
+    font-size: 13px;
+    line-height: 1;
+    vertical-align: -1px;
+    cursor: pointer;
+}
+
+.anomalous-wfd-focus-top .anomalous-wfd-focus-star { margin-right: -4px; }
+.anomalous-wfd-focus-star:hover { background: rgba(var(--amb-ink-rgb), 0.08); color: var(--amb-link); }
+.anomalous-wfd-focus-star.is-on { color: #f5b301; }
+
 /* A tip under a set's name: what sets are for, or where ⇄ is. */
 .anomalous-wfd-tip {
     display: flex;

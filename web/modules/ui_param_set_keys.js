@@ -1,14 +1,16 @@
 /**
  * Parameter sets (参数方案) at a glance. A recipe card says how many sets it has, and its
  * chip opens the recipe on its first set. A set's row in the details shows its key parameters'
- * values (key_params.js; marked when they differ from the recipe's own), how many values
- * differ from the recipe, and ⇄ to compare the two (ui_param_compare.js). Each workflow is
- * read once and kept while its data lives.
+ * values (the starred ones, key_params.js, and the workflow's focus values, recipe_focus.js;
+ * marked when they differ from the recipe's own), how many values differ from the recipe, and
+ * ⇄ to compare the two (ui_param_compare.js). Each workflow is read once and kept while its
+ * data lives.
  */
 
 import { translate as t } from './locales.js';
 import { detachedGraph } from './detached_graph.js';
 import { keyParamTest, onKeyParamsChange } from './key_params.js';
+import { focusTest } from './recipe_focus.js';
 import { compareParams, readParams, shownValue } from './param_compare.js';
 import { openParamCompare } from './ui_param_compare.js';
 
@@ -17,8 +19,8 @@ const read = new WeakMap(); // workflow object → readParams
 const decorated = new WeakMap(); // a set's card → [notebook, recipe], to draw it again after a star changes
 let following = false;
 
-/** A star changed: the set cards on screen show the new key values. */
-function redrawSets() {
+/** A star or a focus value changed: the set rows on screen show the new key values. */
+export function redrawParameterSets() {
     for (const row of document.querySelectorAll('.anomalous-wfd-set')) {
         const args = decorated.get(row);
         if (!args) continue;
@@ -28,7 +30,8 @@ function redrawSets() {
     }
 }
 
-function paramsOf(workflow) {
+/** A workflow's values as readParams reads them, read once per workflow object. */
+export function workflowParams(workflow) {
     if (!read.has(workflow)) read.set(workflow, readParams(detachedGraph(workflow)));
     return read.get(workflow);
 }
@@ -92,11 +95,15 @@ export function decorateParameterSet(row, notebook, recipe) {
     decorated.set(row, [notebook, recipe]);
     if (!following) {
         following = true;
-        onKeyParamsChange(redrawSets);
+        onKeyParamsChange(redrawParameterSets);
     }
+    const starred = keyParamTest();
+    const focus = focusTest(recipe);
     let result;
     try {
-        result = compareParams(paramsOf(recipe.workflow), paramsOf(setWorkflow), { isKey: keyParamTest() });
+        result = compareParams(workflowParams(recipe.workflow), workflowParams(setWorkflow), {
+            isKey: (type, widget, ...ids) => starred(type, widget) || Boolean(focus(type, widget, ...ids)),
+        });
     } catch (error) {
         console.warn('[AMB] Parameter set not compared with its recipe.', error);
         return;
@@ -106,9 +113,11 @@ export function decorateParameterSet(row, notebook, recipe) {
         + result.keys.filter(({ row }) => counted(row)).length;
     const line = el('div', 'anomalous-preset-item-keys');
     for (const { node, row } of result.keys) {
-        const chip = el('span', `anomalous-preset-key-chip${row.same ? '' : ' is-differs'}`, `${row.name} ${short(row.b)}`);
-        chip.title = `${node.title} · ${row.name}: ${shownValue(row.a)} → ${shownValue(row.b)}`;
-        line.append(chip);
+        const marked = focus(node.type, row.name, node.bId, node.aId);
+        const chip = el('span', `anomalous-preset-key-chip${row.same ? '' : ' is-differs'}${marked ? ' is-focus' : ''}`, `${row.name} ${short(row.b)}`);
+        chip.title = `${node.title} · ${row.name}: ${shownValue(row.a)} → ${shownValue(row.b)}${marked?.note ? `\n${marked.note}` : ''}`;
+        if (marked) line.prepend(chip);
+        else line.append(chip);
     }
     line.append(el('span', 'anomalous-preset-key-count', differing ? t('paramSetDiffers', { count: differing }) : t('paramSetSame')));
     row.querySelector('.anomalous-wfd-set-main')?.append(line);
@@ -118,7 +127,7 @@ export function decorateParameterSet(row, notebook, recipe) {
     compare.title = t('paramSetCompare');
     compare.onclick = (event) => {
         event.stopPropagation();
-        openParamCompare({ workflow: recipe.workflow, label: t('workflowOwnValues') }, { workflow: setWorkflow, label: notebook.name || t('recipeParameterUntitled') });
+        openParamCompare({ workflow: recipe.workflow, label: t('workflowOwnValues') }, { workflow: setWorkflow, label: notebook.name || t('recipeParameterUntitled') }, { focus });
     };
     row.querySelector('.anomalous-wfd-set-actions')?.prepend(compare);
 }

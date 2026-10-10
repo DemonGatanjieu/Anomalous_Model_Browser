@@ -109,6 +109,20 @@ class RecipeWorkflowValidationTests(unittest.TestCase):
         payload.pop("workflow_scope")
         self.assertEqual(recipes._normalise_recipe(payload)["workflow_scope"], "complete")
 
+    def test_focus_values_are_checked_and_kept(self):
+        payload = recipe_payload(valid_workflow())
+        mark = {"node": "2", "type": "KSampler", "widget": "cfg", "note": " 6-8 "}
+        payload["params"]["focusParams"] = [mark, dict(mark)]
+        self.assertEqual(
+            recipes._normalise_recipe(payload)["params"]["focusParams"],
+            [{"node": "2", "type": "KSampler", "widget": "cfg", "note": "6-8"}],
+        )
+        for bad in ("cfg", [{"node": 2, "widget": "cfg"}], [{"node": "2", "widget": ""}],
+                    [{"node": "2", "widget": "cfg", "note": "x" * 121}], [dict(mark, widget=f"w{i}") for i in range(13)]):
+            payload["params"]["focusParams"] = bad
+            with self.assertRaises(ValueError):
+                recipes._normalise_recipe(payload)
+
     def test_invalid_workflow_scope_is_rejected(self):
         payload = recipe_payload(valid_workflow())
         payload["workflow_scope"] = "selection"

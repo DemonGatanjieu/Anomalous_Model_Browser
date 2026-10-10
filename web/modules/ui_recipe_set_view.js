@@ -1,7 +1,8 @@
 /**
  * The right side of a workflow's details for one set of values (the workflow's own, or a saved
  * set): its name with Apply to canvas, ⇄ and ⋯; for the workflow's own, its cover, notes and
- * tags; the main values (steps, CFG, sampler…, the model and LoRAs); the prompts; the pictures
+ * tags; its focus values (重点参数, ui_recipe_focus.js; each node value has a ☆ to mark one);
+ * the main values (steps, CFG, sampler…, the model and LoRAs); the prompts; the pictures
  * made with these values (each ⇄ to compare); the models (the workflow's own only) and every
  * node's values, folded (this browser remembers which the viewer left open). A tip says what a
  * set is for while the workflow has none, and where ⇄ is on a set until the viewer has used it.
@@ -19,6 +20,8 @@ import { modelDisplayName, renderRecipeModels } from './ui_recipe_models.js';
 import { deleteSet, editNewSet, listedSets, renameSet, saveCanvasAsSet } from './ui_recipe_sets.js';
 import { openParamCompare } from './ui_param_compare.js';
 import { openPopupMenu } from './ui_popup_menu.js';
+import { focusTest } from './recipe_focus.js';
+import { drawFocus, focusStars } from './ui_recipe_focus.js';
 
 const t = (key, params) => translate(key, params);
 const FOLDS_KEY = 'anomalous_wfd_folds';
@@ -151,8 +154,8 @@ function setHead(main, ctx, notebook, source) {
         store(COMPARE_TIP_KEY, true);
         main.querySelector('.anomalous-wfd-tip.is-compare')?.remove();
         openPopupMenu(compare, [
-            ...(notebook ? [{ label: t('compareWithDefault'), run: () => openParamCompare(own, mine) }] : []),
-            { label: t('compareWithCanvas'), run: () => openParamCompare(mine, { canvas: true }) },
+            ...(notebook ? [{ label: t('compareWithDefault'), run: () => openParamCompare(own, mine, { focus: focusTest(recipe) }) }] : []),
+            { label: t('compareWithCanvas'), run: () => openParamCompare(mine, { canvas: true }, { focus: focusTest(recipe) }) },
         ]);
     };
     const more = button(actions, '⋯', 'anomalous-wf-icon-btn');
@@ -219,6 +222,7 @@ function pictures(main, ctx, sides) {
     if (parameterGallery.status === 'ready' && parameterGallery.images.length) {
         renderImageGrid(box, owner, parameterGallery.images, {
             compareOthers: notebook ? [{ label: t('compareWithDefault'), side: sides.own }] : [],
+            focus: focusTest(ctx.recipe),
         });
         return;
     }
@@ -240,6 +244,10 @@ export function renderSetView(main, ctx) {
     if (notebook) compareTip(main);
     else if (parameterState.status === 'ready' && !listedSets(recipe, parameterState.notebooks).length) noSetsTip(main, ctx);
     if (!notebook) renderRecipeInfo(main, owner, recipe);
+    const focusSlot = document.createElement('div');
+    focusSlot.className = 'anomalous-wfd-focus-slot';
+    main.appendChild(focusSlot);
+    drawFocus(focusSlot, ctx, source);
     mainValues(main, source.params || {});
     renderPromptSection(section(main, t('recipeDetailPrompts')), owner, recipe, source, ctx.rerender);
     pictures(main, ctx, sides);
@@ -256,5 +264,7 @@ export function renderSetView(main, ctx) {
             renderRecipeModels(list, owner, recipe, references, ctx.openModel);
         });
     }
-    foldedSection(main, { title: t('workflowAllNodeValues'), name: 'nodes' }, box => renderRawNodesLazy(box, source));
+    foldedSection(main, { title: t('workflowAllNodeValues'), name: 'nodes' }, box => renderRawNodesLazy(box, source, {
+        star: focusStars(ctx, focusSlot, source),
+    }));
 }

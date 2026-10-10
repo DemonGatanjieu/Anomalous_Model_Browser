@@ -8,6 +8,7 @@ import { translate } from './locales.js';
 import { showImageWorkbench } from './ui_gallery_detail.js';
 import { appendText, button } from './ui_recipe_detail_dom.js';
 import { isComparePicked, pressCompare } from './ui_param_compare.js';
+import { focusTest } from './recipe_focus.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -45,9 +46,10 @@ export function openGalleryImageDetail(owner, images, sourceImage, url) {
 
 /**
  * The pictures as a grid in `parent`. `compareOthers`: more sides the ⇄ bar offers
- * ([{ label, side }], the workflow's own values for one); the bar goes under the grid.
+ * ([{ label, side }], the workflow's own values for one); the bar goes under the grid. `focus`:
+ * the workflow's focus values, listed first when comparing.
  */
-export function renderImageGrid(parent, owner, images, { compareOthers = [] } = {}) {
+export function renderImageGrid(parent, owner, images, { compareOthers = [], focus = null } = {}) {
     const grid = document.createElement('div');
     grid.className = 'anomalous-wfd-images';
     for (const sourceImage of images) {
@@ -70,7 +72,7 @@ export function renderImageGrid(parent, owner, images, { compareOthers = [] } = 
         compare.title = t('compareCardTitle');
         compare.onclick = (event) => {
             event.stopPropagation();
-            pressCompare(owner, sourceImage, card, { host: parent, others: compareOthers });
+            pressCompare(owner, sourceImage, card, { host: parent, others: compareOthers, focus });
         };
         card.prepend(image);
         grid.appendChild(card);
@@ -97,6 +99,7 @@ export function renderRecipeGallery(content, owner, recipe, gallery, refresh) {
         appendText(section, 'p', t('recipeGalleryScanHint', { count: gallery.scanned || 0 }), 'anomalous-wfd-muted');
         renderImageGrid(section, owner, gallery.images, {
             compareOthers: [{ label: t('compareWithDefault'), side: { workflow: recipe.workflow, label: t('workflowOwnValues') } }],
+            focus: focusTest(recipe),
         });
     }
     content.appendChild(section);

@@ -472,7 +472,10 @@ covered by the `styles.css` manifest.
   canvas, New; then all pictures and versions) and the chosen view on the right.
   `ui_recipe_set_view.js` is one set: Apply to canvas, ⇄ (with the workflow's own or the canvas),
   ⋯ (copy as a new set, rename, delete); the cover, notes and tags for the workflow's own
-  (`ui_recipe_info.js`, which also holds the name and the models' state); the main values; the
+  (`ui_recipe_info.js`, which also holds the name and the models' state); the workflow's focus
+  values (重点参数: `recipe_focus.js` keeps them in the recipe's params and tells comparisons which
+  values they are, `ui_recipe_focus.js` draws them with their notes and the ☆ on each node
+  value); the main values; the
   prompts; the pictures made with these values; the models (the fold says whether all are here)
   and every node's values, folded, each opening as the viewer last left it (this browser's
   storage); a tip while the workflow has no set, and one pointing at ⇄ on a set until it is used.
