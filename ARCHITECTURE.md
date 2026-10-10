@@ -353,6 +353,8 @@ covered by the `styles.css` manifest.
 - `ui_combos.js` renders the Combos page's list (搭配: a main model, LoRAs and a prompt, formerly Prompt Notes): search,
   New, and a card per combo with its model's cover and Put on canvas; a card opens the combo's editor, and dragged onto the
   canvas (`material_drag.js`) becomes a new group of nodes where it is dropped. Combos keep the notes' files.
+- `detached_graph.js` lays a workflow on a graph of its own, off the canvas, under an id of its own: ComfyUI keeps widget
+  values by graph id, so a copy under the canvas's id would write its values onto the canvas.
 - `recipe_save.js` saves Workflow Recipes for the canvas save and for an output image's workflow (the gallery's keep menu,
   moving whole workflows kept as materials), laying an image's workflow on a canvas of its own to summarise it.
 - `ui_apply_receipt.js` is the receipt of values written to a node from a panel (Current node's parameters) with its Undo. `node_material_actions.js` owns prompt envelope extraction (`extractMaterialPromptEnvelope`) and the node writes shared by those panels and prompt drops.

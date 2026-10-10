@@ -11,6 +11,7 @@
 import { extractRecipeMetadata } from './recipe_parser.js';
 import { categorizePromptSnippet, promptTitle } from './prompt_composition.js';
 import { jsonResponse } from './ui_dom.js';
+import { detachedGraph } from './detached_graph.js';
 
 const MAIN_TYPES = ['checkpoints', 'unet', 'diffusion_models'];
 // The combo editor lists models without a base model under this value (notebook_canvas.js).
@@ -35,9 +36,7 @@ export async function loadKeptImages(signal) {
 /** What the image's workflow uses (extractRecipeMetadata) and a name: its prompt's first tags, else the file's. */
 async function readImage(sourceImage) {
     const info = await jsonResponse(await post('/anomalous/inspect_image_material', { source_image: sourceImage }), 'read image workflow');
-    const graph = new globalThis.LiteGraph.LGraph();
-    graph.configure(JSON.parse(JSON.stringify(info.workflow)));
-    const metadata = extractRecipeMetadata(graph);
+    const metadata = extractRecipeMetadata(detachedGraph(info.workflow));
     const name = promptTitle(metadata.promptPositive[0]) || String(sourceImage?.filename || '').replace(/\.[^.]+$/, '');
     return { name, metadata };
 }
