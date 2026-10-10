@@ -92,6 +92,7 @@
 - **A character voice dropped on a TTS node stays put (拖到 TTS 节点的角色声音刷新后还在)**: the same gap as above: reloading right after the drop brought back the node's previous voice, and Ctrl+Z skipped it. Every drop from the browser onto the canvas is now recorded as one history step.
 
 ### Fixes
+- **Models found offline no longer get their name doubled (离线推断的模型名字不再越叠越长)**: a model Civitai had no record of (or a scan without a connection) is named after its file, as both model and version. With renaming on, a scan renamed it to name_name, and each later scan doubled it again; the details showed "name - name". Such models now keep their file name, a doubled name set by an earlier virtual rename is dropped at the next scan, and the details show the name once. Files already renamed keep their current name (scanning again no longer lengthens it).
 - **The Workflows page was blank after opening a workflow (在新画布打开后再打开插件是空的)**: opening a workflow on the canvas (Open on a card or in its details) and then the browser again showed an empty page. The Workflows list is there again.
 - **Language follows ComfyUI again (语言跟随 ComfyUI)**: with the language left on "Follow ComfyUI" (the default), changing ComfyUI's language now switches the browser the next time it opens; before, it kept the old language until the page was reloaded.
 - **Empty list on the audio pages (音频页左边列表是空的)**: after reloading ComfyUI, a browser that reopened straight onto Voices or Audio showed an empty list column until you switched to the image side and back.
