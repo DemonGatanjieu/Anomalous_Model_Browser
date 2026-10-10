@@ -105,8 +105,8 @@ lists the models with previews and whether each is here under its saved name. In
 in `ui_recipe_metadata.js`, with pure ordering/value helpers in
 `ui_recipe_parameter_utils.js`. The catalog shell lives in `ui_recipe_catalog.js`,
 cards and card actions in `ui_recipe_cards.js` (styles in `styles/28-workflows.css`; the ⋯
-and filter menus are `ui_popup_menu.js`), save/edit dialogs in
-`ui_recipe_dialogs.js`, and shared cover helpers in `ui_recipe_media.js`.
+and filter menus are `ui_popup_menu.js`), the save dialog in `ui_recipe_save_dialog.js`, the edit
+dialog in `ui_recipe_dialogs.js`, and shared cover helpers in `ui_recipe_media.js`.
 `ui_recipe_versions.js` owns version comparison and restore, while
 `ui_recipe_gallery.js` owns result rendering and opens `ui_gallery_detail.js`
 directly for image inspection. Shared detail DOM/copy primitives live in

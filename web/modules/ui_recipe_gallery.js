@@ -18,7 +18,7 @@ export function outputImageUrl(image) {
     return `/view?${query.toString()}`;
 }
 
-function thumbnailUrl(image) {
+export function outputThumbnailUrl(image) {
     const query = new URLSearchParams({ filename: image.filename, subfolder: image.subfolder || '' });
     return `/anomalous/output_thumbnail?${query.toString()}`;
 }
@@ -57,7 +57,7 @@ export function renderImageGrid(parent, owner, images, { compareOthers = [] } = 
         card.className = 'anomalous-wfd-image';
         if (isComparePicked(owner, sourceImage)) card.classList.add('is-compare-picked');
         const image = document.createElement('img');
-        image.src = thumbnailUrl(sourceImage);
+        image.src = outputThumbnailUrl(sourceImage);
         image.alt = t('recipeGalleryOpenImage');
         image.loading = 'lazy';
         image.onclick = () => owner.showGalleryViewer?.(url);

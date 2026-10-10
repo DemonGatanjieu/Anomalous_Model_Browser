@@ -6,7 +6,8 @@ import {
     refreshRecipes as refreshRecipeCatalog,
     renderRecipeList as renderRecipeCatalog,
 } from './ui_recipe_catalog.js';
-import { formatRecipeText, showRecipeEditDialog, showRecipeSaveDialog } from './ui_recipe_dialogs.js';
+import { formatRecipeText, showRecipeEditDialog } from './ui_recipe_dialogs.js';
+import { showRecipeSaveDialog } from './ui_recipe_save_dialog.js';
 import { translate } from './locales.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import {
@@ -147,13 +148,12 @@ export async function handleSaveRecipe() {
     const canvasThumbnail = captureCanvasThumbnail(app.canvas?.canvas);
     const editing = this.recipeEditing || null;
     const modelAudit = await inspectRecipeModelIdentities(draft);
-    const details = await showRecipeSaveDialog(
-        this,
+    const details = await showRecipeSaveDialog(this, {
         canvasThumbnail,
-        draft.workflowScope,
+        workflowScope: draft.workflowScope,
         modelAudit,
-        editing?.data || null,
-    );
+        initial: editing?.data || null,
+    });
     if (!details) return;
 
     // Prompt-role labels belong to the recipe skeleton. Preserve labels whose

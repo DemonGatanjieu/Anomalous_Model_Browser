@@ -21,12 +21,9 @@ import { loadCurrentPreviews, openLocalModel } from './ui_recipe_models.js';
 import { anomalousAlert } from './ui_dialog.js';
 
 const t = (key, params) => translate(key, params);
+
+/** Hides the browser over the canvas; the Workflows page stays, so opening it again shows the list. */
 function closeRecipeWorkspace(owner) {
-    if (!owner) return;
-    owner.nbPanel && (owner.nbPanel.style.display = 'none');
-    owner.notebookBody && (owner.notebookBody.style.display = 'none');
-    owner.recipeView && (owner.recipeView.style.display = 'none');
-    owner.modal?.classList.remove('visible');
     owner?.close?.();
 }
 
@@ -153,7 +150,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
         view.remove();
         owner.recipeDetailView = null;
         syncRecipeReferencesToCatalog(owner, filename, references);
-        if (!['canvas', 'append', 'model'].includes(mode)) {
+        if (mode !== 'model') {
             owner.recipeListContainer.style.display = '';
             topbars.forEach(bar => { bar.style.display = ''; });
             owner.renderRecipeList?.(owner.recipeRecords || []);

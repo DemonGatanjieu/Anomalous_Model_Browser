@@ -1,9 +1,10 @@
 /**
  * A Workflow Recipe's card on the Workflows page: its cover (a dot when its models are all
  * here, words when some are missing; 功能模块 marks a partial workflow), its name, a line of
- * its steps, sampler, LoRAs and size, and its model. Open (or append, for a partial one) and ⋯ (edit, export,
- * delete) show over the cover while the pointer is on the card; a press elsewhere opens its
- * details, and the card drags onto the canvas. The page lays cards as a grid or a list
+ * its steps, sampler, LoRAs and size, and its model. Two small buttons in the cover's corner,
+ * Open (or append, for a partial one) and ⋯ (edit, export, delete), show while the pointer is
+ * on the card; a press anywhere else opens its details, and the card drags onto the canvas.
+ * The page lays cards as a grid or a list
  * (styles/28-workflows.css).
  */
 
@@ -115,13 +116,14 @@ async function deleteRecipe(owner, recipe) {
     await owner.refreshRecipes();
 }
 
-/** Open / append and ⋯, shown over the cover while the pointer is on the card. */
+/** Open / append and ⋯: small buttons in the cover's corner, so a press meant for the details does not open the canvas. */
 function cardActions(owner, recipe, services, isPartial) {
     const actions = document.createElement('div');
     actions.className = 'anomalous-wf-actions';
-    const open = appendText(actions, 'button', `▶ ${t(isPartial ? 'recipeAppendCanvas' : 'recipeOpenCanvas')}`, 'anomalous-wf-open');
+    const open = appendText(actions, 'button', isPartial ? '+' : '▶', 'anomalous-wf-open');
     open.type = 'button';
     open.title = t(isPartial ? 'recipeCardPrimaryActionTooltipPartial' : 'recipeCardPrimaryActionTooltipComplete');
+    open.setAttribute('aria-label', t(isPartial ? 'recipeAppendCanvas' : 'recipeOpenCanvas'));
     open.onclick = (event) => {
         event.stopPropagation();
         runRecipeCardAction(open, async () => {

@@ -483,69 +483,6 @@ dialog.anomalous-gallery-viewer[open] {
     margin: 0;
 }
 
-.anomalous-recipe-dialog-preview {
-    max-height: 180px;
-    object-fit: contain; /* the chosen cover as it is, not stretched to the dialog's width */
-}
-
-.anomalous-recipe-save-section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.anomalous-recipe-dialog label.anomalous-recipe-checkbox {
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-}
-
-.anomalous-recipe-checkbox input {
-    margin: 0;
-}
-
-.anomalous-recipe-cover-choices {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
-    gap: 7px;
-}
-
-.anomalous-recipe-cover-choice {
-    display: flex;
-    min-height: 66px;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    overflow: hidden;
-    padding: 4px;
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 7px;
-    background: var(--amb-bg-panel);
-    color: var(--amb-text-muted);
-    cursor: pointer;
-}
-
-.anomalous-recipe-cover-choice img {
-    width: 100%;
-    height: 58px;
-    border-radius: 4px;
-    object-fit: cover;
-}
-
-.anomalous-recipe-cover-choice.selected {
-    border-color: #e5e7eb;
-    color: var(--amb-text-main);
-    box-shadow: inset 0 0 0 1px rgba(var(--amb-ink-rgb), 0.35);
-}
-
-.theme-abyssal-scarlet .anomalous-recipe-cover-choice.selected {
-    border-color: #dc143c;
-    color: #dc143c;
-    box-shadow: inset 0 0 0 1px rgba(220, 20, 60, 0.35);
-}
-
 .anomalous-recipe-history-list {
     display: flex;
     flex-direction: column;
@@ -574,6 +511,7 @@ dialog.anomalous-gallery-viewer[open] {
 
 /* Recipe detail panel: one scroll owner inside the Notebook modal. */
 .anomalous-recipe-detail-view {
+    container: wfd / inline-size; /* narrow (docked) details: 29-workflow-detail.css */
     display: flex;
     min-height: 0;
     flex: 1;

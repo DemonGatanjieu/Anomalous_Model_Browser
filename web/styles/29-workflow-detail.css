@@ -359,6 +359,51 @@
 }
 
 .anomalous-wfd-section > summary { cursor: pointer; }
+
+.anomalous-wfd-fold-note {
+    margin-left: 8px;
+    color: var(--amb-text-dim);
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.anomalous-wfd-fold-note.is-warn { color: var(--amb-danger-text); }
+
+/* A tip under a set's name: what sets are for, or where ⇄ is. */
+.anomalous-wfd-tip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px dashed var(--amb-border-strong);
+    border-radius: var(--amb-radius-panel);
+    background: rgba(var(--amb-ink-rgb), 0.03);
+}
+
+.anomalous-wfd-tip-text { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
+.anomalous-wfd-tip strong { color: var(--amb-text-main); font-size: 13px; }
+
+.anomalous-wfd-tip p {
+    flex: 1;
+    margin: 0;
+    color: var(--amb-text-muted);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.anomalous-wfd-tip-action {
+    flex: 0 0 auto;
+    padding: 5px 12px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-wfd-tip-action:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
+.anomalous-wfd-tip.is-compare { margin-top: -6px; padding: 7px 10px; }
 .anomalous-wfd-section.is-folded:not([open]) { gap: 0; }
 
 .anomalous-wfd-stats {
@@ -549,9 +594,60 @@
 .theme-abyssal-scarlet .anomalous-wfd-set.is-active,
 .theme-abyssal-scarlet .anomalous-wfd-nav-item.is-active { box-shadow: inset 3px 0 0 #dc143c; }
 
-@media (max-width: 720px) {
+/* Narrow details (docked, or a small window): the left column becomes one row of pills over the values. */
+@container wfd (max-width: 760px) {
+    .anomalous-wfd-bar { flex-wrap: wrap; gap: 8px; padding: 8px 12px; }
     .anomalous-wfd-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
-    .anomalous-wfd-nav { max-height: 34vh; border-right: none; border-bottom: 1px solid var(--amb-border); }
-    .anomalous-wfd-bar { flex-wrap: wrap; }
+
+    .anomalous-wfd-nav {
+        flex-direction: row;
+        align-items: center;
+        padding: 8px 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-right: none;
+        border-bottom: 1px solid var(--amb-border);
+        scrollbar-width: thin;
+    }
+
+    .anomalous-wfd-set-list { flex: 0 0 auto; flex-direction: row; align-items: center; }
+    .anomalous-wfd-nav-head { flex: 0 0 auto; order: 1; padding: 0; }
+    .anomalous-wfd-nav-head > span,
+    .anomalous-wfd-set-date,
+    .anomalous-wfd-set .anomalous-preset-item-keys,
+    .anomalous-wfd-set-actions { display: none; }
+
+    .anomalous-wfd-nav-item,
+    .anomalous-wfd-set {
+        flex: 0 0 auto;
+        width: auto;
+        max-width: 170px;
+        padding: 5px 12px;
+        border-color: var(--amb-border);
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+
+    .anomalous-wfd-set-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .anomalous-wfd-nav-item.is-active,
+    .anomalous-wfd-set.is-active,
+    .theme-abyssal-scarlet .anomalous-wfd-nav-item.is-active,
+    .theme-abyssal-scarlet .anomalous-wfd-set.is-active { border-color: var(--amb-link); box-shadow: none; }
+
+    .anomalous-wfd-nav-new { flex: 0 0 auto; margin: 0; }
+
+    .anomalous-wfd-nav-more {
+        flex: 0 0 auto;
+        flex-direction: row;
+        order: 2;
+        margin: 0 0 0 4px;
+        padding: 0 0 0 10px;
+        border-top: none;
+        border-left: 1px solid var(--amb-border);
+    }
+
+    .anomalous-wfd-main { padding: 12px 12px 20px; }
     .anomalous-wfd-info { grid-template-columns: 96px minmax(0, 1fr); }
+    .anomalous-wfd-tip { flex-wrap: wrap; }
 }

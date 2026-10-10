@@ -3,7 +3,9 @@
  * set): its name with Apply to canvas, ⇄ and ⋯; for the workflow's own, its cover, notes and
  * tags; the main values (steps, CFG, sampler…, the model and LoRAs); the prompts; the pictures
  * made with these values (each ⇄ to compare); the models (the workflow's own only) and every
- * node's values, folded. A new set being made shows its editor instead.
+ * node's values, folded (this browser remembers which the viewer left open). A tip says what a
+ * set is for while the workflow has none, and where ⇄ is on a set until the viewer has used it.
+ * A new set being made shows its editor instead.
  */
 
 import { translate } from './locales.js';
@@ -14,11 +16,31 @@ import { renderParameterNotebookEditor, renderPromptSection, renderRawNodesLazy 
 import { renderImageGrid } from './ui_recipe_gallery.js';
 import { renderRecipeInfo } from './ui_recipe_info.js';
 import { modelDisplayName, renderRecipeModels } from './ui_recipe_models.js';
-import { deleteSet, editNewSet, renameSet } from './ui_recipe_sets.js';
+import { deleteSet, editNewSet, listedSets, renameSet, saveCanvasAsSet } from './ui_recipe_sets.js';
 import { openParamCompare } from './ui_param_compare.js';
 import { openPopupMenu } from './ui_popup_menu.js';
 
 const t = (key, params) => translate(key, params);
+const FOLDS_KEY = 'anomalous_wfd_folds';
+const COMPARE_TIP_KEY = 'anomalous_wfd_compare_tip_done';
+
+/** This browser's memory of the details (folds left open, tips seen); without storage it just forgets. */
+function stored(key, fallback) {
+    try {
+        const value = localStorage.getItem(key);
+        return value === null ? fallback : JSON.parse(value);
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function store(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+        console.warn('Could not remember a workflow details choice:', error);
+    }
+}
 
 function section(parent, title, className = '') {
     const box = document.createElement('section');
@@ -31,11 +53,16 @@ function section(parent, title, className = '') {
     return box;
 }
 
-/** A folded section: its body is drawn the first time it opens. */
-function foldedSection(parent, title, draw, open = false) {
+/**
+ * A folded section: its body is drawn the first time it opens. It opens as the viewer last left
+ * it (`name`), or anyway when `open`; `note` ({ text, warn }) follows the title.
+ */
+function foldedSection(parent, { title, name, note = null, open = false }, draw) {
     const box = document.createElement('details');
     box.className = 'anomalous-wfd-section is-folded';
-    appendText(box, 'summary', title);
+    const summary = appendText(box, 'summary', title);
+    if (note) appendText(summary, 'span', note.text, `anomalous-wfd-fold-note${note.warn ? ' is-warn' : ''}`);
+    summary.addEventListener('click', () => store(FOLDS_KEY, { ...stored(FOLDS_KEY, {}), [name]: !box.open }));
     let drawn = false;
     const drawOnce = () => {
         if (drawn || !box.open) return;
@@ -44,8 +71,41 @@ function foldedSection(parent, title, draw, open = false) {
     };
     box.addEventListener('toggle', drawOnce);
     parent.appendChild(box);
-    box.open = open;
+    box.open = open || Boolean(stored(FOLDS_KEY, {})[name]);
     drawOnce();
+}
+
+/** The models' state after the title: how many are missing, or that all are here (once checked). */
+function modelsNote(references) {
+    if (!references.some(ref => ref.currentAvailability)) return null;
+    const missing = references.filter(ref => ref.currentAvailability === 'missing').length;
+    return missing ? { text: t('recipeStatusMissing', { count: missing }), warn: true } : { text: t('recipeStatusReady') };
+}
+
+/** No saved set yet: what one is for, with Save the canvas at hand. */
+function noSetsTip(main, ctx) {
+    const tip = appendText(main, 'div', '', 'anomalous-wfd-tip');
+    const text = appendText(tip, 'div', '', 'anomalous-wfd-tip-text');
+    appendText(text, 'strong', t('workflowSetsTipTitle'));
+    appendText(text, 'p', t('workflowSetsTip'));
+    const save = button(tip, `+ ${t('workflowSetFromCanvas')}`, 'anomalous-wfd-tip-action');
+    save.onclick = async () => {
+        save.disabled = true;
+        await saveCanvasAsSet(ctx);
+        save.disabled = false;
+    };
+}
+
+/** On a saved set, until the viewer has pressed ⇄ or closed it: what ⇄ shows. */
+function compareTip(main) {
+    if (stored(COMPARE_TIP_KEY, false)) return;
+    const tip = appendText(main, 'div', '', 'anomalous-wfd-tip is-compare');
+    appendText(tip, 'p', t('workflowCompareTip'));
+    const done = button(tip, t('workflowTipDone'), 'anomalous-wfd-tip-action');
+    done.onclick = () => {
+        store(COMPARE_TIP_KEY, true);
+        tip.remove();
+    };
 }
 
 /** Writes `source`'s values onto the canvas's matching nodes and says how it went. */
@@ -87,10 +147,14 @@ function setHead(main, ctx, notebook, source) {
     const own = { workflow: recipe.workflow, label: t('workflowOwnValues') };
     const mine = { workflow: source.workflow, label: name };
     const compare = button(actions, `⇄ ${t('workflowCompare')}`, 'anomalous-wf-filter');
-    compare.onclick = () => openPopupMenu(compare, [
-        ...(notebook ? [{ label: t('compareWithDefault'), run: () => openParamCompare(own, mine) }] : []),
-        { label: t('compareWithCanvas'), run: () => openParamCompare(mine, { canvas: true }) },
-    ]);
+    compare.onclick = () => {
+        store(COMPARE_TIP_KEY, true);
+        main.querySelector('.anomalous-wfd-tip.is-compare')?.remove();
+        openPopupMenu(compare, [
+            ...(notebook ? [{ label: t('compareWithDefault'), run: () => openParamCompare(own, mine) }] : []),
+            { label: t('compareWithCanvas'), run: () => openParamCompare(mine, { canvas: true }) },
+        ]);
+    };
     const more = button(actions, '⋯', 'anomalous-wf-icon-btn');
     more.title = t('notebookMore');
     more.onclick = () => openPopupMenu(more, [
@@ -173,17 +237,24 @@ export function renderSetView(main, ctx) {
     }
     const source = notebook?.data?.workflow ? notebook.data : recipe;
     const sides = setHead(main, ctx, notebook, source);
+    if (notebook) compareTip(main);
+    else if (parameterState.status === 'ready' && !listedSets(recipe, parameterState.notebooks).length) noSetsTip(main, ctx);
     if (!notebook) renderRecipeInfo(main, owner, recipe);
     mainValues(main, source.params || {});
     renderPromptSection(section(main, t('recipeDetailPrompts')), owner, recipe, source, ctx.rerender);
     pictures(main, ctx, sides);
     if (!notebook) {
-        const missing = references.some(ref => ref.currentAvailability === 'missing');
-        foldedSection(main, `${t('recipeDetailModelComposition')} (${references.length})`, (box) => {
+        const note = modelsNote(references);
+        foldedSection(main, {
+            title: `${t('recipeDetailModelComposition')} (${references.length})`,
+            name: 'models',
+            note,
+            open: Boolean(note?.warn),
+        }, (box) => {
             const list = document.createElement('div');
             box.appendChild(list);
             renderRecipeModels(list, owner, recipe, references, ctx.openModel);
-        }, missing);
+        });
     }
-    foldedSection(main, t('workflowAllNodeValues'), box => renderRawNodesLazy(box, source));
+    foldedSection(main, { title: t('workflowAllNodeValues'), name: 'nodes' }, box => renderRawNodesLazy(box, source));
 }

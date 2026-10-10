@@ -473,7 +473,10 @@ covered by the `styles.css` manifest.
   `ui_recipe_set_view.js` is one set: Apply to canvas, ⇄ (with the workflow's own or the canvas),
   ⋯ (copy as a new set, rename, delete); the cover, notes and tags for the workflow's own
   (`ui_recipe_info.js`, which also holds the name and the models' state); the main values; the
-  prompts; the pictures made with these values; the models and every node's values, folded. A new
+  prompts; the pictures made with these values; the models (the fold says whether all are here)
+  and every node's values, folded, each opening as the viewer last left it (this browser's
+  storage); a tip while the workflow has no set, and one pointing at ⇄ on a set until it is used.
+  Narrow (docked) details turn the left column into one row of pills (a container query). A new
   set is named after the workflow with the next number (`nextSetName`). `ui_recipe_parameters.js`
   holds what the views share: prompt roles (automatic or set by hand) and their boxes, every node's
   values (unnamed ones labelled by their node type's widgets, `comfyWidgetLabels`), the new set's editor.
@@ -505,8 +508,12 @@ covered by the `styles.css` manifest.
   (`resolveCatalogRecipeReadiness`). `ui_recipe_cards.js` is one card: the cover with the models'
   state (`getRecipeReadiness`: a dot, or words when some are missing) and 功能模块 for a partial
   workflow, the name, a line of steps, sampler, LoRAs and size, then its model; Open and ⋯ (edit, export, delete)
-  over the cover on hover; a press opens the details, a drag opens it on the canvas. Its styles are
-  `styles/28-workflows.css`. `ui_popup_menu.js` is the small menu under a button they share, `ui_recipe_dialogs.js` owns save/edit dialogs, and `ui_recipe_media.js` owns shared cover helpers. Detail sessions synchronize detected model availability back to `owner.recipeRecords` via `syncRecipeReferencesToCatalog`.
+  as two small buttons in the cover's corner on hover; a press anywhere else opens the details, a drag opens it on
+  the canvas. Opening a workflow on the canvas hides the browser and leaves the Workflows list in place. Its styles are
+  `styles/28-workflows.css`. `ui_popup_menu.js` is the small menu under a button they share,
+  `ui_recipe_save_dialog.js` is saving the canvas as a workflow (the cover chosen on the left from the canvas,
+  the current cover or recent pictures as thumbnails; name, tags, notes and the fingerprint choice on the right;
+  the name defaults to the canvas's saved workflow name), `ui_recipe_dialogs.js` the edit dialog, and `ui_recipe_media.js` owns shared cover helpers. Detail sessions synchronize detected model availability back to `owner.recipeRecords` via `syncRecipeReferencesToCatalog`.
 - `ui_prompt_composer.js` owns the standalone Prompt Studio drawer (dock side, width, Esc);
   `ui_prompt_workbench.js` fills it: the top bar (tags or text view, the meanings' language) and
   saving a box as a card. `ui_prompt_target.js` decides what is edited, the prompt boxes of

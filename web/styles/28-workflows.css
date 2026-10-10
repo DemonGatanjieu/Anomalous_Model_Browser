@@ -181,9 +181,8 @@
 
 .anomalous-wf-actions {
     position: absolute;
-    top: calc(var(--wf-cover-height) - 42px);
+    top: calc(var(--wf-cover-height) - 38px);
     right: 8px;
-    left: 8px;
     display: flex;
     gap: 6px;
     opacity: 0;
@@ -201,20 +200,22 @@
 
 .anomalous-wf-open,
 .anomalous-wf-more {
-    height: 32px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
     border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: var(--amb-radius-control);
+    border-radius: 50%;
     background: rgba(15, 20, 30, 0.88);
     color: #f3f4f6;
-    font-size: 12.5px;
-    font-weight: 600;
+    font-size: 15px;
+    line-height: 1;
 }
 
-.anomalous-wf-open { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.anomalous-wf-more { flex: 0 0 34px; font-size: 16px; }
+.anomalous-wf-open { font-size: 11px; }
 
 .anomalous-wf-open:hover,
 .anomalous-wf-more:hover { background: rgba(30, 38, 56, 0.96); }
+.anomalous-wf-open:hover { border-color: var(--amb-link); color: #fff; }
 
 .anomalous-wf-info {
     display: flex;
@@ -276,16 +277,14 @@
 
 .anomalous-wf-list.is-list .anomalous-wf-info {
     flex: 1;
-    padding: 6px 220px 6px 14px;
+    padding: 6px 90px 6px 14px;
 }
 
 .anomalous-wf-list.is-list .anomalous-wf-extras { display: none; }
 
 .anomalous-wf-list.is-list .anomalous-wf-actions {
-    top: 16px;
+    top: 17px;
     right: 12px;
-    left: auto;
-    width: 200px;
 }
 
 /* Abyssal Scarlet: wine cards, crimson on hover. */
@@ -439,6 +438,154 @@
 }
 
 .anomalous-recipe-empty-action-btn:hover { background: var(--amb-btn-primary-hover); }
+
+/* Saving the canvas as a workflow (ui_recipe_save_dialog.js): cover on the left, fields on the right. */
+.anomalous-recipe-dialog.anomalous-wfs-dialog {
+    container: wfs / inline-size;
+    width: min(760px, 100%);
+    gap: 0;
+    overflow: hidden;
+    padding: 0;
+}
+
+.anomalous-wfs-head {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--amb-border);
+}
+
+.anomalous-wfs-titles { display: flex; flex: 1; flex-direction: column; gap: 4px; min-width: 0; }
+.anomalous-wfs-titles h3 { margin: 0; font-size: 16px; }
+
+.anomalous-wfs-close {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.anomalous-wfs-close:hover { background: rgba(var(--amb-ink-rgb), 0.08); color: var(--amb-text-main); }
+
+.anomalous-wfs-body {
+    display: grid;
+    flex: 1;
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: 18px;
+    min-height: 0;
+    padding: 16px 18px;
+    overflow-y: auto;
+}
+
+.anomalous-wfs-cover-side,
+.anomalous-wfs-fields { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.anomalous-wfs-fields { gap: 12px; }
+
+.anomalous-wfs-cover {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    border: 1px solid var(--amb-border);
+    border-radius: var(--amb-radius-panel);
+    background: var(--amb-bg-sunken);
+}
+
+.anomalous-wfs-cover img { width: 100%; height: 100%; object-fit: cover; }
+.anomalous-wfs-cover-empty { color: var(--amb-text-dim); font-size: 12px; }
+
+.anomalous-wfs-choices {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.anomalous-wfs-choice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    overflow: hidden;
+    padding: 0;
+    border: 1px solid var(--amb-border);
+    border-radius: 6px;
+    background: var(--amb-bg-sunken);
+    color: var(--amb-text-dim);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.anomalous-wfs-choice img { width: 100%; height: 100%; object-fit: cover; }
+.anomalous-wfs-choice:hover { border-color: var(--amb-border-hover); }
+.anomalous-wfs-choice.is-selected { border-color: var(--amb-link); box-shadow: 0 0 0 1px var(--amb-link); }
+
+.anomalous-wfs-field { display: flex; flex-direction: column; gap: 5px; }
+.anomalous-wfs-field textarea { min-height: 84px; resize: vertical; }
+
+.anomalous-wfs-label {
+    color: var(--amb-text-soft);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.anomalous-wfs-hint {
+    margin: 0;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.anomalous-wfs-verify {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: var(--amb-radius-panel);
+    background: rgba(var(--amb-ink-rgb), 0.03);
+}
+
+.anomalous-wfs-dialog .anomalous-wfs-check { flex-direction: row; align-items: center; gap: 8px; cursor: pointer; }
+.anomalous-wfs-check input { margin: 0; }
+
+.anomalous-wfs-foot {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--amb-border);
+}
+
+.anomalous-wfs-foot .anomalous-recipe-dialog-error { flex: 1; }
+
+.anomalous-wfs-cancel {
+    padding: 7px 16px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: var(--amb-radius-control);
+    background: transparent;
+    color: var(--amb-text-soft);
+    cursor: pointer;
+}
+
+.anomalous-wfs-cancel:hover { color: var(--amb-text-main); }
+
+@container wfs (max-width: 560px) {
+    .anomalous-wfs-body { grid-template-columns: minmax(0, 1fr); }
+    .anomalous-wfs-cover { aspect-ratio: 2 / 1; }
+    .anomalous-wfs-choices { grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); }
+}
 
 @media (max-width: 560px) {
     .anomalous-wf-bar { flex-wrap: wrap; }

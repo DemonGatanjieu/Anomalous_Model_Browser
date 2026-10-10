@@ -34,7 +34,7 @@ export function listedSets(recipe, notebooks) {
 }
 
 /** Saves the canvas's values as a new set of this workflow, when its nodes match; selects it. */
-async function saveCanvasAsSet(ctx) {
+export async function saveCanvasAsSet(ctx) {
     const { owner, recipe, parameterState } = ctx;
     try {
         if (!app.graph?.serialize) throw new Error('recipe_parameter_canvas_unavailable');
