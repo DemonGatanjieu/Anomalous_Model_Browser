@@ -61,6 +61,7 @@ def _summarize():
     return {
         "total": total, "matched": matched, "unmatched": len(unmatched), "new": len(new),
         "pending": sum(item["reason"] in ("offline", "network") for item in unmatched),
+        "damaged": sum(item["reason"] == "damaged" for item in unmatched),
         "unmatched_models": unmatched[:MAX_LISTED], "new_models": new[:MAX_LISTED],
         "skipped": len(skipped), "skipped_models": skipped[:MAX_LISTED],
     }

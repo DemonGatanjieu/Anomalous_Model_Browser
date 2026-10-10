@@ -254,6 +254,7 @@ function mainPage(owner, panel, { summary, config, last }, busy, progressHost) {
         stat(summary?.new, t('scanPageNew'), summary?.new ? 'new' : '', summary?.new ? open('new') : null),
     );
     page.append(stats);
+    if (summary?.damaged) page.append(button('anomalous-scan-damaged-note', t('scanPageDamagedNote', { count: summary.damaged }), open('unmatched')));
     if (summary?.skipped) page.append(button('anomalous-scan-skipped-note', t('scanPageSkippedNote', { count: summary.skipped }), open('skipped')));
     if (!summary) page.append(el('p', 'anomalous-scan-muted', t('scanPageSummaryFailed')));
 

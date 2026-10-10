@@ -52,8 +52,44 @@ def is_unmatched(info):
 
 
 # Why an unmatched model has no Civitai record: Civitai does not know the file; Civitai could
-# not be reached; the scan was offline. Scans before this was recorded leave it empty.
-UNMATCHED_REASONS = ("not_found", "network", "offline")
+# not be reached; the scan was offline; the file's header is damaged (safetensors_damage), so
+# neither Civitai nor the header can tell what it is. Scans before this was recorded leave it empty.
+UNMATCHED_REASONS = ("not_found", "network", "offline", "damaged")
+MAX_HEADER_BYTES = 100 * 1024 * 1024
+
+
+def safetensors_damage(file_path):
+    """What is wrong with a .safetensors file's header, or "" when it reads whole: "short" (no
+    room for the header's length), "header_size" (longer than the file), "header" (not the JSON
+    of a tensor list) or "truncated" (a tensor ends past the file's end: a download cut short).
+    Reads only the header. A file that cannot be opened now says nothing ("")."""
+    try:
+        size = os.path.getsize(file_path)
+        with open(file_path, "rb") as handle:
+            head = handle.read(8)
+            if len(head) < 8:
+                return "short"
+            header_size = struct.unpack("<Q", head)[0]
+            if not header_size or header_size > MAX_HEADER_BYTES or 8 + header_size > size:
+                return "header_size"
+            header = json.loads(handle.read(header_size).decode("utf-8"))
+    except OSError:
+        return ""
+    except ValueError:  # bad UTF-8 or JSON
+        return "header"
+    if not isinstance(header, dict):
+        return "header"
+    data_size = size - 8 - header_size
+    for name, tensor in header.items():
+        if name == "__metadata__":
+            continue
+        offsets = tensor.get("data_offsets") if isinstance(tensor, dict) else None
+        if not (isinstance(offsets, list) and len(offsets) == 2 and all(isinstance(value, int) for value in offsets)
+                and 0 <= offsets[0] <= offsets[1]):
+            return "header"
+        if offsets[1] > data_size:
+            return "truncated"
+    return ""
 
 
 def unmatched_reason(info):

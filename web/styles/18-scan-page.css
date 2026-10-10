@@ -50,6 +50,21 @@
     color: var(--amb-text-main);
 }
 
+/* "N model files are damaged": a warning under the counts, to their list. */
+.anomalous-scan-damaged-note {
+    align-self: flex-start;
+    padding: 6px 12px;
+    border: 1px solid color-mix(in srgb, var(--amb-danger-text) 45%, transparent);
+    border-radius: var(--amb-radius-control);
+    background: color-mix(in srgb, var(--amb-danger-text) 10%, transparent);
+    color: var(--amb-danger-text);
+    font-size: 0.9em;
+    text-align: left;
+    cursor: pointer;
+}
+
+.anomalous-scan-damaged-note:hover { background: color-mix(in srgb, var(--amb-danger-text) 16%, transparent); }
+
 .anomalous-scan-stats {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -568,7 +583,9 @@ label.anomalous-scan-setting {
 }
 
 .anomalous-scan-row.is-matched .anomalous-scan-row-mark { color: var(--amb-ok-text); }
-.anomalous-scan-row.is-failed .anomalous-scan-row-mark { color: var(--amb-danger-text); }
+.anomalous-scan-row.is-failed .anomalous-scan-row-mark,
+.anomalous-scan-row.is-damaged .anomalous-scan-row-mark,
+.anomalous-scan-row.is-damaged .anomalous-scan-row-detail { color: var(--amb-danger-text); }
 .anomalous-scan-row.is-unchanged .anomalous-scan-row-mark { color: var(--amb-text-muted); }
 
 .anomalous-scan-row-copy {
