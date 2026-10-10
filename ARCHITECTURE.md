@@ -24,7 +24,6 @@ and Current node lists the saved values. See the material contract below.
 | Workflow Recipes, packages, galleries, Parameter Notebooks, or prompt roles | [`docs/architecture/recipes.md`](docs/architecture/recipes.md) |
 | Saved prompts and node values (material files), image parameter details, keeping an output image | [`docs/architecture/material-library.md`](docs/architecture/material-library.md) |
 | Model Check, provenance hashes, missing-model recovery, or model scanning | [`docs/architecture/model-resolution.md`](docs/architecture/model-resolution.md) |
-| Browser audits, E2E functional bug reports, or verification sign-offs | [`docs/audits/README.md`](docs/audits/README.md) |
 | Why a current product boundary exists | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Recurring implementation mistakes and post-mortems | [`docs/architecture/lessons.md`](docs/architecture/lessons.md) |
 

@@ -8,4 +8,4 @@
 
 如果当前工具没有加载本文件，任务发起者应明确要求 Gemini 阅读 `GEMINI.md` 和 `AGENTS.md`。文件的存在不代表工具已实际读取，更不代表检查已自动执行。
 
-前端设计任务另读 [前端设计与协作方案](docs/plans/frontend-design-brief.md)；具体功能计划按该文链接进入，不使用历史视觉建议作为当前任务单。
+前端设计任务按 AGENTS.md 第 4 节和 [前端架构](docs/architecture/frontend.md) 进行，不使用历史视觉建议作为当前任务单。

@@ -103,9 +103,6 @@
 
 ### Fixes
 - **Ctrl+Z after a scan (扫描后的 Ctrl+Z)**: after any scan, the first Ctrl+Z used to seem to do nothing: the workflow's saved fingerprints had changed, which ComfyUI counted as a step. A change of fingerprints alone no longer takes a step.
-- **Picking a model keeps your place (换模型时列表不再跳回顶部)**: in Current node's model picker, choosing a model further down redrew the whole list and scrolled back to the top (the model was chosen all the same). Only the chosen card's outline changes now.
-- **A combo is saved once, not once per tag (搭配不再一下存几十次)**: opening a combo's bilingual tags saved it once for nothing, then once more for every tag's translation as it came back, so a long prompt wrote the file (and the activity log) dozens of times in a second. The translations are now saved together, half a second after the last one.
-- **Activity shows where a long prompt changed (操作记录能看到长提示词改了哪里)**: values are kept to 400 characters, cut from the start, so an edit late in a long prompt showed the same text before and after. A long before/after pair is now cut around its first difference.
 
 ## v1.58.0 Beta (New Layout, Keep & Reuse, Prompt Studio, Model Check, Voices) — 2026-10-09
 
@@ -207,6 +204,9 @@
 - **Gallery pictures dragged to the canvas open their workflow again (图库拖到画布又能直接打开工作流)**: since the gallery shows small thumbnails, Chrome handed ComfyUI the thumbnail, which has no workflow in it, so only a Load Image node appeared. The original is dragged now: on an empty spot it opens the workflow, on a Load Image node it becomes that node's picture (full size, not the thumbnail).
 - **The picture details' thumbnail rail keeps its place (查看参数左边的缩略图不再重新翻一遍)**: picking a picture near the end loads the next gallery page; the rail used to be rebuilt and scroll down again from the top, now the new pictures are added below.
 - **Back and the tabs work on a scrolled page (页面往下滚后，返回和顶部标签点得动)**: on a combo's page and on a Workflow Recipe's details, once the content was scrolled under the header, clicks on **‹ All combos**, **← Back to recipes** and the recipe's tabs went to the model tiles or the cover hidden behind them (Chrome still counted those as being there). Both pages now give the click to what you see.
+- **Picking a model keeps your place (换模型时列表不再跳回顶部)**: in Current node's model picker, choosing a model further down redrew the whole list and scrolled back to the top (the model was chosen all the same). Only the chosen card's outline changes now.
+- **A combo is saved once, not once per tag (搭配不再一下存几十次)**: opening a combo's bilingual tags saved it once for nothing, then once more for every tag's translation as it came back, so a long prompt wrote the file (and the activity log) dozens of times in a second. The translations are now saved together, half a second after the last one.
+- **Activity shows where a long prompt changed (操作记录能看到长提示词改了哪里)**: values are kept to 400 characters, cut from the start, so an edit late in a long prompt showed the same text before and after. A long before/after pair is now cut around its first difference.
 
 ## v1.57.3 Beta (Hotfix: Offline Scan, Prompt Workshop) — 2026-09-29
 
