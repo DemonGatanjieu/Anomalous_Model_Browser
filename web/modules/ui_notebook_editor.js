@@ -287,9 +287,7 @@ function createPromptSection(ctx, data) {
     const rawArea = document.createElement('textarea');
     rawArea.className = 'anomalous-nb-textarea';
     rawArea.value = data.promptEn || '';
-    rawArea.placeholder = window.anomalous_browser_lang === 'zh'
-        ? '在此输入提示词内容（英文词条用逗号分隔，支持自动双语切词翻译）...'
-        : 'Enter prompt here (comma-separated for tags, bilingual translation supported)...';
+    rawArea.placeholder = t('notebookPromptPlaceholder');
 
     const dualPane = document.createElement('div');
     dualPane.className = 'anomalous-nb-dual-pane';
@@ -298,10 +296,13 @@ function createPromptSection(ctx, data) {
     if (!data.translations) data.translations = {};
 
     let visualDebounceTimer = null;
+    // One save after a burst (typing, or every tag's translation arriving), not one per change.
+    const saveSoon = () => {
+        clearTimeout(ctx.pTimeout);
+        ctx.pTimeout = setTimeout(() => ctx.saveCurrentNotebook(), 500);
+    };
     const updateVisualTags = () => {
         const txt = rawArea.value;
-        data.promptEn = txt;
-        ctx.saveCurrentNotebook();
         if (!txt.trim()) {
             dualPane.replaceChildren();
             return;
@@ -386,7 +387,7 @@ function createPromptSection(ctx, data) {
                     if (d.translated) {
                         data.translations[tag] = d.translated;
                         txtR.innerText = d.translated;
-                        ctx.saveCurrentNotebook();
+                        saveSoon();
                     }
                 }).catch(() => { });
             }
@@ -408,9 +409,8 @@ function createPromptSection(ctx, data) {
     };
 
     rawArea.oninput = () => {
-        clearTimeout(ctx.pTimeout);
         data.promptEn = rawArea.value;
-        ctx.pTimeout = setTimeout(() => ctx.saveCurrentNotebook(), 500);
+        saveSoon();
 
         if (dualPane.style.display !== 'none') {
             clearTimeout(visualDebounceTimer);

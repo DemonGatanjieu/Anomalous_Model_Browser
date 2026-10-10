@@ -287,6 +287,13 @@ export function _openGalleryReplacer(node, w, options = {}) {
             });
         };
 
+        // Marks the chosen card in place: redrawing the grid would empty it and scroll back to the top.
+        const paintCard = (card) => {
+            const path = card.dataset.path;
+            const isSelected = path === selectedPath;
+            card.style.borderColor = isSelected ? '#6ea8ff' : path === currentPath ? '#e9b949' : 'rgba(255,255,255,0.09)';
+            card.style.boxShadow = isSelected ? '0 0 0 2px rgba(88,151,255,0.22),0 14px 28px rgba(0,0,0,0.28)' : '0 8px 20px rgba(0,0,0,0.16)';
+        };
         renderCards = () => {
             const term = searchInput.value.trim().toLowerCase();
             const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
@@ -311,14 +318,15 @@ export function _openGalleryReplacer(node, w, options = {}) {
                 const end = Math.min(index + 40, paths.length);
                 for (; index < end; index += 1) {
                     const path = paths[index];
-                    const isSelected = selectedPath === path;
                     const isCurrent = currentPath === path;
                     const info = modelInfo[path] || {};
                     const baseModel = info.metadata?.baseModel || '';
                     const card = document.createElement('div');
                     card.tabIndex = 0;
                     card.setAttribute('role', 'button');
-                    card.style.cssText = `position:relative;background:linear-gradient(160deg,var(--amb-bg-card-hover),var(--amb-bg-card));border-radius:11px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;border:1px solid ${isSelected ? '#6ea8ff' : isCurrent ? '#e9b949' : 'rgba(255,255,255,0.09)'};box-shadow:${isSelected ? '0 0 0 2px rgba(88,151,255,0.22),0 14px 28px rgba(0,0,0,0.28)' : '0 8px 20px rgba(0,0,0,0.16)'};transition:transform 0.12s,box-shadow 0.12s;min-width:0;`;
+                    card.dataset.path = path;
+                    card.style.cssText = 'position:relative;background:linear-gradient(160deg,var(--amb-bg-card-hover),var(--amb-bg-card));border-radius:11px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;border:1px solid transparent;transition:transform 0.12s,box-shadow 0.12s;min-width:0;';
+                    paintCard(card);
                     const previewBox = document.createElement('div');
                     previewBox.style.cssText = 'height:150px;background:radial-gradient(circle at 50% 15%,#2b3041,var(--amb-bg-page) 72%);display:flex;align-items:center;justify-content:center;font-size:30px;position:relative;overflow:hidden;';
                     const previewUrl = info.preview_url || previews[path];
@@ -374,7 +382,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
                     const choose = () => {
                         selectedPath = path;
                         updateSelection();
-                        renderCards();
+                        grid.querySelectorAll('[data-path]').forEach(paintCard);
                     };
                     card.onclick = choose;
                     card.onkeydown = event => {
