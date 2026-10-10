@@ -43,7 +43,6 @@
 - **Where downloads (and now imports) go is a choice**: by base model (the new default), in Downloads then by base model, all in a Downloads folder, straight in the type's folder, or your own folder typed by hand; an example path shows the result. Without a saved setting, downloads now go by base model instead of into a Downloads folder.
 
 ### Fixes
-- **The Workflows page was blank after opening a workflow (在新画布打开后再打开插件是空的)**: opening a workflow on the canvas (▶ on a card or in its details) and then the browser again showed an empty page. The Workflows list is there again.
 - **Edit emotions: every clip in the list, and the line follows the clip (编辑情绪：下拉列出全部音频，换音频台词跟着换)**: a box that already held a file listed only the files whose names contain it (the browser filters by the box's text), so a character's other clips seemed missing. Pressing the box now lists all of them, with the current file shown greyed; leaving without a pick keeps it. Picking another clip no longer keeps the old clip's line beside it: the line the node already reads for that clip is filled in, otherwise the line the node finds for the clip (its .txt / .lab or the annotation list) is filled in, with Anomalous_TTS from interface 14 on (older versions leave the box blank and the node reads the line when it speaks); going back to the first clip brings its line back. A blank line box shows, greyed, the line the node uses for its clip.
 - **Search a character's clips by line (按台词找参考音频)**: Edit emotions has a search box above the clips: type part of a line or a file name and the matches list with their lines, to hear (▶), **Use as main voice** or **Add as emotion** (a new emotion row with that clip and its line, ready for its name). Searching lines needs Anomalous_TTS interface 14; with an older version it searches file names.
 
@@ -215,6 +214,7 @@
 - **A character voice dropped on a TTS node stays put (拖到 TTS 节点的角色声音刷新后还在)**: the same gap as above: reloading right after the drop brought back the node's previous voice, and Ctrl+Z skipped it. Every drop from the browser onto the canvas is now recorded as one history step.
 
 ### Fixes
+- **The Workflows page was blank after opening a workflow (在新画布打开后再打开插件是空的)**: opening a workflow on the canvas (Open on a card or in its details) and then the browser again showed an empty page. The Workflows list is there again.
 - **Language follows ComfyUI again (语言跟随 ComfyUI)**: with the language left on "Follow ComfyUI" (the default), changing ComfyUI's language now switches the browser the next time it opens; before, it kept the old language until the page was reloaded.
 - **Empty list on the audio pages (音频页左边列表是空的)**: after reloading ComfyUI, a browser that reopened straight onto Voices or Audio showed an empty list column until you switched to the image side and back.
 - Prompt Studio's new card form showed "cancel" instead of 取消 on its Cancel button.
