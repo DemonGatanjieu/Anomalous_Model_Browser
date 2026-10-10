@@ -123,7 +123,8 @@ def _read_metadata(file_path):
                     name = data.get("name", "")
                     if "model" in data and isinstance(data["model"], dict):
                         model_name = data["model"].get("name", "")
-                        name = f"{model_name} - {name}".strip(' -')
+                        # A model and version of one name (what the file alone tells) read once.
+                        name = f"{model_name} - {name}" if model_name and name and model_name != name else model_name or name
                         
                     description = data.get("description", "") or ""
                     if not description and "model" in data and isinstance(data["model"], dict):

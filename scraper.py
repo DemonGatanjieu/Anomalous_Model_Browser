@@ -215,9 +215,14 @@ def scan_one(args, state, rename_log, root, filename, previous):
     info_data = civitai_data
     if file_hash:
         info_data["anomalous_file_identity"] = computed_file_identity(file_path, file_hash)
+    # What the file alone tells has no standard name: both names are the file's own, so a
+    # rename would only repeat it (name_name, then name_name_name_name on the next scan).
+    inferred = is_unmatched(civitai_data)
     # Civitai's name for the card; a name set in the model editor lives in
     # <model>.anomalous.json and is shown instead.
-    if args.virtual_rename:
+    if inferred:
+        info_data.pop("anomalous_custom_name", None)
+    elif args.virtual_rename:
         info_data["anomalous_custom_name"] = f"{model_name}_{version_name}"
     if not args.dry_run:
         with open(old_base + ".info", 'w', encoding='utf-8') as f:
@@ -257,6 +262,8 @@ def scan_one(args, state, rename_log, root, filename, previous):
 
     if args.skip_rename or not args.physical_rename:
         print(f"[*] 物理重命名已跳过。仅保存 .info 及其可能包含的虚拟重命名。")
+    elif inferred:
+        print(f"[*] 没有 Civitai 的标准名称，保留原文件名。")
     elif file_path != new_file_path and new_filename != filename:
         if os.path.exists(new_file_path):
             print(f"[*] 目标文件名已存在，正在验证内容是否完全相同: {filename}")
