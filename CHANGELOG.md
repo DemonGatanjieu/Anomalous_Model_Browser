@@ -101,6 +101,9 @@
 ### ⭐ A Star for the project (点个 Star)
 - Home's "Found a problem, or have an idea?" band ends with **⭐ Star on GitHub**, and Settings → Help and feedback has **Star it on GitHub**: both open the project page, where the ☆ Star button is. Nothing pops up and nothing is fetched; it is there for whoever wants it.
 
+### ⚠️ Damaged model files are named as such (模型文件损坏会直接说出来)
+- A model whose file header cannot be read (a download cut short, or another tool that rewrote the header and failed) used to look like a model Civitai simply does not know, inferred from the file. A scan now checks the header of every model it cannot match and names these **文件损坏**: a red badge on the card, a line in the details, a warning on the scan page, and first place in its unmatched list with advice to download the model again (then **Look up again**). Only the header is read. Models scanned before keep their old reason until they are looked up again.
+
 ### Fixes
 - **Ctrl+Z after a scan (扫描后的 Ctrl+Z)**: after any scan, the first Ctrl+Z used to seem to do nothing: the workflow's saved fingerprints had changed, which ComfyUI counted as a step. A change of fingerprints alone no longer takes a step.
 

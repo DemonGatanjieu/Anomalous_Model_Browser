@@ -91,6 +91,19 @@
     text-transform: none;
 }
 
+/* A model whose file header is damaged: to download again. */
+.anomalous-card-badge.is-damaged {
+    border-color: rgba(239, 68, 68, 0.7);
+    background: rgba(127, 29, 29, 0.85);
+    color: #fecaca;
+    text-transform: none;
+}
+
+.anomalous-source-damaged {
+    color: var(--amb-danger-text);
+    font-weight: 600;
+}
+
 .anomalous-source-sep {
     opacity: 0.5;
 }

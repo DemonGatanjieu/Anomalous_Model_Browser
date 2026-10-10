@@ -73,6 +73,21 @@ class ScanRetryTests(unittest.TestCase):
         self.assertNotIn("anomalous_custom_name", info)
         self.assertEqual(metadata._read_metadata(str(self.new))["name"], "new")
 
+    def test_damaged_files_are_named_as_such(self):
+        # "model bytes" is no safetensors header; a whole file next to it is only unknown to Civitai.
+        header = json.dumps({"w": {"dtype": "F32", "shape": [1], "data_offsets": [0, 4]}}).encode()
+        whole = Path(self.temp.name, "whole.safetensors")
+        whole.write_bytes(len(header).to_bytes(8, "little") + header + b"\0" * 4)
+        with mock.patch.object(sys, "argv", ["scraper.py", self.temp.name]), \
+                mock.patch.object(scraper, "fetch_civitai_info", return_value=None), \
+                mock.patch.object(scraper, "calculate_sha256", return_value=DIGEST):
+            scraper.main()
+        reason = lambda path: json.loads(Path(str(path)[:-12] + ".info").read_text(encoding="utf-8"))["anomalous_unmatched_reason"]
+        self.assertEqual(reason(self.new), "damaged")
+        self.assertEqual(reason(whole), "not_found")
+        with mock.patch.object(scan_summary, "get_active_scan_paths", return_value=[self.temp.name]):
+            self.assertEqual(scan_summary._summarize()["damaged"], 1)
+
     def test_changed_file_is_hashed_again(self):
         self.unmatched.write_bytes(b"other bytes, other size")
         with mock.patch.object(scraper, "write_report") as report:

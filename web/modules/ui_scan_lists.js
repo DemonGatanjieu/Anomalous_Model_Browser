@@ -160,9 +160,9 @@ function listOf(view, summary, last, actions) {
                 STATUS_MARKS[item.status] || ''),
         };
     }
-    // Unmatched: those the next online scan looks up by itself first.
-    const items = [...(summary?.unmatched_models || [])]
-        .sort((a, b) => Number(isPending(b.reason)) - Number(isPending(a.reason)));
+    // Unmatched: damaged files first (to download again), then those the next online scan looks up by itself.
+    const rank = item => (item.reason === 'damaged' ? 2 : isPending(item.reason) ? 1 : 0);
+    const items = [...(summary?.unmatched_models || [])].sort((a, b) => rank(b) - rank(a));
     // Civitai does not know it and the file is no known image model: say what it may be.
     const guess = item => (item.base ? `≈ ${item.base}` : item.reason === 'not_found' ? t('scanReasonNotImage') : '');
     return {
@@ -170,8 +170,9 @@ function listOf(view, summary, last, actions) {
         title: t('scanListUnmatched', { count: items.length }),
         hint: t(actions.offline ? 'scanListUnmatchedHintOffline' : 'scanListUnmatchedHint'),
         all: items.length && !actions.offline ? [t('scanPageRetry', { count: items.length }), actions.retryAll] : null,
-        render: item => row(item, [reasonText(item.reason), guess(item)].filter(Boolean).join(' · '),
-            unmatchedButtons(item, actions), '≈'),
+        render: item => row(item.reason === 'damaged' ? { ...item, status: 'damaged' } : item,
+            [reasonText(item.reason), guess(item)].filter(Boolean).join(' · '),
+            unmatchedButtons(item, actions), item.reason === 'damaged' ? '⚠' : '≈'),
     };
 }
 

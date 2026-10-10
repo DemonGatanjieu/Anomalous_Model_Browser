@@ -6,7 +6,7 @@
 
 import { translate as t } from './locales.js';
 
-const REASON_KEYS = { not_found: 'scanReasonNotFound', network: 'scanReasonNetwork', offline: 'scanReasonOffline' };
+const REASON_KEYS = { not_found: 'scanReasonNotFound', network: 'scanReasonNetwork', offline: 'scanReasonOffline', damaged: 'scanReasonDamaged' };
 const ERROR_KEYS = { name_conflict: 'scanErrorNameConflict', duplicate_kept: 'scanErrorDuplicateKept' };
 const COUNT_KEYS = [
     ['matched', 'scanCountMatched'], ['inferred', 'scanCountInferred'], ['failed', 'scanCountFailed'],

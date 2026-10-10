@@ -19,7 +19,7 @@ import argparse
 import shutil
 from model_policies import is_physical_rename_protected
 from recycle_bin import move_to_trash
-from model_identity import USER_INFO_SUFFIX, computed_file_identity, file_sha256, infer_base_model_from_header, is_unmatched, scan_info_path, sidecar_file_hash, sidecar_info as read_local_info, unmatched_reason
+from model_identity import USER_INFO_SUFFIX, computed_file_identity, file_sha256, infer_base_model_from_header, is_unmatched, safetensors_damage, scan_info_path, sidecar_file_hash, sidecar_info as read_local_info, unmatched_reason
 from civitai_client import CIVITAI_API_KEY, CivitaiUnreachable, download_media, fetch_civitai_info, fetch_model_description
 
 
@@ -181,6 +181,12 @@ def scan_one(args, state, rename_log, root, filename, previous):
             file_hash = sidecar_file_hash(previous, file_path, (previous.get("files") or [{}])[0])[0]
         file_hash = file_hash or calculate_sha256(file_path)
         civitai_data, reason = ask_civitai(args, state, file_hash)
+        # A damaged header changes the file's hash and hides its tensors: say so instead of
+        # "Civitai does not know it", so the user downloads it again.
+        damage = "" if civitai_data else safetensors_damage(file_path)
+        if damage:
+            print(f"\033[91m[-] 文件头损坏 ({damage})，文件可能不完整或被改坏了，建议重新下载: {filename}\033[0m")
+            reason = "damaged"
 
     # What was read from disk is not fetched again: only fresh Civitai data needs the model
     # page's description and the cover.
