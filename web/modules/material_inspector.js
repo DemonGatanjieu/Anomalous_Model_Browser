@@ -295,7 +295,7 @@ function comfyNodeTitle(nodeType) {
     return (ctor && ctor.title) || nodeType;
 }
 
-function comfyWidgetLabels(nodeType) {
+export function comfyWidgetLabels(nodeType) { // widget labels in order (ComfyUI's, else known ones)
     if (comfyWidgetLabelCache.has(nodeType)) return comfyWidgetLabelCache.get(nodeType);
     let labels = [];
     try {

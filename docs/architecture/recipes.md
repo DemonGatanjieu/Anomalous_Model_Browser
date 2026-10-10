@@ -93,7 +93,7 @@ full copy value. Detail rows provide visible expand/collapse and copy controls
 for long values and prompts; they do not silently truncate authoritative data.
 
 `ui_recipe_detail.js` coordinates the detail session, active tab, and model composition.
-`ui_recipe_overview.js` owns the overview; `ui_recipe_parameters.js` owns prompt roles,
+`ui_recipe_overview.js` owns the overview (styles in `styles/29-workflow-detail.css`); `ui_recipe_parameters.js` owns prompt roles,
 parameter editing, raw nodes, and preset saving; and `ui_recipe_models.js`
 lists the models with previews and whether each is here under its saved name. Inline persistence is centralized
 in `ui_recipe_metadata.js`, with pure ordering/value helpers in

@@ -128,32 +128,6 @@ dialog.anomalous-gallery-viewer::backdrop {
     transition: filter 0.25s ease, transform 0.25s ease, opacity 0.25s ease;
 }
 
-/* 封面右上角作用域徽章 */
-.anomalous-recipe-scope-pill {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.65rem;
-    font-weight: 600;
-    background: rgba(10, 12, 16, 0.85);
-    backdrop-filter: blur(6px);
-    border: 1px solid var(--amb-border-strong);
-    color: var(--amb-text-muted);
-    pointer-events: none;
-}
-
-.anomalous-recipe-scope-pill.is-partial {
-    border-color: rgba(245, 158, 11, 0.4);
-    color: var(--amb-warn);
-}
-
-.anomalous-recipe-scope-pill.is-complete {
-    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
-    color: var(--amb-link);
-}
-
 /* 配方单行文本标签 (收拢至单行 Flex，溢出截断) */
 .anomalous-recipe-tags {
     display: flex;
@@ -185,79 +159,6 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-recipe-badge-tag:hover {
     background: rgba(var(--amb-ink-rgb), 0.1);
     color: var(--amb-text-main);
-}
-
-.anomalous-recipe-btn-primary-action {
-    position: relative;
-    flex: 1;
-    height: 32px;
-    padding: 0 12px;
-    border-radius: var(--amb-radius-control, 6px);
-    background: var(--amb-btn-primary-bg, #D7D9E0);
-    color: var(--amb-btn-primary-text, #15171C);
-    border: 1px solid var(--amb-border-strong);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.2px;
-    cursor: pointer;
-    text-align: center;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    overflow: hidden;
-    box-shadow: none;
-    user-select: none;
-    box-sizing: border-box;
-}
-
-.anomalous-recipe-btn-primary-action:hover {
-    background: var(--amb-btn-primary-hover, var(--amb-btn-primary-bg));
-    border-color: rgba(var(--amb-ink-rgb), 0.4);
-    box-shadow: none;
-}
-
-.anomalous-recipe-btn-primary-action:active {
-    transform: translateY(1px);
-    filter: brightness(0.95);
-}
-
-/* Detail View: Readiness Banner */
-.anomalous-recipe-readiness-banner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 16px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    font-size: 0.88rem;
-    backdrop-filter: blur(10px);
-}
-
-.anomalous-recipe-readiness-copy {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-}
-
-.anomalous-recipe-readiness-banner.is-ready {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.08));
-    border: 1px solid rgba(16, 185, 129, 0.35);
-    color: var(--amb-ok-soft); /* was pink on the green banner */
-}
-
-.anomalous-recipe-readiness-banner.is-warning {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.08));
-    border: 1px solid rgba(245, 158, 11, 0.4);
-    color: var(--amb-warn-soft);
-}
-
-.anomalous-recipe-readiness-banner.is-missing {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(185, 28, 28, 0.08));
-    border: 1px solid rgba(239, 68, 68, 0.4);
-    color: var(--amb-lt-danger, #fecaca);
 }
 
 /* Metric Cards for Sampling Parameters */
@@ -296,26 +197,6 @@ dialog.anomalous-gallery-viewer::backdrop {
 .anomalous-recipe-lazy-expand-btn:hover {
     background: rgba(var(--amb-ink-rgb), 0.09);
     border-color: var(--amb-border-strong);
-}
-
-.anomalous-recipe-btn-primary-action {
-    flex: 1;
-    padding: 8px 14px;
-    border-radius: 8px;
-    background: rgba(var(--amb-ink-rgb), 0.1);
-    border: 1px solid var(--amb-border-strong);
-    color: var(--amb-text-main);
-    font-size: 0.82rem;
-    font-weight: 500;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.15s ease;
-}
-
-.anomalous-recipe-btn-primary-action:hover {
-    background: rgba(var(--amb-ink-rgb), 0.16);
-    border-color: var(--amb-border-strong);
-    color: var(--amb-text-main);
 }
 
 /* Metric Cards for Sampling Parameters */

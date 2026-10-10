@@ -593,30 +593,40 @@ dialog.anomalous-gallery-viewer[open] {
     margin: 0;
 }
 
+/* The details' bar, like the Workflows page's: Back, then the tabs. */
 .anomalous-recipe-detail-tabs {
     display: flex;
     flex: 0 0 auto;
-    gap: 4px;
+    align-items: center;
+    gap: 2px;
     overflow-x: auto;
-    padding: 8px 52px 8px 18px;
-    border-bottom: 1px solid var(--amb-border-strong);
-    background: var(--amb-bg-card-hover);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--amb-border);
 }
 
 .anomalous-recipe-detail-tab {
-    padding: 7px 11px;
+    height: 32px;
+    padding: 0 12px;
     border: 1px solid transparent;
-    border-radius: 7px;
+    border-radius: var(--amb-radius-control);
     color: var(--amb-text-muted);
     background: transparent;
+    font-size: 13px;
     cursor: pointer;
     white-space: nowrap;
 }
 
+.anomalous-recipe-detail-tab:hover { color: var(--amb-text-main); }
+
 .anomalous-recipe-detail-tab.active {
     border-color: var(--amb-border-strong);
     color: var(--amb-text-main);
-    background: rgba(var(--amb-ink-rgb), 0.1);
+    background: var(--amb-bg-card-hover);
+}
+
+.anomalous-recipe-back-tab {
+    margin-right: 10px;
+    padding-left: 6px;
 }
 
 .theme-abyssal-scarlet .anomalous-recipe-detail-tab.active {
@@ -690,48 +700,10 @@ dialog.anomalous-gallery-viewer[open] {
     box-shadow: none;
 }
 
-.anomalous-recipe-detail-overview,
 .anomalous-recipe-detail-section {
     display: flex;
     flex-direction: column;
     gap: 10px;
-}
-
-.anomalous-recipe-detail-hero {
-    display: grid;
-    grid-template-columns: minmax(140px, 220px) minmax(0, 1fr);
-    gap: 14px;
-    align-items: stretch;
-}
-
-.anomalous-recipe-detail-hero img {
-    width: 100%;
-    max-height: 190px;
-    min-height: 120px;
-    border-radius: 9px;
-    object-fit: contain;
-    background: var(--amb-bg-page);
-}
-
-.anomalous-recipe-detail-hero video {
-    width: 100%;
-    max-height: 190px;
-    min-height: 120px;
-    border-radius: 9px;
-    object-fit: contain;
-    background: var(--amb-bg-page);
-}
-
-.anomalous-recipe-detail-hero-copy {
-    display: flex;
-    min-width: 0;
-    flex-direction: column;
-    gap: 7px;
-    justify-content: center;
-}
-
-.anomalous-recipe-inline-title-row {
-    min-width: 0;
 }
 
 .anomalous-recipe-inline-title {
@@ -815,17 +787,6 @@ dialog.anomalous-gallery-viewer[open] {
     color: var(--amb-lt-accent-text, #cce0ff);
 }
 
-.anomalous-recipe-detail-hero-copy h3 {
-    margin: 0;
-    color: var(--amb-lt-text, #f1f1f1);
-    font-size: 1.35rem;
-}
-
-.anomalous-recipe-detail-hero-copy p {
-    margin: 0;
-    white-space: pre-wrap;
-}
-
 .anomalous-recipe-detail-notes {
     display: flex;
     min-width: 0;
@@ -839,32 +800,12 @@ dialog.anomalous-gallery-viewer[open] {
     color: var(--amb-text-muted);
 }
 
-.anomalous-recipe-detail-stat {
-    display: grid;
-    min-width: 0;
-    grid-template-columns: max-content minmax(0, 1fr);
-    align-items: start;
-    gap: 4px;
-    padding: 9px 10px;
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 8px;
-    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.16));
-}
-
-.anomalous-recipe-detail-stat-label,
 .anomalous-recipe-detail-label {
     color: var(--amb-text-muted);
     font-size: 0.8rem;
     word-break: break-all;
     overflow-wrap: anywhere;
 }
-
-.anomalous-recipe-detail-stat strong {
-    color: var(--amb-text-main);
-}
-
-.anomalous-recipe-detail-stat-good { color: var(--amb-ok-soft) !important; }
-.anomalous-recipe-detail-stat-warn { color: #ffd493 !important; }
 
 .anomalous-recipe-model-composition {
     display: grid;
@@ -1493,9 +1434,7 @@ dialog.anomalous-gallery-viewer[open] {
 }
 
 @media (max-width: 820px) {
-    .anomalous-recipe-detail-hero { grid-template-columns: 1fr; }
-    .anomalous-recipe-detail-hero img { max-height: 180px; }
-    .anomalous-recipe-detail-content { padding: 10px; }
+            .anomalous-recipe-detail-content { padding: 10px; }
     .anomalous-recipe-parameter-notebook-layout { grid-template-columns: 1fr; }
     .anomalous-recipe-parameter-notebook-sidebar { position: static; max-height: none; }
     .anomalous-recipe-parameter-editor-name { grid-template-columns: 1fr; gap: 5px; }
@@ -1591,76 +1530,6 @@ dialog.anomalous-gallery-viewer[open] {
 
 /* Secondary Actions Group */
 
-/* Primary Actions Group */
-.anomalous-recipe-actions-primary {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    position: relative;
-}
-
-.anomalous-recipe-actions-primary .anomalous-recipe-btn-primary-action {
-    flex: 0 0 auto;
-    min-width: 140px;
-    white-space: nowrap;
-}
-
-/* Floating More Dropdown in Recipe Overview */
-.anomalous-recipe-dropdown-wrapper {
-    position: relative;
-    display: inline-flex;
-}
-
-.anomalous-recipe-more-btn {
-    position: relative;
-    background: rgba(var(--amb-ink-rgb), 0.06);
-    color: var(--amb-text-soft);
-    border: 1px solid var(--amb-border-strong);
-    height: 32px;
-    padding: 0 12px;
-    border-radius: var(--amb-radius-control, 6px);
-    cursor: pointer;
-    font-size: 0.82rem;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    transition: all 0.16s ease;
-    user-select: none;
-    box-sizing: border-box;
-    white-space: nowrap;
-}
-
-.anomalous-recipe-more-btn:hover,
-.anomalous-recipe-more-btn.active {
-    background: rgba(var(--amb-ink-rgb), 0.12);
-    border-color: var(--amb-border-strong);
-    color: var(--amb-text-main);
-}
-
-.anomalous-recipe-dropdown-menu {
-    display: none;
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    z-index: 100;
-    min-width: 140px;
-    background: var(--amb-lt-surface, rgba(24, 24, 28, 0.96));
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--amb-border-strong);
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.35);
-    padding: 4px;
-    flex-direction: column;
-    gap: 2px;
-    animation: anomalous-recipe-dropdown-fadein 0.15s ease-out;
-}
-
-.anomalous-recipe-dropdown-menu.show {
-    display: flex;
-}
-
 @keyframes anomalous-recipe-dropdown-fadein {
     from {
         opacity: 0;
@@ -1670,35 +1539,6 @@ dialog.anomalous-gallery-viewer[open] {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-.anomalous-recipe-dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 8px 12px;
-    border: none;
-    background: transparent;
-    color: var(--amb-text-main);
-    font-size: 0.82rem;
-    font-weight: 500;
-    border-radius: 5px;
-    cursor: pointer;
-    text-align: left;
-    transition: all 0.15s ease;
-    box-sizing: border-box;
-    white-space: nowrap;
-}
-
-.anomalous-recipe-dropdown-item:hover:not(:disabled) {
-    background: rgba(var(--amb-ink-rgb), 0.08);
-    color: var(--amb-text-main);
-}
-
-.anomalous-recipe-dropdown-item:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
 }
 
 .anomalous-recipe-header-status {
@@ -1863,17 +1703,6 @@ dialog.anomalous-gallery-viewer[open] {
 .anomalous-recipe-detail-parameter-node.is-collapsed {
     max-height: 180px;
     overflow: hidden;
-}
-
-/* Hero Section Styling */
-.anomalous-recipe-detail-hero {
-    position: relative;
-    width: 100%;
-    max-height: 350px;
-    margin-bottom: 24px;
-    border-radius: 8px;
-    overflow: hidden;
-    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.2));
 }
 
 /* Search blocks (ui_search_chips.js); used above the output gallery */

@@ -467,11 +467,12 @@ covered by the `styles.css` manifest.
   `notebook_canvas.js` puts a combo on the canvas as a new wired group of nodes (following the pointer, or at a dropped
   card's position; Esc takes a following group off again); it never changes nodes already there. Combos are a rail page. `ui_recipe_detail.js`
   coordinates the Workflow Recipe detail session and model composition. `ui_recipe_overview.js`
-  owns the Overview prompt showcase (with `entry.text` fallback, guarded non-shrinking primary action CTA, and floating Popover More dropdown menu), and `ui_recipe_parameters.js`
-  owns the responsive Parameter Presets workspace (featuring default-expanded raw node parameter inspection,
-  a `clamp(230px, 24vw, 290px)` sidebar with guarded card actions, uncluttered console action bars with deferred status feedback,
-  `minmax(130px, 1fr)` Bento Grid with universal click-to-copy, LoRA cards with flexbox truncation guards,
-  and sticky editor headers).
+  is the overview, styled like the Workflows page (`styles/29-workflow-detail.css`): the cover, the
+  name (edited in place), the models' state as one line, Open and ⋯ (edit, export), the numbers,
+  notes and tags, the prompts (long ones folded), the models. `ui_recipe_parameters.js` is the
+  Parameters tab: the sets (buttons on hover; a new one is named after the recipe with the next
+  number, `nextSetName`), the selected set's values, its raw nodes (unnamed values labelled by
+  their node type's widgets, `comfyWidgetLabels`) and the editor.
   `prompt_boxes.js` is the one place that finds prompt boxes on the live canvas: a
   multiline STRING input by the node's ComfyUI definition, whatever it is called; its
   role is the box's own name (positive / negative) or else the wiring (outputs followed

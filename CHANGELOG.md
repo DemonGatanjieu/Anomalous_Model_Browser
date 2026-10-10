@@ -29,6 +29,7 @@
 
 ### 🗂️ A tidier Workflows page (工作流页面重做)
 - One bar on top: search, **Filter** (kind and tag in one menu), grid or list, share and import, and **Save the canvas**. The drag tip strip and the red ✕ are gone (Esc still closes the page; the empty page explains dragging).
+- A workflow's details match: a quieter bar (Back and the tabs); the overview shows the models' state as one line instead of a banner, Open and ⋯ instead of More, the numbers as small tiles, and folds long prompts (**Show all**). Parameter sets show their buttons on hover and names on two lines; a new set is named after the workflow with a number (阿罗娜K4.0 2) instead of a long suffix; values saved without names show their real names instead of 控件 1, 控件 2.
 - Cards keep the picture, the name, a line of steps, sampler, LoRAs and size, and the model. The models' state is a dot on the cover, with words only when some are missing; 功能模块 marks a partial workflow. **Open** and **⋯** (edit, export, delete) show when the pointer is on a card.
 
 ### ⚙️ Settings in tabs (设置分组)

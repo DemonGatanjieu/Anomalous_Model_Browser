@@ -9,7 +9,8 @@ import { applyRecipeWidgetChanges, captureRecipeDraft, isSupportedPromptNodeType
 import { PROMPT_ROLES, appendCopyButton, appendText, appendValueViewer, button, dateText, displayValue } from "./ui_recipe_detail_dom.js";
 import { openGalleryImageDetail, outputImageUrl, renderRecipeGallery } from "./ui_recipe_gallery.js";
 import { updateRecipeMetadata } from "./ui_recipe_metadata.js";
-import { decorateParameterSet } from "./ui_param_set_keys.js";
+import { decorateParameterSet, nextSetName } from "./ui_param_set_keys.js";
+import { comfyWidgetLabels } from "./material_inspector.js";
 import { cloneJson, editorValueText, formatRecipeResolution, isVolatileParameter, parameterNodeOrder, parseEditorValue, promptRoleLabel } from "./ui_recipe_parameter_utils.js";
 
 const t = (key, params) => translate(key, params);
@@ -196,7 +197,7 @@ function renderParameterNotebookEditor(wrapper, owner, recipe, parameterState, s
         if (!workflowNode || !Array.isArray(workflowNode.widgets_values)) continue;
         const widgets = Array.isArray(node?.widgets) && node.widgets.length
             ? node.widgets
-            : workflowNode.widgets_values.map((value, index) => ({ name: `${t('recipeDetailWidget')} ${index + 1}`, index, value }));
+            : workflowNode.widgets_values.map((value, index) => ({ name: comfyWidgetLabels(workflowNode.type)[index] || `${t('recipeDetailWidget')} ${index + 1}`, index, value }));
         const block = document.createElement('article');
         block.className = 'anomalous-recipe-detail-parameter-node';
         const titleText = [node.title, node.type].filter(Boolean).join(' · ') || t('recipeDetailUnknownNode');
@@ -284,7 +285,7 @@ function renderRawNodesLazy(parent, source) {
                 ? node.widgets
                 : (Array.isArray(workflowNode?.widgets_values)
                     ? workflowNode.widgets_values.map((value, index) => ({
-                        name: `${t('recipeDetailWidget')} ${index + 1}`,
+                        name: comfyWidgetLabels(node?.type)[index] || `${t('recipeDetailWidget')} ${index + 1}`,
                         index,
                         value,
                     }))
@@ -570,7 +571,7 @@ export function renderRecipeParameters(content, owner, recipe, gallery, refreshG
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    name: `${recipe.name || t('recipeUntitled')} · ${t('recipeParameterReadCurrent')}`,
+                    name: nextSetName(recipe, parameterState.notebooks),
                     tags: recipe.tags || [],
                     notes: recipe.notes || '',
                     params: current.metadata,
@@ -613,7 +614,7 @@ export function renderRecipeParameters(content, owner, recipe, gallery, refreshG
         if (!draft?.workflow) return;
         parameterState.editor = {
             draft,
-            name: `${recipe.name || t('recipeUntitled')} · ${t('recipeParameterNew')}`,
+            name: nextSetName(recipe, parameterState.notebooks),
         };
         parameterState.selectedFilename = null;
         gallery.status = 'idle';
@@ -623,7 +624,6 @@ export function renderRecipeParameters(content, owner, recipe, gallery, refreshG
     };
 
     sidebar.appendChild(sidebarActions);
-    appendText(sidebar, 'small', t('recipeParameterSnapshotsHint'), 'anomalous-recipe-detail-muted');
     const snapshotList = document.createElement('div');
     snapshotList.className = 'anomalous-recipe-parameter-notebook-list';
     snapshotList.style.marginTop = '8px';
@@ -765,8 +765,6 @@ export function renderRecipeParameters(content, owner, recipe, gallery, refreshG
     appendText(titleRow, 'h3', currentName, 'anomalous-preset-console-title');
     appendText(titleRow, 'span', t('recipeParameterActive'), 'anomalous-preset-item-badge');
     consoleInfo.appendChild(titleRow);
-
-    appendText(consoleInfo, 'p', t('recipeDetailParametersHint'), 'anomalous-recipe-detail-muted');
 
     const consoleActions = document.createElement('div');
     consoleActions.className = 'anomalous-preset-console-actions';

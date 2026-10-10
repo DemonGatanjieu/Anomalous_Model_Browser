@@ -1,0 +1,225 @@
+/* A workflow's details (ui_recipe_overview.js): the overview's cover and its column, the models'
+   state, Open and ⋯, the numbers, notes and tags, the prompts. Matches the Workflows page
+   (28-workflows.css). */
+
+.anomalous-wfd-overview {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+}
+
+.anomalous-wfd-hero {
+    display: grid;
+    grid-template-columns: minmax(160px, 260px) minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.anomalous-wfd-cover {
+    overflow: hidden;
+    aspect-ratio: 4 / 5;
+    border: 1px solid var(--amb-border);
+    border-radius: var(--amb-radius-panel);
+    background: var(--amb-bg-sunken);
+}
+
+.anomalous-wfd-cover img,
+.anomalous-wfd-cover video {
+    cursor: pointer;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anomalous-wfd-hero-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.anomalous-wfd-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.anomalous-wfd-kind {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--amb-warn) 16%, transparent);
+    color: var(--amb-warn-text);
+    font-size: 11.5px;
+}
+
+.anomalous-wfd-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    color: var(--amb-text-soft);
+    font-size: 13px;
+}
+
+.anomalous-wfd-status strong { font-weight: 600; }
+
+.anomalous-wfd-status-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--amb-ok);
+}
+
+.anomalous-wfd-status.is-checking .anomalous-wfd-status-dot { background: var(--amb-text-muted); }
+.anomalous-wfd-status.is-missing .anomalous-wfd-status-dot { background: var(--amb-danger); }
+.anomalous-wfd-status.is-missing strong { color: var(--amb-danger-text); }
+
+.anomalous-wfd-status-hint {
+    flex-basis: 100%;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+}
+
+.anomalous-wfd-status.is-missing-nodes {
+    color: var(--amb-warn-text);
+    font-size: 12px;
+}
+
+.anomalous-wfd-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.anomalous-wfd-primary {
+    height: 34px;
+    padding: 0 16px;
+    border: none;
+    border-radius: var(--amb-radius-control);
+    background: var(--amb-btn-primary-bg);
+    color: var(--amb-btn-primary-text);
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.anomalous-wfd-primary:hover { background: var(--amb-btn-primary-hover); }
+.anomalous-wfd-primary:disabled { opacity: 0.6; cursor: default; }
+.anomalous-wfd-actions .anomalous-wf-icon-btn { height: 34px; width: 34px; }
+
+.anomalous-wfd-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 8px;
+}
+
+.anomalous-wfd-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: var(--amb-radius-card);
+    background: var(--amb-bg-card);
+}
+
+.anomalous-wfd-stat-label {
+    color: var(--amb-text-dim);
+    font-size: 11px;
+}
+
+.anomalous-wfd-stat-value {
+    overflow: hidden;
+    color: var(--amb-text-main);
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-wfd-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 10px;
+    border-top: 1px solid var(--amb-border);
+}
+
+.anomalous-wfd-meta .anomalous-recipe-detail-notes p {
+    margin: 0;
+    font-size: 13px;
+}
+
+.anomalous-wfd-updated {
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
+}
+
+.anomalous-wfd-prompts {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.anomalous-wfd-prompt {
+    padding: 10px 12px;
+    border: 1px solid var(--amb-border);
+    border-left: 3px solid var(--amb-ok);
+    border-radius: 0 var(--amb-radius-card) var(--amb-radius-card) 0;
+    background: var(--amb-bg-card);
+}
+
+.anomalous-wfd-prompt.is-negative { border-left-color: var(--amb-danger); }
+
+.anomalous-wfd-prompt-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.anomalous-wfd-prompt-role {
+    color: var(--amb-ok-text);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.anomalous-wfd-prompt.is-negative .anomalous-wfd-prompt-role { color: var(--amb-danger-text); }
+
+.anomalous-wfd-prompt-text {
+    color: var(--amb-text-soft);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-wfd-prompt-text.is-folded {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+}
+
+.anomalous-wfd-prompt-toggle {
+    margin-top: 6px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--amb-link);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.theme-abyssal-scarlet .anomalous-wfd-prompt { background: rgba(18, 10, 26, 0.88); }
+
+@media (max-width: 640px) {
+    .anomalous-wfd-hero { grid-template-columns: minmax(0, 1fr); }
+    .anomalous-wfd-cover { max-width: 260px; }
+}

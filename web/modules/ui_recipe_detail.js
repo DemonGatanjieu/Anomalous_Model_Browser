@@ -266,11 +266,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
                 }
             });
     };
-    const backTab = button(tabs, '← ' + t('recipeDetailBack'), 'anomalous-recipe-detail-tab anomalous-recipe-back-tab');
-    backTab.style.backgroundColor = 'transparent';
-    backTab.style.color = 'var(--descrip-text, #a8a8a8)';
-    backTab.onmouseover = () => { backTab.style.color = 'var(--amb-lt-text, #fff)'; };
-    backTab.onmouseout = () => { backTab.style.color = 'var(--descrip-text, #a8a8a8)'; };
+    const backTab = button(tabs, `‹ ${t('recipeDetailBack')}`, 'anomalous-recipe-detail-tab anomalous-recipe-back-tab');
     backTab.onclick = () => finish('back');
     for (const [key, label] of tabDefinitions) {
         const tab = button(tabs, label, 'anomalous-recipe-detail-tab');

@@ -78,6 +78,13 @@ export function showParameterSetCount(owner, card, recipe, signatures) {
     });
 }
 
+/** A new set's name: the recipe's name and the first number from 2 no set of it has yet (`Name 2`). */
+export function nextSetName(recipe, notebooks) {
+    const base = String(recipe?.name || t('recipeUntitled')).trim();
+    const taken = new Set((notebooks || []).map(notebook => String(notebook?.name || '').trim()));
+    for (let n = 2; ; n += 1) if (!taken.has(`${base} ${n}`)) return `${base} ${n}`;
+}
+
 /** Adds the key values, the count of differences and ⇄ to a set's card (`row`, with its main and actions). */
 export function decorateParameterSet(row, notebook, recipe) {
     const setWorkflow = notebook?.data?.workflow;

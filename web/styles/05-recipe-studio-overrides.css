@@ -1,105 +1,4 @@
-/* Studio Layout Overhaul */
-.anomalous-recipe-detail-overview .anomalous-recipe-detail-hero {
-    display: grid !important;
-    grid-template-columns: 260px minmax(0, 1fr) !important;
-    gap: 20px !important;
-    align-items: start !important;
-    padding: 16px !important;
-    border-radius: 14px !important;
-    background: var(--amb-lt-surface, linear-gradient(145deg, rgba(30, 32, 38, 0.7), rgba(18, 19, 23, 0.85))) !important;
-    border: 1px solid var(--amb-border) !important;
-    margin-bottom: 16px !important;
-    backdrop-filter: blur(12px);
-}
 
-.anomalous-recipe-detail-hero-media {
-    position: relative;
-    width: 100%;
-    height: 220px;
-    border-radius: 10px;
-    overflow: hidden;
-    background: var(--amb-bg-page);
-    border: 1px solid var(--amb-border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.anomalous-recipe-detail-hero-media img,
-.anomalous-recipe-detail-hero-media video {
-    width: 100% !important;
-    height: 100% !important;
-    max-height: none !important;
-    object-fit: cover !important;
-    border-radius: 9px;
-    cursor: pointer;
-    transition: transform 0.25s ease;
-}
-
-.anomalous-recipe-detail-hero-media:hover img {
-    transform: scale(1.02);
-}
-
-.anomalous-recipe-studio-metrics {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-    gap: 8px;
-    margin: 12px 0 8px 0;
-}
-
-.anomalous-recipe-studio-metric-tile {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: 8px 10px;
-    border-radius: 8px;
-    background: rgba(var(--amb-ink-rgb), 0.035);
-    border: 1px solid var(--amb-border);
-}
-
-.anomalous-recipe-studio-metric-label {
-    font-size: 0.72rem;
-    color: var(--amb-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-
-.anomalous-recipe-studio-metric-val {
-    font-size: 0.96rem;
-    font-weight: 600;
-    color: var(--amb-text-main);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* Prompt Showcase Boxes - Ultra-clean Dark Glassmorphism */
-.anomalous-recipe-prompt-box {
-    position: relative;
-    padding: 14px 16px;
-    border-radius: 10px;
-    margin-bottom: 12px;
-    font-size: 0.84rem;
-    line-height: 1.6;
-    word-break: break-word;
-    background: rgba(var(--amb-ink-rgb), 0.025);
-    border: 1px solid var(--amb-border);
-    color: var(--amb-text-soft);
-    transition: border-color 0.2s ease, background 0.2s ease;
-}
-
-.anomalous-recipe-prompt-box:hover {
-    background: rgba(var(--amb-ink-rgb), 0.035);
-    border-color: var(--amb-border-strong);
-}
-
-.anomalous-recipe-prompt-box.is-positive {
-    border-left: 3px solid rgba(16, 185, 129, 0.6);
-}
-
-.anomalous-recipe-prompt-box.is-negative {
-    border-left: 3px solid rgba(244, 63, 94, 0.6);
-}
 
 .anomalous-recipe-prompt-micro-copy {
     display: inline-flex;
@@ -127,29 +26,6 @@
     background: rgba(16, 185, 129, 0.2) !important;
     border-color: rgba(16, 185, 129, 0.4) !important;
     color: var(--amb-ok) !important;
-}
-
-.anomalous-recipe-prompt-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 0.74rem;
-    font-weight: 600;
-    letter-spacing: 0.2px;
-}
-
-.anomalous-recipe-prompt-badge.is-positive {
-    background: rgba(16, 185, 129, 0.12);
-    color: var(--amb-lt-ok, var(--amb-ok));
-    border: 1px solid rgba(16, 185, 129, 0.25);
-}
-
-.anomalous-recipe-prompt-badge.is-negative {
-    background: rgba(244, 63, 94, 0.12);
-    color: var(--amb-lt-danger, #fb7185);
-    border: 1px solid rgba(244, 63, 94, 0.25);
 }
 
 /* ========================================================================== */
@@ -201,11 +77,11 @@
     color: var(--amb-text-soft);
 }
 
+/* A parameter set in the list: name, date, key values; its buttons show on hover, over the top right. */
 .anomalous-preset-item-card {
     position: relative;
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    align-items: stretch;
     gap: 8px;
     min-width: 0;
     padding: 10px 12px;
@@ -274,14 +150,17 @@
 }
 
 .anomalous-preset-item-title {
+    display: -webkit-box;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--amb-text-soft);
     font-size: 0.86rem;
     font-weight: 500;
-    color: var(--amb-text-soft);
-    min-width: 0;
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
 .anomalous-preset-item-card.is-active .anomalous-preset-item-title {
@@ -307,16 +186,24 @@
 }
 
 .anomalous-preset-item-actions {
+    position: absolute;
+    top: 6px;
+    right: 6px;
     display: flex;
     align-items: center;
     gap: 4px;
-    flex-shrink: 0;
-    opacity: 0.35;
+    padding: 2px;
+    border-radius: var(--amb-radius-control);
+    background: var(--amb-bg-panel);
+    opacity: 0;
+    pointer-events: none;
     transition: opacity 0.15s ease;
 }
 
-.anomalous-preset-item-card:hover .anomalous-preset-item-actions {
+.anomalous-preset-item-card:hover .anomalous-preset-item-actions,
+.anomalous-preset-item-card:focus-within .anomalous-preset-item-actions {
     opacity: 1;
+    pointer-events: auto;
 }
 
 .anomalous-preset-item-btn {
