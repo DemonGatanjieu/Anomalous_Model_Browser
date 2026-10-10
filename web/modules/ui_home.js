@@ -10,7 +10,7 @@ import { TOOL_ICONS } from './tool_registry.js';
 import { startSpotlightTour } from './ui_spotlight_tour.js';
 import { showUpdateGuide } from './ui_update_guide.js';
 import { renderRecentActivity } from './ui_activity.js';
-import { copyDiagnostics } from './feedback.js';
+import { copyDiagnostics, openRepoPage } from './feedback.js';
 import { openFeedbackDialog } from './ui_feedback_dialog.js';
 
 // One card per task: where it goes and its text (`homeCard<Name>Title` / `…Body`).
@@ -54,6 +54,9 @@ function feedbackBand(owner) {
         button('anomalous-home-feedback-btn', t('feedbackSuggest'), () => openFeedbackDialog(owner, 'idea')),
         copyBtn,
     );
+    const star = button('anomalous-home-feedback-btn', t('starButton'), openRepoPage);
+    star.title = t('starHint');
+    actions.append(star);
     band.append(copy, actions);
     return band;
 }

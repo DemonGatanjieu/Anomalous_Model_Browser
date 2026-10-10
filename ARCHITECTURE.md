@@ -353,7 +353,8 @@ covered by the `styles.css` manifest.
   backup (`ui_backup.js`), opening mode and window, help; `ui_feedback_dialog.js` is the feedback window (Home and the
   settings page open it): one text box, then `feedback.js` opens a GitHub issue with it in
   the browser's language, the environment folded at the end when attached (versions and
-  hardware only, never a path or ComfyUI's command line), or copies the environment;
+  hardware only, never a path or ComfyUI's command line), or copies the environment, and
+  `openRepoPage()` opens the project page for a Star (on a press only; nothing is fetched);
   `ui_rail_tools.js` owns the rail's tool buttons (scan, doctor, current node);
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,
   including Esc on the workspace panel (`nbPanel`, below the header and right of the

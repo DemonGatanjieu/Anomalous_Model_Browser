@@ -70,6 +70,9 @@
 ### 🧪 Tests in the repository (测试公开)
 - The plugin's tests are now part of the repository: `tests/` (Python tests for the backend, `.mjs` tests for the frontend rules), `node tools/run_tests.mjs` runs them all with the structure check, and [docs/guides/testing.md](docs/guides/testing.md) says how to run and write them. They need no network or GPU and only touch temporary folders. Developer notes no longer point at tests that were removed earlier.
 
+### ⭐ A Star for the project (点个 Star)
+- Home's "Found a problem, or have an idea?" band ends with **⭐ Star on GitHub**, and Settings → Help and feedback has **Star it on GitHub**: both open the project page, where the ☆ Star button is. Nothing pops up and nothing is fetched; it is there for whoever wants it.
+
 ### Fixes
 - **Ctrl+Z after a scan (扫描后的 Ctrl+Z)**: after any scan, the first Ctrl+Z used to seem to do nothing: the workflow's saved fingerprints had changed, which ComfyUI counted as a step. A change of fingerprints alone no longer takes a step.
 
