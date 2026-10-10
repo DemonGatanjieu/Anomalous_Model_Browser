@@ -24,6 +24,9 @@
 - The settings page is split into tabs: **Look, Models, Workflows, Prompts, Backup, Help**. "Change where downloads go" opens Models directly.
 - **Where downloads (and now imports) go is a choice**: by base model (the new default), in Downloads then by base model, all in a Downloads folder, straight in the type's folder, or your own folder typed by hand; an example path shows the result. Without a saved setting, downloads now go by base model instead of into a Downloads folder.
 
+### Fixes
+- **Edit emotions: every clip in the list, and the line follows the clip (编辑情绪：下拉列出全部音频，换音频台词跟着换)**: a box that already held a file listed only the files whose names contain it (the browser filters by the box's text), so a character's other clips seemed missing. Pressing the box now lists all of them, with the current file shown greyed; leaving without a pick keeps it. Picking another clip no longer keeps the old clip's line beside it: the line the node already reads for that clip is filled in, otherwise the box is left blank and the node reads the clip's own line (its .txt / .lab or the annotation list) when it speaks; going back to the first clip brings its line back.
+
 ## v1.59.0 Beta (Model Downloads, Backup, Share Codes, Node Combos, MCP, Light Theme) — unreleased
 
 ### ⬇️ Download missing models from Model Check (模型检查一键下载缺失模型)

@@ -39,6 +39,24 @@ function audioInput(listId, value) {
     input.setAttribute('list', listId);
     input.placeholder = t('ttsEditorAudioPlaceholder');
     input.value = value || '';
+    // The browser lists only the files matching the box's text, so a filled box offered one or
+    // two. Pressing it empties the box to list them all (the file shows greyed meanwhile);
+    // leaving without a pick puts the file back, unless it was deleted with a key.
+    let kept = '';
+    input.addEventListener('mousedown', () => {
+        if (!input.value) return;
+        kept = input.value;
+        input.placeholder = kept;
+        input.value = '';
+    });
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' || e.key === 'Delete') kept = '';
+    });
+    input.addEventListener('blur', () => {
+        if (!input.value) input.value = kept;
+        kept = '';
+        input.placeholder = t('ttsEditorAudioPlaceholder');
+    });
     return input;
 }
 
@@ -82,6 +100,19 @@ export function openGptSovitsEditor(group, { onSaved } = {}) {
         close();
     }, true);
 
+    // A picked file gets its own line: the one it had in this dialog, the line the node read for it
+    // when it is in use already, or blank, which the node fills from the file's .txt / .lab / list.
+    const knownText = new Map([raw.reference, ...Object.values(raw.emotions || {})]
+        .filter(ref => ref?.audio && ref.text).map(ref => [ref.audio, ref.text]));
+    const linkText = (audio, text) => {
+        const start = { audio: audio.value.trim(), text: text.value };
+        audio.addEventListener('input', () => {
+            const path = audio.value.trim();
+            if (!audioList.includes(path)) return;
+            text.value = path === start.audio ? start.text : knownText.get(path) || '';
+        });
+    };
+
     const play = (input) => {
         player?.pause();
         const path = input.value.trim();
@@ -107,6 +138,7 @@ export function openGptSovitsEditor(group, { onSaved } = {}) {
     const mainRow = el('div', 'anomalous-tts-row is-main');
     const mainAudio = audioInput(listId, settings.reference?.audio);
     const mainText = textInput(settings.reference?.text);
+    linkText(mainAudio, mainText);
     mainRow.append(
         el('span', 'anomalous-tts-row-name', '{main}'),
         mainAudio,
@@ -127,6 +159,7 @@ export function openGptSovitsEditor(group, { onSaved } = {}) {
         nameInput.value = row.name || '';
         const audio = audioInput(listId, row.audio);
         const text = textInput(row.text);
+        linkText(audio, text);
         line.append(
             nameInput,
             audio,
