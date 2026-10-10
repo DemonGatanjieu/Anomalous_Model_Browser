@@ -207,6 +207,7 @@
 - **Picking a model keeps your place (换模型时列表不再跳回顶部)**: in Current node's model picker, choosing a model further down redrew the whole list and scrolled back to the top (the model was chosen all the same). Only the chosen card's outline changes now.
 - **A combo is saved once, not once per tag (搭配不再一下存几十次)**: opening a combo's bilingual tags saved it once for nothing, then once more for every tag's translation as it came back, so a long prompt wrote the file (and the activity log) dozens of times in a second. The translations are now saved together, half a second after the last one.
 - **Activity shows where a long prompt changed (操作记录能看到长提示词改了哪里)**: values are kept to 400 characters, cut from the start, so an edit late in a long prompt showed the same text before and after. A long before/after pair is now cut around its first difference.
+- **Keeping a picture no longer changes the canvas (收藏图片不再改动画布上的参数)**: keeping a picture with ☆ as a workflow or a combo reads its workflow off the canvas, but when the canvas had the same workflow open (a picture dragged in, say), ComfyUI took the two for one and the canvas's values became the picture's. The workflow is now read under a name of its own.
 
 ## v1.57.3 Beta (Hotfix: Offline Scan, Prompt Workshop) — 2026-09-29
 
