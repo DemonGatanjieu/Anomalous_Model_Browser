@@ -89,6 +89,15 @@ async function getJson(url, signal) {
     return { ok: resp.ok, status: resp.status, data };
 }
 
+/**
+ * The line (and its language) the node would use with this clip as a reference, or '' when
+ * it finds none. Interface 14; an older node has no such route and gives '' too.
+ */
+export async function fetchReferenceText(name, path, signal) {
+    const { ok, data } = await getJson(`/anomalous_tts/reference_text?character=${encodeURIComponent(name)}&path=${encodeURIComponent(path)}`, signal);
+    return ok && typeof data?.text === 'string' ? data.text : '';
+}
+
 /** Installed = ComfyUI knows the node class (`/object_info/<class>` is `{}` otherwise). */
 async function isNodeInstalled(nodeClass) {
     try {

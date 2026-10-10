@@ -1,7 +1,7 @@
 import { t } from './interface_settings.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert } from './ui_dialog.js';
-import { fetchGptSovitsCharacter, mergeGptSovitsSettings, saveGptSovitsSettings, ttsAudioUrl } from './audio_engines.js';
+import { fetchGptSovitsCharacter, fetchReferenceText, mergeGptSovitsSettings, saveGptSovitsSettings, ttsAudioUrl } from './audio_engines.js';
 
 /**
  * GPT-SoVITS (Anomalous_TTS) emotion editor: pick one reference audio from the
@@ -101,15 +101,24 @@ export function openGptSovitsEditor(group, { onSaved } = {}) {
     }, true);
 
     // A picked file gets its own line: the one it had in this dialog, the line the node read for it
-    // when it is in use already, or blank, which the node fills from the file's .txt / .lab / list.
+    // when it is in use already, else the line the node finds for it (blank until it answers, and
+    // blank with a node too old to tell, which then reads it when it speaks).
     const knownText = new Map([raw.reference, ...Object.values(raw.emotions || {})]
         .filter(ref => ref?.audio && ref.text).map(ref => [ref.audio, ref.text]));
+    // A blank box shows the line the node uses for its clip, greyed, without saving it.
     const linkText = (audio, text) => {
         const start = { audio: audio.value.trim(), text: text.value };
+        const showLine = () => { text.placeholder = knownText.get(audio.value.trim()) || t('ttsEditorTextPlaceholder'); };
+        showLine();
         audio.addEventListener('input', () => {
             const path = audio.value.trim();
             if (!audioList.includes(path)) return;
             text.value = path === start.audio ? start.text : knownText.get(path) || '';
+            showLine();
+            if (text.value || path === start.audio) return;
+            fetchReferenceText(name, path, scope.signal).then(line => {
+                if (line && audio.value.trim() === path && !text.value) text.value = line;
+            }).catch(() => {}); // aborted with the dialog, or the node is unreachable: the box stays blank
         });
     };
 
