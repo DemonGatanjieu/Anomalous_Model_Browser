@@ -11,7 +11,7 @@ sys.path.insert(0, str(PLUGIN_DIR.parents[1]))
 sys.path.insert(0, str(PLUGIN_DIR))
 
 import scraper
-from api import scan_summary, scanner
+from api import metadata, scan_summary, scanner
 from model_identity import computed_file_identity
 
 DIGEST = "a" * 64
@@ -60,6 +60,18 @@ class ScanRetryTests(unittest.TestCase):
         self.assertEqual(info["id"], 7)
         self.assertEqual(json.loads(Path(str(self.matched)[:-12] + ".info").read_text(encoding="utf-8"))["id"], 5)
         self.assertFalse(Path(str(self.new)[:-12] + ".info").exists())
+
+    def test_models_found_offline_keep_their_name(self):
+        # Named after the file as model and version: renaming doubled the name on every scan.
+        for flags in (["--offline-only"], ["--force-overwrite"]):
+            with mock.patch.object(sys, "argv", ["scraper.py", self.temp.name, "--physical-rename", "--virtual-rename", *flags]), \
+                    mock.patch.object(scraper, "fetch_civitai_info", return_value=None), \
+                    mock.patch.object(scraper, "calculate_sha256", return_value=DIGEST):
+                scraper.main()
+        self.assertTrue(self.new.exists())
+        info = json.loads(Path(str(self.new)[:-12] + ".info").read_text(encoding="utf-8"))
+        self.assertNotIn("anomalous_custom_name", info)
+        self.assertEqual(metadata._read_metadata(str(self.new))["name"], "new")
 
     def test_changed_file_is_hashed_again(self):
         self.unmatched.write_bytes(b"other bytes, other size")
