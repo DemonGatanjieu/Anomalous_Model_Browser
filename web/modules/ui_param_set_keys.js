@@ -1,6 +1,6 @@
 /**
  * Parameter sets (参数方案) at a glance. A recipe card says how many sets it has, and its
- * chip opens the recipe on its Parameters tab. A set's card there shows its key parameters'
+ * chip opens the recipe on its first set. A set's row in the details shows its key parameters'
  * values (key_params.js; marked when they differ from the recipe's own), how many values
  * differ from the recipe, and ⇄ to compare the two (ui_param_compare.js). Each workflow is
  * read once and kept while its data lives.
@@ -19,7 +19,7 @@ let following = false;
 
 /** A star changed: the set cards on screen show the new key values. */
 function redrawSets() {
-    for (const row of document.querySelectorAll('.anomalous-preset-item-card')) {
+    for (const row of document.querySelectorAll('.anomalous-wfd-set')) {
         const args = decorated.get(row);
         if (!args) continue;
         row.querySelector('.anomalous-preset-item-keys')?.remove();
@@ -56,7 +56,7 @@ export function fetchParameterSetSignatures() {
 /**
  * The recipe card's 参数方案 N chip, once the signatures are here: N counts the sets whose values
  * differ from the recipe's (saving a recipe keeps a set of its own values too). It opens the
- * recipe on its Parameters tab.
+ * recipe on its first set.
  */
 export function showParameterSetCount(owner, card, recipe, signatures) {
     signatures.then((map) => {
@@ -71,7 +71,7 @@ export function showParameterSetCount(owner, card, recipe, signatures) {
         chip.setAttribute('aria-label', chip.title);
         chip.onclick = (event) => {
             event.stopPropagation();
-            owner.recipeReturnState = { activeTab: 'parameters' };
+            owner.recipeReturnState = { activeTab: 'set', firstSet: true };
             card.click();
         };
         line.append(chip);
@@ -85,7 +85,7 @@ export function nextSetName(recipe, notebooks) {
     for (let n = 2; ; n += 1) if (!taken.has(`${base} ${n}`)) return `${base} ${n}`;
 }
 
-/** Adds the key values, the count of differences and ⇄ to a set's card (`row`, with its main and actions). */
+/** Adds the key values, the count of differences and ⇄ to a set's row in the details (`row`, with its main and actions). */
 export function decorateParameterSet(row, notebook, recipe) {
     const setWorkflow = notebook?.data?.workflow;
     if (!setWorkflow || !recipe?.workflow) return;
@@ -111,14 +111,14 @@ export function decorateParameterSet(row, notebook, recipe) {
         line.append(chip);
     }
     line.append(el('span', 'anomalous-preset-key-count', differing ? t('paramSetDiffers', { count: differing }) : t('paramSetSame')));
-    row.querySelector('.anomalous-preset-item-main')?.append(line);
+    row.querySelector('.anomalous-wfd-set-main')?.append(line);
 
     const compare = el('button', 'anomalous-preset-item-btn anomalous-preset-set-compare', '⇄');
     compare.type = 'button';
     compare.title = t('paramSetCompare');
     compare.onclick = (event) => {
         event.stopPropagation();
-        openParamCompare({ workflow: recipe.workflow, label: t('recipeParameterCurrentRecipe') }, { workflow: setWorkflow, label: notebook.name || t('recipeParameterUntitled') });
+        openParamCompare({ workflow: recipe.workflow, label: t('workflowOwnValues') }, { workflow: setWorkflow, label: notebook.name || t('recipeParameterUntitled') });
     };
-    row.querySelector('.anomalous-preset-item-actions')?.prepend(compare);
+    row.querySelector('.anomalous-wfd-set-actions')?.prepend(compare);
 }

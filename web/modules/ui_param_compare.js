@@ -395,7 +395,7 @@ export function newestCompareButton(className) {
     return node;
 }
 
-// ---- The gallery's pick: the first image waits for a second one or the canvas. ----
+// ---- A pick among pictures (the gallery, a workflow's pictures): the first waits for a second one or another side. ----
 
 const pickKey = image => `${image.subfolder || ''}\n${image.filename}`;
 
@@ -403,27 +403,35 @@ export const isComparePicked = (owner, image) => owner.comparePick && pickKey(ow
 
 function clearPick(owner) {
     owner.comparePick = null;
-    owner.galleryPanel?.querySelectorAll('.anomalous-gallery-card.is-compare-picked').forEach(card => card.classList.remove('is-compare-picked'));
-    owner.galleryPanel?.querySelector('.anomalous-compare-bar')?.remove();
+    document.querySelectorAll('.is-compare-picked').forEach(card => card.classList.remove('is-compare-picked'));
+    owner.comparePickBar?.remove();
+    owner.comparePickBar = null;
 }
 
-function showPickBar(owner) {
-    owner.galleryPanel?.querySelector('.anomalous-compare-bar')?.remove();
+/** The bar under the pictures: what is picked, then the canvas and any `others` ({ label, side }) to compare it with. */
+function showPickBar(owner, host, others) {
+    owner.comparePickBar?.remove();
     const image = owner.comparePick;
     const bar = el('div', 'anomalous-compare-bar');
+    const sideButton = (label, side) => button('anomalous-compare-bar-btn', label, () => {
+        clearPick(owner);
+        openParamCompare({ image }, side);
+    });
     bar.append(
         el('span', 'anomalous-compare-bar-text', t('comparePicked', { name: image.filename })),
-        button('anomalous-compare-bar-btn', t('compareWithCanvas'), () => {
-            clearPick(owner);
-            openParamCompare({ image }, { canvas: true });
-        }),
+        sideButton(t('compareWithCanvas'), { canvas: true }),
+        ...others.map(({ label, side }) => sideButton(label, side)),
         button('anomalous-compare-bar-btn is-quiet', t('dialogCancel'), () => clearPick(owner)),
     );
-    owner.galleryPanel?.append(bar);
+    host?.append(bar);
+    owner.comparePickBar = bar;
 }
 
-/** The ⇄ of a card: the first press picks the image, a second image's opens the comparison. */
-export function pressCompare(owner, image, card) {
+/**
+ * The ⇄ of a picture's card: the first press picks it, a second picture's opens the comparison.
+ * `host`: where the bar goes (the gallery by default); `others`: more sides the bar offers.
+ */
+export function pressCompare(owner, image, card, { host = owner.galleryPanel, others = [] } = {}) {
     if (isComparePicked(owner, image)) {
         clearPick(owner);
         return;
@@ -436,5 +444,5 @@ export function pressCompare(owner, image, card) {
     }
     owner.comparePick = { filename: image.filename, subfolder: image.subfolder || '' };
     card.classList.add('is-compare-picked');
-    showPickBar(owner);
+    showPickBar(owner, host, others);
 }

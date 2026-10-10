@@ -466,13 +466,17 @@ covered by the `styles.css` manifest.
   prompt composer with dynamic field-sizing and compact inline find & replace toolbar, and unified dark slim scrollbar ergonomics with complete bilingual dictionary coverage in `locales.js`), and
   `notebook_canvas.js` puts a combo on the canvas as a new wired group of nodes (following the pointer, or at a dropped
   card's position; Esc takes a following group off again); it never changes nodes already there. Combos are a rail page. `ui_recipe_detail.js`
-  coordinates the Workflow Recipe detail session and model composition. `ui_recipe_overview.js`
-  is the overview, styled like the Workflows page (`styles/29-workflow-detail.css`): the cover, the
-  name (edited in place), the models' state as one line, Open and ⋯ (edit, export), the numbers,
-  notes and tags, the prompts (long ones folded), the models. `ui_recipe_parameters.js` is the
-  Parameters tab: the sets (buttons on hover; a new one is named after the recipe with the next
-  number, `nextSetName`), the selected set's values, its raw nodes (unnamed values labelled by
-  their node type's widgets, `comfyWidgetLabels`) and the editor.
+  is a workflow's details, built around its values (styles `styles/29-workflow-detail.css`): a bar
+  (Back, the name, the models' state, Open, ⋯ edit and export), then `ui_recipe_sets.js`'s left
+  column (the workflow's own values, the saved sets unlike them with their key values, Save the
+  canvas, New; then all pictures and versions) and the chosen view on the right.
+  `ui_recipe_set_view.js` is one set: Apply to canvas, ⇄ (with the workflow's own or the canvas),
+  ⋯ (copy as a new set, rename, delete); the cover, notes and tags for the workflow's own
+  (`ui_recipe_info.js`, which also holds the name and the models' state); the main values; the
+  prompts; the pictures made with these values; the models and every node's values, folded. A new
+  set is named after the workflow with the next number (`nextSetName`). `ui_recipe_parameters.js`
+  holds what the views share: prompt roles (automatic or set by hand) and their boxes, every node's
+  values (unnamed ones labelled by their node type's widgets, `comfyWidgetLabels`), the new set's editor.
   `prompt_boxes.js` is the one place that finds prompt boxes on the live canvas: a
   multiline STRING input by the node's ComfyUI definition, whatever it is called; its
   role is the box's own name (positive / negative) or else the wiring (outputs followed
@@ -484,7 +488,7 @@ covered by the `styles.css` manifest.
   extracts prompt envelopes without model file paths and writes them (`fillPrompt`);
   text never crosses roles unless the user picked the box; writes are one undo step.
   Within recipe detail, `ui_recipe_versions.js` owns history comparison/restore,
-  `ui_recipe_gallery.js` owns result cards and direct Image Detail Workbench handoff,
+  `ui_recipe_gallery.js` owns the picture grid (thumbnails, 参数, ⇄ to compare) and the all-pictures view,
   `ui_recipe_models.js` owns the overview's model list (preview, presence under the saved name,
   note, download page; finding missing models is Model Check's) and the recipe cover,
   `ui_recipe_metadata.js` owns inline persistence, and `ui_recipe_detail_dom.js` owns

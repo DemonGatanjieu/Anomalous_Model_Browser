@@ -1,28 +1,4 @@
-/* Modal Gallery Dialog Styling */
-.anomalous-recipe-gallery-dialog {
-    background: var(--amb-bg-card);
-    color: var(--amb-text-main);
-    border: 1px solid var(--amb-border);
-    border-radius: 12px;
-    padding: 24px;
-    width: 90vw;
-    max-width: 1200px;
-    max-height: 90vh;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-    overflow-y: auto;
-}
 
-.anomalous-recipe-gallery-dialog::backdrop {
-    background: var(--amb-lt-scrim, rgba(0, 0, 0, 0.7));
-    backdrop-filter: blur(4px);
-}
-
-.anomalous-recipe-gallery-dialog-title {
-    margin-top: 0;
-    margin-bottom: 16px;
-    font-size: 1.4rem;
-    font-weight: 600;
-}
 
 .anomalous-dialog-close {
     position: absolute;
@@ -36,53 +12,6 @@
     justify-content: center;
     border-radius: 50%;
     cursor: pointer;
-}
-
-/* Gallery Grid Refactor */
-.anomalous-recipe-gallery-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
-    padding: 16px 0;
-}
-
-.anomalous-recipe-gallery-card {
-    position: relative;
-    border-radius: 8px;
-    overflow: hidden;
-    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.2));
-    aspect-ratio: 1;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.anomalous-recipe-gallery-card:hover {
-    transform: scale(1.03);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
-    z-index: 2;
-}
-
-.anomalous-recipe-gallery-card img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    cursor: pointer;
-}
-
-.anomalous-recipe-gallery-card-actions {
-    right: 10px;
-    bottom: 10px;
-    display: flex;
-    opacity: 0;
-    transform: translateY(4px);
-    pointer-events: none;
-}
-
-.anomalous-recipe-gallery-card:hover .anomalous-recipe-gallery-card-actions,
-.anomalous-recipe-gallery-card:focus-within .anomalous-recipe-gallery-card-actions {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
 }
 
 /* ========================================================================== */
@@ -118,8 +47,7 @@ dialog.anomalous-gallery-viewer::backdrop {
     background: rgba(0, 0, 0, 0.95);
 }
 
-/* Workflow Recipes: the cover placeholder and the scope pill the recipe details use
-   (the Workflows page and its cards: 28-workflows.css). */
+/* Workflow Recipes: the generated cover placeholder (the pages: 28-workflows.css, 29-workflow-detail.css). */
 
 /* 默认封面占位图微光与材质渲染 (AI Abstract Art Blind Box) */
 .anomalous-recipe-thumbnail.is-default-placeholder {
@@ -163,24 +91,6 @@ dialog.anomalous-gallery-viewer::backdrop {
 
 /* Metric Cards for Sampling Parameters */
 
-/* Lazy Loaded Raw Nodes Container */
-.anomalous-recipe-raw-nodes-summary {
-    padding: 10px 14px;
-    border-radius: 8px;
-    background: rgba(var(--amb-ink-rgb), 0.03);
-    border: 1px solid var(--amb-border);
-    color: var(--amb-link);
-    cursor: pointer;
-    user-select: none;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: background 0.2s;
-}
-
-.anomalous-recipe-raw-nodes-summary:hover {
-    background: rgba(var(--amb-ink-rgb), 0.06);
-}
-
 .anomalous-recipe-lazy-expand-btn {
     width: 100%;
     margin-top: 10px;
@@ -200,24 +110,6 @@ dialog.anomalous-gallery-viewer::backdrop {
 }
 
 /* Metric Cards for Sampling Parameters */
-
-/* Lazy Loaded Raw Nodes Container */
-.anomalous-recipe-raw-nodes-summary {
-    padding: 10px 14px;
-    border-radius: 8px;
-    background: rgba(var(--amb-ink-rgb), 0.03);
-    border: 1px solid var(--amb-border);
-    color: var(--amb-link);
-    cursor: pointer;
-    user-select: none;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: background 0.2s;
-}
-
-.anomalous-recipe-raw-nodes-summary:hover {
-    background: rgba(var(--amb-ink-rgb), 0.06);
-}
 
 .anomalous-recipe-lazy-expand-btn {
     width: 100%;

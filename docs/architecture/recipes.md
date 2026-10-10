@@ -87,14 +87,20 @@ Doctor requires their hash for automatic recovery and treats size-only evidence
 as a manual candidate at most.
 Inspection failure never blocks the workflow snapshot from being saved.
 
-The detail view contains Overview, Parameters, Gallery, and Versions as
-applicable. Compact cards may ellipsize bounded values while preserving their
+The details are built around the recipe's values: a bar (Back, the name, the models'
+state, Open, ⋯ edit and export), a left column (the recipe's own values, then its saved sets
+whose value signature differs from the recipe's, newest first; all pictures; versions) and the
+chosen view on the right. The recipe's own values show its cover, notes and tags first; each set
+shows Apply to canvas, ⇄ (with the recipe's values or the canvas), its main values, prompts,
+the pictures made with those values, and, folded, the models (own values only) and every node. Compact cards may ellipsize bounded values while preserving their
 full copy value. Detail rows provide visible expand/collapse and copy controls
 for long values and prompts; they do not silently truncate authoritative data.
 
-`ui_recipe_detail.js` coordinates the detail session, active tab, and model composition.
-`ui_recipe_overview.js` owns the overview (styles in `styles/29-workflow-detail.css`); `ui_recipe_parameters.js` owns prompt roles,
-parameter editing, raw nodes, and preset saving; and `ui_recipe_models.js`
+`ui_recipe_detail.js` coordinates the detail session (the view: a set, all pictures or versions)
+and the bar; `ui_recipe_sets.js` the left column and the set actions (save the canvas, new,
+rename, delete); `ui_recipe_set_view.js` one set; `ui_recipe_info.js` the name, notes, tags and
+models' state (styles in `styles/29-workflow-detail.css`); `ui_recipe_parameters.js` prompt roles,
+raw nodes and the new set's editor; and `ui_recipe_models.js`
 lists the models with previews and whether each is here under its saved name. Inline persistence is centralized
 in `ui_recipe_metadata.js`, with pure ordering/value helpers in
 `ui_recipe_parameter_utils.js`. The catalog shell lives in `ui_recipe_catalog.js`,
@@ -168,8 +174,8 @@ position across manual refresh.
 ## Parameter Notebooks
 
 Parameter Notebooks are immutable generation-value snapshots owned by a recipe.
-Saving or updating a recipe creates a new snapshot. The Parameters tab uses a
-two-pane history browser: the left pane selects a notebook and the right pane
+Saving or updating a recipe creates a new snapshot, equal to the recipe's own values, so
+the details leave it out of the list. The details are a two-pane browser: the left pane selects a notebook and the right pane
 prominently identifies the active name and timestamp. Selection requests carry a
 token so an older gallery response cannot overwrite a newer selection. Parameter
 result matching uses the separate `sha256-params-v1` signature.

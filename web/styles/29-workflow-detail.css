@@ -1,53 +1,62 @@
-/* A workflow's details (ui_recipe_overview.js): the overview's cover and its column, the models'
-   state, Open and ⋯, the numbers, notes and tags, the prompts. Matches the Workflows page
-   (28-workflows.css). */
+/* A workflow's details (ui_recipe_detail.js and its parts): the bar, the left column of values
+   (ui_recipe_sets.js), the chosen set (ui_recipe_set_view.js), the pictures (ui_recipe_gallery.js).
+   Matches the Workflows page (28-workflows.css). */
 
-.anomalous-wfd-overview {
+.anomalous-wfd-bar {
     display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 16px;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--amb-border);
 }
 
-.anomalous-wfd-hero {
-    display: grid;
-    grid-template-columns: minmax(160px, 260px) minmax(0, 1fr);
-    gap: 18px;
-    align-items: start;
-}
-
-.anomalous-wfd-cover {
-    overflow: hidden;
-    aspect-ratio: 4 / 5;
-    border: 1px solid var(--amb-border);
-    border-radius: var(--amb-radius-panel);
-    background: var(--amb-bg-sunken);
-}
-
-.anomalous-wfd-cover img,
-.anomalous-wfd-cover video {
+.anomalous-wfd-back {
+    flex: 0 0 auto;
+    height: 32px;
+    padding: 0 10px 0 4px;
+    border: none;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 13px;
     cursor: pointer;
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
 }
 
-.anomalous-wfd-hero-copy {
+.anomalous-wfd-back:hover { color: var(--amb-text-main); }
+
+.anomalous-wfd-title {
     display: flex;
-    flex-direction: column;
-    gap: 12px;
+    flex: 0 1 auto;
+    align-items: center;
+    gap: 8px;
     min-width: 0;
 }
 
-.anomalous-wfd-title-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
+.anomalous-wfd-title .anomalous-recipe-inline-title {
+    overflow: hidden;
+    max-width: 100%;
+    padding: 2px 4px;
+    border: 1px solid transparent;
+    border-radius: var(--amb-radius-control);
+    background: transparent;
+    color: var(--amb-text-main);
+    font-size: 15px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: text;
+}
+
+.anomalous-wfd-title .anomalous-recipe-inline-title:hover { border-color: var(--amb-border-strong); }
+
+.anomalous-wfd-bar-status {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .anomalous-wfd-kind {
+    flex: 0 0 auto;
     padding: 2px 8px;
     border-radius: 999px;
     background: color-mix(in srgb, var(--amb-warn) 16%, transparent);
@@ -56,47 +65,36 @@
 }
 
 .anomalous-wfd-status {
-    display: flex;
-    flex-wrap: wrap;
+    display: inline-flex;
     align-items: center;
-    gap: 6px 8px;
-    color: var(--amb-text-soft);
-    font-size: 13px;
+    gap: 6px;
+    max-width: 100%;
+    color: var(--amb-text-muted);
+    font-size: 12.5px;
+    white-space: nowrap;
 }
 
-.anomalous-wfd-status strong { font-weight: 600; }
+.anomalous-wfd-status-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
 .anomalous-wfd-status-dot {
-    width: 9px;
-    height: 9px;
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--amb-ok);
 }
 
 .anomalous-wfd-status.is-checking .anomalous-wfd-status-dot { background: var(--amb-text-muted); }
 .anomalous-wfd-status.is-missing .anomalous-wfd-status-dot { background: var(--amb-danger); }
-.anomalous-wfd-status.is-missing strong { color: var(--amb-danger-text); }
-
-.anomalous-wfd-status-hint {
-    flex-basis: 100%;
-    color: var(--amb-text-muted);
-    font-size: 12px;
-}
-
-.anomalous-wfd-status.is-missing-nodes {
-    color: var(--amb-warn-text);
-    font-size: 12px;
-}
-
-.anomalous-wfd-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
+.anomalous-wfd-status.is-missing { color: var(--amb-danger-text); }
 
 .anomalous-wfd-primary {
-    height: 34px;
-    padding: 0 16px;
+    flex: 0 0 auto;
+    height: 32px;
+    padding: 0 14px;
     border: none;
     border-radius: var(--amb-radius-control);
     background: var(--amb-btn-primary-bg);
@@ -109,11 +107,263 @@
 
 .anomalous-wfd-primary:hover { background: var(--amb-btn-primary-hover); }
 .anomalous-wfd-primary:disabled { opacity: 0.6; cursor: default; }
-.anomalous-wfd-actions .anomalous-wf-icon-btn { height: 34px; width: 34px; }
+
+.anomalous-wfd-body {
+    display: grid;
+    flex: 1;
+    grid-template-columns: clamp(200px, 26%, 280px) minmax(0, 1fr);
+    min-height: 0;
+}
+
+/* The left column. */
+.anomalous-wfd-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+    padding: 12px 10px;
+    overflow-y: auto;
+    border-right: 1px solid var(--amb-border);
+}
+
+.anomalous-wfd-nav-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 0 4px 4px;
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
+    font-weight: 600;
+}
+
+.anomalous-wfd-nav-add,
+.anomalous-wfd-nav-new {
+    padding: 3px 8px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font-size: 11.5px;
+    cursor: pointer;
+}
+
+.anomalous-wfd-nav-add:hover,
+.anomalous-wfd-nav-new:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
+.anomalous-wfd-nav-new { align-self: flex-start; margin: 4px 4px 0; border-style: dashed; }
+
+.anomalous-wfd-set-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.anomalous-wfd-nav-item,
+.anomalous-wfd-set {
+    position: relative;
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    border-radius: var(--amb-radius-card);
+    background: transparent;
+    color: var(--amb-text-soft);
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.anomalous-wfd-nav-item:hover,
+.anomalous-wfd-set:hover { background: var(--amb-bg-card-hover); }
+
+.anomalous-wfd-nav-item.is-active,
+.anomalous-wfd-set.is-active {
+    border-color: var(--amb-border-strong);
+    background: var(--amb-bg-card-hover);
+    color: var(--amb-text-main);
+    box-shadow: inset 3px 0 0 var(--amb-link);
+}
+
+.anomalous-wfd-nav-item.is-own { font-weight: 600; }
+.anomalous-wfd-nav-item.is-editing { color: var(--amb-link); }
+
+.anomalous-wfd-set-main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.anomalous-wfd-set-name {
+    display: -webkit-box;
+    overflow: hidden;
+    font-weight: 500;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.anomalous-wfd-set-date {
+    color: var(--amb-text-dim);
+    font-size: 11px;
+}
+
+.anomalous-wfd-set-actions {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: flex;
+    gap: 4px;
+    padding: 2px;
+    border-radius: var(--amb-radius-control);
+    background: var(--amb-bg-panel);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.anomalous-wfd-set:hover .anomalous-wfd-set-actions,
+.anomalous-wfd-set:focus-within .anomalous-wfd-set-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.anomalous-wfd-nav-more {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--amb-border);
+}
+
+/* The right side. */
+.anomalous-wfd-main {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+    min-height: 0;
+    padding: 16px 18px 24px;
+    overflow-y: auto;
+}
+
+.anomalous-wfd-set-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.anomalous-wfd-set-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.anomalous-wfd-set-title {
+    margin: 0;
+    color: var(--amb-text-main);
+    font-size: 18px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-wfd-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.anomalous-wfd-apply-status {
+    margin-top: -8px;
+    color: var(--amb-ok-text);
+    font-size: 12px;
+}
+
+.anomalous-wfd-apply-status:empty { display: none; }
+.anomalous-wfd-apply-status.is-error { color: var(--amb-danger-text); }
+
+.anomalous-wfd-muted {
+    margin: 0;
+    color: var(--amb-text-muted);
+    font-size: 12.5px;
+}
+
+.anomalous-wfd-info {
+    display: grid;
+    grid-template-columns: 132px minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+}
+
+.anomalous-wfd-cover {
+    overflow: hidden;
+    aspect-ratio: 4 / 5;
+    border: 1px solid var(--amb-border);
+    border-radius: var(--amb-radius-card);
+    background: var(--amb-bg-sunken);
+}
+
+.anomalous-wfd-cover img,
+.anomalous-wfd-cover video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+.anomalous-wfd-info-text {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.anomalous-wfd-info-text .anomalous-recipe-detail-notes p {
+    margin: 0;
+    font-size: 13px;
+}
+
+.anomalous-wfd-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--amb-border);
+    border-radius: var(--amb-radius-panel);
+    background: var(--amb-bg-card);
+}
+
+.anomalous-wfd-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.anomalous-wfd-section-head h3,
+.anomalous-wfd-section > summary {
+    margin: 0;
+    color: var(--amb-text-soft);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.anomalous-wfd-section > summary { cursor: pointer; }
+.anomalous-wfd-section.is-folded:not([open]) { gap: 0; }
 
 .anomalous-wfd-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
     gap: 8px;
 }
 
@@ -123,9 +373,8 @@
     gap: 2px;
     min-width: 0;
     padding: 8px 10px;
-    border: 1px solid var(--amb-border);
     border-radius: var(--amb-radius-card);
-    background: var(--amb-bg-card);
+    background: var(--amb-bg-sunken);
 }
 
 .anomalous-wfd-stat-label {
@@ -141,22 +390,30 @@
     white-space: nowrap;
 }
 
-.anomalous-wfd-meta {
+.anomalous-wfd-model-lines {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding-top: 10px;
-    border-top: 1px solid var(--amb-border);
+    gap: 4px;
 }
 
-.anomalous-wfd-meta .anomalous-recipe-detail-notes p {
-    margin: 0;
-    font-size: 13px;
+.anomalous-wfd-model-line {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 12.5px;
 }
 
-.anomalous-wfd-updated {
-    color: var(--amb-text-dim);
-    font-size: 11.5px;
+.anomalous-wfd-model-name {
+    overflow: hidden;
+    color: var(--amb-text-soft);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-wfd-model-weight {
+    color: var(--amb-text-muted);
+    font-variant-numeric: tabular-nums;
 }
 
 .anomalous-wfd-prompts {
@@ -168,28 +425,41 @@
 .anomalous-wfd-prompt {
     padding: 10px 12px;
     border: 1px solid var(--amb-border);
-    border-left: 3px solid var(--amb-ok);
+    border-left: 3px solid var(--amb-text-dim);
     border-radius: 0 var(--amb-radius-card) var(--amb-radius-card) 0;
-    background: var(--amb-bg-card);
+    background: var(--amb-bg-sunken);
 }
 
+.anomalous-wfd-prompt.is-positive { border-left-color: var(--amb-ok); }
 .anomalous-wfd-prompt.is-negative { border-left-color: var(--amb-danger); }
+.anomalous-wfd-prompt.is-saving { opacity: 0.6; }
 
 .anomalous-wfd-prompt-head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     gap: 8px;
     margin-bottom: 6px;
 }
 
 .anomalous-wfd-prompt-role {
-    color: var(--amb-ok-text);
+    height: 26px;
+    padding: 0 6px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: var(--amb-radius-control);
+    background: var(--amb-bg-input);
+    color: var(--amb-text-main);
     font-size: 12px;
-    font-weight: 600;
 }
 
-.anomalous-wfd-prompt.is-negative .anomalous-wfd-prompt-role { color: var(--amb-danger-text); }
+.anomalous-wfd-prompt-node {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
 .anomalous-wfd-prompt-text {
     color: var(--amb-text-soft);
@@ -217,9 +487,71 @@
     cursor: pointer;
 }
 
-.theme-abyssal-scarlet .anomalous-wfd-prompt { background: rgba(18, 10, 26, 0.88); }
+/* Pictures (ui_recipe_gallery.js): thumbnails, 参数 and ⇄ on hover. */
+.anomalous-wfd-images {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+}
 
-@media (max-width: 640px) {
-    .anomalous-wfd-hero { grid-template-columns: minmax(0, 1fr); }
-    .anomalous-wfd-cover { max-width: 260px; }
+.anomalous-wfd-image {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 3 / 4;
+    border: 1px solid var(--amb-border);
+    border-radius: var(--amb-radius-card);
+    background: var(--amb-bg-sunken);
+}
+
+.anomalous-wfd-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: zoom-in;
+}
+
+.anomalous-wfd-image.is-compare-picked {
+    border-color: var(--amb-link);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--amb-link) 45%, transparent);
+}
+
+.anomalous-wfd-image-btn {
+    position: absolute;
+    bottom: 6px;
+    left: 6px;
+    height: 26px;
+    padding: 0 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 999px;
+    background: rgba(15, 20, 30, 0.85);
+    color: #f3f4f6;
+    font-size: 11.5px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.anomalous-wfd-image-btn.is-compare {
+    right: 6px;
+    left: auto;
+    width: 26px;
+    padding: 0;
+}
+
+.anomalous-wfd-image:hover .anomalous-wfd-image-btn,
+.anomalous-wfd-image:focus-within .anomalous-wfd-image-btn,
+.anomalous-wfd-image.is-compare-picked .anomalous-wfd-image-btn.is-compare { opacity: 1; }
+
+.anomalous-wfd-section .anomalous-compare-bar { margin: 0; }
+
+.theme-abyssal-scarlet .anomalous-wfd-section { background: rgba(18, 10, 26, 0.88); }
+.theme-abyssal-scarlet .anomalous-wfd-set.is-active,
+.theme-abyssal-scarlet .anomalous-wfd-nav-item.is-active { box-shadow: inset 3px 0 0 #dc143c; }
+
+@media (max-width: 720px) {
+    .anomalous-wfd-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+    .anomalous-wfd-nav { max-height: 34vh; border-right: none; border-bottom: 1px solid var(--amb-border); }
+    .anomalous-wfd-bar { flex-wrap: wrap; }
+    .anomalous-wfd-info { grid-template-columns: 96px minmax(0, 1fr); }
 }
