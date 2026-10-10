@@ -26,6 +26,7 @@
 
 ### Fixes
 - **Edit emotions: every clip in the list, and the line follows the clip (编辑情绪：下拉列出全部音频，换音频台词跟着换)**: a box that already held a file listed only the files whose names contain it (the browser filters by the box's text), so a character's other clips seemed missing. Pressing the box now lists all of them, with the current file shown greyed; leaving without a pick keeps it. Picking another clip no longer keeps the old clip's line beside it: the line the node already reads for that clip is filled in, otherwise the line the node finds for the clip (its .txt / .lab or the annotation list) is filled in, with Anomalous_TTS from interface 14 on (older versions leave the box blank and the node reads the line when it speaks); going back to the first clip brings its line back. A blank line box shows, greyed, the line the node uses for its clip.
+- **Search a character's clips by line (按台词找参考音频)**: Edit emotions has a search box above the clips: type part of a line or a file name and the matches list with their lines, to hear (▶), **Use as main voice** or **Add as emotion** (a new emotion row with that clip and its line, ready for its name). Searching lines needs Anomalous_TTS interface 14; with an older version it searches file names.
 
 ## v1.59.0 Beta (Model Downloads, Backup, Share Codes, Node Combos, MCP, Light Theme) — unreleased
 

@@ -1297,6 +1297,79 @@
     display: none;
 }
 
+/* Clip search in Edit emotions (ui_tts_clip_search.js): box, then play, name and line, two uses */
+.anomalous-tts-search {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anomalous-tts-search-input {
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--amb-border);
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.25));
+    color: var(--amb-text-main);
+    font-size: 12px;
+}
+
+.anomalous-tts-search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.anomalous-tts-search-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+}
+
+.anomalous-tts-search-copy {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.anomalous-tts-search-name,
+.anomalous-tts-search-line {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-tts-search-name {
+    color: var(--amb-text-main);
+    font-size: 12px;
+}
+
+.anomalous-tts-search-line {
+    color: var(--amb-text-dim);
+    font-size: 11px;
+}
+
+.anomalous-tts-search-use {
+    padding: 4px 8px;
+    border: 1px solid var(--amb-border);
+    border-radius: 6px;
+    background: rgba(var(--amb-ink-rgb), 0.04);
+    color: var(--amb-text-soft);
+    font-size: 11px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.anomalous-tts-search-use:hover {
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
+    color: var(--amb-link);
+}
+
 /* Pronunciation table (ui_tts_pronunciation.js): from → to, two listen buttons, remove */
 .anomalous-tts-pronounce .anomalous-tts-row {
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto auto auto;

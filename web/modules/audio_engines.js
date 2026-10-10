@@ -90,12 +90,12 @@ async function getJson(url, signal) {
 }
 
 /**
- * The line (and its language) the node would use with this clip as a reference, or '' when
- * it finds none. Interface 14; an older node has no such route and gives '' too.
+ * Each clip's line as the node finds it (a `Map` path -> line; clips without one are left
+ * out), or null when the node is older than interface 14 and cannot tell.
  */
-export async function fetchReferenceText(name, path, signal) {
-    const { ok, data } = await getJson(`/anomalous_tts/reference_text?character=${encodeURIComponent(name)}&path=${encodeURIComponent(path)}`, signal);
-    return ok && typeof data?.text === 'string' ? data.text : '';
+export async function fetchReferenceLines(name, signal) {
+    const { ok, data } = await getJson(`/anomalous_tts/reference_lines?character=${encodeURIComponent(name)}`, signal);
+    return ok && data?.lines && typeof data.lines === 'object' ? new Map(Object.entries(data.lines)) : null;
 }
 
 /** Installed = ComfyUI knows the node class (`/object_info/<class>` is `{}` otherwise). */

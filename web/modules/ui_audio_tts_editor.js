@@ -1,17 +1,19 @@
 import { t } from './interface_settings.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert } from './ui_dialog.js';
-import { fetchGptSovitsCharacter, fetchReferenceText, mergeGptSovitsSettings, saveGptSovitsSettings, ttsAudioUrl } from './audio_engines.js';
+import { fetchGptSovitsCharacter, fetchReferenceLines, mergeGptSovitsSettings, saveGptSovitsSettings, ttsAudioUrl } from './audio_engines.js';
+import { createClipSearch } from './ui_tts_clip_search.js';
 
 /**
  * GPT-SoVITS (Anomalous_TTS) emotion editor: pick one reference audio from the
- * character's folder for the main voice and for each emotion. The node owns the
+ * character's folder for the main voice and for each emotion, typed or found by its
+ * line in the clip search (ui_tts_clip_search.js). The node owns the
  * file; this modal only sends the new settings through its API, keeping every
  * field it does not edit.
  *
  * The studio list carries no file lists (a folder can hold thousands of clips), so
- * the modal opens at once and fetches this character's files in the background;
- * saving waits until they are here.
+ * the modal opens at once and fetches this character's files (and their lines) in the
+ * background; saving waits until they are here.
  */
 
 let activeScope = null;
@@ -100,35 +102,32 @@ export function openGptSovitsEditor(group, { onSaved } = {}) {
         close();
     }, true);
 
-    // A picked file gets its own line: the one it had in this dialog, the line the node read for it
-    // when it is in use already, else the line the node finds for it (blank until it answers, and
-    // blank with a node too old to tell, which then reads it when it speaks).
+    // A picked file gets its own line: the one it had in this dialog, the line the node uses for
+    // it when it is in use, else the one the node finds for it (blank with a node too old to
+    // tell, which then reads it when it speaks). A blank box shows the line greyed, unsaved.
     const knownText = new Map([raw.reference, ...Object.values(raw.emotions || {})]
         .filter(ref => ref?.audio && ref.text).map(ref => [ref.audio, ref.text]));
-    // A blank box shows the line the node uses for its clip, greyed, without saving it.
+    let lines = new Map();
+    const lineOf = path => knownText.get(path) || lines.get(path) || '';
     const linkText = (audio, text) => {
         const start = { audio: audio.value.trim(), text: text.value };
-        const showLine = () => { text.placeholder = knownText.get(audio.value.trim()) || t('ttsEditorTextPlaceholder'); };
+        const showLine = () => { text.placeholder = lineOf(audio.value.trim()) || t('ttsEditorTextPlaceholder'); };
         showLine();
         audio.addEventListener('input', () => {
             const path = audio.value.trim();
             if (!audioList.includes(path)) return;
-            text.value = path === start.audio ? start.text : knownText.get(path) || '';
+            text.value = path === start.audio ? start.text : lineOf(path);
             showLine();
-            if (text.value || path === start.audio) return;
-            fetchReferenceText(name, path, scope.signal).then(line => {
-                if (line && audio.value.trim() === path && !text.value) text.value = line;
-            }).catch(() => {}); // aborted with the dialog, or the node is unreachable: the box stays blank
         });
     };
 
-    const play = (input) => {
+    const playPath = (path) => {
         player?.pause();
-        const path = input.value.trim();
         if (!audioList.includes(path)) return;
         player = new Audio(ttsAudioUrl(name, path));
         player.play().catch(() => {});
     };
+    const play = (input) => playPath(input.value.trim());
 
     // Header
     const header = el('div', 'anomalous-voice-modal-header');
@@ -183,6 +182,14 @@ export function openGptSovitsEditor(group, { onSaved } = {}) {
         addRow({ name: emotion, audio: ref?.audio, text: ref?.text });
     }
     const addBtn = button('anomalous-tts-add', t('ttsEditorAdd'), () => addRow().focus());
+    const search = createClipSearch({
+        play: playPath,
+        onMain: (path) => {
+            mainAudio.value = path;
+            mainAudio.dispatchEvent(new Event('input'));
+        },
+        onEmotion: (path) => addRow({ audio: path, text: lineOf(path) }).focus(),
+    });
 
     const autoEmotions = Object.entries(raw.emotions || {}).filter(([, ref]) => ref?.source === 'filename').map(([emotion]) => `{${emotion}}`);
     const autoNote = el('div', 'anomalous-tts-hint', autoEmotions.length ? t('ttsEditorFilenameEmotions', { emotions: autoEmotions.join(' ') }) : '');
@@ -220,9 +227,14 @@ export function openGptSovitsEditor(group, { onSaved } = {}) {
 
     const status = el('div', 'anomalous-tts-hint anomalous-tts-status', t('ttsEditorLoadingFiles'));
     saveBtn.disabled = true;
-    fetchGptSovitsCharacter(name, scope.signal).then(detail => {
+    Promise.all([
+        fetchGptSovitsCharacter(name, scope.signal),
+        fetchReferenceLines(name, scope.signal).catch(() => null), // the lines only help: never block the files
+    ]).then(([detail, found]) => {
         if (scope.signal.aborted) return;
         audioList = Array.isArray(detail.audio) ? detail.audio : [];
+        lines = found || new Map();
+        search.setClips(audioList, found);
         // The detail is read from disk now: keep its unknown fields when saving.
         if (detail.settings && typeof detail.settings === 'object') settings = detail.settings;
         datalist.replaceChildren(...audioList.map(path => { const option = el('option'); option.value = path; return option; }));
@@ -238,6 +250,7 @@ export function openGptSovitsEditor(group, { onSaved } = {}) {
     const body = el('div', 'anomalous-tts-editor-body');
     body.append(
         status,
+        search.element,
         datalist,
         el('div', 'anomalous-tts-section', t('ttsEditorMainSection')), mainRow, mainHint,
         el('div', 'anomalous-tts-section', t('ttsEditorEmotionSection')), rowsBox, addBtn, autoNote,

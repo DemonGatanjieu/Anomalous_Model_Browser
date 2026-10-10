@@ -222,8 +222,11 @@ covered by the `styles.css` manifest.
   and `invalidateEngineCache({ rescan: true })` (Refresh button) also makes the node
   re-read its folders (`?refresh=1`).
   `ui_audio_tts_editor.js` edits a character's emotion references through that API:
-  it opens at once, loads the character's audio list in the background (save waits
-  for it), and keeps settings fields it does not know.
+  it opens at once, loads the character's audio list and their lines
+  (`/anomalous_tts/reference_lines`, interface 14; optional) in the background (save
+  waits for the list), and keeps settings fields it does not know.
+  `ui_tts_clip_search.js` is its clip search: by file name or line, the first 30
+  matches with listen, use as main voice and add as emotion.
   `tts_setup_api.js` holds the other calls (pretrained downloads, chunked
   upload, inspect, commit, discard) and the pure import-form rules (`importKind`,
   `pickWeights`, `nameConflict`, `textFromFile`, `buildImportBody`, `importProblem`,
