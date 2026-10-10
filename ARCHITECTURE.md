@@ -398,7 +398,7 @@ covered by the `styles.css` manifest.
   step with Undo; `param_compare.js` reads and compares the two sides without DOM.
   `key_params.js` keeps the starred key parameters (node type + widget name, a hidden ComfyUI
   setting); the window shows them first. `ui_param_set_keys.js` puts parameter sets in view: a
-  recipe card's 参数方案 N chip (`GET /anomalous/parameters/signatures`; sets equal to the recipe not counted) opens its Parameters tab,
+  recipe card's ▤ N chip (first in its specs line) (`GET /anomalous/parameters/signatures`; sets equal to the recipe not counted) opens its Parameters tab,
   and each set there shows its key values, how many values differ from the recipe, and ⇄.
   `ui_keep_menu.js` is the star's keep menu (also the workbench's Keep): the whole workflow, the combo or the prompts,
   each saying where it goes, opening what was kept already or removing it (to the Recycle Bin through the recipe,

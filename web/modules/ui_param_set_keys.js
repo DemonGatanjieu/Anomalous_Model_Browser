@@ -63,17 +63,22 @@ export function showParameterSetCount(owner, card, recipe, signatures) {
         const own = recipe?.data?.parameter_signature?.value;
         const sets = Array.isArray(map[recipe?.filename]) ? map[recipe.filename] : [];
         const count = sets.filter(signature => !own || signature !== own).length;
+        // First in the specs line: the card's height is fixed, so a line of its own would push into it
+        // (a card without specs has that line free).
+        const strip = card.querySelector('.anomalous-recipe-specs-strip');
         const header = card.querySelector('.anomalous-recipe-card-header');
-        if (!count || !header) return;
-        const chip = el('button', 'anomalous-recipe-set-chip', t('paramSetCount', { count }));
+        if (!count || !(strip || header)) return;
+        const chip = el('button', 'anomalous-recipe-set-chip', `▤ ${count}`);
         chip.type = 'button';
-        chip.title = t('paramSetCountHint');
+        chip.title = `${t('paramSetCount', { count })} · ${t('paramSetCountHint')}`;
+        chip.setAttribute('aria-label', chip.title);
         chip.onclick = (event) => {
             event.stopPropagation();
             owner.recipeReturnState = { activeTab: 'parameters' };
             card.click();
         };
-        header.after(chip);
+        if (strip) strip.prepend(chip);
+        else header.after(chip);
     });
 }
 

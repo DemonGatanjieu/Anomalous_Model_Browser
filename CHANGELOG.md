@@ -25,7 +25,7 @@
 - Against the canvas, tick the values to take from the picture and put them on the canvas in one go (seeds stay); one Ctrl+Z or the toast's Undo takes them back.
 - **What changed since the last picture (和最新出图对比)**: **⇄ Canvas vs. newest picture** at the top of the Gallery and of Activity compares the canvas with the newest picture in the output folder, edits made by hand on the canvas included, and can put the picture's values back.
 - **Key parameters (关键参数)**: press ☆ before a value's name (tick **Show equal values too** to star one that matches) and it stays at the top of every comparison, for every workflow, kept with your ComfyUI settings.
-- **Parameter sets in view (参数方案更好找)**: a workflow card with saved sets shows **参数方案 N**, which opens them directly. Each set there shows its key values (those unlike the workflow's own in colour), how many values differ, and ⇄ to compare it with the workflow.
+- **Parameter sets in view (参数方案更好找)**: a workflow card with saved sets shows **▤ N** (how many), which opens them directly. Each set there shows its key values (those unlike the workflow's own in colour), how many values differ, and ⇄ to compare it with the workflow.
 
 ### ⚙️ Settings in tabs (设置分组)
 - The settings page is split into tabs: **Look, Models, Workflows, Prompts, Backup, Help**. "Change where downloads go" opens Models directly.

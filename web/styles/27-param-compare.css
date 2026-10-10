@@ -507,9 +507,10 @@
 .anomalous-compare-apply:disabled { opacity: 0.5; cursor: default; }
 
 .anomalous-recipe-set-chip {
+    flex: 0 0 auto;
     align-self: flex-start;
-    margin: 2px 0 4px;
-    padding: 2px 9px;
+    padding: 1px 8px;
+    white-space: nowrap;
     border: 1px solid var(--amb-border-strong);
     border-radius: 999px;
     background: var(--amb-bg-sunken);
