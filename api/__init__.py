@@ -71,6 +71,7 @@ def setup_routes(app):
     app.router.add_get('/anomalous/recipe_gallery_compare', recipes.api_get_recipe_gallery_compare)
     app.router.add_post('/anomalous/save_recipe', recipes.api_save_recipe)
     app.router.add_post('/anomalous/update_recipe', recipes.api_update_recipe)
+    app.router.add_post('/anomalous/recipe_focus', recipes.api_set_recipe_focus)
     app.router.add_post('/anomalous/set_recipe_gallery_cover', recipes.api_set_recipe_gallery_cover)
     app.router.add_post('/anomalous/delete_recipe', recipes.api_delete_recipe)
     app.router.add_get('/anomalous/recipe_history', recipes.api_get_recipe_history)

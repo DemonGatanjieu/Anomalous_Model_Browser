@@ -427,24 +427,55 @@
 .anomalous-wfd-focus-note.is-empty { color: var(--amb-text-dim); }
 
 .anomalous-wfd-focus-star {
+    display: inline-flex;
     flex: 0 0 auto;
-    width: 20px;
-    height: 20px;
-    margin-right: 4px;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin: -3px 4px -3px -4px;
     padding: 0;
     border: none;
     border-radius: 50%;
     background: transparent;
     color: var(--amb-text-dim);
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1;
-    vertical-align: -1px;
+    vertical-align: middle;
     cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease, transform 0.12s ease;
 }
 
-.anomalous-wfd-focus-top .anomalous-wfd-focus-star { margin-right: -4px; }
-.anomalous-wfd-focus-star:hover { background: rgba(var(--amb-ink-rgb), 0.08); color: var(--amb-link); }
-.anomalous-wfd-focus-star.is-on { color: #f5b301; }
+.anomalous-wfd-focus-top .anomalous-wfd-focus-star { margin: -4px -6px -4px 0; }
+.anomalous-wfd-focus-star:hover { background: rgba(var(--amb-ink-rgb), 0.08); color: #f5b301; transform: scale(1.12); }
+.anomalous-wfd-focus-star:active { transform: scale(0.88); }
+.anomalous-wfd-focus-star.is-on { color: #f5b301; text-shadow: 0 0 8px rgba(245, 179, 1, 0.45); }
+.anomalous-wfd-focus-star.is-popping { animation: anomalous-focus-star-pop 0.32s cubic-bezier(0.3, 1.6, 0.5, 1); }
+
+@keyframes anomalous-focus-star-pop {
+    0% { transform: scale(0.7); }
+    55% { transform: scale(1.35); }
+    100% { transform: scale(1); }
+}
+
+/* The value just marked fades in; one being unmarked fades while its save runs. */
+.anomalous-wfd-focus-tile { transition: opacity 0.2s ease, transform 0.2s ease; }
+.anomalous-wfd-focus-tile.is-new,
+.anomalous-wfd-focus.is-new { animation: anomalous-focus-in 0.35s ease-out; }
+.anomalous-wfd-focus-tile.is-leaving { opacity: 0.35; transform: scale(0.97); }
+
+@keyframes anomalous-focus-in {
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .anomalous-wfd-focus-star,
+    .anomalous-wfd-focus-tile { transition: none; }
+    .anomalous-wfd-focus-star.is-popping,
+    .anomalous-wfd-focus-tile.is-new,
+    .anomalous-wfd-focus.is-new { animation: none; }
+}
 
 /* A tip under a set's name: what sets are for, or where ⇄ is. */
 .anomalous-wfd-tip {

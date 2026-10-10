@@ -225,7 +225,10 @@ still match.
 A workflow's focus values (重点参数) live in `params.focusParams`: at most 12
 `{ node, type, widget, note }`, all strings (node ID, saved node type, widget
 name, a note of at most 120 characters). `api/recipe_schema.py` refuses any other
-shape and drops repeats. They are shown, compared and kept only while a node of
+shape and drops repeats. A star or a note saves them alone through
+`POST /anomalous/recipe_focus` (`api/recipes.py`, from this computer only): the
+recipe file is read (up to its size limit), only `focusParams` changes, and no
+version is kept, unlike a recipe update. They are shown, compared and kept only while a node of
 that ID and type is still in the workflow (`recipe_focus.js focusEntries`); an
 update from the canvas keeps the ones still true. Its parameter sets, the canvas
 it opens and its pictures share the node IDs, so comparisons among them

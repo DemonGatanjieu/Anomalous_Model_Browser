@@ -123,6 +123,21 @@ class RecipeWorkflowValidationTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 recipes._normalise_recipe(payload)
 
+    def test_focus_values_save_alone_without_a_version(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            recipe = recipes._normalise_recipe(recipe_payload(valid_workflow()))
+            Path(temp_dir, "r.json").write_text(json.dumps(recipe), encoding="utf-8")
+            mark = {"node": "2", "type": "KSampler", "widget": "cfg", "note": "7-9"}
+            self.assertEqual(recipes._set_recipe_focus(temp_dir, "r.json", [mark]), [mark])
+            saved = json.loads(Path(temp_dir, "r.json").read_text(encoding="utf-8"))
+            self.assertEqual(saved["params"]["focusParams"], [mark])
+            self.assertEqual(saved["workflow"], recipe["workflow"])
+            self.assertFalse(Path(temp_dir, ".history").exists())
+            with self.assertRaises(ValueError):
+                recipes._set_recipe_focus(temp_dir, "r.json", [{"node": "2"}])
+            with self.assertRaises(FileNotFoundError):
+                recipes._set_recipe_focus(temp_dir, "missing.json", [])
+
     def test_invalid_workflow_scope_is_rejected(self):
         payload = recipe_payload(valid_workflow())
         payload["workflow_scope"] = "selection"

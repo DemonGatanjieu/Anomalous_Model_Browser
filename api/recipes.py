@@ -26,13 +26,14 @@ from .recipe_schema import (
     _enrich_recipe as _schema_enrich_recipe, _normalise_recipe, _normalise_source_image,
     _identity_for_reference as _schema_identity_for_reference,
     _model_reference_key, _model_reference_specs,
-    _model_roots, _preserve_model_reference_fields,
+    _model_roots, _normalise_focus_params, _preserve_model_reference_fields,
     _resolve_exact_model_reference, _updated_recipe, _workflow_identity_for_reference,
 )
 from .recipe_store import (
     _archive_recipe, _delete_recipe_with_history, _history_dir, _list_recipe_history,
     _list_recipes, _read_recipe, _write_recipe, get_recipes_dir,
 )
+from .mcp_server import _is_local
 from .utils import require_filename, resolve_within
 from .workflow_schema import (
     _clean_volatile_params, _node_title, _node_type, _normalise_workflow_key,
@@ -357,6 +358,40 @@ async def api_update_recipe(request):
         "filename": filename,
         "receipt": _recipe_receipt(recipe, filename),
     })
+
+
+def _set_recipe_focus(recipes_dir, filename, entries):
+    """Writes a recipe's focus values (重点参数) alone: no version kept, nothing else read again."""
+    focus = _normalise_focus_params(entries)
+    path = resolve_within(recipes_dir, filename)
+    if os.path.getsize(path) > MAX_RECIPE_BYTES:
+        raise ValueError("Recipe is too large")
+    recipe = _read_recipe(path)
+    if not isinstance(recipe, dict) or not isinstance(recipe.get("workflow"), dict):
+        raise ValueError("Invalid recipe")
+    params = recipe.get("params") if isinstance(recipe.get("params"), dict) else {}
+    recipe["params"] = {**params, "focusParams": focus}
+    _write_recipe(recipes_dir, filename, recipe)
+    return focus
+
+
+async def api_set_recipe_focus(request):
+    """Marks or notes a recipe's focus values (a star in its details). Only from this computer."""
+    if not _is_local(request):
+        return web.json_response({"status": "error", "message": "Only from this computer"}, status=403)
+    try:
+        payload = await request.json()
+        filename = require_filename(payload.get("filename", ""))
+        if not filename.endswith(".json"):
+            raise ValueError("Invalid filename")
+        focus = await asyncio.to_thread(_set_recipe_focus, get_recipes_dir(), filename, payload.get("focusParams"))
+    except FileNotFoundError:
+        return web.json_response({"status": "error", "message": "File not found"}, status=404)
+    except (AttributeError, ValueError, json.JSONDecodeError):
+        return web.json_response({"status": "error", "message": "Invalid focus values"}, status=400)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not update recipe"}, status=500)
+    return web.json_response({"status": "success", "focusParams": focus})
 
 
 async def api_get_recipe_history(request):
