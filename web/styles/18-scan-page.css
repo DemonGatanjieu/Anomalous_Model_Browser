@@ -604,6 +604,8 @@ label.anomalous-scan-setting {
     text-overflow: ellipsis;
 }
 
+.anomalous-scan-row.is-damaged .anomalous-scan-row-detail { white-space: normal; } /* the advice is read whole */
+
 .anomalous-scan-row-name {
     color: var(--amb-text-main);
     font-size: 13px;
