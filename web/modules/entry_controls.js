@@ -1,11 +1,3 @@
-// Unconditionally purge legacy contaminated storage keys on module load
-try {
-    if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem('anomalous_btn_x');
-        localStorage.removeItem('anomalous_btn_y');
-    }
-} catch (_) {}
-
 export const FLOATING_TRIGGER_SIZES = new Set(['small', 'medium', 'large']);
 export const FLOATING_TRIGGER_STYLES = new Set(['icon', 'pill']);
 export const ENTRY_MODES = new Set(['floating', 'topbar', 'menu']);
@@ -22,11 +14,11 @@ export function normalizeEntryMode(value) {
     return ENTRY_MODES.has(value) ? value : 'floating';
 }
 
+// Unsaved buttons are placed by CSS (#anomalous-trigger-btn, 00-foundation-models.css);
+// these mirror that default for clamping when no coordinates exist.
 export const DEFAULT_SAFE_TOP = 80;
-export const DEFAULT_SAFE_LEFT = 80; // Safe position outside ComfyUI left sidebar dock
-export const DEFAULT_SAFE_MARGIN_RIGHT = 24;
+export const DEFAULT_SAFE_LEFT = 80;
 export const DEFAULT_MIN_SAFE_X = 70; // Avoid ComfyUI left sidebar dock
-export const DEFAULT_TRIGGER_POSITION = Object.freeze({ top: DEFAULT_SAFE_TOP, left: DEFAULT_SAFE_LEFT });
 export const TRIGGER_POSITION_STORAGE_KEY = 'anomalous_trigger_pos_v3';
 export const LEGACY_TRIGGER_X_KEY = 'anomalous_btn_x';
 export const LEGACY_TRIGGER_Y_KEY = 'anomalous_btn_y';
@@ -81,13 +73,17 @@ export function clearSavedTriggerPosition(storage = (typeof localStorage !== 'un
     } catch (_) {}
 }
 
-export function sanitizeSavedTriggerPosition(x, y) {
+export function normalizeSavedTriggerPosition(x, y) {
     if (!isValidSavedTriggerPosition(x, y)) return null;
     return { x: Number.parseFloat(x), y: Number.parseFloat(y) };
 }
 
-export function normalizeSavedTriggerPosition(x, y) {
-    return sanitizeSavedTriggerPosition(x, y);
+/** Pre-v3 keys could hold coordinates inside the sidebar dock; they are never read, only removed. */
+export function removeLegacyTriggerPosition(storage = (typeof localStorage !== 'undefined' ? localStorage : null)) {
+    try {
+        storage?.removeItem(LEGACY_TRIGGER_X_KEY);
+        storage?.removeItem(LEGACY_TRIGGER_Y_KEY);
+    } catch (_) {}
 }
 
 export function clampFloatingTriggerPosition({

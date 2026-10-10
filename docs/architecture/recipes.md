@@ -21,11 +21,11 @@ local saves are unaffected.
 Reopening requires an explicit release decision, package round-trip and failure
 validation, then restoring the frontend export action and enabling the backend
 gates together. Do not reopen package transfers as a side effect of UX work. Workflow
-share-code import/export is a separate, verified feature available from Toolbox.
+share-code import/export is a separate, verified feature on the Workflows page's top bar (⇅).
 
 ## Product and data model
 
-Workspace contains Prompt Notes, Workflow Recipes, and the Material Library.
+Workspace contains Combos (formerly Prompt Notes) and Workflow Recipes.
 Recipe Parameter Notebooks are presented as Parameter Sets (参数方案). Internal
 notebook route and property names may remain stable for compatibility even when
 the user-facing presentation changes.
@@ -92,8 +92,8 @@ for long values and prompts; they do not silently truncate authoritative data.
 
 `ui_recipe_detail.js` coordinates the detail session, active tab, and model composition.
 `ui_recipe_overview.js` owns the overview; `ui_recipe_parameters.js` owns prompt roles,
-parameter editing, raw nodes, and preset saving; and `ui_recipe_model_matching.js`
-owns preview resolution plus explicit local matching. Inline persistence is centralized
+parameter editing, raw nodes, and preset saving; and `ui_recipe_models.js`
+lists the models with previews and whether each is here under its saved name. Inline persistence is centralized
 in `ui_recipe_metadata.js`, with pure ordering/value helpers in
 `ui_recipe_parameter_utils.js`. The catalog shell lives in `ui_recipe_catalog.js`,
 cards and card actions in `ui_recipe_cards.js`, save/edit dialogs in
@@ -105,17 +105,16 @@ directly for image inspection. Shared detail DOM/copy primitives live in
 callbacks instead of redrawing one another.
 
 Model names in compact recipe presentation use a basename or official model
-name, never a full filesystem path. Saved paths and hashes belong behind advanced
-information. A preview or exact path can locate current-machine presentation
+name, never a full filesystem path; the saved path is a secondary line and the
+detail shows no hashes (Model Check shows that evidence). A preview or exact path can locate current-machine presentation
 only after the reference is already understood; it cannot establish identity.
 
-Import matching is a separate explicit recovery action. Unresolved references
-are sent to the hash/size/category resolver. A discovered candidate remains
-presentation-only until the user chooses Apply match; that action updates the
-authoritative workflow widget, model reference, and node-scoped Hash index
-through the full-recipe update path and archives the previous recipe. The
-author's saved filename or path is never match evidence. Model-reference
-`user_note` is recipe-scoped presentation metadata and never match evidence.
+The recipe detail does not match or replace models. A model not found under its
+saved name is listed as missing, and opening the workflow hands it to Model Check
+(model-resolution.md), which finds renamed or moved files on the canvas; saving
+the recipe again keeps the change, with the previous version archived.
+Model-reference `user_note` is recipe-scoped presentation metadata and never
+match evidence.
 
 Recipe-owned model preview snapshots are bounded, content-addressed WebP files
 below `.assets/<recipe-stem>/`. They are at most 320 px or 96 KiB each, limited

@@ -92,7 +92,8 @@ function refreshRegisteredSettings() {
     }
 }
 
-function applyLanguagePreference(value) {
+/** 'auto' | 'zh' | 'en': the ComfyUI setting's change handler, also used without the settings API. */
+export function applyLanguagePreference(value) {
     const preference = normalizeLanguagePreference(value);
     if (preference === 'auto') localStorage.removeItem('anomalous_lang');
     else localStorage.setItem('anomalous_lang', preference);
@@ -107,6 +108,14 @@ function applyLanguagePreference(value) {
             detail: { language: nextLanguage, preference }
         }));
     }
+}
+
+/**
+ * "Follow ComfyUI" (no language chosen here): takes up a ComfyUI language changed since the
+ * page loaded. Called when the browser opens, since ComfyUI switches its language without a reload.
+ */
+export function followComfyLanguage() {
+    if (!localStorage.getItem('anomalous_lang')) applyLanguagePreference('auto');
 }
 
 if (!localStorage.getItem('anomalous_lang')) {

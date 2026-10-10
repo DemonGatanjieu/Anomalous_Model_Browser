@@ -1,0 +1,218 @@
+/* Activity log: the activity page and the home page's recent list. */
+
+#anomalous-activity-panel {
+    flex: 1;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.anomalous-activity {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: min(860px, 100%);
+    margin: 0 auto;
+    padding: 20px 24px 32px;
+    box-sizing: border-box;
+}
+
+.anomalous-activity-lead {
+    margin: 0;
+    color: var(--amb-text-muted);
+    font-size: 0.82em;
+    line-height: 1.6;
+}
+
+.anomalous-activity-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.anomalous-activity-filters {
+    display: flex;
+    gap: 6px;
+}
+
+.anomalous-activity-chip,
+.anomalous-activity-clear,
+.anomalous-activity-locate {
+    padding: 4px 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 0.8em;
+    cursor: pointer;
+}
+
+.anomalous-activity-chip:hover,
+.anomalous-activity-clear:hover,
+.anomalous-activity-locate:hover {
+    border-color: var(--amb-border-strong);
+    color: var(--amb-text-main);
+}
+
+.anomalous-activity-chip.active {
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+    color: var(--amb-text-main);
+}
+
+.anomalous-activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.anomalous-activity-day {
+    margin: 10px 0 2px;
+    color: var(--amb-text-dim);
+    font-size: 0.75em;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+}
+
+.anomalous-activity-entry {
+    border: 1px solid var(--amb-border);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.anomalous-activity-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 0;
+    padding: 8px 12px;
+    font-size: 0.85em;
+}
+
+.anomalous-activity-head.is-expandable {
+    cursor: pointer;
+}
+
+.anomalous-activity-head.is-expandable:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.anomalous-activity-time {
+    flex-shrink: 0;
+    color: var(--amb-text-dim);
+    font-variant-numeric: tabular-nums;
+}
+
+.anomalous-activity-source {
+    flex-shrink: 0;
+    padding: 0 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--amb-text-muted);
+    font-size: 0.85em;
+}
+
+.anomalous-activity-entry.is-canvas .anomalous-activity-source {
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+    color: var(--amb-text-main);
+}
+
+.anomalous-activity-undo,
+.anomalous-activity-undone {
+    flex-shrink: 0;
+    margin-left: auto;
+    font-size: 0.92em;
+}
+
+.anomalous-activity-undo {
+    padding: 1px 10px;
+    border: 1px solid var(--amb-border-hover);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-main);
+    cursor: pointer;
+}
+
+.anomalous-activity-undo:hover {
+    background: var(--amb-bg-card-hover);
+}
+
+.anomalous-activity-undone {
+    color: var(--amb-text-muted);
+}
+
+.anomalous-activity-summary {
+    overflow: hidden;
+    color: var(--amb-text-main);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.anomalous-activity-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 12px 10px;
+}
+
+.anomalous-activity-details[hidden] {
+    display: none;
+}
+
+.anomalous-activity-change {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 3px 0;
+    color: var(--amb-text-muted);
+    font-size: 0.8em;
+}
+
+.anomalous-activity-change-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.anomalous-activity-locate {
+    flex-shrink: 0;
+    padding: 1px 9px;
+}
+
+.anomalous-activity-more,
+.anomalous-activity-note {
+    color: var(--amb-text-dim);
+    font-size: 0.78em;
+}
+
+.anomalous-activity-empty {
+    padding: 18px 12px;
+    color: var(--amb-text-dim);
+    font-size: 0.85em;
+    text-align: center;
+}
+
+/* Home page: the latest few, one line each. */
+.anomalous-home-recent {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.anomalous-home-recent-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    color: var(--amb-text-muted);
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.anomalous-activity-list.is-compact .anomalous-activity-empty {
+    padding: 10px;
+}

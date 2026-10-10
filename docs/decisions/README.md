@@ -115,3 +115,37 @@ Model Doctor Hash index form one mutation boundary. Local matching updates all
 three through the archived full-recipe path. Partial append remaps Hash records
 with node IDs and rolls them back with the inserted graph. Personal model notes
 are recipe-scoped presentation data and may be excluded from package export.
+
+## AD-016 — The audio page manages one speech engine
+
+The audio page is built around GPT-SoVITS through the separate Anomalous_TTS
+node pack: its characters, emotions, pronunciation and sampling defaults live in
+the node's own settings, and the Script Director can run a script without the
+canvas. The F5-TTS voice library (files under `input/F5-TTS`, upload, romanization,
+Load Audio drags) was removed rather than kept as a parallel engine, so the page
+teaches one set of rules. A zero-shot voice (one clip, no trained model) belongs
+in Anomalous_TTS as a character kind, not as a second engine here.
+
+## AD-017 — The browser is a rail of pages with a home page
+
+Navigation is one narrow icon rail: a home page, the image pages (models, gallery,
+workflows, materials), the audio pages (voices, audio gallery), the canvas tools and
+settings. The rail replaces the header tabs, the image/audio toggle and the tool bar
+under the folder list, so the list column holds only a list and can close without
+hiding any command. Each page decides whether it has a list; the open state is
+remembered per page and narrow windows start with it closed. The home page offers
+tasks rather than a manual: each card opens its page, and a first visit lands there.
+AMB stays the chore layer around ComfyUI (AD-016 keeps one engine per page); a new
+page earns a rail entry only when it is a place users return to, not a one-off tool.
+
+## AD-018 — The activity log records what Anomalous changed, without undo for now
+
+Users need to see what the plugin did to their canvas and files. File changes are
+recorded on the server, after a write request succeeds, from one table of routes,
+so a new write route is logged by adding a line there. Canvas changes are recorded
+without each action reporting itself: a press inside Anomalous takes a snapshot, and
+the difference is logged when the user next presses or types outside it, so the
+user's own edits are never attributed to the plugin. Opening another workflow is
+logged as that, not as removed nodes. The log is bounded and never fails the action
+it records. Undo comes later and only for changes that can be reversed safely
+(canvas values, renames); deletions go through their own confirmations instead.

@@ -1,0 +1,536 @@
+import { app } from '../../../scripts/app.js';
+import { t } from './interface_settings.js';
+import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
+import { buildScriptPackage, comboValueForPath, joinSegments, splitScriptLines, splitSegmentAt, usableEmotions } from './audio_script.js';
+import { targetForNode } from './audio_node_targets.js';
+import { TTS_ENGINE } from './audio_engines.js';
+import { bindMaterialDrag } from './material_drag.js';
+import { createRunSection } from './ui_script_run.js';
+import { recordCanvasStep } from './canvas_history.js';
+
+/**
+ * The script director, the body of the Voices page's Voice-over view (ui_script_page.js):
+ * pick one character, paste a script, choose an emotion per line on the line cards, then
+ * generate it right here (ui_script_run.js), or put the tagged script into the
+ * workflow: push it to a GPT-SoVITS node, drag it onto one (supported nodes:
+ * audio_node_targets.js) or copy it. The panel and its lines live for the page
+ * session; the page mounts it again each time it is shown.
+ */
+
+// From this width on, the cards get the full height and the generate side sits beside them.
+const WIDE_FROM = 760;
+
+const ICONS = {
+    SPEAKER: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>`,
+    STOP: `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>`,
+    GRIP: `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>`,
+};
+
+const state = {
+    groups: [],
+    groupKey: null,
+    lines: [],          // { text, emotion, take } — take > 1: that line was retaken
+    editing: true,
+    splitMode: 'sentence',
+    focusIndex: null,   // card whose text box should receive focus after the next render
+};
+
+let panel = null;
+let refs = null;
+let hooks = {};
+let previewAudio = null;
+let previewButton = null;
+let runSection = null;
+// bindMaterialDrag hides the browser modal while dragging; the owner is only known once the studio sets hooks.
+const dragOwner = { get modal() { return hooks.owner?.modal; } };
+
+// ---------- public API ----------
+
+/** `{ owner, onPreviewStart(), onCharacterChange(), openGallery() }` from the page. */
+export function setScriptDirectorHooks(next) {
+    hooks = next || {};
+}
+
+/** The voice group key of who speaks. */
+export function scriptCharacter() {
+    return state.groupKey;
+}
+
+/** Lines to voice again (a generated file's `{ emotion, text }` segments): one card per line. */
+export function loadScriptLines(segments) {
+    const lines = segments.flatMap(segment => String(segment.text || '').split(/\n+/)
+        .map(text => ({ text: text.trim(), emotion: segment.emotion || 'main', take: 1 })))
+        .filter(line => line.text);
+    if (!lines.length) return;
+    stopScriptDirectorPreview();
+    state.lines = lines;
+    state.editing = false;
+    if (panel) renderAll();
+}
+
+/** Puts the director into `parentContainer` (the Voice-over page). */
+export function mountScriptDirector(parentContainer) {
+    if (!panel) createPanel();
+    if (panel.parentNode !== parentContainer) parentContainer.appendChild(panel);
+    renderAll();
+}
+
+/**
+ * The characters, after each voice fetch. Keeps the chosen character while it exists;
+ * `choose`: switch to `preferredGroup` (a character card's "Voice-over").
+ */
+export function updateScriptDirectorVoices(groups, preferredGroup = null, { choose = false } = {}) {
+    state.groups = Array.isArray(groups) ? groups : [];
+    const exists = key => state.groups.some(group => group.group === key);
+    if (choose && exists(preferredGroup)) {
+        if (state.groupKey !== preferredGroup) stopScriptDirectorPreview();
+        state.groupKey = preferredGroup;
+    } else if (!exists(state.groupKey)) {
+        state.groupKey = (preferredGroup && exists(preferredGroup) ? preferredGroup : null)
+            || state.groups.find(group => usableEmotions(group).includes('main'))?.group
+            || state.groups[0]?.group
+            || null;
+    }
+    if (panel) renderAll();
+}
+
+export function stopScriptDirectorPreview() {
+    stopLinePreview();
+    runSection?.stopPlayback();
+}
+
+function stopLinePreview() {
+    if (previewAudio) {
+        previewAudio.pause();
+        previewAudio = null;
+    }
+    if (previewButton) {
+        previewButton.innerHTML = ICONS.SPEAKER;
+        previewButton.classList.remove('is-playing');
+        previewButton = null;
+    }
+}
+
+// ---------- state helpers ----------
+
+function selectedGroup() {
+    return state.groups.find(group => group.group === state.groupKey) || null;
+}
+
+/** The script with retakes, for a run in the director. */
+function runScript() {
+    const group = selectedGroup();
+    return { group, pkg: buildScriptPackage(state.lines, group, { takes: true }) };
+}
+
+function emotionLabel(emotion) {
+    return emotion === 'main' ? t('scriptDirectorMainEmotion') : emotion;
+}
+
+function currentPackage() {
+    return buildScriptPackage(state.lines, selectedGroup());
+}
+
+// ---------- DOM ----------
+
+function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+}
+
+function button(className, label, onClick, title) {
+    const btn = el('button', className, label);
+    btn.type = 'button';
+    if (title) {
+        btn.title = title;
+        btn.setAttribute('aria-label', title);
+    }
+    btn.onclick = onClick;
+    return btn;
+}
+
+function createPanel() {
+    panel = el('div', 'anomalous-script-director-panel');
+
+    const header = el('div', 'anomalous-sd-header');
+    const subtitle = el('p', 'anomalous-sd-subtitle');
+    header.append(subtitle);
+
+    const characterBar = el('label', 'anomalous-sd-character-bar');
+    const characterSelect = el('select', 'anomalous-sd-character-select');
+    characterSelect.onchange = () => {
+        state.groupKey = characterSelect.value;
+        stopScriptDirectorPreview();
+        renderAll();
+        hooks.onCharacterChange?.();
+    };
+    const characterHint = el('div', 'anomalous-sd-character-hint');
+    characterBar.append(el('span', 'anomalous-sd-step', t('scriptDirectorCharacter')), characterSelect);
+
+    const inputArea = el('div', 'anomalous-sd-input-area');
+    const textarea = el('textarea', 'anomalous-sd-textarea');
+    textarea.placeholder = t('scriptDirectorInputPlaceholder');
+    const inputActions = el('div', 'anomalous-sd-input-actions');
+    const splitMode = el('select', 'anomalous-sd-split-mode');
+    for (const [value, key] of [['sentence', 'scriptDirectorSplitSentence'], ['line', 'scriptDirectorSplitLine']]) {
+        const option = el('option', '', t(key));
+        option.value = value;
+        splitMode.appendChild(option);
+    }
+    splitMode.value = state.splitMode;
+    splitMode.onchange = () => { state.splitMode = splitMode.value; };
+    const cancelEdit = button('anomalous-sd-btn', t('dialogCancel'), () => { state.editing = false; renderAll(); });
+    inputActions.append(
+        splitMode,
+        button('anomalous-sd-btn', t('scriptDirectorClear'), () => { textarea.value = ''; textarea.focus(); }),
+        cancelEdit,
+        button('anomalous-sd-btn primary', t('scriptDirectorParse'), () => parseScript(textarea.value)),
+    );
+    inputArea.append(textarea, inputActions);
+
+    const linesBar = el('div', 'anomalous-sd-lines-bar');
+    const linesCount = el('span', 'anomalous-sd-lines-count');
+    linesBar.append(linesCount, button('anomalous-sd-link-btn', t('scriptDirectorEdit'), () => {
+        textarea.value = state.lines.map(line => line.text).join('\n');
+        state.editing = true;
+        renderAll();
+        textarea.focus();
+    }));
+
+    const linesContainer = el('div', 'anomalous-sd-lines-container');
+    const scroll = el('div', 'anomalous-sd-scroll');
+    // One voice only: emotion chips would all say "main", so one line says how to get more.
+    const onlyMain = el('div', 'anomalous-sd-only-main');
+
+    const footer = el('div', 'anomalous-sd-footer');
+    const summary = el('div', 'anomalous-sd-package-summary');
+    const actions = el('div', 'anomalous-sd-package-actions');
+    const dragHandle = el('div', 'anomalous-sd-drag-handle');
+    dragHandle.innerHTML = ICONS.GRIP;
+    dragHandle.append(el('span', '', t('scriptDirectorDragHandle')));
+    bindPackageDrag(dragHandle);
+    const copyBtn = button('anomalous-sd-btn', t('scriptDirectorCopy'), copyScript);
+    const pushBtn = button('anomalous-sd-btn', t('scriptDirectorInject'), pushToNode);
+    actions.append(dragHandle, pushBtn, copyBtn);
+    // Into your own workflow: second to generating here, so it sits below it, quieter.
+    const workflow = el('div', 'anomalous-sd-workflow');
+    const workflowTitle = el('div', 'anomalous-sd-workflow-title');
+    workflow.append(workflowTitle, actions);
+    runSection = createRunSection({
+        getScript: runScript,
+        onPlay: () => {
+            stopLinePreview();
+            hooks.onPreviewStart?.();
+        },
+        resetTakes: () => state.lines.forEach(line => { line.take = 1; }),
+        onBusyChange: () => renderAll(),
+        openGallery: () => hooks.openGallery?.(),
+    });
+    scroll.append(linesContainer);
+    footer.append(summary, runSection.bar);
+
+    // Cards on one side, everything about generating on the other: below the cards
+    // on a narrow page (docked browser), beside them once the page is wide.
+    const main = el('div', 'anomalous-sd-main');
+    main.append(linesBar, onlyMain, scroll);
+    const side = el('div', 'anomalous-sd-side');
+    side.append(footer, runSection.settings, workflow);
+    const body = el('div', 'anomalous-sd-body');
+    body.append(main, side);
+    // The panel lives for the page session, so the observer does too.
+    new ResizeObserver(([entry]) => panel.classList.toggle('is-wide', entry.contentRect.width >= WIDE_FROM)).observe(panel);
+
+    panel.append(header, characterBar, characterHint, inputArea, body);
+    refs = { subtitle, characterSelect, characterHint, inputArea, textarea, cancelEdit, body, linesCount, onlyMain, linesContainer, summary, workflowTitle, dragHandle, copyBtn, pushBtn };
+}
+
+function renderAll() {
+    if (!panel) return;
+    const node = TTS_ENGINE.label;
+    refs.subtitle.textContent = t('scriptDirectorSubtitle');
+    refs.workflowTitle.textContent = t('scriptDirectorWorkflowTitle');
+    refs.dragHandle.title = t('scriptDirectorDragHint', { node });
+    refs.pushBtn.title = t('scriptDirectorPushHint', { node });
+    refs.pushBtn.setAttribute('aria-label', refs.pushBtn.title);
+    renderCharacterBar();
+    const hasLines = state.lines.length > 0;
+    refs.inputArea.hidden = hasLines && !state.editing;
+    refs.cancelEdit.hidden = !hasLines;
+    refs.body.hidden = !hasLines || state.editing;
+    refs.linesCount.textContent = t('scriptDirectorLinesCount', { count: state.lines.length });
+    if (hasLines && !state.editing) renderLines();
+    renderPackage();
+}
+
+function renderCharacterBar() {
+    const select = refs.characterSelect;
+    select.replaceChildren(...state.groups.map(group => {
+        const option = el('option', '', group.character);
+        option.value = group.group;
+        return option;
+    }));
+    select.disabled = state.groups.length === 0;
+    if (state.groupKey) select.value = state.groupKey;
+
+    const group = selectedGroup();
+    let hint = '';
+    if (!state.groups.length) hint = t('scriptDirectorNoCharacters');
+    else if (group && !usableEmotions(group).includes('main')) hint = t('scriptDirectorMainMissing');
+    else if (group) hint = t('scriptDirectorEmotionsAvailable', { emotions: usableEmotions(group).map(emotionLabel).join(' · ') });
+    refs.characterHint.textContent = hint;
+    refs.characterHint.classList.toggle('is-warning', Boolean(group && !usableEmotions(group).includes('main')) || !state.groups.length);
+}
+
+function renderLines() {
+    const group = selectedGroup();
+    const emotions = usableEmotions(group);
+    const slices = new Map((group?.slices || []).map(slice => [slice.emotion, slice]));
+    // Chips only when there is a choice, or a line still asks for an emotion this character lacks.
+    const showChips = emotions.length > 1 || state.lines.some(line => !emotions.includes(line.emotion));
+    refs.onlyMain.hidden = showChips;
+    refs.onlyMain.textContent = t('scriptDirectorOnlyMain');
+    const addLine = button('anomalous-sd-add-line', t('scriptDirectorAddLine'), () => {
+        state.lines.push({ text: '', emotion: state.lines.at(-1)?.emotion || 'main', take: 1 });
+        state.focusIndex = state.lines.length - 1;
+        renderAll();
+    });
+    refs.linesContainer.replaceChildren(...state.lines.map((line, index) => renderLineCard(line, index, emotions, slices, showChips)), addLine);
+    if (state.focusIndex !== null) {
+        refs.linesContainer.querySelectorAll('.anomalous-sd-line-text')[state.focusIndex]?.focus();
+        state.focusIndex = null;
+    }
+}
+
+function renderLineCard(line, index, emotions, slices, showChips) {
+    const card = el('div', 'anomalous-sd-line-card');
+
+    // Editing buttons (.is-edit) show on hover; another take of this line stays visible.
+    const head = el('div', 'anomalous-sd-line-head');
+    head.append(
+        el('span', 'anomalous-sd-line-no', `#${index + 1}`),
+        // Split at the text caret (the textarea keeps its caret after losing focus to this button).
+        button('anomalous-sd-icon-btn is-edit', '✂', async () => {
+            const parts = splitSegmentAt(line.text, text.selectionStart);
+            if (!parts) {
+                await anomalousAlert(t('scriptDirectorSplitHint'));
+                text.focus();
+                return;
+            }
+            line.text = parts[0];
+            state.lines.splice(index + 1, 0, { text: parts[1], emotion: line.emotion, take: 1 });
+            state.focusIndex = index + 1;
+            stopScriptDirectorPreview();
+            renderAll();
+        }, t('scriptDirectorSplitAtCaret')),
+    );
+    if (index < state.lines.length - 1) {
+        // Merge keeps this card's emotion: one card = one segment spoken with one voice.
+        head.append(button('anomalous-sd-icon-btn is-edit', '↧', () => {
+            line.text = joinSegments(line.text, state.lines[index + 1].text);
+            state.lines.splice(index + 1, 1);
+            stopScriptDirectorPreview();
+            renderAll();
+        }, t('scriptDirectorMergeNext')));
+    }
+    if (runSection?.canRetake(selectedGroup())) {
+        const retake = button('anomalous-sd-icon-btn', '↻', () => {
+            line.take = (line.take || 1) + 1;
+            runSection.generate();
+        }, t('scriptRunRetakeLine'));
+        if (line.take > 1) retake.append(el('span', 'anomalous-sd-take-no', String(line.take)));
+        head.append(retake);
+    }
+    head.append(
+        button('anomalous-sd-icon-btn is-edit is-danger', '×', () => {
+            state.lines.splice(index, 1);
+            stopScriptDirectorPreview();
+            renderAll();
+        }, t('scriptDirectorDeleteLine')),
+    );
+
+    const text = el('textarea', 'anomalous-sd-line-text');
+    text.rows = 1;
+    text.value = line.text;
+    text.oninput = () => {
+        line.text = text.value;
+        renderPackage();
+    };
+
+    if (!showChips) {
+        card.append(head, text);
+        return card;
+    }
+    const chips = el('div', 'anomalous-sd-emotion-row');
+    // The reference clip of the chosen emotion: how this voice sounds, not this line's result.
+    const reference = button('anomalous-sd-ref-btn', '', () => previewLine(line, slices, reference),
+        t('scriptDirectorPreviewEmotion', { emotion: emotionLabel(line.emotion) }));
+    reference.innerHTML = ICONS.SPEAKER;
+    // A choice this character cannot voice stays visible (and blocks the bundle) instead of being silently reset.
+    const choices = emotions.includes(line.emotion) ? emotions : [...emotions, line.emotion];
+    for (const emotion of choices) {
+        const chip = button('anomalous-sd-emotion-chip', emotionLabel(emotion), () => {
+            line.emotion = emotion;
+            chips.querySelectorAll('.anomalous-sd-emotion-chip').forEach(item => item.classList.toggle('active', item === chip));
+            if (previewButton === reference) stopScriptDirectorPreview();
+            reference.title = t('scriptDirectorPreviewEmotion', { emotion: emotionLabel(emotion) });
+            reference.setAttribute('aria-label', reference.title);
+            reference.disabled = !slices.get(emotion)?.audio_url;
+            renderPackage();
+        });
+        chip.classList.toggle('active', line.emotion === emotion);
+        chip.classList.toggle('is-main', emotion === 'main');
+        if (!emotions.includes(emotion)) {
+            chip.classList.add('is-missing');
+            chip.title = t('scriptDirectorEmotionMissing');
+        }
+        const sample = slices.get(emotion);
+        if (sample?.text) chip.title = sample.text;
+        chips.appendChild(chip);
+    }
+    reference.disabled = !slices.get(line.emotion)?.audio_url;
+    chips.appendChild(reference);
+
+    card.append(head, text, chips);
+    return card;
+}
+
+function renderPackage() {
+    if (!refs) return;
+    const pkg = currentPackage();
+    const ok = !pkg.error;
+    refs.summary.classList.toggle('is-error', !ok);
+    if (ok) {
+        const used = [...new Set(state.lines.filter(line => line.text.trim()).map(line => emotionLabel(line.emotion)))];
+        refs.summary.textContent = t('scriptDirectorPackageSummary', { count: pkg.lineCount, emotions: used.join(' · ') });
+    } else {
+        refs.summary.textContent = t(pkg.error);
+    }
+    refs.copyBtn.disabled = !ok;
+    refs.pushBtn.disabled = !ok;
+    refs.dragHandle.draggable = ok;
+    refs.dragHandle.classList.toggle('is-disabled', !ok);
+    runSection.render();
+}
+
+// ---------- actions ----------
+
+function parseScript(text) {
+    const parsed = splitScriptLines(text, state.splitMode);
+    if (!parsed.length) return;
+    const previous = new Map(state.lines.map(line => [line.text.trim(), line]));
+    state.lines = parsed.map(lineText => ({
+        text: lineText,
+        emotion: previous.get(lineText)?.emotion || 'main',
+        take: previous.get(lineText)?.take || 1,
+    }));
+    state.editing = false;
+    renderAll();
+}
+
+function previewLine(line, slices, btn) {
+    if (previewButton === btn) {
+        stopScriptDirectorPreview();
+        return;
+    }
+    stopScriptDirectorPreview();
+    const slice = slices.get(line.emotion);
+    if (!slice?.audio_url) return;
+    hooks.onPreviewStart?.();
+    const audio = new Audio(slice.audio_url);
+    previewAudio = audio;
+    previewButton = btn;
+    btn.innerHTML = ICONS.STOP;
+    btn.classList.add('is-playing');
+    const done = () => { if (previewAudio === audio) stopScriptDirectorPreview(); };
+    audio.onended = done;
+    audio.onerror = done;
+    audio.play().catch(done);
+}
+
+async function copyScript() {
+    const pkg = currentPackage();
+    if (pkg.error || !navigator.clipboard?.writeText) return;
+    try {
+        await navigator.clipboard.writeText(pkg.speech);
+        flash(refs.copyBtn, t('scriptDirectorCopied'), t('scriptDirectorCopy'));
+    } catch (_) {
+        // Clipboard permission refused: the line cards still hold the text.
+    }
+}
+
+function flash(btn, text, restore) {
+    btn.textContent = text;
+    btn.classList.add('is-success');
+    setTimeout(() => {
+        btn.textContent = restore;
+        btn.classList.remove('is-success');
+    }, 1800);
+}
+
+function findTargetNode() {
+    const nodes = (app.graph?._nodes || []).filter(targetForNode);
+    if (!nodes.length) return { error: 'scriptDirectorNoNode' };
+    const selected = Object.values(app.canvas?.selected_nodes || {}).filter(targetForNode);
+    if (selected.length === 1) return { node: selected[0] };
+    if (nodes.length === 1) return { node: nodes[0] };
+    return { error: 'scriptDirectorPickNode' };
+}
+
+async function pushToNode() {
+    const pkg = currentPackage();
+    if (pkg.error) return;
+    const { node, error } = findTargetNode();
+    if (error) {
+        await anomalousAlert(t(error, { node: TTS_ENGINE.label }));
+        return;
+    }
+    if (await applyPackageToNode(node, pkg)) flash(refs.pushBtn, t('scriptDirectorSuccess'), t('scriptDirectorInject'));
+}
+
+/** Write character + script into one node; re-checks the node after any dialog. Returns true when written. */
+async function applyPackageToNode(node, pkg) {
+    const graph = app.graph;
+    const target = targetForNode(node);
+    const speechWidget = target && node.widgets?.find(w => w.name === target.speechWidget);
+    const sampleWidget = target && node.widgets?.find(w => w.name === target.voiceWidget);
+    if (!speechWidget || !sampleWidget) {
+        await anomalousAlert(t('scriptDirectorDropNotTts', { node: TTS_ENGINE.label }));
+        return false;
+    }
+    const sampleValue = comboValueForPath(sampleWidget, pkg.sample);
+    if (sampleValue == null) {
+        await anomalousAlert(t('scriptDirectorSampleNotListed', { file: pkg.sample, node: TTS_ENGINE.label }));
+        return false;
+    }
+    const previous = speechWidget.value;
+    if (typeof previous === 'string' && previous.trim() && previous.trim() !== pkg.speech) {
+        if (!await anomalousConfirm(t('scriptDirectorOverwriteConfirm'))) return false;
+        if (app.graph !== graph || graph.getNodeById(node.id) !== node || speechWidget.value !== previous) return false;
+    }
+    if (sampleWidget.value !== sampleValue) {
+        sampleWidget.value = sampleValue;
+        sampleWidget.callback?.(sampleValue, app.canvas, node);
+    }
+    speechWidget.value = pkg.speech;
+    speechWidget.callback?.(pkg.speech, app.canvas, node);
+    node.setDirtyCanvas?.(true, true);
+    recordCanvasStep(app);
+    return true;
+}
+
+// ---------- drag the bundle onto a canvas node ----------
+
+function bindPackageDrag(handle) {
+    bindMaterialDrag(handle, dragOwner, {
+        payload: () => {
+            const pkg = currentPackage();
+            return pkg.error ? null : { ...pkg, dragHint: t('scriptDirectorDragHint', { node: TTS_ENGINE.label }) };
+        },
+        accepts: node => Boolean(targetForNode(node)),
+        drop: async node => {
+            if (await applyPackageToNode(node, currentPackage())) flash(refs.pushBtn, t('scriptDirectorSuccess'), t('scriptDirectorInject'));
+        },
+    });
+}

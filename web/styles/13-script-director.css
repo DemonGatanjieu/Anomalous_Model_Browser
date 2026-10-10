@@ -1,0 +1,712 @@
+/* The Voices page's Voice-over view (ui_script_page.js) and the script director it holds. */
+#anomalous-script-panel {
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--amb-bg-page);
+}
+
+/* Characters | Voice-over, where the Characters view has its toolbar. */
+.anomalous-script-topbar {
+    margin: 20px 20px 0;
+}
+
+.anomalous-script-host {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.anomalous-script-director-panel {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.anomalous-script-director-panel [hidden] {
+    display: none;
+}
+
+/* Instead of the director: loading, no node pack, no characters yet. */
+.anomalous-script-page-note {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 40px 24px;
+    color: var(--amb-text-muted);
+    font-size: 13.5px;
+    text-align: center;
+}
+
+.anomalous-script-page-note p {
+    max-width: 420px;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.anomalous-sd-body,
+.anomalous-sd-main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Narrow: settings and the generate bar under the cards, never taking over the drawer. */
+.anomalous-sd-side {
+    flex-shrink: 0;
+    max-height: 55%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 16px 10px;
+    border-top: 1px solid var(--amb-border);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Wide: cards take the full height, the generate side is a column beside them. */
+.anomalous-script-director-panel.is-wide .anomalous-sd-body {
+    flex-direction: row;
+}
+
+.anomalous-script-director-panel.is-wide .anomalous-sd-side {
+    width: 320px;
+    max-height: none;
+    padding: 12px 14px;
+    border-top: none;
+    border-left: 1px solid var(--amb-border);
+}
+
+.anomalous-sd-header {
+    padding: 12px 16px 2px;
+}
+
+.anomalous-sd-subtitle {
+    margin: 0;
+    color: var(--amb-text-muted);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* Character */
+.anomalous-sd-character-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px 4px;
+}
+
+.anomalous-sd-step {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--amb-text-soft);
+    flex-shrink: 0;
+}
+
+.anomalous-sd-character-select {
+    flex: 1;
+    min-width: 0;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 6px;
+    color: var(--amb-text-main);
+    font-size: 13px;
+    padding: 5px 8px;
+}
+
+.anomalous-sd-character-hint {
+    padding: 0 16px 10px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--amb-text-dim);
+    border-bottom: 1px solid var(--amb-border);
+}
+
+.anomalous-sd-character-hint.is-warning {
+    color: #fbbf24;
+}
+
+/* Script input */
+.anomalous-sd-input-area {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+}
+
+.anomalous-sd-textarea {
+    width: 100%;
+    flex: 1;
+    min-height: 160px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--amb-border);
+    border-radius: 6px;
+    padding: 10px;
+    color: var(--amb-text-soft);
+    font-size: 13px;
+    line-height: 1.6;
+    resize: none;
+    box-sizing: border-box;
+}
+
+.anomalous-sd-input-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.anomalous-sd-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-main);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.anomalous-sd-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.anomalous-sd-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.anomalous-sd-btn.primary {
+    background: color-mix(in srgb, var(--amb-link) 10%, transparent);
+    color: var(--amb-link);
+    border-color: color-mix(in srgb, var(--amb-link) 25%, transparent);
+}
+
+.anomalous-sd-btn.primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--amb-link) 20%, transparent);
+}
+
+.anomalous-sd-btn.accent {
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
+    color: var(--amb-link);
+    border-color: color-mix(in srgb, var(--amb-link) 35%, transparent);
+    font-weight: 600;
+}
+
+.anomalous-sd-btn.accent:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--amb-link) 30%, transparent);
+}
+
+.anomalous-sd-btn.is-success {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.45);
+    color: #6ee7b7;
+}
+
+/* Lines */
+.anomalous-sd-lines-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px 0;
+    font-size: 12px;
+    color: var(--amb-text-muted);
+}
+
+.anomalous-sd-link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--amb-link);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-sd-link-btn:hover {
+    text-decoration: underline;
+}
+
+.anomalous-sd-scroll {
+    flex: 1;
+    min-height: 120px;
+    overflow-y: auto;
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.anomalous-sd-lines-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.anomalous-sd-line-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    padding: 8px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anomalous-sd-line-card:focus-within {
+    border-color: color-mix(in srgb, var(--amb-link) 35%, transparent);
+}
+
+.anomalous-sd-line-head {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Split, merge and delete show on the card you are on; another take of a line stays in view. */
+.anomalous-sd-line-head .anomalous-sd-icon-btn.is-edit {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.anomalous-sd-line-card:hover .anomalous-sd-icon-btn.is-edit,
+.anomalous-sd-line-card:focus-within .anomalous-sd-icon-btn.is-edit {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .anomalous-sd-line-head .anomalous-sd-icon-btn.is-edit {
+        opacity: 1;
+    }
+}
+
+/* One voice only: instead of a row of "main voice" chips on every card. */
+.anomalous-sd-only-main {
+    padding: 0 16px 8px;
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
+    line-height: 1.5;
+}
+
+.anomalous-sd-line-no {
+    flex: 1;
+    font-size: 11px;
+    font-family: monospace;
+    color: var(--amb-text-dim);
+}
+
+.anomalous-sd-icon-btn {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--amb-border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--amb-text-muted);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.anomalous-sd-icon-btn:hover,
+.anomalous-sd-icon-btn.is-playing {
+    color: var(--amb-link);
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
+}
+
+.anomalous-sd-icon-btn.is-danger:hover {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.4);
+}
+
+.anomalous-sd-line-text {
+    width: 100%;
+    box-sizing: border-box;
+    field-sizing: content;
+    min-height: 1.6em;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 2px 4px;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.6;
+    resize: none;
+}
+
+.anomalous-sd-line-text:hover,
+.anomalous-sd-line-text:focus {
+    border-color: var(--amb-border);
+    background: rgba(0, 0, 0, 0.2);
+    outline: none;
+}
+
+.anomalous-sd-emotion-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+}
+
+/* The chosen emotion's reference clip: how the voice sounds, beside the chips it belongs to. */
+.anomalous-sd-ref-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--amb-text-dim);
+    cursor: pointer;
+}
+
+.anomalous-sd-ref-btn:hover:not(:disabled),
+.anomalous-sd-ref-btn.is-playing {
+    color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+}
+
+.anomalous-sd-ref-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.anomalous-sd-emotion-chip {
+    padding: 2px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--amb-border);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--amb-text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.anomalous-sd-emotion-chip:hover {
+    color: var(--amb-text-main);
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
+}
+
+.anomalous-sd-emotion-chip.active {
+    background: color-mix(in srgb, var(--amb-link) 30%, transparent);
+    border-color: var(--amb-link);
+    color: var(--amb-text-main);
+    font-weight: 600;
+}
+
+.anomalous-sd-emotion-chip.is-main.active {
+    background: rgba(16, 185, 129, 0.22);
+    border-color: rgba(52, 211, 153, 0.7);
+}
+
+/* Generating here is the main way: its button stands out. */
+.anomalous-sd-run-actions > .anomalous-sd-btn.accent:first-child {
+    padding: 7px 18px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Into your own workflow: below generating, quieter. */
+.anomalous-sd-workflow {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 10px;
+    border-top: 1px solid var(--amb-border);
+}
+
+.anomalous-sd-workflow-title {
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
+}
+
+/* Bundle */
+.anomalous-sd-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.anomalous-sd-package-summary {
+    font-size: 12px;
+    color: var(--amb-text-soft);
+}
+
+.anomalous-sd-package-summary.is-error {
+    color: #fbbf24;
+}
+
+.anomalous-sd-package-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Generating happens in the run section; the canvas buttons stay a small row. */
+.anomalous-sd-package-actions .anomalous-sd-btn {
+    padding: 3px 8px;
+    font-size: 11px;
+}
+
+.anomalous-sd-drag-handle {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px dashed color-mix(in srgb, var(--amb-link) 50%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 8%, transparent);
+    color: var(--amb-link);
+    font-size: 11px;
+    cursor: grab;
+    user-select: none;
+}
+
+.anomalous-sd-drag-handle:active {
+    cursor: grabbing;
+}
+
+.anomalous-sd-drag-handle.is-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.anomalous-sd-emotion-chip.is-missing {
+    border-style: dashed;
+    border-color: rgba(251, 191, 36, 0.7);
+    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.anomalous-sd-split-mode {
+    margin-right: auto;
+    min-width: 0;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 6px;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+    padding: 5px 6px;
+}
+
+.anomalous-sd-add-line {
+    align-self: stretch;
+    padding: 7px;
+    border-radius: 8px;
+    border: 1px dashed var(--amb-border-strong);
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-sd-add-line:hover {
+    color: var(--amb-text-main);
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+}
+
+/* Generate here (GPT-SoVITS): ui_script_run.js */
+.anomalous-sd-run {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anomalous-sd-run-hint {
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.anomalous-sd-run-hint.is-warning {
+    color: #fbbf24;
+}
+
+.anomalous-sd-run-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* How it is read: one setting per row; the sampling numbers folded under fine-tuning. */
+.anomalous-sd-run-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--amb-border);
+}
+
+.anomalous-sd-run-heading {
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
+}
+
+.anomalous-sd-run-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.anomalous-sd-run-label {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 44px;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.anomalous-sd-run-code {
+    color: var(--amb-text-dim);
+    font-family: ui-monospace, monospace;
+    font-size: 10px;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-sd-run-segment {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.anomalous-sd-run-choice {
+    padding: 3px 10px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-sd-run-choice:hover:not(:disabled) {
+    color: var(--amb-text-main);
+}
+
+.anomalous-sd-run-choice[aria-checked="true"] {
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
+    color: var(--amb-text-main);
+    font-weight: 600;
+}
+
+.anomalous-sd-run-choice:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.anomalous-sd-run-slider {
+    flex: 1;
+    min-width: 0;
+    accent-color: var(--amb-link);
+}
+
+.anomalous-sd-run-value {
+    width: 32px;
+    color: var(--amb-text-main);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.anomalous-sd-run-fine > summary {
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-sd-run-fine[open] > summary {
+    margin-bottom: 4px;
+}
+
+.anomalous-sd-run-fine > .anomalous-sd-run-row {
+    padding: 4px 0 4px 14px;
+}
+
+.anomalous-sd-run-fine .anomalous-sd-run-label {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+}
+
+/* The pronunciation editor's language picker (ui_tts_pronunciation.js). */
+.anomalous-sd-run-select {
+    padding: 4px 6px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--amb-text-main);
+    font-size: 12px;
+}
+
+.anomalous-sd-run-number {
+    flex-shrink: 0;
+    width: 64px;
+    padding: 4px 6px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--amb-text-main);
+    font-size: 12px;
+}
+
+.anomalous-sd-run-note {
+    margin: 6px 0 4px 14px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--amb-text-muted);
+}
+
+.anomalous-sd-run-status {
+    font-size: 12px;
+    color: var(--amb-text-soft);
+}
+
+/* "Saved to the audio gallery ›": the file's path is its tooltip. */
+.anomalous-sd-run-saved {
+    align-self: flex-start;
+}
+
+.anomalous-sd-run-warnings {
+    max-height: 60px;
+    overflow-y: auto;
+    font-size: 11px;
+    color: #fbbf24;
+    white-space: pre-wrap;
+}
+
+.anomalous-sd-run-player {
+    width: 100%;
+    height: 32px;
+}
+
+.anomalous-sd-take-no {
+    margin-left: 2px;
+    font-size: 10px;
+    color: var(--amb-link);
+}

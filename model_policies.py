@@ -13,7 +13,7 @@ PHYSICAL_RENAME_PROTECTED_TYPES = frozenset({
 })
 
 # This is a recovery-confidence policy, not a scanner-support list. The scan
-# wizard may hash these folders, but Model Doctor must not redirect one of these
+# wizard may hash these folders, but Model Check must not redirect one of these
 # components from size, filename, metadata labels, or Civitai availability.
 HASH_ONLY_RECOVERY_TYPES = frozenset({
     "vae",

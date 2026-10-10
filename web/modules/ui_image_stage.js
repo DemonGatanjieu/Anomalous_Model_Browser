@@ -218,10 +218,22 @@ export function buildFilmstripRail(items, currentIndex, onNavigate, workbench = 
 
     const track = document.createElement('div');
     track.className = 'anomalous-workbench-filmstrip-track';
+    rail.appendChild(track);
+    extendFilmstripRail(rail, items, onNavigate, workbench || { currentIndex });
 
-    items.forEach((item, idx) => {
+    // Open on the active thumbnail, without scrolling down to it from the top.
+    const active = track.children[currentIndex];
+    if (active) requestAnimationFrame(() => setTimeout(() => active.scrollIntoView({ block: 'center', inline: 'nearest' }), 40));
+    return rail;
+}
+
+/** Adds the thumbnails of `items` the rail does not show yet (pictures loaded after it was built). */
+export function extendFilmstripRail(rail, items, onNavigate, workbench) {
+    const track = rail.querySelector('.anomalous-workbench-filmstrip-track');
+    for (let idx = track.children.length; idx < items.length; idx++) {
+        const item = items[idx];
         const thumbWrap = document.createElement('div');
-        thumbWrap.className = idx === currentIndex
+        thumbWrap.className = idx === workbench.currentIndex
             ? 'anomalous-workbench-filmstrip-thumb is-active'
             : 'anomalous-workbench-filmstrip-thumb';
         thumbWrap.title = `${idx + 1}. ${fileBaseName(item.filename)}`;
@@ -239,21 +251,9 @@ export function buildFilmstripRail(items, currentIndex, onNavigate, workbench = 
 
         thumbWrap.onclick = (e) => {
             e.stopPropagation();
-            if (idx !== currentIndex) onNavigate(idx);
+            if (idx !== workbench.currentIndex) onNavigate(idx);
         };
 
         track.appendChild(thumbWrap);
-
-        // Auto-center active thumbnail vertically
-        if (idx === currentIndex) {
-            requestAnimationFrame(() => {
-                setTimeout(() => {
-                    thumbWrap.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-                }, 40);
-            });
-        }
-    });
-
-    rail.appendChild(track);
-    return rail;
+    }
 }

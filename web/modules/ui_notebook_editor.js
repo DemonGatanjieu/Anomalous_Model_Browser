@@ -1,12 +1,10 @@
 /**
  * ui_notebook_editor.js
- * Prompt Note editor with unfolded cards, sticky toolbar, and compatible-model galleries.
+ * Combo (搭配) editor with unfolded cards, sticky toolbar, and compatible-model galleries.
  */
 
 import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
-import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
-import { showMaterialSaved } from './material_feedback.js';
 import { isUnetModel, UNLABELED_BASE_MODEL } from './notebook_canvas.js';
 
 const t = (key, params) => translate(key, params);
@@ -39,7 +37,7 @@ function createNotebookToolbar(ctx, notebook) {
 
     const saveBtn = document.createElement('button');
     saveBtn.type = 'button';
-    saveBtn.innerHTML = `💾 ${t('saveNotebook') || (window.anomalous_browser_lang === 'zh' ? '保存笔记' : 'Save Note')}`;
+    saveBtn.textContent = `💾 ${t('saveNotebook')}`;
     saveBtn.className = 'anomalous-btn-primary';
     saveBtn.onclick = async () => {
         const orig = saveBtn.innerHTML;
@@ -54,11 +52,9 @@ function createNotebookToolbar(ctx, notebook) {
         }, 1500);
     };
 
-    const sendBtn = document.createElement('button');
-    sendBtn.type = 'button';
-    sendBtn.innerHTML = `🚀 ${t('sendToCanvas') || (window.anomalous_browser_lang === 'zh' ? '发送到画布' : 'Send to Canvas')}`;
-    sendBtn.className = 'anomalous-btn-success';
-    sendBtn.onclick = () => ctx.sendNotebookToCanvas();
+    // Put on the canvas: the combo as a new group of nodes.
+    const useBtn = Object.assign(document.createElement('button'), { type: 'button', className: 'anomalous-btn-success', textContent: t('comboUse'), title: t('comboUseHint') });
+    useBtn.onclick = () => ctx.sendNotebookToCanvas();
 
     // Floating More Dropdown Menu
     const moreWrapper = document.createElement('div');
@@ -67,7 +63,7 @@ function createNotebookToolbar(ctx, notebook) {
     const moreBtn = document.createElement('button');
     moreBtn.type = 'button';
     moreBtn.className = 'anomalous-nb-more-btn';
-    moreBtn.innerHTML = `<span>··· ${t('notebookMore') || (window.anomalous_browser_lang === 'zh' ? '更多' : 'More')}</span> <span style="font-size:0.7rem;margin-left:2px;">▾</span>`;
+    moreBtn.innerHTML = `<span>··· ${t('notebookMore')}</span> <span style="font-size:0.7rem;margin-left:2px;">▾</span>`;
 
     const dropdownMenu = document.createElement('div');
     dropdownMenu.className = 'anomalous-nb-dropdown-menu';
@@ -76,7 +72,7 @@ function createNotebookToolbar(ctx, notebook) {
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.className = 'anomalous-nb-dropdown-item anomalous-nb-dropdown-item-danger';
-    const normalDelHtml = `<span>🗑️</span> <span>${t('deleteNotebook') || (window.anomalous_browser_lang === 'zh' ? '删除笔记' : 'Delete Note')}</span>`;
+    const normalDelHtml = `<span>🗑️</span> <span>${t('deleteNotebook')}</span>`;
     delBtn.innerHTML = normalDelHtml;
 
     const resetDel = () => {
@@ -96,11 +92,11 @@ function createNotebookToolbar(ctx, notebook) {
             resetDel();
             dropdownMenu.classList.remove('show');
             moreBtn.classList.remove('active');
-            ctx.deleteCurrentNotebook(true);
+            ctx.deleteCurrentNotebook();
         }
     };
 
-    dropdownMenu.appendChild(delBtn);
+    dropdownMenu.append(delBtn);
 
     moreBtn.onclick = (e) => {
         e.stopPropagation();
@@ -119,7 +115,7 @@ function createNotebookToolbar(ctx, notebook) {
     document.addEventListener('click', onDocClick);
 
     moreWrapper.append(moreBtn, dropdownMenu);
-    rightBtns.append(saveBtn, sendBtn, moreWrapper);
+    rightBtns.append(saveBtn, useBtn, moreWrapper);
     tb.append(titleBox, rightBtns);
     return tb;
 }
@@ -485,84 +481,6 @@ function createPromptToolsBar(ctx, data, rawArea, onTagsUpdated) {
 }
 
 /**
- * Flat Material Library archive card (unfolded bottom card).
- */
-function createArchiveCard(ctx, currentNotebook, data) {
-    const card = document.createElement('div');
-    card.id = 'amb-nb-sec-archive';
-    card.className = 'anomalous-nb-card anomalous-nb-archive-card';
-
-    const header = document.createElement('div');
-    header.className = 'anomalous-nb-card-header';
-    const title = document.createElement('span');
-    const rawShort = t('materialSaveSnapshotShort') || (window.anomalous_browser_lang === 'zh' ? '保存到素材库' : 'Save to Library');
-    const cleanShort = rawShort.replace(/^💾\s*/, '');
-    title.innerHTML = `💾 <strong>${cleanShort}</strong>`;
-    header.appendChild(title);
-
-    const hint = document.createElement('p');
-    hint.className = 'anomalous-nb-hint';
-    hint.textContent = t('materialNoteScopeHint') || (window.anomalous_browser_lang === 'zh'
-        ? '将当前笔记归档保存至素材库中，便于随处调用与复用。'
-        : 'Archive this prompt note to the material library for quick reuse.');
-
-    const actions = document.createElement('div');
-    actions.className = 'anomalous-nb-archive-actions';
-    actions.style.display = 'flex';
-    actions.style.gap = '10px';
-    actions.style.flexWrap = 'wrap';
-
-    const sourceFilename = currentNotebook.filename;
-    const sourceName = currentNotebook.name;
-
-    const scopes = [
-        ['note', 'materialSaveNoteBundle', '📦 保存整篇笔记 (含配套模型与提示词)', '📦 Save Note Bundle'],
-        ['prompt', 'materialSavePromptText', '📝 仅保存提示词文本', '📝 Save Prompt Text Only']
-    ];
-
-    for (const [scope, key, defaultZh, defaultEn] of scopes) {
-        const saveMaterial = document.createElement('button');
-        saveMaterial.type = 'button';
-        saveMaterial.className = 'anomalous-btn-primary';
-        saveMaterial.textContent = t(key) || (window.anomalous_browser_lang === 'zh' ? defaultZh : defaultEn);
-        saveMaterial.onclick = async () => {
-            saveMaterial.disabled = true;
-            const body = JSON.parse(JSON.stringify({
-                notebook_filename: sourceFilename,
-                name: String(sourceName || t('notebookPromptTitle')).slice(0, 120),
-                scope,
-                note: data
-            }));
-            const send = () => fetch('/anomalous/save_prompt_note_material', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-            });
-            try {
-                let response = await send();
-                if (response.status === 409) {
-                    const duplicate = await response.json();
-                    if (duplicate.status !== 'duplicate') throw new Error('material conflict');
-                    if (!await anomalousConfirm(t('materialDuplicateConfirm', { name: duplicate.name }))) return;
-                    body.allow_duplicate = true;
-                    response = await send();
-                }
-                const result = await response.json();
-                if (!response.ok || result.status !== 'success') throw new Error('material save failed');
-                showMaterialSaved(ctx, result.material);
-                await ctx.refreshMaterials?.();
-            } catch (error) {
-                await anomalousAlert(t('materialSaveError') || (window.anomalous_browser_lang === 'zh' ? '保存到素材库失败' : 'Failed to save to material library'));
-            } finally {
-                saveMaterial.disabled = false;
-            }
-        };
-        actions.appendChild(saveMaterial);
-    }
-
-    card.append(header, hint, actions);
-    return card;
-}
-
-/**
  * Primary notebook editor render entrypoint.
  */
 export function renderNotebookEditor() {
@@ -576,9 +494,7 @@ export function renderNotebookEditor() {
         const tb = createNotebookToolbar(this, this.currentNotebook);
         const modelsCard = createCompanionModelsCard(this, data);
         const promptSec = createPromptSection(this, data);
-        const archiveCard = createArchiveCard(this, this.currentNotebook, data);
-
-        this.nbEditor.replaceChildren(tb, modelsCard, promptSec, archiveCard);
+        this.nbEditor.replaceChildren(tb, modelsCard, promptSec);
     } catch (err) {
         console.error('[AMB] Error rendering notebook editor:', err);
         if (this.nbEditor) {
@@ -599,7 +515,7 @@ export function fillNotebookGalleries(baseModel, mainGallery, loraGallery, data)
             if (isVid) return `<video src="${m.preview_url}" muted loop playsinline></video>`;
             return `<img src="${m.preview_url}" />`;
         }
-        return `<div style="width:30px; height:30px; background:#222; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#555;">?</div>`;
+        return `<div style="width:30px; height:30px; background:var(--amb-bg-card); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--amb-text-dim);">?</div>`;
     };
 
     fetch(`/anomalous/compatible_models?base_model=${encodeURIComponent(baseModel)}&target_type=checkpoints,unet,diffusion_models`)
@@ -650,7 +566,7 @@ export function fillNotebookGalleries(baseModel, mainGallery, loraGallery, data)
 
                         let badgeHtml = '';
                         if (isSelected) {
-                            badgeHtml = `<div style="position:absolute; top:-5px; right:-5px; background:linear-gradient(135deg, #f59e0b, #d97706); color:#180808; border-radius:50%; width:20px; height:20px; font-size:12px; display:flex; align-items:center; justify-content:center; font-weight:bold; z-index:10; box-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 0 6px rgba(245,158,11,0.4); border: 1px solid rgba(255,255,255,0.3);">${loraIndex + 1}</div>`;
+                            badgeHtml = `<div style="position:absolute; top:-5px; right:-5px; background:linear-gradient(135deg, #f59e0b, #d97706); color:#180808; border-radius:50%; width:20px; height:20px; font-size:12px; display:flex; align-items:center; justify-content:center; font-weight:bold; z-index:10; box-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 0 6px rgba(245,158,11,0.4); border: 1px solid var(--amb-border-strong);">${loraIndex + 1}</div>`;
                         }
 
                         card.innerHTML = `${badgeHtml}${buildThumbHtml(m)}<div class="anomalous-nb-minilora-name" title="${escapeHtml(m.filename)}">${escapeHtml(m.filename)}</div>`;

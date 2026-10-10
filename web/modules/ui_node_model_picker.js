@@ -5,6 +5,7 @@ import { translate } from "./locales.js";
 import { analyzeModelChainInsertion, getModelChainInsertionCapabilities, spliceModelChainNode } from "./graph_splice.js";
 import { collectMainModelContextRequests, formatModelTypeLabel, getBaseModelFamily, inferPickerModelType } from "./model_picker.js";
 import { escapeHtml } from "./safe_dom.js";
+import { recordCanvasStep } from "./canvas_history.js";
 
 const t = (key, params) => translate(key, params);
 
@@ -104,10 +105,10 @@ export function _openGalleryReplacer(node, w, options = {}) {
             : t('pickerChangeTitle');
         const typeBadge = document.createElement('span');
         typeBadge.textContent = pickerType.label;
-        typeBadge.style.cssText = 'padding:5px 10px;border-radius:20px;background:rgba(138,180,248,0.1);border:1px solid rgba(138,180,248,0.25);color:#a9c7ff;font-size:10px;font-weight:750;';
+        typeBadge.style.cssText = 'padding:5px 10px;border-radius:20px;background:color-mix(in srgb, var(--amb-link) 10%, transparent);border:1px solid color-mix(in srgb, var(--amb-link) 25%, transparent);color:var(--amb-link);font-size:10px;font-weight:750;';
         const closeBtn = document.createElement('button');
         closeBtn.textContent = '✕';
-        closeBtn.style.cssText = 'margin-left:auto;width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);color:#aaa;font-size:20px;cursor:pointer;';
+        closeBtn.style.cssText = 'margin-left:auto;width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,0.04);border:1px solid var(--amb-border);color:var(--amb-text-muted);font-size:20px;cursor:pointer;';
         closeBtn.onclick = closeModal;
         headerCopy.append(eyebrow, title);
         header.append(headerIcon, headerCopy, typeBadge, closeBtn);
@@ -120,30 +121,30 @@ export function _openGalleryReplacer(node, w, options = {}) {
         const body = document.createElement('div');
         body.style.cssText = 'display:grid;grid-template-columns:minmax(190px,250px) minmax(0,1fr);gap:14px;min-height:0;flex:1;';
         const folderPanel = document.createElement('aside');
-        folderPanel.style.cssText = 'background:rgba(20,22,29,0.92);border:1px solid rgba(255,255,255,0.075);border-radius:13px;overflow:auto;padding:10px;box-shadow:0 14px 35px rgba(0,0,0,0.18);';
+        folderPanel.style.cssText = 'background:rgba(20,22,29,0.92);border:1px solid var(--amb-border);border-radius:13px;overflow:auto;padding:10px;box-shadow:0 14px 35px rgba(0,0,0,0.18);';
         const folderTitle = document.createElement('div');
         folderTitle.textContent = t('pickerFolders');
-        folderTitle.style.cssText = 'font-size:13px;font-weight:700;color:#ddd;padding:8px 10px 10px;';
+        folderTitle.style.cssText = 'font-size:13px;font-weight:700;color:var(--amb-text-soft);padding:8px 10px 10px;';
         const folderList = document.createElement('div');
         folderList.style.cssText = 'display:flex;flex-direction:column;gap:3px;';
         folderPanel.append(folderTitle, folderList);
 
         const content = document.createElement('section');
-        content.style.cssText = 'display:flex;flex-direction:column;min-width:0;min-height:0;background:rgba(18,20,27,0.92);border:1px solid rgba(255,255,255,0.075);border-radius:13px;overflow:hidden;box-shadow:0 14px 35px rgba(0,0,0,0.18);';
+        content.style.cssText = 'display:flex;flex-direction:column;min-width:0;min-height:0;background:rgba(18,20,27,0.92);border:1px solid var(--amb-border);border-radius:13px;overflow:hidden;box-shadow:0 14px 35px rgba(0,0,0,0.18);';
         const toolbar = document.createElement('div');
-        toolbar.style.cssText = 'display:flex;gap:10px;padding:12px;border-bottom:1px solid #333;flex-wrap:wrap;align-items:center;';
+        toolbar.style.cssText = 'display:flex;gap:10px;padding:12px;border-bottom:1px solid var(--amb-border-strong);flex-wrap:wrap;align-items:center;';
         const searchInput = document.createElement('input');
         searchInput.type = 'search';
         searchInput.placeholder = t('pickerSearch');
-        searchInput.style.cssText = 'flex:1;min-width:220px;padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:#222631;color:#fff;font-size:13px;outline:none;';
+        searchInput.style.cssText = 'flex:1;min-width:220px;padding:10px 12px;border-radius:9px;border:1px solid var(--amb-border);background:var(--amb-bg-card-hover);color:#fff;font-size:13px;outline:none;';
         const baseFilterSelect = document.createElement('select');
-        baseFilterSelect.style.cssText = `display:${pickerType.isLora ? 'block' : 'none'};padding:10px 12px;border-radius:9px;border:1px solid rgba(0,220,180,0.2);background:#1d292b;color:#9be8d9;font-size:12px;max-width:230px;`;
+        baseFilterSelect.style.cssText = `display:${pickerType.isLora ? 'block' : 'none'};padding:10px 12px;border-radius:9px;border:1px solid rgba(0,220,180,0.2);background:var(--amb-bg-card-hover);color:#9be8d9;font-size:12px;max-width:230px;`;
         const allBaseOption = document.createElement('option');
         allBaseOption.value = '';
         allBaseOption.textContent = t('pickerMainAll');
         baseFilterSelect.appendChild(allBaseOption);
         const sortSelect = document.createElement('select');
-        sortSelect.style.cssText = 'padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:#222631;color:#fff;font-size:12px;';
+        sortSelect.style.cssText = 'padding:10px 12px;border-radius:9px;border:1px solid var(--amb-border);background:var(--amb-bg-card-hover);color:#fff;font-size:12px;';
         [
             ['name-asc', t('pickerNameAsc')],
             ['name-desc', t('pickerNameDesc')],
@@ -155,13 +156,13 @@ export function _openGalleryReplacer(node, w, options = {}) {
             sortSelect.appendChild(option);
         });
         const resultCount = document.createElement('span');
-        resultCount.style.cssText = 'color:#888;font-size:12px;white-space:nowrap;';
+        resultCount.style.cssText = 'color:var(--amb-text-muted);font-size:12px;white-space:nowrap;';
         toolbar.append(searchInput, baseFilterSelect, sortSelect, resultCount);
         content.appendChild(toolbar);
 
         const loadingText = document.createElement('div');
         loadingText.textContent = t('pickerLoadingCovers');
-        loadingText.style.cssText = 'color:#888;font-size:13px;padding:10px 14px 0;';
+        loadingText.style.cssText = 'color:var(--amb-text-muted);font-size:13px;padding:10px 14px 0;';
         const gridScroll = document.createElement('div');
         gridScroll.style.cssText = 'overflow:auto;min-height:0;flex:1;padding:14px;';
         const grid = document.createElement('div');
@@ -174,10 +175,10 @@ export function _openGalleryReplacer(node, w, options = {}) {
         const footer = document.createElement('div');
         footer.style.cssText = 'display:flex;align-items:center;gap:12px;margin-top:14px;flex-shrink:0;';
         const selectionText = document.createElement('div');
-        selectionText.style.cssText = 'min-width:0;flex:1;color:#aaa;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        selectionText.style.cssText = 'min-width:0;flex:1;color:var(--amb-text-muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
         const cancelBtn = document.createElement('button');
         cancelBtn.textContent = t('pickerCancel');
-        cancelBtn.style.cssText = 'padding:10px 18px;background:#333;color:#ddd;border:1px solid #555;border-radius:7px;cursor:pointer;';
+        cancelBtn.style.cssText = 'padding:10px 18px;background:var(--amb-bg-card-hover);color:var(--amb-text-soft);border:1px solid var(--amb-border-strong);border-radius:7px;cursor:pointer;';
         cancelBtn.onclick = closeModal;
         const confirmBtn = document.createElement('button');
         confirmBtn.textContent = mode === 'insert'
@@ -317,9 +318,9 @@ export function _openGalleryReplacer(node, w, options = {}) {
                     const card = document.createElement('div');
                     card.tabIndex = 0;
                     card.setAttribute('role', 'button');
-                    card.style.cssText = `position:relative;background:linear-gradient(160deg,#252935,#1b1d24);border-radius:11px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;border:1px solid ${isSelected ? '#6ea8ff' : isCurrent ? '#e9b949' : 'rgba(255,255,255,0.09)'};box-shadow:${isSelected ? '0 0 0 2px rgba(88,151,255,0.22),0 14px 28px rgba(0,0,0,0.28)' : '0 8px 20px rgba(0,0,0,0.16)'};transition:transform 0.12s,box-shadow 0.12s;min-width:0;`;
+                    card.style.cssText = `position:relative;background:linear-gradient(160deg,var(--amb-bg-card-hover),var(--amb-bg-card));border-radius:11px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;border:1px solid ${isSelected ? '#6ea8ff' : isCurrent ? '#e9b949' : 'rgba(255,255,255,0.09)'};box-shadow:${isSelected ? '0 0 0 2px rgba(88,151,255,0.22),0 14px 28px rgba(0,0,0,0.28)' : '0 8px 20px rgba(0,0,0,0.16)'};transition:transform 0.12s,box-shadow 0.12s;min-width:0;`;
                     const previewBox = document.createElement('div');
-                    previewBox.style.cssText = 'height:150px;background:radial-gradient(circle at 50% 15%,#2b3041,#0d0e13 72%);display:flex;align-items:center;justify-content:center;font-size:30px;position:relative;overflow:hidden;';
+                    previewBox.style.cssText = 'height:150px;background:radial-gradient(circle at 50% 15%,#2b3041,var(--amb-bg-page) 72%);display:flex;align-items:center;justify-content:center;font-size:30px;position:relative;overflow:hidden;';
                     const previewUrl = info.preview_url || previews[path];
                     if (/\.(mp4|webm)(?:$|\?|&|#)/i.test(previewUrl || '')) {
                         const video = document.createElement('video');
@@ -351,7 +352,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
                     badgeStack.style.cssText = 'position:absolute;top:6px;right:6px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;max-width:76%;';
                     const categoryBadge = document.createElement('span');
                     categoryBadge.textContent = formatModelTypeLabel(info.type, pickerType.label);
-                    categoryBadge.style.cssText = 'padding:3px 6px;border-radius:5px;background:rgba(25,34,54,0.9);border:1px solid rgba(138,180,248,0.28);color:#b8d0ff;font-size:9px;font-weight:800;box-shadow:0 3px 8px rgba(0,0,0,0.22);';
+                    categoryBadge.style.cssText = 'padding:3px 6px;border-radius:5px;background:rgba(25,34,54,0.9);border:1px solid color-mix(in srgb, var(--amb-link) 28%, transparent);color:#b8d0ff;font-size:9px;font-weight:800;box-shadow:0 3px 8px rgba(0,0,0,0.22);';
                     badgeStack.appendChild(categoryBadge);
                     if (baseModel) {
                         const baseBadge = document.createElement('span');
@@ -399,7 +400,7 @@ export function _openGalleryReplacer(node, w, options = {}) {
             else {
                 const empty = document.createElement('div');
                 empty.textContent = t('pickerNoMatches');
-                empty.style.cssText = 'color:#777;padding:30px;text-align:center;grid-column:1/-1;';
+                empty.style.cssText = 'color:var(--amb-text-dim);padding:30px;text-align:center;grid-column:1/-1;';
                 grid.appendChild(empty);
             }
         };
@@ -423,6 +424,8 @@ export function _openGalleryReplacer(node, w, options = {}) {
                     try {
                         setWidgetValue(node, w, selectedPath);
                         if (typeof w.callback === 'function') w.callback(w.value, app.canvas, node, app.canvas?.graph_mouse, null);
+                        // ComfyUI clears its own missing-model mark through this hook.
+                        node.onWidgetChanged?.(w.name, w.value, oldValue, w);
                         app.graph?.afterChange?.(node);
                     } catch (error) {
                         setWidgetValue(node, w, oldValue);
@@ -438,8 +441,10 @@ export function _openGalleryReplacer(node, w, options = {}) {
                 if (app.lastNodeErrors?.[node.id]) delete app.lastNodeErrors[node.id];
                 if (typeof app.clearErrors === 'function') app.clearErrors();
                 try { window.dispatchEvent(new CustomEvent('graphChanged')); } catch (error) {}
+                recordCanvasStep(app);
                 closeModal();
                 if (mode === 'insert' && app.canvas?.selectNode) app.canvas.selectNode(node);
+                else if (options.onApplied) options.onApplied();
                 else this.diagnoseNode(node);
             } catch (error) {
                 setWidgetValue(node, w, oldValue);

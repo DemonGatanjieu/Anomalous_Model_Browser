@@ -83,7 +83,7 @@
 在阶段 1 稳定后，从 `createDOM()` 提取：
 
 - `ui_settings_hub.js`：设置中心与模型显示设置。接口覆盖 open/close/refreshLanguage，保留原来的设置来源、键名和生效时机。
-- `ui_toolbox.js`：工具箱内容、开关和底部按钮装配；复用 `tool_registry.js`、`shortcut_layout.js`、`sidebar_actions.js`、`ui_shortcut_organizer.js`。按**当前代码**保持固定栏与工具过滤规则，不顺便实施旧计划中的另一种交互。
+- `ui_toolbox.js`：工具箱内容、开关和底部按钮装配；复用 `tool_registry.js`、`sidebar_actions.js`。按**当前代码**保持固定栏与工具过滤规则，不顺便实施旧计划中的另一种交互。
 - `ui_browser_navigation.js`：主面板切换与返回协调。先收拢现有 `hideAllPanels/closeWorkspace` 相关调用，不引入新的路由系统；笔记模块最终不再独占其他工作台的公共关闭逻辑。
 - 窗口拖动、缩放、停靠先保留在外壳；仍形成独立大段时再提取 `browser_window.js`，复用生命周期工具，不改变尺寸偏好。
 

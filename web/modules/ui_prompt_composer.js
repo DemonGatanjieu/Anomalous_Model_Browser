@@ -1,148 +1,87 @@
+/**
+ * The Prompt Studio drawer beside the canvas: docked left or right (remembered), resizable by its
+ * edge (double-click resets), closed with Close or Esc. The browser folds away while it is open
+ * and comes back when it closes. Its content is ui_prompt_workbench.js.
+ */
+
 import { createViewScope, bindDrawerResize } from './ui_lifecycle.js';
 import { createPromptWorkbench } from './ui_prompt_workbench.js';
-import { newDraft, normalizeBlock, syncDraftSynthesizedText } from './prompt_studio_data.js';
-import { categorizePromptSnippet, planToWorkbenchDraft } from './prompt_composition.js';
-import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
-import { jsonResponse } from './ui_dom.js';
 import { translate as t } from './locales.js';
 
+const DEFAULT_WIDTH = 620;
 let activeStudio = null;
-let pendingPlanLoad = null;
 
-export function closePromptStudio(owner) {
-    pendingPlanLoad?.abort();
-    pendingPlanLoad = null;
+function stored(key, fallback) {
+    try { return localStorage.getItem(key) || fallback; } catch { return fallback; }
+}
+
+function store(key, value) {
+    try { localStorage.setItem(key, value); } catch { /* remembered for this visit only */ }
+}
+
+/** Closes the studio; the browser it folded away comes back (not when another studio replaces it). */
+export function closePromptStudio(owner, { replacing = false } = {}) {
     if (!activeStudio) return;
     const previous = activeStudio;
     activeStudio = null;
     previous.scope.dispose();
-    previous.owner.sidePromptComposerControl = null;
     document.body.classList.remove('anomalous-prompt-studio-open');
-    if (!previous.owner.modal?.classList.contains('visible')) previous.owner.setTriggerVisible?.(true);
+    if (replacing) return;
+    if (previous.reopenBrowser) previous.owner.show?.();
+    else if (!previous.owner.modal?.classList.contains('visible')) previous.owner.setTriggerVisible?.(true);
 }
 
 export async function openPromptStudio(owner = this) {
-    closePromptStudio(owner);
-
-    // Canvas Focus Mode: If left master browser is visible, auto-collapse it so canvas has 80%+ space
-    if (owner?.modal?.classList.contains('visible')) {
-        if (typeof owner.close === 'function') {
-            owner.close();
-        }
-    }
-
-    // Hide global floating trigger button while Studio Drawer is open
+    // The browser folds away so the canvas has room, and comes back when the studio closes.
+    const reopenBrowser = Boolean(owner?.modal?.classList.contains('visible') || activeStudio?.reopenBrowser);
+    closePromptStudio(owner, { replacing: true });
+    if (owner?.modal?.classList.contains('visible')) owner.close?.();
     owner?.setTriggerVisible?.(false);
     document.body.classList.add('anomalous-prompt-studio-open');
 
     const overlay = document.createElement('div');
     overlay.className = 'anomalous-prompt-studio-overlay';
     const scope = createViewScope();
-    activeStudio = { scope, owner };
+    activeStudio = { scope, owner, reopenBrowser };
     scope.onDispose(() => overlay.remove());
 
     const drawer = document.createElement('aside');
     drawer.className = 'anomalous-prompt-studio-drawer';
+    if (stored('anomalous_studio_dock_side', 'left') === 'left') drawer.classList.add('is-dock-left');
+    const savedWidth = parseInt(stored('anomalous_studio_sidebar_width', String(DEFAULT_WIDTH)), 10) || DEFAULT_WIDTH;
+    drawer.style.width = `${Math.max(420, Math.min(window.innerWidth * 0.85, savedWidth))}px`;
     overlay.appendChild(drawer);
-
-    // Dock side persistence (default to left)
-    const savedSide = localStorage.getItem('anomalous_studio_dock_side') || 'left';
-    if (savedSide === 'left') {
-        drawer.classList.add('is-dock-left');
-    }
-
-    // Sidebar width persistence & resize handle (default to 580px)
-    const savedWidth = localStorage.getItem('anomalous_studio_sidebar_width') || '580';
-    drawer.style.width = `${Math.max(420, Math.min(window.innerWidth * 0.85, (parseInt(savedWidth, 10) || 580)))}px`;
 
     const resizeHandle = document.createElement('div');
     resizeHandle.className = 'anomalous-studio-resize-handle';
-    resizeHandle.title = window.anomalous_browser_lang === 'zh'
-        ? '拖动调整侧边栏宽度，双击恢复默认'
-        : 'Drag to resize sidebar, double-click to reset';
+    resizeHandle.title = t('promptStudioResize');
     drawer.appendChild(resizeHandle);
-
     bindDrawerResize(resizeHandle, drawer, scope, {
         side: () => drawer.classList.contains('is-dock-left') ? 'left' : 'right',
-        minWidth: 380,
+        minWidth: 420,
         setWidth: width => { drawer.style.width = `${width}px`; },
-        saveWidth: width => localStorage.setItem('anomalous_studio_sidebar_width', String(Math.round(width))),
+        saveWidth: width => store('anomalous_studio_sidebar_width', String(Math.round(width))),
+    });
+    resizeHandle.ondblclick = () => {
+        drawer.style.width = `${DEFAULT_WIDTH}px`;
+        store('anomalous_studio_sidebar_width', String(DEFAULT_WIDTH));
+    };
+
+    // Esc in a text field of the studio only leaves the field.
+    scope.listen(window, 'keydown', (event) => {
+        if (event.key !== 'Escape' || document.querySelector('.anomalous-card-preview-popover.is-pinned')) return;
+        const field = document.activeElement;
+        if (drawer.contains(field) && field.matches('input, textarea')) { field.blur(); return; }
+        closePromptStudio(owner);
     });
 
-    resizeHandle.ondblclick = () => {
-        drawer.style.width = '580px';
-        localStorage.setItem('anomalous_studio_sidebar_width', '580');
-    };
-
-    const onKeydown = (e) => {
-        if (e.key === 'Escape') {
-            const inspector = document.querySelector('.anomalous-prompt-inspector-overlay');
-            if (inspector) return;
-            closePromptStudio(owner);
-        }
-    };
-    scope.listen(window, 'keydown', onKeydown);
-
-    const composer = createPromptWorkbench(owner, drawer, scope, {
+    createPromptWorkbench(owner, drawer, scope, {
         onClose: () => closePromptStudio(owner),
         onToggleDockSide: () => {
             const isLeft = drawer.classList.toggle('is-dock-left');
-            localStorage.setItem('anomalous_studio_dock_side', isLeft ? 'left' : 'right');
+            store('anomalous_studio_dock_side', isLeft ? 'left' : 'right');
             return isLeft;
         },
     });
-    owner.sidePromptComposerControl = composer;
-
     document.body.appendChild(overlay);
 }
-
-export async function showPromptComposer(owner, material) {
-    pendingPlanLoad?.abort();
-    if (material) {
-        const controller = new AbortController();
-        pendingPlanLoad = controller;
-        try {
-            if (owner.promptPlanDraft && !await anomalousConfirm(t('promptReplaceDraft'))) return;
-            if (controller.signal.aborted) return;
-            const response = await fetch(`/anomalous/material_full?include_workflow=0&filename=${encodeURIComponent(material.filename)}`, { signal: controller.signal });
-            const payload = await jsonResponse(response, 'material load failed');
-            if (controller.signal.aborted) return;
-            if (payload.data?.kind !== 'prompt_plan') throw new Error('invalid plan');
-            const draft = planToWorkbenchDraft(payload.data.plan || {}, payload.data.name || '');
-            draft.tags = payload.data.tags || [];
-            owner.promptPlanDraft = draft;
-        } catch (error) {
-            if (error.name !== 'AbortError') await anomalousAlert(t('materialDetailLoadError'));
-            return;
-        } finally {
-            if (pendingPlanLoad === controller) pendingPlanLoad = null;
-        }
-    }
-
-    owner.promptPlanDraft ||= newDraft();
-    await openPromptStudio(owner);
-}
-
-export function appendPromptToStudio(owner, textSnippet, isPositive = true, noteTitle = '') {
-    if (!textSnippet || !textSnippet.trim()) return;
-    const role = isPositive ? 'positive' : 'negative';
-    const cat = isPositive ? categorizePromptSnippet(textSnippet) : 'base';
-    const block = normalizeBlock({
-        title: noteTitle || (window.anomalous_browser_lang === 'zh' ? '素材片段' : 'Material Snippet'),
-        content: textSnippet.trim(),
-        role,
-        category: cat,
-    });
-
-    if (owner.sidePromptComposerControl?.addBlock) {
-        owner.sidePromptComposerControl.addBlock(block);
-
-    } else {
-        owner.promptPlanDraft ||= newDraft();
-        owner.promptPlanDraft.plan.parts ||= [];
-        owner.promptPlanDraft.plan.parts.push(block);
-        syncDraftSynthesizedText(owner.promptPlanDraft);
-        if (!owner.promptPlanDraft.name?.trim() && noteTitle) owner.promptPlanDraft.name = noteTitle;
-    }
-}
-

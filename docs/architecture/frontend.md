@@ -6,15 +6,18 @@ localization, media, or explicit canvas mutations.
 ## Bootstrap and module ownership
 
 The verified AMB0/AMB1 workflow share-code Import / Export Center is available
-from Toolbox through `window.AMB_WorkflowShare.showUnifiedModal()`. Both directions
+from the Workflows page's top bar (⇅) through `window.AMB_WorkflowShare.showUnifiedModal()`. Both directions
 are enabled by explicit product decision. It is independent of the paused Recipe
-package import/export and closed Material Library file import. Image/workflow hash
+package import/export. Image/workflow hash
 injection, host saving, and ordinary image downloads remain unchanged.
 
 ComfyUI loads JavaScript in the extension `WEB_DIRECTORY` as ES modules.
 `web/main.js` registers `Anomalous.ModelBrowser` and coordinates host hooks.
 `browser.js` defines the browser class and binds extracted feature methods;
-`browser_entry.js` owns the single browser instance and all entry presentation;
+`browser_entry.js` owns the single browser instance and all entry presentation,
+including `window.anomalous_open_voice(character)`, which the Anomalous_TTS node's
+character menu calls to open one character's voice card (`browser.openVoice`; the
+node pack documents it in its `docs/INTERFACE.md` §6);
 `interface_settings.js` owns locale and theme preferences. A syntax error or duplicate
 top-level declaration in any imported module can prevent registration and make
 the entire entry disappear. For affected modules, validate syntax and module linking
@@ -22,22 +25,34 @@ via Node's experimental VM modules (`vm.SourceTextModule`) and verify
 the real ComfyUI runtime creates the configured entry. Floating trigger styling in
 the ordered stylesheet bundle rooted at `web/styles.css` uses dynamic `1em` SVG
 scaling and flex centering to guarantee
-consistent visual presentation across all configured trigger sizes.
+consistent visual presentation across all configured trigger sizes. The unsaved
+default position is defined in CSS outside the sidebar dock; `browser_entry.js`
+drags with pointer capture and only persists real drags, and `entry_controls.js`
+validates and clamps saved coordinates (`clampFloatingTriggerPosition`). Resetting
+the position clears the saved coordinates so the CSS default applies again.
+
+Web modules are imported by plain relative paths. Do not add `?v=` query strings to
+module imports: a different URL is a second module instance with its own state.
+Freshness comes from the `Cache-Control: no-cache` header on this plugin's files.
 
 Major UI panels live in `web/modules/ui_*.js`. Shared browser state remains on
 the `AnomalousBrowser` instance. Pure parsing, normalization, comparison, and
 transaction helpers remain in focused modules rather than acquiring DOM state.
 
-`ui_sidebar.js` assembles the browser shell and folder navigation.
-`ui_settings_hub.js` owns settings and model-card preferences, while
-`ui_toolbox.js` owns the catalog, fixed shortcut actions, and tool dispatch.
-The Material Library shortcut remains a native ComfyUI command/keybinding; a
-deferred window-key fallback invokes the same command path only when the host
-did not bring the library forward, so handled shortcuts are not executed twice.
+`ui_sidebar.js` assembles the browser window and the model folder list; the left
+icon rail (`ui_shell_rail.js`), page navigation and the list column's open state
+(`ui_shell_nav.js`), the home page (`ui_home.js`) and the window frame
+(`ui_shell_frame.js`) are their own modules. Every page change goes through
+`owner.goTo(page)`. `ui_settings_hub.js` owns the display preferences behind
+`owner.displayPrefs`, which the settings page (`ui_settings_page.js`) changes,
+while `ui_rail_tools.js` owns the rail's tool buttons.
+The Prompt Studio shortcut (its command and setting ids still say "materials") is a
+native ComfyUI command/keybinding; a deferred window-key fallback invokes the same
+command path only when the host did not open the studio, so handled shortcuts are not executed twice.
 `ui_browser_navigation.js` owns shared panel hiding, recoverable detail cleanup,
-and workspace return. `ui_scan_wizard.js` owns scan configuration and scan-launch polling,
-`ui_folder_manager.js` owns folder visibility/order and presentation-mode
-changes, and `ui_help.js` owns the help dialog. Public entry functions remain
+and workspace return. `ui_scan_page.js` owns the scan page and `scan_runner.js` scan launch and polling,
+`ui_folder_manager.js` is the settings page's Model folders view (grouping mode,
+visibility and order, saved on each change). Public entry functions remain
 browser-instance methods so existing actions share current browser state.
 
 Update-guide content and UI lifecycle are separate modules. The header and Help
@@ -49,32 +64,38 @@ bootstrap or reuse its content version as a feature flag.
 The main surfaces are:
 
 - Sidebar shell: navigation and persistent scan controls; focused child modules
-  own the scan wizard, folder manager, and help dialog.
+  own the scan page, folder manager, and help dialog.
 - Grid and model detail: model browsing plus coordinated detail display in
   `ui_detail.js`, metadata editing in `ui_model_editor.js`, and advanced selection
   in `ui_model_selector.js`.
 - Gallery: generated outputs and the full-screen Image Detail Studio Workbench.
+  `ui_gallery_card.js` builds each output's card; its star and the workbench's Keep open
+  `ui_keep_menu.js`, which keeps the image as a Workflow Recipe, a combo or its prompts
+  (`image_keep.js`; `GET /anomalous/kept_images` says what each image was kept as).
   `ui_gallery_detail.js` owns its singleton lifecycle and cache, `ui_image_stage.js`
   owns header/zoom/filmstrip interaction, and `ui_image_inspector.js` owns metadata tabs.
-- Workspace: Prompt Notes, Workflow Recipes, and the Material Library. Prompt Note
-  catalog/persistence, editing, and canvas creation are separated across
-  `ui_notebooks.js`, `ui_notebook_editor.js`, and `notebook_canvas.js`. Material
-  discovery/pagination, cards, detail, and node application are separated across
-  `ui_materials.js`, `ui_material_cards.js`, `ui_material_detail.js`, and
-  `ui_material_application.js`.
-- Node Assistant/Model Doctor: selected-node actions, diagnostics, parameter
-  presets, and missing-model recovery. `ui_doctor.js` coordinates diagnosis and
-  global scans, `ui_node_assistant.js` owns assistant history, `ui_node_model_picker.js`
-  owns the native-widget model replacer, and `ui_node_presets.js` owns parameter
-  preset previews and application.
+- Workspace: Combos (搭配, formerly Prompt Notes) and Workflow Recipes. The combo list, workspace/persistence, editing, and canvas use are separated
+  across `ui_combos.js`, `ui_notebooks.js`, `ui_notebook_editor.js`, and
+  `notebook_canvas.js`; Put on canvas lays a combo out as a new wired group of nodes (Esc while it
+  follows the pointer removes it; the activity log holds back while `owner.placingCombo` is set) and
+  never changes nodes already on the canvas (values of an existing node are changed in
+  Current node).
+- Prompts: the rail entry opens Prompt Studio (below); there is no Material Library page.
+  Saved node values are listed, applied and deleted in Current node.
+- Current node (Node Assistant)/Model Check: selected-node actions, saved parameters, and
+  missing-model recovery. `model_check.js` decides each workflow model's state and
+  applies fixes; `ui_doctor.js` (the page) and `ui_doctor_banner.js` (the bar shown
+  after a workflow opens, unless its "Don't show again" or Settings → Workflows turned the
+  check on opening off) only render it and call it on a press.
+  `ui_node_assistant.js` owns the current-node panel and model history, `ui_node_model_picker.js`
+  owns the native-widget model replacer, and `ui_node_parameters.js` with
+  `node_parameter_sets.js` own the panel's one list of saved values for the node type;
+  `ui_apply_receipt.js` is the receipt with Undo after a panel writes to a node.
 
 `ui_dom.js` owns generic `text` and `jsonResponse` helpers.
-`material_inspector.js` shares image metadata helpers and node-parameter rendering
-between the material and image-inspector modules. The workbench does not import
-the library UI, keeping this dependency chain acyclic. Library discovery uses
-server-side filters and pages with cancellable requests. Detail entry fetches
-metadata and scoped node blocks; the complete workflow loads only on the explicit
-open action. See `material-library.md` for the API and persistence contract.
+`material_inspector.js` holds the image workbench's metadata helpers and
+node-parameter rendering. See `material-library.md` for the material files' API and
+persistence contract.
 
 ## Entry modes and host integration
 
@@ -84,7 +105,7 @@ are mutually exclusive and reuse the same browser instance. The Extensions
 command remains available as a recovery path in every mode.
 
 Native commands own the default `Ctrl + Shift + M` browser binding and the
-`Ctrl + Shift + L` Material Library binding. Shortcut customization delegates
+`Ctrl + Shift + L` Prompt Studio binding. Shortcut customization delegates
 to ComfyUI's command/keybinding panel and recorder; the plugin does not install
 a parallel global keyboard listener or maintain a second shortcut preference.
 
@@ -130,14 +151,15 @@ query parameter.
 
 ## Model source component links
 
-The source hub uses `inferModelFolderTypes` for workflow component labels and
+The Sources view (`ui_model_sources.js`, data in `model_source_links.js`) uses
+`inferModelFolderTypes` for workflow component labels and
 category-scoped, exact-path local metadata reads. Context requests are batched
 to respect the endpoint's 16-item limit. Missing source links and unavailable
 native model choices are independent states; dynamic choices are not treated
 as evidence of absence. Native extensionless component choices and PTH/GGUF
 references remain visible even when the backend cannot locate an individual file.
 
-`model_source_data.js` owns library-result shaping and the source hub's pure
+`model_source_data.js` owns library-result shaping and the Sources view's pure
 main/component grouping and filtering. CLIP, text encoder, CLIP Vision, VAE, and
 preview-VAE entries live in a session-local, default-collapsed disclosure; the
 source-status pills and search affect both main models and components. Collapsed
@@ -204,9 +226,9 @@ widget objects.
 
 ## Optional capabilities
 
-`web/hash_resolver.js` may hook a compatible graph serializer to carry model
-provenance. If the host API is unavailable, it disables only that integration
-with a useful warning. It must not prevent `main.js` from registering or remove
+`web/hash_resolver.js` keeps the local hash cache and may hook a compatible graph
+serializer to carry model provenance. If the host API is unavailable, it disables
+only that integration with a useful warning. It must not prevent `main.js` from registering or remove
 the visible browser entry.
 
 Network-backed enrichment is explicit and recoverable. An unavailable Civitai
@@ -215,66 +237,74 @@ browsing, editing, or already stored data.
 
 ## Prompt Studio ownership
 
-The studio supports copying prompt text and saving combinations to the local
-Material Library. Standalone prompt-plan JSON export has been removed and the
-Material Library file-import entry is closed.
+The studio edits prompts where they are: the prompt boxes of the prompt node last
+selected on the canvas, or, with no such node, a positive and a negative draft
+(`owner.promptStudioDraft`, kept while the page stays open). It opens from the rail's
+Prompts entry, the Prompt Studio shortcut and Current node's "Edit in Prompt Studio";
+the browser folds away while it is open and comes back when it closes (not when
+another studio replaces it). There is no assembly board, block draft or plan loading.
 
-Source cards automatically refresh on studio open, browser focus/visibility, and
-every 30 seconds while the page is visible (scheduled after the previous request).
-Saving a studio combination also refreshes immediately. `sourceKind: 'material'`
-cards are reconciled by filename and role from a complete paginated snapshot;
-renames/content edits replace them and deleted sources disappear. Failed or
-cancelled reads retain existing cards. Equal text from different sources retains
-each source identity. Built-in and unsaved local cards remain independent.
-Library cards show their origin and have no delete action in the studio. Mixer
-blocks are editable copies; refreshing sources must not modify existing drafts.
-The deck owns its refresh timer, listeners and AbortController and releases all
-of them when its view closes. New-card role is supplied by the workbench callback.
+The target (`ui_prompt_target.js`) is polled every 400 ms. Selecting another node with
+prompt boxes switches to it; empty canvas or a node without boxes keeps the current
+one; the ✕ beside the node's name switches to the draft; a node that leaves the open graph drops back to the
+draft. Each change is one `applyNodeMaterialValues` write (a Ctrl+Z step). The studio's
+Undo takes its own writes back newest first and stops with `materialUndoChanged` when a
+box changed elsewhere; switching target clears it. Box editors re-read their widget on
+each poll and redraw unless a tag is being edited, a translation is pending or the text
+view has focus.
 
-The studio has one standalone drawer; the former embedded side/full composer
-and material import drawer are removed. Existing browser integration continues
-to call `openPromptStudio(owner)`, and external prompt dispatch uses
-`appendPromptToStudio(owner, text, isPositive, title)`.
+`prompt_tags.js` splits a box on top-level commas and line breaks and keeps each
+separator, so editing one tag leaves the rest of the text, line breaks included, as it
+was; a weight is `(tag:w)`. Inserting skips tags the box has already (same words, any
+weight). Typed or edited text with letters that are not plain English (`needsEnglish`:
+Chinese, kana, hangul, Cyrillic, accented Latin) is translated to English before it is
+written; a box that holds such tags offers to translate them, a translation the box
+has already removes the tag instead, and the result is written only if the box still
+holds the text the request was made from. Meanings (`prompt_gloss.js`) are shown in the
+language picked in the top bar (one of `GLOSS_LANGUAGES`, none by default, remembered in
+local storage with the view; an older "Chinese on" setting reads as Simplified Chinese).
+They are asked for in batches, kept for the session per language, and a failed lookup
+leaves that box's meanings in that language blank instead of retrying. The backend
+skips DeepL for a target it does not take and lets MyMemory detect a source that is
+neither English nor Chinese.
+
+The cards are three built-in ones and the saved prompts (prompt-kind material files,
+`prompt_material_source.js`). The saved list is asked for on open, every 30 seconds
+while the page is visible (scheduled after the previous request), on focus/visibility
+and after a save; a newer request cancels the older one and a failed one keeps the
+current cards. List summaries are not prompt bodies: a prompt's text is read through
+`material_prompt_data.js` once per filename and timestamp, since a saved prompt's text
+never changes. A card's role decides its box: a positive card never goes into a
+negative box or the reverse; boxes of unknown or both roles take either. A saved
+card's preview renames it (`update_material`, tags kept) or deletes it
+(`delete_material`, to the Recycle Bin). A card, or a box's handle with the box's text
+at drag start, drags onto the canvas (`prompt_card_drag.js`, one undo step); over the
+drawer the drag passes through to the boxes.
 
 | Module | Owned state and responsibilities |
 | --- | --- |
-| `ui_prompt_composer.js` | Active drawer, docking width/side, trigger visibility and plan-loading request |
-| `ui_prompt_workbench.js` | Owner-backed draft, active role, block editing, ordering, write/copy/save |
-| `ui_prompt_source_deck.js` | Source cards, filters, new-card form, preview popover and current sync request |
-| `ui_prompt_inspector.js` | Full-text inspection window, role tab and its translation lifetime |
-| `prompt_studio_data.js` | Starter cards, display categories, draft/block initialization and synthesis |
-| `prompt_composition.js` | Pure plan conversion, sorting and composition; no DOM ownership |
-| `prompt_material_source.js` | All-page prompt discovery, detail loading and reconciliation by source identity |
+| `ui_prompt_composer.js` | Active drawer, docking width/side, Esc, trigger visibility and reopening the browser |
+| `ui_prompt_workbench.js` | Top bar, view and meanings switches (remembered), saving a box as a card |
+| `ui_prompt_target.js` | Which node or draft is edited, the poll, node/draft writes and the studio's Undo |
+| `ui_prompt_box_editor.js` | One box: tags or text, selection, weight, edit, remove, reorder, drops, typing, translation |
+| `ui_prompt_source_deck.js` | Built-in and saved cards, search, new-card form, rename/delete and the sync request |
+| `ui_prompt_card_popover.js` | Card preview: hover corridor, pin, copy/add/rename/delete actions |
+| `prompt_card_drag.js` | A card or box dragged onto the canvas: box fill or new prompt node, passing through the drawer |
+| `prompt_tags.js` | Pure tag split/join, weights, insert/remove/replace/move keeping separators |
+| `prompt_gloss.js` | Meaning languages, session cache and batched lookup of tags' meanings |
+| `prompt_material_source.js` | Saved prompts as cards (paginated list, text read once) and saving a card |
+| `prompt_composition.js` | Starter cards (`PROMPT_PRESETS`, also the combo group's negative), composing a saved plan's text, prompt titles and categories; no DOM |
 | `ui_lifecycle.js` | View-scoped listeners, AbortSignal, cleanup callbacks and resizing |
 
-Child views receive their container and narrow callbacks. The workbench keeps
-`owner.promptPlanDraft` for reopening and exposes only `updateAll` / `addBlock`
-through `owner.sidePromptComposerControl`. The source deck keeps its state local
-and returns extraction/refresh/sync actions instead of assigning new owner fields.
+Every close route (Close, Esc outside a text field, replacement) disposes the same view
+scope: the poll and sync timers, requests, translation and text timers, listeners and
+resize handlers. Esc in a studio text field only leaves the field, and Esc with a pinned
+card preview leaves the studio open. Closing during resize releases move/up listeners
+and restores body cursor and selection styles. A save already sent to the server may
+still complete, but must not reopen or repaint a disposed view.
 
-Draft `plan.parts` is the authoritative editable representation. Full-text
-inspector edits merge the enabled blocks in the edited role into one block,
-preserving disabled blocks and the opposite role. The inspector explains this
-behavior before editing. Copy, save and reopen derive text from the same parts.
-
-Every close route (button, Escape, backdrop, replacement and parent close) must
-dispose the same view scope. Parent close also closes its inspector. An Escape
-handled by an inspector must not close its parent in the same event dispatch.
-Closing during resize releases move/up listeners and restores body cursor and
-selection styles. UI reads are cancelled on close; a save already sent to the
-server may still complete, but must not reopen or repaint a disposed view.
-
-Initial and automatic source synchronization share a paginated loader. List
-summaries are identifiers, not prompt bodies: each unique filename is resolved
-through `material_prompt_data.js`. Reconciliation uses source filename and role,
-so equal text from different materials retains each origin. A newer sync cancels the old
-one and only the current result updates the deck.
-
-The translator captures graph, node, widget and widget value before an async
-write. It revalidates that destination and the input after translation; close,
-selection changes and intervening widget edits invalidate the pending write.
-Explicit English translation applies to all input languages, including kana
-and Korean. Transport errors and rejected bridge responses remain local errors;
+Explicit English translation applies to all input languages, including kana and
+Korean. Transport errors and rejected bridge responses remain local errors;
 provider-specific validation belongs to the backend translation route.
 
 ## Visual styling and theme architecture
@@ -287,19 +317,25 @@ guards the unique ordered list and byte-for-byte reconstructed bundle. Shared `-
 tokens express surfaces, text, borders and control shapes; theme overrides must
 be scoped to `.theme-abyssal-scarlet` rather than changing unrelated surfaces.
 
+Colours come from the tokens in `00-foundation-models.css`, which both themes define:
+surfaces (`--amb-bg-page`, `-panel`, `-card`, `-card-hover`, `-input`), text
+(`--amb-text-main`, `-soft`, `-muted`, `-dim`), borders (`--amb-border`, `-strong`,
+`-hover`), the primary button (`--amb-btn-primary-*`) and one accent, `--amb-link`, for
+links, selection and focus; its tints are `color-mix(in srgb, var(--amb-link) N%,
+transparent)`. CSS injected from JS and inline styles use the same tokens. Literal
+colours stay only where the colour is the meaning: status (red, green, amber), prompt
+roles, voice emotions, canvas node colours and translucent shadows or overlays.
+
 Studio drawer rules keep the source deck at the screen edge and the assembly
 track next to the canvas. Common geometry is shared between dock directions;
 direction-specific rules set column order and separators. The removed embedded
 composer's `#anomalous-container.anomalous-docked` overrides must not return.
 Before adding an override or `!important`, locate and edit the owning rule.
-Older component and theme overrides elsewhere in the ordered bundle still need a
-separate, visually verified consolidation.
+Older theme overrides in `08-theme-gallery-overrides.css` predate the tokens; many are
+now redundant and can go as the rules they override are touched.
 
 ## Verification
 
-Use `node --experimental-vm-modules tests/prompt_ui_lifecycle.mjs` for actual
-module open/close, nested Escape, resize cleanup, block insertion and delayed
-node writes. `tests/prompt_material_source.mjs` covers pagination, deduplication
-and cancellation; `tests/translation_service_contracts.mjs` covers the HTTP
-bridge. The UI fixture simulates DOM and ComfyUI APIs and does not replace
+`tests/prompt_tags.mjs` covers splitting, joining, weights and tag edits keeping
+separators. The UI fixture simulates DOM and ComfyUI APIs and does not replace
 checking the real host, layout, focus, drag gestures and theme rendering.

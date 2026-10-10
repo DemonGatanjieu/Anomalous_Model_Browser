@@ -9,12 +9,12 @@ open only the topic needed for the current task.
   media lifecycle, panel state, and graph mutations.
 - [`recipes.md`](recipes.md): Workflow Recipes, packages, galleries, Parameter
   Notebooks, prompt roles, and recipe-to-model transitions.
-- [`material-library.md`](material-library.md): generated-image snapshots,
-  material assets, node-block reuse, and Model Doctor handoff.
+- [`material-library.md`](material-library.md): saved prompts and node values
+  (material files), keeping an output image, and dragging prompts onto the canvas.
 - [`recipe-model-lifecycle.md`](recipe-model-lifecycle.md): authoritative model
   fields, Hash synchronization, local matching, partial append, and note privacy.
-- [`model-resolution.md`](model-resolution.md): model provenance, Model Doctor,
-  hash injection, deep scanning, and recovery policy.
+- [`model-resolution.md`](model-resolution.md): model provenance, Model Check,
+  hash injection, model scanning, and recovery policy.
 - [`../decisions/README.md`](../decisions/README.md): concise records of product
   and architectural decisions that still explain current behavior.
 

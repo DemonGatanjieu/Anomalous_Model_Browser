@@ -1,6 +1,6 @@
 from . import (
-    folder_types, gallery_routes, materials, media_routes, model_catalog,
-    model_media, model_metadata, model_resolution, recipe_packages, recipes,
+    activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
+    model_media, model_metadata, model_resolution, model_type_listing, kept_images, node_material, recipe_packages, recipes, scan_report, scan_summary,
     translation_routes, version_manager,
 )
 from .scanner import *
@@ -10,13 +10,20 @@ from .parameters import *
 
 from aiohttp import web
 
+EXTENSION_STATIC_PREFIX = '/extensions/Anomalous_Model_Browser/'
+
+
 @web.middleware
 async def no_cache_extension_middleware(request, handler):
+    """Make browsers revalidate this plugin's JS/CSS so a normal refresh picks up updates.
+
+    `no-cache` still allows 304 responses via ETag/Last-Modified. This replaces
+    per-import `?v=` query strings, which load a second module instance whenever
+    two files import the same module with different URLs.
+    """
     response = await handler(request)
-    if request.path.startswith('/extensions/Anomalous_Model_Browser'):
-        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
+    if request.path.startswith(EXTENSION_STATIC_PREFIX):
+        response.headers['Cache-Control'] = 'no-cache'
     return response
 
 def setup_routes(app):
@@ -25,16 +32,18 @@ def setup_routes(app):
     app.router.add_get('/anomalous/folders', model_catalog.api_get_folders)
     app.router.add_get('/anomalous/all_folder_types', folder_types.api_get_all_folder_types)
     app.router.add_get('/anomalous/models', model_catalog.api_get_models)
+    app.router.add_get('/anomalous/type_models', model_type_listing.api_get_type_models)
     app.router.add_get('/anomalous/all_scan_models', model_catalog.api_get_all_scan_models)
     app.router.add_get('/anomalous/batch_select', model_catalog.api_batch_select)
     app.router.add_get('/anomalous/image', media_routes.api_serve_image)
+    app.router.add_get('/anomalous/card_cache', media_routes.api_card_cache)
+    app.router.add_post('/anomalous/card_cache/clear', media_routes.api_clear_card_cache)
     app.router.add_post('/anomalous/scan', api_scan_folder)
     app.router.add_get('/anomalous/scan_status', api_scan_status)
     app.router.add_get('/anomalous/find_model', model_catalog.api_find_model)
     app.router.add_get('/anomalous/config', api_get_config)
     app.router.add_post('/anomalous/save_config', api_save_config)
     app.router.add_post('/anomalous/delete_model', model_metadata.api_delete_model)
-    app.router.add_post('/anomalous/clean_civitai_info', api_clean_civitai_info)
     app.router.add_get('/anomalous/compatible_models', model_catalog.api_compatible_models)
     app.router.add_get('/anomalous/notebooks', api_get_notebooks)
     app.router.add_post('/anomalous/save_notebook', api_save_notebook)
@@ -74,27 +83,38 @@ def setup_routes(app):
     app.router.add_get('/anomalous/materials/by_node_type', materials.api_get_materials_by_node_type)
     app.router.add_post('/anomalous/inspect_image_material', materials.api_inspect_image_material)
     app.router.add_post('/anomalous/save_image_material', materials.api_save_image_material)
-    app.router.add_post('/anomalous/save_parameter_material', materials.api_save_parameter_material)
-    app.router.add_post('/anomalous/save_prompt_note_material', materials.api_save_prompt_note_material)
     app.router.add_post('/anomalous/save_prompt_plan', materials.api_save_prompt_plan)
+    app.router.add_post('/anomalous/save_node_material', node_material.api_save_node_material)
     app.router.add_post('/anomalous/delete_material', materials.api_delete_material)
     app.router.add_post('/anomalous/update_material', materials.api_update_material)
+    app.router.add_post('/anomalous/mark_material_moved', materials.api_mark_material_moved)
 
     app.router.add_post('/anomalous/translate', translation_routes.api_translate)
     app.router.add_get('/anomalous/base_models', model_catalog.api_base_models)
     app.router.add_get('/anomalous/gallery_images', gallery_routes.api_get_gallery_images)
     app.router.add_post('/anomalous/delete_gallery_image', gallery_routes.api_delete_gallery_image)
+    app.router.add_get('/anomalous/output_thumbnail', gallery_routes.api_output_thumbnail)
+    app.router.add_get('/anomalous/kept_images', kept_images.api_kept_images)
     app.router.add_get('/anomalous/resolve_hash', model_resolution.api_resolve_hash)
     app.router.add_post('/anomalous/resolve_hash_batch', model_resolution.api_resolve_hash_batch)
     app.router.add_get('/anomalous/all_hashes', model_resolution.api_get_all_hashes)
     app.router.add_post('/anomalous/scan_all', api_scan_all)
     app.router.add_get('/anomalous/global_scan_status', api_global_scan_status)
-    app.router.add_get('/anomalous/scan_missing_models_status', api_scan_missing_models_status)
     app.router.add_post('/anomalous/clear_cache', media_routes.api_clear_cache)
     app.router.add_post('/anomalous/update_metadata', model_metadata.api_update_metadata)
     app.router.add_post('/anomalous/set_custom_cover', model_media.api_set_custom_cover)
     app.router.add_post('/anomalous/upload_custom_cover', model_media.api_upload_custom_cover)
     app.router.add_get('/anomalous/model_images', media_routes.api_get_model_images)
     app.router.add_post('/anomalous/resolve_paths_to_previews', model_catalog.api_resolve_paths_to_previews)
-    app.router.add_post('/anomalous/scan_missing_models', api_scan_missing_models)
+    app.router.add_get('/anomalous/scan_summary', scan_summary.api_scan_summary)
+    app.router.add_get('/anomalous/last_scan', scan_report.api_last_scan)
+    app.router.add_get('/anomalous/scan_model', scan_report.api_scan_model)
+
+    # Audio & Voice Studio Routes
+    app.router.add_get('/anomalous/audio_stream', audio_catalog.api_serve_audio)
+    app.router.add_get('/anomalous/audio_gallery', audio_catalog.api_get_audio_gallery)
+    app.router.add_post('/anomalous/delete_audio_gallery', audio_catalog.api_delete_audio_gallery)
+    app.router.add_get('/anomalous/audio_previews', audio_catalog.api_get_audio_previews)
+    app.router.add_post('/anomalous/save_audio_preview', audio_catalog.api_save_audio_preview)
     version_manager.register_routes(app)
+    activity_log.register_routes(app)

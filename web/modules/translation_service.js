@@ -1,53 +1,21 @@
 /**
- * translation_service.js
- * Atomic prompt translation service for Anomalous Model Browser.
- * Handles DeepL / Google Translate backend bridge, smart language detection,
- * in-memory caching, and prompt tag splitting.
+ * Prompt translation: the backend /anomalous/translate bridge (DeepL when a key is set, then
+ * Google, then MyMemory) with an in-memory cache, and which text needs translating to English
+ * before it goes into a prompt.
  */
 
 const translationCache = new Map();
+// A letter that is not plain English: Chinese, kana, hangul, Cyrillic, accented Latin…
+const NON_ENGLISH_LETTER = /(?![A-Za-z])\p{L}/u;
 
-/**
- * Checks if the given text contains any Chinese characters.
- * @param {string} text 
- * @returns {boolean}
- */
-export function hasChinese(text) {
-    if (!text || typeof text !== 'string') return false;
-    return /[\u4e00-\u9fa5]/.test(text);
-}
-
-/**
- * Splits a prompt string into trimmed comma-separated tags or phrases.
- * Supports English/Chinese commas, enumeration marks (顿号 、), semicolons, pipes, and newlines.
- * @param {string} text 
- * @returns {string[]}
- */
-export function splitPromptTags(text) {
-    if (!text || typeof text !== 'string') return [];
-    return text
-        .split(/[,，、;；|｜\n\r]+/)
-        .map(t => t.trim())
-        .filter(Boolean);
-}
-
-/**
- * Normalizes punctuation and formatting of a prompt text into standard comma-separated tags.
- * Converts Chinese commas, enumeration marks (顿号), semicolons, pipes, and newlines into clean `, `.
- * @param {string} text 
- * @param {string} [delimiter=', ']
- * @returns {string}
- */
-export function normalizePromptFormatting(text, delimiter = ', ') {
-    const tags = splitPromptTags(text);
-    return tags.join(delimiter);
+/** Whether `text` has letters other than English ones, so it goes to English before a prompt. */
+export function needsEnglish(text) {
+    return typeof text === 'string' && NON_ENGLISH_LETTER.test(text);
 }
 
 /**
  * Translates prompt text using the backend /anomalous/translate endpoint.
- * Automatically selects target language if omitted:
- * - If text contains Chinese -> translates to English ('en')
- * - If text is English/Latin -> translates to Simplified Chinese ('zh-CN')
+ * Without a target, text that needs English goes to English and other text to Chinese.
  *
  * @param {string} text - Raw prompt text to translate
  * @param {Object} [options]
@@ -63,7 +31,7 @@ export async function translatePromptText(text, options = {}) {
         return { ok: true, translated: '', targetLang: options.targetLang || 'en' };
     }
 
-    const targetLang = options.targetLang || (hasChinese(raw) ? 'en' : 'zh-CN');
+    const targetLang = options.targetLang || (needsEnglish(raw) ? 'en' : 'zh-CN');
     const cacheKey = `${targetLang}:::${raw}`;
 
     if (!options.bypassCache && translationCache.has(cacheKey)) {
@@ -114,11 +82,4 @@ export async function translatePromptText(text, options = {}) {
             error: err.message || 'Translation request failed',
         };
     }
-}
-
-/**
- * Clears the in-memory translation cache.
- */
-export function clearTranslationCache() {
-    translationCache.clear();
 }

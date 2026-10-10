@@ -9,7 +9,7 @@ from aiohttp import web
 import folder_paths
 
 from .metadata import get_metadata
-from .model_constants import MEDIA_EXTENSIONS, MODEL_EXTENSIONS, PREVIEW_SUFFIXES
+from .model_constants import MEDIA_EXTENSIONS, PREVIEW_SUFFIXES, is_model_file
 from .model_media import _cache_token, _preview_url_for_model
 from .folder_types import (
     get_active_folder_types, get_active_model_roots,
@@ -32,7 +32,7 @@ def _collect_folder_models(target_dir, folder_type, path_idx, rel_subfolder, pag
         return {"models": [], "total": 0, "page": page, "limit": limit}
 
     valid_files = sorted(
-        (name for name in file_entries if name.endswith(('.safetensors', '.ckpt', '.pt'))),
+        (name for name in file_entries if is_model_file(name)),
         key=str.lower,
     )
     total = len(valid_files)
@@ -123,7 +123,7 @@ def _collect_folders():
                 base_dir = item["base_dir"]
                 tree = {}
                 for root, dirs, files in os.walk(base_dir):
-                    has_models = any(f.endswith(('.safetensors', '.ckpt', '.pt')) for f in files)
+                    has_models = any(is_model_file(f) for f in files)
                     rel = os.path.relpath(root, base_dir)
                     if rel == '.':
                         rel = '/'
@@ -133,7 +133,7 @@ def _collect_folders():
                         "path": rel,
                         "name": os.path.basename(root) if rel != '/' else '[Root]',
                         "has_models": has_models,
-                        "model_count": sum(1 for f in files if f.endswith(('.safetensors', '.ckpt', '.pt')))
+                        "model_count": sum(1 for f in files if is_model_file(f))
                     }
                 
                 label = item["bn"]
@@ -166,7 +166,7 @@ def _collect_folders():
                 
                 tree = {}
                 for root, dirs, files in os.walk(base_dir):
-                    has_models = any(f.endswith(('.safetensors', '.ckpt', '.pt')) for f in files)
+                    has_models = any(is_model_file(f) for f in files)
                     rel = os.path.relpath(root, base_dir)
                     if rel == '.':
                         rel = '/'
@@ -176,7 +176,7 @@ def _collect_folders():
                         "path": rel,
                         "name": os.path.basename(root) if rel != '/' else '[Root]',
                         "has_models": has_models,
-                        "model_count": sum(1 for f in files if f.endswith(('.safetensors', '.ckpt', '.pt')))
+                        "model_count": sum(1 for f in files if is_model_file(f))
                     }
                     
                 try:
@@ -253,7 +253,7 @@ def _iter_search_models():
                 continue
             for root, _, files in os.walk(base_dir):
                 for filename in files:
-                    if filename.lower().endswith(MODEL_EXTENSIONS + ('.sft',)):
+                    if is_model_file(filename):
                         yield folder_type, path_idx, base_dir, os.path.join(root, filename)
 
 
@@ -310,7 +310,7 @@ def _walk_model_files(target_types):
                 continue
             for root, _, files in os.walk(base_dir):
                 for filename in files:
-                    if not filename.lower().endswith(MODEL_EXTENSIONS):
+                    if not is_model_file(filename):
                         continue
                     file_path = os.path.join(root, filename)
                     real_path = os.path.realpath(file_path)
@@ -455,7 +455,7 @@ def _resolve_paths_to_model_info_sync(paths, folder_types=None, exact_only=False
                         continue
                 except ValueError:
                     continue
-                if os.path.isfile(candidate) and candidate.lower().endswith(('.safetensors', '.ckpt', '.pt', '.bin', '.sft')):
+                if os.path.isfile(candidate) and is_model_file(candidate):
                     exact_results[original] = _model_info_for_path(folder_type, path_idx, base_dir, candidate)
 
     unresolved = [(original, normalized) for original, normalized, _ in requested if original not in exact_results]
@@ -469,7 +469,7 @@ def _resolve_paths_to_model_info_sync(paths, folder_types=None, exact_only=False
     for folder_type, path_idx, base_dir in roots:
         for root, _, files in os.walk(base_dir):
             for filename in files:
-                if not filename.lower().endswith(('.safetensors', '.ckpt', '.pt', '.bin', '.sft')):
+                if not is_model_file(filename):
                     continue
                 rel_path = os.path.relpath(os.path.join(root, filename), base_dir).replace(os.sep, '/').lower()
                 basename = filename.lower()
@@ -542,7 +542,6 @@ async def api_resolve_paths_to_previews(request):
 
 
 def _collect_all_scan_models(page, limit):
-    source_library_extensions = {'.safetensors', '.ckpt', '.pt', '.pth', '.bin', '.sft', '.gguf'}
     all_tuples = []
     for model_root in get_active_model_roots():
         t = model_root["type"]
@@ -550,7 +549,7 @@ def _collect_all_scan_models(page, limit):
         base_dir = model_root["base_dir"]
         for root, dirs, files in os.walk(base_dir):
             for f in files:
-                if os.path.splitext(f)[1].lower() in source_library_extensions:
+                if is_model_file(f):
                     all_tuples.append((t, path_idx, root, base_dir, f))
                         
     all_tuples.sort(key=lambda x: (x[0], x[4].lower()))
@@ -651,7 +650,7 @@ async def api_batch_select(request):
                 if not os.path.exists(base_dir): continue
                 for root, dirs, files in os.walk(base_dir):
                     for f in files:
-                        if f.endswith(('.safetensors', '.ckpt', '.pt', '.bin', '.sft')):
+                        if is_model_file(f):
                             file_path = os.path.join(root, f)
                             base_name = os.path.splitext(f)[0]
                             if matches_condition(file_path, root, base_name):
@@ -681,7 +680,7 @@ async def api_batch_select(request):
                     try: entries = os.listdir(target_dir)
                     except: entries = []
                     for f in entries:
-                        if f.endswith(('.safetensors', '.ckpt', '.pt', '.bin', '.sft')):
+                        if is_model_file(f):
                             file_path = os.path.join(target_dir, f)
                             if os.path.isfile(file_path):
                                 base_name = os.path.splitext(f)[0]

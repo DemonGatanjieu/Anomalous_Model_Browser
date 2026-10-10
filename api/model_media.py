@@ -9,6 +9,7 @@ from aiohttp import web
 import folder_paths
 
 from .model_constants import MEDIA_EXTENSIONS, PREVIEW_SUFFIXES
+from .trash import move_to_trash
 from .utils import require_filename, resolve_folder_subdir, resolve_within
 
 def _cache_token(file_path):
@@ -29,13 +30,13 @@ async def _handle_custom_cover(target_dir, filename, save_func, source_ext='.png
         
     dest_path = os.path.join(target_dir, f"{base_name}{preview_ext}")
     
-    # Delete any existing .preview.* files to ensure only one custom cover is active
-    for ext in PREVIEW_SUFFIXES:
-        p = os.path.join(target_dir, f"{base_name}{ext}")
-        if os.path.exists(p) and p != dest_path:
-            try: os.remove(p)
-            except: pass
-            
+    # Only one cover is active: the others go to the Recycle Bin (a failure keeps them).
+    older = [os.path.join(target_dir, f"{base_name}{ext}") for ext in PREVIEW_SUFFIXES]
+    try:
+        move_to_trash(*[path for path in older if path != dest_path])
+    except OSError as e:
+        print(f"[Anomalous Browser] Old cover kept: {e}")
+
     await save_func(dest_path)
 
 

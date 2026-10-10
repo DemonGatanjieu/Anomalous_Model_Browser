@@ -7,6 +7,7 @@ import threading
 
 from aiohttp import web
 import folder_paths
+from .trash import move_to_trash
 from .utils import atomic_write_json, require_filename, resolve_within
 
 
@@ -117,7 +118,10 @@ async def api_save_notebook(request):
 
 def _delete_notebook(filename):
     with _notebooks_lock:
-        os.remove(resolve_within(get_notebooks_dir(), filename))
+        path = resolve_within(get_notebooks_dir(), filename)
+        if not os.path.isfile(path):
+            raise FileNotFoundError(path)
+        move_to_trash(path)
 
 
 async def api_delete_notebook(request):

@@ -5,6 +5,10 @@
 
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
+import { focusModel, modelListUrl, renderTypeBar } from './ui_model_types.js';
+import { renderSourceBadge } from './model_source.js';
+import { renderModelSourcesView } from './ui_model_sources.js';
+import { recordCanvasStep } from './canvas_history.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -12,6 +16,14 @@ export function cardPreviewUrl(previewUrl, thumbnailMode) {
     if (!previewUrl || thumbnailMode === 'original') return previewUrl;
     return `${previewUrl}${previewUrl.includes('?') ? '&' : '?'}variant=card`;
 }
+
+/** A video cover's still first frame (made once on the server), shown until the video plays. */
+function cardPosterUrl(previewUrl) {
+    return `${previewUrl}${previewUrl.includes('?') ? '&' : '?'}variant=poster`;
+}
+
+// The first screen of cards loads first; the rest waits until scrolled near.
+const EAGER_CARDS = 12;
 
 function modelCardDisplayName(model) {
     const metadata = model?.metadata || {};
@@ -23,11 +35,17 @@ function modelCardDisplayName(model) {
 export async function loadModels() {
         try {
             if (this._modelLoadController) this._modelLoadController.abort();
+            this.modelSources?.controller?.abort();
+            if (this.modelView === 'sources') { // the type bar, then where each model is downloaded
+                stopMediaInContainer(this.grid);
+                this.grid.replaceChildren(renderTypeBar(this, 0));
+                renderModelSourcesView(this, this.grid);
+                return;
+            }
             this._modelRenderGeneration = (this._modelRenderGeneration || 0) + 1;
             const loadController = new AbortController();
             this._modelLoadController = loadController;
-            const params = new URLSearchParams({ type: this.currentType, path_idx: this.currentPathIdx, subfolder: this.currentSubfolder });
-            const res = await fetch('/anomalous/models?' + params.toString(), { signal: loadController.signal });
+            const res = await fetch(modelListUrl(this), { signal: loadController.signal });
             const data = await res.json();
             if (this._modelLoadController !== loadController) return;
 
@@ -61,10 +79,13 @@ export async function loadModels() {
                 }, { rootMargin: '300px' })
                 : null;
             stopMediaInContainer(this.grid);
-            this.grid.replaceChildren();
+            this.grid.replaceChildren(renderTypeBar(this, (data.models || []).length));
 
             if (!data.models || data.models.length === 0) {
-                this.grid.innerHTML = `<div style="color:white; padding:20px;">${t('noModels')}</div>`;
+                const empty = document.createElement('div');
+                empty.className = 'anomalous-grid-empty';
+                empty.textContent = t('noModels');
+                this.grid.appendChild(empty);
                 return;
             }
 
@@ -83,7 +104,9 @@ export async function loadModels() {
                         const video = document.createElement('video');
                         video.dataset.anomalousSrc = model.preview_url;
                         video.muted = true; video.loop = true; video.playsInline = true;
-                        video.preload = 'metadata';
+                        // Nothing of the video is fetched until it plays; the poster shows meanwhile.
+                        video.preload = 'none';
+                        video.poster = cardPosterUrl(model.preview_url);
                         const ensureVideoSource = () => {
                             if (!video.getAttribute('src')) video.src = video.dataset.anomalousSrc;
                         };
@@ -106,7 +129,9 @@ export async function loadModels() {
                         card.appendChild(video);
                     } else {
                         const img = document.createElement('img');
-                        img.loading = 'lazy';
+                        const early = renderIndex < EAGER_CARDS;
+                        img.loading = early ? 'eager' : 'lazy';
+                        if (early) img.fetchPriority = 'high';
                         img.decoding = 'async';
                         img.className = 'anomalous-skeleton-shimmer';
                         img.onload = () => { img.classList.remove('anomalous-skeleton-shimmer'); };
@@ -135,23 +160,8 @@ export async function loadModels() {
                     `;
                     card.appendChild(ph);
                 }
-                if (model.metadata && model.metadata.baseModel) {
-                    const badge = document.createElement('div');
-                    badge.className = 'anomalous-card-badge';
-                    const bm = String(model.metadata.baseModel);
-                    badge.textContent = bm;
-                    const bmLower = bm.toLowerCase();
-                    if (bmLower.includes('flux')) {
-                        badge.classList.add('badge-flux');
-                    } else if (bmLower.includes('pony') || bmLower.includes('illustrious') || bmLower.includes('anime')) {
-                        badge.classList.add('badge-rose');
-                    } else if (bmLower.includes('sdxl') || bmLower.includes('xl')) {
-                        badge.classList.add('badge-gold');
-                    } else {
-                        badge.classList.add('badge-amber');
-                    }
-                    card.appendChild(badge);
-                }
+                const badge = renderSourceBadge(model);
+                if (badge) card.appendChild(badge);
                 const labels = document.createElement('div');
                 labels.className = 'anomalous-card-labels';
                 const title = document.createElement('div');
@@ -168,6 +178,7 @@ export async function loadModels() {
 
                 card.onclick = () => { 
                     this.recipeModelReturn = null;
+                    focusModel(this, model);
                     this.historyStack = []; 
                     this.currentDetailModel = model; 
                     this.showDetail(model); 
@@ -182,6 +193,7 @@ export async function loadModels() {
                 applyBtn.setAttribute('data-tooltip-pos', 'bottom');
                 applyBtn.onclick = (e) => {
                     e.stopPropagation();
+                    focusModel(this, model);
                     this.applyModelToCanvas(this.currentType, this.currentSubfolder, model);
                 };
                 card.appendChild(applyBtn);
@@ -195,6 +207,7 @@ export async function loadModels() {
                 editBtn.setAttribute('data-tooltip-pos', 'bottom');
                 editBtn.onclick = (e) => {
                     e.stopPropagation();
+                    focusModel(this, model);
                     this.showEditModal(model);
                 };
                 card.appendChild(editBtn);
@@ -208,11 +221,8 @@ export async function loadModels() {
                 singleScanBtn.setAttribute('data-tooltip-pos', 'bottom');
                 singleScanBtn.onclick = (e) => {
                     e.stopPropagation();
-                    if (typeof this.scanSingleModel === 'function') {
-                        this.scanSingleModel(model, singleScanBtn);
-                    } else if (typeof this.openScanWizard === 'function') {
-                        this.openScanWizard({ targetFiles: model.filename });
-                    }
+                    focusModel(this, model);
+                    this.scanSingleModel(model, singleScanBtn);
                 };
                 card.appendChild(singleScanBtn);
 
@@ -268,6 +278,7 @@ export function applyModelToCanvas(type, subfolder, model) {
         const relPath = sub ? `${sub}/${model.filename}` : model.filename;
 
         this.setWidgetValuePath(node, relPath);
+        recordCanvasStep(app);
 
         const isDocked = this.container?.classList.contains('anomalous-docked');
         if (!isDocked) {

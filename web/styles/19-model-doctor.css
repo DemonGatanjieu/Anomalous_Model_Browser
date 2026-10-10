@@ -1,0 +1,183 @@
+/* Model Check: the page (on the scan page's layout classes) and the bar over the canvas. */
+
+#anomalous-doctor-panel {
+    flex: 1;
+    flex-direction: column;
+    overflow-y: auto;
+    background: var(--amb-bg-page, var(--amb-bg-page));
+}
+
+.anomalous-scan-stat.is-bad .anomalous-scan-stat-value { color: #fca5a5; }
+
+.anomalous-doctor-row {
+    align-items: flex-start;
+}
+
+.anomalous-doctor-row .anomalous-scan-row-mark { margin-top: 1px; }
+.anomalous-doctor-row.is-ready .anomalous-scan-row-mark { color: #86efac; }
+.anomalous-doctor-row.is-fixable .anomalous-scan-row-mark { color: var(--amb-link); }
+.anomalous-doctor-row.is-conflict .anomalous-scan-row-mark,
+.anomalous-doctor-row.is-missing .anomalous-scan-row-mark { color: #fca5a5; }
+
+.anomalous-doctor-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.anomalous-doctor-title > .anomalous-scan-row-name {
+    min-width: 0;
+}
+
+.anomalous-doctor-level {
+    flex-shrink: 0;
+    padding: 1px 7px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.anomalous-doctor-level.is-sure { color: #86efac; }
+.anomalous-doctor-level.is-likely { color: var(--amb-link); }
+.anomalous-doctor-level.is-maybe { color: #fcd34d; }
+.anomalous-doctor-level.is-ambiguous,
+.anomalous-doctor-level.is-conflict,
+.anomalous-doctor-level.is-missing { color: #fca5a5; }
+
+.anomalous-doctor-why {
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-doctor-proof {
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
+}
+
+.anomalous-doctor-proof > summary {
+    width: fit-content;
+    cursor: pointer;
+}
+
+.anomalous-doctor-proof > div {
+    margin-top: 3px;
+    font-family: Consolas, monospace;
+    overflow-wrap: anywhere;
+    user-select: text;
+}
+
+.anomalous-scan-row-btn.is-main {
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 12%, transparent);
+    color: var(--amb-text-main);
+}
+
+.anomalous-doctor-to-scan {
+    align-self: flex-start;
+}
+
+.anomalous-scan-advanced > .anomalous-scan-rows {
+    margin: 0 16px 8px;
+}
+
+/* The bar over the canvas, under ComfyUI's top bar. */
+.anomalous-doctor-banner {
+    position: fixed;
+    top: 56px;
+    left: 50%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: max-content;
+    max-width: min(560px, calc(100vw - 32px));
+    padding: 8px 8px 8px 14px;
+    border: 1px solid rgba(252, 211, 77, 0.35);
+    border-radius: 12px;
+    background: rgba(24, 24, 27, 0.96);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    color: var(--amb-text-main);
+    font-size: 13px;
+    transform: translateX(-50%);
+    box-sizing: border-box;
+}
+
+.anomalous-doctor-banner-text {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.5;
+}
+
+.anomalous-doctor-banner-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 6px;
+}
+
+.anomalous-doctor-banner-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--amb-text-main);
+    font-size: 12.5px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.anomalous-doctor-banner-btn.is-main {
+    border-color: transparent;
+    background: var(--amb-btn-primary-bg);
+    color: var(--amb-btn-primary-text);
+    font-weight: 600;
+}
+
+.anomalous-doctor-banner-btn:hover { filter: brightness(1.15); }
+
+.anomalous-doctor-banner-label {
+    margin-right: 4px;
+    font-weight: 600;
+}
+
+.anomalous-doctor-banner-mute {
+    flex-shrink: 0;
+    padding: 4px 6px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.anomalous-doctor-banner-mute:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--amb-text-main);
+}
+
+.anomalous-doctor-banner-close {
+    flex-shrink: 0;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    cursor: pointer;
+}
+
+.anomalous-doctor-banner-close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--amb-text-main);
+}
+
+@media (max-width: 640px) {
+    .anomalous-doctor-banner { flex-wrap: wrap; }
+    .anomalous-doctor-row { flex-wrap: wrap; }
+    .anomalous-doctor-row .anomalous-scan-row-actions { margin-left: 26px; }
+}

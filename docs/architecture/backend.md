@@ -59,13 +59,19 @@ persistence/history live in `workflow_schema.py`, `recipe_schema.py`,
 `recipe_images.py`, and `recipe_store.py`; `recipes.py` is the HTTP facade.
 Material shaping, private assets, and the single persistence lock/summary cache
 live in `material_schema.py`, `material_assets.py`, and `material_store.py`;
-`materials.py` owns request/response mapping and compatibility entry points.
+`materials.py` owns request/response mapping and compatibility entry points;
+`node_material.py` saves one canvas node's values as a `node_parameter_selection`
+material (deduplicated by node type and values like other parameter materials).
 
 The former mixed utility routes are separated: `media_routes.py` owns card
 thumbnails and model/output media lookups, `gallery_routes.py` owns the bounded
 output snapshot and deletion (searched through `image_search.py`, which reads
 PNG text chunks only and caches per-image records by mtime), `translation_routes.py`
-owns provider fallback, and `folder_types.py` owns configured visibility and scan scope.
+owns provider fallback, `folder_types.py` owns configured visibility and scan scope, and `audio_catalog.py`
+owns generated audio: the output-audio history, temp Preview Audio results and
+their copy into `output/audio/`, deletion, and streaming from the output and temp
+folders only. Character voices are the Anomalous_TTS node's data and never pass
+through this plugin's backend.
 
 `version_manager.py` runs git against the plugin checkout only (no shell, no
 prompts, `CREATE_NO_WINDOW` on Windows) and accepts only tags that appear in the
@@ -78,7 +84,7 @@ Offline inference sidecars use non-positive Civitai IDs as sentinels. Metadata
 normalization must not expose those values as release-page URLs or resolved
 model/version identities; only positive IDs may form a Civitai source link.
 
-Prompt Notes use `workflows/anomalous_notebooks`. First access copies legacy
+Combos (搭配, formerly Prompt Notes) use `workflows/anomalous_notebooks`. First access copies legacy
 `api/notebooks` records without deleting originals or overwriting current notes.
 Conflicts receive a deterministic recovered filename. A completion marker makes
 the copy retryable after write failure and prevents deleted notes reappearing.
@@ -108,8 +114,7 @@ small bounded safetensors header is acceptable; reading a whole multi-gigabyte
 model to discover metadata is not.
 
 Background work claims state before launching. Folder scans use
-`.scan_in_progress`; global quick scans use `.global_scan_in_progress`; deep
-missing-model scans use `GLOBAL_SCAN_STATE` and the corresponding status route.
+`.scan_in_progress`; global scans use `.global_scan_in_progress`.
 Marker files are versioned JSON records containing backend session, owner PID,
 worker PID, and job ID. Status checks validate ownership and process liveness;
 file existence alone is not proof that a scan is active.
@@ -123,6 +128,22 @@ remains locked until that recorded process exits.
 file count, current index, and filename. Status responses merge worker progress
 with parent-owned folder progress. The frontend can reconstruct this state by
 polling after its UI has been reopened.
+
+`scraper.py --report-file` appends one JSON line per model it changed (`matched`,
+`inferred` with its reason, `failed` with the error, renames and covers) and events
+(`civitai_down`, `done` with the unchanged count). One model's error is reported and
+the scan goes on. `ScanJob` in `api/scan_report.py` reads each folder's report when its
+worker exits and, before the scan's marker is released, writes the scan's result to
+`user/anomalous/last_scan.json` and the activity log, so whoever sees the scan end can
+read its result. The scan page's picked or listed models go to `/anomalous/scan_all` as
+`targets` (`--targets-file` per folder), so one scan has one result.
+
+An unmatched model's `.info` (`id` -1) keeps why: `anomalous_unmatched_reason` is
+`not_found` (Civitai answered 404), `network` (no answer after the retries) or
+`offline`. Online scans look up `network` and `offline` models again; `not_found` ones
+wait for "look up again". After `CIVITAI_DOWN_AFTER` models in a row without an answer
+a scan stops asking (`--civitai-down` carries this to the next folders) and infers the
+rest from the files, instead of waiting for every timeout.
 
 ## Metadata and cache behavior
 
@@ -147,14 +168,20 @@ remain browser-cacheable.
 
 Preview lookup tries a contained exact relative path first and recursively walks
 the library only for unresolved basename fallbacks. This locates presentation
-for a model value already supplied by ComfyUI; it is not Model Doctor discovery.
+for a model value already supplied by ComfyUI; it is not Model Check discovery.
 
 Balanced grid thumbnails are derived, longest-edge 512 px WebP files in
-ComfyUI's temporary area. Their cache is keyed by source real path and physical
-signature and capped at 256 MiB with oldest-accessed eviction. The original mode
+`<user folder>/anomalous/cache/card_thumbnails` (not ComfyUI's temp folder, which
+ComfyUI empties on every start). The cache is keyed by source real path and
+physical signature and capped at 256 MiB with oldest-accessed eviction; the
+settings page reads its size (`GET /anomalous/card_cache`) and empties it
+(`POST /anomalous/card_cache/clear`). A video cover's card image is its first frame
+(`variant=poster`, decoded with PyAV, which ComfyUI ships); the card shows it until
+the video plays. Listing a model type queues the covers without a card image for one
+background thread, one decode at a time, at most 512 waiting. The original mode
 serves source covers, and detail views always use originals. Derived media never
 modifies or sits beside a user's cover; unsupported, animated, or failed inputs
-fall back to the original.
+fall back to the original (a video without a readable frame has no poster).
 
 ## Model sidecar and cover lifecycle
 
@@ -172,7 +199,9 @@ media.
 - Foundation components—`vae`, `vae_approx`, `clip`, `text_encoders`, and
   `clip_vision`—are never physical-rename targets. UI and all backend entry
   points enforce the same denial.
-- Main model extensions (`.safetensors`, `.ckpt`, `.pt`, `.bin`) are never
+- Model files are `MODEL_EXTENSIONS` in `api/model_constants.py` (`.safetensors`,
+  `.ckpt`, `.pt`, `.pth`, `.bin`, `.sft`, `.gguf`); listing, counting, search and
+  lookups test names with `is_model_file()`, without case. They are never
   sidecar suffixes. Cleanup must not delete a same-stem model with another
   extension. If such a sibling remains, ambiguous stem-keyed sidecars remain.
 - Rename/delete/reset uses centralized immutable suffix tuples and a constant

@@ -22,12 +22,12 @@ export function showEditModal(model) {
         modal.style.justifyContent = 'center';
 
         const content = document.createElement('div');
-        content.style.background = '#202124';
+        content.style.background = 'var(--amb-bg-card)';
         content.style.padding = '24px';
         content.style.borderRadius = '12px';
         content.style.width = '720px';
         content.style.maxWidth = '90%';
-        content.style.border = '1px solid #3c4043';
+        content.style.border = '1px solid var(--amb-border-strong)';
         content.style.boxShadow = '0 8px 32px rgba(0,0,0,0.5)';
         content.style.display = 'flex';
         content.style.flexDirection = 'row';
@@ -45,13 +45,13 @@ export function showEditModal(model) {
         const previewContainer = document.createElement('div');
         previewContainer.style.width = '100%';
         previewContainer.style.height = '320px';
-        previewContainer.style.background = '#303134';
+        previewContainer.style.background = 'var(--amb-bg-card-hover)';
         previewContainer.style.borderRadius = '8px';
         previewContainer.style.display = 'flex';
         previewContainer.style.alignItems = 'center';
         previewContainer.style.justifyContent = 'center';
         previewContainer.style.overflow = 'hidden';
-        previewContainer.style.border = '1px solid #3c4043';
+        previewContainer.style.border = '1px solid var(--amb-border-strong)';
         previewContainer.style.position = 'relative';
 
         if (model.preview_url) {
@@ -113,15 +113,15 @@ export function showEditModal(model) {
         const galleryBtn = document.createElement('button');
         galleryBtn.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>${t('detailPickGallery')}`;
         galleryBtn.style.padding = '8px';
-        galleryBtn.style.background = '#303134';
+        galleryBtn.style.background = 'var(--amb-bg-card-hover)';
         galleryBtn.style.color = '#e5e7eb';
         galleryBtn.style.border = '1px solid #5f6368';
         galleryBtn.style.borderRadius = '6px';
         galleryBtn.style.cursor = 'pointer';
         galleryBtn.style.fontWeight = '500';
         galleryBtn.style.fontSize = '0.9em';
-        galleryBtn.onmouseover = () => galleryBtn.style.background = '#3c4043';
-        galleryBtn.onmouseout = () => galleryBtn.style.background = '#303134';
+        galleryBtn.onmouseover = () => galleryBtn.style.background = 'var(--amb-bg-card-hover)';
+        galleryBtn.onmouseout = () => galleryBtn.style.background = 'var(--amb-bg-card-hover)';
         galleryBtn.onclick = () => {
             document.body.removeChild(modal);
             this.showGallerySelectMode(model);
@@ -130,15 +130,15 @@ export function showEditModal(model) {
         const localBtn = document.createElement('button');
         localBtn.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${t('detailUploadLocal')}`;
         localBtn.style.padding = '8px';
-        localBtn.style.background = '#303134';
+        localBtn.style.background = 'var(--amb-bg-card-hover)';
         localBtn.style.color = '#e5e7eb';
         localBtn.style.border = '1px solid #5f6368';
         localBtn.style.borderRadius = '6px';
         localBtn.style.cursor = 'pointer';
         localBtn.style.fontWeight = '500';
         localBtn.style.fontSize = '0.9em';
-        localBtn.onmouseover = () => localBtn.style.background = '#3c4043';
-        localBtn.onmouseout = () => localBtn.style.background = '#303134';
+        localBtn.onmouseover = () => localBtn.style.background = 'var(--amb-bg-card-hover)';
+        localBtn.onmouseout = () => localBtn.style.background = 'var(--amb-bg-card-hover)';
         localBtn.onclick = () => {
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
@@ -205,7 +205,7 @@ export function showEditModal(model) {
         const inputStyle = `
             width: 100%;
             padding: 12px 14px;
-            background: #303134;
+            background: var(--amb-bg-card-hover);
             color: #e8eaed;
             border: 1px solid #5f6368;
             border-radius: 6px;
@@ -230,10 +230,10 @@ export function showEditModal(model) {
         notesInput.style.minHeight = '150px';
         notesInput.style.resize = 'vertical';
         // Notebook styling override
-        notesInput.style.background = 'linear-gradient(135deg, #262522 0%, #202124 100%)';
+        notesInput.style.background = 'linear-gradient(135deg, var(--amb-bg-card-hover) 0%, var(--amb-bg-card) 100%)';
         notesInput.style.backgroundImage = 'repeating-linear-gradient(transparent, transparent 23px, rgba(163, 141, 83, 0.04) 23px, rgba(163, 141, 83, 0.04) 24px)';
         notesInput.style.backgroundAttachment = 'local';
-        notesInput.style.border = '1px solid #3c4043';
+        notesInput.style.border = '1px solid var(--amb-border-strong)';
         notesInput.style.borderLeft = '4px solid #a38d53';
         notesInput.style.borderRadius = '4px 8px 8px 4px';
         notesInput.style.color = '#d1c9b4';
@@ -247,7 +247,7 @@ export function showEditModal(model) {
         };
         notesInput.onblur = () => {
             notesInput.style.boxShadow = 'none';
-            notesInput.style.borderColor = '#3c4043';
+            notesInput.style.borderColor = 'var(--amb-border-strong)';
         };
 
         const physicalRow = document.createElement('div');

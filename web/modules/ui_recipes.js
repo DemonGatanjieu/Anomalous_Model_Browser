@@ -7,13 +7,14 @@ import {
     renderRecipeList as renderRecipeCatalog,
 } from './ui_recipe_catalog.js';
 import { formatRecipeText, showRecipeEditDialog, showRecipeSaveDialog } from './ui_recipe_dialogs.js';
-import { outputImageUrl, previewIsVideo } from './ui_recipe_media.js';
 import { translate } from './locales.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import {
     captureCanvasThumbnail,
     captureRecipeDraft,
 } from './recipe_parser.js';
+import { persistRecipe } from './recipe_save.js';
+import { showRecipeDetail } from './ui_recipe_detail.js';
 import {
     canVerifyRecipeModelReference,
     deriveRecipeModelReferences,
@@ -80,60 +81,6 @@ async function inspectRecipeModelIdentities(draft) {
             && reference.currentAvailability !== 'missing'
         )),
     };
-}
-
-async function captureOutputThumbnail(image) {
-    const url = outputImageUrl(image);
-    if (!url) return null;
-    const response = await fetch(url);
-    if (!response.ok) return null;
-    const blob = await response.blob();
-    if (previewIsVideo(url) || /^video\//i.test(blob.type)) {
-        const objectUrl = URL.createObjectURL(blob);
-        const video = document.createElement('video');
-        video.src = objectUrl;
-        video.muted = true;
-        video.playsInline = true;
-        video.preload = 'auto';
-        try {
-            await new Promise((resolve, reject) => {
-                video.onloadeddata = resolve;
-                video.onerror = reject;
-                video.load();
-            });
-            if (video.duration > 0.2) {
-                await new Promise((resolve) => {
-                    video.onseeked = resolve;
-                    video.currentTime = 0.1;
-                });
-            }
-            const maxEdge = 720;
-            const scale = Math.min(1, maxEdge / Math.max(video.videoWidth, video.videoHeight));
-            const canvas = document.createElement('canvas');
-            canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
-            canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
-            const context = canvas.getContext('2d');
-            if (!context) return null;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            return canvas.toDataURL('image/webp', 0.72);
-        } finally {
-            URL.revokeObjectURL(objectUrl);
-        }
-    }
-    const bitmap = await createImageBitmap(blob);
-    try {
-        const maxEdge = 720;
-        const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-        canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-        const context = canvas.getContext('2d');
-        if (!context) return null;
-        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-        return canvas.toDataURL('image/jpeg', 0.72);
-    } finally {
-        bitmap.close?.();
-    }
 }
 
 async function fetchRecipeBundle(filename) {
@@ -231,57 +178,7 @@ export async function handleSaveRecipe() {
         saveButton.textContent = t('recipeSaving');
     }
     try {
-        let thumbnail = details.thumbnail;
-        if (details.sourceImage) {
-            try {
-                thumbnail = await captureOutputThumbnail(details.sourceImage);
-            } catch (error) {
-                console.warn('Could not persist bound recipe image thumbnail:', error);
-            }
-        }
-        const response = await fetch(editing ? '/anomalous/update_recipe' : '/anomalous/save_recipe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                ...(editing ? { filename: editing.filename } : {}),
-                name: details.name,
-                tags: details.tags,
-                notes: details.notes,
-                params: draft.metadata,
-                workflow: draft.workflow,
-                workflow_scope: draft.workflowScope,
-                thumbnail,
-                source_image: details.sourceImage,
-                presentation: { save_model_preview_snapshots: details.saveModelPreviewSnapshots },
-                verify_model_identities: details.verifyModelIdentities,
-            }),
-        });
-        const payload = await response.json();
-        if (!response.ok || payload.status !== 'success') throw new Error('recipe save request failed');
-
-        const recipeFilename = payload.filename || editing?.filename;
-        if (recipeFilename) {
-            try {
-                const parameterResponse = await fetch('/anomalous/save_parameter', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: details.name,
-                        tags: details.tags,
-                        notes: details.notes,
-                        params: draft.metadata,
-                        workflow: draft.workflow,
-                        recipe_filename: recipeFilename,
-                    }),
-                });
-                if (!parameterResponse.ok) throw new Error('parameter snapshot request failed');
-            } catch (error) {
-                // Recipe persistence is already successful; a snapshot failure
-                // must not make the user retry and create a duplicate recipe.
-                console.warn('Could not save the recipe parameter snapshot:', error);
-            }
-        }
-
+        const { payload } = await persistRecipe(draft, details, editing);
         const receipt = payload.receipt || {};
         const receiptMatchesDraft = receipt.node_count === draft.stats.nodeCount
             && receipt.link_count === draft.stats.linkCount
@@ -306,5 +203,18 @@ export async function handleSaveRecipe() {
             saveButton.disabled = false;
             saveButton.textContent = this.recipeEditing ? t('recipeUpdateCurrent') : t('recipeSaveCurrent');
         }
+    }
+}
+
+/** Opens the Workflows page on one recipe's detail (from Recent's star, a toast). */
+export async function openRecipeByFilename(filename) {
+    this.goTo?.('recipes');
+    try {
+        const bundle = await fetchRecipeBundle(filename);
+        const result = await showRecipeDetail(this, { recipe: bundle.data, filename, history: bundle.history });
+        if (result?.mode === 'edit') await editRecipe(this, bundle.data, filename, bundle.history);
+    } catch (error) {
+        console.error('Could not open Workflow Recipe:', error);
+        await anomalousAlert(t('recipeLoadError'));
     }
 }

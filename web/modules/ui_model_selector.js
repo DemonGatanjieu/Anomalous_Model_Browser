@@ -37,7 +37,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
         modal.style.fontFamily = 'Roboto, Inter, sans-serif';
 
         const contentDiv = document.createElement('div');
-        contentDiv.style.background = '#202124';
+        contentDiv.style.background = 'var(--amb-bg-card)';
         contentDiv.style.borderRadius = '8px';
         contentDiv.style.width = '92vw';
         contentDiv.style.height = '88vh';
@@ -49,7 +49,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
         // Header
         const header = document.createElement('div');
         header.style.padding = '16px 24px';
-        header.style.borderBottom = '1px solid #3c4043';
+        header.style.borderBottom = '1px solid var(--amb-border-strong)';
         header.style.display = 'flex';
         header.style.justifyContent = 'space-between';
         header.style.alignItems = 'center';
@@ -90,10 +90,10 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
         // Left Panel
         const leftPanel = document.createElement('div');
         leftPanel.style.width = '280px';
-        leftPanel.style.borderRight = '1px solid #3c4043';
+        leftPanel.style.borderRight = '1px solid var(--amb-border-strong)';
         leftPanel.style.display = 'flex';
         leftPanel.style.flexDirection = 'column';
-        leftPanel.style.background = '#171717';
+        leftPanel.style.background = 'var(--amb-bg-panel)';
         
         const leftTitle = document.createElement('div');
         leftTitle.textContent = t('detailFolders');
@@ -115,12 +115,12 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
         rightPanel.style.flex = '1';
         rightPanel.style.display = 'flex';
         rightPanel.style.flexDirection = 'column';
-        rightPanel.style.background = '#202124';
+        rightPanel.style.background = 'var(--amb-bg-card)';
         
         // Toolbar
         const toolbar = document.createElement('div');
         toolbar.style.padding = '12px 24px';
-        toolbar.style.borderBottom = '1px solid #3c4043';
+        toolbar.style.borderBottom = '1px solid var(--amb-border-strong)';
         toolbar.style.display = 'flex';
         toolbar.style.gap = '12px';
         toolbar.style.alignItems = 'center';
@@ -231,10 +231,10 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                 } else {
 
                 
-                    card.style.border = '1px solid #3c4043';
+                    card.style.border = '1px solid var(--amb-border-strong)';
 
                 
-                    card.style.background = '#303134';
+                    card.style.background = 'var(--amb-bg-card-hover)';
 
                 
                     cbWrapper.style.background = 'rgba(0,0,0,0.3)';
@@ -297,7 +297,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
         toolbar.appendChild(createTBtn(t('detailSelectNoDesc'), () => handleBatchSelect('no_desc'), true));
         
         const divi = document.createElement('div');
-        divi.style.width = '1px'; divi.style.height = '24px'; divi.style.background = '#3c4043'; divi.style.margin = '0 8px';
+        divi.style.width = '1px'; divi.style.height = '24px'; divi.style.background = 'var(--amb-bg-card-hover)'; divi.style.margin = '0 8px';
         toolbar.appendChild(divi);
 
         toolbar.appendChild(createTBtn(t('detailSelectAll'), () => handleBatchSelect('all')));
@@ -320,7 +320,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
         grid.style.gridAutoRows = 'max-content';
         grid.style.gap = '20px';
         grid.style.alignContent = 'start';
-        grid.style.background = '#171717';
+        grid.style.background = 'var(--amb-bg-panel)';
         rightPanel.appendChild(grid);
 
         body.appendChild(leftPanel);
@@ -330,7 +330,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
         // Footer (Confirm)
         const footer = document.createElement('div');
         footer.style.padding = '12px 24px';
-        footer.style.borderTop = '1px solid #3c4043';
+        footer.style.borderTop = '1px solid var(--amb-border-strong)';
         footer.style.display = 'flex';
         footer.style.justifyContent = 'flex-end';
         footer.style.gap = '12px';
@@ -385,11 +385,11 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                 card.dataset.mpathidx = m.path_idx;
                 card.dataset.msubfolder = m.subfolder;
                 
-                card.style.background = '#303134';
+                card.style.background = 'var(--amb-bg-card-hover)';
                 card.style.borderRadius = '8px';
                 card.style.overflow = 'hidden';
                 card.style.position = 'relative';
-                card.style.border = '1px solid #3c4043';
+                card.style.border = '1px solid var(--amb-border-strong)';
                 card.style.display = 'flex';
                 card.style.flexDirection = 'column';
                 card.style.aspectRatio = '2 / 3';
@@ -399,7 +399,7 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                 
                 const imgContainer = document.createElement('div');
                 imgContainer.style.flex = '1';
-                imgContainer.style.background = '#202124';
+                imgContainer.style.background = 'var(--amb-bg-card)';
                 imgContainer.style.display = 'flex';
                 imgContainer.style.justifyContent = 'center';
                 imgContainer.style.alignItems = 'center';
@@ -478,13 +478,13 @@ export function _openAdvancedModelSelector(initialSelectedMap, onConfirm) {
                 
                 const nameBar = document.createElement('div');
                 nameBar.style.padding = '12px';
-                nameBar.style.background = '#303134';
+                nameBar.style.background = 'var(--amb-bg-card-hover)';
                 nameBar.style.fontSize = '13px';
                 nameBar.style.color = '#e8eaed';
                 nameBar.style.whiteSpace = 'nowrap';
                 nameBar.style.overflow = 'hidden';
                 nameBar.style.textOverflow = 'ellipsis';
-                nameBar.style.borderTop = '1px solid #3c4043';
+                nameBar.style.borderTop = '1px solid var(--amb-border-strong)';
                 nameBar.innerText = m.filename;
                 card.appendChild(nameBar);
                 

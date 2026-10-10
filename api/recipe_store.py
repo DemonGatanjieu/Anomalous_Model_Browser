@@ -11,6 +11,7 @@ import folder_paths
 
 from .recipe_constants import MAX_HISTORY_VERSIONS
 from .recipe_images import _recipe_assets_dir
+from .trash import move_to_trash
 from .utils import require_filename, resolve_within
 
 def get_recipes_dir():
@@ -131,11 +132,8 @@ def _list_recipe_history(recipes_dir, filename):
 
 
 def _delete_recipe_with_history(recipes_dir, filename):
-    """Delete an explicitly selected recipe and its contained local history."""
-    os.remove(resolve_within(recipes_dir, filename))
-    history_dir = _history_dir(recipes_dir, filename)
-    if os.path.isdir(history_dir):
-        shutil.rmtree(history_dir)
-    assets_dir = _recipe_assets_dir(recipes_dir, filename)
-    if os.path.isdir(assets_dir):
-        shutil.rmtree(assets_dir)
+    """Moves an explicitly selected recipe, its history and its images to the Recycle Bin."""
+    path = resolve_within(recipes_dir, filename)
+    if not os.path.isfile(path):
+        raise FileNotFoundError(path)
+    move_to_trash(path, _history_dir(recipes_dir, filename), _recipe_assets_dir(recipes_dir, filename))

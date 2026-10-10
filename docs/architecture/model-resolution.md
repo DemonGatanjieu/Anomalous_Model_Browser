@@ -1,11 +1,11 @@
 # Model Identity and Scanning
 
-Read this document for Model Doctor, workflow provenance, missing-model recovery,
-hash caches, Civitai metadata resolution, or deep scanning.
+Read this document for Model Check, workflow provenance, missing-model recovery,
+hash caches, Civitai metadata resolution, or model scanning.
 
 ## Identity boundary
 
-Model Doctor recovers the same physical model referenced by provenance embedded
+Model Check recovers the same physical model referenced by provenance embedded
 in a workflow or image. Local renames and path differences are the problem it
 solves, so names cannot also be its proof.
 
@@ -16,32 +16,38 @@ Allowed automatic evidence is:
 3. the model category required by the target widget.
 
 Without a hash, one unique in-category size match is only a candidate. Model
-Doctor may show it during an explicit manual check, but it cannot redirect the
-node until the user confirms that candidate. Confirmation applies to the current
-node only; it does not create a persistent binding. If both hash and size are
+Doctor shows it, but it cannot redirect the node until the user takes that
+candidate. Confirmation applies to the current node only; it does not create a
+persistent binding. If both hash and size are
 present and point to conflicting physical files (both match distinct local files),
 resolution reports an identity conflict and is rejected. When a requested model hash
 simply does not exist in any local file, it returns `{"found": False}` cleanly without
 falsely flagging a conflict.
 
 Paths, filenames, source filenames, display/custom names, previews, workflow
-fingerprints, and fuzzy/visual similarity are never candidate evidence. They may
+fingerprints, and fuzzy/visual similarity never establish identity. They may
 be used only after identity is established to return a local dropdown value,
 locate presentation media, and verify the value against ComfyUI's native choices.
+One exception, for ordinary models only: when the workflow carries no record at
+all (a workflow saved without the plugin), the single file of the same name
+among the widget's own choices is offered as a candidate (`via: 'name'`); a
+size-only candidate whose name also matches is shown as likely (`via:
+'name-size'`). Both take a press on their row and never count among the files
+put in at once. Several files of that name leave the model ambiguous.
 
 Foundation components—`vae`, `vae_approx`, `clip`, `text_encoders`, and
 `clip_vision`—are hash-only automatic-recovery categories. Byte size alone
-cannot automatically repair them. When size provenance is available it may be
+cannot automatically repair them, and they are never offered by name. When size provenance is available it may be
 shown as the same explicit manual candidate, but a supplied hash mismatch never
 falls back to a filename or size-only guess.
-This is a Model Doctor confidence boundary, not a scanner-support boundary. The
-scan wizard may traverse any active registered model folder and can still
+This is a Model Check confidence boundary, not a scanner-support boundary. The
+scanner may traverse any active registered model folder and can still
 calculate a local hash when Civitai has no matching record. Sparse or ambiguous
 remote metadata is a reason to require cryptographic identity, not to exclude
 the category from scanning.
 
 An existing native combo value remains loadable even if a foundation component's
-current local hash differs from stored provenance. Model Doctor shows a
+current local hash differs from stored provenance. Model Check shows a
 non-blocking identity-change warning instead of declaring the node missing or
 replacing it. If the value is absent, redirection requires one exact in-category
 hash match. Missing or ambiguous evidence remains unresolved for manual action.
@@ -67,6 +73,11 @@ When provenance injection is enabled, the compatible active graph constructor's
 `extraObj.anomalous_hashes[node_id_filename] = {hash, size}` for known model
 widgets. The cache covers ordinary models and foundation categories. A
 foundation component without a recorded hash receives no size-only provenance.
+The same pass writes `extraObj.anomalous_model_sources`: links the workflow keeps
+win; a model present here without one gets its own information's link (the
+editor's first, else Civitai's), marked `auto` so a newer one replaces it; links
+for names no node holds any more are dropped. The live graph is never changed.
+The share-code export may leave the links out.
 A missing compatible graph API disables only injection and recovery integration,
 not the main browser.
 
@@ -89,9 +100,9 @@ metadata includes the discovered hash, but consumers still associate the record
 with the current physical file through the established size/name rules; array
 position is not identity.
 
-## Deep scanning
+## Scanning
 
-Deep Hash Scan runs outside the aiohttp event loop and identifies a model through
+A scan (the scan page) runs outside the aiohttp event loop and identifies a model through
 the established fallback sequence:
 
 1. use existing valid file SHA-256 metadata when the scan does not request refresh;
@@ -131,8 +142,15 @@ may write offline metadata for later reuse.
 After a hash match—or explicit confirmation of a size-only candidate—the
 frontend refreshes ComfyUI's native combo definitions and accepts the returned
 path only if it is present in the target widget's choices. Then it updates the
-dropdown and clears the missing-model presentation. Background checks may
-surface size candidates but never prompt for or apply them.
+dropdown through the node's widget hooks, which also clears ComfyUI's
+missing-model mark.
+
+Checking never changes the workflow (`model_check.js`). Every opened workflow is
+checked without reloading ComfyUI's model lists; when models are missing, a bar
+over the canvas says how many and how many hash matches can be put in. Only a
+press puts them in: the bar's or the doctor page's for hash matches, the page's
+per-row button for a size-only candidate. A scan with "fix the open workflow"
+on puts hash matches in when it ends.
 
 Provenance-rich workflows skip the redundant full filename-to-hash cache refresh.
 Legacy workflows without injected provenance may refresh it for compatibility.

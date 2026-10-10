@@ -13,7 +13,7 @@
 
 - 中控 `fetchAllLibraryModels()` 调用 `/anomalous/all_scan_models`，后端 `_collect_all_scan_models()` 只读分类模式的 `get_active_folder_types()`，没有遵循当前物理目录模式。
 - 本次本地配置中，物理目录模式的 `clip` 已开启，但分类配置的 `text_encoders` 关闭。这能解释本地库遗漏 CLIP；不能因此认定所有缺项都只有这一种原因。
-- 此接口只枚举 `.safetensors/.ckpt/.pt/.bin/.sft`，遗漏 `.gguf/.pth`，且扩展名比较区分大小写。
+- 此接口只枚举 `.safetensors/.ckpt/.pt/.bin/.sft`，遗漏 `.gguf/.pth`，且扩展名比较区分大小写。（已修：统一用 `is_model_file()`。）
 - 上轮提交只补了工作流收集、基础组件标签与对应类别的元数据读取，没有修复本地目录范围。
 
 ### 一、目录范围与文件格式

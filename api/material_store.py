@@ -19,11 +19,10 @@ from .material_schema import (
     _normalise_prompt_plan,
     _recipe_link_fingerprint,
 )
-from .parameters import get_parameters_dir
 from .recipe_constants import MAX_RECIPE_BYTES
 from .recipe_store import _read_recipe, get_recipes_dir
+from .trash import move_to_trash
 from .utils import atomic_write_json as _atomic_write_json, require_filename, resolve_within
-from .workflow_schema import _parameter_signature, _validate_workflow
 
 
 _material_write_lock = threading.RLock()
@@ -56,47 +55,6 @@ def _read_material(path):
     elif not isinstance(value.get("workflow"), dict):
         raise ValueError("Invalid material snapshot")
     return value
-
-
-def _read_parameter_source(recipe_filename, parameter_filename=None):
-    recipe_filename = require_filename(recipe_filename)
-    if not recipe_filename.endswith(".json") or recipe_filename.startswith("."):
-        raise ValueError("Invalid recipe filename")
-    recipe_path = resolve_within(get_recipes_dir(), recipe_filename)
-    if os.path.getsize(recipe_path) > MAX_RECIPE_BYTES:
-        raise ValueError("Recipe source is too large")
-    recipe = _read_recipe(recipe_path)
-    source = recipe
-    if parameter_filename:
-        parameter_filename = require_filename(parameter_filename)
-        if not parameter_filename.endswith(".json") or parameter_filename.startswith("."):
-            raise ValueError("Invalid parameter filename")
-        parameter_path = resolve_within(get_parameters_dir(), parameter_filename)
-        if os.path.getsize(parameter_path) > MAX_RECIPE_BYTES:
-            raise ValueError("Parameter notebook is too large")
-        with open(parameter_path, "r", encoding="utf-8") as parameter_file:
-            source = json.load(parameter_file)
-        if not isinstance(source, dict) or source.get("recipe_filename") != recipe_filename:
-            raise ValueError("Parameter notebook does not belong to recipe")
-    workflow = source.get("workflow") if isinstance(source, dict) else None
-    if not isinstance(workflow, dict):
-        raise ValueError("Parameter source has no workflow")
-    _validate_workflow(workflow)
-    return recipe_filename, parameter_filename, recipe, source, workflow
-
-
-def _parameter_source_record(recipe_filename, parameter_filename, recipe, source, workflow):
-    record = {
-        "type": "recipe_parameter_notebook" if parameter_filename else "workflow_recipe",
-        **_snapshot_recipe_source(recipe_filename),
-        "parameter_signature": (_parameter_signature(workflow) or {}).get("value") or "",
-    }
-    if parameter_filename:
-        record["parameter_filename"] = parameter_filename
-        record["parameter_name"] = str(source.get("name") or "").strip()[:200]
-    elif isinstance(recipe, dict):
-        record["parameter_name"] = str(recipe.get("name") or "").strip()[:200]
-    return record
 
 
 def _snapshot_recipe_source(recipe_filename):
@@ -253,14 +211,17 @@ def _query_materials(materials_dir, query):
     if len(node_type) > 200:
         raise ValueError("Invalid node type")
     if len(search) > 200 or len(tag) > 60 or kind not in (
-        "", "image_workflow_snapshot", "image_node_selection", "recipe_parameter_selection", "prompt_note_bundle", "prompt_text", "prompt_plan"
+        "", "image_workflow_snapshot", "image_node_selection", "recipe_parameter_selection", "node_parameter_selection",
+        "prompt_note_bundle", "prompt_text", "prompt_plan"
     ):
         raise ValueError("Invalid material filter")
+    # Whole workflows live with the recipes: "all" is the pieces, and one moved there is not listed.
     materials = [material for material in materials
-                 if (not search or search in " ".join([material["name"], *material["node_types"], *material.get("tags", [])]).casefold())
+                 if not material.get("moved_to_recipe")
+                 and (not search or search in " ".join([material["name"], *material["node_types"], *material.get("tags", [])]).casefold())
                  and (not tag or tag in [value.casefold() for value in material.get("tags", [])])
                  and (not kind or material["kind"] == kind)
-                 and (category == "all" or _material_category(material) == category)
+                 and (_material_category(material) == category if category != "all" else _material_category(material) != "workflow")
                  and (not node_type or node_type in material["node_types"])]
     total = len(materials)
     limit = min(100, max(1, int(query.get("limit", 48))))
@@ -288,10 +249,16 @@ def _update_material_details(materials_dir, filename, name, tags, prompt_role_ov
         return _with_live_recipe_source(_material_summary(filename, material))
 
 
+def _mark_material_moved(materials_dir, filename, recipe_filename):
+    """Notes that a kept workflow now lives as recipe `recipe_filename`; the material file stays."""
+    with _material_write_lock:
+        path = resolve_within(materials_dir, filename)
+        material = _read_material(path)
+        material["moved_to_recipe"] = recipe_filename
+        _atomic_write_json(path, material)
+
+
 def _delete_material(materials_dir, filename, path):
     with _material_write_lock:
         _read_material(path)
-        os.remove(path)
-        assets_dir = _material_assets_dir(materials_dir, filename)
-        if os.path.isdir(assets_dir):
-            shutil.rmtree(assets_dir)
+        move_to_trash(path, _material_assets_dir(materials_dir, filename))

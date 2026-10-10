@@ -3,8 +3,34 @@
 import { translate } from './locales.js';
 import { appendText } from './ui_recipe_detail_dom.js';
 import { createRecipeCard, ensureRecipeGuideStyles } from './ui_recipe_cards.js';
+import { moveWorkflowMaterials, workflowMaterialCount } from './recipe_save.js';
 
 const t = (key, params) => translate(key, params);
+
+/**
+ * A strip offering to move the whole workflows kept as materials (before stars made recipes)
+ * to the recipes; it shows only while there are some.
+ */
+function buildMoveStrip(owner) {
+    const strip = document.createElement('div');
+    strip.className = 'anomalous-recipe-move-strip';
+    strip.hidden = true;
+    const copy = appendText(strip, 'span', '');
+    const move = appendText(strip, 'button', t('recipeMoveKeptButton'), 'anomalous-btn-primary');
+    move.type = 'button';
+    move.onclick = async () => {
+        move.disabled = true;
+        const moved = await moveWorkflowMaterials((done, total) => { move.textContent = `${done} / ${total}`; });
+        copy.textContent = t('recipeMovedKept', { count: moved });
+        move.remove();
+        await owner.refreshRecipes();
+    };
+    workflowMaterialCount().then((count) => {
+        copy.textContent = t('recipeMoveKept', { count });
+        strip.hidden = !count;
+    }).catch(() => {});
+    return strip;
+}
 
 export function updateRecipeFilterControls(owner, recipes) {
     if (!owner.recipeTagSelect) return;
@@ -106,11 +132,12 @@ function buildRecipeStudioTopbar(owner) {
     viewSwitch.append(gridButton, listButton);
     right.appendChild(viewSwitch);
 
-    const importButton = appendText(right, 'button', '⇧', 'anomalous-recipe-topbar-btn anomalous-tooltip-target');
-    importButton.type = 'button';
-    importButton.disabled = true;
-    importButton.setAttribute('data-tooltip', t('recipeImportUnavailable'));
-    importButton.setAttribute('aria-label', t('recipeImportUnavailable'));
+    // Workflow share codes (AMB0/AMB1): import and export the canvas workflow (main.js).
+    const shareButton = appendText(right, 'button', '⇅', 'anomalous-recipe-topbar-btn anomalous-tooltip-target');
+    shareButton.type = 'button';
+    shareButton.setAttribute('data-tooltip', t('toolWorkflowTransferTitle'));
+    shareButton.setAttribute('aria-label', t('toolWorkflowTransferTitle'));
+    shareButton.onclick = () => window.AMB_WorkflowShare?.showUnifiedModal();
 
     const saveButton = appendText(right, 'button', '', 'anomalous-recipe-topbar-btn is-primary');
     saveButton.dataset.recipeSaveCurrent = 'true';
@@ -218,7 +245,6 @@ export function renderRecipeList(recipes, services) {
 
 
 export async function showRecipes() {
-    if (this.materialContainer) this.materialContainer.style.display = 'none';
     if (this.notebookContainer) this.notebookContainer.style.display = 'none';
     if (this.nbPanel) this.nbPanel.style.display = 'flex';
 
@@ -229,7 +255,7 @@ export async function showRecipes() {
         modalClose.type = 'button';
         modalClose.className = 'anomalous-recipe-modal-close';
         modalClose.innerHTML = '&times;';
-        modalClose.title = t('workspaceClose') || (window.anomalous_browser_lang === 'zh' ? '关闭' : 'Close');
+        modalClose.title = t('close');
         modalClose.onclick = () => this.closeWorkspace();
         this.recipeContainer.appendChild(modalClose);
         this.nbPanel.appendChild(this.recipeContainer);
@@ -243,9 +269,6 @@ export async function showRecipes() {
     }
     this.recipeDetailFinish?.('closed');
     if (this.notebookBody) this.notebookBody.style.display = 'none';
-    if (this.materialView) this.materialView.style.display = 'none';
-    this.notebookNotesTab?.classList.remove('active');
-    this.notebookRecipesTab?.classList.add('active');
 
     if (this.recipeDetailView) {
         this.recipeDetailView.remove();
@@ -306,6 +329,7 @@ export async function showRecipes() {
     this.recipeHintStrip.appendChild(hintClose);
 
     this.recipeView.appendChild(this.recipeHintStrip);
+    this.recipeView.appendChild(buildMoveStrip(this));
 
     this.recipeListContainer = document.createElement('div');
     this.recipeListContainer.className = `anomalous-recipe-list ${this.recipeViewMode === 'list' ? 'is-list' : 'is-grid'}`;

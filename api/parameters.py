@@ -12,6 +12,7 @@ from .recipe_constants import MAX_RECIPE_BYTES
 from .recipe_images import _parameter_gallery_images
 from .recipe_store import get_recipes_dir, _read_recipe
 from .workflow_schema import _parameter_signature
+from .trash import move_to_trash
 
 def get_parameters_dir():
     # Store parameter notebooks in the user directory
@@ -295,8 +296,7 @@ async def api_delete_parameter(request):
     try:
         parameters_dir = get_parameters_dir()
         file_path = resolve_within(parameters_dir, filename)
-        if os.path.exists(file_path):
-            os.remove(file_path)
+        move_to_trash(file_path)
         _invalidate_parameter_notebooks_cache()
     except OSError:
         return web.json_response({"status": "error", "message": "Could not delete parameter notebook"}, status=500)

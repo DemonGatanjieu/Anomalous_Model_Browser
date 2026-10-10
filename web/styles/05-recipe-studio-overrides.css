@@ -7,7 +7,7 @@
     padding: 16px !important;
     border-radius: 14px !important;
     background: linear-gradient(145deg, rgba(30, 32, 38, 0.7), rgba(18, 19, 23, 0.85)) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid var(--amb-border) !important;
     margin-bottom: 16px !important;
     backdrop-filter: blur(12px);
 }
@@ -18,8 +18,8 @@
     height: 220px;
     border-radius: 10px;
     overflow: hidden;
-    background: #0d0e11;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: var(--amb-bg-page);
+    border: 1px solid var(--amb-border);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -54,12 +54,12 @@
     padding: 8px 10px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.035);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--amb-border);
 }
 
 .anomalous-recipe-studio-metric-label {
     font-size: 0.72rem;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.3px;
 }
@@ -67,7 +67,7 @@
 .anomalous-recipe-studio-metric-val {
     font-size: 0.96rem;
     font-weight: 600;
-    color: #f1f5f9;
+    color: var(--amb-text-main);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -83,14 +83,14 @@
     line-height: 1.6;
     word-break: break-word;
     background: rgba(255, 255, 255, 0.025);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    color: #cbd5e1;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-soft);
     transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .anomalous-recipe-prompt-box:hover {
     background: rgba(255, 255, 255, 0.035);
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: var(--amb-border-strong);
 }
 
 .anomalous-recipe-prompt-box.is-positive {
@@ -110,16 +110,16 @@
     padding: 0;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #94a3b8;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-muted);
     cursor: pointer;
     transition: all 0.18s ease;
 }
 
 .anomalous-recipe-prompt-micro-copy:hover {
     background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.25);
-    color: #ffffff;
+    border-color: var(--amb-border-strong);
+    color: var(--amb-text-main);
     transform: translateY(-1px);
 }
 
@@ -152,10 +152,6 @@
     border: 1px solid rgba(244, 63, 94, 0.25);
 }
 
-.anomalous-recipe-beta-notice[style*="display: none"] {
-    display: none !important;
-}
-
 /* ========================================================================== */
 /* Modern Studio Presets (Parameter Notebook Overhaul)                        */
 /* ========================================================================== */
@@ -168,8 +164,8 @@
     padding: 8px 14px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    color: #f1f5f9;
+    border: 1px solid var(--amb-border-strong);
+    color: var(--amb-text-main);
     font-size: 0.82rem;
     font-weight: 500;
     cursor: pointer;
@@ -179,8 +175,8 @@
 
 .anomalous-preset-btn-primary:hover {
     background: rgba(255, 255, 255, 0.18);
-    border-color: rgba(255, 255, 255, 0.28);
-    color: #ffffff;
+    border-color: var(--amb-border-strong);
+    color: var(--amb-text-main);
 }
 
 .anomalous-preset-btn-secondary {
@@ -191,8 +187,8 @@
     padding: 8px 12px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.035);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #94a3b8;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-muted);
     font-size: 0.82rem;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -201,8 +197,8 @@
 
 .anomalous-preset-btn-secondary:hover {
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
-    color: #cbd5e1;
+    border-color: var(--amb-border-strong);
+    color: var(--amb-text-soft);
 }
 
 .anomalous-preset-item-card {
@@ -215,7 +211,7 @@
     padding: 10px 12px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--amb-border);
     cursor: pointer;
     transition: all 0.15s ease;
     margin-bottom: 6px;
@@ -223,7 +219,7 @@
 
 .anomalous-preset-item-card:hover {
     background: rgba(255, 255, 255, 0.045);
-    border-color: rgba(255, 255, 255, 0.14);
+    border-color: var(--amb-border-strong);
 }
 
 .anomalous-preset-item-card.is-active {
@@ -257,16 +253,16 @@
     padding: 2px 7px;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #94a3b8;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-muted);
     font-size: 0.74rem;
     transition: all 0.15s ease;
 }
 
 .anomalous-recipe-info-bubble:hover {
     background: rgba(255, 255, 255, 0.08);
-    color: #e2e8f0;
-    border-color: rgba(255, 255, 255, 0.16);
+    color: var(--amb-text-main);
+    border-color: var(--amb-border-strong);
 }
 
 .anomalous-preset-item-main {
@@ -280,7 +276,7 @@
 .anomalous-preset-item-title {
     font-size: 0.86rem;
     font-weight: 500;
-    color: #cbd5e1;
+    color: var(--amb-text-soft);
     min-width: 0;
     flex: 1;
     overflow: hidden;
@@ -289,7 +285,7 @@
 }
 
 .anomalous-preset-item-card.is-active .anomalous-preset-item-title {
-    color: #ffffff;
+    color: var(--amb-text-main);
     font-weight: 600;
 }
 
@@ -298,14 +294,14 @@
     align-items: center;
     gap: 6px;
     font-size: 0.72rem;
-    color: #64748b;
+    color: var(--amb-text-dim);
 }
 
 .anomalous-preset-item-badge {
     padding: 1px 6px;
     border-radius: 4px;
     background: rgba(255, 255, 255, 0.08);
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-size: 0.68rem;
     font-weight: 500;
 }
@@ -332,8 +328,8 @@
     padding: 0;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #cbd5e1;
+    border: 1px solid var(--amb-border);
+    color: var(--amb-text-soft);
     cursor: pointer;
     font-size: 0.78rem;
     line-height: 1;
@@ -343,7 +339,7 @@
 
 .anomalous-preset-item-btn:hover {
     background: rgba(255, 255, 255, 0.16);
-    color: #fff;
+    color: var(--amb-text-main);
     transform: translateY(-1px);
 }
 
@@ -355,8 +351,8 @@
 
 /* Modern Parameter Bento Matrix */
 .anomalous-preset-bento-deck {
-    background: var(--amb-bg-panel, #1C1E24) !important;
-    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.08)) !important;
+    background: var(--amb-bg-panel, var(--amb-bg-card)) !important;
+    border: 1px solid var(--amb-border, var(--amb-border)) !important;
     border-radius: var(--amb-radius-panel, 12px) !important;
     padding: 12px 14px !important;
     margin-bottom: 12px !important;
@@ -376,8 +372,8 @@
     gap: 4px;
     padding: 9px 12px;
     border-radius: var(--amb-radius-control, 8px);
-    background: var(--amb-bg-card, #24262E);
-    border: 1px solid var(--amb-border, rgba(255, 255, 255, 0.07));
+    background: var(--amb-bg-card, var(--amb-bg-card-hover));
+    border: 1px solid var(--amb-border, var(--amb-border));
     transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 
@@ -386,8 +382,8 @@
 }
 
 .anomalous-recipe-bento-tile:hover {
-    background: var(--amb-bg-card-hover, #2d303a);
-    border-color: var(--amb-border-hover, rgba(255, 255, 255, 0.18));
+    background: var(--amb-bg-card-hover, var(--amb-bg-card-hover));
+    border-color: var(--amb-border-hover, var(--amb-border-strong));
     transform: translateY(-1px);
 }
 
@@ -402,7 +398,7 @@
     display: inline-flex;
     align-items: center;
     font-size: 0.7rem;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.3px;
     font-weight: 600;
@@ -415,7 +411,7 @@
 .anomalous-recipe-bento-val {
     font-size: 0.98rem;
     font-weight: 600;
-    color: #f1f5f9;
+    color: var(--amb-text-main);
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -431,8 +427,8 @@
 .anomalous-recipe-model-highlight-card {
     padding: 10px 14px;
     border-radius: 8px;
-    background: rgba(99, 102, 241, 0.08);
-    border: 1px solid rgba(99, 102, 241, 0.2);
+    background: color-mix(in srgb, var(--amb-link) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--amb-link) 20%, transparent);
     min-width: 0;
 }
 
@@ -452,21 +448,21 @@
     padding: 8px 12px;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     font-size: 0.82rem;
     transition: all 0.15s ease;
 }
 
 .anomalous-recipe-lora-pill:hover {
     background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(99, 102, 241, 0.3);
+    border-color: color-mix(in srgb, var(--amb-link) 30%, transparent);
     transform: translateY(-1px);
 }
 
 .anomalous-recipe-lora-name {
     flex: 1;
     min-width: 0;
-    color: #e2e8f0;
+    color: var(--amb-text-main);
     font-weight: 500;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -479,7 +475,7 @@
     align-items: center;
     gap: 8px;
     font-size: 0.72rem;
-    color: #94a3b8;
+    color: var(--amb-text-muted);
     font-family: ui-monospace, monospace;
 }
 
@@ -492,7 +488,7 @@
     padding: 16px 18px;
     border-radius: 12px;
     background: linear-gradient(145deg, rgba(30, 32, 38, 0.7), rgba(18, 19, 23, 0.85));
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--amb-border);
     margin-bottom: 14px;
     backdrop-filter: blur(12px);
     flex-wrap: wrap;
@@ -516,7 +512,7 @@
 .anomalous-preset-console-title {
     font-size: 1.15rem;
     font-weight: 600;
-    color: #f8fafc;
+    color: var(--amb-text-main);
     margin: 0;
     min-width: 0;
     overflow: hidden;
@@ -537,7 +533,7 @@
     height: 80px;
     border-radius: 8px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--amb-border-strong);
     cursor: pointer;
     flex-shrink: 0;
     align-self: flex-start;
@@ -548,7 +544,7 @@
 
 .anomalous-preset-compact-gallery:hover {
     transform: scale(1.03);
-    border-color: rgba(99, 102, 241, 0.5);
+    border-color: color-mix(in srgb, var(--amb-link) 50%, transparent);
 }
 
 .anomalous-preset-compact-gallery img {
@@ -565,7 +561,7 @@
     padding: 2px 6px;
     border-radius: 4px;
     background: rgba(0, 0, 0, 0.75);
-    color: #fff;
+    color: var(--amb-text-main);
     font-size: 0.68rem;
     backdrop-filter: blur(4px);
     white-space: nowrap;
@@ -579,7 +575,7 @@
     padding: 10px 0;
     background: rgba(32, 32, 32, 0.92);
     backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--amb-border);
     margin-bottom: 12px;
     display: flex;
     align-items: center;

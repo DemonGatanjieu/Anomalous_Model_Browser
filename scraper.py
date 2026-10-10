@@ -13,16 +13,14 @@ except:
     pass
 import time
 import json
-import hashlib
 import re
 import urllib.request
-import urllib.error
-import urllib.parse
 import argparse
 import shutil
-from typing import Dict, Optional
 from model_policies import is_physical_rename_protected
-from model_identity import computed_file_identity
+from recycle_bin import move_to_trash
+from model_identity import USER_INFO_SUFFIX, computed_file_identity, file_sha256, infer_base_model_from_header, is_unmatched, scan_info_path, sidecar_file_hash, sidecar_info as read_local_info, unmatched_reason
+from civitai_client import CIVITAI_API_KEY, CivitaiUnreachable, download_media, fetch_civitai_info, fetch_model_description
 
 
 # Fixed tuples avoid rebuilding long extension lists for every scanned model.
@@ -33,11 +31,28 @@ CIVITAI_BACKUP_SUFFIXES = tuple(f".civitai_bak{ext}" for ext in MEDIA_EXTENSIONS
 COVER_SUFFIXES = MEDIA_EXTENSIONS + PREVIEW_SUFFIXES
 ACTIVE_COVER_SUFFIXES = PREVIEW_SUFFIXES + MEDIA_EXTENSIONS
 SIDECAR_SUFFIXES = (
-    ".info", ".civitai.info", ".json", ".txt", ".yaml",
+    ".info", ".civitai.info", USER_INFO_SUFFIX, ".json", ".txt", ".yaml",
     *MEDIA_EXTENSIONS,
     *PREVIEW_SUFFIXES,
     *CIVITAI_BACKUP_SUFFIXES,
 )
+
+
+def same_file(a, b):
+    """Byte-for-byte equal (covers are small; size is checked first)."""
+    try:
+        return os.path.getsize(a) == os.path.getsize(b) and calculate_sha256(a) == calculate_sha256(b)
+    except OSError:
+        return False
+
+
+def cover_owners(base):
+    """(Civitai's, the user's) active covers. A cover is Civitai's only when it is a copy of the
+    Civitai image saved last time (<model>.civitai_bak.*); any other cover is the user's."""
+    backups = [base + ext for ext in CIVITAI_BACKUP_SUFFIXES if os.path.exists(base + ext)]
+    covers = [base + ext for ext in ACTIVE_COVER_SUFFIXES if os.path.exists(base + ext)]
+    civitai = [c for c in covers if any(same_file(c, b) for b in backups)]
+    return civitai, [c for c in covers if c not in civitai]
 
 
 def write_scan_progress(progress_file, phase, total=0, current=0, filename=""):
@@ -60,87 +75,21 @@ def write_scan_progress(progress_file, phase, total=0, current=0, filename=""):
             pass
 
 
-def count_scan_files(target_folder, target_files_basenames):
+def count_scan_files(target_folder, target_files_basenames, unmatched_only=False):
     total = 0
     selected = set(target_files_basenames)
-    for _, _, files in os.walk(target_folder):
+    for root, _, files in os.walk(target_folder):
         total += sum(
             1 for filename in files
             if filename.endswith(".safetensors") and (not selected or filename in selected)
+            and (not unmatched_only or is_unmatched(read_local_info(os.path.join(root, os.path.splitext(filename)[0]))))
         )
     return total
 
-# ==============================================================================
-# CIVITAI API 配置读取
-# 请在插件目录 (Anomalous_Model_Browser) 下新建 config.json 文件：
-# { "CIVITAI_API_KEY": "你的KEY" }
-# ==============================================================================
-CIVITAI_API_KEY = None
-plugin_dir = os.path.dirname(os.path.abspath(__file__))
-config_paths = [os.path.join(plugin_dir, "api", "config.json"), os.path.join(plugin_dir, "config.json")]
-for config_path in config_paths:
-    if not os.path.exists(config_path):
-        continue
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            cfg = json.load(f)
-        configured_key = cfg.get("CIVITAI_API_KEY", "")
-        if isinstance(configured_key, str) and configured_key.strip():
-            CIVITAI_API_KEY = configured_key.strip()
-            break
-    except Exception as e:
-        print(f"[-] 读取 config.json 失败: {e}")
-
-if not CIVITAI_API_KEY:
-    print("[!] 未配置 Civitai API Key。部分限制级模型或将无法获取图片。")
-
 def calculate_sha256(file_path: str) -> str:
     """计算文件的 SHA256 哈希值 (用于 Civitai 匹配)"""
-    sha256_hash = hashlib.sha256()
     print(f"[*] 正在计算 Hash (大文件可能需要几分钟): {os.path.basename(file_path)}")
-    with open(file_path, "rb") as f:
-        for byte_block in iter(lambda: f.read(4096 * 1024), b""):
-            sha256_hash.update(byte_block)
-    return sha256_hash.hexdigest()
-
-import struct
-
-def infer_base_model_from_header(file_path: str) -> str:
-    """从 safetensors 头文件的张量键名推断底层 Base Model (用于脱机/HuggingFace 兼容)"""
-    try:
-        with open(file_path, "rb") as f:
-            header_size_bytes = f.read(8)
-            if len(header_size_bytes) < 8: return 'Unknown'
-            header_size = struct.unpack('<Q', header_size_bytes)[0]
-            if header_size > 100 * 1024 * 1024: return 'Unknown'
-            
-            header_json = json.loads(f.read(header_size).decode('utf-8'))
-            
-            # 1. 尝试从 __metadata__ 提取
-            metadata = header_json.get('__metadata__', {})
-            arch = metadata.get('modelspec.architecture', '')
-            if 'stable-diffusion-xl' in arch.lower(): return 'SDXL'
-            if 'stable-diffusion-v1' in arch.lower() or 'runwayml/stable-diffusion-v1-5' in arch.lower(): return 'SD 1.5'
-            if 'flux' in arch.lower(): return 'Flux.1 D'
-            if 'sd3' in arch.lower(): return 'SD3'
-            
-            # 2. 暴力张量键名指纹匹配 (Tensor Fingerprinting)
-            # 把前 500 个键拼接成字符串以提高检索效率，大部分核心键都在前面
-            keys_str = " ".join(list(header_json.keys())[:500])
-            
-            # Flux 指纹
-            if 'double_blocks.0.img_attn' in keys_str or 'img_in.weight' in keys_str: return 'Flux.1 D'
-            # SD3 指纹
-            if 'joint_blocks.0.x_block' in keys_str: return 'SD3'
-            # SDXL 指纹 (包含两套 text encoder)
-            if 'conditioner.embedders.1.model' in keys_str or 'label_emb.0.0.weight' in keys_str: return 'SDXL'
-            # SD 1.5 指纹
-            if 'cond_stage_model.transformer.text_model' in keys_str or 'model.diffusion_model.input_blocks.0.0.weight' in keys_str: return 'SD 1.5'
-            
-            return 'Unknown'
-    except Exception as e:
-        print(f"[-] 离线底模推断失败: {e}")
-        return 'Unknown'
+    return file_sha256(file_path)
 
 def sanitize_filename(name: str) -> str:
     """清理文件名中的非法字符"""
@@ -148,71 +97,205 @@ def sanitize_filename(name: str) -> str:
     name = re.sub(r'[\\/*?:"<>|#]', "", name)
     return name.strip(' .')
 
-def fetch_civitai_info(file_hash: str, max_retries: int = 3) -> Optional[Dict]:
-    """向 Civitai API 获取模型信息，支持重试机制"""
-    url = f"https://civitai.com/api/v1/model-versions/by-hash/{file_hash}"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-    if CIVITAI_API_KEY:
-        headers["Authorization"] = f"Bearer {CIVITAI_API_KEY}"
-    
-    for attempt in range(max_retries):
-        try:
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=15) as response:
-                return json.loads(response.read().decode('utf-8'))
-        except urllib.error.HTTPError as e:
-            if e.code == 404:
-                print(f"\033[93m[Skip] 模型 Hash {file_hash} 未在 Civitai 找到 (404)，已跳过。\033[0m")
-                return None
-            print(f"[-] 请求异常，状态码: {e.code} (尝试 {attempt+1}/{max_retries})")
-        except urllib.error.URLError as e:
-            print(f"[-] 网络请求超时或异常: {e.reason} (尝试 {attempt+1}/{max_retries})")
-        except Exception as e:
-            print(f"[-] 未知异常: {e} (尝试 {attempt+1}/{max_retries})")
-            
-        if attempt < max_retries - 1:
-            time.sleep(2)
+CIVITAI_DOWN_AFTER = 2  # models in a row Civitai did not answer for before the rest of the run stays offline
 
-    print(f"\033[93m[Skip] 模型 Hash {file_hash} 网络重试失败，已跳过该文件。\033[0m")
-    return None
 
-def download_media(url: str, base_path: str, max_retries: int = 3):
-    """下载图片或视频并自动识别扩展名"""
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+def write_report(args, **entry):
+    """One line of the scan report (--report-file): a model's outcome, or an event of the run."""
+    if not args.report_file:
+        return
+    try:
+        with open(args.report_file, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except OSError as e:
+        print(f"[-] 扫描记录写入失败: {e}")
+
+
+def local_record(file_path, root, file_hash, reason):
+    """What the file alone tells (id -1), with why Civitai's record is missing."""
+    inferred_base = infer_base_model_from_header(file_path)
+    stem = os.path.splitext(os.path.basename(file_path))[0]
+    print(f"[*] 使用本地哈希重建基础元数据 ({os.path.basename(file_path)})")
+    return {
+        "id": -1,
+        "modelId": -1,
+        "name": stem,
+        "baseModel": "" if inferred_base == 'Unknown' else inferred_base,
+        "description": "<p>Automatically inferred by Anomalous Local Engine.</p>",
+        "model": {"name": stem, "type": "LORA" if "lora" in root.lower() else "Checkpoint"},
+        "files": [{"hashes": {"SHA256": file_hash}}],
+        "anomalous_unmatched_reason": reason,
     }
-    if CIVITAI_API_KEY:
-        headers["Authorization"] = f"Bearer {CIVITAI_API_KEY}"
-        
-    for attempt in range(max_retries):
-        try:
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=15) as response:
-                content_type = response.headers.get("Content-Type", "").lower()
-                ext = ".png" # default
-                if "video/mp4" in content_type: ext = ".mp4"
-                elif "video/webm" in content_type: ext = ".webm"
-                elif "image/jpeg" in content_type: ext = ".jpg"
-                elif "image/webp" in content_type: ext = ".webp"
-                elif url.endswith(".mp4"): ext = ".mp4"
-                
-                final_path = base_path + ext
-                with open(final_path, 'wb') as f:
-                    while True:
-                        chunk = response.read(8192)
-                        if not chunk:
-                            break
-                        f.write(chunk)
-                return final_path
-        except urllib.error.HTTPError as e:
-            print(f"[-] 媒体下载失败，状态码: {e.code} (尝试 {attempt+1}/{max_retries})")
-        except urllib.error.URLError as e:
-            print(f"[-] 媒体下载网络异常: {e.reason} (尝试 {attempt+1}/{max_retries})")
-        except Exception as e:
-            pass
-    return None
+
+
+def ask_civitai(args, state, file_hash):
+    """(Civitai's record or None, why it is missing: "not_found" | "network" | "offline" | "")."""
+    if args.offline_only:
+        return None, "offline"
+    if state["civitai_down"]:
+        return None, "network"
+    try:
+        data = fetch_civitai_info(file_hash)
+    except CivitaiUnreachable:
+        state["network_failures"] += 1
+        if state["network_failures"] >= CIVITAI_DOWN_AFTER:
+            state["civitai_down"] = True
+            print("\033[93m[!] 连续几个模型都连不上 Civitai，本次其余模型改为从文件推断，之后可以“重新联网查找”。\033[0m")
+            write_report(args, event="civitai_down")
+        return None, "network"
+    state["network_failures"] = 0
+    return data, ("" if data else "not_found")
+
+
+def scan_one(args, state, rename_log, root, filename, previous):
+    """Scans one model; returns its report entry, or None when nothing about it changed."""
+    file_path = os.path.join(root, filename)
+    old_base = os.path.splitext(file_path)[0]
+    online = not args.offline_only and not state["civitai_down"]
+
+    # A .civitai.info holding only edits from older versions is not a scan result.
+    info_exists = scan_info_path(old_base) is not None
+    # Models Civitai was never asked about (an offline scan, no connection then) are looked up
+    # by every online scan; models Civitai did not know wait for "look up again".
+    unasked = is_unmatched(previous) and unmatched_reason(previous) in ("offline", "network")
+    if args.force_overwrite or args.retry_unmatched or (online and unasked):
+        info_exists = False
+
+    preview_exists = args.skip_media or any(os.path.exists(old_base + ext) for ext in COVER_SUFFIXES)
+    needs_rename = bool(args.virtual_rename or (not args.skip_rename and args.physical_rename))
+    if info_exists and preview_exists and not needs_rename:
+        print(f"[*] 已跳过 (信息满足要求): {filename}")
+        return None
+
+    print(f"\n---> 处理文件: {filename} (位于 {root})")
+    civitai_data = None
+    file_hash = None
+    reason = ""
+    if info_exists:  # a rename, or a missing cover fetched from the saved record: no new lookup
+        civitai_data = read_local_info(old_base)
+        if civitai_data:
+            print(f"[*] 使用本地已有的信息")
+
+    if not civitai_data:
+        if is_unmatched(previous):  # the hash from last time, if the file is unchanged
+            file_hash = sidecar_file_hash(previous, file_path, (previous.get("files") or [{}])[0])[0]
+        file_hash = file_hash or calculate_sha256(file_path)
+        civitai_data, reason = ask_civitai(args, state, file_hash)
+
+    # What was read from disk is not fetched again: only fresh Civitai data needs the model
+    # page's description and the cover.
+    fresh = civitai_data is not None and file_hash is not None
+    if not civitai_data:
+        if args.skip_local_metadata:
+            print(f"[*] Civitai 获取失败，且禁用了本地元数据解析。跳过 {filename}")
+            return {"status": "failed", "error": "no_local_metadata", "reason": reason}
+        civitai_data = local_record(file_path, root, file_hash, reason)
+    entry = {"status": "matched" if fresh else "inferred" if reason else "unchanged"}
+    if reason:
+        entry["reason"] = reason
+
+    model_id = civitai_data.get("modelId")
+    if fresh and model_id and model_id != -1 and not state["civitai_down"]:
+        description = fetch_model_description(model_id)
+        if description:
+            civitai_data["description"] = description
+            if not isinstance(civitai_data.get("model"), dict):
+                civitai_data["model"] = {}
+            civitai_data["model"]["description"] = description
+
+    model_name = sanitize_filename(civitai_data.get("model", {}).get("name", "UnknownModel"))
+    version_name = sanitize_filename(civitai_data.get("name", "UnknownVersion"))
+    if fresh:
+        entry["name"] = f"{civitai_data.get('model', {}).get('name', '')} · {civitai_data.get('name', '')}".strip(" ·")
+    entry["base"] = civitai_data.get("baseModel") or ""
+    new_filename = f"{model_name}_{version_name}.safetensors"
+    new_file_path = os.path.join(root, new_filename)
+    new_base = os.path.splitext(new_file_path)[0]
+
+    info_data = civitai_data
+    if file_hash:
+        info_data["anomalous_file_identity"] = computed_file_identity(file_path, file_hash)
+    # Civitai's name for the card; a name set in the model editor lives in
+    # <model>.anomalous.json and is shown instead.
+    if args.virtual_rename:
+        info_data["anomalous_custom_name"] = f"{model_name}_{version_name}"
+    if not args.dry_run:
+        with open(old_base + ".info", 'w', encoding='utf-8') as f:
+            json.dump(info_data, f, ensure_ascii=True, indent=4)
+        print(f"[+] 写入纯净版 Civitai 描述 -> .info")
+    else:
+        print(f"[Dry-Run] 拟生成标准描述信息 -> .info")
+
+    media_url = None
+    if not args.skip_media:
+        media_url = next((img.get("url") for img in civitai_data.get("images") or [] if img.get("url")), None)
+    civitai_covers, user_covers = cover_owners(old_base)
+    # Download when the data is fresh, or when the model has no cover at all.
+    if media_url and not state["civitai_down"] and (fresh or not (civitai_covers or user_covers)):
+        if not args.dry_run:
+            print(f"[*] 正在下载预览媒体...")
+            saved_path = download_media(media_url, old_base + ".civitai_bak")
+            if saved_path:
+                print(f"[+] 媒体下载成功 -> {os.path.basename(saved_path)}")
+                entry["cover"] = "kept" if user_covers else "new"
+                if user_covers:
+                    # The user's cover always stays; Civitai's image is kept as the backup.
+                    print(f"[*] 保留你自己的封面，Civitai 封面存为备份")
+                else:
+                    ext = os.path.splitext(saved_path)[1]
+                    preview_path = old_base + (ext if ext.startswith('.preview.') else f".preview{ext}")
+                    # Earlier copies of Civitai's image under another name give way to the new one.
+                    older = [c for c in civitai_covers if c != preview_path]
+                    try:
+                        if older:
+                            move_to_trash(*older)
+                    except Exception as e:
+                        print(f"[-] 旧的 Civitai 封面没有移走: {e}")
+                    shutil.copy2(saved_path, preview_path)
+        else:
+            print(f"[Dry-Run] 拟下载预览媒体...")
+
+    if args.skip_rename or not args.physical_rename:
+        print(f"[*] 物理重命名已跳过。仅保存 .info 及其可能包含的虚拟重命名。")
+    elif file_path != new_file_path and new_filename != filename:
+        if os.path.exists(new_file_path):
+            print(f"[*] 目标文件名已存在，正在验证内容是否完全相同: {filename}")
+            try:
+                files_identical = os.path.getsize(file_path) == os.path.getsize(new_file_path)
+                if files_identical:
+                    files_identical = calculate_sha256(file_path) == calculate_sha256(new_file_path)
+            except OSError:
+                files_identical = False
+
+            if not files_identical:
+                print(f"\033[91m[-] 目标名称冲突但文件内容不同，已保留两个模型并跳过重命名: {filename}\033[0m")
+                return {**entry, "status": "failed", "error": "name_conflict", "renamed_to": new_file_path}
+            if not args.dry_run:
+                try:
+                    print(f"[*] Hash 一致，把已确认的重复副本移到回收站: {filename}")
+                    move_to_trash(file_path, *[old_base + ext for ext in SIDECAR_SUFFIXES])
+                    entry["duplicate_of"] = new_file_path
+                except Exception as e:
+                    print(f"[-] 重复副本没有移走，两份都保留 (可能文件被占用或这个盘没有回收站): {e}")
+                    return {**entry, "status": "failed", "error": "duplicate_kept"}
+            else:
+                print(f"[Dry-Run] Hash 一致，拟删除重复副本及其附属文件: {filename}")
+        elif not args.dry_run:
+            os.rename(file_path, new_file_path)
+            rename_log[file_path] = new_file_path
+            for ext in SIDECAR_SUFFIXES:
+                if os.path.exists(old_base + ext):
+                    os.replace(old_base + ext, new_base + ext)
+            print(f"[+] 物理重命名完成: {filename}  ==>  {new_filename}")
+            entry["renamed_to"] = new_file_path
+        else:
+            print(f"[Dry-Run] 拟物理重命名文件: {filename}  ==>  {new_filename}")
+            print(f"[Dry-Run] 拟连带重命名附属文件 (.info / .png 等)")
+    else:
+        print("[*] 文件名已符合规范，无需重命名。")
+    changed = entry["status"] != "unchanged" or set(entry) & {"cover", "renamed_to", "duplicate_of"}
+    return entry if changed else None
+
 
 def main():
     parser = argparse.ArgumentParser(description="ComfyUI 模型 Civitai 嗅探与重命名工具")
@@ -225,10 +308,14 @@ def main():
     parser.add_argument("--skip-media", action="store_true", help="不下载预览图或视频")
     parser.add_argument("--offline-only", action="store_true", help="跳过 Civitai 联网获取，强制使用本地脱机张量推断提取 Base Model")
     parser.add_argument("--force-overwrite", action="store_true", help="强制覆盖已存在的信息文件")
+    parser.add_argument("--retry-unmatched", action="store_true", help="只处理之前没在 Civitai 匹配到的模型，重新联网查找（文件没变时复用哈希，不替换封面）")
     parser.add_argument("--skip-local-metadata", action="store_true", help="忽略本地已有的.info / .json文件")
     parser.add_argument("--target-files", type=str, default="", help="仅扫描逗号分隔的具体文件(相对路径)")
     parser.add_argument("--folder-type", default="", help="由 ComfyUI 传入的模型目录类型，用于执行安全策略")
     parser.add_argument("--progress-file", default="", help=argparse.SUPPRESS)
+    parser.add_argument("--targets-file", default="", help=argparse.SUPPRESS)  # JSON list of file names
+    parser.add_argument("--report-file", default="", help=argparse.SUPPRESS)  # one JSON line per changed model
+    parser.add_argument("--civitai-down", action="store_true", help=argparse.SUPPRESS)  # an earlier folder could not reach it
     args = parser.parse_args()
     if args.offline_only:
         # Offline means no network at all: previews and model pages come from Civitai.
@@ -283,22 +370,21 @@ def main():
     # 模式二：正常嗅探与重命名
     # ==========================
     rename_log = {}
-    success_count = 0
-    fail_count = 0
     if os.path.exists(backup_log_path):
         with open(backup_log_path, 'r', encoding='utf-8') as f:
             rename_log = json.load(f)
 
     target_files_basenames = []
-    target_file_path = os.path.join(target_folder, '.scan_targets.json')
-    if os.path.exists(target_file_path):
+    for targets_path in (os.path.join(target_folder, '.scan_targets.json'), args.targets_file):
+        if not targets_path or not os.path.exists(targets_path):
+            continue
         try:
-            with open(target_file_path, 'r', encoding='utf-8') as f:
-                target_files_basenames = [os.path.basename(t.strip()) for t in __import__('json').load(f)]
-            os.remove(target_file_path)
-        except:
+            with open(targets_path, 'r', encoding='utf-8') as f:
+                target_files_basenames += [os.path.basename(t.strip()) for t in json.load(f)]
+            if targets_path != args.targets_file:  # the scanner removes its own file
+                os.remove(targets_path)
+        except (OSError, ValueError, AttributeError):
             pass
-            
     if args.target_files:
         target_files_basenames.extend([os.path.basename(t.strip()) for t in args.target_files.split(',')])
 
@@ -307,19 +393,25 @@ def main():
         print("==================================================")
         print("[警告]: 当前处于 Dry-Run (空跑) 模式，不会修改系统中的任何文件！")
         print("==================================================")
+    if not CIVITAI_API_KEY and not args.offline_only:
+        print("[!] 未配置 Civitai API Key。部分限制级模型或将无法获取图片。")
 
     write_scan_progress(args.progress_file, "enumerating")
-    total_files = count_scan_files(target_folder, target_files_basenames)
+    total_files = count_scan_files(target_folder, target_files_basenames, args.retry_unmatched)
     write_scan_progress(args.progress_file, "scanning", total_files)
     current_file = 0
     last_progress_write = 0.0
+    state = {"network_failures": 0, "civitai_down": args.civitai_down}
+    counts = {"success": 0, "fail": 0, "unchanged": 0}
 
     for root, _, files in os.walk(target_folder):
         for filename in files:
             if not filename.endswith(".safetensors"):
                 continue
-
             if target_files_basenames and filename not in target_files_basenames:
+                continue
+            previous = read_local_info(os.path.join(root, os.path.splitext(filename)[0]))
+            if args.retry_unmatched and not is_unmatched(previous):
                 continue
 
             current_file += 1
@@ -328,222 +420,28 @@ def main():
                 write_scan_progress(args.progress_file, "scanning", total_files, current_file, filename)
                 last_progress_write = now
 
-            file_path = os.path.join(root, filename)
-            old_base = os.path.splitext(file_path)[0]
-            
-            info_exists = os.path.exists(old_base + ".info") or os.path.exists(old_base + ".civitai.info")
-            if args.force_overwrite:
-                info_exists = False
-                
-            preview_exists = args.skip_media
-            if not preview_exists:
-                for ext in COVER_SUFFIXES:
-                    if os.path.exists(old_base + ext):
-                        preview_exists = True
-                        break
-                    
-            needs_rename = False
-            if not args.skip_rename and args.physical_rename:
-                needs_rename = True
-            elif args.virtual_rename:
-                needs_rename = True
-                
-            if info_exists and preview_exists and not needs_rename:
-                print(f"[*] 已跳过 (信息满足要求): {filename}")
+            try:
+                entry = scan_one(args, state, rename_log, root, filename, previous)
+            except Exception as e:  # one model's trouble does not end the scan of the others
+                print(f"\033[91m[-] 处理失败，已跳过: {filename}: {e}\033[0m")
+                entry = {"status": "failed", "error": str(e)[:300]}
+            if entry is None:
+                counts["unchanged"] += 1
                 continue
-                
-            print(f"\n---> 处理文件: {filename} (位于 {root})")
-            
-            civitai_data = None
-            file_hash = None
-            if info_exists and needs_rename:
-                info_path = old_base + ".info"
-                if not os.path.exists(info_path):
-                    info_path = old_base + ".civitai.info"
-                try:
-                    with open(info_path, 'r', encoding='utf-8') as f:
-                        civitai_data = json.load(f)
-                    print(f"[*] 本地信息存在，直接进入重命名流程")
-                except:
-                    pass
-            
-            if not civitai_data:
-                file_hash = calculate_sha256(file_path)
-                if not args.offline_only:
-                    civitai_data = fetch_civitai_info(file_hash)
+            counts["fail" if entry["status"] == "failed" else "success"] += 1
+            write_report(args, file=os.path.join(root, filename), **entry)
 
-            # Fallback 3: Local Offline Inference (if Civitai still fails or offline_only)
-            if not civitai_data:
-                if args.skip_local_metadata:
-                    print(f"[*] Civitai 获取失败，且禁用了本地元数据解析。跳过 {filename}")
-                    fail_count += 1
-                    continue
-                # 尝试离线推断底模
-                inferred_base = infer_base_model_from_header(file_path)
-                if inferred_base == 'Unknown':
-                    inferred_base = ""
-                
-                print(f"[*] 使用本地哈希重建基础元数据 ({filename})")
-                civitai_data = {
-                    "id": -1,
-                    "modelId": -1,
-                    "name": os.path.splitext(filename)[0],
-                    "baseModel": inferred_base,
-                    "description": "<p>Automatically inferred by Anomalous Local Engine.</p>",
-                    "model": {
-                        "name": os.path.splitext(filename)[0],
-                        "type": "LORA" if "lora" in root.lower() else "Checkpoint"
-                    },
-                    "files": [{"hashes": {"SHA256": file_hash}}]
-                }
-                
-            # --- 额外获取模型主页的说明文字 ---
-            model_id = civitai_data.get("modelId")
-            if model_id and model_id != -1 and not args.offline_only:
-                try:
-                    headers = {
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                    }
-                    if CIVITAI_API_KEY:
-                        headers["Authorization"] = f"Bearer {CIVITAI_API_KEY}"
-                    req = urllib.request.Request(f"https://civitai.com/api/v1/models/{model_id}", headers=headers)
-                    with urllib.request.urlopen(req, timeout=10) as m_resp:
-                        m_data = json.loads(m_resp.read().decode('utf-8'))
-                        if "description" in m_data and m_data["description"]:
-                            civitai_data["description"] = m_data["description"]
-                            if "model" not in civitai_data or not isinstance(civitai_data["model"], dict):
-                                civitai_data["model"] = {}
-                            civitai_data["model"]["description"] = m_data["description"]
-                except Exception as e:
-                    print(f"[-] 获取模型主页详细说明失败: {e}")
-            # ----------------------------------
-                
-            model_name = sanitize_filename(civitai_data.get("model", {}).get("name", "UnknownModel"))
-            version_name = sanitize_filename(civitai_data.get("name", "UnknownVersion"))
-            
-            new_filename = f"{model_name}_{version_name}.safetensors"
-            new_file_path = os.path.join(root, new_filename)
-            new_base = os.path.splitext(new_file_path)[0]
-            
-            # ==========================================
-            # 兼容性大刀阔斧改革：直接保存全宇宙最原汁原味的格式
-            # ==========================================
-            info_data = civitai_data
-            if file_hash:
-                info_data["anomalous_file_identity"] = computed_file_identity(file_path, file_hash)
-
-            if args.virtual_rename:
-                info_data["anomalous_custom_name"] = f"{model_name}_{version_name}"
-            
-            if not args.dry_run:
-                info_path = old_base + ".info"
-                with open(info_path, 'w', encoding='utf-8') as f:
-                    json.dump(info_data, f, ensure_ascii=True, indent=4)
-                print(f"[+] 写入纯净版 Civitai 描述 -> .info")
-            else:
-                print(f"[Dry-Run] 拟生成标准描述信息 -> .info")
-                
-            media_url = None
-            images = civitai_data.get("images", [])
-            if images and len(images) > 0:
-                for img_obj in images:
-                    if not args.skip_media:
-                        if img_obj.get("url"):
-                            media_url = img_obj.get("url")
-                            break
-            
-            if media_url and not args.skip_media:
-                if not args.dry_run:
-                    print(f"[*] 正在下载预览媒体...")
-                    saved_path = download_media(media_url, old_base + ".civitai_bak")
-                    if saved_path:
-                        print(f"[+] 媒体下载成功 -> {os.path.basename(saved_path)}")
-                        # Promote to .preview if no custom cover exists
-                        has_custom = False
-                        if not args.force_overwrite:
-                            for c_ext in ACTIVE_COVER_SUFFIXES:
-                                p = old_base + c_ext
-                                if os.path.exists(p) and not p.endswith('.civitai_bak' + c_ext):
-                                    has_custom = True
-                                    break
-                        if not has_custom:
-                            ext = os.path.splitext(saved_path)[1]
-                            import shutil
-                            if args.force_overwrite:
-                                for c_ext in ACTIVE_COVER_SUFFIXES:
-                                    p = old_base + c_ext
-                                    if os.path.exists(p) and not p.endswith('.civitai_bak' + c_ext):
-                                        try:
-                                            os.remove(p)
-                                            print(f"[*] 强制覆盖: 已删除旧预览文件 {os.path.basename(p)}")
-                                        except:
-                                            pass
-                            preview_ext = ext if ext.startswith('.preview.') else f".preview{ext}"
-                            shutil.copy2(saved_path, old_base + preview_ext)
-                else:
-                    print(f"[Dry-Run] 拟下载预览媒体...")
-                        
-            if args.skip_rename or not args.physical_rename:
-                print(f"[*] 物理重命名已跳过。仅保存 .info 及其可能包含的虚拟重命名。")
-                success_count += 1
-            elif file_path != new_file_path and new_filename != filename:
-                if os.path.exists(new_file_path):
-                    print(f"[*] 目标文件名已存在，正在验证内容是否完全相同: {filename}")
-                    try:
-                        files_identical = os.path.getsize(file_path) == os.path.getsize(new_file_path)
-                        if files_identical:
-                            files_identical = calculate_sha256(file_path) == calculate_sha256(new_file_path)
-                    except OSError:
-                        files_identical = False
-
-                    if not files_identical:
-                        print(f"\033[91m[-] 目标名称冲突但文件内容不同，已保留两个模型并跳过重命名: {filename}\033[0m")
-                        fail_count += 1
-                    elif not args.dry_run:
-                        try:
-                            print(f"[*] Hash 一致，删除已确认的重复副本: {filename}")
-                            os.remove(file_path)
-                            for ext in SIDECAR_SUFFIXES:
-                                old_ext = old_base + ext
-                                if os.path.exists(old_ext):
-                                    os.remove(old_ext)
-                            success_count += 1
-                        except Exception as e:
-                            print(f"[-] 删除多余副本失败 (可能文件被占用): {e}")
-                            fail_count += 1
-                    else:
-                        print(f"[Dry-Run] Hash 一致，拟删除重复副本及其附属文件: {filename}")
-                else:
-                    if not args.dry_run:
-                        os.rename(file_path, new_file_path)
-                        rename_log[file_path] = new_file_path
-                        
-                        for ext in SIDECAR_SUFFIXES:
-                            old_ext = old_base + ext
-                            new_ext = new_base + ext
-                            if os.path.exists(old_ext):
-                                os.replace(old_ext, new_ext)
-                                
-                        print(f"[+] 物理重命名完成: {filename}  ==>  {new_filename}")
-                        success_count += 1
-                    else:
-                        print(f"[Dry-Run] 拟物理重命名文件: {filename}  ==>  {new_filename}")
-                        print(f"[Dry-Run] 拟连带重命名附属文件 (.info / .png 等)")
-            else:
-                print("[*] 文件名已符合规范，无需重命名。")
-                success_count += 1
-                    
-    
     # Save scan results
     write_scan_progress(args.progress_file, "complete", total_files, total_files)
+    write_report(args, event="done", unchanged=counts["unchanged"], civitai_down=state["civitai_down"])
     if not args.dry_run:
         result_path = os.path.join(target_folder, ".scan_result.json")
         try:
             with open(result_path, 'w', encoding='utf-8') as f:
-                json.dump({"success": success_count, "fail": fail_count}, f)
+                json.dump({"success": counts["success"], "fail": counts["fail"]}, f)
         except Exception as e:
             print(f"[-] 保存统计结果失败: {e}")
-            
+
     if not args.dry_run and rename_log:
         with open(backup_log_path, 'w', encoding='utf-8') as f:
             json.dump(rename_log, f, ensure_ascii=True, indent=4)

@@ -1,4 +1,3 @@
-import { showMaterialSaved } from './material_feedback.js';
 /**
  * ui_gallery_detail.js
  * Professional Image Detail Studio Workbench for ComfyUI.
@@ -8,18 +7,20 @@ import { showMaterialSaved } from './material_feedback.js';
  * - Collapsible left thumbnail rail with smooth vertical auto-centering
  * - High-speed in-memory LRU metadata cache (imageMetadataCache)
  * - Preloading of adjacent images and AbortController request cancellation
- * - Segmented Bento Inspector: Key Specs Bento grid, Prompts Station, Models & LoRA with weight pills, Node structure
- * - One-click actions: load Workflow and save a full or selected-node Material
+ * - Inspector: specs, prompts, models and LoRAs, nodes; load the workflow, keep the image
+ *   as a workflow, a combo or its prompts (ui_keep_menu.js), or keep selected nodes' values
  */
-
 import { app } from '../../../scripts/app.js';
 import { translate } from './locales.js';
+import { openKeepMenu } from './ui_keep_menu.js';
+import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { text, jsonResponse } from './ui_dom.js';
 import {
     buildWorkbenchHeader,
     setupStagePanZoom,
     buildFilmstripRail,
+    extendFilmstripRail,
     preloadAdjacentImages,
 } from './ui_image_stage.js';
 import { renderImageInspectorContent } from './ui_image_inspector.js';
@@ -105,12 +106,11 @@ function materialSourceImage(item) {
     };
 }
 
-async function saveImageMaterial(item, name, selectedNodeIds = null, tags = []) {
+async function saveImageMaterial(item, name, selectedNodeIds) {
     const owner = wb?.owner;
     const promptRoleOverrides = wb?.promptRoleOverrides;
     const body = {
-        source_image: materialSourceImage(item), name: String(name || '').trim().slice(0, 120), tags,
-        ...(selectedNodeIds?.length ? { selected_node_ids: selectedNodeIds } : {}),
+        source_image: materialSourceImage(item), name: String(name || '').trim().slice(0, 120), selected_node_ids: selectedNodeIds,
         ...(owner?.recipeDetailFilename ? { recipe_filename: owner.recipeDetailFilename } : {}),
         ...(promptRoleOverrides && typeof promptRoleOverrides === 'object' ? { promptRoleOverrides } : {}),
     };
@@ -127,8 +127,7 @@ async function saveImageMaterial(item, name, selectedNodeIds = null, tags = []) 
     }
     const payload = await jsonResponse(response, 'material save failed');
     if (payload.status !== 'success') throw new Error(payload.message || 'material save failed');
-    showMaterialSaved(owner, payload.material, dismissWorkbench);
-    await owner?.refreshMaterials?.();
+    showWorkbenchToast(t('nodeValuesSaved'));
     return payload;
 }
 
@@ -165,7 +164,7 @@ async function saveSelectedBlocks(item, suggestedName, blocks, button) {
         console.error('Could not save selected material nodes:', error);
         button.textContent = defaultLabel;
         button.disabled = false;
-        await anomalousAlert(t('materialSaveError') || '素材快照保存失败。');
+        await anomalousAlert(t('materialSaveError'));
     }
 }
 
@@ -186,7 +185,7 @@ function dismissWorkbench() {
  */
 async function loadWorkflowToComfyCanvas(workflow) {
     if (!workflow || typeof app.loadGraphData !== 'function') {
-        await anomalousAlert(t('materialOpenError') || '无法打开这个素材中的工作流。');
+        await anomalousAlert(t('materialOpenError'));
         return;
     }
     try {
@@ -254,17 +253,8 @@ async function loadWorkbenchImage(index) {
             wb.loadMore().then(newItems => {
                 if (Array.isArray(newItems) && newItems.length > wb.items.length) {
                     wb.items = newItems;
-                    // Rebuild filmstrip track
-                    if (wb.filmstripEl && wb.filmstripEl.parentElement) {
-                        const newRail = buildFilmstripRail(
-                            wb.items,
-                            wb.currentIndex,
-                            (idx) => loadWorkbenchImage(idx),
-                            wb,
-                        );
-                        wb.filmstripEl.replaceWith(newRail);
-                        wb.filmstripEl = newRail;
-                    }
+                    // Only the new thumbnails are added, so the rail keeps its place.
+                    if (wb.filmstripEl) extendFilmstripRail(wb.filmstripEl, wb.items, (idx) => loadWorkbenchImage(idx), wb);
                 }
             }).catch(() => {});
         } catch (_) {}
@@ -347,76 +337,13 @@ function renderInspectorContent(data, item) {
         copyToClipboard,
         loadWorkflowToComfyCanvas,
         openMaterialLocalModel,
-        renderSaveSnapshotFooter,
+        openKeep,
     }, data, item);
 }
 
-/**
- * Render Save Snapshot form in the sticky footer
- */
-function renderSaveSnapshotFooter(inspectPayload, item) {
-    if (!wb || !wb.sideFooterEl) return;
-    wb.sideFooterEl.replaceChildren();
-    wb.sideFooterEl.hidden = true;
-
-    const saveRow = document.createElement('div');
-    saveRow.className = 'anomalous-workbench-save-row';
-
-    const inputWrap = document.createElement('div');
-    inputWrap.className = 'anomalous-workbench-save-input-wrap';
-
-    const nameInput = document.createElement('input');
-    nameInput.type = 'text';
-    nameInput.maxLength = 120;
-    nameInput.placeholder = t('materialName') || '输入素材快照名称…';
-    nameInput.value = inspectPayload.suggested_name || fileBaseName(item.filename) || '';
-    nameInput.setAttribute('aria-label', t('materialName'));
-    inputWrap.appendChild(nameInput);
-    const tagsInput = document.createElement('input');
-    tagsInput.type = 'text';
-    tagsInput.maxLength = 1200;
-    tagsInput.placeholder = t('materialTagsHint');
-    tagsInput.setAttribute('aria-label', t('materialTags'));
-    inputWrap.appendChild(tagsInput);
-    text(inputWrap, 'small', t('materialFullSaveHint'), 'anomalous-workbench-save-hint');
-
-    saveRow.appendChild(inputWrap);
-
-    const saveBtn = document.createElement('button');
-    saveBtn.type = 'button';
-    saveBtn.className = 'anomalous-workbench-action-btn is-save';
-    const snapshotLabel = (t('materialSaveSnapshot') || '保存为素材').replace(/^[^\w\u4e00-\u9fa5]+/, '').trim();
-    const renderSaveBtnNormal = () => {
-        saveBtn.innerHTML = `
-            <svg class="anomalous-workbench-action-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M3.5 2.5h9a1 1 0 0 1 1 1v10.5l-5.5-3-5.5 3V3.5a1 1 0 0 1 1-1z"></path>
-            </svg>
-            <span>${snapshotLabel}</span>
-        `;
-    };
-    renderSaveBtnNormal();
-
-    saveBtn.onclick = async () => {
-        const val = nameInput.value.trim();
-        if (!val) { nameInput.focus(); return; }
-        saveBtn.disabled = true;
-        saveBtn.textContent = t('materialSaving');
-        try {
-            const tags = tagsInput.value.split(/[,，]/).map(value => value.trim()).filter(Boolean);
-            const saved = await saveImageMaterial(item, val, null, tags);
-            if (!saved) { saveBtn.disabled = false; renderSaveBtnNormal(); return; }
-            saveBtn.textContent = t('materialSaved');
-            saveBtn.disabled = false;
-        } catch (error) {
-            console.error('Could not save image material:', error);
-            renderSaveBtnNormal();
-            saveBtn.disabled = false;
-            await anomalousAlert(t('materialSaveError') || '素材快照保存失败。');
-        }
-    };
-
-    saveRow.appendChild(saveBtn);
-    wb.sideFooterEl.appendChild(saveRow);
+/** Keep: the keep menu for the image shown (ui_keep_menu.js); what is kept is named after its prompt. */
+function openKeep(anchor, item) {
+    void openKeepMenu(wb?.owner, anchor, materialSourceImage(item), { beforeOpen: dismissWorkbench });
 }
 
 /**
@@ -610,11 +537,6 @@ export async function showImageWorkbench(owner, sourceImage, imageUrl, options =
     sideBody.className = 'anomalous-workbench-inspector-body';
     wb.sideBodyEl = sideBody;
     inspector.appendChild(sideBody);
-
-    const sideFooter = document.createElement('div');
-    sideFooter.className = 'anomalous-workbench-inspector-footer';
-    wb.sideFooterEl = sideFooter;
-    inspector.appendChild(sideFooter);
 
     bodyContainer.appendChild(inspector);
     dialog.appendChild(bodyContainer);

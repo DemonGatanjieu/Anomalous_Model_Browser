@@ -1,325 +1,189 @@
-/** Folder visibility, ordering, and presentation-mode dialog. */
+/**
+ * Model folders, a view of the settings page: how the models are grouped (by ComfyUI's
+ * model types or by the folders on disk), which groups show on the Models page and in
+ * what order. Folders that are off are neither read nor scanned. Each change is saved at
+ * once (POST /anomalous/save_config) and the folder list reloads shortly after.
+ */
 
 import { translate } from './locales.js';
+import { typeLabel, isCommonModelType } from './ui_model_types.js';
 
 const t = (key, params) => translate(key, params);
+const RELOAD_DELAY_MS = 500;
 
-export async function openFolderManager() {
-    let modal = document.getElementById('anomalous-folder-manager-modal');
-    if (modal) modal.remove();
-
-    modal = document.createElement('div');
-    modal.id = 'anomalous-folder-manager-modal';
-    modal.style.position = 'fixed';
-    modal.style.top = '0';
-    modal.style.left = '0';
-    modal.style.width = '100vw';
-    modal.style.height = '100vh';
-    modal.style.backgroundColor = 'rgba(0,0,0,0.7)';
-    modal.style.zIndex = '9999999';
-    modal.style.display = 'flex';
-    modal.style.justifyContent = 'center';
-    modal.style.alignItems = 'center';
-    modal.style.fontFamily = 'Roboto, "Segoe UI", sans-serif';
-
-    const content = document.createElement('div');
-    content.style.background = '#1e1e1e';
-    content.style.borderRadius = '12px';
-    content.style.padding = '24px';
-    content.style.width = '500px';
-    content.style.maxWidth = '90%';
-    content.style.maxHeight = '85vh';
-    content.style.display = 'flex';
-    content.style.flexDirection = 'column';
-    content.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
-
-    const header = document.createElement('h2');
-    header.textContent = t('sidebarFolderManagerTitle');
-    header.style.margin = '0 0 16px 0';
-    header.style.color = '#fff';
-    header.style.fontSize = '1.4em';
-    content.appendChild(header);
-
-    const desc = document.createElement('div');
-    desc.textContent = t('sidebarFolderManagerDesc');
-    desc.style.color = '#aaa';
-    desc.style.fontSize = '0.9em';
-    desc.style.marginBottom = '20px';
-    desc.style.lineHeight = '1.5';
-    content.appendChild(desc);
-
-    const toggleContainer = document.createElement('div');
-    toggleContainer.style.display = 'flex';
-    toggleContainer.style.alignItems = 'center';
-    toggleContainer.style.justifyContent = 'center';
-    toggleContainer.style.marginBottom = '15px';
-    toggleContainer.style.gap = '20px';
-    toggleContainer.style.background = '#222';
-    toggleContainer.style.padding = '10px';
-    toggleContainer.style.borderRadius = '8px';
-    toggleContainer.style.border = '1px solid #444';
-
-    const abstractRadio = document.createElement('input');
-    abstractRadio.type = 'radio';
-    abstractRadio.name = 'viewMode';
-    abstractRadio.value = 'abstract';
-    abstractRadio.id = 'anomalous_mode_abstract';
-    
-    const abstractLabel = document.createElement('label');
-    abstractLabel.htmlFor = 'anomalous_mode_abstract';
-    abstractLabel.textContent = t('sidebarCategoryMode');
-    abstractLabel.style.cursor = 'pointer';
-    abstractLabel.style.color = '#ccc';
-
-    const physicalRadio = document.createElement('input');
-    physicalRadio.type = 'radio';
-    physicalRadio.name = 'viewMode';
-    physicalRadio.value = 'physical';
-    physicalRadio.id = 'anomalous_mode_physical';
-
-    const physicalLabel = document.createElement('label');
-    physicalLabel.htmlFor = 'anomalous_mode_physical';
-    physicalLabel.textContent = t('sidebarPhysicalMode');
-    physicalLabel.style.cursor = 'pointer';
-    physicalLabel.style.color = '#ccc';
-    
-    const div1 = document.createElement('div');
-    div1.style.display = 'flex';
-    div1.style.alignItems = 'center';
-    div1.style.gap = '6px';
-    div1.appendChild(abstractRadio);
-    div1.appendChild(abstractLabel);
-
-    const div2 = document.createElement('div');
-    div2.style.display = 'flex';
-    div2.style.alignItems = 'center';
-    div2.style.gap = '6px';
-    div2.appendChild(physicalRadio);
-    div2.appendChild(physicalLabel);
-
-    toggleContainer.appendChild(div1);
-    toggleContainer.appendChild(div2);
-    content.appendChild(toggleContainer);
-
-    const listContainer = document.createElement('div');
-    listContainer.style.flex = '1';
-    listContainer.style.overflowY = 'auto';
-    listContainer.style.border = '1px solid #444';
-    listContainer.style.borderRadius = '8px';
-    listContainer.style.background = '#2a2a2a';
-    listContainer.style.padding = '8px';
-
-    content.appendChild(listContainer);
-
-    let typesData = [];
-    let currentMode = 'abstract';
-    
-    const fetchData = async () => {
-        try {
-            const res = await fetch('/anomalous/all_folder_types');
-            const data = await res.json();
-            typesData = data.folder_types || [];
-            currentMode = data.folder_view_mode || 'abstract';
-            
-            if (currentMode === 'physical') {
-                physicalRadio.checked = true;
-            } else {
-                abstractRadio.checked = true;
-            }
-            
-            typesData.sort((a, b) => {
-                if (a.visible && !b.visible) return -1;
-                if (!a.visible && b.visible) return 1;
-                return 0;
-            });
-            renderList();
-        } catch(e) {
-            alert(t('sidebarFolderLoadFailed'));
-        }
-    };
-    
-    const onModeSwitch = async (e) => {
-        const newMode = e.target.value;
-        if (newMode === currentMode) return;
-        
-        try {
-            await fetch('/anomalous/save_config', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ folder_view_mode: newMode })
-            });
-            await fetchData();
-            this.firstLoadDone = false;
-            this.expandedFolders.clear();
-            await this.loadFolders();
-        } catch(err) {
-            alert(t('sidebarFolderModeError'));
-        }
-    };
-    
-    abstractRadio.addEventListener('change', onModeSwitch);
-    physicalRadio.addEventListener('change', onModeSwitch);
-
-    let dragSrcEl = null;
-
-    const renderList = () => {
-        listContainer.innerHTML = '';
-        typesData.forEach((item, index) => {
-            const row = document.createElement('div');
-            row.className = 'anomalous-folder-manager-row';
-            row.draggable = true;
-            row.style.display = 'flex';
-            row.style.alignItems = 'center';
-            row.style.justifyContent = 'space-between';
-            row.style.padding = '10px 12px';
-            row.style.margin = '4px 0';
-            row.style.background = '#333';
-            row.style.borderRadius = '6px';
-            row.style.cursor = 'grab';
-            row.style.border = '1px solid transparent';
-            
-            row.dataset.index = index;
-            row.dataset.type = item.type;
-            row.dataset.visible = item.visible;
-
-            row.addEventListener('dragstart', function(e) {
-                this.style.opacity = '0.4';
-                dragSrcEl = this;
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/html', this.innerHTML);
-            });
-
-            row.addEventListener('dragover', function(e) {
-                if (e.preventDefault) e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-                return false;
-            });
-
-            row.addEventListener('dragenter', function(e) {
-                this.style.border = '1px dashed #e5e7eb';
-            });
-
-            row.addEventListener('dragleave', function(e) {
-                this.style.border = '1px solid transparent';
-            });
-
-            row.addEventListener('drop', function(e) {
-                if (e.stopPropagation) e.stopPropagation();
-                if (dragSrcEl !== this) {
-                    const fromIdx = parseInt(dragSrcEl.dataset.index);
-                    const toIdx = parseInt(this.dataset.index);
-                    const movedItem = typesData.splice(fromIdx, 1)[0];
-                    typesData.splice(toIdx, 0, movedItem);
-                    renderList();
-                }
-                return false;
-            });
-
-            row.addEventListener('dragend', function(e) {
-                this.style.opacity = '1';
-                const rows = listContainer.querySelectorAll('.anomalous-folder-manager-row');
-                rows.forEach(r => r.style.border = '1px solid transparent');
-            });
-
-            const leftGroup = document.createElement('div');
-            leftGroup.style.display = 'flex';
-            leftGroup.style.alignItems = 'center';
-            leftGroup.style.gap = '12px';
-            
-            const handle = document.createElement('div');
-            handle.innerHTML = '☰';
-            handle.style.color = '#888';
-            handle.style.cursor = 'grab';
-
-            const name = document.createElement('div');
-            name.innerText = item.type;
-            name.style.color = item.visible ? '#fff' : '#666';
-            name.style.fontWeight = '500';
-
-            leftGroup.appendChild(handle);
-            leftGroup.appendChild(name);
-
-            const visBtn = document.createElement('button');
-            visBtn.innerHTML = item.visible ? '👁️' : '❌';
-            visBtn.style.background = 'transparent';
-            visBtn.style.border = 'none';
-            visBtn.style.cursor = 'pointer';
-            visBtn.style.fontSize = '1.2em';
-            visBtn.style.opacity = item.visible ? '1' : '0.5';
-            visBtn.title = t(item.visible ? 'sidebarVisible' : 'sidebarHidden');
-            
-            visBtn.onclick = (e) => {
-                e.stopPropagation();
-                typesData[index].visible = !typesData[index].visible;
-                renderList();
-            };
-
-            row.appendChild(leftGroup);
-            row.appendChild(visBtn);
-
-            listContainer.appendChild(row);
-        });
-    };
-    fetchData(); // initial load
-    
-    // --- End Drag & Drop Logic ---
-
-    const footer = document.createElement('div');
-    footer.style.display = 'flex';
-    footer.style.justifyContent = 'flex-end';
-    footer.style.gap = '12px';
-    footer.style.marginTop = '20px';
-
-    const cancelBtn = document.createElement('button');
-    cancelBtn.textContent = t('sidebarCancel');
-    cancelBtn.style.padding = '8px 16px';
-    cancelBtn.style.background = 'transparent';
-    cancelBtn.style.color = '#ccc';
-    cancelBtn.style.border = '1px solid #555';
-    cancelBtn.style.borderRadius = '6px';
-    cancelBtn.style.cursor = 'pointer';
-    cancelBtn.onclick = () => modal.remove();
-
-    const saveBtn = document.createElement('button');
-    saveBtn.textContent = t('sidebarSaveReload');
-    saveBtn.style.padding = '8px 16px';
-    saveBtn.style.background = '#e5e7eb';
-    saveBtn.style.color = '#111827';
-    saveBtn.style.border = 'none';
-    saveBtn.style.borderRadius = '6px';
-    saveBtn.style.cursor = 'pointer';
-    saveBtn.style.fontWeight = 'bold';
-    saveBtn.onclick = async () => {
-        saveBtn.innerText = '⏳...';
-        saveBtn.disabled = true;
-        try {
-            const payload = {};
-            if (currentMode === 'physical') {
-                payload.physical_folders_config = typesData;
-            } else {
-                payload.folder_types_config = typesData;
-            }
-            await fetch('/anomalous/save_config', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            modal.remove();
-            
-            this.firstLoadDone = false;
-            this.expandedFolders.clear();
-            await this.loadFolders();
-        } catch(e) {
-            alert(t('sidebarSaveConfigError') + e);
-            saveBtn.textContent = t('sidebarSaveReload');
-            saveBtn.disabled = false;
-        }
-    };
-
-    footer.appendChild(cancelBtn);
-    footer.appendChild(saveBtn);
-    content.appendChild(footer);
-    modal.appendChild(content);
-    document.body.appendChild(modal);
+function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
 }
 
+function button(className, label, onClick, title) {
+    const node = el('button', className, label);
+    node.type = 'button';
+    node.onclick = onClick;
+    if (title) {
+        node.title = title;
+        node.setAttribute('aria-label', title);
+    }
+    return node;
+}
+
+async function postConfig(body) {
+    const res = await fetch('/anomalous/save_config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.status === 'error') throw new Error(data.message || `HTTP ${res.status}`);
+}
+
+/**
+ * Renders the view into `page` (an emptied settings page). `onBack` returns to the
+ * settings. The list lives in this view only; the browser's folder list is reloaded.
+ */
+export async function renderFolderPage(owner, page, onBack) {
+    const state = { mode: 'abstract', items: [], error: '' };
+    let reloadTimer = null;
+
+    const reloadFolders = () => {
+        clearTimeout(reloadTimer);
+        reloadTimer = setTimeout(() => {
+            owner.firstLoadDone = false;
+            owner.loadFolders?.();
+        }, RELOAD_DELAY_MS);
+    };
+
+    const save = async () => {
+        const key = state.mode === 'physical' ? 'physical_folders_config' : 'folder_types_config';
+        try {
+            await postConfig({ [key]: state.items.map(({ type, visible }) => ({ type, visible })) });
+            state.error = '';
+            reloadFolders();
+        } catch (error) {
+            state.error = t('foldersSaveFailed', { error: error.message });
+        }
+        draw();
+    };
+
+    const load = async () => {
+        try {
+            const data = await (await fetch('/anomalous/all_folder_types')).json();
+            state.mode = data.folder_view_mode === 'physical' ? 'physical' : 'abstract';
+            // Shown ones first, in their saved order; the rest after.
+            const items = data.folder_types || [];
+            state.items = [...items.filter(item => item.visible), ...items.filter(item => !item.visible)];
+            state.error = '';
+        } catch (error) {
+            state.error = t('foldersLoadFailed');
+        }
+        draw();
+    };
+
+    const setMode = async (mode) => {
+        if (mode === state.mode) return;
+        try {
+            await postConfig({ folder_view_mode: mode });
+            owner.expandedFolders?.clear();
+            reloadFolders();
+            await load();
+        } catch (error) {
+            state.error = t('foldersSaveFailed', { error: error.message });
+            draw();
+        }
+    };
+
+    const move = (item, step) => {
+        const shown = state.items.filter(entry => entry.visible);
+        const at = shown.indexOf(item);
+        const other = shown[at + step];
+        if (!other) return;
+        const a = state.items.indexOf(item);
+        const b = state.items.indexOf(other);
+        [state.items[a], state.items[b]] = [state.items[b], state.items[a]];
+        save();
+    };
+
+    const toggle = (item, on) => {
+        item.visible = on;
+        // A folder switched on joins the end of the shown ones; one switched off leaves them.
+        state.items.splice(state.items.indexOf(item), 1);
+        const lastShown = state.items.reduce((last, entry, index) => (entry.visible ? index : last), -1);
+        state.items.splice(on ? lastShown + 1 : state.items.length, 0, item);
+        save();
+    };
+
+    const row = (item, { first = false, last = false } = {}) => {
+        const line = el('div', 'anomalous-scan-setting anomalous-folder-row');
+        const copy = el('span', 'anomalous-scan-setting-copy');
+        const name = typeLabel({ type: item.type });
+        copy.append(el('span', 'anomalous-scan-setting-title', name));
+        if (name !== item.type) copy.append(el('code', 'anomalous-folder-raw', item.type));
+        const controls = el('span', 'anomalous-folder-controls');
+        if (item.visible) {
+            const up = button('anomalous-folder-move', '↑', () => move(item, -1), t('foldersMoveUp'));
+            const down = button('anomalous-folder-move', '↓', () => move(item, 1), t('foldersMoveDown'));
+            up.disabled = first;
+            down.disabled = last;
+            controls.append(up, down);
+        }
+        const input = el('input', 'anomalous-scan-switch');
+        input.type = 'checkbox';
+        input.checked = item.visible;
+        input.setAttribute('aria-label', name);
+        input.onchange = () => toggle(item, input.checked);
+        controls.append(input);
+        line.append(copy, controls);
+        return line;
+    };
+
+    const group = (titleKey, ...children) => {
+        const box = el('section', 'anomalous-scan-card anomalous-scan-group');
+        box.append(el('h3', 'anomalous-scan-group-title', t(titleKey)), ...children);
+        return box;
+    };
+
+    const modeChoices = () => {
+        const segment = el('div', 'anomalous-scan-segment');
+        segment.setAttribute('role', 'radiogroup');
+        for (const [value, key] of [['abstract', 'foldersByType'], ['physical', 'foldersByDisk']]) {
+            const choice = button('anomalous-scan-segment-btn', t(key), () => setMode(value));
+            choice.setAttribute('role', 'radio');
+            choice.setAttribute('aria-checked', String(state.mode === value));
+            segment.append(choice);
+        }
+        return segment;
+    };
+
+    function draw() {
+        const shown = state.items.filter(item => item.visible);
+        const hidden = state.items.filter(item => !item.visible);
+        // By type, ComfyUI registers many folders few people use: they wait behind a fold.
+        const usual = state.mode === 'physical' ? hidden : hidden.filter(item => isCommonModelType(item.type));
+        const rare = state.mode === 'physical' ? [] : hidden.filter(item => !isCommonModelType(item.type));
+
+        const groupingHelp = el('small', 'anomalous-scan-setting-help', t(state.mode === 'physical' ? 'foldersByDiskHelp' : 'foldersByTypeHelp'));
+        const shownRows = shown.length
+            ? shown.map((item, index) => row(item, { first: index === 0, last: index === shown.length - 1 }))
+            : [el('p', 'anomalous-scan-muted', t('foldersNoneShown'))];
+        const hiddenRows = usual.map(item => row(item));
+        if (rare.length) {
+            const fold = el('details', 'anomalous-folder-rare');
+            fold.append(el('summary', '', t('foldersRare', { count: rare.length })), ...rare.map(item => row(item)));
+            hiddenRows.push(fold);
+        }
+        page.replaceChildren(
+            button('anomalous-scan-back', t('foldersBack'), onBack),
+            el('h1', 'anomalous-scan-title', t('sidebarManageFolders')),
+            el('p', 'anomalous-scan-lead', t('foldersLead')),
+            ...(state.error ? [el('p', 'anomalous-scan-note is-error', state.error)] : []),
+            group('foldersGrouping', modeChoices(), groupingHelp),
+            group('foldersShown', ...shownRows),
+            ...(hiddenRows.length ? [group('foldersHidden', ...hiddenRows)] : []),
+        );
+    }
+
+    page.replaceChildren(button('anomalous-scan-back', t('foldersBack'), onBack), el('p', 'anomalous-scan-muted', t('audioLoading')));
+    await load();
+}

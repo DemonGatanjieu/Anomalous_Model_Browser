@@ -19,8 +19,36 @@ function nodeTitle(node) {
     return String(node?._meta?.title || node?.title || nodeType(node) || 'Unknown node').trim();
 }
 
-function modelSpecs(type) {
-    const lowered = type.toLowerCase();
+/**
+ * All-in-one loaders with a verified serialized widget layout. Must stay in sync
+ * with ALL_IN_ONE_LOADER_SPECS in api/recipe_schema.py. Arbitrary third-party
+ * widgets stay parameters: guessing categories from file names mislabels models.
+ */
+export const ALL_IN_ONE_LOADER_SPECS = Object.freeze({
+    // ComfyUI-Easy-Use: ckpt_name, vae_name, clip_skip, lora_name, ...
+    'easy a1111loader': [[0, 'checkpoint', 'ckpt_name'], [1, 'vae', 'vae_name'], [3, 'lora', 'lora_name']],
+    // ComfyUI-Easy-Use: ckpt_name, config_name, vae_name, clip_skip, lora_name, ...
+    'easy fullloader': [[0, 'checkpoint', 'ckpt_name'], [2, 'vae', 'vae_name'], [4, 'lora', 'lora_name']],
+    // efficiency-nodes-comfyui: ckpt_name, vae_name, clip_skip, lora_name, ...
+    'efficient loader': [[0, 'checkpoint', 'ckpt_name'], [1, 'vae', 'vae_name'], [3, 'lora', 'lora_name']],
+});
+
+/** Loader values that mean "no file selected". */
+const PLACEHOLDER_MODEL_VALUES = new Set(['none', 'baked vae']);
+
+export function isAllInOneLoaderType(type) {
+    return Object.prototype.hasOwnProperty.call(ALL_IN_ONE_LOADER_SPECS, String(type || '').trim().toLowerCase());
+}
+
+export function isPlaceholderModelValue(value) {
+    return PLACEHOLDER_MODEL_VALUES.has(String(value ?? '').trim().toLowerCase());
+}
+
+/** [widgetIndex, category, widgetName] triples for known loader nodes (by type). */
+export function deriveNodeModelSpecs(nodeOrType) {
+    const type = typeof nodeOrType === 'string' ? nodeOrType : nodeType(nodeOrType);
+    const lowered = type.trim().toLowerCase();
+    if (isAllInOneLoaderType(lowered)) return ALL_IN_ONE_LOADER_SPECS[lowered].map((spec) => [...spec]);
     if (/checkpointloader(simple)?$/.test(lowered)) return [[0, 'checkpoint', 'checkpoint']];
     if (lowered.endsWith('unetloader')) return [[0, 'unet', 'unet']];
     if (/loraloader/.test(lowered)) return [[0, 'lora', 'lora']];
@@ -35,6 +63,7 @@ function modelSpecs(type) {
     }
     return [];
 }
+
 
 function statusFor(identity) {
     const status = identity?.status;
@@ -90,9 +119,9 @@ export function deriveRecipeModelReferences(recipe) {
     for (const node of recipe?.workflow?.nodes || []) {
         const type = nodeType(node);
         const values = Array.isArray(node?.widgets_values) ? node.widgets_values : [];
-        for (const [widgetIndex, category, widgetName] of modelSpecs(type)) {
+        for (const [widgetIndex, category, widgetName] of deriveNodeModelSpecs(node)) {
             const savedValue = values[widgetIndex];
-            if (typeof savedValue !== 'string' || !savedValue.trim()) continue;
+            if (typeof savedValue !== 'string' || !savedValue.trim() || isPlaceholderModelValue(savedValue)) continue;
             const identity = workflowIdentity(recipe?.workflow, node?.id, savedValue)
                 || { status: 'unverified' };
             references.push({
@@ -135,5 +164,6 @@ export function formatIdentitySize(value) {
 }
 
 export function isModelReference(reference) {
-    return Boolean(reference?.saved_value && MODEL_FILE_PATTERN.test(reference.saved_value));
+    const val = String(reference?.saved_value || '').trim();
+    return Boolean(val && !isPlaceholderModelValue(val) && MODEL_FILE_PATTERN.test(val));
 }

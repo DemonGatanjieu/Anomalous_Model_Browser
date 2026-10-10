@@ -10,8 +10,7 @@
 | `web/modules/update_guide_data.js` | 当前引导的稳定 ID、步骤顺序、图标和文案键；也提供配置校验 |
 | `web/modules/locales.js` | 每个步骤及按钮的中英文文案，均按纯文本展示 |
 | `web/modules/ui_update_guide.js` | 显示、翻页、关闭、焦点、版本记录；一般内容更新不要修改 |
-| `web/modules/sidebar_actions.js` | 六个底部按钮的短标签、完整名称和用途提示，不改变点击动作 |
-| `web/styles.css` | 引导布局和底部图标/文字切换的现有规则 |
+| `web/styles.css` | 引导布局的现有规则 |
 | `web/main.js` / `ui_sidebar.js` | 父窗口关闭清理，以及上方按钮和帮助页的手动入口 |
 
 ## 后续 AI 更新步骤
@@ -24,6 +23,12 @@
 6. 运行下方相关测试，再在浏览器验证打开插件不弹窗、上方入口、跳过后手动重开、帮助页重看、Esc 和长文案。
 7. 修改现有样式规则，不在文件末尾追加覆盖包。没有明确产品决策，不增加强制阅读、自动跳转、网络请求或额外追踪。
 
+## 音频页使用说明
+
+- `AUDIO_USAGE_GUIDE`（同在 `update_guide_data.js`）是音频页的使用说明，不是更新公告。音频域激活时，右上角 **!** 打开它；图像域照旧打开 `CURRENT_UPDATE_GUIDE`。
+- 可选字段：`titleKey` 替换对话框标题；`tour: false` 不显示遮罩导览入口，`tour: [...]` 用这份说明自己的导览步骤（音频页用 `AUDIO_TOUR_STEPS`），不写则是图像界面的导览。导览步骤的目标不在屏幕上时自动跳过。
+- 内容跟着功能改，ID 保持 `audio-studio-usage`。完整说明在 `docs/guides/audio-studio.md`，两边要一致。
+
 ## 生命周期与记录
 
 - 面板右上角常驻感叹号按钮（`#anomalous-update-notice-btn`），提供完整的用途提示和 accessible name。只有用户点击该按钮或帮助页入口才打开引导；初始化、打开插件、版本变化都不能触发弹窗。
@@ -34,14 +39,6 @@
 - 同一时刻只有一个引导。重复调用不叠加弹窗；所有关闭路径通过 `closeUpdateGuide` 释放资源。
 - 上方按钮和帮助页的“查看更新引导”均使用 `force: true`，允许重看已确认版本。
 - 引导不自动点击对应功能，也不修改画布、模型、素材、导入导出限制。
-
-## 底部按钮约束
-
-原按钮保留点击处理器、尺寸和图标。短标签是独立且 `aria-hidden` 的 `span`，
-不能占用已用于详细提示的 `::before`/`::after`。扫描状态替换 SVG 后重新配置标签。
-语言切换须更新六个标签、完整 accessible name 和用途提示。
-悬停与键盘焦点使用相同文字切换；无悬停设备直接显示短文字；减少动态效果偏好禁用位移动画。
-**防闪烁与稳定性铁律**：底栏按钮必须显式声明 `cursor: pointer !important; overflow: hidden;`，内部 SVG 与 Label 必须设置 `pointer-events: none !important;`。图标切换文本时**严禁使用 `display: none`**（必须使用 `opacity: 0` 保持物理文档流支撑），以避免浏览器 Hit-testing 丢失目标导致高频触发 `mouseleave` -> `mouseenter` 乒乓震荡闪烁。
 
 ## 验证
 

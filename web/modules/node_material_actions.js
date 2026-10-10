@@ -1,4 +1,8 @@
-// Shared by Node Assistant and Material Library. No node creation or link edits.
+import { composePromptPlan } from './prompt_composition.js';
+import { planPromptFill, typeTakesPrompt } from './prompt_boxes.js';
+import { recordCanvasStep } from './canvas_history.js';
+
+// Shared by Current node, Prompt Studio and prompt drops. No node creation or link edits.
 const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -10,7 +14,8 @@ export function selectedMaterialNode(app) {
     return graph?.getNodeById(node.id) === node ? node : null;
 }
 
-function volatile(node, widget, index) {
+/** Seeds and the like: values that change on every run and are never applied from a material. */
+export function isVolatileWidget(node, widget, index) {
     return /(^|[_\s-])(seed|noise_seed|random_seed|variation_seed|last_seed)([_\s-]|$)/i.test(widget?.name || '')
         || (node.type === 'KSampler' && index === 0) || (node.type === 'KSamplerAdvanced' && index === 1);
 }
@@ -30,7 +35,7 @@ function replaceHashes(graph, id, records) {
 export function applyNodeMaterialValues(app, node, entries, options = {}) {
     const graph = app.graph?.getNodeById(node?.id) === node ? app.graph : (node?.graph || app.canvas?.graph || app.graph);
     if (!node || graph?.getNodeById(node.id) !== node || !Array.isArray(node.widgets)) throw new Error('materialTargetChanged');
-    const changes = entries.filter(({ index }) => !volatile(node, node.widgets[index], index));
+    const changes = entries.filter(({ index }) => !isVolatileWidget(node, node.widgets[index], index));
     if (!changes.length) throw new Error('materialNoCompatibleValues');
     for (const { index, value } of changes) {
         const widget = node.widgets[index];
@@ -78,7 +83,7 @@ export function applyNodeMaterialValues(app, node, entries, options = {}) {
             widget.value = clone(value);
             if (Array.isArray(node.widgets_values)) node.widgets_values[index] = clone(value);
             widget.callback?.call(widget, widget.value, app.canvas, node);
-            node.onWidgetChanged?.(index, widget.value, previous[index], widget);
+            node.onWidgetChanged?.(widget.name, widget.value, previous[index], widget);
         }
         if (transportsHashes) replaceHashes(graph, node.id, mapped);
         notify();
@@ -87,6 +92,8 @@ export function applyNodeMaterialValues(app, node, entries, options = {}) {
         notify();
         throw error;
     } finally { graph.afterChange?.(); }
+    // `record: false`: the caller makes one Ctrl+Z step of several writes.
+    if (options.record !== false) recordCanvasStep(app);
     const appliedSerialized = clone(node.widgets_values);
     const applied = node.widgets.map(widget => clone(widget.value));
     const appliedHashes = clone(hashesFor(graph, node.id));
@@ -101,25 +108,178 @@ export function applyNodeMaterialValues(app, node, entries, options = {}) {
             graph.beforeChange?.();
             try { restore(); notify(); undone = true; }
             finally { graph.afterChange?.(); }
+            if (options.record !== false) recordCanvasStep(app);
         },
     };
 }
 
-export function applyMaterialBlock(app, node, block, workflowHashes) {
-    if (node?.type !== block?.type || !Array.isArray(block.widgets_values)
-        || block.widgets_values.length > (node.widgets?.length || 0)) throw new Error('materialNoCompatibleValues');
-    return applyNodeMaterialValues(app, node, block.widgets_values.map((value, index) => ({ index, value })),
-        { sourceNodeId: block.node_id, workflowHashes });
+export const MODEL_EXTENSIONS_REGEX = /\.(safetensors|ckpt|pt|bin|pth|sft|onnx|engine|gguf)$/i;
+
+export function isModelFilePath(value) {
+    if (typeof value !== 'string') return false;
+    const trimmed = value.trim();
+    if (!trimmed) return false;
+    const lines = trimmed.split(/[\r\n]+/).map(s => s.trim()).filter(Boolean);
+    return lines.length > 0 && lines.every(line => MODEL_EXTENSIONS_REGEX.test(line));
 }
 
-export function promptWidgetTargets(node) {
-    const promptNameRegex = /^(text|text_g|text_l|prompt|positive|negative|caption|string|value|文本|提示词|正面|负面|正向|反向|正面提示词|负面提示词|正向提示词|反向提示词|描述|内容)$/i;
-    return (node?.widgets || []).flatMap((widget, index) => {
-        if (!widget) return [];
-        const name = String(widget.name || '');
-        const label = String(widget.label || '');
-        const isNotCombo = !widget.options?.values || !Array.isArray(widget.options.values);
-        const matchesName = promptNameRegex.test(name) || promptNameRegex.test(label) || widget.type === 'customtext' || widget.type === 'text' || !!widget.options?.multiline;
-        return typeof widget.value === 'string' && matchesName && isNotCombo ? [{ index, name: name || label || 'text' }] : [];
-    });
+export function sanitizePromptText(value) {
+    if (typeof value !== 'string') return '';
+    const trimmed = value.trim();
+    if (!trimmed || isModelFilePath(trimmed)) return '';
+    return trimmed;
+}
+
+export function formatPromptEnvelope(res = {}) {
+    const positive = (res.positive || '').trim();
+    const negative = (res.negative || '').trim();
+    const singleText = (res.singleText || '').trim();
+    const primaryRole = res.primaryRole || 'none';
+    const hasPrompt = Boolean(positive || negative || singleText);
+    return {
+        hasPrompt,
+        positive,
+        negative,
+        singleText,
+        primaryRole,
+    };
+}
+
+function extractFromPlan(payload, data) {
+    if (data.kind === 'prompt_plan' || payload.kind === 'prompt_plan' || data.plan || payload.plan) {
+        const plan = data.plan || payload.plan || {};
+        const composed = composePromptPlan(plan);
+        const pos = sanitizePromptText(composed.positive);
+        const neg = sanitizePromptText(composed.negative);
+        if (pos && neg) return { positive: pos, negative: neg, singleText: pos, primaryRole: 'both' };
+        if (pos) return { positive: pos, negative: '', singleText: pos, primaryRole: 'positive' };
+        if (neg) return { positive: '', negative: neg, singleText: neg, primaryRole: 'negative' };
+    }
+    return null;
+}
+
+function extractFromNote(payload, data) {
+    const note = data.note || payload.note;
+    if (!note) return null;
+    const isZh = typeof window !== 'undefined' && window.anomalous_browser_lang === 'zh';
+    const raw = (isZh && note.promptZh) ? note.promptZh : (note.promptEn || note.promptZh || '');
+    const txt = sanitizePromptText(raw);
+    if (!txt) return null;
+
+    const lowerName = String(payload.name || note.title || '').toLowerCase();
+    const tags = Array.isArray(payload.tags) ? payload.tags.map(t => String(t).toLowerCase()) : [];
+    const isNeg = lowerName.includes('negative') || lowerName.includes('负向') || lowerName.includes('反向')
+        || tags.some(t => t.includes('negative') || t.includes('负向') || t.includes('反向'));
+    return isNeg
+        ? { positive: '', negative: txt, singleText: txt, primaryRole: 'negative' }
+        : { positive: txt, negative: '', singleText: txt, primaryRole: 'positive' };
+}
+
+function extractFromPromptGroups(payload) {
+    const groups = payload.prompt_groups;
+    if (!groups || typeof groups !== 'object') return null;
+
+    const pgPos = (Array.isArray(groups.positive) ? groups.positive : [])
+        .map(sanitizePromptText)
+        .filter(Boolean)
+        .join('\n\n');
+    const pgNeg = (Array.isArray(groups.negative) ? groups.negative : [])
+        .map(sanitizePromptText)
+        .filter(Boolean)
+        .join('\n\n');
+
+    if (pgPos && pgNeg) return { positive: pgPos, negative: pgNeg, singleText: pgPos, primaryRole: 'both' };
+    if (pgPos) return { positive: pgPos, negative: '', singleText: pgPos, primaryRole: 'positive' };
+    if (pgNeg) return { positive: '', negative: pgNeg, singleText: pgNeg, primaryRole: 'negative' };
+    return null;
+}
+
+function extractFromNodeBlocks(payload) {
+    const blocks = payload.node_blocks;
+    if (!Array.isArray(blocks) || blocks.length === 0) return null;
+
+    const promptRoles = payload.prompt_roles;
+    const posList = [];
+    const negList = [];
+
+    for (const block of blocks) {
+        if (!block) continue;
+        const blockType = String(block.type || '').toLowerCase();
+        const role = promptRoles?.[String(block.node_id)]?.role || block.promptRole;
+        const isExplicitPrompt = role === 'positive' || role === 'negative' || role === 'both';
+        const isPromptType = typeTakesPrompt(block.type);
+
+        if (!isExplicitPrompt && !isPromptType) continue;
+
+        const widgetValues = Array.isArray(block.widgets_values) ? block.widgets_values : [];
+        for (const val of widgetValues) {
+            const str = sanitizePromptText(val);
+            if (!str) continue;
+
+            if (role === 'negative') {
+                negList.push(str);
+            } else if (role === 'positive') {
+                posList.push(str);
+            } else if (role === 'both') {
+                posList.push(str);
+                negList.push(str);
+            } else {
+                const blockTitle = String(block.title || block.type || '').toLowerCase();
+                if (/negative|负向|反向/i.test(blockTitle)) {
+                    negList.push(str);
+                } else if (/positive|正向|正面/i.test(blockTitle) || isPromptType) {
+                    posList.push(str);
+                }
+            }
+            break;
+        }
+    }
+
+    const pos = [...new Set(posList)].join('\n\n');
+    const neg = [...new Set(negList)].join('\n\n');
+    if (pos && neg) return { positive: pos, negative: neg, singleText: pos, primaryRole: 'both' };
+    if (pos) return { positive: pos, negative: '', singleText: pos, primaryRole: 'positive' };
+    if (neg) return { positive: '', negative: neg, singleText: neg, primaryRole: 'negative' };
+    return null;
+}
+
+function extractFromSummary(payload) {
+    if (payload.kind === 'prompt_text') {
+        const raw = sanitizePromptText(payload.summary || payload.name || '');
+        if (raw) return { positive: raw, negative: '', singleText: raw, primaryRole: 'positive' };
+    }
+    return null;
+}
+
+export const PROMPT_EXTRACTORS = [
+    extractFromPlan,
+    extractFromNote,
+    extractFromPromptGroups,
+    extractFromNodeBlocks,
+    extractFromSummary,
+];
+
+export function extractMaterialPromptEnvelope(material, payload = {}) {
+    const effectivePayload = (payload && Object.keys(payload).length > 0) ? payload : (material || {});
+    const data = effectivePayload.data || effectivePayload;
+
+    for (const extractor of PROMPT_EXTRACTORS) {
+        const result = extractor(effectivePayload, data);
+        if (result && result.primaryRole !== 'none') {
+            return formatPromptEnvelope(result);
+        }
+    }
+
+    return formatPromptEnvelope();
+}
+
+/**
+ * Writes an envelope's prompt text into `node`'s prompt boxes (prompt_boxes.js decides
+ * which box takes which text); `box`, one of the node's boxes, limits it to that box.
+ */
+export function fillPrompt(app, node, envelope, box = null, options = {}) {
+    if (!node || !envelope?.hasPrompt) throw new Error('materialNoCompatibleValues');
+    const entries = planPromptFill(node, envelope, box);
+    if (!entries.length) throw new Error('materialNoCompatibleValues');
+    return applyNodeMaterialValues(app, node, entries.map(({ index, value }) => ({ index, value })), options);
 }

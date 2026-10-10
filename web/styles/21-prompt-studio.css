@@ -1,0 +1,654 @@
+/* Prompt Studio's content: ui_prompt_workbench.js, the cards (ui_prompt_source_deck.js) and the
+   prompt boxes (ui_prompt_target.js, ui_prompt_box_editor.js). The drawer is 09-prompt-drawers.css. */
+
+.anomalous-ps {
+    container: anomalous-ps / inline-size;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    color: var(--amb-text-main);
+    font-size: 12px;
+}
+
+.anomalous-ps-top {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--amb-border);
+}
+
+.anomalous-ps-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.anomalous-ps-top-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.anomalous-ps-switch {
+    display: inline-flex;
+    padding: 2px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: var(--amb-bg-input);
+}
+
+.anomalous-ps-switch-btn,
+.anomalous-ps-gloss,
+.anomalous-ps-icon,
+.anomalous-ps-mini {
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.anomalous-ps-switch-btn {
+    padding: 3px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+}
+
+.anomalous-ps-switch-btn.is-active {
+    background: var(--amb-bg-card-hover);
+    color: var(--amb-text-main);
+}
+
+.anomalous-ps-gloss,
+.anomalous-ps-mini {
+    border: 1px solid var(--amb-border);
+    background: transparent;
+    color: var(--amb-text-soft);
+    white-space: nowrap;
+}
+
+.anomalous-ps-gloss {
+    max-width: 150px;
+    padding: 4px 6px;
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.anomalous-ps-gloss option {
+    background: var(--amb-bg-panel);
+    color: var(--amb-text-main);
+}
+
+.anomalous-ps-mini {
+    padding: 3px 9px;
+    border-radius: 7px;
+    font-size: 11.5px;
+}
+
+.anomalous-ps-gloss.is-active,
+.anomalous-ps-mini.is-accent {
+    border-color: color-mix(in srgb, var(--amb-link) 55%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+    color: var(--amb-text-main);
+}
+
+.anomalous-ps-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font-size: 13px;
+}
+
+.anomalous-ps-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.anomalous-ps-icon:hover,
+.anomalous-ps-gloss:hover,
+.anomalous-ps-mini:hover:not(:disabled) {
+    border-color: var(--amb-border-hover);
+    color: var(--amb-text-main);
+}
+
+.anomalous-ps-mini:disabled {
+    cursor: default;
+    opacity: 0.45;
+}
+
+.anomalous-ps-mini.is-danger:hover {
+    border-color: rgba(248, 113, 113, 0.6);
+    color: #fca5a5;
+}
+
+/* The cards sit on the drawer's outer side, the prompt boxes beside the canvas. */
+.anomalous-ps-grid {
+    display: grid;
+    flex: 1;
+    grid-template-columns: 200px minmax(0, 1fr);
+    min-height: 0;
+}
+
+.anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-grid {
+    grid-template-columns: minmax(0, 1fr) 200px;
+}
+
+.anomalous-ps-deck {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    padding: 10px;
+    border-right: 1px solid var(--amb-border);
+    background: var(--amb-bg-panel);
+}
+
+.anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-deck {
+    order: 2;
+    border-right: 0;
+    border-left: 1px solid var(--amb-border);
+}
+
+.anomalous-ps-deck-top {
+    display: flex;
+    gap: 6px;
+}
+
+.anomalous-ps-search,
+.anomalous-ps-input {
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: var(--amb-bg-input);
+    color: var(--amb-text-main);
+    font-family: inherit;
+    font-size: 12px;
+}
+
+.anomalous-ps-search:focus,
+.anomalous-ps-input:focus,
+.anomalous-ps-add:focus,
+.anomalous-ps-text:focus,
+.anomalous-ps-tag-input:focus {
+    border-color: color-mix(in srgb, var(--amb-link) 60%, transparent);
+    outline: none;
+}
+
+.anomalous-ps-new {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: var(--amb-bg-card);
+}
+
+.anomalous-ps-new textarea {
+    resize: vertical;
+}
+
+.anomalous-ps-new-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.anomalous-ps-new-roles {
+    display: flex;
+    flex: 1 1 100%;
+    gap: 10px;
+}
+
+.anomalous-ps-new-role {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--amb-text-soft);
+    cursor: pointer;
+}
+
+.anomalous-ps-cards {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 5px;
+    min-height: 0;
+    padding-right: 2px;
+    overflow-y: auto;
+}
+
+.anomalous-ps-cards-head {
+    margin-top: 6px;
+    color: var(--amb-text-dim);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.anomalous-ps-cards-head:first-child {
+    margin-top: 0;
+}
+
+.anomalous-ps-cards-empty,
+.anomalous-ps-target-note,
+.anomalous-ps-empty {
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
+    line-height: 1.5;
+}
+
+/* The inset stripe is the card's role; hover changes only the border. */
+.anomalous-ps-card {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 7px 9px 7px 11px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: var(--amb-bg-card);
+    box-shadow: inset 3px 0 0 #4ade80;
+    cursor: pointer;
+    user-select: none;
+}
+
+.anomalous-ps-card.is-negative {
+    box-shadow: inset 3px 0 0 #f87171;
+}
+
+.anomalous-ps-card:hover,
+.anomalous-ps-card.is-preview-active {
+    border-color: var(--amb-border-hover);
+    background: var(--amb-bg-card-hover);
+}
+
+.anomalous-ps-card-title,
+.anomalous-ps-card-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-ps-card-title {
+    color: var(--amb-text-main);
+    font-weight: 500;
+}
+
+.anomalous-ps-card-text {
+    color: var(--amb-text-dim);
+    font-size: 11px;
+}
+
+.anomalous-ps-sync {
+    color: #fca5a5;
+    font-size: 11px;
+}
+
+.anomalous-ps-sync:empty {
+    display: none;
+}
+
+.anomalous-popover-origin {
+    color: var(--amb-text-muted);
+    font-size: 0.68rem;
+}
+
+.anomalous-ps-target {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    padding: 10px 12px 16px;
+    overflow-y: auto;
+}
+
+.anomalous-ps-target-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.anomalous-ps-target-label {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.anomalous-ps-target-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Beside the node's name: stop editing it and use the draft. */
+.anomalous-ps-target-x {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--amb-text-dim);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-ps-target-x:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--amb-text-main);
+}
+
+.anomalous-ps-target-note {
+    margin: 0;
+}
+
+.anomalous-ps-boxes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.anomalous-ps-box {
+    --anomalous-ps-role: var(--amb-border-strong);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 10px 10px 13px;
+    border: 1px solid var(--amb-border);
+    border-radius: 12px;
+    background: var(--amb-bg-card);
+    box-shadow: inset 3px 0 0 var(--anomalous-ps-role);
+}
+
+.anomalous-ps-box.is-positive { --anomalous-ps-role: #4ade80; }
+.anomalous-ps-box.is-negative { --anomalous-ps-role: #f87171; }
+
+.anomalous-ps-box.is-drop-target {
+    border-color: color-mix(in srgb, var(--anomalous-ps-role) 65%, transparent);
+}
+
+.anomalous-ps-box-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.anomalous-ps-role {
+    flex-shrink: 0;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--amb-text-soft);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.anomalous-ps-role.is-positive { color: #86efac; }
+.anomalous-ps-role.is-negative { color: #fca5a5; }
+
+.anomalous-ps-box-name {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--amb-text-dim);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-ps-box-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.anomalous-ps-drag {
+    padding: 2px 6px;
+    border-radius: 6px;
+    color: var(--amb-text-dim);
+    cursor: grab;
+    user-select: none;
+}
+
+.anomalous-ps-drag:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--amb-text-main);
+}
+
+.anomalous-ps-foreign {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: rgba(251, 191, 36, 0.1);
+    color: #fcd34d;
+    font-size: 11.5px;
+}
+
+.anomalous-ps-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+.anomalous-ps-tag {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 3px 6px 3px 8px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+    user-select: none;
+}
+
+.anomalous-ps-tag:hover {
+    border-color: var(--amb-border-hover);
+}
+
+.anomalous-ps-tag:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--amb-link) 70%, transparent);
+    outline-offset: 1px;
+}
+
+.anomalous-ps-tag.is-selected {
+    border-color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
+}
+
+.anomalous-ps-tag.is-foreign {
+    border-color: rgba(251, 191, 36, 0.55);
+}
+
+.anomalous-ps-tag.is-dragging {
+    opacity: 0.4;
+}
+
+.anomalous-ps-tag.is-drop-before::before {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    left: -4px;
+    width: 2px;
+    border-radius: 2px;
+    background: var(--amb-link);
+    content: '';
+}
+
+.anomalous-ps-tag-main {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    min-width: 0;
+}
+
+.anomalous-ps-tag-text {
+    color: var(--amb-text-main);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-ps-tag-weight {
+    padding: 0 4px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--amb-text-soft);
+    font-size: 10.5px;
+    font-variant-numeric: tabular-nums;
+}
+
+.anomalous-ps-tag.is-up .anomalous-ps-tag-weight { color: #fcd34d; }
+.anomalous-ps-tag.is-down .anomalous-ps-tag-weight { color: #93c5fd; }
+
+.anomalous-ps-tag-x {
+    padding: 0 2px;
+    border: 0;
+    background: transparent;
+    color: var(--amb-text-dim);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+}
+
+.anomalous-ps-tag:hover .anomalous-ps-tag-x,
+.anomalous-ps-tag.is-selected .anomalous-ps-tag-x,
+.anomalous-ps-tag:focus-visible .anomalous-ps-tag-x {
+    opacity: 1;
+}
+
+.anomalous-ps-tag-x:hover {
+    color: #fca5a5;
+}
+
+/* The meaning reads as text of its own, one step quieter than the tag. */
+.anomalous-ps-tag-gloss {
+    margin-top: 1px;
+    color: var(--amb-text-muted);
+    font-size: 11.5px;
+    line-height: 1.35;
+}
+
+.anomalous-ps-tag-gloss:empty {
+    display: none;
+}
+
+.anomalous-ps-tag-input,
+.anomalous-ps-add {
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 4px 8px;
+    border-radius: 8px;
+    color: var(--amb-text-main);
+    font-family: inherit;
+    font-size: 12px;
+}
+
+.anomalous-ps-tag-input {
+    min-width: 80px;
+    border: 1px solid var(--amb-link);
+    background: var(--amb-bg-input);
+}
+
+.anomalous-ps-add {
+    flex: 1 1 160px;
+    min-width: 120px;
+    border: 1px dashed var(--amb-border);
+    background: transparent;
+}
+
+.anomalous-ps-add.is-drop-here {
+    border-style: solid;
+    border-color: var(--amb-link);
+}
+
+.anomalous-ps-empty {
+    width: 100%;
+}
+
+.anomalous-ps-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--amb-border);
+}
+
+.anomalous-ps-tools-weight {
+    min-width: 60px;
+    color: var(--amb-text-soft);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.anomalous-ps-text {
+    width: 100%;
+    min-height: 120px;
+    box-sizing: border-box;
+    padding: 8px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: var(--amb-bg-input);
+    color: var(--amb-text-main);
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+/* These blocks set their own display, which would outrank the hidden attribute. */
+.anomalous-ps-new[hidden],
+.anomalous-ps-target-note[hidden],
+.anomalous-ps-foreign[hidden],
+.anomalous-ps-tags[hidden],
+.anomalous-ps-tools[hidden],
+.anomalous-ps-text[hidden] {
+    display: none;
+}
+
+/* A narrow drawer stacks the cards over the prompt boxes. */
+@container anomalous-ps (max-width: 540px) {
+    .anomalous-ps-grid,
+    .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-grid {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(120px, 34%) minmax(0, 1fr);
+    }
+
+    .anomalous-ps-deck,
+    .anomalous-prompt-studio-drawer:not(.is-dock-left) .anomalous-ps-deck {
+        order: 0;
+        border: 0;
+        border-bottom: 1px solid var(--amb-border);
+    }
+}

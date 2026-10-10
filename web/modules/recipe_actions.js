@@ -1,4 +1,5 @@
 import { app } from '../../../scripts/app.js';
+import { recordCanvasStep } from './canvas_history.js';
 import { mergeRecipeHashRecords } from './recipe_provenance.js';
 
 function cloneJson(value) {
@@ -156,6 +157,7 @@ export function applyRecipeParametersToCanvas(source) {
         throw error;
     } finally {
         graph.afterChange?.();
+        recordCanvasStep(app);
     }
 }
 
@@ -344,5 +346,6 @@ export function appendRecipeToCanvas(recipe) {
         throw error;
     } finally {
         graph.afterChange?.();
+        recordCanvasStep(app);
     }
 }
