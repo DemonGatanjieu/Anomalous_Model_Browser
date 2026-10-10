@@ -204,8 +204,7 @@ html.theme-abyssal-scarlet,
     background: linear-gradient(180deg, rgba(25, 12, 20, 0.9) 0%, rgba(14, 6, 14, 0.98) 100%) !important;
 }
 
-.theme-abyssal-scarlet .anomalous-card:hover,
-.theme-abyssal-scarlet .anomalous-recipe-card:hover {
+.theme-abyssal-scarlet .anomalous-card:hover {
     border-color: #dc143c !important;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.95), inset 0 0 12px rgba(0, 0, 0, 0.7) !important;
 }
@@ -272,24 +271,6 @@ html.theme-abyssal-scarlet,
     border-color: #dc143c !important;
     color: #f1eaed !important;
     box-shadow: none !important;
-}
-
-.theme-abyssal-scarlet .anomalous-recipe-card {
-    border-color: rgba(220, 20, 60, 0.22) !important;
-    background: rgba(18, 10, 26, 0.88) !important;
-}
-
-/* 6. Active Pills in Deep Velvet Wine (Inner Shadow & Sharp Border) */
-.theme-abyssal-scarlet .anomalous-recipe-pill.is-active {
-    background-color: rgba(60, 10, 20, 0.85) !important;
-    border-color: #dc143c !important;
-    color: #e0d8db !important;
-    box-shadow: none !important;
-}
-
-.theme-abyssal-scarlet .anomalous-recipe-readiness-pill {
-    border-color: rgba(220, 20, 60, 0.35) !important;
-    color: #e0d8db !important;
 }
 
 /* 7. Error State Abyssal Corruption Animations */
@@ -857,29 +838,3 @@ button:hover .anomalous-btn-icon {
     position: relative;
 }
 
-.anomalous-recipe-modal-close {
-    position: absolute;
-    top: 8px;
-    right: 14px;
-    z-index: 100;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: none;
-    color: var(--amb-lt-danger, #ff4444);
-    font-size: 1.8rem;
-    line-height: 1;
-    cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.18s ease;
-    user-select: none;
-}
-
-.anomalous-recipe-modal-close:hover {
-    background: rgba(239, 68, 68, 0.16);
-    color: #ff6666;
-    transform: scale(1.08);
-}

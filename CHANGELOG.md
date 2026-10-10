@@ -27,6 +27,10 @@
 - **Key parameters (关键参数)**: press ☆ before a value's name (tick **Show equal values too** to star one that matches) and it stays at the top of every comparison, for every workflow, kept with your ComfyUI settings.
 - **Parameter sets in view (参数方案更好找)**: a workflow card with saved sets shows **▤ N** (how many), which opens them directly. Each set there shows its key values (those unlike the workflow's own in colour), how many values differ, and ⇄ to compare it with the workflow.
 
+### 🗂️ A tidier Workflows page (工作流页面重做)
+- One bar on top: search, **Filter** (kind and tag in one menu), grid or list, share and import, and **Save the canvas**. The drag tip strip and the red ✕ are gone (Esc still closes the page; the empty page explains dragging).
+- Cards keep the picture, the name, a line of steps, sampler, LoRAs and size, and the model. The models' state is a dot on the cover, with words only when some are missing; 功能模块 marks a partial workflow. **Open** and **⋯** (edit, export, delete) show when the pointer is on a card.
+
 ### ⚙️ Settings in tabs (设置分组)
 - The settings page is split into tabs: **Look, Models, Workflows, Prompts, Backup, Help**. "Change where downloads go" opens Models directly.
 - **Where downloads (and now imports) go is a choice**: by base model (the new default), in Downloads then by base model, all in a Downloads folder, straight in the type's folder, or your own folder typed by hand; an example path shows the result. Without a saved setting, downloads now go by base model instead of into a Downloads folder.

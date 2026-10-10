@@ -95,7 +95,7 @@ export function showRecipeDetail(owner, { recipe, filename, history = [] }) {
     owner.recipeDetailPayload = { recipe, filename, history };
     owner.recipeDetailFilename = filename;
     owner.recipeListContainer.style.display = 'none';
-    const topbars = owner.recipeView ? Array.from(owner.recipeView.querySelectorAll('.anomalous-recipe-topbar, .anomalous-recipe-actionbar')) : [];
+    const topbars = owner.recipeView ? Array.from(owner.recipeView.querySelectorAll('.anomalous-wf-bar')) : [];
     topbars.forEach(bar => { bar.style.display = 'none'; });
     if (owner.recipeDetailView) owner.recipeDetailView.remove();
 

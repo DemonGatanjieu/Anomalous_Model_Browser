@@ -1,8 +1,9 @@
-/** Workflow Recipe catalog shell: navigation, filters, view mode, and loading. */
+/** The Workflows page (Workflow Recipe catalog): its bar (search, filter, view), the list, loading. Cards: ui_recipe_cards.js. */
 
 import { translate } from './locales.js';
 import { appendText } from './ui_recipe_detail_dom.js';
-import { createRecipeCard, ensureRecipeGuideStyles } from './ui_recipe_cards.js';
+import { createRecipeCard } from './ui_recipe_cards.js';
+import { openPopupMenu } from './ui_popup_menu.js';
 import { moveWorkflowMaterials, workflowMaterialCount } from './recipe_save.js';
 import { openShareDialog } from './ui_share.js';
 import { fetchParameterSetSignatures, showParameterSetCount } from './ui_param_set_keys.js';
@@ -34,57 +35,52 @@ function buildMoveStrip(owner) {
     return strip;
 }
 
-export function updateRecipeFilterControls(owner, recipes) {
-    if (!owner.recipeTagSelect) return;
-    const tags = [...new Set((recipes || []).flatMap(item => item?.data?.tags || []))]
+/** The page's tags, for the filter menu. */
+function recipeTags(owner) {
+    return [...new Set((owner.recipeRecords || []).flatMap(item => item?.data?.tags || []))]
         .filter(Boolean)
         .sort((a, b) => a.localeCompare(b));
-    const selected = [...(owner.recipeSelectedTags || [])][0] || '';
-    owner.recipeSelectedTags = new Set(selected ? [selected] : []);
-    owner.recipeTagSelect.replaceChildren();
-    appendText(owner.recipeTagSelect, 'option', t('materialAllTags')).value = '';
-    if (selected && !tags.includes(selected)) tags.push(selected);
-    for (const tag of tags) appendText(owner.recipeTagSelect, 'option', tag).value = tag;
-    owner.recipeTagSelect.value = selected;
 }
 
-function buildRecipeStudioTopbar(owner) {
-    const topbar = document.createElement('div');
-    topbar.className = 'anomalous-recipe-topbar';
+/** The filter button says how many filters are on. */
+export function updateRecipeFilterControls(owner) {
+    const button = owner.recipeFilterButton;
+    if (!button) return;
+    const active = (owner.recipeScopeFilter && owner.recipeScopeFilter !== 'all' ? 1 : 0) + (owner.recipeSelectedTags?.size || 0);
+    button.textContent = active ? t('workflowsFilterOn', { count: active }) : t('workflowsFilter');
+    button.classList.toggle('is-active', Boolean(active));
+}
 
-    const left = document.createElement('div');
-    left.className = 'anomalous-recipe-topbar-left';
-    const pillsWrap = document.createElement('div');
-    pillsWrap.className = 'anomalous-recipe-pills';
-    const scopes = [
-        { id: 'all', label: t('recipeScopePill_all') },
-        { id: 'complete', label: t('recipeScopePill_complete') },
-        { id: 'partial', label: t('recipeScopePill_partial') },
-    ];
-    owner.recipeScopeFilter = owner.recipeScopeFilter || 'all';
-    for (const { id, label } of scopes) {
-        const scopeButton = appendText(pillsWrap, 'button', label, 'anomalous-recipe-pill');
-        scopeButton.type = 'button';
-        if (owner.recipeScopeFilter === id) scopeButton.classList.add('is-active');
-        scopeButton.onclick = () => {
-            if (owner.recipeScopeFilter === id) return;
-            owner.recipeScopeFilter = id;
-            pillsWrap.querySelectorAll('.anomalous-recipe-pill').forEach(element => element.classList.remove('is-active'));
-            scopeButton.classList.add('is-active');
-            owner.renderRecipeList(owner.recipeRecords || []);
-        };
+/** The filter menu: what kind of workflow, then one tag. */
+function openFilterMenu(owner, anchor) {
+    const rerender = () => owner.renderRecipeList(owner.recipeRecords || []);
+    const scope = owner.recipeScopeFilter || 'all';
+    const tag = [...(owner.recipeSelectedTags || [])][0] || '';
+    const items = [{ heading: t('workflowsFilterKind') }];
+    for (const id of ['all', 'complete', 'partial']) {
+        items.push({ label: t(`recipeScopePill_${id}`), checked: scope === id, run: () => { owner.recipeScopeFilter = id; rerender(); } });
     }
-    left.appendChild(pillsWrap);
-    topbar.appendChild(left);
+    const tags = recipeTags(owner);
+    if (tags.length) {
+        items.push({ heading: t('workflowsFilterTag') });
+        items.push({ label: t('materialAllTags'), checked: !tag, run: () => { owner.recipeSelectedTags = new Set(); rerender(); } });
+        for (const name of tags) {
+            items.push({ label: `#${name}`, checked: tag === name, run: () => { owner.recipeSelectedTags = new Set([name]); rerender(); } });
+        }
+    }
+    openPopupMenu(anchor, items);
+}
 
-    const center = document.createElement('div');
-    center.className = 'anomalous-recipe-topbar-center';
-    const searchWrap = document.createElement('div');
-    searchWrap.className = 'anomalous-recipe-search-wrap';
-    appendText(searchWrap, 'span', '🔍', 'anomalous-recipe-search-icon');
+/** The one row over the list: search, filter, count, view, share and import, save the canvas. */
+function buildWorkflowBar(owner) {
+    const bar = document.createElement('div');
+    bar.className = 'anomalous-wf-bar';
+
+    const search = document.createElement('label');
+    search.className = 'anomalous-wf-search';
+    search.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>'; // static markup only
     const searchInput = document.createElement('input');
     searchInput.type = 'search';
-    searchInput.className = 'anomalous-recipe-search-input';
     searchInput.placeholder = t('recipeSearchPlaceholder');
     searchInput.value = owner.recipeSearchQuery || '';
     searchInput.oninput = () => {
@@ -92,64 +88,46 @@ function buildRecipeStudioTopbar(owner) {
         owner.renderRecipeList(owner.recipeRecords || []);
     };
     owner.recipeSearchInput = searchInput;
-    searchWrap.appendChild(searchInput);
-    center.appendChild(searchWrap);
+    search.append(searchInput);
 
-    const tagSelect = document.createElement('select');
-    tagSelect.className = 'anomalous-recipe-tag-select';
-    tagSelect.onchange = () => {
-        owner.recipeSelectedTags = new Set(tagSelect.value ? [tagSelect.value] : []);
-        owner.renderRecipeList(owner.recipeRecords || []);
-    };
-    owner.recipeTagSelect = tagSelect;
-    center.appendChild(tagSelect);
-    owner.recipeFilterSummary = appendText(center, 'small', '0/0', 'anomalous-recipe-filter-summary');
-    topbar.appendChild(center);
+    const filter = appendText(bar, 'button', '', 'anomalous-wf-filter');
+    filter.type = 'button';
+    filter.onclick = () => openFilterMenu(owner, filter);
+    owner.recipeFilterButton = filter;
+    bar.prepend(search);
+    owner.recipeFilterSummary = appendText(bar, 'span', '0/0', 'anomalous-wf-count');
 
-    const right = document.createElement('div');
-    right.className = 'anomalous-recipe-topbar-right';
-    const viewSwitch = document.createElement('div');
-    viewSwitch.className = 'anomalous-recipe-view-switch';
     owner.recipeViewMode = owner.recipeViewMode || 'grid';
-    const gridButton = document.createElement('button');
-    gridButton.type = 'button';
-    gridButton.className = 'anomalous-recipe-view-btn' + (owner.recipeViewMode === 'grid' ? ' is-active' : '');
-    gridButton.title = t('recipeViewGrid');
-    gridButton.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h7v7H3V3zm11 0h7v7h-7V3zm-11 11h7v7H3v-7zm11 0h7v7h-7v-7z"/></svg>';
-    const listButton = document.createElement('button');
-    listButton.type = 'button';
-    listButton.className = 'anomalous-recipe-view-btn' + (owner.recipeViewMode === 'list' ? ' is-active' : '');
-    listButton.title = t('recipeViewList');
-    listButton.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v3H3V4zm0 7h18v3H3v-3zm0 7h18v3H3v-3z"/></svg>';
-    const setViewMode = mode => {
-        if (owner.recipeViewMode === mode) return;
-        owner.recipeViewMode = mode;
-        gridButton.classList.toggle('is-active', mode === 'grid');
-        listButton.classList.toggle('is-active', mode === 'list');
-        owner.recipeListContainer?.classList.toggle('is-grid', mode === 'grid');
-        owner.recipeListContainer?.classList.toggle('is-list', mode === 'list');
+    const view = appendText(bar, 'button', '', 'anomalous-wf-icon-btn');
+    view.type = 'button';
+    const showViewButton = () => {
+        const list = owner.recipeViewMode === 'list';
+        view.textContent = list ? '▦' : '☰';
+        view.title = t(list ? 'recipeViewGrid' : 'recipeViewList');
+        view.setAttribute('aria-label', view.title);
     };
-    gridButton.onclick = () => setViewMode('grid');
-    listButton.onclick = () => setViewMode('list');
-    viewSwitch.append(gridButton, listButton);
-    right.appendChild(viewSwitch);
+    view.onclick = () => {
+        owner.recipeViewMode = owner.recipeViewMode === 'list' ? 'grid' : 'list';
+        owner.recipeListContainer?.classList.toggle('is-grid', owner.recipeViewMode === 'grid');
+        owner.recipeListContainer?.classList.toggle('is-list', owner.recipeViewMode === 'list');
+        showViewButton();
+    };
+    showViewButton();
 
     // Share and import (ui_share.js): share codes, workflow files, images, backups.
-    const shareButton = appendText(right, 'button', '⇅', 'anomalous-recipe-topbar-btn anomalous-tooltip-target');
-    shareButton.type = 'button';
-    shareButton.setAttribute('data-tooltip', t('toolWorkflowTransferTitle'));
-    shareButton.setAttribute('aria-label', t('toolWorkflowTransferTitle'));
-    shareButton.onclick = () => openShareDialog(owner);
+    const share = appendText(bar, 'button', '⇅', 'anomalous-wf-icon-btn');
+    share.type = 'button';
+    share.title = t('toolWorkflowTransferTitle');
+    share.setAttribute('aria-label', share.title);
+    share.onclick = () => openShareDialog(owner);
 
-    const saveButton = appendText(right, 'button', '', 'anomalous-recipe-topbar-btn is-primary');
-    saveButton.dataset.recipeSaveCurrent = 'true';
-    saveButton.type = 'button';
-    saveButton.innerHTML = `<svg style="width:14px;height:14px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>${t('recipeSaveCurrent')}`;
-    saveButton.onclick = () => owner.handleSaveRecipe();
-    topbar.appendChild(right);
-    return topbar;
+    const save = appendText(bar, 'button', `+ ${t('recipeSaveCurrent')}`, 'anomalous-wf-save');
+    save.type = 'button';
+    save.dataset.recipeSaveCurrent = 'true';
+    save.onclick = () => owner.handleSaveRecipe();
+    updateRecipeFilterControls(owner);
+    return bar;
 }
-
 function normaliseSearchText(value) {
     const text = String(value || '').trim().toLocaleLowerCase();
     try { return text.normalize('NFKC'); } catch (error) { return text; }
@@ -200,6 +178,7 @@ function renderRecipeEmptyGuide(owner) {
 
 export function renderRecipeList(recipes, services) {
     this.recipeListContainer.replaceChildren();
+    updateRecipeFilterControls(this);
     const records = Array.isArray(recipes) ? recipes : [];
     const selectedTags = this.recipeSelectedTags || new Set();
     const scopeFilter = this.recipeScopeFilter || 'all';
@@ -215,14 +194,7 @@ export function renderRecipeList(recipes, services) {
     });
 
     if (this.recipeFilterSummary) this.recipeFilterSummary.textContent = `${filtered.length}/${records.length}`;
-    if (this.recipeHintStrip) {
-        const isDismissed = (() => {
-            try { return localStorage.getItem('amb_hide_recipe_drag_hint') === 'true'; } catch (_) { return false; }
-        })();
-        this.recipeHintStrip.style.display = (records.length > 0 && !isDismissed) ? 'flex' : 'none';
-    }
     if (!records.length) {
-        ensureRecipeGuideStyles();
         if (this.recipeSearchQuery || (this.recipeSelectedTags && this.recipeSelectedTags.size > 0) || (this.recipeScopeFilter && this.recipeScopeFilter !== 'all')) {
             appendText(this.recipeListContainer, 'p', t('recipeNoMatches'), 'anomalous-recipe-empty');
         } else {
@@ -256,13 +228,6 @@ export async function showRecipes() {
     if (!this.recipeContainer) {
         this.recipeContainer = document.createElement('div');
         this.recipeContainer.className = 'anomalous-nb-container anomalous-recipe-container';
-        const modalClose = document.createElement('button');
-        modalClose.type = 'button';
-        modalClose.className = 'anomalous-recipe-modal-close';
-        modalClose.innerHTML = '&times;';
-        modalClose.title = t('close');
-        modalClose.onclick = () => this.closeWorkspace();
-        this.recipeContainer.appendChild(modalClose);
         this.nbPanel.appendChild(this.recipeContainer);
     }
     this.recipeContainer.style.display = 'flex';
@@ -279,21 +244,15 @@ export async function showRecipes() {
         this.recipeDetailView.remove();
         this.recipeDetailView = null;
         if (this.recipeListContainer) this.recipeListContainer.style.display = '';
-        const topbar = this.recipeView?.querySelector('.anomalous-recipe-topbar');
-        if (topbar) topbar.style.display = '';
+        const bar = this.recipeView?.querySelector('.anomalous-wf-bar');
+        if (bar) bar.style.display = '';
     }
     if (this.recipeView) {
         this.recipeView.style.display = 'flex';
         if (!this.recipeDetailView) {
             if (this.recipeListContainer) this.recipeListContainer.style.display = '';
-            const topbar = this.recipeView?.querySelector('.anomalous-recipe-topbar');
-            if (topbar) topbar.style.display = '';
-            const isDismissed = (() => {
-                try { return localStorage.getItem('amb_hide_recipe_drag_hint') === 'true'; } catch (_) { return false; }
-            })();
-            if (this.recipeHintStrip && (this.recipeRecords || []).length > 0 && !isDismissed) {
-                this.recipeHintStrip.style.display = 'flex';
-            }
+            const bar = this.recipeView?.querySelector('.anomalous-wf-bar');
+            if (bar) bar.style.display = '';
             this.recipeReturnState = null;
             delete this.recipeDetailPayload;
         }
@@ -302,7 +261,6 @@ export async function showRecipes() {
         await this.refreshRecipes();
         return;
     }
-    ensureRecipeGuideStyles();
     this.recipesInitialized = true;
     this.recipeSelectedTags = this.recipeSelectedTags || new Set();
     this.recipeSearchQuery = this.recipeSearchQuery || '';
@@ -310,34 +268,11 @@ export async function showRecipes() {
     this.recipeViewMode = this.recipeViewMode || 'grid';
     this.recipeView = document.createElement('div');
     this.recipeView.className = 'anomalous-recipe-body';
-    this.recipeView.appendChild(buildRecipeStudioTopbar(this));
-
-    this.recipeHintStrip = document.createElement('div');
-    this.recipeHintStrip.className = 'anomalous-recipe-actionbar anomalous-recipe-drag-hint-strip';
-    this.recipeHintStrip.style.display = 'none';
-
-    const hintContent = document.createElement('div');
-    hintContent.className = 'anomalous-recipe-drag-hint-content';
-    hintContent.innerHTML = `<span class="anomalous-recipe-drag-hint-icon">💡</span><span class="anomalous-recipe-drag-hint-text">${t('recipeDragGlobalHint') || '提示：按住卡片直接拖拽到 ComfyUI 画布空白处释放，即可立即载入工作流'}</span>`;
-    this.recipeHintStrip.appendChild(hintContent);
-
-    const hintClose = document.createElement('button');
-    hintClose.type = 'button';
-    hintClose.className = 'anomalous-recipe-drag-hint-close';
-    hintClose.innerHTML = '&times;';
-    hintClose.title = t('close') || (window.anomalous_browser_lang === 'zh' ? '关闭提示' : 'Dismiss tip');
-    hintClose.onclick = (e) => {
-        e.stopPropagation();
-        this.recipeHintStrip.style.display = 'none';
-        try { localStorage.setItem('amb_hide_recipe_drag_hint', 'true'); } catch (_) {}
-    };
-    this.recipeHintStrip.appendChild(hintClose);
-
-    this.recipeView.appendChild(this.recipeHintStrip);
+    this.recipeView.appendChild(buildWorkflowBar(this));
     this.recipeView.appendChild(buildMoveStrip(this));
 
     this.recipeListContainer = document.createElement('div');
-    this.recipeListContainer.className = `anomalous-recipe-list ${this.recipeViewMode === 'list' ? 'is-list' : 'is-grid'}`;
+    this.recipeListContainer.className = `anomalous-wf-list ${this.recipeViewMode === 'list' ? 'is-list' : 'is-grid'}`;
     this.recipeView.appendChild(this.recipeListContainer);
     this.recipeContainer.appendChild(this.recipeView);
     await this.refreshRecipes();
@@ -408,7 +343,7 @@ export async function refreshRecipes() {
         if (!response.ok) throw new Error('recipe list request failed');
         const payload = await response.json();
         this.recipeRecords = payload.recipes || [];
-        updateRecipeFilterControls(this, this.recipeRecords);
+        updateRecipeFilterControls(this);
     } catch (error) {
         console.error('Could not load Workflow Recipes from server:', error);
         this.recipeListContainer.replaceChildren();

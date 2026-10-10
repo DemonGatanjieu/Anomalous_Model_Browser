@@ -458,11 +458,8 @@ covered by the `styles.css` manifest.
   with stage interaction in `ui_image_stage.js` and metadata tabs in
   `ui_image_inspector.js`.
 - `ui_recipes.js` / `ui_recipe_detail.js` and `ui_notebooks.js`
-  own their respective workspace surfaces and persistence flows. `ui_recipes.js` owns
-  the Workflow Recipe studio catalog workspace with search/filter tags, grid/list layout toggle,
-  dedicated top-right modal close anchor (permanently decoupled from the tool button row to prevent wrapping displacement),
-  streamlined action header (preserving active workflow saving while pruning unfinished package
-  import entrypoints), and card browsing. `ui_notebooks.js` owns the Combos workspace (its list or one combo's editor,
+  own their respective workspace surfaces and persistence flows. `ui_recipes.js` hands the
+  Workflows page (its catalog) the recipe services (save, edit, fetch) and opens a recipe by name. `ui_notebooks.js` owns the Combos workspace (its list or one combo's editor,
   with Back to the list) and combo persistence; `ui_notebook_editor.js` owns unfolded card editing (modularized into single-responsibility
   sub-functions adhering to the 50-line rule: sticky top action toolbar with floating More popover dropdown and timed two-step delete safety guard,
   unfolded companion models card with unconstrained multi-column tile flow eliminating nested gallery scrollbars,
@@ -497,9 +494,14 @@ covered by the `styles.css` manifest.
   `(node_id, widget_index, category, saved_value)`. `recipe_parser.js` summarizes
   models, LoRAs, samplers and prompts (linked prompt nodes before embedded loader
   prompts) and keeps the summary in step with widget edits using the same node rules.
-  `ui_recipe_catalog.js` owns recipe
-  filters, navigation, dismissible topbar drag guidance strip with localStorage persistence, the 3-step empty-state onboarding blueprint (`renderRecipeEmptyGuide`), and background catalog-wide model readiness resolution (`resolveCatalogRecipeReadiness`), `ui_recipe_cards.js` owns cards and card actions
-  (including `grab` drag affordance, cover `可拖拽` badge, harmonized multi-state model readiness pill with `getRecipeReadiness` synchronizing available, missing, and pending matches with detail overview, and direct canvas drag-and-drop), `ui_recipe_dialogs.js` owns save/edit dialogs, and `ui_recipe_media.js` owns shared cover helpers. Detail sessions synchronize detected model availability back to `owner.recipeRecords` via `syncRecipeReferencesToCatalog`.
+  `ui_recipe_catalog.js` is the Workflows page: one bar (search, the filter menu with kind and tag,
+  the count, grid or list, share and import, save the canvas), the list, the empty page's three-step
+  guide (`renderRecipeEmptyGuide`) and the catalog-wide model readiness check
+  (`resolveCatalogRecipeReadiness`). `ui_recipe_cards.js` is one card: the cover with the models'
+  state (`getRecipeReadiness`: a dot, or words when some are missing) and 功能模块 for a partial
+  workflow, the name, a line of steps, sampler, LoRAs and size, then its model; Open and ⋯ (edit, export, delete)
+  over the cover on hover; a press opens the details, a drag opens it on the canvas. Its styles are
+  `styles/28-workflows.css`. `ui_popup_menu.js` is the small menu under a button they share, `ui_recipe_dialogs.js` owns save/edit dialogs, and `ui_recipe_media.js` owns shared cover helpers. Detail sessions synchronize detected model availability back to `owner.recipeRecords` via `syncRecipeReferencesToCatalog`.
 - `ui_prompt_composer.js` owns the standalone Prompt Studio drawer (dock side, width, Esc);
   `ui_prompt_workbench.js` fills it: the top bar (tags or text view, the meanings' language) and
   saving a box as a card. `ui_prompt_target.js` decides what is edited, the prompt boxes of

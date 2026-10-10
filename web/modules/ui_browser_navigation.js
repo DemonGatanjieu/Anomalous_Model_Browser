@@ -40,8 +40,8 @@ export function closeWorkspace() {
         this.recipeReturnState = null;
         delete this.recipeDetailPayload;
         if (this.recipeListContainer) this.recipeListContainer.style.display = '';
-        const actionbar = this.recipeView?.querySelector('.anomalous-recipe-actionbar');
-        if (actionbar) actionbar.style.display = '';
+        const bar = this.recipeView?.querySelector('.anomalous-wf-bar');
+        if (bar) bar.style.display = '';
         if (this.detailPanel) {
             this.stopMediaInContainer?.(this.detailPanel);
             this.detailPanel.replaceChildren();
@@ -83,8 +83,8 @@ export function hideAllPanels() {
         this.recipeReturnState = null;
         delete this.recipeDetailPayload;
         if (this.recipeListContainer) this.recipeListContainer.style.display = '';
-        const actionbar = this.recipeView?.querySelector('.anomalous-recipe-actionbar');
-        if (actionbar) actionbar.style.display = '';
+        const bar = this.recipeView?.querySelector('.anomalous-wf-bar');
+        if (bar) bar.style.display = '';
         if (this.detailPanel) {
             this.stopMediaInContainer?.(this.detailPanel);
             this.detailPanel.replaceChildren();
