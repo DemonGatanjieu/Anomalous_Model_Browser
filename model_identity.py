@@ -12,11 +12,12 @@ import hashlib
 import json
 import os
 import re
+import struct
 
 try:
-    from .model_kind import inspect_file
+    from .model_kind import MAX_HEADER, inspect_file
 except ImportError:  # the standalone scanner imports this file on its own
-    from model_kind import inspect_file
+    from model_kind import MAX_HEADER, inspect_file
 
 
 USER_INFO_SUFFIX = ".anomalous.json"
@@ -59,7 +60,6 @@ def is_unmatched(info):
 # not be reached; the scan was offline; the file's header is damaged (safetensors_damage), so
 # neither Civitai nor the header can tell what it is. Scans before this was recorded leave it empty.
 UNMATCHED_REASONS = ("not_found", "network", "offline", "damaged")
-MAX_HEADER_BYTES = 100 * 1024 * 1024
 
 
 def safetensors_damage(file_path):
@@ -74,7 +74,7 @@ def safetensors_damage(file_path):
             if len(head) < 8:
                 return "short"
             header_size = struct.unpack("<Q", head)[0]
-            if not header_size or header_size > MAX_HEADER_BYTES or 8 + header_size > size:
+            if not header_size or header_size > MAX_HEADER or 8 + header_size > size:
                 return "header_size"
             header = json.loads(handle.read(header_size).decode("utf-8"))
     except OSError:
