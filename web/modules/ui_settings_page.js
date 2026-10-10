@@ -15,7 +15,7 @@ import { LANGUAGE_SETTING_ID, applyLanguagePreference, setThemePreference, theme
 import { ENTRY_MODE_SETTING_ID } from './browser_entry.js';
 import { showUpdateGuide } from './ui_update_guide.js';
 import { startSpotlightTour } from './ui_spotlight_tour.js';
-import { copyDiagnostics } from './feedback.js';
+import { copyDiagnostics, openRepoPage } from './feedback.js';
 import { renderFolderPage } from './ui_folder_manager.js';
 import { openFeedbackDialog } from './ui_feedback_dialog.js';
 import { checkOnOpen, setCheckOnOpen } from './ui_doctor_banner.js';
@@ -375,6 +375,7 @@ function helpGroup(owner) {
             });
             return copy;
         })()),
+        row('settingsStar', 'settingsStarHelp', small(t('settingsStarOpen'), openRepoPage)),
     );
 }
 

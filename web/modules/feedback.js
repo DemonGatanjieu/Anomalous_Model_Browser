@@ -14,6 +14,11 @@ const t = (key, params) => translate(key, params);
 
 const REPO = 'https://github.com/DemonGatanjieu/Anomalous_Model_Browser';
 
+/** The project page, where a Star helps others find the browser. Opened only on a press; nothing is fetched. */
+export function openRepoPage() {
+    window.open(REPO, '_blank', 'noopener');
+}
+
 async function fetchJson(url) {
     try {
         const res = await fetch(url);
