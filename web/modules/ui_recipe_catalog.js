@@ -5,6 +5,7 @@ import { appendText } from './ui_recipe_detail_dom.js';
 import { createRecipeCard, ensureRecipeGuideStyles } from './ui_recipe_cards.js';
 import { moveWorkflowMaterials, workflowMaterialCount } from './recipe_save.js';
 import { openShareDialog } from './ui_share.js';
+import { fetchParameterSetSignatures, showParameterSetCount } from './ui_param_set_keys.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -233,9 +234,12 @@ export function renderRecipeList(recipes, services) {
         appendText(this.recipeListContainer, 'p', t('recipeNoMatches'), 'anomalous-recipe-empty');
         return;
     }
+    const setSignatures = fetchParameterSetSignatures();
     for (const recipe of filtered) {
         try {
-            this.recipeListContainer.appendChild(createRecipeCard(this, recipe, services));
+            const card = createRecipeCard(this, recipe, services);
+            showParameterSetCount(this, card, recipe, setSignatures);
+            this.recipeListContainer.appendChild(card);
         } catch (cardError) {
             console.error('Could not render Workflow Recipe card:', recipe?.filename, cardError);
             const notice = appendText(this.recipeListContainer, 'p', `${recipe?.data?.name || t('recipeUntitled')} — ${t('recipeLoadError')}`, 'anomalous-recipe-empty');

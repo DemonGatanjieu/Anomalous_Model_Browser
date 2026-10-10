@@ -50,6 +50,42 @@ async def api_get_parameters(request):
     return web.json_response({"notebooks": notebooks})
 
 
+MAX_COUNTED_NOTEBOOKS = 5000
+
+
+def _parameter_set_signatures(parameters_dir):
+    """Each recipe's parameter sets by their values' signature: {recipe filename: [signature]},
+    so the page can leave out the set saved with the recipe itself. Files over the save limit,
+    unreadable ones and any past the first MAX_COUNTED_NOTEBOOKS are skipped."""
+    sets = {}
+    try:
+        filenames = sorted(name for name in os.listdir(parameters_dir) if name.endswith(".json"))
+    except OSError:
+        return sets
+    for filename in filenames[:MAX_COUNTED_NOTEBOOKS]:
+        try:
+            file_path = resolve_within(parameters_dir, filename)
+            if os.path.getsize(file_path) > MAX_RECIPE_BYTES:
+                continue
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (OSError, ValueError):
+            continue
+        if not isinstance(data, dict):
+            continue
+        recipe_filename = data.get("recipe_filename")
+        signature = data.get("parameter_signature")
+        value = signature.get("value") if isinstance(signature, dict) else None
+        if isinstance(recipe_filename, str) and recipe_filename:
+            sets.setdefault(recipe_filename, []).append(value if isinstance(value, str) else "")
+    return sets
+
+
+async def api_get_parameter_set_signatures(request):
+    sets = await asyncio.to_thread(_parameter_set_signatures, get_parameters_dir())
+    return web.json_response({"sets": sets})
+
+
 _parameter_notebooks_cache = None
 _parameter_notebooks_cache_time = 0
 

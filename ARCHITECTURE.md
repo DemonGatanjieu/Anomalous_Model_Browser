@@ -395,6 +395,10 @@ covered by the `styles.css` manifest.
   whether both are the same node structure and lists each value that differs (prompts by the tags
   only one side has, seeds apart), writing ticked image values onto the canvas as one Ctrl+Z
   step with Undo; `param_compare.js` reads and compares the two sides without DOM.
+  `key_params.js` keeps the starred key parameters (node type + widget name, a hidden ComfyUI
+  setting); the window shows them first. `ui_param_set_keys.js` puts parameter sets in view: a
+  recipe card's 参数方案 N chip (`GET /anomalous/parameters/signatures`; sets equal to the recipe not counted) opens its Parameters tab,
+  and each set there shows its key values, how many values differ from the recipe, and ⇄.
   `ui_keep_menu.js` is the star's keep menu (also the workbench's Keep): the whole workflow, the combo or the prompts,
   each saying where it goes, opening what was kept already or removing it (to the Recycle Bin through the recipe,
   notebook or material delete route); `image_keep.js` does the keeping (an image as a combo,

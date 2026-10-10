@@ -525,5 +525,22 @@ class ParameterNotebookRenameTests(unittest.IsolatedAsyncioTestCase):
                 parameters.get_parameters_dir = orig_get_dir
 
 
+class ParameterSetSignatureTests(unittest.TestCase):
+    def test_lists_set_signatures_per_recipe_skipping_bad_and_oversized_files(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            def write(name, payload):
+                with open(os.path.join(temp_dir, name), "w", encoding="utf-8") as f:
+                    f.write(payload if isinstance(payload, str) else json.dumps(payload))
+            signed = lambda value: {"algorithm": "sha256-params-v1", "value": value}
+            write("params_a_1.json", {"recipe_filename": "a.json", "parameter_signature": signed("s1")})
+            write("params_a_2.json", {"recipe_filename": "a.json", "parameter_signature": signed("s2")})
+            write("params_b_1.json", {"recipe_filename": "b.json"})
+            write("params_unbound.json", {"name": "no recipe"})
+            write("params_broken.json", "{not json")
+            write("notes.txt", "ignored")
+            write("params_huge.json", json.dumps({"recipe_filename": "a.json", "pad": "x" * parameters.MAX_RECIPE_BYTES}))
+            self.assertEqual(parameters._parameter_set_signatures(temp_dir), {"a.json": ["s1", "s2"], "b.json": [""]})
+            self.assertEqual(parameters._parameter_set_signatures(os.path.join(temp_dir, "missing")), {})
+
 if __name__ == "__main__":
     unittest.main()

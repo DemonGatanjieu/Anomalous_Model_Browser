@@ -44,18 +44,23 @@ export function readParams(graph) {
 
 const nodeRef = node => ({ id: node.id, type: node.type, title: node.title });
 
-function compareValues(left, right) {
+/** One node pair's values: the differing ones (`rows`; equal ones too with `includeSame`), the starred ones equal or not (`keys`). */
+function compareValues(left, right, isKey, includeSame) {
     const rows = [];
+    const keys = [];
     let same = 0;
     if (left.mode !== right.mode) rows.push({ name: '', mode: true, a: left.mode, b: right.mode });
     const rightByName = new Map(right.widgets.map(widget => [widget.name, widget]));
     for (const widget of left.widgets) {
         const other = rightByName.get(widget.name);
         if (!other) continue;
-        if (other.text === widget.text) { same += 1; continue; }
-        rows.push({ name: widget.name, index: other.index, a: widget.value, b: other.value, aText: widget.text, bText: other.text, volatile: widget.volatile || other.volatile, role: other.role || widget.role });
+        const equal = other.text === widget.text;
+        if (equal) same += 1;
+        const row = { name: widget.name, index: other.index, a: widget.value, b: other.value, aText: widget.text, bText: other.text, volatile: widget.volatile || other.volatile, role: other.role || widget.role, same: equal };
+        if (isKey(right.type, widget.name)) keys.push(row);
+        else if (!equal || includeSame) rows.push(row);
     }
-    return { rows, same };
+    return { rows, keys, same };
 }
 
 /** Unpaired nodes of a type found once on each side: two workflows' only KSampler, say. */
@@ -73,19 +78,26 @@ function pairsByType(leftovers, others) {
 /**
  * What differs from `a` to `b` (both from readParams). Nodes pair by id and type; nodes left
  * over pair by type when each side has one node of it. Returns { sameStructure, nodes: [{ id,
- * aId, bId, type, title, rows }], onlyA, onlyB, rewired, sameCount, compared } (`id` is `bId`):
- * a row is { name, index, a, b, aText, bText, volatile, role } or, for a node bypassed or muted on one
- * side only, { name: '', mode: true, a, b }; `sameCount` counts the values equal on both sides,
- * `compared` all values set side by side (none: nothing could be paired).
+ * aId, bId, type, title, rows }], keys, onlyA, onlyB, rewired, sameCount, compared } (`id` is `bId`):
+ * a row is { name, index, a, b, aText, bText, volatile, role, same } or, for a node bypassed or
+ * muted on one side only, { name: '', mode: true, a, b }. Values `isKey(type, widget)` stars are
+ * not in `nodes` but in `keys` ([{ node, row }], equal ones too); with `includeSame` the other
+ * equal values are in `nodes` too (`same: true`). `sameCount` counts the values equal on both
+ * sides, `compared` all values set side by side (none: nothing could be paired).
  */
-export function compareParams(a, b) {
+export function compareParams(a, b, { isKey = () => false, includeSame = false } = {}) {
     const nodes = [];
+    const keys = [];
     const rewired = [];
     let sameCount = 0;
+    let differing = 0;
     const pair = (left, right) => {
-        const { rows, same } = compareValues(left, right);
-        sameCount += same;
-        if (rows.length) nodes.push({ id: right.id, aId: left.id, bId: right.id, type: right.type, title: right.title, rows });
+        const values = compareValues(left, right, isKey, includeSame);
+        const node = { id: right.id, aId: left.id, bId: right.id, type: right.type, title: right.title };
+        sameCount += values.same;
+        differing += [...values.rows, ...values.keys].filter(row => !row.same).length;
+        if (values.rows.length) nodes.push({ ...node, rows: values.rows });
+        keys.push(...values.keys.map(row => ({ node, row })));
     };
     const leftovers = [];
     for (const [id, left] of a) {
@@ -106,7 +118,7 @@ export function compareParams(a, b) {
     const onlyA = leftovers.filter(node => !paired.has(node)).map(nodeRef);
     const onlyB = others.filter(node => !paired.has(node)).map(nodeRef);
     const sameStructure = !leftovers.length && !others.length && !rewired.length;
-    return { sameStructure, nodes, onlyA, onlyB, rewired, sameCount, compared: sameCount + nodes.reduce((sum, node) => sum + node.rows.length, 0) };
+    return { sameStructure, nodes, keys, onlyA, onlyB, rewired, sameCount, compared: sameCount + differing };
 }
 
 const tagsOf = text => String(text).split(/[,，\n]/).map(tag => tag.trim()).filter(Boolean);

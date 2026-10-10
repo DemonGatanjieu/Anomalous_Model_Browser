@@ -12,6 +12,7 @@ import { recordCanvasStep } from './canvas_history.js';
 import { detachedGraph } from './detached_graph.js';
 import { applyNodeMaterialValues } from './node_material_actions.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
+import { keyParamTest, onKeyParamsChange, toggleKeyParam } from './key_params.js';
 import { compareParams, isLongText, readParams, shownValue, textDifference } from './param_compare.js';
 
 const MODE_KEYS = { 0: 'compareModeOn', 2: 'compareModeMuted', 4: 'compareModeBypassed' };
@@ -35,11 +36,12 @@ function button(className, label, onClick) {
 
 const canvasGraph = () => app.rootGraph || app.graph;
 const imageQuery = image => `filename=${encodeURIComponent(image.filename)}&subfolder=${encodeURIComponent(image.subfolder || '')}`;
-const sideName = side => (side.canvas ? t('compareCanvas') : side.image.filename);
+const sideName = side => (side.canvas ? t('compareCanvas') : (side.label || side.image?.filename || ''));
 
-/** One side's parameters: the canvas as it is now, or the workflow kept in an output image. */
+/** One side's parameters: the canvas as it is now, a saved workflow, or the workflow kept in an output image. */
 async function readSide(side, signal) {
     if (side.canvas) return readParams(canvasGraph());
+    if (side.workflow) return readParams(detachedGraph(side.workflow));
     const response = await fetch('/anomalous/inspect_image_material', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -55,7 +57,7 @@ async function readSide(side, signal) {
 
 function sideCard(side, letter) {
     const card = el('div', 'anomalous-compare-side');
-    if (side.canvas) card.append(el('div', 'anomalous-compare-thumb is-canvas', '▦'));
+    if (side.canvas || side.workflow) card.append(el('div', 'anomalous-compare-thumb is-canvas', side.canvas ? '▦' : '▤'));
     else {
         const img = el('img', 'anomalous-compare-thumb');
         img.src = `/anomalous/output_thumbnail?${imageQuery(side.image)}`;
@@ -106,15 +108,31 @@ function textCell(row) {
 
 const cellText = (row, value) => (row.mode ? t(MODE_KEYS[value] || 'compareModeOn') : shownValue(value));
 
-function rowLine(row, tick) {
-    const line = el('div', 'anomalous-compare-row');
-    const label = el('label', 'anomalous-compare-name');
+/** The ☆ beside a value's name: stars (or unstars) that widget of that node type everywhere. */
+function starButton(node, row, starred) {
+    const star = button(`anomalous-compare-star${starred ? ' is-on' : ''}`, starred ? '★' : '☆', () => {
+        star.disabled = true;
+        toggleKeyParam(node.type, row.name).catch(() => { star.disabled = false; });
+    });
+    star.title = t(starred ? 'compareUnstar' : 'compareStar');
+    return star;
+}
+
+/** A value's line: its name (with the star, the tick, the node's title for a key value), then A and B. */
+function rowLine(row, tick, { node = null, starred = false, prefix = '' } = {}) {
+    const line = el('div', `anomalous-compare-row${row.same ? ' is-same' : ''}`);
+    const name = el('div', 'anomalous-compare-name');
+    if (node && !row.mode) name.append(starButton(node, row, starred));
+    const label = el('label', 'anomalous-compare-label');
     if (tick) label.append(tick);
+    if (prefix) label.append(el('span', 'anomalous-compare-prefix', prefix));
     label.append(document.createTextNode(row.mode ? t('compareState') : row.name));
-    if (ROLE_KEYS[row.role]) label.append(el('span', `anomalous-compare-role is-${row.role}`, t(ROLE_KEYS[row.role])));
-    line.append(label);
+    name.append(label);
+    if (ROLE_KEYS[row.role]) name.append(el('span', `anomalous-compare-role is-${row.role}`, t(ROLE_KEYS[row.role])));
+    line.append(name);
     if (!row.mode && isLongText(row)) {
-        line.append(textCell(row));
+        // The same long value on both sides is written once, across both columns.
+        line.append(row.same ? el('div', 'anomalous-compare-value is-both', shownValue(row.a)) : textCell(row));
         return line;
     }
     for (const [value, className] of [[row.a, 'is-a'], [row.b, 'is-b']]) {
@@ -141,7 +159,15 @@ function nodeBlock(node, rows, ticks) {
     const block = el('div', 'anomalous-compare-node');
     const ids = node.aId === node.bId ? `#${node.bId}` : `A #${node.aId} · B #${node.bId}`;
     block.append(el('div', 'anomalous-compare-node-title', `${node.title} ${ids}`));
-    for (const row of rows) block.append(rowLine(row, ticks?.get(row)));
+    for (const row of rows) block.append(rowLine(row, ticks?.get(row), { node }));
+    return block;
+}
+
+/** The starred values first, equal ones too (dimmed), each with its node's title. */
+function keyBlock(keys, ticks) {
+    const block = el('div', 'anomalous-compare-node is-keys');
+    block.append(el('div', 'anomalous-compare-node-title', t('compareKeys')));
+    for (const { node, row } of keys) block.append(rowLine(row, ticks.get(row), { node, starred: true, prefix: node.title }));
     return block;
 }
 
@@ -190,12 +216,16 @@ function applyRows(entries, fromKey) {
     return { done, skipped, undo };
 }
 
-/** Opens the comparison of `left` and `right`, each { image: { filename, subfolder, type? } } or { canvas: true }. */
+/**
+ * Opens the comparison of `left` and `right`, each { image: { filename, subfolder, type? } },
+ * { workflow, label } (a recipe or one of its parameter sets) or { canvas: true }.
+ */
 export function openParamCompare(left, right) {
     openWindow?.close();
     const controller = new AbortController();
     const sides = [left, right];
     let read = null;
+    let showSame = false; // equal values listed too, so they can be starred
 
     const overlay = el('div', 'anomalous-dialog-overlay anomalous-compare-overlay');
     const dialog = el('div', 'anomalous-compare-dialog');
@@ -208,6 +238,7 @@ export function openParamCompare(left, right) {
     const footer = el('div', 'anomalous-compare-footer');
     const close = () => {
         controller.abort();
+        stopStars();
         overlay.remove();
         document.removeEventListener('keydown', onKey, true);
         if (openWindow?.close === close) openWindow = null;
@@ -222,7 +253,7 @@ export function openParamCompare(left, right) {
 
     const render = () => {
         const [a, b] = read;
-        const result = compareParams(a, b);
+        const result = compareParams(a, b, { isKey: keyParamTest(), includeSame: showSame });
         const canvasKey = sides[0].canvas ? 'a' : (sides[1].canvas ? 'b' : null);
         const fromKey = canvasKey === 'a' ? 'b' : 'a';
         sidesRow.replaceChildren(sideCard(sides[0], 'A'), button('anomalous-compare-swap', '⇄', () => {
@@ -237,24 +268,30 @@ export function openParamCompare(left, right) {
         const entries = [];
         let diffCount = 0;
         body.replaceChildren(columnHeads());
+        const tickFor = (node, row) => {
+            const tick = el('input');
+            tick.type = 'checkbox';
+            tick.checked = true;
+            tick.onchange = () => updateApply();
+            ticks.set(row, tick);
+            entries.push({ node, row, tick });
+        };
+        for (const { node, row } of result.keys) {
+            if (row.same) continue;
+            diffCount += 1;
+            if (canvasKey && !row.volatile) tickFor(node, row);
+        }
+        if (result.keys.length) body.append(keyBlock(result.keys, ticks));
+        else body.append(el('div', 'anomalous-compare-key-hint', t('compareKeyHint')));
         for (const node of result.nodes) {
             const rows = node.rows.filter(row => !row.volatile);
             node.rows.filter(row => row.volatile).forEach(row => seeds.push({ node, row }));
             if (!rows.length) continue;
-            diffCount += rows.length;
-            if (canvasKey) {
-                for (const row of rows.filter(item => !item.mode)) {
-                    const tick = el('input');
-                    tick.type = 'checkbox';
-                    tick.checked = true;
-                    tick.onchange = () => updateApply();
-                    ticks.set(row, tick);
-                    entries.push({ node, row, tick });
-                }
-            }
+            diffCount += rows.filter(row => !row.same).length;
+            if (canvasKey) rows.filter(item => !item.mode && !item.same).forEach(row => tickFor(node, row));
             body.append(nodeBlock(node, rows, ticks));
         }
-        if (!diffCount) body.append(el('div', 'anomalous-compare-empty', t(result.compared ? 'compareNoDifference' : 'compareNothingPaired')));
+        if (!diffCount && !showSame) body.append(el('div', 'anomalous-compare-empty', t(result.compared ? 'compareNoDifference' : 'compareNothingPaired')));
         if (seeds.length) {
             const details = el('details', 'anomalous-compare-seeds');
             details.append(el('summary', '', t('compareSeeds')));
@@ -268,6 +305,7 @@ export function openParamCompare(left, right) {
         summary.replaceChildren(
             el('span', `anomalous-compare-badge ${result.sameStructure ? 'is-same' : 'is-other'}`, t(result.sameStructure ? 'compareSameStructure' : 'compareOtherStructure')),
             document.createTextNode(t('compareSummary', { diff: diffCount, same: result.sameCount })),
+            sameToggle(),
         );
 
         const apply = button('anomalous-compare-apply', '', () => {
@@ -289,6 +327,15 @@ export function openParamCompare(left, right) {
         footer.append(button('anomalous-compare-done', t('compareClose'), close));
         if (canvasKey && entries.length) footer.append(apply);
     };
+    const sameToggle = () => {
+        const label = el('label', 'anomalous-compare-same-toggle');
+        const box = el('input');
+        box.type = 'checkbox';
+        box.checked = showSame;
+        box.onchange = () => { showSame = box.checked; render(); };
+        label.append(box, document.createTextNode(t('compareShowSame')));
+        return label;
+    };
     const refreshCanvas = () => {
         if (!overlay.isConnected) return;
         read = read.map((params, index) => (sides[index].canvas ? readParams(canvasGraph()) : params));
@@ -301,6 +348,8 @@ export function openParamCompare(left, right) {
     document.body.append(overlay);
     document.addEventListener('keydown', onKey, true);
     openWindow = { close };
+    // A star changed here or elsewhere: the starred values move up or back.
+    const stopStars = onKeyParamsChange(() => { if (read && overlay.isConnected) render(); });
     sidesRow.append(sideCard(left, 'A'), sideCard(right, 'B'));
     footer.append(button('anomalous-compare-done', t('compareClose'), close));
 

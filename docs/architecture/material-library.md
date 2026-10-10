@@ -143,6 +143,15 @@ copy a fresh id: ComfyUI's frontend keeps widget values by root graph id, node a
 copy under the open canvas's id (any workflow opened from that image) would share and overwrite
 the canvas's values.
 
+Key parameters (`key_params.js`) are starred in the window by node type and widget name, so a
+star holds in every workflow; they live in the hidden ComfyUI setting
+`Anomalous.ModelBrowser.KeyParameters` (at most 40) and show first, equal values included.
+A side can also be a saved workflow (`{ workflow, label }`): a recipe's parameter set beside
+the recipe (`ui_param_set_keys.js`), whose card in the Parameters tab lists the set's key values
+and how many values differ. `GET /anomalous/parameters/signatures` gives each recipe's sets by
+their value signature (files over the save limit skipped, at most 5,000 read); a recipe card counts
+those unlike the recipe's own, since saving a recipe also keeps a set equal to it.
+
 ## Prompt plans
 
 `prompt_plan` has no synthetic workflow. `POST save_prompt_plan` accepts a name, tags,

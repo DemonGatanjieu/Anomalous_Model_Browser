@@ -1,4 +1,5 @@
-/* Comparing parameters (ui_param_compare.js): the gallery card's ⇄, the pick bar, the window. */
+/* Comparing parameters (ui_param_compare.js): the gallery card's ⇄, the pick bar, the window;
+   a parameter set's key values (ui_param_set_keys.js). */
 
 .anomalous-gallery-compare {
     position: absolute;
@@ -204,6 +205,16 @@
 
 .anomalous-compare-summary.is-error { color: var(--amb-danger-text); }
 
+.anomalous-compare-same-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+
 .anomalous-compare-badge {
     padding: 2px 8px;
     border-radius: 999px;
@@ -268,6 +279,48 @@
     min-width: 0;
     color: var(--amb-text-soft);
     overflow-wrap: anywhere;
+}
+
+.anomalous-compare-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-compare-prefix {
+    color: var(--amb-text-dim);
+    font-size: 11.5px;
+}
+
+.anomalous-compare-prefix::after { content: ' ·'; }
+
+.anomalous-compare-star {
+    flex: 0 0 auto;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--amb-text-dim);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.anomalous-compare-star:hover,
+.anomalous-compare-star.is-on { color: var(--amb-warn-text); }
+
+.anomalous-compare-node.is-keys {
+    border-color: color-mix(in srgb, var(--amb-warn) 40%, transparent);
+    background: color-mix(in srgb, var(--amb-warn) 6%, var(--amb-bg-card));
+}
+
+.anomalous-compare-row.is-same .anomalous-compare-value { color: var(--amb-text-muted); }
+.anomalous-compare-value.is-both { grid-column: 2 / -1; }
+
+.anomalous-compare-key-hint {
+    color: var(--amb-text-dim);
+    font-size: 12px;
 }
 
 .anomalous-compare-role {
@@ -414,6 +467,50 @@
 
 .anomalous-compare-apply:hover:not(:disabled) { background: var(--amb-btn-primary-hover); }
 .anomalous-compare-apply:disabled { opacity: 0.5; cursor: default; }
+
+.anomalous-recipe-set-chip {
+    align-self: flex-start;
+    margin: 2px 0 4px;
+    padding: 2px 9px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    background: var(--amb-bg-sunken);
+    color: var(--amb-text-soft);
+    font-size: 11.5px;
+    cursor: pointer;
+}
+
+.anomalous-recipe-set-chip:hover {
+    border-color: var(--amb-link);
+    color: var(--amb-text-main);
+}
+
+/* A parameter set's card: its key values, marked where they differ from the recipe's. */
+.anomalous-preset-item-keys {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-top: 5px;
+}
+
+.anomalous-preset-key-chip {
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--amb-bg-sunken);
+    color: var(--amb-text-muted);
+    font-size: 11px;
+}
+
+.anomalous-preset-key-chip.is-differs {
+    background: color-mix(in srgb, var(--amb-warn) 18%, transparent);
+    color: var(--amb-warn-text);
+}
+
+.anomalous-preset-key-count {
+    color: var(--amb-text-dim);
+    font-size: 11px;
+}
 
 @media (max-width: 560px) {
     .anomalous-compare-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }

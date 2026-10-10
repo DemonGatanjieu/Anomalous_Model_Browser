@@ -45,6 +45,21 @@ assert.deepEqual(changed.nodes[0].rows[0], { name: '', mode: true, a: 0, b: 4 })
 const retyped = compareParams(readParams(graph([node(5, 'A', { x: 1 })])), readParams(graph([node(5, 'B', { x: 2 })])));
 assert.deepEqual([retyped.onlyA.map(n => n.type), retyped.onlyB.map(n => n.type), retyped.nodes], [['A'], ['B'], []]);
 
+// Starred values stand apart, equal ones too, and count as compared like the rest.
+const starred = compareParams(readParams(imageA), readParams(imageB), { isKey: (type, widget) => type === 'KSampler' && ['cfg', 'steps'].includes(widget) });
+assert.deepEqual(starred.keys.map(({ node, row }) => [node.id, row.name, row.same]), [['3', 'steps', false], ['3', 'cfg', true]]);
+assert.deepEqual(starred.nodes.map(n => [n.id, n.rows.map(r => r.name)]), [['3', ['seed']], ['6', ['text']]]);
+assert.deepEqual([starred.sameCount, starred.compared], [2, 5]);
+
+// Equal values listed on request, marked same, counted the same way.
+const all = compareParams(readParams(imageA), readParams(imageB), { includeSame: true });
+assert.deepEqual(all.nodes.map(n => [n.id, n.rows.map(r => [r.name, r.same])]), [
+    ['3', [['seed', false], ['steps', false], ['cfg', true]]],
+    ['4', [['ckpt_name', true]]],
+    ['6', [['text', false]]],
+]);
+assert.deepEqual([all.sameCount, all.compared], [2, 5]);
+
 // Two workflows numbered differently: a type found once on each side still pairs, by type.
 const other = compareParams(
     readParams(graph([node(3, 'KSampler', { steps: 20 }), node(6, 'CLIPTextEncode', { text: 'a' }), node(7, 'CLIPTextEncode', { text: 'b' })])),

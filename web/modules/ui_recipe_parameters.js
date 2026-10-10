@@ -9,6 +9,7 @@ import { applyRecipeWidgetChanges, captureRecipeDraft, isSupportedPromptNodeType
 import { PROMPT_ROLES, appendCopyButton, appendText, appendValueViewer, button, dateText, displayValue } from "./ui_recipe_detail_dom.js";
 import { openGalleryImageDetail, outputImageUrl, renderRecipeGallery } from "./ui_recipe_gallery.js";
 import { updateRecipeMetadata } from "./ui_recipe_metadata.js";
+import { decorateParameterSet } from "./ui_param_set_keys.js";
 import { cloneJson, editorValueText, formatRecipeResolution, isVolatileParameter, parameterNodeOrder, parseEditorValue, promptRoleLabel } from "./ui_recipe_parameter_utils.js";
 
 const t = (key, params) => translate(key, params);
@@ -652,10 +653,7 @@ export function renderRecipeParameters(content, owner, recipe, gallery, refreshG
 
             const titleRow = document.createElement('div');
             titleRow.className = 'anomalous-preset-item-title-row';
-            titleRow.style.display = 'flex';
-            titleRow.style.alignItems = 'center';
-            titleRow.style.gap = '6px';
-            titleRow.style.minWidth = '0';
+            Object.assign(titleRow.style, { display: 'flex', alignItems: 'center', gap: '6px', minWidth: '0' });
 
             if (isSelected) {
                 const activeDot = document.createElement('span');
@@ -737,6 +735,7 @@ export function renderRecipeParameters(content, owner, recipe, gallery, refreshG
             };
 
             row.appendChild(actions);
+            decorateParameterSet(row, notebook, recipe);
             snapshotList.appendChild(row);
         }
     } else {

@@ -23,6 +23,8 @@
 ### ⇄ Compare parameters (参数对比)
 - Two pictures from the same workflow often differ in only a few values. Press ⇄ on one picture in the Gallery, then on another (or **Compare with the canvas**); the picture details have the same ⇄ for the canvas. The window says whether both use the same nodes and lists only what differs, node by node, A and B each in its own colour: prompts by the tags only A or only B has (marked positive or negative), long names one line per side with the differing part marked, seeds folded away, nodes only one side has listed apart. Two workflows numbered differently still compare the nodes each has one of, such as their only KSampler.
 - Against the canvas, tick the values to take from the picture and put them on the canvas in one go (seeds stay); one Ctrl+Z or the toast's Undo takes them back.
+- **Key parameters (关键参数)**: press ☆ before a value's name (tick **Show equal values too** to star one that matches) and it stays at the top of every comparison, for every workflow, kept with your ComfyUI settings.
+- **Parameter sets in view (参数方案更好找)**: a workflow card with saved sets shows **参数方案 N**, which opens them directly. Each set there shows its key values (those unlike the workflow's own in colour), how many values differ, and ⇄ to compare it with the workflow.
 
 ### ⚙️ Settings in tabs (设置分组)
 - The settings page is split into tabs: **Look, Models, Workflows, Prompts, Backup, Help**. "Change where downloads go" opens Models directly.
