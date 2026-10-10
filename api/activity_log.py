@@ -24,6 +24,7 @@ from .path_utils import atomic_write_json
 MAX_ENTRIES = 500
 MAX_LOG_BYTES = 2 * 1024 * 1024  # long canvas entries could otherwise outgrow the JSON writer's limit
 MAX_VALUE_CHARS = 400
+DIFF_CONTEXT_CHARS = 60  # kept before the first difference of a long before/after pair
 MAX_CHANGES = 60
 
 # Write routes worth a line in the log → the action id the browser has words for. Scans are
@@ -99,9 +100,33 @@ def _trim(entries):
         del entries[max(1, len(entries) * 9 // 10):]
 
 
+def _text(value):
+    return value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
+
+
 def _short(value):
-    text = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
+    text = _text(value)
     return text if len(text) <= MAX_VALUE_CHARS else text[:MAX_VALUE_CHARS] + '…'
+
+
+def _short_values(item, keys):
+    """`keys` of `item` shortened. A long before/after pair is cut around its first difference
+    instead of at the start, so a change late in a long prompt still shows."""
+    out = {key: _short(item[key]) for key in keys if key in item and item[key] is not None}
+    if 'before' not in out or 'after' not in out:
+        return out
+    old, new = _text(item['before']), _text(item['after'])
+    if len(old) <= MAX_VALUE_CHARS and len(new) <= MAX_VALUE_CHARS:
+        return out
+    same = 0
+    while same < min(len(old), len(new)) and old[same] == new[same]:
+        same += 1
+    start = max(0, same - DIFF_CONTEXT_CHARS)
+
+    def cut(text):
+        return ('…' if start else '') + text[start:start + MAX_VALUE_CHARS] + ('…' if start + MAX_VALUE_CHARS < len(text) else '')
+    out['before'], out['after'] = cut(old), cut(new)
+    return out
 
 
 def add_entry(source, action, target='', detail=None):
@@ -180,7 +205,7 @@ def _clean_detail(detail):
         return None
     cleaned = {}
     if isinstance(detail.get('fields'), list):
-        cleaned['fields'] = [{key: _short(item[key]) for key in ('field', 'before', 'after') if key in item}
+        cleaned['fields'] = [_short_values(item, ('field', 'before', 'after'))
                              for item in detail['fields'][:MAX_CHANGES] if isinstance(item, dict)]
     if isinstance(detail.get('files'), list):
         cleaned['files'] = [_short(name) for name in detail['files'][:MAX_CHANGES]]
@@ -206,8 +231,7 @@ def _clean_changes(changes):
     for change in changes[:MAX_CHANGES]:
         if not isinstance(change, dict):
             continue
-        item = {key: _short(change[key]) for key in ('kind', 'node', 'type', 'widget', 'before', 'after')
-                if key in change and change[key] is not None}
+        item = _short_values(change, ('kind', 'node', 'type', 'widget', 'before', 'after'))
         if item.get('kind') in ('changed', 'added', 'removed', 'opened'):
             cleaned.append(item)
     return cleaned

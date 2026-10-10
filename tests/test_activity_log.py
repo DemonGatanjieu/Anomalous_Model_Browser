@@ -49,6 +49,16 @@ class ActivityLogTests(unittest.TestCase):
         entry = activity_log.add_entry('file', 'note_save', 'x' * 1000)
         self.assertLessEqual(len(entry['target']), activity_log.MAX_VALUE_CHARS + 1)
 
+    def test_a_change_late_in_a_long_text_still_shows(self):
+        before = ', '.join(f'tag{i}' for i in range(200))  # far longer than MAX_VALUE_CHARS
+        after = before.replace('tag180', 'tag180, extra')
+        item = activity_log._clean_changes([{'kind': 'changed', 'node': 'n', 'widget': 'text',
+                                             'before': before, 'after': after}])[0]
+        self.assertNotEqual(item['before'], item['after'])
+        self.assertIn('extra', item['after'])
+        self.assertTrue(item['before'].startswith('…'))
+        self.assertLessEqual(len(item['after']), activity_log.MAX_VALUE_CHARS + 2)
+
     def test_failure_responses_are_not_recorded(self):
         ok = web.json_response({'success': True})
         self.assertFalse(activity_log._failed(ok))
