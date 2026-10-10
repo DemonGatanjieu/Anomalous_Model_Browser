@@ -28,7 +28,7 @@ export function preloadAdjacentImages(items, currentIndex) {
  * Build Workbench Header
  */
 export function buildWorkbenchHeader(item, index, total, onNavigate, context = {}) {
-    const { workbench, onDismiss } = context;
+    const { workbench, onDismiss, onCompare } = context;
     const header = document.createElement('div');
     header.className = 'anomalous-workbench-header';
 
@@ -112,6 +112,16 @@ export function buildWorkbenchHeader(item, index, total, onNavigate, context = {
         if (workbench.filmstripEl) workbench.filmstripEl.classList.toggle('is-hidden', !workbench.isFilmstripVisible);
     };
     rightWrap.appendChild(filmstripToggle);
+
+    if (onCompare) {
+        const compareBtn = document.createElement('button');
+        compareBtn.type = 'button';
+        compareBtn.className = 'anomalous-workbench-tool-btn';
+        compareBtn.textContent = '⇄';
+        compareBtn.title = t('compareWithCanvas');
+        compareBtn.onclick = () => onCompare(item);
+        rightWrap.appendChild(compareBtn);
+    }
 
     // Close button
     const closeBtn = document.createElement('button');

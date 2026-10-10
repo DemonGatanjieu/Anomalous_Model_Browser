@@ -123,6 +123,25 @@ the star is filled when any exists, and a kept row opens it or removes it: what 
 the Recycle Bin through its own delete route (`delete_recipe`, `delete_notebook`,
 `delete_material`) after a confirmation, and the star follows.
 
+## Comparing parameters
+
+`param_compare.js` reads two sides (`readParams`: each node's named widget values, mode, input
+wiring and prompt-box role from `prompt_boxes.js`) and compares them (`compareParams`): nodes
+pair by id and type, then leftover nodes by type when each side has exactly one of it; values
+equal by their text form are counted, not listed; seeds (`isVolatileWidget`) are flagged.
+`textDifference` shows a long text as tags removed and added, or as the changed span with
+40 characters around it. `ui_param_compare.js` is the window: a side is an output image (its
+workflow from `inspect_image_material`, laid on a detached graph) or the live canvas. With the
+canvas on one side, ticked image values are written through `applyNodeMaterialValues` (seeds,
+missing choices and vanished nodes skipped and counted), all as one Ctrl+Z step, with Undo in
+the toast. Nothing is stored; the gallery's pick (`owner.comparePick`) lasts until it is used
+or cancelled.
+
+An image's workflow is always laid on its graph through `detached_graph.js`, which gives the
+copy a fresh id: ComfyUI's frontend keeps widget values by root graph id, node and name, and a
+copy under the open canvas's id (any workflow opened from that image) would share and overwrite
+the canvas's values.
+
 ## Prompt plans
 
 `prompt_plan` has no synthetic workflow. `POST save_prompt_plan` accepts a name, tags,

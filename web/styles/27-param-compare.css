@@ -1,0 +1,381 @@
+/* Comparing parameters (ui_param_compare.js): the gallery card's ⇄, the pick bar, the window. */
+
+.anomalous-gallery-compare {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 50%;
+    color: var(--amb-text-main);
+    background: rgba(15, 20, 30, 0.78);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.anomalous-gallery-card:hover .anomalous-gallery-compare,
+.anomalous-gallery-card:focus-within .anomalous-gallery-compare,
+.anomalous-gallery-card.is-compare-picked .anomalous-gallery-compare {
+    opacity: 1;
+}
+
+.anomalous-gallery-compare:hover { transform: scale(1.08); }
+
+.anomalous-gallery-card.is-compare-picked {
+    border-color: var(--amb-link);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--amb-link) 45%, transparent);
+}
+
+.anomalous-gallery-card.is-compare-picked .anomalous-gallery-compare {
+    border-color: var(--amb-link);
+    color: var(--amb-link);
+}
+
+#anomalous-gallery-panel.is-cover-selecting .anomalous-gallery-compare,
+#anomalous-gallery-panel.is-cover-selecting .anomalous-compare-bar {
+    display: none;
+}
+
+.anomalous-compare-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 12px 10px;
+    padding: 8px 12px;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 45%, transparent);
+    border-radius: var(--amb-radius-card);
+    background: color-mix(in srgb, var(--amb-link) 10%, var(--amb-bg-panel));
+    color: var(--amb-text-main);
+    font-size: 12.5px;
+}
+
+.anomalous-compare-bar-text {
+    flex: 1 1 200px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-compare-bar-btn,
+.anomalous-compare-done,
+.anomalous-compare-apply {
+    padding: 6px 12px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: var(--amb-radius-control);
+    background: var(--amb-bg-card);
+    color: var(--amb-text-main);
+    font-size: 12.5px;
+    cursor: pointer;
+}
+
+.anomalous-compare-bar-btn:hover,
+.anomalous-compare-done:hover { background: var(--amb-bg-card-hover); }
+
+.anomalous-compare-bar-btn.is-quiet {
+    border-color: transparent;
+    background: transparent;
+    color: var(--amb-text-muted);
+}
+
+.anomalous-compare-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+    background: var(--amb-scrim);
+    backdrop-filter: blur(4px);
+}
+
+.anomalous-compare-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: min(760px, 100%);
+    max-height: 90vh;
+    padding: 18px 20px;
+    box-sizing: border-box;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 16px;
+    background: var(--amb-bg-panel);
+    color: var(--amb-text-main);
+    box-shadow: 0 24px 70px rgba(var(--amb-shadow-rgb), 0.55);
+}
+
+.anomalous-compare-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.anomalous-compare-title {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.anomalous-compare-close {
+    border: none;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.anomalous-compare-close:hover { color: var(--amb-text-main); }
+
+.anomalous-compare-sides {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+}
+
+.anomalous-compare-side {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid var(--amb-border);
+    border-radius: var(--amb-radius-card);
+    background: var(--amb-bg-card);
+}
+
+.anomalous-compare-thumb {
+    flex: 0 0 auto;
+    width: 56px;
+    height: 56px;
+    border-radius: var(--amb-radius-control);
+    object-fit: cover;
+    background: var(--amb-bg-sunken);
+}
+
+.anomalous-compare-thumb.is-canvas {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--amb-text-muted);
+    font-size: 24px;
+}
+
+.anomalous-compare-side-name {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-compare-swap {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 50%;
+    background: var(--amb-bg-card);
+    color: var(--amb-text-main);
+    cursor: pointer;
+}
+
+.anomalous-compare-swap:hover { background: var(--amb-bg-card-hover); }
+
+.anomalous-compare-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    color: var(--amb-text-soft);
+    font-size: 12.5px;
+}
+
+.anomalous-compare-summary.is-error { color: var(--amb-danger-text); }
+
+.anomalous-compare-badge {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+}
+
+.anomalous-compare-badge.is-same {
+    background: color-mix(in srgb, var(--amb-ok) 16%, transparent);
+    color: var(--amb-ok-text);
+}
+
+.anomalous-compare-badge.is-other {
+    background: color-mix(in srgb, var(--amb-warn) 16%, transparent);
+    color: var(--amb-warn-text);
+}
+
+.anomalous-compare-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.anomalous-compare-node {
+    padding: 8px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: var(--amb-radius-card);
+    background: var(--amb-bg-card);
+}
+
+.anomalous-compare-node-title {
+    margin-bottom: 4px;
+    color: var(--amb-text-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+}
+
+.anomalous-compare-row {
+    display: grid;
+    grid-template-columns: minmax(90px, 0.8fr) minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    padding: 4px 0;
+    font-size: 12.5px;
+}
+
+.anomalous-compare-row + .anomalous-compare-row { border-top: 1px solid var(--amb-border); }
+
+.anomalous-compare-row.is-head {
+    padding: 0 11px;
+    color: var(--amb-text-dim);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.anomalous-compare-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    color: var(--amb-text-soft);
+    overflow-wrap: anywhere;
+}
+
+.anomalous-compare-role {
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 11px;
+    white-space: nowrap;
+    background: var(--amb-bg-sunken);
+    color: var(--amb-text-muted);
+}
+
+.anomalous-compare-role.is-positive { color: var(--amb-ok-text); }
+.anomalous-compare-role.is-negative { color: var(--amb-danger-text); }
+
+.anomalous-compare-value {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-compare-value.is-a { color: var(--amb-text-muted); }
+.anomalous-compare-value.is-b { color: var(--amb-text-main); font-weight: 600; }
+
+.anomalous-compare-text {
+    grid-column: 2 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-compare-text .is-out,
+.anomalous-compare-tag.is-removed {
+    color: var(--amb-danger-text);
+    background: color-mix(in srgb, var(--amb-danger) 14%, transparent);
+    text-decoration: line-through;
+}
+
+.anomalous-compare-text .is-in,
+.anomalous-compare-tag.is-added {
+    color: var(--amb-ok-text);
+    background: color-mix(in srgb, var(--amb-ok) 14%, transparent);
+}
+
+.anomalous-compare-more {
+    padding: 1px 8px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-compare-more:hover { color: var(--amb-text-main); }
+
+.anomalous-compare-tag {
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 12px;
+}
+
+.anomalous-compare-structure-list {
+    color: var(--amb-text-soft);
+    font-size: 12.5px;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-compare-seeds summary {
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-compare-seeds .anomalous-compare-node { margin-top: 6px; }
+
+.anomalous-compare-empty {
+    padding: 14px;
+    color: var(--amb-text-muted);
+    font-size: 12.5px;
+    text-align: center;
+}
+
+.anomalous-compare-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.anomalous-compare-hint {
+    flex: 1 1 220px;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+}
+
+.anomalous-compare-apply {
+    border-color: transparent;
+    background: var(--amb-btn-primary-bg);
+    color: var(--amb-btn-primary-text);
+    font-weight: 600;
+}
+
+.anomalous-compare-apply:hover:not(:disabled) { background: var(--amb-btn-primary-hover); }
+.anomalous-compare-apply:disabled { opacity: 0.5; cursor: default; }
+
+@media (max-width: 560px) {
+    .anomalous-compare-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .anomalous-compare-name { grid-column: 1 / -1; }
+}

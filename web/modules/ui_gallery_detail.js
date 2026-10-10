@@ -24,6 +24,7 @@ import {
     preloadAdjacentImages,
 } from './ui_image_stage.js';
 import { renderImageInspectorContent } from './ui_image_inspector.js';
+import { openParamCompare } from './ui_param_compare.js';
 import {
     fileBaseName,
     parsePngMetadataFromUrl,
@@ -168,6 +169,12 @@ async function saveSelectedBlocks(item, suggestedName, blocks, button) {
     }
 }
 
+/** The header's ⇄: this image's parameters beside the canvas's. */
+function compareWithCanvas(item) {
+    const source = item.sourceImage || { type: 'output', filename: item.filename, subfolder: item.subfolder || '' };
+    openParamCompare({ image: source }, { canvas: true });
+}
+
 /**
  * Dismiss active workbench
  */
@@ -221,7 +228,7 @@ async function loadWorkbenchImage(index) {
             index,
             total,
             (newIdx) => loadWorkbenchImage(newIdx),
-            { workbench: wb, onDismiss: dismissWorkbench },
+            { workbench: wb, onDismiss: dismissWorkbench, onCompare: compareWithCanvas },
         );
         wb.headerEl.replaceWith(newHeader);
         wb.headerEl = newHeader;
@@ -444,7 +451,7 @@ export async function showImageWorkbench(owner, sourceImage, imageUrl, options =
         currentIndex,
         items.length,
         (idx) => loadWorkbenchImage(idx),
-        { workbench: wb, onDismiss: dismissWorkbench },
+        { workbench: wb, onDismiss: dismissWorkbench, onCompare: compareWithCanvas },
     );
     wb.headerEl = headerEl;
     dialog.appendChild(headerEl);

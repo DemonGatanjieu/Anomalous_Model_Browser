@@ -137,7 +137,7 @@ html.amb-theme-light {
    and so do the labels and buttons laid over pictures: the dark tokens again, no light-only ones. */
 html.amb-theme-light :is(.anomalous-workbench-overlay, .anomalous-gallery-viewer,
     .anomalous-card-labels, .anomalous-card-action-btn, .anomalous-card-badge.is-unscanned,
-    .anomalous-gallery-details, .anomalous-gallery-keep,
+    .anomalous-gallery-details, .anomalous-gallery-keep, .anomalous-gallery-compare,
     .anomalous-recipe-readiness-pill, .anomalous-recipe-cover-pill, .anomalous-recipe-scope-pill,
     .anomalous-recipe-drag-badge, .anomalous-recipe-model-preview small, .anomalous-preset-compact-gallery-badge) {
     --amb-bg-page: #131315;

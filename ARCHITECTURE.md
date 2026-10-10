@@ -389,7 +389,12 @@ covered by the `styles.css` manifest.
   shortcuts (the second keeps its old "materials" ids), their fallback when ComfyUI's keybinding does not fire, and the
   settings control that opens ComfyUI's keybinding editor.
 - `ui_model_sources.js` renders the Models page's Sources view (the last type chip): where each model is downloaded, for the open workflow or every model, with each link editable and saved in place; `model_source_links.js` owns its data and actions (collecting the workflow's models, resolving them here, saving a link to the model's information and the workflow, the canvas note and the clipboard list).
-- `ui_gallery_card.js` builds one output image's gallery card (viewer, workbench, cover pick, drag, star, delete);
+- `ui_gallery_card.js` builds one output image's gallery card (viewer, workbench, cover pick, drag, star, compare, delete);
+  `ui_param_compare.js` compares parameters: a card's ⇄ picks an image, a second image's ⇄ or
+  the canvas completes the pair (the image workbench's ⇄ takes the canvas), and its window says
+  whether both are the same node structure and lists each value that differs (prompts by tags
+  taken out and put in, seeds apart), writing ticked image values onto the canvas as one Ctrl+Z
+  step with Undo; `param_compare.js` reads and compares the two sides without DOM.
   `ui_keep_menu.js` is the star's keep menu (also the workbench's Keep): the whole workflow, the combo or the prompts,
   each saying where it goes, opening what was kept already or removing it (to the Recycle Bin through the recipe,
   notebook or material delete route); `image_keep.js` does the keeping (an image as a combo,
