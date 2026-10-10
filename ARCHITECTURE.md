@@ -391,7 +391,8 @@ covered by the `styles.css` manifest.
 - `ui_model_sources.js` renders the Models page's Sources view (the last type chip): where each model is downloaded, for the open workflow or every model, with each link editable and saved in place; `model_source_links.js` owns its data and actions (collecting the workflow's models, resolving them here, saving a link to the model's information and the workflow, the canvas note and the clipboard list).
 - `ui_gallery_card.js` builds one output image's gallery card (viewer, workbench, cover pick, drag, star, compare, delete);
   `ui_param_compare.js` compares parameters: a card's ⇄ picks an image, a second image's ⇄ or
-  the canvas completes the pair (the image workbench's ⇄ takes the canvas), and its window says
+  the canvas completes the pair (the image workbench's ⇄ takes the canvas; the Gallery's and
+  Activity's ⇄ Canvas vs. newest picture pair the newest output PNG with it), and its window says
   whether both are the same node structure and lists each value that differs (prompts by the tags
   only one side has, seeds apart), writing ticked image values onto the canvas as one Ctrl+Z
   step with Undo; `param_compare.js` reads and compares the two sides without DOM.

@@ -37,6 +37,7 @@ function button(className, label, onClick) {
 const canvasGraph = () => app.rootGraph || app.graph;
 const imageQuery = image => `filename=${encodeURIComponent(image.filename)}&subfolder=${encodeURIComponent(image.subfolder || '')}`;
 const sideName = side => (side.canvas ? t('compareCanvas') : (side.label || side.image?.filename || ''));
+const sideTitle = side => (side.image?.filename && side.label ? `${side.label} · ${side.image.filename}` : sideName(side));
 
 /** One side's parameters: the canvas as it is now, a saved workflow, or the workflow kept in an output image. */
 async function readSide(side, signal) {
@@ -64,8 +65,8 @@ function sideCard(side, letter) {
         img.alt = '';
         card.append(img);
     }
-    const name = el('div', 'anomalous-compare-side-name', sideName(side));
-    name.title = sideName(side);
+    const name = el('div', 'anomalous-compare-side-name', sideTitle(side));
+    name.title = sideTitle(side);
     card.append(letterBadge(letter), name);
     return card;
 }
@@ -363,6 +364,35 @@ export function openParamCompare(left, right) {
         summary.classList.add('is-error');
     });
     return close;
+}
+
+// ---- The canvas beside the newest picture: what changed since the last run. ----
+
+/** The newest output picture that can hold a workflow (a PNG), or null. */
+async function newestPicture() {
+    const response = await fetch('/anomalous/gallery_images?page=1&limit=40&refresh=1', { cache: 'no-store' });
+    if (!response.ok) return null;
+    const { images = [] } = await response.json();
+    const image = images.find(item => /\.png$/i.test(item?.filename || ''));
+    return image ? { filename: image.filename, subfolder: image.subfolder || '' } : null;
+}
+
+/** A button comparing the newest picture with the canvas (the gallery's and the activity page's). */
+export function newestCompareButton(className) {
+    const node = button(className, `⇄ ${t('compareNewest')}`, async () => {
+        node.disabled = true;
+        try {
+            const image = await newestPicture();
+            if (image) openParamCompare({ image, label: t('compareNewestSide') }, { canvas: true });
+            else showWorkbenchToast(t('compareNoPicture'));
+        } catch (_) {
+            showWorkbenchToast(t('compareNoPicture'));
+        } finally {
+            node.disabled = false;
+        }
+    });
+    node.title = t('compareNewestHint');
+    return node;
 }
 
 // ---- The gallery's pick: the first image waits for a second one or the canvas. ----

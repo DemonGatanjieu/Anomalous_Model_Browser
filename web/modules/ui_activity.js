@@ -11,6 +11,7 @@ import { openListedModel } from './ui_scan_lists.js';
 import { changeNodeId } from './activity_diff.js';
 import { anomalousConfirm } from './ui_dialog.js';
 import { canUndo, undoEntry } from './canvas_undo.js';
+import { newestCompareButton } from './ui_param_compare.js';
 
 const FILTERS = [['', 'activityAll'], ['canvas', 'activityCanvas'], ['file', 'activityFiles']];
 const PAGE_SIZE = 300;
@@ -174,7 +175,7 @@ export function renderActivityPage(owner, panel) {
             list.prepend(el('div', 'anomalous-activity-empty', `${t('activityLoadFailed')} ${error.message}`));
         }
     });
-    bar.append(chips, clear);
+    bar.append(chips, newestCompareButton('anomalous-activity-newest'), clear);
     page.append(el('p', 'anomalous-activity-lead', t('activityLead')), bar, list);
     panel.replaceChildren(page);
     load();

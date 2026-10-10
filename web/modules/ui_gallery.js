@@ -10,6 +10,7 @@ import { showImageWorkbench } from './ui_gallery_detail.js';
 import { createGalleryCard } from './ui_gallery_card.js';
 import { loadKeptImages } from './image_keep.js';
 import { createSearchChips } from './ui_search_chips.js';
+import { newestCompareButton } from './ui_param_compare.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -41,7 +42,10 @@ export function createGallerySearchBar(owner) {
     });
     search.element.classList.add('anomalous-gallery-search');
     owner.gallerySearchCount = search.countElement;
-    return search.element;
+    const bar = document.createElement('div');
+    bar.className = 'anomalous-gallery-toolbar';
+    bar.append(search.element, newestCompareButton('anomalous-gallery-newest'));
+    return bar;
 }
 
 export async function loadGalleryImages(page = 1, reset = false, { refresh = reset } = {}) {
