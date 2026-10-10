@@ -153,6 +153,8 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
 
     const showModels = () => {
         owner.grid.style.display = 'grid';
+        // Emptied after the browser sat closed (browser.js close()); reopened onto another page, nothing redrew it.
+        if (!owner.grid.childElementCount && owner.foldersData) owner.loadModels();
         if (owner.detailPanel.innerHTML !== '') {
             owner.stopMediaInContainer(owner.detailPanel);
             owner.detailPanel.innerHTML = '';
