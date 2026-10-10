@@ -30,7 +30,11 @@ export function renderSourceBadge(model) {
     const baseModel = String(meta.baseModel || '');
     const badge = document.createElement('div');
     badge.className = 'anomalous-card-badge';
-    if (meta.info_source === 'local') {
+    if (meta.info_source === 'local' && meta.unmatched_reason === 'damaged') {
+        badge.classList.add('is-inferred', 'is-damaged');
+        badge.textContent = `⚠ ${t('modelSourceDamagedShort')}`;
+        badge.title = reasonText('damaged');
+    } else if (meta.info_source === 'local') {
         badge.classList.add('is-inferred', ...(baseModel ? [colourClass(baseModel)] : []));
         badge.textContent = `≈ ${baseModel || t('modelSourceLocalShort')}`;
         badge.title = t('modelSourceLocalHint', { reason: reasonText(meta.unmatched_reason) });
@@ -55,6 +59,9 @@ export function renderSourceLine(span, model, meta) {
         : meta.info_source === 'local' ? t('modelSourceLocal')
             : scannable(model) ? t('modelSourceNotScanned') : '';
     if (source) parts.push(`<strong>${escapeHtml(t('modelSourceLabel'))}:</strong> ${escapeHtml(source)}`);
+    if (meta.info_source === 'local' && meta.unmatched_reason === 'damaged') {
+        parts.push(`<span class="anomalous-source-damaged">⚠ ${escapeHtml(t('modelSourceDamaged'))}</span>`);
+    }
     const edited = (meta.user_fields || []).map(field => t(FIELD_KEYS[field] || field));
     if (edited.length) parts.push(escapeHtml(t('modelSourceEdited', { fields: edited.join(t('modelSourceListSep')) })));
     span.innerHTML = parts.join('<span class="anomalous-source-sep"> · </span>');

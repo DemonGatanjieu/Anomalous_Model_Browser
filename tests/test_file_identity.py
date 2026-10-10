@@ -11,10 +11,33 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 from api import metadata, models, recipes
-from model_identity import computed_file_identity
+from model_identity import computed_file_identity, safetensors_damage
+
+
+def safetensors_bytes(tensors, payload=b'\0' * 16, header_size=None):
+    header = json.dumps({'__metadata__': {'x': 'y'}, **tensors}).encode()
+    return struct.pack('<Q', len(header) if header_size is None else header_size) + header + payload
 
 
 class FileIdentityTests(unittest.TestCase):
+    def test_damaged_headers_are_told_apart_from_whole_files(self):
+        tensor = lambda end: {'w': {'dtype': 'F32', 'shape': [4], 'data_offsets': [0, end]}}
+        cases = {
+            'whole': (safetensors_bytes(tensor(16)), ''),
+            'short': (b'abc', 'short'),
+            'header longer than the file': (safetensors_bytes(tensor(16), header_size=10 ** 6), 'header_size'),
+            'not json': (struct.pack('<Q', 4) + b'{{{{' + b'\0' * 8, 'header'),
+            'offsets not numbers': (safetensors_bytes({'w': {'data_offsets': ['a', 'b']}}), 'header'),
+            'cut short': (safetensors_bytes(tensor(64)), 'truncated'),
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            for name, (content, expected) in cases.items():
+                with self.subTest(name):
+                    path = Path(directory, 'm.safetensors')
+                    path.write_bytes(content)
+                    self.assertEqual(safetensors_damage(str(path)), expected)
+            self.assertEqual(safetensors_damage(str(Path(directory, 'missing.safetensors'))), '')
+
     def test_header_digests_are_not_file_identity(self):
         for key in ('modelspec.hash.blake3', 'modelspec.hash.sha256', 'modelspec.hash_sha256'):
             with self.subTest(key=key), tempfile.TemporaryDirectory() as directory:

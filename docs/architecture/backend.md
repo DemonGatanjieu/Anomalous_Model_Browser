@@ -138,9 +138,13 @@ read its result. The scan page's picked or listed models go to `/anomalous/scan_
 `targets` (`--targets-file` per folder), so one scan has one result.
 
 An unmatched model's `.info` (`id` -1) keeps why: `anomalous_unmatched_reason` is
-`not_found` (Civitai answered 404), `network` (no answer after the retries) or
-`offline`. Online scans look up `network` and `offline` models again; `not_found` ones
-wait for "look up again". After `CIVITAI_DOWN_AFTER` models in a row without an answer
+`not_found` (Civitai answered 404), `network` (no answer after the retries),
+`offline`, or `damaged`: Civitai had no record and the safetensors header does not read
+whole (`model_identity.safetensors_damage`: too short, a header longer than the file, not
+JSON, or a tensor ending past the file's end; only the header is read). A damaged header
+changes the file's hash, so the file is to be downloaded again; the scan summary counts these
+(`damaged`). Online scans look up `network` and `offline` models again; `not_found` and
+`damaged` ones wait for "look up again". After `CIVITAI_DOWN_AFTER` models in a row without an answer
 a scan stops asking (`--civitai-down` carries this to the next folders) and infers the
 rest from the files, instead of waiting for every timeout.
 
