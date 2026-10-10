@@ -21,7 +21,7 @@
 - A scanned model's card shows its Civitai version ("v2.0", "Illustrious", "fp8"…) as a small label above the name, so versions of one model that share a file name can be told apart.
 
 ### ⇄ Compare parameters (参数对比)
-- Two pictures from the same workflow often differ in only a few values. Press ⇄ on one picture in the Gallery, then on another (or **Compare with the canvas**); the picture details have the same ⇄ for the canvas. The window says whether both use the same nodes and lists only what differs, node by node: prompts by the tags taken out and put in (marked positive or negative), seeds folded away, nodes only one side has listed apart. Two workflows numbered differently still compare the nodes each has one of, such as their only KSampler.
+- Two pictures from the same workflow often differ in only a few values. Press ⇄ on one picture in the Gallery, then on another (or **Compare with the canvas**); the picture details have the same ⇄ for the canvas. The window says whether both use the same nodes and lists only what differs, node by node, A and B each in its own colour: prompts by the tags only A or only B has (marked positive or negative), long names one line per side with the differing part marked, seeds folded away, nodes only one side has listed apart. Two workflows numbered differently still compare the nodes each has one of, such as their only KSampler.
 - Against the canvas, tick the values to take from the picture and put them on the canvas in one go (seeds stay); one Ctrl+Z or the toast's Undo takes them back.
 
 ### ⚙️ Settings in tabs (设置分组)

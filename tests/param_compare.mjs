@@ -55,9 +55,9 @@ assert.deepEqual(other.nodes.map(n => [n.aId, n.bId, n.id, n.rows[0].aText, n.ro
 assert.deepEqual([other.onlyA.map(n => n.id), other.onlyB.map(n => n.id), other.compared], [['6', '7'], ['71', '72'], 1]);
 assert.equal(compareParams(readParams(graph([node(1, 'A', {})])), readParams(graph([node(2, 'B', {})]))).compared, 0);
 
-// Prompts as tags: what was taken out and put in.
-assert.deepEqual(textDifference('1girl, red dress, smile', '1girl, smile, white dress, hat'),
-    { tags: true, removed: ['red dress'], added: ['white dress', 'hat'] });
+// Prompts as tags: the tags only one side has, each once.
+assert.deepEqual(textDifference('1girl, red dress, smile, red dress', '1girl, smile, white dress, hat'),
+    { tags: true, onlyA: ['red dress'], onlyB: ['white dress', 'hat'] });
 // Other text: the changed part with a little around it.
 const long = `${'a'.repeat(50)} cat ${'b'.repeat(50)}`;
 assert.deepEqual(textDifference(long, long.replace('cat', 'dog')), {

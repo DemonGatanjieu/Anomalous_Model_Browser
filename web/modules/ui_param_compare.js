@@ -15,7 +15,7 @@ import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { compareParams, isLongText, readParams, shownValue, textDifference } from './param_compare.js';
 
 const MODE_KEYS = { 0: 'compareModeOn', 2: 'compareModeMuted', 4: 'compareModeBypassed' };
-const SHOWN_TAGS = 12; // a prompt swapped whole lists every tag: the rest wait behind a button
+const SHOWN_TAGS = 10; // per side: a prompt swapped whole lists every tag, the rest wait behind a button
 const ROLE_KEYS = { positive: 'recipePromptRolePositive', negative: 'recipePromptRoleNegative', both: 'recipePromptRoleBoth' };
 let openWindow = null;
 
@@ -62,31 +62,45 @@ function sideCard(side, letter) {
         img.alt = '';
         card.append(img);
     }
-    const name = el('div', 'anomalous-compare-side-name', `${letter} · ${sideName(side)}`);
+    const name = el('div', 'anomalous-compare-side-name', sideName(side));
     name.title = sideName(side);
-    card.append(name);
+    card.append(letterBadge(letter), name);
     return card;
 }
 
-/** A long text's difference: tags taken out and put in, or the changed part in its place. */
+/** A or B in its own colour, the same in the side cards, the column heads and the text lines. */
+const letterBadge = letter => el('span', `anomalous-compare-letter is-${letter.toLowerCase()}`, letter);
+
+/** One side's line of a long text: its letter, then its tags or its text with the differing part marked. */
+function textLine(letter, parts) {
+    const line = el('div', `anomalous-compare-text-line is-${letter.toLowerCase()}`);
+    line.append(letterBadge(letter), ...parts);
+    return line;
+}
+
+/** A long text's difference, one line per side: the tags only that side has, or its differing part in place. */
 function textCell(row) {
     const cell = el('div', 'anomalous-compare-text');
     const diff = textDifference(row.aText, row.bText);
     if (diff.tags) {
-        const removed = diff.removed.map(tag => el('span', 'anomalous-compare-tag is-removed', `− ${tag}`));
-        const added = diff.added.map(tag => el('span', 'anomalous-compare-tag is-added', `+ ${tag}`));
-        // Both kinds show at first: half each, or more of one when the other has fewer.
-        const firstRemoved = Math.max(SHOWN_TAGS / 2, SHOWN_TAGS - added.length);
-        const shown = [...removed.slice(0, firstRemoved), ...added.slice(0, SHOWN_TAGS - Math.min(removed.length, firstRemoved))];
-        const rest = [...removed.slice(firstRemoved), ...added.slice(SHOWN_TAGS - Math.min(removed.length, firstRemoved))];
-        cell.append(...shown);
-        if (rest.length) {
-            const more = button('anomalous-compare-more', t('compareMoreTags', { count: rest.length }), () => more.replaceWith(...rest));
-            cell.append(more);
+        for (const [letter, tags] of [['A', diff.onlyA], ['B', diff.onlyB]]) {
+            if (!tags.length) continue;
+            const chips = tags.map(tag => el('span', 'anomalous-compare-tag', tag));
+            const parts = [el('span', 'anomalous-compare-line-label', t('compareTagsOnly')), ...chips.slice(0, SHOWN_TAGS)];
+            if (chips.length > SHOWN_TAGS) {
+                const more = button('anomalous-compare-more', t('compareMoreTags', { count: chips.length - SHOWN_TAGS }), () => more.replaceWith(...chips.slice(SHOWN_TAGS)));
+                parts.push(more);
+            }
+            cell.append(textLine(letter, parts));
         }
         return cell;
     }
-    cell.append(document.createTextNode(diff.before), el('span', 'is-out', diff.aPart), el('span', 'is-in', diff.bPart), document.createTextNode(diff.after));
+    for (const [letter, part] of [['A', diff.aPart], ['B', diff.bPart]]) {
+        const text = el('span', 'anomalous-compare-text-body');
+        // A side with nothing where the other has more shows no mark: the other's line marks it.
+        text.append(document.createTextNode(diff.before), ...(part ? [el('mark', '', part)] : []), document.createTextNode(diff.after));
+        cell.append(textLine(letter, [text]));
+    }
     return cell;
 }
 
@@ -114,7 +128,12 @@ function rowLine(row, tick) {
 
 function columnHeads() {
     const line = el('div', 'anomalous-compare-row is-head');
-    line.append(el('span', '', t('compareParameter')), el('span', '', 'A'), el('span', '', 'B'));
+    const head = (letter) => {
+        const cell = el('span');
+        cell.append(letterBadge(letter));
+        return cell;
+    };
+    line.append(el('span', '', t('compareParameter')), head('A'), head('B'));
     return line;
 }
 

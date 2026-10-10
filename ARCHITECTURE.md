@@ -392,8 +392,8 @@ covered by the `styles.css` manifest.
 - `ui_gallery_card.js` builds one output image's gallery card (viewer, workbench, cover pick, drag, star, compare, delete);
   `ui_param_compare.js` compares parameters: a card's ⇄ picks an image, a second image's ⇄ or
   the canvas completes the pair (the image workbench's ⇄ takes the canvas), and its window says
-  whether both are the same node structure and lists each value that differs (prompts by tags
-  taken out and put in, seeds apart), writing ticked image values onto the canvas as one Ctrl+Z
+  whether both are the same node structure and lists each value that differs (prompts by the tags
+  only one side has, seeds apart), writing ticked image values onto the canvas as one Ctrl+Z
   step with Undo; `param_compare.js` reads and compares the two sides without DOM.
   `ui_keep_menu.js` is the star's keep menu (also the workbench's Keep): the whole workflow, the combo or the prompts,
   each saying where it goes, opening what was kept already or removing it (to the Recycle Bin through the recipe,

@@ -129,8 +129,9 @@ the Recycle Bin through its own delete route (`delete_recipe`, `delete_notebook`
 wiring and prompt-box role from `prompt_boxes.js`) and compares them (`compareParams`): nodes
 pair by id and type, then leftover nodes by type when each side has exactly one of it; values
 equal by their text form are counted, not listed; seeds (`isVolatileWidget`) are flagged.
-`textDifference` shows a long text as tags removed and added, or as the changed span with
-40 characters around it. `ui_param_compare.js` is the window: a side is an output image (its
+`textDifference` shows a long text as the tags only one side has (each once), or as the
+differing span with 40 characters around it; the window gives each side its own line and colour,
+since neither side is older than the other. `ui_param_compare.js` is the window: a side is an output image (its
 workflow from `inspect_image_material`, laid on a detached graph) or the live canvas. With the
 canvas on one side, ticked image values are written through `applyNodeMaterialValues` (seeds,
 missing choices and vanished nodes skipped and counted), all as one Ctrl+Z step, with Undo in

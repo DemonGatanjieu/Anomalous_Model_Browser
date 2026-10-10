@@ -99,6 +99,8 @@
 }
 
 .anomalous-compare-dialog {
+    --amb-compare-a: var(--amb-link);
+    --amb-compare-b: var(--amb-warn);
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -280,36 +282,74 @@
 .anomalous-compare-role.is-positive { color: var(--amb-ok-text); }
 .anomalous-compare-role.is-negative { color: var(--amb-danger-text); }
 
+/* Values wrap whole: a model's name often differs only at its end. */
 .anomalous-compare-value {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    color: var(--amb-text-main);
+    overflow-wrap: anywhere;
 }
 
-.anomalous-compare-value.is-a { color: var(--amb-text-muted); }
-.anomalous-compare-value.is-b { color: var(--amb-text-main); font-weight: 600; }
+.anomalous-compare-letter {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.anomalous-compare-letter.is-a {
+    background: color-mix(in srgb, var(--amb-compare-a) 22%, transparent);
+    color: var(--amb-compare-a);
+}
+
+.anomalous-compare-letter.is-b {
+    background: color-mix(in srgb, var(--amb-compare-b) 22%, transparent);
+    color: var(--amb-compare-b);
+}
 
 .anomalous-compare-text {
     grid-column: 2 / -1;
     display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.anomalous-compare-text-line {
+    display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    align-items: baseline;
+    gap: 4px 6px;
     line-height: 1.6;
     overflow-wrap: anywhere;
 }
 
-.anomalous-compare-text .is-out,
-.anomalous-compare-tag.is-removed {
-    color: var(--amb-danger-text);
-    background: color-mix(in srgb, var(--amb-danger) 14%, transparent);
-    text-decoration: line-through;
+.anomalous-compare-text-body { min-width: 0; flex: 1 1 0; }
+
+.anomalous-compare-line-label {
+    color: var(--amb-text-muted);
+    font-size: 11.5px;
 }
 
-.anomalous-compare-text .is-in,
-.anomalous-compare-tag.is-added {
-    color: var(--amb-ok-text);
-    background: color-mix(in srgb, var(--amb-ok) 14%, transparent);
+.anomalous-compare-text-line mark {
+    border-radius: 3px;
+    padding: 0 2px;
+    color: inherit;
+}
+
+.anomalous-compare-text-line.is-a mark,
+.anomalous-compare-text-line.is-a .anomalous-compare-tag {
+    background: color-mix(in srgb, var(--amb-compare-a) 20%, transparent);
+}
+
+.anomalous-compare-text-line.is-b mark,
+.anomalous-compare-text-line.is-b .anomalous-compare-tag {
+    background: color-mix(in srgb, var(--amb-compare-b) 20%, transparent);
 }
 
 .anomalous-compare-more {

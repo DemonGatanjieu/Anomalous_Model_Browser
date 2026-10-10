@@ -112,9 +112,9 @@ export function compareParams(a, b) {
 const tagsOf = text => String(text).split(/[,，\n]/).map(tag => tag.trim()).filter(Boolean);
 
 /**
- * How two texts differ, for showing: prompts written as tags by the tags taken out and put in
- * ({ tags: true, removed, added }), anything else by the part that changed with a little of
- * what surrounds it ({ tags: false, before, aPart, bPart, after }, cut ends marked with …).
+ * How two texts differ, for showing: prompts written as tags by the tags only one side has
+ * ({ tags: true, onlyA, onlyB }, each tag once), anything else by the part that differs with a
+ * little of what surrounds it ({ tags: false, before, aPart, bPart, after }, cut ends marked …).
  */
 export function textDifference(aText, bText) {
     const aTags = tagsOf(aText);
@@ -122,9 +122,9 @@ export function textDifference(aText, bText) {
     if (aTags.length >= MIN_TAGS && bTags.length >= MIN_TAGS) {
         const inA = new Set(aTags);
         const inB = new Set(bTags);
-        const removed = aTags.filter(tag => !inB.has(tag));
-        const added = bTags.filter(tag => !inA.has(tag));
-        if (removed.length || added.length) return { tags: true, removed, added };
+        const onlyA = [...inA].filter(tag => !inB.has(tag));
+        const onlyB = [...inB].filter(tag => !inA.has(tag));
+        if (onlyA.length || onlyB.length) return { tags: true, onlyA, onlyB };
     }
     const a = String(aText);
     const b = String(bText);
