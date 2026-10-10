@@ -65,9 +65,6 @@ docs/architecture/*
 !docs/decisions/
 docs/decisions/*
 !docs/decisions/*.md
-!docs/audits/
-docs/audits/*
-!docs/audits/*.md
 !docs/guides/
 docs/guides/*
 !docs/guides/*.md
