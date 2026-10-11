@@ -3,7 +3,8 @@
  * (GET /anomalous/scan_summary), one button to scan, how the next scan goes, progress in
  * the page and the last scan in one card. Each count and the last scan open their list
  * as a page of its own (ui_scan_lists.js), the settings card the settings page; each
- * has a way back. New models whose header looks like no drawing model are asked about
+ * has a way back. The settings page says, in the summary's counts, what a scan of all models
+ * will do, or lists the models picked in ui_scan_picker.js. New models whose header looks like no drawing model are asked about
  * (don't scan them, scan them, see them); models set to "don't scan" have a list of their own.
  * Scans run through scan_runner.js; the progress box is scan_progress.js's panel,
  * hosted here while the page is shown.
@@ -13,17 +14,19 @@ import { translate as t } from './locales.js';
 import { isScanRunning, startScan, targetsForItems } from './scan_runner.js';
 import { setScanProgressHost } from './scan_progress.js';
 import { openListedModel, renderLastScan, renderListPage } from './ui_scan_lists.js';
+import { openScanPicker, pickKey, picksLine } from './ui_scan_picker.js';
 
 // Choices kept while the browser is open. The two risky ones go back off after each scan.
 const options = {
     scope: 'all', // 'all' | 'picked'
-    selection: new Map(),
+    picked: [], // the picker's items
     offline: false,
     virtualRename: true,
     physicalRename: false,
     forceOverwrite: false,
     autoFix: true,
 };
+const SHOWN_PICKS = 12; // picked models named on the settings page; the rest are counted
 // The view shown: '' the page itself, 'settings', or a list: 'new' | 'unmatched' | 'skipped' | 'result'
 // | 'notdrawing' | 'excluded'.
 // `scroll`: where to put a list shown again after a model's Back.
@@ -41,12 +44,6 @@ function button(className, label, onClick) {
     node.type = 'button';
     node.onclick = onClick;
     return node;
-}
-
-function pickedCount() {
-    let count = 0;
-    for (const files of options.selection.values()) count += files.size;
-    return count;
 }
 
 async function fetchJson(url) {
@@ -99,7 +96,7 @@ function group(title, ...children) {
 function currentChoices(hasKey) {
     const online = !options.offline;
     return [
-        [options.scope === 'picked' ? t('scanChipPicked', { count: pickedCount() }) : t('scanPageScopeAll')],
+        [options.scope === 'picked' ? t('scanChipPicked', { count: options.picked.length }) : t('scanPageScopeAll')],
         [t(online ? 'scanChipOnline' : 'scanPageOffline')],
         online && options.virtualRename && [t('scanChipDisplayName')],
         online && options.physicalRename && [t('scanChipFileRename'), true],
@@ -120,8 +117,73 @@ function settingsCard(owner, panel, hasKey) {
     return card;
 }
 
+/** What a scan of every model does this time, in the summary's counts and the current settings. */
+function wholeScanFacts(summary) {
+    const box = el('div', 'anomalous-scan-scope-facts');
+    if (summary) {
+        const online = !options.offline;
+        const force = online && options.forceOverwrite;
+        const pending = online ? summary.pending : 0;
+        const lookup = online ? summary.new + pending : summary.new;
+        const lines = force ? [['scanScopeForce', summary.total], ['scanScopeExcluded', summary.excluded]] : [
+            [online ? 'scanScopeLookup' : 'scanScopeInfer', lookup],
+            ['scanScopeNothingNew', lookup ? 0 : 1],
+            ['scanScopeMatched', summary.matched],
+            ['scanScopeNotFound', summary.unmatched - pending],
+            ['scanScopeExcluded', summary.excluded],
+        ];
+        const list = el('ul', 'anomalous-scan-scope-list');
+        for (const [key, count] of lines) {
+            if (count) list.append(el('li', '', t(key, { count: count.toLocaleString() })));
+        }
+        box.append(el('strong', 'anomalous-scan-scope-total', t('scanScopeTotal', { count: summary.total.toLocaleString() })), list);
+    }
+    box.append(el('small', 'anomalous-scan-setting-help', t('scanPageScopeAllHelp')));
+    return box;
+}
+
+/** The picks: how many and how big, their names (each with a ✕), a way to pick, and a word on the found ones. */
+function pickedFacts(summary, refresh) {
+    const box = el('div', 'anomalous-scan-pick');
+    const head = el('div', 'anomalous-scan-pick-head');
+    head.append(el('span', 'anomalous-scan-pick-count', picksLine(options.picked)),
+        button('anomalous-scan-secondary anomalous-scan-small-btn', t(options.picked.length ? 'scanPickChange' : 'scanPagePickModels'), () => openScanPicker(options.picked, (next) => {
+            options.picked = next;
+            refresh();
+        })));
+    if (options.picked.length) {
+        head.append(button('anomalous-pick-link', t('scanPickClear'), () => {
+            options.picked = [];
+            refresh();
+        }));
+    }
+    box.append(head);
+    if (!options.picked.length) return box;
+    const names = el('div', 'anomalous-scan-pick-names');
+    for (const item of options.picked.slice(0, SHOWN_PICKS)) {
+        const chip = el('span', 'anomalous-scan-pick-name');
+        chip.title = item.rel;
+        const remove = button('anomalous-scan-pick-remove', '✕', () => {
+            options.picked = options.picked.filter(each => each !== item);
+            refresh();
+        });
+        remove.title = t('scanPickRemove');
+        chip.append(el('span', '', item.name), remove);
+        names.append(chip);
+    }
+    if (options.picked.length > SHOWN_PICKS) names.append(el('span', 'anomalous-scan-pick-more', t('scanPickMore', { count: options.picked.length - SHOWN_PICKS })));
+    box.append(names);
+    // Found ones are read from their record again, not looked up, unless fetching again is on.
+    if (summary && !(options.forceOverwrite && !options.offline)) {
+        const open = new Set([...summary.new_models, ...summary.unmatched_models, ...summary.excluded_models].map(pickKey));
+        const found = options.picked.filter(item => !open.has(pickKey(item))).length;
+        if (found) box.append(el('small', 'anomalous-scan-setting-help', t('scanPickFoundNote', { count: found })));
+    }
+    return box;
+}
+
 /** The settings as a page of their own, like the lists: back, then one card per question. */
-function settingsPage(owner, panel, hasKey, progressHost) {
+function settingsPage(owner, panel, { summary, hasKey }, progressHost) {
     const refresh = () => go(owner, panel, 'settings');
     const page = el('div', 'anomalous-scan-page');
     page.append(button('anomalous-scan-back', t('scanBack'), () => go(owner, panel, '')),
@@ -139,17 +201,7 @@ function settingsPage(owner, panel, hasKey, progressHost) {
         choice.setAttribute('aria-checked', String(options.scope === value));
         segment.append(choice);
     }
-    let scopeNote = el('small', 'anomalous-scan-setting-help', t('scanPageScopeAllHelp'));
-    if (options.scope === 'picked') {
-        scopeNote = el('div', 'anomalous-scan-pick');
-        scopeNote.append(
-            button('anomalous-scan-secondary anomalous-scan-small-btn', t('scanPagePickModels'), () => owner._openAdvancedModelSelector(options.selection, (next) => {
-                options.selection = next;
-                refresh();
-            })),
-            el('span', 'anomalous-scan-muted', t('scanPagePickedCount', { count: pickedCount() })),
-        );
-    }
+    const scopeNote = options.scope === 'picked' ? pickedFacts(summary, refresh) : wholeScanFacts(summary);
 
     // What only an online scan does: under its own heading, faded while scanning offline.
     const online = el('div', `anomalous-scan-online${options.offline ? ' is-disabled' : ''}`);
@@ -157,7 +209,7 @@ function settingsPage(owner, panel, hasKey, progressHost) {
         el('div', 'anomalous-scan-subtitle', t(options.offline ? 'scanPageOnlineOff' : 'scanPageOnline')),
         toggle('virtualRename', 'scanPageDisplayName', 'scanPageDisplayNameHelp'),
         toggle('physicalRename', 'scanPageFileRename', 'scanPageFileRenameHelp', { tag: 'scanPageTagFiles' }),
-        toggle('forceOverwrite', 'scanPageForce', 'scanPageForceHelp', { tag: 'scanPageTagSlow' }),
+        toggle('forceOverwrite', 'scanPageForce', 'scanPageForceHelp', { tag: 'scanPageTagSlow', onChange: refresh }),
     );
 
     const key = el('div', 'anomalous-scan-setting');
@@ -202,13 +254,13 @@ export async function saveApiKey() {
  * { targets, retryUnmatched } for the models of a list row or a whole list. */
 async function run(owner, panel, extra = {}) {
     const whole = !extra.retryUnmatched && !extra.targets;
-    if (whole && options.scope === 'picked' && pickedCount() === 0) {
+    if (whole && options.scope === 'picked' && !options.picked.length) {
         alert(t('scanPageNothingPicked'));
         return;
     }
     if (whole && options.forceOverwrite && !confirm(t('scanPageForceConfirm'))) return;
-    const selection = whole && options.scope === 'picked' ? options.selection : null;
-    const started = startScan(owner, { ...options, ...extra, selection });
+    const targets = whole && options.scope === 'picked' ? targetsForItems(options.picked) : extra.targets;
+    const started = startScan(owner, { ...options, ...extra, targets });
     renderScanPage(owner, panel); // buttons show "scanning"
     await started;
     if (whole) {
@@ -301,7 +353,7 @@ function mainPage(owner, panel, { summary, config, last }, busy, progressHost) {
     // An online scan also looks up the models earlier scans could not ask Civitai about.
     const waiting = (summary?.new || 0) + (options.offline ? 0 : summary?.pending || 0);
     const label = busy ? t('scanPageScanning')
-        : picked ? t('scanPageScanPicked', { count: pickedCount() })
+        : picked ? t('scanPageScanPicked', { count: options.picked.length })
             : waiting ? t(options.offline ? 'scanPageScanNewOffline' : 'scanPageScanNew', { count: waiting })
                 : t('scanPageScanAgain');
     const primary = button('anomalous-scan-primary', label, () => run(owner, panel));
@@ -323,7 +375,7 @@ function paint(owner, panel, data) {
     pageState.scroll = 0;
     const busy = isScanRunning();
     const progressHost = el('div', 'anomalous-scan-progress-host');
-    const page = view === 'settings' ? settingsPage(owner, panel, Boolean(data.config?.has_api_key), progressHost)
+    const page = view === 'settings' ? settingsPage(owner, panel, { summary: data.summary, hasKey: Boolean(data.config?.has_api_key) }, progressHost)
         : view ? renderListPage(view, data.summary, data.last, listActions(owner, panel, busy), progressHost)
         : mainPage(owner, panel, data, busy, progressHost);
     panel.replaceChildren(page);

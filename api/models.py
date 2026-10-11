@@ -10,7 +10,7 @@ from .model_catalog import (
     _allowed_folder_types, _collect_all_scan_models, _collect_folder_models,
     _collect_folders, _find_model_sync, _iter_search_models, _model_info_for_path,
     _resolve_paths_to_model_info_sync, _resolve_paths_to_previews_sync,
-    api_base_models, api_batch_select, api_compatible_models, api_find_model,
+    api_base_models, api_compatible_models, api_find_model,
     api_get_all_scan_models, api_get_folders, api_get_models,
     api_resolve_paths_to_previews,
 )

@@ -2,7 +2,8 @@
 new, and which ones the last two are (located like the scan report's models, so the page can
 open them); also the model files a scan never reads (other formats than .safetensors), so the
 page can say why they are not there, the models the user set to "don't scan", and the new ones
-whose header looks like no drawing model (a voice model, say), for the page to ask about."""
+whose header looks like no drawing model (a voice model, say), for the page to ask about. And
+for the scan settings' picker, every model a scan reads with its name, size, cover and state."""
 
 import asyncio
 import os
@@ -10,6 +11,8 @@ import os
 from aiohttp import web
 
 from .folder_types import get_active_scan_paths
+from .metadata import get_metadata
+from .model_media import _preview_url_for_model
 from .scan_report import locate_root
 
 try:
@@ -20,20 +23,18 @@ except ImportError:  # loaded outside the package (tests)
     from model_kind import inspect_file
 
 MAX_LISTED = 2000  # models listed per kind; the counts stay exact
+MAX_PICKABLE = 5000  # models the picker lists; its total stays exact
 # Model files in other formats: listed as "not scanned" (scans read only .safetensors).
 OTHER_MODEL_EXTENSIONS = (".ckpt", ".pt", ".pth", ".bin", ".gguf", ".onnx", ".sft", ".engine")
+# What the picker needs of a model's metadata: its card badge (model_source.js) and its name.
+PICKER_FIELDS = ("info_source", "unmatched_reason", "scan_choice", "not_drawing", "baseModel", "base_guess", "custom_name")
 
 
-def _summarize():
-    """Counts the files the scanner handles (.safetensors in the active scan folders), each once.
-    `pending`: unmatched models Civitai was never asked about (offline, or unreachable then),
-    which the next online scan looks up. `skipped`: model files in other formats, outside hidden
-    folders (tools keep their working files there). `excluded`: models set to "don't scan", not in
-    the other counts. A new model not chosen about whose header reads but names no drawing model
-    kind carries `not_drawing` (counted too); only new models' headers are read."""
+def _walk():
+    """Each model file in the active scan folders once, as ((type, path_idx), base_dir, path,
+    other): the .safetensors files scans read, and (`other`) model files in other formats outside
+    hidden folders (tools keep their working files there)."""
     seen = set()
-    total = matched = 0
-    unmatched, new, skipped, excluded = [], [], [], []
     for base_dir in get_active_scan_paths():
         located = locate_root(base_dir) or ("", 0)
         for root, _dirs, files in os.walk(base_dir):
@@ -47,30 +48,42 @@ def _summarize():
                 if real in seen:
                     continue
                 seen.add(real)
-                if other:
-                    skipped.append({"type": located[0], "path_idx": located[1], "filename": filename,
-                                    "rel": os.path.relpath(path, base_dir).replace(os.sep, "/")})
-                    continue
-                base = os.path.splitext(path)[0]
-                item = {"type": located[0], "path_idx": located[1], "filename": filename,
-                        "rel": os.path.relpath(path, base_dir).replace(os.sep, "/")}
-                choice = scan_choice(base)
-                if choice == "skip":
-                    excluded.append(item)
-                    continue
-                total += 1
-                info = sidecar_info(base)
-                if info is not None and not is_unmatched(info):
-                    matched += 1
-                    continue
-                if info is None:
-                    found = inspect_file(path)
-                    if not choice and found["format"] == "safetensors" and not found["kind"]:
-                        item["not_drawing"] = True
-                    new.append(item)
-                else:
-                    item.update(reason=unmatched_reason(info), base=info.get("baseModel") or "")
-                    unmatched.append(item)
+                yield located, base_dir, path, other
+
+
+def _summarize():
+    """Counts the files the scanner handles (.safetensors in the active scan folders), each once.
+    `pending`: unmatched models Civitai was never asked about (offline, or unreachable then),
+    which the next online scan looks up. `skipped`: model files in other formats. `excluded`:
+    models set to "don't scan", not in the other counts. A new model not chosen about whose
+    header reads but names no drawing model kind carries `not_drawing` (counted too); only new
+    models' headers are read."""
+    total = matched = 0
+    unmatched, new, skipped, excluded = [], [], [], []
+    for located, base_dir, path, other in _walk():
+        item = {"type": located[0], "path_idx": located[1], "filename": os.path.basename(path),
+                "rel": os.path.relpath(path, base_dir).replace(os.sep, "/")}
+        if other:
+            skipped.append(item)
+            continue
+        base = os.path.splitext(path)[0]
+        choice = scan_choice(base)
+        if choice == "skip":
+            excluded.append(item)
+            continue
+        total += 1
+        info = sidecar_info(base)
+        if info is not None and not is_unmatched(info):
+            matched += 1
+            continue
+        if info is None:
+            found = inspect_file(path)
+            if not choice and found["format"] == "safetensors" and not found["kind"]:
+                item["not_drawing"] = True
+            new.append(item)
+        else:
+            item.update(reason=unmatched_reason(info), base=info.get("baseModel") or "")
+            unmatched.append(item)
     return {
         "total": total, "matched": matched, "unmatched": len(unmatched), "new": len(new),
         "pending": sum(item["reason"] in ("offline", "network") for item in unmatched),
@@ -82,6 +95,40 @@ def _summarize():
     }
 
 
+def _pickable():
+    """Every model a scan reads (the models set to "don't scan" too), located like the summary's,
+    with its size, cover and what its card badge needs; `roots`: the name of each models folder
+    they are in and of the folder holding it, to tell two folders of one type apart."""
+    models, roots, total = [], {}, 0
+    for located, base_dir, path, other in _walk():
+        if other:
+            continue
+        total += 1
+        if len(models) >= MAX_PICKABLE:
+            continue
+        key = f"{located[0]}|{located[1]}"
+        if key not in roots:
+            roots[key] = {"type": located[0], "path_idx": located[1], "name": os.path.basename(os.path.normpath(base_dir)),
+                          "parent": os.path.basename(os.path.dirname(os.path.normpath(base_dir)))}
+        meta = get_metadata(path)
+        try:
+            size = os.path.getsize(path)
+        except OSError:
+            size = 0
+        models.append({
+            "type": located[0], "path_idx": located[1], "filename": os.path.basename(path),
+            "rel": os.path.relpath(path, base_dir).replace(os.sep, "/"), "size": size,
+            "preview_url": _preview_url_for_model(located[0], located[1], base_dir, path),
+            "metadata": {field: meta.get(field) for field in PICKER_FIELDS},
+        })
+    return {"models": models, "total": total, "roots": list(roots.values())}
+
+
 async def api_scan_summary(request):
     """GET /anomalous/scan_summary - counts, and the unmatched and new models."""
     return web.json_response(await asyncio.to_thread(_summarize))
+
+
+async def api_scan_pickable(request):
+    """GET /anomalous/scan_pickable - the models the scan settings' picker lists."""
+    return web.json_response(await asyncio.to_thread(_pickable))

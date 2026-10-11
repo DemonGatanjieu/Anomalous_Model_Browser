@@ -159,6 +159,37 @@ class ScanReportTests(unittest.TestCase):
         reasons = {item["filename"]: (item["reason"], item["base"]) for item in summary["unmatched_models"]}
         self.assertEqual(reasons, {"gone.safetensors": ("not_found", "SD 1.5"), "off.safetensors": ("offline", "")})
 
+    def test_picker_lists_every_model_a_scan_reads_with_its_badge_fields(self):
+        self.model("new")
+        self.model("found", {**FOUND, "description": "<p>long text</p>"})
+        (self.dir / "found.preview.png").write_bytes(b"png")
+        self.model("skipped")
+        (self.dir / "skipped.anomalous.json").write_text(json.dumps({"format": 1, "scan": "skip"}), encoding="utf-8")
+        (self.dir / "sub").mkdir()
+        self.dir, top = self.dir / "sub", self.dir
+        self.model("deep", {"id": -1, "anomalous_unmatched_reason": "damaged"})
+        self.dir = top
+        (self.dir / "old.ckpt").write_bytes(b"never read")
+        with mock.patch.object(scan_summary, "get_active_scan_paths", return_value=[str(self.dir)]), \
+                mock.patch.object(scan_summary, "locate_root", return_value=("loras", 1)):
+            listed = scan_summary._pickable()
+            with mock.patch.object(scan_summary, "MAX_PICKABLE", 2):
+                capped = scan_summary._pickable()
+        models = {item["rel"]: item for item in listed["models"]}
+        self.assertEqual(sorted(models), ["found.safetensors", "new.safetensors", "skipped.safetensors", "sub/deep.safetensors"])
+        self.assertEqual(listed["total"], 4)
+        self.assertEqual(listed["roots"], [{"type": "loras", "path_idx": 1, "name": self.dir.name, "parent": self.dir.parent.name}])
+        found = models["found.safetensors"]
+        self.assertEqual((found["type"], found["path_idx"], found["filename"]), ("loras", 1, "found.safetensors"))
+        self.assertIn("filename=found.preview.png", found["preview_url"])
+        self.assertEqual(found["size"], (self.dir / "found.safetensors").stat().st_size)
+        self.assertEqual(set(found["metadata"]), set(scan_summary.PICKER_FIELDS))  # no description
+        self.assertEqual((found["metadata"]["info_source"], found["metadata"]["baseModel"]), ("civitai", "SDXL 1.0"))
+        self.assertEqual(models["skipped.safetensors"]["metadata"]["scan_choice"], "skip")
+        self.assertEqual(models["sub/deep.safetensors"]["metadata"]["unmatched_reason"], "damaged")
+        self.assertEqual(models["new.safetensors"]["metadata"]["info_source"], "")
+        self.assertEqual((len(capped["models"]), capped["total"]), (2, 4))
+
 
 class EditDetailTests(unittest.TestCase):
     def test_editing_a_model_logs_what_changed_from_what(self):
