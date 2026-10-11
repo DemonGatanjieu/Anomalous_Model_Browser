@@ -155,9 +155,32 @@ class ScanReportTests(unittest.TestCase):
                 mock.patch.object(scan_summary, "locate_root", return_value=("loras", 1)):
             summary = scan_summary._summarize()
         self.assertEqual((summary["total"], summary["matched"], summary["unmatched"], summary["new"], summary["pending"]), (4, 1, 2, 1, 1))
-        self.assertEqual(summary["new_models"], [{"type": "loras", "path_idx": 1, "filename": "new.safetensors", "rel": "new.safetensors"}])
+        self.assertEqual(summary["new_models"], [{"type": "loras", "path_idx": 1, "filename": "new.safetensors", "rel": "new.safetensors", "state": "new"}])
         reasons = {item["filename"]: (item["reason"], item["base"]) for item in summary["unmatched_models"]}
         self.assertEqual(reasons, {"gone.safetensors": ("not_found", "SD 1.5"), "off.safetensors": ("offline", "")})
+
+    def test_components_are_counted_and_listed_on_their_own(self):
+        loras, vae = self.dir / "loras", self.dir / "vae"
+        for folder in (loras, vae):
+            folder.mkdir()
+        top = self.dir
+        self.dir = loras
+        self.model("style", {"id": 3})
+        self.dir = vae
+        self.model("found_vae", {"id": 4})
+        self.model("odd_vae", {"id": -1, "anomalous_unmatched_reason": "not_found"})
+        self.model("new_vae")
+        self.dir = top
+        roots = {str(loras): ("loras", 0), str(vae): ("vae", 0)}
+        with mock.patch.object(scan_summary, "get_active_scan_paths", return_value=[str(loras), str(vae)]), \
+                mock.patch.object(scan_summary, "locate_root", side_effect=lambda path: roots[path]):
+            summary = scan_summary._summarize()
+        self.assertEqual((summary["total"], summary["matched"], summary["unmatched"], summary["new"]), (4, 2, 1, 1))
+        self.assertEqual(summary["components"], {"total": 3, "matched": 1, "unmatched": 1, "new": 1, "pending": 0})
+        states = {item["filename"]: (item["state"], item.get("reason", "")) for item in summary["component_models"]}
+        self.assertEqual(states, {"found_vae.safetensors": ("matched", ""), "odd_vae.safetensors": ("unmatched", "not_found"),
+                                  "new_vae.safetensors": ("new", "")})
+        self.assertTrue(all(item.get("component") for item in summary["unmatched_models"] + summary["new_models"]))
 
     def test_picker_lists_every_model_a_scan_reads_with_its_badge_fields(self):
         self.model("new")

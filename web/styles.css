@@ -16,7 +16,7 @@
 @import url("./styles/15-shell-rail.css?v=20261007-theme-2");
 @import url("./styles/16-activity.css?v=20261007-theme-2");
 @import url("./styles/17-model-types.css?v=20261007-theme-2");
-@import url("./styles/18-scan-page.css?v=20261011-pick");
+@import url("./styles/18-scan-page.css?v=20261011-scan");
 @import url("./styles/19-model-doctor.css?v=20261007-theme-2");
 @import url("./styles/20-current-node.css?v=20261007-theme-2");
 @import url("./styles/21-prompt-studio.css?v=20261007-theme-2");
@@ -25,4 +25,4 @@
 @import url("./styles/24-backup.css?v=20261007-theme-2");
 @import url("./styles/25-model-import.css?v=20261008-import");
 @import url("./styles/26-model-tidy.css?v=20261008-tidy");
-@import url("./styles/30-scan-picker.css?v=20261011-pick-2");
+@import url("./styles/30-scan-picker.css?v=20261011-scan");

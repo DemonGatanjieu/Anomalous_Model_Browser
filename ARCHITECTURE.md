@@ -100,6 +100,8 @@ covered by the `styles.css` manifest.
   (`sidecar_info`, `is_unmatched`, `unmatched_reason` in `model_identity.py`); it also
   lists the model files in other formats, which scans never read, so the page can say so,
   the models set to "don't scan", and the new ones whose header names no drawing model kind.
+  Models in component folders (VAE, text encoders, CLIP, CLIP Vision, upscalers) are counted
+  and listed apart as well (`components`, `component_models`): many are not on Civitai.
   It also lists every model a scan reads for the scan settings' picker
   (`/anomalous/scan_pickable`), with size, cover and the card badge's metadata fields.
   `api/scan_choice.py` saves that choice (`POST /anomalous/scan_choice`, this computer only)
@@ -376,16 +378,18 @@ covered by the `styles.css` manifest.
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,
   including Esc on the workspace panel (`nbPanel`, below the header and right of the
   rail; the list column steps aside while it is open).
-  `ui_scan_page.js` is the scan page (a tool page like the doctor): counts, the scan
-  button, a card for how the next scan goes (opening the scan settings page), the last
-  scan's summary; each count and the summary open a
+  `ui_scan_page.js` is the scan page (a tool page like the doctor): counts without the
+  components, a card for the components, the scan button with "pick models to scan" beside it
+  and what the scan will do, the settings card (`ui_scan_settings.js`: the scan options,
+  folded into short words or unfolded in place), the last scan's summary; each count, the
+  components and the summary open a
   list page from `ui_scan_lists.js` (not scanned, unmatched, other formats, the last scan's
   models) with Back, a button for the whole list (scan these / look them up again) and rows
   that open a model, whose Back returns to the list, or scan it;
   `scan_results.js` holds the words for scan results, shared with the activity page.
-  `ui_scan_picker.js` is the scan settings' model picker: every model a scan reads, by folder,
+  `ui_scan_picker.js` is the scan page's model picker: every model a scan reads, by folder,
   state (not scanned, not found, damaged, found, don't scan) and search, as a list or covers;
-  the settings page keeps its picks as items and says what a scan of all models will do.
+  the page keeps its picks as items (none: the button scans everything).
   `scan_runner.js` starts and follows scans (every folder, picked or listed models, or one
   model from its card), shows the result and refreshes node drop-downs, hashes and the
   grid afterwards; folder visibility/order lives in

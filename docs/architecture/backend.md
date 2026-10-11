@@ -158,7 +158,12 @@ a voice model say) as `not_drawing`, and the scan page asks. `POST /anomalous/sc
 (`api/scan_choice.py`, this computer only) takes the picked models as scan `targets`, at most
 2000, and writes only `.safetensors` files' layers that are readable.
 
-The scan settings' picker reads `GET /anomalous/scan_pickable` (`api/scan_summary.py`): the
+The summary also counts the models in component folders (`COMPONENT_TYPES`: VAE, text
+encoders, CLIP, CLIP Vision, upscalers) as `components` and lists them, found ones too, in
+`component_models` with their `state`; they stay in the other counts, and their list items carry
+`component`, so the page can show them apart. Folder type decides, not the file's header.
+
+The scan page's picker reads `GET /anomalous/scan_pickable` (`api/scan_summary.py`): the
 same files the summary counts (the scan folders' `.safetensors`, each once), the "don't scan"
 ones included, up to 5000 with the exact `total`. Each carries its locator (`type`,
 `path_idx`, `rel`), size, cover URL and only the metadata fields its badge needs, not the

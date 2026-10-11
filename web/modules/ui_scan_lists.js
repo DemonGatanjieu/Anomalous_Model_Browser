@@ -1,7 +1,9 @@
 /**
  * The scan page's lists, each a page of its own behind a count on the scan page: the models
- * not scanned yet, the unmatched ones, the model files a scan never reads (other formats), and
- * each model the last scan changed (GET /anomalous/scan_summary, /anomalous/last_scan).
+ * not scanned yet, the unmatched ones (both without the components), the components (VAE, text
+ * encoders…: found, not found and not scanned, with why not being found is fine), the model
+ * files a scan never reads (other formats), and each model the last scan changed
+ * (GET /anomalous/scan_summary, /anomalous/last_scan).
  * On the scan page itself the last scan is one summary card with a way to its list.
  * Every row opens its model; rows offer "scan" / "look up again" and a Civitai search. Two
  * more lists: the new models whose header looks like no drawing model ("don't scan" / "scan
@@ -131,7 +133,7 @@ export function renderLastScan(result, onDetails) {
 /** A list's models, title, why they are here and the row for one of them. */
 function listOf(view, summary, last, actions) {
     if (view === 'new') {
-        const items = summary?.new_models || [];
+        const items = (summary?.new_models || []).filter(item => !item.component);
         return {
             items,
             title: t('scanListNew', { count: items.length }),
@@ -170,6 +172,24 @@ function listOf(view, summary, last, actions) {
             ]),
         };
     }
+    if (view === 'components') {
+        const order = { new: 0, unmatched: 1, matched: 2 };
+        const items = [...(summary?.component_models || [])].sort((a, b) => order[a.state] - order[b.state]);
+        const fresh = items.filter(item => item.state === 'new');
+        const detail = item => (item.state === 'matched' ? t('scanPageMatched') : item.state === 'new' ? t('scanPageNew')
+            : [reasonText(item.reason), item.reason === 'not_found' ? t('scanFingerprintKept') : ''].filter(Boolean).join(' · '));
+        return {
+            items,
+            title: t('scanListParts', { count: items.length }),
+            hint: t('scanListPartsHint'),
+            all: fresh.length ? [t('scanListScanAll', { count: fresh.length }), () => actions.scan(fresh)] : null,
+            render: item => row(item.reason === 'damaged' ? { ...item, status: 'damaged' } : item, detail(item),
+                item.state === 'unmatched' ? unmatchedButtons(item, actions)
+                    : item.state === 'new' ? [[t('scanRowOpen'), () => actions.open(item)], [t('scanRowScan'), () => actions.scan([item]), actions.busy]]
+                        : [[t('scanRowOpen'), () => actions.open(item)]],
+                item.state === 'matched' ? '✓' : item.reason === 'damaged' ? '⚠' : item.state === 'unmatched' ? '≈' : ''),
+        };
+    }
     if (view === 'skipped') {
         const items = summary?.skipped_models || [];
         return {
@@ -191,14 +211,14 @@ function listOf(view, summary, last, actions) {
     }
     // Unmatched: damaged files first (to download again), then those the next online scan looks up by itself.
     const rank = item => (item.reason === 'damaged' ? 2 : isPending(item.reason) ? 1 : 0);
-    const items = [...(summary?.unmatched_models || [])].sort((a, b) => rank(b) - rank(a));
+    const items = (summary?.unmatched_models || []).filter(item => !item.component).sort((a, b) => rank(b) - rank(a));
     // Civitai does not know it and the file is no known image model: say what it may be.
     const guess = item => (item.base ? `≈ ${item.base}` : item.reason === 'not_found' ? t('scanReasonNotImage') : '');
     return {
         items,
         title: t('scanListUnmatched', { count: items.length }),
         hint: t(actions.offline ? 'scanListUnmatchedHintOffline' : 'scanListUnmatchedHint'),
-        all: items.length && !actions.offline ? [t('scanPageRetry', { count: items.length }), actions.retryAll] : null,
+        all: items.length && !actions.offline ? [t('scanPageRetry', { count: items.length }), () => actions.scan(items, { retry: true })] : null,
         render: item => row(item.reason === 'damaged' ? { ...item, status: 'damaged' } : item,
             [reasonText(item.reason), guess(item), item.reason === 'not_found' ? t('scanFingerprintKept') : ''].filter(Boolean).join(' · '),
             unmatchedButtons(item, actions), item.reason === 'damaged' ? '⚠' : '≈'),
@@ -206,7 +226,7 @@ function listOf(view, summary, last, actions) {
 }
 
 /**
- * One list as a page ('new' | 'unmatched' | 'skipped' | 'result' | 'notdrawing' | 'excluded'): back to the scan page, what
+ * One list as a page ('new' | 'unmatched' | 'components' | 'skipped' | 'result' | 'notdrawing' | 'excluded'): back to the scan page, what
  * these models are and why they are here, a button for all of them, then the rows. A scan
  * started here shows its progress in `progressHost`, above the rows.
  */

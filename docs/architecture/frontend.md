@@ -73,7 +73,7 @@ The main surfaces are:
   own the scan page, folder manager, and help dialog.
 - Grid and model detail: model browsing plus coordinated detail display in
   `ui_detail.js`, metadata editing in `ui_model_editor.js`; `model_widget_path.js` puts a
-  model path into a loader's widget. The scan settings' model picker is `ui_scan_picker.js`.
+  model path into a loader's widget. The scan page's model picker is `ui_scan_picker.js`, its settings card `ui_scan_settings.js`.
 - Gallery: generated outputs and the full-screen Image Detail Studio Workbench.
   `ui_gallery_card.js` builds each output's card; its star and the workbench's Keep open
   `ui_keep_menu.js`, which keeps the image as a Workflow Recipe, a combo or its prompts
