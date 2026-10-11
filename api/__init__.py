@@ -1,7 +1,7 @@
 from . import (
     activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
     model_media, model_metadata, model_resolution, model_type_listing, kept_images, node_material, recipe_packages, recipes, scan_report, scan_summary,
-    translation_routes, version_manager,
+    local_guard, translation_routes, version_manager,
 )
 from .scanner import *
 from .config import *
@@ -29,6 +29,10 @@ async def no_cache_extension_middleware(request, handler):
 def setup_routes(app):
     if hasattr(app, 'middlewares') and no_cache_extension_middleware not in app.middlewares:
         app.middlewares.append(no_cache_extension_middleware)
+    # Other devices on the network may look; only this computer may change things (local_guard.py).
+    if hasattr(app, 'middlewares') and local_guard.local_only_middleware not in app.middlewares:
+        app.middlewares.append(local_guard.local_only_middleware)
+    app.router.add_get('/anomalous/access', local_guard.api_access)
     app.router.add_get('/anomalous/folders', model_catalog.api_get_folders)
     app.router.add_get('/anomalous/all_folder_types', folder_types.api_get_all_folder_types)
     app.router.add_get('/anomalous/models', model_catalog.api_get_models)

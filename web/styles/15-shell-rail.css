@@ -517,3 +517,16 @@
     color: var(--amb-btn-primary-text);
     font-weight: 600;
 }
+
+/* Opened from another device (remote_view.js): a quiet "view only" chip beside the page title. */
+.anomalous-remote-chip {
+    flex-shrink: 0;
+    margin-left: 8px;
+    padding: 2px 9px;
+    border: 1px dashed var(--amb-border-strong);
+    border-radius: 999px;
+    color: var(--amb-text-muted);
+    font-size: 11.5px;
+    white-space: nowrap;
+    cursor: help;
+}

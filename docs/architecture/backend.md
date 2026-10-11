@@ -40,6 +40,20 @@ inventory recognizes GGUF and PTH case-insensitively in addition to the existing
 list formats. This route-level inventory does not expand global model-format,
 scanner, metadata-parser, recovery, or cloud-identification support.
 
+## Requests from other devices
+
+ComfyUI started with `--listen` lets other devices on the network open the page. They may
+look; every change under `/anomalous/` answers only the computer ComfyUI runs on. One
+middleware (`api/local_guard.py`, registered first in `setup_routes`) decides it for all routes:
+a request other than GET must be local unless its path is in `OPEN_POSTS` (reads sent as POST:
+`resolve_paths_to_previews`, `resolve_hash_batch`, `inspect_image_material`); a GET is open
+unless its path is in `LOCAL_GETS` (`backup/file`, `version/releases`, `import/folders`).
+`/anomalous/mcp` answers other devices itself. Local means: a loopback peer, no proxy headers
+(`Forwarded`, `X-Forwarded-For`, `X-Real-IP`, `X-Forwarded-Host`) and a loopback `Host`, so a
+page that reached the server under another name (DNS rebinding) is refused too. A refusal is
+HTTP 403 with `code: local_only` and a bilingual message. `GET /anomalous/access` tells the page
+whether it is local; `remote_view.js` then shows a "view only" chip in the header.
+
 ## Storage ownership
 
 Runtime UI settings and newly stored API keys live in `api/config.json`.
