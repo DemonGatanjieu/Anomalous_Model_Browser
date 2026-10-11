@@ -102,4 +102,4 @@ body:has(#anomalous-toolbox-modal[style*="display: flex"]) #anomalous-sidebar-to
 
 **以后怎么做**
 - 两个仓库的规范都写了安全底线（本仓库 AGENTS.md 第 5 节“安全底线”，Anomalous_TTS 的 ARCHITECTURE.md“不能破的规矩”）。新接口按它写，审查时逐条对照。
-- 本仓库的现状（2026-10-09 统计）：55 个会写文件的接口，只有 MCP、模型导入、整理三处检查了本机请求；删除模型、改模型信息、开始下载、导入备份等在 `--listen` 时局域网里的其他设备也能调用。计划在 10 号版本发布后逐个补上；没有执行下载内容、pickle、eval 的代码。
+- 本仓库的现状（2026-10-09 统计）：55 个会写文件的接口，只有 MCP、模型导入、整理三处检查了本机请求；删除模型、改模型信息、开始下载、导入备份等在 `--listen` 时局域网里的其他设备也能调用。没有执行下载内容、pickle、eval 的代码。2026-10-12 的 v1.58.1 一次补齐：`api/local_guard.py` 一个中间件把关 `/anomalous/` 下所有会改东西的请求，只接受本机（见 backend.md“Requests from other devices”）。
