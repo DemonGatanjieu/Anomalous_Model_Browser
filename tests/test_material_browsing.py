@@ -73,3 +73,20 @@ class MaterialsByNodeTypeTests(unittest.IsolatedAsyncioTestCase):
                 response = await materials.api_get_materials_by_node_type(SimpleNamespace(query={'type': 'KSampler'}))
             self.assertEqual([item['name'] for item in json.loads(response.text)['materials']], ['kept'])
 
+    async def test_each_says_where_its_values_came_from(self):
+        with tempfile.TemporaryDirectory() as directory:
+            workflow = {'nodes': [{'id': 1, 'type': 'KSampler', 'widgets_values': [123, 'fixed', 20]}]}
+            Path(directory, 'kept.json').write_text(json.dumps({
+                'name': 'kept', 'workflow': workflow, 'kind': 'image_node_selection',
+                'source': {'type': 'generated_image', 'image': {'filename': 'ComfyUI_00001_.png', 'subfolder': 'day', 'type': 'output'}},
+                'image': {'preview_asset_id': 'preview-1.webp'}}))
+            Path(directory, 'here.json').write_text(json.dumps({
+                'name': 'here', 'workflow': workflow, 'kind': 'node_parameter_selection',
+                'source': {'type': 'canvas_node'}, 'image': {'preview_asset_id': '../escape.txt'}}))
+            with mock.patch.object(materials, 'get_materials_dir', lambda: directory):
+                response = await materials.api_get_materials_by_node_type(SimpleNamespace(query={'type': 'KSampler'}))
+            found = {item['name']: item for item in json.loads(response.text)['materials']}
+            self.assertEqual((found['kept']['origin'], found['kept']['source_image'], found['kept']['preview']),
+                             ('generated_image', {'filename': 'ComfyUI_00001_.png', 'subfolder': 'day'}, 'preview-1.webp'))
+            self.assertEqual((found['here']['origin'], found['here']['source_image'], found['here']['preview']), ('canvas_node', None, ''))
+

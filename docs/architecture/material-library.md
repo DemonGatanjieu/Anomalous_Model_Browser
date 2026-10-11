@@ -80,6 +80,11 @@ The route family is:
 - `POST /anomalous/update_material`
 - `POST /anomalous/delete_material`
 
+`materials/by_node_type` (Current node's saved values) also says where each record's values
+came from: `origin` (the source type, `generated_image` or `canvas_node`), `source_image` (the
+kept picture's `filename` and `subfolder`, or null) and `preview` (the saved preview asset's id,
+for `material_asset`, or "").
+
 `material_full?include_workflow=0` returns metadata and scoped node blocks (with
 `workflow_hashes` restricted to them) and no complete workflow; `include_workflow=1`
 returns the original workflow of a complete snapshot. Selected-node records never

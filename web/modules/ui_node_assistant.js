@@ -471,5 +471,5 @@ for (const w of node.widgets) {
             for (const w of modelWidgets) this.renderAssistantModelCard(node, w, body);
         }
         renderNodePrompts(this, node, body);
-        renderNodeParameters(node, body);
+        renderNodeParameters(node, body, this);
     }

@@ -1,4 +1,5 @@
-/* The current-node panel (Node Assistant): one scrolling body of sections; prompts; the parameters list. */
+/* The current-node panel (Node Assistant): one scrolling body of sections; prompts; the parameters
+   (saved sets as cards with their picture and source, or side by side). */
 
 .anomalous-node-body {
     display: flex;
@@ -56,6 +57,40 @@
     font-size: 12px;
 }
 
+.anomalous-node-param-tools {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Cards or side by side. */
+.anomalous-node-param-views {
+    display: inline-flex;
+    padding: 2px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+}
+
+.anomalous-node-param-views[hidden] { display: none; }
+
+.anomalous-node-param-view {
+    padding: 3px 10px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.anomalous-node-param-view:hover { color: var(--amb-text-main); }
+
+.anomalous-node-param-view.is-on {
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
+    color: var(--amb-text-main);
+    font-weight: 600;
+}
+
 .anomalous-node-param-list {
     display: flex;
     flex-direction: column;
@@ -65,11 +100,55 @@
 .anomalous-node-param {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 10px 12px;
+    gap: 10px;
+    padding: 12px;
     border: 1px solid var(--amb-border);
     border-radius: 10px;
     background: rgba(var(--amb-ink-rgb), 0.035);
+}
+
+/* The picture made with the values, and where they came from. */
+.anomalous-node-param-top {
+    display: flex;
+    gap: 12px;
+    min-width: 0;
+}
+
+.anomalous-node-param-thumb {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 52px;
+    height: 68px;
+    padding: 0;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: rgba(var(--amb-ink-rgb), 0.05);
+    color: var(--amb-text-dim);
+    overflow: hidden;
+    cursor: zoom-in;
+}
+
+.anomalous-node-param-thumb.is-empty { cursor: default; }
+
+.anomalous-node-param-thumb > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anomalous-node-param-thumb > .anomalous-node-param-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.anomalous-node-param-main {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
 }
 
 .anomalous-node-param-head {
@@ -82,7 +161,7 @@
 .anomalous-node-param-name {
     overflow: hidden;
     color: var(--amb-text-main);
-    font-size: 12.5px;
+    font-size: 13px;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
@@ -99,39 +178,156 @@
 .anomalous-node-param-role.is-positive { color: var(--amb-ok-text); }
 .anomalous-node-param-role.is-negative { color: var(--amb-danger-text); }
 
-.anomalous-node-param-sources {
+.anomalous-node-param-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    width: 13px;
+    height: 13px;
+}
+
+.anomalous-node-param-icon > svg {
+    width: 100%;
+    height: 100%;
+}
+
+.anomalous-node-param-from {
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-}
-
-.anomalous-node-param-sources span {
-    padding: 1px 7px;
-    border: 1px solid var(--amb-border);
-    border-radius: 999px;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
     color: var(--amb-text-muted);
-    font-size: 10px;
+    font-size: 11.5px;
+    line-height: 1.45;
 }
 
-.anomalous-node-param-changes {
+.anomalous-node-param-from > .anomalous-node-param-icon { align-self: center; }
+.anomalous-node-param-from-text { min-width: 0; overflow-wrap: anywhere; }
+
+.anomalous-node-param-link {
+    flex-shrink: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--amb-link);
+    font: inherit;
+    cursor: pointer;
+}
+
+.anomalous-node-param-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* The values: the name, then a picture of the change (two bars for numbers, old → new otherwise). */
+.anomalous-node-param-rows {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    gap: 6px;
+}
+
+.anomalous-node-param-row {
+    display: grid;
+    grid-template-columns: minmax(56px, 112px) minmax(48px, 200px) auto;
+    justify-content: start;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
     color: var(--amb-text-soft);
     font-size: 11.5px;
 }
 
-.anomalous-node-param-changes li {
+.anomalous-node-param-row.is-kept,
+.anomalous-node-param-row.is-same {
+    grid-template-columns: minmax(56px, 112px) minmax(0, 1fr);
+    justify-content: stretch;
+    color: var(--amb-text-dim);
+}
+
+.anomalous-node-param-label {
+    overflow: hidden;
+    color: var(--amb-text-muted);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.anomalous-node-param-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 40px;
+}
+
+.anomalous-node-param-bar {
+    height: 5px;
+    border-radius: 3px;
+}
+
+.anomalous-node-param-bar.is-now { background: rgba(var(--amb-ink-rgb), 0.22); }
+.anomalous-node-param-bar.is-then { background: var(--amb-link); }
+
+.anomalous-node-param-nums {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.anomalous-node-param-nums > .is-now { color: var(--amb-text-dim); }
+
+.anomalous-node-param-nums > strong {
+    color: var(--amb-text-main);
+    font-weight: 600;
+}
+
+.anomalous-node-param-trend {
+    margin-left: 3px;
+    color: var(--amb-link);
+}
+
+.anomalous-node-param-swap {
+    display: flex;
+    flex-wrap: wrap;
+    grid-column: 2 / -1;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    color: var(--amb-text-dim);
+}
+
+.anomalous-node-param-pill {
+    max-width: 100%;
+    padding: 1px 8px;
+    border-radius: 999px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
 
-.anomalous-node-param-changes li.is-more,
-.anomalous-node-param-kept,
+.anomalous-node-param-pill.is-now {
+    background: rgba(var(--amb-ink-rgb), 0.06);
+    color: var(--amb-text-dim);
+    text-decoration: line-through;
+}
+
+.anomalous-node-param-pill.is-then {
+    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
+    color: var(--amb-text-main);
+}
+
+.anomalous-node-param-quiet {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* The one line on what stays, across the whole row. */
+.anomalous-node-param-quiet:only-child {
+    grid-column: 1 / -1;
+    white-space: normal;
+}
+
 .anomalous-node-muted {
     margin: 0;
     color: #8b91a3;
@@ -141,12 +337,28 @@
 
 .anomalous-node-muted.is-error { color: var(--amb-danger-text); }
 
+/* Show all, compare, delete, apply. */
 .anomalous-node-param-actions {
     display: flex;
-    justify-content: flex-end;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 6px;
 }
 
+.anomalous-node-param-gap { flex: 1; }
+
+.anomalous-node-param-more {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--amb-text-muted);
+    font-size: 11.5px;
+    cursor: pointer;
+}
+
+.anomalous-node-param-more:hover { color: var(--amb-text-main); }
+
+.anomalous-node-param-secondary,
 .anomalous-node-param-delete {
     padding: 5px 10px;
     border: 1px solid var(--amb-border);
@@ -155,6 +367,11 @@
     color: var(--amb-text-muted);
     font-size: 11.5px;
     cursor: pointer;
+}
+
+.anomalous-node-param-secondary:hover {
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+    color: var(--amb-text-main);
 }
 
 .anomalous-node-param-delete:hover {
@@ -170,6 +387,7 @@
     color: var(--amb-text-main);
     font-size: 11.5px;
     font-weight: 600;
+    white-space: nowrap;
     cursor: pointer;
 }
 
@@ -179,6 +397,83 @@
     color: var(--amb-text-dim);
     cursor: default;
 }
+
+/* Side by side: a column for now and for each set, the values a set would put in marked. */
+.anomalous-node-param-table-wrap {
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    overflow-x: auto;
+}
+
+.anomalous-node-param-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+}
+
+.anomalous-node-param-table th,
+.anomalous-node-param-table td {
+    max-width: 150px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--amb-border);
+    overflow: hidden;
+    color: var(--amb-text-soft);
+    text-align: left;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.anomalous-node-param-table th {
+    vertical-align: bottom;
+    font-weight: 600;
+}
+
+.anomalous-node-param-table .is-now { color: var(--amb-text-muted); }
+
+.anomalous-node-param-table td.is-change {
+    background: color-mix(in srgb, var(--amb-link) 13%, transparent);
+    color: var(--amb-text-main);
+}
+
+.anomalous-node-param-table td.is-same,
+.anomalous-node-param-table td.is-none { color: var(--amb-text-dim); }
+
+.anomalous-node-param-table td.is-seed,
+.anomalous-node-param-table td.is-model,
+.anomalous-node-param-table td.is-missing {
+    color: var(--amb-text-dim);
+    font-style: italic;
+}
+
+.anomalous-node-param-table-thumb {
+    display: block;
+    width: 44px;
+    height: 56px;
+    margin-bottom: 5px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: rgba(var(--amb-ink-rgb), 0.05);
+    overflow: hidden;
+}
+
+button.anomalous-node-param-table-thumb { cursor: zoom-in; }
+
+.anomalous-node-param-table-thumb > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anomalous-node-param-table-name {
+    display: block;
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.anomalous-node-param-table-foot td { border-bottom: none; }
 
 /* A prompt box of the node, with its translation. */
 .anomalous-node-prompt {

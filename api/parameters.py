@@ -9,7 +9,7 @@ from aiohttp import web
 import folder_paths
 from .utils import require_filename, resolve_within
 from .recipe_constants import MAX_RECIPE_BYTES
-from .recipe_images import _parameter_gallery_images
+from .recipe_images import _parameter_gallery_images, _pictures_by_signature
 from .recipe_store import get_recipes_dir, _read_recipe
 from .workflow_schema import _parameter_signature
 from .trash import move_to_trash
@@ -188,10 +188,12 @@ async def api_get_parameters_by_type(request):
         if recipe_fn not in grouped:
             grouped[recipe_fn] = []
             
+        signature = (nb.get("data", {}).get("parameter_signature") or {})
         grouped[recipe_fn].append({
             "filename": nb.get("filename"),
             "name": nb.get("name"),
             "timestamp": nb.get("timestamp"),
+            "signature": signature.get("value") if isinstance(signature, dict) else "",
             "nodes": matched_nodes
         })
         
@@ -384,6 +386,23 @@ async def api_rename_parameter(request):
         return web.json_response({"status": "error", "message": "Could not update parameter notebook"}, status=500)
 
     return web.json_response({"status": "success", "filename": filename, "name": new_name})
+
+MAX_PICTURE_SIGNATURES = 64
+
+
+async def api_get_parameter_pictures(request):
+    """GET /anomalous/parameter_pictures?signatures=a,b - for Current node: how many recent
+    output pictures were made with each parameter set's values, and the newest, in one pass."""
+    signatures = {value.lower() for value in request.query.get("signatures", "").split(",") if value}
+    if not signatures or len(signatures) > MAX_PICTURE_SIGNATURES \
+            or any(not re.fullmatch(r"[0-9a-f]{64}", value) for value in signatures):
+        return web.json_response({"status": "error", "message": "Invalid signatures"}, status=400)
+    try:
+        pictures, scanned = await asyncio.to_thread(_pictures_by_signature, signatures)
+    except OSError:
+        return web.json_response({"status": "error", "message": "Could not read the pictures"}, status=500)
+    return web.json_response({"status": "success", "pictures": pictures, "scanned": scanned})
+
 
 async def api_get_parameter_gallery(request):
     """Find recent output PNGs whose embedded parameters match one parameter notebook."""

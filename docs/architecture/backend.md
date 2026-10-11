@@ -172,6 +172,14 @@ else 400 and nothing changes) into the user layer, and covers through `set_custo
 (`api/model_media.py`, read-only) tells it Civitai's kept image (`<model>.civitai_bak.*`, as an
 image URL) and whether the cover shown is the user's, so it can offer Civitai's back.
 
+Current node's saved values: `GET /anomalous/parameters/by_node_type` gives each recipe set's
+file and values' `signature`; `GET /anomalous/parameter_pictures?signatures=a,b`
+(`api/parameters.py`, at most 64 signatures, 64 hex characters each) counts, in one pass over
+the newest output pictures (`recipe_images._recent_output_pngs`), how many were made with each
+set's values and names the newest. A picture's signature is read once per file version
+(`lru_cache` of 4096 entries keyed by path and modification time), which the workflow page's
+`parameter_gallery` shares.
+
 The scan page's picker reads `GET /anomalous/scan_pickable` (`api/scan_summary.py`): the
 same files the summary counts (the scan folders' `.safetensors`, each once), the "don't scan"
 ones included, up to 5000 with the exact `total`. Each carries its locator (`type`,

@@ -399,6 +399,10 @@ async def api_get_materials_by_node_type(request):
                 continue
             blocks = [block for block in _material_node_blocks(material, include_values=True) if block["type"] == node_type]
             if blocks:
+                # Where the values came from, for Current node: a kept picture, or a node saved there.
+                source = material.get("source") if isinstance(material.get("source"), dict) else {}
+                image = source.get("image") if isinstance(source.get("image"), dict) else {}
+                preview = str((material.get("image") if isinstance(material.get("image"), dict) else {}).get("preview_asset_id") or "")
                 matches.append({
                     "filename": summary["filename"],
                     "name": summary["name"],
@@ -406,6 +410,10 @@ async def api_get_materials_by_node_type(request):
                     "timestamp": summary["timestamp"],
                     "blocks": blocks,
                     "workflow_hashes": _workflow_hashes_for_blocks(material["workflow"], blocks),
+                    "origin": str(source.get("type") or ""),
+                    "source_image": {"filename": str(image["filename"]), "subfolder": str(image.get("subfolder") or "")}
+                    if isinstance(image.get("filename"), str) and image["filename"] else None,
+                    "preview": preview if preview.lower().endswith((".png", ".webp")) else "",
                 })
         return matches
 

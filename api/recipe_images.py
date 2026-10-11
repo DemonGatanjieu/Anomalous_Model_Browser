@@ -1,6 +1,7 @@
 """Contained Recipe image assets and bounded output-gallery inspection."""
 
 from io import BytesIO
+from functools import lru_cache
 import hashlib
 import heapq
 import json
@@ -192,6 +193,34 @@ def _recipe_gallery_images(node_signature):
     return matches, scanned
 
 
+@lru_cache(maxsize=4096)
+def _picture_parameter_signature(image_path, mtime_ns):
+    """A picture's parameter signature, read once per version of the file."""
+    return _embedded_parameter_signature(image_path)
+
+
+def _pictures_by_signature(signatures):
+    """({signature: {"count", "newest": {filename, subfolder}}}, pictures read) for the recent
+    output pictures made with each of `signatures`, newest first, in one pass."""
+    output_dir = folder_paths.get_output_directory()
+    found = {}
+    if not os.path.isdir(output_dir):
+        return found, 0
+    scanned = 0
+    for mtime_ns, image_path in _recent_output_pngs(output_dir):
+        scanned += 1
+        signature = _picture_parameter_signature(image_path, mtime_ns)
+        if signature not in signatures:
+            continue
+        entry = found.setdefault(signature, {"count": 0, "newest": None})
+        entry["count"] += 1
+        if entry["newest"] is None:
+            relative_dir = os.path.relpath(os.path.dirname(image_path), output_dir)
+            entry["newest"] = {"filename": os.path.basename(image_path),
+                               "subfolder": "" if relative_dir == "." else relative_dir.replace("\\", "/")}
+    return found, scanned
+
+
 def _parameter_gallery_images(parameter_signature):
     output_dir = folder_paths.get_output_directory()
     if not os.path.isdir(output_dir):
@@ -200,7 +229,7 @@ def _parameter_gallery_images(parameter_signature):
     scanned = 0
     for mtime_ns, image_path in _recent_output_pngs(output_dir):
         scanned += 1
-        if _embedded_parameter_signature(image_path) != parameter_signature:
+        if _picture_parameter_signature(image_path, mtime_ns) != parameter_signature:
             continue
         relative_dir = os.path.relpath(os.path.dirname(image_path), output_dir)
         subfolder = "" if relative_dir == "." else relative_dir.replace("\\", "/")

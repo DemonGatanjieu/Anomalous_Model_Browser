@@ -60,6 +60,7 @@ def setup_routes(app):
     app.router.add_post('/anomalous/rename_parameter', api_rename_parameter)
     app.router.add_post('/anomalous/delete_parameter', api_delete_parameter)
     app.router.add_get('/anomalous/parameter_gallery', api_get_parameter_gallery)
+    app.router.add_get('/anomalous/parameter_pictures', api_get_parameter_pictures)
 
     # Recipe Routes
     app.router.add_get('/anomalous/recipes', recipes.api_get_recipes)

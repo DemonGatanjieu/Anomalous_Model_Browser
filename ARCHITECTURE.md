@@ -575,10 +575,13 @@ covered by the `styles.css` manifest.
   is the page's Download buttons, progress and the dialog that shows and changes where
   each file goes. `ui_node_assistant.js` owns the current-node panel (model actions, LoRA
   insertion, model cards and history), `ui_node_model_picker.js` owns native combo
-  replacement, `ui_node_parameters.js` renders the panel's parameters section, and
+  replacement, `ui_node_parameters.js` renders the panel's parameters section (each saved
+  set as a card with the picture made with it and where it came from, values as bars or
+  old → new, or all sets side by side), and
   `node_parameter_sets.js` merges the node type's saved values (material files and recipe
-  parameter sets) and works out what each would change on the node, keeping seeds,
-  model files and missing choices; saved values (not a recipe's) are deleted there. `model_picker.js`, `node_material_actions.js`, and `graph_splice.js`
+  parameter sets, each source with its origin) and works out what each would change on the node, keeping seeds,
+  model files and missing choices, and asks `/anomalous/parameter_pictures` for the recent pictures made with
+  the sets' values; saved values (not a recipe's) are deleted there. `model_picker.js`, `node_material_actions.js`, and `graph_splice.js`
   own the remaining explicit graph changes.
 - A model's download link lives in its user layer (`source_url` in `<model>.anomalous.json`, via
   `/anomalous/update_metadata`), the same field the model editor edits; for the open workflow's

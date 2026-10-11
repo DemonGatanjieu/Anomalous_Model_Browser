@@ -2,9 +2,11 @@
  * The saved parameters for a node type, as one list: material blocks
  * (GET /anomalous/materials/by_node_type) and recipes' parameter sets
  * (GET /anomalous/parameters/by_node_type), with the same values saved twice merged into
- * one entry that names both sources. For a live node, what an entry would change: every
- * differing value, except seeds and how they change after a run, model files (the model
- * section changes those) and choices this computer does not have, which stay. No DOM.
+ * one entry that names both sources, each saying where it came from (a recipe's set with its
+ * file and values' signature, a kept picture, or values saved in Current node). For a live
+ * node, what an entry would change: every differing value, except seeds and how they change
+ * after a run, model files (the model section changes those) and choices this computer does
+ * not have, which stay. And the recent pictures made with each set's values. No DOM.
  */
 
 import { applyNodeMaterialValues, isModelFilePath, isVolatileWidget } from './node_material_actions.js';
@@ -18,8 +20,11 @@ async function fetchJson(url, signal) {
 }
 
 /**
- * [{ name, role, timestamp, values, sources: [{ kind: 'material' | 'recipe', label }] }],
- * newest first.
+ * [{ name, role, timestamp, values, sources }], newest first. A source is a material
+ * { kind: 'material', label, filename, timestamp, origin, image, preview } (origin: how it was
+ * saved, 'generated_image' or 'canvas_node'; image: the kept picture { filename, subfolder } or
+ * null; preview: its saved preview's URL or '') or a recipe set { kind: 'recipe', label (the
+ * recipe), recipeFile, setFile, setName, timestamp, signature }.
  */
 export async function loadParameterSets(type, { signal } = {}) {
     const query = `type=${encodeURIComponent(type)}`;
@@ -45,7 +50,11 @@ export async function loadParameterSets(type, { signal } = {}) {
                 name: blocks.length > 1 ? `${material.name} · ${block.title || block.type}` : material.name,
                 role: block.role || '',
                 timestamp: material.timestamp || 0,
-                sources: [{ kind: 'material', label: material.name, filename: material.filename }],
+                sources: [{
+                    kind: 'material', label: material.name, filename: material.filename, timestamp: material.timestamp || 0,
+                    origin: material.origin || '', image: material.source_image?.filename ? material.source_image : null,
+                    preview: material.preview ? `/anomalous/material_asset?${new URLSearchParams({ filename: material.filename, asset: material.preview })}` : '',
+                }],
             });
         }
     }
@@ -60,7 +69,10 @@ export async function loadParameterSets(type, { signal } = {}) {
                     name: nodes.length > 1 ? `${notebook.name} · ${node.title}` : notebook.name,
                     role: node.role || '',
                     timestamp: notebook.timestamp || 0,
-                    sources: [{ kind: 'recipe', label: recipe }],
+                    sources: [{
+                        kind: 'recipe', label: recipe, recipeFile: group.recipe_filename, setFile: notebook.filename || '',
+                        setName: notebook.name || '', timestamp: notebook.timestamp || 0, signature: notebook.signature || '',
+                    }],
                 });
             }
         }
@@ -69,22 +81,52 @@ export async function loadParameterSets(type, { signal } = {}) {
 }
 
 /**
+ * Every value of `values` for `node`: [{ index, label, from, to, status }], status being
+ * 'change' (put in), 'same', or why the value stays: 'seed' | 'model' | 'missing'. Values of
+ * another type than the node's input there are left out.
+ */
+export function parameterRows(node, values) {
+    const rows = [];
+    values.forEach((to, index) => {
+        const widget = node.widgets?.[index];
+        if (!widget || to === undefined || to === null) return;
+        if (widget.value != null && typeof widget.value !== typeof to) return; // not the same input
+        const label = widget.label || widget.name || `#${index}`;
+        if (same(widget.value, to)) {
+            rows.push({ index, label, from: widget.value, to, status: 'same' });
+            return;
+        }
+        const choices = Array.isArray(widget.options?.values) ? widget.options.values : null;
+        const status = isVolatileWidget(node, widget, index) || widget.name === 'control_after_generate' ? 'seed'
+            : isModelFilePath(to) || isModelFilePath(widget.value) ? 'model'
+                : choices && !choices.includes(to) ? 'missing' : 'change';
+        rows.push({ index, label, from: widget.value, to, status });
+    });
+    return rows;
+}
+
+/**
  * What putting `values` into `node` would change: [{ index, label, from, to, keep }], keep
  * being '' for a change that is made, or why the value stays: 'seed' | 'model' | 'missing'.
  */
 export function parameterChanges(node, values) {
-    const changes = [];
-    values.forEach((to, index) => {
-        const widget = node.widgets?.[index];
-        if (!widget || to === undefined || to === null || same(widget.value, to)) return;
-        if (widget.value != null && typeof widget.value !== typeof to) return; // not the same input
-        const choices = Array.isArray(widget.options?.values) ? widget.options.values : null;
-        const keep = isVolatileWidget(node, widget, index) || widget.name === 'control_after_generate' ? 'seed'
-            : isModelFilePath(to) || isModelFilePath(widget.value) ? 'model'
-                : choices && !choices.includes(to) ? 'missing' : '';
-        changes.push({ index, label: widget.label || widget.name || `#${index}`, from: widget.value, to, keep });
-    });
-    return changes;
+    return parameterRows(node, values).filter(row => row.status !== 'same')
+        .map(({ index, label, from, to, status }) => ({ index, label, from, to, keep: status === 'change' ? '' : status }));
+}
+
+/**
+ * The recent pictures made with the recipe sets' values among `entries` (one pass over the
+ * outputs): { signature: { count, newest: { filename, subfolder } } }; {} when none or unreadable.
+ */
+export async function loadSetPictures(entries, { signal } = {}) {
+    const signatures = [...new Set(entries.flatMap(entry => entry.sources.map(source => source.signature)).filter(Boolean))].slice(0, 64);
+    if (!signatures.length) return {};
+    try {
+        const data = await fetchJson(`/anomalous/parameter_pictures?signatures=${signatures.join(',')}`, signal);
+        return data.pictures || {};
+    } catch {
+        return {};
+    }
 }
 
 /** Puts the changes that are made into the node; the undoable result of node_material_actions. */

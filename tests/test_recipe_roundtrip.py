@@ -19,6 +19,7 @@ from api import models
 from api import parameters
 from api import recipe_packages
 from api import materials
+from api import recipe_images
 
 
 def recipe_payload(workflow):
@@ -207,6 +208,26 @@ class RecipeWorkflowValidationTests(unittest.TestCase):
                 recipes.folder_paths.get_output_directory = previous_output_dir
         self.assertEqual(scanned, 1)
         self.assertEqual([item["filename"] for item in matches], ["match.png"])
+
+    def test_pictures_of_several_sets_are_counted_in_one_pass(self):
+        with tempfile.TemporaryDirectory() as directory:
+            first = valid_workflow()
+            second = json.loads(json.dumps(first))
+            second["nodes"][1]["widgets_values"][2] = 42
+            for name, workflow in (("a1.png", first), ("a2.png", first), ("b.png", second)):
+                info = PngImagePlugin.PngInfo()
+                info.add_text("workflow", json.dumps(workflow))
+                Image.new("RGB", (8, 8), "white").save(Path(directory, name), pnginfo=info)
+            os.utime(Path(directory, "a2.png"), (2_000_000_000, 2_000_000_000))  # the newest
+            signature = parameters._parameter_signature(first)["value"]
+            previous_output_dir = recipe_images.folder_paths.get_output_directory
+            recipe_images.folder_paths.get_output_directory = lambda: directory
+            try:
+                found, scanned = recipe_images._pictures_by_signature({signature, "0" * 64})
+            finally:
+                recipe_images.folder_paths.get_output_directory = previous_output_dir
+        self.assertEqual(scanned, 3)
+        self.assertEqual(found, {signature: {"count": 2, "newest": {"filename": "a2.png", "subfolder": ""}}})
 
     def test_gallery_comparison_reports_parameter_difference_after_node_match(self):
         recipe = valid_workflow()
