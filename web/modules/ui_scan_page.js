@@ -243,7 +243,7 @@ function stateRow(summary, open) {
     };
     const chips = el('div', 'anomalous-scan-state-chips');
     chips.append(chip('ok', t('scanPageMatched'), counts.matched),
-        chip(counts.warn ? 'warn' : 'plain', t('scanPageUnmatched'), counts.unmatched, counts.unmatched ? open('unmatched') : null),
+        chip(counts.warn ? 'warn' : 'plain', t('scanStateUnmatched'), counts.unmatched, counts.unmatched ? open('unmatched') : null),
         chip('new', t('scanPageNew'), counts.new, counts.new ? open('new') : null));
     const parts = summary.components;
     if (parts?.total) {

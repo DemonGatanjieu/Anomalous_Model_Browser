@@ -12,7 +12,9 @@ PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
 import scraper
-from api import metadata as metadata_module, model_metadata, scan_summary
+from aiohttp.test_utils import make_mocked_request
+
+from api import metadata as metadata_module, model_media, model_metadata, scan_summary
 from api.metadata import get_metadata
 
 CIVITAI = {"id": 7, "modelId": 3, "name": "v2", "model": {"name": "Found"},
@@ -99,6 +101,38 @@ class LayerTests(unittest.TestCase):
         self.assertEqual(Path(self.base + ".civitai.info").read_text(encoding="utf-8"), before)
         user = json.loads(Path(self.base + ".anomalous.json").read_text(encoding="utf-8"))
         self.assertEqual((user["custom_name"], user["custom_notes"]), ("Mine", "note"))
+
+    def edit(self, **fields):
+        with mock.patch.object(model_metadata, "resolve_folder_subdir", return_value=(str(self.dir), str(self.dir))):
+            return asyncio.run(model_metadata.api_update_metadata(Request({"type": "loras", "filename": "m.safetensors", **fields})))
+
+    def test_the_editor_keeps_a_source_link_and_refuses_what_is_no_web_address(self):
+        self.assertEqual(self.edit(custom_source_url="https://www.liblib.art/modelinfo/abc").status, 200)
+        user = json.loads(Path(self.base + ".anomalous.json").read_text(encoding="utf-8"))
+        self.assertEqual(user["source_url"], "https://www.liblib.art/modelinfo/abc")
+        for bad in ("javascript:alert(1)", "file:///C:/x.png", "https://"):
+            self.assertEqual(self.edit(custom_source_url=bad).status, 400)
+        self.assertEqual(json.loads(Path(self.base + ".anomalous.json").read_text(encoding="utf-8")), user)
+        self.edit(custom_source_url="")  # emptied on purpose
+        metadata_module.clear_metadata_cache()
+        meta = get_metadata(str(self.model))
+        self.assertEqual((meta["source_url"], "source_url" in meta["user_fields"]), ("", True))
+
+    def test_the_editor_learns_whether_the_cover_shown_is_civitais(self):
+        def covers():
+            request = make_mocked_request("GET", "/anomalous/model_covers?type=loras&path_idx=0&subfolder=/&filename=m.safetensors")
+            with mock.patch.object(model_media, "resolve_folder_subdir", return_value=(str(self.dir), str(self.dir))):
+                return json.loads(asyncio.run(model_media.api_model_covers(request)).text)
+
+        self.assertEqual(covers(), {"civitai": "", "custom": False})  # no cover at all
+        Path(self.base + ".preview.png").write_bytes(b"my own picture")
+        self.assertEqual(covers(), {"civitai": "", "custom": True})
+        Path(self.base + ".civitai_bak.png").write_bytes(b"civitai image")
+        found = covers()
+        self.assertTrue(found["custom"])
+        self.assertIn("filename=m.civitai_bak.png", found["civitai"])
+        Path(self.base + ".preview.png").write_bytes(b"civitai image")  # a copy of Civitai's
+        self.assertFalse(covers()["custom"])
 
     def test_a_scan_does_not_refetch_what_is_on_disk(self):
         write(self.base + ".info", {**CIVITAI, "anomalous_custom_name": "Found_v2"})

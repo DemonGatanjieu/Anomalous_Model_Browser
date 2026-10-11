@@ -6,7 +6,7 @@
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { escapeHtml, setSafeRichHtml } from './safe_dom.js';
-import { renderSourceLine } from './model_source.js';
+import { renderDetailActions, renderInferredNote, renderSourceLine } from './model_source.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -354,41 +354,10 @@ export function showDetail(model) {
         renderSourceLine(metaSpan, model, m);
         topRow.appendChild(metaSpan);
 
-        if (m.civitai_url) {
-            const cBtn = document.createElement('a');
-            cBtn.href = m.civitai_url;
-            cBtn.target = '_blank';
-            cBtn.rel = 'noopener noreferrer';
-            cBtn.innerHTML = '🌐 Civitai';
-            cBtn.style.marginLeft = 'auto';
-            cBtn.style.padding = '4px 8px';
-            cBtn.style.background = 'rgba(var(--amb-ink-rgb), 0.1)';
-            cBtn.style.border = '1px solid var(--amb-border-strong)';
-            cBtn.style.color = 'var(--amb-text-main)';
-            cBtn.style.textDecoration = 'none';
-            cBtn.style.borderRadius = '4px';
-            cBtn.style.fontSize = '0.85em';
-            cBtn.style.fontWeight = 'bold';
-            topRow.appendChild(cBtn);
-        }
-
-        const editMetaBtn = document.createElement('button');
-        editMetaBtn.textContent = t('detailEdit');
-        editMetaBtn.style.marginLeft = m.civitai_url ? '10px' : 'auto';
-        editMetaBtn.style.padding = '4px 8px';
-        editMetaBtn.style.background = 'var(--amb-bg-card-hover)';
-        editMetaBtn.style.color = 'var(--amb-text-main)';
-        editMetaBtn.style.border = 'none';
-        editMetaBtn.style.borderRadius = '4px';
-        editMetaBtn.style.fontSize = '0.85em';
-        editMetaBtn.style.fontWeight = 'bold';
-        editMetaBtn.style.cursor = 'pointer';
-        editMetaBtn.onclick = () => {
-            this.showEditModal(model);
-        };
-        topRow.appendChild(editMetaBtn);
-
+        topRow.appendChild(renderDetailActions(m, () => this.showEditModal(model)));
         rightPanel.appendChild(topRow);
+        const inferredNote = renderInferredNote(m, () => this.showEditModal(model));
+        if (inferredNote) rightPanel.appendChild(inferredNote);
         rightPanel.appendChild(createModelLocationCard(model));
 
         // 1.5 Custom Notes Section (Google Material Card)
@@ -548,8 +517,8 @@ export function showDetail(model) {
             rightPanel.appendChild(twCont);
         }
 
-        // 3. Description Section (Expands to fill remaining height)
-        if (m.description) {
+        // 3. Description Section (a model read from its file has the note above instead)
+        if (m.description && m.info_source !== 'local') {
             const descCont = document.createElement('div');
             descCont.style.flex = 'none';
             descCont.style.display = 'flex';

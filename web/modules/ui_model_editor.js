@@ -1,428 +1,363 @@
 /**
- * Model metadata editor and cover-selection entry.
+ * The model editor (the details' Edit, a notes card's pencil, the "read from the file" note):
+ * the cover on the left (the one shown, Civitai's own when the one shown is the user's, recent
+ * pictures, a file to upload, or the whole gallery), the name, the source link and the notes on
+ * the right, Reset, Cancel and Save always in view. Nothing is written before Save; then the
+ * cover goes first and the fields after (renaming the file takes its cover along). Fields left as
+ * they were are not sent, so they do not count as the user's own. Esc or a click outside closes.
  */
 
 import { translate } from './locales.js';
 import { isPhysicalRenameProtectedType } from './model_policies.js';
+import { detectPlatform, normalizeUrl } from './model_source_links.js';
+import { usableSourceUrl } from './model_source_data.js';
+import { reasonText } from './scan_results.js';
 
 const t = (key, params) => translate(key, params);
+const RECENT_PICTURES = 6;
+const VIDEO = /\.(mp4|webm|mov|avi)(?:[?&#]|$)/i;
+const PICTURE = /\.(png|jpe?g|webp|gif|avif)$/i;
+let fieldCount = 0;
+
+function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+}
+
+function button(className, label, onClick) {
+    const node = el('button', className, label);
+    node.type = 'button';
+    node.onclick = onClick;
+    return node;
+}
+
+/** A field: its label (for `input`, the control itself unless it is a row holding one), the control, the lines under it. */
+function field(parent, label, control, under = [], input = control) {
+    const box = el('div', 'anomalous-medit-field');
+    const name = el('label', 'anomalous-medit-label', label);
+    input.id = `anomalous-medit-field-${++fieldCount}`;
+    name.htmlFor = input.id;
+    box.append(name, control, ...under);
+    parent.append(box);
+    return box;
+}
+
+/** The model's own place, as the cover and metadata routes take it. */
+function placeOf(owner, model) {
+    const sub = String(model.subfolder ?? '').replace(/^\/+/, '');
+    return {
+        type: model.type || owner.currentType,
+        path_idx: model.path_idx ?? owner.currentPathIdx ?? 0,
+        subfolder: model.subfolder == null ? owner.currentSubfolder || '/' : sub ? `/${sub}` : '/',
+        filename: model.filename,
+    };
+}
+
+async function postJson(url, body) {
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.status !== 'success') throw new Error(data.message || `HTTP ${res.status}`);
+    return data;
+}
+
+/** The line under the title: where the model's information came from ('' for files scans never read). */
+function originLine(model, meta) {
+    if (meta.info_source === 'civitai') return t('modelEditFromCivitai');
+    if (meta.info_source === 'local') {
+        return meta.unmatched_reason === 'damaged' ? `⚠ ${t('modelSourceDamaged')}`
+            : `≈ ${t('modelSourceLocal')} · ${reasonText(meta.unmatched_reason)}`;
+    }
+    return /\.safetensors$/i.test(model.filename) ? t('modelSourceNotScanned') : '';
+}
+
+/** A web address to keep ('' for none), or null when it is not one. */
+function linkValue(raw) {
+    const text = raw.trim();
+    if (!text) return '';
+    const url = normalizeUrl(text);
+    return /^https?:\/\/[^\s/]+\.[^\s]+$/i.test(url) && usableSourceUrl(url) ? url : null;
+}
+
+/**
+ * The cover side: the chosen cover large, the choices under it. `pick(change)` gets what Save is
+ * to do: null keeps the cover, { picture } copies an output picture, { file } uploads one,
+ * { civitai: true } brings Civitai's own back. Returns { dispose } (object URLs to give back).
+ */
+function coverSide(parent, model, place, pick, toGallery) {
+    const side = el('div', 'anomalous-medit-cover-side');
+    const preview = el('div', 'anomalous-medit-cover');
+    const hint = el('small', 'anomalous-medit-hint');
+    const choices = el('div', 'anomalous-medit-choices');
+    const objectUrls = [];
+    side.append(preview, el('span', 'anomalous-medit-label', t('modelEditCover')), choices, hint);
+    parent.append(side);
+
+    const show = (url, video = VIDEO.test(url || '')) => {
+        preview.replaceChildren();
+        if (!url) {
+            preview.append(el('span', 'anomalous-medit-cover-empty', t('modelEditNoCover')));
+            return;
+        }
+        const media = el(video ? 'video' : 'img');
+        if (video) Object.assign(media, { muted: true, autoplay: true, loop: true, playsInline: true });
+        else media.alt = '';
+        media.src = url;
+        preview.append(media);
+    };
+    const choose = (tile, url, change, note, video) => {
+        choices.querySelectorAll('.is-selected').forEach(other => other.classList.remove('is-selected'));
+        tile.classList.add('is-selected');
+        show(url, video);
+        hint.textContent = note;
+        pick(change);
+    };
+    const tile = (title, thumb, onClick, className = '') => {
+        const node = button(`anomalous-medit-choice${className ? ` ${className}` : ''}`, undefined, onClick);
+        node.title = title;
+        node.setAttribute('aria-label', title);
+        if (thumb) {
+            const img = el('img');
+            img.alt = '';
+            img.loading = 'lazy';
+            img.src = thumb;
+            img.onerror = () => img.remove();
+            node.append(img);
+        }
+        return node;
+    };
+    const thumbOf = url => `${url}&variant=${VIDEO.test(url) ? 'poster' : 'card'}`;
+
+    const current = model.preview_url || '';
+    const now = tile(t('modelEditCoverNow'), current ? thumbOf(current) : '', () => choose(now, current, null, ''), 'is-selected');
+    if (!current) now.append(el('span', 'anomalous-medit-choice-mark', '∅'));
+    const upload = tile(t('modelEditCoverUpload'), '', () => input.click(), 'is-action');
+    upload.append(el('span', 'anomalous-medit-choice-mark', '⤒'));
+    const input = el('input');
+    input.type = 'file';
+    input.accept = 'image/*,video/mp4,video/webm';
+    input.hidden = true;
+    input.onchange = () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        const video = file.type.startsWith('video/');
+        objectUrls.push(url);
+        const chosen = tile(file.name, video ? '' : url, () => choose(chosen, url, { file }, t('modelEditCoverHint'), video));
+        if (video) chosen.append(el('span', 'anomalous-medit-choice-mark', '▶'));
+        upload.before(chosen);
+        chosen.click();
+        input.value = '';
+    };
+    const gallery = tile(t('modelEditCoverGallery'), '', toGallery, 'is-action');
+    gallery.append(el('span', 'anomalous-medit-choice-mark', '…'));
+    choices.append(now, upload, gallery, input);
+    show(current);
+
+    // Civitai's own cover, when the one shown is the user's; then the newest pictures.
+    const query = new URLSearchParams(place);
+    fetch(`/anomalous/model_covers?${query}`).then(res => (res.ok ? res.json() : null)).then((covers) => {
+        if (!covers?.custom || !covers.civitai || !side.isConnected) return;
+        const civitai = tile(t('modelEditCoverCivitai'), thumbOf(covers.civitai), () => choose(civitai, covers.civitai, { civitai: true }, t('modelEditCoverCivitaiHint')));
+        now.after(civitai);
+    }).catch(() => {});
+    fetch(`/anomalous/gallery_images?page=1&limit=${RECENT_PICTURES * 2}`).then(res => (res.ok ? res.json() : null)).then((data) => {
+        if (!side.isConnected) return;
+        const pictures = (data?.images || []).filter(image => PICTURE.test(image.filename || '')).slice(0, RECENT_PICTURES);
+        for (const image of pictures) {
+            const thumb = `/anomalous/output_thumbnail?${new URLSearchParams({ filename: image.filename, subfolder: image.subfolder || '' })}`;
+            const source = image.subfolder ? `${image.subfolder}/${image.filename}` : image.filename;
+            const chosen = tile(image.filename, thumb, () => choose(chosen, thumb, { picture: source }, t('modelEditCoverHint'), false));
+            upload.before(chosen);
+        }
+    }).catch(() => {});
+    return { dispose: () => objectUrls.forEach(url => URL.revokeObjectURL(url)) };
+}
+
+/** Puts the cover change in (before the fields, so a renamed file takes it along). */
+async function applyCover(place, change) {
+    if (change?.picture) {
+        await postJson('/anomalous/set_custom_cover', { ...place, source_image: change.picture });
+    } else if (change?.file) {
+        const form = new FormData();
+        for (const [key, value] of Object.entries(place)) form.append(key, value);
+        form.append('image', change.file);
+        const res = await fetch('/anomalous/upload_custom_cover', { method: 'POST', body: form });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.status !== 'success') throw new Error(data.message || `HTTP ${res.status}`);
+    }
+}
+
+/** After a save: the grid again, and the details of this model when they are open. */
+async function refresh(owner, model, place, filename) {
+    owner.loadModels?.();
+    const open = owner.currentDetailModel;
+    if (!open || (open.filename !== model.filename && open.filename !== filename)) return;
+    const rel = [place.subfolder.replace(/^\/+|\/+$/g, ''), filename].filter(Boolean).join('/');
+    const params = new URLSearchParams({ type: place.type, path_idx: place.path_idx, rel });
+    const data = await fetch(`/anomalous/scan_model?${params}`).then(res => res.json()).catch(() => ({}));
+    if (data.model) {
+        owner.currentDetailModel = data.model;
+        owner.showDetail(data.model);
+    }
+}
 
 export function showEditModal(model) {
-        const modal = document.createElement('div');
-        modal.style.position = 'fixed';
-        modal.style.top = '0';
-        modal.style.left = '0';
-        modal.style.width = '100vw';
-        modal.style.height = '100vh';
-        modal.style.background = 'var(--amb-scrim)';
-        modal.style.backdropFilter = 'blur(4px)';
-        modal.style.zIndex = '10000';
-        modal.style.display = 'flex';
-        modal.style.alignItems = 'center';
-        modal.style.justifyContent = 'center';
+    const owner = this;
+    const meta = model.metadata || {};
+    const place = placeOf(owner, model);
+    let coverChange = null;
+    let busy = false;
 
-        const content = document.createElement('div');
-        content.style.background = 'var(--amb-bg-card)';
-        content.style.padding = '24px';
-        content.style.borderRadius = '12px';
-        content.style.width = '720px';
-        content.style.maxWidth = '90%';
-        content.style.border = '1px solid var(--amb-border-strong)';
-        content.style.boxShadow = '0 8px 32px rgba(0,0,0,0.5)';
-        content.style.display = 'flex';
-        content.style.flexDirection = 'row';
-        content.style.gap = '24px';
-        content.style.fontFamily = 'Inter, Roboto, sans-serif';
+    const overlay = el('div', 'anomalous-medit-overlay');
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    const dialog = el('div', 'anomalous-medit');
+    overlay.append(dialog);
 
-        // --- LEFT COLUMN ---
-        const leftCol = document.createElement('div');
-        leftCol.style.width = '240px';
-        leftCol.style.flexShrink = '0';
-        leftCol.style.display = 'flex';
-        leftCol.style.flexDirection = 'column';
-        leftCol.style.gap = '12px';
+    const head = el('div', 'anomalous-medit-head');
+    const titles = el('div', 'anomalous-medit-titles');
+    titles.append(el('h3', '', t('modelEditTitle')), el('p', 'anomalous-medit-file', model.filename));
+    const origin = originLine(model, meta);
+    if (origin) titles.append(el('p', `anomalous-medit-origin is-${meta.info_source || 'none'}`, origin));
+    const shut = button('anomalous-medit-close', '×', () => close());
+    shut.setAttribute('aria-label', t('modelEditClose'));
+    head.append(titles, shut);
 
-        const previewContainer = document.createElement('div');
-        previewContainer.style.width = '100%';
-        previewContainer.style.height = '320px';
-        previewContainer.style.background = 'var(--amb-bg-card-hover)';
-        previewContainer.style.borderRadius = '8px';
-        previewContainer.style.display = 'flex';
-        previewContainer.style.alignItems = 'center';
-        previewContainer.style.justifyContent = 'center';
-        previewContainer.style.overflow = 'hidden';
-        previewContainer.style.border = '1px solid var(--amb-border-strong)';
-        previewContainer.style.position = 'relative';
+    const body = el('div', 'anomalous-medit-body');
+    const dirty = () => coverChange || nameInput.value.trim() !== (meta.custom_name || '')
+        || notesInput.value.trim() !== (meta.custom_notes || '').trim() || linkInput.value.trim() !== (meta.source_url || '');
+    const cover = coverSide(body, model, place, (change) => { coverChange = change; }, () => {
+        if (dirty() && !confirm(t('modelEditLeaveForGallery'))) return;
+        close();
+        owner.showGallerySelectMode(model);
+    });
+    const fields = el('div', 'anomalous-medit-fields');
+    body.append(fields);
 
-        if (model.preview_url) {
-            const isVideo = model.preview_url.match(/\.mp4(?:&|$)/i) || model.preview_url.match(/\.webm(?:&|$)/i);
-            if (isVideo) {
-                const video = document.createElement('video');
-                video.src = model.preview_url;
-                video.controls = false;
-                video.autoplay = true;
-                video.loop = true;
-                video.muted = true;
-                video.style.width = '100%';
-                video.style.height = '100%';
-                video.style.objectFit = 'cover';
+    const nameInput = el('input', 'anomalous-medit-input');
+    nameInput.type = 'text';
+    nameInput.maxLength = 200;
+    nameInput.value = meta.custom_name || '';
+    nameInput.placeholder = meta.name || model.filename;
+    const renameRow = el('label', 'anomalous-medit-check');
+    const rename = el('input');
+    rename.type = 'checkbox';
+    const locked = isPhysicalRenameProtectedType(place.type);
+    rename.disabled = locked;
+    renameRow.classList.toggle('is-disabled', locked);
+    renameRow.append(rename, el('span', '', t('modelEditRename')));
+    const renameHint = el('small', 'anomalous-medit-hint', t(locked ? 'modelEditRenameProtected' : 'modelEditNameHint'));
+    rename.onchange = () => { renameHint.textContent = t(rename.checked ? 'modelEditRenameHint' : 'modelEditNameHint'); };
+    field(fields, t('modelEditName'), nameInput, [renameRow, renameHint]);
 
-                const muteBtn = document.createElement('div');
-                muteBtn.innerHTML = '🔇';
-                muteBtn.style.position = 'absolute';
-                muteBtn.style.bottom = '8px';
-                muteBtn.style.right = '8px';
-                muteBtn.style.background = 'rgba(0,0,0,0.6)';
-                muteBtn.style.color = '#fff';
-                muteBtn.style.padding = '6px';
-                muteBtn.style.borderRadius = '50%';
-                muteBtn.style.cursor = 'pointer';
-                muteBtn.style.fontSize = '14px';
-                muteBtn.style.zIndex = '10';
-                muteBtn.title = t('detailToggleSound');
-                muteBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    video.muted = !video.muted;
-                    muteBtn.innerHTML = video.muted ? '🔇' : '🔊';
-                };
+    const linkRow = el('div', 'anomalous-medit-link');
+    const linkInput = el('input', 'anomalous-medit-input');
+    linkInput.type = 'text';
+    linkInput.inputMode = 'url';
+    linkInput.spellcheck = false;
+    linkInput.maxLength = 2048;
+    linkInput.value = meta.source_url || '';
+    linkInput.placeholder = t('modelEditLinkPlaceholder');
+    const site = el('span', 'anomalous-medit-site');
+    const showSite = () => {
+        const platform = linkInput.value.trim() ? detectPlatform(linkInput.value) : null;
+        site.hidden = !platform;
+        site.textContent = platform?.name === 'Web Link' ? t('modelEditLinkWeb') : platform?.name || '';
+        site.style.color = platform?.color || '';
+        site.style.borderColor = platform?.border || '';
+    };
+    linkInput.oninput = showSite;
+    showSite();
+    linkRow.append(linkInput, site);
+    const linkHint = meta.info_source === 'local' ? 'modelEditLinkLocalHint' : meta.civitai_url ? 'modelEditLinkCivitaiHint' : 'modelEditLinkHint';
+    field(fields, t('modelEditLink'), linkRow, [el('small', 'anomalous-medit-hint', t(linkHint))], linkInput);
 
-                previewContainer.appendChild(video);
-                previewContainer.appendChild(muteBtn);
-            } else {
-                const img = document.createElement('img');
-                img.src = model.preview_url;
-                img.style.width = '100%';
-                img.style.height = '100%';
-                img.style.objectFit = 'cover';
-                previewContainer.appendChild(img);
-            }
-        } else {
-            const noCover = document.createElement('div');
-            noCover.style.color = 'var(--amb-text-muted)';
-            noCover.style.fontSize = '0.9em';
-            noCover.style.textAlign = 'center';
-            noCover.textContent = t('detailNoCover');
-            previewContainer.appendChild(noCover);
-        }
+    const notesInput = el('textarea', 'anomalous-medit-input anomalous-medit-notes');
+    notesInput.maxLength = 5000;
+    notesInput.rows = 6;
+    notesInput.value = meta.custom_notes || '';
+    notesInput.placeholder = t('modelEditNotesPlaceholder');
+    field(fields, t('modelEditNotes'), notesInput);
 
-        const coverRow = document.createElement('div');
-        coverRow.style.display = 'flex';
-        coverRow.style.flexDirection = 'column';
-        coverRow.style.gap = '8px';
+    const foot = el('div', 'anomalous-medit-foot');
+    const reset = button('anomalous-medit-reset', t('modelEditReset'), () => resetAll());
+    reset.title = t('modelEditResetHint');
+    const error = el('div', 'anomalous-medit-error');
+    error.setAttribute('role', 'alert');
+    const cancel = button('anomalous-medit-cancel', t('modelEditCancel'), () => close());
+    const save = button('anomalous-btn-primary anomalous-medit-save', t('modelEditSave'), () => submit());
+    foot.append(reset, error, cancel, save);
+    dialog.append(head, body, foot);
 
-        const galleryBtn = document.createElement('button');
-        galleryBtn.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>${t('detailPickGallery')}`;
-        galleryBtn.style.padding = '8px';
-        galleryBtn.style.background = 'var(--amb-bg-card-hover)';
-        galleryBtn.style.color = 'var(--amb-text-main)';
-        galleryBtn.style.border = '1px solid var(--amb-border-strong)';
-        galleryBtn.style.borderRadius = '6px';
-        galleryBtn.style.cursor = 'pointer';
-        galleryBtn.style.fontWeight = '500';
-        galleryBtn.style.fontSize = '0.9em';
-        galleryBtn.onmouseover = () => galleryBtn.style.background = 'var(--amb-bg-card-hover)';
-        galleryBtn.onmouseout = () => galleryBtn.style.background = 'var(--amb-bg-card-hover)';
-        galleryBtn.onclick = () => {
-            document.body.removeChild(modal);
-            this.showGallerySelectMode(model);
-        };
-
-        const localBtn = document.createElement('button');
-        localBtn.innerHTML = `<svg style="width:13px;height:13px;margin-right:6px;vertical-align:-2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${t('detailUploadLocal')}`;
-        localBtn.style.padding = '8px';
-        localBtn.style.background = 'var(--amb-bg-card-hover)';
-        localBtn.style.color = 'var(--amb-text-main)';
-        localBtn.style.border = '1px solid var(--amb-border-strong)';
-        localBtn.style.borderRadius = '6px';
-        localBtn.style.cursor = 'pointer';
-        localBtn.style.fontWeight = '500';
-        localBtn.style.fontSize = '0.9em';
-        localBtn.onmouseover = () => localBtn.style.background = 'var(--amb-bg-card-hover)';
-        localBtn.onmouseout = () => localBtn.style.background = 'var(--amb-bg-card-hover)';
-        localBtn.onclick = () => {
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.accept = 'image/*';
-            fileInput.onchange = async (e) => {
-                if (e.target.files && e.target.files.length > 0) {
-                    const file = e.target.files[0];
-                    const formData = new FormData();
-                    formData.append('type', this.currentType);
-                    formData.append('path_idx', this.currentPathIdx);
-                    formData.append('subfolder', this.currentSubfolder);
-                    formData.append('filename', model.filename);
-                    formData.append('image', file);
-                    try {
-                        const res = await fetch('/anomalous/upload_custom_cover', { method: 'POST', body: formData });
-                        const data = await res.json();
-                        if (data.status === 'success') {
-                            await this.loadModels();
-                            const updatedModel = this.models.find(m => m.filename === model.filename);
-                            if (this.currentDetailModel && this.currentDetailModel.filename === model.filename) {
-                                if (updatedModel) this.showDetail(updatedModel);
-                            }
-                            document.body.removeChild(modal);
-                        } else {
-                            alert(t('detailUploadError') + data.message);
-                        }
-                    } catch (err) {
-                        alert(t('detailUploadFailed') + err);
-                    }
-                }
-            };
-            fileInput.click();
-        };
-
-        coverRow.appendChild(galleryBtn);
-        coverRow.appendChild(localBtn);
-
-        leftCol.appendChild(previewContainer);
-        leftCol.appendChild(coverRow);
-
-        // --- RIGHT COLUMN ---
-        const rightCol = document.createElement('div');
-        rightCol.style.flex = '1';
-        rightCol.style.display = 'flex';
-        rightCol.style.flexDirection = 'column';
-        rightCol.style.gap = '15px';
-
-        const title = document.createElement('h2');
-        title.textContent = t('detailModelInfo');
-        title.style.margin = '0';
-        title.style.color = 'var(--amb-text-main)';
-        title.style.fontSize = '1.25em';
-        title.style.fontWeight = '500';
-
-        const filenameLabel = document.createElement('div');
-        const filenamePrefix = document.createElement('span');
-        filenamePrefix.style.color = 'var(--amb-text-muted)';
-        filenamePrefix.textContent = t('detailFile');
-        filenameLabel.append(filenamePrefix, document.createTextNode(` ${model.filename}`));
-        filenameLabel.style.color = 'var(--amb-text-main)';
-        filenameLabel.style.fontSize = '0.9em';
-        filenameLabel.style.wordBreak = 'break-all';
-
-        const inputStyle = `
-            width: 100%;
-            padding: 12px 14px;
-            background: var(--amb-bg-card-hover);
-            color: var(--amb-text-main);
-            border: 1px solid var(--amb-border-strong);
-            border-radius: 6px;
-            box-sizing: border-box;
-            outline: none;
-            font-size: 14px;
-            transition: border 0.2s;
-        `;
-
-        const nameInput = document.createElement('input');
-        nameInput.placeholder = t('detailCustomNamePlaceholder');
-        nameInput.value = (model.metadata && model.metadata.custom_name) ? model.metadata.custom_name : '';
-        nameInput.style.cssText = inputStyle;
-        nameInput.onfocus = () => nameInput.style.borderColor = 'rgba(var(--amb-ink-rgb), 0.4)';
-        nameInput.onblur = () => nameInput.style.borderColor = 'var(--amb-text-dim)';
-
-        const notesInput = document.createElement('textarea');
-        notesInput.placeholder = t('detailNotesPlaceholder');
-        notesInput.value = (model.metadata && model.metadata.custom_notes) ? model.metadata.custom_notes : '';
-        notesInput.style.cssText = inputStyle;
-        notesInput.style.flex = '1'; // fill remaining space
-        notesInput.style.minHeight = '150px';
-        notesInput.style.resize = 'vertical';
-        // Notebook styling override
-        notesInput.style.background = 'linear-gradient(135deg, var(--amb-bg-card-hover) 0%, var(--amb-bg-card) 100%)';
-        notesInput.style.backgroundImage = 'repeating-linear-gradient(transparent, transparent 23px, rgba(163, 141, 83, 0.04) 23px, rgba(163, 141, 83, 0.04) 24px)';
-        notesInput.style.backgroundAttachment = 'local';
-        notesInput.style.border = '1px solid var(--amb-border-strong)';
-        notesInput.style.borderLeft = '4px solid var(--amb-note-accent)';
-        notesInput.style.borderRadius = '4px 8px 8px 4px';
-        notesInput.style.color = 'var(--amb-note-text)';
-        notesInput.style.fontFamily = '"Consolas", "Courier New", monospace';
-        notesInput.style.lineHeight = '24px';
-        // Removed text shadow for cleaner look
-
-        notesInput.onfocus = () => {
-            notesInput.style.boxShadow = '0 0 0 2px rgba(163, 141, 83, 0.2)';
-            notesInput.style.borderColor = 'var(--amb-note-accent)';
-        };
-        notesInput.onblur = () => {
-            notesInput.style.boxShadow = 'none';
-            notesInput.style.borderColor = 'var(--amb-border-strong)';
-        };
-
-        const physicalRow = document.createElement('div');
-        physicalRow.style.display = 'flex';
-        physicalRow.style.flexDirection = 'column';
-        physicalRow.style.gap = '4px';
-
-        const physicalCheckboxWrapper = document.createElement('div');
-        physicalCheckboxWrapper.style.display = 'flex';
-        physicalCheckboxWrapper.style.alignItems = 'center';
-        physicalCheckboxWrapper.style.gap = '8px';
-
-        const physicalCheckbox = document.createElement('input');
-        physicalCheckbox.type = 'checkbox';
-        physicalCheckbox.id = 'anomalous-physical-rename-checkbox';
-        physicalCheckbox.style.cursor = 'pointer';
-        const physicalRenameProtected = isPhysicalRenameProtectedType(this.currentType);
-        physicalCheckbox.disabled = physicalRenameProtected;
-        physicalCheckbox.style.cursor = physicalRenameProtected ? 'not-allowed' : 'pointer';
-
-        const physicalLabel = document.createElement('label');
-        physicalLabel.htmlFor = 'anomalous-physical-rename-checkbox';
-        physicalLabel.textContent = t('detailPhysicalRename');
-        physicalLabel.style.color = 'var(--amb-text-main)';
-        physicalLabel.style.fontSize = '0.9em';
-        physicalLabel.style.cursor = physicalRenameProtected ? 'not-allowed' : 'pointer';
-        physicalLabel.style.opacity = physicalRenameProtected ? '0.6' : '1';
-
-        physicalCheckboxWrapper.appendChild(physicalCheckbox);
-        physicalCheckboxWrapper.appendChild(physicalLabel);
-
-        const physicalDesc = document.createElement('div');
-        physicalDesc.style.fontSize = '0.8em';
-        physicalDesc.style.color = 'var(--amb-text-muted)';
-        physicalDesc.style.marginLeft = '22px';
-        physicalDesc.textContent = t(physicalRenameProtected
-            ? 'detailPhysicalRenameProtectedDesc'
-            : 'detailPhysicalRenameDesc');
-
-        physicalRow.appendChild(physicalCheckboxWrapper);
-        physicalRow.appendChild(physicalDesc);
-
-        const actionRow = document.createElement('div');
-        actionRow.style.display = 'flex';
-        actionRow.style.justifyContent = 'space-between';
-        actionRow.style.marginTop = 'auto';
-
-        const leftActions = document.createElement('div');
-        leftActions.style.display = 'flex';
-        leftActions.style.gap = '10px';
-
-        const resetBtn = document.createElement('button');
-        resetBtn.textContent = t('detailResetAll');
-        resetBtn.style.padding = '8px 16px';
-        resetBtn.style.background = 'transparent';
-        resetBtn.style.color = 'var(--amb-danger-text)';
-        resetBtn.style.border = '1px solid var(--amb-danger-text)';
-        resetBtn.style.borderRadius = '4px';
-        resetBtn.style.cursor = 'pointer';
-        resetBtn.style.fontWeight = '500';
-        resetBtn.onclick = async () => {
-            if (!confirm(t('detailResetConfirm'))) return;
-            document.body.removeChild(modal);
-            try {
-                const res = await fetch('/anomalous/update_metadata', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        type: this.currentType,
-                        path_idx: this.currentPathIdx,
-                        subfolder: this.currentSubfolder,
-                        filename: model.filename,
-                        custom_name: '',
-                        custom_notes: '',
-                        reset_cover: true,
-                        physical_rename: false
-                    })
-                });
-                const result = await res.json();
-                if (res.ok && result.status === 'success') {
-                    await this.loadModels();
-                    const updatedModel = this.models.find(m => m.filename === model.filename);
-                    if (this.currentDetailModel && this.currentDetailModel.filename === model.filename) {
-                        if (updatedModel) {
-                            this.showDetail(updatedModel);
-                        } else {
-                            this.grid.style.display = 'grid';
-                            this.detailPanel.style.display = 'none';
-                        }
-                    }
-                    if (result.cover_reset === false) {
-                        const noSource = result.cover_reset_source === 'preserved_current';
-                        alert(t(noSource ? 'detailResetCoverPreserved' : 'detailResetCoverFailed'));
-                    }
-                } else {
-                    alert(result.message || t('detailResetFailed'));
-                }
-            } catch (e) { console.error(e); }
-        };
-
-        const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = t('detailCancel');
-        cancelBtn.style.padding = '8px 16px';
-        cancelBtn.style.background = 'transparent';
-        cancelBtn.style.color = 'var(--amb-text-muted)';
-        cancelBtn.style.border = 'none';
-        cancelBtn.style.borderRadius = '4px';
-        cancelBtn.style.cursor = 'pointer';
-        cancelBtn.style.fontWeight = '500';
-        cancelBtn.onclick = () => document.body.removeChild(modal);
-
-        leftActions.appendChild(resetBtn);
-        leftActions.appendChild(cancelBtn);
-
-        const saveBtn = document.createElement('button');
-        saveBtn.textContent = t('detailSaveChanges');
-        saveBtn.style.padding = '8px 24px';
-        saveBtn.style.background = 'var(--amb-btn-primary-bg)';
-        saveBtn.style.color = 'var(--amb-btn-primary-text)';
-        saveBtn.style.border = 'none';
-        saveBtn.style.borderRadius = '4px';
-        saveBtn.style.cursor = 'pointer';
-        saveBtn.style.fontWeight = '600';
-        saveBtn.onclick = () => {
-            const newName = nameInput.value.trim();
-            const newNotes = notesInput.value.trim();
-            saveBtn.textContent = t('detailSaving');
-            saveBtn.disabled = true;
-
-            fetch('/anomalous/update_metadata', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: this.currentType,
-                    path_idx: this.currentPathIdx,
-                    subfolder: this.currentSubfolder,
-                    filename: model.filename,
-                    custom_name: newName,
-                    custom_notes: newNotes,
-                    physical_rename: physicalCheckbox.checked
-                })
-            }).then(res => res.json()).then(data => {
-                document.body.removeChild(modal);
-                if (data.status === 'success') {
-                    if (!model.metadata) model.metadata = {};
-                    model.metadata.custom_name = newName;
-                    model.metadata.custom_notes = newNotes;
-                    if (data.new_filename && physicalCheckbox.checked) {
-                        model.filename = data.new_filename;
-                    }
-                    this.loadModels();
-                    if (this.currentDetailModel && (this.currentDetailModel.filename === model.filename || (data.new_filename && this.currentDetailModel.filename === data.new_filename))) {
-                        this.showDetail(model);
-                    }
-                } else {
-                    alert(t('detailUploadError') + data.message);
-                }
-            }).catch(e => {
-                document.body.removeChild(modal);
-                alert(t('detailUploadError') + e);
-            });
-        };
-
-        actionRow.appendChild(leftActions);
-        actionRow.appendChild(saveBtn);
-
-        rightCol.appendChild(title);
-        rightCol.appendChild(filenameLabel);
-        rightCol.appendChild(nameInput);
-        rightCol.appendChild(notesInput);
-        rightCol.appendChild(physicalRow);
-        rightCol.appendChild(actionRow);
-
-        content.appendChild(leftCol);
-        content.appendChild(rightCol);
-        modal.appendChild(content);
-        document.body.appendChild(modal);
+    function close() {
+        cover.dispose();
+        overlay.remove();
     }
+    function setBusy(on) {
+        busy = on;
+        for (const node of [reset, cancel, save]) node.disabled = on;
+        save.textContent = t(on ? 'modelEditSaving' : 'modelEditSave');
+    }
+    function fail(message, focus) {
+        error.textContent = message;
+        focus?.focus();
+    }
+
+    async function submit() {
+        if (busy) return;
+        const name = nameInput.value.trim();
+        const notes = notesInput.value.trim();
+        const link = linkValue(linkInput.value);
+        if (link === null) return fail(t('modelEditLinkInvalid'), linkInput);
+        if (rename.checked && !name) return fail(t('modelEditRenameNeedsName'), nameInput);
+        const request = { ...place, physical_rename: rename.checked };
+        if (name !== (meta.custom_name || '') || rename.checked) request.custom_name = name;
+        if (notes !== (meta.custom_notes || '').trim()) request.custom_notes = notes;
+        if (link !== (meta.source_url || '')) request.custom_source_url = link;
+        if (coverChange?.civitai) request.reset_cover = true;
+        setBusy(true);
+        error.textContent = '';
+        let filename = model.filename;
+        try {
+            await applyCover(place, coverChange);
+            const data = await postJson('/anomalous/update_metadata', request);
+            filename = data.new_filename || filename;
+        } catch (failure) {
+            setBusy(false);
+            return fail(t('modelEditSaveFailed', { error: failure.message }));
+        }
+        close();
+        await refresh(owner, model, place, filename);
+    }
+
+    async function resetAll() {
+        if (busy || !confirm(t('modelEditResetConfirm'))) return;
+        setBusy(true);
+        try {
+            const data = await postJson('/anomalous/update_metadata', { ...place, custom_name: '', custom_notes: '', reset_cover: true, physical_rename: false });
+            close();
+            if (data.cover_reset === false) alert(t(data.cover_reset_source === 'preserved_current' ? 'modelEditResetCoverKept' : 'modelEditResetCoverFailed'));
+            await refresh(owner, model, place, model.filename);
+        } catch (failure) {
+            setBusy(false);
+            fail(t('modelEditSaveFailed', { error: failure.message }));
+        }
+    }
+
+    overlay.addEventListener('mousedown', (event) => {
+        if (event.target === overlay && !busy) close();
+    });
+    overlay.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            event.stopPropagation();
+            if (!busy) close();
+        } else if (event.key === 'Enter' && (event.target.tagName === 'INPUT' && event.target.type === 'text' || event.ctrlKey || event.metaKey)) {
+            event.preventDefault();
+            submit();
+        }
+    });
+    document.body.append(overlay);
+    nameInput.focus();
+}

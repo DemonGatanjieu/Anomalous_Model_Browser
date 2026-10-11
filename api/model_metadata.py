@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import shutil
 
 from aiohttp import web
@@ -134,6 +135,10 @@ async def api_delete_model(request):
         return web.json_response({"status": "error", "message": str(e)}, status=500)
 
 
+def _is_web_link(text):
+    return not text or (len(text) <= 2048 and re.fullmatch(r"https?://[^\s/]+\.\S+", text, re.IGNORECASE) is not None)
+
+
 async def api_update_metadata(request):
     try:
         data = await request.json()
@@ -182,6 +187,9 @@ async def api_update_metadata(request):
 
         if not file_path or not os.path.exists(file_path):
             return web.json_response({"status": "error", "message": "Model not found"})
+        # A source link is opened from the page: a web address or nothing.
+        if custom_source_url is not None and not _is_web_link(str(custom_source_url).strip()):
+            return web.json_response({"status": "error", "message": "The source link must be an http(s) address."}, status=400)
 
         physical_rename_skipped = physical_rename_requested and is_physical_rename_protected(
             folder_type=folder_type,
