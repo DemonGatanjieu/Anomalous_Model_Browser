@@ -15,6 +15,7 @@ import { translate as t } from './locales.js';
 import { dayLabel, timeLabel } from './activity_log.js';
 import { countsLine, fileOutcome, isPending, reasonText, scanScope, STATUS_MARKS } from './scan_results.js';
 import { typeLabel } from './ui_model_types.js';
+import { scanIcon } from './scan_icons.js';
 
 const SHOWN_ROWS = 100; // more behind "show all"
 
@@ -118,15 +119,16 @@ function resultNotes(result) {
     return notes;
 }
 
-/** The last scan on the scan page: when, what, the counts, and a way to each model. Null before the first scan. */
+/** The last scan at the foot of the scan page, in one line: when, what, the counts, a way to each model. Null before the first scan. */
 export function renderLastScan(result, onDetails) {
     if (!result?.counts) return null;
-    const box = el('section', 'anomalous-scan-card anomalous-scan-result');
-    box.append(el('div', 'anomalous-scan-card-title', resultTitle(result)),
-        el('div', 'anomalous-scan-result-counts', countsLine(result.counts)), ...resultNotes(result));
+    const box = el('section', 'anomalous-scan-last');
     const files = result.files || [];
-    if (files.length) box.append(button('anomalous-scan-more', t('scanResultDetails', { count: files.length }), onDetails));
-    else box.append(el('p', 'anomalous-scan-muted', t('scanResultNothing', { count: result.counts.unchanged || 0 })));
+    const line = el('div', 'anomalous-scan-last-line');
+    line.append(scanIcon('history'), el('span', 'anomalous-scan-last-text', `${resultTitle(result)} · ${
+        files.length ? countsLine(result.counts) : t('scanResultNothing', { count: result.counts.unchanged || 0 })}`));
+    if (files.length) line.append(button('anomalous-pick-link', t('scanResultDetails', { count: files.length }), onDetails));
+    box.append(line, ...resultNotes(result));
     return box;
 }
 

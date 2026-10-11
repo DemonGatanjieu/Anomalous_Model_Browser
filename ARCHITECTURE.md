@@ -378,11 +378,13 @@ covered by the `styles.css` manifest.
   `ui_browser_navigation.js` owns shared panel hiding/cleanup and workspace return,
   including Esc on the workspace panel (`nbPanel`, below the header and right of the
   rail; the list column steps aside while it is open).
-  `ui_scan_page.js` is the scan page (a tool page like the doctor): counts without the
-  components, a card for the components, the scan button with "pick models to scan" beside it
-  and what the scan will do, the settings card (`ui_scan_settings.js`: the scan options,
-  folded into short words or unfolded in place), the last scan's summary; each count, the
-  components and the summary open a
+  `ui_scan_page.js` is the scan page (a tool page like the doctor), quieter the further
+  down: the scan card (a ring of the models found, what is left, the scan button with "pick
+  models to scan" beside it, online or offline, what the scan will do in one sentence), the
+  models' state as a bar and chips (the components on a chip of their own), what needs a look,
+  the settings (`ui_scan_settings.js`: the scan options as tiles, the two that change files
+  folded under "more"), the last scan in one line; icons from `scan_icons.js`. Each state chip,
+  the components and the last scan open a
   list page from `ui_scan_lists.js` (not scanned, unmatched, other formats, the last scan's
   models) with Back, a button for the whole list (scan these / look them up again) and rows
   that open a model, whose Back returns to the list, or scan it;

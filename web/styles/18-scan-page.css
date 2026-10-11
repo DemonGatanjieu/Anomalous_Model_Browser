@@ -1,5 +1,5 @@
-/* Scan page: counts, the scan button, progress in the page, advanced options, and the
-   list pages behind the counts. The settings page (ui_settings_page.js) is built from the
+/* Scan page: the scan card (ring, button, online or offline), the models' state, what needs a
+   look, the settings tiles, the last scan, and the list pages behind them. The settings page (ui_settings_page.js) is built from the
    same page, card, row, choice and switch rules. */
 
 #anomalous-scan-panel,
@@ -33,56 +33,370 @@
     line-height: 1.6;
 }
 
-/* "N files in other formats are not scanned": a quiet link under the counts. */
-.anomalous-scan-skipped-note {
+.anomalous-scan-head {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.anomalous-scan-about > summary {
     align-self: flex-start;
-    padding: 0;
-    border: none;
-    background: none;
-    color: var(--amb-text-muted);
-    font-size: 0.85em;
-    text-decoration: underline dotted;
-    text-underline-offset: 3px;
+    width: fit-content;
+    color: var(--amb-link);
+    font-size: 12.5px;
+    list-style: none;
     cursor: pointer;
 }
 
-.anomalous-scan-skipped-note:hover {
-    color: var(--amb-text-main);
+.anomalous-scan-about > summary::-webkit-details-marker {
+    display: none;
 }
 
-/* The question about new models that look like no drawing model, under the counts (a row,
-   unlike the other cards). */
-.anomalous-scan-card.anomalous-scan-ask {
+.anomalous-scan-about > .anomalous-scan-lead {
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.anomalous-scan-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+}
+
+.anomalous-scan-icon > svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* A section's small heading (the models' state, what needs a look, the settings). */
+.anomalous-scan-section-title {
+    margin: 10px 0 0;
+    color: var(--amb-text-muted);
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+/* The scan card: the ring on the left; what is left, the buttons and what the scan does. */
+.anomalous-scan-card.anomalous-scan-hero {
     flex-direction: row;
+    align-items: flex-start;
+    gap: 22px;
+    padding: 22px 24px;
+    border-color: color-mix(in srgb, var(--amb-link) 28%, var(--amb-border));
+    background: color-mix(in srgb, var(--amb-link) 5%, transparent);
+}
+
+.anomalous-scan-ring {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 92px;
+    height: 92px;
+}
+
+.anomalous-scan-ring > svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.anomalous-scan-ring-track,
+.anomalous-scan-ring-done {
+    fill: none;
+    stroke-width: 8;
+}
+
+.anomalous-scan-ring-track { stroke: rgba(var(--amb-ink-rgb), 0.1); }
+.anomalous-scan-ring-done { stroke: var(--amb-ok-text); stroke-linecap: round; }
+
+.anomalous-scan-ring-count {
+    color: var(--amb-text-main);
+    font-size: 21px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+}
+
+.anomalous-scan-ring-total {
+    color: var(--amb-text-muted);
+    font-size: 11.5px;
+}
+
+.anomalous-scan-hero-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.anomalous-scan-hero-title {
+    color: var(--amb-text-main);
+    font-size: 19px;
+    font-weight: 600;
+}
+
+.anomalous-scan-hero-sub {
+    margin-bottom: 10px;
+    color: var(--amb-text-muted);
+    font-size: 13px;
+}
+
+.anomalous-scan-hero .anomalous-scan-actions {
+    align-items: center;
+    margin-top: 0;
+}
+
+.anomalous-scan-hero-sentence {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+    margin: 0;
+    color: var(--amb-text-soft);
+    font-size: 13px;
+}
+
+.anomalous-scan-hero-sentence .anomalous-pick-link {
+    margin-left: 0;
+    padding: 0;
+}
+
+.anomalous-scan-hero-warn {
+    margin: 6px 0 0;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--amb-warn-text) 12%, transparent);
+    color: var(--amb-warn-text);
+    font-size: 12.5px;
+}
+
+/* Online or offline, at the end of the scan card's buttons. */
+.anomalous-scan-mode {
+    display: inline-flex;
+    margin-left: auto;
+    padding: 3px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+}
+
+.anomalous-scan-mode-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.anomalous-scan-mode-btn .anomalous-scan-icon { width: 16px; height: 16px; }
+.anomalous-scan-mode-btn:hover { color: var(--amb-text-main); }
+
+.anomalous-scan-mode-btn.is-on {
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
+    color: var(--amb-text-main);
+    font-weight: 600;
+}
+
+/* The models' state: a bar of shares, then a chip per state. */
+.anomalous-scan-state,
+.anomalous-scan-attention,
+.anomalous-scan-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.anomalous-scan-bar {
+    display: flex;
+    gap: 2px;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.08);
+    overflow: hidden;
+}
+
+.anomalous-scan-bar-part { flex-basis: 0; min-width: 4px; }
+.anomalous-scan-bar-part.is-ok, .anomalous-scan-state-chip.is-ok .anomalous-scan-state-dot { background: var(--amb-ok-text); }
+.anomalous-scan-bar-part.is-plain, .anomalous-scan-state-chip.is-plain .anomalous-scan-state-dot { background: var(--amb-text-dim); }
+.anomalous-scan-bar-part.is-warn, .anomalous-scan-state-chip.is-warn .anomalous-scan-state-dot { background: var(--amb-warn-text); }
+.anomalous-scan-bar-part.is-new, .anomalous-scan-state-chip.is-new .anomalous-scan-state-dot { background: var(--amb-link); }
+
+.anomalous-scan-state-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.anomalous-scan-state-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 13px;
+}
+
+.anomalous-scan-state-chip strong {
+    color: var(--amb-text-main);
+    font-variant-numeric: tabular-nums;
+}
+
+.anomalous-scan-state-chip .anomalous-scan-icon { width: 14px; height: 14px; color: var(--amb-text-muted); }
+
+button.anomalous-scan-state-chip { cursor: pointer; }
+
+button.anomalous-scan-state-chip:hover {
+    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
+    background: rgba(var(--amb-ink-rgb), 0.06);
+}
+
+.anomalous-scan-state-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+/* The components: apart from the counts, dashed, at the end of the row. */
+.anomalous-scan-state-chip.anomalous-scan-parts-chip {
+    margin-left: auto;
+    border-style: dashed;
+}
+
+/* What needs a look: one row each, a list in one card. */
+.anomalous-scan-card.anomalous-scan-attn-list {
+    gap: 0;
+    padding: 0;
+}
+
+.anomalous-scan-attn {
+    display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px 14px;
-}
-
-.anomalous-scan-ask-text { flex: 1 1 260px; margin: 0; text-align: left; color: var(--amb-text-soft); font-size: 0.9em; line-height: 1.5; }
-.anomalous-scan-ask-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-
-.anomalous-scan-ask-see {
+    gap: 8px 12px;
+    width: 100%;
+    padding: 11px 16px;
     border: none;
-    background: none;
-    color: var(--amb-link);
-    cursor: pointer;
-}
-
-/* "N model files are damaged": a warning under the counts, to their list. */
-.anomalous-scan-damaged-note {
-    align-self: flex-start;
-    padding: 6px 12px;
-    border: 1px solid color-mix(in srgb, var(--amb-danger-text) 45%, transparent);
-    border-radius: var(--amb-radius-control);
-    background: color-mix(in srgb, var(--amb-danger-text) 10%, transparent);
-    color: var(--amb-danger-text);
-    font-size: 0.9em;
+    border-top: 1px solid var(--amb-border);
+    background: transparent;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 13.5px;
     text-align: left;
+}
+
+.anomalous-scan-attn:first-child { border-top: none; }
+button.anomalous-scan-attn { cursor: pointer; }
+button.anomalous-scan-attn:hover { background: rgba(var(--amb-ink-rgb), 0.04); }
+.anomalous-scan-attn-text { flex: 1 1 220px; min-width: 0; line-height: 1.5; }
+.anomalous-scan-attn > .anomalous-scan-icon:last-child { color: var(--amb-text-muted); }
+.anomalous-scan-attn.is-danger { color: var(--amb-danger-text); }
+.anomalous-scan-attn.is-quiet { color: var(--amb-text-muted); }
+
+/* The settings: a tile each, with its icon and switch; the rarer ones folded under them. */
+.anomalous-scan-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.anomalous-scan-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px;
+    border: 1px solid var(--amb-border);
+    border-radius: 12px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+}
+
+label.anomalous-scan-tile { cursor: pointer; }
+label.anomalous-scan-tile:hover { border-color: color-mix(in srgb, var(--amb-link) 35%, transparent); }
+.anomalous-scan-tile.is-dim { opacity: 0.55; }
+
+.anomalous-scan-tile-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.anomalous-scan-tile-top > .anomalous-scan-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--amb-link);
+}
+
+.anomalous-scan-tile-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: var(--amb-text-main);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.anomalous-scan-more-settings {
+    padding: 0 16px;
+    border: 1px solid var(--amb-border);
+    border-radius: 12px;
+}
+
+.anomalous-scan-more-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0;
+    color: var(--amb-text-soft);
+    font-size: 13px;
+    list-style: none;
     cursor: pointer;
 }
 
-.anomalous-scan-damaged-note:hover { background: color-mix(in srgb, var(--amb-danger-text) 16%, transparent); }
+.anomalous-scan-more-head::-webkit-details-marker { display: none; }
+.anomalous-scan-more-head::before { content: '›'; color: var(--amb-text-muted); transition: transform 0.15s ease; }
+.anomalous-scan-more-settings[open] > .anomalous-scan-more-head::before { transform: rotate(90deg); }
+.anomalous-scan-more-settings > .anomalous-scan-setting-help { display: block; padding-bottom: 12px; }
+
+/* The last scan, at the foot of the page in one line. */
+.anomalous-scan-last {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+    padding-top: 14px;
+    border-top: 1px solid var(--amb-border);
+}
+
+.anomalous-scan-last-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    color: var(--amb-text-muted);
+    font-size: 13px;
+}
+
+.anomalous-scan-last-text { flex: 1 1 260px; min-width: 0; }
+.anomalous-scan-last-line .anomalous-pick-link { margin-left: 0; }
+
+@media (max-width: 560px) {
+    .anomalous-scan-card.anomalous-scan-hero { flex-direction: column; align-items: center; }
+    .anomalous-scan-mode { margin-left: 0; }
+    .anomalous-scan-state-chip.anomalous-scan-parts-chip { margin-left: 0; }
+}
 
 .anomalous-scan-stats {
     display: grid;
@@ -128,7 +442,9 @@ button.anomalous-scan-stat:hover {
 }
 
 .anomalous-scan-stat.is-ok .anomalous-scan-stat-value { color: var(--amb-ok-text); }
+
 .anomalous-scan-stat.is-warn .anomalous-scan-stat-value { color: var(--amb-warn-text); }
+
 .anomalous-scan-stat.is-new .anomalous-scan-stat-value { color: var(--amb-link); }
 
 .anomalous-scan-actions {
@@ -140,6 +456,10 @@ button.anomalous-scan-stat:hover {
 
 .anomalous-scan-primary,
 .anomalous-scan-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     padding: 10px 18px;
     border-radius: 10px;
     font-size: 14px;
@@ -213,140 +533,6 @@ button.anomalous-scan-stat:hover {
     border-bottom: 1px solid var(--amb-border);
 }
 
-/* The scan page's settings card: folded, how the next scan goes in short words; unfolded in
-   place, the switches. A <details>, so a block (not the cards' flex column). */
-.anomalous-scan-card.anomalous-scan-settings {
-    display: block;
-    padding: 0;
-}
-
-.anomalous-scan-settings-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 12px;
-    padding: 14px 16px;
-    border-radius: 12px;
-    list-style: none;
-    cursor: pointer;
-}
-
-.anomalous-scan-settings-head::-webkit-details-marker {
-    display: none;
-}
-
-.anomalous-scan-settings-head:hover {
-    background: rgba(var(--amb-ink-rgb), 0.04);
-}
-
-.anomalous-scan-settings-head > .anomalous-scan-chips {
-    flex: 1 1 260px;
-}
-
-.anomalous-scan-settings-change,
-.anomalous-scan-settings-fold {
-    margin-left: auto;
-    color: var(--amb-link);
-    font-size: 12.5px;
-    white-space: nowrap;
-}
-
-.anomalous-scan-settings-fold,
-.anomalous-scan-settings[open] .anomalous-scan-settings-change {
-    display: none;
-}
-
-.anomalous-scan-settings[open] .anomalous-scan-settings-fold {
-    display: inline;
-}
-
-.anomalous-scan-settings > .anomalous-scan-setting-help {
-    margin: 0 16px 4px;
-}
-
-.anomalous-scan-settings-part {
-    margin: 0 16px;
-    padding: 12px 0;
-    border-top: 1px solid var(--amb-border);
-}
-
-.anomalous-scan-settings-part:last-child {
-    padding-bottom: 16px;
-}
-
-/* The components (VAE, text encoders…) under the counts: a card to their list. */
-.anomalous-scan-card.anomalous-scan-parts {
-    gap: 6px;
-    width: 100%;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-.anomalous-scan-card.anomalous-scan-parts:hover {
-    border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
-    background: rgba(var(--amb-ink-rgb), 0.04);
-}
-
-.anomalous-scan-parts-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 4px 10px;
-}
-
-.anomalous-scan-parts-kinds {
-    color: var(--amb-text-dim);
-    font-size: 12px;
-}
-
-.anomalous-scan-parts-head > .anomalous-scan-settings-change {
-    margin-left: auto;
-}
-
-.anomalous-scan-parts-counts {
-    color: var(--amb-text-main);
-    font-size: 14px;
-    font-variant-numeric: tabular-nums;
-}
-
-.anomalous-scan-parts-note {
-    color: var(--amb-text-muted);
-    font-size: 12.5px;
-    line-height: 1.55;
-}
-
-/* The scan: its buttons, then the picks or what a scan of everything does. */
-.anomalous-scan-run > .anomalous-scan-actions {
-    align-items: center;
-    margin-top: 0;
-}
-
-.anomalous-scan-run > .anomalous-scan-muted {
-    font-size: 12px;
-}
-
-.anomalous-scan-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.anomalous-scan-chip {
-    padding: 3px 10px;
-    border: 1px solid var(--amb-border);
-    border-radius: 999px;
-    color: var(--amb-text-soft);
-    font-size: 12px;
-}
-
-.anomalous-scan-chip.is-warn {
-    border-color: rgba(252, 211, 77, 0.35);
-    color: var(--amb-warn-text);
-}
-
 /* The settings page: one card per question. */
 .anomalous-scan-group-title {
     margin: 0 0 2px;
@@ -391,18 +577,13 @@ button.anomalous-scan-stat:hover {
     font-weight: 600;
 }
 
-/* Under "which models": what a scan of all of them does, or the picks. */
+/* In the scan card: what a scan of everything does, or the picks. */
 .anomalous-scan-scope-facts,
 .anomalous-scan-pick {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    margin-top: 10px;
-}
-
-.anomalous-scan-scope-total {
-    color: var(--amb-text-main);
-    font-size: 14px;
+    margin-top: 12px;
 }
 
 .anomalous-scan-scope-list {
@@ -484,8 +665,7 @@ label.anomalous-scan-setting {
     cursor: pointer;
 }
 
-.anomalous-scan-group-title + .anomalous-scan-setting,
-.anomalous-scan-subtitle + .anomalous-scan-setting {
+.anomalous-scan-group-title + .anomalous-scan-setting {
     padding-top: 4px;
     border-top: none;
 }
@@ -571,24 +751,6 @@ label.anomalous-scan-setting {
 .anomalous-scan-switch:focus-visible {
     outline: 2px solid color-mix(in srgb, var(--amb-link) 60%, transparent);
     outline-offset: 2px;
-}
-
-/* What only an online scan does: a small heading, faded while scanning offline. */
-.anomalous-scan-online {
-    display: flex;
-    flex-direction: column;
-    border-top: 1px solid var(--amb-border);
-}
-
-.anomalous-scan-subtitle {
-    padding-top: 12px;
-    color: var(--amb-text-dim);
-    font-size: 11.5px;
-}
-
-.anomalous-scan-online.is-disabled > .anomalous-scan-setting {
-    opacity: 0.4;
-    pointer-events: none;
 }
 
 .anomalous-scan-small-btn {
@@ -757,9 +919,11 @@ label.anomalous-scan-setting {
 }
 
 .anomalous-scan-row.is-matched .anomalous-scan-row-mark { color: var(--amb-ok-text); }
+
 .anomalous-scan-row.is-failed .anomalous-scan-row-mark,
 .anomalous-scan-row.is-damaged .anomalous-scan-row-mark,
 .anomalous-scan-row.is-damaged .anomalous-scan-row-detail { color: var(--amb-danger-text); }
+
 .anomalous-scan-row.is-unchanged .anomalous-scan-row-mark { color: var(--amb-text-muted); }
 
 .anomalous-scan-row-copy {

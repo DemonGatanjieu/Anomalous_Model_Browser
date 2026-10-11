@@ -1,21 +1,22 @@
 /**
- * The scan page (GET /anomalous/scan_summary): how many models are matched on Civitai,
- * unmatched or not scanned, without the components a drawing model loads (VAE, text
- * encoders…), which have a card of their own saying that not being on Civitai is no fault.
- * Then the scan itself: one button, "pick models to scan" beside it (ui_scan_picker.js; the
- * picks are named under it, and cleared the button scans everything again), and what this
- * scan will do in the summary's counts. Under it the settings, unfolded in place
- * (ui_scan_settings.js), progress in the page and the last scan in one card. Each count, the
- * components and the last scan open their list as a page of its own (ui_scan_lists.js) with a
- * way back. New models whose header looks like no drawing model are asked about (don't scan
- * them, scan them, see them); models set to "don't scan" have a list of their own.
- * Scans run through scan_runner.js; the progress box is scan_progress.js's panel,
- * hosted here while the page is shown.
+ * The scan page (GET /anomalous/scan_summary), quieter the further down. First the scan card:
+ * a ring of the models found on Civitai, what is left to do in one line, the scan button,
+ * "pick models to scan" (ui_scan_picker.js; the picks are named in the card, and cleared the
+ * button scans everything again), online or offline, and what this scan will do in one sentence
+ * (the full counts unfold). Progress shows under it. Then the models' state as a bar with a chip
+ * per state (not found and not scanned open their list), and a chip for the components a
+ * drawing model loads (VAE, text encoders…), which are not in the counts since many are not on
+ * Civitai. Then, only when there is something, what needs a look: damaged files, new models that
+ * look like no drawing model (don't scan them, scan them, see them), models set to "don't scan",
+ * files in other formats. Then the settings (ui_scan_settings.js) and the last scan in one line.
+ * Lists are pages of their own (ui_scan_lists.js) with a way back. Scans run through
+ * scan_runner.js; the progress box is scan_progress.js's panel, hosted here while the page is shown.
  */
 
 import { translate as t } from './locales.js';
 import { isScanRunning, startScan, targetsForItems } from './scan_runner.js';
 import { setScanProgressHost } from './scan_progress.js';
+import { scanIcon } from './scan_icons.js';
 import { openListedModel, renderLastScan, renderListPage } from './ui_scan_lists.js';
 import { openScanPicker, pickKey, picksLine } from './ui_scan_picker.js';
 import { renderScanSettings, scanOptions as options } from './ui_scan_settings.js';
@@ -23,8 +24,8 @@ import { renderScanSettings, scanOptions as options } from './ui_scan_settings.j
 const SHOWN_PICKS = 12; // picked models named on the page; the rest are counted
 // The view shown: '' the page itself, or a list: 'new' | 'unmatched' | 'skipped' | 'result'
 // | 'notdrawing' | 'excluded' | 'components'. `scroll`: where to put a list shown again after a
-// model's Back. `settingsOpen`: the settings card is unfolded.
-const pageState = { view: '', scroll: 0, settingsOpen: false };
+// model's Back. `factsOpen`, `moreOpen`: the scan's full counts, the rarer settings unfolded.
+const pageState = { view: '', scroll: 0, factsOpen: false, moreOpen: false };
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -49,19 +50,7 @@ async function fetchJson(url) {
     }
 }
 
-/** A count; with `onClick` it opens the list of those models. */
-function stat(value, label, tone, onClick) {
-    const box = el(onClick ? 'button' : 'div', `anomalous-scan-stat${tone ? ` is-${tone}` : ''}`);
-    if (onClick) {
-        box.type = 'button';
-        box.onclick = onClick;
-        box.title = t('scanPageShowList');
-    }
-    box.append(el('strong', 'anomalous-scan-stat-value', value ?? '–'), el('span', 'anomalous-scan-stat-label', label));
-    return box;
-}
-
-/** The counts without the components (they have their own card). */
+/** The counts without the components (they have their own chip). */
 function mainCounts(summary) {
     const parts = summary.components || { total: 0, matched: 0, unmatched: 0, new: 0 };
     const unmatched = (summary.unmatched_models || []).filter(item => !item.component);
@@ -73,48 +62,50 @@ function mainCounts(summary) {
     };
 }
 
-/** The components (VAE, text encoders…): their counts, that missing on Civitai is fine, and a way to their list. */
-function componentsCard(summary, open) {
-    const parts = summary?.components;
-    if (!parts?.total) return null;
-    const card = button('anomalous-scan-card anomalous-scan-parts', undefined, open);
-    const head = el('span', 'anomalous-scan-parts-head');
-    head.append(el('span', 'anomalous-scan-card-title', t('scanPartsTitle')), el('span', 'anomalous-scan-parts-kinds', t('scanPartsKinds')),
-        el('span', 'anomalous-scan-settings-change', t('scanPartsOpen')));
-    const counts = [t('scanPartsTotal', { count: parts.total }),
-        parts.matched && t('scanPartsMatched', { count: parts.matched }),
-        parts.unmatched && t('scanPartsUnmatched', { count: parts.unmatched }),
-        parts.new && t('scanPartsNew', { count: parts.new })].filter(Boolean).join(' · ');
-    card.append(head, el('span', 'anomalous-scan-parts-counts', counts), el('span', 'anomalous-scan-parts-note', t('scanPartsNote')));
-    return card;
+/** The ring: the share of the models found on Civitai, the count in its middle. */
+function ring(matched, total) {
+    const box = el('div', 'anomalous-scan-ring');
+    const length = 2 * Math.PI * 34;
+    const done = total ? Math.min(1, matched / total) * length : 0;
+    box.innerHTML = `<svg viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="34" class="anomalous-scan-ring-track"/>`
+        + `<circle cx="42" cy="42" r="34" class="anomalous-scan-ring-done" stroke-dasharray="${done.toFixed(1)} ${length.toFixed(1)}" transform="rotate(-90 42 42)"/></svg>`; // numbers only
+    box.append(el('strong', 'anomalous-scan-ring-count', String(matched)), el('small', 'anomalous-scan-ring-total', `/ ${total}`));
+    box.title = t('scanHeroFound', { matched, total });
+    return box;
 }
 
 /**
- * What a scan of every model does this time, in the summary's counts and the current settings;
- * a line says how many of its models are components (the counts above leave them out).
+ * What a scan of every model does this time, in the summary's counts and the current settings:
+ * one sentence, and the lines (each saying how many of its models are components) when unfolded.
  */
-function wholeScanFacts(summary) {
+function wholeScanFacts(summary, refresh) {
     const box = el('div', 'anomalous-scan-scope-facts');
-    if (summary) {
-        const online = !options.offline;
-        const force = online && options.forceOverwrite;
-        const parts = { total: 0, matched: 0, unmatched: 0, new: 0, pending: 0, ...summary.components };
-        const lookup = online ? summary.new + summary.pending : summary.new;
-        const lines = force ? [['scanScopeForce', summary.total, parts.total], ['scanScopeExcluded', summary.excluded, 0]] : [
-            [online ? 'scanScopeLookup' : 'scanScopeInfer', lookup, online ? parts.new + parts.pending : parts.new],
-            ['scanScopeNothingNew', lookup ? 0 : 1, 0],
-            ['scanScopeMatched', summary.matched, parts.matched],
-            ['scanScopeNotFound', summary.unmatched - summary.pending, parts.unmatched - parts.pending],
-            ['scanScopeWaiting', online ? 0 : summary.pending, parts.pending],
-            ['scanScopeExcluded', summary.excluded, 0],
-        ];
-        const list = el('ul', 'anomalous-scan-scope-list');
-        for (const [key, count, ofParts] of lines) {
-            if (count) list.append(el('li', '', t(key, { count: count.toLocaleString(), parts: ofParts ? t('scanScopeWithParts', { count: ofParts }) : '' })));
-        }
-        box.append(list);
+    const online = !options.offline;
+    const force = online && options.forceOverwrite;
+    const parts = { total: 0, matched: 0, unmatched: 0, new: 0, pending: 0, ...summary.components };
+    const lookup = online ? summary.new + summary.pending : summary.new;
+    const sentence = force ? t('scanHeroForce', { count: summary.total })
+        : !lookup ? t('scanScopeNothingNew')
+            : online ? t('scanHeroLookup', { count: lookup }) : t('scanHeroInfer', { count: lookup });
+    const line = el('p', 'anomalous-scan-hero-sentence', sentence);
+    line.append(button('anomalous-pick-link', t(pageState.factsOpen ? 'scanHeroLess' : 'scanHeroMore'), () => {
+        pageState.factsOpen = !pageState.factsOpen;
+        refresh();
+    }));
+    box.append(line);
+    if (!pageState.factsOpen) return box;
+    const lines = force ? [['scanScopeForce', summary.total, parts.total], ['scanScopeExcluded', summary.excluded, 0]] : [
+        [online ? 'scanScopeLookup' : 'scanScopeInfer', lookup, online ? parts.new + parts.pending : parts.new],
+        ['scanScopeMatched', summary.matched, parts.matched],
+        ['scanScopeNotFound', summary.unmatched - summary.pending, parts.unmatched - parts.pending],
+        ['scanScopeWaiting', online ? 0 : summary.pending, parts.pending],
+        ['scanScopeExcluded', summary.excluded, 0],
+    ];
+    const list = el('ul', 'anomalous-scan-scope-list');
+    for (const [key, count, ofParts] of lines) {
+        if (count) list.append(el('li', '', t(key, { count: count.toLocaleString(), parts: ofParts ? t('scanScopeWithParts', { count: ofParts }) : '' })));
     }
-    box.append(el('small', 'anomalous-scan-setting-help', t('scanPageScopeAllHelp')));
+    box.append(list, el('small', 'anomalous-scan-setting-help', t('scanPageScopeAllHelp')));
     return box;
 }
 
@@ -145,22 +136,43 @@ function pickedFacts(summary, refresh) {
     return box;
 }
 
-/** The scan: its button, picking models beside it, and what it will do. */
+/** Online or offline: two buttons side by side, each with its icon. */
+function modeSwitch(refresh) {
+    const box = el('div', 'anomalous-scan-mode');
+    box.setAttribute('role', 'radiogroup');
+    for (const [offline, icon, key] of [[false, 'online', 'scanModeOnline'], [true, 'offline', 'scanModeOffline']]) {
+        const choice = button(`anomalous-scan-mode-btn${options.offline === offline ? ' is-on' : ''}`, undefined, () => {
+            options.offline = offline;
+            refresh();
+        });
+        choice.setAttribute('role', 'radio');
+        choice.setAttribute('aria-checked', String(options.offline === offline));
+        choice.title = t(offline ? 'scanPageOfflineHelp' : 'scanModeOnlineHelp');
+        choice.append(scanIcon(icon), el('span', '', t(key)));
+        box.append(choice);
+    }
+    return box;
+}
+
+/** The scan card: the ring, what is left in one line, the buttons, and what this scan will do. */
 function scanCard(owner, panel, summary, busy) {
     const refresh = () => go(owner, panel, '');
     const picked = options.picked.length;
+    const counts = mainCounts(summary);
     // An online scan also looks up the models earlier scans could not ask Civitai about.
-    const waiting = (summary?.new || 0) + (options.offline ? 0 : summary?.pending || 0);
+    const waiting = summary.new + (options.offline ? 0 : summary.pending);
     const label = busy ? t('scanPageScanning')
         : picked ? t('scanPageScanPicked', { count: picked })
             : waiting ? t(options.offline ? 'scanPageScanNewOffline' : 'scanPageScanNew', { count: waiting })
                 : t('scanPageScanAgain');
-    const primary = button('anomalous-scan-primary', label, () => run(owner, panel));
+    const primary = button('anomalous-scan-primary', undefined, () => run(owner, panel));
+    primary.append(scanIcon('radar'), el('span', '', label));
     primary.disabled = busy;
-    const pick = button('anomalous-scan-secondary', t(picked ? 'scanPickChange' : 'scanPagePickModels'), () => openScanPicker(options.picked, (next) => {
+    const pick = button('anomalous-scan-secondary', undefined, () => openScanPicker(options.picked, (next) => {
         options.picked = next;
         refresh();
     }));
+    pick.append(scanIcon('pick'), el('span', '', t(picked ? 'scanPickChange' : 'scanPagePickModels')));
     const actions = el('div', 'anomalous-scan-actions');
     actions.append(primary, pick);
     if (picked) {
@@ -169,9 +181,88 @@ function scanCard(owner, panel, summary, busy) {
             refresh();
         }));
     }
-    const card = el('section', 'anomalous-scan-card anomalous-scan-run');
-    card.append(actions, picked ? pickedFacts(summary, refresh) : wholeScanFacts(summary), el('p', 'anomalous-scan-muted', t('scanPageBackground')));
+    actions.append(modeSwitch(refresh));
+
+    const body = el('div', 'anomalous-scan-hero-body');
+    body.append(el('div', 'anomalous-scan-hero-title', busy ? t('scanPageScanning') : picked ? t('scanHeroPicked', { count: picked })
+        : waiting ? t('scanHeroWaiting', { count: waiting }) : t('scanHeroDone')),
+    el('div', 'anomalous-scan-hero-sub', t('scanHeroFound', { matched: counts.matched, total: counts.total })), actions,
+    picked ? pickedFacts(summary, refresh) : wholeScanFacts(summary, refresh));
+    // The two switches that change files say so where the scan starts.
+    if (!options.offline && options.physicalRename) body.append(el('p', 'anomalous-scan-hero-warn', t('scanHeroRenames')));
+    if (!options.offline && options.forceOverwrite) body.append(el('p', 'anomalous-scan-hero-warn', t('scanHeroFetchesAll')));
+
+    const card = el('section', 'anomalous-scan-card anomalous-scan-hero');
+    card.append(ring(counts.matched, counts.total), body);
     return card;
+}
+
+/** The models' state: a bar of found / not found / not scanned, a chip for each, and the components' chip. */
+function stateRow(summary, open) {
+    const counts = mainCounts(summary);
+    const box = el('section', 'anomalous-scan-state');
+    const bar = el('div', 'anomalous-scan-bar');
+    for (const [tone, count] of [['ok', counts.matched], [counts.warn ? 'warn' : 'plain', counts.unmatched], ['new', counts.new]]) {
+        if (!count) continue;
+        const part = el('span', `anomalous-scan-bar-part is-${tone}`);
+        part.style.flexGrow = String(count); // the share of the models
+        bar.append(part);
+    }
+    const chip = (tone, label, count, onClick) => {
+        const node = el(onClick ? 'button' : 'span', `anomalous-scan-state-chip is-${tone}`);
+        if (onClick) {
+            node.type = 'button';
+            node.onclick = onClick;
+            node.title = t('scanPageShowList');
+        }
+        node.append(el('span', 'anomalous-scan-state-dot'), el('span', '', label), el('strong', '', String(count)));
+        if (onClick) node.append(scanIcon('next'));
+        return node;
+    };
+    const chips = el('div', 'anomalous-scan-state-chips');
+    chips.append(chip('ok', t('scanPageMatched'), counts.matched),
+        chip(counts.warn ? 'warn' : 'plain', t('scanPageUnmatched'), counts.unmatched, counts.unmatched ? open('unmatched') : null),
+        chip('new', t('scanPageNew'), counts.new, counts.new ? open('new') : null));
+    const parts = summary.components;
+    if (parts?.total) {
+        const node = button('anomalous-scan-state-chip anomalous-scan-parts-chip', undefined, open('components'));
+        node.title = t('scanPartsNote');
+        node.append(scanIcon('parts'), el('span', '', t('scanPartsChip', { count: parts.total })), scanIcon('info'));
+        chips.append(node);
+    }
+    box.append(el('h2', 'anomalous-scan-section-title', t('scanStateTitle')), bar, chips);
+    return box;
+}
+
+/** What needs a look, one row each; null when nothing does. */
+function attention(owner, panel, summary, open) {
+    const rows = [];
+    const line = (icon, text, tone, onClick, extra = []) => {
+        const row = el(onClick ? 'button' : 'div', `anomalous-scan-attn${tone ? ` is-${tone}` : ''}`);
+        if (onClick) {
+            row.type = 'button';
+            row.onclick = onClick;
+        }
+        row.append(scanIcon(icon), el('span', 'anomalous-scan-attn-text', text), ...extra, ...(onClick ? [scanIcon('next')] : []));
+        rows.push(row);
+    };
+    if (summary.damaged) line('damaged', t('scanPageDamagedNote', { count: summary.damaged }), 'danger', open('unmatched'));
+    const notDrawing = (summary.new_models || []).filter(item => item.not_drawing);
+    if (notDrawing.length) {
+        line('voice', t('scanPageNotDrawing', { count: notDrawing.length }), '', null, [
+            button('anomalous-scan-secondary anomalous-scan-small-btn', t('scanPageSkipThem'), () => setChoice(owner, panel, notDrawing, 'skip')),
+            button('anomalous-scan-secondary anomalous-scan-small-btn', t('scanPageScanThem'), () => setChoice(owner, panel, notDrawing, 'scan')),
+            button('anomalous-pick-link', t('scanPageSeeThem'), open('notdrawing')),
+        ]);
+    }
+    if (summary.excluded) line('excluded', t('scanPageExcludedNote', { count: summary.excluded }), 'quiet', open('excluded'));
+    if (summary.skipped) line('file', t('scanPageSkippedNote', { count: summary.skipped }), 'quiet', open('skipped'));
+    if (!rows.length) return null;
+    const box = el('section', 'anomalous-scan-attention');
+    const list = el('div', 'anomalous-scan-card anomalous-scan-attn-list');
+    list.append(...rows);
+    box.append(el('h2', 'anomalous-scan-section-title', t('scanAttentionTitle')), list);
+    return box;
 }
 
 /** A scan from this page: every model, the picks, or `extra.targets` (a list's models; `retryUnmatched` to look them up again). */
@@ -207,19 +298,6 @@ async function setChoice(owner, panel, items, choice) {
     renderScanPage(owner, panel);
 }
 
-/** The question about new models that look like no drawing model: don't scan them, scan them, or see them. */
-function notDrawingCard(owner, panel, items, see) {
-    const card = el('section', 'anomalous-scan-card anomalous-scan-ask');
-    const buttons = el('div', 'anomalous-scan-ask-actions');
-    buttons.append(
-        button('anomalous-scan-secondary anomalous-scan-small-btn', t('scanPageSkipThem'), () => setChoice(owner, panel, items, 'skip')),
-        button('anomalous-scan-secondary anomalous-scan-small-btn', t('scanPageScanThem'), () => setChoice(owner, panel, items, 'scan')),
-        button('anomalous-scan-small-btn anomalous-scan-ask-see', t('scanPageSeeThem'), see),
-    );
-    card.append(el('p', 'anomalous-scan-ask-text', t('scanPageNotDrawing', { count: items.length })), buttons);
-    return card;
-}
-
 /** To another view of the page ('' is the scan page itself), with what was read last. */
 function go(owner, panel, view) {
     pageState.view = view;
@@ -244,37 +322,29 @@ function listActions(owner, panel, busy) {
     };
 }
 
-/** The scan page itself: what a scan is, the counts (each opening its list), the components, the scan, its settings, the last scan. */
+/** The scan page itself, from the scan card down to the last scan. */
 function mainPage(owner, panel, { summary, config, last }, busy, progressHost) {
     const page = el('div', 'anomalous-scan-page');
-    page.append(el('h1', 'anomalous-scan-title', t('scanPageTitle')), el('p', 'anomalous-scan-lead', t('scanPageLead')));
-
+    const about = el('details', 'anomalous-scan-about');
+    about.append(el('summary', '', t('scanPageAboutLink')), el('p', 'anomalous-scan-lead', t('scanPageLead')),
+        el('p', 'anomalous-scan-lead', t('scanPageBackground')));
+    const head = el('div', 'anomalous-scan-head');
+    head.append(el('h1', 'anomalous-scan-title', t('scanPageTitle')), el('p', 'anomalous-scan-lead', t('scanPageLeadShort')), about);
+    page.append(head);
+    if (!summary) {
+        page.append(el('p', 'anomalous-scan-muted', t('scanPageSummaryFailed')), progressHost);
+        return page;
+    }
     const open = view => () => go(owner, panel, view);
-    const counts = summary ? mainCounts(summary) : {};
-    const stats = el('div', 'anomalous-scan-stats');
-    stats.append(
-        stat(counts.total, t('scanPageTotal')),
-        stat(counts.matched, t('scanPageMatched'), 'ok'),
-        stat(counts.unmatched, t('scanPageUnmatched'), counts.warn ? 'warn' : '', counts.unmatched ? open('unmatched') : null),
-        stat(counts.new, t('scanPageNew'), counts.new ? 'new' : '', counts.new ? open('new') : null),
-    );
-    page.append(stats);
-    const parts = componentsCard(summary, open('components'));
-    if (parts) page.append(parts);
-    if (summary?.damaged) page.append(button('anomalous-scan-damaged-note', t('scanPageDamagedNote', { count: summary.damaged }), open('unmatched')));
-    const notDrawing = (summary?.new_models || []).filter(item => item.not_drawing);
-    if (notDrawing.length) page.append(notDrawingCard(owner, panel, notDrawing, open('notdrawing')));
-    if (summary?.excluded) page.append(button('anomalous-scan-skipped-note', t('scanPageExcludedNote', { count: summary.excluded }), open('excluded')));
-    if (summary?.skipped) page.append(button('anomalous-scan-skipped-note', t('scanPageSkippedNote', { count: summary.skipped }), open('skipped')));
-    if (!summary) page.append(el('p', 'anomalous-scan-muted', t('scanPageSummaryFailed')));
-
-    page.append(scanCard(owner, panel, summary, busy), renderScanSettings(Boolean(config?.has_api_key), {
-        open: pageState.settingsOpen,
-        onFold: (isOpen) => { pageState.settingsOpen = isOpen; },
+    page.append(scanCard(owner, panel, summary, busy), progressHost, stateRow(summary, open));
+    const look = attention(owner, panel, summary, open);
+    if (look) page.append(look);
+    page.append(renderScanSettings(Boolean(config?.has_api_key), {
+        moreOpen: pageState.moreOpen,
+        onMore: (isOpen) => { pageState.moreOpen = isOpen; },
         onChange: () => go(owner, panel, ''),
         onKey: () => renderScanPage(owner, panel),
-    }), progressHost);
-
+    }));
     const result = renderLastScan(last, open('result'));
     if (result) page.append(result);
     return page;
