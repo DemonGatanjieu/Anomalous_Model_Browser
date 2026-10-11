@@ -301,7 +301,7 @@ and SHA-256.
 `api/model_import.py` takes model files the user drops on the models page. A browser gives a
 dropped file's name, size, time and bytes but never its path, so `POST
 /anomalous/import/inspect` gets the name, size and time with the file's header bytes, and,
-asked from this computer (`mcp_server._is_local`), looks for the same file (name, size, time
+asked from this computer (`local_guard.is_local`), looks for the same file (name, size, time
 within 2 s) in the Downloads and Desktop known folders and two subfolder levels below. A
 found file gets an in-memory token; the client never sends a path. What the file is comes
 from `model_kind.py`: the safetensors header's tensor names, shapes and kohya/modelspec
