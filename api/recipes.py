@@ -33,7 +33,7 @@ from .recipe_store import (
     _archive_recipe, _delete_recipe_with_history, _history_dir, _list_recipe_history,
     _list_recipes, _read_recipe, _write_recipe, get_recipes_dir,
 )
-from .mcp_server import _is_local
+from .local_guard import is_local as _is_local
 from .utils import require_filename, resolve_within
 from .workflow_schema import (
     _clean_volatile_params, _node_title, _node_type, _normalise_workflow_key,
