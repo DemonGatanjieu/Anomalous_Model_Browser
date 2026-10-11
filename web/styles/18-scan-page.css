@@ -1,4 +1,4 @@
-/* Scan page: the scan card (ring, button, online or offline), the models' state, what needs a
+/* Scan page: the scan card (pictures, button, online or offline), the models' state, what needs a
    look, the settings tiles, the last scan, and the list pages behind them. The settings page (ui_settings_page.js) is built from the
    same page, card, row, choice and switch rules. */
 
@@ -78,53 +78,55 @@
     font-weight: 600;
 }
 
-/* The scan card: the ring on the left; what is left, the buttons and what the scan does. */
+/* The scan card: a band of pictures on top; what is left, the buttons and what the scan does. */
 .anomalous-scan-card.anomalous-scan-hero {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 22px;
-    padding: 22px 24px;
+    gap: 18px;
+    padding: 20px 24px 22px;
+    overflow: hidden;
     border-color: color-mix(in srgb, var(--amb-link) 28%, var(--amb-border));
     background: color-mix(in srgb, var(--amb-link) 5%, transparent);
 }
 
-.anomalous-scan-ring {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    width: 92px;
-    height: 92px;
+/* Two rows of tiles running to the card's right edge, fading out there. */
+.anomalous-scan-band {
+    --amb-band-tile: 52px;
+    display: grid;
+    grid-auto-columns: var(--amb-band-tile);
+    grid-auto-flow: column;
+    grid-template-rows: repeat(2, var(--amb-band-tile));
+    gap: 6px;
+    margin-right: -24px;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(to right, #000 62%, transparent);
+    mask-image: linear-gradient(to right, #000 62%, transparent);
 }
 
-.anomalous-scan-ring > svg {
-    position: absolute;
-    inset: 0;
+.anomalous-scan-band-tile {
+    display: block;
     width: 100%;
     height: 100%;
+    box-sizing: border-box;
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.06);
+    object-fit: cover;
 }
 
-.anomalous-scan-ring-track,
-.anomalous-scan-ring-done {
-    fill: none;
-    stroke-width: 8;
+/* A model not scanned yet: an empty frame waiting for its cover. */
+.anomalous-scan-band-tile.is-empty {
+    border: 1.5px dashed color-mix(in srgb, var(--amb-link) 55%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 7%, transparent);
 }
 
-.anomalous-scan-ring-track { stroke: rgba(var(--amb-ink-rgb), 0.1); }
-.anomalous-scan-ring-done { stroke: var(--amb-ok-text); stroke-linecap: round; }
-
-.anomalous-scan-ring-count {
-    color: var(--amb-text-main);
-    font-size: 21px;
-    font-variant-numeric: tabular-nums;
-    line-height: 1.1;
+.anomalous-scan-band.is-busy .anomalous-scan-band-tile.is-empty {
+    animation: anomalous-scan-band-wait 1.4s ease-in-out infinite;
 }
 
-.anomalous-scan-ring-total {
-    color: var(--amb-text-muted);
-    font-size: 11.5px;
+@keyframes anomalous-scan-band-wait {
+    50% { background: color-mix(in srgb, var(--amb-link) 22%, transparent); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .anomalous-scan-band.is-busy .anomalous-scan-band-tile.is-empty { animation: none; }
 }
 
 .anomalous-scan-hero-body {
@@ -415,10 +417,10 @@ label.anomalous-scan-tile:hover { border-color: color-mix(in srgb, var(--amb-lin
 .anomalous-scan-last-text { flex: 1 1 260px; min-width: 0; }
 .anomalous-scan-last-line .anomalous-pick-link { margin-left: 0; }
 
-/* Narrow (a phone, or docked in the sidebar): the ring above the rest. */
+/* Narrow (a phone, or docked in the sidebar): smaller pictures, the switches under the buttons. */
 @container scanpage (max-width: 560px) {
-    .anomalous-scan-card.anomalous-scan-hero { flex-direction: column; align-items: stretch; }
-    .anomalous-scan-ring { align-self: center; }
+    .anomalous-scan-card.anomalous-scan-hero { padding: 16px 18px 18px; }
+    .anomalous-scan-band { --amb-band-tile: 44px; gap: 5px; margin-right: -18px; }
     .anomalous-scan-mode { margin-left: 0; }
     .anomalous-scan-state-chip.anomalous-scan-parts-chip { margin-left: 0; }
 }

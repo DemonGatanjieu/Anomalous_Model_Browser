@@ -1,6 +1,7 @@
 /**
  * The scan page (GET /anomalous/scan_summary), quieter the further down. First the scan card:
- * a ring of the models found on Civitai, what is left to do in one line, the scan button,
+ * a band of pictures (an empty frame for each model not scanned yet, then covers the scans
+ * brought), what is left to do in one line, the scan button,
  * "pick models to scan" (ui_scan_picker.js; the picks are named in the card, and cleared the
  * button scans everything again), online or offline, and what this scan will do in one sentence
  * (the full counts unfold). Progress shows under it. Then the models' state as a bar with a chip
@@ -22,6 +23,7 @@ import { openScanPicker, pickKey, picksLine } from './ui_scan_picker.js';
 import { renderScanSettings, scanOptions as options } from './ui_scan_settings.js';
 
 const SHOWN_PICKS = 12; // picked models named on the page; the rest are counted
+const BAND_TILES = 48; // pictures put in the scan card's band (as many as fit show)
 // The view shown: '' the page itself, or a list: 'new' | 'unmatched' | 'skipped' | 'result'
 // | 'notdrawing' | 'excluded' | 'components'. `scroll`: where to put a list shown again after a
 // model's Back. `factsOpen`, `moreOpen`: the scan's full counts, the rarer settings unfolded.
@@ -62,16 +64,31 @@ function mainCounts(summary) {
     };
 }
 
-/** The ring: the share of the models found on Civitai, the count in its middle. */
-function ring(matched, total) {
-    const box = el('div', 'anomalous-scan-ring');
-    const length = 2 * Math.PI * 34;
-    const done = total ? Math.min(1, matched / total) * length : 0;
-    box.innerHTML = `<svg viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="34" class="anomalous-scan-ring-track"/>`
-        + `<circle cx="42" cy="42" r="34" class="anomalous-scan-ring-done" stroke-dasharray="${done.toFixed(1)} ${length.toFixed(1)}" transform="rotate(-90 42 42)"/></svg>`; // numbers only
-    box.append(el('strong', 'anomalous-scan-ring-count', String(matched)), el('small', 'anomalous-scan-ring-total', `/ ${total}`));
-    box.title = t('scanHeroFound', { matched, total });
-    return box;
+/**
+ * The band on top of the scan card, what a scan is for in a picture: an empty frame for each
+ * model not scanned yet (`waiting`), then the covers scans brought, the newest models first.
+ * The frames breathe while a scan runs. Null when there is neither.
+ */
+function coverBand(covers, waiting, busy) {
+    const frames = Math.min(waiting, BAND_TILES);
+    if (!frames && !covers.length) return null;
+    const band = el('div', `anomalous-scan-band${busy ? ' is-busy' : ''}`);
+    band.setAttribute('aria-hidden', 'true');
+    for (let index = 0; index < frames; index++) {
+        const frame = el('span', 'anomalous-scan-band-tile is-empty');
+        frame.style.animationDelay = `${(index % 12) * 90}ms`; // a wave along the row
+        band.append(frame);
+    }
+    for (const cover of covers.slice(0, BAND_TILES - frames)) {
+        const img = el('img', 'anomalous-scan-band-tile');
+        img.alt = '';
+        img.loading = 'lazy';
+        img.title = cover.name;
+        img.src = `${cover.preview_url}&variant=${/\.(mp4|webm|mov)(?:&|$)/i.test(cover.preview_url) ? 'poster' : 'card'}`;
+        img.onerror = () => img.remove();
+        band.append(img);
+    }
+    return band;
 }
 
 /**
@@ -154,7 +171,7 @@ function modeSwitch(refresh) {
     return box;
 }
 
-/** The scan card: the ring, what is left in one line, the buttons, and what this scan will do. */
+/** The scan card: the band of pictures, what is left in one line, the buttons, and what this scan will do. */
 function scanCard(owner, panel, summary, busy) {
     const refresh = () => go(owner, panel, '');
     const picked = options.picked.length;
@@ -193,7 +210,9 @@ function scanCard(owner, panel, summary, busy) {
     if (!options.offline && options.forceOverwrite) body.append(el('p', 'anomalous-scan-hero-warn', t('scanHeroFetchesAll')));
 
     const card = el('section', 'anomalous-scan-card anomalous-scan-hero');
-    card.append(ring(counts.matched, counts.total), body);
+    const band = coverBand(summary.covers || [], counts.new, busy);
+    if (band) card.append(band);
+    card.append(body);
     return card;
 }
 
