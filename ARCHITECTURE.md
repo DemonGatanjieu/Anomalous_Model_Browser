@@ -581,7 +581,9 @@ covered by the `styles.css` manifest.
   `node_parameter_sets.js` merges the node type's saved values (material files and recipe
   parameter sets, each source with its origin) and works out what each would change on the node, keeping seeds,
   model files and missing choices, and asks `/anomalous/parameter_pictures` for the recent pictures made with
-  the sets' values; saved values (not a recipe's) are deleted there. `model_picker.js`, `node_material_actions.js`, and `graph_splice.js`
+  the sets' values; saved values (not a recipe's) are deleted there. It also keeps, in this
+  browser's storage (`anomalous_applied_sets`, the newest 100 by workflow and node), which set
+  was last put into a node, for the panel's line on where the values came from. `model_picker.js`, `node_material_actions.js`, and `graph_splice.js`
   own the remaining explicit graph changes.
 - A model's download link lives in its user layer (`source_url` in `<model>.anomalous.json`, via
   `/anomalous/update_metadata`), the same field the model editor edits; for the open workflow's

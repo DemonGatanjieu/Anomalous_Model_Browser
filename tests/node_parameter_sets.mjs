@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import { applyParameterChanges, loadParameterSets, loadSetPictures, parameterChanges, parameterRows } from '../web/modules/node_parameter_sets.js';
+import {
+    appliedState, applyParameterChanges, closestSet, isAppliedEntry, loadParameterSets, loadSetPictures, parameterChanges, parameterRows,
+    rememberApplied, restoreApplied,
+} from '../web/modules/node_parameter_sets.js';
 
 // Both sources, with the same values saved in a material and in a recipe parameter set.
 const shared = [123, 'fixed', 30, 5.5, 'euler', 'karras', 1];
@@ -73,4 +76,49 @@ function sampler() {
     assert.deepEqual(node.widgets.map(w => w.value), [5, 'fixed', 20, 7, 'euler', 'normal', 1]);
 }
 
-console.log('node parameter sets: merged sources, kept values and undoable apply OK');
+// What was last put into a node, per workflow and node; what changed since; undone, forgotten.
+{
+    const saved = new Map();
+    globalThis.localStorage = { getItem: key => saved.get(key) ?? null, setItem: (key, value) => saved.set(key, String(value)) };
+    const app = { extensionManager: { workflow: { activeWorkflow: { key: 'workflows/a.json' } } } };
+    const node = sampler();
+    const entry = { name: 'Slow', values: [123, 'fixed', 30, 5.5, 'euler', 'normal', 1] };
+    const rows = parameterRows(node, entry.values);
+    assert.equal(appliedState(app, node), null);
+    const previous = rememberApplied(app, node, entry, rows, 1000);
+    assert.equal(previous, null);
+    for (const change of parameterChanges(node, entry.values).filter(change => !change.keep)) node.widgets[change.index].value = change.to;
+    assert.deepEqual(appliedState(app, node).changed, []);
+    assert.equal(isAppliedEntry(entry, appliedState(app, node).record), true);
+    assert.equal(isAppliedEntry({ ...entry, values: [123, 'fixed', 31] }, appliedState(app, node).record), false);
+    node.widgets[3].value = 6; // cfg by hand
+    assert.deepEqual(appliedState(app, node).changed.map(change => [change.label, change.from, change.to]), [['cfg', 5.5, 6]]);
+    const other = { ...sampler(), id: 9 };
+    assert.equal(appliedState(app, other), null); // another node
+    app.extensionManager.workflow.activeWorkflow.key = 'workflows/b.json';
+    assert.equal(appliedState(app, node), null); // another workflow
+    app.extensionManager.workflow.activeWorkflow.key = 'workflows/a.json';
+    node.widgets[2].value = 20; // steps and cfg back as before: nothing it changed is left
+    node.widgets[3].value = 7;
+    assert.equal(appliedState(app, node), null);
+    restoreApplied(app, node, previous); // undone: forgotten
+    assert.equal(JSON.parse(saved.get('anomalous_applied_sets'))['workflows/a.json||3'], undefined);
+}
+
+// Without a record: the set the values are now, or the closest one.
+{
+    const node = sampler();
+    const now = node.widgets.map(w => w.value);
+    const entries = [
+        { name: 'Far', values: [1, 'fixed', 40, 2, 'dpmpp_2m', 'karras', 0.5] },
+        { name: 'Near', values: [1, 'fixed', 20, 7.5, 'euler', 'normal', 1] },
+        { name: 'Same', values: now },
+        { name: 'Same too', values: [...now] },
+    ];
+    assert.deepEqual([closestSet(node, entries).entry.name, closestSet(node, entries).others], ['Same', 1]);
+    const near = closestSet(node, entries.slice(0, 2));
+    assert.deepEqual([near.entry.name, near.changes.map(change => change.label)], ['Near', ['cfg']]);
+    assert.equal(closestSet(node, entries.slice(0, 1)), null); // too far to speak of
+}
+
+console.log('node parameter sets: merged sources, kept values, undoable apply, last applied OK');

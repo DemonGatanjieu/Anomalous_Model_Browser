@@ -9,7 +9,9 @@
  * canvas; one press puts the changes in (the receipt undoes it); saved values (not a
  * recipe's) can be deleted. Side by side: the current values and every set in columns, the
  * ones a set would change marked. "Save these values" keeps the node's values for the next
- * node of its kind.
+ * node of its kind. On top, one line on where the node's values came from: the set last put
+ * in here (marked on its card too) and what changed since, with a way to put them back; or,
+ * without that, the set the values match or come closest to.
  */
 
 import { app } from "../../../scripts/app.js";
@@ -18,17 +20,22 @@ import { anomalousConfirm, anomalousPrompt } from './ui_dialog.js';
 import { showApplyReceipt } from './ui_apply_receipt.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { openParamCompare } from './ui_param_compare.js';
-import { applyParameterChanges, deleteSavedValues, loadParameterSets, loadSetPictures, parameterRows, saveNodeParameters } from './node_parameter_sets.js';
+import {
+    appliedState, applyParameterChanges, closestSet, deleteSavedValues, isAppliedEntry, loadParameterSets, loadSetPictures,
+    parameterRows, rememberApplied, restoreApplied, saveNodeParameters,
+} from './node_parameter_sets.js';
 
 const SEARCH_FROM = 6; // entries before a search box is worth showing
 const VIEW_KEY = 'anomalous_node_params_view'; // 'cards' | 'table', this browser's choice
 const ROLE_KEYS = { positive: 'recipePromptRolePositive', negative: 'recipePromptRoleNegative', both: 'recipePromptRoleBoth' };
 const KEEP_KEYS = { seed: 'currentNodeKeepSeed', model: 'currentNodeKeepModel', missing: 'currentNodeKeepMissing' };
+const SHOWN_SINCE = 3; // changes named in the line on top; the rest are counted
 const ICONS = {
     workflow: '<rect x="3" y="4" width="7" height="6" rx="1.5"/><rect x="14" y="14" width="7" height="6" rx="1.5"/><path d="M6.5 10v4a3 3 0 0 0 3 3H14"/>',
     picture: '<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-9 9"/>',
     saved: '<path d="M6.5 3.5h11v17l-5.5-4-5.5 4z"/>',
     lock: '<rect x="5" y="11" width="14" height="9.5" rx="2"/><path d="M8.5 11V7.5a3.5 3.5 0 0 1 7 0V11"/>',
+    history: '<path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3.5 4.5v4h4"/><path d="M12 8v4.5l3 2"/>',
 };
 
 function el(tag, className, text) {
@@ -64,6 +71,21 @@ function dayOf(stamp) {
     if (Number.isNaN(date.getTime())) return '';
     const sameYear = date.getFullYear() === new Date().getFullYear();
     return date.toLocaleDateString(undefined, sameYear ? { month: 'short', day: 'numeric' } : { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+/** "今天 10:32", or the day and the time. */
+function whenOf(stamp) {
+    const date = new Date(stamp);
+    if (Number.isNaN(date.getTime())) return '';
+    const time = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    return date.toDateString() === new Date().toDateString() ? t('currentNodeToday', { time }) : `${dayOf(stamp)} ${time}`;
+}
+
+/** "cfg 5 → 6、步数 15 → 20 等 2 项". */
+function changesText(changes, from, to) {
+    const named = changes.slice(0, SHOWN_SINCE).map(change => `${change.label} ${brief(change[from])} → ${brief(change[to])}`);
+    const text = named.join(t('modelSourceListSep'));
+    return changes.length > SHOWN_SINCE ? `${text} ${t('currentNodeAppliedMore', { count: changes.length - SHOWN_SINCE })}` : text;
 }
 
 const outputQuery = image => new URLSearchParams({ filename: image.filename, subfolder: image.subfolder || '' });
@@ -171,10 +193,18 @@ function quietRow(row) {
     return line;
 }
 
-function applyChanges(node, made, receiptHost, redraw) {
+/** Puts `made` into the node; with `entry` (and its `rows`), remembers it as the set last put in, until undone. */
+function applyChanges(node, made, receiptHost, redraw, entry = null, rows = []) {
     try {
         const result = applyParameterChanges(app, node, made);
-        showApplyReceipt(receiptHost, { undo() { result.undo(); redraw(); } }, node);
+        const previous = entry ? rememberApplied(app, node, entry, rows) : null;
+        showApplyReceipt(receiptHost, {
+            undo() {
+                result.undo();
+                if (entry) restoreApplied(app, node, previous);
+                redraw();
+            },
+        }, node);
         redraw();
     } catch (error) {
         showWorkbenchToast(t(error.message) === error.message ? t('materialApplyFailed') : t(error.message));
@@ -209,6 +239,7 @@ function entryCard(node, entry, ctx) {
     const head = el('div', 'anomalous-node-param-head');
     head.append(el('strong', 'anomalous-node-param-name', entry.name));
     if (ROLE_KEYS[entry.role]) head.append(el('span', `anomalous-node-param-role is-${entry.role}`, t(ROLE_KEYS[entry.role])));
+    if (isAppliedEntry(entry, ctx.applied?.record)) head.append(el('span', 'anomalous-node-param-last', t('currentNodeLastBadge')));
     main.append(head);
     const seen = new Set();
     for (const source of entry.sources) {
@@ -255,7 +286,7 @@ function entryCard(node, entry, ctx) {
     const saved = [...new Set(entry.sources.filter(source => source.kind === 'material' && source.filename).map(source => source.filename))];
     if (saved.length) actions.append(button('anomalous-node-param-delete', t('currentNodeDelete'), () => ctx.remove(entry, saved)));
     const apply = button('anomalous-node-param-apply', made.length ? t('currentNodeApply', { count: made.length }) : t('currentNodeSame'),
-        () => applyChanges(node, made, ctx.section, ctx.redraw));
+        () => applyChanges(node, made, ctx.section, ctx.redraw, entry, rows));
     apply.disabled = !made.length;
     actions.append(apply);
     card.append(actions);
@@ -288,6 +319,7 @@ function entryTable(node, entries, ctx) {
             thumb.append(img);
         }
         cell.append(thumb, el('span', 'anomalous-node-param-table-name', entry.name));
+        if (isAppliedEntry(entry, ctx.applied?.record)) cell.append(el('span', 'anomalous-node-param-last', t('currentNodeLastBadge')));
         cell.title = entry.name;
         head.append(cell);
     }
@@ -310,7 +342,7 @@ function entryTable(node, entries, ctx) {
         const made = [...rows.values()].filter(row => row.status === 'change');
         const cell = el('td');
         const apply = button('anomalous-node-param-apply', made.length ? t('currentNodeApplyShort', { count: made.length }) : t('currentNodeSame'),
-            () => applyChanges(node, made, ctx.section, ctx.redraw));
+            () => applyChanges(node, made, ctx.section, ctx.redraw, entry, [...rows.values()]));
         apply.disabled = !made.length;
         apply.title = entry.name;
         cell.append(apply);
@@ -320,6 +352,34 @@ function entryTable(node, entries, ctx) {
     wrap.append(table);
     if (!indexes.length) wrap.append(el('p', 'anomalous-node-muted', t('currentNodeAllSame')));
     return wrap;
+}
+
+/**
+ * The line on top: the set last put into this node and what changed since (Put back puts
+ * those back); without one, the set the values match or come closest to. Null for neither.
+ */
+function historyLine(node, entries, ctx) {
+    const line = el('div', 'anomalous-node-param-history');
+    line.append(icon('history'));
+    const state = ctx.applied;
+    if (state) {
+        const { record, changed } = state;
+        line.append(el('span', 'anomalous-node-param-history-main', t('currentNodeAppliedLast', { name: record.name, when: whenOf(record.at) })));
+        line.append(el('span', `anomalous-node-param-history-note${changed.length ? '' : ' is-same'}`,
+            changed.length ? t('currentNodeAppliedChanged', { changes: changesText(changed, 'from', 'to') }) : t('currentNodeAppliedSame')));
+        if (changed.length) {
+            const back = changed.map(change => ({ index: change.index, label: change.label, from: change.to, to: change.from, keep: '' }));
+            line.append(button('anomalous-node-param-link', t('currentNodeAppliedRestore'), () => applyChanges(node, back, ctx.section, ctx.redraw)));
+        }
+        return line;
+    }
+    const near = closestSet(node, entries);
+    if (!near) return null;
+    const text = near.changes.length
+        ? t('currentNodeClosest', { name: near.entry.name, changes: changesText(near.changes, 'from', 'to') })
+        : t('currentNodeMatches', { name: near.entry.name }) + (near.others ? t('currentNodeMatchesMore', { count: near.others }) : '');
+    line.append(el('span', 'anomalous-node-param-history-main', text));
+    return line;
 }
 
 function readView() {
@@ -347,7 +407,7 @@ export function renderNodeParameters(node, container, owner) {
 
     let entries = [];
     let view = readView();
-    const ctx = { owner, section, pictures: {}, expanded: new Set(), redraw: () => draw(), remove: (entry, files) => remove(entry, files) };
+    const ctx = { owner, section, pictures: {}, expanded: new Set(), applied: null, redraw: () => draw(), remove: (entry, files) => remove(entry, files) };
     const paintViews = () => {
         views.hidden = entries.length < 2;
         views.replaceChildren(...[['cards', 'currentNodeViewCards'], ['table', 'currentNodeViewTable']].map(([name, label]) => {
@@ -362,14 +422,17 @@ export function renderNodeParameters(node, container, owner) {
         }));
     };
     const draw = () => {
+        ctx.applied = appliedState(app, node);
         const query = search.value.trim().toLowerCase();
         const shown = entries.filter(entry => !query
             || `${entry.name} ${entry.sources.map(source => `${source.label} ${source.image?.filename || ''}`).join(' ')}`.toLowerCase().includes(query));
         search.hidden = entries.length < SEARCH_FROM;
         paintViews();
-        if (!shown.length) list.replaceChildren(el('p', 'anomalous-node-muted', t(entries.length ? 'currentNodeNoMatch' : 'currentNodeNoSets')));
-        else if (view === 'table' && entries.length >= 2) list.replaceChildren(entryTable(node, shown, ctx));
-        else list.replaceChildren(...shown.map(entry => entryCard(node, entry, ctx)));
+        const history = historyLine(node, entries, ctx);
+        const top = history ? [history] : [];
+        if (!shown.length) list.replaceChildren(...top, el('p', 'anomalous-node-muted', t(entries.length ? 'currentNodeNoMatch' : 'currentNodeNoSets')));
+        else if (view === 'table' && entries.length >= 2) list.replaceChildren(...top, entryTable(node, shown, ctx));
+        else list.replaceChildren(...top, ...shown.map(entry => entryCard(node, entry, ctx)));
     };
     search.oninput = draw;
 

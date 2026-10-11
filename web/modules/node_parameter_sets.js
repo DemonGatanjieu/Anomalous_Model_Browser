@@ -6,12 +6,18 @@
  * file and values' signature, a kept picture, or values saved in Current node). For a live
  * node, what an entry would change: every differing value, except seeds and how they change
  * after a run, model files (the model section changes those) and choices this computer does
- * not have, which stay. And the recent pictures made with each set's values. No DOM.
+ * not have, which stay. And the recent pictures made with each set's values. What was last
+ * put into a node is remembered in this browser (per workflow and node), so the panel can say
+ * which set the values came from and what changed since; without a record, which set the
+ * values match or come closest to. No DOM.
  */
 
 import { applyNodeMaterialValues, isModelFilePath, isVolatileWidget } from './node_material_actions.js';
+import { workflowKey } from './canvas_undo.js';
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const APPLIED_KEY = 'anomalous_applied_sets'; // { "workflow|graph|node": record }, this browser only
+const APPLIED_KEPT = 100; // records kept, the newest
 
 async function fetchJson(url, signal) {
     const response = await fetch(url, { cache: 'no-store', signal });
@@ -132,6 +138,94 @@ export async function loadSetPictures(entries, { signal } = {}) {
 /** Puts the changes that are made into the node; the undoable result of node_material_actions. */
 export function applyParameterChanges(app, node, changes) {
     return applyNodeMaterialValues(app, node, changes.filter(change => !change.keep).map(({ index, to }) => ({ index, value: to })));
+}
+
+function appliedStore() {
+    try {
+        const data = JSON.parse(globalThis.localStorage?.getItem(APPLIED_KEY) || '{}');
+        return data && typeof data === 'object' && !Array.isArray(data) ? data : {};
+    } catch {
+        return {};
+    }
+}
+
+function keepAppliedStore(store) {
+    const newest = Object.entries(store).sort((a, b) => (b[1]?.at || 0) - (a[1]?.at || 0)).slice(0, APPLIED_KEPT);
+    try {
+        globalThis.localStorage?.setItem(APPLIED_KEY, JSON.stringify(Object.fromEntries(newest)));
+    } catch { /* only a convenience: without storage the panel says which set the values match */ }
+}
+
+const appliedKey = (app, node) => `${workflowKey(app)}|${node.graph?.id || ''}|${node.id}`;
+
+/**
+ * Remembers that `entry`'s values were put into `node` (`rows`: its parameterRows before):
+ * { name, at, values: { index: value } (the values it set or that were equal already), labels,
+ * made: [index] (the ones it changed) }. Returns the record it replaces (null for none).
+ */
+export function rememberApplied(app, node, entry, rows, now = Date.now()) {
+    const store = appliedStore();
+    const key = appliedKey(app, node);
+    const previous = store[key] || null;
+    const held = rows.filter(row => row.status === 'change' || row.status === 'same');
+    store[key] = {
+        name: entry.name,
+        at: now,
+        values: Object.fromEntries(held.map(row => [row.index, row.to])),
+        labels: Object.fromEntries(held.map(row => [row.index, row.label])),
+        made: rows.filter(row => row.status === 'change').map(row => row.index),
+    };
+    keepAppliedStore(store);
+    return previous;
+}
+
+/** Puts back the record rememberApplied replaced (null: none), when the change is undone. */
+export function restoreApplied(app, node, previous) {
+    const store = appliedStore();
+    const key = appliedKey(app, node);
+    if (previous) store[key] = previous;
+    else delete store[key];
+    keepAppliedStore(store);
+}
+
+/**
+ * The node against what was last put into it: { record, changed: [{ index, label, from (the
+ * set's), to (now) }] }, or null without a record or once none of the values it changed is
+ * there any more (undone, or replaced since).
+ */
+export function appliedState(app, node) {
+    const record = appliedStore()[appliedKey(app, node)];
+    if (!record?.values) return null;
+    const now = index => node.widgets?.[Number(index)]?.value;
+    if (!(record.made || []).some(index => same(now(index), record.values[index]))) return null;
+    const changed = Object.entries(record.values).filter(([index, value]) => !same(now(index), value))
+        .map(([index, value]) => ({ index: Number(index), label: record.labels?.[index] || `#${index}`, from: value, to: now(index) }));
+    return { record, changed };
+}
+
+/** Whether `entry` is the set `record` was taken from (its name, and every value it set). */
+export function isAppliedEntry(entry, record) {
+    return Boolean(record) && entry.name === record.name
+        && Object.entries(record.values || {}).every(([index, value]) => same(entry.values[Number(index)], value));
+}
+
+/**
+ * The saved set the node's values are now (none of its values would change anything), else the
+ * one that would change the fewest, at most `most`: { entry, changes (parameterRows), others
+ * (how many more match) }, or null.
+ */
+export function closestSet(node, entries, most = 3) {
+    let best = null;
+    let matches = 0;
+    for (const entry of entries) {
+        const rows = parameterRows(node, entry.values);
+        if (!rows.some(row => row.status === 'same')) continue; // nothing in common to speak of
+        const changes = rows.filter(row => row.status === 'change');
+        if (!changes.length) matches += 1;
+        if (!best || changes.length < best.changes.length) best = { entry, changes };
+    }
+    if (!best || best.changes.length > most) return null;
+    return { ...best, others: best.changes.length ? 0 : matches - 1 };
 }
 
 /** Saves the node's current values as a material; { status: 'success' | 'duplicate', name }. */

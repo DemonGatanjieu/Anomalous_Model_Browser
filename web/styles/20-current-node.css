@@ -97,6 +97,47 @@
     gap: 8px;
 }
 
+/* On top: the set last put into this node and what changed since, or the set the values match. */
+.anomalous-node-param-history {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    padding: 9px 12px;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 30%, var(--amb-border));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--amb-link) 7%, transparent);
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.anomalous-node-param-history > .anomalous-node-param-icon {
+    width: 15px;
+    height: 15px;
+    color: var(--amb-link);
+}
+
+.anomalous-node-param-history-main { color: var(--amb-text-main); }
+.anomalous-node-param-history-note.is-same { color: var(--amb-ok-text); }
+.anomalous-node-param-history > .anomalous-node-param-link { margin-left: auto; }
+
+/* The card (or column) of the set last put in. */
+.anomalous-node-param-last {
+    flex-shrink: 0;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
+    color: var(--amb-text-main);
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.anomalous-node-param-table .anomalous-node-param-last {
+    display: inline-block;
+    margin-top: 3px;
+}
+
 .anomalous-node-param {
     display: flex;
     flex-direction: column;
