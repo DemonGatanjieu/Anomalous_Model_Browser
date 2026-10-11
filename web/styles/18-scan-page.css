@@ -50,15 +50,16 @@
     color: var(--amb-text-main);
 }
 
-/* The question about new models that look like no drawing model, under the counts. */
-.anomalous-scan-ask {
-    display: flex;
+/* The question about new models that look like no drawing model, under the counts (a row,
+   unlike the other cards). */
+.anomalous-scan-card.anomalous-scan-ask {
+    flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
     gap: 10px 14px;
 }
 
-.anomalous-scan-ask-text { flex: 1 1 260px; margin: 0; color: var(--amb-text-soft); font-size: 0.9em; line-height: 1.5; }
+.anomalous-scan-ask-text { flex: 1 1 260px; margin: 0; text-align: left; color: var(--amb-text-soft); font-size: 0.9em; line-height: 1.5; }
 .anomalous-scan-ask-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .anomalous-scan-ask-see {
