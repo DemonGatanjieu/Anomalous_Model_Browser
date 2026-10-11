@@ -100,7 +100,7 @@ Tools on the rail:
    git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
    ```
 2. Restart ComfyUI. *(Alternatively, install via **ComfyUI Manager** by searching for `Anomalous Model Browser`)*
-3. For character voices, also install [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS) the same way. It is optional.
+3. For character voices, also install [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS): search `Anomalous TTS` in **ComfyUI Manager**, or clone it the same way. It is optional.
 4. **Updating**: click the **!** button at the top right of the browser; it shows the current version, and **Check for updates / switch version** opens the version panel. Update to the newest release, go back to an earlier one or return to the latest, then restart ComfyUI. The plugin never checks for updates on its own.
 
 Open the browser with **Ctrl + Shift + M**, the floating button on the canvas, or **Extensions → Anomalous Model Browser** in ComfyUI's menu. **ComfyUI Settings → Anomalous Model Browser → Interface** changes the shortcut, the language and how the browser is opened (floating button, a button next to Run, or the Extensions menu only).
@@ -195,7 +195,7 @@ The first time you open it, start on **Home**: **Scan model folders** fills in c
    git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
    ```
 2. 重启 ComfyUI 即可使用。（*也可以直接在 **ComfyUI Manager** 搜索 `Anomalous Model Browser` 安装*）
-3. 想用角色配音的话，用同样的方法再装 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)。不装也不影响其他功能。
+3. 想用角色配音的话，再装 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)：在 **ComfyUI Manager** 搜索 `Anomalous TTS`，或用同样的方法 git clone。不装也不影响其他功能。
 4. **更新插件**：
    - 点窗口右上角的 **!**，可以看到当前版本；
    - 点 **检查更新 / 切换版本** 打开版本面板，可以更新到最新版、回退到以前的版本，或回到最新版；
