@@ -4,9 +4,9 @@
  * yet, not found, damaged, found, set to "don't scan"), its folder, base model and size. The
  * folders on the left, the state chips, the search and "picked only" narrow what is shown;
  * "pick these" picks all of it, a click one model, a shift-click the run since the last click.
- * OK hands the picks to the settings page as items { type, path_idx, rel, filename, name, size,
- * state }; Cancel, ✕, Esc and the backdrop leave them as they were. Long lists are drawn a
- * screenful at a time.
+ * OK hands the picks to the settings page as items { type, path_idx, rel, filename, name, size };
+ * Cancel, ✕, Esc and the backdrop leave them as they were. Long lists are drawn a screenful at
+ * a time.
  */
 
 import { translate as t } from './locales.js';
@@ -66,15 +66,20 @@ export function picksLine(items) {
     return t('scanPickSummary', { count: items.length, size: formatSize(items.reduce((sum, item) => sum + (item.size || 0), 0)) });
 }
 
-/** The listed models as rows to show: their key, state, folder and what a search matches. */
+/**
+ * The listed models as rows to show (their key, state, folder and what a search matches), in
+ * folder order, and the models folders with their labels: the type, and where the folder is
+ * when it is not named after it or the type has two.
+ */
 function readModels(data) {
-    const roots = new Map((data.roots || []).map(root => [`${root.type}|${root.path_idx}`, root]));
     const perType = new Map();
-    for (const root of roots.values()) perType.set(root.type, (perType.get(root.type) || 0) + 1);
-    const rootLabel = (root) => {
-        const label = typeLabel({ type: root.type });
-        return perType.get(root.type) > 1 ? `${label} · ${root.parent}/${root.name}` : label;
-    };
+    for (const root of data.roots || []) perType.set(root.type, (perType.get(root.type) || 0) + 1);
+    const roots = new Map((data.roots || []).map((root) => {
+        const where = perType.get(root.type) > 1 ? `${root.parent}/${root.name}` : root.name !== root.type ? root.name : '';
+        const name = typeLabel({ type: root.type });
+        return [`${root.type}|${root.path_idx}`, { ...root, name, label: name + (where ? ` · ${where}` : '') }];
+    }).sort(([, a], [, b]) => a.name.localeCompare(b.name) || a.path_idx - b.path_idx));
+    const order = new Map([...roots.keys()].map((key, index) => [key, index]));
     const models = (data.models || []).map((model) => {
         const meta = model.metadata || {};
         const cut = model.rel.lastIndexOf('/');
@@ -84,16 +89,17 @@ function readModels(data) {
             ...model, meta, name, root, dir: cut < 0 ? '' : model.rel.slice(0, cut),
             key: pickKey(model), state: scanState(meta),
             base: meta.baseModel || (meta.base_guess ? `≈ ${meta.base_guess}` : ''),
+            path: [roots.get(root)?.label || model.type, ...model.rel.split('/')].join(' / '),
             text: `${name}\n${model.rel}`.toLowerCase(),
         };
-    });
-    return { models, roots, rootLabel };
+    }).sort((a, b) => order.get(a.root) - order.get(b.root) || a.rel.localeCompare(b.rel, undefined, { sensitivity: 'base' }));
+    return { models, roots };
 }
 
 /** The item kept for a picked model (what the settings page lists and the scan needs). */
 const asItem = model => ({
     type: model.type, path_idx: model.path_idx, rel: model.rel, filename: model.filename,
-    name: model.name, size: model.size, state: model.state,
+    name: model.name, size: model.size,
 });
 
 /** Opens the picker over the page with `picked` (items) picked; `onConfirm(items)` on OK. */
@@ -104,7 +110,6 @@ export function openScanPicker(picked, onConfirm) {
     let view = stored();
     let all = [];
     let roots = new Map();
-    let rootLabel = () => '';
     let shown = [];
     let drawn = 0;
     let lastClicked = -1;
@@ -184,7 +189,7 @@ export function openScanPicker(picked, onConfirm) {
         for (const [root, info] of roots) {
             const inRoot = all.filter(model => model.root === root);
             if (!inRoot.length) continue;
-            rows.push([root, rootLabel(info), 0, inRoot]);
+            rows.push([root, info.label, 0, inRoot]);
             const dirs = [...new Set(inRoot.flatMap(model => model.dir ? model.dir.split('/').map((_, i, parts) => parts.slice(0, i + 1).join('/')) : []))].sort();
             for (const dir of dirs) {
                 const key = `${root}|${dir}`;
@@ -309,10 +314,10 @@ export function openScanPicker(picked, onConfirm) {
             cover.append(img);
         }
         const names = el('span', 'anomalous-pick-names');
-        names.append(el('strong', 'anomalous-pick-name', model.name), el('small', 'anomalous-pick-path', `${rootLabel(roots.get(model.root) || model)} / ${model.rel}`));
+        names.append(el('strong', 'anomalous-pick-name', model.name), el('small', 'anomalous-pick-path', model.path));
         const facts = el('span', 'anomalous-pick-facts');
         facts.append(el('span', `anomalous-pick-state is-${model.state}`, t(STATE_KEYS[model.state])));
-        if (model.base) facts.append(el('span', 'anomalous-pick-base', model.base));
+        facts.append(el('span', 'anomalous-pick-base', model.base));
         facts.append(el('span', 'anomalous-pick-size', formatSize(model.size)));
         node.append(el('span', 'anomalous-pick-check', '✓'), cover, names, facts);
         node.title = model.state === 'skip' ? `${model.rel}\n${t('modelSourceSkippedHint')}` : model.rel;
@@ -343,7 +348,7 @@ export function openScanPicker(picked, onConfirm) {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             if (scope.signal.aborted) return;
-            ({ models: all, roots, rootLabel } = readModels(data));
+            ({ models: all, roots } = readModels(data));
             if (data.total > all.length) main.insertBefore(el('p', 'anomalous-pick-note', t('scanPickTruncated', { shown: all.length, total: data.total })), list);
             refresh();
             search.focus();

@@ -129,7 +129,8 @@ function wholeScanFacts(summary) {
             [online ? 'scanScopeLookup' : 'scanScopeInfer', lookup],
             ['scanScopeNothingNew', lookup ? 0 : 1],
             ['scanScopeMatched', summary.matched],
-            ['scanScopeNotFound', summary.unmatched - pending],
+            ['scanScopeNotFound', summary.unmatched - summary.pending],
+            ['scanScopeWaiting', online ? 0 : summary.pending],
             ['scanScopeExcluded', summary.excluded],
         ];
         const list = el('ul', 'anomalous-scan-scope-list');
