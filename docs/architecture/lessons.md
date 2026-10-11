@@ -74,6 +74,20 @@ body:has(#anomalous-toolbox-modal[style*="display: flex"]) #anomalous-sidebar-to
 
 ---
 
+## 2026-10-12 · 页面往下滚后，点“返回”点到了下面的模型（第二次）
+
+**现象**：从画布节点存的搭配（节点搭配），页面往下滚一点后，点“‹ 全部搭配”打开的是被滚到标题下面的模型封面。普通搭配和搭配列表没事。
+
+**根因**：和 2026-10-09 修过的是同一个 Chrome 行为：滚动框里有 `overflow: hidden` 的元素（这里是模型封面的圆角框）或 `content-visibility: auto` 时，滚出可见区域的部分在点击判断里仍算“在那里”，盖住了上面的标题按钮。上次只给当时有问题的两个滚动框加了 `clip-path: inset(0)`，之后新做的节点搭配页面又放进了带圆角封面的行。
+
+**怎么发现的**：在隔离的 ComfyUI 里把节点存成搭配，把编辑区分 12 步滚到底，每一步用 `document.elementFromPoint` 取标题里每个按钮中心点的元素，看是不是按钮自己；滚到 140px 起就变成了封面 `IMG`。
+
+**以后怎么做**
+- 标题、标签栏下面的滚动框一律加 `clip-path: inset(0)`（它对点击判断也生效）。`overflow` 本身裁不住这种情况。
+- 新页面或新内容放进滚动框后，用上面的办法扫一遍：每个滚动框分步滚到底，检查每个可见按钮都能拿到自己的点击。
+
+---
+
 ## 2026-10-08 · ComfyUI-Manager 审核 Anomalous_TTS：三类安全口子
 
 **现象**：Anomalous_TTS 申请收录进 ComfyUI-Manager（Comfy-Org/ComfyUI-Manager#3342），维护者两轮审核退回，先后指出：
