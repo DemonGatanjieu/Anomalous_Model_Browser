@@ -14,7 +14,7 @@ import {
     cancelDownload, defaultRoot, doneCount, downloadFor, lookupDownloads, rememberRoot, startDownload, syncDownloads,
     watchDownloads,
 } from './model_download.js';
-import { saveApiKey } from './ui_scan_page.js';
+import { saveApiKey } from './ui_scan_settings.js';
 import { openSettingsPage } from './ui_settings_page.js';
 
 const ACTIVE = ['queued', 'running', 'verifying'];

@@ -2,8 +2,10 @@
 new, and which ones the last two are (located like the scan report's models, so the page can
 open them); also the model files a scan never reads (other formats than .safetensors), so the
 page can say why they are not there, the models the user set to "don't scan", and the new ones
-whose header looks like no drawing model (a voice model, say), for the page to ask about. And
-for the scan settings' picker, every model a scan reads with its name, size, cover and state."""
+whose header looks like no drawing model (a voice model, say), for the page to ask about. The
+components a drawing model loads (VAE, text encoders…) are counted and listed on their own too,
+since many are not on Civitai and that is no fault. And for the scan page's picker, every model
+a scan reads with its name, size, cover and state."""
 
 import asyncio
 import os
@@ -26,6 +28,8 @@ MAX_LISTED = 2000  # models listed per kind; the counts stay exact
 MAX_PICKABLE = 5000  # models the picker lists; its total stays exact
 # Model files in other formats: listed as "not scanned" (scans read only .safetensors).
 OTHER_MODEL_EXTENSIONS = (".ckpt", ".pt", ".pth", ".bin", ".gguf", ".onnx", ".sft", ".engine")
+# Folders of the parts a drawing model loads: many are not on Civitai, and that is no fault.
+COMPONENT_TYPES = ("vae", "clip", "text_encoders", "clip_vision", "upscale_models")
 # What the picker needs of a model's metadata: its card badge (model_source.js) and its name.
 PICKER_FIELDS = ("info_source", "unmatched_reason", "scan_choice", "not_drawing", "baseModel", "base_guess", "custom_name")
 
@@ -57,9 +61,11 @@ def _summarize():
     which the next online scan looks up. `skipped`: model files in other formats. `excluded`:
     models set to "don't scan", not in the other counts. A new model not chosen about whose
     header reads but names no drawing model kind carries `not_drawing` (counted too); only new
-    models' headers are read."""
+    models' headers are read. Models in a component folder carry `component` (counted too) and
+    are listed again, matched ones as well, in `component_models` with their `state`
+    (matched | unmatched | new); `components` counts them."""
     total = matched = 0
-    unmatched, new, skipped, excluded = [], [], [], []
+    unmatched, new, skipped, excluded, components = [], [], [], [], []
     for located, base_dir, path, other in _walk():
         item = {"type": located[0], "path_idx": located[1], "filename": os.path.basename(path),
                 "rel": os.path.relpath(path, base_dir).replace(os.sep, "/")}
@@ -73,16 +79,21 @@ def _summarize():
             continue
         total += 1
         info = sidecar_info(base)
+        if located[0] in COMPONENT_TYPES:
+            item["component"] = True
+            components.append(item)
         if info is not None and not is_unmatched(info):
             matched += 1
+            item["state"] = "matched"
             continue
         if info is None:
             found = inspect_file(path)
             if not choice and found["format"] == "safetensors" and not found["kind"]:
                 item["not_drawing"] = True
+            item["state"] = "new"
             new.append(item)
         else:
-            item.update(reason=unmatched_reason(info), base=info.get("baseModel") or "")
+            item.update(state="unmatched", reason=unmatched_reason(info), base=info.get("baseModel") or "")
             unmatched.append(item)
     return {
         "total": total, "matched": matched, "unmatched": len(unmatched), "new": len(new),
@@ -92,6 +103,12 @@ def _summarize():
         "excluded": len(excluded), "excluded_models": excluded[:MAX_LISTED],
         "unmatched_models": unmatched[:MAX_LISTED], "new_models": new[:MAX_LISTED],
         "skipped": len(skipped), "skipped_models": skipped[:MAX_LISTED],
+        "components": {
+            "total": len(components),
+            **{state: sum(item["state"] == state for item in components) for state in ("matched", "unmatched", "new")},
+            "pending": sum(item.get("reason") in ("offline", "network") for item in components),
+        },
+        "component_models": components[:MAX_LISTED],
     }
 
 

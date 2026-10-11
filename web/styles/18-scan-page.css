@@ -213,8 +213,70 @@ button.anomalous-scan-stat:hover {
     border-bottom: 1px solid var(--amb-border);
 }
 
-/* The scan page's settings card: how the next scan goes; it opens the settings page. */
-.anomalous-scan-settings-card {
+/* The scan page's settings card: folded, how the next scan goes in short words; unfolded in
+   place, the switches. A <details>, so a block (not the cards' flex column). */
+.anomalous-scan-card.anomalous-scan-settings {
+    display: block;
+    padding: 0;
+}
+
+.anomalous-scan-settings-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    list-style: none;
+    cursor: pointer;
+}
+
+.anomalous-scan-settings-head::-webkit-details-marker {
+    display: none;
+}
+
+.anomalous-scan-settings-head:hover {
+    background: rgba(var(--amb-ink-rgb), 0.04);
+}
+
+.anomalous-scan-settings-head > .anomalous-scan-chips {
+    flex: 1 1 260px;
+}
+
+.anomalous-scan-settings-change,
+.anomalous-scan-settings-fold {
+    margin-left: auto;
+    color: var(--amb-link);
+    font-size: 12.5px;
+    white-space: nowrap;
+}
+
+.anomalous-scan-settings-fold,
+.anomalous-scan-settings[open] .anomalous-scan-settings-change {
+    display: none;
+}
+
+.anomalous-scan-settings[open] .anomalous-scan-settings-fold {
+    display: inline;
+}
+
+.anomalous-scan-settings > .anomalous-scan-setting-help {
+    margin: 0 16px 4px;
+}
+
+.anomalous-scan-settings-part {
+    margin: 0 16px;
+    padding: 12px 0;
+    border-top: 1px solid var(--amb-border);
+}
+
+.anomalous-scan-settings-part:last-child {
+    padding-bottom: 16px;
+}
+
+/* The components (VAE, text encoders…) under the counts: a card to their list. */
+.anomalous-scan-card.anomalous-scan-parts {
+    gap: 6px;
     width: 100%;
     color: inherit;
     font: inherit;
@@ -223,22 +285,47 @@ button.anomalous-scan-stat:hover {
     transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.anomalous-scan-settings-card:hover {
+.anomalous-scan-card.anomalous-scan-parts:hover {
     border-color: color-mix(in srgb, var(--amb-link) 40%, transparent);
     background: rgba(var(--amb-ink-rgb), 0.04);
 }
 
-.anomalous-scan-settings-head {
+.anomalous-scan-parts-head {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
 }
 
-.anomalous-scan-settings-change {
-    color: var(--amb-link);
+.anomalous-scan-parts-kinds {
+    color: var(--amb-text-dim);
+    font-size: 12px;
+}
+
+.anomalous-scan-parts-head > .anomalous-scan-settings-change {
+    margin-left: auto;
+}
+
+.anomalous-scan-parts-counts {
+    color: var(--amb-text-main);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+}
+
+.anomalous-scan-parts-note {
+    color: var(--amb-text-muted);
     font-size: 12.5px;
-    white-space: nowrap;
+    line-height: 1.55;
+}
+
+/* The scan: its buttons, then the picks or what a scan of everything does. */
+.anomalous-scan-run > .anomalous-scan-actions {
+    align-items: center;
+    margin-top: 0;
+}
+
+.anomalous-scan-run > .anomalous-scan-muted {
+    font-size: 12px;
 }
 
 .anomalous-scan-chips {
@@ -327,13 +414,6 @@ button.anomalous-scan-stat:hover {
     color: var(--amb-text-soft);
     font-size: 13px;
     line-height: 1.5;
-}
-
-.anomalous-scan-pick-head {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
 }
 
 .anomalous-scan-pick-count {

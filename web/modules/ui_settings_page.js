@@ -20,7 +20,7 @@ import { renderFolderPage } from './ui_folder_manager.js';
 import { openFeedbackDialog } from './ui_feedback_dialog.js';
 import { checkOnOpen, setCheckOnOpen } from './ui_doctor_banner.js';
 import { fetchDownloadSettings, hfMirrorOn, saveDownloadSettings } from './model_download.js';
-import { saveApiKey } from './ui_scan_page.js';
+import { saveApiKey } from './ui_scan_settings.js';
 import { exportBackup, importBackup } from './ui_backup.js';
 import { followsSelection, setFollowsSelection } from './shell_open_rules.js';
 import { FOLDER_PRESETS, expandFolder } from './download_places.js';
