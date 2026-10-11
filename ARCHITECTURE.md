@@ -379,7 +379,7 @@ covered by the `styles.css` manifest.
   including Esc on the workspace panel (`nbPanel`, below the header and right of the
   rail; the list column steps aside while it is open).
   `ui_scan_page.js` is the scan page (a tool page like the doctor), quieter the further
-  down: the scan card (a ring of the models found, what is left, the scan button with "pick
+  down: the scan card (a band of covers with an empty frame per model not scanned yet, what is left, the scan button with "pick
   models to scan" beside it, online or offline, what the scan will do in one sentence), the
   models' state as a bar and chips (the components on a chip of their own), what needs a look,
   the settings (`ui_scan_settings.js`: the scan options as tiles, the two that change files

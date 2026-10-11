@@ -162,6 +162,8 @@ The summary also counts the models in component folders (`COMPONENT_TYPES`: VAE,
 encoders, CLIP, CLIP Vision, upscalers) as `components` and lists them, found ones too, in
 `component_models` with their `state`; they stay in the other counts, and their list items carry
 `component`, so the page can show them apart. Folder type decides, not the file's header.
+`covers` holds up to 48 covers of scanned models, components left out, newest model file first
+(`{name, preview_url}`), for the pictures on top of the scan card.
 
 The scan page's picker reads `GET /anomalous/scan_pickable` (`api/scan_summary.py`): the
 same files the summary counts (the scan folders' `.safetensors`, each once), the "don't scan"

@@ -4,7 +4,8 @@ open them); also the model files a scan never reads (other formats than .safeten
 page can say why they are not there, the models the user set to "don't scan", and the new ones
 whose header looks like no drawing model (a voice model, say), for the page to ask about. The
 components a drawing model loads (VAE, text encoders…) are counted and listed on their own too,
-since many are not on Civitai and that is no fault. And for the scan page's picker, every model
+since many are not on Civitai and that is no fault; and some covers of the scanned models, for
+the scan card's band of pictures. And for the scan page's picker, every model
 a scan reads with its name, size, cover and state."""
 
 import asyncio
@@ -26,6 +27,7 @@ except ImportError:  # loaded outside the package (tests)
 
 MAX_LISTED = 2000  # models listed per kind; the counts stay exact
 MAX_PICKABLE = 5000  # models the picker lists; its total stays exact
+COVER_SAMPLE = 48  # covers the scan card's band gets (it shows as many as fit)
 # Model files in other formats: listed as "not scanned" (scans read only .safetensors).
 OTHER_MODEL_EXTENSIONS = (".ckpt", ".pt", ".pth", ".bin", ".gguf", ".onnx", ".sft", ".engine")
 # Folders of the parts a drawing model loads: many are not on Civitai, and that is no fault.
@@ -63,9 +65,9 @@ def _summarize():
     header reads but names no drawing model kind carries `not_drawing` (counted too); only new
     models' headers are read. Models in a component folder carry `component` (counted too) and
     are listed again, matched ones as well, in `component_models` with their `state`
-    (matched | unmatched | new); `components` counts them."""
+    (matched | unmatched | new); `components` counts them. `covers`: see `_covers`."""
     total = matched = 0
-    unmatched, new, skipped, excluded, components = [], [], [], [], []
+    unmatched, new, skipped, excluded, components, scanned = [], [], [], [], [], []
     for located, base_dir, path, other in _walk():
         item = {"type": located[0], "path_idx": located[1], "filename": os.path.basename(path),
                 "rel": os.path.relpath(path, base_dir).replace(os.sep, "/")}
@@ -82,6 +84,8 @@ def _summarize():
         if located[0] in COMPONENT_TYPES:
             item["component"] = True
             components.append(item)
+        elif info is not None:
+            scanned.append((located, base_dir, path))
         if info is not None and not is_unmatched(info):
             matched += 1
             item["state"] = "matched"
@@ -109,7 +113,28 @@ def _summarize():
             "pending": sum(item.get("reason") in ("offline", "network") for item in components),
         },
         "component_models": components[:MAX_LISTED],
+        "covers": _covers(scanned),
     }
+
+
+def _modified(entry):
+    try:
+        return os.path.getmtime(entry[2])
+    except OSError:
+        return 0
+
+
+def _covers(scanned):
+    """Up to COVER_SAMPLE covers of the scanned models (components left out, they seldom have
+    one), the newest model files first, as {name, preview_url}: the scan card's band of pictures."""
+    covers = []
+    for located, base_dir, path in sorted(scanned, key=_modified, reverse=True):
+        url = _preview_url_for_model(located[0], located[1], base_dir, path)
+        if url:
+            covers.append({"name": os.path.splitext(os.path.basename(path))[0], "preview_url": url})
+            if len(covers) >= COVER_SAMPLE:
+                break
+    return covers
 
 
 def _pickable():

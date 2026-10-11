@@ -2,8 +2,10 @@
 import asyncio
 import hashlib
 import json
+import os
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -181,6 +183,31 @@ class ScanReportTests(unittest.TestCase):
         self.assertEqual(states, {"found_vae.safetensors": ("matched", ""), "odd_vae.safetensors": ("unmatched", "not_found"),
                                   "new_vae.safetensors": ("new", "")})
         self.assertTrue(all(item.get("component") for item in summary["unmatched_models"] + summary["new_models"]))
+
+    def test_summary_has_the_scanned_models_covers_newest_first(self):
+        loras, vae = self.dir / "loras", self.dir / "vae"
+        top, now = self.dir, time.time()
+        for folder, name, info, age, cover in (
+                (loras, "old", {"id": 3}, 300, True), (loras, "fresh", {"id": 4}, 100, True),
+                (loras, "gone", {"id": -1, "anomalous_unmatched_reason": "not_found"}, 200, True),
+                (loras, "bare", {"id": 5}, 50, False), (loras, "new", None, 10, True), (vae, "part", {"id": 6}, 5, True)):
+            folder.mkdir(exist_ok=True)
+            self.dir = folder
+            path = self.model(name, info)
+            if cover:
+                (folder / f"{name}.preview.png").write_bytes(b"png")
+            os.utime(path, (now - age, now - age))
+        self.dir = top
+        roots = {str(loras): ("loras", 0), str(vae): ("vae", 0)}
+        with mock.patch.object(scan_summary, "get_active_scan_paths", return_value=[str(loras), str(vae)]), \
+                mock.patch.object(scan_summary, "locate_root", side_effect=lambda path: roots[path]):
+            summary = scan_summary._summarize()
+            with mock.patch.object(scan_summary, "COVER_SAMPLE", 1):
+                capped = scan_summary._summarize()
+        # Scanned ones with a cover, found or not; not the new one, the one without a cover or the component.
+        self.assertEqual([cover["name"] for cover in summary["covers"]], ["fresh", "gone", "old"])
+        self.assertIn("filename=fresh.preview.png", summary["covers"][0]["preview_url"])
+        self.assertEqual([cover["name"] for cover in capped["covers"]], ["fresh"])
 
     def test_picker_lists_every_model_a_scan_reads_with_its_badge_fields(self):
         self.model("new")
