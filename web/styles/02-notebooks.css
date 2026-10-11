@@ -191,6 +191,10 @@
     flex: 1;
     background: var(--amb-bg-card);
     overflow-y: auto;
+    /* Chrome hit-tests a node combo's model covers (overflow: hidden inside) above this box
+       once they scroll under the header, so "‹ All combos" got their clicks; clip-path makes
+       the clip count (lessons.md, 2026-10-12). */
+    clip-path: inset(0);
     padding: 20px;
     color: var(--amb-text-main);
 }
