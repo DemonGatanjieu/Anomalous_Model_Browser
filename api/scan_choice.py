@@ -7,7 +7,7 @@ import os
 
 from aiohttp import web
 
-from .mcp_server import _is_local
+from .local_guard import is_local as _is_local
 from .path_utils import atomic_write_json, resolve_folder_subdir
 from .utils import resolve_within
 

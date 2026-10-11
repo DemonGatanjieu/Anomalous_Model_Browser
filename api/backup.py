@@ -543,8 +543,11 @@ async def api_file(request):
 
 async def api_inspect(request):
     """Receives the chosen .zip, keeps it in the temp folder and says what putting it back would do."""
-    reader = await request.multipart()
-    field = await reader.next()
+    try:
+        reader = await request.multipart()
+        field = await reader.next()
+    except (AssertionError, ValueError):  # not a file upload at all
+        return _error("no file")
     if field is None or field.name != "file":
         return _error("no file")
     token = uuid.uuid4().hex
