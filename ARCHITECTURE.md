@@ -141,6 +141,8 @@ covered by the `styles.css` manifest.
   lifecycle; `api/materials.py` owns HTTP mapping and compatibility entry points.
   `api/node_material.py` saves one canvas node's current values as a
   `node_parameter_selection` material (the current-node panel's "save").
+- `api/local_guard.py` decides which requests only this computer may make (every change under
+  `/anomalous/`; other devices may look), as one middleware; see backend.md.
 - `api/media_routes.py`, `api/gallery_routes.py`, `api/translation_routes.py`, and
   `api/folder_types.py` own the formerly mixed utility route families.
 - `model_policies.py` owns shared backend rename and protected-category policy.
@@ -324,7 +326,8 @@ covered by the `styles.css` manifest.
   seeking, search, paging, download and deletion, showing the speech/voice/seed
   recorded in each file, plus a section for unsaved temp previews that can be
   copied into `output/audio/`.
-- `ui_sidebar.js` assembles the browser window (rail, list column, header, page panels)
+- `ui_sidebar.js` assembles the browser window (rail, list column, header, page panels;
+  `remote_view.js` adds the header's "view only" chip when opened from another device)
   and renders the model folder list. `ui_shell_rail.js` owns the left icon rail: one
   entry per page, the tool slots and the settings slot. `ui_shell_nav.js` owns page
   navigation (`goTo`): the domain each page needs, which pages have a list and whether

@@ -14,12 +14,12 @@ the open ComfyUI page claims and answers canvas actions (mcp_bridge.py).
 
 import asyncio
 import base64
-import ipaddress
 import urllib.parse
 
 from aiohttp import web
 
 from . import mcp_bridge
+from .local_guard import is_local as _is_local, loopback_host as _loopback_host
 from .mcp_actions import ACTIONS
 from .mcp_tools import TOOLS as READ_TOOLS, call_tool
 
@@ -43,32 +43,9 @@ LIST_TTL_MS = 300000
 # Requests run tools in threads; a few at a time is plenty for one person's AI app.
 _slots = asyncio.Semaphore(4)
 
-PROXY_HEADERS = ("Forwarded", "X-Forwarded-For", "X-Real-IP", "X-Forwarded-Host")
-LOCAL_NAMES = ("localhost",)
 
 PARSE_ERROR, INVALID_REQUEST, METHOD_NOT_FOUND, INVALID_PARAMS = -32700, -32600, -32601, -32602
 HEADER_MISMATCH, UNSUPPORTED_VERSION = -32020, -32022
-
-
-def _loopback_host(name):
-    if not name:
-        return False
-    name = name.strip("[]").lower()
-    if name in LOCAL_NAMES:
-        return True
-    try:
-        return ipaddress.ip_address(name).is_loopback
-    except ValueError:
-        return False
-
-
-def _is_local(request):
-    """The request comes from this computer, directly, and names a loopback host."""
-    if not _loopback_host(request.remote or ""):
-        return False
-    if any(header in request.headers for header in PROXY_HEADERS):
-        return False
-    return _loopback_host(urllib.parse.urlsplit("//" + request.headers.get("Host", "")).hostname)
 
 
 def _origin_ok(request):
