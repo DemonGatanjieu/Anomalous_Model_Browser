@@ -6,9 +6,9 @@
  * (the full counts unfold). Progress shows under it. Then the models' state as a bar with a chip
  * per state (not found and not scanned open their list), and a chip for the components a
  * drawing model loads (VAE, text encoders…), which are not in the counts since many are not on
- * Civitai. Then, only when there is something, what needs a look: damaged files, new models that
- * look like no drawing model (don't scan them, scan them, see them), models set to "don't scan",
- * files in other formats. Then the settings (ui_scan_settings.js) and the last scan in one line.
+ * Civitai, with quiet links to the models set to "don't scan" and the files in other formats.
+ * Then, only when there is something, what needs a look: damaged files, new models that look
+ * like no drawing model (don't scan them, scan them, see them). Then the settings (ui_scan_settings.js) and the last scan in one line.
  * Lists are pages of their own (ui_scan_lists.js) with a way back. Scans run through
  * scan_runner.js; the progress box is scan_progress.js's panel, hosted here while the page is shown.
  */
@@ -166,7 +166,7 @@ function scanCard(owner, panel, summary, busy) {
             : waiting ? t(options.offline ? 'scanPageScanNewOffline' : 'scanPageScanNew', { count: waiting })
                 : t('scanPageScanAgain');
     const primary = button('anomalous-scan-primary', undefined, () => run(owner, panel));
-    primary.append(scanIcon('radar'), el('span', '', label));
+    primary.append(scanIcon('scan'), el('span', '', label));
     primary.disabled = busy;
     const pick = button('anomalous-scan-secondary', undefined, () => openScanPicker(options.picked, (next) => {
         options.picked = next;
@@ -197,7 +197,10 @@ function scanCard(owner, panel, summary, busy) {
     return card;
 }
 
-/** The models' state: a bar of found / not found / not scanned, a chip for each, and the components' chip. */
+/**
+ * The models' state: a bar of found / not found / not scanned, a chip for each, the components'
+ * chip, and under them quiet links to the models left out (set to "don't scan", other formats).
+ */
 function stateRow(summary, open) {
     const counts = mainCounts(summary);
     const box = el('section', 'anomalous-scan-state');
@@ -231,6 +234,14 @@ function stateRow(summary, open) {
         chips.append(node);
     }
     box.append(el('h2', 'anomalous-scan-section-title', t('scanStateTitle')), bar, chips);
+    const notes = el('div', 'anomalous-scan-state-notes');
+    for (const [count, icon, key, view] of [[summary.excluded, 'excluded', 'scanPageExcludedNote', 'excluded'], [summary.skipped, 'file', 'scanPageSkippedNote', 'skipped']]) {
+        if (!count) continue;
+        const link = button('anomalous-scan-quiet-link', undefined, open(view));
+        link.append(scanIcon(icon), el('span', '', t(key, { count })));
+        notes.append(link);
+    }
+    if (notes.childElementCount) box.append(notes);
     return box;
 }
 
@@ -255,8 +266,6 @@ function attention(owner, panel, summary, open) {
             button('anomalous-pick-link', t('scanPageSeeThem'), open('notdrawing')),
         ]);
     }
-    if (summary.excluded) line('excluded', t('scanPageExcludedNote', { count: summary.excluded }), 'quiet', open('excluded'));
-    if (summary.skipped) line('file', t('scanPageSkippedNote', { count: summary.skipped }), 'quiet', open('skipped'));
     if (!rows.length) return null;
     const box = el('section', 'anomalous-scan-attention');
     const list = el('div', 'anomalous-scan-card anomalous-scan-attn-list');
