@@ -304,16 +304,91 @@ button.anomalous-scan-stat:hover {
     font-weight: 600;
 }
 
-.anomalous-scan-group > .anomalous-scan-setting-help {
-    margin-top: 8px;
+/* Under "which models": what a scan of all of them does, or the picks. */
+.anomalous-scan-scope-facts,
+.anomalous-scan-pick {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
 }
 
-.anomalous-scan-pick {
+.anomalous-scan-scope-total {
+    color: var(--amb-text-main);
+    font-size: 14px;
+}
+
+.anomalous-scan-scope-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding-left: 18px;
+    color: var(--amb-text-soft);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.anomalous-scan-pick-head {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 10px;
-    margin-top: 10px;
+}
+
+.anomalous-scan-pick-count {
+    color: var(--amb-text-main);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.anomalous-scan-pick-names {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.anomalous-scan-pick-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 260px;
+    padding: 3px 4px 3px 10px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.04);
+    color: var(--amb-text-main);
+    font-size: 12px;
+}
+
+.anomalous-scan-pick-name > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-scan-pick-remove {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.anomalous-scan-pick-remove:hover {
+    background: rgba(var(--amb-ink-rgb), 0.1);
+    color: var(--amb-text-main);
+}
+
+.anomalous-scan-pick-more {
+    color: var(--amb-text-muted);
+    font-size: 12px;
 }
 
 /* A setting: what it does on the left, its switch or button on the right. */

@@ -100,6 +100,8 @@ covered by the `styles.css` manifest.
   (`sidecar_info`, `is_unmatched`, `unmatched_reason` in `model_identity.py`); it also
   lists the model files in other formats, which scans never read, so the page can say so,
   the models set to "don't scan", and the new ones whose header names no drawing model kind.
+  It also lists every model a scan reads for the scan settings' picker
+  (`/anomalous/scan_pickable`), with size, cover and the card badge's metadata fields.
   `api/scan_choice.py` saves that choice (`POST /anomalous/scan_choice`, this computer only)
   into each model's `<model>.anomalous.json`.
 - `api/mcp_server.py` serves `/anomalous/mcp`, the Model Context Protocol endpoint AI apps
@@ -381,6 +383,9 @@ covered by the `styles.css` manifest.
   models) with Back, a button for the whole list (scan these / look them up again) and rows
   that open a model, whose Back returns to the list, or scan it;
   `scan_results.js` holds the words for scan results, shared with the activity page.
+  `ui_scan_picker.js` is the scan settings' model picker: every model a scan reads, by folder,
+  state (not scanned, not found, damaged, found, don't scan) and search, as a list or covers;
+  the settings page keeps its picks as items and says what a scan of all models will do.
   `scan_runner.js` starts and follows scans (every folder, picked or listed models, or one
   model from its card), shows the result and refreshes node drop-downs, hashes and the
   grid afterwards; folder visibility/order lives in
@@ -446,7 +451,7 @@ covered by the `styles.css` manifest.
   with absolute positioning cascades immune to tooltip target conflicts, vibrant hover affordance,
   safe docked sidebar preservation upon node addition, and multi-type node dispatch; `ui_detail.js`
   coordinates detail display, `ui_model_editor.js` owns metadata editing, and
-  `ui_model_selector.js` owns advanced selection. `ui_gallery.js` (cards in
+  `model_widget_path.js` puts a model path into a loader's widget. `ui_gallery.js` (cards in
   `ui_gallery_card.js`) and `ui_gallery_detail.js` own generated-image browsing and workbench lifecycle,
   with stage interaction in `ui_image_stage.js` and metadata tabs in
   `ui_image_inspector.js`.

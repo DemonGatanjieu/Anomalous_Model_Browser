@@ -67,18 +67,6 @@ export function targetsForItems(items) {
     return [...folders.values()];
 }
 
-/** The model picker's selection (Map "type|path_idx|subfolder" -> Set of file names) as `targets`. */
-function targetsForSelection(selection) {
-    const targets = [];
-    for (const [folderKey, files] of selection.entries()) {
-        const [type, pathIdx, ...rest] = folderKey.split('|');
-        if (type && pathIdx !== undefined && rest.length && files.size) {
-            targets.push({ type, path_idx: Number(pathIdx), subfolder: rest.join('|'), files: [...files] });
-        }
-    }
-    return targets;
-}
-
 async function postJson(url, body) {
     const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const data = await res.json().catch(() => ({}));
@@ -143,17 +131,16 @@ export function showScanResult(owner, result) {
 }
 
 /**
- * Runs one scan from the scan page: every active model folder, `options.selection` (the model
- * picker) or `options.targets` (listed models). Resolves with the scan's result when it has
- * ended, or null when it could not start (the reason shown).
+ * Runs one scan from the scan page: every active model folder, or `options.targets` (picked or
+ * listed models, targetsForItems). Resolves with the scan's result when it has ended, or null
+ * when it could not start (the reason shown).
  */
 export async function startScan(owner, options) {
     if (running) return null;
     running = true;
     setActiveScanButtonState(true);
     const body = scanRequestBody(options);
-    const targets = options.targets || (options.selection ? targetsForSelection(options.selection) : null);
-    if (targets) body.targets = targets;
+    if (options.targets) body.targets = options.targets;
     try {
         const data = await postJson('/anomalous/scan_all', body);
         updateScanProgress({ scanning: true, phase: 'preparing', recovered: data.recovered });

@@ -1,7 +1,7 @@
 import { app } from "../../../scripts/app.js";
 import { showDetail } from './ui_detail.js';
 import { showEditModal } from './ui_model_editor.js';
-import { _openAdvancedModelSelector, setWidgetValuePath } from './ui_model_selector.js';
+import { setWidgetValuePath } from './model_widget_path.js';
 import { loadModels, applyModelToCanvas, stopMediaInContainer } from './ui_grid.js';
 import { createDOM, renderSidebar, loadFolders } from './ui_sidebar.js';
 import { closeWorkspace, hideAllPanels } from './ui_browser_navigation.js';
@@ -233,5 +233,4 @@ AnomalousBrowser.prototype.stopMediaInContainer = stopMediaInContainer;
 
 AnomalousBrowser.prototype.showDetail = showDetail;
 AnomalousBrowser.prototype.showEditModal = showEditModal;
-AnomalousBrowser.prototype._openAdvancedModelSelector = _openAdvancedModelSelector;
 AnomalousBrowser.prototype.setWidgetValuePath = setWidgetValuePath;

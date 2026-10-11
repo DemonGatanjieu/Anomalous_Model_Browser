@@ -1,7 +1,6 @@
 """Model folder discovery, listing, search, and presentation lookup."""
 
 import asyncio
-import json
 import os
 import urllib.parse
 
@@ -601,91 +600,3 @@ async def api_get_all_scan_models(request):
     limit = int(request.query.get('limit', 0))
     payload = await asyncio.to_thread(_collect_all_scan_models, page, limit)
     return web.json_response(payload)
-
-
-async def api_batch_select(request):
-    folder_key = request.query.get('folderKey', 'ALL')
-    action = request.query.get('action', 'all')
-    
-    def matches_condition(file_path, root, base_name):
-        if action == 'all':
-            return True
-        elif action == 'no_preview':
-            for ext in PREVIEW_SUFFIXES + MEDIA_EXTENSIONS:
-                if os.path.exists(os.path.join(root, base_name + ext)):
-                    return False
-            return True
-        elif action == 'no_desc':
-            info_file = file_path + '.info'
-            civitai_info = os.path.join(root, base_name + '.civitai.info')
-            if os.path.exists(civitai_info):
-                try:
-                    with open(civitai_info, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                        if data.get('description', '').strip():
-                            return False
-                except: pass
-            if os.path.exists(info_file):
-                try:
-                    with open(info_file, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                        if data.get('description', '').strip():
-                            return False
-                except: pass
-            return True
-        return False
-
-    results = {}
-    
-    if folder_key == 'ALL':
-        target_types = get_active_folder_types()
-        seen_dirs = set()
-        for t in target_types:
-            try: paths = folder_paths.get_folder_paths(t)
-            except Exception: continue
-            if not paths: continue
-            for path_idx, base_dir in enumerate(paths):
-                if base_dir in seen_dirs: continue
-                seen_dirs.add(base_dir)
-                if not os.path.exists(base_dir): continue
-                for root, dirs, files in os.walk(base_dir):
-                    for f in files:
-                        if is_model_file(f):
-                            file_path = os.path.join(root, f)
-                            base_name = os.path.splitext(f)[0]
-                            if matches_condition(file_path, root, base_name):
-                                rel_subfolder = os.path.relpath(root, base_dir)
-                                if rel_subfolder == '.': rel_subfolder = ''
-                                else: rel_subfolder = rel_subfolder.replace('\\', '/')
-                                fkey = f"{t}|{path_idx}|{rel_subfolder}"
-                                if fkey not in results: results[fkey] = []
-                                results[fkey].append(f)
-    else:
-        parts = folder_key.split('|')
-        if len(parts) >= 3:
-            t = parts[0]
-            path_idx = int(parts[1])
-            subfolder = parts[2]
-            
-            try: paths = folder_paths.get_folder_paths(t)
-            except Exception: paths = []
-            
-            if paths and path_idx < len(paths):
-                try:
-                    base_dir, target_dir = resolve_folder_subdir(t, path_idx, subfolder)
-                except ValueError:
-                    return web.json_response({"selected": {}})
-                    
-                if os.path.exists(target_dir):
-                    try: entries = os.listdir(target_dir)
-                    except: entries = []
-                    for f in entries:
-                        if is_model_file(f):
-                            file_path = os.path.join(target_dir, f)
-                            if os.path.isfile(file_path):
-                                base_name = os.path.splitext(f)[0]
-                                if matches_condition(file_path, target_dir, base_name):
-                                    if folder_key not in results: results[folder_key] = []
-                                    results[folder_key].append(f)
-                                    
-    return web.json_response({"selected": results})
