@@ -390,11 +390,17 @@
     font-size: 12px;
 }
 
+/* In the list, the same columns on every row (a model without a base model leaves its column empty). */
 .anomalous-pick-facts {
-    display: flex;
+    display: grid;
+    grid-template-columns: 76px 130px 68px;
     align-items: center;
     gap: 10px;
     font-size: 12px;
+}
+
+.anomalous-pick-state {
+    justify-self: start;
 }
 
 .anomalous-pick-state {
@@ -422,7 +428,7 @@
 }
 
 .anomalous-pick-base {
-    max-width: 140px;
+    min-width: 0;
     overflow: hidden;
     color: var(--amb-text-soft);
     text-overflow: ellipsis;
@@ -469,6 +475,7 @@
 }
 
 .is-covers .anomalous-pick-facts {
+    display: flex;
     justify-content: space-between;
 }
 
