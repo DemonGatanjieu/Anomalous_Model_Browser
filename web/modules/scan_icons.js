@@ -4,7 +4,7 @@
  */
 
 const ICONS = {
-    radar: '<circle cx="12" cy="12" r="9"/><path d="M12 12l6-6" /><circle cx="12" cy="12" r="1.5" fill="currentColor"/><path d="M12 3v3M3 12h3" opacity="0.5"/>',
+    scan: '<path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M4 12h16"/>',
     pick: '<path d="M10 6h10M10 12h10M10 18h10"/><path d="M3.5 6l1.5 1.5 2.5-3M3.5 12l1.5 1.5 2.5-3"/><circle cx="5" cy="18" r="1.2"/>',
     online: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.6 2.5 3.8 5.5 3.8 9s-1.2 6.5-3.8 9c-2.6-2.5-3.8-5.5-3.8-9S9.4 5.5 12 3z"/>',
     offline: '<path d="M3 3l18 18"/><path d="M8.5 16.4a5 5 0 0 1 7 0"/><path d="M5 12.9a10 10 0 0 1 4.5-2.6M14.5 10.3a10 10 0 0 1 4.5 2.6"/><circle cx="12" cy="20" r="1" fill="currentColor"/>',

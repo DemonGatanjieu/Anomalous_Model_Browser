@@ -18,6 +18,7 @@
     margin: 0 auto;
     padding: 32px 28px 40px;
     box-sizing: border-box;
+    container: scanpage / inline-size;
 }
 
 .anomalous-scan-title {
@@ -271,6 +272,29 @@ button.anomalous-scan-state-chip:hover {
     border-radius: 50%;
 }
 
+/* Under the chips: the models left out, as quiet links. */
+.anomalous-scan-state-notes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+}
+
+.anomalous-scan-quiet-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--amb-text-muted);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+
+.anomalous-scan-quiet-link .anomalous-scan-icon { width: 14px; height: 14px; }
+.anomalous-scan-quiet-link:hover { color: var(--amb-text-main); text-decoration: underline dotted; text-underline-offset: 3px; }
+
 /* The components: apart from the counts, dashed, at the end of the row. */
 .anomalous-scan-state-chip.anomalous-scan-parts-chip {
     margin-left: auto;
@@ -305,7 +329,6 @@ button.anomalous-scan-attn:hover { background: rgba(var(--amb-ink-rgb), 0.04); }
 .anomalous-scan-attn-text { flex: 1 1 220px; min-width: 0; line-height: 1.5; }
 .anomalous-scan-attn > .anomalous-scan-icon:last-child { color: var(--amb-text-muted); }
 .anomalous-scan-attn.is-danger { color: var(--amb-danger-text); }
-.anomalous-scan-attn.is-quiet { color: var(--amb-text-muted); }
 
 /* The settings: a tile each, with its icon and switch; the rarer ones folded under them. */
 .anomalous-scan-tiles {
@@ -366,7 +389,7 @@ label.anomalous-scan-tile:hover { border-color: color-mix(in srgb, var(--amb-lin
 }
 
 .anomalous-scan-more-head::-webkit-details-marker { display: none; }
-.anomalous-scan-more-head::before { content: '›'; color: var(--amb-text-muted); transition: transform 0.15s ease; }
+.anomalous-scan-more-head::before { content: '›'; display: inline-block; color: var(--amb-text-muted); transition: transform 0.15s ease; }
 .anomalous-scan-more-settings[open] > .anomalous-scan-more-head::before { transform: rotate(90deg); }
 .anomalous-scan-more-settings > .anomalous-scan-setting-help { display: block; padding-bottom: 12px; }
 
@@ -392,8 +415,10 @@ label.anomalous-scan-tile:hover { border-color: color-mix(in srgb, var(--amb-lin
 .anomalous-scan-last-text { flex: 1 1 260px; min-width: 0; }
 .anomalous-scan-last-line .anomalous-pick-link { margin-left: 0; }
 
-@media (max-width: 560px) {
-    .anomalous-scan-card.anomalous-scan-hero { flex-direction: column; align-items: center; }
+/* Narrow (a phone, or docked in the sidebar): the ring above the rest. */
+@container scanpage (max-width: 560px) {
+    .anomalous-scan-card.anomalous-scan-hero { flex-direction: column; align-items: stretch; }
+    .anomalous-scan-ring { align-self: center; }
     .anomalous-scan-mode { margin-left: 0; }
     .anomalous-scan-state-chip.anomalous-scan-parts-chip { margin-left: 0; }
 }
