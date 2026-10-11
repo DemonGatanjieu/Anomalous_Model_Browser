@@ -33,6 +33,17 @@ def read_json(path):
     return data if isinstance(data, dict) else None
 
 
+SCAN_CHOICES = ("skip", "scan")
+
+
+def scan_choice(base):
+    """What the user chose about scanning a model, kept in <model>.anomalous.json ("scan"):
+    "skip" (a scan of its folder leaves it out; picking it by hand still scans it), "scan"
+    (asked once, scanned like any other) or "" (not chosen). ``base``: the path without extension."""
+    choice = (read_json(base + USER_INFO_SUFFIX) or {}).get("scan")
+    return choice if choice in SCAN_CHOICES else ""
+
+
 def scan_info_path(base):
     """The sidecar holding a scan result: <model>.info, else another tool's <model>.civitai.info.
     A .civitai.info with only edits made in older versions (no Civitai ids) does not count,

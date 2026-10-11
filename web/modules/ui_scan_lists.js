@@ -3,7 +3,9 @@
  * not scanned yet, the unmatched ones, the model files a scan never reads (other formats), and
  * each model the last scan changed (GET /anomalous/scan_summary, /anomalous/last_scan).
  * On the scan page itself the last scan is one summary card with a way to its list.
- * Every row opens its model; rows offer "scan" / "look up again" and a Civitai search.
+ * Every row opens its model; rows offer "scan" / "look up again" and a Civitai search. Two
+ * more lists: the new models whose header looks like no drawing model ("don't scan" / "scan
+ * as usual"), and the models set to "don't scan" ("scan it after all").
  * The page passes what the buttons do (`actions`); this module only renders.
  */
 
@@ -135,9 +137,36 @@ function listOf(view, summary, last, actions) {
             title: t('scanListNew', { count: items.length }),
             hint: t('scanListNewHint'),
             all: items.length ? [t('scanListScanAll', { count: items.length }), () => actions.scan(items)] : null,
-            render: item => row(item, '', [
+            render: item => row(item, item.not_drawing ? t('scanRowNotDrawing') : '', [
                 [t('scanRowOpen'), () => actions.open(item)],
                 [t('scanRowScan'), () => actions.scan([item]), actions.busy],
+            ]),
+        };
+    }
+    if (view === 'notdrawing') {
+        const items = (summary?.new_models || []).filter(item => item.not_drawing);
+        return {
+            items,
+            title: t('scanListNotDrawing', { count: items.length }),
+            hint: t('scanListNotDrawingHint'),
+            all: items.length ? [t('scanPageSkipThem'), () => actions.choose(items, 'skip')] : null,
+            render: item => row(item, '', [
+                [t('scanRowOpen'), () => actions.open(item)],
+                [t('scanRowSkip'), () => actions.choose([item], 'skip')],
+                [t('scanRowKeep'), () => actions.choose([item], 'scan')],
+            ]),
+        };
+    }
+    if (view === 'excluded') {
+        const items = summary?.excluded_models || [];
+        return {
+            items,
+            title: t('scanListExcluded', { count: items.length }),
+            hint: t('scanListExcludedHint'),
+            all: items.length ? [t('scanListExcludedAll'), () => actions.choose(items, '')] : null,
+            render: item => row(item, '', [
+                [t('scanRowOpen'), () => actions.open(item)],
+                [t('scanRowUnskip'), () => actions.choose([item], '')],
             ]),
         };
     }
@@ -171,13 +200,13 @@ function listOf(view, summary, last, actions) {
         hint: t(actions.offline ? 'scanListUnmatchedHintOffline' : 'scanListUnmatchedHint'),
         all: items.length && !actions.offline ? [t('scanPageRetry', { count: items.length }), actions.retryAll] : null,
         render: item => row(item.reason === 'damaged' ? { ...item, status: 'damaged' } : item,
-            [reasonText(item.reason), guess(item)].filter(Boolean).join(' · '),
+            [reasonText(item.reason), guess(item), item.reason === 'not_found' ? t('scanFingerprintKept') : ''].filter(Boolean).join(' · '),
             unmatchedButtons(item, actions), item.reason === 'damaged' ? '⚠' : '≈'),
     };
 }
 
 /**
- * One list as a page ('new' | 'unmatched' | 'skipped' | 'result'): back to the scan page, what
+ * One list as a page ('new' | 'unmatched' | 'skipped' | 'result' | 'notdrawing' | 'excluded'): back to the scan page, what
  * these models are and why they are here, a button for all of them, then the rows. A scan
  * started here shows its progress in `progressHost`, above the rows.
  */

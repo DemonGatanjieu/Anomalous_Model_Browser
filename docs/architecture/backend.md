@@ -148,6 +148,16 @@ changes the file's hash, so the file is to be downloaded again; the scan summary
 a scan stops asking (`--civitai-down` carries this to the next folders) and infers the
 rest from the files, instead of waiting for every timeout.
 
+A model can be left out of scans: `"scan": "skip"` in its `<model>.anomalous.json` (the
+user's own layer, which scans never write; `model_identity.scan_choice`). A scan of a whole
+folder skips it and the scan summary counts it apart (`excluded`), not in the other counts;
+picked by hand (`targets`) it is scanned all the same. `"scan": "scan"` records that the user
+was asked and kept it. Nothing decides this alone: the summary only marks new models whose
+safetensors header reads but names no drawing model kind (`model_kind.inspect_file`, kind "",
+a voice model say) as `not_drawing`, and the scan page asks. `POST /anomalous/scan_choice`
+(`api/scan_choice.py`, this computer only) takes the picked models as scan `targets`, at most
+2000, and writes only `.safetensors` files' layers that are readable.
+
 ## MCP endpoint
 
 `POST /anomalous/mcp` (`api/mcp_server.py`) answers one JSON-RPC message per POST with

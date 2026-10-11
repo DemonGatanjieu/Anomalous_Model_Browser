@@ -3,7 +3,8 @@
  * (GET /anomalous/scan_summary), one button to scan, how the next scan goes, progress in
  * the page and the last scan in one card. Each count and the last scan open their list
  * as a page of its own (ui_scan_lists.js), the settings card the settings page; each
- * has a way back.
+ * has a way back. New models whose header looks like no drawing model are asked about
+ * (don't scan them, scan them, see them); models set to "don't scan" have a list of their own.
  * Scans run through scan_runner.js; the progress box is scan_progress.js's panel,
  * hosted here while the page is shown.
  */
@@ -23,7 +24,8 @@ const options = {
     forceOverwrite: false,
     autoFix: true,
 };
-// The view shown: '' the page itself, 'settings', or a list: 'new' | 'unmatched' | 'skipped' | 'result'.
+// The view shown: '' the page itself, 'settings', or a list: 'new' | 'unmatched' | 'skipped' | 'result'
+// | 'notdrawing' | 'excluded'.
 // `scroll`: where to put a list shown again after a model's Back.
 const pageState = { view: '', scroll: 0 };
 
@@ -216,6 +218,37 @@ async function run(owner, panel, extra = {}) {
     if (panel.isConnected && panel.style.display !== 'none') renderScanPage(owner, panel);
 }
 
+/** Saves "don't scan" ('skip'), "scan" or no choice ('') for `items`, then reads the page again. */
+async function setChoice(owner, panel, items, choice) {
+    try {
+        const res = await fetch('/anomalous/scan_choice', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ targets: targetsForItems(items), choice }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.status !== 'success') throw new Error(data.message || `HTTP ${res.status}`);
+        if (data.failed?.length) alert(t('scanChoiceFailed', { count: data.failed.length }));
+    } catch (error) {
+        console.error('Could not save the scan choice:', error);
+        alert(t('scanChoiceFailed', { count: items.length }));
+    }
+    renderScanPage(owner, panel);
+}
+
+/** The question about new models that look like no drawing model: don't scan them, scan them, or see them. */
+function notDrawingCard(owner, panel, items, see) {
+    const card = el('section', 'anomalous-scan-card anomalous-scan-ask');
+    const buttons = el('div', 'anomalous-scan-ask-actions');
+    buttons.append(
+        button('anomalous-scan-secondary anomalous-scan-small-btn', t('scanPageSkipThem'), () => setChoice(owner, panel, items, 'skip')),
+        button('anomalous-scan-secondary anomalous-scan-small-btn', t('scanPageScanThem'), () => setChoice(owner, panel, items, 'scan')),
+        button('anomalous-scan-small-btn anomalous-scan-ask-see', t('scanPageSeeThem'), see),
+    );
+    card.append(el('p', 'anomalous-scan-ask-text', t('scanPageNotDrawing', { count: items.length })), buttons);
+    return card;
+}
+
 /** To another view of the page ('' is the scan page itself), with what was read last. */
 function go(owner, panel, view) {
     pageState.view = view;
@@ -236,6 +269,7 @@ function listActions(owner, panel, busy) {
             openListedModel(owner, item, () => openScanPage(owner, view, scroll));
         },
         scan: (items, { retry = false } = {}) => run(owner, panel, { targets: targetsForItems(items), retryUnmatched: retry }),
+        choose: (items, choice) => setChoice(owner, panel, items, choice),
         retryAll: () => run(owner, panel, { retryUnmatched: true }),
     };
 }
@@ -250,11 +284,15 @@ function mainPage(owner, panel, { summary, config, last }, busy, progressHost) {
     stats.append(
         stat(summary?.total, t('scanPageTotal')),
         stat(summary?.matched, t('scanPageMatched'), 'ok'),
-        stat(summary?.unmatched, t('scanPageUnmatched'), summary?.unmatched ? 'warn' : '', summary?.unmatched ? open('unmatched') : null),
+        // Not on Civitai is no fault (the fingerprint is kept): only damaged files and lookups still to do warn.
+        stat(summary?.unmatched, t('scanPageUnmatched'), summary?.damaged || summary?.pending ? 'warn' : '', summary?.unmatched ? open('unmatched') : null),
         stat(summary?.new, t('scanPageNew'), summary?.new ? 'new' : '', summary?.new ? open('new') : null),
     );
     page.append(stats);
     if (summary?.damaged) page.append(button('anomalous-scan-damaged-note', t('scanPageDamagedNote', { count: summary.damaged }), open('unmatched')));
+    const notDrawing = (summary?.new_models || []).filter(item => item.not_drawing);
+    if (notDrawing.length) page.append(notDrawingCard(owner, panel, notDrawing, open('notdrawing')));
+    if (summary?.excluded) page.append(button('anomalous-scan-skipped-note', t('scanPageExcludedNote', { count: summary.excluded }), open('excluded')));
     if (summary?.skipped) page.append(button('anomalous-scan-skipped-note', t('scanPageSkippedNote', { count: summary.skipped }), open('skipped')));
     if (!summary) page.append(el('p', 'anomalous-scan-muted', t('scanPageSummaryFailed')));
 

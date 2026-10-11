@@ -270,5 +270,5 @@ def inspect_file(path):
     """classify() of a file on disk, plus its "format" (None when its header cannot be read)."""
     fmt, header = read_head(path)
     found = classify(fmt, header)
-    found["format"] = fmt
+    found["format"] = fmt if header else None
     return found
