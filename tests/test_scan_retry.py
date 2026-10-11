@@ -11,7 +11,7 @@ sys.path.insert(0, str(PLUGIN_DIR.parents[1]))
 sys.path.insert(0, str(PLUGIN_DIR))
 
 import scraper
-from api import metadata, scan_summary, scanner
+from api import metadata, scan_choice, scan_summary, scanner
 from model_identity import computed_file_identity
 
 DIGEST = "a" * 64
@@ -87,6 +87,36 @@ class ScanRetryTests(unittest.TestCase):
         self.assertEqual(reason(whole), "not_found")
         with mock.patch.object(scan_summary, "get_active_scan_paths", return_value=[self.temp.name]):
             self.assertEqual(scan_summary._summarize()["damaged"], 1)
+
+    def test_models_set_not_to_be_scanned_are_left_out(self):
+        # A voice model's header names no drawing model kind: the page asks; "skip" leaves it out.
+        header = json.dumps({"ema_model.transformer.w": {"dtype": "F32", "shape": [1], "data_offsets": [0, 4]}}).encode()
+        voice = Path(self.temp.name, "voice.safetensors")
+        voice.write_bytes(len(header).to_bytes(8, "little") + header + b"\0" * 4)
+        summarize = lambda: scan_summary._summarize()
+        with mock.patch.object(scan_summary, "get_active_scan_paths", return_value=[self.temp.name]):
+            first = summarize()
+            self.assertEqual([item["filename"] for item in first["new_models"] if item.get("not_drawing")], ["voice.safetensors"])
+            self.assertTrue(metadata._read_metadata(str(voice))["not_drawing"])
+            target = [{"type": "checkpoints", "path_idx": 0, "subfolder": "/", "files": ["voice.safetensors", "gone.safetensors"]}]
+            with mock.patch.object(scan_choice, "resolve_folder_subdir", return_value=(self.temp.name, self.temp.name)):
+                self.assertEqual(scan_choice._set_scan_choice(target, "skip"), (1, ["gone.safetensors"]))
+                with self.assertRaises(ValueError):
+                    scan_choice._set_scan_choice(target, "never")
+            after = summarize()
+        self.assertEqual((after["excluded"], after["total"], after["not_drawing"]), (1, first["total"] - 1, 0))
+        self.assertEqual(metadata._read_metadata(str(voice))["scan_choice"], "skip")
+        with mock.patch.object(sys, "argv", ["scraper.py", self.temp.name]), \
+                mock.patch.object(scraper, "fetch_civitai_info", return_value=None), \
+                mock.patch.object(scraper, "calculate_sha256", return_value=DIGEST):
+            scraper.main()
+        self.assertFalse(Path(self.temp.name, "voice.info").exists())
+        # Picked by hand, it is scanned all the same.
+        with mock.patch.object(sys, "argv", ["scraper.py", self.temp.name, "--target-files", "voice.safetensors"]), \
+                mock.patch.object(scraper, "fetch_civitai_info", return_value=None), \
+                mock.patch.object(scraper, "calculate_sha256", return_value=DIGEST):
+            scraper.main()
+        self.assertTrue(Path(self.temp.name, "voice.info").exists())
 
     def test_changed_file_is_hashed_again(self):
         self.unmatched.write_bytes(b"other bytes, other size")

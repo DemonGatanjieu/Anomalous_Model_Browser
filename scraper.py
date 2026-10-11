@@ -19,7 +19,7 @@ import argparse
 import shutil
 from model_policies import is_physical_rename_protected
 from recycle_bin import move_to_trash
-from model_identity import USER_INFO_SUFFIX, computed_file_identity, file_sha256, infer_base_model_from_header, is_unmatched, safetensors_damage, scan_info_path, sidecar_file_hash, sidecar_info as read_local_info, unmatched_reason
+from model_identity import USER_INFO_SUFFIX, computed_file_identity, file_sha256, infer_base_model_from_header, is_unmatched, safetensors_damage, scan_choice, scan_info_path, sidecar_file_hash, sidecar_info as read_local_info, unmatched_reason
 from civitai_client import CIVITAI_API_KEY, CivitaiUnreachable, download_media, fetch_civitai_info, fetch_model_description
 
 
@@ -75,6 +75,11 @@ def write_scan_progress(progress_file, phase, total=0, current=0, filename=""):
             pass
 
 
+def left_out(root, filename, selected):
+    """A model the user set to "don't scan" (model_identity.scan_choice), in a scan of its whole folder."""
+    return not selected and scan_choice(os.path.join(root, os.path.splitext(filename)[0])) == "skip"
+
+
 def count_scan_files(target_folder, target_files_basenames, unmatched_only=False):
     total = 0
     selected = set(target_files_basenames)
@@ -82,6 +87,7 @@ def count_scan_files(target_folder, target_files_basenames, unmatched_only=False
         total += sum(
             1 for filename in files
             if filename.endswith(".safetensors") and (not selected or filename in selected)
+            and not left_out(root, filename, selected)
             and (not unmatched_only or is_unmatched(read_local_info(os.path.join(root, os.path.splitext(filename)[0]))))
         )
     return total
@@ -422,6 +428,9 @@ def main():
             if not filename.endswith(".safetensors"):
                 continue
             if target_files_basenames and filename not in target_files_basenames:
+                continue
+            if left_out(root, filename, target_files_basenames):
+                print(f"[*] 已设为不扫描，跳过: {filename}")
                 continue
             previous = read_local_info(os.path.join(root, os.path.splitext(filename)[0]))
             if args.retry_unmatched and not is_unmatched(previous):

@@ -111,6 +111,8 @@ def _read_metadata(file_path):
         "info_source": "",
         "unmatched_reason": "",  # for "local": not_found | network | offline | "" (scanned before this was kept)
         "user_fields": [],
+        "scan_choice": "",  # the user's "skip" / "scan" (model_identity.scan_choice)
+        "not_drawing": False,  # not scanned yet, and its header looks like no drawing model
     }
     
     info_files = [f"{base_path}.info", f"{base_path}.civitai.info"]
@@ -175,10 +177,16 @@ def _read_metadata(file_path):
     if scan is not None:
         metadata["info_source"] = "local" if is_unmatched(scan) else "civitai"
         metadata["unmatched_reason"] = unmatched_reason(scan)
-    if not metadata["baseModel"] and scan is None:
-        metadata["base_guess"] = inspect_file(file_path).get("base") or ""
+    if scan is None:
+        found = inspect_file(file_path)
+        if not metadata["baseModel"]:
+            metadata["base_guess"] = found.get("base") or ""
+        # A header that reads but names no drawing model kind (a voice model, say).
+        metadata["not_drawing"] = found["format"] == "safetensors" and not found["kind"]
     # The user's own layer comes last and wins, also when a field was cleared on purpose ("").
     user = read_json(base_path + USER_INFO_SUFFIX) or {}
+    if user.get("scan") in ("skip", "scan"):
+        metadata["scan_choice"] = user["scan"]
     for key, field in USER_FIELDS.items():
         if isinstance(user.get(key), str):
             metadata[field] = user[key]

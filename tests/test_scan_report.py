@@ -35,8 +35,8 @@ class ScanReportTests(unittest.TestCase):
 
     def model(self, name, info=None):
         path = self.dir / f"{name}.safetensors"
-        header = json.dumps({"__metadata__": {"name": name}, "w": {"dtype": "F32", "shape": [1], "data_offsets": [0, 4]}}).encode()
-        path.write_bytes(len(header).to_bytes(8, "little") + header + b"\0" * 4)  # a whole file (not damaged)
+        header = json.dumps({"__metadata__": {"name": name}, "lora_unet_a.lora_up.weight": {"dtype": "F32", "shape": [1], "data_offsets": [0, 4]}}).encode()
+        path.write_bytes(len(header).to_bytes(8, "little") + header + b"\0" * 4)  # a whole LoRA file (not damaged)
         if info is not None:
             Path(str(path)[:-12] + ".info").write_text(json.dumps(info), encoding="utf-8")
         return path

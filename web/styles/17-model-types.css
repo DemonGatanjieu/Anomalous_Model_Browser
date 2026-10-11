@@ -104,6 +104,20 @@
     font-weight: 600;
 }
 
+/* "Don't scan it" / "Scan it again" after the detail header's source line. */
+.anomalous-source-choice {
+    margin-left: 8px;
+    padding: 1px 8px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.anomalous-source-choice:hover { border-color: var(--amb-link); color: var(--amb-text-main); }
+
 .anomalous-source-sep {
     opacity: 0.5;
 }

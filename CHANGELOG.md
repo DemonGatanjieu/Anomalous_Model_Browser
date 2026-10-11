@@ -39,6 +39,10 @@
 - **Docked, the details fit (侧边栏模式不再挤)**: in a narrow panel the left column becomes one row of pills above the values (默认参数, your sets, new, 全部出图, 版本).
 - **Saving a workflow, redone (保存工作流的窗口重做)**: the cover is large on the left, chosen from the canvas, the current cover or your recent pictures (as thumbnails); name, tags and notes on the right; Cancel and Save always in view. The name starts as the canvas's workflow name when ComfyUI has saved it under one. Esc cancels, Enter in the name saves.
 
+### 🔇 Models you never want scanned (不需要扫描的模型)
+- A model whose header looks like no drawing model (a voice model such as F5-TTS kept in checkpoints, say) is no longer just "not scanned" forever. The scan page asks about them: **都不扫**, **都照常扫**, or **逐个看**. Set to not be scanned, a model shows **不扫描** instead of 未扫描, a scan of everything skips it (picked by hand it is still scanned), and the scan page lists these models to change it back. A model's details have the same button. Nothing is decided for you: scanning still keeps a fingerprint that repairs workflows.
+- **Not on Civitai is no fault (Civitai 上没有不再像出错)**: the count of models Civitai did not find warns only when some file is damaged or a lookup is still to do; each such model says its fingerprint is kept for repairing workflows.
+
 ### ⚙️ Settings in tabs (设置分组)
 - The settings page is split into tabs: **Look, Models, Workflows, Prompts, Backup, Help**. "Change where downloads go" opens Models directly.
 - **Where downloads (and now imports) go is a choice**: by base model (the new default), in Downloads then by base model, all in a Downloads folder, straight in the type's folder, or your own folder typed by hand; an example path shows the result. Without a saved setting, downloads now go by base model instead of into a Downloads folder.

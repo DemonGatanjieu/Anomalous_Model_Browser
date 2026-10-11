@@ -50,6 +50,24 @@
     color: var(--amb-text-main);
 }
 
+/* The question about new models that look like no drawing model, under the counts. */
+.anomalous-scan-ask {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+}
+
+.anomalous-scan-ask-text { flex: 1 1 260px; margin: 0; color: var(--amb-text-soft); font-size: 0.9em; line-height: 1.5; }
+.anomalous-scan-ask-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.anomalous-scan-ask-see {
+    border: none;
+    background: none;
+    color: var(--amb-link);
+    cursor: pointer;
+}
+
 /* "N model files are damaged": a warning under the counts, to their list. */
 .anomalous-scan-damaged-note {
     align-self: flex-start;

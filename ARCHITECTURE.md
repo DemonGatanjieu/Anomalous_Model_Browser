@@ -98,7 +98,10 @@ covered by the `styles.css` manifest.
   `api/scan_summary.py` counts models matched on Civitai, unmatched and not yet scanned
   for the scan page and lists the last two, by the same sidecar rules the scraper uses
   (`sidecar_info`, `is_unmatched`, `unmatched_reason` in `model_identity.py`); it also
-  lists the model files in other formats, which scans never read, so the page can say so.
+  lists the model files in other formats, which scans never read, so the page can say so,
+  the models set to "don't scan", and the new ones whose header names no drawing model kind.
+  `api/scan_choice.py` saves that choice (`POST /anomalous/scan_choice`, this computer only)
+  into each model's `<model>.anomalous.json`.
 - `api/mcp_server.py` serves `/anomalous/mcp`, the Model Context Protocol endpoint AI apps
   connect to (Streamable HTTP; the 2026-07-28 stateless protocol and the earlier
   `initialize`-based ones; this computer only, Host and Origin checked against DNS
