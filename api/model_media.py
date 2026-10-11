@@ -1,6 +1,7 @@
 """Model preview lookup and bounded custom-cover operations."""
 
 import asyncio
+import filecmp
 import os
 import shutil
 import urllib.parse
@@ -8,7 +9,7 @@ import urllib.parse
 from aiohttp import web
 import folder_paths
 
-from .model_constants import MEDIA_EXTENSIONS, PREVIEW_SUFFIXES
+from .model_constants import CIVITAI_BACKUP_SUFFIXES, MEDIA_EXTENSIONS, PREVIEW_SUFFIXES
 from .trash import move_to_trash
 from .utils import require_filename, resolve_folder_subdir, resolve_within
 
@@ -132,12 +133,46 @@ def _preview_url_for_model(folder_type, path_idx, base_dir, file_path):
     )
     if not preview_file:
         return ""
-    rel_subfolder = os.path.relpath(root, base_dir)
+    return _media_url(folder_type, path_idx, base_dir, os.path.join(root, preview_file))
+
+
+def _media_url(folder_type, path_idx, base_dir, media_path):
+    """The /anomalous/image URL of a file beside a model, with a token that changes with it."""
+    rel_subfolder = os.path.relpath(os.path.dirname(media_path), base_dir)
     if rel_subfolder == '.':
         rel_subfolder = '/'
     q_type = urllib.parse.quote(folder_type)
     q_idx = str(path_idx)
     q_sub = urllib.parse.quote(rel_subfolder)
-    q_file = urllib.parse.quote(preview_file)
-    version = _cache_token(os.path.join(root, preview_file))
+    q_file = urllib.parse.quote(os.path.basename(media_path))
+    version = _cache_token(media_path)
     return f"/anomalous/image?type={q_type}&path_idx={q_idx}&subfolder={q_sub}&filename={q_file}&t={version}"
+
+
+def _model_covers(folder_type, path_idx, base_dir, file_path):
+    """Civitai's own image a scan kept (<model>.civitai_bak.*) as a URL, or "", and whether the
+    cover shown is another picture (the user's): a cover is Civitai's when it is a copy of it."""
+    base = os.path.splitext(file_path)[0]
+    saved = next((base + suffix for suffix in CIVITAI_BACKUP_SUFFIXES if os.path.isfile(base + suffix)), "")
+    shown = next((base + suffix for suffix in PREVIEW_SUFFIXES + MEDIA_EXTENSIONS if os.path.isfile(base + suffix)), "")
+    try:
+        custom = bool(shown) and not (saved and filecmp.cmp(shown, saved, shallow=False))
+    except OSError:
+        custom = bool(shown)
+    return {"civitai": _media_url(folder_type, path_idx, base_dir, saved) if saved else "", "custom": custom}
+
+
+async def api_model_covers(request):
+    """GET /anomalous/model_covers?type&path_idx&subfolder&filename - for the model editor: the
+    Civitai cover it can bring back, and whether the one shown is the user's."""
+    try:
+        folder_type = request.query.get('type', '')
+        path_idx = int(request.query.get('path_idx', 0))
+        filename = require_filename(request.query.get('filename', ''))
+        base_dir, target_dir = resolve_folder_subdir(folder_type, path_idx, request.query.get('subfolder', '/'))
+        file_path = resolve_within(target_dir, filename)
+    except (ValueError, KeyError, TypeError):
+        return web.json_response({"error": "Invalid model location"}, status=400)
+    if not os.path.isfile(file_path):
+        return web.json_response({"error": "Model not found"}, status=404)
+    return web.json_response(await asyncio.to_thread(_model_covers, folder_type, path_idx, base_dir, file_path))

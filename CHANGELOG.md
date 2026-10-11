@@ -17,6 +17,16 @@
 - Under the type chips, one chip per base model the listed models have, with counts: **All · Illustrious 21 · Anima 7 · SDXL 9 · Unknown 2**. Spellings of one family count as one (SDXL 1.0 and SDXL). Models not scanned yet are listed by what their file's header tells. Handy for LoRAs: pick the base model of your checkpoint and only the LoRAs that fit are left. It works together with the search.
 - The scanner's offline guess of a base model (for models Civitai does not know) now also recognizes LoRAs, Qwen-Image, Wan, Chroma and Hunyuan Video files.
 
+### ✏️ A new model editor, with a source link (模型编辑页重做，能填来源链接)
+- **Edit** on a model opens a cleaner editor: the cover large on the left with the choices under it (the current one, Civitai's own cover when you replaced it, your newest pictures, upload, or the whole gallery), and on the right **Name**, **Source link** and **Notes**, each saying what it does. Nothing is written until **Save**; Esc or a click outside cancels. Renaming the file on disk is a tick under the name that says what it means.
+- **Source link (来源链接)**: where you downloaded a model (LiblibAI, HuggingFace…), its site named as you type. The details get a button that opens it, beside Civitai's; shared workflows and Model Check point to it when someone misses that model. Only web addresses are kept.
+- **Reset** clears the name and notes you set and brings Civitai's cover back; the source link stays.
+- Saving no longer marks the name or notes as yours when you did not touch them.
+
+### ≈ What was read from the file says so (离线推断标清楚)
+- A model Civitai does not know has its base model inferred from the file, as before; now it says so. Its card reads **推断 SDXL** (it was ≈), and its details open with a note: why Civitai did not have it, that the base model was read from the file and may be off, and **Add a name and source link**, instead of an English placeholder description.
+- The scan page says it too: an online scan "looks up 5 on Civitai and infers the base model from the file for any it does not find", and the state chip reads **Not found · inferred from file**.
+
 ### 🏷️ Version labels on model cards (卡片显示版本号)
 - A scanned model's card shows its Civitai version ("v2.0", "Illustrious", "fp8"…) as a small label above the name, so versions of one model that share a file name can be told apart.
 

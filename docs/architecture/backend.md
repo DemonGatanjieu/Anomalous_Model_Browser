@@ -165,6 +165,13 @@ encoders, CLIP, CLIP Vision, upscalers) as `components` and lists them, found on
 `covers` holds up to 48 covers of scanned models, components left out, newest model file first
 (`{name, preview_url}`), for the pictures on top of the scan card.
 
+The model editor writes through `POST /anomalous/update_metadata` (only the fields it sends:
+`custom_name`, `custom_notes`, `custom_source_url`, which must be empty or an http(s) address,
+else 400 and nothing changes) into the user layer, and covers through `set_custom_cover` /
+`upload_custom_cover` first. `GET /anomalous/model_covers?type&path_idx&subfolder&filename`
+(`api/model_media.py`, read-only) tells it Civitai's kept image (`<model>.civitai_bak.*`, as an
+image URL) and whether the cover shown is the user's, so it can offer Civitai's back.
+
 The scan page's picker reads `GET /anomalous/scan_pickable` (`api/scan_summary.py`): the
 same files the summary counts (the scan folders' `.safetensors`, each once), the "don't scan"
 ones included, up to 5000 with the exact `total`. Each carries its locator (`type`,

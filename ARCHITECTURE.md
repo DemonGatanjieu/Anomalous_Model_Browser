@@ -449,14 +449,16 @@ covered by the `styles.css` manifest.
   search in the header (shown on the models page through the shell's `data-page`): the grid
   lists the models of its type matching every word (`owner.modelQuery`).
 - `model_source.js` shows where a model's information came from: the card badge (marked only
-  when inferred from the file, ≈, or not scanned yet) and the detail header's source line with
-  the fields the user set.
+  when inferred from the file, "推断", or not scanned yet), the detail header's source line with
+  the fields the user set, its buttons (source link, Civitai, Edit) and, for a model Civitai
+  does not know, the note on what was read from the file.
 - `ui_grid.js` and model-detail modules own model presentation: `ui_grid.js` manages chunked card rendering,
   card placeholder ergonomics (eliminating misleading unclickable text in favor of pure centered icon and status),
   card action buttons (one-click canvas addition with plus icon, model metadata editor, direct precision scanner without wizard modal popups)
   with absolute positioning cascades immune to tooltip target conflicts, vibrant hover affordance,
   safe docked sidebar preservation upon node addition, and multi-type node dispatch; `ui_detail.js`
-  coordinates detail display, `ui_model_editor.js` owns metadata editing, and
+  coordinates detail display, `ui_model_editor.js` owns metadata editing (cover, name, source link, notes;
+  styles `styles/31-model-info.css`), and
   `model_widget_path.js` puts a model path into a loader's widget. `ui_gallery.js` (cards in
   `ui_gallery_card.js`) and `ui_gallery_detail.js` own generated-image browsing and workbench lifecycle,
   with stage interaction in `ui_image_stage.js` and metadata tabs in

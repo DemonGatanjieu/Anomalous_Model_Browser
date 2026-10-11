@@ -1,15 +1,19 @@
 /**
  * Where a model's information came from, shown on cards and in the detail header.
  * Matched on Civitai is the normal case and looks as before; only the exceptions are
- * marked: base model inferred from the file (≈), a damaged file, not scanned yet, and set to
+ * marked: base model inferred from the file ("推断"), a damaged file, not scanned yet, and set to
  * "don't scan" (metadata.scan_choice). The detail header also names the fields the user set
  * (metadata.user_fields, from <model>.anomalous.json), and for a model not scanned whose header
- * looks like no drawing model, or one set to "don't scan", a button to change that.
+ * looks like no drawing model, or one set to "don't scan", a button to change that. Its buttons
+ * open the source link (named after its site), Civitai's page and the editor; a model Civitai
+ * does not know gets a note under it saying what was read from the file.
  */
 
 import { translate as t } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
-import { reasonText } from './scan_results.js';
+import { isPending, reasonText } from './scan_results.js';
+import { detectPlatform } from './model_source_links.js';
+import { usableSourceUrl } from './model_source_data.js';
 
 const FIELD_KEYS = { custom_name: 'modelSourceFieldName', custom_notes: 'modelSourceFieldNotes', source_url: 'modelSourceFieldLink' };
 
@@ -38,7 +42,7 @@ export function renderSourceBadge(model) {
         badge.title = reasonText('damaged');
     } else if (meta.info_source === 'local') {
         badge.classList.add('is-inferred', ...(baseModel ? [colourClass(baseModel)] : []));
-        badge.textContent = `≈ ${baseModel || t('modelSourceLocalShort')}`;
+        badge.textContent = baseModel ? t('modelSourceInferredBadge', { base: baseModel }) : t('modelSourceLocalShort');
         badge.title = t('modelSourceLocalHint', { reason: reasonText(meta.unmatched_reason) });
     } else if (!meta.info_source && scannable(model)) {
         const skipped = meta.scan_choice === 'skip';
@@ -74,6 +78,72 @@ export function renderSourceLine(span, model, meta) {
         : skipped ? t('modelSourceSkippedHint')
             : !meta.info_source && scannable(model) ? t(meta.not_drawing ? 'modelSourceNotDrawingHint' : 'modelSourceNotScannedHint') : '';
     if (scannable(model) && (skipped || (!meta.info_source && meta.not_drawing))) span.append(choiceButton(span, model, meta));
+}
+
+/** A link the page may open: http(s) only. */
+function openable(url) {
+    const clean = usableSourceUrl(url);
+    return /^https?:\/\//i.test(clean) ? clean : '';
+}
+
+/** The detail header's buttons: the source link (its site named, its colour as a dot), Civitai's page, Edit. */
+export function renderDetailActions(meta, onEdit) {
+    const box = document.createElement('span');
+    box.className = 'anomalous-detail-actions';
+    const civitai = openable(meta.civitai_url);
+    const source = openable(meta.source_url);
+    const link = (url, label, colour) => {
+        const node = document.createElement('a');
+        node.className = 'anomalous-detail-link';
+        Object.assign(node, { href: url, target: '_blank', rel: 'noopener noreferrer', title: url });
+        const dot = document.createElement('span');
+        dot.className = 'anomalous-detail-link-dot';
+        if (colour) dot.style.background = colour;
+        node.append(dot, `${label} ↗`);
+        box.append(node);
+    };
+    if (source && source !== civitai) {
+        const platform = detectPlatform(source);
+        link(source, platform.name === 'Web Link' ? t('modelLinkSource') : platform.name, platform.name === 'Web Link' ? '' : platform.color);
+    }
+    if (civitai) link(civitai, 'Civitai', 'rgb(56, 189, 248)');
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'anomalous-detail-edit';
+    edit.textContent = t('detailEdit');
+    edit.onclick = onEdit;
+    box.append(edit);
+    return box;
+}
+
+/**
+ * Under the detail header of a model Civitai does not know: why, that the base model was read
+ * from the file (and may be off), and a button to add a name and a source link. Null for others.
+ */
+export function renderInferredNote(meta, onEdit) {
+    if (meta.info_source !== 'local') return null;
+    const damaged = meta.unmatched_reason === 'damaged';
+    const note = document.createElement('div');
+    note.className = `anomalous-inferred-note${damaged ? ' is-damaged' : ''}`;
+    const mark = document.createElement('span');
+    mark.className = 'anomalous-inferred-mark';
+    mark.textContent = damaged ? '⚠' : '≈';
+    const text = document.createElement('div');
+    text.className = 'anomalous-inferred-text';
+    const title = document.createElement('strong');
+    title.textContent = damaged ? t('modelSourceDamaged') : reasonText(meta.unmatched_reason);
+    const body = document.createElement('span');
+    body.textContent = damaged ? reasonText('damaged')
+        : [t(meta.baseModel ? 'modelInferredBase' : 'modelInferredNoBase', { base: meta.baseModel }),
+            isPending(meta.unmatched_reason) ? t('modelInferredPending') : ''].filter(Boolean).join(' ');
+    text.append(title, body);
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'anomalous-inferred-edit';
+    edit.textContent = t(meta.source_url ? 'modelInferredEdit' : 'modelInferredFill');
+    edit.onclick = onEdit;
+    note.append(mark, text, edit);
+    return note;
 }
 
 /** "Don't scan" / "Scan it after all" in the detail header: saves the choice, then draws the line again. */

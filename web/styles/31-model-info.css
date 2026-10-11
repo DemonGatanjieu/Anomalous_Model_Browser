@@ -1,0 +1,459 @@
+/* The model editor (ui_model_editor.js: cover and its choices on the left, name, source link
+   and notes on the right, Reset, Cancel and Save at the foot), and in the model details
+   (model_source.js) the header's link buttons and the note on what was read from the file. */
+
+.anomalous-medit-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    background: var(--amb-scrim);
+    backdrop-filter: blur(4px);
+}
+
+.anomalous-medit {
+    display: flex;
+    flex-direction: column;
+    width: min(800px, 100%);
+    max-height: 100%;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 14px;
+    background: var(--amb-bg-panel);
+    box-shadow: 0 24px 64px rgba(var(--amb-shadow-rgb), 0.45);
+    color: var(--amb-text-main);
+    font-size: 14px;
+    overflow: hidden;
+    container: medit / inline-size;
+}
+
+.anomalous-medit-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 18px 18px 14px 24px;
+    border-bottom: 1px solid var(--amb-border);
+}
+
+.anomalous-medit-titles {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 0;
+}
+
+.anomalous-medit-titles h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.anomalous-medit-file {
+    margin: 0;
+    color: var(--amb-text-muted);
+    font: 12px/1.4 ui-monospace, Consolas, monospace;
+    overflow-wrap: anywhere;
+}
+
+/* Where the information came from, as a small chip: dashed when read from the file. */
+.anomalous-medit-origin {
+    margin: 2px 0 0;
+    padding: 2px 9px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    color: var(--amb-text-soft);
+    font-size: 12px;
+}
+
+.anomalous-medit-origin.is-civitai {
+    border-color: color-mix(in srgb, var(--amb-ok-text) 40%, transparent);
+    color: var(--amb-ok-text);
+}
+
+.anomalous-medit-origin.is-local {
+    border-style: dashed;
+    border-color: color-mix(in srgb, var(--amb-link) 50%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 7%, transparent);
+}
+
+.anomalous-medit-close {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.anomalous-medit-close:hover {
+    background: rgba(var(--amb-ink-rgb), 0.08);
+    color: var(--amb-text-main);
+}
+
+.anomalous-medit-body {
+    display: flex;
+    gap: 26px;
+    min-height: 0;
+    padding: 20px 24px 22px;
+    overflow-y: auto;
+}
+
+/* The cover: large, the choices under it (the current one, Civitai's, recent pictures, upload, gallery). */
+.anomalous-medit-cover-side {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    gap: 8px;
+    width: 236px;
+}
+
+.anomalous-medit-cover {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 3 / 4;
+    border: 1px solid var(--amb-border);
+    border-radius: 12px;
+    background: rgba(var(--amb-ink-rgb), 0.04);
+    overflow: hidden;
+}
+
+.anomalous-medit-cover > img,
+.anomalous-medit-cover > video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anomalous-medit-cover-empty {
+    color: var(--amb-text-dim);
+    font-size: 13px;
+}
+
+.anomalous-medit-choices {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.anomalous-medit-choice {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: rgba(var(--amb-ink-rgb), 0.05);
+    color: var(--amb-text-muted);
+    font: inherit;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.anomalous-medit-choice > img {
+    display: block;
+    grid-area: 1 / 1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.anomalous-medit-choice-mark {
+    grid-area: 1 / 1;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.anomalous-medit-choice:hover { border-color: var(--amb-border-hover); }
+
+.anomalous-medit-choice.is-selected {
+    border-color: transparent;
+    outline: 2px solid var(--amb-link);
+    outline-offset: 1px;
+}
+
+/* Upload and the whole gallery: actions, not pictures. */
+.anomalous-medit-choice.is-action {
+    border-style: dashed;
+    border-color: var(--amb-border-strong);
+    background: transparent;
+}
+
+.anomalous-medit-choice.is-action:hover {
+    border-color: color-mix(in srgb, var(--amb-link) 55%, transparent);
+    color: var(--amb-text-main);
+}
+
+.anomalous-medit-fields {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+}
+
+.anomalous-medit-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.anomalous-medit-label {
+    color: var(--amb-text-soft);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.anomalous-medit-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 12px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 8px;
+    background: var(--amb-bg-input);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.anomalous-medit-input::placeholder { color: var(--amb-text-dim); }
+
+.anomalous-medit-input:focus {
+    border-color: color-mix(in srgb, var(--amb-link) 70%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--amb-link) 18%, transparent);
+}
+
+.anomalous-medit-notes {
+    min-height: 132px;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+/* The link, with the site it points to named at its end. */
+.anomalous-medit-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.anomalous-medit-link > .anomalous-medit-input { padding-right: 104px; }
+
+.anomalous-medit-site {
+    position: absolute;
+    right: 8px;
+    padding: 2px 9px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    background: var(--amb-bg-input);
+    font-size: 11.5px;
+    font-weight: 600;
+    pointer-events: none;
+}
+
+.anomalous-medit-site[hidden] { display: none; }
+
+.anomalous-medit-hint {
+    color: var(--amb-text-muted);
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.anomalous-medit-hint:empty { display: none; }
+
+.anomalous-medit-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: fit-content;
+    color: var(--amb-text-soft);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.anomalous-medit-check > input {
+    margin: 0;
+    accent-color: var(--amb-link);
+}
+
+.anomalous-medit-check.is-disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.anomalous-medit-foot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    border-top: 1px solid var(--amb-border);
+    background: rgba(var(--amb-ink-rgb), 0.02);
+}
+
+.anomalous-medit-reset {
+    padding: 7px 2px;
+    border: none;
+    background: none;
+    color: var(--amb-text-muted);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.anomalous-medit-reset:hover:not(:disabled) {
+    color: var(--amb-danger-text);
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+}
+
+.anomalous-medit-error {
+    flex: 1;
+    min-width: 0;
+    color: var(--amb-danger-text);
+    font-size: 12.5px;
+    text-align: right;
+}
+
+.anomalous-medit-cancel {
+    padding: 8px 16px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 13.5px;
+    cursor: pointer;
+}
+
+.anomalous-medit-cancel:hover:not(:disabled) {
+    background: rgba(var(--amb-ink-rgb), 0.06);
+    color: var(--amb-text-main);
+}
+
+.anomalous-medit-save { min-width: 92px; }
+
+.anomalous-medit button:disabled { cursor: progress; opacity: 0.6; }
+
+/* Narrow (docked, a small window): the cover small on the left of its choices, above the fields. */
+@container medit (max-width: 620px) {
+    .anomalous-medit-body { flex-direction: column; gap: 20px; padding: 16px 18px 18px; }
+    .anomalous-medit-cover-side {
+        display: grid;
+        grid-template-columns: 96px minmax(0, 1fr);
+        grid-template-rows: auto auto 1fr;
+        gap: 6px 14px;
+        width: auto;
+    }
+    .anomalous-medit-cover { grid-row: 1 / 4; }
+    .anomalous-medit-choices { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); }
+    .anomalous-medit-head { padding: 14px 14px 12px 18px; }
+    .anomalous-medit-foot { flex-wrap: wrap; padding: 12px 18px; }
+}
+
+/* The details header: the source link (the site's colour as a dot), Civitai, Edit. */
+.anomalous-detail-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.anomalous-detail-link,
+.anomalous-detail-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 6px;
+    background: rgba(var(--amb-ink-rgb), 0.06);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.anomalous-detail-link:hover,
+.anomalous-detail-edit:hover { background: rgba(var(--amb-ink-rgb), 0.12); }
+
+.anomalous-detail-link-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--amb-text-muted);
+}
+
+/* A model Civitai does not know: what was read from the file, and a way to add the rest. */
+.anomalous-inferred-note {
+    display: flex;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px 12px;
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    border: 1px dashed color-mix(in srgb, var(--amb-link) 45%, var(--amb-border));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--amb-link) 6%, transparent);
+}
+
+.anomalous-inferred-mark {
+    width: 20px;
+    color: var(--amb-link);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+}
+
+.anomalous-inferred-text {
+    display: flex;
+    flex: 1 1 260px;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.anomalous-inferred-text > strong { font-size: 13.5px; }
+
+.anomalous-inferred-text > span {
+    color: var(--amb-text-muted);
+    font-size: 12.5px;
+    line-height: 1.55;
+}
+
+.anomalous-inferred-edit {
+    align-self: center;
+    padding: 6px 12px;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 45%, transparent);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.anomalous-inferred-edit:hover { background: color-mix(in srgb, var(--amb-link) 14%, transparent); }
+
+.anomalous-inferred-note.is-damaged {
+    border-color: color-mix(in srgb, var(--amb-danger-text) 45%, transparent);
+    background: color-mix(in srgb, var(--amb-danger-text) 7%, transparent);
+}
+
+.anomalous-inferred-note.is-damaged .anomalous-inferred-mark { color: var(--amb-danger-text); }

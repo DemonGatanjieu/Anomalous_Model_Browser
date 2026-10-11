@@ -107,6 +107,7 @@ def setup_routes(app):
     app.router.add_post('/anomalous/update_metadata', model_metadata.api_update_metadata)
     app.router.add_post('/anomalous/set_custom_cover', model_media.api_set_custom_cover)
     app.router.add_post('/anomalous/upload_custom_cover', model_media.api_upload_custom_cover)
+    app.router.add_get('/anomalous/model_covers', model_media.api_model_covers)
     app.router.add_get('/anomalous/model_images', media_routes.api_get_model_images)
     app.router.add_post('/anomalous/resolve_paths_to_previews', model_catalog.api_resolve_paths_to_previews)
     app.router.add_get('/anomalous/scan_summary', scan_summary.api_scan_summary)
