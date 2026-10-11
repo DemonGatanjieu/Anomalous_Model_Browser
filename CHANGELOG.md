@@ -129,6 +129,12 @@
 
 ### Fixes
 - **Ctrl+Z after a scan (扫描后的 Ctrl+Z)**: after any scan, the first Ctrl+Z used to seem to do nothing: the workflow's saved fingerprints had changed, which ComfyUI counted as a step. A change of fingerprints alone no longer takes a step.
+## v1.58.1 Beta (Security: only this computer can change things) — 2026-10-12
+
+### 🔒 Other devices can look, not change (别的设备只能看，不能改)
+- When ComfyUI is started with `--listen`, other devices on your network can open it. Until now they could also use most of Anomalous Model Browser's actions: delete or rename models, save and delete workflows, combos and prompts, start downloads and scans, export a backup of all your data, translate with your translation key, change settings, switch the plugin's version. Now every change answers only the computer ComfyUI runs on; other devices can still browse models, pictures and workflows.
+- A window opened from another device shows **View only** next to the page title; pressing a button that changes something there says why it did nothing.
+- A web page that reaches ComfyUI through another name for this computer, or a proxy, counts as another device too.
 
 ## v1.58.0 Beta (New Layout, Keep & Reuse, Prompt Studio, Model Check, Voices) — 2026-10-09
 

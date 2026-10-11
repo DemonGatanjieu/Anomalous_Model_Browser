@@ -12,7 +12,7 @@ POST /anomalous/import/identify {token} -> its SHA-256, what Civitai knows of it
 POST /anomalous/import/place {token, type, root, rel, keep} -> moves that file there (a copy
     when `keep`); same drive = a rename, another drive = copy, then the original goes.
 PUT  /anomalous/import/upload?type&root&rel&size  body: the whole file -> written there.
-identify, place and upload answer only the computer ComfyUI runs on (mcp_server._is_local).
+identify, place and upload answer only the computer ComfyUI runs on (local_guard.is_local).
 
 A file already at the destination is never replaced: the new one gets " (2)". Each import is
 one activity log entry (model_import).
@@ -36,7 +36,7 @@ except ImportError:  # loaded outside the package (tests)
     from model_kind import classify, inspect_file, parse_gguf, parse_safetensors
 from .activity_log import add_entry
 from .download_sources import SourceUnreachable, civitai_by_hash
-from .mcp_server import _is_local
+from .local_guard import is_local as _is_local
 from .model_download import (
     CHUNK, MODEL_EXTENSIONS, SPACE_MARGIN, clean_folder, folder_type_for, forget_file_lists, read_settings, roots_of,
 )

@@ -3,6 +3,7 @@
  * The browser window (rail, list column, header, page panels) and the model folder list.
  */
 
+import { markRemoteView } from './remote_view.js';
 import { translate } from './locales.js';
 import { escapeHtml } from './safe_dom.js';
 import { showUpdateGuide } from './ui_update_guide.js';
@@ -160,6 +161,7 @@ export function createDOM() {
         rightGroup.append(updateNoticeBtn, dockBtn, closeBtn);
         centerGroup.append(createModelSearch(this));
         header.append(leftGroup, centerGroup, rightGroup);
+        markRemoteView(container, leftGroup); // opened from another device: "view only"
 
         this.grid = panel('anomalous-grid', '');
         attachModelDrop(this, this.grid); // model files dropped on the models page are imported
