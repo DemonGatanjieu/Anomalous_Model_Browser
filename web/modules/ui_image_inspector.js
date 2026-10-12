@@ -115,7 +115,7 @@ function buildSpecsGrid(params, blocks, item, suggestedName, context) {
     };
 
     addTile(t('materialParamSeed') || '种子 (Seed)', params.seed, { copyable: true, mono: true, accent: 'seed' });
-    addTile(t('recipeCardSpecsSteps') || '采样步数 (Steps)', params.steps != null ? `${params.steps} 步` : null, { });
+    addTile(t('recipeCardSpecsSteps') || '采样步数 (Steps)', params.steps != null ? t('workbenchStepsValue', { count: params.steps }) : null, { });
     addTile('CFG Scale', params.cfg, { });
     addTile(t('materialDenoise') || '重绘降噪 (Denoise)', params.denoise, { });
     addTile(t('recipeCardSpecsSampler') || '采样器 (Sampler)', params.sampler_name, { });
@@ -216,7 +216,7 @@ function buildModelsSection(orderedRefs, groups, onOpenModel) {
     wrap.className = 'anomalous-workbench-models-wrap';
 
     if (!orderedRefs || !orderedRefs.length) {
-        const empty = text(wrap, 'div', '（未检测到模型引用）', 'anomalous-workbench-muted');
+        const empty = text(wrap, 'div', t('workbenchNoModels'), 'anomalous-workbench-muted');
         empty.style.padding = '12px';
         return wrap;
     }
@@ -259,7 +259,7 @@ function buildModelsSection(orderedRefs, groups, onOpenModel) {
                 const viewBtn = document.createElement('button');
                 viewBtn.type = 'button';
                 viewBtn.className = 'anomalous-workbench-mini-action-btn';
-                viewBtn.textContent = '🔎 定位模型';
+                viewBtn.textContent = t('workbenchLocateModel');
                 viewBtn.onclick = (e) => {
                     e.stopPropagation();
                     onOpenModel(item.localModel);
@@ -292,7 +292,7 @@ function buildWorkflowNodesSection(blocks, clientWorkflow, item, suggestedName, 
     wrap.className = 'anomalous-workbench-nodes-wrap';
 
     if (!blocks || !blocks.length) {
-        text(wrap, 'div', '（无底层节点参数数据）', 'anomalous-workbench-muted');
+        text(wrap, 'div', t('workbenchNoNodeParams'), 'anomalous-workbench-muted');
         return wrap;
     }
 
@@ -343,7 +343,7 @@ function buildWorkflowNodesSection(blocks, clientWorkflow, item, suggestedName, 
     copyJsonBtn.textContent = `📋 ${t('workbenchCopyWorkflowJson') || '复制完整工作流 JSON'}`;
     copyJsonBtn.onclick = () => {
         if (clientWorkflow) {
-            copyToClipboard(JSON.stringify(clientWorkflow, null, 2), copyJsonBtn, '✅ 已复制工作流 JSON', `📋 ${t('workbenchCopyWorkflowJson') || '复制完整工作流 JSON'}`);
+            copyToClipboard(JSON.stringify(clientWorkflow, null, 2), copyJsonBtn, t('workbenchCopiedWorkflowJson'), `📋 ${t('workbenchCopyWorkflowJson') || '复制完整工作流 JSON'}`);
         }
     };
     jsonActionRow.appendChild(copyJsonBtn);
