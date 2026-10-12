@@ -129,7 +129,13 @@
 
 ### Fixes
 - **Ctrl+Z after a scan (扫描后的 Ctrl+Z)**: after any scan, the first Ctrl+Z used to seem to do nothing: the workflow's saved fingerprints had changed, which ComfyUI counted as a step. A change of fingerprints alone no longer takes a step.
-## v1.58.2 Beta (Fix: switching pictures with the keyboard) — unreleased
+
+## v1.58.2 Beta (Small fixes: Esc closes, Show in folder, insert a picture as a node) — unreleased
+
+### 💬 From a Bilibili comment (来自 B 站评论)
+- **Esc closes the browser (Esc 关闭浏览器)**: Esc closes what is on top: a dialog or menu first, then the Workflows / Combos workspace, then the browser. The shortcut (Ctrl + Shift + M by default) and the Extensions menu entry now close the browser when it is open. Esc in a text box still belongs to the text box.
+- **Show in folder (打开所在文件夹)**: a model's details have **Show in folder** next to **Copy path**: Explorer (or Finder) opens with the file selected. Only on the computer ComfyUI runs on.
+- **Insert a picture as a node (图片作为节点插入)**: right-click a gallery picture → **Insert as a Load Image node** puts a Load Image node showing that picture in the middle of the canvas. It reads the picture from the output folder; nothing is copied.
 
 ### ⌨️ Arrow keys in picture details (查看参数里方向键切图)
 - In a picture's details, **← / →** (and **A / D**) switch pictures again after you ticked a node's checkbox under **All parameters**; the ticked checkbox kept the keyboard and the keys did nothing until you clicked elsewhere. Typing in a text box still keeps the arrows for the text.
