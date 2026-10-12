@@ -148,6 +148,13 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
         ensureBrowser()?.show({ followSelection: true });
     }
 
+    // The shortcut and the Extensions menu entry: open, or close when it is open.
+    function toggle() {
+        const browser = ensureBrowser();
+        if (browser?.modal?.classList.contains('visible')) browser.close();
+        else browser?.show({ followSelection: true });
+    }
+
     const translationPatches = getSettingTranslationPatches();
     const settings = [
         {
@@ -416,7 +423,7 @@ export function createBrowserEntry({ translate, getCurrentLanguage }) {
             onClick: open
         }],
         commands: [
-            { id: OPEN_BROWSER_COMMAND_ID, label: t('mainOpenTitle'), function: open },
+            { id: OPEN_BROWSER_COMMAND_ID, label: t('mainOpenTitle'), function: toggle },
             { id: RESET_TRIGGER_POSITION_COMMAND_ID, label: t('mainResetFloatingTriggerPosition'), function: resetPosition }
         ],
         keybindings: [

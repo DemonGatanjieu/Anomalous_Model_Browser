@@ -83,6 +83,8 @@ covered by the `styles.css` manifest.
   and no scan replaces or deletes it.
 - `api/model_catalog.py`, `api/model_resolution.py`, `api/model_metadata.py`, and
   `api/model_media.py` own model listing, identity recovery, mutation, and covers;
+  `api/model_folder.py` shows a model file in Explorer / Finder (by type, folder index and
+  file name, never a path; a POST, so only this computer may ask);
   `api/models.py` is a compatibility facade; `api/model_constants.py` holds the
   model, media and sidecar extensions they share. `api/model_type_listing.py` lists a
   whole models folder with its subfolders for the models page's type chips.
@@ -407,6 +409,7 @@ covered by the `styles.css` manifest.
   settings control that opens ComfyUI's keybinding editor.
 - `ui_model_sources.js` renders the Models page's Sources view (the last type chip): where each model is downloaded, for the open workflow or every model, with each link editable and saved in place; `model_source_links.js` owns its data and actions (collecting the workflow's models, resolving them here, saving a link to the model's information and the workflow, the canvas note and the clipboard list).
 - `ui_gallery_card.js` builds one output image's gallery card (viewer, workbench, cover pick, drag, star, compare, delete);
+  `gallery_card_menu.js` is its right-click menu (insert as a Load Image node reading the output file, parameters);
   `ui_param_compare.js` compares parameters: a card's ⇄ picks an image, a second image's ⇄ or
   the canvas completes the pair (the image workbench's ⇄ takes the canvas; the Gallery's and
   Activity's ⇄ Canvas vs. newest picture pair the newest output PNG with it), and its window says
@@ -470,7 +473,7 @@ covered by the `styles.css` manifest.
   card action buttons (one-click canvas addition with plus icon, model metadata editor, direct precision scanner without wizard modal popups)
   with absolute positioning cascades immune to tooltip target conflicts, vibrant hover affordance,
   safe docked sidebar preservation upon node addition, and multi-type node dispatch; `ui_detail.js`
-  coordinates detail display, `ui_model_editor.js` owns metadata editing (cover, name, source link, notes;
+  coordinates detail display (the file card with Show in folder in `model_location.js`), `ui_model_editor.js` owns metadata editing (cover, name, source link, notes;
   styles `styles/31-model-info.css`), and
   `model_widget_path.js` puts a model path into a loader's widget. `ui_gallery.js` (cards in
   `ui_gallery_card.js`) and `ui_gallery_detail.js` own generated-image browsing and workbench lifecycle,

@@ -7,48 +7,9 @@ import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { escapeHtml, setSafeRichHtml } from './safe_dom.js';
 import { renderDetailActions, renderInferredNote, renderSourceLine } from './model_source.js';
+import { createModelLocationCard } from './model_location.js';
 
 const t = (key, params) => translate(key, params);
-
-function createModelLocationCard(model) {
-    const card = document.createElement('div');
-    card.className = 'anomalous-model-location';
-
-    const appendValue = (labelKey, value) => {
-        const row = document.createElement('div');
-        row.className = 'anomalous-model-location-row';
-        const label = document.createElement('span');
-        label.className = 'anomalous-model-location-label';
-        label.textContent = t(labelKey);
-        const content = document.createElement('code');
-        content.textContent = value;
-        content.title = value;
-        row.append(label, content);
-        card.appendChild(row);
-    };
-
-    appendValue('detailPhysicalFilename', model.filename);
-    if (model.file_path) {
-        appendValue('detailFullPath', model.file_path);
-        const copyButton = document.createElement('button');
-        copyButton.type = 'button';
-        copyButton.className = 'anomalous-model-location-copy';
-        copyButton.textContent = t('detailCopyPath');
-        copyButton.onclick = async () => {
-            try {
-                await navigator.clipboard.writeText(model.file_path);
-                copyButton.textContent = t('detailPathCopied');
-            } catch (error) {
-                copyButton.textContent = t('detailPathCopyFailed');
-            }
-            setTimeout(() => { copyButton.textContent = t('detailCopyPath'); }, 1400);
-        };
-        card.appendChild(copyButton);
-    }
-    return card;
-}
-
-
 
 export function showDetail(model) {
         if (this.currentDetailObserver) {
@@ -358,7 +319,9 @@ export function showDetail(model) {
         rightPanel.appendChild(topRow);
         const inferredNote = renderInferredNote(m, () => this.showEditModal(model));
         if (inferredNote) rightPanel.appendChild(inferredNote);
-        rightPanel.appendChild(createModelLocationCard(model));
+        rightPanel.appendChild(createModelLocationCard(model, {
+            type: this.currentType, path_idx: this.currentPathIdx, subfolder: this.currentSubfolder,
+        }));
 
         // 1.5 Custom Notes Section (Google Material Card)
         if (m.custom_notes) {
