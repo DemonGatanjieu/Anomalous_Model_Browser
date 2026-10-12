@@ -1,5 +1,10 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.58.2 Beta (Fix: switching pictures with the keyboard) — unreleased
+
+### ⌨️ Arrow keys in picture details (查看参数里方向键切图)
+- In a picture's details, **← / →** (and **A / D**) switch pictures again after you ticked a node's checkbox under **All parameters**; the ticked checkbox kept the keyboard and the keys did nothing until you clicked elsewhere. Typing in a text box still keeps the arrows for the text.
+
 ## v1.58.1 Beta (Security: only this computer can change things) — 2026-10-12
 
 ### 🔒 Other devices can look, not change (别的设备只能看，不能改)
