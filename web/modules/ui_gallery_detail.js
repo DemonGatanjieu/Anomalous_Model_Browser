@@ -34,6 +34,16 @@ import {
 
 const t = (key, params) => translate(key, params);
 
+// Inputs that keep the focus after a click but take no typing: the arrows and A / D still
+// switch pictures after a node's checkbox in All parameters was ticked.
+const NON_TEXT_INPUTS = new Set(['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file']);
+
+function isTyping(target) {
+    if (!target) return false;
+    if (target.isContentEditable || target.tagName === 'TEXTAREA') return true;
+    return target.tagName === 'INPUT' && !NON_TEXT_INPUTS.has(target.type);
+}
+
 // In-memory LRU metadata cache: key -> { inspectPayload, clientWorkflow, clientDetails, params }
 const imageMetadataCache = new Map();
 // A workflow can contain large prompt strings and hundreds of nodes. Keep only
@@ -554,7 +564,7 @@ export async function showImageWorkbench(owner, sourceImage, imageUrl, options =
     const onKeyDown = (e) => {
         if (wb.inspectingModel) return;
         if (document.querySelector('.anomalous-dialog-overlay')) return;
-        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+        if (isTyping(e.target)) return;
 
         if (e.key === 'Escape') {
             e.preventDefault();
