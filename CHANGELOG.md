@@ -5,6 +5,11 @@
 ### ⌨️ Arrow keys in picture details (查看参数里方向键切图)
 - In a picture's details, **← / →** (and **A / D**) switch pictures again after you ticked a node's checkbox under **All parameters**; the ticked checkbox kept the keyboard and the keys did nothing until you clicked elsewhere. Typing in a text box still keeps the arrows for the text.
 
+### 🌐 English interface (英文界面)
+- Picture details no longer show Chinese in the English interface: the step count ("20 steps"), **Show model** on the Models tab, the copied-JSON note and the empty-tab notes.
+- Counts read right for one: "Changed 1 thing on the canvas", "1 model", "1 file" instead of "1 things", "1 models", "1 files".
+- The voice guides name the node as English ComfyUI shows it: **Character Speech (GPT-SoVITS)**.
+
 ## v1.58.1 Beta (Security: only this computer can change things) — 2026-10-12
 
 ### 🔒 Other devices can look, not change (别的设备只能看，不能改)
