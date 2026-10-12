@@ -13,7 +13,7 @@ import { renderRailTools } from './ui_rail_tools.js';
 import { getActiveDomain } from './ui_domain_switcher.js';
 import { renderAudioSidebar } from './ui_audio_sidebar.js';
 import { createGallerySearchBar } from './ui_gallery.js';
-import { bindWorkspaceEscape } from './ui_browser_navigation.js';
+import { bindBrowserEscape } from './ui_browser_navigation.js';
 import { createShellRail } from './ui_shell_rail.js';
 import { installShellNavigation } from './ui_shell_nav.js';
 import { bindShellDrag, bindShellResize } from './ui_shell_frame.js';
@@ -219,7 +219,7 @@ export function createDOM() {
         this.nbPanel.onclick = (e) => {
             if (e.target === this.nbPanel) this.closeWorkspace();
         };
-        bindWorkspaceEscape(this);
+        bindBrowserEscape(this);
 
         content.append(header, this.grid, this.detailPanel, this.galleryPanel, this.homePanel, this.activityPanel, this.promptPanel, this.scanPanel, this.settingsPanel, this.doctorPanel,
             this.assistantPanel, this.audioStudioPanel, this.scriptPanel, this.audioGalleryPanel);

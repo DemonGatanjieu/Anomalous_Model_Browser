@@ -59,21 +59,24 @@ export function closeWorkspace() {
 }
 
 /**
- * Esc on the recipe / combo workspace does what a click beside it does:
- * `closeWorkspace()`. Not while one of this plugin's dialogs or a ComfyUI dialog sits
- * above it, and not while a text field has the key (Esc there belongs to the field).
- * ComfyUI's own keybindings mark Esc as handled, so `defaultPrevented` says nothing here.
+ * Esc closes the browser's top layer: the recipe / combo workspace when it is open (what a
+ * click beside it does), else the browser. Not while one of this plugin's dialogs, overlays
+ * or menus, or a ComfyUI dialog, sits above it (they close themselves), and not while a text
+ * field has the key (Esc there belongs to the field). It listens first (capture), so a dialog
+ * that closes on this same Esc still counts as above. ComfyUI's own keybindings mark Esc as
+ * handled, so `defaultPrevented` says nothing here.
  */
-export function bindWorkspaceEscape(owner) {
+export function bindBrowserEscape(owner) {
     window.addEventListener('keydown', (e) => {
-        if (e.key !== 'Escape') return;
-        if (!owner.modal?.classList.contains('visible') || owner.nbPanel?.style.display !== 'flex') return;
+        if (e.key !== 'Escape' || !owner.modal?.classList.contains('visible')) return;
         if (e.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
-        const layered = [...document.body.children, ...owner.nbPanel.children]
-            .some(el => [...el.classList].some(c => c.startsWith('anomalous-') && c.endsWith('overlay')) && el.getClientRects().length);
+        const layered = [...document.body.children, ...(owner.nbPanel?.children || [])]
+            .some(el => el !== owner.modal && el.getClientRects().length
+                && (el.getAttribute('role') === 'menu' || [...el.classList].some(c => c.startsWith('anomalous-') && c.endsWith('overlay'))));
         if (layered || document.querySelector('dialog[open], .p-dialog-mask')) return;
-        owner.closeWorkspace();
-    });
+        if (owner.nbPanel?.style.display === 'flex') owner.closeWorkspace();
+        else owner.close();
+    }, true);
 }
 
 export function hideAllPanels() {

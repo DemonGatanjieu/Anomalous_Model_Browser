@@ -198,7 +198,13 @@
     display: none;
 }
 
-/* The keep menu under a star or the workbench's Keep (ui_keep_menu.js). */
+/* The keep menu under a star or the workbench's Keep (ui_keep_menu.js); a gallery card's
+   right-click menu (gallery_card_menu.js) wears the same look, as wide as its rows. */
+.anomalous-gallery-card-menu {
+    width: max-content;
+    min-width: 200px;
+}
+
 .anomalous-keep-menu {
     position: fixed;
     z-index: 1000001;
@@ -1212,6 +1218,12 @@ dialog.anomalous-gallery-viewer[open] {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.anomalous-model-location-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
 .anomalous-model-location-copy {
