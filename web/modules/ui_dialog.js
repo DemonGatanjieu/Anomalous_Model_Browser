@@ -62,6 +62,11 @@ export function anomalousAlert(message, title = 'Anomalous') {
         };
         
         okBtn.onclick = cleanup;
+        overlay.onkeydown = (e) => {
+            if (e.key !== 'Escape') return;
+            e.stopPropagation();
+            cleanup();
+        };
         
         footer.appendChild(okBtn);
         dialog.append(heading, text, footer);
@@ -144,6 +149,11 @@ export function anomalousConfirm(message, title = 'Anomalous', options = {}) {
         cancelBtn.onclick = () => finish(null);
         noBtn?.addEventListener('click', () => finish(false));
         okBtn.onclick = () => finish(true);
+        overlay.onkeydown = (e) => {
+            if (e.key !== 'Escape') return;
+            e.stopPropagation();
+            finish(null); // as Cancel
+        };
         
         footer.append(cancelBtn);
         if (noBtn) footer.append(noBtn);

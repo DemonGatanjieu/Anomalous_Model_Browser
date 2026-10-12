@@ -1,6 +1,6 @@
 from . import (
     activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
-    model_media, model_metadata, model_resolution, model_type_listing, kept_images, node_material, recipe_packages, recipes, scan_report, scan_summary,
+    model_folder, model_media, model_metadata, model_resolution, model_type_listing, kept_images, node_material, recipe_packages, recipes, scan_report, scan_summary,
     local_guard, translation_routes, version_manager,
 )
 from .scanner import *
@@ -48,6 +48,7 @@ def setup_routes(app):
     app.router.add_get('/anomalous/config', api_get_config)
     app.router.add_post('/anomalous/save_config', api_save_config)
     app.router.add_post('/anomalous/delete_model', model_metadata.api_delete_model)
+    app.router.add_post('/anomalous/open_model_folder', model_folder.api_open_model_folder)
     app.router.add_get('/anomalous/compatible_models', model_catalog.api_compatible_models)
     app.router.add_get('/anomalous/notebooks', api_get_notebooks)
     app.router.add_post('/anomalous/save_notebook', api_save_notebook)
