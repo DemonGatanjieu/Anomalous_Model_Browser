@@ -156,8 +156,9 @@
 
 ### 💬 From a Bilibili comment (来自 B 站评论)
 - **Esc closes the browser (Esc 关闭浏览器)**: Esc closes what is on top: a dialog or menu first, then the Workflows / Combos workspace, then the browser. The shortcut (Ctrl + Shift + M by default) and the Extensions menu entry now close the browser when it is open. Esc in a text box still belongs to the text box.
+- **Dragging a gallery picture hides the browser (拖图时浏览器让开)**: while you drag a picture, the browser fades out as it does for other cards, so the canvas and the node under it take the drop.
 - **Show in folder (打开所在文件夹)**: a model's details have **Show in folder** next to **Copy path**: Explorer (or Finder) opens in front of the browser with the file selected. Only on the computer ComfyUI runs on.
-- **Insert a picture as a node (图片作为节点插入)**: right-click a gallery picture → **Insert as a Load Image node** puts a Load Image node showing that picture in the middle of the canvas. The picture is copied into ComfyUI's input folder, as when you drop a file on the node (the same picture is kept once).
+- **Insert a picture as a node (图片作为节点插入)**: right-click a gallery picture → **Insert as a Load Image node** gives you a Load Image node showing that picture: the browser closes and the node follows the pointer until a click puts it down (Esc cancels), like a combo's **Put on canvas**. The picture is copied into ComfyUI's input folder, as when you drop a file on the node (the same picture is kept once).
 
 ### ⌨️ Arrow keys in picture details (查看参数里方向键切图)
 - In a picture's details, **← / →** (and **A / D**) switch pictures again after you ticked a node's checkbox under **All parameters**; the ticked checkbox kept the keyboard and the keys did nothing until you clicked elsewhere. Typing in a text box still keeps the arrows for the text.
