@@ -137,7 +137,8 @@ button, and `Extensions -> Anomalous Model Browser` command. Entry presentations
 are mutually exclusive and reuse the same browser instance. The Extensions
 command remains available as a recovery path in every mode.
 
-A native command owns the default `Ctrl + Shift + M` browser binding. Prompt Studio has
+A native command owns the default `B` browser binding (Ctrl + Shift + M before v1.58.2: Chrome and Edge
+take it for switching profiles). Prompt Studio has
 no shortcut of its own (removed 2026-10-07): it opens from the rail, the 7 key, or by opening
 the browser with a text node selected. Shortcut customization delegates
 to ComfyUI's command/keybinding panel and recorder; the plugin does not install

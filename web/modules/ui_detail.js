@@ -40,7 +40,7 @@ export function showDetail(model) {
         header.style.alignItems = 'center';
         header.style.boxSizing = 'border-box';
 
-        const backBtn = document.createElement('button');
+        const backBtn = Object.assign(document.createElement('button'), { className: 'anomalous-detail-back' }); // Esc presses it
         let isFromDoctor = false;
         let isFromAssistant = false;
         if (this.historyStack.length > 0) {

@@ -1,7 +1,7 @@
+// B alone, like ComfyUI's own single keys for its side panels (M, N, W); Ctrl+Shift+M is taken
+// by Chrome and Edge (switch profile) before the page sees it.
 export const DEFAULT_BROWSER_SHORTCUT = Object.freeze({
-    key: 'm',
-    ctrl: true,
-    shift: true
+    key: 'b'
 });
 
 export function formatKeyCombo(combo) {
