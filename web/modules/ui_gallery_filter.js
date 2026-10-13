@@ -1,21 +1,18 @@
 /**
- * ui_gallery_filter.js
- * UI components for gallery extension filtering: the quick filter bar
- * in the Gallery header, and the configuration section in Settings.
+ * The output gallery's filters (state in gallery_filter.js): All / Pictures / Videos beside its
+ * search, shown once the output folder has a video (or while Pictures or Videos is chosen), and
+ * Settings → Gallery's formats, each clicked to hide it or show it again.
  */
 
-import { translate } from './locales.js';
+import { translate as t } from './locales.js';
 import {
-    ALL_GALLERY_EXTENSIONS,
-    GALLERY_IMAGE_EXTENSIONS,
-    GALLERY_VIDEO_EXTENSIONS,
-    getActiveGalleryExtensions,
-    toggleGalleryExtension,
-    setGalleryGroup,
-    isAllGalleryExtensionsActive,
+    GALLERY_IMAGE_FORMATS,
+    GALLERY_VIDEO_FORMATS,
+    galleryMedia,
+    hiddenGalleryFormats,
+    setGalleryFormatHidden,
+    setGalleryMedia,
 } from './gallery_filter.js';
-
-const t = (key, params) => translate(key, params);
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -24,140 +21,62 @@ function el(tag, className, text) {
     return node;
 }
 
-/**
- * Creates the filter bar rendered inside the Gallery header.
- * Displays quick group presets (All, Images, Videos) and format chips (PNG, WEBP, MP4, etc.).
- */
-export function createGalleryFilterBar(owner, onFilterChange) {
-    const bar = el('div', 'anomalous-gallery-filter-bar');
-
-    const updateChips = () => {
-        const active = getActiveGalleryExtensions();
-        const allActive = isAllGalleryExtensionsActive();
-
-        bar.querySelectorAll('[data-ext]').forEach(chip => {
-            const ext = chip.getAttribute('data-ext');
-            chip.classList.toggle('is-active', active.has(ext));
-            chip.setAttribute('aria-pressed', String(active.has(ext)));
+/** The switch; `onChange()` after a click, `switch.refresh(hasVideos)` after each listing. */
+export function createGalleryMediaSwitch(onChange) {
+    const box = el('div', 'anomalous-gallery-media');
+    box.setAttribute('role', 'radiogroup');
+    box.hidden = galleryMedia() === 'all';
+    const choices = [['all', 'galleryFilterAll'], ['image', 'galleryFilterImages'], ['video', 'galleryFilterVideos']]
+        .map(([media, labelKey]) => {
+            const choice = el('button', 'anomalous-gallery-media-btn', t(labelKey));
+            choice.type = 'button';
+            choice.setAttribute('role', 'radio');
+            choice.dataset.media = media;
+            choice.onclick = () => {
+                if (galleryMedia() === media) return;
+                setGalleryMedia(media);
+                mark();
+                onChange();
+            };
+            return choice;
         });
-
-        const allChip = bar.querySelector('[data-group="all"]');
-        if (allChip) {
-            allChip.classList.toggle('is-active', allActive);
-            allChip.setAttribute('aria-pressed', String(allActive));
-        }
-
-        const imagesActive = GALLERY_IMAGE_EXTENSIONS.some(e => active.has(e));
-        const imagesAll = GALLERY_IMAGE_EXTENSIONS.every(e => active.has(e));
-        const imgChip = bar.querySelector('[data-group="images"]');
-        if (imgChip) {
-            imgChip.classList.toggle('is-active', imagesAll);
-            imgChip.classList.toggle('is-partial', imagesActive && !imagesAll);
-        }
-
-        const videosActive = GALLERY_VIDEO_EXTENSIONS.some(e => active.has(e));
-        const videosAll = GALLERY_VIDEO_EXTENSIONS.every(e => active.has(e));
-        const vidChip = bar.querySelector('[data-group="videos"]');
-        if (vidChip) {
-            vidChip.classList.toggle('is-active', videosAll);
-            vidChip.classList.toggle('is-partial', videosActive && !videosAll);
-        }
+    const mark = () => {
+        const current = galleryMedia();
+        for (const choice of choices) choice.setAttribute('aria-checked', String(choice.dataset.media === current));
     };
-
-    const addGroupChip = (groupKey, labelKey) => {
-        const chip = el('button', 'anomalous-gallery-filter-chip is-group', t(labelKey));
-        chip.type = 'button';
-        chip.setAttribute('data-group', groupKey);
-        chip.onclick = (e) => {
-            e.preventDefault();
-            const active = getActiveGalleryExtensions();
-            let targets = [];
-            if (groupKey === 'all') targets = ALL_GALLERY_EXTENSIONS;
-            else if (groupKey === 'images') targets = GALLERY_IMAGE_EXTENSIONS;
-            else if (groupKey === 'videos') targets = GALLERY_VIDEO_EXTENSIONS;
-
-            const allInGroupActive = targets.every(ext => active.has(ext));
-            setGalleryGroup(groupKey, !allInGroupActive);
-            updateChips();
-            onFilterChange?.();
-        };
-        bar.appendChild(chip);
+    box.append(...choices);
+    mark();
+    box.refresh = (hasVideos) => {
+        box.hidden = !hasVideos && galleryMedia() === 'all';
+        mark();
     };
-
-    // Preset group buttons
-    addGroupChip('all', 'galleryFilterAll');
-    addGroupChip('images', 'galleryFilterImages');
-    addGroupChip('videos', 'galleryFilterVideos');
-
-    // Separator divider
-    bar.appendChild(el('span', 'anomalous-gallery-filter-sep'));
-
-    // Format pills
-    ALL_GALLERY_EXTENSIONS.forEach(ext => {
-        const isVid = GALLERY_VIDEO_EXTENSIONS.includes(ext);
-        const chip = el('button', `anomalous-gallery-filter-chip is-ext ${isVid ? 'is-video' : ''}`, ext.toUpperCase());
-        chip.type = 'button';
-        chip.setAttribute('data-ext', ext);
-        chip.title = `${t('galleryExtensionToggle')}: .${ext}`;
-        chip.onclick = (e) => {
-            e.preventDefault();
-            toggleGalleryExtension(ext);
-            updateChips();
-            onFilterChange?.();
-        };
-        bar.appendChild(chip);
-    });
-
-    updateChips();
-    bar.refresh = updateChips;
-    return bar;
-}
-
-/**
- * Creates the extension configuration control for the Settings page.
- */
-export function createGalleryExtensionSettings(owner, redraw) {
-    const box = el('div', 'anomalous-gallery-settings-exts');
-    const active = getActiveGalleryExtensions();
-
-    const chipsWrap = el('div', 'anomalous-gallery-settings-chips');
-    ALL_GALLERY_EXTENSIONS.forEach(ext => {
-        const isVid = GALLERY_VIDEO_EXTENSIONS.includes(ext);
-        const btn = el('button', `anomalous-scan-segment-btn ${active.has(ext) ? 'is-active' : ''}`, `.${ext}`);
-        btn.type = 'button';
-        btn.onclick = () => {
-            toggleGalleryExtension(ext);
-            redraw();
-        };
-        chipsWrap.appendChild(btn);
-    });
-
-    const actions = el('div', 'anomalous-gallery-settings-actions');
-    const selectAllBtn = el('button', 'anomalous-scan-secondary anomalous-scan-small-btn', t('galleryFilterAll'));
-    selectAllBtn.type = 'button';
-    selectAllBtn.onclick = () => {
-        setGalleryGroup('all', true);
-        redraw();
-    };
-
-    const imagesOnlyBtn = el('button', 'anomalous-scan-secondary anomalous-scan-small-btn', t('galleryFilterImages'));
-    imagesOnlyBtn.type = 'button';
-    imagesOnlyBtn.onclick = () => {
-        setGalleryGroup('images', true);
-        setGalleryGroup('videos', false);
-        redraw();
-    };
-
-    const videosOnlyBtn = el('button', 'anomalous-scan-secondary anomalous-scan-small-btn', t('galleryFilterVideos'));
-    videosOnlyBtn.type = 'button';
-    videosOnlyBtn.onclick = () => {
-        setGalleryGroup('videos', true);
-        setGalleryGroup('images', false);
-        redraw();
-    };
-
-    actions.append(selectAllBtn, imagesOnlyBtn, videosOnlyBtn);
-    box.append(chipsWrap, actions);
     return box;
 }
 
+/** Settings → Gallery: one line of pictures, one of videos; `onChange()` after a click. */
+export function createGalleryFormatSettings(onChange) {
+    const box = el('div', 'anomalous-gallery-formats');
+    const hidden = hiddenGalleryFormats();
+    for (const [labelKey, formats] of [['galleryFilterImages', GALLERY_IMAGE_FORMATS], ['galleryFilterVideos', GALLERY_VIDEO_FORMATS]]) {
+        const line = el('div', 'anomalous-gallery-formats-line');
+        line.append(el('span', 'anomalous-gallery-formats-label', t(labelKey)));
+        for (const format of formats) {
+            const toggle = el('button', 'anomalous-gallery-format', format.toUpperCase());
+            toggle.type = 'button';
+            const mark = (shown) => {
+                toggle.setAttribute('aria-pressed', String(shown));
+                toggle.title = t(shown ? 'galleryFormatShown' : 'galleryFormatHidden');
+            };
+            mark(!hidden.has(format));
+            toggle.onclick = () => {
+                const shown = toggle.getAttribute('aria-pressed') !== 'true';
+                setGalleryFormatHidden(format, !shown);
+                mark(shown);
+                onChange();
+            };
+            line.append(toggle);
+        }
+        box.append(line);
+    }
+    return box;
+}

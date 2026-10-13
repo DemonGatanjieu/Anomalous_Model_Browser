@@ -74,7 +74,9 @@ The main surfaces are:
 - Grid and model detail: model browsing plus coordinated detail display in
   `ui_detail.js`, metadata editing in `ui_model_editor.js`, and advanced selection
   in `ui_model_selector.js`.
-- Gallery: generated outputs and the full-screen Image Detail Studio Workbench.
+- Gallery: generated outputs (pictures and videos; All / Pictures / Videos beside the search
+  and the hidden formats in Settings, `gallery_filter.js` + `ui_gallery_filter.js`) and the
+  full-screen Image Detail Studio Workbench, for pictures only.
   `ui_gallery_card.js` builds each output's card; its star and the workbench's Keep open
   `ui_keep_menu.js`, which keeps the image as a Workflow Recipe, a combo or its prompts
   (`image_keep.js`; `GET /anomalous/kept_images` says what each image was kept as).

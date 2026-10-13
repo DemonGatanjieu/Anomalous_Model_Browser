@@ -10,8 +10,8 @@ import { showImageWorkbench } from './ui_gallery_detail.js';
 import { createGalleryCard } from './ui_gallery_card.js';
 import { loadKeptImages } from './image_keep.js';
 import { createSearchChips } from './ui_search_chips.js';
-import { createGalleryFilterBar } from './ui_gallery_filter.js';
-import { appendExtensionParams } from './gallery_filter.js';
+import { createGalleryMediaSwitch } from './ui_gallery_filter.js';
+import { appendGalleryFilter } from './gallery_filter.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -31,7 +31,8 @@ export async function refreshGalleryImages() {
 
 
 
-/** Search blocks and format filters above the output gallery. */
+/** Search blocks above the output gallery (the terms live on the browser as `gallerySearchTerms`),
+ * with All / Pictures / Videos beside them. */
 export function createGallerySearchBar(owner) {
     const header = document.createElement('div');
     header.className = 'anomalous-gallery-header';
@@ -47,12 +48,8 @@ export function createGallerySearchBar(owner) {
     search.element.classList.add('anomalous-gallery-search');
     owner.gallerySearchCount = search.countElement;
 
-    const filterBar = createGalleryFilterBar(owner, () => {
-        owner.loadGalleryImages(1, true, { refresh: false });
-    });
-    owner.galleryFilterBar = filterBar;
-
-    header.append(search.element, filterBar);
+    owner.galleryMediaSwitch = createGalleryMediaSwitch(() => owner.loadGalleryImages(1, true, { refresh: false }));
+    header.append(search.element, owner.galleryMediaSwitch);
     return header;
 }
 
@@ -72,13 +69,14 @@ export async function loadGalleryImages(page = 1, reset = false, { refresh = res
             const params = new URLSearchParams({ page: String(page), limit: '50' });
             if (refresh) params.set('refresh', '1');
             terms.forEach(term => params.append('term', term));
-            appendExtensionParams(params);
+            appendGalleryFilter(params);
             const res = await fetch(`/anomalous/gallery_images?${params}`);
             const data = await res.json();
             if (termsKey !== JSON.stringify(this.gallerySearchTerms || [])) {
                 this.galleryReloadPending = true;
                 return;
             }
+            this.galleryMediaSwitch?.refresh(Boolean(data.has_videos));
             if (this.gallerySearchCount) {
                 this.gallerySearchCount.textContent = query && Number.isFinite(data.total) ? t('gallerySearchCount', { count: data.total }) : '';
             }
@@ -100,6 +98,7 @@ export async function loadGalleryImages(page = 1, reset = false, { refresh = res
                     return {
                         filename: imgData.filename,
                         subfolder: imgData.subfolder || '',
+                        media_type: imgData.media_type,
                         url: `/view?filename=${q_file}&subfolder=${q_sub}&type=output`,
                         sourceImage: {
                             type: 'output',
@@ -481,22 +480,22 @@ export function showGalleryViewer(src, isVideo = false) {
                 scale = 1; translateX = 0; translateY = 0;
                 img.style.transform = `translate(0px, 0px) scale(1)`;
                 img.style.cursor = 'grab';
-                const v = document.getElementById('anomalous-gallery-viewer-video');
-                if (v) {
-                    v.pause();
-                    v.style.display = 'none';
-                    v.removeAttribute('src');
-                }
+            };
+            viewer.stopVideo = () => {
+                video.pause();
+                video.style.display = 'none';
+                video.removeAttribute('src');
+                video.load(); // drops the file, so its sound cannot go on
             };
 
-            const closeViewer = () => {
-                viewer.close();
+            // However it closes (the ×, a click beside the picture, Esc), the video stops.
+            viewer.addEventListener('close', () => {
                 resetTransform();
-            };
-
-            closeBtn.onclick = closeViewer;
+                viewer.stopVideo();
+            });
+            closeBtn.onclick = () => viewer.close();
             viewer.onclick = (e) => {
-                if (e.target === viewer) closeViewer();
+                if (e.target === viewer) viewer.close();
             };
 
             viewer.addEventListener('wheel', (e) => {
@@ -532,19 +531,14 @@ export function showGalleryViewer(src, isVideo = false) {
 
         const img = document.getElementById('anomalous-gallery-viewer-img');
         const video = document.getElementById('anomalous-gallery-viewer-video');
-        const isVid = isVideo || /\.(mp4|webm|mov|avi|mkv)(\?|$)/i.test(src);
 
-        if (isVid && video) {
+        if (isVideo) {
             img.style.display = 'none';
             video.style.display = 'block';
             video.src = src;
             video.play().catch(() => {});
         } else {
-            if (video) {
-                video.pause();
-                video.style.display = 'none';
-                video.removeAttribute('src');
-            }
+            viewer.stopVideo();
             img.style.display = 'block';
             img.src = src;
             img.style.transform = `translate(0px, 0px) scale(1)`;

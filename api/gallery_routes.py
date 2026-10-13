@@ -21,10 +21,10 @@ from .trash import move_to_trash, trash_failure
 
 GALLERY_SNAPSHOT_SECONDS = 10
 MAX_CACHED_GALLERY_IMAGES = 50_000
-SUPPORTED_GALLERY_EXTENSIONS = {
-    '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif',
-    '.mp4', '.webm', '.mov', '.avi', '.mkv',
-}
+GALLERY_IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'}
+# Videos a browser plays in the viewer; not .avi (Chrome and Edge cannot).
+GALLERY_VIDEO_EXTENSIONS = {'.mp4', '.webm', '.mov', '.mkv'}
+GALLERY_MEDIA = ("all", "image", "video")
 _gallery_snapshot_lock = threading.Lock()
 _gallery_snapshot = {"root": None, "expires": 0, "images": []}
 
@@ -34,7 +34,7 @@ def _collect_gallery_images(output_dir):
     for root, _, files in os.walk(output_dir):
         for filename in files:
             ext = os.path.splitext(filename)[1].lower()
-            if ext not in SUPPORTED_GALLERY_EXTENSIONS:
+            if ext not in GALLERY_IMAGE_EXTENSIONS and ext not in GALLERY_VIDEO_EXTENSIONS:
                 continue
             try:
                 mtime = os.path.getmtime(os.path.join(root, filename))
@@ -46,8 +46,7 @@ def _collect_gallery_images(output_dir):
                 "subfolder": "" if subfolder == "." else subfolder.replace(os.sep, '/'),
                 "type": "output",
                 "mtime": mtime,
-                "ext": ext.lstrip('.'),
-                "media_type": "video" if ext in CARD_POSTER_VIDEO_EXTENSIONS else "image",
+                "media_type": "video" if ext in GALLERY_VIDEO_EXTENSIONS else "image",
             })
     images.sort(key=lambda item: (item['mtime'], item['subfolder'], item['filename']), reverse=True)
     return images
@@ -71,46 +70,54 @@ def _invalidate_gallery_snapshot():
         _gallery_snapshot.update(root=None, expires=0, images=[])
 
 
-def _gallery_listing(output_dir, refresh, query, allowed_exts=None):
+def _format(filename):
+    """The format name the gallery's settings use: the extension, with .jpeg counted as jpg."""
+    ext = os.path.splitext(filename)[1].lower().lstrip('.')
+    return 'jpg' if ext == 'jpeg' else ext
+
+
+def _gallery_listing(output_dir, refresh, query, media="image", hidden=frozenset()):
+    """Outputs, newest first. `media`: "image" (the default, for callers that show pictures),
+    "video" or "all"; `hidden`: format names left out (see _format)."""
     images = _gallery_images(output_dir, refresh)
-    if allowed_exts is not None:
-        images = [img for img in images if os.path.splitext(img['filename'])[1].lower().lstrip('.') in allowed_exts]
+    if media != "all" or hidden:
+        images = [item for item in images
+                  if media in ("all", item["media_type"]) and _format(item["filename"]) not in hidden]
     return filter_images(os.path.realpath(output_dir), images, query) if query else images
 
 
+def _gallery_page_source(output_dir, refresh, query, media, hidden):
+    """The listing, and whether the output folder has any video (the gallery offers its
+    Pictures / Videos switch only then)."""
+    images = _gallery_listing(output_dir, refresh, query, media, hidden)
+    has_videos = any(item["media_type"] == "video" for item in _gallery_images(output_dir))
+    return images, has_videos
+
+
 async def api_get_gallery_images(request):
-    """GET /anomalous/gallery_images?page&limit&refresh&term=..&ext=.. - Output images/videos, optionally filtered by extension."""
+    """GET /anomalous/gallery_images?page&limit&refresh&term=..&term=.. (or q)&media=all|image|video&hide=mkv,gif
+    - Outputs (pictures only unless `media` says otherwise), optionally searched by embedded
+    generation info, without the `hide` formats."""
     try:
         page = max(1, int(request.query.get('page', 1)))
         limit = min(200, max(1, int(request.query.get('limit', 50))))
         # Repeated `term` params keep phrases whole; `q` is split on whitespace.
         terms = [term for term in request.query.getall('term', []) if term.strip()]
         query = terms or request.query.get('q', '').strip()
-
-        # Optional extension filter (?ext=png&ext=mp4 or ?ext=png,mp4)
-        ext_filter = None
-        if 'ext' in request.query:
-            allowed_exts = set()
-            for raw in request.query.getall('ext', []):
-                for part in raw.split(','):
-                    cleaned = part.strip().lower().lstrip('.')
-                    if cleaned:
-                        allowed_exts.add(cleaned)
-            ext_filter = allowed_exts
-
-        images = await asyncio.to_thread(
-            _gallery_listing,
-            folder_paths.get_output_directory(),
-            request.query.get('refresh') == '1',
-            query,
-            ext_filter,
-        )
+        media = request.query.get('media', 'image')
+        if media not in GALLERY_MEDIA:
+            raise ValueError(media)
+        hidden = frozenset(part.strip().lower().lstrip('.') for part in request.query.get('hide', '').split(','))
+        images, has_videos = await asyncio.to_thread(
+            _gallery_page_source, folder_paths.get_output_directory(), request.query.get('refresh') == '1',
+            query, media, hidden - {''})
         total = len(images)
         start = (page - 1) * limit
         return web.json_response({"images": images[start:start + limit], "total": total,
-                                  "page": page, "pages": (total + limit - 1) // limit})
+                                  "page": page, "pages": (total + limit - 1) // limit,
+                                  "has_videos": has_videos})
     except (TypeError, ValueError):
-        return web.json_response({"error": "Invalid pagination"}, status=400)
+        return web.json_response({"error": "Invalid page or filter"}, status=400)
     except OSError:
         return web.json_response({"error": "Could not list output images"}, status=500)
 
