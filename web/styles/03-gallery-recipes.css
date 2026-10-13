@@ -1325,12 +1325,16 @@ dialog.anomalous-gallery-viewer[open] {
 /* The details' path line (model_location.js): the full path and Copy. */
 /* The foot of a model's details (model_location.js): the file's path, Copy and Delete, quiet
    and last; on a short page it sits at the bottom. */
+.anomalous-model-file-foot {
+    flex-shrink: 0;
+    margin-top: auto;
+    padding-top: 20px;
+}
+
 .anomalous-model-file {
     display: flex;
-    flex-shrink: 0;
     align-items: center;
     gap: 8px;
-    margin-top: auto;
     padding-top: 12px;
     border-top: 1px solid var(--amb-border);
 }

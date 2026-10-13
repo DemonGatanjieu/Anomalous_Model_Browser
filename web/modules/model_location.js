@@ -76,15 +76,18 @@ function footButton(className, label, onClick) {
  */
 export function createModelFileFoot(owner, model, where) {
     const foot = document.createElement('div');
-    foot.className = 'anomalous-model-file';
+    foot.className = 'anomalous-model-file-foot';
+    const row = document.createElement('div');
+    row.className = 'anomalous-model-file';
     const label = document.createElement('span');
     label.className = 'anomalous-model-file-label';
     label.textContent = t('detailFile');
     const path = document.createElement('code');
     path.textContent = model.file_path || model.filename;
     path.title = path.textContent;
-    foot.append(label, path,
+    row.append(label, path,
         footButton('anomalous-model-file-btn', t('detailCopy'), () => copyToClipboard(path.textContent, 'detailPathCopied')),
         footButton('anomalous-model-file-btn is-danger', t('detailDeleteModel'), () => deleteModel(owner, model, where)));
+    foot.append(row);
     return foot;
 }
