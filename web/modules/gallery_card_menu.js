@@ -1,7 +1,8 @@
 /**
  * A gallery card's right-click menu: put the picture on the canvas as a Load Image node, or
- * open its parameters. The node reads the output file where it is ("name.png [output]",
- * ComfyUI's own way to name an output file), so nothing is copied into the input folder.
+ * open its parameters. The picture is uploaded into the input folder the way a dropped file is
+ * (ComfyUI keeps one copy of the same picture): a "name.png [output]" value would be flagged
+ * as a missing file by ComfyUI's checks for any picture not made since ComfyUI started.
  */
 
 import { app } from '../../../scripts/app.js';
@@ -29,20 +30,42 @@ function row(icon, label, run, close) {
     return item;
 }
 
-/** A Load Image node in the middle of the visible canvas, showing `image` from the output folder. */
-export function insertLoadImageNode(image) {
+/** The output picture uploaded into the input folder; its name there for a Load Image node. */
+async function copyToInput(image) {
+    const query = new URLSearchParams({ filename: image.filename, subfolder: image.subfolder || '', type: 'output' });
+    const picture = await fetch(`/view?${query}`);
+    if (!picture.ok) throw new Error(`view ${picture.status}`);
+    const blob = await picture.blob();
+    const form = new FormData();
+    form.append('image', new File([blob], image.filename, { type: blob.type }));
+    form.append('type', 'input');
+    const response = await fetch('/upload/image', { method: 'POST', body: form });
+    if (!response.ok) throw new Error(`upload ${response.status}`);
+    const data = await response.json();
+    return data.subfolder ? `${data.subfolder}/${data.name}` : data.name;
+}
+
+/** A Load Image node in the middle of the visible canvas, showing `image`. */
+export async function insertLoadImageNode(image) {
     const node = globalThis.LiteGraph?.createNode('LoadImage');
     const widget = node?.widgets?.find(item => item.name === 'image');
-    if (!node || !widget || !app.graph) {
+    let file = null;
+    try {
+        if (node && widget && app.graph) file = await copyToInput(image);
+    } catch (error) {
+        console.error('[AMB] Could not copy the picture into the input folder:', error);
+    }
+    if (!file) {
         showWorkbenchToast(t('galleryInsertNodeFailed'));
         return;
     }
     const [x, y, width, height] = app.canvas?.visible_area || [0, 0, 0, 0];
     node.pos = [x + width / 2 - node.size[0] / 2, y + height / 2 - node.size[1] / 2];
     app.graph.add(node);
-    const file = image.subfolder ? `${image.subfolder}/${image.filename}` : image.filename;
-    widget.value = `${file} [output]`;
-    widget.callback?.(widget.value); // shows the picture in the node
+    const choices = widget.options?.values;
+    if (Array.isArray(choices) && !choices.includes(file)) choices.push(file);
+    widget.value = file;
+    widget.callback?.(file); // shows the picture in the node
     app.canvas?.selectNode?.(node);
     app.graph.setDirtyCanvas(true, true);
     recordCanvasStep(app);
