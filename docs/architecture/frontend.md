@@ -104,7 +104,7 @@ button, and `Extensions -> Anomalous Model Browser` command. Entry presentations
 are mutually exclusive and reuse the same browser instance. The Extensions
 command remains available as a recovery path in every mode.
 
-Native commands own the default `B` browser binding (Ctrl + Shift + M before v1.58.2: Chrome
+Native commands own the default `Shift + B` browser binding (Ctrl + Shift + M before v1.58.2: Chrome
 and Edge take it for switching profiles) and the
 `Ctrl + Shift + L` Prompt Studio binding. Shortcut customization delegates
 to ComfyUI's command/keybinding panel and recorder; the plugin does not install

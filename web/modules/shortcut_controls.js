@@ -1,7 +1,8 @@
-// B alone, like ComfyUI's own single keys for its side panels (M, N, W); Ctrl+Shift+M is taken
-// by Chrome and Edge (switch profile) before the page sees it.
+// Shift+B ("B" for browser). Not B alone: comfyui-browser toggles its own window on a plain b
+// and has no setting for it. Not Ctrl+Shift+M: Chrome and Edge take it (switch profile).
 export const DEFAULT_BROWSER_SHORTCUT = Object.freeze({
-    key: 'b'
+    key: 'b',
+    shift: true
 });
 
 export const DEFAULT_MATERIALS_SHORTCUT = Object.freeze({
