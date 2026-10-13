@@ -465,6 +465,16 @@ export function showGalleryViewer(src, isVideo = false) {
             video.autoplay = true;
             video.loop = true;
             video.style.display = 'none';
+            // Double-click: full screen and back. Some Chrome builds already do this for a video
+            // with controls; the check afterwards keeps it from toggling twice.
+            video.addEventListener('dblclick', () => {
+                const before = Boolean(document.fullscreenElement);
+                setTimeout(() => {
+                    if (Boolean(document.fullscreenElement) !== before) return;
+                    if (before) document.exitFullscreen?.().catch(() => {});
+                    else video.requestFullscreen?.().catch(() => {});
+                }, 200);
+            });
 
             viewer.appendChild(img);
             viewer.appendChild(video);

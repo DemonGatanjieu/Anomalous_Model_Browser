@@ -4,7 +4,8 @@
  * workbench), the star (ui_keep_menu.js: keep it as a workflow, a combo or its prompts;
  * filled once kept as anything), Delete (to the Recycle Bin, after a confirmation) and the
  * right-click menu (gallery_card_menu.js: insert as a Load Image node, parameters). A video's
- * card shows its first frame with a ▶ badge and plays in the viewer; it has no Parameters,
+ * card shows its first frame with a ▶ badge, plays muted in place (previewInPlace) and with
+ * sound in the viewer; it has no Parameters,
  * star or menu (those read a picture).
  */
 
@@ -102,6 +103,42 @@ async function deleteImage(owner, image, card) {
     }
 }
 
+/**
+ * A video card plays its video muted where it is: while the pointer is on it, or while it is in
+ * view when Settings → Video covers says always play (as model covers do). The <video> exists
+ * only while it plays, so a page of videos decodes nothing at rest.
+ */
+function previewInPlace(owner, card, url) {
+    let video = null;
+    const start = () => {
+        if (video) return;
+        video = Object.assign(document.createElement('video'), {
+            className: 'anomalous-gallery-card-video', src: url, muted: true, loop: true, playsInline: true,
+        });
+        card.querySelector('img').after(video);
+        video.play().catch(() => {});
+    };
+    const stop = () => {
+        if (!video) return;
+        video.pause();
+        video.removeAttribute('src');
+        video.load(); // lets the decoder go
+        video.remove();
+        video = null;
+    };
+    if (owner.energySaving) {
+        card.addEventListener('mouseenter', start);
+        card.addEventListener('mouseleave', stop);
+        return;
+    }
+    // Leaving the gallery hides the cards, and hidden or removed cards stop too.
+    owner.galleryVideoObserver ??= new IntersectionObserver((entries) => {
+        for (const entry of entries) entry.target.anomalousPreview?.[entry.isIntersecting ? 'start' : 'stop']();
+    }, { rootMargin: '100px' });
+    card.anomalousPreview = { start, stop };
+    owner.galleryVideoObserver.observe(card);
+}
+
 /** The star: ☆, or ★ once the image is kept as anything. */
 function keepButton(owner, image) {
     const star = button('anomalous-gallery-keep', t('galleryKeep'), () => openKeepMenu(owner, star, image, {
@@ -162,6 +199,7 @@ export function createGalleryCard(owner, imgData, { showViewer }) {
         badge.innerHTML = PLAY_ICON; // static markup only
         badge.append(image.filename.split('.').pop().toUpperCase());
         card.append(img, remove, badge);
+        previewInPlace(owner, card, url);
         return card;
     }
     card.addEventListener('contextmenu', (event) => {
