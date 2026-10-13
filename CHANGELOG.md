@@ -37,6 +37,11 @@
 ### 🎨 The Combos page looks like the others (搭配页和其他页面统一)
 - It no longer sits in a lighter, inset box with a shadow, a second "Combos" title and a red ✕: it fills the page in the same colours as Models and Workflows. The explanation of what a combo is folds behind **?** (shown by itself while you have no combos), and the editor's Back reads **← All combos**.
 
+### 🧩 Combos with rgthree's and Easy-Use's LoRA nodes (搭配支持常用的第三方 LoRA 节点)
+- Stacking many LoRAs used to mean a long chain of Load LoRA nodes. **New** on the Combos page now also offers **Default combo, LoRAs in Power Lora Loader** (rgthree: every LoRA in one node, each row with its own switch and strength) and **…in Easy-Use LoRA stack** (up to ten per stack node, put on the model by Easy Apply LoraStack), each only when that node pack is installed. You still just pick the main model and the LoRAs; the combo's editor can switch between them later.
+- A combo set to a node pack this ComfyUI does not have is put down with ComfyUI's own LoRA loaders, and says so.
+- **Save as combo** on canvas nodes keeps a Power Lora Loader's LoRAs: before, its rows were lost and it came back empty. Each row's LoRA is now a slot you can change in the editor, its strength and switch shown beside it.
+
 ### ≈ What was read from the file says so (离线推断标清楚)
 - A model Civitai does not know has its base model inferred from the file, as before; now it says so. Its card reads **推断 SDXL** (it was ≈), and its details open with a note: why Civitai did not have it, that the base model was read from the file and may be off, and **Add a name and source link**, instead of an English placeholder description.
 - The scan page says it too: an online scan "looks up 5 on Civitai and infers the base model from the file for any it does not find", and the state chip reads **Not found · inferred from file**.

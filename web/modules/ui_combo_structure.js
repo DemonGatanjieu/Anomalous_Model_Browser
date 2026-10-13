@@ -4,8 +4,8 @@
  * dropped), its editor (models, LoRAs and prompts in the order they flow: a model chosen from
  * that slot's models folder, filtered by base model, with its node's saved values shown; a text
  * box; then the nodes without slots, shown with their saved values, and the inputs to wire after
- * it is put down), and "New" offering the default combo, the picked nodes, or the
- * structure of a combo already saved. The canvas's node menu has "Save as combo" too
+ * it is put down), and "New" offering the default combo (also with each installed third-party
+ * LoRA node, lora_nodes.js), the picked nodes, or the structure of a combo already saved. The canvas's node menu has "Save as combo" too
  * (browser_entry.js). Putting one on the canvas is notebook_canvas.js.
  */
 
@@ -13,6 +13,7 @@ import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
 import { STRUCTURED, chainOrder, fixedNodes, missingTypes, structureKey, structureSummary } from './combo_slots.js';
 import { captureStructure } from './combo_structure.js';
+import { installedLoraNodes } from './lora_nodes.js';
 import { freeComboName, listCombos } from './image_keep.js';
 import { anomalousAlert, anomalousPrompt } from './ui_dialog.js';
 import { typeLabel } from './ui_model_types.js';
@@ -30,6 +31,7 @@ const FIXED_NAMES = [
     [/^(lora_)?strength_?clip$|^lora_(\d+_)?clip_strength$|^clip_weight_\d+$|^strength_clip_\d+$/i, 'comboFixedClipStrength'],
     [/^(lora_)?strength(_?model)?(_\d+)?$|^lora_(\d+_)?(model_)?strength$|^model_weight_\d+$/i, 'comboFixedStrength'],
     [/^weight_dtype$/i, 'comboFixedDtype'], [/^type$/i, 'comboFixedType'], [/^device$/i, 'comboFixedDevice'],
+    [/^on$/i, 'comboFixedSwitch'],
 ];
 const FIXED_SHOWN = 4; // more saved values fold behind "+N"
 const numberIn = (name) => { const found = String(name).match(/(\d+)(?!.*\d)/); return found ? Number(found[1]) : null; };
@@ -96,7 +98,11 @@ function fixedValues(node, slots, slot) {
         if (models.length < 2 || numberIn(name) === null) return models[0];
         return models.find(item => numberIn(item.widget) === numberIn(name));
     };
-    return (node?.widgets || []).filter(entry => !taken.has(entry[0]) && showable(entry) && rowOf(entry[0]) === slot).map(valueText);
+    // A Power Lora Loader's row holds its own strength and switch (combo_structure.js).
+    const row = slot.field ? node?.rows?.[numberIn(slot.widget) - 1] : null;
+    const ofRow = row ? [['strength', row.strength], ...(row.strengthTwo === null ? [] : [['strength_clip', row.strengthTwo]]),
+        ...(row.on ? [] : [['on', t('comboFixedOff')]])] : [];
+    return [...ofRow, ...(node?.widgets || []).filter(entry => !taken.has(entry[0]) && rowOf(entry[0]) === slot)].filter(showable).map(valueText);
 }
 
 /** Saved values as chips, the first few shown and the rest behind "+N". */
@@ -508,7 +514,7 @@ export function renderStructuredCombo(owner, host, note, toolbar) {
     }
 }
 
-/** "New": the default combo, the canvas's picked nodes, or a structure a saved combo has. */
+/** "New": the default combo (`newDefault(loraNode)`), the canvas's picked nodes, or a structure a saved combo has. */
 export async function chooseNewCombo(owner, newDefault) {
     const combos = await listCombos().catch(() => []);
     const structures = [];
@@ -533,7 +539,9 @@ export async function chooseNewCombo(owner, newDefault) {
         return item;
     };
     dialog.append(el('h3', 'anomalous-structure-title', t('comboNew')),
-        option(t('comboNewDefault'), t('comboNewDefaultHint'), newDefault),
+        option(t('comboNewDefault'), t('comboNewDefaultHint'), () => newDefault('core')),
+        ...installedLoraNodes().filter(kind => kind.id !== 'core')
+            .map(kind => option(t('comboNewWithLoraNode', { node: t(kind.labelKey) }), t(kind.hintKey), () => newDefault(kind.id))),
         option(t('comboNewFromSelection'), picked ? t('comboNewFromSelectionHint', { count: picked }) : t('comboNewFromSelectionEmpty'),
             () => saveSelectionAsCombo(owner), !picked));
     for (const note of structures) {

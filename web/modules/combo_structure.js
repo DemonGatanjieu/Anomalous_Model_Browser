@@ -13,6 +13,10 @@
  * its rows), then fills the slots by name, then links; whatever cannot be found is reported,
  * never guessed.
  *
+ * rgthree's Power Lora Loader keeps its LoRAs in rows, no drop-downs: a node's rows are stored
+ * as `rows` (lora_nodes.js), made again before its slots are filled, and each row's LoRA is a
+ * model slot with `field: 'lora'` (the row's value is an object).
+ *
  * A combo with a structure: data = { kind: 'nodes', structure: { version, nodes, links, slots,
  * open: [{ node, name, type }] }, values: { slotId: value }, covers: { slotId: url } }.
  */
@@ -23,6 +27,7 @@ import { promptBoxes } from './prompt_boxes.js';
 import {
     NONE, STRUCTURE_VERSION, chainOrder, findPort, folderFor, fedByLink, isModelWidget, missingTypes, optionValues, packOf, slashes,
 } from './combo_slots.js';
+import { addPowerLoraRows, nativeLora, powerLoraRows } from './lora_nodes.js';
 
 let folderLists = null;
 
@@ -73,6 +78,7 @@ export async function captureStructure(picked, { labelFor } = {}) {
     for (const { node, models, texts } of kept) {
         const key = keys.get(node.id);
         const definitionTitle = globalThis.LiteGraph?.registered_node_types?.[node.type]?.title;
+        const rows = powerLoraRows(node);
         nodes.push({
             key, type: node.type, pack: packOf(node.type), name: node.title || node.type, // as the canvas shows it
             title: node.title && node.title !== definitionTitle ? node.title : '',
@@ -80,6 +86,7 @@ export async function captureStructure(picked, { labelFor } = {}) {
             size: Array.isArray(node.size) ? [Math.round(node.size[0]), Math.round(node.size[1])] : null,
             widgets: (node.widgets || []).filter(widget => widget.name && widget.type !== 'button' && storable(widget.value))
                 .map(widget => [widget.name, widget.value]),
+            ...(rows.length ? { rows } : {}),
         });
         for (const widget of models) {
             if (fedByLink(node, widget)) continue;
@@ -91,6 +98,15 @@ export async function captureStructure(picked, { labelFor } = {}) {
                 label: labelFor?.({ kind: 'model', folder, index: counts[folder], widget: widget.name }) || widget.name });
             values[id] = String(widget.value ?? '');
         }
+        rows.forEach((row, index) => {
+            if (row.lora === null) return;
+            counts.loras = (counts.loras || 0) + 1;
+            const id = `s${slots.length + 1}`;
+            const widget = `lora_${index + 1}`; // the name the row gets when the node is made again
+            slots.push({ id, node: key, widget, field: 'lora', kind: 'model', folder: 'loras', optional: false,
+                label: labelFor?.({ kind: 'model', folder: 'loras', index: counts.loras, widget }) || widget });
+            values[id] = row.lora;
+        });
         for (const box of texts) {
             if (fedByLink(node, box.widget)) continue;
             const id = `s${slots.length + 1}`;
@@ -167,6 +183,7 @@ export function buildStructure(structure, values = {}) {
             const widget = node.widgets?.find(entry => entry.name === name);
             if (widget) setBox(node, widget, value); // in order: a count box adds the boxes after it
         }
+        if (item.rows?.length) addPowerLoraRows(node, item.rows);
         if (Array.isArray(item.size)) node.size = [Math.max(node.size?.[0] || 0, item.size[0]), Math.max(node.size?.[1] || 0, item.size[1])];
     }
     for (const slot of structure.slots) {
@@ -176,8 +193,9 @@ export function buildStructure(structure, values = {}) {
             problems.push({ kind: 'slot_missing', label: slot.label, widget: slot.widget, type: node?.title || node?.type || '' });
             continue;
         }
-        const value = Object.hasOwn(values, slot.id) ? values[slot.id] : widget.value;
-        setBox(node, widget, slot.kind === 'model' ? nativeChoice(widget, value) : String(value ?? ''));
+        const value = Object.hasOwn(values, slot.id) ? values[slot.id] : slot.field ? widget.value?.[slot.field] : widget.value;
+        if (slot.field) widget.value = { ...widget.value, [slot.field]: nativeLora(value) };
+        else setBox(node, widget, slot.kind === 'model' ? nativeChoice(widget, value) : String(value ?? ''));
     }
     for (const link of structure.links) {
         const from = made.get(link.from);

@@ -8,6 +8,7 @@ import { escapeHtml } from './safe_dom.js';
 import { isUnetModel, UNLABELED_BASE_MODEL } from './notebook_canvas.js';
 import { STRUCTURED } from './combo_slots.js';
 import { renderStructuredCombo } from './ui_combo_structure.js';
+import { createLoraNodeChoice } from './ui_lora_node_choice.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -223,11 +224,7 @@ function createCompanionModelsCard(ctx, data) {
     const mainBox = document.createElement('div');
     mainBox.className = 'anomalous-nb-gallery-box';
     const mainRow = document.createElement('div');
-    mainRow.className = 'anomalous-nb-row';
-    mainRow.style.display = 'flex';
-    mainRow.style.alignItems = 'center';
-    mainRow.style.justifyContent = 'space-between';
-    mainRow.style.marginBottom = '8px';
+    mainRow.className = 'anomalous-nb-row anomalous-nb-gallery-head';
     const mainLabel = document.createElement('strong');
     mainLabel.textContent = `🎨 ${t('mainModel') || (window.anomalous_browser_lang === 'zh' ? '主模型' : 'Main Model')}`;
     mainRow.append(mainLabel, mainSelectedBadge);
@@ -239,17 +236,13 @@ function createCompanionModelsCard(ctx, data) {
     const loraBox = document.createElement('div');
     loraBox.className = 'anomalous-nb-gallery-box';
     const loraRow = document.createElement('div');
-    loraRow.className = 'anomalous-nb-row';
-    loraRow.style.display = 'flex';
-    loraRow.style.alignItems = 'center';
-    loraRow.style.justifyContent = 'space-between';
-    loraRow.style.marginBottom = '8px';
+    loraRow.className = 'anomalous-nb-row anomalous-nb-gallery-head';
     const loraLabel = document.createElement('strong');
     loraLabel.textContent = `⚡ ${t('loras') || (window.anomalous_browser_lang === 'zh' ? 'LoRA 模型' : 'LoRA Models')}`;
     loraRow.append(loraLabel, loraSelectedBadge);
     const loraGallery = document.createElement('div');
     loraGallery.className = 'anomalous-nb-gallery-wrap';
-    loraBox.append(loraRow, loraGallery);
+    loraBox.append(loraRow, createLoraNodeChoice(data, () => ctx.saveCurrentNotebook()), loraGallery);
 
     const unetHint = document.createElement('div');
     unetHint.className = 'anomalous-nb-unet-hint';

@@ -36,6 +36,7 @@ node tools/check_structure.mjs
 
 # 一个前端测试
 node tests/combo_slots.mjs
+node tests/lora_nodes.mjs
 
 # 全部 Python 测试（便携版 ComfyUI 的写法；其他安装方式换成自己的 python）
 ../../../python_embeded/python.exe -B -m unittest discover -s tests -p "test_*.py"

@@ -1,6 +1,7 @@
 /**
  * Puts the active combo (搭配) on the canvas as a new group of nodes: its main model loader,
- * its LoRA chain and a positive and a negative prompt node (the positive holds the combo's
+ * its LoRAs in the LoRA node it chose (lora_nodes.js: ComfyUI's own chain, or rgthree's / Easy-Use's
+ * when installed; else ComfyUI's own, and it says so) and a positive and a negative prompt node (the positive holds the combo's
  * prompt, the negative the common negative starter card), wired together. From a button the
  * group follows the pointer until a click, and Esc takes it off again; a card dropped on the
  * canvas builds it where it was dropped. Nothing already on the canvas changes, except that a
@@ -15,6 +16,7 @@ import { PROMPT_PRESETS } from './prompt_composition.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { STRUCTURED } from './combo_slots.js';
 import { buildStructure } from './combo_structure.js';
+import { chainLoras, isInstalled, loraNodeKind } from './lora_nodes.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -157,17 +159,14 @@ export function sendNotebookToCanvas(position = null) {
 
     const loader = add(isUnet ? 'UNETLoader' : 'CheckpointLoaderSimple', 0, 0);
     this.setWidgetValuePath(loader, modelPath(data.mainModel));
-    let last = loader;
-    const clipSlot = isUnet ? null : 1; // a checkpoint loader and a LoraLoader both give CLIP second
-    let relX = STEP_X;
-    (data.loras || []).forEach(lora => {
-        const node = add(isUnet ? 'LoraLoaderModelOnly' : 'LoraLoader', relX, 0);
-        this.setWidgetValuePath(node, modelPath(lora));
-        last.connect(0, node, 0);
-        if (clipSlot !== null) last.connect(clipSlot, node, 1);
-        last = node;
-        relX += STEP_X;
+    const wanted = loraNodeKind(data.loraNode);
+    const kind = isInstalled(wanted) ? wanted : loraNodeKind('core');
+    const chained = chainLoras(kind, {
+        add, source: loader, clipSlot: isUnet ? null : 1, loras: (data.loras || []).map(modelPath), relX: STEP_X, step: STEP_X,
+        setPath: (node, path) => this.setWidgetValuePath(node, path),
     });
+    const { last, clipSlot } = chained;
+    const relX = chained.relX + Math.max(STEP_X, (last.size?.[0] || 0) + 50); // a Power Lora Loader is wider than the step
 
     const promptNode = (title, text, relY) => {
         const node = add('CLIPTextEncode', relX, relY);
@@ -189,7 +188,8 @@ export function sendNotebookToCanvas(position = null) {
 
     const placed = () => {
         recordCanvasStep(app);
-        if (!clip) void anomalousAlert(t('noteNeedsClip'));
+        const notes = [kind !== wanted && t('comboLoraNodeFallback', { node: t(wanted.labelKey), pack: wanted.pack }), !clip && t('noteNeedsClip')];
+        if (notes.some(Boolean)) void anomalousAlert(notes.filter(Boolean).join('\n\n'));
     };
     this.nbPanel.style.display = 'none';
     if (!position) {

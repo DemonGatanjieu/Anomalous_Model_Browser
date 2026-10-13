@@ -86,7 +86,12 @@ The main surfaces are:
   owns header/zoom/filmstrip interaction, and `ui_image_inspector.js` owns metadata tabs.
 - Workspace: Combos (搭配, formerly Prompt Notes) and Workflow Recipes. The combo list, workspace/persistence, editing, and canvas use are separated
   across `ui_combos.js`, `ui_notebooks.js`, `ui_notebook_editor.js`, and
-  `notebook_canvas.js`; Put on canvas lays a combo out as a new wired group of nodes (Esc while it
+  `notebook_canvas.js`; a default combo's `data.loraNode` ('core', 'rgthree', 'easy'; none is 'core')
+  says which LoRA node it is laid out with (`lora_nodes.js`; one this ComfyUI lacks falls back to
+  'core' and says so after placing), chosen under New or in its editor (`ui_lora_node_choice.js`,
+  shown only when there is a choice). A Power Lora Loader in a node structure keeps its rows as
+  the node's `rows` and each row's LoRA as a slot with `field: 'lora'`; its rows are made again
+  (`addNewLoraWidget`) before the slots are filled. Put on canvas lays a combo out as a new wired group of nodes (Esc while it
   follows the pointer removes it; the activity log holds back while `owner.placingCombo` is set) and
   never changes nodes already on the canvas (values of an existing node are changed in
   Current node). A combo with a node structure (`combo_structure.js`, `ui_combo_structure.js`)

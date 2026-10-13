@@ -625,6 +625,49 @@
     margin-bottom: 15px;
 }
 
+.anomalous-nb-gallery-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+/* Which LoRA node the combo is put down with (ui_lora_node_choice.js). */
+.anomalous-nb-lora-node {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+    color: var(--amb-text-muted);
+    font-size: 0.8rem;
+}
+
+.anomalous-nb-lora-node[hidden] {
+    display: none;
+}
+
+.anomalous-nb-lora-node-option {
+    padding: 3px 10px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font: inherit;
+    cursor: pointer;
+}
+
+.anomalous-nb-lora-node-option:hover {
+    background: rgba(var(--amb-ink-rgb), 0.08);
+}
+
+.anomalous-nb-lora-node-option[aria-pressed="true"] {
+    border-color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
+    color: var(--amb-text-main);
+    font-weight: 600;
+}
+
 .anomalous-nb-unet-hint {
     margin-top: 10px;
     font-size: 0.8rem;

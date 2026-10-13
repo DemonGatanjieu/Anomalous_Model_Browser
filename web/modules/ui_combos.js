@@ -89,14 +89,14 @@ function comboCard(owner, note) {
 }
 
 /** Asks for a name, saves an empty combo and opens it. */
-export async function newCombo(owner) {
+export async function newCombo(owner, loraNode = 'core') {
     const wanted = String(await anomalousPrompt(t('comboNewName'), '', t('comboNew')) || '').trim();
     if (!wanted) return;
     const name = freeComboName(wanted, await listCombos());
     const note = {
         filename: `${name}.json`,
         name,
-        data: { name, baseModel: '', mainModel: null, loras: [], promptEn: '', promptZh: '' },
+        data: { name, baseModel: '', mainModel: null, loras: [], loraNode, promptEn: '', promptZh: '' },
     };
     owner.currentNotebook = note;
     if (await owner.saveCurrentNotebook()) owner.openCombo(note);
@@ -122,7 +122,7 @@ export async function renderComboList(owner, host) {
     help.setAttribute('aria-label', t('comboHelp'));
     help.setAttribute('aria-expanded', 'false');
     bar.append(search, help,
-        button('anomalous-btn-primary', t('comboNew'), () => void chooseNewCombo(owner, () => newCombo(owner))), lead);
+        button('anomalous-btn-primary', t('comboNew'), () => void chooseNewCombo(owner, (loraNode) => newCombo(owner, loraNode))), lead);
     const grid = el('div', 'anomalous-combo-grid');
     host.replaceChildren(bar, grid);
     grid.append(el('p', 'anomalous-combo-empty', t('loading')));
