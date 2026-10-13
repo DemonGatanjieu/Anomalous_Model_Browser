@@ -316,6 +316,7 @@ export function showDetail(model) {
             descCont.appendChild(descLabel);
 
             const descText = document.createElement('div');
+            descText.className = 'anomalous-detail-description'; // Civitai's headings kept to size
             descText.style.flex = 'none';
 
             descText.style.background = 'var(--amb-bg-card)';

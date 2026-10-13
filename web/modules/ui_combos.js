@@ -102,15 +102,27 @@ export async function newCombo(owner) {
     if (await owner.saveCurrentNotebook()) owner.openCombo(note);
 }
 
-/** Fills `host` with the search box, New and a card per combo matching the search. */
+/**
+ * Fills `host` with the search box, ? (what a combo is; shown by itself while there are none),
+ * New and a card per combo matching the search.
+ */
 export async function renderComboList(owner, host) {
     const bar = el('div', 'anomalous-combo-bar');
     const search = el('input', 'anomalous-combo-search');
     search.type = 'search';
     search.placeholder = t('comboSearch');
     search.value = owner.comboQuery || '';
-    bar.append(el('p', 'anomalous-combo-lead', t('comboLead')), search,
-        button('anomalous-btn-primary', t('comboNew'), () => void chooseNewCombo(owner, () => newCombo(owner))));
+    const lead = el('p', 'anomalous-combo-lead', t('comboLead'));
+    lead.hidden = true;
+    const help = button('anomalous-combo-help', '?', () => {
+        lead.hidden = !lead.hidden;
+        help.setAttribute('aria-expanded', String(!lead.hidden));
+    });
+    help.title = t('comboHelp');
+    help.setAttribute('aria-label', t('comboHelp'));
+    help.setAttribute('aria-expanded', 'false');
+    bar.append(search, help,
+        button('anomalous-btn-primary', t('comboNew'), () => void chooseNewCombo(owner, () => newCombo(owner))), lead);
     const grid = el('div', 'anomalous-combo-grid');
     host.replaceChildren(bar, grid);
     grid.append(el('p', 'anomalous-combo-empty', t('loading')));
@@ -118,6 +130,7 @@ export async function renderComboList(owner, host) {
     let combos;
     try {
         combos = await listCombos();
+        if (!combos.length) lead.hidden = false;
     } catch (error) {
         console.error('[AMB] Could not list combos:', error);
         grid.replaceChildren(el('p', 'anomalous-combo-empty', t('comboLoadError')));

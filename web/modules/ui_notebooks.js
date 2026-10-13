@@ -1,6 +1,7 @@
 /**
- * The Combos page (搭配) as a workspace over the current page: the list of combos
- * (ui_combos.js), or one combo in its editor (ui_notebook_editor.js) with Back to the list;
+ * The Combos page (搭配) as a workspace over the current page, filling it like Workflows: the
+ * list of combos (ui_combos.js), or one combo in its editor (ui_notebook_editor.js) under a bar
+ * with Back to the list (Esc presses it; the rail and Esc close the page);
  * saving and deleting a combo (the files under workflows/anomalous_notebooks, which the
  * code still calls notebooks: combos were Prompt Notes before).
  */
@@ -13,22 +14,14 @@ const t = (key, params) => translate(key, params);
 
 function buildComboWorkspace(owner) {
     const container = document.createElement('div');
-    container.className = 'anomalous-nb-container';
-    const header = document.createElement('div');
-    header.className = 'anomalous-nb-header';
-    const headerMain = document.createElement('div');
-    headerMain.className = 'anomalous-nb-header-main';
+    container.className = 'anomalous-nb-container anomalous-combo-container';
+    owner.comboHeader = document.createElement('div');
+    owner.comboHeader.className = 'anomalous-nb-header';
     owner.comboBack = document.createElement('button');
     owner.comboBack.type = 'button';
     owner.comboBack.className = 'anomalous-btn-ghost anomalous-nb-back';
     owner.comboBack.onclick = () => owner.showNotebooks();
-    owner.comboHeading = document.createElement('h2');
-    headerMain.append(owner.comboBack, owner.comboHeading);
-    const close = document.createElement('span');
-    close.className = 'anomalous-nb-close';
-    close.innerHTML = '&times;';
-    close.onclick = () => owner.closeWorkspace();
-    header.append(headerMain, close);
+    owner.comboHeader.append(owner.comboBack);
 
     const body = document.createElement('div');
     body.className = 'anomalous-nb-body';
@@ -37,7 +30,7 @@ function buildComboWorkspace(owner) {
     owner.nbEditor = document.createElement('div');
     owner.nbEditor.className = 'anomalous-nb-editor';
     body.append(owner.comboList, owner.nbEditor);
-    container.append(header, body);
+    container.append(owner.comboHeader, body);
     owner.nbPanel.appendChild(container);
     owner.notebookContainer = container;
     owner.notebookBody = body;
@@ -68,9 +61,8 @@ export async function showNotebooks({ editor = false } = {}) {
     this.markWorkspace?.('combos');
 
     const editing = editor && Boolean(this.currentNotebook);
-    this.comboHeading.textContent = t('shellCombos');
     this.comboBack.textContent = t('comboBack');
-    this.comboBack.hidden = !editing;
+    this.comboHeader.hidden = !editing;
     this.comboList.hidden = editing;
     this.nbEditor.hidden = !editing;
     if (editing) {

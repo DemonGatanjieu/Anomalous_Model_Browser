@@ -430,7 +430,7 @@ covered by the `styles.css` manifest.
   notebook or material delete route); `image_keep.js` does the keeping (an image as a combo,
   its prompts as a saved prompt, reading what was kept) without DOM.
 - `ui_combos.js` renders the Combos page's list (搭配: a main model, LoRAs and a prompt, formerly Prompt Notes): search,
-  New, and a card per combo with its model's cover and Put on canvas; a card opens the combo's editor, and dragged onto the
+  ? (what a combo is), New, and a card per combo with its model's cover and Put on canvas; a card opens the combo's editor, and dragged onto the
   canvas (`material_drag.js`) becomes a new group of nodes where it is dropped. Combos keep the notes' files.
   A combo can instead hold a node structure (`data.kind === 'nodes'`): `combo_structure.js`
   captures the canvas's picked nodes (subgraphs aside) with the links between them and puts
@@ -488,7 +488,7 @@ covered by the `styles.css` manifest.
   `ui_image_inspector.js`.
 - `ui_recipes.js` / `ui_recipe_detail.js` and `ui_notebooks.js`
   own their respective workspace surfaces and persistence flows. `ui_recipes.js` hands the
-  Workflows page (its catalog) the recipe services (save, edit, fetch) and opens a recipe by name. `ui_notebooks.js` owns the Combos workspace (its list or one combo's editor,
+  Workflows page (its catalog) the recipe services (save, edit, fetch) and opens a recipe by name. `ui_notebooks.js` owns the Combos workspace (filling the page; its list or one combo's editor,
   with Back to the list) and combo persistence; `ui_notebook_editor.js` owns unfolded card editing (modularized into single-responsibility
   sub-functions adhering to the 50-line rule: sticky top action toolbar with floating More popover dropdown and timed two-step delete safety guard,
   unfolded companion models card with unconstrained multi-column tile flow eliminating nested gallery scrollbars,
