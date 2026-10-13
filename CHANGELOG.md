@@ -161,6 +161,7 @@
 
 ### Fixes
 - **Ctrl+Z after a scan (扫描后的 Ctrl+Z)**: after any scan, the first Ctrl+Z used to seem to do nothing: the workflow's saved fingerprints had changed, which ComfyUI counted as a step. A change of fingerprints alone no longer takes a step.
+- **Esc in a model's Outputs window (作品窗口里按 Esc)**: Esc closes the window of pictures made with a model; it used to close the model's details behind it and leave the window open.
 
 ## v1.58.2 Beta (Small fixes: Esc closes, Show in folder, insert a picture as a node) — 2026-10-13
 
