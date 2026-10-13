@@ -497,6 +497,8 @@
 .anomalous-detail-description :is(h1, h2) { margin: 0.8em 0 0.4em; font-size: 1.15em; line-height: 1.35; }
 .anomalous-detail-description :is(h3, h4, h5, h6) { margin: 0.7em 0 0.3em; font-size: 1.05em; line-height: 1.35; }
 .anomalous-detail-description > :first-child { margin-top: 0; }
+/* Its code blocks are often a whole prompt on one line: they wrap rather than widen the details. */
+.anomalous-detail-description :is(pre, pre code) { white-space: pre-wrap; overflow-wrap: anywhere; }
 
 .anomalous-detail-action.is-primary:hover { background: color-mix(in srgb, var(--amb-link) 85%, var(--amb-text-main)); }
 
