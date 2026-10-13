@@ -5,15 +5,85 @@ computer ask (it is a POST)."""
 import os
 import subprocess
 import sys
+import threading
+import time
 
 from aiohttp import web
 
 from .utils import require_filename, resolve_folder_subdir, resolve_within
 
 
+def _explorer_windows():
+    """Handles of the open Explorer folder windows (window class CabinetWClass)."""
+    import ctypes
+    from ctypes import wintypes
+
+    found = []
+    callback_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+    def collect(hwnd, _):
+        name = ctypes.create_unicode_buffer(64)
+        ctypes.windll.user32.GetClassNameW(hwnd, name, 64)
+        if name.value == "CabinetWClass":
+            found.append(hwnd)
+        return True
+
+    ctypes.windll.user32.EnumWindows(callback_type(collect), 0)
+    return found
+
+
+def _window_title(hwnd):
+    import ctypes
+
+    title = ctypes.create_unicode_buffer(512)
+    ctypes.windll.user32.GetWindowTextW(hwnd, title, 512)
+    return title.value
+
+
+def _to_front(hwnd):
+    """Windows keeps a background program (ComfyUI here) from raising a window; borrowing the
+    foreground window's input queue for a moment lets it."""
+    import ctypes
+
+    user32, kernel32 = ctypes.windll.user32, ctypes.windll.kernel32
+    foreground = user32.GetForegroundWindow()
+    theirs = user32.GetWindowThreadProcessId(foreground, None)
+    mine = kernel32.GetCurrentThreadId()
+    attached = theirs and theirs != mine and user32.AttachThreadInput(mine, theirs, True)
+    try:
+        user32.ShowWindow(hwnd, 9 if user32.IsIconic(hwnd) else 5)  # SW_RESTORE / SW_SHOW
+        user32.BringWindowToTop(hwnd)
+        user32.SetForegroundWindow(hwnd)
+    finally:
+        if attached:
+            user32.AttachThreadInput(mine, theirs, False)
+
+
+def _raise_explorer(folder, before):
+    """Waits up to 3 s for the window showing `folder` (a new one, or the open one Explorer
+    reused) and brings it to the front."""
+    names = (os.path.basename(folder).lower(), os.path.normcase(folder).lower())
+
+    def shows_folder(hwnd):
+        # The folder's name (or full path), then " - File Explorer" in the system's language.
+        title = _window_title(hwnd).lower()
+        return any(title == name or title.startswith(name + " - ") for name in names)
+
+    for _ in range(30):
+        time.sleep(0.1)
+        windows = _explorer_windows()
+        fresh = [hwnd for hwnd in windows if hwnd not in before]
+        match = fresh or [hwnd for hwnd in windows if shows_folder(hwnd)]
+        if match:
+            _to_front(match[0])
+            return
+
+
 def _reveal(path):
     if sys.platform == "win32":
+        before = set(_explorer_windows())
         subprocess.Popen(f'explorer /select,"{path}"')
+        threading.Thread(target=_raise_explorer, args=(os.path.dirname(path), before), daemon=True).start()
     elif sys.platform == "darwin":
         subprocess.Popen(["open", "-R", path])
     else:
