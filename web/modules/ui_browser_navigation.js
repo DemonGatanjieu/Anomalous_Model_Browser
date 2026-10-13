@@ -56,13 +56,16 @@ export function closeWorkspace() {
     restoreWorkspaceReturnPanel(this);
 }
 
+// The back buttons of the pages one level down: a model's details, one combo, one recipe.
+const BACK_BUTTONS = '.anomalous-detail-back, .anomalous-nb-back, .anomalous-recipe-back-tab';
+
 /**
- * Esc closes the browser's top layer: the recipe / combo workspace when it is open (what a
- * click beside it does), else the browser. Not while one of this plugin's dialogs, overlays
- * or menus, or a ComfyUI dialog, sits above it (they close themselves), and not while a text
- * field has the key (Esc there belongs to the field). It listens first (capture), so a dialog
- * that closes on this same Esc still counts as above. ComfyUI's own keybindings mark Esc as
- * handled, so `defaultPrevented` says nothing here.
+ * Esc on the browser: a page one level down (a model's details, one combo or one recipe) goes
+ * back as its own back button does; any other page closes the browser. Not while one of this
+ * plugin's dialogs, overlays or menus, or a ComfyUI dialog, sits above it (they close
+ * themselves), and not while a text field has the key (Esc there belongs to the field). It
+ * listens first (capture), so a dialog that closes on this same Esc still counts as above.
+ * ComfyUI's own keybindings mark Esc as handled, so `defaultPrevented` says nothing here.
  */
 export function bindBrowserEscape(owner) {
     window.addEventListener('keydown', (e) => {
@@ -72,7 +75,8 @@ export function bindBrowserEscape(owner) {
             .some(el => el !== owner.modal && el.getClientRects().length
                 && (el.getAttribute('role') === 'menu' || [...el.classList].some(c => c.startsWith('anomalous-') && c.endsWith('overlay'))));
         if (layered || document.querySelector('dialog[open], .p-dialog-mask')) return;
-        if (owner.nbPanel?.style.display === 'flex') owner.closeWorkspace();
+        const back = [...owner.modal.querySelectorAll(BACK_BUTTONS)].find(button => button.getClientRects().length);
+        if (back) back.click();
         else owner.close();
     }, true);
 }
