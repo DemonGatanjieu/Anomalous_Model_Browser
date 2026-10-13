@@ -26,7 +26,7 @@ from .path_utils import require_filename, resolve_folder_subdir, resolve_within
 CARD_THUMBNAIL_EDGE = 512
 CARD_THUMBNAIL_CACHE_LIMIT = 256 * 1024 * 1024
 CARD_THUMBNAIL_STATIC_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.webp', '.avif'}
-CARD_POSTER_VIDEO_EXTENSIONS = {'.mp4', '.webm', '.mov'}
+CARD_POSTER_VIDEO_EXTENSIONS = {'.mp4', '.webm', '.mov', '.avi', '.mkv'}
 CARD_WARM_QUEUE_LIMIT = 512
 _thumbnail_cleanup_lock = threading.Lock()
 _thumbnail_generation_slots = threading.BoundedSemaphore(2)
@@ -302,7 +302,8 @@ async def api_serve_image(request):
         '.mp4': 'video/mp4',
         '.webm': 'video/webm',
         '.mov': 'video/quicktime',
-        '.avi': 'video/x-msvideo'
+        '.avi': 'video/x-msvideo',
+        '.mkv': 'video/x-matroska'
     }
     content_type = content_types.get(ext)
     if content_type is None:

@@ -11,6 +11,8 @@ import { createGalleryCard } from './ui_gallery_card.js';
 import { loadKeptImages } from './image_keep.js';
 import { createSearchChips } from './ui_search_chips.js';
 import { newestCompareButton } from './ui_param_compare.js';
+import { createGalleryMediaSwitch } from './ui_gallery_filter.js';
+import { appendGalleryFilter } from './gallery_filter.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -30,8 +32,12 @@ export async function refreshGalleryImages() {
 
 
 
-/** Search blocks above the output gallery; the terms live on the browser as `gallerySearchTerms`. */
+/** Search blocks above the output gallery (the terms live on the browser as `gallerySearchTerms`),
+ * with All / Pictures / Videos beside them. */
 export function createGallerySearchBar(owner) {
+    const header = document.createElement('div');
+    header.className = 'anomalous-gallery-header';
+
     const search = createSearchChips({
         placeholder: t('gallerySearchPlaceholder'),
         help: t('gallerySearchHelp'),
@@ -42,10 +48,10 @@ export function createGallerySearchBar(owner) {
     });
     search.element.classList.add('anomalous-gallery-search');
     owner.gallerySearchCount = search.countElement;
-    const bar = document.createElement('div');
-    bar.className = 'anomalous-gallery-toolbar';
-    bar.append(search.element, newestCompareButton('anomalous-gallery-newest'));
-    return bar;
+
+    owner.galleryMediaSwitch = createGalleryMediaSwitch(() => owner.loadGalleryImages(1, true, { refresh: false }));
+    header.append(search.element, owner.galleryMediaSwitch, newestCompareButton('anomalous-gallery-newest'));
+    return header;
 }
 
 export async function loadGalleryImages(page = 1, reset = false, { refresh = reset } = {}) {
@@ -64,12 +70,14 @@ export async function loadGalleryImages(page = 1, reset = false, { refresh = res
             const params = new URLSearchParams({ page: String(page), limit: '50' });
             if (refresh) params.set('refresh', '1');
             terms.forEach(term => params.append('term', term));
+            appendGalleryFilter(params);
             const res = await fetch(`/anomalous/gallery_images?${params}`);
             const data = await res.json();
             if (termsKey !== JSON.stringify(this.gallerySearchTerms || [])) {
                 this.galleryReloadPending = true;
                 return;
             }
+            this.galleryMediaSwitch?.refresh(Boolean(data.has_videos));
             if (this.gallerySearchCount) {
                 this.gallerySearchCount.textContent = query && Number.isFinite(data.total) ? t('gallerySearchCount', { count: data.total }) : '';
             }
@@ -91,6 +99,7 @@ export async function loadGalleryImages(page = 1, reset = false, { refresh = res
                     return {
                         filename: imgData.filename,
                         subfolder: imgData.subfolder || '',
+                        media_type: imgData.media_type,
                         url: `/view?filename=${q_file}&subfolder=${q_sub}&type=output`,
                         sourceImage: {
                             type: 'output',
@@ -437,7 +446,7 @@ export function showGallerySelectMode(model) {
 
 
 
-export function showGalleryViewer(src) {
+export function showGalleryViewer(src, isVideo = false) {
         let viewer = document.getElementById('anomalous-gallery-viewer');
         if (!viewer) {
             viewer = document.createElement('dialog');
@@ -451,7 +460,15 @@ export function showGalleryViewer(src) {
             const img = document.createElement('img');
             img.id = 'anomalous-gallery-viewer-img';
 
+            const video = document.createElement('video');
+            video.id = 'anomalous-gallery-viewer-video';
+            video.controls = true;
+            video.autoplay = true;
+            video.loop = true;
+            video.style.display = 'none';
+
             viewer.appendChild(img);
+            viewer.appendChild(video);
             viewer.appendChild(closeBtn);
 
             let scale = 1;
@@ -460,22 +477,26 @@ export function showGalleryViewer(src) {
             let isDragging = false;
             let startX = 0, startY = 0;
 
-            const resetImgTransform = () => {
+            const resetTransform = () => {
                 scale = 1; translateX = 0; translateY = 0;
                 img.style.transform = `translate(0px, 0px) scale(1)`;
                 img.style.cursor = 'grab';
             };
-
-            closeBtn.onclick = () => {
-                viewer.close();
-                resetImgTransform();
+            viewer.stopVideo = () => {
+                video.pause();
+                video.style.display = 'none';
+                video.removeAttribute('src');
+                video.load(); // drops the file, so its sound cannot go on
             };
 
+            // However it closes (the ×, a click beside the picture, Esc), the video stops.
+            viewer.addEventListener('close', () => {
+                resetTransform();
+                viewer.stopVideo();
+            });
+            closeBtn.onclick = () => viewer.close();
             viewer.onclick = (e) => {
-                if (e.target === viewer) {
-                    viewer.close();
-                    resetImgTransform();
-                }
+                if (e.target === viewer) viewer.close();
             };
 
             viewer.addEventListener('wheel', (e) => {
@@ -510,11 +531,20 @@ export function showGalleryViewer(src) {
         }
 
         const img = document.getElementById('anomalous-gallery-viewer-img');
-        img.src = src;
+        const video = document.getElementById('anomalous-gallery-viewer-video');
 
-        // Reset scale and translation when opening a new image
-        img.style.transform = `translate(0px, 0px) scale(1)`;
-        img.style.cursor = 'grab';
+        if (isVideo) {
+            img.style.display = 'none';
+            video.style.display = 'block';
+            video.src = src;
+            video.play().catch(() => {});
+        } else {
+            viewer.stopVideo();
+            img.style.display = 'block';
+            img.src = src;
+            img.style.transform = `translate(0px, 0px) scale(1)`;
+            img.style.cursor = 'grab';
+        }
 
         if (!viewer.open) viewer.showModal();
     }

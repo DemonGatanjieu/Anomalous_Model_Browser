@@ -1,20 +1,6 @@
 /* Comparing parameters (ui_param_compare.js): the gallery card's ⇄, the pick bar, the window,
    the canvas-vs-newest-picture buttons; a parameter set's key values (ui_param_set_keys.js). */
 
-.anomalous-gallery-toolbar {
-    display: flex;
-    flex-shrink: 0;
-    align-items: center;
-    gap: 8px;
-    margin: 12px 20px 0;
-}
-
-.anomalous-gallery-toolbar .anomalous-gallery-search {
-    flex: 1 1 auto;
-    min-width: 0;
-    margin: 0;
-}
-
 .anomalous-gallery-newest,
 .anomalous-activity-newest {
     flex: 0 0 auto;

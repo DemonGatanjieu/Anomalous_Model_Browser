@@ -24,6 +24,7 @@ import { saveApiKey } from './ui_scan_settings.js';
 import { exportBackup, importBackup } from './ui_backup.js';
 import { followsSelection, setFollowsSelection } from './shell_open_rules.js';
 import { FOLDER_PRESETS, expandFolder } from './download_places.js';
+import { createGalleryFormatSettings } from './ui_gallery_filter.js';
 
 const t = (key, params) => translate(key, params);
 // The full written guide: the README, at its Chinese half for Chinese.
@@ -182,6 +183,13 @@ function cardsGroup(owner, redraw) {
                 reload();
             })),
         cacheRow(owner),
+    );
+}
+
+function galleryGroup(owner) {
+    return group('settingsGallery',
+        // The gallery lists again when it is next shown.
+        row('galleryFormatsTitle', 'galleryFormatsHelp', createGalleryFormatSettings(() => { owner.galleryLoaded = false; })),
     );
 }
 
@@ -381,7 +389,7 @@ function helpGroup(owner) {
 
 // Tab -> its title and its cards, in order.
 const TABS = [
-    ['look', 'settingsTabLook', (owner, redraw) => [appearanceGroup(owner, redraw), cardsGroup(owner, redraw), openingGroup(owner, redraw)]],
+    ['look', 'settingsTabLook', (owner, redraw) => [appearanceGroup(owner, redraw), cardsGroup(owner, redraw), galleryGroup(owner), openingGroup(owner, redraw)]],
     ['models', 'settingsTabModels', (owner, redraw) => [foldersGroup(owner), downloadGroup(owner, redraw)]],
     ['workflows', 'settingsTabWorkflows', (owner) => [workflowGroup(owner)]],
     ['prompts', 'settingsTabPrompts', () => [translationGroup()]],
