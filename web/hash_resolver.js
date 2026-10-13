@@ -103,7 +103,9 @@ app.registerExtension({
                     const liveNode = liveNodes.find(n => n.id === node.id);
 
                     if (node.widgets_values && node.widgets_values.length > 0) {
-                        for (const val of node.widgets_values) {
+                        for (const saved of node.widgets_values) {
+                            // A Power Lora Loader row is an object naming its LoRA.
+                            const val = typeof saved?.lora === 'string' ? saved.lora : saved;
                             if (typeof val === 'string') {
                                 usedNames.add(val).add(val.replace(/\\/g, '/')).add(val.split(/[/\\]/).pop());
                             }

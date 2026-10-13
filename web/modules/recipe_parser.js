@@ -1,5 +1,7 @@
 import { promptBoxes, promptNameRole } from './prompt_boxes.js';
 import { isAllInOneLoaderType, isPlaceholderModelValue } from './recipe_identity.js';
+import { isSelectedModelFile, nodeType, normaliseName, numberValue, textValue, widgetValue } from './recipe_widgets.js';
+import { nodeLoras, syncLoraMetadata } from './recipe_loras.js';
 
 /**
  * Read-only helpers for turning the live LiteGraph canvas into a compact
@@ -13,12 +15,10 @@ const MAX_WIDGETS_PER_NODE = 64;
 const MAX_WIDGET_TEXT = 320;
 const MAX_PINNED_VALUE_JSON = 2400;
 const MAX_PARAMETER_CHOICES = 5000;
-const MODEL_FILE_PATTERN = /\.(?:safetensors|ckpt|pt|bin|sft|gguf)$/i;
 const NATIVE_MODEL_LOADER = /^(checkpointloader(simple)?|unetloader)$/i;
 const NATIVE_MODEL_WIDGETS = ['ckpt_name', 'checkpoint', 'unet_name', 'unet', 'model_name'];
 // Unambiguous names only: `model_name` also belongs to upscalers, detectors, etc.
 const MODEL_WIDGETS = ['ckpt_name', 'unet_name'];
-const LORA_LOADER = /lora.*loader|loader.*lora/i;
 const SAMPLING_NODE = /sampl|scheduler|noise|guider/i;
 const SENSITIVE_WIDGET_NAME = /(?:api.?key|access.?token|auth|password|passwd|secret|credential)/i;
 
@@ -45,41 +45,8 @@ const SUPPORTED_CONDITIONING_PASSTHROUGH = new Set([
     'conditioningzeroout',
 ]);
 
-function nodeType(node) {
-    return String(node?.type || node?.comfyClass || '');
-}
-
-function normaliseName(value) {
-    return String(value || '').trim().toLowerCase();
-}
-
 export function isSupportedPromptNodeType(value) {
     return SUPPORTED_PROMPT_NODE_TYPES.has(normaliseName(value));
-}
-
-function widgetValue(node, names, fallbackIndex = -1) {
-    const wanted = new Set(names.map(normaliseName));
-    const widgets = Array.isArray(node?.widgets) ? node.widgets : [];
-    const named = widgets.find((widget) => wanted.has(normaliseName(widget?.name)));
-    if (named && named.value !== undefined && named.value !== null) return named.value;
-
-    if (fallbackIndex >= 0) {
-        const fallback = widgets[fallbackIndex]?.value;
-        if (fallback !== undefined && fallback !== null) return fallback;
-        const serialised = node?.widgets_values?.[fallbackIndex];
-        if (serialised !== undefined && serialised !== null) return serialised;
-    }
-    return null;
-}
-
-function textValue(value) {
-    return typeof value === 'string' ? value.trim() : '';
-}
-
-function numberValue(value) {
-    if (value === null || value === undefined || value === '') return null;
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
 }
 
 function summariseWidgetValue(value) {
@@ -200,42 +167,6 @@ function findSummaryWidget(params, change) {
     const widget = (node.widgets || []).find((item) => Number.isInteger(change.widgetIndex) && item.index === change.widgetIndex)
         || (node.widgets || []).find((item) => item.name === change.widgetName && valuesMatch(item.value, change.previousValue));
     return widget ? { node, widget } : null;
-}
-
-function isSelectedModelFile(value) {
-    const text = textValue(value);
-    return Boolean(text && !isPlaceholderModelValue(text) && MODEL_FILE_PATTERN.test(text));
-}
-
-/** Current LoRA file shown by the edited node (single-LoRA loaders or a `lora_N_*` stack slot). */
-function loraNameForChange(params, change, widget) {
-    const summary = (params.nodes || []).find((item) => String(item?.id) === String(change.nodeId));
-    const slot = /^lora_(\d+)_/.exec(widget)?.[1];
-    const names = slot ? [`lora_${slot}_name`] : ['lora_name', 'lora', 'model_name'];
-    const nameWidget = (summary?.widgets || []).find((item) => names.includes(normaliseName(item?.name)));
-    return textValue(nameWidget?.value);
-}
-
-function syncLoraMetadata(params, change, type, widget) {
-    const isLoraNode = LORA_LOADER.test(type) || isAllInOneLoaderType(type);
-    const isStackSlot = /^lora_\d+_(name|strength|model_strength|clip_strength)$|^lora_name_\d+$/.test(widget);
-    if (!isLoraNode && !isStackSlot) return;
-    if (!Array.isArray(params.loras)) return;
-
-    if (/^(lora_name|lora|lora_\d+_name|lora_name_\d+)$/.test(widget) || (LORA_LOADER.test(type) && widget === 'model_name')) {
-        const previous = textValue(change.previousValue);
-        const lora = params.loras.find((item) => item?.name === previous);
-        if (lora && isSelectedModelFile(change.value)) lora.name = textValue(change.value);
-        return;
-    }
-    const lora = params.loras.find((item) => item?.name === loraNameForChange(params, change, widget));
-    if (!lora) return;
-    if (/^(strength_model|model_strength|lora_model_strength|lora_\d+_strength|lora_\d+_model_strength)$/.test(widget)) {
-        lora.strength_model = numberValue(change.value);
-    }
-    if (/^(strength_clip|clip_strength|lora_clip_strength|lora_\d+_clip_strength)$/.test(widget)) {
-        lora.strength_clip = numberValue(change.value);
-    }
 }
 
 /** Keep the presentation summary in step with an edited widget, using the same node rules as extraction. */
@@ -446,38 +377,8 @@ export function extractRecipeMetadata(graph) {
             if (!metadata.baseModel) metadata.baseModel = model;
         }
 
-        // LoRA loaders and all-in-one loaders: one entry per node, like the loaders themselves.
-        const isLoraLoader = LORA_LOADER.test(type);
-        if (isLoraLoader || isAllInOneLoaderType(type)) {
-            const loraName = textValue(widgetValue(node, ['lora_name', 'lora', 'model_name'], isLoraLoader ? 0 : -1));
-            if (isLoraLoader ? loraName && !isPlaceholderModelValue(loraName) : isSelectedModelFile(loraName)) {
-                metadata.loras.push({
-                    name: loraName,
-                    strength_model: numberValue(widgetValue(node, ['strength_model', 'model_strength', 'lora_model_strength'], isLoraLoader ? 1 : -1)),
-                    strength_clip: numberValue(widgetValue(node, ['strength_clip', 'clip_strength', 'lora_clip_strength'], isLoraLoader ? 2 : -1)),
-                });
-            }
-        }
-
-        if (Array.isArray(node.widgets)) {
-            for (const widget of node.widgets) {
-                const wName = String(widget?.name || '').toLowerCase();
-                const match = wName.match(/^lora(?:_(\d+))?_name$/) || wName.match(/^lora_name_(\d+)$/);
-                if (match && match[1]) {
-                    const slotNum = match[1];
-                    const slotVal = textValue(widget?.value);
-                    if (isSelectedModelFile(slotVal)) {
-                        const slotStrengthModel = numberValue(widgetValue(node, [`lora_${slotNum}_strength`, `lora_${slotNum}_model_strength`, `lora_model_strength_${slotNum}`], -1));
-                        const slotStrengthClip = numberValue(widgetValue(node, [`lora_${slotNum}_clip_strength`, `lora_clip_strength_${slotNum}`], -1));
-                        metadata.loras.push({
-                            name: slotVal,
-                            strength_model: slotStrengthModel,
-                            strength_clip: slotStrengthClip,
-                        });
-                    }
-                }
-            }
-        }
+        // LoRAs: loaders, all-in-one loaders, stack rows, Power Lora Loader rows (recipe_loras.js).
+        metadata.loras.push(...nodeLoras(node, type));
 
         // Sniff samplers
         if (/^ksampler(advanced)?$/i.test(type) || /samplercustom/i.test(type) || /sampler/i.test(type) || widgetValue(node, ['sampler_name', 'sampler']) !== null || widgetValue(node, ['steps']) !== null) {

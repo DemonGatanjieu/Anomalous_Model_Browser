@@ -2,9 +2,9 @@
  * The LoRA nodes a combo (搭配) puts its LoRAs in: ComfyUI's own (one LoRA loader per LoRA, in a
  * chain), rgthree's Power Lora Loader (one node, a row per LoRA) or Easy-Use's LoRA stack (rows
  * of up to ten per stack node, applied to the model by Easy Apply LoraStack). A third-party one
- * is offered only where its node pack is installed. Also the Power Lora Loader's rows for combos
- * saved from canvas nodes (combo_structure.js): they are no drop-downs, so they are read and
- * made here. No imports, so it is tested on its own (LiteGraph is read from globalThis).
+ * is offered only where its node pack is installed. Also the Power Lora Loader's rows, which are
+ * no drop-downs: read and made again for combos saved from canvas nodes (combo_structure.js), and
+ * shown to Model Check as drop-down-like boxes (model_check.js). No imports, so it is tested on its own (LiteGraph is read from globalThis).
  */
 
 export const POWER_LORA = 'Power Lora Loader (rgthree)';
@@ -34,11 +34,16 @@ export function installedLoraNodes() {
     return LORA_NODES.filter(isInstalled);
 }
 
+// ComfyUI's LoRA files, as its own LoRA loader lists them.
+const loraList = () => {
+    const list = registered().LoraLoader?.nodeData?.input?.required?.lora_name?.[0];
+    return Array.isArray(list) ? list.filter(value => typeof value === 'string') : [];
+};
+
 /** ComfyUI's own spelling of a LoRA path (folders with \ on Windows), from its LoRA loader's list. */
 export function nativeLora(path) {
-    const list = registered().LoraLoader?.nodeData?.input?.required?.lora_name?.[0];
     const wanted = String(path ?? '').replace(/\\/g, '/');
-    return (Array.isArray(list) ? list : []).find(value => typeof value === 'string' && value.replace(/\\/g, '/') === wanted) ?? path;
+    return loraList().find(value => value.replace(/\\/g, '/') === wanted) ?? path;
 }
 
 const inputIndex = (node, name) => (node.inputs || []).findIndex(input => input?.name === name);
@@ -119,6 +124,27 @@ export function powerLoraRows(node) {
         .map(({ value }) => ({ on: value.on !== false, lora: typeof value.lora === 'string' ? value.lora : null,
             strength: Number.isFinite(value.strength) ? value.strength : 1,
             strengthTwo: Number.isFinite(value.strengthTwo) ? value.strengthTwo : null }));
+}
+
+/**
+ * A Power Lora Loader's switched-on rows with a LoRA, as boxes Model Check and the model picker
+ * read like a drop-down: { name, type: 'combo', value (the row's LoRA), options.values (ComfyUI's
+ * LoRA list) }. Setting the value changes only the row's LoRA; what Model Check notes on a box
+ * (anomalous_replaced) is kept on the row, so it lasts from one check to the next.
+ */
+export function powerLoraRowBoxes(node) {
+    if (node?.type !== POWER_LORA) return [];
+    const values = loraList();
+    return (node.widgets || []).filter(row => /^lora_\d+$/.test(row.name || '') && typeof row.value?.lora === 'string' && row.value.on !== false)
+        .map(row => ({
+            name: row.name,
+            type: 'combo',
+            options: { values },
+            get value() { return row.value?.lora ?? null; },
+            set value(lora) { row.value = { ...row.value, lora }; },
+            get anomalous_replaced() { return row.anomalous_replaced; },
+            set anomalous_replaced(note) { row.anomalous_replaced = note; },
+        }));
 }
 
 /** Makes `rows` on a new Power Lora Loader; they are named lora_1, lora_2… in that order. */

@@ -441,8 +441,9 @@ covered by the `styles.css` manifest.
   dialog, the slot editor, the slot model picker and "New"; `ui_translation_peek.js` is the
   read-only translation panel beside its prompts. `lora_nodes.js` knows the LoRA nodes a default
   combo puts its LoRAs in (ComfyUI's chain, rgthree's Power Lora Loader, Easy-Use's LoRA stack, the
-  third-party ones only when installed) and a Power Lora Loader's rows for structures;
-  `ui_lora_node_choice.js` is the default combo editor's choice among them.
+  third-party ones only when installed) and a Power Lora Loader's rows (for structures, and as
+  drop-down-like boxes for Model Check); `ui_lora_node_choice.js` is the default combo editor's
+  choice among them.
 - `detached_graph.js` lays a workflow on a graph of its own, off the canvas, under an id of its own: ComfyUI keeps widget
   values by graph id, so a copy under the canvas's id would write its values onto the canvas.
 - `recipe_save.js` saves Workflow Recipes for the canvas save and for an output image's workflow (the gallery's keep menu,
@@ -532,11 +533,13 @@ covered by the `styles.css` manifest.
   `ui_recipe_metadata.js` owns inline persistence, and `ui_recipe_detail_dom.js` owns
   the DOM/copy helpers shared by detail subviews. `recipe_identity.js` derives model
   references from native loaders plus a table of verified all-in-one loader layouts
-  (`ALL_IN_ONE_LOADER_SPECS`, mirrored in `api/recipe_schema.py`); other third-party
-  widgets stay parameters. References are keyed by
+  (`ALL_IN_ONE_LOADER_SPECS`) and two stack nodes by their rows (rgthree's Power Lora Loader,
+  Easy-Use's LoRA stack; `nodeModelValues`), all mirrored in `api/recipe_schema.py`; other
+  third-party widgets stay parameters. References are keyed by
   `(node_id, widget_index, category, saved_value)`. `recipe_parser.js` summarizes
   models, LoRAs, samplers and prompts (linked prompt nodes before embedded loader
-  prompts) and keeps the summary in step with widget edits using the same node rules.
+  prompts) and keeps the summary in step with widget edits using the same node rules; which
+  LoRAs a node loads is `recipe_loras.js`, and reading a node's boxes `recipe_widgets.js`.
   `ui_recipe_catalog.js` is the Workflows page: one bar (search, the filter menu with kind and tag,
   the count, grid or list, share and import, save the canvas), the list, the empty page's three-step
   guide (`renderRecipeEmptyGuide`) and the catalog-wide model readiness check
@@ -579,7 +582,8 @@ covered by the `styles.css` manifest.
   need a workflow-carried hash before Model Check recovers them.
 - `ui_dom.js` provides small DOM/JSON helpers; `material_inspector.js` owns the image
   workbench's metadata and node-parameter rendering.
-- `model_check.js` checks the open workflow's models against this computer (Model
+- `model_check.js` checks the open workflow's models (drop-downs naming model files, and
+  switched-on Power Lora Loader rows through `lora_nodes.js`) against this computer (Model
   Check's verdicts, no DOM; the feature was called Model Doctor, and code and CSS still
   say "doctor") and puts a found file into its node; `ui_doctor.js` is the
   Model Check page and `ui_doctor_banner.js` the bar over the canvas when an opened workflow

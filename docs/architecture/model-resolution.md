@@ -145,6 +145,12 @@ path only if it is present in the target widget's choices. Then it updates the
 dropdown through the node's widget hooks, which also clears ComfyUI's
 missing-model mark.
 
+The check reads every drop-down naming a model file, and rgthree's Power Lora Loader's
+switched-on rows, which are no drop-downs (`powerLoraRowBoxes` in `lora_nodes.js` shows each
+as one: ComfyUI's LoRA list as its choices, a fix changing only the row's LoRA). The
+fingerprints a saved workflow carries (`hash_resolver.js`) and a picture's model search
+(`api/image_search.py`) read those rows too.
+
 Checking never changes the workflow (`model_check.js`). Every opened workflow is
 checked without reloading ComfyUI's model lists; when models are missing, a bar
 over the canvas says how many and how many hash matches can be put in. Only a

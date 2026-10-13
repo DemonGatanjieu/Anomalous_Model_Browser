@@ -64,6 +64,30 @@ export function deriveNodeModelSpecs(nodeOrType) {
     return [];
 }
 
+const POWER_LORA_TYPE = 'power lora loader (rgthree)';
+const EASY_LORA_STACK_TYPE = 'easy lorastack';
+const EASY_STACK_ROWS = 10;
+
+/**
+ * Every model a saved node names: [widgetIndex, category, widgetName, value]. Known loaders by
+ * position (deriveNodeModelSpecs); two stack nodes by their rows: rgthree's Power Lora Loader (a
+ * row is an object { on, lora, strength }; switched-off rows load nothing) and Easy-Use's LoRA
+ * stack (lora_N_name at 3 + 4·(N−1), up to num_loras). Must stay in sync with
+ * _model_reference_values in api/recipe_schema.py.
+ */
+export function nodeModelValues(node) {
+    const values = Array.isArray(node?.widgets_values) ? node.widgets_values : [];
+    const lowered = nodeType(node).toLowerCase();
+    if (lowered === POWER_LORA_TYPE) {
+        const rows = values.flatMap((value, index) => (value && typeof value === 'object' && 'lora' in value ? [[index, value]] : []));
+        return rows.flatMap(([index, value], row) => (value.on === false ? [] : [[index, 'lora', `lora_${row + 1}`, value.lora]]));
+    }
+    if (lowered === EASY_LORA_STACK_TYPE) {
+        const count = Math.min(Math.max(Math.trunc(Number(values[2])) || 0, 0), EASY_STACK_ROWS);
+        return Array.from({ length: count }, (_, row) => [3 + 4 * row, 'lora', `lora_${row + 1}_name`, values[3 + 4 * row]]);
+    }
+    return deriveNodeModelSpecs(node).map(([index, category, name]) => [index, category, name, values[index]]);
+}
 
 function statusFor(identity) {
     const status = identity?.status;
@@ -118,9 +142,7 @@ export function deriveRecipeModelReferences(recipe) {
     const references = [];
     for (const node of recipe?.workflow?.nodes || []) {
         const type = nodeType(node);
-        const values = Array.isArray(node?.widgets_values) ? node.widgets_values : [];
-        for (const [widgetIndex, category, widgetName] of deriveNodeModelSpecs(node)) {
-            const savedValue = values[widgetIndex];
+        for (const [widgetIndex, category, widgetName, savedValue] of nodeModelValues(node)) {
             if (typeof savedValue !== 'string' || !savedValue.trim() || isPlaceholderModelValue(savedValue)) continue;
             const identity = workflowIdentity(recipe?.workflow, node?.id, savedValue)
                 || { status: 'unverified' };

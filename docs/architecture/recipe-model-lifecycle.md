@@ -132,7 +132,13 @@ the same normalization and enrichment boundaries as local recipes.
   native loaders plus `ALL_IN_ONE_LOADER_SPECS` (verified serialized layouts),
   mirrored by `_model_reference_specs` in `api/recipe_schema.py`. Add a loader
   to both tables with its real widget order; never infer a category from a
-  file name, and skip placeholder values such as `None` / `Baked VAE`;
+  file name, and skip placeholder values such as `None` / `Baked VAE`. Stack
+  nodes whose rows are not fixed positions are read by `nodeModelValues` /
+  `_model_reference_values` (the same two sides): rgthree's Power Lora Loader
+  (rows are `{on, lora, strength}` objects; off rows are skipped, rows numbered
+  as rgthree numbers them) and Easy-Use's LoRA stack (`lora_N_name` at
+  3 + 4·(N−1), up to `num_loras`). Only widely used nodes are read this way;
+  ComfyUI's own loaders stay the reference;
 - `web/modules/recipe_provenance.js`: pure Hash lookup/remap/replace helpers;
 - `web/modules/recipe_actions.js`: canvas transactions and append rollback;
 - `web/modules/ui_recipe_detail.js`: user actions that invoke the contracts;

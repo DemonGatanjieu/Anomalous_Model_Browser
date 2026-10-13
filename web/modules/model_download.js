@@ -10,7 +10,7 @@
 
 import { app } from "../../../scripts/app.js";
 import { translate as t } from './locales.js';
-import { applyModelFix, checkWorkflowModels } from './model_check.js';
+import { applyModelFix, checkWorkflowModels, modelBoxes } from './model_check.js';
 import { DEFAULT_FOLDER, destinationFor, expandFolder } from './download_places.js';
 import { inferModelFolderTypes } from './model_policies.js';
 import { startScan, targetsForItems } from './scan_runner.js';
@@ -263,7 +263,7 @@ async function afterDownload(job) {
     const rel = slashes(job.rel);
     let put = 0;
     for (const node of app.graph?._nodes || []) {
-        for (const widget of node.widgets || []) {
+        for (const widget of modelBoxes(node)) {
             if (widget.type !== 'combo' || widget.value !== job.value) continue;
             const target = (widget.options?.values || []).find(value => typeof value === 'string' && slashes(value) === rel);
             // Same place as the workflow says: nothing changes, ComfyUI's missing mark goes.

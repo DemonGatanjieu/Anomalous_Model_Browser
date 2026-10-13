@@ -4,7 +4,8 @@
  * model only by the hash (and size) the workflow carries; a file of the same size is only
  * offered (docs/architecture/model-resolution.md). Checking changes nothing; only
  * applyModelFix / fixWorkflowModels write to nodes. No DOM: ui_doctor.js and
- * ui_doctor_banner.js show the result.
+ * ui_doctor_banner.js show the result. A model box is a drop-down naming a model file, or a
+ * switched-on row of rgthree's Power Lora Loader (lora_nodes.js), read and written the same way.
  *
  * An entry: { node, widget, value, state, target, via, record, local }, state one of
  * ready · changed (there, but not the file the workflow was saved with) · fixable (target
@@ -18,6 +19,7 @@ import { app } from "../../../scripts/app.js";
 import { recordCanvasStep } from './canvas_history.js';
 import { findWorkflowHashRecord } from './recipe_provenance.js';
 import { inferModelFolderTypes, requiresHashForModelRecovery } from './model_policies.js';
+import { powerLoraRowBoxes } from './lora_nodes.js';
 
 const MODEL_FILE = /\.(safetensors|ckpt|pt|bin|pth|sft|gguf)$/i;
 const BATCH = 256;
@@ -31,10 +33,15 @@ const nativeValue = (widget, filename) => choices(widget).find(v => typeof v ===
 /** Entries that keep the workflow from running as saved. */
 export const isProblem = (entry) => PROBLEMS.has(entry.state);
 
+/** A node's boxes that may name a model: its widgets, and a Power Lora Loader's rows. */
+export function modelBoxes(node) {
+    return [...(node.widgets || []), ...powerLoraRowBoxes(node)];
+}
+
 function modelRefs() {
     const refs = [];
     for (const node of app.graph?._nodes || []) {
-        for (const widget of node.widgets || []) {
+        for (const widget of modelBoxes(node)) {
             if (widget.type === 'combo' && typeof widget.value === 'string' && MODEL_FILE.test(widget.value)) {
                 refs.push({ node, widget, value: widget.value });
             }

@@ -93,6 +93,8 @@ def build_record(path):
                     continue
                 texts.append(str(node.get("class_type", "")))
                 for key, value in (node.get("inputs") or {}).items():
+                    if isinstance(value, dict) and isinstance(value.get("lora"), str):
+                        value = value["lora"]  # a row of rgthree's Power Lora Loader
                     if isinstance(value, str):
                         texts.append(value)
                         if MODEL_FILE.search(value):

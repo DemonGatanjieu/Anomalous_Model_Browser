@@ -29,6 +29,9 @@ ALL_IN_ONE_LOADER_SPECS = {
     "efficient loader": ((0, "checkpoint", "ckpt_name"), (1, "vae", "vae_name"), (3, "lora", "lora_name")),
 }
 PLACEHOLDER_MODEL_VALUES = {"none", "baked vae"}
+POWER_LORA_TYPE = "power lora loader (rgthree)"
+EASY_LORA_STACK_TYPE = "easy lorastack"
+EASY_STACK_ROWS = 10
 
 
 def _model_reference_specs(node):
@@ -58,6 +61,29 @@ def _model_reference_specs(node):
         if "tripleclip" in lowered:
             specs.append((2, "text_encoder", "clip"))
     return specs
+
+
+def _model_reference_values(node):
+    """(widget_index, category, widget_name, saved_value) for every model a saved node names: known
+    loaders by position, and two stack nodes by their rows: rgthree's Power Lora Loader (a row is a
+    dict {on, lora, strength}; switched-off rows load nothing) and Easy-Use's LoRA stack
+    (lora_N_name at 3 + 4*(N-1), up to num_loras). Must stay in sync with nodeModelValues in
+    web/modules/recipe_identity.js."""
+    values = _widget_values(node)
+    lowered = _node_type(node).lower().strip()
+    if lowered == POWER_LORA_TYPE:
+        rows = [(index, value) for index, value in enumerate(values) if isinstance(value, dict) and "lora" in value]
+        return [(index, "lora", f"lora_{row}", value.get("lora"))
+                for row, (index, value) in enumerate(rows, 1) if value.get("on") is not False]
+    if lowered == EASY_LORA_STACK_TYPE:
+        try:
+            count = max(0, min(int(values[2]), EASY_STACK_ROWS))
+        except (IndexError, TypeError, ValueError):
+            count = 0
+        return [(3 + 4 * row, "lora", f"lora_{row + 1}_name", values[3 + 4 * row] if 3 + 4 * row < len(values) else None)
+                for row in range(count)]
+    return [(index, category, name, values[index] if index < len(values) else None)
+            for index, category, name in _model_reference_specs(node)]
 
 
 def _identity_for_reference(saved_value):
@@ -153,9 +179,7 @@ def _build_model_references(recipe, verify_identities=False):
     for node in workflow.get("nodes", []) if isinstance(workflow, dict) else []:
         if not isinstance(node, dict):
             continue
-        values = _widget_values(node)
-        for widget_index, category, widget_name in _model_reference_specs(node):
-            saved_value = values[widget_index] if widget_index < len(values) else None
+        for widget_index, category, widget_name, saved_value in _model_reference_values(node):
             if not isinstance(saved_value, str) or not saved_value.strip():
                 continue
             if saved_value.strip().lower() in PLACEHOLDER_MODEL_VALUES:

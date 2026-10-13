@@ -58,6 +58,16 @@ class ImageSearchTests(unittest.TestCase):
     def names(self, query):
         return [image['filename'] for image in image_search.filter_images(str(self.root), self.images, query)]
 
+    def test_power_lora_loader_rows_name_their_loras(self):
+        prompt = json.dumps({'9': {'class_type': 'Power Lora Loader (rgthree)', 'inputs': {
+            'PowerLoraLoaderHeaderWidget': {'type': 'PowerLoraLoaderHeaderWidget'},
+            'lora_1': {'on': True, 'lora': 'Style\\ink wash.safetensors', 'strength': 0.8},
+            'model': ['4', 0]}}})
+        _png(self.root / 'd.png', prompt=prompt)
+        record = image_search.build_record(str(self.root / 'd.png'))
+        self.assertIn('style/ink wash.safetensors', record['models'])
+        self.assertIn('ink wash.safetensors', record['models'])
+
     def test_prompt_text_models_and_seed(self):
         self.assertEqual(self.names('赛博朋克'), ['a.png'])
         self.assertEqual(self.names('miaomiao realskin'), ['a.png'], 'all terms must match')
