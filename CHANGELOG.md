@@ -24,15 +24,15 @@
 - Saving no longer marks the name or notes as yours when you did not touch them.
 
 ### 🪪 Model details, rearranged (模型详情页重排)
-- From a Bilibili comment: the buttons were small and spread over five places, and the file name showed twice. Now the title bar is gone and everything sits beside the cover: a small **← Models / LoRA** to go back (Esc does the same; from Model Check or the assistant it says where it leads), the model's **name**, the size / base model / source line with the Civitai and source links, and one row of buttons: **Add node** (the one coloured button), **Edit**, **Folder** (shows the file in Explorer), **Outputs** (pictures made with it) and **⋯**.
-- **⋯** holds Copy path, Copy file name and **Delete**, which is no longer a red button next to Add node; it asks first in AMB's own dialog, and the files still go to the Recycle Bin.
-- The file's full path shows once, in a line under the buttons with **Copy**. The ⬇ (jump to the bottom) button is gone.
+- From a Bilibili comment: the buttons were small and spread over five places, and the file name showed twice. Now the title bar is gone and everything sits beside the cover: a small **← Models / LoRA** to go back (Esc does the same; from Model Check or the assistant it says where it leads), the model's **name**, the size / base model / source line with the Civitai and source links, and one row of buttons: **Add node** (the one coloured button), **Edit**, **Folder** (shows the file in Explorer; pointing at it shows the path) and **Outputs** (pictures made with it).
+- The file's full path shows once, at the foot of the details with **Copy** and **Delete model**. Delete is no longer a red button next to Add node; it asks first in AMB's own dialog, and the files still go to the Recycle Bin. The ⬇ (jump to the bottom) button is gone.
 - In a narrow window (the browser docked beside the canvas) the cover column is hidden as before, so a small cover now sits beside the name.
 - A model's description (Civitai's own text) keeps its headings a little above the text instead of poster size.
 
 ### 🗂️ The folder column follows the type; open folders in Explorer (文件夹栏跟着类型走，一键打开文件夹)
 - The column left of the models used to list every type's folders (raw names like `checkpoints (1)`, `[Root]` rows with 0, nothing marking where you were), repeating the chips above it. Now it shows the folders of the type you picked: **All**, then its subfolders as a tree whose numbers include their subfolders (empty ones dimmed, ▾ folds one), and **In the top folder** for models lying directly in the type's folder. The folder you are looking at is marked.
 - **📂 Open** next to the type's name opens that type's folder in Explorer, and a 📂 on any folder you point at opens that one, so you can drop files in or tidy up by hand. Like the details' Folder button, it works only on the computer ComfyUI runs on.
+- In a narrow window (docked beside the canvas) the column opens as a drawer over the page; closing it no longer squeezes the page for a moment as it slides away.
 
 ### 🎨 The Combos page looks like the others (搭配页和其他页面统一)
 - It no longer sits in a lighter, inset box with a shadow, a second "Combos" title and a red ✕: it fills the page in the same colours as Models and Workflows. The explanation of what a combo is folds behind **?** (shown by itself while you have no combos), and the editor's Back reads **← All combos**.

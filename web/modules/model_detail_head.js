@@ -2,17 +2,16 @@
  * The top of a model's details, beside its cover: back (a crumb, "Models / LoRA", or back to
  * Model Check, the assistant or the model before; Esc presses it), the name, the size / base /
  * source line with the source links, and one row of actions: Add node (the one blue button),
- * Edit, Folder, Outputs and ⋯ (Copy path, Copy file name, Delete). Where the page is too narrow
- * for the cover column, a small cover sits beside the name instead.
+ * Edit, Folder (its tooltip shows the path) and Outputs. The path, Copy and Delete are at the
+ * foot of the details (model_location.js). Where the page is too narrow for the cover column,
+ * a small cover sits beside the name instead.
  */
 
 import { translate as t } from './locales.js';
-import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
 import { renderDetailLinks, renderSourceLine } from './model_source.js';
-import { copyToClipboard, showInFolder } from './model_location.js';
+import { showInFolder } from './model_location.js';
 import { cardPosterUrl, cardPreviewUrl } from './ui_grid.js';
 import { typeLabel } from './ui_model_types.js';
-import { openActionMenu } from './action_menu.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -38,29 +37,6 @@ function backLabel(owner) {
     if (typeof owner.recipeModelReturn === 'function') return [t('detailBack'), true];
     const group = (owner.foldersData || []).find(item => item.type === owner.currentType && item.path_idx === owner.currentPathIdx);
     return [t('detailBackModels', { type: group ? typeLabel(group) : owner.currentType }), false];
-}
-
-async function deleteModel(owner, model, where) {
-    if (!await anomalousConfirm(`${t('delConfirm')} ${model.filename} ${t('delConfirm2')}`, t('delModel'), { okLabel: t('delModel') })) return;
-    try {
-        const response = await fetch('/anomalous/delete_model', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...where, filename: model.filename }),
-        });
-        const data = await response.json();
-        if (data.status !== 'success') throw new Error(data.message);
-        owner.currentDetailObserver?.disconnect();
-        owner.currentDetailObserver = null;
-        owner.detailPanel.style.display = 'none';
-        owner.stopMediaInContainer(owner.detailPanel);
-        owner.detailPanel.replaceChildren();
-        owner.grid.style.display = 'grid';
-        owner.loadModels();
-        await anomalousAlert(t('delSuccess') + data.deleted.join('\n') + t('delNote'));
-    } catch (error) {
-        await anomalousAlert(t('delFail') + error.message);
-    }
 }
 
 function smallCover(owner, model) {
@@ -95,23 +71,13 @@ export function createDetailHead(owner, model, onBack) {
     title.append(name, facts);
     named.append(title);
 
-    let closeMenu = null;
-    const more = button('anomalous-detail-action', '⋯', () => {
-        if (closeMenu) return closeMenu();
-        closeMenu = openActionMenu(more, [
-            ...(model.file_path ? [{ icon: '📋', label: t('detailCopyPath'), run: () => copyToClipboard(model.file_path, 'detailPathCopied') }] : []),
-            { icon: '🏷️', label: t('detailCopyFilename'), run: () => copyToClipboard(model.filename, 'detailFilenameCopied') },
-            { icon: '🗑️', label: t('delModel'), run: () => deleteModel(owner, model, where), danger: true },
-        ], { onClose: () => { closeMenu = null; } });
-    }, t('detailMore'));
-    more.setAttribute('aria-label', t('detailMore'));
     const actions = el('div', 'anomalous-detail-actions');
     actions.append(
         button('anomalous-detail-action is-primary', t('applyToCanvas'), () => owner.applyModelToCanvas(owner.currentType, owner.currentSubfolder, model)),
         button('anomalous-detail-action', t('detailEdit'), () => owner.showEditModal(model)),
-        button('anomalous-detail-action', t('detailFolder'), () => showInFolder(model, where), t('detailOpenFolder')),
+        button('anomalous-detail-action', t('detailFolder'), () => showInFolder(model, where),
+            `${t('detailOpenFolder')}\n${model.file_path || model.filename}`),
         button('anomalous-detail-action', t('detailOutputs'), () => owner.showGeneratedGallery(model), t('detailGeneratedGallery')),
-        more,
     );
 
     head.append(crumb, named, actions);

@@ -7,7 +7,7 @@ import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { escapeHtml, setSafeRichHtml } from './safe_dom.js';
 import { renderInferredNote } from './model_source.js';
-import { createModelLocationCard } from './model_location.js';
+import { createModelFileFoot } from './model_location.js';
 import { createDetailHead } from './model_detail_head.js';
 
 const t = (key, params) => translate(key, params);
@@ -167,7 +167,6 @@ export function showDetail(model) {
         rightPanel.appendChild(createDetailHead(this, model, goBack));
         const inferredNote = renderInferredNote(m, () => this.showEditModal(model));
         if (inferredNote) rightPanel.appendChild(inferredNote);
-        rightPanel.appendChild(createModelLocationCard(model));
 
         // 1.5 Custom Notes Section (Google Material Card)
         if (m.custom_notes) {
@@ -435,6 +434,9 @@ export function showDetail(model) {
                 });
         }
         // ---------------------------------
+
+        rightPanel.appendChild(createModelFileFoot(this, model,
+            { type: this.currentType, path_idx: this.currentPathIdx, subfolder: this.currentSubfolder }));
 
         splitContainer.appendChild(leftPanel);
         splitContainer.appendChild(resizer);
