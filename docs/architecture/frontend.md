@@ -72,7 +72,8 @@ The main surfaces are:
 - Sidebar shell: navigation and persistent scan controls; focused child modules
   own the scan page, folder manager, and help dialog.
 - Grid and model detail: model browsing plus coordinated detail display in
-  `ui_detail.js`, metadata editing in `ui_model_editor.js`; `model_widget_path.js` puts a
+  `ui_detail.js` (its head with the actions in `model_detail_head.js`), metadata editing in
+  `ui_model_editor.js`; `model_widget_path.js` puts a
   model path into a loader's widget. The scan page's model picker is `ui_scan_picker.js`, its settings card `ui_scan_settings.js`.
 - Gallery: generated outputs (pictures and videos; All / Pictures / Videos beside the search
   and the hidden formats in Settings, `gallery_filter.js` + `ui_gallery_filter.js`) and the

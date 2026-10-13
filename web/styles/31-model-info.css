@@ -1,6 +1,6 @@
 /* The model editor (ui_model_editor.js: cover and its choices on the left, name, source link
    and notes on the right, Reset, Cancel and Save at the foot), and in the model details
-   (model_source.js) the header's link buttons and the note on what was read from the file. */
+   (model_source.js) the note on what was read from the file; the details' head after it. */
 
 .anomalous-medit-overlay {
     position: fixed;
@@ -361,34 +361,101 @@
     .anomalous-medit-foot { flex-wrap: wrap; padding: 12px 18px; }
 }
 
-/* The details header: the source link (the site's colour as a dot), Civitai, Edit. */
-.anomalous-detail-actions {
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    margin-left: auto;
+/* The top of a model's details (model_detail_head.js): the crumb back, the name with its
+   facts and source links, and the action row; Add node is the one accent-coloured button. */
+.anomalous-detail-head {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--amb-border-strong);
 }
 
-.anomalous-detail-link,
-.anomalous-detail-edit {
+.anomalous-detail-back {
+    align-self: flex-start;
+    margin-left: -6px;
+    padding: 2px 6px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font: inherit;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+
+.anomalous-detail-back:hover { background: rgba(var(--amb-ink-rgb), 0.08); color: var(--amb-text-main); }
+.anomalous-detail-back.is-leaving { color: var(--amb-link); font-weight: 600; }
+
+.anomalous-detail-named {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+/* Only where the cover column is hidden (ui_detail.js and 01-shell-tools.css: under 750 px). */
+.anomalous-detail-head-cover {
+    display: none;
+    flex: none;
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: var(--amb-bg-page);
+}
+
+@container (max-width: 750px) {
+    .anomalous-detail-head-cover { display: block; }
+}
+
+.anomalous-detail-title {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.anomalous-detail-name {
+    margin: 0;
+    color: var(--amb-text-main);
+    font-size: 1.45em;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.anomalous-detail-facts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    color: var(--amb-text-muted);
+    font-size: 0.9em;
+}
+
+.anomalous-detail-links {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.anomalous-detail-link {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
+    padding: 2px 8px;
     border: 1px solid var(--amb-border-strong);
     border-radius: 6px;
     background: rgba(var(--amb-ink-rgb), 0.06);
     color: var(--amb-text-main);
-    font: inherit;
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 600;
     text-decoration: none;
-    cursor: pointer;
 }
 
-.anomalous-detail-link:hover,
-.anomalous-detail-edit:hover { background: rgba(var(--amb-ink-rgb), 0.12); }
+.anomalous-detail-link:hover { background: rgba(var(--amb-ink-rgb), 0.12); }
 
 .anomalous-detail-link-dot {
     width: 7px;
@@ -396,6 +463,37 @@
     border-radius: 50%;
     background: var(--amb-text-muted);
 }
+
+.anomalous-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.anomalous-detail-action {
+    padding: 7px 14px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 8px;
+    background: rgba(var(--amb-ink-rgb), 0.06);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.anomalous-detail-action:hover { background: rgba(var(--amb-ink-rgb), 0.12); }
+
+/* The page's colour as text: dark on the light accents of the dark themes, light on the light theme's. */
+.anomalous-detail-action.is-primary {
+    padding-inline: 22px;
+    border-color: transparent;
+    background: var(--amb-link);
+    color: var(--amb-bg-page);
+}
+
+.anomalous-detail-action.is-primary:hover { background: color-mix(in srgb, var(--amb-link) 85%, var(--amb-text-main)); }
 
 /* A model Civitai does not know: what was read from the file, and a way to add the rest. */
 .anomalous-inferred-note {

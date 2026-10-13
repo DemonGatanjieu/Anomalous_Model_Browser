@@ -411,7 +411,8 @@ covered by the `styles.css` manifest.
 - `ui_gallery_card.js` builds one output's gallery card (viewer, workbench, cover pick, drag, star, compare, delete; a video's card
   plays in the viewer and has no workbench, star or menu); `gallery_filter.js` holds what the gallery lists (All / Pictures /
   Videos and the formats hidden in Settings, per browser) and `ui_gallery_filter.js` draws both controls;
-  `gallery_card_menu.js` is its right-click menu (insert as a Load Image node reading the output file, parameters);
+  `gallery_card_menu.js` is its right-click menu (insert as a Load Image node reading the output file, parameters),
+  drawn by `action_menu.js` (a small menu at the pointer or under a button, also the model details' ⋯);
   `ui_param_compare.js` compares parameters: a card's ⇄ picks an image, a second image's ⇄ or
   the canvas completes the pair (the image workbench's ⇄ takes the canvas; the Gallery's and
   Activity's ⇄ Canvas vs. newest picture pair the newest output PNG with it), and its window says
@@ -467,15 +468,17 @@ covered by the `styles.css` manifest.
   search in the header (shown on the models page through the shell's `data-page`): the grid
   lists the models of its type matching every word (`owner.modelQuery`).
 - `model_source.js` shows where a model's information came from: the card badge (marked only
-  when inferred from the file, "推断", or not scanned yet), the detail header's source line with
-  the fields the user set, its buttons (source link, Civitai, Edit) and, for a model Civitai
+  when inferred from the file, "推断", or not scanned yet), the details' source line with
+  the fields the user set, its links (source link, Civitai) and, for a model Civitai
   does not know, the note on what was read from the file.
 - `ui_grid.js` and model-detail modules own model presentation: `ui_grid.js` manages chunked card rendering,
   card placeholder ergonomics (eliminating misleading unclickable text in favor of pure centered icon and status),
   card action buttons (one-click canvas addition with plus icon, model metadata editor, direct precision scanner without wizard modal popups)
   with absolute positioning cascades immune to tooltip target conflicts, vibrant hover affordance,
   safe docked sidebar preservation upon node addition, and multi-type node dispatch; `ui_detail.js`
-  coordinates detail display (the file card with Show in folder in `model_location.js`), `ui_model_editor.js` owns metadata editing (cover, name, source link, notes;
+  coordinates detail display (cover column, then the head from `model_detail_head.js`: back crumb, name, source line,
+  Add node / Edit / Folder / Outputs / ⋯ with Copy path, Copy file name and Delete; the path line and Show in folder in
+  `model_location.js`), `ui_model_editor.js` owns metadata editing (cover, name, source link, notes;
   styles `styles/31-model-info.css`), and
   `model_widget_path.js` puts a model path into a loader's widget. `ui_gallery.js` (cards in
   `ui_gallery_card.js`, filters in `gallery_filter.js` / `ui_gallery_filter.js`) and `ui_gallery_detail.js` own generated-output browsing and workbench lifecycle,

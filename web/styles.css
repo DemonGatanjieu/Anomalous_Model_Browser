@@ -1,7 +1,7 @@
 @import url("./styles/00-foundation-models.css?v=20261011-wfd-3");
 @import url("./styles/01-shell-tools.css?v=20261007-theme-2");
 @import url("./styles/02-notebooks.css?v=20261012-click-2");
-@import url("./styles/03-gallery-recipes.css?v=20261013-video-3");
+@import url("./styles/03-gallery-recipes.css?v=20261013-detail-1");
 @import url("./styles/04-dialogs-materials.css?v=20261011-wfd-3");
 @import url("./styles/05-recipe-studio-overrides.css?v=20261011-wfd-3");
 @import url("./styles/06-material-workbench.css?v=20261007-theme-2");
@@ -29,4 +29,4 @@
 @import url("./styles/28-workflows.css?v=20261010-wf-2");
 @import url("./styles/29-workflow-detail.css?v=20261011-wfd-3");
 @import url("./styles/30-scan-picker.css?v=20261011-scan");
-@import url("./styles/31-model-info.css?v=20261011-edit");
+@import url("./styles/31-model-info.css?v=20261013-detail-1");

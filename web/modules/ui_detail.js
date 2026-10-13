@@ -6,8 +6,9 @@
 import { app } from "../../../scripts/app.js";
 import { translate } from './locales.js';
 import { escapeHtml, setSafeRichHtml } from './safe_dom.js';
-import { renderDetailActions, renderInferredNote, renderSourceLine } from './model_source.js';
+import { renderInferredNote } from './model_source.js';
 import { createModelLocationCard } from './model_location.js';
+import { createDetailHead } from './model_detail_head.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -31,45 +32,7 @@ export function showDetail(model) {
         this.detailPanel.style.display = 'flex';
         this.stopMediaInContainer(this.detailPanel); this.detailPanel.innerHTML = '';
 
-        const header = document.createElement('div');
-        header.style.width = '100%';
-        header.style.padding = '8px 15px';
-        header.style.background = 'var(--comfy-menu-bg, var(--amb-bg-card-hover))';
-        header.style.borderBottom = '1px solid var(--border-color, var(--amb-border-strong))';
-        header.style.display = 'flex';
-        header.style.alignItems = 'center';
-        header.style.boxSizing = 'border-box';
-
-        const backBtn = Object.assign(document.createElement('button'), { className: 'anomalous-detail-back' }); // Esc presses it
-        let isFromDoctor = false;
-        let isFromAssistant = false;
-        if (this.historyStack.length > 0) {
-            const lastHistory = this.historyStack[this.historyStack.length - 1];
-            if (lastHistory.type === 'doctor') {
-                isFromDoctor = true;
-            } else if (lastHistory.type === 'assistant') {
-                isFromAssistant = true;
-            }
-        }
-
-        if (isFromDoctor) {
-            backBtn.textContent = t('detailBackDoctor');
-            backBtn.style.background = 'var(--amb-btn-primary-bg)';
-            backBtn.style.color = 'var(--amb-btn-primary-text)';
-        } else if (isFromAssistant) {
-            backBtn.textContent = t('detailBackAssistant');
-            backBtn.style.background = 'var(--amb-btn-primary-bg)';
-            backBtn.style.color = 'var(--amb-btn-primary-text)';
-        } else {
-            backBtn.innerHTML = this.historyStack.length > 0 ? t('backToPrev') : t('back');
-            backBtn.style.background = 'var(--amb-bg-card-hover)';
-            backBtn.style.color = 'var(--amb-text-main)';
-        }
-        backBtn.style.padding = '6px 12px';
-        backBtn.style.border = 'none';
-        backBtn.style.borderRadius = '4px';
-        backBtn.style.cursor = 'pointer';
-        backBtn.onclick = () => {
+        const goBack = () => {
             if (this.currentDetailObserver) {
                 this.currentDetailObserver.disconnect();
                 this.currentDetailObserver = null;
@@ -113,96 +76,6 @@ export function showDetail(model) {
                 }
             }
         };
-
-        const title = document.createElement('h2');
-        title.textContent = model.filename;
-        title.style.margin = '0 20px 0 20px';
-        title.style.color = 'var(--amb-text-main)';
-        title.style.fontSize = '1.2em';
-        // 强制单行并溢出显示省略号
-        title.style.whiteSpace = 'nowrap';
-        title.style.overflow = 'hidden';
-        title.style.textOverflow = 'ellipsis';
-        title.style.flex = '1'; // 撑开剩余空间，把右侧按钮挤到最右边
-
-        const delBtn = document.createElement('button');
-        delBtn.innerHTML = t('delModel');
-        delBtn.style.padding = '6px 12px';
-        delBtn.style.background = '#ff4444';
-        delBtn.style.color = '#fff';
-        delBtn.style.border = 'none';
-        delBtn.style.borderRadius = '4px';
-        delBtn.style.cursor = 'pointer';
-        delBtn.style.marginLeft = 'auto'; // push to the right
-        delBtn.style.whiteSpace = 'nowrap';
-        delBtn.onclick = async () => {
-            if (!confirm(`${t('delConfirm')} ${model.filename} ${t('delConfirm2')}`)) return;
-            try {
-                const res = await fetch('/anomalous/delete_model', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        type: this.currentType,
-                        path_idx: this.currentPathIdx,
-                        subfolder: this.currentSubfolder,
-                        filename: model.filename
-                    })
-                });
-                const data = await res.json();
-                if (data.status === 'success') {
-                    if (this.currentDetailObserver) {
-                        this.currentDetailObserver.disconnect();
-                        this.currentDetailObserver = null;
-                    }
-                    alert(t('delSuccess') + data.deleted.join('\n') + t('delNote'));
-                    this.detailPanel.style.display = 'none';
-                    this.stopMediaInContainer(this.detailPanel); this.detailPanel.innerHTML = '';
-                    this.grid.style.display = 'grid';
-                    this.loadModels(); // refresh grid
-                } else {
-                    alert(t('delFail') + data.message);
-                }
-            } catch (e) {
-                alert(t('delFail') + e.message);
-            }
-        };
-
-        const jumpBtn = document.createElement('button');
-        jumpBtn.innerHTML = '⬇️';
-        jumpBtn.title = t('detailJumpToBottom');
-        jumpBtn.style.padding = '6px 12px';
-        jumpBtn.style.background = 'var(--amb-bg-card-hover)';
-        jumpBtn.style.color = 'var(--amb-text-main)';
-        jumpBtn.style.border = 'none';
-        jumpBtn.style.borderRadius = '4px';
-        jumpBtn.style.cursor = 'pointer';
-        jumpBtn.style.marginLeft = '10px';
-        jumpBtn.onclick = () => {
-            // Find rightPanel which is created later, so we bind it dynamically
-            const rp = this.detailPanel.querySelector('.anomalous-split-right');
-            if (rp) rp.scrollTo({ top: rp.scrollHeight, behavior: 'smooth' });
-        };
-
-        header.appendChild(backBtn);
-        header.appendChild(title);
-        header.appendChild(delBtn);
-        header.appendChild(jumpBtn);
-
-        const applyDetailBtn = document.createElement('button');
-        applyDetailBtn.textContent = t('applyToCanvas');
-        applyDetailBtn.style.padding = '6px 12px';
-        applyDetailBtn.style.background = '#007bff';
-        applyDetailBtn.style.color = '#fff';
-        applyDetailBtn.style.border = 'none';
-        applyDetailBtn.style.borderRadius = '4px';
-        applyDetailBtn.style.cursor = 'pointer';
-        applyDetailBtn.style.marginLeft = '10px';
-        applyDetailBtn.style.fontWeight = 'bold';
-        applyDetailBtn.onclick = () => {
-            this.applyModelToCanvas(this.currentType, this.currentSubfolder, model);
-        };
-        header.appendChild(applyDetailBtn);
-
 
         const splitContainer = document.createElement('div');
         splitContainer.className = 'anomalous-split-container';
@@ -291,37 +164,10 @@ export function showDetail(model) {
 
         const m = model.metadata || {};
 
-        // 1. Top Bar (Title + Size + Model + Button) in a single compact row if possible
-        const topRow = document.createElement('div');
-        topRow.style.flexShrink = '0';
-        topRow.style.display = 'flex';
-        topRow.style.flexWrap = 'wrap';
-        topRow.style.alignItems = 'center';
-        topRow.style.gap = '10px';
-        topRow.style.paddingBottom = '10px';
-        topRow.style.marginBottom = '10px';
-        topRow.style.borderBottom = '1px solid var(--amb-border-strong)';
-
-        const titleEl = document.createElement('h3');
-        titleEl.style.margin = '0';
-        titleEl.style.fontSize = '1.3em';
-        titleEl.style.marginRight = '10px';
-        titleEl.innerText = m.custom_name || m.name || model.filename;
-        topRow.appendChild(titleEl);
-
-        const metaSpan = document.createElement('span');
-        metaSpan.style.fontSize = '0.9em';
-        metaSpan.style.color = 'var(--amb-text-muted)';
-        renderSourceLine(metaSpan, model, m);
-        topRow.appendChild(metaSpan);
-
-        topRow.appendChild(renderDetailActions(m, () => this.showEditModal(model)));
-        rightPanel.appendChild(topRow);
+        rightPanel.appendChild(createDetailHead(this, model, goBack));
         const inferredNote = renderInferredNote(m, () => this.showEditModal(model));
         if (inferredNote) rightPanel.appendChild(inferredNote);
-        rightPanel.appendChild(createModelLocationCard(model, {
-            type: this.currentType, path_idx: this.currentPathIdx, subfolder: this.currentSubfolder,
-        }));
+        rightPanel.appendChild(createModelLocationCard(model));
 
         // 1.5 Custom Notes Section (Google Material Card)
         if (m.custom_notes) {
@@ -392,30 +238,6 @@ export function showDetail(model) {
 
             rightPanel.appendChild(notesCard);
         }
-        // 1.8 Generated Gallery Button
-        const galleryBtnCont = document.createElement('div');
-        galleryBtnCont.style.flexShrink = '0';
-        galleryBtnCont.style.marginBottom = '15px';
-
-        const galleryBtn = document.createElement('button');
-        galleryBtn.className = 'anomalous-nb-add-btn';
-        galleryBtn.style.width = '100%';
-        galleryBtn.style.display = 'flex';
-        galleryBtn.style.justifyContent = 'center';
-        galleryBtn.style.alignItems = 'center';
-        galleryBtn.style.gap = '8px';
-        galleryBtn.style.padding = '10px';
-        galleryBtn.style.background = 'var(--amb-bg-card-hover)';
-        galleryBtn.style.border = '1px solid var(--amb-border-strong)';
-        galleryBtn.textContent = t('detailGeneratedGallery');
-        galleryBtn.onmouseover = () => { galleryBtn.style.background = 'var(--amb-bg-card-hover)'; galleryBtn.style.borderColor = 'var(--amb-border-strong)'; };
-        galleryBtn.onmouseout = () => { galleryBtn.style.background = 'var(--amb-bg-card-hover)'; galleryBtn.style.borderColor = 'var(--amb-border-strong)'; };
-
-        galleryBtn.onclick = () => {
-            this.showGeneratedGallery(model);
-        };
-        galleryBtnCont.appendChild(galleryBtn);
-        rightPanel.appendChild(galleryBtnCont);
 
         // 2. Trained Words Section
         if (m.trainedWords && m.trainedWords.length > 0) {
@@ -617,6 +439,5 @@ export function showDetail(model) {
         splitContainer.appendChild(resizer);
         splitContainer.appendChild(rightPanel);
 
-        this.detailPanel.appendChild(header);
         this.detailPanel.appendChild(splitContainer);
     }
