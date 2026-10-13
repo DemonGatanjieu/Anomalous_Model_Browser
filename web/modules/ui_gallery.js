@@ -489,14 +489,24 @@ export function showGalleryViewer(src, isVideo = false) {
                 video.load(); // drops the file, so its sound cannot go on
             };
 
-            // However it closes (the ×, a click beside the picture, Esc), the video stops.
-            viewer.addEventListener('close', () => {
+            // However it closes (the ×, a click beside the picture, Esc), the video stops at once.
+            // The dialog's 'close' event comes later (half a second, seen), when another video
+            // may already play in it: it only catches a close nothing else saw.
+            const stop = () => {
                 resetTransform();
                 viewer.stopVideo();
+            };
+            const closeViewer = () => {
+                stop();
+                viewer.close();
+            };
+            viewer.addEventListener('cancel', stop); // Esc
+            viewer.addEventListener('close', () => {
+                if (!viewer.open) stop();
             });
-            closeBtn.onclick = () => viewer.close();
+            closeBtn.onclick = closeViewer;
             viewer.onclick = (e) => {
-                if (e.target === viewer) viewer.close();
+                if (e.target === viewer) closeViewer();
             };
 
             viewer.addEventListener('wheel', (e) => {
