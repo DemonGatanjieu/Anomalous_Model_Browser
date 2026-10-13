@@ -1,6 +1,6 @@
 # 📈 Anomalous Model Browser Changelog
 
-## v1.58.2 Beta (Small fixes: Esc closes, Show in folder, insert a picture as a node) — unreleased
+## v1.58.2 Beta (Small fixes: Esc closes, Show in folder, insert a picture as a node) — 2026-10-13
 
 ### 💬 From a Bilibili comment (来自 B 站评论)
 - **Esc closes the browser (Esc 关闭浏览器)**: Esc closes what is on top: a dialog or menu first, then the Workflows / Combos workspace, then the browser. The shortcut (Ctrl + Shift + M by default) and the Extensions menu entry now close the browser when it is open. Esc in a text box still belongs to the text box.
