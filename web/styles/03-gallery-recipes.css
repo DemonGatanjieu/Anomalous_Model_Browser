@@ -474,6 +474,7 @@ dialog.anomalous-gallery-viewer[open] {
     height: 95%;
     object-fit: contain;
     background: #000;
+    outline: none; /* it takes focus on opening (Space plays and pauses); no ring around the window */
 }
 
 .anomalous-gallery-viewer-close {
