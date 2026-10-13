@@ -138,10 +138,14 @@ export function createGalleryCard(owner, imgData, { showViewer }) {
         event.dataTransfer.setData('text/plain', fullUrl);
         // Chromium may not start dragging very large (hires) images without a small drag image.
         if (window.anomalousDragGhostImg) event.dataTransfer.setDragImage(window.anomalousDragGhostImg, 40, 40);
+        // The browser fades out (as for other cards) so the canvas and its nodes take the drop;
+        // later than now, so the drag image is captured first.
+        setTimeout(() => owner.modal?.classList.add('anomalous-material-dragging'), 0);
     });
+    card.addEventListener('dragend', () => owner.modal?.classList.remove('anomalous-material-dragging'));
     img.onclick = () => (owner.gallerySelectModel ? useAsCover(owner, image) : showViewer(url));
     card.addEventListener('contextmenu', (event) => {
-        if (!owner.gallerySelectModel) openGalleryCardMenu(event, image, { openDetails: () => openWorkbench(owner, image, url) });
+        if (!owner.gallerySelectModel) openGalleryCardMenu(event, image, { owner, openDetails: () => openWorkbench(owner, image, url) });
     });
 
     const details = button('anomalous-gallery-details', t('materialViewDetails'), () => {

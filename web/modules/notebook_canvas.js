@@ -43,7 +43,7 @@ const modelPath = (model) => {
 };
 
 /** The pointer's position in canvas coordinates. */
-function canvasPoint(event) {
+export function canvasPoint(event) {
     const canvas = app.canvas;
     if (canvas.convertEventToCanvasOffset) return canvas.convertEventToCanvasOffset(event);
     const rect = canvas.canvas.getBoundingClientRect();
@@ -58,7 +58,7 @@ function canvasPoint(event) {
  * again. While it follows, `owner.placingCombo` holds back the activity log, which is told once
  * the group is down (after Esc there is nothing to log).
  */
-function followPointer(owner, groupNodes, placed) {
+export function followPointer(owner, groupNodes, placed) {
     const half = (groupNodes[0].node.size?.[0] || 200) / 2;
     const move = (event) => {
         if (!app.canvas) return;
