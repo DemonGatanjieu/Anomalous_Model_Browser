@@ -6,6 +6,7 @@ export const CURRENT_UPDATE_GUIDE = Object.freeze({
         { id: 'import', icon: '📥', titleKey: 'updateGuideImportTitle', bodyKey: 'updateGuideImportBody' },
         { id: 'tidy', icon: '🧹', titleKey: 'updateGuideTidyTitle', bodyKey: 'updateGuideTidyBody' },
         { id: 'base-models', icon: '🧬', titleKey: 'updateGuideBaseModelsTitle', bodyKey: 'updateGuideBaseModelsBody' },
+        { id: 'compare', icon: '⇄', titleKey: 'updateGuideCompareTitle', bodyKey: 'updateGuideCompareBody' },
         { id: 'settings-tabs', icon: '⚙️', titleKey: 'updateGuideSettingsTabsTitle', bodyKey: 'updateGuideSettingsTabsBody' },
     ]),
 });
