@@ -168,7 +168,11 @@ function appearanceGroup(owner, redraw) {
 }
 
 function cardsGroup(owner, redraw) {
-    const reload = () => { owner.loadModels(); redraw(); };
+    const reload = () => {
+        owner.galleryLoaded = false; // the gallery's video cards follow Video covers too
+        owner.loadModels();
+        redraw();
+    };
     return group('settingsCards',
         row('sidebarCardQuality', 'settingsCardQualityHelp', segment(
             [['balanced', 'sidebarOptimizedThumbnail'], ['original', 'sidebarOriginalCover']], owner.cardThumbnailMode, value => {

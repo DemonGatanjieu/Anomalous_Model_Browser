@@ -173,6 +173,17 @@
     background: var(--amb-bg-page);
 }
 
+/* A video card's muted preview, over its first frame; clicks and drags go to the card. */
+.anomalous-gallery-card-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: var(--amb-bg-page);
+    pointer-events: none;
+}
+
 .anomalous-gallery-delete {
     position: absolute;
     top: 8px;
@@ -449,13 +460,20 @@ dialog.anomalous-gallery-viewer[open] {
     display: flex;
 }
 
-.anomalous-gallery-viewer img,
-.anomalous-gallery-viewer video {
+.anomalous-gallery-viewer img {
     max-width: 95%;
     max-height: 95%;
     object-fit: contain;
     border-radius: 4px;
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+/* A video fills the window (keeping its shape), however small it was made. */
+.anomalous-gallery-viewer video {
+    width: 95%;
+    height: 95%;
+    object-fit: contain;
+    background: #000;
 }
 
 .anomalous-gallery-viewer-close {
