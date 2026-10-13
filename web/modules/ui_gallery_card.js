@@ -122,10 +122,13 @@ export function createGalleryCard(owner, imgData, { showViewer }) {
     const card = document.createElement('div');
     card.className = 'anomalous-gallery-card';
 
+    const isVideo = /\.(mp4|webm|mov|avi|mkv)$/i.test(image.filename);
+    if (isVideo) card.classList.add('is-video');
+
     const img = document.createElement('img');
     img.src = `/anomalous/output_thumbnail?${query}`; // drags and the viewer use the original
     img.loading = 'lazy';
-    img.title = t('materialViewOriginal');
+    img.title = isVideo ? t('galleryViewVideo') : t('materialViewOriginal');
     // The card is dragged, not the <img>: Chrome adds a dragged <img> as a file, and ComfyUI
     // would load that thumbnail (no workflow in it) instead of fetching the original's link.
     img.draggable = false;
@@ -137,7 +140,7 @@ export function createGalleryCard(owner, imgData, { showViewer }) {
         // Chromium may not start dragging very large (hires) images without a small drag image.
         if (window.anomalousDragGhostImg) event.dataTransfer.setDragImage(window.anomalousDragGhostImg, 40, 40);
     });
-    img.onclick = () => (owner.gallerySelectModel ? useAsCover(owner, image) : showViewer(url));
+    img.onclick = () => (owner.gallerySelectModel ? useAsCover(owner, image) : showViewer(url, isVideo));
 
     const details = button('anomalous-gallery-details', t('materialViewDetails'), () => {
         if (!owner.gallerySelectModel) openWorkbench(owner, image, url);
@@ -148,6 +151,13 @@ export function createGalleryCard(owner, imgData, { showViewer }) {
     remove.innerHTML = DELETE_ICON; // static markup only
 
     card.append(img, details, remove);
+    if (isVideo) {
+        const ext = image.filename.split('.').pop().toUpperCase();
+        const badge = document.createElement('span');
+        badge.className = 'anomalous-gallery-video-badge';
+        badge.innerHTML = `<svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg> ${ext}`;
+        card.append(badge);
+    }
     // Only PNG outputs carry the workflow that can be kept.
     if (/\.png$/i.test(image.filename)) card.append(keepButton(owner, image));
     return card;

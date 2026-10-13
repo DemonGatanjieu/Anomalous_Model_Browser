@@ -7,6 +7,104 @@
     background: var(--bg-color, var(--amb-bg-card));
 }
 
+.anomalous-gallery-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--bg-color, var(--amb-bg-card));
+    border-bottom: 1px solid var(--amb-border-subtle);
+    padding-bottom: 10px;
+}
+
+.anomalous-gallery-filter-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 16px;
+}
+
+.anomalous-gallery-filter-sep {
+    width: 1px;
+    height: 14px;
+    background: var(--amb-border-subtle);
+    margin: 0 4px;
+}
+
+.anomalous-gallery-filter-chip {
+    background: var(--amb-bg-page);
+    color: var(--amb-text-muted);
+    border: 1px solid var(--amb-border-subtle);
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    cursor: pointer;
+    line-height: 1.2;
+    transition: all 0.15s ease;
+}
+
+.anomalous-gallery-filter-chip:hover {
+    color: var(--amb-text-main);
+    border-color: var(--amb-border-strong);
+}
+
+.anomalous-gallery-filter-chip.is-active {
+    background: var(--amb-accent-soft, rgba(64, 128, 255, 0.15));
+    border-color: var(--amb-accent, #3b82f6);
+    color: var(--amb-text-main);
+}
+
+.anomalous-gallery-filter-chip.is-video.is-active {
+    border-color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.18);
+}
+
+.anomalous-gallery-filter-chip.is-group.is-partial {
+    border-color: var(--amb-border-strong);
+    color: var(--amb-text-soft);
+    background: var(--amb-bg-card-hover);
+}
+
+.anomalous-gallery-video-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    pointer-events: none;
+    backdrop-filter: blur(4px);
+    z-index: 2;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.anomalous-gallery-settings-exts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.anomalous-gallery-settings-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.anomalous-gallery-settings-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
 .anomalous-gallery-grid {
     flex: 1;
     padding: 20px;
@@ -331,7 +429,8 @@ dialog.anomalous-gallery-viewer[open] {
     display: flex;
 }
 
-.anomalous-gallery-viewer img {
+.anomalous-gallery-viewer img,
+.anomalous-gallery-viewer video {
     max-width: 95%;
     max-height: 95%;
     object-fit: contain;

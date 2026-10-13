@@ -17,6 +17,7 @@ import { copyDiagnostics } from './feedback.js';
 import { renderFolderPage } from './ui_folder_manager.js';
 import { openFeedbackDialog } from './ui_feedback_dialog.js';
 import { checkOnOpen, setCheckOnOpen } from './ui_doctor_banner.js';
+import { createGalleryExtensionSettings } from './ui_gallery_filter.js';
 
 const t = (key, params) => translate(key, params);
 // The full written guide: the README, at its Chinese half for Chinese.
@@ -178,6 +179,12 @@ function cardsGroup(owner, redraw) {
     );
 }
 
+function galleryGroup(owner, redraw) {
+    return group('settingsGallery',
+        row('galleryExtensionsTitle', 'galleryExtensionsHelp', createGalleryExtensionSettings(owner, redraw)),
+    );
+}
+
 function foldersGroup(owner) {
     return group('settingsFolders',
         row('sidebarManageFolders', 'settingsFoldersHelp',
@@ -253,6 +260,7 @@ function render(owner) {
         el('h1', 'anomalous-scan-title', t('sidebarSettings')),
         appearanceGroup(owner, redraw),
         cardsGroup(owner, redraw),
+        galleryGroup(owner, redraw),
         foldersGroup(owner),
         workflowGroup(owner),
         openingGroup(owner, redraw),

@@ -1,5 +1,11 @@
 # 📈 Anomalous Model Browser Changelog
 
+## Unreleased (Gallery file extensions & video display)
+
+### 🖼️ Gallery file extension filtering & video playback (画廊扩展名过滤与视频支持 / 갤러리 확장자 필터 및 비디오 지원)
+- **File format configuration (파일 확장자 표시/숨김 설정)**: In the Gallery toolbar and Settings page, users can configure which output file extensions to display and hide. Easily toggle individual formats (PNG, JPG, WEBP, GIF, MP4, WEBM, MOV, MKV) or use quick group presets (All, Images, Videos).
+- **Video outputs support (비디오 출력 지원)**: Gallery backend now indexes video outputs (.mp4, .webm, .mov, .avi, .mkv), generates video posters for thumbnails, displays a video format badge on the card, and enables video playback in the full-size gallery viewer.
+
 ## v1.58.1 Beta (Security: only this computer can change things) — 2026-10-12
 
 ### 🔒 Other devices can look, not change (别的设备只能看，不能改)

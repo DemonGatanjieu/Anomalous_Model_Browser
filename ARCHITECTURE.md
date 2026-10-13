@@ -378,7 +378,7 @@ covered by the `styles.css` manifest.
   safe docked sidebar preservation upon node addition, and multi-type node dispatch; `ui_detail.js`
   coordinates detail display, `ui_model_editor.js` owns metadata editing, and
   `ui_model_selector.js` owns advanced selection. `ui_gallery.js` (cards in
-  `ui_gallery_card.js`) and `ui_gallery_detail.js` own generated-image browsing and workbench lifecycle,
+  `ui_gallery_card.js`, format filtering state in `gallery_filter.js`, and quick filter and settings UI in `ui_gallery_filter.js`) and `ui_gallery_detail.js` own generated-image browsing and workbench lifecycle,
   with stage interaction in `ui_image_stage.js` and metadata tabs in
   `ui_image_inspector.js`.
 - `ui_recipes.js` / `ui_recipe_detail.js` and `ui_notebooks.js`
