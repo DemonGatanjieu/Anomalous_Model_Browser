@@ -493,6 +493,11 @@
     color: var(--amb-bg-page);
 }
 
+/* A model's description is Civitai's HTML; its headings stay a little above the text, not poster size. */
+.anomalous-detail-description :is(h1, h2) { margin: 0.8em 0 0.4em; font-size: 1.15em; line-height: 1.35; }
+.anomalous-detail-description :is(h3, h4, h5, h6) { margin: 0.7em 0 0.3em; font-size: 1.05em; line-height: 1.35; }
+.anomalous-detail-description > :first-child { margin-top: 0; }
+
 .anomalous-detail-action.is-primary:hover { background: color-mix(in srgb, var(--amb-link) 85%, var(--amb-text-main)); }
 
 /* A model Civitai does not know: what was read from the file, and a way to add the rest. */

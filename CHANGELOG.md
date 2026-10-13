@@ -28,6 +28,14 @@
 - **⋯** holds Copy path, Copy file name and **Delete**, which is no longer a red button next to Add node; it asks first in AMB's own dialog, and the files still go to the Recycle Bin.
 - The file's full path shows once, in a line under the buttons with **Copy**. The ⬇ (jump to the bottom) button is gone.
 - In a narrow window (the browser docked beside the canvas) the cover column is hidden as before, so a small cover now sits beside the name.
+- A model's description (Civitai's own text) keeps its headings a little above the text instead of poster size.
+
+### 🗂️ The folder column follows the type; open folders in Explorer (文件夹栏跟着类型走，一键打开文件夹)
+- The column left of the models used to list every type's folders (raw names like `checkpoints (1)`, `[Root]` rows with 0, nothing marking where you were), repeating the chips above it. Now it shows the folders of the type you picked: **All**, then its subfolders as a tree whose numbers include their subfolders (empty ones dimmed, ▾ folds one), and **In the top folder** for models lying directly in the type's folder. The folder you are looking at is marked.
+- **📂 Open** next to the type's name opens that type's folder in Explorer, and a 📂 on any folder you point at opens that one, so you can drop files in or tidy up by hand. Like the details' Folder button, it works only on the computer ComfyUI runs on.
+
+### 🎨 The Combos page looks like the others (搭配页和其他页面统一)
+- It no longer sits in a lighter, inset box with a shadow, a second "Combos" title and a red ✕: it fills the page in the same colours as Models and Workflows. The explanation of what a combo is folds behind **?** (shown by itself while you have no combos), and the editor's Back reads **← All combos**.
 
 ### ≈ What was read from the file says so (离线推断标清楚)
 - A model Civitai does not know has its base model inferred from the file, as before; now it says so. Its card reads **推断 SDXL** (it was ≈), and its details open with a note: why Civitai did not have it, that the base model was read from the file and may be off, and **Add a name and source link**, instead of an English placeholder description.
