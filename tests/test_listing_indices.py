@@ -69,5 +69,18 @@ class ListingIndexTests(unittest.TestCase):
                 self.assertEqual(collect.call_count, 3)
 
 
+    def test_gallery_lists_pictures_unless_asked_and_hides_formats(self):
+        from api import gallery_routes
+        with tempfile.TemporaryDirectory() as directory:
+            for name in ('a.png', 'b.jpeg', 'c.mp4', 'd.mkv', 'e.avi', 'f.txt'):
+                Path(directory, name).write_bytes(b'x')
+            names = lambda items: sorted(item['filename'] for item in items)
+            self.assertEqual(names(gallery_routes._gallery_listing(directory, True, '')), ['a.png', 'b.jpeg'])
+            self.assertEqual(names(gallery_routes._gallery_listing(directory, False, '', 'video')), ['c.mp4', 'd.mkv'])
+            self.assertEqual(names(gallery_routes._gallery_listing(directory, False, '', 'all', frozenset({'jpg', 'mkv'}))),
+                             ['a.png', 'c.mp4'])
+            images, has_videos = gallery_routes._gallery_page_source(directory, False, '', 'image', frozenset())
+            self.assertEqual((len(images), has_videos), (2, True))
+
 if __name__ == '__main__':
     unittest.main()

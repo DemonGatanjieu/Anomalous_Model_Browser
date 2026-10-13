@@ -118,6 +118,10 @@
 - **Settings → Translation → DeepL key**: prompts are translated with Google's free endpoint (MyMemory when Google cannot be reached); with your own DeepL API key, DeepL comes first. Saving the key translates one sentence to show it works, or says why not (a key DeepL refuses, a used-up month). The Free plan gives 500,000 characters a month. The key stays on this computer and is never put in a backup.
 - A DeepL key saved by hand in `config.json` before did not work any more: DeepL stopped taking the key as a request parameter in 2025. It now goes in the Authorization header.
 
+### 🎬 Videos in the gallery (图库显示视频)
+- **The gallery shows your video outputs** (MP4, WebM, MOV, MKV) next to the pictures: each card shows the video's first frame with a ▶ badge naming its format, and clicking it plays the video in the viewer. Closing the viewer (×, a click beside it or Esc) stops it. Videos are deleted (to the Recycle Bin) and dragged onto the canvas like pictures; View parameters, the star and the right-click menu stay with pictures, which carry the parameters. A first contribution from outside: thanks to cocorang and wkdtjs (PR #21).
+- **All / Pictures / Videos** beside the gallery's search, shown once your output folder has a video. **Settings → Gallery** hides formats you never want to see (GIF, say); click a format again to show it. Both are remembered in this browser. The recipe cover picker and AI apps (MCP) still see pictures only.
+
 ### 🧪 Tests in the repository (测试公开)
 - The plugin's tests are now part of the repository: `tests/` (Python tests for the backend, `.mjs` tests for the frontend rules), `node tools/run_tests.mjs` runs them all with the structure check, and [docs/guides/testing.md](docs/guides/testing.md) says how to run and write them. They need no network or GPU and only touch temporary folders. Developer notes no longer point at tests that were removed earlier.
 

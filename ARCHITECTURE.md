@@ -408,7 +408,9 @@ covered by the `styles.css` manifest.
   shortcuts (the second keeps its old "materials" ids), their fallback when ComfyUI's keybinding does not fire, and the
   settings control that opens ComfyUI's keybinding editor.
 - `ui_model_sources.js` renders the Models page's Sources view (the last type chip): where each model is downloaded, for the open workflow or every model, with each link editable and saved in place; `model_source_links.js` owns its data and actions (collecting the workflow's models, resolving them here, saving a link to the model's information and the workflow, the canvas note and the clipboard list).
-- `ui_gallery_card.js` builds one output image's gallery card (viewer, workbench, cover pick, drag, star, delete);
+- `ui_gallery_card.js` builds one output's gallery card (viewer, workbench, cover pick, drag, star, delete; a video's card
+  plays in the viewer and has no workbench, star or menu); `gallery_filter.js` holds what the gallery lists (All / Pictures /
+  Videos and the formats hidden in Settings, per browser) and `ui_gallery_filter.js` draws both controls;
   `gallery_card_menu.js` is its right-click menu (insert as a Load Image node reading the output file, parameters);
   `ui_keep_menu.js` is the star's keep menu (also the workbench's Keep): the whole workflow, the combo or the prompts,
   each saying where it goes, opening what was kept already or removing it (to the Recycle Bin through the recipe,
@@ -466,7 +468,7 @@ covered by the `styles.css` manifest.
   coordinates detail display (the file card with Show in folder in `model_location.js`), `ui_model_editor.js` owns metadata editing (cover, name, source link, notes;
   styles `styles/31-model-info.css`), and
   `model_widget_path.js` puts a model path into a loader's widget. `ui_gallery.js` (cards in
-  `ui_gallery_card.js`) and `ui_gallery_detail.js` own generated-image browsing and workbench lifecycle,
+  `ui_gallery_card.js`, filters in `gallery_filter.js` / `ui_gallery_filter.js`) and `ui_gallery_detail.js` own generated-output browsing and workbench lifecycle,
   with stage interaction in `ui_image_stage.js` and metadata tabs in
   `ui_image_inspector.js`.
 - `ui_recipes.js` / `ui_recipe_detail.js` and `ui_notebooks.js`

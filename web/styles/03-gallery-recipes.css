@@ -7,6 +7,118 @@
     background: var(--bg-color, var(--amb-bg-card));
 }
 
+/* The search, and All / Pictures / Videos beside it (ui_gallery_filter.js) once there are videos. */
+.anomalous-gallery-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    margin: 12px 20px 0;
+    flex-shrink: 0;
+}
+
+.anomalous-gallery-header .anomalous-gallery-search {
+    flex: 1 1 260px;
+    margin: 0;
+}
+
+.anomalous-gallery-media {
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: rgba(var(--amb-ink-rgb), 0.03);
+}
+
+.anomalous-gallery-media[hidden] {
+    display: none;
+}
+
+.anomalous-gallery-media-btn {
+    padding: 4px 12px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font: inherit;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.anomalous-gallery-media-btn:hover {
+    color: var(--amb-text-main);
+}
+
+.anomalous-gallery-media-btn[aria-checked="true"] {
+    background: color-mix(in srgb, var(--amb-link) 18%, transparent);
+    color: var(--amb-text-main);
+    font-weight: 600;
+}
+
+/* A video's card: its first frame, with the format on a ▶ badge (over pictures, so always dark). */
+.anomalous-gallery-video-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+}
+
+/* Settings → Gallery: each format, pressed while shown. */
+.anomalous-gallery-formats {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.anomalous-gallery-formats-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+}
+
+.anomalous-gallery-formats-label {
+    min-width: 3em;
+    color: var(--amb-text-muted);
+    font-size: 12px;
+}
+
+.anomalous-gallery-format {
+    padding: 3px 9px;
+    border: 1px dashed var(--amb-border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--amb-text-muted);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: line-through;
+    cursor: pointer;
+}
+
+.anomalous-gallery-format[aria-pressed="true"] {
+    border-style: solid;
+    border-color: color-mix(in srgb, var(--amb-link) 45%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 16%, transparent);
+    color: var(--amb-text-main);
+    text-decoration: none;
+}
+
 .anomalous-gallery-grid {
     flex: 1;
     padding: 20px;
@@ -337,7 +449,8 @@ dialog.anomalous-gallery-viewer[open] {
     display: flex;
 }
 
-.anomalous-gallery-viewer img {
+.anomalous-gallery-viewer img,
+.anomalous-gallery-viewer video {
     max-width: 95%;
     max-height: 95%;
     object-fit: contain;
@@ -2220,11 +2333,6 @@ dialog.anomalous-gallery-viewer[open] {
 
 .anomalous-search-chips-count:empty {
     display: none;
-}
-
-.anomalous-gallery-search {
-    margin: 12px 20px 0;
-    flex-shrink: 0;
 }
 
 /* Workflow share codes (main.js AMB_WorkflowShare): the menu, export and import dialogs. */
