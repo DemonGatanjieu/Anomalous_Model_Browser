@@ -59,7 +59,7 @@ export function closeWorkspace() {
 }
 
 // The back buttons of the pages one level down: a model's details, one combo, one recipe.
-const BACK_BUTTONS = '.anomalous-detail-back, .anomalous-nb-back, .anomalous-recipe-back-tab';
+const BACK_BUTTONS = '.anomalous-detail-back, .anomalous-nb-back, .anomalous-wfd-back';
 
 /**
  * Esc on the browser: a page one level down (a model's details, one combo or one recipe) goes
