@@ -9,6 +9,7 @@ import { app } from '../../../scripts/app.js';
 import { translate as t } from './locales.js';
 import { recordCanvasStep } from './canvas_history.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
+import { canvasPoint, followPointer } from './notebook_canvas.js';
 
 let closeOpenMenu = null;
 
@@ -23,9 +24,9 @@ function row(icon, label, run, close) {
     const text = document.createElement('strong');
     text.textContent = label;
     item.append(mark, text);
-    item.onclick = () => {
+    item.onclick = (event) => {
         close();
-        run();
+        run(event);
     };
     return item;
 }
@@ -45,8 +46,12 @@ async function copyToInput(image) {
     return data.subfolder ? `${data.subfolder}/${data.name}` : data.name;
 }
 
-/** A Load Image node in the middle of the visible canvas, showing `image`. */
-export async function insertLoadImageNode(image) {
+/**
+ * A Load Image node showing `image`: the browser closes and the node follows the pointer until a
+ * click puts it down (Esc takes it off again), like a combo's Put on canvas. `at` is the click
+ * that chose it, where the node starts.
+ */
+export async function insertLoadImageNode(owner, image, at) {
     const node = globalThis.LiteGraph?.createNode('LoadImage');
     const widget = node?.widgets?.find(item => item.name === 'image');
     let file = null;
@@ -59,21 +64,21 @@ export async function insertLoadImageNode(image) {
         showWorkbenchToast(t('galleryInsertNodeFailed'));
         return;
     }
-    const [x, y, width, height] = app.canvas?.visible_area || [0, 0, 0, 0];
-    node.pos = [x + width / 2 - node.size[0] / 2, y + height / 2 - node.size[1] / 2];
+    const [x, y] = canvasPoint(at);
+    node.pos = [x - node.size[0] / 2, y - 20];
     app.graph.add(node);
     const choices = widget.options?.values;
     if (Array.isArray(choices) && !choices.includes(file)) choices.push(file);
     widget.value = file;
     widget.callback?.(file); // shows the picture in the node
-    app.canvas?.selectNode?.(node);
     app.graph.setDirtyCanvas(true, true);
-    recordCanvasStep(app);
-    showWorkbenchToast(t('galleryInsertNodeDone'));
+    owner.close();
+    followPointer(owner, [{ node, relX: 0, relY: 0 }], () => recordCanvasStep(app));
+    showWorkbenchToast(t('galleryInsertNodeFollow'));
 }
 
 /** Opens the menu at the pointer; `openDetails()` opens the picture's parameters. */
-export function openGalleryCardMenu(event, image, { openDetails }) {
+export function openGalleryCardMenu(event, image, { owner, openDetails }) {
     event.preventDefault();
     closeOpenMenu?.();
     const menu = document.createElement('div');
@@ -93,7 +98,7 @@ export function openGalleryCardMenu(event, image, { openDetails }) {
         if (closeOpenMenu === close) closeOpenMenu = null;
     };
     menu.append(
-        row('🖼️', t('galleryInsertAsNode'), () => insertLoadImageNode(image), close),
+        row('🖼️', t('galleryInsertAsNode'), (click) => insertLoadImageNode(owner, image, click), close),
         row('🔍', t('materialViewParameters'), openDetails, close),
     );
     document.body.append(menu);
