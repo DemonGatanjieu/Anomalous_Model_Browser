@@ -5,7 +5,6 @@
 
 import { markRemoteView } from './remote_view.js';
 import { translate } from './locales.js';
-import { escapeHtml } from './safe_dom.js';
 import { showUpdateGuide } from './ui_update_guide.js';
 import { AUDIO_USAGE_GUIDE, CURRENT_UPDATE_GUIDE } from './update_guide_data.js';
 import { createSettingsHub } from './ui_settings_hub.js';
@@ -21,6 +20,7 @@ import { watchScans } from './ui_scan_watch.js';
 import { watchCanvasChanges } from './activity_canvas.js';
 import { watchWorkflowLoads } from './ui_doctor_banner.js';
 import { settleModelScope } from './ui_model_types.js';
+import { renderFolderColumn } from './ui_folder_list.js';
 import { createModelSearch } from './ui_model_search.js';
 import { attachModelDrop } from './ui_model_import.js';
 
@@ -29,11 +29,7 @@ const t = (key, params) => translate(key, params);
 const SIDEBAR_ICONS = {
     DOCK: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>`,
     LIST: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg>`,
-    HELP: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;margin-right:7px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
     SETTINGS: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
-    FOLDER: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-3px;margin-right:7px;"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>`,
-    CHEVRON_UP: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><polyline points="18 15 12 9 6 15"/></svg>`,
-    CHEVRON_DOWN: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:4px;"><polyline points="6 9 12 15 18 9"/></svg>`
 };
 
 /** Five quick clicks on the rail's logo toggle the Abyssal Scarlet theme. */
@@ -254,138 +250,8 @@ export function renderSidebar() {
             renderAudioSidebar(this);
             return;
         }
-        this.sidebar.innerHTML = '';
-
-        const topBar = document.createElement('div');
-        topBar.style.display = 'flex';
-        topBar.style.justifyContent = 'space-between';
-        topBar.style.alignItems = 'center';
-        topBar.style.padding = '10px 15px 15px 15px';
-
-        const title = document.createElement('h3');
-        title.innerHTML = `${SIDEBAR_ICONS.FOLDER}<span>${t('folders')}</span>`;
-        title.style.color = 'var(--amb-lt-text, #fff)';
-        title.style.margin = '0';
-        title.style.display = 'inline-flex';
-        title.style.alignItems = 'center';
-        title.style.fontSize = '1.05em';
-
-        const isAllCollapsed = this.expandedFolders.size === 0;
-        const collapseAllBtn = document.createElement('button');
-        const collapseIcon = isAllCollapsed ? SIDEBAR_ICONS.CHEVRON_DOWN : SIDEBAR_ICONS.CHEVRON_UP;
-        collapseAllBtn.innerHTML = `${collapseIcon}<span>${t(isAllCollapsed ? 'sidebarExpandAll' : 'sidebarCollapseAll')}</span>`;
-        collapseAllBtn.style.display = 'inline-flex';
-        collapseAllBtn.style.alignItems = 'center';
-        collapseAllBtn.style.padding = '4px 9px';
-        collapseAllBtn.style.background = 'rgba(var(--amb-ink-rgb), 0.08)';
-        collapseAllBtn.style.color = 'var(--amb-lt-soft, #e2e8f0)';
-        collapseAllBtn.style.border = '1px solid var(--amb-border-strong)';
-        collapseAllBtn.style.borderRadius = '3px 8px 3px 8px';
-        collapseAllBtn.style.cursor = 'pointer';
-        collapseAllBtn.style.fontSize = '0.82em';
-        collapseAllBtn.style.transition = 'all 0.2s ease';
-        collapseAllBtn.onmouseover = () => { collapseAllBtn.style.background = 'rgba(var(--amb-ink-rgb), 0.15)'; collapseAllBtn.style.borderColor = 'var(--amb-border-strong)'; };
-        collapseAllBtn.onmouseout = () => { collapseAllBtn.style.background = 'rgba(var(--amb-ink-rgb), 0.08)'; collapseAllBtn.style.borderColor = 'var(--amb-border-strong)'; };
-        collapseAllBtn.onclick = () => {
-            if (isAllCollapsed) {
-                (this.foldersData || []).forEach(typeGroup => {
-                    this.expandedFolders.add(typeGroup.type);
-                    Object.keys(typeGroup.folders).forEach(path => {
-                        this.expandedFolders.add(typeGroup.type + path);
-                    });
-                });
-            } else {
-                this.expandedFolders.clear();
-            }
-            this.renderSidebar();
-        };
-
-        topBar.appendChild(title);
-        topBar.appendChild(collapseAllBtn);
-        this.sidebar.appendChild(topBar);
-
-
-        (this.foldersData || []).forEach(typeGroup => {
-            const header = document.createElement('div');
-            header.className = 'anomalous-type-header';
-            header.style.display = 'flex';
-            header.style.justifyContent = 'space-between';
-            header.style.cursor = 'pointer';
-
-            const isTypeExpanded = this.expandedFolders.has(typeGroup.type);
-            header.innerHTML = `<span>${escapeHtml(typeGroup.label)}</span> <span>${isTypeExpanded ? '▼' : '▶'}</span>`;
-
-            header.onclick = () => {
-                if (isTypeExpanded) this.expandedFolders.delete(typeGroup.type);
-                else this.expandedFolders.add(typeGroup.type);
-                this.renderSidebar();
-            };
-            this.sidebar.appendChild(header);
-
-            if (!isTypeExpanded) return;
-
-            const sortedPaths = Object.keys(typeGroup.folders).sort();
-
-            sortedPaths.forEach(path => {
-                const info = typeGroup.folders[path];
-                const parts = path.split('/').filter(p => p);
-                const parentPath = parts.length > 1 ? '/' + parts.slice(0, -1).join('/') : '/';
-
-                if (path !== '/' && parentPath !== '/') {
-                    let parentId = typeGroup.type + parentPath;
-                    if (!this.expandedFolders.has(parentId)) return;
-                }
-
-                const hasChildren = sortedPaths.some(p => p !== path && p.startsWith(path === '/' ? '/' : path + '/'));
-
-                const item = document.createElement('div');
-                item.className = 'anomalous-folder-item';
-
-                const depth = path === '/' ? 0 : parts.length;
-                item.style.paddingLeft = (15 + depth * 15) + 'px';
-
-                const myId = typeGroup.type + path;
-                const isExpanded = this.expandedFolders.has(myId);
-
-                let toggleIcon = '';
-                if (hasChildren) {
-                    toggleIcon = `<span class="anomalous-folder-toggle" style="margin-right: 8px; width: 12px; display: inline-block; font-size: 0.8em; color: var(--amb-text-muted);">${isExpanded ? '▼' : '▶'}</span>`;
-                } else {
-                    toggleIcon = `<span style="margin-right: 8px; width: 12px; display: inline-block;"></span>`;
-                }
-
-                item.innerHTML = `${toggleIcon}<span class="anomalous-folder-name" style="color: var(--amb-text-soft);">${escapeHtml(info.name)}</span> <span style="color: var(--amb-text-dim); font-size:0.8em; margin-left: 5px;">${escapeHtml(info.model_count)}</span>`;
-
-                const scope = this.modelScope;
-                if (scope?.subfolder === path && scope.type === typeGroup.type && scope.path_idx === typeGroup.path_idx) {
-                    item.classList.add('active');
-                }
-
-                item.onclick = (e) => {
-                    if (e.target.classList.contains('anomalous-folder-toggle')) {
-                        if (isExpanded) this.expandedFolders.delete(myId);
-                        else this.expandedFolders.add(myId);
-                        this.renderSidebar();
-                        return;
-                    }
-                    this.modelScope = { type: typeGroup.type, path_idx: typeGroup.path_idx, subfolder: path };
-                    this.modelView = '';
-                    this.currentType = typeGroup.type;
-                    this.currentPathIdx = typeGroup.path_idx;
-                    this.currentSubfolder = path;
-
-                    this.hideAllPanels();
-                    this.grid.style.display = 'grid';
-
-                    this.renderSidebar();
-                    this.loadModels();
-                };
-
-                this.sidebar.appendChild(item);
-            });
-        });
+        this.sidebar.replaceChildren(renderFolderColumn(this));
     }
-
 
 
 export async function loadFolders() {
@@ -394,15 +260,6 @@ export async function loadFolders() {
             const data = await res.json();
             this.foldersData = data.folders || [];
             settleModelScope(this);
-
-            // Auto expand all
-            (this.foldersData || []).forEach(typeGroup => {
-                this.expandedFolders.add(typeGroup.type);
-                Object.keys(typeGroup.folders).forEach(path => {
-                    this.expandedFolders.add(typeGroup.type + path);
-                });
-            });
-
             this.renderSidebar();
             this.loadModels();
         } catch (e) { }
