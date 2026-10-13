@@ -1,26 +1,31 @@
 /**
- * Where a model's file is: the details' path line (the full path, or the file name, with Copy)
- * and Show in folder (Explorer / Finder opens with the file selected; only on the computer
- * ComfyUI runs on), which the details' Folder button calls.
+ * Where a model's file is: the details' path line (the full path, or the file name, with Copy),
+ * and the file manager (only on the computer ComfyUI runs on): showInFolder for the details'
+ * Folder button (Explorer / Finder with the file selected), openModelFolder for the folder
+ * column's 📂 (a type's folder or a subfolder).
  */
 
 import { translate as t } from './locales.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 
-/** `where`: the model's { type, path_idx, subfolder } in the browser. */
-export async function showInFolder(model, where) {
+/** `where`: { type, path_idx, subfolder } as the browser lists it; no `filename`: the folder itself. */
+export async function openModelFolder(where, filename = '') {
     try {
         const response = await fetch('/anomalous/open_model_folder', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...where, filename: model.filename }),
+            body: JSON.stringify({ ...where, filename }),
         });
         const data = await response.json().catch(() => ({}));
         if (data.status !== 'success') throw new Error(data.message || `HTTP ${response.status}`);
     } catch (error) {
         await anomalousAlert(t('detailOpenFolderFailed', { error: error.message }));
     }
+}
+
+export function showInFolder(model, where) {
+    return openModelFolder(where, model.filename);
 }
 
 export async function copyToClipboard(text, doneKey) {

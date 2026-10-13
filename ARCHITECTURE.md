@@ -83,8 +83,9 @@ covered by the `styles.css` manifest.
   and no scan replaces or deletes it.
 - `api/model_catalog.py`, `api/model_resolution.py`, `api/model_metadata.py`, and
   `api/model_media.py` own model listing, identity recovery, mutation, and covers;
-  `api/model_folder.py` shows a model file in Explorer / Finder (by type, folder index and
-  file name, never a path; a POST, so only this computer may ask);
+  `api/model_folder.py` shows a model file in Explorer / Finder, or without a file name opens
+  the models folder (by type, folder index, subfolder and file name, never a path; a POST, so
+  only this computer may ask);
   `api/models.py` is a compatibility facade; `api/model_constants.py` holds the
   model, media and sidecar extensions they share. `api/model_type_listing.py` lists a
   whole models folder with its subfolders for the models page's type chips.
@@ -349,7 +350,8 @@ covered by the `styles.css` manifest.
   copied into `output/audio/`.
 - `ui_sidebar.js` assembles the browser window (rail, list column, header, page panels;
   `remote_view.js` adds the header's "view only" chip when opened from another device)
-  and renders the model folder list. `ui_shell_rail.js` owns the left icon rail: one
+  and puts the model folder column in the list column (`ui_folder_list.js`: the folders of the
+  type the chips show, counts with subfolders, 📂 to open one in Explorer). `ui_shell_rail.js` owns the left icon rail: one
   entry per page, the tool slots and the settings slot. `ui_shell_nav.js` owns page
   navigation (`goTo`): the domain each page needs, which pages have a list and whether
   it is open (remembered per page; closed and overlaying below 760 px), the header's

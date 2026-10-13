@@ -84,65 +84,95 @@ button:active::after,
     margin-bottom: 15px;
 }
 
-.anomalous-type-header {
-    padding: 10px 15px;
-    background: rgba(var(--amb-ink-rgb), 0.03);
-    color: var(--fg-color, var(--amb-text-main));
-    font-weight: bold;
-    font-size: 0.9em;
-    border-top: 1px solid var(--amb-border);
-    border-bottom: 1px solid var(--amb-border);
+/* The models page's folder column (ui_folder_list.js): the type's heading with 📂 Open, then its
+   folders; a folder's 📂 shows on hover, empty folders are dimmed, the listed one is marked. */
+.anomalous-folder-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 12px 8px;
+    color: var(--amb-text-main);
+    font-weight: 700;
+}
+
+.anomalous-folder-head-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .anomalous-folder-item {
-    padding: 8px 15px;
-    color: var(--fg-color, var(--amb-text-soft));
-    cursor: pointer;
-    font-size: 0.9em;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 28px;
+    padding: 2px 8px 2px 12px;
     border-left: 2px solid transparent;
+    color: var(--amb-text-soft);
+    font-size: 0.88em;
+    cursor: pointer;
 }
 
-.anomalous-folder-item:hover {
-    background: rgba(var(--amb-ink-rgb), 0.06);
-    color: var(--amb-text-main);
-}
+.anomalous-folder-item:hover { background: rgba(var(--amb-ink-rgb), 0.06); color: var(--amb-text-main); }
+.anomalous-folder-item.is-empty { opacity: 0.45; }
 
-/* Clean Neutral Active Indicator on Selected Menu (Normal Mode) */
 .anomalous-folder-item.active {
-    background: rgba(var(--amb-ink-rgb), 0.08);
+    border-left-color: var(--amb-link);
+    background: color-mix(in srgb, var(--amb-link) 14%, transparent);
     color: var(--amb-text-main);
     font-weight: 600;
-    border-left: 2px solid #e5e7eb;
-    box-shadow: inset 3px 0 6px rgba(var(--amb-ink-rgb), 0.03);
-    border-radius: 0 6px 6px 0;
 }
 
-.anomalous-folder-item.active .anomalous-folder-name {
-    color: var(--amb-text-main) !important;
-    text-shadow: none;
+.anomalous-folder-toggle {
+    flex: none;
+    width: 12px;
+    color: var(--amb-text-muted);
+    font-size: 0.85em;
+    text-align: center;
+    user-select: none;
 }
 
-.theme-abyssal-scarlet .anomalous-folder-item.active {
-    background: rgba(55, 12, 22, 0.85);
-    border-left: 2px solid #dc143c;
-    border-left-color: var(--c-crimson, #dc143c);
-    box-shadow: inset 2px 0 6px rgba(0, 0, 0, 0.8);
+.anomalous-folder-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.theme-abyssal-scarlet .anomalous-folder-item.active .anomalous-folder-name {
-    color: #e0d8db;
-    text-shadow: none;
+.anomalous-folder-count {
+    flex: none;
+    color: var(--amb-text-muted);
+    font-size: 0.85em;
+    font-variant-numeric: tabular-nums;
 }
+
+.anomalous-folder-open {
+    flex: none;
+    padding: 2px 7px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 6px;
+    background: rgba(var(--amb-ink-rgb), 0.06);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 0.82em;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.anomalous-folder-open:hover { background: rgba(var(--amb-ink-rgb), 0.14); }
+.anomalous-folder-item .anomalous-folder-open { display: none; padding: 0 5px; }
+.anomalous-folder-item:hover .anomalous-folder-open { display: inline-block; }
+.anomalous-folder-item:hover .anomalous-folder-count { display: none; }
 
 /* Sidebar Icons & Actions - Normal Mode (Neutral & Clean) */
-.anomalous-folder-item svg,
 #anomalous-sidebar h3 svg {
     color: var(--amb-text-muted) !important;
     filter: none;
 }
 
-.theme-abyssal-scarlet .anomalous-folder-item svg,
 .theme-abyssal-scarlet #anomalous-sidebar h3 svg {
     color: #d4af37 !important;
     filter: none;
@@ -260,11 +290,6 @@ button:active::after,
 
 .anomalous-card {
     cursor: pointer;
-}
-
-.anomalous-folder-toggle {
-    cursor: pointer;
-    user-select: none;
 }
 
 #anomalous-api-key {

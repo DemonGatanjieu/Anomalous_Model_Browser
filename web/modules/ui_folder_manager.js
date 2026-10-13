@@ -85,7 +85,7 @@ export async function renderFolderPage(owner, page, onBack) {
         if (mode === state.mode) return;
         try {
             await postConfig({ folder_view_mode: mode });
-            owner.expandedFolders?.clear();
+            owner.collapsedFolders?.clear();
             reloadFolders();
             await load();
         } catch (error) {

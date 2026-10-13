@@ -60,7 +60,7 @@ function showType(owner, group) {
     } catch { /* remembering the chip is a convenience */ }
 }
 
-function openType(owner, group) {
+export function openType(owner, group) {
     owner.modelView = '';
     owner.modelBase = null; // another type has other base models
     showType(owner, group);

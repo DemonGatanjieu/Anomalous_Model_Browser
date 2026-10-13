@@ -45,7 +45,8 @@ Major UI panels live in `web/modules/ui_*.js`. Shared browser state remains on
 the `AnomalousBrowser` instance. Pure parsing, normalization, comparison, and
 transaction helpers remain in focused modules rather than acquiring DOM state.
 
-`ui_sidebar.js` assembles the browser window and the model folder list; the left
+`ui_sidebar.js` assembles the browser window and places the model folder column
+(`ui_folder_list.js`, the current type's folders only); the left
 icon rail (`ui_shell_rail.js`), page navigation and the list column's open state
 (`ui_shell_nav.js`), the home page (`ui_home.js`) and the window frame
 (`ui_shell_frame.js`) are their own modules. Every page change goes through

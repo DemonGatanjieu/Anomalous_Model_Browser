@@ -83,7 +83,7 @@ export function installShellNavigation(owner, { container, rail, listToggle, tit
     scrim.onclick = closeDrawer;
     container.insertBefore(scrim, owner.sidebarWrapper.nextSibling);
     owner.sidebarWrapper.addEventListener('click', (e) => {
-        if (!drawerOpen() || e.target.classList.contains('anomalous-folder-toggle')) return;
+        if (!drawerOpen() || e.target.closest('.anomalous-folder-toggle, .anomalous-folder-open')) return;
         if (e.target.closest('.anomalous-folder-item, .anomalous-audio-nav-item')) closeDrawer();
     });
     window.addEventListener('keydown', (e) => {

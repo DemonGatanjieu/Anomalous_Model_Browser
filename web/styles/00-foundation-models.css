@@ -787,18 +787,6 @@ html:not(.anomalous-floating-entry-enabled) [data-setting-id="Anomalous.ModelBro
     right: 62px !important;
 }
 
-#anomalous-container.view-mode-compact .anomalous-folder-item,
-#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-folder-item {
-    padding: 5px 12px !important;
-    font-size: 0.86em !important;
-}
-
-#anomalous-container.view-mode-compact .anomalous-type-header,
-#anomalous-container:not(.view-mode-standard):not(.view-mode-aesthetic) .anomalous-type-header {
-    padding: 6px 12px !important;
-    font-size: 0.85em !important;
-}
-
 /* Mode 1: Standard - Clean, balanced, 8px architectural geometry */
 #anomalous-container.view-mode-standard #anomalous-grid {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
