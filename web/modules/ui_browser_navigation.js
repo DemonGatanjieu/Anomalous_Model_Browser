@@ -77,6 +77,12 @@ export function bindBrowserEscape(owner) {
             .some(el => el !== owner.modal && el.getClientRects().length
                 && (el.getAttribute('role') === 'menu' || [...el.classList].some(c => c.startsWith('anomalous-') && c.endsWith('overlay'))));
         if (layered || document.querySelector('dialog[open], .p-dialog-mask')) return;
+        // A model's Outputs window lies over its details inside the browser: Esc closes it, as its ✖ does.
+        const outputs = document.getElementById('anomalous-generated-gallery-overlay');
+        if (outputs?.getClientRects().length) {
+            outputs.style.display = 'none';
+            return;
+        }
         const back = [...owner.modal.querySelectorAll(BACK_BUTTONS)].find(button => button.getClientRects().length);
         if (back) back.click();
         else owner.close();
