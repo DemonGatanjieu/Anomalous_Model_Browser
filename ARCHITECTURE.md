@@ -582,6 +582,9 @@ covered by the `styles.css` manifest.
   need a workflow-carried hash before Model Check recovers them.
 - `ui_dom.js` provides small DOM/JSON helpers; `material_inspector.js` owns the image
   workbench's metadata and node-parameter rendering.
+- `ui_first_run.js` is Home's first-run setup while nothing is scanned (check that Civitai answers
+  through `api/network_check.py`, the optional key, a scan of every model, the tour); a card, never
+  a popup, hidden per browser.
 - `model_check.js` checks the open workflow's models (drop-downs naming model files, and
   switched-on Power Lora Loader rows through `lora_nodes.js`) against this computer (Model
   Check's verdicts, no DOM; the feature was called Model Doctor, and code and CSS still

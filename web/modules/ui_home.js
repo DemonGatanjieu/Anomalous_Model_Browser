@@ -1,7 +1,8 @@
 /**
- * The home page: what you can do here, one card per task, each opening its page; and
- * the first steps (scan, the tour, what's new). Rendered again on each visit, so text
- * follows the language.
+ * The home page: what you can do here, one card per task, each opening its page; the
+ * first-run setup above them while nothing is scanned (ui_first_run.js); and the first steps
+ * (set up, scan, the tour, what's new). Rendered again on each visit, so text follows the
+ * language.
  */
 
 import { translate as t } from './locales.js';
@@ -12,6 +13,7 @@ import { showUpdateGuide } from './ui_update_guide.js';
 import { renderRecentActivity } from './ui_activity.js';
 import { copyDiagnostics, openRepoPage } from './feedback.js';
 import { openFeedbackDialog } from './ui_feedback_dialog.js';
+import { renderFirstRun, showFirstRun } from './ui_first_run.js';
 
 // One card per task: where it goes and its text (`homeCard<Name>Title` / `…Body`).
 const CARDS = Object.freeze([
@@ -80,11 +82,13 @@ export function renderHome(owner, panel) {
 
     const start = el('div', 'anomalous-home-start');
     start.append(el('span', 'anomalous-home-start-label', t('homeStartLabel')),
+        button('anomalous-home-link', t('homeStartSetup'), () => void showFirstRun(owner, page, grid)),
         button('anomalous-home-link', t('homeStartScan'), () => owner.openScanPage()),
         button('anomalous-home-link', t('homeStartTour'), () => startSpotlightTour(owner)),
         button('anomalous-home-link', t('homeStartNews'), () => showUpdateGuide(owner, { force: true })));
 
     page.append(grid, start, feedbackBand(owner));
     panel.replaceChildren(page);
+    void renderFirstRun(owner, page, grid);
     renderRecentActivity(owner, page);
 }

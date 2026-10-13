@@ -330,6 +330,213 @@
     text-decoration: underline;
 }
 
+/* The first-run setup above the task cards (ui_first_run.js): four steps, then Set up for me. */
+.anomalous-first-run {
+    padding: 18px 20px;
+    border: 1px solid color-mix(in srgb, var(--amb-link) 35%, var(--amb-border));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--amb-link) 6%, var(--amb-bg-card));
+}
+
+.anomalous-first-run:empty {
+    display: none;
+}
+
+.anomalous-first-run-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.anomalous-first-run-title {
+    margin: 0;
+    color: var(--amb-text-main);
+    font-size: 1.15em;
+    font-weight: 600;
+}
+
+.anomalous-first-run-lead {
+    margin: 4px 0 0;
+    color: var(--amb-text-muted);
+    font-size: 0.85em;
+    line-height: 1.6;
+}
+
+.anomalous-first-run-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.anomalous-first-run-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: var(--amb-bg-card);
+}
+
+.anomalous-first-run-step.is-current {
+    border-color: var(--amb-link);
+}
+
+.anomalous-first-run-icon {
+    flex: none;
+    font-size: 1.25em;
+}
+
+.anomalous-first-run-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.anomalous-first-run-step-title {
+    color: var(--amb-text-main);
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.anomalous-first-run-step-body {
+    color: var(--amb-text-muted);
+    font-size: 0.8em;
+    line-height: 1.55;
+}
+
+.anomalous-first-run-aside {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    max-width: 45%;
+}
+
+.anomalous-first-run-pill {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(var(--amb-ink-rgb), 0.08);
+    color: var(--amb-text-soft);
+    font-size: 0.75em;
+    white-space: nowrap;
+}
+
+.anomalous-first-run-pill.is-ok {
+    background: color-mix(in srgb, var(--amb-lt-ok, #4ade80) 16%, transparent);
+    color: var(--amb-lt-ok, #4ade80);
+}
+
+.anomalous-first-run-pill.is-bad {
+    background: color-mix(in srgb, var(--amb-lt-danger, #ff6b6b) 16%, transparent);
+    color: var(--amb-lt-danger, #ff6b6b);
+}
+
+.anomalous-first-run-btn,
+.anomalous-first-run-later {
+    padding: 4px 12px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 6px;
+    background: rgba(var(--amb-ink-rgb), 0.06);
+    color: var(--amb-text-main);
+    font: inherit;
+    font-size: 0.78em;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.anomalous-first-run-btn:hover,
+.anomalous-first-run-later:hover {
+    background: rgba(var(--amb-ink-rgb), 0.12);
+}
+
+.anomalous-first-run-later {
+    flex: none;
+    border-color: transparent;
+    background: transparent;
+    color: var(--amb-text-muted);
+}
+
+.anomalous-first-run-track {
+    height: 4px;
+    margin-top: 6px;
+    overflow: hidden;
+    border-radius: 2px;
+    background: rgba(var(--amb-ink-rgb), 0.1);
+}
+
+.anomalous-first-run-fill {
+    width: 0;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--amb-link);
+    transition: width 0.4s ease;
+}
+
+/* Preparing: no count yet, the bar sweeps. */
+.anomalous-first-run-track.is-waiting .anomalous-first-run-fill {
+    width: 30%;
+    animation: anomalous-first-run-sweep 1.2s ease-in-out infinite;
+}
+
+@keyframes anomalous-first-run-sweep {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(340%); }
+}
+
+.anomalous-first-run-count {
+    color: var(--amb-link);
+    font-size: 0.78em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.anomalous-first-run-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    margin-top: 14px;
+}
+
+.anomalous-first-run-go {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 8px;
+    background: var(--amb-link);
+    color: var(--amb-bg-page);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.anomalous-first-run-go:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.anomalous-first-run-note {
+    color: var(--amb-text-dim);
+    font-size: 0.78em;
+}
+
+@media (max-width: 560px) {
+    .anomalous-first-run-step {
+        flex-wrap: wrap;
+    }
+
+    .anomalous-first-run-aside {
+        justify-content: flex-start;
+        max-width: none;
+    }
+}
+
 /* "Found a problem, or have an idea?": the way to GitHub, in view on Home. */
 .anomalous-home-feedback {
     display: flex;

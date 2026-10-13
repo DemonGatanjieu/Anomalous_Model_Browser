@@ -46,7 +46,8 @@ look; every change under `/anomalous/` answers only the computer ComfyUI runs on
 middleware (`api/local_guard.py`, registered first in `setup_routes`) decides it for all routes:
 a request other than GET must be local unless its path is in `OPEN_POSTS` (reads sent as POST:
 `resolve_paths_to_previews`, `resolve_hash_batch`, `inspect_image_material`); a GET is open
-unless its path is in `LOCAL_GETS` (`backup/file`, `version/releases`, `import/folders`).
+unless its path is in `LOCAL_GETS` (`backup/file`, `version/releases`, `import/folders`,
+`civitai_check`: the first-run setup's one request to Civitai, `api/network_check.py`).
 `/anomalous/mcp` answers other devices itself. Local means: a loopback peer, no proxy headers
 (`Forwarded`, `X-Forwarded-For`, `X-Real-IP`, `X-Forwarded-Host`) and a loopback `Host`, so a
 page that reached the server under another name (DNS rebinding) is refused too. A refusal is
