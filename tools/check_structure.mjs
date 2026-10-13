@@ -2,7 +2,8 @@
 // Fails when a source file is missing from the architecture map, a web module is
 // no longer imported from an entry, a new file starts over the size threshold, a
 // file already over it grew since the last commit (AGENTS.md section 2), or a web file
-// does not parse as the ES module the browser loads.
+// does not parse as the ES module the browser loads, or a CSS :has() matches the style
+// attribute.
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -79,6 +80,26 @@ const syntax = execFileSync(process.execPath, ['--experimental-vm-modules', '--n
 for (const line of syntax.split(/\r?\n/).filter(Boolean)) {
     const [file, message] = line.split(' | ');
     failures.push(`${path.relative(ROOT, file).split(path.sep).join('/')}: does not parse (${message})`);
+}
+
+// 5. No `:has()` that matches the style attribute. Chrome then treats every inline-style
+// write on the page as a possible change and recalculates styles for the whole page; with
+// extensions that move overlays every frame, canvas dragging fell to a few fps (v1.57.2,
+// issue #22). Mirror the state as a class on an ancestor instead.
+for (const file of [...list('web', '.css'), ...list('web/styles', '.css')]) {
+    const css = read(file).replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, ' '));
+    for (let start = css.indexOf(':has('); start !== -1; start = css.indexOf(':has(', start + 1)) {
+        let depth = 0;
+        let end = start + 4;
+        for (; end < css.length; end++) {
+            if (css[end] === '(') depth++;
+            else if (css[end] === ')' && --depth === 0) break;
+        }
+        if (/\[\s*style\b/i.test(css.slice(start, end))) {
+            const line = css.slice(0, start).split('\n').length;
+            failures.push(`${file}:${line}: :has() matches the style attribute, which makes every inline-style change restyle the whole page; toggle a class instead`);
+        }
+    }
 }
 
 if (failures.length) {
