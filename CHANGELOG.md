@@ -23,6 +23,12 @@
 - **Reset** clears the name and notes you set and brings Civitai's cover back; the source link stays.
 - Saving no longer marks the name or notes as yours when you did not touch them.
 
+### 🪪 Model details, rearranged (模型详情页重排)
+- From a Bilibili comment: the buttons were small and spread over five places, and the file name showed twice. Now the title bar is gone and everything sits beside the cover: a small **← Models / LoRA** to go back (Esc does the same; from Model Check or the assistant it says where it leads), the model's **name**, the size / base model / source line with the Civitai and source links, and one row of buttons: **Add node** (the one coloured button), **Edit**, **Folder** (shows the file in Explorer), **Outputs** (pictures made with it) and **⋯**.
+- **⋯** holds Copy path, Copy file name and **Delete**, which is no longer a red button next to Add node; it asks first in AMB's own dialog, and the files still go to the Recycle Bin.
+- The file's full path shows once, in a line under the buttons with **Copy**. The ⬇ (jump to the bottom) button is gone.
+- In a narrow window (the browser docked beside the canvas) the cover column is hidden as before, so a small cover now sits beside the name.
+
 ### ≈ What was read from the file says so (离线推断标清楚)
 - A model Civitai does not know has its base model inferred from the file, as before; now it says so. Its card reads **推断 SDXL** (it was ≈), and its details open with a note: why Civitai did not have it, that the base model was read from the file and may be off, and **Add a name and source link**, instead of an English placeholder description.
 - The scan page says it too: an online scan "looks up 5 on Civitai and infers the base model from the file for any it does not find", and the state chip reads **Not found · inferred from file**.

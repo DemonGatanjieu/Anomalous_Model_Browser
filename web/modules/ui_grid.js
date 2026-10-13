@@ -21,7 +21,7 @@ export function cardPreviewUrl(previewUrl, thumbnailMode) {
 }
 
 /** A video cover's still first frame (made once on the server), shown until the video plays. */
-function cardPosterUrl(previewUrl) {
+export function cardPosterUrl(previewUrl) {
     return `${previewUrl}${previewUrl.includes('?') ? '&' : '?'}variant=poster`;
 }
 

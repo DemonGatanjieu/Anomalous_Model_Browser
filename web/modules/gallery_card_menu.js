@@ -10,26 +10,7 @@ import { translate as t } from './locales.js';
 import { recordCanvasStep } from './canvas_history.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { canvasPoint, followPointer } from './notebook_canvas.js';
-
-let closeOpenMenu = null;
-
-function row(icon, label, run, close) {
-    const item = document.createElement('button');
-    item.type = 'button';
-    item.className = 'anomalous-keep-row';
-    item.setAttribute('role', 'menuitem');
-    const mark = document.createElement('span');
-    mark.className = 'anomalous-keep-row-icon';
-    mark.textContent = icon;
-    const text = document.createElement('strong');
-    text.textContent = label;
-    item.append(mark, text);
-    item.onclick = (event) => {
-        close();
-        run(event);
-    };
-    return item;
-}
+import { openActionMenu } from './action_menu.js';
 
 /** The output picture uploaded into the input folder; its name there for a Load Image node. */
 async function copyToInput(image) {
@@ -80,33 +61,8 @@ export async function insertLoadImageNode(owner, image, at) {
 /** Opens the menu at the pointer; `openDetails()` opens the picture's parameters. */
 export function openGalleryCardMenu(event, image, { owner, openDetails }) {
     event.preventDefault();
-    closeOpenMenu?.();
-    const menu = document.createElement('div');
-    menu.className = 'anomalous-keep-menu anomalous-gallery-card-menu';
-    menu.setAttribute('role', 'menu');
-    const onPointer = (pointer) => { if (!menu.contains(pointer.target)) close(); };
-    const onKey = (key) => {
-        if (key.key !== 'Escape') return;
-        key.stopPropagation();
-        close();
-    };
-    const close = () => {
-        menu.remove();
-        window.removeEventListener('pointerdown', onPointer, true);
-        window.removeEventListener('keydown', onKey, true);
-        window.removeEventListener('wheel', close, true);
-        if (closeOpenMenu === close) closeOpenMenu = null;
-    };
-    menu.append(
-        row('🖼️', t('galleryInsertAsNode'), (click) => insertLoadImageNode(owner, image, click), close),
-        row('🔍', t('materialViewParameters'), openDetails, close),
-    );
-    document.body.append(menu);
-    const { width, height } = menu.getBoundingClientRect();
-    menu.style.left = `${Math.max(8, Math.min(event.clientX, window.innerWidth - width - 8))}px`;
-    menu.style.top = `${Math.max(8, Math.min(event.clientY, window.innerHeight - height - 8))}px`;
-    window.addEventListener('pointerdown', onPointer, true);
-    window.addEventListener('keydown', onKey, true);
-    window.addEventListener('wheel', close, true);
-    closeOpenMenu = close;
+    openActionMenu(event, [
+        { icon: '🖼️', label: t('galleryInsertAsNode'), run: (click) => insertLoadImageNode(owner, image, click) },
+        { icon: '🔍', label: t('materialViewParameters'), run: openDetails },
+    ]);
 }

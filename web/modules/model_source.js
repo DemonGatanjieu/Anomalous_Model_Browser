@@ -4,9 +4,9 @@
  * marked: base model inferred from the file ("推断"), a damaged file, not scanned yet, and set to
  * "don't scan" (metadata.scan_choice). The detail header also names the fields the user set
  * (metadata.user_fields, from <model>.anomalous.json), and for a model not scanned whose header
- * looks like no drawing model, or one set to "don't scan", a button to change that. Its buttons
- * open the source link (named after its site), Civitai's page and the editor; a model Civitai
- * does not know gets a note under it saying what was read from the file.
+ * looks like no drawing model, or one set to "don't scan", a button to change that. Its links
+ * open the source link (named after its site) and Civitai's page; a model Civitai does not know
+ * gets a note under it saying what was read from the file.
  */
 
 import { translate as t } from './locales.js';
@@ -86,10 +86,10 @@ function openable(url) {
     return /^https?:\/\//i.test(clean) ? clean : '';
 }
 
-/** The detail header's buttons: the source link (its site named, its colour as a dot), Civitai's page, Edit. */
-export function renderDetailActions(meta, onEdit) {
+/** The details' links: the source link (its site named, its colour as a dot) and Civitai's page. */
+export function renderDetailLinks(meta) {
     const box = document.createElement('span');
-    box.className = 'anomalous-detail-actions';
+    box.className = 'anomalous-detail-links';
     const civitai = openable(meta.civitai_url);
     const source = openable(meta.source_url);
     const link = (url, label, colour) => {
@@ -107,12 +107,6 @@ export function renderDetailActions(meta, onEdit) {
         link(source, platform.name === 'Web Link' ? t('modelLinkSource') : platform.name, platform.name === 'Web Link' ? '' : platform.color);
     }
     if (civitai) link(civitai, 'Civitai', 'rgb(56, 189, 248)');
-    const edit = document.createElement('button');
-    edit.type = 'button';
-    edit.className = 'anomalous-detail-edit';
-    edit.textContent = t('detailEdit');
-    edit.onclick = onEdit;
-    box.append(edit);
     return box;
 }
 

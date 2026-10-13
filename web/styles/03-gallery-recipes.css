@@ -321,9 +321,9 @@
     display: none;
 }
 
-/* The keep menu under a star or the workbench's Keep (ui_keep_menu.js); a gallery card's
-   right-click menu (gallery_card_menu.js) wears the same look, as wide as its rows. */
-.anomalous-gallery-card-menu {
+/* The keep menu under a star or the workbench's Keep (ui_keep_menu.js); the action menus
+   (action_menu.js: a gallery card's right-click, a model's ⋯) wear the same look, as wide as their rows. */
+.anomalous-action-menu {
     width: max-content;
     min-width: 200px;
 }
@@ -367,6 +367,8 @@
 .anomalous-keep-row:focus-visible {
     background: var(--amb-bg-card-hover);
 }
+
+.anomalous-keep-row.is-danger { color: var(--amb-danger); }
 
 .anomalous-keep-row-icon {
     flex: none;
@@ -1320,30 +1322,20 @@ dialog.anomalous-gallery-viewer[open] {
     padding-right: 2px;
 }
 
+/* The details' path line (model_location.js): the full path and Copy. */
 .anomalous-model-location {
-    display: grid;
-    gap: 7px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin-bottom: 12px;
-    padding: 10px 12px;
+    padding: 7px 8px 7px 12px;
     border: 1px solid var(--border-color, var(--amb-border-strong));
     border-radius: 7px;
     background: rgba(var(--amb-ink-rgb), 0.025);
 }
 
-.anomalous-model-location-row {
-    min-width: 0;
-    display: grid;
-    grid-template-columns: max-content minmax(0, 1fr);
-    gap: 9px;
-    align-items: baseline;
-}
-
-.anomalous-model-location-label {
-    color: var(--amb-lt-muted, #9aa0a6);
-    font-size: 0.78em;
-}
-
 .anomalous-model-location code {
+    flex: 1;
     min-width: 0;
     color: var(--amb-lt-soft, #d7dbe5);
     font-size: 0.76em;
@@ -1352,15 +1344,9 @@ dialog.anomalous-gallery-viewer[open] {
     text-overflow: ellipsis;
 }
 
-.anomalous-model-location-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
 .anomalous-model-location-copy {
-    justify-self: start;
-    padding: 4px 9px;
+    flex: none;
+    padding: 3px 9px;
     border: 1px solid var(--amb-border-strong);
     border-radius: 5px;
     background: rgba(var(--amb-ink-rgb), 0.06);
