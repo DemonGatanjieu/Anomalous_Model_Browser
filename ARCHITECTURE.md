@@ -414,7 +414,7 @@ covered by the `styles.css` manifest.
   plays in the viewer and has no workbench, star or menu); `gallery_filter.js` holds what the gallery lists (All / Pictures /
   Videos and the formats hidden in Settings, per browser) and `ui_gallery_filter.js` draws both controls;
   `gallery_card_menu.js` is its right-click menu (insert as a Load Image node reading the output file, parameters),
-  drawn by `action_menu.js` (a small menu at the pointer or under a button, also the model details' ⋯);
+  drawn by `action_menu.js` (a small menu at the pointer or under a button);
   `ui_param_compare.js` compares parameters: a card's ⇄ picks an image, a second image's ⇄ or
   the canvas completes the pair (the image workbench's ⇄ takes the canvas; the Gallery's and
   Activity's ⇄ Canvas vs. newest picture pair the newest output PNG with it), and its window says
@@ -479,7 +479,7 @@ covered by the `styles.css` manifest.
   with absolute positioning cascades immune to tooltip target conflicts, vibrant hover affordance,
   safe docked sidebar preservation upon node addition, and multi-type node dispatch; `ui_detail.js`
   coordinates detail display (cover column, then the head from `model_detail_head.js`: back crumb, name, source line,
-  Add node / Edit / Folder / Outputs / ⋯ with Copy path, Copy file name and Delete; the path line and Show in folder in
+  Add node / Edit / Folder / Outputs; the foot with the path, Copy and Delete, and Show in folder, in
   `model_location.js`), `ui_model_editor.js` owns metadata editing (cover, name, source link, notes;
   styles `styles/31-model-info.css`), and
   `model_widget_path.js` puts a model path into a loader's widget. `ui_gallery.js` (cards in
