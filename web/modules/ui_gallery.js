@@ -10,6 +10,8 @@ import { showImageWorkbench } from './ui_gallery_detail.js';
 import { createGalleryCard } from './ui_gallery_card.js';
 import { loadKeptImages } from './image_keep.js';
 import { createSearchChips } from './ui_search_chips.js';
+import { createGalleryFilterBar } from './ui_gallery_filter.js';
+import { appendExtensionParams } from './gallery_filter.js';
 
 const t = (key, params) => translate(key, params);
 
@@ -29,8 +31,11 @@ export async function refreshGalleryImages() {
 
 
 
-/** Search blocks above the output gallery; the terms live on the browser as `gallerySearchTerms`. */
+/** Search blocks and format filters above the output gallery. */
 export function createGallerySearchBar(owner) {
+    const header = document.createElement('div');
+    header.className = 'anomalous-gallery-header';
+
     const search = createSearchChips({
         placeholder: t('gallerySearchPlaceholder'),
         help: t('gallerySearchHelp'),
@@ -41,7 +46,14 @@ export function createGallerySearchBar(owner) {
     });
     search.element.classList.add('anomalous-gallery-search');
     owner.gallerySearchCount = search.countElement;
-    return search.element;
+
+    const filterBar = createGalleryFilterBar(owner, () => {
+        owner.loadGalleryImages(1, true, { refresh: false });
+    });
+    owner.galleryFilterBar = filterBar;
+
+    header.append(search.element, filterBar);
+    return header;
 }
 
 export async function loadGalleryImages(page = 1, reset = false, { refresh = reset } = {}) {
@@ -60,6 +72,7 @@ export async function loadGalleryImages(page = 1, reset = false, { refresh = res
             const params = new URLSearchParams({ page: String(page), limit: '50' });
             if (refresh) params.set('refresh', '1');
             terms.forEach(term => params.append('term', term));
+            appendExtensionParams(params);
             const res = await fetch(`/anomalous/gallery_images?${params}`);
             const data = await res.json();
             if (termsKey !== JSON.stringify(this.gallerySearchTerms || [])) {
@@ -433,7 +446,7 @@ export function showGallerySelectMode(model) {
 
 
 
-export function showGalleryViewer(src) {
+export function showGalleryViewer(src, isVideo = false) {
         let viewer = document.getElementById('anomalous-gallery-viewer');
         if (!viewer) {
             viewer = document.createElement('dialog');
@@ -447,7 +460,15 @@ export function showGalleryViewer(src) {
             const img = document.createElement('img');
             img.id = 'anomalous-gallery-viewer-img';
 
+            const video = document.createElement('video');
+            video.id = 'anomalous-gallery-viewer-video';
+            video.controls = true;
+            video.autoplay = true;
+            video.loop = true;
+            video.style.display = 'none';
+
             viewer.appendChild(img);
+            viewer.appendChild(video);
             viewer.appendChild(closeBtn);
 
             let scale = 1;
@@ -456,22 +477,26 @@ export function showGalleryViewer(src) {
             let isDragging = false;
             let startX = 0, startY = 0;
 
-            const resetImgTransform = () => {
+            const resetTransform = () => {
                 scale = 1; translateX = 0; translateY = 0;
                 img.style.transform = `translate(0px, 0px) scale(1)`;
                 img.style.cursor = 'grab';
-            };
-
-            closeBtn.onclick = () => {
-                viewer.close();
-                resetImgTransform();
-            };
-
-            viewer.onclick = (e) => {
-                if (e.target === viewer) {
-                    viewer.close();
-                    resetImgTransform();
+                const v = document.getElementById('anomalous-gallery-viewer-video');
+                if (v) {
+                    v.pause();
+                    v.style.display = 'none';
+                    v.removeAttribute('src');
                 }
+            };
+
+            const closeViewer = () => {
+                viewer.close();
+                resetTransform();
+            };
+
+            closeBtn.onclick = closeViewer;
+            viewer.onclick = (e) => {
+                if (e.target === viewer) closeViewer();
             };
 
             viewer.addEventListener('wheel', (e) => {
@@ -506,11 +531,25 @@ export function showGalleryViewer(src) {
         }
 
         const img = document.getElementById('anomalous-gallery-viewer-img');
-        img.src = src;
+        const video = document.getElementById('anomalous-gallery-viewer-video');
+        const isVid = isVideo || /\.(mp4|webm|mov|avi|mkv)(\?|$)/i.test(src);
 
-        // Reset scale and translation when opening a new image
-        img.style.transform = `translate(0px, 0px) scale(1)`;
-        img.style.cursor = 'grab';
+        if (isVid && video) {
+            img.style.display = 'none';
+            video.style.display = 'block';
+            video.src = src;
+            video.play().catch(() => {});
+        } else {
+            if (video) {
+                video.pause();
+                video.style.display = 'none';
+                video.removeAttribute('src');
+            }
+            img.style.display = 'block';
+            img.src = src;
+            img.style.transform = `translate(0px, 0px) scale(1)`;
+            img.style.cursor = 'grab';
+        }
 
         if (!viewer.open) viewer.showModal();
     }

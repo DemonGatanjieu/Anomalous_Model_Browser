@@ -21,6 +21,7 @@ import { fetchDownloadSettings, hfMirrorOn, saveDownloadSettings } from './model
 import { saveApiKey } from './ui_scan_page.js';
 import { exportBackup, importBackup } from './ui_backup.js';
 import { followsSelection, setFollowsSelection } from './shell_open_rules.js';
+import { createGalleryExtensionSettings } from './ui_gallery_filter.js';
 
 const t = (key, params) => translate(key, params);
 // The full written guide: the README, at its Chinese half for Chinese.
@@ -179,6 +180,12 @@ function cardsGroup(owner, redraw) {
                 reload();
             })),
         cacheRow(owner),
+    );
+}
+
+function galleryGroup(owner, redraw) {
+    return group('settingsGallery',
+        row('galleryExtensionsTitle', 'galleryExtensionsHelp', createGalleryExtensionSettings(owner, redraw)),
     );
 }
 
@@ -361,6 +368,7 @@ function render(owner) {
         el('h1', 'anomalous-scan-title', t('sidebarSettings')),
         appearanceGroup(owner, redraw),
         cardsGroup(owner, redraw),
+        galleryGroup(owner, redraw),
         foldersGroup(owner),
         workflowGroup(owner),
         downloadGroup(owner, redraw),
