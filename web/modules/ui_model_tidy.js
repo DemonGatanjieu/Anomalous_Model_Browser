@@ -7,7 +7,7 @@
  * are anyway, or an extra copy of a file in the right folder (step 2 has it), are not listed
  * in step 1. Nothing changes without a press; after one the tab checks again
  * and keeps a note of what was done (`owner.modelTidy.notes`). model_placement.js does the
- * requests.
+ * requests. Under the two steps, "Not used lately" (ui_model_usage.js).
  */
 
 import { app } from "../../../scripts/app.js";
@@ -15,6 +15,7 @@ import { translate as t } from './locales.js';
 import { checkPlacement, moveModel, recycleModel, tidyMisplaced } from './model_placement.js';
 import { fetchImportFolders } from './model_import.js';
 import { formatSize, joinPath } from './ui_model_download.js';
+import { renderUsageSection } from './ui_model_usage.js';
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -225,7 +226,7 @@ export function renderModelTidyView(owner, grid) {
     for (const note of view.notes) section.append(el('div', 'anomalous-tidy-note', note));
     const body = el('div', 'anomalous-tidy-list');
     body.append(el('div', 'anomalous-download-text', t(view.deep ? 'tidyDeepRunning' : 'tidyLoading')));
-    section.append(body);
+    section.append(body, renderUsageSection(owner, note => changed(owner, note)));
     grid.appendChild(section);
 
     Promise.all([checkPlacement(view.deep, controller.signal), fetchImportFolders().catch(() => null)]).then(([data, folders]) => {

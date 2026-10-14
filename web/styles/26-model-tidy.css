@@ -152,6 +152,58 @@
     font-weight: 700;
 }
 
+/* "Not used lately" (ui_model_usage.js): a row per model or node pack. */
+.anomalous-usage {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.anomalous-usage-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.anomalous-usage-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: var(--amb-bg-card);
+    cursor: pointer;
+}
+
+.anomalous-usage-row.is-pack { cursor: default; }
+.anomalous-usage-row:has(input:checked) { border-color: var(--amb-link); }
+
+.anomalous-usage-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.anomalous-usage-when { color: var(--amb-text-muted); font-size: 12px; }
+.anomalous-usage-saved { color: var(--amb-warn-text); font-size: 12px; }
+.anomalous-usage-pack { color: var(--amb-text-main); font-size: 13.5px; }
+
+.anomalous-usage-foot {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 8px 0;
+    background: var(--amb-bg-page);
+}
+
 .anomalous-tidy-card {
     display: flex;
     gap: 14px;

@@ -76,11 +76,12 @@ def _normalise_model_ref(value):
 
 
 def build_record(path):
-    """Searchable text, recorded model hashes and referenced model files for one image."""
+    """Searchable text, recorded model hashes, referenced model files and node types for one image."""
     name = os.path.basename(path)
     texts = [name]
     hashes = set()
     models = set()
+    types = set()
     if path.lower().endswith(".png"):
         try:
             chunks = read_png_text(path)
@@ -92,6 +93,8 @@ def build_record(path):
                 if not isinstance(node, dict):
                     continue
                 texts.append(str(node.get("class_type", "")))
+                if isinstance(node.get("class_type"), str):
+                    types.add(node["class_type"])
                 for key, value in (node.get("inputs") or {}).items():
                     if isinstance(value, dict) and isinstance(value.get("lora"), str):
                         value = value["lora"]  # a row of rgthree's Power Lora Loader
@@ -113,7 +116,7 @@ def build_record(path):
                     models |= _normalise_model_ref(model_name)
         if chunks.get("parameters"):
             texts.append(chunks["parameters"])
-    return {"text": "\n".join(texts).lower(), "hashes": hashes, "models": models}
+    return {"text": "\n".join(texts).lower(), "hashes": hashes, "models": models, "types": types}
 
 
 def _load_json(raw):

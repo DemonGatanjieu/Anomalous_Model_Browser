@@ -22,6 +22,9 @@ const post = (url, body) => json(url, { method: 'POST', headers: { 'Content-Type
 /** { misplaced, duplicates, unchecked }; `deep` also reads same-size files never scanned. */
 export const checkPlacement = (deep = false, signal) => json(`/anomalous/placement/check${deep ? '?deep=1' : ''}`, { signal });
 
+/** { models, packs, seen, now }: what was not used lately (api/model_usage.py); reads every output. */
+export const checkUsage = (signal) => json('/anomalous/usage/check', { signal });
+
 /** The misplaced models the Tidy tab lists: not those that load where they are, nor an extra
  * copy of a file that is in the right folder (the identical files step has it). */
 export function tidyMisplaced(data) {
