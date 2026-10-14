@@ -1,8 +1,9 @@
 /**
- * The Tidy tab's "Not used lately" part (api/model_usage.py): models and node packs by when the
- * outputs last used them. Run on a press (it reads every output and saved workflow); the answer
- * is kept in `owner.modelUsage` while the tab is redrawn. Models picked here go to the Recycle
- * Bin (model_placement.js); node packs are only listed, ComfyUI Manager disables or removes them.
+ * The Tidy tab's "Not used lately" part (api/model_usage.py): models and node packs by when they
+ * were last used (the run record, outputs and saved workflows). Run on a press (it reads every
+ * output and saved workflow); the answer is kept in `owner.modelUsage` while the tab is redrawn.
+ * Two pages: models, picked here, go to the Recycle Bin (model_placement.js); node packs are only
+ * listed, each with a way into ComfyUI Manager, which disables or removes them.
  */
 
 import { app } from "../../../scripts/app.js";
@@ -11,14 +12,17 @@ import { checkUsage, recycleModel } from './model_placement.js';
 import { formatSize } from './ui_model_download.js';
 
 const DAY = 24 * 3600;
+const NEVER_DAYS = 30; // "never used" only for what has been here this long
 const SHOWN = 100; // rows drawn at most; the rest is counted
 const FILTERS = [['30', 'tidyUsage30'], ['90', 'tidyUsage90'], ['never', 'tidyUsageNever']];
 // ComfyUI lists the Manager's commands even without the Manager; its own routes tell it is there,
-// and which one: the Manager 4 (ComfyUI's own command) or 3 (the command its script adds).
+// and which one: the Manager 4 (ComfyUI's own command) or 3 (the command its script adds, whose
+// node list has a search box this page can fill).
 const MANAGERS = [
-    ['/api/v2/manager/version', ['Comfy.Manager.CustomNodesManager.ShowCustomNodesMenu']],
-    ['/api/manager/version', ['Comfy.Manager.CustomNodesManager.ToggleVisibility', 'Comfy.Manager.CustomNodesManager.ShowLegacyCustomNodesMenu']],
+    ['/api/v2/manager/version', ['Comfy.Manager.CustomNodesManager.ShowCustomNodesMenu'], null],
+    ['/api/manager/version', ['Comfy.Manager.CustomNodesManager.ToggleVisibility', 'Comfy.Manager.CustomNodesManager.ShowLegacyCustomNodesMenu'], 'input.cn-manager-keywords'],
 ];
+const SEARCH_WAIT_MS = 6000;
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -35,22 +39,34 @@ function button(className, label, onClick) {
 }
 
 function state(owner) {
-    owner.modelUsage ||= { data: null, filter: '90', picked: new Set(), running: false, error: false };
+    owner.modelUsage ||= { data: null, filter: '90', page: 'models', picked: new Set(), running: false, error: false };
     return owner.modelUsage;
 }
 
 const keyOf = (item) => `${item.type}|${item.root}|${item.rel}`;
+const daysSince = (seconds, now) => Math.floor((now - seconds) / DAY);
+const threshold = (filter) => (filter === 'never' ? NEVER_DAYS : Number(filter)) * DAY;
 
-/** Whether `item` ({last_used, saved}) is listed under `filter` ('30' | '90' | 'never'), as of `now`. */
+/** Whether `item` ({last_used, saved, added}) is listed under `filter` ('30' | '90' | 'never'), as
+ * of `now`: idle since its last use or its arrival, whichever is later; nothing new is judged. */
 export function notUsedSince(item, filter, now) {
-    if (filter === 'never') return !item.last_used && !item.saved;
-    return !item.last_used || now - item.last_used >= Number(filter) * DAY;
+    const since = Math.max(item.last_used || 0, item.added || 0);
+    if (now - since < threshold(filter)) return false;
+    return filter !== 'never' || (!item.last_used && !item.saved);
 }
 
 function when(item, now) {
     if (!item.last_used) return t('tidyUsageNoOutput');
     const date = new Date(item.last_used * 1000).toLocaleDateString();
-    return t('tidyUsageLast', { date, days: Math.floor((now - item.last_used) / DAY) });
+    return t('tidyUsageLast', { date, days: daysSince(item.last_used, now) });
+}
+
+/** What the run record can vouch for under `filter`: a line, a warning while it is younger than that. */
+function ledgerNote(since, filter, now) {
+    if (!since) return el('div', 'anomalous-usage-ledger is-short', t('tidyUsageLedgerNone'));
+    const values = { date: new Date(since * 1000).toLocaleDateString(), days: daysSince(since, now) };
+    const short = now - since < threshold(filter);
+    return el('div', `anomalous-usage-ledger${short ? ' is-short' : ''}`, t(short ? 'tidyUsageLedgerShort' : 'tidyUsageLedger', values));
 }
 
 function cover(item) {
@@ -88,39 +104,63 @@ function modelRow(view, item, now, redrawFoot) {
     return row;
 }
 
-function packRow(item, now) {
+function packRow(owner, item, now) {
     const row = el('div', 'anomalous-usage-row is-pack');
     const body = el('div', 'anomalous-usage-body');
-    body.append(el('strong', 'anomalous-usage-pack', item.name), el('div', 'anomalous-tidy-file', t('tidyUsageNodes', { count: item.nodes })),
-        el('div', 'anomalous-usage-when', when(item, now)));
+    const facts = [item.nodes ? t('tidyUsageNodes', { count: item.nodes }) : t('tidyUsageNoNodes')];
+    if (item.added) facts.push(t('tidyUsageInstalled', { days: daysSince(item.added, now) }));
+    body.append(el('strong', 'anomalous-usage-pack', item.name), el('div', 'anomalous-tidy-file', facts.join(' · ')));
+    if (item.nodes) body.append(el('div', 'anomalous-usage-when', when(item, now)));
     if (item.saved) body.append(el('div', 'anomalous-usage-saved', t('tidyUsageSaved', { count: item.saved })));
-    row.append(body);
+    if (item.feeds?.length) body.append(el('div', 'anomalous-usage-saved', t('tidyUsageFeeds', { packs: item.feeds.join(', ') })));
+    if (item.nodes && item.web) body.append(el('div', 'anomalous-usage-when', t('tidyUsageWeb')));
+    row.append(body, button('anomalous-scan-row-btn', t('tidyUsageFind'), () => openManager(owner, item)));
     return row;
 }
 
-/** The commands that open the installed Manager's node pack list; null without a Manager. */
-async function managerCommands() {
-    for (const [url, ids] of MANAGERS) {
+/** The installed Manager: { ids: commands opening its node pack list, search: its search box } or null. */
+async function findManager() {
+    for (const [url, ids, search] of MANAGERS) {
         try {
-            if ((await fetch(url)).ok) return ids;
+            if ((await fetch(url)).ok) return { ids, search };
         } catch (_) { /* not this Manager version */ }
     }
     return null;
 }
 
-/** ComfyUI Manager's node pack list, where packs are disabled or removed; the browser steps aside for it. */
-async function openManager(owner) {
-    const ids = await managerCommands();
-    if (!ids) {
+/** Types `words` into the Manager's search box once its node list shows; false when it never does. */
+async function searchManager(selector, words) {
+    const until = Date.now() + SEARCH_WAIT_MS;
+    while (Date.now() < until) {
+        const box = [...document.querySelectorAll(selector)].find(node => node.offsetParent !== null);
+        if (box) {
+            box.value = words;
+            box.dispatchEvent(new Event('input', { bubbles: true }));
+            return true;
+        }
+        await new Promise(resolve => setTimeout(resolve, 150));
+    }
+    return false;
+}
+
+/** ComfyUI Manager's node pack list, searched for `pack` where the Manager allows it (its name
+ * is also copied, to paste where it does not); the browser steps aside for it. */
+async function openManager(owner, pack) {
+    const manager = await findManager();
+    if (!manager) {
         alert(t('tidyUsageNoManager'));
         return;
     }
+    try {
+        await navigator.clipboard?.writeText(pack.name);
+    } catch (_) { /* no clipboard here: the name is on the page */ }
     const commands = app.extensionManager?.command;
     owner.close?.();
-    for (const id of ids) {
+    for (const id of manager.ids) {
         try {
             if (commands?.commands?.some?.(command => command.id === id) === false) continue;
             await commands.execute(id);
+            if (manager.search) await searchManager(manager.search, pack.words || pack.name);
             return;
         } catch (_) { /* not this ComfyUI's command: the next one */ }
     }
@@ -144,37 +184,15 @@ async function run(owner) {
     }
 }
 
-/** The part under the Tidy tab's checks; `onRecycled(note)` after models went to the Recycle Bin. */
-export function renderUsageSection(owner, onRecycled) {
-    const view = state(owner);
-    const section = el('div', 'anomalous-usage');
-    const head = el('div', 'anomalous-tidy-step');
-    head.append(el('h3', '', t('tidyUsageTitle')));
-    section.append(head, el('p', 'anomalous-tidy-why', t('tidyUsageLead')));
-    if (view.running) {
-        section.append(el('div', 'anomalous-download-text', t('tidyUsageRunning')));
-        return section;
-    }
-    if (view.error) section.append(el('div', 'anomalous-download-text is-bad', t('tidyUsageFailed')));
-    if (!view.data) {
-        section.append(button('anomalous-scan-primary anomalous-scan-small-btn', t('tidyUsageRun'), () => run(owner)));
-        return section;
-    }
+function chip(label, pressed, onClick) {
+    const node = button('anomalous-model-base-chip', label, onClick);
+    node.setAttribute('aria-pressed', String(pressed));
+    return node;
+}
 
-    const { models, packs, seen, now } = view.data;
-    const chips = el('div', 'anomalous-usage-filters');
-    for (const [value, key] of FILTERS) {
-        const count = models.filter(item => notUsedSince(item, value, now)).length;
-        const chip = button('anomalous-model-base-chip', `${t(key)} ${count}`, () => {
-            view.filter = value;
-            owner.loadModels();
-        });
-        chip.setAttribute('aria-pressed', String(view.filter === value));
-        chips.append(chip);
-    }
-    chips.append(button('anomalous-scan-row-btn', t('tidyUsageAgain'), () => run(owner)));
-    section.append(chips, el('div', 'anomalous-tidy-file', t(seen.capped ? 'tidyUsageSeenCapped' : 'tidyUsageSeen', { outputs: seen.outputs, saved: seen.saved })));
-
+function modelsPage(view, onRecycled) {
+    const { models, now } = view.data;
+    const page = document.createDocumentFragment();
     const listed = models.filter(item => notUsedSince(item, view.filter, now)).sort((a, b) => b.size - a.size);
     const foot = el('div', 'anomalous-usage-foot');
     const recycle = button('anomalous-scan-primary anomalous-scan-small-btn', t('tidyUsageRecycle'), async () => {
@@ -207,22 +225,65 @@ export function renderUsageSection(owner, onRecycled) {
     drawFoot();
     foot.append(summary, recycle);
 
-    if (!listed.length) section.append(el('div', 'anomalous-tidy-done', t('tidyUsageNone')));
+    if (!listed.length) page.append(el('div', 'anomalous-tidy-done', t('tidyUsageNone')));
     else {
-        section.append(...listed.slice(0, SHOWN).map(item => modelRow(view, item, now, drawFoot)));
+        page.append(...listed.slice(0, SHOWN).map(item => modelRow(view, item, now, drawFoot)));
         if (listed.length > SHOWN) {
             const rest = listed.slice(SHOWN);
-            section.append(el('div', 'anomalous-tidy-file', t('tidyUsageMore', { count: rest.length, size: formatSize(rest.reduce((sum, item) => sum + item.size, 0)) })));
+            page.append(el('div', 'anomalous-tidy-file', t('tidyUsageMore', { count: rest.length, size: formatSize(rest.reduce((sum, item) => sum + item.size, 0)) })));
         }
-        section.append(foot);
+        page.append(foot);
+    }
+    return page;
+}
+
+function packsPage(owner, view) {
+    const { packs, now } = view.data;
+    const page = document.createDocumentFragment();
+    const listed = packs.filter(item => item.nodes && notUsedSince(item, view.filter, now));
+    const pageOnly = packs.filter(item => !item.nodes);
+    page.append(el('p', 'anomalous-tidy-why', t('tidyUsagePacksLead')));
+    if (!listed.length) page.append(el('div', 'anomalous-tidy-done', t('tidyUsagePacksNone')));
+    else page.append(...listed.map(item => packRow(owner, item, now)));
+    if (pageOnly.length) {
+        const head = el('div', 'anomalous-tidy-step');
+        head.append(el('h3', '', t('tidyUsagePageOnly')));
+        page.append(head, el('p', 'anomalous-tidy-why', t('tidyUsagePageOnlyLead')), ...pageOnly.map(item => packRow(owner, item, now)));
+    }
+    return page;
+}
+
+/** The part under the Tidy tab's checks; `onRecycled(note)` after models went to the Recycle Bin. */
+export function renderUsageSection(owner, onRecycled) {
+    const view = state(owner);
+    const section = el('div', 'anomalous-usage');
+    const head = el('div', 'anomalous-tidy-step');
+    head.append(el('h3', '', t('tidyUsageTitle')));
+    section.append(head, el('p', 'anomalous-tidy-why', t('tidyUsageLead')));
+    if (view.running) {
+        section.append(el('div', 'anomalous-download-text', t('tidyUsageRunning')));
+        return section;
+    }
+    if (view.error) section.append(el('div', 'anomalous-download-text is-bad', t('tidyUsageFailed')));
+    if (!view.data) {
+        section.append(button('anomalous-scan-primary anomalous-scan-small-btn', t('tidyUsageRun'), () => run(owner)));
+        return section;
     }
 
-    const packHead = el('div', 'anomalous-tidy-step');
-    packHead.append(el('h3', '', t('tidyUsagePacks')));
-    const packsListed = packs.filter(item => notUsedSince(item, view.filter, now));
-    section.append(packHead, el('p', 'anomalous-tidy-why', t('tidyUsagePacksLead')),
-        button('anomalous-scan-secondary anomalous-scan-small-btn', t('tidyUsageManager'), () => openManager(owner)));
-    if (!packsListed.length) section.append(el('div', 'anomalous-tidy-done', t('tidyUsagePacksNone')));
-    else section.append(...packsListed.map(item => packRow(item, now)));
+    const { models, packs, seen, now, ledger_since: since } = view.data;
+    const redraw = () => owner.loadModels();
+    const counted = (list) => list.filter(item => notUsedSince(item, view.filter, now)).length;
+    const pages = el('div', 'anomalous-usage-filters');
+    pages.append(
+        chip(`${t('tidyUsageModels')} ${counted(models)}`, view.page === 'models', () => { view.page = 'models'; redraw(); }),
+        chip(`${t('tidyUsagePacks')} ${counted(packs.filter(item => item.nodes))}`, view.page === 'packs', () => { view.page = 'packs'; redraw(); }));
+    const filters = el('div', 'anomalous-usage-filters');
+    for (const [value, key] of FILTERS) {
+        filters.append(chip(t(key), view.filter === value, () => { view.filter = value; redraw(); }));
+    }
+    filters.append(button('anomalous-scan-row-btn', t('tidyUsageAgain'), () => run(owner)));
+    section.append(pages, filters, ledgerNote(since, view.filter, now),
+        el('div', 'anomalous-tidy-file', t(seen.capped ? 'tidyUsageSeenCapped' : 'tidyUsageSeen', { outputs: seen.outputs, saved: seen.saved })),
+        view.page === 'packs' ? packsPage(owner, view) : modelsPage(view, onRecycled));
     return section;
 }

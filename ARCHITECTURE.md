@@ -151,9 +151,15 @@ covered by the `styles.css` manifest.
   whose header names another type than their folder, identical files (by SHA-256), and moving
   a model with its sidecars to where it belongs.
 - `api/model_usage.py` is Tidy's "not used lately" (`GET /anomalous/usage/check`, this computer
-  only, on a press): when each model and node pack was last used, from the PNG outputs'
-  prompts (image_search's cached records, which keep the node types too) and the saved
-  workflows, recipes, combos and parameter sets; read with limits, deletes nothing.
+  only, on a press): when each model and node pack was last used, from the run record, the
+  PNG outputs' prompts (image_search's cached records, which keep the node types too), FLAC /
+  Ogg sounds' prompts and the saved workflows, recipes, combos and parameter sets; nothing that
+  came in the last 30 days is judged. Node packs come from ComfyUI's loaded packs, with whether
+  they add to the page and which other packs take what only they make. Read with limits,
+  deletes nothing.
+- `api/usage_ledger.py` is the run record behind it: ComfyUI's on_prompt hook (registered in
+  the plugin's `__init__.py`) notes each queued run's node types and model files with the time
+  in `user/anomalous/usage_ledger.json`, saved a few seconds later; it never stops a run.
 - `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
   `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
   integrity receipts; `api/recipes.py` is the HTTP facade. `api/recipe_constants.py`
@@ -481,8 +487,9 @@ covered by the `styles.css` manifest.
   'tidy'`): cards with covers in two steps — models in a folder whose loader cannot read them
   (from → to, Move there), identical copies (pick the one to keep, recycle the rest);
   `model_placement.js` does its requests and keeps the tab's count. Under the two steps
-  `ui_model_usage.js` lists the models and node packs not used for 30 / 90 days or never,
-  picked models go to the Recycle Bin; node packs only get ComfyUI Manager's node list. `ui_model_search.js` is the models
+  `ui_model_usage.js` lists the models and node packs not used for 30 / 90 days or never, on
+  two pages: picked models go to the Recycle Bin; each node pack opens ComfyUI Manager's node
+  list searched for it (Manager 3; its name is copied for the rest). `ui_model_search.js` is the models
   search in the header (shown on the models page through the shell's `data-page`): the grid
   lists the models of its type matching every word (`owner.modelQuery`).
 - `model_source.js` shows where a model's information came from: the card badge (marked only

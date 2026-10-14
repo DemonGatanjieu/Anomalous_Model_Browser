@@ -192,6 +192,8 @@
 .anomalous-usage-when { color: var(--amb-text-muted); font-size: 12px; }
 .anomalous-usage-saved { color: var(--amb-warn-text); font-size: 12px; }
 .anomalous-usage-pack { color: var(--amb-text-main); font-size: 13.5px; }
+.anomalous-usage-ledger { color: var(--amb-text-muted); font-size: 12px; }
+.anomalous-usage-ledger.is-short { color: var(--amb-warn-text); }
 
 .anomalous-usage-foot {
     position: sticky;
