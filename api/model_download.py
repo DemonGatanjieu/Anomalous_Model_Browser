@@ -36,6 +36,11 @@ from .download_sources import (
 )
 from .path_utils import atomic_write_json, resolve_within
 
+try:
+    from ..net_proxy import urlopen
+except ImportError:  # loaded outside the package (tests)
+    from net_proxy import urlopen
+
 MODEL_EXTENSIONS = (".safetensors", ".ckpt", ".pt", ".pth", ".bin", ".sft", ".gguf")
 CHUNK = 1024 * 1024
 SPACE_MARGIN = 200 * 1024 * 1024
@@ -248,7 +253,7 @@ def _open(job, start):
     if key:  # not carried along the redirect to the file storage
         request.add_unredirected_header("Authorization", f"Bearer {key}")
     try:
-        return urllib.request.urlopen(request, timeout=60)
+        return urlopen(request, timeout=60)
     except urllib.error.HTTPError as error:
         if error.code in (401, 403):
             raise DownloadError("needs_key" if is_civitai(job["url"]) and not key else "forbidden") from error

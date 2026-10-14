@@ -142,12 +142,12 @@ def ask_civitai(args, state, file_hash):
         return None, "network"
     try:
         data = fetch_civitai_info(file_hash)
-    except CivitaiUnreachable:
+    except CivitaiUnreachable as unreachable:
         state["network_failures"] += 1
         if state["network_failures"] >= CIVITAI_DOWN_AFTER:
             state["civitai_down"] = True
             print("\033[93m[!] 连续几个模型都连不上 Civitai，本次其余模型改为从文件推断，之后可以“重新联网查找”。\033[0m")
-            write_report(args, event="civitai_down")
+            write_report(args, event="civitai_down", reason=str(unreachable))
         return None, "network"
     state["network_failures"] = 0
     return data, ("" if data else "not_found")

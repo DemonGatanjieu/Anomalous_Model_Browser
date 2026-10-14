@@ -11,6 +11,11 @@ import urllib.request
 
 from aiohttp import web
 
+try:
+    from ..net_proxy import urlopen
+except ImportError:  # loaded outside the package (tests)
+    from net_proxy import urlopen
+
 
 _DEEPL_TARGETS = {
     "zh": "ZH-HANS", "zh-CN": "ZH-HANS", "zh-TW": "ZH-HANT", "en": "EN-US", "ja": "JA", "ko": "KO",
@@ -31,7 +36,7 @@ def _translate_with_deepl(text, tl, deepl_key):
         "Authorization": f"DeepL-Auth-Key {deepl_key}",
         "Content-Type": "application/json",
     })
-    with urllib.request.urlopen(req, timeout=8) as resp:
+    with urlopen(req, timeout=8) as resp:
         result = json.loads(resp.read().decode('utf-8'))
         return result["translations"][0]["text"]
 
@@ -70,7 +75,7 @@ def _translate_with_google(text, tl):
             req = urllib.request.Request(url, headers={
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             })
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            with urlopen(req, timeout=5) as resp:
                 result = json.loads(resp.read().decode('utf-8'))
                 if result and isinstance(result, list) and len(result) > 0 and isinstance(result[0], list):
                     translated_text = "".join([part[0] for part in result[0] if part and len(part) > 0 and part[0]])
@@ -93,7 +98,7 @@ def _translate_with_mymemory(text, tl):
     req = urllib.request.Request(url, headers={
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     })
-    with urllib.request.urlopen(req, timeout=5) as resp:
+    with urlopen(req, timeout=5) as resp:
         data = json.loads(resp.read().decode('utf-8'))
         res = data.get("responseData", {}).get("translatedText")
         if res and res != text:

@@ -145,7 +145,9 @@ polling after its UI has been reopened.
 
 `scraper.py --report-file` appends one JSON line per model it changed (`matched`,
 `inferred` with its reason, `failed` with the error, renames and covers) and events
-(`civitai_down`, `done` with the unchanged count). One model's error is reported and
+(`civitai_down` with `reason`, net_proxy.py's name for the failure, and `done` with the
+unchanged count; the result carries the first reason as `civitai_error`). The scan process
+gets Settings' proxy as HTTP(S)_PROXY (`net_proxy.child_env`). One model's error is reported and
 the scan goes on. `ScanJob` in `api/scan_report.py` reads each folder's report when its
 worker exits and, before the scan's marker is released, writes the scan's result to
 `user/anomalous/last_scan.json` and the activity log, so whoever sees the scan end can

@@ -81,11 +81,11 @@ class ScanReportTests(unittest.TestCase):
             self.model(name)
 
         def down(_hash):
-            raise scraper.CivitaiUnreachable("offline")
+            raise scraper.CivitaiUnreachable("timeout")
 
         asked, lines = self.scan(down)
         self.assertEqual(len(asked), scraper.CIVITAI_DOWN_AFTER)
-        self.assertIn({"event": "civitai_down"}, lines)
+        self.assertIn({"event": "civitai_down", "reason": "timeout"}, lines)  # why, for the scan page
         reasons = [line.get("reason") for line in lines if "file" in line]
         self.assertEqual(reasons, ["network"] * 4)
 
@@ -125,7 +125,7 @@ class ScanReportTests(unittest.TestCase):
             {"file": str(sub / "a.safetensors"), "status": "matched", "name": "A · v1", "cover": "new"},
             {"file": str(self.dir / "b.safetensors"), "status": "inferred", "reason": "network", "base": "Flux.1 D"},
             {"file": str(self.dir / "old.safetensors"), "status": "unchanged", "renamed_to": str(self.dir / "New_v1.safetensors")},
-            {"event": "civitai_down"},
+            {"event": "civitai_down", "reason": "refused"},
             {"event": "done", "unchanged": 5},
         )), encoding="utf-8")
         log = self.dir / "activity_log.json"
@@ -140,6 +140,7 @@ class ScanReportTests(unittest.TestCase):
         self.assertFalse(self.report.exists())
         self.assertEqual(result["counts"], {"matched": 1, "inferred": 1, "failed": 0, "covers": 1, "renamed": 1, "unchanged": 5})
         self.assertTrue(result["civitai_down"])
+        self.assertEqual(result["civitai_error"], "refused")
         first, _, renamed = result["files"]
         self.assertEqual((first["type"], first["rel"], first["filename"]), ("loras", "sub/a.safetensors", "a.safetensors"))
         self.assertEqual((renamed["filename"], renamed["renamed_from"]), ("New_v1.safetensors", "old.safetensors"))

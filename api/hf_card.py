@@ -18,9 +18,11 @@ from .path_utils import atomic_write_json
 try:
     from ..model_identity import USER_INFO_SUFFIX, read_json
     from ..civitai_client import USER_AGENT
+    from ..net_proxy import urlopen
 except ImportError:  # loaded outside the package (tests)
     from model_identity import USER_INFO_SUFFIX, read_json
     from civitai_client import USER_AGENT
+    from net_proxy import urlopen
 
 TIMEOUT = 15
 MAX_COVER_BYTES = 20 * 1024 * 1024
@@ -41,7 +43,7 @@ def repo_of(url):
 
 def _get(url, limit=None):
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
+    with urlopen(request, timeout=TIMEOUT) as response:
         data = response.read(limit + 1 if limit else -1)
         return data, str(response.headers.get("Content-Type", "")).split(";")[0].strip().lower()
 

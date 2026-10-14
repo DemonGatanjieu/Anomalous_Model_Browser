@@ -6,6 +6,7 @@
 
 import { translate as t } from './locales.js';
 import { countsLine, fileOutcome, scanScope, STATUS_MARKS } from './scan_results.js';
+import { civitaiDownWhy } from './net_failure.js';
 
 // Server action id → locale key.
 const ACTION_KEYS = {
@@ -103,6 +104,7 @@ export function fileDetailLines(entry) {
     const empty = t('activityEmptyValue');
     const lines = [];
     if (detail.scan?.civitai_down) lines.push({ text: t('scanResultCivitaiDown') });
+    if (detail.scan?.civitai_down && detail.scan.civitai_error) lines.push({ text: civitaiDownWhy(detail.scan.civitai_error) });
     for (const error of detail.scan?.errors || []) lines.push({ text: error });
     const download = detail.download;
     if (download) {

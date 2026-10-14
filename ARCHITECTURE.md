@@ -92,7 +92,11 @@ covered by the `styles.css` manifest.
 - `api/scanner.py` and `scraper.py` own scan orchestration and enrichment; both scan
   routes map request fields to scraper switches in one place (`_scraper_flags`).
   `civitai_client.py` is the scraper's network side (version by hash, model page, media),
-  telling "Civitai does not know the file" from "Civitai could not be asked".
+  telling "Civitai does not know the file" from "Civitai could not be asked" (and why).
+  `net_proxy.py` is the proxy every request of the plugin goes through (Settings → Network,
+  `NETWORK_PROXY` in api/config.json; empty = urllib's own: HTTPS_PROXY or the Windows proxy),
+  handed to the scan process as HTTP(S)_PROXY, and the names of why a request failed;
+  `api/network_check.py` (`GET /anomalous/civitai_check`, this computer only) tests Civitai through it.
   `api/scan_report.py` turns the scraper's per-model report lines into one result per
   scan: kept as the last scan (`/anomalous/last_scan`), recorded in the activity log, each
   model located so the browser can open it (`/anomalous/scan_model`).
@@ -395,7 +399,9 @@ covered by the `styles.css` manifest.
   list page from `ui_scan_lists.js` (not scanned, unmatched, other formats, the last scan's
   models) with Back, a button for the whole list (scan these / look them up again) and rows
   that open a model, whose Back returns to the list, or scan it;
-  `scan_results.js` holds the words for scan results, shared with the activity page.
+  `scan_results.js` holds the words for scan results, shared with the activity page;
+  `net_failure.js` the words for why Civitai could not be reached (net_proxy.py's codes), for
+  the scan results and Settings → Network's connection test.
   `ui_scan_picker.js` is the scan page's model picker: every model a scan reads, by folder,
   state (not scanned, not found, damaged, found, don't scan) and search, as a list or covers;
   the page keeps its picks as items (none: the button scans everything).

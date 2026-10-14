@@ -112,6 +112,11 @@
 - **AI apps can download too (AI 也能下载)**: three new MCP tools: `download_missing_models` (what Model Check's Download all does, for the open workflow), `download_model` (one model from a Civitai version link, a Hugging Face or GitHub file link, or a Civitai hash, into the folder of its type) and `download_status`. Files go where Settings → Model downloads says, are checked the same way, and are never written over an existing file.
 - **Hugging Face through the China mirror (Hugging Face 国内镜像)**: Settings → Model downloads can send Hugging Face downloads through hf-mirror.com, which is on by default for the Chinese interface. When a download from Hugging Face itself fails, the row suggests the mirror.
 
+### 🌐 A proxy for the plugin, and why Civitai cannot be reached (代理设置与连不上的原因)
+- **Settings → Network → Proxy address**: the plugin's own requests (scans, model downloads, translation, update checks) go through the proxy written here, e.g. `127.0.0.1:7890`. Empty uses the system proxy as before. For a VPN app in PAC mode or one that only proxies the browser: the browser reached Civitai, the scan did not. Only this plugin uses it; ComfyUI and other node packs are untouched.
+- **Test connection** right below says whether Civitai answers now, and if not, why.
+- **A scan that cannot reach Civitai says why**: no answer (often no proxy), refused (wrong proxy port, VPN off), the address not found, a failed secure connection, or an error from Civitai, with what to try.
+
 ### 💾 Backup and restore (备份与恢复)
 - **Settings → Backup → Export** packs your Workflow Recipes, combos, materials and saved prompts, parameter sets, the plugin settings and the names, notes and covers you gave your models into one .zip, optionally with ComfyUI's own saved workflows. Keep it on a cloud drive or a USB stick. The Civitai API key is never included.
 - **Import** first lists what is in the backup next to what this computer has (new, the same, different), and the models it finds again by file hash, even after they were renamed or moved. By default it only adds what is missing; "take the backup's" replaces differing files and puts this computer's in the Recycle Bin. A model's name and notes are filled in where empty, and your own cover takes the place of the Civitai one. Nothing is deleted.
