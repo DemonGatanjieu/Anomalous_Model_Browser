@@ -3,13 +3,15 @@
  * were last used (the run record, outputs and saved workflows). Run on a press (it reads every
  * output and saved workflow); the answer is kept in `owner.modelUsage` while the tab is redrawn.
  * Two pages: models, picked here, go to the Recycle Bin (model_placement.js); node packs are only
- * listed, each with a way into ComfyUI Manager, which disables or removes them.
+ * listed, each with a way into ComfyUI Manager, which disables or removes them. Packs that also
+ * add to the page are set apart: their nodes going unused does not say the pack is.
  */
 
 import { app } from "../../../scripts/app.js";
 import { translate as t } from './locales.js';
 import { checkUsage, recycleModel } from './model_placement.js';
 import { formatSize } from './ui_model_download.js';
+import { noteOpenWorkflows } from './usage_notes.js';
 
 const DAY = 24 * 3600;
 const NEVER_DAYS = 30; // "never used" only for what has been here this long
@@ -113,7 +115,6 @@ function packRow(owner, item, now) {
     if (item.nodes) body.append(el('div', 'anomalous-usage-when', when(item, now)));
     if (item.saved) body.append(el('div', 'anomalous-usage-saved', t('tidyUsageSaved', { count: item.saved })));
     if (item.feeds?.length) body.append(el('div', 'anomalous-usage-saved', t('tidyUsageFeeds', { packs: item.feeds.join(', ') })));
-    if (item.nodes && item.web) body.append(el('div', 'anomalous-usage-when', t('tidyUsageWeb')));
     row.append(body, button('anomalous-scan-row-btn', t('tidyUsageFind'), () => openManager(owner, item)));
     return row;
 }
@@ -173,6 +174,7 @@ async function run(owner) {
     view.error = false;
     owner.loadModels();
     try {
+        await noteOpenWorkflows();
         view.data = await checkUsage();
         view.picked.clear();
     } catch (error) {
@@ -240,16 +242,20 @@ function modelsPage(view, onRecycled) {
 function packsPage(owner, view) {
     const { packs, now } = view.data;
     const page = document.createDocumentFragment();
-    const listed = packs.filter(item => item.nodes && notUsedSince(item, view.filter, now));
-    const pageOnly = packs.filter(item => !item.nodes);
-    page.append(el('p', 'anomalous-tidy-why', t('tidyUsagePacksLead')));
-    if (!listed.length) page.append(el('div', 'anomalous-tidy-done', t('tidyUsagePacksNone')));
-    else page.append(...listed.map(item => packRow(owner, item, now)));
-    if (pageOnly.length) {
+    const idle = packs.filter(item => item.nodes && notUsedSince(item, view.filter, now));
+    const group = (titleKey, leadKey, items) => {
         const head = el('div', 'anomalous-tidy-step');
-        head.append(el('h3', '', t('tidyUsagePageOnly')));
-        page.append(head, el('p', 'anomalous-tidy-why', t('tidyUsagePageOnlyLead')), ...pageOnly.map(item => packRow(owner, item, now)));
-    }
+        head.append(el('h3', '', t(titleKey)));
+        page.append(head, el('p', 'anomalous-tidy-why', t(leadKey)), ...items.map(item => packRow(owner, item, now)));
+    };
+    const nodesOnly = idle.filter(item => !item.web);
+    page.append(el('p', 'anomalous-tidy-why', t('tidyUsagePacksLead')));
+    if (!nodesOnly.length) page.append(el('div', 'anomalous-tidy-done', t('tidyUsagePacksNone')));
+    else page.append(...nodesOnly.map(item => packRow(owner, item, now)));
+    const withPage = idle.filter(item => item.web);
+    if (withPage.length) group('tidyUsageUiPacks', 'tidyUsageUiPacksLead', withPage);
+    const pageOnly = packs.filter(item => !item.nodes);
+    if (pageOnly.length) group('tidyUsagePageOnly', 'tidyUsagePageOnlyLead', pageOnly);
     return page;
 }
 
@@ -276,7 +282,7 @@ export function renderUsageSection(owner, onRecycled) {
     const pages = el('div', 'anomalous-usage-filters');
     pages.append(
         chip(`${t('tidyUsageModels')} ${counted(models)}`, view.page === 'models', () => { view.page = 'models'; redraw(); }),
-        chip(`${t('tidyUsagePacks')} ${counted(packs.filter(item => item.nodes))}`, view.page === 'packs', () => { view.page = 'packs'; redraw(); }));
+        chip(`${t('tidyUsagePacks')} ${counted(packs.filter(item => item.nodes && !item.web))}`, view.page === 'packs', () => { view.page = 'packs'; redraw(); }));
     const filters = el('div', 'anomalous-usage-filters');
     for (const [value, key] of FILTERS) {
         filters.append(chip(t(key), view.filter === value, () => { view.filter = value; redraw(); }));

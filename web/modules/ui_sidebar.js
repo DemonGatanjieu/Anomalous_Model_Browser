@@ -19,6 +19,7 @@ import { bindShellDrag, bindShellResize } from './ui_shell_frame.js';
 import { watchScans } from './ui_scan_watch.js';
 import { watchCanvasChanges } from './activity_canvas.js';
 import { watchWorkflowLoads } from './ui_doctor_banner.js';
+import { watchOpenedWorkflows } from './usage_notes.js';
 import { settleModelScope } from './ui_model_types.js';
 import { renderFolderColumn } from './ui_folder_list.js';
 import { createModelSearch } from './ui_model_search.js';
@@ -227,6 +228,7 @@ export function createDOM() {
         installShellNavigation(this, { container, rail, listToggle, title: pageTitle });
         watchCanvasChanges(this);
         watchWorkflowLoads(this);
+        watchOpenedWorkflows();
 
         const isScanning = watchScans(this);
         const settingsHubControl = createSettingsHub(this, {

@@ -157,8 +157,10 @@ covered by the `styles.css` manifest.
   they add to the page and which other packs take what only they make. Read with limits,
   deletes nothing.
 - `api/usage_ledger.py` is the run record behind it: ComfyUI's on_prompt hook (registered in
-  the plugin's `__init__.py`) notes each queued run's node types and model files with the time
-  in `user/anomalous/usage_ledger.json`, saved a few seconds later; it never stops a run.
+  the plugin's `__init__.py`) notes each queued run's node types and model files with the time,
+  and `POST /anomalous/usage/opened` (this computer only, capped lists) what an opened workflow
+  holds, apart from the runs, in `user/anomalous/usage_ledger.json`, saved a few seconds later;
+  it never stops a run.
 - `api/workflow_schema.py`, `api/recipe_schema.py`, `api/recipe_images.py`, and
   `api/recipe_store.py` own recipe validation/shaping, images, CRUD, history, and
   integrity receipts; `api/recipes.py` is the HTTP facade. `api/recipe_constants.py`
@@ -488,7 +490,10 @@ covered by the `styles.css` manifest.
   `model_placement.js` does its requests and keeps the tab's count. Under the two steps
   `ui_model_usage.js` lists the models and node packs not used for 30 / 90 days or never, on
   two pages: picked models go to the Recycle Bin; each node pack opens ComfyUI Manager's node
-  list searched for it (Manager 3; its name is copied for the rest). `ui_model_search.js` is the models
+  list searched for it (Manager 3; its name is copied for the rest); packs that also add to the
+  page are set apart. `usage_notes.js` posts what each workflow ComfyUI opens holds (its own
+  `loadGraphData` wrapper, once per content and page load) and the open tabs just before a
+  check, so opening a workflow or putting a node on the canvas counts as use. `ui_model_search.js` is the models
   search in the header (shown on the models page through the shell's `data-page`): the grid
   lists the models of its type matching every word (`owner.modelQuery`).
 - `model_source.js` shows where a model's information came from: the card badge (marked only

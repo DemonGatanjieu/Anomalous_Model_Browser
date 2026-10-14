@@ -1,11 +1,15 @@
-"""What each run used, kept from the day this started (the Tidy tab's "Not used lately").
+"""What each run used and each opened workflow held, kept from the day this started (the Tidy
+tab's "Not used lately").
 
 ComfyUI keeps no lasting note of which nodes and models a run used: its history is gone after a
 restart and its log names neither. So every prompt queued here passes `note_prompt` (ComfyUI's
-on_prompt hook) on its way in, whether it makes an image, a sound, a video or nothing kept: its
-node types and model files go into user/anomalous/usage_ledger.json, with when each was last
-used and how often ({started, types: {type: [last, runs]}, models: {ref: [last, runs]}}).
-It stays on this computer, is saved a few seconds after a run, and noting never stops a run.
+on_prompt hook) on its way in, whether it makes an image, a sound, a video or nothing kept, and
+the page posts what a workflow holds when it is opened (POST /anomalous/usage/opened {types,
+models}, usage_notes.js; this computer only). Node types and model files go into
+user/anomalous/usage_ledger.json with when each was last used and how often:
+{started, types: {type: [last, runs]}, models: {ref: [last, runs]},
+ opened: {types: {type: [last, times]}, models: {ref: [last, times]}}}.
+It stays on this computer, is saved a few seconds after a note, and noting never stops a run.
 """
 
 import json
@@ -15,12 +19,15 @@ import threading
 import time
 
 import folder_paths
+from aiohttp import web
 
 from .image_search import MODEL_FILE
 from .path_utils import atomic_write_json
 
-SAVE_DELAY = 5.0  # seconds after a run: several runs in a row are saved once
+SAVE_DELAY = 5.0  # seconds after a note: several in a row are saved once
 MAX_NAMES = 20_000  # per kind; the longest unused go first
+MAX_POSTED = 5_000  # names one opened workflow may post, per kind
+MAX_NAME_CHARS = 512
 
 _lock = threading.Lock()
 _ledger = None
@@ -36,6 +43,11 @@ def ledger_path():
     return os.path.join(directory, "usage_ledger.json")
 
 
+def _names(data):
+    """{type or ref: [last, count]} from the saved file, {} when it is not one."""
+    return data if isinstance(data, dict) else {}
+
+
 def _load():
     global _ledger
     if _ledger is None:
@@ -47,12 +59,19 @@ def _load():
             pass
         if not isinstance(data, dict):
             data = {}
+        opened = data.get("opened") if isinstance(data.get("opened"), dict) else {}
         _ledger = {
             "started": data.get("started") if isinstance(data.get("started"), (int, float)) else None,
-            "types": data.get("types") if isinstance(data.get("types"), dict) else {},
-            "models": data.get("models") if isinstance(data.get("models"), dict) else {},
+            "types": _names(data.get("types")),
+            "models": _names(data.get("models")),
+            "opened": {"types": _names(opened.get("types")), "models": _names(opened.get("models"))},
         }
     return _ledger
+
+
+def _copy(ledger):
+    return {"started": ledger["started"], "types": dict(ledger["types"]), "models": dict(ledger["models"]),
+            "opened": {kind: dict(ledger["opened"][kind]) for kind in ("types", "models")}}
 
 
 def _save():
@@ -60,11 +79,11 @@ def _save():
     with _lock:
         _timer = None
         ledger = _load()
-        for kind in ("types", "models"):
-            if len(ledger[kind]) > MAX_NAMES:
-                kept = sorted(ledger[kind].items(), key=lambda entry: entry[1][0], reverse=True)[:MAX_NAMES]
-                ledger[kind] = dict(kept)
-        snapshot = {"started": ledger["started"], "types": dict(ledger["types"]), "models": dict(ledger["models"])}
+        for names in (ledger, ledger["opened"]):
+            for kind in ("types", "models"):
+                if len(names[kind]) > MAX_NAMES:
+                    names[kind] = dict(sorted(names[kind].items(), key=lambda entry: entry[1][0], reverse=True)[:MAX_NAMES])
+        snapshot = _copy(ledger)
     try:
         atomic_write_json(ledger_path(), snapshot)
     except (OSError, ValueError) as error:
@@ -87,25 +106,30 @@ def prompt_uses(prompt):
     return types, models
 
 
-def note(prompt, when=None):
-    """Note what `prompt` (ComfyUI's API prompt) uses, as of `when`; saved shortly after."""
+def _note(types, models, when, opened):
+    """Counts `types` and `models` as used at `when`, among the runs or the opened workflows."""
     global _timer
-    if not isinstance(prompt, dict):
-        return
-    when = time.time() if when is None else when
-    types, models = prompt_uses(prompt)
     with _lock:
         ledger = _load()
         if ledger["started"] is None:
             ledger["started"] = when
-        for kind, names in (("types", types), ("models", models)):
-            for name in names:
-                runs = ledger[kind].get(name, [0, 0])[1]
-                ledger[kind][name] = [when, runs + 1]
+        names = ledger["opened"] if opened else ledger
+        for kind, found in (("types", types), ("models", models)):
+            for name in found:
+                count = names[kind].get(name, [0, 0])[1]
+                names[kind][name] = [when, count + 1]
         if _timer is None:
             _timer = threading.Timer(SAVE_DELAY, _save)
             _timer.daemon = True
             _timer.start()
+
+
+def note(prompt, when=None):
+    """Note what `prompt` (ComfyUI's API prompt) uses, as of `when`; saved shortly after."""
+    if not isinstance(prompt, dict):
+        return
+    types, models = prompt_uses(prompt)
+    _note(types, models, time.time() if when is None else when, opened=False)
 
 
 def note_prompt(json_data):
@@ -117,8 +141,33 @@ def note_prompt(json_data):
     return json_data
 
 
+def _posted(values):
+    """The names of a posted list: strings of a sane length, at most MAX_POSTED; None when not a list."""
+    if not isinstance(values, list):
+        return None
+    return {value for value in values[:MAX_POSTED] if isinstance(value, str) and 0 < len(value) <= MAX_NAME_CHARS}
+
+
+async def api_opened(request):
+    try:
+        data = await request.json()
+    except ValueError:
+        data = None
+    if not isinstance(data, dict):
+        return web.json_response({"error": "bad_request"}, status=400)
+    types, models = _posted(data.get("types")), _posted(data.get("models"))
+    if types is None or models is None:
+        return web.json_response({"error": "bad_request"}, status=400)
+    models = {model.replace("\\", "/").strip().lower() for model in models if MODEL_FILE.search(model)}
+    _note(types, models, time.time(), opened=True)
+    return web.json_response({"noted": len(types) + len(models)})
+
+
 def read():
-    """{started, types, models} as noted so far (a copy)."""
+    """The record as noted so far (a copy), shaped as the module docstring says."""
     with _lock:
-        ledger = _load()
-        return {"started": ledger["started"], "types": dict(ledger["types"]), "models": dict(ledger["models"])}
+        return _copy(_load())
+
+
+def register_routes(app):
+    app.router.add_post("/anomalous/usage/opened", api_opened)

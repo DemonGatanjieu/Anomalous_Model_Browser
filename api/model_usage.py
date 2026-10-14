@@ -2,7 +2,8 @@
 
 GET /anomalous/usage/check -> {models, packs, seen, now, ledger_since}
     Evidence, read only when the user asks:
-    - the run record (usage_ledger.py): every run since it started, kept or not;
+    - the run record (usage_ledger.py): every run since it started, kept or not, and every
+      workflow opened on the page (the open tabs are noted just before a check);
     - the outputs from before that: PNG images (their prompt names model files and node types;
       image_search.cached_record) and FLAC / Ogg sounds (audio_metadata), dated by the file;
     - the saved ComfyUI workflows, recipes, combos and parameter sets (any string naming a model
@@ -12,9 +13,9 @@ GET /anomalous/usage/check -> {models, packs, seen, now, ledger_since}
     Nothing new is judged: a model or pack counts as idle since its last use or since it came
     here (`added`: the file's or folder's creation date), whichever is later.
     models: idle for 30 days or more, with {type, root, rel, size, name, version, preview_url,
-        last_used (seconds or null), outputs, runs, saved (saved files naming it), added}.
+        last_used (seconds or null), outputs, runs, opened, saved (saved files naming it), added}.
     packs: the node packs in custom_nodes but this plugin and ComfyUI Manager, {name, nodes,
-        last_used, outputs, runs, saved, added, web (it adds to ComfyUI's page too), feeds (packs
+        last_used, outputs, runs, opened, saved, added, web (it adds to ComfyUI's page too), feeds (packs
         whose nodes take a kind of thing only its nodes make), words (what to search the Manager
         for)}; a pack of no nodes only works on the page or the server, nothing here can tell.
     seen: {outputs, saved, capped} what was read (capped: some outputs or files were not).
@@ -67,10 +68,11 @@ def _arrived(stat, changed=True):
 
 
 class Evidence:
-    """Per model reference / hash / node type: how many outputs, runs and saved files, and the latest time."""
+    """Per model reference / hash / node type: how many outputs, runs, openings and saved files,
+    and the latest time."""
 
     def __init__(self):
-        self.outputs, self.runs, self.saved, self.last = {}, {}, {}, {}
+        self.outputs, self.runs, self.opened, self.saved, self.last = {}, {}, {}, {}, {}
         self.seen = {"outputs": 0, "saved": 0, "capped": False}
 
     def add(self, keys, when=None):
@@ -81,8 +83,9 @@ class Evidence:
                 self.outputs[key] = self.outputs.get(key, 0) + 1
                 self.last[key] = max(self.last.get(key, 0), when)
 
-    def add_runs(self, key, when, runs):
-        self.runs[key] = self.runs.get(key, 0) + runs
+    def add_noted(self, counts, key, when, count):
+        """A run record entry; `counts` is self.runs or self.opened."""
+        counts[key] = counts.get(key, 0) + count
         self.last[key] = max(self.last.get(key, 0), when)
 
     def of(self, keys):
@@ -90,7 +93,7 @@ class Evidence:
         last = max((self.last.get(key, 0) for key in keys), default=0)
         return {"last_used": last or None,
                 **{kind: max((counts.get(key, 0) for key in keys), default=0)
-                   for kind, counts in (("outputs", self.outputs), ("runs", self.runs), ("saved", self.saved))}}
+                   for kind, counts in (("outputs", self.outputs), ("runs", self.runs), ("opened", self.opened), ("saved", self.saved))}}
 
 
 def _walk_json(value, found):
@@ -183,13 +186,14 @@ def _read_outputs(evidence):
 
 
 def _read_ledger(evidence):
-    """Every run since the record started; its start, or None."""
+    """Every run and opened workflow since the record started; its start, or None."""
     ledger = usage_ledger.read()
-    for node_type, (when, runs) in ledger["types"].items():
-        evidence.add_runs("t:" + node_type, when, runs)
-    for model, (when, runs) in ledger["models"].items():
-        for ref in _refs(model):
-            evidence.add_runs("m:" + ref, when, runs)
+    for names, counts in ((ledger, evidence.runs), (ledger["opened"], evidence.opened)):
+        for node_type, (when, count) in names["types"].items():
+            evidence.add_noted(counts, "t:" + node_type, when, count)
+        for model, (when, count) in names["models"].items():
+            for ref in _refs(model):
+                evidence.add_noted(counts, "m:" + ref, when, count)
     return ledger["started"]
 
 
@@ -286,7 +290,7 @@ def check(now=None):
         packs.append({"name": pack["name"], "nodes": len(pack["types"]), "added": added, "web": pack["web"],
                       "feeds": pack["feeds"][:FEEDS_SHOWN], "words": _search_words(pack["name"]),
                       "last_used": max((use["last_used"] or 0 for use in uses), default=0) or None,
-                      **{kind: max((use[kind] for use in uses), default=0) for kind in ("outputs", "runs", "saved")}})
+                      **{kind: max((use[kind] for use in uses), default=0) for kind in ("outputs", "runs", "opened", "saved")}})
     return {"models": models, "packs": packs, "seen": evidence.seen, "now": now, "ledger_since": ledger_since}
 
 

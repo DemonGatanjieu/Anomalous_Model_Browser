@@ -2,7 +2,7 @@ from . import (
     activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
     model_folder, model_media, model_metadata, model_resolution, model_type_listing, kept_images, node_material, recipe_packages, recipes, scan_choice, scan_report, scan_summary,
     local_guard, lora_info, mcp_server, model_download, model_import, model_placement, translation_routes, version_manager, backup,
-    network_check, model_usage,
+    network_check, model_usage, usage_ledger,
 )
 from .scanner import *
 from .config import *
@@ -138,6 +138,7 @@ def setup_routes(app):
     model_download.register_routes(app)
     network_check.register_routes(app)
     model_usage.register_routes(app)
+    usage_ledger.register_routes(app)
     model_import.register_routes(app)
     model_placement.register_routes(app)
     backup.register_routes(app)

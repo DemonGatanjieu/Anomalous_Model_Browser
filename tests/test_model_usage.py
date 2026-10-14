@@ -1,6 +1,7 @@
 """The Tidy tab's "Not used lately" (api/model_usage.py, api/usage_ledger.py): when each model and
 node pack was last used, from the run record, output images and sounds and saved workflows in
 temporary folders."""
+import asyncio
 import json
 import os
 import sys
@@ -56,7 +57,7 @@ class UsageTests(unittest.TestCase):
             (custom / name).mkdir(parents=True)
         (custom / "rgthree-comfy" / "js").mkdir()
         (custom / "page-only" / "web").mkdir()
-        self.ledger = {"started": None, "types": {}, "models": {}}
+        self.ledger = {"started": None, "types": {}, "models": {}, "opened": {"types": {}, "models": {}}}
         self.models = [
             {"type": "checkpoints", "root": 0, "rel": "sdxl/fresh.safetensors", "size": 6},
             {"type": "loras", "root": 0, "rel": "old.safetensors", "size": 3},
@@ -131,7 +132,8 @@ class UsageTests(unittest.TestCase):
 
     def test_the_run_record_and_sounds_count_as_use(self):
         self.ledger = {"started": NOW - 10 * DAY, "types": {"Genie Speak": [NOW - 3 * DAY, 4]},
-                       "models": {"never.safetensors": [NOW - 31 * DAY, 2]}}
+                       "models": {"never.safetensors": [NOW - 31 * DAY, 2]},
+                       "opened": {"types": {}, "models": {"style/kept.safetensors": [NOW - 45 * DAY, 3]}}}
         sound = self.out / "speech.flac"
         sound.write_bytes(b"")
         os.utime(sound, (NOW - 50 * DAY, NOW - 50 * DAY))
@@ -143,6 +145,7 @@ class UsageTests(unittest.TestCase):
         self.assertEqual(result["ledger_since"], NOW - 10 * DAY)
         self.assertEqual((packs["Genie-TTS"]["last_used"], packs["Genie-TTS"]["runs"]), (NOW - 3 * DAY, 4))  # a sound, never an image
         self.assertEqual((models["never"]["last_used"], models["never"]["runs"]), (NOW - 31 * DAY, 2))
+        self.assertEqual((models["kept"]["last_used"], models["kept"]["opened"], models["kept"]["runs"]), (NOW - 45 * DAY, 3, 0))  # opened, never run
         self.assertEqual((packs["forgotten-pack"]["last_used"], models["old"]["last_used"]), (NOW - 50 * DAY, NOW - 50 * DAY))
         self.assertEqual(result["seen"]["outputs"], 1)
 
@@ -197,6 +200,23 @@ class LedgerTests(unittest.TestCase):
         self.assertEqual(sorted(saved["models"]), ["a.safetensors", "sdxl/base.safetensors"])
         usage_ledger._ledger = None  # read back from the file
         self.assertEqual(usage_ledger.read()["models"]["a.safetensors"], [200.0, 2])
+
+    def test_an_opened_workflow_is_noted_apart_from_runs(self):
+        class Request:
+            def __init__(self, body):
+                self.body = body
+
+            async def json(self):
+                return self.body
+
+        noted = asyncio.run(usage_ledger.api_opened(Request({"types": ["KSampler", 5, ""], "models": ["Loras\\A.safetensors", "notes.txt"]})))
+        usage_ledger._timer.cancel()
+        self.assertEqual(json.loads(noted.body)["noted"], 2)
+        ledger = usage_ledger.read()
+        self.assertEqual((sorted(ledger["opened"]["types"]), sorted(ledger["opened"]["models"])), (["KSampler"], ["loras/a.safetensors"]))
+        self.assertEqual((ledger["types"], ledger["models"]), ({}, {}))  # not counted as a run
+        for body in ({"types": "KSampler", "models": []}, ["KSampler"], {"types": []}):
+            self.assertEqual(asyncio.run(usage_ledger.api_opened(Request(body))).status, 400)
 
     def test_a_note_never_stops_a_run(self):
         request = {"prompt": "not a prompt", "client_id": "x"}
