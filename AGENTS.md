@@ -21,7 +21,7 @@
 | 用户能感觉到的行为 | `CHANGELOG.md`；使用方法变了同步 `README.md` 或 `docs/guides/` |
 | 长期有效的产品或架构取舍 | `docs/decisions/` |
 | 反复出现的坑、严重故障 | `docs/architecture/lessons.md` |
-| 开发规范本身 | 只改本文件；`CLAUDE.md`、`GEMINI.md` 只做阅读入口 |
+| 开发规范本身 | 只改本文件 |
 
 普通修复、样式微调不写进架构文档；没有变化的边界不写“本次未改变”。
 

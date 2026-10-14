@@ -9,7 +9,6 @@ by default.
 
 Before implementation, follow [AGENTS.md](AGENTS.md), the canonical development
 and maintenance rules; its section 0 is required for every commit.
-[GEMINI.md](GEMINI.md) and [CLAUDE.md](CLAUDE.md) are reading entry points only.
 
 Saved prompts and saved node values are material files (`anomalous_materials`); there is no
 Material Library page any more. Prompt Studio lists the saved prompts (reading each body
