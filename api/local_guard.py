@@ -27,6 +27,7 @@ LOCAL_GETS = frozenset({
     "/anomalous/backup/file",
     "/anomalous/version/releases",
     "/anomalous/import/folders",
+    "/anomalous/civitai_check",
 })
 # Routes that answer other devices themselves (MCP replies in JSON-RPC).
 OWN_CHECK = frozenset({"/anomalous/mcp"})

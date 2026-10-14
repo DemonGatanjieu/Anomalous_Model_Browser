@@ -20,6 +20,11 @@ import urllib.request
 
 from aiohttp import web
 
+try:
+    from ..net_proxy import urlopen
+except ImportError:  # loaded outside the package (tests)
+    from net_proxy import urlopen
+
 PLUGIN_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATE_FILE = os.path.join(PLUGIN_DIR, ".anomalous_version.local.json")
 # A version whose tree contains this file has the version panel; older ones do not.
@@ -124,7 +129,7 @@ def _fetch_github_releases(owner, repo):
         "Accept": "application/vnd.github+json",
         "User-Agent": "Anomalous-Model-Browser",
     })
-    with urllib.request.urlopen(request, timeout=NETWORK_TIMEOUT) as response:
+    with urlopen(request, timeout=NETWORK_TIMEOUT) as response:
         payload = json.loads(response.read().decode("utf-8"))
     releases = []
     for item in payload if isinstance(payload, list) else []:

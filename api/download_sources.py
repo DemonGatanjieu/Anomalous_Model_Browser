@@ -18,8 +18,10 @@ import urllib.request
 
 try:
     from ..civitai_client import USER_AGENT, _load_api_key
+    from ..net_proxy import urlopen
 except ImportError:  # loaded outside the package (tests)
     from civitai_client import USER_AGENT, _load_api_key
+    from net_proxy import urlopen
 from . import manager_catalog
 
 CIVITAI_HOSTS = ("civitai.com", "civitai.red")
@@ -67,7 +69,7 @@ def civitai_headers():
 def _get_json(url, headers):
     """The JSON at `url`; None on 404; SourceUnreachable when it could not be asked."""
     try:
-        with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=TIMEOUT) as response:
+        with urlopen(urllib.request.Request(url, headers=headers), timeout=TIMEOUT) as response:
             return json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as error:
         if error.code in (400, 404):

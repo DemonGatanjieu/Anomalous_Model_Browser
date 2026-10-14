@@ -17,8 +17,10 @@ from .path_utils import resolve_folder_subdir
 from .scan_report import ScanJob, locate_root
 try:
     from ..model_policies import is_physical_rename_protected
+    from ..net_proxy import child_env
 except ImportError:
     from model_policies import is_physical_rename_protected
+    from net_proxy import child_env
 
 
 PLUGIN_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -334,7 +336,7 @@ async def api_scan_folder(request):
             try:
                 cmd = [sys.executable, SCRAPER_PATH, target_dir, "--folder-type", folder_type, *flags]
                 cmd.extend(["--progress-file", progress_file, "--report-file", report_file])
-                process = subprocess.Popen(cmd, cwd=PLUGIN_DIR)
+                process = subprocess.Popen(cmd, cwd=PLUGIN_DIR, env=child_env())
                 _update_scan_marker(marker_file, worker_pid=process.pid)
                 return_code = process.wait()
                 job.add_folder(report_file, base_dir, (folder_type, path_idx))
@@ -442,7 +444,7 @@ async def api_scan_all(request):
                         if job.civitai_down:  # an earlier folder found Civitai unreachable
                             cmd.append("--civitai-down")
                         cmd.extend(["--progress-file", progress_file, "--report-file", report_file])
-                        process = subprocess.Popen(cmd, cwd=PLUGIN_DIR)
+                        process = subprocess.Popen(cmd, cwd=PLUGIN_DIR, env=child_env())
                         _update_scan_marker(marker_file, worker_pid=process.pid)
                         return_code = process.wait()
                         _update_scan_marker(marker_file, worker_pid=0)

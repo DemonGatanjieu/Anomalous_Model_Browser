@@ -11,6 +11,7 @@ import { translate as t } from './locales.js';
 import { dayLabel, timeLabel } from './activity_log.js';
 import { countsLine, fileOutcome, isPending, reasonText, scanScope, STATUS_MARKS } from './scan_results.js';
 import { typeLabel } from './ui_model_types.js';
+import { civitaiDownWhy } from './net_failure.js';
 
 const SHOWN_ROWS = 100; // more behind "show all"
 
@@ -109,7 +110,11 @@ function resultTitle(result) {
 function resultNotes(result) {
     const notes = [];
     if (result.options?.offline_only) notes.push(el('p', 'anomalous-scan-muted', t('scanResultOffline')));
-    if (result.civitai_down) notes.push(el('p', 'anomalous-scan-note is-warn', t('scanResultCivitaiDown')));
+    if (result.civitai_down) {
+        notes.push(el('p', 'anomalous-scan-note is-warn', t('scanResultCivitaiDown')));
+        const why = civitaiDownWhy(result.civitai_error);
+        if (why) notes.push(el('p', 'anomalous-scan-muted', why));
+    }
     for (const error of result.errors || []) notes.push(el('p', 'anomalous-scan-note is-error', error));
     return notes;
 }

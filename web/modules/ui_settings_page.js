@@ -2,7 +2,8 @@
  * The settings page (the rail's gear): one card per subject — how the browser looks,
  * model cards and what they cost in memory (with the card image cache), model folders
  * (a view of its own, ui_folder_manager.js, `owner.settingsView === 'folders'`),
- * workflows, where Model Check's downloads go, prompt translation (a DeepL key), backups (ui_backup.js), how the browser opens, and help. A tool page like the scan page, with a
+ * workflows, the network (the proxy the plugin's own requests use, and a Civitai connection test), where Model Check's
+ * downloads go, prompt translation (a DeepL key), backups (ui_backup.js), how the browser opens, and help. A tool page like the scan page, with a
  * way back to the page you came from. Display preferences go through `owner.displayPrefs`
  * (ui_settings_hub.js); language, theme and opening mode are ComfyUI settings.
  */
@@ -22,6 +23,7 @@ import { saveApiKey } from './ui_scan_page.js';
 import { exportBackup, importBackup } from './ui_backup.js';
 import { followsSelection, setFollowsSelection } from './shell_open_rules.js';
 import { createGalleryFormatSettings } from './ui_gallery_filter.js';
+import { failureWords } from './net_failure.js';
 
 const t = (key, params) => translate(key, params);
 // The full written guide: the README, at its Chinese half for Chinese.
@@ -213,6 +215,48 @@ function workflowGroup(owner) {
 }
 
 /** Where Model Check's downloads go (model_download.js); filled once the settings are read. */
+/** The proxy the plugin's own requests use (net_proxy.py; empty = the system's), and a test that Civitai answers. */
+function networkGroup() {
+    const input = el('input', 'anomalous-download-folder');
+    input.type = 'text';
+    input.spellcheck = false;
+    input.placeholder = t('settingsProxyPlaceholder');
+    const proxyRow = row('settingsProxy', 'settingsProxyHelp', input);
+    const proxyHelp = proxyRow.querySelector('.anomalous-scan-setting-help');
+    fetch('/anomalous/config').then(res => res.json()).then(config => { input.value = config.proxy || ''; })
+        .catch(error => console.warn('[AMB] Settings: proxy unavailable.', error));
+    input.onchange = async () => {
+        let data = null;
+        try {
+            const res = await fetch('/anomalous/save_config', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ proxy: input.value }),
+            });
+            data = await res.json();
+        } catch (_) { /* shown below as not saved */ }
+        const saved = data?.status === 'ok';
+        input.classList.toggle('is-bad', !saved);
+        proxyHelp.textContent = saved ? t('settingsProxyHelp') : t(data?.code === 'socks' ? 'settingsProxySocks' : 'settingsProxyBad');
+        if (saved) input.value = (await fetch('/anomalous/config').then(res => res.json()).catch(() => ({}))).proxy ?? input.value;
+    };
+
+    const test = button('anomalous-scan-secondary anomalous-scan-small-btn', t('settingsNetworkTest'), async () => {
+        test.disabled = true;
+        testHelp.textContent = t('settingsNetworkTesting');
+        try {
+            const data = await (await fetch('/anomalous/civitai_check')).json();
+            testHelp.textContent = !data.reachable ? t('settingsNetworkFail', { why: failureWords(data.failure) })
+                : data.key === 'refused' ? t('settingsNetworkKeyRefused') : t('settingsNetworkOk', { ms: data.ms });
+        } catch (error) {
+            testHelp.textContent = t('settingsNetworkFail', { why: String(error.message || error) });
+        } finally {
+            test.disabled = false;
+        }
+    });
+    const testRow = row('settingsNetworkTest', 'settingsNetworkTestHelp', test);
+    const testHelp = testRow.querySelector('.anomalous-scan-setting-help');
+    return group('settingsNetwork', proxyRow, testRow);
+}
+
 function downloadGroup(owner, redraw) {
     const box = group('settingsDownloads');
     fetchDownloadSettings().then(settings => {
@@ -376,6 +420,7 @@ function render(owner) {
         galleryGroup(owner),
         foldersGroup(owner),
         workflowGroup(owner),
+        networkGroup(),
         downloadGroup(owner, redraw),
         translationGroup(),
         backupGroup(owner),

@@ -9,6 +9,11 @@ from aiohttp import web
 import folder_paths
 import struct
 
+try:
+    from ..net_proxy import CONFIG_KEY as PROXY_KEY, configured as configured_proxy, normalize as normalize_proxy
+except ImportError:  # loaded outside the package (tests)
+    from net_proxy import CONFIG_KEY as PROXY_KEY, configured as configured_proxy, normalize as normalize_proxy
+
 async def api_get_config(request):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(script_dir, "config.json")
@@ -38,7 +43,7 @@ async def api_get_config(request):
     except (OSError, ValueError, AttributeError):
         pass
     return web.json_response({"has_api_key": has_key, "has_deepl_key": bool(isinstance(deepl_key, str) and deepl_key.strip()),
-                              "folder_types_config": folder_types})
+                              "proxy": configured_proxy(), "folder_types_config": folder_types})
 
 async def api_save_config(request):
     try:
@@ -62,6 +67,12 @@ async def api_save_config(request):
             return web.json_response({"status": "error", "message": "Invalid API key"}, status=400)
         if deepl_key is not None and not isinstance(deepl_key, str):
             return web.json_response({"status": "error", "message": "Invalid DeepL key"}, status=400)
+        proxy = None
+        if "proxy" in data:  # Settings -> Network (net_proxy.py); "" = the system's proxy
+            try:
+                proxy = normalize_proxy(data.get("proxy"))
+            except ValueError as error:
+                return web.json_response({"status": "error", "message": "Invalid proxy", "code": str(error)}, status=400)
         if folder_types_config is not None and not isinstance(folder_types_config, list):
             return web.json_response({"status": "error", "message": "Invalid folder configuration"}, status=400)
         if "physical_folders_config" in data and not isinstance(data.get("physical_folders_config"), list):
@@ -74,6 +85,9 @@ async def api_save_config(request):
 
         if deepl_key is not None:  # Settings -> Translation (translation_routes.py)
             cfg["DEEPL_API_KEY"] = deepl_key.strip()
+
+        if proxy is not None:
+            cfg[PROXY_KEY] = proxy
             
         if folder_types_config is not None:
             cfg["folder_types_config"] = folder_types_config

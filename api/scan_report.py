@@ -72,6 +72,7 @@ class ScanJob:
         self.files = []
         self.unchanged = 0
         self.civitai_down = False
+        self.civitai_error = ""  # why Civitai could not be reached (net_proxy.failure), the first one
         self.errors = []
 
     def add_folder(self, report_file, base_dir, located=None):
@@ -87,6 +88,7 @@ class ScanJob:
                 self.unchanged += int(event.get("unchanged") or 0)
             elif event.get("event") == "civitai_down":
                 self.civitai_down = True
+                self.civitai_error = self.civitai_error or str(event.get("reason") or "")[:40]
         for entry in entries:
             path = entry.get("renamed_to") if entry.get("renamed_to") and entry.get("status") != "failed" else entry.get("file")
             if not isinstance(path, str):
@@ -116,6 +118,7 @@ class ScanJob:
         return {
             "kind": self.kind, "options": self.options, "started": self.started,
             "finished": time.time(), "counts": counts, "civitai_down": self.civitai_down,
+            "civitai_error": self.civitai_error,
             "errors": self.errors[:10], "files": files[:MAX_FILES],
         }
 
@@ -129,7 +132,7 @@ class ScanJob:
             print(f"[Anomalous Browser] Could not keep the scan result: {error}")
         try:
             target = result["files"][0]["filename"] if self.kind == "one" and result["files"] else ""
-            detail = {"scan": {key: result[key] for key in ("kind", "options", "counts", "civitai_down", "errors")},
+            detail = {"scan": {key: result[key] for key in ("kind", "options", "counts", "civitai_down", "civitai_error", "errors")},
                       "files": result["files"][:MAX_CHANGES], "total": len(self.files),
                       "seconds": round(result["finished"] - result["started"])}
             add_entry("file", "scan_done", target, detail)
