@@ -214,7 +214,6 @@ function workflowGroup(owner) {
         })));
 }
 
-/** Where Model Check's downloads go (model_download.js); filled once the settings are read. */
 /** The proxy the plugin's own requests use (net_proxy.py; empty = the system's), and a test that Civitai answers. */
 function networkGroup() {
     const input = el('input', 'anomalous-download-folder');
@@ -257,6 +256,7 @@ function networkGroup() {
     return group('settingsNetwork', proxyRow, testRow);
 }
 
+/** Where Model Check's downloads go (model_download.js); filled once the settings are read. */
 function downloadGroup(owner, redraw) {
     const box = group('settingsDownloads');
     fetchDownloadSettings().then(settings => {
