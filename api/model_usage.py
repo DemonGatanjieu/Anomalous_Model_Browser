@@ -17,9 +17,15 @@ GET /anomalous/usage/check -> {models, packs, seen, now, ledger_since}
     packs: the node packs in custom_nodes but this plugin and ComfyUI Manager, {name, nodes,
         last_used, outputs, runs, opened, saved, added, web (it adds to ComfyUI's page too), feeds (packs
         whose nodes take a kind of thing only its nodes make), words (what to search the Manager
-        for)}; a pack of no nodes only works on the page or the server, nothing here can tell.
+        for), kept (the user said they still use it)}; a pack of no nodes only works on the page or
+        the server, nothing here can tell.
     seen: {outputs, saved, capped} what was read (capped: some outputs or files were not).
     ledger_since: when the run record started (null: nothing run since).
+
+POST /anomalous/usage/keep {pack, kept} -> {kept: [names]}
+    What no record can show (a pack used only through its panels or buttons) the user says:
+    "I still use it", kept in user/anomalous/usage_kept.json ({packs: {name: since}}); only a
+    pack ComfyUI loaded can be marked, any name unmarked.
 
 What none of this can show (a workflow from before the record, dropped in and never saved) is
 said on the page; nothing here deletes or disables anything.
@@ -29,6 +35,7 @@ import asyncio
 import json
 import os
 import re
+import threading
 import time
 
 import folder_paths
@@ -39,6 +46,7 @@ from .audio_metadata import read_audio_tags
 from .backup import part_dirs
 from .image_search import MODEL_FILE, cached_record
 from .model_placement import _card, _known_hash, library
+from .path_utils import atomic_write_json
 
 RECENT_SECONDS = 30 * 24 * 3600  # used or added within this: not listed
 MAX_IMAGES = 100_000  # outputs read at most, images and sounds
@@ -53,6 +61,8 @@ FEEDS_SHOWN = 3
 # Words left out of what the Manager is searched for: its search wants all words, in order, in
 # one of a pack's title, author or description, and pack folders carry these where titles do not.
 SEARCH_NOISE = {"comfyui", "comfy", "custom", "customnodes", "node", "nodes", "pack", "main", "master"}
+
+_kept_lock = threading.Lock()
 
 
 def _refs(value):
@@ -221,8 +231,8 @@ def _search_words(name):
     return " ".join(words) or name.lower()
 
 
-def _packs():
-    """[{name, path, dir, types, web, feeds}] for the node packs ComfyUI loaded from custom_nodes."""
+def _pack_dirs():
+    """{name: {name, path, dir, types: []}} for the node packs ComfyUI loaded from custom_nodes."""
     import nodes  # ComfyUI's registry, filled once ComfyUI has loaded the packs
 
     roots = []
@@ -238,7 +248,14 @@ def _packs():
             packs[name] = {"name": name, "path": os.path.join(directory, name + ".py"), "dir": None, "types": []}
         elif os.path.normcase(os.path.realpath(os.path.dirname(directory))) in roots:
             packs[name] = {"name": name, "path": directory, "dir": real, "types": []}
+    return packs
 
+
+def _packs():
+    """[{name, path, dir, types, web, feeds}] for the node packs ComfyUI loaded from custom_nodes."""
+    import nodes
+
+    packs = _pack_dirs()
     io, core = {}, set()
     for node_type, cls in (getattr(nodes, "NODE_CLASS_MAPPINGS", {}) or {}).items():
         module = str(getattr(cls, "RELATIVE_PYTHON_MODULE", "") or "")
@@ -258,6 +275,35 @@ def _packs():
         own = io.get(name, [set(), set()])[1] - core
         pack["feeds"] = sorted((other for other, (taken, _) in io.items() if other != name and own & taken), key=str.lower)
     return [pack for name, pack in packs.items() if name.lower() not in NOT_LISTED]
+
+
+def kept_path():
+    return os.path.join(os.path.dirname(usage_ledger.ledger_path()), "usage_kept.json")
+
+
+def _kept():
+    """{pack name: since} the user still uses."""
+    try:
+        with open(kept_path(), encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return {}
+    packs = data.get("packs") if isinstance(data, dict) else None
+    return packs if isinstance(packs, dict) else {}
+
+
+def keep(name, kept):
+    """Marks pack `name` as still used (`kept`) or not; the names marked. KeyError: not a loaded pack."""
+    with _kept_lock:
+        packs = _kept()
+        if kept:
+            if name not in _pack_dirs() or name.lower() in NOT_LISTED:
+                raise KeyError(name)
+            packs[name] = time.time()
+        else:
+            packs.pop(name, None)
+        atomic_write_json(kept_path(), {"packs": packs})
+        return sorted(packs)
 
 
 def check(now=None):
@@ -280,7 +326,7 @@ def check(now=None):
         models.append({"type": item["type"], "root": item["root"], "rel": item["rel"], "size": item["size"],
                        "added": added, **_card(item), **use})
 
-    packs = []
+    packs, kept = [], _kept()
     for pack in sorted(_packs(), key=lambda entry: entry["name"].lower()):
         uses = [evidence.of(["t:" + node_type]) for node_type in pack["types"]]
         try:
@@ -288,7 +334,7 @@ def check(now=None):
         except OSError:
             added = None
         packs.append({"name": pack["name"], "nodes": len(pack["types"]), "added": added, "web": pack["web"],
-                      "feeds": pack["feeds"][:FEEDS_SHOWN], "words": _search_words(pack["name"]),
+                      "feeds": pack["feeds"][:FEEDS_SHOWN], "words": _search_words(pack["name"]), "kept": pack["name"] in kept,
                       "last_used": max((use["last_used"] or 0 for use in uses), default=0) or None,
                       **{kind: max((use[kind] for use in uses), default=0) for kind in ("outputs", "runs", "opened", "saved")}})
     return {"models": models, "packs": packs, "seen": evidence.seen, "now": now, "ledger_since": ledger_since}
@@ -298,5 +344,22 @@ async def api_check(request):
     return web.json_response(await asyncio.to_thread(check))
 
 
+async def api_keep(request):
+    try:
+        data = await request.json()
+    except ValueError:
+        data = None
+    name, kept = (data.get("pack"), data.get("kept")) if isinstance(data, dict) else (None, None)
+    if not isinstance(name, str) or not name or not isinstance(kept, bool):
+        return web.json_response({"error": "bad_request"}, status=400)
+    try:
+        return web.json_response({"kept": await asyncio.to_thread(keep, name, kept)})
+    except KeyError:
+        return web.json_response({"error": "unknown_pack"}, status=404)
+    except (OSError, ValueError):
+        return web.json_response({"error": "write_failed"}, status=500)
+
+
 def register_routes(app):
     app.router.add_get("/anomalous/usage/check", api_check)
+    app.router.add_post("/anomalous/usage/keep", api_keep)

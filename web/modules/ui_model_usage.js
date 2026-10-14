@@ -4,12 +4,13 @@
  * output and saved workflow); the answer is kept in `owner.modelUsage` while the tab is redrawn.
  * Two pages: models, picked here, go to the Recycle Bin (model_placement.js); node packs are only
  * listed, each with a way into ComfyUI Manager, which disables or removes them. Packs that also
- * add to the page are set apart: their nodes going unused does not say the pack is.
+ * add to the page are set apart: their nodes going unused does not say the pack is. A pack the
+ * user says they still use ("I still use it") leaves the groups for a list of its own.
  */
 
 import { app } from "../../../scripts/app.js";
 import { translate as t } from './locales.js';
-import { checkUsage, recycleModel } from './model_placement.js';
+import { checkUsage, keepPack, recycleModel } from './model_placement.js';
 import { formatSize } from './ui_model_download.js';
 import { noteOpenWorkflows } from './usage_notes.js';
 
@@ -115,7 +116,22 @@ function packRow(owner, item, now) {
     if (item.nodes) body.append(el('div', 'anomalous-usage-when', when(item, now)));
     if (item.saved) body.append(el('div', 'anomalous-usage-saved', t('tidyUsageSaved', { count: item.saved })));
     if (item.feeds?.length) body.append(el('div', 'anomalous-usage-saved', t('tidyUsageFeeds', { packs: item.feeds.join(', ') })));
-    row.append(body, button('anomalous-scan-row-btn', t('tidyUsageFind'), () => openManager(owner, item)));
+    const actions = el('div', 'anomalous-usage-actions');
+    const mark = button('anomalous-scan-row-btn', t(item.kept ? 'tidyUsageUnkeep' : 'tidyUsageKeep'), async () => {
+        mark.disabled = true;
+        try {
+            await keepPack(item.name, !item.kept);
+            item.kept = !item.kept;
+            owner.loadModels();
+        } catch (error) {
+            console.warn('[AMB] Tidy: could not mark a node pack.', error);
+            alert(t('tidyUsageKeepFailed'));
+            mark.disabled = false;
+        }
+    });
+    actions.append(mark);
+    if (!item.kept) actions.append(button('anomalous-scan-row-btn', t('tidyUsageFind'), () => openManager(owner, item)));
+    row.append(body, actions);
     return row;
 }
 
@@ -242,7 +258,7 @@ function modelsPage(view, onRecycled) {
 function packsPage(owner, view) {
     const { packs, now } = view.data;
     const page = document.createDocumentFragment();
-    const idle = packs.filter(item => item.nodes && notUsedSince(item, view.filter, now));
+    const idle = packs.filter(item => item.nodes && !item.kept && notUsedSince(item, view.filter, now));
     const group = (titleKey, leadKey, items) => {
         const head = el('div', 'anomalous-tidy-step');
         head.append(el('h3', '', t(titleKey)));
@@ -254,8 +270,10 @@ function packsPage(owner, view) {
     else page.append(...nodesOnly.map(item => packRow(owner, item, now)));
     const withPage = idle.filter(item => item.web);
     if (withPage.length) group('tidyUsageUiPacks', 'tidyUsageUiPacksLead', withPage);
-    const pageOnly = packs.filter(item => !item.nodes);
+    const pageOnly = packs.filter(item => !item.nodes && !item.kept);
     if (pageOnly.length) group('tidyUsagePageOnly', 'tidyUsagePageOnlyLead', pageOnly);
+    const kept = packs.filter(item => item.kept);
+    if (kept.length) group('tidyUsageKept', 'tidyUsageKeptLead', kept);
     return page;
 }
 
@@ -282,7 +300,7 @@ export function renderUsageSection(owner, onRecycled) {
     const pages = el('div', 'anomalous-usage-filters');
     pages.append(
         chip(`${t('tidyUsageModels')} ${counted(models)}`, view.page === 'models', () => { view.page = 'models'; redraw(); }),
-        chip(`${t('tidyUsagePacks')} ${counted(packs.filter(item => item.nodes && !item.web))}`, view.page === 'packs', () => { view.page = 'packs'; redraw(); }));
+        chip(`${t('tidyUsagePacks')} ${counted(packs.filter(item => item.nodes && !item.web && !item.kept))}`, view.page === 'packs', () => { view.page = 'packs'; redraw(); }));
     const filters = el('div', 'anomalous-usage-filters');
     for (const [value, key] of FILTERS) {
         filters.append(chip(t(key), view.filter === value, () => { view.filter = value; redraw(); }));

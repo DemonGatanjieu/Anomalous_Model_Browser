@@ -88,6 +88,7 @@ class UsageTests(unittest.TestCase):
             mock.patch.object(model_usage.folder_paths, "get_output_directory", return_value=str(self.out)),
             mock.patch.object(model_usage.folder_paths, "get_folder_paths", side_effect=lambda kind: [str(custom)] if kind == "custom_nodes" else []),
             mock.patch.object(model_usage.usage_ledger, "read", side_effect=lambda: self.ledger),
+            mock.patch.object(model_usage, "kept_path", return_value=str(base / "usage_kept.json")),
             mock.patch.dict(sys.modules, {"nodes": nodes}),
         ]
         for patch in patches:
@@ -156,6 +157,27 @@ class UsageTests(unittest.TestCase):
         models = {Path(item["rel"]).stem: item for item in result["models"]}
         self.assertNotIn("old", models)
         self.assertEqual(models["never"]["added"], NOW - 400 * DAY)
+
+    def test_a_pack_can_be_marked_as_still_used(self):
+        self.assertEqual(model_usage.keep("ComfyUI-Easy-Use", True), ["ComfyUI-Easy-Use"])
+        for name in ("not-installed", "ComfyUI-Manager"):  # only a listed pack ComfyUI loaded
+            with self.assertRaises(KeyError):
+                model_usage.keep(name, True)
+        packs = {item["name"]: item for item in model_usage.check(now=NOW)["packs"]}
+        self.assertEqual((packs["ComfyUI-Easy-Use"]["kept"], packs["forgotten-pack"]["kept"]), (True, False))
+        self.assertEqual(model_usage.keep("ComfyUI-Easy-Use", False), [])
+        self.assertEqual(model_usage.keep("gone-since", False), [])  # unmarking any name is fine
+
+        class Request:
+            def __init__(self, body):
+                self.body = body
+
+            async def json(self):
+                return self.body
+
+        for body in ({"pack": "ComfyUI-Easy-Use"}, {"pack": "", "kept": True}, ["x"]):
+            self.assertEqual(asyncio.run(model_usage.api_keep(Request(body))).status, 400)
+        self.assertEqual(asyncio.run(model_usage.api_keep(Request({"pack": "nope", "kept": True}))).status, 404)
 
     def test_reading_stops_at_the_limits_and_says_so(self):
         for index in range(3):

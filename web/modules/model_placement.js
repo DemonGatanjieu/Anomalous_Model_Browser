@@ -25,6 +25,9 @@ export const checkPlacement = (deep = false, signal) => json(`/anomalous/placeme
 /** { models, packs, seen, now }: what was not used lately (api/model_usage.py); reads every output. */
 export const checkUsage = (signal) => json('/anomalous/usage/check', { signal });
 
+/** Marks a node pack as still used (`kept`), or not: { kept: [names] }. */
+export const keepPack = (pack, kept) => post('/anomalous/usage/keep', { pack, kept });
+
 /** The misplaced models the Tidy tab lists: not those that load where they are, nor an extra
  * copy of a file that is in the right folder (the identical files step has it). */
 export function tidyMisplaced(data) {

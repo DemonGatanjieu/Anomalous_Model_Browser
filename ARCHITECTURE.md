@@ -155,7 +155,8 @@ covered by the `styles.css` manifest.
   Ogg sounds' prompts and the saved workflows, recipes, combos and parameter sets; nothing that
   came in the last 30 days is judged. Node packs come from ComfyUI's loaded packs, with whether
   they add to the page and which other packs take what only they make. Read with limits,
-  deletes nothing.
+  deletes nothing. `POST /anomalous/usage/keep` (this computer only) keeps the packs the user
+  says they still use, which no record can show, in `user/anomalous/usage_kept.json`.
 - `api/usage_ledger.py` is the run record behind it: ComfyUI's on_prompt hook (registered in
   the plugin's `__init__.py`) notes each queued run's node types and model files with the time,
   and `POST /anomalous/usage/opened` (this computer only, capped lists) what an opened workflow
@@ -491,7 +492,7 @@ covered by the `styles.css` manifest.
   `ui_model_usage.js` lists the models and node packs not used for 30 / 90 days or never, on
   two pages: picked models go to the Recycle Bin; each node pack opens ComfyUI Manager's node
   list searched for it (Manager 3; its name is copied for the rest); packs that also add to the
-  page are set apart. `usage_notes.js` posts what each workflow ComfyUI opens holds (its own
+  page are set apart, those marked "I still use it" listed last. `usage_notes.js` posts what each workflow ComfyUI opens holds (its own
   `loadGraphData` wrapper, once per content and page load) and the open tabs just before a
   check, so opening a workflow or putting a node on the canvas counts as use. `ui_model_search.js` is the models
   search in the header (shown on the models page through the shell's `data-page`): the grid

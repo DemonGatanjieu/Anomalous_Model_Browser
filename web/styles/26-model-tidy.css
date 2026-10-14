@@ -179,6 +179,7 @@
 }
 
 .anomalous-usage-row.is-pack { cursor: default; }
+.anomalous-usage-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 .anomalous-usage-row:has(input:checked) { border-color: var(--amb-link); }
 
 .anomalous-usage-body {
