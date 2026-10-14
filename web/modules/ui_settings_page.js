@@ -3,7 +3,8 @@
  * away): Look (how the browser looks, model cards and what they cost in memory with the card
  * image cache, how the browser opens), Models (model folders — a view of its own,
  * ui_folder_manager.js, `owner.settingsView === 'folders'` —, the network: the proxy the plugin's
- * own requests use and a Civitai connection test, and where downloads and imported models go), Workflows, Prompts (translation with a DeepL key), Backup (ui_backup.js) and
+ * own requests use and a Civitai connection test, and where downloads and imported models go), Workflows,
+ * Node packs (those not used lately, ui_pack_usage.js), Prompts (translation with a DeepL key), Backup (ui_backup.js) and
  * Help. A tool page like the scan page, with a way back to the page you came from. Display
  * preferences go through `owner.displayPrefs` (ui_settings_hub.js); language, theme and opening
  * mode are ComfyUI settings.
@@ -26,6 +27,7 @@ import { followsSelection, setFollowsSelection } from './shell_open_rules.js';
 import { FOLDER_PRESETS, expandFolder } from './download_places.js';
 import { createGalleryFormatSettings } from './ui_gallery_filter.js';
 import { failureWords } from './net_failure.js';
+import { renderPackUsage } from './ui_pack_usage.js';
 
 const t = (key, params) => translate(key, params);
 // The full written guide: the README, at its Chinese half for Chinese.
@@ -439,6 +441,7 @@ const TABS = [
     ['look', 'settingsTabLook', (owner, redraw) => [appearanceGroup(owner, redraw), cardsGroup(owner, redraw), galleryGroup(owner), openingGroup(owner, redraw)]],
     ['models', 'settingsTabModels', (owner, redraw) => [foldersGroup(owner), networkGroup(), downloadGroup(owner, redraw)]],
     ['workflows', 'settingsTabWorkflows', (owner) => [workflowGroup(owner)]],
+    ['packs', 'settingsTabPacks', (owner, redraw) => [renderPackUsage(owner, redraw)]],
     ['prompts', 'settingsTabPrompts', () => [translationGroup()]],
     ['backup', 'settingsTabBackup', (owner) => [backupGroup(owner)]],
     ['help', 'settingsTabHelp', (owner) => [helpGroup(owner)]],

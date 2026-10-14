@@ -180,6 +180,19 @@
 
 .anomalous-usage-row.is-pack { cursor: default; }
 .anomalous-usage-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+
+/* The models page's line leading to Settings → Node packs. */
+.anomalous-usage-elsewhere {
+    align-self: flex-start;
+    margin-bottom: 4px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--amb-link);
+    font-size: 13px;
+    cursor: pointer;
+}
+.anomalous-usage-elsewhere:hover { text-decoration: underline; }
 .anomalous-usage-row:has(input:checked) { border-color: var(--amb-link); }
 
 .anomalous-usage-body {

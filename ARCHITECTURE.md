@@ -391,7 +391,8 @@ covered by the `styles.css` manifest.
   layout) and their application, the gear and language redraws; `ui_settings_page.js`
   is the settings page the gear opens (a tool page with Back), in tabs: Look (look and
   language, model cards and memory with the card image cache, opening mode and window),
-  Models (folders, where downloads and imports go), Workflows (fingerprints), Prompts
+  Models (folders, where downloads and imports go), Workflows (fingerprints), Node packs
+  (those not used lately, `ui_pack_usage.js`), Prompts
   (translation), Backup (`ui_backup.js`), Help; `ui_feedback_dialog.js` is the feedback window (Home and the
   settings page open it): one text box, then `feedback.js` opens a GitHub issue with it in
   the browser's language, the environment folded at the end when attached (versions and
@@ -489,10 +490,12 @@ covered by the `styles.css` manifest.
   'tidy'`): cards with covers in two steps — models in a folder whose loader cannot read them
   (from → to, Move there), identical copies (pick the one to keep, recycle the rest);
   `model_placement.js` does its requests and keeps the tab's count. Under the two steps
-  `ui_model_usage.js` lists the models and node packs not used for 30 / 90 days or never, on
-  two pages: picked models go to the Recycle Bin; each node pack opens ComfyUI Manager's node
-  list searched for it (Manager 3; its name is copied for the rest); packs that also add to the
-  page are set apart, those marked "I still use it" listed last. `usage_notes.js` posts what each workflow ComfyUI opens holds (its own
+  `ui_model_usage.js` lists the models not used for 30 / 90 days or never (picked ones go to
+  the Recycle Bin) and leads to Settings → Node packs, where `ui_pack_usage.js` lists the node
+  packs: each opens ComfyUI Manager's node list searched for it (Manager 3; its name is copied
+  for the rest); packs that also add to the page are set apart, those marked "I still use it"
+  listed last. `usage_view.js` is what both share: the check, kept in `owner.modelUsage`, and
+  each page's head (groups, what the run record vouches for). `usage_notes.js` posts what each workflow ComfyUI opens holds (its own
   `loadGraphData` wrapper, once per content and page load) and the open tabs just before a
   check, so opening a workflow or putting a node on the canvas counts as use. `ui_model_search.js` is the models
   search in the header (shown on the models page through the shell's `data-page`): the grid
