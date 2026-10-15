@@ -1,5 +1,10 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.58.3 Beta (Fix: canvas speed with other extensions) — unreleased
+
+### 🐢 The canvas stays smooth with other extensions (画布不再被其他插件拖慢)
+- One style rule of the browser (the list column stepping aside while a workspace is open) made every inline-style change on the page, by any extension and also while the browser is closed, restyle the whole page. Extensions that move their buttons on every canvas frame (ComfyUI-Prompt-Assistant, for one) then brought a large workflow's canvas down to 2–3 fps. The list column now follows a class on the window instead. Thanks to **@Lindemellis** for finding it, measuring it and proposing the fix ([#22](https://github.com/DemonGatanjieu/Anomalous_Model_Browser/issues/22)).
+
 ## v1.58.2 Beta (Small fixes: Esc closes, Show in folder, insert a picture as a node) — 2026-10-13
 
 ### 💬 From a Bilibili comment (来自 B 站评论)
