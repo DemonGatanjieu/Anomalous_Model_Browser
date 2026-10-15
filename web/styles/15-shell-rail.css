@@ -139,7 +139,7 @@
 }
 
 #anomalous-container.anomalous-has-rail.anomalous-sidebar-closed #anomalous-sidebar-wrapper,
-#anomalous-container.anomalous-has-rail:has(> .anomalous-nb-modal[style*="display: flex"]) #anomalous-sidebar-wrapper {
+#anomalous-container.anomalous-has-rail.anomalous-workspace-open #anomalous-sidebar-wrapper {
     width: 0;
     margin-right: 0;
     margin-left: 0;

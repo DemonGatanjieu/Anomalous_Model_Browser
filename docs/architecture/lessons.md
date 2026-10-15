@@ -103,3 +103,23 @@ body:has(#anomalous-toolbox-modal[style*="display: flex"]) #anomalous-sidebar-to
 **以后怎么做**
 - 两个仓库的规范都写了安全底线（本仓库 AGENTS.md 第 5 节“安全底线”，Anomalous_TTS 的 ARCHITECTURE.md“不能破的规矩”）。新接口按它写，审查时逐条对照。
 - 本仓库的现状（2026-10-09 统计）：55 个会写文件的接口，只有 MCP、模型导入、整理三处检查了本机请求；删除模型、改模型信息、开始下载、导入备份等在 `--listen` 时局域网里的其他设备也能调用。没有执行下载内容、pickle、eval 的代码。2026-10-12 的 v1.58.1 一次补齐：`api/local_guard.py` 一个中间件把关 `/anomalous/` 下所有会改东西的请求，只接受本机（见 backend.md“Requests from other devices”）。
+
+---
+
+## 2026-10-13 · v1.58.0–v1.58.2：同一种 `:has()` 又掉帧（第二次）
+
+**现象**：#22（Lindemellis）：216 个节点的工作流，开着 Prompt Assistant 时一次画布重绘 465–770 ms，拖动只有 2–3 帧。只删掉一条规则就回到 53 ms。
+
+**根因**：图标栏（46facb9，2026-09-29，随 v1.58.0 发布）在 `web/styles/15-shell-rail.css` 里又写了
+
+```css
+#anomalous-container.anomalous-has-rail:has(> .anomalous-nb-modal[style*="display: flex"]) #anomalous-sidebar-wrapper
+```
+
+和上面 v1.57.2 那条是同一种写法：`:has()` 里按 `style` 属性匹配。v1.57.2 修好三天后就写回来了，因为经验只写在这份文档里，没有东西拦着；当时的性能实测也只跑了 main 和音频分支，没跑图标栏所在的分支。
+
+**修复**：工作区开没开由 JS 在容器上加减 `anomalous-workspace-open`，CSS 只看这个 class（#22 的修复）。
+
+**以后怎么做**
+- `node tools/check_structure.mjs` 现在会拒绝 `:has()` 里出现 `[style…]`，报出文件和行号。
+- 同一个坑第二次出现，就把它做成检查，不再只补一段经验。

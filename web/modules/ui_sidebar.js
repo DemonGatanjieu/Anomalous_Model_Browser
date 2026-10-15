@@ -223,6 +223,12 @@ export function createDOM() {
         content.append(header, this.grid, this.detailPanel, this.galleryPanel, this.homePanel, this.activityPanel, this.promptPanel, this.scanPanel, this.settingsPanel, this.doctorPanel,
             this.assistantPanel, this.audioStudioPanel, this.scriptPanel, this.audioGalleryPanel);
         container.append(rail.root, this.sidebarWrapper, content, this.nbPanel);
+        // The list column steps aside while a workspace is open. Several modules open it by
+        // setting its display, so the container gets a class for it; CSS matching the style
+        // attribute inside :has() makes every inline-style write on the page recalc all
+        // styles (issue #22, canvas at 2-3 fps).
+        const syncWorkspaceOpen = () => container.classList.toggle('anomalous-workspace-open', this.nbPanel.style.display === 'flex');
+        new MutationObserver(syncWorkspaceOpen).observe(this.nbPanel, { attributes: true, attributeFilter: ['style'] });
         this.modal.appendChild(container);
 
         installShellNavigation(this, { container, rail, listToggle, title: pageTitle });
