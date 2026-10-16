@@ -48,9 +48,9 @@
 
 <p align="center"><img src="docs/images/en-gallery.webp" width="760" alt="Gallery search, then drag an image onto the canvas"></p>
 
-**4. The same model, LoRAs and prompt, again and again.** Keep them as a combo. Drag the card onto empty canvas and a wired group of nodes appears; nothing already on the canvas changes.
+**4. The same model, LoRAs and prompt, again and again.** Pick those nodes on the canvas, right-click → **Save as combo**, and they are kept as a card beside the canvas. Next time press **Put on canvas** (or drag the card) and the wired group comes back where you click; nothing already on the canvas changes. Models and prompts in a combo can be changed later.
 
-<p align="center"><img src="docs/images/en-combo.webp" width="760" alt="A combo card dragged onto the canvas becomes wired nodes"></p>
+<p align="center"><img src="docs/images/en-combo.webp" width="760" alt="Picked nodes saved as a combo, then put back on the canvas as wired nodes"></p>
 
 **5. Long prompts are hard to edit.** Select a prompt node and Prompt Studio shows its text as tags: click to weight, drag to reorder, type to add (Chinese and other languages become English).
 
