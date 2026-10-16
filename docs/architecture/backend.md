@@ -19,17 +19,7 @@ small `api/utils.py` compatibility facade):
 
 - `resolve_folder_subdir()` for configured model-folder boundaries;
 - `resolve_within()` for containment below an owned root;
-- `require_filename()` for single-file identifiers (never `.` or `..`);
-- `model_file_within()` / `model_reference_within()` for a model file in a resolved folder.
-
-A model file can be a link: on a cloud server (AutoDL) every model in the models folder links
-into the platform's shared, read-only model disk, under a name like `6b4679…` without an
-extension. Resolving the file would leave the models folder and lose its covers and info, which
-are written beside the link. So the folder part is resolved and must stay inside its root
-(through links too), and the file is taken as named: `model_file_within` is the folder joined
-with a bare `require_filename` name, `get_metadata` reads the sidecars beside the path it is
-given (`abspath`, not `realpath`), and edits, renames and deletes act on the link, never on the
-disk behind it. Nothing in the plugin writes into a model file.
+- `require_filename()` for single-file identifiers.
 
 Never rely only on `..` rejection. Absolute Windows paths, UNC paths, alternate
 separators, device paths, and symlinks can bypass naïve string checks. Media

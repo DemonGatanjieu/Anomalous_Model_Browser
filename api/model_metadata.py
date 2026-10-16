@@ -23,7 +23,7 @@ try:
     from ..model_identity import USER_INFO_SUFFIX, read_json
 except ImportError:
     from model_identity import USER_INFO_SUFFIX, read_json
-from .utils import model_file_within, require_filename, resolve_folder_subdir
+from .utils import require_filename, resolve_folder_subdir, resolve_within
 
 def _first_existing_sidecar(base_path, suffixes):
     for suffix in suffixes:
@@ -96,7 +96,7 @@ async def api_delete_model(request):
         try:
             filename = require_filename(filename)
             _, target_dir = resolve_folder_subdir(folder_type, path_idx, subfolder)
-            model_path = model_file_within(target_dir, filename)
+            model_path = resolve_within(target_dir, filename)
         except (ValueError, KeyError):
             return web.json_response({"status": "error", "message": "Invalid request parameters"}, status=400)
         if not os.path.exists(model_path):
@@ -162,7 +162,7 @@ async def api_update_metadata(request):
         try:
             filename = require_filename(extracted_filename)
             _, target_dir = resolve_folder_subdir(folder_type, path_idx, subfolder)
-            file_path = model_file_within(target_dir, filename)
+            file_path = resolve_within(target_dir, filename)
         except (ValueError, KeyError):
             pass
 

@@ -204,8 +204,7 @@ def _get_metadata_cached(file_path, signature):
 
 
 def get_metadata(file_path):
-    # As named, not resolved: a model that is a link has its covers and info beside the link.
-    normalized_path = os.path.abspath(file_path)
+    normalized_path = os.path.realpath(file_path)
     signature = _metadata_signature(normalized_path)
     # Metadata contains mutable lists. Never expose the cached object directly.
     return copy.deepcopy(_get_metadata_cached(normalized_path, signature))
