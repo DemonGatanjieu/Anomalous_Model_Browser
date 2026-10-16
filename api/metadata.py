@@ -89,8 +89,18 @@ def _positive_civitai_id(value):
         return None
     return parsed if parsed > 0 else None
 
+def _info_base(file_path, base_path):
+    """Where the model's info files are read: beside the model as named; for a link with none
+    beside it, beside the file it links to, where another tool (A1111's Civitai Helper) may
+    have left them. Only read there: covers, edits and scans stay beside the link."""
+    if os.path.islink(file_path) and not any(os.path.exists(base_path + suffix) for suffix in (".info", ".civitai.info")):
+        return os.path.splitext(os.path.realpath(file_path))[0]
+    return base_path
+
+
 def _read_metadata(file_path):
     base_path = os.path.splitext(file_path)[0]
+    info_base = _info_base(file_path, base_path)
     metadata = {
         "name": os.path.basename(base_path),
         "description": "",
@@ -115,7 +125,7 @@ def _read_metadata(file_path):
         "not_drawing": False,  # not scanned yet, and its header looks like no drawing model
     }
     
-    info_files = [f"{base_path}.info", f"{base_path}.civitai.info"]
+    info_files = [f"{info_base}.info", f"{info_base}.civitai.info"]
     for info_file in info_files:
         if os.path.exists(info_file):
             try:
@@ -173,7 +183,7 @@ def _read_metadata(file_path):
             except Exception:
                 pass
 
-    scan = sidecar_info(base_path)
+    scan = sidecar_info(info_base)
     if scan is not None:
         metadata["info_source"] = "local" if is_unmatched(scan) else "civitai"
         metadata["unmatched_reason"] = unmatched_reason(scan)

@@ -423,7 +423,9 @@ covered by the `styles.css` manifest.
   the page keeps its picks as items (none: the button scans everything).
   `scan_runner.js` starts and follows scans (every folder, picked or listed models, or one
   model from its card), shows the result and refreshes node drop-downs, hashes and the
-  grid afterwards; folder visibility/order lives in
+  grid afterwards; before an online scan `scan_connection.js` checks whether Civitai can be
+  reached and, when not, asks: scan from the files, set a proxy, or not now;
+  folder visibility/order lives in
   `ui_folder_manager.js`.
   `scan_progress.js` owns the scan progress panel
   (`updateScanProgress` / `finishScanProgress` / `failScanProgress`): inside the scan

@@ -41,6 +41,20 @@ class ModelLinkTests(unittest.TestCase):
         with self.resolve:
             self.assertEqual(metadata.get_metadata(str(self.model))["name"], "style")  # not the disk's file name
 
+    def test_info_left_beside_the_linked_file_is_read_when_none_is_beside_the_link(self):
+        # Another tool (A1111's Civitai Helper) kept its info beside the real file.
+        disk = Path(self.temp.name, "a1111")
+        disk.mkdir()
+        (disk / "style.civitai.info").write_text(json.dumps({"id": 9, "modelId": 4, "name": "from a1111"}), encoding="utf-8")
+        Path(str(self.model)[:-12] + ".info").unlink()
+        real = os.path.realpath
+        to_a1111 = mock.patch("os.path.realpath", side_effect=lambda p: str(disk / "style.safetensors") if os.path.basename(p) == "style.safetensors" else real(p))
+        with to_a1111, mock.patch("os.path.islink", side_effect=lambda p: os.path.basename(p) == "style.safetensors"):
+            self.assertEqual(metadata.get_metadata(str(self.model))["name"], "from a1111")
+            metadata.clear_metadata_cache()
+            Path(str(self.model)[:-12] + ".info").write_text(json.dumps({"id": 7, "modelId": 3, "name": "v1"}), encoding="utf-8")
+            self.assertEqual(metadata.get_metadata(str(self.model))["name"], "v1")  # beside the link wins
+
     def test_a_model_named_in_its_folder_stays_the_link_but_cannot_leave_the_folder(self):
         folder = str(self.root / "sub")
         with self.resolve:

@@ -29,7 +29,8 @@ are written beside the link. So the folder part is resolved and must stay inside
 (through links too), and the file is taken as named: `model_file_within` is the folder joined
 with a bare `require_filename` name, `get_metadata` reads the sidecars beside the path it is
 given (`abspath`, not `realpath`), and edits, renames and deletes act on the link, never on the
-disk behind it. Nothing in the plugin writes into a model file. Tidy's moves and the
+disk behind it. Only when a link has no info beside it are the info files beside the file it
+links to read (`_info_base`): another tool (A1111's Civitai Helper) may have left them there. Nothing in the plugin writes into a model file. Tidy's moves and the
 import's `move_into` tell a rename from a copy by where the link is (`lstat`), so moving a
 linked model renames the link instead of copying the model disk's file onto the server.
 

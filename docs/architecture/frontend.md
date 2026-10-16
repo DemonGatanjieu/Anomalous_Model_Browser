@@ -57,7 +57,7 @@ The Prompt Studio shortcut (its command and setting ids still say "materials") i
 native ComfyUI command/keybinding; a deferred window-key fallback invokes the same
 command path only when the host did not open the studio, so handled shortcuts are not executed twice.
 `ui_browser_navigation.js` owns shared panel hiding, recoverable detail cleanup,
-and workspace return. `ui_scan_page.js` owns the scan page and `scan_runner.js` scan launch and polling,
+and workspace return. `ui_scan_page.js` owns the scan page and `scan_runner.js` scan launch and polling (an online scan first goes through `scan_connection.js`: Civitai reachable, or the user picks scanning from the files),
 `ui_folder_manager.js` is the settings page's Model folders view (grouping mode,
 visibility and order, saved on each change). Public entry functions remain
 browser-instance methods so existing actions share current browser state.

@@ -184,7 +184,7 @@ export function anomalousConfirm(message, title = 'Anomalous', options = {}) {
         
         const okBtn = document.createElement('button');
         okBtn.textContent = options.okLabel || t('dialogOk');
-        okBtn.className = 'anomalous-btn-danger';
+        okBtn.className = options.okClass || 'anomalous-btn-danger'; // most confirmations delete or replace
         okBtn.style.padding = '8px 24px';
         
         const noBtn = options.noLabel ? document.createElement('button') : null;

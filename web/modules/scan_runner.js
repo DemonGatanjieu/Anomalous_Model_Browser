@@ -2,8 +2,9 @@
  * Starting scans and following them: every model folder, picked models or listed models from
  * the scan page (all through /anomalous/scan_all), and one model from its card. Progress goes
  * to scan_progress.js; when a scan ends its result (GET /anomalous/last_scan) is shown, and
- * node drop-downs, hashes and the model grid are refreshed. No page DOM here: ui_scan_page.js
- * renders the page.
+ * node drop-downs, hashes and the model grid are refreshed. An online scan first asks whether
+ * Civitai can be reached (scan_connection.js) and, when not, whether to scan from the files.
+ * No page DOM here: ui_scan_page.js renders the page.
  */
 
 import { app } from '../../../scripts/app.js';
@@ -13,6 +14,7 @@ import { oneModelLine, resultLine } from './scan_results.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 import { checkWorkflowModels, fixWorkflowModels } from './model_check.js';
 import { updateDoctorBanner } from './ui_doctor_banner.js';
+import { onlineOrAsk } from './scan_connection.js';
 
 const POLL_MS = 2000;
 const SCAN_RADAR_ICON_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="12" r="9"/><line x1="12" y1="3" x2="12" y2="21" stroke-opacity="0.35"/><line x1="3" y1="12" x2="21" y2="12" stroke-opacity="0.35"/><line x1="12" y1="12" x2="18.5" y2="5.5" stroke-width="2"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>`;
@@ -139,9 +141,11 @@ export async function startScan(owner, options) {
     if (running) return null;
     running = true;
     setActiveScanButtonState(true);
-    const body = scanRequestBody(options);
-    if (options.targets) body.targets = options.targets;
     try {
+        const how = options.offline ? 'offline' : await onlineOrAsk(owner);
+        if (!how) return null;
+        const body = scanRequestBody({ ...options, offline: how === 'offline' });
+        if (options.targets) body.targets = options.targets;
         const data = await postJson('/anomalous/scan_all', body);
         updateScanProgress({ scanning: true, phase: 'preparing', recovered: data.recovered });
         const status = await followScan('/anomalous/global_scan_status');
@@ -166,6 +170,8 @@ export async function triggerDirectModelScan(model, triggerBtn = null, browserIn
 
     const modelLabel = model.name || model.filename;
     const titleText = t('scanOneTitle', { name: modelLabel });
+    const how = await onlineOrAsk(browser);
+    if (!how) return;
 
     if (triggerBtn) {
         triggerBtn.classList.add('anomalous-radar-spinning');
@@ -201,12 +207,12 @@ export async function triggerDirectModelScan(model, triggerBtn = null, browserIn
         // A model that was looked up without an answer is looked up again.
         await postJson(`/anomalous/scan?${params}`, {
             target_files: [model.filename],
-            offline_only: false,
+            offline_only: how === 'offline',
             skip_rename: true,
             virtual_rename: false,
             physical_rename: false,
             force_overwrite: false,
-            retry_unmatched: model.metadata?.info_source === 'local',
+            retry_unmatched: how === 'online' && model.metadata?.info_source === 'local',
         });
         showWorkbenchToast(titleText);
         const status = await followScan(`/anomalous/scan_status?${params}`, {}, 1200, titleText);
