@@ -11,7 +11,7 @@ import folder_paths
 
 from .model_constants import CIVITAI_BACKUP_SUFFIXES, MEDIA_EXTENSIONS, PREVIEW_SUFFIXES
 from .trash import move_to_trash
-from .utils import require_filename, resolve_folder_subdir, resolve_within
+from .utils import model_file_within, require_filename, resolve_folder_subdir, resolve_within
 
 def _cache_token(file_path):
     try:
@@ -170,7 +170,7 @@ async def api_model_covers(request):
         path_idx = int(request.query.get('path_idx', 0))
         filename = require_filename(request.query.get('filename', ''))
         base_dir, target_dir = resolve_folder_subdir(folder_type, path_idx, request.query.get('subfolder', '/'))
-        file_path = resolve_within(target_dir, filename)
+        file_path = model_file_within(target_dir, filename)
     except (ValueError, KeyError, TypeError):
         return web.json_response({"error": "Invalid model location"}, status=400)
     if not os.path.isfile(file_path):
