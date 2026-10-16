@@ -10,7 +10,7 @@ import time
 
 from aiohttp import web
 
-from .utils import require_filename, resolve_folder_subdir, resolve_within
+from .utils import model_file_within, require_filename, resolve_folder_subdir
 
 
 def _explorer_windows():
@@ -100,7 +100,7 @@ async def api_open_model_folder(request):
     try:
         filename = require_filename(data.get("filename", ""))
         _, folder = resolve_folder_subdir(data.get("type", ""), int(data.get("path_idx", 0)), data.get("subfolder", "/"))
-        path = resolve_within(folder, filename)
+        path = model_file_within(folder, filename)
     except (ValueError, KeyError, TypeError):
         return web.json_response({"status": "error", "message": "Invalid request parameters"}, status=400)
     if not os.path.isfile(path):

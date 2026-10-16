@@ -32,16 +32,30 @@ def _model_roots():
                 yield folder_type, path_index, os.path.realpath(base_dir)
 
 
+def model_file_within(directory, filename):
+    """The model file `filename` (a bare name) in `directory`, which was resolved inside its
+    models folder already, as named: a model that is a link stays the link (on a cloud server
+    the models folder links into a shared, read-only model disk). Its covers and info are the
+    ones beside the link, edits are written there and a delete moves the link; only the folder
+    part must stay inside the models folder, and the name cannot leave it."""
+    return os.path.join(directory, require_filename(filename))
+
+
+def model_reference_within(base_dir, relative):
+    """model_file_within for a path relative to the models folder `base_dir` (subfolders and
+    a file name): the subfolders must stay inside it, through links too."""
+    head, name = os.path.split(relative)
+    return model_file_within(resolve_within(base_dir, head), name)
+
+
 def _resolve_exact_model_reference(saved_value):
     """Resolve one saved model value without recursive scanning or hashing."""
     if not isinstance(saved_value, str) or not saved_value.strip():
         return None
     relative_value = saved_value.replace("/", os.sep)
     for folder_type, path_index, base_dir in _model_roots():
-        candidate = os.path.realpath(os.path.join(base_dir, relative_value))
         try:
-            if os.path.commonpath((base_dir, candidate)) != base_dir:
-                continue
+            candidate = model_reference_within(base_dir, relative_value)
         except ValueError:
             continue
         if not os.path.isfile(candidate) or not candidate.lower().endswith(MODEL_FILE_SUFFIXES):
@@ -68,7 +82,7 @@ def resolve_folder_subdir(folder_type, path_idx=0, subfolder='/'):
 
 
 def require_filename(filename):
-    if not isinstance(filename, str) or not filename or os.path.basename(filename) != filename:
+    if not isinstance(filename, str) or filename in ("", ".", "..") or os.path.basename(filename) != filename:
         raise ValueError("Invalid filename")
     return filename
 

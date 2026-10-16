@@ -31,7 +31,7 @@ from .metadata import get_metadata
 from .model_catalog import _iter_search_models
 from .model_constants import MEDIA_EXTENSIONS, MODEL_EXTENSIONS, PREVIEW_SUFFIXES
 from .notebooks import _list_notebooks
-from .path_utils import resolve_folder_subdir, resolve_within
+from .path_utils import model_file_within, resolve_folder_subdir, resolve_within
 from .recipe_store import _list_recipes, get_recipes_dir
 from .scan_report import last_scan_path
 from .scan_summary import _summarize
@@ -94,7 +94,7 @@ def _resolve_model(model_id):
     try:
         path_idx = int(path_idx)
         base_dir, target_dir = resolve_folder_subdir(folder_type, path_idx, "/" + subfolder)
-        file_path = resolve_within(target_dir, filename)
+        file_path = model_file_within(target_dir, filename)
     except (ValueError, KeyError, TypeError):
         raise ToolError(f"No models folder for {model_id}.")
     if not filename.lower().endswith(MODEL_EXTENSIONS) or not os.path.isfile(file_path):
