@@ -75,7 +75,7 @@ The main surfaces are:
 - Grid and model detail: model browsing plus coordinated detail display in
   `ui_detail.js` (its head with the actions in `model_detail_head.js`), metadata editing in
   `ui_model_editor.js`; `model_widget_path.js` puts a
-  model path into a loader's widget. The scan page's model picker is `ui_scan_picker.js`, its settings card `ui_scan_settings.js`.
+  model path into a loader's widget. The scan page's model picker is `ui_scan_picker.js`, its settings card `ui_scan_settings.js`; opened afresh, a count slower than 400 ms shows "counting your models" instead of a blank page.
 - Gallery: generated outputs (pictures and videos; All / Pictures / Videos beside the search
   and the hidden formats in Settings, `gallery_filter.js` + `ui_gallery_filter.js`) and the
   full-screen Image Detail Studio Workbench, for pictures only.

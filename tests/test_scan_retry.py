@@ -88,6 +88,24 @@ class ScanRetryTests(unittest.TestCase):
         with mock.patch.object(scan_summary, "get_active_scan_paths", return_value=[self.temp.name]):
             self.assertEqual(scan_summary._summarize()["damaged"], 1)
 
+    def test_new_models_headers_are_read_once_until_the_file_changes(self):
+        # On a network drive each read waits: the page opened again reads none of them.
+        header = json.dumps({"ema_model.transformer.w": {"dtype": "F32", "shape": [1], "data_offsets": [0, 4]}}).encode()
+        voice = Path(self.temp.name, "voice.safetensors")
+        voice.write_bytes(len(header).to_bytes(8, "little") + header + b"\0" * 4)
+        reads = []
+        real_inspect = metadata.inspect_file
+        metadata.clear_metadata_cache()
+        with mock.patch.object(scan_summary, "get_active_scan_paths", return_value=[self.temp.name]), \
+                mock.patch.object(metadata, "inspect_file", side_effect=lambda path: reads.append(path) or real_inspect(path)):
+            first = scan_summary._summarize()
+            again = scan_summary._summarize()
+            self.assertEqual(len(reads), 2)  # new.safetensors and the voice model, each once
+            self.assertEqual(again["not_drawing"], first["not_drawing"])
+            voice.write_bytes(len(header).to_bytes(8, "little") + header + b"\0" * 8)  # changed: read again
+            scan_summary._summarize()
+        self.assertEqual([Path(path).name for path in reads].count("voice.safetensors"), 2)
+
     def test_models_set_not_to_be_scanned_are_left_out(self):
         # A voice model's header names no drawing model kind: the page asks; "skip" leaves it out.
         header = json.dumps({"ema_model.transformer.w": {"dtype": "F32", "shape": [1], "data_offsets": [0, 4]}}).encode()
