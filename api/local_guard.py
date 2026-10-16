@@ -15,6 +15,7 @@ page cannot make or remove it. MCP keeps to this computer either way."""
 
 import ipaddress
 import os
+import shlex
 import urllib.parse
 
 from aiohttp import web
@@ -95,7 +96,21 @@ async def local_only_middleware(request, handler):
     return await handler(request)
 
 
+def switch_command():
+    """The line to paste into the server's terminal that makes the allow_remote_changes file, or
+    removes it when it is there. On Windows `echo off >` makes the file in cmd and PowerShell
+    alike (only that it exists counts)."""
+    if os.name == "nt":
+        return f'del "{REMOTE_FILE}"' if REMOTE_CHANGES else f'echo off > "{REMOTE_FILE}"'
+    return ("rm -f " if REMOTE_CHANGES else "touch ") + shlex.quote(REMOTE_FILE)
+
+
 async def api_access(request):
     """GET /anomalous/access - whether this page is on this computer and whether it may change
-    things: {"local": bool, "changes": bool}."""
-    return web.json_response({"local": is_local(request), "changes": may_change(request)})
+    things: {"local": bool, "changes": bool}; for another device also "command", the line that
+    turns remote changes on or off (it only runs where someone types it, on the server)."""
+    local = is_local(request)
+    answer = {"local": local, "changes": may_change(request)}
+    if not local:
+        answer["command"] = switch_command()
+    return web.json_response(answer)

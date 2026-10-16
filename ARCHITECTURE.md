@@ -600,7 +600,8 @@ covered by the `styles.css` manifest.
   cancellation and resize cleanup. Translation requests go through `translation_service.js`.
 - `ui_dialog.js` owns the plugin's own alert / confirm / prompt dialogs
   (`anomalousAlert`, `anomalousConfirm`, `anomalousPrompt`), used instead of the
-  browser's native ones. `ui_prompt_toast.js` is the short toast (optionally with an
+  browser's native ones; an alert can carry a line to copy (`copy`), and `copyText`
+  also works on a page served over plain http. `ui_prompt_toast.js` is the short toast (optionally with an
   action, such as Undo after a drop) shared across the plugin.
 - `canvas_history.js` asks ComfyUI's Ctrl+Z history for a step after each canvas write
   Anomalous makes (applied values, drops, created or inserted nodes, recipes): ComfyUI

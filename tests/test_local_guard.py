@@ -71,9 +71,18 @@ class LocalGuardTests(unittest.TestCase):
             return json.loads((await local_guard.api_access(request)).text)
 
         self.assertEqual(asyncio.run(run("127.0.0.1", "127.0.0.1:8188")), {"local": True, "changes": True})
-        self.assertEqual(asyncio.run(run("192.168.1.20", "192.168.1.5:8188")), {"local": False, "changes": False})
+        lan = asyncio.run(run("192.168.1.20", "192.168.1.5:8188"))
+        self.assertEqual((lan["local"], lan["changes"]), (False, False))
+        self.assertIn(local_guard.REMOTE_FILE, lan["command"])
+        self.assertTrue(lan["command"].startswith("echo off >" if os.name == "nt" else "touch "))
         with mock.patch.object(local_guard, "REMOTE_CHANGES", True):
-            self.assertEqual(asyncio.run(run("10.0.0.7", "u123.cloud.example:8443")), {"local": False, "changes": True})
+            cloud = asyncio.run(run("10.0.0.7", "u123.cloud.example:8443"))
+            self.assertEqual((cloud["local"], cloud["changes"]), (False, True))
+            self.assertTrue(cloud["command"].startswith("del " if os.name == "nt" else "rm -f "))
+
+    def test_the_command_survives_a_folder_with_spaces(self):
+        with mock.patch.object(local_guard, "REMOTE_FILE", "/root/my comfy/custom_nodes/AMB/allow_remote_changes"),                 mock.patch.object(local_guard.os, "name", "posix"):
+            self.assertEqual(local_guard.switch_command(), "touch '/root/my comfy/custom_nodes/AMB/allow_remote_changes'")
 
 
 class RemoteChangesTests(unittest.TestCase):

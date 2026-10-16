@@ -59,8 +59,11 @@ ComfyUI on a rented cloud server is only ever opened from another device. An emp
 (`REMOTE_CHANGES`), makes `local_guard.may_change` true for every request: the middleware and
 the routes that check for themselves (import, placement, scan choice, recipe focus) use
 `may_change`; `is_local` stays for what needs the browser on this computer (import's search of
-this computer's Downloads) and for MCP. `GET /anomalous/access` answers `{local, changes}`; the
-chip then reads "remote changes on". Usage and the risk: `docs/guides/cloud-server.md`.
+this computer's Downloads) and for MCP. `GET /anomalous/access` answers `{local, changes}`, and
+for another device also `command`: the line that makes the file (or, when it is there, removes
+it), with this server's real path, which the chip's dialog offers to copy; it only runs where
+someone pastes it, in the server's terminal. The chip reads "remote changes on" while the file
+is there. Usage and the risk: `docs/guides/cloud-server.md`.
 
 ## Storage ownership
 

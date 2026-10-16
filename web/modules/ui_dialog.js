@@ -4,7 +4,58 @@ const t = (key, params) => translate(key, params);
 // Confirmations must remain above the image workbench (z-index: 1000000).
 const DIALOG_Z_INDEX = '1000001';
 
-export function anomalousAlert(message, title = 'Anomalous') {
+/** Puts `text` on the clipboard; also on a page served over plain http, where only the old way works. */
+export async function copyText(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch {
+        const area = document.createElement('textarea');
+        area.value = text;
+        document.body.append(area);
+        area.select();
+        const done = document.execCommand('copy');
+        area.remove();
+        return done;
+    }
+}
+
+/** A line to copy (a command), shown as typed, with a Copy button beside it; when the browser
+ * refuses the clipboard, the line is selected for Ctrl+C. */
+function copyLine(text) {
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.gap = '8px';
+    row.style.alignItems = 'center';
+    const line = document.createElement('code');
+    line.textContent = text;
+    line.style.flex = '1';
+    line.style.minWidth = '0';
+    line.style.padding = '8px 10px';
+    line.style.borderRadius = '8px';
+    line.style.background = 'var(--amb-bg-input)';
+    line.style.border = '1px solid var(--amb-border-strong)';
+    line.style.fontSize = '0.85rem';
+    line.style.wordBreak = 'break-all';
+    line.style.userSelect = 'all';
+    const button = document.createElement('button');
+    button.textContent = t('copy');
+    button.className = 'anomalous-btn-ghost';
+    button.style.padding = '8px 14px';
+    button.onclick = async () => {
+        if (await copyText(text)) {
+            button.textContent = t('copied');
+            return;
+        }
+        getSelection().selectAllChildren(line);
+        button.textContent = t('dialogCopySelected');
+    };
+    row.append(line, button);
+    return row;
+}
+
+/** `options.copy`: a line to copy, shown under the message. */
+export function anomalousAlert(message, title = 'Anomalous', options = {}) {
     return new Promise((resolve) => {
         const overlay = document.createElement('div');
         overlay.style.position = 'fixed';
@@ -69,7 +120,9 @@ export function anomalousAlert(message, title = 'Anomalous') {
         };
         
         footer.appendChild(okBtn);
-        dialog.append(heading, text, footer);
+        dialog.append(heading, text);
+        if (options.copy) dialog.append(copyLine(options.copy));
+        dialog.append(footer);
         overlay.appendChild(dialog);
         document.body.appendChild(overlay);
         okBtn.focus();

@@ -12,6 +12,7 @@ import { decodeShareCode, encodeShareCode } from './share_code.js';
 import { packOf } from './combo_slots.js';
 import { isModelFilename } from './model_source_links.js';
 import { importBackupFile } from './ui_backup.js';
+import { copyText } from './ui_dialog.js';
 import { importRecipePackageFile } from './ui_recipe_package.js';
 import { showWorkbenchToast } from './ui_prompt_toast.js';
 
@@ -69,21 +70,6 @@ function provenanceNote(summary) {
     const missing = summary.models - summary.hashed;
     return [t('mainShareFingerprints', { hashed: summary.hashed, total: summary.models }),
         missing ? t('mainShareNoFingerprint', { count: missing }) : ''].filter(Boolean).join(' ');
-}
-
-async function copyText(text) {
-    try {
-        await navigator.clipboard.writeText(text);
-        return true;
-    } catch {
-        const area = el('textarea');
-        area.value = text;
-        document.body.append(area);
-        area.select();
-        const done = document.execCommand('copy');
-        area.remove();
-        return done;
-    }
 }
 
 /** The share part: the code is made when the dialog opens, again when links are left out. */

@@ -12,7 +12,13 @@ AutoDL 控制台里每台实例都有 SSH 登录指令和密码，平台也提�
 
 ## 办法二：在服务器上放一个开关文件
 
-如果你只能用平台给的网址打开 ComfyUI：
+如果你只能用平台给的网址打开 ComfyUI，最简单的做法：
+
+1. 点标题旁的 **仅浏览**，在弹出的说明里点 **复制**。复制的是一行命令，已经填好了你服务器上插件的真实位置。
+2. 打开服务器的终端（AutoDL：JupyterLab → 终端），粘贴，按回车。
+3. 重启 ComfyUI。启动日志里会出现一行提示，标题旁的标签变成黄色的 **远程可修改**。
+
+想自己动手也可以：
 
 1. 在服务器上打开插件文件夹 `ComfyUI/custom_nodes/Anomalous_Model_Browser`（AutoDL 可以用 JupyterLab 的文件浏览器，或在终端里操作）。
 2. 新建一个空文件，名字是 `allow_remote_changes`（没有扩展名）。终端里可以这样做：
@@ -23,7 +29,7 @@ AutoDL 控制台里每台实例都有 SSH 登录指令和密码，平台也提�
 
 3. 重启 ComfyUI。启动日志里会出现一行提示，标题旁的标签变成黄色的 **远程可修改**。
 
-**风险：** 打开之后，任何能打开这个网址的人都能扫描、移动、删除（进回收站）你的模型，改插件设置，也能用你的 Civitai Key。只在网址不外传时这样做；不需要了就删掉这个文件，再重启 ComfyUI。这个文件只能在服务器上建，网页里打不开也关不掉。
+**风险：** 打开之后，任何能打开这个网址的人都能扫描、移动、删除（进回收站）你的模型，改插件设置，也能用你的 Civitai Key。只在网址不外传时这样做；不需要了就删掉这个文件（点黄色的 **远程可修改**，里面也有一行可以复制的命令），再重启 ComfyUI。这个文件只能在服务器上建，网页里打不开也关不掉。
 
 AI 软件用的 MCP 接口不受这个开关影响，始终只接受本机。
 
@@ -35,4 +41,4 @@ AI 软件用的 MCP 接口不受这个开关影响，始终只接受本机。
 
 ## English summary
 
-On a rented cloud server the page is always opened from another device, so the plugin is **view only** there by default. Either open ComfyUI through an **SSH tunnel** (the browser address starts with `127.0.0.1`; counts as this computer, nothing to change), or create an empty file named `allow_remote_changes` in the plugin folder on the server and restart ComfyUI. With that file, anyone who can open the address may scan, move, delete and save, and use your Civitai key, so only do it while the address stays private; delete the file and restart to go back. The page cannot create or remove the file, and the MCP endpoint stays local-only either way.
+On a rented cloud server the page is always opened from another device, so the plugin is **view only** there by default. Either open ComfyUI through an **SSH tunnel** (the browser address starts with `127.0.0.1`; counts as this computer, nothing to change), or create an empty file named `allow_remote_changes` in the plugin folder on the server and restart ComfyUI (press **View only**: its dialog has the line to copy into the server's terminal, with the real path filled in). With that file, anyone who can open the address may scan, move, delete and save, and use your Civitai key, so only do it while the address stays private; delete the file and restart to go back. The page cannot create or remove the file, and the MCP endpoint stays local-only either way.
