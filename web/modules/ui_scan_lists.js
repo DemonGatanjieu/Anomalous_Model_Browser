@@ -2,8 +2,9 @@
  * The scan page's lists, each a page of its own behind a count on the scan page: the models
  * not scanned yet, the unmatched ones (both without the components), the components (VAE, text
  * encoders…: found, not found and not scanned, with why not being found is fine), the model
- * files a scan never reads (other formats), and each model the last scan changed
- * (GET /anomalous/scan_summary, /anomalous/last_scan).
+ * files a scan never reads (other formats), each model the last scan changed
+ * (GET /anomalous/scan_summary, /anomalous/last_scan), and the models found on Civitai, with
+ * a box to find one by name (/anomalous/scan_matched, read when the list opens).
  * On the scan page itself the last scan is one summary card with a way to its list.
  * Every row opens its model; rows offer "scan" / "look up again" and a Civitai search. Two
  * more lists: the new models whose header looks like no drawing model ("don't scan" / "scan
@@ -139,6 +140,18 @@ export function renderLastScan(result, onDetails) {
 
 /** A list's models, title, why they are here and the row for one of them. */
 function listOf(view, summary, last, actions) {
+    if (view === 'matched') {
+        const found = summary?.matched_models;
+        const items = found?.models || [];
+        return {
+            items,
+            loading: !found,
+            search: true,
+            title: t('scanListMatched', { count: found?.total ?? summary?.matched ?? 0 }),
+            hint: t('scanListMatchedHint'),
+            render: item => row(item, [item.name, item.base].filter(Boolean).join(' · '), [[t('scanRowOpen'), () => actions.open(item)]], '✓'),
+        };
+    }
     if (view === 'new') {
         const items = (summary?.new_models || []).filter(item => !item.component);
         return {
@@ -233,7 +246,7 @@ function listOf(view, summary, last, actions) {
 }
 
 /**
- * One list as a page ('new' | 'unmatched' | 'components' | 'skipped' | 'result' | 'notdrawing' | 'excluded'): back to the scan page, what
+ * One list as a page ('new' | 'unmatched' | 'matched' | 'components' | 'skipped' | 'result' | 'notdrawing' | 'excluded'): back to the scan page, what
  * these models are and why they are here, a button for all of them, then the rows. A scan
  * started here shows its progress in `progressHost`, above the rows.
  */
@@ -254,13 +267,24 @@ export function renderListPage(view, summary, last, actions, progressHost) {
         page.append(bar);
     }
     page.append(progressHost);
-    if (!list.items.length) {
-        page.append(el('p', 'anomalous-scan-muted', t('scanListEmpty')));
+    if (list.loading || !list.items.length) {
+        page.append(el('p', 'anomalous-scan-muted', t(list.loading ? 'loading' : 'scanListEmpty')));
         return page;
     }
     const card = el('section', 'anomalous-scan-card');
     const rows = el('div', 'anomalous-scan-rows');
     fillRows(rows, list.items, list.render, SHOWN_ROWS);
+    if (list.search) {
+        const box = el('input', 'anomalous-pick-search');
+        box.type = 'search';
+        box.placeholder = t('scanListSearch');
+        box.oninput = () => {
+            const words = box.value.trim().toLowerCase();
+            const shown = words ? list.items.filter(item => `${item.filename} ${item.name || ''}`.toLowerCase().includes(words)) : list.items;
+            fillRows(rows, shown, list.render, SHOWN_ROWS);
+        };
+        card.append(box);
+    }
     card.append(rows);
     page.append(card);
     if (view === 'result' && last?.counts?.unchanged) {

@@ -108,6 +108,12 @@ covered by the `styles.css` manifest.
   (`sidecar_info`, `is_unmatched`, `unmatched_reason` in `model_identity.py`); it also
   lists the model files in other formats, which scans never read, so the page can say so,
   the models set to "don't scan", and the new ones whose header names no drawing model kind.
+  It keeps the last summary (memory and user/anomalous/scan_summary.json) for the page to
+  show at once, shares one count among the requests meanwhile, and lists the models found on
+  Civitai on request (`GET /anomalous/scan_matched`).
+  `api/model_heads.py` keeps what each model file's header says (model_kind.inspect_file)
+  in user/anomalous/model_heads.json by real path, size and time, so a header is read once per
+  file version, also across restarts; get_metadata reads headers through it.
   Models in component folders (VAE, text encoders, CLIP, CLIP Vision, upscalers) are counted
   and listed apart as well (`components`, `component_models`): many are not on Civitai.
   It also lists every model a scan reads for the scan settings' picker

@@ -2,7 +2,7 @@ from . import (
     activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
     model_folder, model_media, model_metadata, model_resolution, model_type_listing, kept_images, node_material, recipe_packages, recipes, scan_choice, scan_report, scan_summary,
     local_guard, lora_info, mcp_server, model_download, model_import, model_placement, translation_routes, version_manager, backup,
-    network_check, model_usage, usage_ledger,
+    network_check, model_heads, model_usage, usage_ledger,
 )
 from .scanner import *
 from .config import *
@@ -28,6 +28,7 @@ async def no_cache_extension_middleware(request, handler):
     return response
 
 def setup_routes(app):
+    model_heads.keep_on_disk()
     if hasattr(app, 'middlewares') and no_cache_extension_middleware not in app.middlewares:
         app.middlewares.append(no_cache_extension_middleware)
     # Other devices on the network may look; only this computer may change things (local_guard.py).
@@ -120,6 +121,7 @@ def setup_routes(app):
     app.router.add_get('/anomalous/model_images', media_routes.api_get_model_images)
     app.router.add_post('/anomalous/resolve_paths_to_previews', model_catalog.api_resolve_paths_to_previews)
     app.router.add_get('/anomalous/scan_summary', scan_summary.api_scan_summary)
+    app.router.add_get('/anomalous/scan_matched', scan_summary.api_scan_matched)
     app.router.add_get('/anomalous/scan_pickable', scan_summary.api_scan_pickable)
     app.router.add_get('/anomalous/last_scan', scan_report.api_last_scan)
     app.router.add_get('/anomalous/scan_model', scan_report.api_scan_model)

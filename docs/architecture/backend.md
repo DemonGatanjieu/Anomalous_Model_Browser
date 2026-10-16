@@ -204,8 +204,16 @@ safetensors header reads but names no drawing model kind (`model_kind.inspect_fi
 a voice model say) as `not_drawing`, and the scan page asks. Those headers are read
 `HEAD_READERS` (16) at a time, since on a network drive each read waits on the network (1041
 new models on a cloud server's model disk took 79 s one after another), through
-`get_metadata`, whose cache keeps each answer until the file changes: the page opened again
-reads none of them, and the picker after it finds them there. `POST /anomalous/scan_choice`
+`get_metadata`, which reads headers through `api/model_heads.py`: each file's answer is kept
+by real path with its size and time in user/anomalous/model_heads.json (at most 50,000 files,
+the longest unused dropped first, written a few seconds after the last change, and only once
+`setup_routes` called `keep_on_disk`, so tests stay in memory), so a header is read once per
+file version, also after a restart. The last summary is kept too (`_last`, and
+user/anomalous/scan_summary.json when it changed): `?quick=1` hands it out at once for the page
+to show while a fresh one is worked out, and requests meanwhile await that same count
+(`_fresh`). The models found on Civitai are kept with it, components apart, and
+`GET /anomalous/scan_matched` lists them (file, Civitai's name, base model; at most 5000), so
+the summary the page reads each time stays small. `POST /anomalous/scan_choice`
 (`api/scan_choice.py`, this computer only) takes the picked models as scan `targets`, at most
 2000, and writes only `.safetensors` files' layers that are readable.
 

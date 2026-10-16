@@ -12,8 +12,10 @@
  * like no drawing model (don't scan them, scan them, see them). Then the settings (ui_scan_settings.js) and the last scan in one line.
  * Lists are pages of their own (ui_scan_lists.js) with a way back. Scans run through
  * scan_runner.js; the progress box is scan_progress.js's panel, hosted here while the page is shown.
- * Opened afresh and the counts slow to come (many models, or on a network drive), it says it is
- * counting instead of staying blank.
+ * Opened afresh it shows the last counts at once (GET /anomalous/scan_summary?quick=1), saying
+ * they are being updated, and the fresh ones when they come; before any, a slow count (many
+ * models, or on a network drive) says it is counting instead of staying blank. The models
+ * found on Civitai are a list too, read when it is opened (GET /anomalous/scan_matched).
  */
 
 import { translate as t } from './locales.js';
@@ -245,7 +247,7 @@ function stateRow(summary, open) {
         return node;
     };
     const chips = el('div', 'anomalous-scan-state-chips');
-    chips.append(chip('ok', t('scanPageMatched'), counts.matched),
+    chips.append(chip('ok', t('scanPageMatched'), counts.matched, counts.matched ? open('matched') : null),
         chip(counts.warn ? 'warn' : 'plain', t('scanStateUnmatched'), counts.unmatched, counts.unmatched ? open('unmatched') : null),
         chip('new', t('scanPageNew'), counts.new, counts.new ? open('new') : null));
     const parts = summary.components;
@@ -354,7 +356,7 @@ function listActions(owner, panel, busy) {
 }
 
 /** The scan page itself, from the scan card down to the last scan. */
-function mainPage(owner, panel, { summary, config, last }, busy, progressHost) {
+function mainPage(owner, panel, { summary, config, last, stale }, busy, progressHost) {
     const page = el('div', 'anomalous-scan-page');
     const about = el('details', 'anomalous-scan-about');
     about.append(el('summary', '', t('scanPageAboutLink')), el('p', 'anomalous-scan-lead', t('scanPageLead')),
@@ -362,6 +364,11 @@ function mainPage(owner, panel, { summary, config, last }, busy, progressHost) {
     const head = el('div', 'anomalous-scan-head');
     head.append(el('h1', 'anomalous-scan-title', t('scanPageTitle')), el('p', 'anomalous-scan-lead', t('scanPageLeadShort')), about);
     page.append(head);
+    if (stale && summary) {
+        const note = el('p', 'anomalous-scan-updating', t('scanUpdating'));
+        note.setAttribute('role', 'status');
+        page.append(note);
+    }
     if (!summary) {
         page.append(el('p', 'anomalous-scan-muted', t('scanPageSummaryFailed')), progressHost);
         return page;
@@ -388,12 +395,23 @@ function paint(owner, panel, data) {
     pageState.scroll = 0;
     const busy = isScanRunning();
     const progressHost = el('div', 'anomalous-scan-progress-host');
-    const page = view ? renderListPage(view, data.summary, data.last, listActions(owner, panel, busy), progressHost)
+    if (view === 'matched' && !data.matched) loadMatched(owner, panel, data);
+    const summary = view === 'matched' ? { ...data.summary, matched_models: data.matched } : data.summary;
+    const page = view ? renderListPage(view, summary, data.last, listActions(owner, panel, busy), progressHost)
         : mainPage(owner, panel, data, busy, progressHost);
     panel.replaceChildren(page);
     panel._scanView = view;
     panel.scrollTop = top;
     setScanProgressHost(progressHost);
+}
+
+/** Reads the models found on Civitai into `data` and shows them, if that list is still open. */
+async function loadMatched(owner, panel, data) {
+    if (data.matchedLoading) return;
+    data.matchedLoading = true;
+    const found = await fetchJson('/anomalous/scan_matched');
+    data.matched = found || { models: [], total: 0 };
+    if (panel._scanData === data && pageState.view === 'matched') paint(owner, panel, data);
 }
 
 /** What the page shows while the counts are on their way. */
@@ -411,16 +429,28 @@ function countingPage() {
  * page was just opened, so a slow count shows "counting" instead of the page from before. */
 export async function renderScanPage(owner, panel, fresh = false) {
     const token = (panel._scanRender = (panel._scanRender || 0) + 1);
-    const counting = fresh && setTimeout(() => {
-        if (token === panel._scanRender) panel.replaceChildren(countingPage());
-    }, COUNTING_AFTER_MS);
-    const [summary, config, last] = await Promise.all([
-        fetchJson('/anomalous/scan_summary'), fetchJson('/anomalous/config'), fetchJson('/anomalous/last_scan'),
-    ]);
-    clearTimeout(counting);
-    if (token !== panel._scanRender) return;
     // Closed or left meanwhile: the progress box keeps floating instead of hiding in the page.
-    if (panel.style.display === 'none' || !owner.modal?.classList.contains('visible')) return;
+    const current = () => token === panel._scanRender && panel.style.display !== 'none' && owner.modal?.classList.contains('visible');
+    let shownKept = false;
+    const counting = fresh && setTimeout(() => {
+        if (token === panel._scanRender && !shownKept) panel.replaceChildren(countingPage());
+    }, COUNTING_AFTER_MS);
+    const latest = fetchJson('/anomalous/scan_summary');
+    const rest = Promise.all([fetchJson('/anomalous/config'), fetchJson('/anomalous/last_scan')]);
+    if (fresh) {
+        const kept = await fetchJson('/anomalous/scan_summary?quick=1');
+        const [config, last] = kept?.summary ? await rest : [];
+        if (kept?.summary && current()) {
+            shownKept = true;
+            clearTimeout(counting);
+            panel._scanData = { summary: kept.summary, config, last, stale: true };
+            paint(owner, panel, panel._scanData);
+        }
+    }
+    const summary = await latest;
+    const [config, last] = await rest;
+    clearTimeout(counting);
+    if (!current()) return;
     panel._scanData = { summary, config, last };
     paint(owner, panel, panel._scanData);
     // A scan that ends elsewhere (a card's radar, another tab) refreshes the counts too.

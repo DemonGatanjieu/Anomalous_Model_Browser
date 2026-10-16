@@ -14,10 +14,7 @@ try:
     from ..model_identity import USER_INFO_SUFFIX, is_unmatched, read_json, sidecar_file_hash, sidecar_info, unmatched_reason
 except ImportError:
     from model_identity import USER_INFO_SUFFIX, is_unmatched, read_json, sidecar_file_hash, sidecar_info, unmatched_reason
-try:
-    from ..model_kind import inspect_file
-except ImportError:
-    from model_kind import inspect_file
+from .model_heads import inspect as inspect_file  # the header, read once per file version
 
 # Fields the model editor sets: <model>.anomalous.json key -> metadata key.
 USER_FIELDS = {"custom_name": "custom_name", "custom_notes": "custom_notes", "source_url": "source_url"}

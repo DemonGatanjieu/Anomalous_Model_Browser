@@ -514,3 +514,39 @@
     .anomalous-pick-folders { display: none; }
     .anomalous-pick-base, .anomalous-pick-hint { display: none; }
 }
+
+/* The scan page's lists: the box to find a model among those found on Civitai. */
+.anomalous-scan-card > .anomalous-pick-search {
+    display: block;
+    width: 100%;
+    max-width: none;
+    margin: 0 0 10px;
+    box-sizing: border-box;
+}
+
+/* The last counts shown while fresh ones are worked out. */
+.anomalous-scan-updating {
+    margin: 0;
+    color: var(--amb-text-muted);
+    font-size: 12.5px;
+}
+
+.anomalous-scan-updating::before {
+    content: "";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: var(--amb-link);
+    vertical-align: middle;
+    animation: anomalous-scan-updating 1.2s ease-in-out infinite;
+}
+
+@keyframes anomalous-scan-updating {
+    50% { opacity: 0.25; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .anomalous-scan-updating::before { animation: none; }
+}
