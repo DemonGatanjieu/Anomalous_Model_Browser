@@ -292,7 +292,8 @@ function networkGroup() {
         try {
             const data = await (await fetch('/anomalous/civitai_check')).json();
             testHelp.textContent = !data.reachable ? t('settingsNetworkFail', { why: failureWords(data.failure) })
-                : data.key === 'refused' ? t('settingsNetworkKeyRefused') : t('settingsNetworkOk', { ms: data.ms });
+                : data.key === 'refused' ? t('settingsNetworkKeyRefused')
+                : t(data.host === 'civitai.red' ? 'settingsNetworkOkRed' : 'settingsNetworkOk', { ms: data.ms });
         } catch (error) {
             testHelp.textContent = t('settingsNetworkFail', { why: String(error.message || error) });
         } finally {

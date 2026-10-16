@@ -21,14 +21,16 @@ class _Answer(io.BytesIO):
 
 
 def _http_error(code):
-    return urllib.error.HTTPError(network_check.PROBE_URL, code, "x", {}, io.BytesIO(b""))
+    return urllib.error.HTTPError("https://civitai.com" + network_check.PROBE_PATH, code, "x", {}, io.BytesIO(b""))
 
 
 class CivitaiCheckTests(unittest.TestCase):
-    def check(self, answer, key=None):
+    def check(self, *answers, key=None):
+        """The check, with civitai.com answering answers[0] and civitai.red answers[1] (if asked)."""
         headers = {"User-Agent": "t", **({"Authorization": f"Bearer {key}"} if key else {})}
         with mock.patch.object(network_check, "civitai_headers", return_value=headers), \
-                mock.patch.object(network_check.urllib.request, "urlopen", side_effect=[answer]) as opened:
+                mock.patch("civitai_client._answered", ["civitai.com"]), \
+                mock.patch.object(network_check.urllib.request, "urlopen", side_effect=list(answers)) as opened:
             result = network_check.check_civitai()
         self.assertEqual(opened.call_args.kwargs["timeout"], network_check.TIMEOUT)
         return result
@@ -40,10 +42,16 @@ class CivitaiCheckTests(unittest.TestCase):
     def test_a_refused_key_is_told_apart_from_no_network(self):
         refused = self.check(_http_error(401), key="bad")
         self.assertEqual((refused["reachable"], refused["key"]), (True, "refused"))
-        down = self.check(urllib.error.URLError("timed out"))
-        self.assertEqual((down["reachable"], down["key"]), (False, "none"))
-        self.assertIn("timed out", down["error"])
+        down = self.check(urllib.error.URLError("timed out"), urllib.error.URLError("refused"))
+        self.assertEqual((down["reachable"], down["key"], down["host"]), (False, "none", ""))
+        self.assertIn("timed out", down["error"])  # why civitai.com, the usual address, failed
         self.assertFalse(self.check(_http_error(503))["reachable"])
+
+    def test_civitai_red_answering_is_reachable_and_named(self):
+        # Some networks (a cloud server in mainland China) reach only Civitai's other address.
+        result = self.check(urllib.error.URLError("timed out"), _Answer(b"{}"))
+        self.assertEqual((result["reachable"], result["host"]), (True, "civitai.red"))
+        self.assertEqual(self.check(_Answer(b"{}"))["host"], "civitai.com")
 
     def test_it_answers_this_computer_only(self):
         self.assertIn("/anomalous/civitai_check", local_guard.LOCAL_GETS)

@@ -158,7 +158,13 @@ polling after its UI has been reopened.
 `inferred` with its reason, `failed` with the error, renames and covers) and events
 (`civitai_down` with `reason`, net_proxy.py's name for the failure, and `done` with the
 unchanged count; the result carries the first reason as `civitai_error`). The scan process
-gets Settings' proxy as HTTP(S)_PROXY (`net_proxy.child_env`). One model's error is reported and
+gets Settings' proxy as HTTP(S)_PROXY (`net_proxy.child_env`). Civitai answers its API on
+civitai.com and civitai.red, and some networks (a cloud server in mainland China) reach only the
+second: `civitai_client.api_hosts` gives both, the one that answered last first, and every API
+request (the scan, import's and Model Check's lookups, `civitai_check`, which names the `host`)
+asks the other when the first does not answer at all; an HTTP error is Civitai's own answer and
+is not asked again. The pictures stay on image.civitai.com, so after `COVERS_DOWN_AFTER` (2)
+covers in a row that would not download the scan fetches no more covers (`covers_down`). One model's error is reported and
 the scan goes on. `ScanJob` in `api/scan_report.py` reads each folder's report when its
 worker exits and, before the scan's marker is released, writes the scan's result to
 `user/anomalous/last_scan.json` and the activity log, so whoever sees the scan end can

@@ -35,10 +35,12 @@ AI 软件用的 MCP 接口不受这个开关影响，始终只接受本机。
 
 ## 国内服务器连不上 Civitai
 
-国内机房的服务器访问 Civitai 常常不稳定。扫描连不上时会自动改成只看文件（没有封面和触发词）；也可以在 **设置 → 网络** 里填代理，或者在扫描页选 **离线**。
+国内机房的服务器常常连不上 civitai.com。插件这时会自动改用 Civitai 的另一个地址 civitai.red（在 AutoDL 上测过能连上），照样能认出模型的名字、触发词和底模；封面图放在 civitai.com 那边，多半下不来，连续两张下不了，这次扫描就不再下载封面。**设置 → 网络 → 测试连接** 会告诉你连上的是哪一个。
+
+两个都连不上时，扫描会自动改成只看文件（没有封面和触发词）；也可以在 **设置 → 网络** 里填代理，或者在扫描页选 **离线**。
 
 ---
 
 ## English summary
 
-On a rented cloud server the page is always opened from another device, so the plugin is **view only** there by default. Either open ComfyUI through an **SSH tunnel** (the browser address starts with `127.0.0.1`; counts as this computer, nothing to change), or create an empty file named `allow_remote_changes` in the plugin folder on the server and restart ComfyUI (press **View only**: its dialog has the line to copy into the server's terminal, with the real path filled in). With that file, anyone who can open the address may scan, move, delete and save, and use your Civitai key, so only do it while the address stays private; delete the file and restart to go back. The page cannot create or remove the file, and the MCP endpoint stays local-only either way.
+When civitai.com cannot be reached (often so from mainland China), the plugin asks Civitai's other address, civitai.red, which gives names and trigger words; the covers may not download. On a rented cloud server the page is always opened from another device, so the plugin is **view only** there by default. Either open ComfyUI through an **SSH tunnel** (the browser address starts with `127.0.0.1`; counts as this computer, nothing to change), or create an empty file named `allow_remote_changes` in the plugin folder on the server and restart ComfyUI (press **View only**: its dialog has the line to copy into the server's terminal, with the real path filled in). With that file, anyone who can open the address may scan, move, delete and save, and use your Civitai key, so only do it while the address stays private; delete the file and restart to go back. The page cannot create or remove the file, and the MCP endpoint stays local-only either way.

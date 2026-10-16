@@ -111,7 +111,7 @@ The first time you open it, start on **Home**: **Scan model folders** fills in c
 > **On a cloud server (AutoDL, RunPod…):** opened from another computer, the plugin is view only by default. Open ComfyUI through an SSH tunnel, or see [docs/guides/cloud-server.md](docs/guides/cloud-server.md).
 
 > [!NOTE]
-> **Network:** Scan looks models up on Civitai and prompt translation uses Google Translate, so both need to reach those sites (from mainland China usually through a proxy). Without them, pick **Offline** on the scan page (an online scan does the same by itself when it cannot connect): base models are read from the files, without covers or trigger words, and a later online scan fills in the rest. Downloading missing models needs the network too; for Hugging Face, **Settings → Model downloads** can use the hf-mirror.com mirror (Civitai has none). Browsing models, outputs, workflows and combos needs no network.
+> **Network:** Scan looks models up on Civitai and prompt translation uses Google Translate, so both need to reach those sites (from mainland China usually through a proxy; when civitai.com cannot be reached the plugin tries Civitai's other address, civitai.red, which some networks reach, a cloud server in mainland China among them: names and trigger words come, covers usually not). Without them, pick **Offline** on the scan page (an online scan does the same by itself when it cannot connect): base models are read from the files, without covers or trigger words, and a later online scan fills in the rest. Downloading missing models needs the network too; for Hugging Face, **Settings → Model downloads** can use the hf-mirror.com mirror (Civitai has none). Browsing models, outputs, workflows and combos needs no network.
 
 > [!WARNING]
 > **Keep a copy of your own data:** **Settings → Backup → Export** packs Workflow Recipes, combos, saved prompts and node values, parameter presets, and the names, notes and covers you gave your models into one .zip; keep it on a cloud drive or a USB stick, and **Import** puts it back, also on another computer. (They live in `workflows/anomalous_recipes`, `workflows/anomalous_notebooks`, `workflows/anomalous_materials` and `workflows/anomalous_parameters` in your ComfyUI user folder.)
@@ -215,7 +215,7 @@ The first time you open it, start on **Home**: **Scan model folders** fills in c
 > **在云服务器上（AutoDL 等）：** 从别的电脑打开时插件默认只能浏览。用 SSH 隧道打开就能照常用，或者见 [docs/guides/cloud-server.md](docs/guides/cloud-server.md)。
 
 > [!NOTE]
-> **关于网络：** 扫描模型要连 Civitai（C 站）查封面和触发词，提示词翻译默认用谷歌翻译，这两样在国内一般要开网络代理才能用。不开代理也行：扫描页选 **离线**（联网扫描连不上时也会自动改成这样），只从模型文件推断底模，没有封面和触发词，以后能连上时再扫一次会自动补上。下载缺失的模型也要联网：Hugging Face 的模型可以在 **设置 → 模型下载** 里打开“Hugging Face 用国内镜像”，不用代理；C 站的没有镜像。浏览模型、图库、工作流和搭配都不用联网。
+> **关于网络：** 扫描模型要连 Civitai（C 站）查封面和触发词，提示词翻译默认用谷歌翻译，这两样在国内一般要开网络代理才能用。不开代理也行：扫描页选 **离线**（联网扫描连不上时也会自动改成这样），只从模型文件推断底模，没有封面和触发词，以后能连上时再扫一次会自动补上。下载缺失的模型也要联网：Hugging Face 的模型可以在 **设置 → 模型下载** 里打开“Hugging Face 用国内镜像”，不用代理；C 站的没有镜像。（civitai.com 连不上时插件会自动试 Civitai 的另一个地址 civitai.red，有的网络能连上，比如国内的云服务器，这时能认出模型名字和触发词，封面多半还是下不来。）浏览模型、图库、工作流和搭配都不用联网。
 
 > [!WARNING]
 > **备份自己的数据：** **设置 → 备份 → 导出**，把工作流配方、搭配、存下的提示词和节点参数、参数预设，以及你给模型改的名字、备注和封面打成一个压缩包，放到云端硬盘或 U 盘里；换电脑或重装后用 **导入** 恢复。（它们存在 ComfyUI 用户目录下的 `workflows/anomalous_recipes`、`workflows/anomalous_notebooks`、`workflows/anomalous_materials` 与 `workflows/anomalous_parameters`。）

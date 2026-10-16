@@ -17,10 +17,10 @@ import urllib.parse
 import urllib.request
 
 try:
-    from ..civitai_client import USER_AGENT, _load_api_key
+    from ..civitai_client import USER_AGENT, _load_api_key, answered, api_hosts
     from ..net_proxy import urlopen
 except ImportError:  # loaded outside the package (tests)
-    from civitai_client import USER_AGENT, _load_api_key
+    from civitai_client import USER_AGENT, _load_api_key, answered, api_hosts
     from net_proxy import urlopen
 from . import manager_catalog
 
@@ -79,6 +79,23 @@ def _get_json(url, headers):
         raise SourceUnreachable(str(error)) from error
 
 
+def _civitai_json(path):
+    """Civitai's API answer at `path` (/api/v1/…), from whichever of its addresses answers
+    (civitai_client.api_hosts); None on 404."""
+    unreachable = None
+    for host in api_hosts():
+        try:
+            data = _get_json(f"https://{host}{path}", civitai_headers())
+        except SourceUnreachable as error:
+            if isinstance(error.__cause__, urllib.error.HTTPError):
+                raise  # Civitai answered with an error: the other address is the same Civitai
+            unreachable = error
+            continue
+        answered(host)
+        return data
+    raise unreachable
+
+
 def _civitai_page(version):
     domain = "civitai.red" if (version.get("model") or {}).get("nsfw") or (version.get("nsfwLevel") or 1) > 1 else "civitai.com"
     model_id = version.get("modelId")
@@ -127,7 +144,7 @@ def _from_civitai_version(version, file_hash="", name=""):
 
 
 def civitai_by_hash(file_hash):
-    version = _get_json(f"https://civitai.com/api/v1/model-versions/by-hash/{urllib.parse.quote(file_hash)}", civitai_headers())
+    version = _civitai_json(f"/api/v1/model-versions/by-hash/{urllib.parse.quote(file_hash)}")
     return _from_civitai_version(version, file_hash) if version else None
 
 
@@ -145,7 +162,7 @@ def civitai_by_link(url, name, file_hash=""):
     version_id = _civitai_version_id(url)
     if not version_id.isdigit():
         return None
-    version = _get_json(f"https://civitai.com/api/v1/model-versions/{version_id}", civitai_headers())
+    version = _civitai_json(f"/api/v1/model-versions/{version_id}")
     return _from_civitai_version(version, file_hash, name) if version else None
 
 

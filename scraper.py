@@ -104,6 +104,9 @@ def sanitize_filename(name: str) -> str:
     return name.strip(' .')
 
 CIVITAI_DOWN_AFTER = 2  # models in a row Civitai did not answer for before the rest of the run stays offline
+# Covers in a row that would not download before the rest of the run fetches none: the API can
+# answer on civitai.red where the pictures (image.civitai.com) cannot be reached, and each try waits.
+COVERS_DOWN_AFTER = 2
 
 
 def write_report(args, **entry):
@@ -248,10 +251,14 @@ def scan_one(args, state, rename_log, root, filename, previous):
         media_url = next((img.get("url") for img in civitai_data.get("images") or [] if img.get("url")), None)
     civitai_covers, user_covers = cover_owners(old_base)
     # Download when the data is fresh, or when the model has no cover at all.
-    if media_url and not state["civitai_down"] and (fresh or not (civitai_covers or user_covers)):
+    if media_url and not state["civitai_down"] and not state["covers_down"] and (fresh or not (civitai_covers or user_covers)):
         if not args.dry_run:
             print(f"[*] 正在下载预览媒体...")
             saved_path = download_media(media_url, old_base + ".civitai_bak")
+            state["cover_failures"] = 0 if saved_path else state["cover_failures"] + 1
+            if state["cover_failures"] >= COVERS_DOWN_AFTER:
+                state["covers_down"] = True
+                print("\033[93m[!] 连续几张封面都下载不了，本次其余模型不再下载封面（名字和触发词照常获取）。\033[0m")
             if saved_path:
                 print(f"[+] 媒体下载成功 -> {os.path.basename(saved_path)}")
                 entry["cover"] = "kept" if user_covers else "new"
@@ -420,7 +427,7 @@ def main():
     write_scan_progress(args.progress_file, "scanning", total_files)
     current_file = 0
     last_progress_write = 0.0
-    state = {"network_failures": 0, "civitai_down": args.civitai_down}
+    state = {"network_failures": 0, "civitai_down": args.civitai_down, "cover_failures": 0, "covers_down": False}
     counts = {"success": 0, "fail": 0, "unchanged": 0}
 
     for root, _, files in os.walk(target_folder):

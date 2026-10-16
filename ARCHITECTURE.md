@@ -91,7 +91,9 @@ covered by the `styles.css` manifest.
 - `api/scanner.py` and `scraper.py` own scan orchestration and enrichment; both scan
   routes map request fields to scraper switches in one place (`_scraper_flags`).
   `civitai_client.py` is the scraper's network side (version by hash, model page, media),
-  telling "Civitai does not know the file" from "Civitai could not be asked" (and why).
+  telling "Civitai does not know the file" from "Civitai could not be asked" (and why); it
+  asks Civitai's other address (civitai.red) when civitai.com does not answer (`api_hosts`,
+  also for import, Model Check and the network test).
   `net_proxy.py` is the proxy every request of the plugin goes through (Settings → Network,
   `NETWORK_PROXY` in api/config.json; empty = urllib's own: HTTPS_PROXY or the Windows proxy),
   handed to the scan process as HTTP(S)_PROXY, and the names of why a request failed;

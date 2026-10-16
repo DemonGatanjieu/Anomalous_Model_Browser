@@ -76,6 +76,17 @@ class ScanReportTests(unittest.TestCase):
         self.assertEqual(self.info("bbb")["anomalous_unmatched_reason"], "not_found")
         self.assertEqual(lines[-1], {"event": "done", "unchanged": 0, "civitai_down": False})
 
+    def test_when_covers_will_not_download_the_rest_fetch_none(self):
+        # Civitai answered on civitai.red, but its pictures (image.civitai.com) cannot be reached.
+        for name in ("c1", "c2", "c3", "c4"):
+            self.model(name)
+        tried = []
+        pictured = {**FOUND, "images": [{"url": "https://image.civitai.com/a/b/orig"}]}
+        with mock.patch.object(scraper, "download_media", side_effect=lambda url, base: tried.append(base) or None):
+            asked, _lines = self.scan(lambda h: dict(pictured))
+        self.assertEqual(len(asked), 4)  # names and trigger words still come
+        self.assertEqual(len(tried), scraper.COVERS_DOWN_AFTER)
+
     def test_when_civitai_stops_answering_the_rest_is_inferred_without_asking(self):
         for name in ("m1", "m2", "m3", "m4"):
             self.model(name)

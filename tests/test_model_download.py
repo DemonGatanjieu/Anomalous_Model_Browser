@@ -284,7 +284,8 @@ class DownloadTests(unittest.TestCase):
                 mock.patch.object(download_sources.manager_catalog, "candidates",
                                   side_effect=lambda name, folder="": listed if name == "ae.safetensors" else []):
             body = json.loads(asyncio.run(model_download.api_lookup(request)).text)
-        self.assertEqual(len(civitai), 1)  # Civitai asked once, not once per model
+        # Civitai asked once (on each of its two addresses), not once per model.
+        self.assertEqual([url.split("/")[2] for url in civitai], ["civitai.com", "civitai.red"])
         reasons = [r.get("reason") for r in body["results"]]
         self.assertEqual(reasons[:3], ["network"] * 3)
         self.assertTrue(body["results"][3]["found"])  # Hugging Face (mirror) through the Manager's list
