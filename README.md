@@ -20,7 +20,7 @@
 
 <br/>
 
-<img src="docs/images/models.webp" width="900" alt="Models with their Civitai covers, base model and real names">
+<img src="docs/images/en-models.webp" width="900" alt="Models with their Civitai covers, base model and real names">
 
 </div>
 
@@ -34,39 +34,52 @@
 * 📺 **Bilibili** (Chinese): [Video demo](https://www.bilibili.com/video/BV1boHx61Enc/) · [Character voices demo](https://www.bilibili.com/video/BV1bkpZ6uEZQ/)
 * 💬 **Reddit**: [The post on r/comfyui](https://www.reddit.com/r/comfyui/s/n38ihf3DLf)
 
-### 👀 See it in action
+### 💡 What it helps with
 
-*The pictures show the Chinese interface; English is one switch away in Settings.*
+**1. "Which LoRA was that again?"** A file called `download (3).safetensors` tells you nothing. Press **Scan** once: every model is looked up on Civitai by its file hash and gets its real name, cover, trigger words and base model. From then on you pick models by their covers.
 
-**1. Scan once, then pick models by their covers.** Press **Scan** and every model is looked up on Civitai by its file hash, so even a file called `下载 (3).safetensors` gets its real name, cover, trigger words and base model.
+<p align="center"><img src="docs/images/en-scan.webp" width="520" alt="Scan results: each file matched on Civitai"></p>
 
-<p align="center"><img src="docs/images/scan.webp" width="520" alt="Scan results: each file matched on Civitai"></p>
+**2. Someone else's workflow opens with red nodes.** Model Check says which models are missing. The ones you already have under another name or in another folder go back in with one press; the rest can be downloaded from Civitai or Hugging Face, and each download is checked against the model's fingerprint.
 
-**2. Open someone else's workflow without hunting for models.** When models are missing, a bar over the canvas says so. One press puts back the ones you already have under another name or in another folder; the red outlines go away.
+<p align="center"><img src="docs/images/en-model-check.webp" width="760" alt="Model Check puts back three missing models with one press"></p>
 
-<p align="center"><img src="docs/images/model-check.webp" width="760" alt="Model Check puts back three missing models with one press"></p>
+**3. "How did I make this picture?"** Search your outputs by prompt words, model or LoRA, then drag the picture onto the canvas: its workflow comes back.
 
-**3. Find an old image and get its workflow back.** Search the gallery by prompt words, model or LoRA, then drag the image onto the canvas.
+<p align="center"><img src="docs/images/en-gallery.webp" width="760" alt="Gallery search, then drag an image onto the canvas"></p>
 
-<p align="center"><img src="docs/images/gallery.webp" width="760" alt="Gallery search, then drag an image onto the canvas"></p>
+**4. The same model, LoRAs and prompt, again and again.** Keep them as a combo. Drag the card onto empty canvas and a wired group of nodes appears; nothing already on the canvas changes.
 
-**4. Keep a model + LoRA + prompt combo and lay it down in one move.** Drag a combo card onto empty canvas: a wired group of nodes appears, and nothing already on the canvas changes.
+<p align="center"><img src="docs/images/en-combo.webp" width="760" alt="A combo card dragged onto the canvas becomes wired nodes"></p>
 
-<p align="center"><img src="docs/images/combo.webp" width="760" alt="A combo card dragged onto the canvas becomes wired nodes"></p>
+**5. Long prompts are hard to edit.** Select a prompt node and Prompt Studio shows its text as tags: click to weight, drag to reorder, type to add (Chinese and other languages become English).
 
-**5. Edit prompts as tags.** Select a prompt node and Prompt Studio opens its text as tags: click to weight, drag to reorder, type to add (Chinese and other languages become English).
+<p align="center"><img src="docs/images/en-prompt-studio.webp" width="760" alt="Prompt Studio editing a prompt node as tags"></p>
 
-<p align="center"><img src="docs/images/prompt-studio.webp" width="760" alt="Prompt Studio editing a prompt node as tags"></p>
+**6. Characters that talk.** With the companion node pack [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS): GPT-SoVITS characters with a reference clip per emotion, and a script page to voice them.
 
-**6. See what the plugin changed, and undo it.** Every change the plugin makes is listed in Activity, with **Undo** and **Find on canvas**.
+<p align="center"><img src="docs/images/en-voices.webp" width="760" alt="Character voices page"></p>
 
-<p align="center"><img src="docs/images/activity.webp" width="560" alt="Activity log with an undo button"></p>
+**Changed your mind?** Everything the plugin changes is listed in **Activity**, with **Undo** and **Find on canvas**.
 
-**7. Give characters a voice** (with [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)): GPT-SoVITS characters with a reference clip per emotion, and a script page to voice them.
+<p align="center"><img src="docs/images/en-activity.webp" width="620" alt="Activity log with an undo button"></p>
 
-<p align="center"><img src="docs/images/voices.webp" width="760" alt="Character voices page"></p>
+**Light on your computer**: the plugin itself loads no models, so it takes no graphics memory from image generation; the browser shows small thumbnails instead of full images, and its pictures are released a minute and a half after you close it. The voice models of Anomalous_TTS give their graphics memory back whenever ComfyUI needs it for image generation, and all of it on **Unload models**.
 
-### 🌟 What it does
+### 📦 Install
+
+1. In **ComfyUI Manager**, search `Anomalous Model Browser`, install it and restart ComfyUI. Or clone it into `custom_nodes`:
+   ```bash
+   cd custom_nodes
+   git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
+   ```
+2. Press **Shift + B** to open it. On **Home**, **Scan model folders** fills in covers and trigger words, and **Tour the interface** points at each part of the window.
+3. Optional: for character voices, also install [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS) (search `Anomalous TTS` in ComfyUI Manager).
+
+Scanning needs to reach Civitai. Without it, scan offline: base models are read from the files, and a later online scan fills in the rest (see **Network and backups** below).
+
+<details>
+<summary><b>📖 Every page and tool, in detail</b></summary>
 
 Every page has an icon on the rail at the left of the window.
 
@@ -91,31 +104,27 @@ Tools on the rail:
 
 **AI apps (MCP)**: Claude, Cursor, Cherry Studio and other apps that support MCP can use your library through `http://127.0.0.1:8188/anomalous/mcp`: answer questions about your models, outputs and saved prompts, and change the open workflow for you (prompts, models, LoRAs, combos, missing models), each change one Ctrl+Z step. Local only; setup in [docs/guides/mcp.md](docs/guides/mcp.md).
 
-**Light on your computer**: the plugin itself loads no models, so it takes no graphics memory from image generation; the browser shows small thumbnails instead of full images, and its pictures are released a minute and a half after you close it. The voice models of Anomalous_TTS give their graphics memory back whenever ComfyUI needs it for image generation, and all of it on **Unload models**.
+</details>
 
-### 📦 Quick Installation
-
-1. Open your terminal in the ComfyUI `custom_nodes` directory:
-   ```bash
-   cd custom_nodes
-   git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
-   ```
-2. Restart ComfyUI. *(Alternatively, install via **ComfyUI Manager** by searching for `Anomalous Model Browser`)*
-3. For character voices, also install [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS): search `Anomalous TTS` in **ComfyUI Manager**, or clone it the same way. It is optional.
-4. **Updating**: click the **!** button at the top right of the browser; it shows the current version, and **Check for updates / switch version** opens the version panel. Update to the newest release, go back to an earlier one or return to the latest, then restart ComfyUI. The plugin never checks for updates on its own.
+<details>
+<summary><b>⚙️ Opening, shortcuts and updating</b></summary>
 
 Open the browser with **Shift + B** (again to close), the floating button on the canvas, or **Extensions → Anomalous Model Browser** in ComfyUI's menu. **ComfyUI Settings → Anomalous Model Browser → Interface** changes the shortcut, the language and how the browser is opened (floating button, a button next to Run, or the Extensions menu only).
 
-The first time you open it, start on **Home**: **Scan model folders** fills in covers and trigger words, and **Tour the interface** points at each part of the window.
+**Updating**: click the **!** button at the top right of the browser; it shows the current version, and **Check for updates / switch version** opens the version panel. Update to the newest release, go back to an earlier one or return to the latest, then restart ComfyUI. The plugin never checks for updates on its own.
 
-> [!NOTE]
-> **On a cloud server (AutoDL, RunPod…):** fully supported on overseas servers; on servers in mainland China only in part (Civitai is mostly out of reach there: lookups are unreliable, covers rarely download). Not fully tested yet (one AutoDL server so far). The guide has a section for AI assistants to walk you through it. Opened from another computer, the plugin is view only by default. Open ComfyUI through an SSH tunnel, or see [docs/guides/cloud-server.md](docs/guides/cloud-server.md).
+</details>
 
-> [!NOTE]
-> **Network:** Scan looks models up on Civitai and prompt translation uses Google Translate, so both need to reach those sites (from mainland China usually through a proxy; when civitai.com cannot be reached the plugin tries Civitai's other address, civitai.red, which some networks reach, a cloud server in mainland China among them: names and trigger words come, covers usually not). Without them, pick **Offline** on the scan page (an online scan does the same by itself when it cannot connect): base models are read from the files, without covers or trigger words, and a later online scan fills in the rest. Downloading missing models needs the network too; for Hugging Face, **Settings → Model downloads** can use the hf-mirror.com mirror (Civitai has none). Browsing models, outputs, workflows and combos needs no network.
+<details>
+<summary><b>🌐 Network and backups</b></summary>
 
-> [!WARNING]
-> **Keep a copy of your own data:** **Settings → Backup → Export** packs Workflow Recipes, combos, saved prompts and node values, parameter presets, and the names, notes and covers you gave your models into one .zip; keep it on a cloud drive or a USB stick, and **Import** puts it back, also on another computer. (They live in `workflows/anomalous_recipes`, `workflows/anomalous_notebooks`, `workflows/anomalous_materials` and `workflows/anomalous_parameters` in your ComfyUI user folder.)
+**On a cloud server (AutoDL, RunPod…):** fully supported on overseas servers; on servers in mainland China only in part (Civitai is mostly out of reach there: lookups are unreliable, covers rarely download). Not fully tested yet (one AutoDL server so far). The guide has a section for AI assistants to walk you through it. Opened from another computer, the plugin is view only by default. Open ComfyUI through an SSH tunnel, or see [docs/guides/cloud-server.md](docs/guides/cloud-server.md).
+
+**Network:** Scan looks models up on Civitai and prompt translation uses Google Translate, so both need to reach those sites (from mainland China usually through a proxy; when civitai.com cannot be reached the plugin tries Civitai's other address, civitai.red, which some networks reach, a cloud server in mainland China among them: names and trigger words come, covers usually not). Without them, pick **Offline** on the scan page (an online scan does the same by itself when it cannot connect): base models are read from the files, without covers or trigger words, and a later online scan fills in the rest. Downloading missing models needs the network too; for Hugging Face, **Settings → Model downloads** can use the hf-mirror.com mirror (Civitai has none). Browsing models, outputs, workflows and combos needs no network.
+
+**Keep a copy of your own data:** **Settings → Backup → Export** packs Workflow Recipes, combos, saved prompts and node values, parameter presets, and the names, notes and covers you gave your models into one .zip; keep it on a cloud drive or a USB stick, and **Import** puts it back, also on another computer. (They live in `workflows/anomalous_recipes`, `workflows/anomalous_notebooks`, `workflows/anomalous_materials` and `workflows/anomalous_parameters` in your ComfyUI user folder.)
+
+</details>
 
 ---
 
@@ -134,37 +143,55 @@ The first time you open it, start on **Home**: **Scan model folders** fills in c
 * 📺 **哔哩哔哩 (Bilibili)**：[功能演示](https://www.bilibili.com/video/BV1boHx61Enc/) · [角色配音演示](https://www.bilibili.com/video/BV1bkpZ6uEZQ/)
 * 💬 **Reddit**：[r/comfyui 上的介绍帖](https://www.reddit.com/r/comfyui/s/n38ihf3DLf)
 
-### 👀 看图上手
+### 💡 它能帮你解决什么
 
-**1. 扫描一次，以后看封面挑模型。** 点 **扫描**，每个模型都按文件哈希去 C 站认一遍。就算文件叫 `下载 (3).safetensors`，也能显示出它真正的名字、封面、触发词和底模。
+**1. 模型太多，认不出谁是谁。** 文件叫 `下载 (3).safetensors`，根本看不出是什么。点一次 **扫描**，每个模型都按文件哈希去 C 站认一遍，显示出它真正的名字、封面、触发词和底模。以后看封面挑模型就行。
 
 <p align="center"><img src="docs/images/scan.webp" width="520" alt="扫描结果：每个文件都在 C 站认出来了"></p>
 
-**2. 打开别人的工作流，不用自己找模型。** 缺模型时画布上方会提示。你电脑里其实有、只是改了名或换了文件夹的，点一下就换上，红框随之消失。
+**2. 打开别人的工作流，一片红框。** 模型检查会告诉你缺哪些模型。你电脑里其实有、只是改了名或换了文件夹的，点一下就换上；真没有的可以从 C 站或 Hugging Face 下载，下载完按模型指纹核对过才用。
 
 <p align="center"><img src="docs/images/model-check.webp" width="760" alt="模型检查一键换上 3 个缺失的模型"></p>
 
-**3. 找到以前的图，拿回当时的工作流。** 在图库里按提示词、模型或 LoRA 搜，再把图拖到画布上。
+**3. 这张图当时是怎么出的？** 在图库里按提示词、模型或 LoRA 搜，再把图拖到画布上，当时的工作流就回来了。
 
 <p align="center"><img src="docs/images/gallery.webp" width="760" alt="图库搜索后把图拖到画布"></p>
 
-**4. 存下“模型 + LoRA + 提示词”的搭配，一拖就用。** 把搭配卡片拖到画布空白处，就放出一组连好线的节点，画布上原有的东西不动。
+**4. 每次都要重新配一遍模型、LoRA 和提示词。** 存成一个搭配。把卡片拖到画布空白处，就放出一组连好线的节点，画布上原有的东西不动。
 
 <p align="center"><img src="docs/images/combo.webp" width="760" alt="搭配卡片拖到画布变成连好线的节点"></p>
 
-**5. 像搭积木一样改提示词。** 选中提示词节点，提示词工坊把它拆成词块：点一下调权重，拖动换位置，输入就加（中文会自动译成英文）。
+**5. 提示词太长，改起来麻烦。** 选中提示词节点，提示词工坊把它拆成词块：点一下调权重，拖动换位置，输入就加（中文会自动译成英文）。
 
 <p align="center"><img src="docs/images/prompt-studio.webp" width="760" alt="提示词工坊按词块编辑提示词节点"></p>
 
-**6. 插件改过什么都查得到，还能撤销。** 插件做的每一处改动都列在“操作记录”里，带 **撤销** 和 **在画布上找到**。
-
-<p align="center"><img src="docs/images/activity.webp" width="560" alt="操作记录和撤销按钮"></p>
-
-**7. 给角色配音**（需要 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)）：导入 GPT-SoVITS 角色，每种情绪一段参考音频，在配音页写台词直接生成。
+**6. 想让角色开口说话。** 配合配套节点包 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)：导入 GPT-SoVITS 角色，每种情绪一段参考音频，在配音页写台词直接生成。
 
 <p align="center"><img src="docs/images/voices.webp" width="760" alt="角色语音页面"></p>
 
-### 🌟 能做什么
+**改错了也不怕。** 插件做的每一处改动都列在“操作记录”里，带 **撤销** 和 **在画布上找到**。
+
+<p align="center"><img src="docs/images/activity.webp" width="560" alt="操作记录和撤销按钮"></p>
+
+**不占你的资源**：
+- 插件本身不加载任何模型，不和生图抢显存。
+- 浏览时显示的是小缩略图，不加载原图；关闭窗口一分半后，图片也会释放掉。
+- Anomalous_TTS 的语音模型在 ComfyUI 生图需要显存时会自动让出，点 **卸载模型** 时全部释放。
+
+### 📦 安装
+
+1. 在 **ComfyUI Manager** 里搜索 `Anomalous Model Browser`，安装后重启 ComfyUI。也可以在 `custom_nodes` 目录下手动安装：
+   ```bash
+   cd custom_nodes
+   git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
+   ```
+2. 按 **Shift + B** 打开。在 **主页** 点 **扫描模型文件夹** 补全封面和触发词；点 **界面导览** 会逐一指给你看窗口的各个部分。
+3. 想用角色配音的话，再装 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)（在 ComfyUI Manager 搜索 `Anomalous TTS`）。不装也不影响其他功能。
+
+扫描要连 C 站。连不上也能用：选离线扫描，只从模型文件推断底模，以后能连上时再扫一次会自动补上（见下面的“网络和备份”）。
+
+<details>
+<summary><b>📖 每个页面和工具的详细说明</b></summary>
 
 窗口左侧的图标栏，每个页面一个图标。
 
@@ -189,37 +216,30 @@ The first time you open it, start on **Home**: **Scan model folders** fills in c
 
 **接入 AI 软件（MCP）**：Claude、Cursor、Cherry Studio 等支持 MCP 的 AI 软件，可以通过 `http://127.0.0.1:8188/anomalous/mcp` 查你的模型、出图和存下的提示词，回答相关问题；也能帮你改当前工作流（提示词、模型、LoRA、搭配、缺失的模型），每次改动都能用 Ctrl+Z 撤销。只限本机。设置方法见 [docs/guides/mcp.md](docs/guides/mcp.md)。
 
-**不占你的资源**：
-- 插件本身不加载任何模型，不和生图抢显存。
-- 浏览时显示的是小缩略图，不加载原图；关闭窗口一分半后，图片也会释放掉。
-- Anomalous_TTS 的语音模型在 ComfyUI 生图需要显存时会自动让出，点 **卸载模型** 时全部释放。
+</details>
 
-### 📦 快速安装
-
-1. 在 ComfyUI 的 `custom_nodes` 目录下打开终端执行：
-   ```bash
-   cd custom_nodes
-   git clone https://github.com/DemonGatanjieu/Anomalous_Model_Browser.git
-   ```
-2. 重启 ComfyUI 即可使用。（*也可以直接在 **ComfyUI Manager** 搜索 `Anomalous Model Browser` 安装*）
-3. 想用角色配音的话，再装 [Anomalous_TTS](https://github.com/DemonGatanjieu/Anomalous_TTS)：在 **ComfyUI Manager** 搜索 `Anomalous TTS`，或用同样的方法 git clone。不装也不影响其他功能。
-4. **更新插件**：
-   - 点窗口右上角的 **!**，可以看到当前版本；
-   - 点 **检查更新 / 切换版本** 打开版本面板，可以更新到最新版、回退到以前的版本，或回到最新版；
-   - 换完版本后重启 ComfyUI。插件不会自己联网检查更新。
+<details>
+<summary><b>⚙️ 打开方式、快捷键和更新</b></summary>
 
 打开方式有三种：按 **Shift + B**（再按一次关闭）、点击画布上的悬浮按钮，或者从 ComfyUI 菜单 **扩展 → Anomalous Model Browser** 打开。在 **ComfyUI 设置 → Anomalous Model Browser → 界面** 里，可以修改快捷键、插件语言和打开方式（悬浮按钮、运行按钮旁的按钮，或只用扩展菜单）。
 
-第一次打开时会停在 **主页**：点 **扫描模型文件夹** 补全封面和触发词；点 **界面导览** 会逐一指给你看窗口的各个部分。
+**更新插件**：
+- 点窗口右上角的 **!**，可以看到当前版本；
+- 点 **检查更新 / 切换版本** 打开版本面板，可以更新到最新版、回退到以前的版本，或回到最新版；
+- 换完版本后重启 ComfyUI。插件不会自己联网检查更新。
 
-> [!NOTE]
-> **在云服务器上（AutoDL 等）：** 海外的云服务器完整支持；国内的云服务器只能部分支持（多半连不上 Civitai，查模型不稳定，封面基本下不来）。目前还没有完整测过（只实测过一台 AutoDL 服务器），用的时候请留意。说明里有一节写给 AI 看的步骤，把链接丢给 AI 就能让它带你做。从别的电脑打开时插件默认只能浏览。用 SSH 隧道打开就能照常用，或者见 [docs/guides/cloud-server.md](docs/guides/cloud-server.md)。
+</details>
 
-> [!NOTE]
-> **关于网络：** 扫描模型要连 Civitai（C 站）查封面和触发词，提示词翻译默认用谷歌翻译，这两样在国内一般要开网络代理才能用。不开代理也行：扫描页选 **离线**（联网扫描连不上时也会自动改成这样），只从模型文件推断底模，没有封面和触发词，以后能连上时再扫一次会自动补上。下载缺失的模型也要联网：Hugging Face 的模型可以在 **设置 → 模型下载** 里打开“Hugging Face 用国内镜像”，不用代理；C 站的没有镜像。（civitai.com 连不上时插件会自动试 Civitai 的另一个地址 civitai.red，有的网络能连上，比如国内的云服务器，这时能认出模型名字和触发词，封面多半还是下不来。）浏览模型、图库、工作流和搭配都不用联网。
+<details>
+<summary><b>🌐 网络和备份</b></summary>
 
-> [!WARNING]
-> **备份自己的数据：** **设置 → 备份 → 导出**，把工作流配方、搭配、存下的提示词和节点参数、参数预设，以及你给模型改的名字、备注和封面打成一个压缩包，放到云端硬盘或 U 盘里；换电脑或重装后用 **导入** 恢复。（它们存在 ComfyUI 用户目录下的 `workflows/anomalous_recipes`、`workflows/anomalous_notebooks`、`workflows/anomalous_materials` 与 `workflows/anomalous_parameters`。）
+**在云服务器上（AutoDL 等）：** 海外的云服务器完整支持；国内的云服务器只能部分支持（多半连不上 Civitai，查模型不稳定，封面基本下不来）。目前还没有完整测过（只实测过一台 AutoDL 服务器），用的时候请留意。说明里有一节写给 AI 看的步骤，把链接丢给 AI 就能让它带你做。从别的电脑打开时插件默认只能浏览。用 SSH 隧道打开就能照常用，或者见 [docs/guides/cloud-server.md](docs/guides/cloud-server.md)。
+
+**关于网络：** 扫描模型要连 Civitai（C 站）查封面和触发词，提示词翻译默认用谷歌翻译，这两样在国内一般要开网络代理才能用。不开代理也行：扫描页选 **离线**（联网扫描连不上时也会自动改成这样），只从模型文件推断底模，没有封面和触发词，以后能连上时再扫一次会自动补上。下载缺失的模型也要联网：Hugging Face 的模型可以在 **设置 → 模型下载** 里打开“Hugging Face 用国内镜像”，不用代理；C 站的没有镜像。（civitai.com 连不上时插件会自动试 Civitai 的另一个地址 civitai.red，有的网络能连上，比如国内的云服务器，这时能认出模型名字和触发词，封面多半还是下不来。）浏览模型、图库、工作流和搭配都不用联网。
+
+**备份自己的数据：** **设置 → 备份 → 导出**，把工作流配方、搭配、存下的提示词和节点参数、参数预设，以及你给模型改的名字、备注和封面打成一个压缩包，放到云端硬盘或 U 盘里；换电脑或重装后用 **导入** 恢复。（它们存在 ComfyUI 用户目录下的 `workflows/anomalous_recipes`、`workflows/anomalous_notebooks`、`workflows/anomalous_materials` 与 `workflows/anomalous_parameters`。）
+
+</details>
 
 ---
 
