@@ -182,7 +182,11 @@ folder skips it and the scan summary counts it apart (`excluded`), not in the ot
 picked by hand (`targets`) it is scanned all the same. `"scan": "scan"` records that the user
 was asked and kept it. Nothing decides this alone: the summary only marks new models whose
 safetensors header reads but names no drawing model kind (`model_kind.inspect_file`, kind "",
-a voice model say) as `not_drawing`, and the scan page asks. `POST /anomalous/scan_choice`
+a voice model say) as `not_drawing`, and the scan page asks. Those headers are read
+`HEAD_READERS` (16) at a time, since on a network drive each read waits on the network (1041
+new models on a cloud server's model disk took 79 s one after another), through
+`get_metadata`, whose cache keeps each answer until the file changes: the page opened again
+reads none of them, and the picker after it finds them there. `POST /anomalous/scan_choice`
 (`api/scan_choice.py`, this computer only) takes the picked models as scan `targets`, at most
 2000, and writes only `.safetensors` files' layers that are readable.
 

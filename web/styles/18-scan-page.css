@@ -129,6 +129,39 @@
     .anomalous-scan-band.is-busy .anomalous-scan-band-tile.is-empty { animation: none; }
 }
 
+/* The counts on their way (many models, or a network drive). */
+.anomalous-scan-counting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 72px 24px;
+    text-align: center;
+    color: var(--amb-text-main);
+}
+
+.anomalous-scan-counting p {
+    margin: 0;
+    max-width: 420px;
+    color: var(--amb-text-soft);
+    line-height: 1.5;
+}
+
+.anomalous-scan-counting-icon {
+    width: 40px;
+    height: 40px;
+    color: var(--amb-link);
+    animation: anomalous-scan-counting 1.4s ease-in-out infinite;
+}
+
+@keyframes anomalous-scan-counting {
+    50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .anomalous-scan-counting-icon { animation: none; }
+}
+
 .anomalous-scan-hero-body {
     display: flex;
     flex: 1 1 auto;

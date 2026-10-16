@@ -12,6 +12,8 @@
  * like no drawing model (don't scan them, scan them, see them). Then the settings (ui_scan_settings.js) and the last scan in one line.
  * Lists are pages of their own (ui_scan_lists.js) with a way back. Scans run through
  * scan_runner.js; the progress box is scan_progress.js's panel, hosted here while the page is shown.
+ * Opened afresh and the counts slow to come (many models, or on a network drive), it says it is
+ * counting instead of staying blank.
  */
 
 import { translate as t } from './locales.js';
@@ -24,6 +26,7 @@ import { renderScanSettings, scanOptions as options } from './ui_scan_settings.j
 
 const SHOWN_PICKS = 12; // picked models named on the page; the rest are counted
 const BAND_TILES = 48; // pictures put in the scan card's band (as many as fit show)
+const COUNTING_AFTER_MS = 400; // the counts not there by then: "counting your models" shows
 // The view shown: '' the page itself, or a list: 'new' | 'unmatched' | 'skipped' | 'result'
 // | 'notdrawing' | 'excluded' | 'components'. `scroll`: where to put a list shown again after a
 // model's Back. `factsOpen`, `moreOpen`: the scan's full counts, the rarer settings unfolded.
@@ -393,12 +396,28 @@ function paint(owner, panel, data) {
     setScanProgressHost(progressHost);
 }
 
-/** Renders the page into `panel` (again after each scan, so the counts are fresh). */
-export async function renderScanPage(owner, panel) {
+/** What the page shows while the counts are on their way. */
+function countingPage() {
+    const page = el('div', 'anomalous-scan-page');
+    const box = el('div', 'anomalous-scan-counting');
+    box.setAttribute('role', 'status');
+    box.append(scanIcon('scan', 'anomalous-scan-counting-icon'), el('strong', '', t('scanCountingTitle')),
+        el('p', '', t('scanCountingHint')));
+    page.append(box);
+    return page;
+}
+
+/** Renders the page into `panel` (again after each scan, so the counts are fresh). `fresh`: the
+ * page was just opened, so a slow count shows "counting" instead of the page from before. */
+export async function renderScanPage(owner, panel, fresh = false) {
     const token = (panel._scanRender = (panel._scanRender || 0) + 1);
+    const counting = fresh && setTimeout(() => {
+        if (token === panel._scanRender) panel.replaceChildren(countingPage());
+    }, COUNTING_AFTER_MS);
     const [summary, config, last] = await Promise.all([
         fetchJson('/anomalous/scan_summary'), fetchJson('/anomalous/config'), fetchJson('/anomalous/last_scan'),
     ]);
+    clearTimeout(counting);
     if (token !== panel._scanRender) return;
     // Closed or left meanwhile: the progress box keeps floating instead of hiding in the page.
     if (panel.style.display === 'none' || !owner.modal?.classList.contains('visible')) return;
@@ -422,7 +441,7 @@ export function openScanPage(owner, view = '', scroll = 0) {
     owner.enterToolPage?.('scan');
     owner.hideAllPanels();
     owner.scanPanel.style.display = 'flex';
-    renderScanPage(owner, owner.scanPanel);
+    renderScanPage(owner, owner.scanPanel, true);
 }
 
 /** Leaving the page: the progress box floats again. */

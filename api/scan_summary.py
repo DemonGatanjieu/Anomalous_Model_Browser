@@ -10,6 +10,7 @@ a scan reads with its name, size, cover and state."""
 
 import asyncio
 import os
+from concurrent.futures import ThreadPoolExecutor
 
 from aiohttp import web
 
@@ -20,10 +21,8 @@ from .scan_report import locate_root
 
 try:
     from ..model_identity import is_unmatched, scan_choice, sidecar_info, unmatched_reason
-    from ..model_kind import inspect_file
 except ImportError:  # loaded outside the package (tests)
     from model_identity import is_unmatched, scan_choice, sidecar_info, unmatched_reason
-    from model_kind import inspect_file
 
 MAX_LISTED = 2000  # models listed per kind; the counts stay exact
 MAX_PICKABLE = 5000  # models the picker lists; its total stays exact
@@ -34,6 +33,11 @@ OTHER_MODEL_EXTENSIONS = (".ckpt", ".pt", ".pth", ".bin", ".gguf", ".onnx", ".sf
 COMPONENT_TYPES = ("vae", "clip", "text_encoders", "clip_vision", "upscale_models")
 # What the picker needs of a model's metadata: its card badge (model_source.js) and its name.
 PICKER_FIELDS = ("info_source", "unmatched_reason", "scan_choice", "not_drawing", "baseModel", "base_guess", "custom_name")
+# New models' headers are read this many at a time: on a network drive (a NAS, a cloud server's
+# model disk) each read waits on the network, and a thousand one after another take minutes.
+# They are read through get_metadata, whose cache keeps them until the file changes (the page
+# opened again reads none, and the picker after it finds them there).
+HEAD_READERS = 16
 
 
 def _walk():
@@ -57,6 +61,11 @@ def _walk():
                 yield located, base_dir, path, other
 
 
+def _looks_not_drawing(path):
+    """Whether the header of a new model reads but names no drawing model kind."""
+    return bool(get_metadata(path).get("not_drawing"))
+
+
 def _summarize():
     """Counts the files the scanner handles (.safetensors in the active scan folders), each once.
     `pending`: unmatched models Civitai was never asked about (offline, or unreachable then),
@@ -67,7 +76,7 @@ def _summarize():
     are listed again, matched ones as well, in `component_models` with their `state`
     (matched | unmatched | new); `components` counts them. `covers`: see `_covers`."""
     total = matched = 0
-    unmatched, new, skipped, excluded, components, scanned = [], [], [], [], [], []
+    unmatched, new, skipped, excluded, components, scanned, to_read = [], [], [], [], [], [], []
     for located, base_dir, path, other in _walk():
         item = {"type": located[0], "path_idx": located[1], "filename": os.path.basename(path),
                 "rel": os.path.relpath(path, base_dir).replace(os.sep, "/")}
@@ -91,14 +100,18 @@ def _summarize():
             item["state"] = "matched"
             continue
         if info is None:
-            found = inspect_file(path)
-            if not choice and found["format"] == "safetensors" and not found["kind"]:
-                item["not_drawing"] = True
+            if not choice:
+                to_read.append((item, path))
             item["state"] = "new"
             new.append(item)
         else:
             item.update(state="unmatched", reason=unmatched_reason(info), base=info.get("baseModel") or "")
             unmatched.append(item)
+    if to_read:
+        with ThreadPoolExecutor(max_workers=HEAD_READERS) as pool:
+            for (item, _path), not_drawing in zip(to_read, pool.map(_looks_not_drawing, [path for _item, path in to_read])):
+                if not_drawing:
+                    item["not_drawing"] = True
     return {
         "total": total, "matched": matched, "unmatched": len(unmatched), "new": len(new),
         "pending": sum(item["reason"] in ("offline", "network") for item in unmatched),
