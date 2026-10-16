@@ -54,6 +54,14 @@ page that reached the server under another name (DNS rebinding) is refused too. 
 HTTP 403 with `code: local_only` and a bilingual message. `GET /anomalous/access` tells the page
 whether it is local; `remote_view.js` then shows a "view only" chip in the header.
 
+ComfyUI on a rented cloud server is only ever opened from another device. An empty
+`allow_remote_changes` file in the plugin folder, made on the server and read once at start
+(`REMOTE_CHANGES`), makes `local_guard.may_change` true for every request: the middleware and
+the routes that check for themselves (import, placement, scan choice, recipe focus) use
+`may_change`; `is_local` stays for what needs the browser on this computer (import's search of
+this computer's Downloads) and for MCP. `GET /anomalous/access` answers `{local, changes}`; the
+chip then reads "remote changes on". Usage and the risk: `docs/guides/cloud-server.md`.
+
 ## Storage ownership
 
 Runtime UI settings and newly stored API keys live in `api/config.json`.

@@ -33,7 +33,7 @@ from .recipe_store import (
     _archive_recipe, _delete_recipe_with_history, _history_dir, _list_recipe_history,
     _list_recipes, _read_recipe, _write_recipe, get_recipes_dir,
 )
-from .local_guard import is_local as _is_local
+from .local_guard import may_change
 from .utils import require_filename, resolve_within
 from .workflow_schema import (
     _clean_volatile_params, _node_title, _node_type, _normalise_workflow_key,
@@ -376,8 +376,8 @@ def _set_recipe_focus(recipes_dir, filename, entries):
 
 
 async def api_set_recipe_focus(request):
-    """Marks or notes a recipe's focus values (a star in its details). Only from this computer."""
-    if not _is_local(request):
+    """Marks or notes a recipe's focus values (a star in its details). Only from this computer (local_guard.may_change)."""
+    if not may_change(request):
         return web.json_response({"status": "error", "message": "Only from this computer"}, status=403)
     try:
         payload = await request.json()

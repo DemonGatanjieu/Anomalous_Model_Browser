@@ -1,5 +1,11 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.61.0 (Cloud servers) — unreleased
+
+### ☁️ ComfyUI on a cloud server (云服务器上使用)
+- On a rented cloud server (AutoDL, RunPod…) the page is always opened from another device, so since v1.58.1 the plugin only let it look: scans, downloads, moves and saves were refused. Now there are two ways: open ComfyUI through an **SSH tunnel** (the address starts with 127.0.0.1; it counts as the computer ComfyUI runs on, nothing to change), or make an empty file named **`allow_remote_changes`** in the plugin folder on the server and restart ComfyUI. With the file, every device that can open the page may change things; the page can neither make nor remove it, and the MCP endpoint stays for this computer only. How, and the risk: [docs/guides/cloud-server.md](docs/guides/cloud-server.md).
+- The **View only** chip beside the page title can be pressed: it says what is refused and the two ways above. With the file there it reads **Remote changes on**, in yellow.
+
 ## v1.60.0 (Model Import, Tidy, Parameter Compare, Workflows Rebuilt, Base Model Filter, Settings Tabs) — unreleased
 
 ### 📥 Drop a model in, it goes to the right folder (拖进来自动归位)

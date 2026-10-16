@@ -1,5 +1,6 @@
 # Local configuration and credentials
 config.json
+allow_remote_changes
 .env
 .env.*
 !.env.example

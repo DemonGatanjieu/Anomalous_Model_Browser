@@ -175,7 +175,8 @@ covered by the `styles.css` manifest.
   `api/node_material.py` saves one canvas node's current values as a
   `node_parameter_selection` material (the current-node panel's "save").
 - `api/local_guard.py` decides which requests only this computer may make (every change under
-  `/anomalous/`; other devices may look), as one middleware; see backend.md.
+  `/anomalous/`; other devices may look), as one middleware, and lets other devices change
+  things too when the server has an `allow_remote_changes` file (cloud servers); see backend.md.
 - `api/media_routes.py`, `api/gallery_routes.py`, `api/translation_routes.py`, and
   `api/folder_types.py` own the formerly mixed utility route families.
 - `model_policies.py` owns shared backend rename and protected-category policy.

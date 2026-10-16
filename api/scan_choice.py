@@ -7,7 +7,7 @@ import os
 
 from aiohttp import web
 
-from .local_guard import is_local as _is_local
+from .local_guard import may_change
 from .path_utils import atomic_write_json, resolve_folder_subdir
 from .utils import resolve_within
 
@@ -59,8 +59,8 @@ def _set_scan_choice(targets, choice):
 
 async def api_set_scan_choice(request):
     """POST /anomalous/scan_choice {targets, choice} - leave models out of scans ("skip"), keep
-    them in ("scan"), or forget the choice (""). Only from this computer."""
-    if not _is_local(request):
+    them in ("scan"), or forget the choice (""). Only from this computer (local_guard.may_change)."""
+    if not may_change(request):
         return web.json_response({"status": "error", "message": "Only from this computer"}, status=403)
     try:
         data = await request.json()

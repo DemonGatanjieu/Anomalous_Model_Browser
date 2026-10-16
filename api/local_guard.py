@@ -6,9 +6,15 @@ version switches, saved settings) answers only requests from the computer ComfyU
 GET is local-only unless it is a read sent as POST (OPEN_POSTS); a GET is open unless it is not
 a plain read (LOCAL_GETS). A request is local when it comes from a loopback address, through no
 proxy, naming a loopback host; checking the Host also keeps out a page that reached this server
-under another name (DNS rebinding)."""
+under another name (DNS rebinding).
+
+ComfyUI on a rented cloud server is only ever opened from another device. An empty file named
+`allow_remote_changes` in the plugin's folder, made on that server, lets every device that can
+open the page change things too (may_change); it is read once, when ComfyUI starts, and the
+page cannot make or remove it. MCP keeps to this computer either way."""
 
 import ipaddress
+import os
 import urllib.parse
 
 from aiohttp import web
@@ -33,6 +39,11 @@ LOCAL_GETS = frozenset({
 # Routes that answer other devices themselves (MCP replies in JSON-RPC).
 OWN_CHECK = frozenset({"/anomalous/mcp"})
 READS = ("GET", "HEAD", "OPTIONS")
+REMOTE_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "allow_remote_changes")
+REMOTE_CHANGES = os.path.isfile(REMOTE_FILE)
+if REMOTE_CHANGES:
+    print("[Anomalous Browser] allow_remote_changes 文件存在：任何能打开页面的设备都能扫描、移动、删除模型和改设置。"
+          " The allow_remote_changes file is there: every device that can open the page may change things.")
 MESSAGE = ("只能在运行 ComfyUI 的电脑上操作，别的设备只能浏览。"
            " Only the computer ComfyUI runs on can do this; other devices can only look.")
 
@@ -58,6 +69,11 @@ def is_local(request):
     return loopback_host(urllib.parse.urlsplit("//" + request.headers.get("Host", "")).hostname)
 
 
+def may_change(request):
+    """The request may change things: it comes from this computer, or remote changes are allowed."""
+    return REMOTE_CHANGES or is_local(request)
+
+
 def needs_local(method, path):
     """Whether a request to `path` with `method` must come from this computer."""
     if not path.startswith(PREFIX) or path in OWN_CHECK:
@@ -74,11 +90,12 @@ def refusal():
 
 @web.middleware
 async def local_only_middleware(request, handler):
-    if needs_local(request.method, request.path) and not is_local(request):
+    if needs_local(request.method, request.path) and not may_change(request):
         return refusal()
     return await handler(request)
 
 
 async def api_access(request):
-    """GET /anomalous/access - whether this page may change things: {"local": bool}."""
-    return web.json_response({"local": is_local(request)})
+    """GET /anomalous/access - whether this page is on this computer and whether it may change
+    things: {"local": bool, "changes": bool}."""
+    return web.json_response({"local": is_local(request), "changes": may_change(request)})

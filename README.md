@@ -108,6 +108,9 @@ Open the browser with **Shift + B** (again to close), the floating button on the
 The first time you open it, start on **Home**: **Scan model folders** fills in covers and trigger words, and **Tour the interface** points at each part of the window.
 
 > [!NOTE]
+> **On a cloud server (AutoDL, RunPod…):** opened from another computer, the plugin is view only by default. Open ComfyUI through an SSH tunnel, or see [docs/guides/cloud-server.md](docs/guides/cloud-server.md).
+
+> [!NOTE]
 > **Network:** Scan looks models up on Civitai and prompt translation uses Google Translate, so both need to reach those sites (from mainland China usually through a proxy). Without them, pick **Offline** on the scan page (an online scan does the same by itself when it cannot connect): base models are read from the files, without covers or trigger words, and a later online scan fills in the rest. Downloading missing models needs the network too; for Hugging Face, **Settings → Model downloads** can use the hf-mirror.com mirror (Civitai has none). Browsing models, outputs, workflows and combos needs no network.
 
 > [!WARNING]
@@ -207,6 +210,9 @@ The first time you open it, start on **Home**: **Scan model folders** fills in c
 打开方式有三种：按 **Shift + B**（再按一次关闭）、点击画布上的悬浮按钮，或者从 ComfyUI 菜单 **扩展 → Anomalous Model Browser** 打开。在 **ComfyUI 设置 → Anomalous Model Browser → 界面** 里，可以修改快捷键、插件语言和打开方式（悬浮按钮、运行按钮旁的按钮，或只用扩展菜单）。
 
 第一次打开时会停在 **主页**：点 **扫描模型文件夹** 补全封面和触发词；点 **界面导览** 会逐一指给你看窗口的各个部分。
+
+> [!NOTE]
+> **在云服务器上（AutoDL 等）：** 从别的电脑打开时插件默认只能浏览。用 SSH 隧道打开就能照常用，或者见 [docs/guides/cloud-server.md](docs/guides/cloud-server.md)。
 
 > [!NOTE]
 > **关于网络：** 扫描模型要连 Civitai（C 站）查封面和触发词，提示词翻译默认用谷歌翻译，这两样在国内一般要开网络代理才能用。不开代理也行：扫描页选 **离线**（联网扫描连不上时也会自动改成这样），只从模型文件推断底模，没有封面和触发词，以后能连上时再扫一次会自动补上。下载缺失的模型也要联网：Hugging Face 的模型可以在 **设置 → 模型下载** 里打开“Hugging Face 用国内镜像”，不用代理；C 站的没有镜像。浏览模型、图库、工作流和搭配都不用联网。
