@@ -1,6 +1,6 @@
 # 📈 Anomalous Model Browser Changelog
 
-## v1.61.0 — unreleased
+## v1.60.1 — unreleased
 
 ### 🔍 Scanning (扫描)
 - **The scan page opens at once, also with many models**: it shows the last counts right away, says it is updating them, and shows the fresh ones when they come. What each model file's header says is now kept on disk (`user/anomalous/model_heads.json`, by file, read again only when the file changes), so a big library or a network drive is not read again after every restart either; requests that come while the page counts share that one count.
