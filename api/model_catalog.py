@@ -14,7 +14,7 @@ from .folder_types import (
     get_active_folder_types, get_active_model_roots,
     get_active_physical_basenames, get_folder_view_mode,
 )
-from .path_utils import model_reference_within, resolve_folder_subdir
+from .path_utils import resolve_folder_subdir
 
 def _collect_folder_models(target_dir, folder_type, path_idx, rel_subfolder, page, limit):
     """Collect one folder in a worker thread with a single directory listing."""
@@ -447,8 +447,11 @@ def _resolve_paths_to_model_info_sync(paths, folder_types=None, exact_only=False
             real_base_dir = os.path.realpath(base_dir)
             roots.append((folder_type, path_idx, real_base_dir))
             for original, _, relative_path in requested:
+                relative = relative_path.replace('/', os.sep)
+                candidate = os.path.realpath(os.path.join(real_base_dir, relative))
                 try:
-                    candidate = model_reference_within(real_base_dir, relative_path.replace('/', os.sep))
+                    if os.path.commonpath((real_base_dir, candidate)) != real_base_dir:
+                        continue
                 except ValueError:
                     continue
                 if os.path.isfile(candidate) and is_model_file(candidate):

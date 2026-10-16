@@ -257,10 +257,8 @@ def destination(data, size=0):
 
 
 def _same_drive(first, second):
-    """Whether `first` can be renamed to `second`; a link counts where the link is (moving
-    it moves the link, not the model disk behind it)."""
     try:
-        return os.lstat(first).st_dev == os.stat(os.path.dirname(second)).st_dev
+        return os.stat(first).st_dev == os.stat(os.path.dirname(second)).st_dev
     except OSError:
         return False
 

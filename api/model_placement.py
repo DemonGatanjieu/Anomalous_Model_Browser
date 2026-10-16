@@ -36,7 +36,7 @@ from .metadata import get_metadata
 from .model_constants import MEDIA_EXTENSIONS, PREVIEW_SUFFIXES, SIDECAR_SUFFIXES
 from .model_download import MODEL_EXTENSIONS, clean_folder, forget_file_lists
 from .model_import import Refused, destination, import_types, move_into
-from .path_utils import model_reference_within
+from .path_utils import resolve_within
 
 # (folder type, what the file is): it loads there all the same.
 WORKS_ANYWAY = {("diffusion_models", "checkpoints")}
@@ -214,7 +214,7 @@ def move(data):
         index = int(data.get("root", 0))
         base = os.path.realpath(paths[index])
         rel = clean_folder(data.get("rel"))
-        source = model_reference_within(base, rel.replace("/", os.sep))
+        source = resolve_within(base, *rel.split("/"))
     except (ValueError, TypeError, IndexError):
         raise Refused("bad_path")
     if not os.path.isfile(source) or not rel.lower().endswith(MODEL_EXTENSIONS):

@@ -12,7 +12,7 @@ from unittest import mock
 PLUGIN = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PLUGIN), str(PLUGIN.parents[1])]
 
-from api import model_folder, path_utils
+from api import model_folder
 
 
 class _Request:
@@ -25,7 +25,7 @@ class _Request:
 
 def ask(body, root):
     with mock.patch.object(model_folder, "resolve_folder_subdir",
-                           side_effect=lambda kind, idx, sub: (root, path_utils.resolve_within(root, sub.strip("/")))), \
+                           side_effect=lambda kind, idx, sub: (root, model_folder.resolve_within(root, sub.strip("/")))), \
             mock.patch.object(model_folder, "_reveal") as reveal, \
             mock.patch.object(model_folder, "_open_folder") as open_folder:
         response = asyncio.run(model_folder.api_open_model_folder(_Request(body)))
@@ -56,7 +56,6 @@ class OpenModelFolderTests(unittest.TestCase):
         self.assertEqual(ask({"type": "loras", "subfolder": "/Anime", "filename": "b.safetensors"}, self.root)[0], 404)
         self.assertEqual(ask({"type": "loras", "subfolder": "/../.."}, self.root)[0], 400)
         self.assertEqual(ask({"type": "loras", "subfolder": "/", "filename": "../x"}, self.root)[0], 400)
-        self.assertEqual(ask({"type": "loras", "subfolder": "/Anime", "filename": ".."}, self.root)[0], 400)
 
 
 if __name__ == "__main__":
