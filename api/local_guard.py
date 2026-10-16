@@ -43,7 +43,7 @@ REMOTE_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 REMOTE_CHANGES = os.path.isfile(REMOTE_FILE)
 if REMOTE_CHANGES:
     print("[Anomalous Browser] allow_remote_changes 文件存在：任何能打开页面的设备都能扫描、移动、删除模型和改设置。"
-          " The allow_remote_changes file is there: every device that can open the page may change things.")
+          " The allow_remote_changes file is there: every device that can open the page may change things.", flush=True)
 MESSAGE = ("只能在运行 ComfyUI 的电脑上操作，别的设备只能浏览。"
            " Only the computer ComfyUI runs on can do this; other devices can only look.")
 

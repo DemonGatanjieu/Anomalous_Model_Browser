@@ -22,11 +22,18 @@ export async function markRemoteView(container, group) {
     if (!data || data.local !== false) return;
     const open = data.changes === true;
     if (!open) container.classList.add('anomalous-remote-view');
-    const chip = document.createElement('button');
-    chip.type = 'button';
+    // A span with a button's role and keys: the header's button rules (!important) would restyle a <button>.
+    const chip = document.createElement('span');
+    chip.setAttribute('role', 'button');
+    chip.tabIndex = 0;
     chip.className = `anomalous-remote-chip${open ? ' is-open' : ''}`;
     chip.textContent = t(open ? 'remoteChangesChip' : 'remoteViewChip');
     chip.title = t(open ? 'remoteChangesHint' : 'remoteViewHint');
     chip.onclick = () => anomalousAlert(chip.title, chip.textContent);
+    chip.onkeydown = (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        chip.click();
+    };
     group.append(chip);
 }
