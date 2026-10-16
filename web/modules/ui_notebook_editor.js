@@ -511,7 +511,7 @@ export function fillNotebookGalleries(baseModel, mainGallery, loraGallery, data)
             if (isVid) return `<video src="${m.preview_url}" muted loop playsinline></video>`;
             return `<img src="${m.preview_url}" />`;
         }
-        return `<div style="width:30px; height:30px; background:var(--amb-bg-card); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--amb-text-dim);">?</div>`;
+        return '<div class="anomalous-nb-mini-empty">?</div>';
     };
 
     fetch(`/anomalous/compatible_models?base_model=${encodeURIComponent(baseModel)}&target_type=checkpoints,unet,diffusion_models`)

@@ -204,7 +204,6 @@
     line-height: 18px;
 }
 
-.anomalous-structure-row.is-model,
 .anomalous-structure-row.is-fixed {
     display: flex;
     align-items: center;
@@ -215,8 +214,80 @@
     background: var(--amb-bg-card);
 }
 
+/* Models: cover cards side by side, as in the model library. */
+.anomalous-structure-models {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.anomalous-structure-row.is-model {
+    display: flex;
+    flex-direction: column;
+    width: 150px;
+    overflow: hidden;
+    border: 1px solid var(--amb-border);
+    border-radius: 10px;
+    background: var(--amb-bg-card);
+}
+
 .anomalous-structure-row.is-pickable { cursor: pointer; }
 .anomalous-structure-row.is-pickable:hover { border-color: var(--amb-link); }
+
+.anomalous-structure-cover { position: relative; }
+
+.anomalous-structure-row.is-model .anomalous-structure-thumb {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 4;
+    border-radius: 0;
+}
+
+/* Text on the cover: dark plates, readable on any picture and in either theme. */
+.anomalous-structure-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    max-width: calc(100% - 12px);
+    overflow: hidden;
+    padding: 1px 7px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.62);
+    color: #fff;
+    font-size: 11px;
+    line-height: 18px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-structure-change {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    padding: 3px 14px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    font: inherit;
+    font-size: 12px;
+    opacity: 0;
+    transform: translateX(-50%);
+    transition: opacity 0.15s;
+    cursor: pointer;
+}
+
+.anomalous-structure-row.is-model:hover .anomalous-structure-change,
+.anomalous-structure-change:focus-visible { opacity: 1; }
+
+@media (hover: none) {
+    .anomalous-structure-change { opacity: 1; }
+}
+
+.anomalous-structure-row.is-model .anomalous-structure-copy { padding: 6px 8px 8px; }
+.anomalous-structure-row.is-model .anomalous-structure-value { font-size: 13px; }
+.anomalous-structure-row.is-model .anomalous-structure-node { font-size: 11px; }
+.anomalous-structure-row.is-model .anomalous-structure-actions { margin-top: 4px; }
 
 .anomalous-structure-row.is-text {
     display: flex;

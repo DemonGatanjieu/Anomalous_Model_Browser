@@ -1,6 +1,6 @@
 @import url("./styles/00-foundation-models.css?v=20261014-folders-1");
 @import url("./styles/01-shell-tools.css?v=20261014-folders-1");
-@import url("./styles/02-notebooks.css?v=20261014-loranode-1");
+@import url("./styles/02-notebooks.css?v=20261017-covers");
 @import url("./styles/03-gallery-recipes.css?v=20261014-file-2");
 @import url("./styles/04-dialogs-materials.css?v=20261011-wfd-3");
 @import url("./styles/05-recipe-studio-overrides.css?v=20261011-wfd-3");
@@ -21,7 +21,7 @@
 @import url("./styles/20-current-node.css?v=20261011-last");
 @import url("./styles/21-prompt-studio.css?v=20261007-theme-2");
 @import url("./styles/22-model-download.css?v=20261007-theme-2");
-@import url("./styles/23-combo-structure.css?v=20261007-theme-2");
+@import url("./styles/23-combo-structure.css?v=20261017-covers");
 @import url("./styles/24-backup.css?v=20261007-theme-2");
 @import url("./styles/25-model-import.css?v=20261008-import");
 @import url("./styles/26-model-tidy.css?v=20261008-tidy");

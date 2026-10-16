@@ -361,12 +361,18 @@ export function renderStructuredCombo(owner, host, note, toolbar) {
         return [slot.id, slotLabel({ ...slot, index: counts[slot.folder] > 1 ? seen[slot.folder] : 0 })];
     }));
     // Which node a slot is on, and its node pack when it is not ComfyUI's own.
+    const nodeName = (slot) => {
+        const node = nodeOf.get(slot.node);
+        if (!node) return null;
+        return { text: `${node.title || node.name || node.type}${node.pack ? `（${node.pack}）` : ''}`,
+            title: node.pack ? `${node.type} · ${node.pack}` : node.type };
+    };
     const labelLine = (slot) => {
         const line = el('span', 'anomalous-structure-label', labels.get(slot.id));
-        const node = nodeOf.get(slot.node);
+        const node = nodeName(slot);
         if (node) {
-            line.append(el('span', 'anomalous-structure-node', ` · ${node.title || node.name || node.type}${node.pack ? `（${node.pack}）` : ''}`));
-            line.title = node.pack ? `${node.type} · ${node.pack}` : node.type;
+            line.append(el('span', 'anomalous-structure-node', ` · ${node.text}`));
+            line.title = node.title;
         }
         return line;
     };
@@ -392,34 +398,43 @@ export function renderStructuredCombo(owner, host, note, toolbar) {
         save(true);
         row.replaceWith(drawModel(slot));
     };
+    // A model is a cover card, like the model library's: its slot on the cover, a click on it changes the model.
     const drawModel = (slot) => {
         const row = el('div', 'anomalous-structure-row is-model');
         row.dataset.slot = slot.id;
         const value = data.values[slot.id];
+        const cover = el('div', 'anomalous-structure-cover');
+        cover.append(drawThumb(slot), el('span', 'anomalous-structure-badge', labels.get(slot.id)));
         const copy = el('div', 'anomalous-structure-copy');
-        copy.append(labelLine(slot),
-            el('strong', 'anomalous-structure-value', isNone(value) ? t('comboSlotEmpty') : shortName(value)));
+        copy.append(el('strong', 'anomalous-structure-value', isNone(value) ? t('comboSlotEmpty') : shortName(value)));
         if (!isNone(value)) copy.title = value;
+        const node = nodeName(slot);
+        if (node) {
+            const line = el('span', 'anomalous-structure-node', node.text);
+            line.title = node.title;
+            copy.append(line);
+        }
         // The node's other values, as saved: shown, not changed here (a combo puts down exactly what was saved).
         const fixed = fixedValues(nodeOf.get(slot.node), structure.slots, slot);
         if (fixed.length) copy.append(chipLine(fixed));
-        const actions = el('div', 'anomalous-structure-actions');
         if (slot.folder) {
-            actions.append(button('anomalous-scan-row-btn is-main', t('comboPick'), () => pick(slot, row)));
+            cover.append(button('anomalous-structure-change', t('comboPick'), () => pick(slot, row)));
             row.classList.add('is-pickable');
             row.onclick = (event) => { if (!event.target.closest('button')) void pick(slot, row); };
         } else {
             copy.append(el('span', 'anomalous-structure-note is-muted', t('comboSlotUnknownFolder')));
         }
         if (slot.optional && !isNone(value)) {
+            const actions = el('div', 'anomalous-structure-actions');
             actions.append(button('anomalous-scan-row-btn', t('comboSlotClear'), () => {
                 data.values[slot.id] = 'None';
                 delete data.covers[slot.id];
                 save(true);
                 row.replaceWith(drawModel(slot));
             }));
+            copy.append(actions);
         }
-        row.append(drawThumb(slot), copy, actions);
+        row.append(cover, copy);
         return row;
     };
     const fits = [];
@@ -459,7 +474,13 @@ export function renderStructuredCombo(owner, host, note, toolbar) {
         const section = el('div', 'anomalous-structure-group');
         const heading = el('h4', 'anomalous-structure-heading', t(key));
         if (slots.length > 1) heading.append(el('span', 'anomalous-structure-count', String(slots.length)));
-        section.append(heading, ...slots.map(slot => (slot.kind === 'text' ? drawText(slot) : drawModel(slot))));
+        if (key === 'comboGroupPrompts') {
+            section.append(heading, ...slots.map(drawText));
+        } else {
+            const covers = el('div', 'anomalous-structure-models');
+            covers.append(...slots.map(drawModel));
+            section.append(heading, covers);
+        }
         card.append(section);
     }
     // Nodes without slots go down exactly as saved: their name and saved values, nothing to change here.
