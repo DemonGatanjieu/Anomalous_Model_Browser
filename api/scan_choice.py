@@ -9,7 +9,7 @@ from aiohttp import web
 
 from .local_guard import is_local as _is_local
 from .path_utils import atomic_write_json, resolve_folder_subdir
-from .utils import resolve_within
+from .utils import model_file_within
 
 try:
     from ..model_identity import USER_INFO_SUFFIX, read_json
@@ -38,7 +38,7 @@ def _set_scan_choice(targets, choice):
     changed, failed = 0, []
     for target_dir, name in picked:
         try:
-            path = resolve_within(target_dir, name)
+            path = model_file_within(target_dir, name)
         except ValueError:
             failed.append(name)
             continue
