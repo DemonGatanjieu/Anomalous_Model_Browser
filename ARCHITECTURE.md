@@ -230,6 +230,14 @@ covered by the `styles.css` manifest.
   `.anomalous_tts_version.local.json`). `ui_tts_version.js` is its group in the
   GPT-SoVITS settings dialog: installed version, "Check for updates", update to
   the newest stable release or back, then the restart question.
+- Generation presets (Anomalous_TTS interface 16): `tts_presets_api.js` holds the
+  calls (`/anomalous_tts/presets`) and pure helpers (the language pairs the
+  characters can meet, the presets file written back with only what differs from
+  the built-in values, a character's `defaults` / `defaults.by_language` as rows
+  and back, keeping every other field). `ui_tts_presets.js` is the group in the
+  GPT-SoVITS settings dialog (default preset, rules per pair, the numbers),
+  saving each change at once; `ui_tts_tuning.js` is the per-character dialog
+  behind the card's Generation settings button, shown only with interface 16.
 
 - `web/main.js` coordinates extension registration (with `?v=...` versioned module imports busting aggressive browser ES Module caching and unconditional legacy storage key purging). `browser.js` owns the shared
   browser class and extracted-method wiring; `browser_entry.js` owns the single

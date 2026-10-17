@@ -3,6 +3,7 @@ import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { loadGptSovitsStatus } from './audio_engines.js';
 import { renderTtsVersion } from './ui_tts_version.js';
+import { renderTtsPresets } from './ui_tts_presets.js';
 import { formatSize, pretrainedReminder, setupSummary, shownPretrained, startPretrainedDownload } from './tts_setup_api.js';
 
 /**
@@ -238,7 +239,7 @@ let activeScope = null;
  * The settings dialog. `onChanged()` redraws the studio and sidebar after a change;
  * the dialog then reloads the status and redraws itself.
  */
-export async function openTtsSetup({ onChanged, languages = [], needs = [] }) {
+export async function openTtsSetup({ onChanged, languages = [], needs = [], groups = [] }) {
     activeScope?.dispose();
     const scope = createViewScope();
     activeScope = scope;
@@ -286,7 +287,7 @@ export async function openTtsSetup({ onChanged, languages = [], needs = [] }) {
     };
     // Kept across redraws: the download poll replaces only the card, and a check for updates stays shown.
     const version = el('section', 'anomalous-tts-setup');
-    version.append(renderTtsVersion(status.local !== false));
+    version.append(renderTtsPresets(status, groups, status.local !== false), renderTtsVersion(status.local !== false));
     const draw = () => {
         subtitle.textContent = summaryText(status, setupSummary(status, needs));
         body.replaceChildren(renderTtsSetup(status, options), version);

@@ -76,6 +76,107 @@
     color: var(--amb-text-muted);
 }
 
+/* Generation presets (ui_tts_presets.js) and a character's generation settings (ui_tts_tuning.js) */
+.anomalous-tts-preset-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.anomalous-tts-preset-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 10px;
+    border: 1px solid var(--amb-border);
+    border-radius: 8px;
+    background: none;
+    color: var(--amb-text-soft);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.anomalous-tts-preset-tile strong {
+    color: var(--amb-text-main);
+}
+
+.anomalous-tts-preset-tile.is-active {
+    border-color: var(--amb-link);
+    box-shadow: inset 0 0 0 1px var(--amb-link);
+}
+
+.anomalous-tts-preset-rules {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px 12px;
+}
+
+.anomalous-tts-preset-grid {
+    display: grid;
+    grid-template-columns: auto repeat(4, minmax(0, 1fr));
+    align-items: center;
+    gap: 6px 8px;
+    margin: 6px 0;
+}
+
+.anomalous-tts-tuning-numbers .anomalous-tts-preset-grid {
+    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
+}
+
+.anomalous-tts-number {
+    width: 100%;
+    min-width: 56px;
+    box-sizing: border-box;
+}
+
+.anomalous-tts-presets-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.anomalous-tts-preset-numbers summary,
+.anomalous-tts-tuning-numbers summary {
+    cursor: pointer;
+    color: var(--amb-link);
+}
+
+.anomalous-tts-tuning-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.anomalous-tts-tuning-row {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--amb-border);
+}
+
+.anomalous-tts-tuning-row .anomalous-tts-tuning-numbers {
+    grid-column: 1 / -1;
+}
+
+.anomalous-tts-tuning-label {
+    color: var(--amb-text-main);
+}
+
+.anomalous-tts-tuning-speed {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.anomalous-tts-tuning-speed .anomalous-tts-number {
+    width: 72px;
+}
+
 .anomalous-tts-version-actions {
     display: flex;
     flex-wrap: wrap;

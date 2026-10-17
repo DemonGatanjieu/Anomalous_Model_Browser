@@ -3,6 +3,8 @@ import { stopGalleryAudio } from './ui_audio_gallery.js';
 import { getActiveAudioFilter, renderAudioSidebar } from './ui_audio_sidebar.js';
 import { bindVoiceDrag } from './audio_voice_drag.js';
 import { TTS_ENGINE, invalidateEngineCache, isTtsInstalled, loadGptSovitsStatus, loadVoices } from './audio_engines.js';
+import { PRESETS_FORMAT } from './tts_presets_api.js';
+import { openTuningEditor } from './ui_tts_tuning.js';
 import { openGptSovitsEditor } from './ui_audio_tts_editor.js';
 import { openPronunciationEditor } from './ui_tts_pronunciation.js';
 import { bindTtsFileDrop } from './ui_tts_file_drop.js';
@@ -33,6 +35,7 @@ const SVG = {
     SEARCH: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
     SCRIPT: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>`,
     PLUS: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+    TUNE: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10"/><path d="M18 6h2"/><circle cx="16" cy="6" r="2"/><path d="M4 12h4"/><path d="M12 12h8"/><circle cx="10" cy="12" r="2"/><path d="M4 18h12"/><circle cx="18" cy="18" r="2"/></svg>`,
     PRONOUNCE: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h10v2"/><path d="M9 5v14"/><path d="M7 19h4"/><path d="M15 13h6"/><path d="M18 10v9"/></svg>`,
     EDIT: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
     REFRESH: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>`,
@@ -190,7 +193,7 @@ function renderSliceRow(slice, withTag) {
     return row;
 }
 
-function renderCharacterCard(group, owner, { onChanged, canImport = false } = {}) {
+function renderCharacterCard(group, owner, { onChanged, canImport = false, tuning = false } = {}) {
     const card = document.createElement('div');
     card.className = 'anomalous-character-voice-card';
     if (canImport && !group.error) card.dataset.ttsCharacter = group.character; // file drop target
@@ -255,6 +258,11 @@ function renderCharacterCard(group, owner, { onChanged, canImport = false } = {}
         const pronounce = createToolButton(SVG.PRONOUNCE, t('ttsPronounceOpen'), 'is-compact');
         pronounce.onclick = () => openPronunciationEditor(group, { onSaved: () => onChanged?.() });
         headerRight.append(edit, pronounce);
+        if (tuning) {
+            const tune = createToolButton(SVG.TUNE, t('ttsTuningOpen'), 'is-compact');
+            tune.onclick = () => openTuningEditor(group, { onSaved: () => onChanged?.() });
+            headerRight.append(tune);
+        }
         if (canImport) {
             const add = createToolButton(SVG.PLUS, t('ttsImportAddOpen'), 'is-compact');
             add.onclick = () => openTtsImport({ target: group.character, onDone: () => onChanged?.() });
@@ -465,6 +473,7 @@ export async function renderAudioStudio(container, { filter = null, owner = null
         studioWrapper.lastChild.replaceWith(renderEmptyGuide(canImport ? onImport : null));
         return;
     }
-    characters.forEach(group => grid.appendChild(renderCharacterCard(group, owner, { onChanged, canImport })));
+    const tuning = Number(ttsStatus?.format) >= PRESETS_FORMAT; // generation settings: Anomalous_TTS 1.1.0+
+    characters.forEach(group => grid.appendChild(renderCharacterCard(group, owner, { onChanged, canImport, tuning })));
     studioWrapper.lastChild.replaceWith(grid);
 }
