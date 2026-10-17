@@ -77,11 +77,12 @@ function feelScale(base, now, baseName) {
  * sentences ("your default (Standard)"), `baseText` is said when the base itself is picked;
  * `values(id)` gives a mode's four numbers; `describe(id)` a line about it or ''; `builtin(id)`
  * its built-in numbers or null; `editable(id)`; `onPick(id)`; `onEdit(id, key, value)`;
- * `extra`: elements after the choices (a "+ New" button); `listen`: the caller's listen row.
+ * `extra`: elements after the choices (a "+ New" button); `listen`: the caller's listen row;
+ * `compact`: the scale goes into the fold with the numbers (the Script Director's narrow side).
  */
 export function renderPresetSwitch({
     choices, selected, base, baseName, baseText, values, describe = () => '', builtin = () => null,
-    editable = () => false, onPick, onEdit, extra = [], listen = null, disabled = false,
+    editable = () => false, onPick, onEdit, extra = [], listen = null, disabled = false, compact = false,
 }) {
     const box = el('div', 'anomalous-tts-switch');
     const row = el('div', 'anomalous-tts-switch-choices');
@@ -107,7 +108,8 @@ export function renderPresetSwitch({
     const numbers = el('details', 'anomalous-tts-switch-numbers');
     numbers.open = numbersOpen;
     numbers.addEventListener('toggle', () => { numbersOpen = numbers.open; });
-    numbers.append(el('summary', '', t('ttsFeelNumbers', { base: baseName })));
+    numbers.append(el('summary', '', t(compact ? 'ttsFeelMore' : 'ttsFeelNumbers', { base: baseName })));
+    if (compact) numbers.append(feelScale(before, now, baseName));
     const rows = el('div', 'anomalous-tts-switch-rows');
     const own = builtin(selected);
     for (const key of SAMPLING) {
@@ -118,7 +120,9 @@ export function renderPresetSwitch({
     }
     numbers.append(rows);
 
-    box.append(row, feelScale(before, now, baseName), sentence);
+    box.append(row);
+    if (!compact) box.append(feelScale(before, now, baseName));
+    box.append(sentence);
     if (listen) box.append(listen);
     box.append(numbers);
     return box;

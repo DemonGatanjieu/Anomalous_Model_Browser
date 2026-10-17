@@ -77,13 +77,6 @@ export const SAMPLE_LINES = {
     en: 'Good morning, teacher! Let\'s do our best today, too.',
 };
 
-/** The first sentence of a script for listening: tags left out, at most 40 characters; '' when there is none. */
-export function firstSentence(speech) {
-    const text = String(speech || '').replace(/\{[^}]*\}|\[[^\]]*\]/g, '').trim();
-    const sentence = /^[\s\S]*?[。！？!?.](?=\s|$|[^.])/.exec(text)?.[0] || text.split('\n')[0];
-    return sentence.trim().slice(0, 40);
-}
-
 /** What can be changed of the presets file, from `loadPresets()`; `presetsFile` writes it back. */
 export function stateFromView(view) {
     return { defaultName: view.default, rules: { ...view.languages }, cross: view.cross, numbers: structuredClone(view.presets), labels: { ...view.labels } };

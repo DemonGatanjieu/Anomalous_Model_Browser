@@ -58,10 +58,12 @@ export function createModePreview(onChange) {
 
     /**
      * The listen row: "Listen to this one" for the picked mode, then the modes already heard
-     * with this sentence (a click picks the mode and plays its take). `takeFor(id)` builds a take.
+     * with this sentence (a click picks the mode and plays its take). `takeFor(id)` builds a take;
+     * `lead`: elements before the button (which line is read).
      */
-    function row({ takeFor, selected, modes, onPick, disabled = false }) {
+    function row({ takeFor, selected, modes, onPick, disabled = false, lead = [] }) {
         const box = el('div', 'anomalous-tts-takes');
+        box.append(...lead);
         const current = takeFor(selected);
         const key = keyOf(current);
         const label = making === key ? 'ttsListenMaking' : (takes.has(key) ? 'ttsListenAgain' : 'ttsListen');

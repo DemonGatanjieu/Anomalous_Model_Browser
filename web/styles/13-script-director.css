@@ -79,7 +79,7 @@
 }
 
 .anomalous-script-director-panel.is-wide .anomalous-sd-side {
-    width: 320px;
+    width: 344px;
     max-height: none;
     padding: 12px 14px;
     border-top: none;
@@ -646,6 +646,12 @@
 
 .anomalous-sd-run-mode > .anomalous-sd-run-label {
     width: auto;
+}
+
+/* The line the modes are heard on: its own row above the listen buttons. */
+.anomalous-sd-run-listen-line {
+    flex: 1 1 100%;
+    min-width: 0;
 }
 
 .anomalous-sd-run-links {

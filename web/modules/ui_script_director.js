@@ -120,7 +120,7 @@ function selectedGroup() {
 /** The script with retakes, for a run in the director. */
 function runScript() {
     const group = selectedGroup();
-    return { group, pkg: buildScriptPackage(state.lines, group, { takes: true }) };
+    return { group, lines: state.lines, pkg: buildScriptPackage(state.lines, group, { takes: true }) };
 }
 
 function emotionLabel(emotion) {
