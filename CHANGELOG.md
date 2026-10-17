@@ -1,6 +1,6 @@
 # 📈 Anomalous Model Browser Changelog
 
-## v1.59.0 Beta (Model Downloads, Backup, Share Codes, Node Combos, MCP, Light Theme) — unreleased
+## v1.59.0 Beta (Model Downloads, Backup, Share Codes, Node Combos, MCP, Light Theme) — 2026-10-17
 
 ### ⬇️ Download missing models from Model Check (模型检查一键下载缺失模型)
 - **Download** next to a missing model, and **Download all** for every one, when its source is certain: Civitai found the very file by the workflow's fingerprint, or the workflow carries a link to the file (a shared workflow's model links, or the download links in ComfyUI's own templates on Hugging Face). A file name alone is never enough, and a link to a different file than the workflow's is not offered.
