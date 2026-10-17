@@ -4,9 +4,11 @@ import { buildTtsPrompt, TTS_NODE_CLASS } from './audio_script.js';
 import { startPromptJob } from './audio_tts_run.js';
 import { fetchGptSovitsCharacter, loadGptSovitsStatus, saveGptSovitsSettings } from './audio_engines.js';
 import {
-    PRESETS_FORMAT, isBuiltin, lineTuning, loadPresets, presetLabel, presetsFile, savePresets, stateFromView, tuningRows,
+    PRESETS_FORMAT, SAMPLE_LINES, firstSentence, isBuiltin, lineTuning, loadPresets, presetLabel, presetsFile, savePresets,
+    stateFromView, tuningRows,
 } from './tts_presets_api.js';
 import { keepParamFocus, renderPresetSwitch } from './ui_tts_preset_switch.js';
+import { createModePreview } from './ui_tts_mode_preview.js';
 import { openTtsSetup } from './ui_tts_setup.js';
 import { openTuningEditor } from './ui_tts_tuning.js';
 
@@ -19,8 +21,9 @@ import { openTuningEditor } from './ui_tts_tuning.js';
  *
  * How it sounds is a mode (Anomalous_TTS interface 16): "Auto" lets the presets and the
  * character's generation settings decide line by line; a preset sends the node's `preset`
- * input, so every line uses it. The modes show their numbers against the one picked before
- * (ui_tts_preset_switch.js); a preset's numbers changed here are saved into that preset.
+ * input, so every line uses it. The modes are shown against Auto (ui_tts_preset_switch.js) and
+ * can be heard on the script's first sentence (ui_tts_mode_preview.js); a preset's numbers
+ * changed here are saved into that preset.
  * Links lead to the presets in GPT-SoVITS Settings and to the character's generation settings.
  *
  * The director owns the lines; this section owns the job, the options and the
@@ -86,7 +89,6 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         presets: null,        // loadPresets(); null without interface 16
         local: false,         // this computer (presets can be changed)
         options: new Map(),   // character -> { language, speed, preset } being edited
-        previous: new Map(),  // character -> the mode looked at before the current one
         settings: new Map(),  // character -> its settings as saved in this session
         saved: new Map(),     // character -> options saved in this session
         presetNote: '',
@@ -161,6 +163,7 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
     bar.append(hint, actions, player, savedTo, warnings);
 
     const characterSettings = group => state.settings.get(group.character) ?? group?.raw?.settings ?? {};
+    const preview = createModePreview(() => render());
 
     /** The character's saved language and speed over the node's own defaults; the mode starts on Auto. */
     function storedOptions(group) {
@@ -229,21 +232,30 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         const auto = autoTuning(group, opts);
         const values = id => (id === AUTO ? auto.values : view.presets[id]);
         if (opts.preset !== AUTO && !view.presets[opts.preset]) opts.preset = AUTO; // deleted in the settings meanwhile
+        const choices = [{ id: AUTO, label: t('scriptRunModeAuto') },
+            ...Object.keys(view.presets).map(name => ({ id: name, label: presetLabel(view.labels, name, t), badge: isBuiltin(name) ? '' : t('ttsPresetCustom') }))];
+        const pick = (id) => {
+            opts.preset = id;
+            state.presetNote = '';
+            render();
+        };
+        // The same sentence for every mode: the script's first one, else a line in the character's language.
+        const refLang = group.raw?.reference?.language || group.language;
+        const text = firstSentence(getScript()?.pkg?.speech) || SAMPLE_LINES[refLang] || SAMPLE_LINES.zh;
+        const take = id => ({ character: group.character, text, language: opts.language, speed: opts.speed, mode: id, preset: id, numbers: values(id) });
         const modes = renderPresetSwitch({
-            choices: [{ id: AUTO, label: t('scriptRunModeAuto') },
-                ...Object.keys(view.presets).map(name => ({ id: name, label: presetLabel(view.labels, name, t), badge: isBuiltin(name) ? '' : t('ttsPresetCustom') }))],
+            choices,
             selected: opts.preset,
-            previous: state.previous.get(group.character),
+            base: AUTO,
+            baseName: t('scriptRunModeAutoBase'),
+            baseText: t('scriptRunModeIsAuto'),
             values,
+            describe: id => (id === AUTO ? '' : isBuiltin(id) ? t(`ttsPresetDesc_${id}`) : t('ttsPresetDescCustom')),
             builtin: id => (isBuiltin(id) ? view.builtin[id] : null),
             editable: id => id !== AUTO && state.local,
-            onPick: (id) => {
-                state.previous.set(group.character, opts.preset);
-                opts.preset = id;
-                state.presetNote = '';
-                render();
-            },
+            onPick: pick,
             onEdit: editPreset,
+            listen: preview.row({ takeFor: take, selected: opts.preset, modes: choices, onPick: pick, disabled: busy }),
             disabled: busy,
         });
         const lang = auto.key === 'all' ? t('ttsTuningAll') : t(`scriptRunLang_${auto.key}`);
@@ -396,6 +408,7 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         },
         stopPlayback() {
             player.pause();
+            preview.stop();
         },
     };
 }

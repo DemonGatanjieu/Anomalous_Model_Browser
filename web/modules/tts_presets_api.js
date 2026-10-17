@@ -49,6 +49,41 @@ export function newPresetId(names, now = Date.now()) {
     return id;
 }
 
+/**
+ * Where a mode sits between steady (0) and lively (100): more candidates (`top_k`, 5 to 50 on a
+ * log scale) and more randomness (`temperature`, 0.6 to 1.4) count half each; a `top_p` under 1
+ * narrows it. Built in: steady 28, standard 49, lively 70.
+ */
+export function liveliness({ top_k: topK, top_p: topP, temperature }) {
+    const clamp = value => Math.min(1, Math.max(0, value));
+    const candidates = clamp(Math.log(topK / 5) / Math.log(10));
+    const randomness = clamp((temperature - 0.6) / 0.8);
+    return Math.round(100 * ((candidates + randomness) / 2) * (0.5 + topP / 2));
+}
+
+/** How a mode compares with the one it is measured against: about / steadier / muchSteadier / livelier / muchLivelier. */
+export function compareFeel(base, values) {
+    const shift = liveliness(values) - liveliness(base);
+    if (Math.abs(shift) < 4) return 'about';
+    const much = Math.abs(shift) >= 25 ? 'much' : '';
+    const word = shift < 0 ? 'Steadier' : 'Livelier';
+    return much ? `much${word}` : word.toLowerCase();
+}
+
+// A line to listen to the modes with, in the character's language.
+export const SAMPLE_LINES = {
+    ja: '先生、おはようございます！今日も一緒に頑張りましょうね。',
+    zh: '老师，早上好！今天也一起加油吧。',
+    en: 'Good morning, teacher! Let\'s do our best today, too.',
+};
+
+/** The first sentence of a script for listening: tags left out, at most 40 characters; '' when there is none. */
+export function firstSentence(speech) {
+    const text = String(speech || '').replace(/\{[^}]*\}|\[[^\]]*\]/g, '').trim();
+    const sentence = /^[\s\S]*?[。！？!?.](?=\s|$|[^.])/.exec(text)?.[0] || text.split('\n')[0];
+    return sentence.trim().slice(0, 40);
+}
+
 /** What can be changed of the presets file, from `loadPresets()`; `presetsFile` writes it back. */
 export function stateFromView(view) {
     return { defaultName: view.default, rules: { ...view.languages }, cross: view.cross, numbers: structuredClone(view.presets), labels: { ...view.labels } };

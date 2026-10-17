@@ -188,6 +188,110 @@
     text-align: right;
 }
 
+/* Steady to lively: a ring for the base, a dot for the mode picked. */
+.anomalous-tts-feel-track {
+    position: relative;
+    height: 4px;
+    margin: 10px 8px 6px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--amb-link) 25%, transparent), color-mix(in srgb, var(--amb-warn) 45%, transparent));
+}
+
+.anomalous-tts-feel-mark {
+    position: absolute;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-sizing: border-box;
+}
+
+.anomalous-tts-feel-mark.is-base {
+    border: 2px solid var(--amb-text-soft);
+    background: var(--amb-bg-dialog);
+}
+
+.anomalous-tts-feel-mark.is-now {
+    width: 10px;
+    height: 10px;
+    background: var(--amb-link);
+}
+
+.anomalous-tts-feel-ends {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0 8px;
+    color: var(--amb-text-muted);
+    font-size: 11px;
+}
+
+/* Its own line under the two ends. */
+.anomalous-tts-feel-legend {
+    order: 3;
+    flex-basis: 100%;
+    color: var(--amb-text-dim);
+    text-align: center;
+}
+
+.anomalous-tts-feel-say {
+    color: var(--amb-text-soft);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.anomalous-tts-feel-say strong {
+    color: var(--amb-text-main);
+    font-weight: 600;
+}
+
+.anomalous-tts-switch-numbers > summary {
+    color: var(--amb-link);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-tts-switch-numbers[open] > summary {
+    margin-bottom: 6px;
+}
+
+/* Listening (ui_tts_mode_preview.js): who reads which line, then the takes heard. */
+.anomalous-tts-listen-setup,
+.anomalous-tts-takes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;    font-size: 12px;
+}
+
+.anomalous-tts-listen-text {
+    flex: 1;
+    min-width: 160px;
+    padding: 4px 6px;
+    border: 1px solid var(--amb-border-strong);
+    border-radius: 6px;
+    background: var(--amb-lt-sunken, rgba(0, 0, 0, 0.3));
+    color: var(--amb-text-main);
+    font-size: 12px;
+}
+
+.anomalous-tts-listen-take {
+    padding: 2px 8px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    background: none;
+    color: var(--amb-text-soft);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.anomalous-tts-listen-take.is-current {
+    border-color: var(--amb-link);
+    color: var(--amb-text-main);
+}
+
 .anomalous-tts-switch-about {
     display: flex;
     flex-wrap: wrap;

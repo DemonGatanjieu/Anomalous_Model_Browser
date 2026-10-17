@@ -1,18 +1,19 @@
 import { t } from './interface_settings.js';
 import { button, el } from './usage_view.js';
-import { PARAM_RANGES, SAMPLING } from './tts_presets_api.js';
+import { PARAM_RANGES, SAMPLING, compareFeel, liveliness } from './tts_presets_api.js';
 
 /**
- * The generation modes as a row of choices and the chosen one's four sampling numbers,
- * drawn like the Current node's value card (ui_node_parameters.js): each number as two bars,
- * the mode looked at before and this one, with "before → now" and an arrow. Each number
- * carries its plain name and the node's own name (top_k …), so values copied from the
- * GPT-SoVITS WebUI are recognised. Shared by GPT-SoVITS Settings (ui_tts_presets.js) and
- * the Script Director's "How it is read" (ui_script_run.js); the callers keep the state
- * and draw it again after each change.
+ * The generation modes as a row of choices and what the picked one means, always against one
+ * fixed mode (the default preset in the settings, Auto in the Script Director): a steady-to-lively
+ * scale with both marked, a sentence ("livelier than your default"), the caller's listen row, and
+ * folded, the four numbers as the Current node card's bars (base → this one), each with its
+ * plain name and the node's own name (`top_k` …) and editable in place. Shared by GPT-SoVITS
+ * Settings (ui_tts_presets.js) and the Script Director (ui_script_run.js); the callers keep the
+ * state and draw it again after each change.
  */
 
 const brief = value => String(Math.round(value * 100) / 100);
+let numbersOpen = false; // the fold stays as the user left it, across redraws and both places
 
 function numberInput(key, value, onChange) {
     const [min, max, step] = PARAM_RANGES[key];
@@ -26,7 +27,7 @@ function numberInput(key, value, onChange) {
     return input;
 }
 
-/** One number: two bars (before, now), "before → now ↑", the built-in value when it was changed. */
+/** One number: two bars (base, this one), "base → this ↑", the built-in value when it was changed. */
 function valueRow(key, before, now, { builtin, onEdit }) {
     const line = el('div', `anomalous-tts-switch-row${before === now ? ' is-same' : ''}`);
     const label = el('span', 'anomalous-tts-switch-label');
@@ -54,12 +55,33 @@ function valueRow(key, before, now, { builtin, onEdit }) {
     return line;
 }
 
+/** The steady-to-lively scale: a hollow ring for the base, a dot for the mode picked. */
+function feelScale(base, now, baseName) {
+    const box = el('div', 'anomalous-tts-feel');
+    const track = el('div', 'anomalous-tts-feel-track');
+    for (const [values, kind] of [[base, 'is-base'], [now, 'is-now']]) {
+        const mark = el('span', `anomalous-tts-feel-mark ${kind}`);
+        mark.style.left = `${liveliness(values)}%`;
+        track.append(mark);
+    }
+    const ends = el('div', 'anomalous-tts-feel-ends');
+    ends.append(el('span', '', t('ttsFeelSteady')), el('span', 'anomalous-tts-feel-legend', t('ttsFeelLegend', { base: baseName })),
+        el('span', '', t('ttsFeelLively')));
+    box.append(track, ends);
+    return box;
+}
+
 /**
- * `choices`: `[{id, label, badge?}]`; `selected` and `previous` are ids; `values(id)` gives a
- * mode's four numbers; `builtin(id)` its built-in ones or null; `editable(id)`; `onPick(id)`;
- * `onEdit(id, key, value)`; `extra`: elements after the choices (a "+ New" button).
+ * `choices`: `[{id, label, badge?}]`; `selected` and `base` are ids; `baseName` names the base in
+ * sentences ("your default (Standard)"), `baseText` is said when the base itself is picked;
+ * `values(id)` gives a mode's four numbers; `describe(id)` a line about it or ''; `builtin(id)`
+ * its built-in numbers or null; `editable(id)`; `onPick(id)`; `onEdit(id, key, value)`;
+ * `extra`: elements after the choices (a "+ New" button); `listen`: the caller's listen row.
  */
-export function renderPresetSwitch({ choices, selected, previous, values, builtin = () => null, editable = () => false, onPick, onEdit, extra = [], disabled = false }) {
+export function renderPresetSwitch({
+    choices, selected, base, baseName, baseText, values, describe = () => '', builtin = () => null,
+    editable = () => false, onPick, onEdit, extra = [], listen = null, disabled = false,
+}) {
     const box = el('div', 'anomalous-tts-switch');
     const row = el('div', 'anomalous-tts-switch-choices');
     row.setAttribute('role', 'radiogroup');
@@ -72,17 +94,32 @@ export function renderPresetSwitch({ choices, selected, previous, values, builti
         row.append(chip);
     }
     row.append(...extra);
+
     const now = values(selected);
-    const before = (previous !== undefined && previous !== null && values(previous)) || now;
-    const own = builtin(selected);
+    const before = values(base) || now;
+    const said = selected === base ? baseText : t(`ttsFeel_${compareFeel(before, now)}`, { base: baseName });
+    const sentence = el('div', 'anomalous-tts-feel-say');
+    sentence.append(el('strong', '', said));
+    const about = describe(selected);
+    if (about) sentence.append(document.createTextNode(` ${about}`));
+
+    const numbers = el('details', 'anomalous-tts-switch-numbers');
+    numbers.open = numbersOpen;
+    numbers.addEventListener('toggle', () => { numbersOpen = numbers.open; });
+    numbers.append(el('summary', '', t('ttsFeelNumbers', { base: baseName })));
     const rows = el('div', 'anomalous-tts-switch-rows');
+    const own = builtin(selected);
     for (const key of SAMPLING) {
         rows.append(valueRow(key, before[key], now[key], {
             builtin: own?.[key],
             onEdit: editable(selected) && !disabled ? value => onEdit(selected, key, value) : null,
         }));
     }
-    box.append(row, rows);
+    numbers.append(rows);
+
+    box.append(row, feelScale(before, now, baseName), sentence);
+    if (listen) box.append(listen);
+    box.append(numbers);
     return box;
 }
 

@@ -79,4 +79,17 @@ assert.deepEqual([chinese.values.top_k, chinese.values.temperature, chinese.valu
 const gone = api.lineTuning(general, api.tuningRows({ defaults: { preset: 'custom_zz' } }), 'ja', 'all'); // deleted since: skipped
 assert.deepEqual(gone.values, gone.general);
 
+// Steady to lively: the built-in presets in order, and words against a base.
+assert.deepEqual(['stable', 'standard', 'lively'].map(name => api.liveliness(builtin[name])), [28, 49, 70]);
+assert.equal(api.compareFeel(builtin.standard, builtin.stable), 'steadier');
+assert.equal(api.compareFeel(builtin.stable, builtin.lively), 'muchLivelier');
+assert.equal(api.compareFeel(builtin.standard, { ...builtin.standard, temperature: 1.1 }), 'livelier');
+assert.equal(api.compareFeel(builtin.standard, { ...builtin.standard, repetition_penalty: 1.5 }), 'about');
+
+// The line to listen with: the script's first sentence without its tags.
+assert.equal(api.firstSentence('{开心}先生、おはよう！[take:2]今日もね。'), '先生、おはよう！');
+assert.equal(api.firstSentence('[阿罗娜]Good morning. Bye.'), 'Good morning.');
+assert.equal(api.firstSentence('没有句号的一行\n第二行'), '没有句号的一行');
+assert.equal(api.firstSentence(''), '');
+
 console.log('tts_presets_api: all checks passed');

@@ -236,12 +236,16 @@ covered by the `styles.css` manifest.
   the built-in values plus the presets made here (`custom_<id>` with a label),
   where a preset is used and taking it out, a dialog row's numbers in effect
   next to the general ones, a character's `defaults` / `defaults.by_language` as
-  rows and back, keeping every other field). `ui_tts_preset_switch.js` draws the
-  modes as choices and the picked one's four numbers as the Current node card's
-  bars against the mode looked at before, each with its plain name and the node's
-  own name (`top_k` …), editable in place. `ui_tts_presets.js` is the group in the
-  GPT-SoVITS settings dialog (that switch, make default / reset / new / rename /
-  delete, rules per pair), saving each change at once; `ui_tts_tuning.js` is the
+  rows and back, keeping every other field, where a mode sits between steady and
+  lively, the first sentence of a script to listen with). `ui_tts_preset_switch.js`
+  draws the modes as choices and the picked one against one fixed mode (the
+  default preset, or Auto): a steady-to-lively scale, a sentence, and folded, the
+  four numbers as the Current node card's bars, each with its plain name and the
+  node's own name (`top_k` …), editable in place. `ui_tts_mode_preview.js` makes
+  and keeps the takes for listening (one line, one seed, only the mode changing,
+  through Preview Audio). `ui_tts_presets.js` is the group in the GPT-SoVITS
+  settings dialog (that switch with a character and a line to listen with, make
+  default / reset / new / rename / delete, rules per pair), saving each change at once; `ui_tts_tuning.js` is the
   per-character dialog behind the card's Generation settings button, shown only
   with interface 16.
 
@@ -369,8 +373,9 @@ covered by the `styles.css` manifest.
   them once the page is wide, below them when it is narrow (docked browser).
   `ui_script_run.js` is the director's "Generate" section (the bar with the result and
   a way to the audio gallery; language, speed and the mode: Auto, or one preset for
-  every line through the node's `preset` input, in the same switch, a preset's
-  numbers changed there saved into the preset; links to the presets and to the
+  every line through the node's `preset` input, in the same switch measured
+  against Auto and heard on the script's first sentence, a preset's numbers
+  changed there saved into the preset; links to the presets and to the
   character's generation settings): it runs
   the script without the canvas, plays the result, retakes the whole script
   (new seed) or one line (`[take:N]`, the node caches the rest), and saves a
