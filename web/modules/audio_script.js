@@ -88,7 +88,8 @@ export function joinSegments(first, second) {
 
 /**
  * Once any line is tagged, untagged lines get {main} instead of inheriting the previous voice.
- * A line with `take` > 1 (GPT-SoVITS only) gets `[take:N]` right before its text.
+ * A line with `take` > 1 (GPT-SoVITS only) gets `[take:N]` right before its text; a line's
+ * `speaker` (`[name]`, where another character takes over) goes first.
  */
 export function composeScript(lines) {
     const anyTagged = lines.some(line => line.voice?.tag);
@@ -96,7 +97,7 @@ export function composeScript(lines) {
         .map(line => {
             const tag = line.voice?.tag || (anyTagged ? MAIN_TAG : '');
             const text = line.take > 1 ? `[take:${line.take}]${line.text}` : line.text;
-            return tag ? `${tag} ${text}` : text;
+            return `${line.speaker || ''}${tag ? `${tag} ${text}` : text}`;
         })
         .join('\n')
         .trim();
@@ -107,27 +108,42 @@ export function usableEmotions(group) {
     return (group?.slices || []).map(slice => slice.emotion);
 }
 
+const speaks = group => Boolean(group?.node_value) && group.has_main !== false && usableEmotions(group).includes('main');
+
 /**
- * Bundle script lines for one TTS node. `lines` are `{ text, emotion }`; the node's
- * `character` widget gets the group's `node_value` and every emotion must be usable
- * for that group. `takes` (runs in the director) writes each line's `take` as `[take:N]`.
- * Returns `{ sample, speech, lineCount }` or `{ error: localeKey }`.
+ * Bundle script lines for one TTS node. `lines` are `{ text, emotion, speaker? }`; the node's
+ * `character` widget gets the group's `node_value`. A line's `speaker` (a voice group key from
+ * `groups`) is read by that character instead: `[name]` goes in where the speaker changes
+ * (Anomalous_TTS's script syntax). Every emotion must be usable for its line's character.
+ * `takes` (runs in the director) writes each line's `take` as `[take:N]`.
+ * Returns `{ sample, speech, lineCount, speakers }` (the characters heard, the node's first)
+ * or `{ error: localeKey }`.
  */
-export function buildScriptPackage(lines, group, { takes = false } = {}) {
+export function buildScriptPackage(lines, group, { takes = false, groups = [] } = {}) {
     if (!group) return { error: 'scriptDirectorPickCharacter' };
-    const usable = new Set(usableEmotions(group));
-    const voice = group.node_value;
-    if (!voice || group.has_main === false || !usable.has('main')) return { error: 'scriptDirectorMainMissing' };
+    if (!speaks(group)) return { error: 'scriptDirectorMainMissing' };
+    const byKey = new Map(groups.map(item => [item.group, item]));
     const voiced = [];
+    const speakers = [group.node_value];
+    let current = group;
     for (const line of lines || []) {
         const text = String(line?.text || '').trim();
         if (!text) continue;
+        const speaker = line.speaker && line.speaker !== group.group ? byKey.get(line.speaker) : group;
+        if (!speaks(speaker)) return { error: 'scriptDirectorSpeakerUnusable' };
         const emotion = line.emotion || 'main';
-        if (!usable.has(emotion)) return { error: 'scriptDirectorVoiceUnusable' };
-        voiced.push({ text, voice: emotion === 'main' ? null : { tag: `{${emotion}}` }, take: takes ? line.take || 1 : 1 });
+        if (!usableEmotions(speaker).includes(emotion)) return { error: 'scriptDirectorVoiceUnusable' };
+        voiced.push({
+            text,
+            voice: emotion === 'main' ? null : { tag: `{${emotion}}` },
+            take: takes ? line.take || 1 : 1,
+            speaker: speaker === current ? '' : `[${speaker.node_value}]`,
+        });
+        current = speaker;
+        if (!speakers.includes(speaker.node_value)) speakers.push(speaker.node_value);
     }
     if (!voiced.length) return { error: 'scriptDirectorEmpty' };
-    return { sample: voice, speech: composeScript(voiced), lineCount: voiced.length };
+    return { sample: group.node_value, speech: composeScript(voiced), lineCount: voiced.length, speakers };
 }
 
 /** Save Audio prefix for a character: `output/audio/<character>/…`, keeping file names Windows accepts. */
@@ -156,16 +172,40 @@ export function buildTtsPrompt({ character, speech, seed, language = 'auto', pre
     };
 }
 
+const TAKE_TAG = /^\s*(?:take|版本)\s*[:：]\s*\d+\s*$/i;
+const PAUSE_TAG = /^\s*(?:pause|wait|stop|停顿|暂停)\s*[:：]/i;
+
 /**
- * Read a tagged script back into segments, splitting at `{emotion}` tags.
- * Text before the first tag belongs to the main voice.
+ * Read a tagged script back into segments, splitting at `{emotion}` and `[name]` tags
+ * (`speaker`: the name, only on segments after one; the emotion goes back to main there).
+ * Text before the first tag belongs to the main voice; `[take:N]` is left out, pauses stay.
  */
 export function parseTaggedSpeech(speech) {
-    return String(speech || '')
-        .split(/(?=\{[^}]+\})/)
-        .map(part => {
-            const match = /^\{([^}]+)\}/.exec(part);
-            return { emotion: match ? match[1].trim() : 'main', text: (match ? part.slice(match[0].length) : part).trim() };
-        })
-        .filter(segment => segment.text);
+    const segments = [];
+    let speaker = null;
+    let emotion = 'main';
+    let text = '';
+    const flush = () => {
+        const words = text.trim();
+        if (words) segments.push({ emotion, text: words, ...(speaker ? { speaker } : {}) });
+        text = '';
+    };
+    for (const part of String(speech || '').split(/(\{[^{}]+\}|\[[^[\]]+\])/)) {
+        const tag = /^\{([^{}]+)\}$/.exec(part);
+        const bracket = /^\[([^[\]]+)\]$/.exec(part);
+        if (tag) {
+            flush();
+            emotion = tag[1].trim();
+        } else if (bracket && TAKE_TAG.test(bracket[1])) {
+            continue; // another take only meant something for that run
+        } else if (bracket && !PAUSE_TAG.test(bracket[1])) {
+            flush();
+            speaker = bracket[1].trim();
+            emotion = 'main';
+        } else {
+            text += part;
+        }
+    }
+    flush();
+    return segments;
 }

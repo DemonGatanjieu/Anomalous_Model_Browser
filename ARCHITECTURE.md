@@ -363,12 +363,16 @@ covered by the `styles.css` manifest.
   (`buildScriptPackage`, with `[take:N]` for retakes), combo value
   matching, and `buildTtsPrompt` (a GPT-SoVITS script as a ComfyUI API prompt
   saving to `output/audio/<character>/`).
-  `ui_script_director.js` owns the script director, the Voice-over view's body: one
-  character, an emotion chip row per line card (with the chosen emotion's reference clip;
-  none when the character has only its main voice), editing buttons shown on hover, and a
-  bundle that is generated in the view, or, under "Into your own workflow", pushed to the selected/only target node,
-  dragged onto one (writing the character and script widgets together, one Ctrl+Z
-  step) or copied. The page feeds it the voice groups after each fetch.
+  `ui_script_director.js` owns the script director, the Voice-over view's body: who reads
+  by default, lines given to other characters (`castScriptCharacter`, called when the list
+  on the left is clicked there; `ui_script_cast.js` holds the colours, the speaker chip and
+  picking lines with Ctrl / Shift), an emotion chip row per line card for its character
+  (with the chosen emotion's reference clip; none when the characters have only their main
+  voice), editing buttons shown on hover, and a bundle (`[name]` where the speaker changes)
+  that is generated in the view, or, under "Into your own workflow" (`ui_script_workflow.js`),
+  pushed to the selected/only target node, dragged onto one (writing the character and
+  script widgets together, one Ctrl+Z step) or copied. The page feeds it the voice groups
+  after each fetch.
   It puts the cards on one side and generating on the other: beside
   them once the page is wide, below them when it is narrow (docked browser); on a
   wide page `ui_split_bar.js` is the divider between them (dragged, remembered).
@@ -394,7 +398,9 @@ covered by the `styles.css` manifest.
   targeted `/interrupt`); it never touches the canvas.
 - In the audio domain the header **!** opens `AUDIO_USAGE_GUIDE` (a how-to, see
   `docs/guides/audio-studio.md`) instead of the visual update guide.
-- `ui_audio_sidebar.js` owns the audio navigation and the active audio filter:
+- `ui_audio_sidebar.js` owns the audio navigation and the active audio filter
+  (on Voice-over it is the cast: narrower, characters with their colours only, a click
+  gives the picked lines to one and never leaves the page):
   characters grouped by language, groups folded
   in `localStorage`, a character unfolds into its clips (a click plays the clip
   through its studio row, switching the studio to that character when needed), a

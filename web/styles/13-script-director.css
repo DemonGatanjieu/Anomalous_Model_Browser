@@ -311,6 +311,38 @@
     border-color: color-mix(in srgb, var(--amb-link) 35%, transparent);
 }
 
+/* Lines picked to give to a character (ui_script_cast.js), and who reads each once several do. */
+.anomalous-sd-line-card.is-picked {
+    border-color: color-mix(in srgb, var(--amb-link) 75%, transparent);
+    background: color-mix(in srgb, var(--amb-link) 13%, transparent);
+}
+
+.anomalous-sd-line-card.has-speaker {
+    border-left: 3px solid var(--speaker);
+}
+
+/* Right after the number (above the rule that sends the head's buttons after the text). */
+.anomalous-sd-line-card > .anomalous-sd-line-head > .anomalous-sd-speaker {
+    order: 0;
+    max-width: 120px;
+    overflow: hidden;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--speaker) 24%, transparent);
+    color: var(--amb-text-main);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.anomalous-sd-cast-hint {
+    flex: 1;
+    min-width: 0;
+    margin: 0 10px;
+    color: var(--amb-text-dim);
+    font-size: 11px;
+}
+
 /* The line heard on the right (ui_script_run.js): marked, with a word saying so. */
 .anomalous-sd-line-card.is-listen {
     border-color: color-mix(in srgb, var(--amb-link) 55%, transparent);

@@ -76,8 +76,8 @@ async function loadNodeSpec() {
 }
 
 /**
- * `getScript()` -> `{ group, lines, listen, pkg }` for the chosen character (the director's lines,
- * the index of the one to listen with, pkg from buildScriptPackage with takes); `getGroups()` -> every voice group (for the presets' "used by");
+ * `getScript()` -> `{ group, lines, listen, speakerOf, pkg }` for the chosen character (the director's
+ * lines, the index of the one to listen with, who reads a line, pkg from buildScriptPackage with takes); `getGroups()` -> every voice group (for the presets' "used by");
  * `onPlay()` when the result starts playing;
  * `resetTakes()` when a new take of the whole script starts; `onBusyChange()` when a job
  * starts or ends (the director re-renders its line cards, whose retake buttons depend on it);
@@ -241,7 +241,13 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         if (!state.presets) return;
         const opts = currentOptions(group);
         const view = state.presets;
-        const auto = autoTuning(group, opts);
+        // The same line for every mode: the one you are on in the director, read by its own character;
+        // an empty one, a line in the character's language.
+        const script = getScript();
+        const index = script?.listen ?? 0;
+        const chosen = script?.lines?.[index];
+        const speaker = (chosen && script.speakerOf?.(chosen)) || group;
+        const auto = autoTuning(speaker, opts);
         const values = id => (id === AUTO ? auto.values : view.presets[id]);
         if (opts.preset !== AUTO && !view.presets[opts.preset]) opts.preset = AUTO; // deleted in the settings meanwhile
         const choices = [{ id: AUTO, label: t('scriptRunModeAuto') },
@@ -251,20 +257,16 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
             state.presetNote = '';
             render();
         };
-        // The same line for every mode: the one you are on in the director; an empty one, a line in the character's language.
-        const script = getScript();
-        const index = script?.listen ?? 0;
-        const chosen = script?.lines?.[index];
         const words = String(chosen?.text || '').trim();
-        const refLang = group.raw?.reference?.language || group.language;
+        const refLang = speaker.raw?.reference?.language || speaker.language;
         const text = words
             ? `${chosen.emotion && chosen.emotion !== 'main' ? `{${chosen.emotion}}` : ''}${words}`
             : SAMPLE_LINES[refLang] || SAMPLE_LINES.zh;
-        const lineLabel = el('span', 'anomalous-sd-run-listen-line', words
-            ? t('scriptRunListenLine', { n: index + 1, text: words })
-            : t('scriptRunListenSample', { text }));
+        const lineLabel = el('span', 'anomalous-sd-run-listen-line', !words ? t('scriptRunListenSample', { text })
+            : speaker !== group ? t('scriptRunListenLineAs', { n: index + 1, text: words, who: speaker.character })
+                : t('scriptRunListenLine', { n: index + 1, text: words }));
         lineLabel.title = t('scriptRunListenLineHint');
-        const take = id => ({ character: group.character, text, language: opts.language, speed: opts.speed, mode: id, preset: id, numbers: values(id) });
+        const take = id => ({ character: speaker.character, text, language: opts.language, speed: opts.speed, mode: id, preset: id, numbers: values(id) });
         state.takeNow = busy ? null : () => take(opts.preset);
         const lang = auto.key === 'all' ? t('ttsTuningAll') : t(`scriptRunLang_${auto.key}`);
         const modes = renderPresetSwitch({

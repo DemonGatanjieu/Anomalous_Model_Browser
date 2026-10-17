@@ -25,6 +25,7 @@ import { followsSelection, pageForNode } from './shell_open_rules.js';
 import { renderAudioStudio, stopAudioStudioPlayback } from './ui_audio_studio.js';
 import { renderAudioGallery, stopGalleryAudio } from './ui_audio_gallery.js';
 import { renderScriptPage } from './ui_script_page.js';
+import { castScriptCharacter } from './ui_script_director.js';
 import { getActiveAudioFilter, setActiveAudioFilter, syncAudioSidebarSelection } from './ui_audio_sidebar.js';
 import { voiceGroupKey } from './audio_engines.js';
 import { getActiveDomain } from './ui_domain_switcher.js';
@@ -118,8 +119,8 @@ export class AnomalousBrowser {
             this.pendingScript = null;
             renderScriptPage(this.scriptPanel, this, pending);
         } else if (filter?.type === 'group' && this.currentShellPage() === 'script') {
-            // A character picked in the list while on Voice-over: it speaks there.
-            this.openScript(filter.value);
+            // On Voice-over the list is the cast: the character reads the picked lines, or by default.
+            castScriptCharacter(filter.value);
             return;
         } else {
             if (filter) setActiveAudioFilter(filter);

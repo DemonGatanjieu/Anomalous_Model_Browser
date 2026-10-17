@@ -41,7 +41,7 @@ assert.deepEqual(buildScriptPackage([
     { text: '早上好', emotion: 'main' },
     { text: ' 好开心 ', emotion: 'happy' },
     { text: '   ', emotion: 'happy' },
-], arona), { sample: 'Arona', speech: '{main} 早上好\n{happy} 好开心', lineCount: 2 });
+], arona), { sample: 'Arona', speech: '{main} 早上好\n{happy} 好开心', lineCount: 2, speakers: ['Arona'] });
 // All-main scripts stay plain text.
 assert.equal(buildScriptPackage([{ text: 'a', emotion: 'main' }, { text: 'b' }], arona).speech, 'a\nb');
 assert.equal(buildScriptPackage([{ text: 'a', emotion: 'main' }], null).error, 'scriptDirectorPickCharacter');
@@ -49,6 +49,25 @@ assert.equal(buildScriptPackage([{ text: 'a', emotion: 'sad' }], arona).error, '
 assert.equal(buildScriptPackage([{ text: 'a', emotion: 'main' }], { ...arona, has_main: false }).error, 'scriptDirectorMainMissing');
 assert.equal(buildScriptPackage([{ text: 'a', emotion: 'main' }], { ...arona, slices: [slice('happy')] }).error, 'scriptDirectorMainMissing');
 assert.equal(buildScriptPackage([{ text: ' ', emotion: 'main' }], arona).error, 'scriptDirectorEmpty');
+
+// Lines read by other characters: [name] where the speaker changes, back to the node's own by name too.
+const aris = { group: 'gpt_sovits:Aris', node_value: 'Aris/日配', has_main: true, slices: [slice('main')] };
+const cast = buildScriptPackage([
+    { text: '早上好', emotion: 'happy' },
+    { text: '你好', emotion: 'main', speaker: 'gpt_sovits:Aris' },
+    { text: '再见', emotion: 'main', speaker: 'gpt_sovits:Aris' },
+    { text: '嗯', emotion: 'main', speaker: 'gpt_sovits:Arona' },
+], arona, { groups: [arona, aris] });
+assert.equal(cast.speech, '{happy} 早上好\n[Aris/日配]{main} 你好\n{main} 再见\n[Arona]{main} 嗯');
+assert.deepEqual(cast.speakers, ['Arona', 'Aris/日配']);
+assert.equal(buildScriptPackage([{ text: 'a', speaker: 'gpt_sovits:Aris' }], arona, { groups: [arona, aris] }).speech, '[Aris/日配]a');
+assert.equal(buildScriptPackage([{ text: 'a', emotion: 'happy', speaker: 'gpt_sovits:Aris' }], arona, { groups: [arona, aris] }).error, 'scriptDirectorVoiceUnusable');
+assert.equal(buildScriptPackage([{ text: 'a', speaker: 'gpt_sovits:Gone' }], arona, { groups: [arona] }).error, 'scriptDirectorSpeakerUnusable');
+assert.deepEqual(parseTaggedSpeech(cast.speech), [
+    { emotion: 'happy', text: '早上好' }, { emotion: 'main', text: '你好', speaker: 'Aris/日配' },
+    { emotion: 'main', text: '再见', speaker: 'Aris/日配' }, { emotion: 'main', text: '嗯', speaker: 'Arona' },
+]);
+assert.deepEqual(parseTaggedSpeech('{main} [take:3]一。[pause:1s]二。'), [{ emotion: 'main', text: '一。[pause:1s]二。' }]);
 
 // Combo values keep the node's own separator; unknown files are not written.
 const windowsCombo = { options: { values: ['阿罗娜\\日配', '普拉娜'] } };

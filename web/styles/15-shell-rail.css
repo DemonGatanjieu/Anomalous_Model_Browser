@@ -138,6 +138,11 @@
     transition: width 0.25s ease, margin 0.25s ease, opacity 0.2s ease;
 }
 
+/* Voice-over: the cast column is narrower (11-audio-studio.css). */
+#anomalous-container.anomalous-has-rail[data-page="script"]:not(.anomalous-shell-narrow) #anomalous-sidebar-wrapper {
+    width: 176px;
+}
+
 #anomalous-container.anomalous-has-rail.anomalous-sidebar-closed #anomalous-sidebar-wrapper,
 #anomalous-container.anomalous-has-rail.anomalous-workspace-open #anomalous-sidebar-wrapper {
     width: 0;

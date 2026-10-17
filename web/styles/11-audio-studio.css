@@ -761,6 +761,43 @@
     letter-spacing: 0;
 }
 
+/* Voice-over: the list is the cast (ui_audio_sidebar.js): characters with their colours, nothing that leaves the page. */
+.anomalous-audio-nav-cast-dot,
+.anomalous-audio-nav-cast-hint {
+    display: none;
+}
+
+#anomalous-container[data-page="script"] .anomalous-audio-nav-cast-dot {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+}
+
+#anomalous-container[data-page="script"] .anomalous-audio-nav-cast-hint {
+    display: block;
+    margin: 8px 12px 4px;
+    color: var(--amb-text-dim);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+#anomalous-container[data-page="script"] .anomalous-audio-nav-all,
+#anomalous-container[data-page="script"] .anomalous-audio-nav-chevron,
+#anomalous-container[data-page="script"] .anomalous-audio-nav-clips,
+#anomalous-container[data-page="script"] .anomalous-audio-nav-character .anomalous-audio-nav-count,
+#anomalous-container[data-page="script"] .anomalous-audio-nav-character .anomalous-audio-nav-icon {
+    display: none;
+}
+
+#anomalous-container[data-page="script"] .anomalous-audio-nav-character .anomalous-audio-nav-item.active {
+    border-left-color: transparent;
+    background: transparent;
+    color: var(--amb-text-soft);
+    font-weight: inherit;
+}
+
 .anomalous-audio-nav-item {
     display: flex;
     align-items: center;

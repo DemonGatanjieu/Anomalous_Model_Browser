@@ -1,20 +1,18 @@
-import { app } from '../../../scripts/app.js';
 import { t } from './interface_settings.js';
-import { anomalousAlert, anomalousConfirm } from './ui_dialog.js';
-import { buildScriptPackage, comboValueForPath, joinSegments, splitScriptLines, splitSegmentAt, usableEmotions } from './audio_script.js';
-import { targetForNode } from './audio_node_targets.js';
-import { TTS_ENGINE } from './audio_engines.js';
-import { bindMaterialDrag } from './material_drag.js';
+import { anomalousAlert } from './ui_dialog.js';
+import { buildScriptPackage, joinSegments, splitScriptLines, splitSegmentAt, usableEmotions } from './audio_script.js';
+import { TTS_ENGINE, voiceGroupKey } from './audio_engines.js';
+import { pickLines, speakerChip, speakerColor } from './ui_script_cast.js';
 import { createRunSection } from './ui_script_run.js';
 import { bindSplitBar } from './ui_split_bar.js';
-import { recordCanvasStep } from './canvas_history.js';
+import { bindPackageDrag, copyScript, pushToNode } from './ui_script_workflow.js';
 
 /**
  * The script director, the body of the Voices page's Voice-over view (ui_script_page.js):
- * pick one character, paste a script, choose an emotion per line on the line cards, then
- * generate it right here (ui_script_run.js), or put the tagged script into the
- * workflow: push it to a GPT-SoVITS node, drag it onto one (supported nodes:
- * audio_node_targets.js) or copy it. The panel and its lines live for the page
+ * pick who reads by default, paste a script, choose an emotion per line on the line cards,
+ * give picked lines to other characters from the list on the left (the cast, ui_script_cast.js),
+ * then generate it right here (ui_script_run.js), or put the tagged script into the
+ * workflow (ui_script_workflow.js). The panel and its lines live for the page
  * session; the page mounts it again each time it is shown.
  */
 
@@ -32,11 +30,13 @@ const ICONS = {
 const state = {
     groups: [],
     groupKey: null,
-    lines: [],          // { text, emotion, take } — take > 1: that line was retaken
+    lines: [],          // { text, emotion, take, speaker } — take > 1: retaken; speaker: a group key, null = the default
     editing: true,
     splitMode: 'sentence',
     focusIndex: null,   // card whose text box should receive focus after the next render
     listenIndex: 0,     // the line the modes are heard on (ui_script_run.js)
+    picked: new Set(),  // lines picked to give to a character (castScriptCharacter)
+    anchor: null,       // where a Shift run of picked lines starts
 };
 
 let panel = null;
@@ -60,14 +60,15 @@ export function scriptCharacter() {
     return state.groupKey;
 }
 
-/** Lines to voice again (a generated file's `{ emotion, text }` segments): one card per line. */
+/** Lines to voice again (a generated file's `{ emotion, text, speaker? }` segments): one card per line. */
 export function loadScriptLines(segments) {
     const lines = segments.flatMap(segment => String(segment.text || '').split(/\n+/)
-        .map(text => ({ text: text.trim(), emotion: segment.emotion || 'main', take: 1 })))
+        .map(text => ({ text: text.trim(), emotion: segment.emotion || 'main', take: 1, speaker: segment.speaker ? voiceGroupKey(segment.speaker) : null })))
         .filter(line => line.text);
     if (!lines.length) return;
     stopScriptDirectorPreview();
     state.lines = lines;
+    state.picked = new Set();
     state.editing = false;
     if (panel) renderAll();
 }
@@ -98,6 +99,35 @@ export function updateScriptDirectorVoices(groups, preferredGroup = null, { choo
     if (panel) renderAll();
 }
 
+/**
+ * A character clicked in the list on Voice-over: it reads the picked lines, or, with none
+ * picked, it becomes the one who reads by default.
+ */
+export function castScriptCharacter(key) {
+    const group = state.groups.find(item => item.group === key);
+    if (!group) return;
+    stopScriptDirectorPreview();
+    if (state.picked.size && state.lines.length && !state.editing) {
+        for (const index of state.picked) {
+            const line = state.lines[index];
+            if (!line) continue;
+            line.speaker = key === state.groupKey ? null : key;
+            if (!usableEmotions(group).includes(line.emotion)) line.emotion = 'main';
+        }
+    } else {
+        chooseDefault(key);
+    }
+    if (panel) renderAll();
+}
+
+/** Who reads the lines not given to anyone; lines given to that character before follow it now. */
+function chooseDefault(key) {
+    if (state.groupKey === key) return;
+    state.groupKey = key;
+    for (const line of state.lines) if (line.speaker === key) line.speaker = null;
+    hooks.onCharacterChange?.();
+}
+
 export function stopScriptDirectorPreview() {
     stopLinePreview();
     runSection?.stopPlayback();
@@ -121,10 +151,23 @@ function selectedGroup() {
     return state.groups.find(group => group.group === state.groupKey) || null;
 }
 
+/** Who reads `line`: the character it was given to, else the default one. */
+function speakerOf(line) {
+    return (line?.speaker && state.groups.find(group => group.group === line.speaker)) || selectedGroup();
+}
+
+/** Whether some line is read by another character than the default one (the cards then say who). */
+function hasCast() {
+    return state.lines.some(line => line.speaker && line.speaker !== state.groupKey);
+}
+
 /** The script with retakes, for a run in the director. */
 function runScript() {
     const group = selectedGroup();
-    return { group, lines: state.lines, listen: state.listenIndex, pkg: buildScriptPackage(state.lines, group, { takes: true }) };
+    return {
+        group, lines: state.lines, listen: state.listenIndex, speakerOf,
+        pkg: buildScriptPackage(state.lines, group, { takes: true, groups: state.groups }),
+    };
 }
 
 function emotionLabel(emotion) {
@@ -132,7 +175,7 @@ function emotionLabel(emotion) {
 }
 
 function currentPackage() {
-    return buildScriptPackage(state.lines, selectedGroup());
+    return buildScriptPackage(state.lines, selectedGroup(), { groups: state.groups });
 }
 
 // ---------- DOM ----------
@@ -165,10 +208,9 @@ function createPanel() {
     const characterBar = el('label', 'anomalous-sd-character-bar');
     const characterSelect = el('select', 'anomalous-sd-character-select');
     characterSelect.onchange = () => {
-        state.groupKey = characterSelect.value;
         stopScriptDirectorPreview();
+        chooseDefault(characterSelect.value);
         renderAll();
-        hooks.onCharacterChange?.();
     };
     const characterHint = el('div', 'anomalous-sd-character-hint');
     characterBar.append(el('span', 'anomalous-sd-step', t('scriptDirectorCharacter')), characterSelect);
@@ -199,7 +241,8 @@ function createPanel() {
 
     const linesBar = el('div', 'anomalous-sd-lines-bar');
     const linesCount = el('span', 'anomalous-sd-lines-count');
-    linesBar.append(linesCount, button('anomalous-sd-link-btn', t('scriptDirectorEdit'), () => {
+    const castHint = el('span', 'anomalous-sd-cast-hint');
+    linesBar.append(linesCount, castHint, button('anomalous-sd-link-btn', t('scriptDirectorEdit'), () => {
         textarea.value = state.lines.map(line => line.text).join('\n');
         state.editing = true;
         renderAll();
@@ -217,9 +260,9 @@ function createPanel() {
     const dragHandle = el('div', 'anomalous-sd-drag-handle');
     dragHandle.innerHTML = ICONS.GRIP;
     dragHandle.append(el('span', '', t('scriptDirectorDragHandle')));
-    bindPackageDrag(dragHandle);
-    const copyBtn = button('anomalous-sd-btn', t('scriptDirectorCopy'), copyScript);
-    const pushBtn = button('anomalous-sd-btn', t('scriptDirectorInject'), pushToNode);
+    bindPackageDrag(dragHandle, dragOwner, currentPackage, () => refs.pushBtn);
+    const copyBtn = button('anomalous-sd-btn', t('scriptDirectorCopy'), () => copyScript(currentPackage(), refs.copyBtn));
+    const pushBtn = button('anomalous-sd-btn', t('scriptDirectorInject'), () => pushToNode(currentPackage(), refs.pushBtn));
     actions.append(dragHandle, pushBtn, copyBtn);
     // Into your own workflow: second to generating here, so it sits below it, folded (remembered).
     const workflow = el('details', 'anomalous-sd-workflow');
@@ -258,7 +301,14 @@ function createPanel() {
     new ResizeObserver(([entry]) => panel.classList.toggle('is-wide', entry.contentRect.width >= WIDE_FROM)).observe(panel);
 
     panel.append(header, who, inputArea, body);
-    refs = { subtitle, characterSelect, characterHint, inputArea, textarea, cancelEdit, body, linesCount, onlyMain, linesContainer, summary, workflowTitle, dragHandle, copyBtn, pushBtn };
+    // Esc lets go of the picked lines first; the browser's own Esc leaves it to this then (ui_browser_navigation.js).
+    window.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape' || !state.picked.size || !panel.getClientRects().length) return;
+        state.picked = new Set();
+        refs.linesContainer.querySelectorAll('.anomalous-sd-line-card.is-picked').forEach(card => card.classList.remove('is-picked'));
+        renderCastHint();
+    });
+    refs = { subtitle, characterSelect, characterHint, inputArea, textarea, cancelEdit, body, linesCount, castHint, onlyMain, linesContainer, summary, workflowTitle, dragHandle, copyBtn, pushBtn };
 }
 
 function renderAll() {
@@ -300,36 +350,51 @@ function renderCharacterBar() {
 }
 
 function renderLines() {
-    const group = selectedGroup();
-    const emotions = usableEmotions(group);
-    const slices = new Map((group?.slices || []).map(slice => [slice.emotion, slice]));
-    // Chips only when there is a choice, or a line still asks for an emotion this character lacks.
-    const showChips = emotions.length > 1 || state.lines.some(line => !emotions.includes(line.emotion));
+    // Chips only when there is a choice, or a line still asks for an emotion its character lacks.
+    const showChips = state.lines.some((line) => {
+        const emotions = usableEmotions(speakerOf(line));
+        return emotions.length > 1 || !emotions.includes(line.emotion);
+    });
     refs.onlyMain.hidden = showChips;
     refs.onlyMain.textContent = t('scriptDirectorOnlyMain');
     const addLine = button('anomalous-sd-add-line', t('scriptDirectorAddLine'), () => {
-        state.lines.push({ text: '', emotion: state.lines.at(-1)?.emotion || 'main', take: 1 });
+        const last = state.lines.at(-1);
+        state.lines.push({ text: '', emotion: last?.emotion || 'main', take: 1, speaker: last?.speaker || null });
         state.focusIndex = state.lines.length - 1;
+        state.picked = new Set();
         renderAll();
     });
     if (state.listenIndex >= state.lines.length) state.listenIndex = 0;
-    refs.linesContainer.replaceChildren(...state.lines.map((line, index) => renderLineCard(line, index, emotions, slices, showChips)), addLine);
+    state.picked = new Set([...state.picked].filter(index => index < state.lines.length));
+    const cast = hasCast();
+    refs.linesContainer.replaceChildren(...state.lines.map((line, index) => renderLineCard(line, index, showChips, cast)), addLine);
+    renderCastHint();
     if (state.focusIndex !== null) {
         refs.linesContainer.querySelectorAll('.anomalous-sd-line-text')[state.focusIndex]?.focus();
         state.focusIndex = null;
     }
 }
 
-function renderLineCard(line, index, emotions, slices, showChips) {
-    const card = el('div', `anomalous-sd-line-card${index === state.listenIndex ? ' is-listen' : ''}`);
-    // The line you are on is the one the modes are heard on (the run section's listen button).
+function renderLineCard(line, index, showChips, cast) {
+    const speaker = speakerOf(line);
+    const emotions = usableEmotions(speaker);
+    const slices = new Map((speaker?.slices || []).map(slice => [slice.emotion, slice]));
+    const card = el('div', `anomalous-sd-line-card${index === state.listenIndex ? ' is-listen' : ''}${state.picked.has(index) ? ' is-picked' : ''}`);
+    // The line you are on is the one the modes are heard on; a click also picks it for the cast.
     card.addEventListener('focusin', () => chooseListenLine(index));
-    card.addEventListener('click', () => chooseListenLine(index));
+    card.addEventListener('click', (e) => {
+        if (!e.target.closest('button')) pickLine(index, e);
+    });
+    if (cast) {
+        card.classList.add('has-speaker');
+        card.style.setProperty('--speaker', speakerColor(speaker?.group, state.groups));
+    }
 
     // Editing buttons (.is-edit) show on hover; another take of this line stays visible.
     const head = el('div', 'anomalous-sd-line-head');
     head.append(
         el('span', 'anomalous-sd-line-no', `#${index + 1}`),
+        ...(cast ? [speakerChip(speaker, speakerColor(speaker?.group, state.groups))] : []),
 
         // Split at the text caret (the textarea keeps its caret after losing focus to this button).
         button('anomalous-sd-icon-btn is-edit', '✂', async () => {
@@ -340,7 +405,8 @@ function renderLineCard(line, index, emotions, slices, showChips) {
                 return;
             }
             line.text = parts[0];
-            state.lines.splice(index + 1, 0, { text: parts[1], emotion: line.emotion, take: 1 });
+            state.lines.splice(index + 1, 0, { text: parts[1], emotion: line.emotion, take: 1, speaker: line.speaker || null });
+            state.picked = new Set();
             state.focusIndex = index + 1;
             stopScriptDirectorPreview();
             renderAll();
@@ -351,6 +417,7 @@ function renderLineCard(line, index, emotions, slices, showChips) {
         head.append(button('anomalous-sd-icon-btn is-edit', '↧', () => {
             line.text = joinSegments(line.text, state.lines[index + 1].text);
             state.lines.splice(index + 1, 1);
+            state.picked = new Set();
             stopScriptDirectorPreview();
             renderAll();
         }, t('scriptDirectorMergeNext')));
@@ -373,6 +440,7 @@ function renderLineCard(line, index, emotions, slices, showChips) {
     head.append(
         button('anomalous-sd-icon-btn is-edit is-danger', '×', () => {
             state.lines.splice(index, 1);
+            state.picked = new Set();
             stopScriptDirectorPreview();
             renderAll();
         }, t('scriptDirectorDeleteLine')),
@@ -424,6 +492,23 @@ function renderLineCard(line, index, emotions, slices, showChips) {
     return card;
 }
 
+/** A click on a card: picks it (Ctrl / ⌘ adds, Shift a run) and makes it the line to listen with. */
+function pickLine(index, event) {
+    state.picked = pickLines(state.picked, index, event, state.anchor);
+    if (!event.shiftKey) state.anchor = index;
+    refs.linesContainer.querySelectorAll('.anomalous-sd-line-card').forEach((card, at) => card.classList.toggle('is-picked', state.picked.has(at)));
+    renderCastHint();
+    chooseListenLine(index);
+}
+
+/** What a click on the list does now: give the picked lines, or (none picked) change who reads by default. */
+function renderCastHint() {
+    refs.castHint.hidden = state.groups.length < 2;
+    refs.castHint.textContent = state.picked.size
+        ? t('scriptCastPicked', { count: state.picked.size })
+        : t('scriptCastHint');
+}
+
 function chooseListenLine(index) {
     if (state.listenIndex === index) return;
     state.listenIndex = index;
@@ -436,7 +521,9 @@ function renderPackage() {
     const pkg = currentPackage();
     const ok = !pkg.error;
     refs.summary.classList.toggle('is-error', !ok);
-    if (ok) {
+    if (ok && pkg.speakers.length > 1) {
+        refs.summary.textContent = t('scriptDirectorPackageSummaryCast', { count: pkg.lineCount, speakers: pkg.speakers.join('、') });
+    } else if (ok) {
         const used = [...new Set(state.lines.filter(line => line.text.trim()).map(line => emotionLabel(line.emotion)))];
         refs.summary.textContent = t('scriptDirectorPackageSummary', { count: pkg.lineCount, emotions: used.join(' · ') });
     } else {
@@ -459,7 +546,9 @@ function parseScript(text) {
         text: lineText,
         emotion: previous.get(lineText)?.emotion || 'main',
         take: previous.get(lineText)?.take || 1,
+        speaker: previous.get(lineText)?.speaker || null,
     }));
+    state.picked = new Set();
     state.editing = false;
     renderAll();
 }
@@ -482,90 +571,4 @@ function previewLine(line, slices, btn) {
     audio.onended = done;
     audio.onerror = done;
     audio.play().catch(done);
-}
-
-async function copyScript() {
-    const pkg = currentPackage();
-    if (pkg.error || !navigator.clipboard?.writeText) return;
-    try {
-        await navigator.clipboard.writeText(pkg.speech);
-        flash(refs.copyBtn, t('scriptDirectorCopied'), t('scriptDirectorCopy'));
-    } catch (_) {
-        // Clipboard permission refused: the line cards still hold the text.
-    }
-}
-
-function flash(btn, text, restore) {
-    btn.textContent = text;
-    btn.classList.add('is-success');
-    setTimeout(() => {
-        btn.textContent = restore;
-        btn.classList.remove('is-success');
-    }, 1800);
-}
-
-function findTargetNode() {
-    const nodes = (app.graph?._nodes || []).filter(targetForNode);
-    if (!nodes.length) return { error: 'scriptDirectorNoNode' };
-    const selected = Object.values(app.canvas?.selected_nodes || {}).filter(targetForNode);
-    if (selected.length === 1) return { node: selected[0] };
-    if (nodes.length === 1) return { node: nodes[0] };
-    return { error: 'scriptDirectorPickNode' };
-}
-
-async function pushToNode() {
-    const pkg = currentPackage();
-    if (pkg.error) return;
-    const { node, error } = findTargetNode();
-    if (error) {
-        await anomalousAlert(t(error, { node: TTS_ENGINE.label }));
-        return;
-    }
-    if (await applyPackageToNode(node, pkg)) flash(refs.pushBtn, t('scriptDirectorSuccess'), t('scriptDirectorInject'));
-}
-
-/** Write character + script into one node; re-checks the node after any dialog. Returns true when written. */
-async function applyPackageToNode(node, pkg) {
-    const graph = app.graph;
-    const target = targetForNode(node);
-    const speechWidget = target && node.widgets?.find(w => w.name === target.speechWidget);
-    const sampleWidget = target && node.widgets?.find(w => w.name === target.voiceWidget);
-    if (!speechWidget || !sampleWidget) {
-        await anomalousAlert(t('scriptDirectorDropNotTts', { node: TTS_ENGINE.label }));
-        return false;
-    }
-    const sampleValue = comboValueForPath(sampleWidget, pkg.sample);
-    if (sampleValue == null) {
-        await anomalousAlert(t('scriptDirectorSampleNotListed', { file: pkg.sample, node: TTS_ENGINE.label }));
-        return false;
-    }
-    const previous = speechWidget.value;
-    if (typeof previous === 'string' && previous.trim() && previous.trim() !== pkg.speech) {
-        if (!await anomalousConfirm(t('scriptDirectorOverwriteConfirm'))) return false;
-        if (app.graph !== graph || graph.getNodeById(node.id) !== node || speechWidget.value !== previous) return false;
-    }
-    if (sampleWidget.value !== sampleValue) {
-        sampleWidget.value = sampleValue;
-        sampleWidget.callback?.(sampleValue, app.canvas, node);
-    }
-    speechWidget.value = pkg.speech;
-    speechWidget.callback?.(pkg.speech, app.canvas, node);
-    node.setDirtyCanvas?.(true, true);
-    recordCanvasStep(app);
-    return true;
-}
-
-// ---------- drag the bundle onto a canvas node ----------
-
-function bindPackageDrag(handle) {
-    bindMaterialDrag(handle, dragOwner, {
-        payload: () => {
-            const pkg = currentPackage();
-            return pkg.error ? null : { ...pkg, dragHint: t('scriptDirectorDragHint', { node: TTS_ENGINE.label }) };
-        },
-        accepts: node => Boolean(targetForNode(node)),
-        drop: async node => {
-            if (await applyPackageToNode(node, currentPackage())) flash(refs.pushBtn, t('scriptDirectorSuccess'), t('scriptDirectorInject'));
-        },
-    });
 }

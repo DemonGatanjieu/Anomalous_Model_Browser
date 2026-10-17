@@ -33,7 +33,6 @@ const SVG = {
     GRIP: `<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true"><circle cx="3" cy="3" r="1.2"/><circle cx="7" cy="3" r="1.2"/><circle cx="3" cy="7" r="1.2"/><circle cx="7" cy="7" r="1.2"/><circle cx="3" cy="11" r="1.2"/><circle cx="7" cy="11" r="1.2"/></svg>`,
     CHECK: `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
     SEARCH: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
-    SCRIPT: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>`,
     PLUS: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
     TUNE: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10"/><path d="M18 6h2"/><circle cx="16" cy="6" r="2"/><path d="M4 12h4"/><path d="M12 12h8"/><circle cx="10" cy="12" r="2"/><path d="M4 18h12"/><circle cx="18" cy="18" r="2"/></svg>`,
     PRONOUNCE: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h10v2"/><path d="M9 5v14"/><path d="M7 19h4"/><path d="M15 13h6"/><path d="M18 10v9"/></svg>`,
@@ -246,12 +245,6 @@ function renderCharacterCard(group, owner, { onChanged, canImport = false, tunin
     titleGroup.append(...(group.has_main ? [gripIcon()] : []), avatar, nameBox);
     const headerRight = document.createElement('div');
     headerRight.className = 'anomalous-character-voice-actions';
-    if (group.has_main && owner?.openScript) {
-        const voiceOver = createToolButton(SVG.SCRIPT, t('scriptDirectorUseCharacter'), 'is-compact is-accent');
-        voiceOver.title = t('scriptDirectorUseCharacterHint', { character: group.character });
-        voiceOver.onclick = () => owner.openScript(group.group);
-        headerRight.append(voiceOver);
-    }
     if (!group.raw.error) {
         const edit = createToolButton(SVG.EDIT, t('ttsEditorOpen'), 'is-compact');
         edit.onclick = () => openGptSovitsEditor(group, { onSaved: () => onChanged?.() });

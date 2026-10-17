@@ -1,5 +1,13 @@
 # 📈 Anomalous Model Browser Changelog
 
+## v1.61.0 — unreleased
+
+### 🎭 Several characters in one script (多角色配音)
+- **Give lines to other characters**: on Voice-over, pick lines (a click; Ctrl / ⌘ adds one, Shift a run; Esc lets go), then click a character in the list on the left: those lines are read by it. With no line picked, a click there changes who reads by default. Each line card then shows who reads it, in that character's colour, and its emotions are that character's.
+- **The list on the left is the cast there**: narrower, the characters with their colours only; a click there never takes you back to the Characters page.
+- Generating, ▶ on a line, pushing, dragging and copying all follow who reads each line: the script carries `[name]` where the speaker changes (Anomalous_TTS reads it already), and in Auto mode each character uses its own generation settings. A file voiced again from the audio gallery comes back with its speakers.
+- The character cards' **Voice-over** button is gone: the switch at the top of the page and the cast do its job.
+
 ## v1.60.1 — unreleased
 
 ### 🔍 Scanning (扫描)

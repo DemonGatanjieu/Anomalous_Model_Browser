@@ -4,13 +4,16 @@ import { bindVoiceDrag } from './audio_voice_drag.js';
 import { bindTtsFileDrop } from './ui_tts_file_drop.js';
 import { openTtsImport } from './ui_tts_import.js';
 import { openTtsSetup, setupAttention } from './ui_tts_setup.js';
+import { speakerColor } from './ui_script_cast.js';
 
 /**
  * Audio sidebar: All Voices, the GPT-SoVITS characters (grouped by language; each
  * group folds, each character unfolds into its clips) and a settings entry at the
- * bottom. On Voice-over, picking a character makes it the one who speaks. Owns the active audio filter. Characters drag
- * onto canvas nodes like the studio cards; files dropped on a character open the
- * import form for it.
+ * bottom. On Voice-over it is the cast (CSS: narrow, characters with their colours only):
+ * a click gives the picked lines to a character, or makes it the one who reads by default
+ * (ui_script_director.js castScriptCharacter), and never leaves the page. Owns the active audio
+ * filter. Characters drag onto canvas nodes like the studio cards; files dropped on a
+ * character open the import form for it.
  */
 
 let activeFilter = { type: 'all', value: null };
@@ -114,8 +117,11 @@ function createNavItem(owner, { label, iconSvg, count, filter, tab }) {
     if (count !== undefined && count !== null) item.appendChild(el('span', 'anomalous-audio-nav-count', String(count)));
 
     item.onclick = () => {
-        activeFilter = filter;
-        syncAudioSidebarSelection(owner);
+        // On Voice-over a character click casts it (browser.js); the Characters page's filter stays.
+        if (!(owner.currentShellPage?.() === 'script' && filter.type === 'group')) {
+            activeFilter = filter;
+            syncAudioSidebarSelection(owner);
+        }
         owner.switchAudioTab?.(tab, filter);
     };
     return item;
@@ -193,7 +199,7 @@ function renderClipRow(owner, group, slice) {
     return row;
 }
 
-function renderCharacter(owner, group, { canImport, forceOpen }) {
+function renderCharacter(owner, group, { canImport, forceOpen, color }) {
     const wrap = el('div', 'anomalous-audio-nav-character');
     const filter = { type: 'group', value: group.group, character: group.character };
     const item = createNavItem(owner, { label: group.character, iconSvg: SIDEBAR_SVG.USER, count: group.total_slices, filter, tab: 'presets' });
@@ -207,10 +213,13 @@ function renderCharacter(owner, group, { canImport, forceOpen }) {
         e.stopPropagation();
         if (expanded.has(group.group)) expanded.delete(group.group);
         else expanded.add(group.group);
-        wrap.replaceWith(renderCharacter(owner, group, { canImport, forceOpen: false }));
+        wrap.replaceWith(renderCharacter(owner, group, { canImport, forceOpen: false, color }));
     };
     toggle.hidden = !group.slices.length;
     item.prepend(toggle);
+    const dot = el('span', 'anomalous-audio-nav-cast-dot'); // its colour on Voice-over's line cards
+    dot.style.background = color;
+    item.querySelector('.anomalous-audio-nav-label').prepend(dot);
 
     const problem = problemOf(group);
     if (problem) {
@@ -233,7 +242,7 @@ function renderCharacter(owner, group, { canImport, forceOpen }) {
     return wrap;
 }
 
-function renderBucket(owner, bucket, { collapsed, canImport, term }) {
+function renderBucket(owner, bucket, { collapsed, canImport, term, colorOf }) {
     const box = el('div', 'anomalous-audio-nav-bucket');
     const isCollapsed = !term && collapsed.has(bucket.key);
     const head = el('button', `anomalous-audio-nav-bucket-head${isCollapsed ? ' is-collapsed' : ''}`);
@@ -245,11 +254,11 @@ function renderBucket(owner, bucket, { collapsed, canImport, term }) {
         if (keys.has(bucket.key)) keys.delete(bucket.key);
         else keys.add(bucket.key);
         storeCollapsed(keys);
-        box.replaceWith(renderBucket(owner, bucket, { collapsed: keys, canImport, term }));
+        box.replaceWith(renderBucket(owner, bucket, { collapsed: keys, canImport, term, colorOf }));
     };
     box.append(head);
     if (!isCollapsed) {
-        for (const group of bucket.groups) box.append(renderCharacter(owner, group, { canImport, forceOpen: false }));
+        for (const group of bucket.groups) box.append(renderCharacter(owner, group, { canImport, forceOpen: false, color: colorOf(group.group) }));
     }
     return box;
 }
@@ -258,12 +267,13 @@ function renderCharacters(owner, container, groups, { canImport, term }) {
     const shown = groups.filter(group => matches(group, term));
     const buckets = bucketsOf(shown);
     const collapsed = storedCollapsed();
+    const colorOf = key => speakerColor(key, groups);
     if (!shown.length && term) {
         container.append(el('div', 'anomalous-audio-nav-empty', t('audioSidebarNoMatch')));
     } else if (buckets.length > 1) {
-        for (const bucket of buckets) container.append(renderBucket(owner, bucket, { collapsed, canImport, term }));
+        for (const bucket of buckets) container.append(renderBucket(owner, bucket, { collapsed, canImport, term, colorOf }));
     } else {
-        for (const group of shown) container.append(renderCharacter(owner, group, { canImport, forceOpen: false }));
+        for (const group of shown) container.append(renderCharacter(owner, group, { canImport, forceOpen: false, color: colorOf(group.group) }));
     }
 }
 
@@ -320,10 +330,10 @@ export async function renderAudioSidebar(owner) {
             characters.replaceChildren();
             renderCharacters(owner, characters, groups, { canImport, term: input.value.trim().toLowerCase() });
         };
-        listContainer.append(allVoices(owner, totalSlices), createSectionLabel(t('audioSectionCharactersOf', { engine: TTS_ENGINE.label })), characters);
+        listContainer.append(castHint(), allVoices(owner, totalSlices), createSectionLabel(t('audioSectionCharactersOf', { engine: TTS_ENGINE.label })), characters);
         renderCharacters(owner, characters, groups, { canImport, term: '' });
     } else {
-        listContainer.append(allVoices(owner, totalSlices), createSectionLabel(t('audioSectionCharactersOf', { engine: TTS_ENGINE.label })));
+        listContainer.append(castHint(), allVoices(owner, totalSlices), createSectionLabel(t('audioSectionCharactersOf', { engine: TTS_ENGINE.label })));
         renderCharacters(owner, listContainer, groups, { canImport, term: '' });
     }
 
@@ -336,8 +346,15 @@ export async function renderAudioSidebar(owner) {
 }
 
 function allVoices(owner, count) {
-    return createNavItem(owner, {
+    const item = createNavItem(owner, {
         label: t('audioAllVoices'), iconSvg: SIDEBAR_SVG.ALL_VOICES, count,
         filter: { type: 'all', value: null }, tab: 'presets',
     });
+    item.classList.add('anomalous-audio-nav-all'); // not on Voice-over (CSS): it would leave the page
+    return item;
+}
+
+/** What a click on a character does on Voice-over (shown there only, CSS). */
+function castHint() {
+    return el('div', 'anomalous-audio-nav-cast-hint', t('scriptCastListHint'));
 }
