@@ -1,7 +1,7 @@
 from . import (
     activity_log, audio_catalog, folder_types, gallery_routes, materials, media_routes, model_catalog,
     model_folder, model_media, model_metadata, model_resolution, model_type_listing, kept_images, node_material, recipe_packages, recipes, scan_choice, scan_report, scan_summary,
-    local_guard, lora_info, mcp_server, model_download, model_import, model_placement, translation_routes, version_manager, backup,
+    local_guard, lora_info, mcp_server, model_download, model_import, model_placement, translation_routes, version_manager, tts_version, backup,
     network_check, model_heads, model_usage, usage_ledger,
 )
 from .scanner import *
@@ -135,6 +135,7 @@ def setup_routes(app):
     app.router.add_get('/anomalous/audio_previews', audio_catalog.api_get_audio_previews)
     app.router.add_post('/anomalous/save_audio_preview', audio_catalog.api_save_audio_preview)
     version_manager.register_routes(app)
+    tts_version.register_routes(app)
     activity_log.register_routes(app)
     mcp_server.register_routes(app)
     model_download.register_routes(app)

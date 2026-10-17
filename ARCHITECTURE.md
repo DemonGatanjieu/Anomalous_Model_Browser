@@ -222,6 +222,14 @@ covered by the `styles.css` manifest.
   switch refuses to run over modified tracked files. `ui_version_manager.js` is
   the version line (shown in the update guide opened by the header "!" button) and panel; nothing goes online until "check for updates"
   is clicked, and restarts go through ComfyUI Manager's reboot route when present.
+  Every function takes an optional `Checkout` (another folder and its own state
+  file): `api/tts_version.py` uses it for the companion node pack Anomalous_TTS,
+  found among the custom_nodes folders by its node class and accepted only as a
+  git clone whose `origin` is the official repository (`/anomalous/tts_version`,
+  `/releases` local-only, `/update`, `/undo`; last switch in the ignored
+  `.anomalous_tts_version.local.json`). `ui_tts_version.js` is its group in the
+  GPT-SoVITS settings dialog: installed version, "Check for updates", update to
+  the newest stable release or back, then the restart question.
 
 - `web/main.js` coordinates extension registration (with `?v=...` versioned module imports busting aggressive browser ES Module caching and unconditional legacy storage key purging). `browser.js` owns the shared
   browser class and extracted-method wiring; `browser_entry.js` owns the single

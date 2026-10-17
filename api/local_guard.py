@@ -33,6 +33,7 @@ OPEN_POSTS = frozenset({
 LOCAL_GETS = frozenset({
     "/anomalous/backup/file",
     "/anomalous/version/releases",
+    "/anomalous/tts_version/releases",
     "/anomalous/import/folders",
     "/anomalous/civitai_check",
     "/anomalous/usage/check",  # reads every output and saved workflow

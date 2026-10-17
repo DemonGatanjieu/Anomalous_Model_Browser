@@ -2,6 +2,7 @@ import { t } from './interface_settings.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { loadGptSovitsStatus } from './audio_engines.js';
+import { renderTtsVersion } from './ui_tts_version.js';
 import { formatSize, pretrainedReminder, setupSummary, shownPretrained, startPretrainedDownload } from './tts_setup_api.js';
 
 /**
@@ -283,9 +284,12 @@ export async function openTtsSetup({ onChanged, languages = [], needs = [] }) {
             if (!scope.signal.aborted && status) draw();
         },
     };
+    // Kept across redraws: the download poll replaces only the card, and a check for updates stays shown.
+    const version = el('section', 'anomalous-tts-setup');
+    version.append(renderTtsVersion(status.local !== false));
     const draw = () => {
         subtitle.textContent = summaryText(status, setupSummary(status, needs));
-        body.replaceChildren(renderTtsSetup(status, options));
+        body.replaceChildren(renderTtsSetup(status, options), version);
     };
     draw();
     modal.append(header, body);

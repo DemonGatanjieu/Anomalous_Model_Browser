@@ -76,6 +76,14 @@
     color: var(--amb-text-muted);
 }
 
+.anomalous-tts-version-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
 .anomalous-tts-setup-command {
     flex: 1 1 320px;
     min-width: 0;
