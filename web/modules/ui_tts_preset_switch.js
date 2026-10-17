@@ -45,6 +45,7 @@ function valueRow(key, before, now, { builtin, onEdit }) {
     if (onEdit) {
         const input = numberInput(key, now, onEdit);
         input.dataset.param = key;
+        input.title = t('ttsFeelEditHint');
         values.append(input);
     } else {
         values.append(el('strong', '', brief(now)));

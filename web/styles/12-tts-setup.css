@@ -175,9 +175,39 @@
     font-size: 12px;
 }
 
+.anomalous-tts-switch-nums > .is-now {
+    color: var(--amb-text-soft);
+}
+
+/* An editable number reads as the value itself: a dashed underline says it can be changed,
+   the box appears only on hover or while typing, so "15 → 10" stays one line to read.
+   No spin arrows (they covered the digits); typing and the arrow keys change it. */
 .anomalous-tts-switch-nums .anomalous-tts-number {
-    width: 56px;
+    width: 52px;
     min-width: 0;
+    padding: 1px 4px;
+    border: 1px solid transparent;
+    border-bottom: 1px dashed var(--amb-border-strong);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--amb-text-main);
+    font: inherit;
+    font-weight: 600;
+    text-align: right;
+    -moz-appearance: textfield;
+}
+
+.anomalous-tts-switch-nums .anomalous-tts-number::-webkit-inner-spin-button,
+.anomalous-tts-switch-nums .anomalous-tts-number::-webkit-outer-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+}
+
+.anomalous-tts-switch-nums .anomalous-tts-number:hover,
+.anomalous-tts-switch-nums .anomalous-tts-number:focus {
+    border-color: var(--amb-border-strong);
+    background: var(--amb-bg-input);
+    outline: none;
 }
 
 /* Under the number, so a narrow column (the Script Director's side) keeps it whole. */
