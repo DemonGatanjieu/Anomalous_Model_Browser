@@ -317,14 +317,22 @@
     background: color-mix(in srgb, var(--amb-link) 6%, transparent);
 }
 
-.anomalous-sd-line-listen {
-    display: none;
+/* ▶ hears the line in the mode picked on the side: on the card you are on, and on hover. */
+.anomalous-sd-line-play {
+    opacity: 0;
     color: var(--amb-link);
-    font-size: 11px;
+    transition: opacity 0.15s ease;
 }
 
-.anomalous-sd-line-card.is-listen .anomalous-sd-line-listen {
-    display: inline;
+.anomalous-sd-line-card:hover .anomalous-sd-line-play,
+.anomalous-sd-line-card.is-listen .anomalous-sd-line-play {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .anomalous-sd-line-play {
+        opacity: 1;
+    }
 }
 
 /* One row per line: number, text, then its buttons; the emotion chips under it when there is a choice. */

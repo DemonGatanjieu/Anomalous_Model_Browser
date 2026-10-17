@@ -376,8 +376,8 @@ covered by the `styles.css` manifest.
   `ui_script_run.js` is the director's "Generate" section (the bar with the result and
   a way to the audio gallery; language, speed and the mode: Auto, or one preset for
   every line through the node's `preset` input, in the same switch measured
-  against Auto (compact: scale and numbers folded) and heard on the line you
-  are on in the director (marked there), a preset's numbers
+  against Auto (compact: scale and numbers folded) and heard from the ▶ on a
+  line card (the takes heard stay on the side to compare), a preset's numbers
   changed there saved into the preset; links to the presets and to the
   character's generation settings): it runs
   the script without the canvas, plays the result, retakes the whole script

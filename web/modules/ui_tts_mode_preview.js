@@ -59,18 +59,23 @@ export function createModePreview(onChange) {
     /**
      * The listen row: "Listen to this one" for the picked mode, then the modes already heard
      * with this sentence (a click picks the mode and plays its take). `takeFor(id)` builds a take;
-     * `lead`: elements before the button (which line is read).
+     * `lead`: elements before the button (which line is read); `withButton` false leaves the
+     * button to the caller (the Script Director's cards) and says "Making it…" instead.
      */
-    function row({ takeFor, selected, modes, onPick, disabled = false, lead = [] }) {
+    function row({ takeFor, selected, modes, onPick, disabled = false, lead = [], withButton = true }) {
         const box = el('div', 'anomalous-tts-takes');
         box.append(...lead);
         const current = takeFor(selected);
         const key = keyOf(current);
-        const label = making === key ? 'ttsListenMaking' : (takes.has(key) ? 'ttsListenAgain' : 'ttsListen');
-        const listen = button('anomalous-sd-btn', t(label), () => play(current));
-        listen.title = t('ttsListenHint');
-        listen.disabled = disabled || (Boolean(job) && !takes.has(key)) || !current.text || !current.character;
-        box.append(listen);
+        if (withButton) {
+            const label = making === key ? 'ttsListenMaking' : (takes.has(key) ? 'ttsListenAgain' : 'ttsListen');
+            const listen = button('anomalous-sd-btn', t(label), () => play(current));
+            listen.title = t('ttsListenHint');
+            listen.disabled = disabled || (Boolean(job) && !takes.has(key)) || !current.text || !current.character;
+            box.append(listen);
+        } else if (making === key) {
+            box.append(el('span', 'anomalous-tts-setup-meta', t('ttsListenMaking')));
+        }
         const heard = modes.filter(mode => takes.has(keyOf(takeFor(mode.id))));
         if (heard.length) {
             box.append(el('span', 'anomalous-tts-setup-meta', t('ttsListenHeard')));
@@ -85,5 +90,5 @@ export function createModePreview(onChange) {
         return box;
     }
 
-    return { row, stop: () => player.pause() };
+    return { row, play, stop: () => player.pause() };
 }

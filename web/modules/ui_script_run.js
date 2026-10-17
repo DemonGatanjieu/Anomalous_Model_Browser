@@ -21,8 +21,9 @@ import { openTuningEditor } from './ui_tts_tuning.js';
  * How it sounds is a mode (Anomalous_TTS interface 16): "Auto" lets the presets and the
  * character's generation settings decide line by line; a preset sends the node's `preset`
  * input, so every line uses it. The modes are shown against Auto (ui_tts_preset_switch.js,
- * compact: the scale and the numbers folded) and can be heard on the line you are on in the
- * director (ui_tts_mode_preview.js); a preset's numbers changed here are saved into that preset.
+ * compact: the scale and the numbers folded) and can be heard on a line from the ▶ on its card
+ * (`listen()`, ui_tts_mode_preview.js); the takes heard stay here to compare. A preset's numbers
+ * changed here are saved into that preset.
  * Links lead to the presets in GPT-SoVITS Settings and to the character's generation settings.
  *
  * The director owns the lines; this section owns the job, the options and the
@@ -89,6 +90,7 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         presets: null,        // loadPresets(); null without interface 16
         local: false,         // this computer (presets can be changed)
         roomy: false,         // the side is wide enough to show the modes' scale and numbers open
+        takeNow: null,        // the take a card's ▶ plays: its line in the mode picked
         options: new Map(),   // character -> { language, speed, preset } being edited
         settings: new Map(),  // character -> its settings as saved in this session
         saved: new Map(),     // character -> options saved in this session
@@ -217,6 +219,7 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         }
         state.options.clear(); // options built before the spec arrived lack the node's defaults
         render();
+        onBusyChange?.(); // the director draws its cards again, now with their ▶
     }
 
     /** A preset's number changed here goes into the preset itself, for every character. */
@@ -234,6 +237,7 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
 
     function renderMode(group, busy) {
         modeBox.hidden = !state.presets;
+        state.takeNow = null;
         if (!state.presets) return;
         const opts = currentOptions(group);
         const view = state.presets;
@@ -261,6 +265,7 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
             : t('scriptRunListenSample', { text }));
         lineLabel.title = t('scriptRunListenLineHint');
         const take = id => ({ character: group.character, text, language: opts.language, speed: opts.speed, mode: id, preset: id, numbers: values(id) });
+        state.takeNow = busy ? null : () => take(opts.preset);
         const lang = auto.key === 'all' ? t('ttsTuningAll') : t(`scriptRunLang_${auto.key}`);
         const modes = renderPresetSwitch({
             choices,
@@ -275,7 +280,7 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
             editable: id => id !== AUTO && state.local,
             onPick: pick,
             onEdit: editPreset,
-            listen: preview.row({ takeFor: take, selected: opts.preset, modes: choices, onPick: pick, disabled: busy, lead: [lineLabel] }),
+            listen: preview.row({ takeFor: take, selected: opts.preset, modes: choices, onPick: pick, disabled: busy, lead: [lineLabel], withButton: false }),
             disabled: busy,
             compact: !state.roomy,
         });
@@ -422,6 +427,15 @@ export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onB
         bar,
         render,
         generate,
+        /** A card's ▶: its line (the director set it as the one to listen with) in the mode picked. */
+        listen() {
+            render();
+            if (state.takeNow) preview.play(state.takeNow());
+        },
+        /** Whether the cards show ▶ (the node has modes, a character is chosen, nothing runs). */
+        canListen() {
+            return Boolean(state.presets && state.supported && !state.job && getScript()?.group);
+        },
         /** A line can be retaken once this character has a result and nothing is running. */
         canRetake(group) {
             return Boolean(state.supported && !state.job && state.result && group && state.result.character === group.character);

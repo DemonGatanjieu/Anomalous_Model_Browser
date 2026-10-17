@@ -330,7 +330,7 @@ function renderLineCard(line, index, emotions, slices, showChips) {
     const head = el('div', 'anomalous-sd-line-head');
     head.append(
         el('span', 'anomalous-sd-line-no', `#${index + 1}`),
-        el('span', 'anomalous-sd-line-listen', t('scriptDirectorListenBadge')),
+
         // Split at the text caret (the textarea keeps its caret after losing focus to this button).
         button('anomalous-sd-icon-btn is-edit', '✂', async () => {
             const parts = splitSegmentAt(line.text, text.selectionStart);
@@ -354,6 +354,13 @@ function renderLineCard(line, index, emotions, slices, showChips) {
             stopScriptDirectorPreview();
             renderAll();
         }, t('scriptDirectorMergeNext')));
+    }
+    if (runSection?.canListen()) {
+        // This line in the mode picked on the side; the side keeps the takes heard to compare.
+        head.append(button('anomalous-sd-icon-btn anomalous-sd-line-play', '▶', () => {
+            chooseListenLine(index);
+            runSection.listen();
+        }, t('scriptDirectorListenLine')));
     }
     if (runSection?.canRetake(selectedGroup())) {
         const retake = button('anomalous-sd-icon-btn', '↻', () => {
