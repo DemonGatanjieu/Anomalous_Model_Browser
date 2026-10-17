@@ -220,6 +220,7 @@ function createPanel() {
     workflow.append(workflowTitle, actions);
     runSection = createRunSection({
         getScript: runScript,
+        getGroups: () => state.groups,
         onPlay: () => {
             stopLinePreview();
             hooks.onPreviewStart?.();

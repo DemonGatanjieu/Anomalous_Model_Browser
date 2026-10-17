@@ -236,11 +236,14 @@ covered by the `styles.css` manifest.
   the built-in values plus the presets made here (`custom_<id>` with a label),
   where a preset is used and taking it out, a dialog row's numbers in effect
   next to the general ones, a character's `defaults` / `defaults.by_language` as
-  rows and back, keeping every other field). `ui_tts_presets.js` is the group in
-  the GPT-SoVITS settings dialog (default preset, rules per pair, every preset's
-  numbers side by side marked like the compare window, new / rename / delete /
-  reset), saving each change at once; `ui_tts_tuning.js` is the per-character
-  dialog behind the card's Generation settings button, shown only with interface 16.
+  rows and back, keeping every other field). `ui_tts_preset_switch.js` draws the
+  modes as choices and the picked one's four numbers as the Current node card's
+  bars against the mode looked at before, each with its plain name and the node's
+  own name (`top_k` …), editable in place. `ui_tts_presets.js` is the group in the
+  GPT-SoVITS settings dialog (that switch, make default / reset / new / rename /
+  delete, rules per pair), saving each change at once; `ui_tts_tuning.js` is the
+  per-character dialog behind the card's Generation settings button, shown only
+  with interface 16.
 
 - `web/main.js` coordinates extension registration (with `?v=...` versioned module imports busting aggressive browser ES Module caching and unconditional legacy storage key purging). `browser.js` owns the shared
   browser class and extracted-method wiring; `browser_entry.js` owns the single
@@ -365,11 +368,13 @@ covered by the `styles.css` manifest.
   It puts the cards on one side and generating on the other: beside
   them once the page is wide, below them when it is narrow (docked browser).
   `ui_script_run.js` is the director's "Generate" section (the bar with the result and
-  a way to the audio gallery; language and speed in view, the sampling numbers folded
-  under "fine-tuning" with plain names): it runs
+  a way to the audio gallery; language, speed and the mode: Auto, or one preset for
+  every line through the node's `preset` input, in the same switch, a preset's
+  numbers changed there saved into the preset; links to the presets and to the
+  character's generation settings): it runs
   the script without the canvas, plays the result, retakes the whole script
   (new seed) or one line (`[take:N]`, the node caches the rest), and saves a
-  character's language, speed and folded sampling parameters to its `defaults`
+  character's language and speed to its `defaults` (keeping the rest of them)
   (only values that differ from the node's own defaults, which it reads from
   `/object_info`; needs Anomalous_TTS interface 11).
   `ui_tts_pronunciation.js` edits a GPT-SoVITS character's pronunciation table

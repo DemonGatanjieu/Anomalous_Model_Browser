@@ -3,7 +3,7 @@ import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { button, el } from './usage_view.js';
 import { fetchGptSovitsCharacter, saveGptSovitsSettings } from './audio_engines.js';
-import { LANGS, SAMPLING, generalPreset, lineTuning, loadPresets, mergeTuning, presetLabel, tuningRows } from './tts_presets_api.js';
+import { LANGS, PARAM_RANGES, SAMPLING, generalPreset, lineTuning, loadPresets, mergeTuning, presetLabel, tuningRows } from './tts_presets_api.js';
 
 /**
  * A character's generation settings (Anomalous_TTS interface 16): a preset and speed for
@@ -14,10 +14,9 @@ import { LANGS, SAMPLING, generalPreset, lineTuning, loadPresets, mergeTuning, p
  */
 
 let activeScope = null;
-const RANGES = { top_k: [1, 100, 1], top_p: [0.05, 1, 0.05], temperature: [0.05, 2, 0.05], repetition_penalty: [1, 2, 0.05], speed: [0.5, 2, 0.05] };
 
 function numberInput(key, value, placeholder) {
-    const [min, max, step] = RANGES[key];
+    const [min, max, step] = PARAM_RANGES[key];
     const input = el('input', 'anomalous-tts-number');
     Object.assign(input, { type: 'number', min, max, step, placeholder: String(placeholder ?? '') });
     if (typeof value === 'number') input.value = value;
@@ -27,7 +26,7 @@ function numberInput(key, value, placeholder) {
 /** The number in `input`, null when empty, or NaN when out of range. */
 function readNumber(key, input) {
     if (input.value.trim() === '') return null;
-    const [min, max] = RANGES[key];
+    const [min, max] = PARAM_RANGES[key];
     const number = key === 'top_k' ? Math.round(Number(input.value)) : Number(input.value);
     return Number.isFinite(number) && number >= min && number <= max ? number : NaN;
 }

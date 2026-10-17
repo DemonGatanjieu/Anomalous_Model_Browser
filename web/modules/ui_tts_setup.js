@@ -239,7 +239,8 @@ let activeScope = null;
  * The settings dialog. `onChanged()` redraws the studio and sidebar after a change;
  * the dialog then reloads the status and redraws itself.
  */
-export async function openTtsSetup({ onChanged, languages = [], needs = [], groups = [] }) {
+/** `showPresets`: scrolled to the generation presets (the Script Director's link). */
+export async function openTtsSetup({ onChanged, languages = [], needs = [], groups = [], showPresets = false }) {
     activeScope?.dispose();
     const scope = createViewScope();
     activeScope = scope;
@@ -287,7 +288,7 @@ export async function openTtsSetup({ onChanged, languages = [], needs = [], grou
     };
     // Kept across redraws: the download poll replaces only the card, and a check for updates stays shown.
     const version = el('section', 'anomalous-tts-setup');
-    version.append(renderTtsPresets(status, groups, status.local !== false), renderTtsVersion(status.local !== false));
+    version.append(renderTtsPresets(status, groups, status.local !== false, { reveal: showPresets }), renderTtsVersion(status.local !== false));
     const draw = () => {
         subtitle.textContent = summaryText(status, setupSummary(status, needs));
         body.replaceChildren(renderTtsSetup(status, options), version);

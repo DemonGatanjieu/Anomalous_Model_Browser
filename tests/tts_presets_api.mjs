@@ -54,9 +54,12 @@ const id = api.newPresetId(['custom_a1'], 1000);
 assert.match(id, /^custom_[a-z0-9]{1,12}$/);
 assert.notEqual(api.newPresetId([id], 1000), id);
 
-// The table marks a number only when the presets do not all share it.
-assert.equal(api.presetsDiffer(builtin, 'top_k'), true);
-assert.equal(api.presetsDiffer(builtin, 'top_p'), false);
+// The state the settings and the Script Director change, and back to the same file.
+const loaded = { ...view, presets: mine, labels: { custom_a1: '念旁白' }, default: 'custom_a1' };
+const editable = api.stateFromView(loaded);
+editable.numbers.custom_a1.top_k = 14;
+assert.equal(loaded.presets.custom_a1.top_k, 12);
+assert.deepEqual(api.presetsFile(loaded, editable).presets.custom_a1, { label: '念旁白', top_k: 14, top_p: 1, temperature: 0.9, repetition_penalty: 1.35 });
 
 // Deleting a preset: where it was used, and those places back on the general setting.
 const state = { defaultName: 'custom_a1', numbers: structuredClone(mine), labels: { custom_a1: '念旁白' }, rules: { 'ja>zh': 'custom_a1', 'ja>en': 'lively' }, cross: 'custom_a1' };

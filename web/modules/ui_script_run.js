@@ -3,28 +3,36 @@ import { anomalousAlert } from './ui_dialog.js';
 import { buildTtsPrompt, TTS_NODE_CLASS } from './audio_script.js';
 import { startPromptJob } from './audio_tts_run.js';
 import { fetchGptSovitsCharacter, loadGptSovitsStatus, saveGptSovitsSettings } from './audio_engines.js';
+import {
+    PRESETS_FORMAT, isBuiltin, lineTuning, loadPresets, presetLabel, presetsFile, savePresets, stateFromView, tuningRows,
+} from './tts_presets_api.js';
+import { keepParamFocus, renderPresetSwitch } from './ui_tts_preset_switch.js';
+import { openTtsSetup } from './ui_tts_setup.js';
+import { openTuningEditor } from './ui_tts_tuning.js';
 
 /**
  * The Script Director's "Generate" section for GPT-SoVITS characters: runs the
  * script through ComfyUI's queue (audio_tts_run.js) without touching the canvas,
  * plays the result, and offers another take of the whole script (new seed) or of
- * one line (`[take:N]`, the other lines come from the node's cache). Language,
- * speed and the sampling parameters start from the character's `defaults` and a
- * setting that worked can be saved back to it.
+ * one line (`[take:N]`, the other lines come from the node's cache). Language and
+ * speed start from the character's `defaults` and can be saved back to it.
+ *
+ * How it sounds is a mode (Anomalous_TTS interface 16): "Auto" lets the presets and the
+ * character's generation settings decide line by line; a preset sends the node's `preset`
+ * input, so every line uses it. The modes show their numbers against the one picked before
+ * (ui_tts_preset_switch.js); a preset's numbers changed here are saved into that preset.
+ * Links lead to the presets in GPT-SoVITS Settings and to the character's generation settings.
  *
  * The director owns the lines; this section owns the job, the options and the
  * result, which live for the page session like the director's panel. It has two
  * parts that the director places together: `bar` (generate / retake / cancel and the
- * result, with a way to the audio gallery) and `settings` (language and speed in
- * view, the sampling numbers folded under "fine-tuning").
+ * result, with a way to the audio gallery) and `settings` (language, speed, mode).
  */
 
 const LANGUAGES = ['auto', 'zh', 'ja', 'en'];
 const MIN_FORMAT = 11; // Anomalous_TTS interface with [take:N] and `defaults`
-// Folded under "fine-tuning"; ranges and defaults come from the node's own input spec.
-const SAMPLING = ['top_k', 'top_p', 'temperature', 'repetition_penalty'];
-const NUMBERS = ['speed', ...SAMPLING];
-const OPEN_KEY = 'anomalous_script_run_settings_open';
+const NUMBERS = ['speed'];
+const AUTO = ''; // the mode that lets the presets decide
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -50,7 +58,7 @@ function audioUrl(audio) {
     return `/view?${query}`;
 }
 
-/** `{ speed: { default, min, max, step }, top_k: … }` from ComfyUI's description of the node. */
+/** `{ speed: { default, min, max, step } }` from ComfyUI's description of the node. */
 async function loadNodeSpec() {
     const resp = await fetch(`/object_info/${TTS_NODE_CLASS}`);
     const info = (await resp.json())?.[TTS_NODE_CLASS]?.input || {};
@@ -65,17 +73,23 @@ async function loadNodeSpec() {
 
 /**
  * `getScript()` -> `{ group, pkg }` for the chosen character (pkg from buildScriptPackage
- * with takes); `onPlay()` when the result starts playing;
+ * with takes); `getGroups()` -> every voice group (for the presets' "used by");
+ * `onPlay()` when the result starts playing;
  * `resetTakes()` when a new take of the whole script starts; `onBusyChange()` when a job
  * starts or ends (the director re-renders its line cards, whose retake buttons depend on it);
  * `openGallery()` for the result's "saved to the audio gallery".
  */
-export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange, openGallery }) {
+export function createRunSection({ getScript, getGroups, onPlay, resetTakes, onBusyChange, openGallery }) {
     const state = {
         seed: newSeed(),
         spec: null,           // node input ranges/defaults; null until loaded
-        options: new Map(),   // character -> options being edited
+        presets: null,        // loadPresets(); null without interface 16
+        local: false,         // this computer (presets can be changed)
+        options: new Map(),   // character -> { language, speed, preset } being edited
+        previous: new Map(),  // character -> the mode looked at before the current one
+        settings: new Map(),  // character -> its settings as saved in this session
         saved: new Map(),     // character -> options saved in this session
+        presetNote: '',
         job: null,
         status: null,         // { state: 'queued' | 'running' | 'done' | 'cancelled', value?, max?, seconds? }
         result: null,         // { audio, url, warnings, character }
@@ -85,17 +99,15 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange, 
     const bar = el('div', 'anomalous-sd-run');
     const hint = el('div', 'anomalous-sd-run-hint is-warning', t('scriptRunNeedsUpdate'));
 
-    // How it is read: language and speed, always in view, one per row.
+    // How it is read: language and speed, one per row, then the mode.
     const settings = el('div', 'anomalous-sd-run-settings');
-    const fields = {};
-    /** A number the user set: clamped to the node's range and kept for this character. */
-    const commit = (name, raw) => {
+    const commitSpeed = (raw) => {
         const script = getScript();
-        const range = state.spec?.[name];
+        const range = state.spec?.speed;
         let value = Number(raw);
         if (!Number.isFinite(value) || !range) value = range?.default ?? 1;
-        value = Math.min(range?.max ?? value, Math.max(range?.min ?? value, name === 'top_k' ? Math.round(value) : value));
-        if (script?.group) currentOptions(script.group)[name] = value;
+        value = Math.min(range?.max ?? value, Math.max(range?.min ?? value, value));
+        if (script?.group) currentOptions(script.group).speed = value;
         render();
     };
 
@@ -121,33 +133,12 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange, 
     speed.title = t('scriptRunParamHint_speed');
     const speedValue = el('span', 'anomalous-sd-run-value');
     speed.oninput = () => { speedValue.textContent = speed.value; };
-    speed.onchange = () => commit('speed', speed.value);
-    fields.speed = speed;
+    speed.onchange = () => commitSpeed(speed.value);
     speedRow.append(el('span', 'anomalous-sd-run-label', t('scriptRunSpeed')), speed, speedValue);
 
-    // The sampling numbers, folded: a plain name with the node's own name under it.
-    const fine = el('details', 'anomalous-sd-run-fine');
-    const fineSummary = el('summary');
-    try { fine.open = localStorage.getItem(OPEN_KEY) === '1'; } catch (_) { /* folded by default */ }
-    fine.addEventListener('toggle', () => {
-        try { localStorage.setItem(OPEN_KEY, fine.open ? '1' : '0'); } catch (_) { /* convenience only */ }
-    });
-    fine.append(fineSummary);
-    for (const name of SAMPLING) {
-        const row = el('label', 'anomalous-sd-run-row');
-        const label = el('span', 'anomalous-sd-run-label');
-        label.append(el('span', '', t(`scriptRunParamName_${name}`)), el('code', 'anomalous-sd-run-code', name));
-        const input = el('input', 'anomalous-sd-run-number');
-        input.type = 'number';
-        input.title = t(`scriptRunParamHint_${name}`);
-        input.onchange = () => commit(name, input.value);
-        fields[name] = input;
-        row.append(label, input);
-        fine.append(row);
-    }
-    fine.append(el('div', 'anomalous-sd-run-note', t('scriptRunAdvancedNote')));
+    const modeBox = el('div', 'anomalous-sd-run-mode');
     const saveDefaults = button('anomalous-sd-link-btn', t('scriptRunSaveDefaults'), () => storeDefaults(), t('scriptRunSaveDefaultsHint'));
-    settings.append(el('div', 'anomalous-sd-run-heading', t('scriptRunHow')), languageRow, speedRow, fine, saveDefaults);
+    settings.append(el('div', 'anomalous-sd-run-heading', t('scriptRunHow')), languageRow, speedRow, modeBox, saveDefaults);
 
     const actions = el('div', 'anomalous-sd-run-actions');
     const generateBtn = button('anomalous-sd-btn accent', t('scriptRunGenerate'), () => generate());
@@ -169,15 +160,17 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange, 
 
     bar.append(hint, actions, player, savedTo, warnings);
 
-    /** The character's saved defaults over the node's own defaults. */
+    const characterSettings = group => state.settings.get(group.character) ?? group?.raw?.settings ?? {};
+
+    /** The character's saved language and speed over the node's own defaults; the mode starts on Auto. */
     function storedOptions(group) {
         if (state.saved.has(group.character)) return state.saved.get(group.character);
-        const defaults = group?.raw?.settings?.defaults || {};
-        const out = { language: LANGUAGES.includes(defaults.language) ? defaults.language : 'auto' };
-        for (const name of NUMBERS) {
-            out[name] = typeof defaults[name] === 'number' ? defaults[name] : state.spec?.[name]?.default ?? null;
-        }
-        return out;
+        const defaults = characterSettings(group).defaults || {};
+        return {
+            language: LANGUAGES.includes(defaults.language) ? defaults.language : 'auto',
+            speed: typeof defaults.speed === 'number' ? defaults.speed : state.spec?.speed?.default ?? null,
+            preset: AUTO,
+        };
     }
 
     function currentOptions(group) {
@@ -185,13 +178,29 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange, 
         return state.options.get(group.character);
     }
 
-    const sameOptions = (a, b) => ['language', ...NUMBERS].every(name => a[name] === b[name]);
+    const sameOptions = (a, b) => a.language === b.language && a.speed === b.speed;
+
+    /** The numbers Auto gives this character's lines in the chosen language (its own one when that is Auto). */
+    function autoTuning(group, opts) {
+        const refLang = group.raw?.reference?.language || group.language || '';
+        const key = opts.language !== 'auto' ? opts.language : (refLang || 'all');
+        return { key, values: lineTuning(state.presets, tuningRows(characterSettings(group)), refLang, key).values };
+    }
+
+    async function reloadPresets() {
+        try {
+            state.presets = await loadPresets();
+        } catch (_) { /* keep the last ones */ }
+        render();
+    }
 
     async function checkSupport() {
         try {
             const [status, spec] = await Promise.all([loadGptSovitsStatus(), loadNodeSpec()]);
             state.spec = spec;
             state.supported = Number(status?.format) >= MIN_FORMAT && NUMBERS.every(name => spec[name]);
+            state.local = status?.local !== false;
+            if (Number(status?.format) >= PRESETS_FORMAT) state.presets = await loadPresets();
         } catch (_) {
             state.supported = false;
         }
@@ -199,12 +208,67 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange, 
         render();
     }
 
+    /** A preset's number changed here goes into the preset itself, for every character. */
+    async function editPreset(name, key, value) {
+        const next = stateFromView(state.presets);
+        next.numbers[name][key] = value;
+        try {
+            state.presets = await savePresets(presetsFile(state.presets, next));
+            state.presetNote = t('scriptRunModeSaved', { name: presetLabel(state.presets.labels, name, t) });
+        } catch (error) {
+            state.presetNote = t('ttsPresetsSaveFailed', { error: error.message });
+        }
+        keepParamFocus(modeBox, render);
+    }
+
+    function renderMode(group, busy) {
+        modeBox.hidden = !state.presets;
+        if (!state.presets) return;
+        const opts = currentOptions(group);
+        const view = state.presets;
+        const auto = autoTuning(group, opts);
+        const values = id => (id === AUTO ? auto.values : view.presets[id]);
+        if (opts.preset !== AUTO && !view.presets[opts.preset]) opts.preset = AUTO; // deleted in the settings meanwhile
+        const modes = renderPresetSwitch({
+            choices: [{ id: AUTO, label: t('scriptRunModeAuto') },
+                ...Object.keys(view.presets).map(name => ({ id: name, label: presetLabel(view.labels, name, t), badge: isBuiltin(name) ? '' : t('ttsPresetCustom') }))],
+            selected: opts.preset,
+            previous: state.previous.get(group.character),
+            values,
+            builtin: id => (isBuiltin(id) ? view.builtin[id] : null),
+            editable: id => id !== AUTO && state.local,
+            onPick: (id) => {
+                state.previous.set(group.character, opts.preset);
+                opts.preset = id;
+                state.presetNote = '';
+                render();
+            },
+            onEdit: editPreset,
+            disabled: busy,
+        });
+        const lang = auto.key === 'all' ? t('ttsTuningAll') : t(`scriptRunLang_${auto.key}`);
+        const note = el('div', 'anomalous-sd-run-note', state.presetNote
+            || (opts.preset === AUTO ? t('scriptRunModeAutoNote', { lang }) : t('scriptRunModePresetNote')));
+        const links = el('div', 'anomalous-sd-run-links');
+        links.append(
+            button('anomalous-sd-link-btn', t('scriptRunOpenPresets'), () => openTtsSetup({ groups: getGroups?.() || [], showPresets: true, onChanged: reloadPresets })),
+            button('anomalous-sd-link-btn', t('scriptRunOpenTuning'), () => openTuningEditor(group, {
+                onSaved: (saved) => {
+                    if (saved?.raw?.settings) state.settings.set(group.character, saved.raw.settings);
+                    render();
+                },
+            })),
+        );
+        modeBox.replaceChildren(el('span', 'anomalous-sd-run-label', t('scriptRunMode')), modes, note, links);
+    }
+
     async function generate() {
         const script = getScript();
         if (!script?.group || script.pkg.error || state.job || !state.supported) return;
         const character = script.group.character;
-        const { language: lang, ...numbers } = currentOptions(script.group);
-        const prompt = buildTtsPrompt({ character, speech: script.pkg.speech, seed: state.seed, language: lang, ...numbers });
+        const { language: lang, speed: speedValue, preset } = currentOptions(script.group);
+        const chosen = state.presets && preset !== AUTO ? { preset } : {};
+        const prompt = buildTtsPrompt({ character, speech: script.pkg.speech, seed: state.seed, language: lang, speed: speedValue, ...chosen });
         state.status = { state: 'queued' };
         const started = Date.now();
         state.job = startPromptJob(prompt, {
@@ -240,18 +304,17 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange, 
         const opts = { ...currentOptions(script.group) };
         saveDefaults.disabled = true;
         try {
-            // Start from the file as it is now, so edits made elsewhere are kept.
+            // Start from the file as it is now, so edits made elsewhere (the generation settings) are kept.
             const fresh = await fetchGptSovitsCharacter(character);
             if (fresh.settings_error) throw new Error(t('scriptRunSettingsBroken', { error: fresh.settings_error }));
             const settings = { ...(fresh.settings || {}), format: 1 };
             // Only what differs from the node's own defaults, so the file stays short.
-            const defaults = {};
-            if (opts.language !== 'auto') defaults.language = opts.language;
-            for (const name of NUMBERS) {
-                if (opts[name] !== state.spec[name].default) defaults[name] = opts[name];
-            }
+            const defaults = { ...(settings.defaults || {}) };
+            if (opts.language !== 'auto') defaults.language = opts.language; else delete defaults.language;
+            if (opts.speed !== state.spec.speed.default) defaults.speed = opts.speed; else delete defaults.speed;
             if (Object.keys(defaults).length) settings.defaults = defaults; else delete settings.defaults;
             await saveGptSovitsSettings(character, settings);
+            state.settings.set(character, settings);
             state.saved.set(character, opts);
             saveDefaults.textContent = t('scriptRunDefaultsSaved');
             setTimeout(() => { saveDefaults.textContent = t('scriptRunSaveDefaults'); render(); }, 1600);
@@ -289,19 +352,16 @@ export function createRunSection({ getScript, onPlay, resetTakes, onBusyChange, 
         settings.hidden = actions.hidden = !ready;
         if (ready) {
             const opts = currentOptions(group);
-            const tuned = SAMPLING.some(name => opts[name] !== state.spec[name].default);
-            fineSummary.textContent = t('scriptRunFineTune') + (tuned ? t('scriptRunFineTuned') : '');
             for (const [code, choice] of languageButtons) {
                 choice.setAttribute('aria-checked', String(opts.language === code));
                 choice.disabled = busy;
             }
-            for (const name of NUMBERS) {
-                const range = state.spec[name];
-                Object.assign(fields[name], { min: String(range.min), max: String(range.max), step: String(range.step ?? 1) });
-                fields[name].value = String(opts[name]);
-                fields[name].disabled = busy;
-            }
+            const range = state.spec.speed;
+            Object.assign(speed, { min: String(range.min), max: String(range.max), step: String(range.step ?? 1) });
+            speed.value = String(opts.speed);
+            speed.disabled = busy;
             speedValue.textContent = String(opts.speed);
+            renderMode(group, busy);
             saveDefaults.hidden = sameOptions(opts, storedOptions(group));
         } else {
             saveDefaults.hidden = true;

@@ -3,35 +3,24 @@ import { anomalousAlert, anomalousConfirm, anomalousPrompt } from './ui_dialog.j
 import { button, el } from './usage_view.js';
 import {
     BUILTIN, CROSS, LABEL_LENGTH, MAX_CUSTOM, PRESETS_FORMAT, SAMPLING, isBuiltin, languagePairs, loadPresets,
-    newPresetId, presetLabel, presetUses, presetsDiffer, presetsFile, removePreset, savePresets,
+    newPresetId, presetLabel, presetUses, presetsFile, removePreset, savePresets, stateFromView,
 } from './tts_presets_api.js';
+import { keepParamFocus, renderPresetSwitch } from './ui_tts_preset_switch.js';
 
 /**
- * "Generation presets" in GPT-SoVITS Settings: the default preset for every character, which
- * preset a pair of languages uses (a Japanese character speaking Chinese), and every preset's
- * numbers side by side the way the compare window shows values: numbers that differ between
- * presets marked, shared ones grey, changed built-in numbers with their built-in value. The
- * built-in presets can be changed and reset; new ones are made from a copy, renamed, deleted.
- * Every change is saved at once to the node's presets file; a character's own settings are in
- * ui_tts_tuning.js.
+ * "Generation presets" in GPT-SoVITS Settings. The presets are a row of choices: the one
+ * picked shows its numbers against the one looked at before (ui_tts_preset_switch.js), to be
+ * changed in place; under it "Make default", "Reset" for a changed built-in one, "Rename" and
+ * "Delete" for one made here, and "+ New" copies the one picked. Then which preset a pair of
+ * languages uses (a Japanese character speaking Chinese). Every change is saved at once to
+ * the node's presets file; a character's own settings are in ui_tts_tuning.js.
  */
 
-const RANGES = { top_k: [1, 100, 1], top_p: [0.05, 1, 0.05], temperature: [0.05, 2, 0.05], repetition_penalty: [1, 2, 0.05] };
-
-function numberInput(key, value, onChange) {
-    const [min, max, step] = RANGES[key];
-    const input = el('input', 'anomalous-tts-number');
-    Object.assign(input, { type: 'number', min, max, step, value });
-    input.onchange = () => {
-        const number = key === 'top_k' ? Math.round(Number(input.value)) : Number(input.value);
-        if (Number.isFinite(number) && number >= min && number <= max) onChange(number);
-        else input.value = value;
-    };
-    return input;
-}
-
-/** The settings group; `status` is the node's status (its `format` tells whether it has presets). */
-export function renderTtsPresets(status, groups, local) {
+/**
+ * The settings group; `status` is the node's status (its `format` tells whether it has presets);
+ * `reveal` scrolls to it once its presets are in (the Script Director's link).
+ */
+export function renderTtsPresets(status, groups, local, { reveal = false } = {}) {
     const group = el('div', 'anomalous-tts-setup-group anomalous-tts-presets');
     group.append(el('div', 'anomalous-tts-section', t('ttsPresetsTitle')));
     if (Number(status?.format) < PRESETS_FORMAT) {
@@ -43,10 +32,12 @@ export function renderTtsPresets(status, groups, local) {
     group.append(note, body);
     let view = null;
     let state = null;
-    let showSame = true;
+    let selected = null;
+    let previous = null;
 
     const names = () => Object.keys(state.numbers);
     const label = name => presetLabel(state.labels, name, t);
+    const changed = name => isBuiltin(name) && SAMPLING.some(key => state.numbers[name][key] !== view.builtin[name][key]);
     const save = async () => {
         try {
             view = await savePresets(presetsFile(view, state));
@@ -57,8 +48,13 @@ export function renderTtsPresets(status, groups, local) {
     };
     const change = (apply) => {
         apply();
-        draw();
+        keepParamFocus(body, draw);
         save();
+    };
+    const pick = (name) => {
+        previous = selected;
+        selected = name;
+        draw();
     };
 
     const presetSelect = (value, onChange) => {
@@ -74,7 +70,7 @@ export function renderTtsPresets(status, groups, local) {
         return select;
     };
 
-    /** A name for a new or renamed preset, or null; asks again while it is taken. */
+    /** A name for a new or renamed preset, or null; a taken one is refused. */
     const askName = async (message, current = '') => {
         const wanted = String(await anomalousPrompt(message, current, t('ttsPresetsTitle'), { maxLength: LABEL_LENGTH }) || '').trim();
         if (!wanted || wanted === current) return null;
@@ -85,14 +81,16 @@ export function renderTtsPresets(status, groups, local) {
         return wanted;
     };
 
-    const addPreset = async (from) => {
+    const addPreset = async () => {
         if (names().length - BUILTIN.length >= MAX_CUSTOM) return anomalousAlert(t('ttsPresetTooMany', { count: MAX_CUSTOM }));
-        const wanted = await askName(t('ttsPresetNewName', { from: label(from), count: LABEL_LENGTH }));
+        const wanted = await askName(t('ttsPresetNewName', { from: label(selected), count: LABEL_LENGTH }));
         if (!wanted) return;
+        const id = newPresetId(names());
         change(() => {
-            const id = newPresetId(names());
-            state.numbers[id] = { ...state.numbers[from] };
+            state.numbers[id] = { ...state.numbers[selected] };
             state.labels[id] = wanted;
+            previous = selected;
+            selected = id;
         });
     };
 
@@ -110,62 +108,45 @@ export function renderTtsPresets(status, groups, local) {
             ...uses.characters,
         ];
         const message = t('ttsPresetDeleteAsk', { name: label(name) }) + (where.length ? `\n${t('ttsPresetDeleteUses', { list: where.join('、') })}` : '');
-        if (await anomalousConfirm(message, t('ttsPresetsTitle'), { okLabel: t('ttsPresetDelete') })) change(() => removePreset(state, name));
-    };
-
-    /** Every preset's numbers side by side, one column per preset. */
-    const numbersTable = () => {
-        const all = names();
-        const table = el('div', 'anomalous-tts-preset-table');
-        table.style.gridTemplateColumns = `auto repeat(${all.length}, minmax(68px, 1fr))`;
-        table.append(el('span', ''));
-        for (const name of all) {
-            const head = el('span', 'anomalous-tts-preset-head');
-            head.append(el('strong', '', label(name)), el('span', 'anomalous-tts-preset-kind', t(isBuiltin(name) ? 'ttsPresetBuiltin' : 'ttsPresetCustom')));
-            table.append(head);
-        }
-        for (const key of SAMPLING) {
-            const differs = presetsDiffer(state.numbers, key);
-            if (!differs && !showSame) continue;
-            table.append(el('span', `anomalous-tts-setup-meta${differs ? '' : ' is-same'}`, t(`scriptRunParamName_${key}`)));
-            for (const name of all) {
-                const value = state.numbers[name][key];
-                const builtin = isBuiltin(name) ? view.builtin[name][key] : value;
-                const cell = el('span', `anomalous-tts-preset-cell${differs ? ' is-diff' : ' is-same'}${value !== builtin ? ' is-edited' : ''}`);
-                const input = numberInput(key, value, number => change(() => { state.numbers[name][key] = number; }));
-                input.dataset.cell = `${name}:${key}`;
-                input.disabled = !local;
-                cell.append(input);
-                if (value !== builtin) cell.append(el('span', 'anomalous-tts-preset-was', t('ttsPresetWas', { value: builtin })));
-                table.append(cell);
-            }
-        }
-        if (local) {
-            table.append(el('span', ''));
-            for (const name of all) {
-                const actions = el('span', 'anomalous-tts-preset-actions');
-                if (!isBuiltin(name)) {
-                    actions.append(button('anomalous-tts-link', t('ttsPresetRename'), () => renamePreset(name)),
-                        button('anomalous-tts-link is-danger', t('ttsPresetDelete'), () => deletePreset(name)));
-                } else if (SAMPLING.some(key => state.numbers[name][key] !== view.builtin[name][key])) {
-                    actions.append(button('anomalous-tts-link', t('ttsPresetResetOne'), () => change(() => { state.numbers[name] = { ...view.builtin[name] }; })));
-                }
-                table.append(actions);
-            }
-        }
-        return table;
+        if (!await anomalousConfirm(message, t('ttsPresetsTitle'), { okLabel: t('ttsPresetDelete') })) return;
+        change(() => {
+            removePreset(state, name);
+            previous = null;
+            selected = state.defaultName;
+        });
     };
 
     const draw = () => {
-        const focused = document.activeElement?.dataset?.cell;
-        const tiles = el('div', 'anomalous-tts-preset-tiles');
-        for (const name of names()) {
-            const tile = button(`anomalous-tts-preset-tile${state.defaultName === name ? ' is-active' : ''}`, '', () => {
-                if (local && state.defaultName !== name) change(() => { state.defaultName = name; });
-            });
-            tile.append(el('strong', '', label(name)), el('span', '', t(isBuiltin(name) ? `ttsPresetDesc_${name}` : 'ttsPresetDescCustom')));
-            tile.disabled = !local;
-            tiles.append(tile);
+        const newChip = button('anomalous-sd-run-choice anomalous-tts-switch-new', t('ttsPresetNew'), addPreset);
+        newChip.hidden = !local;
+        const modes = renderPresetSwitch({
+            choices: names().map(name => ({
+                id: name,
+                label: label(name),
+                badge: name === state.defaultName ? t('ttsPresetDefaultBadge') : (isBuiltin(name) ? '' : t('ttsPresetCustom')),
+            })),
+            selected,
+            previous,
+            values: name => state.numbers[name],
+            builtin: name => (isBuiltin(name) ? view.builtin[name] : null),
+            editable: () => local,
+            onPick: pick,
+            onEdit: (name, key, value) => change(() => { state.numbers[name][key] = value; }),
+            extra: [newChip],
+        });
+
+        const about = el('div', 'anomalous-tts-switch-about');
+        about.append(el('span', 'anomalous-tts-setup-meta', isBuiltin(selected) ? t(`ttsPresetDesc_${selected}`) : t('ttsPresetDescCustom')));
+        if (local) {
+            if (selected === state.defaultName) about.append(el('span', 'anomalous-tts-setup-meta', t('ttsPresetIsDefault')));
+            else about.append(button('anomalous-tts-link', t('ttsPresetMakeDefault'), () => change(() => { state.defaultName = selected; })));
+            if (changed(selected)) {
+                about.append(button('anomalous-tts-link', t('ttsPresetResetOne'), () => change(() => { state.numbers[selected] = { ...view.builtin[selected] }; })));
+            }
+            if (!isBuiltin(selected)) {
+                about.append(button('anomalous-tts-link', t('ttsPresetRename'), () => renamePreset(selected)),
+                    button('anomalous-tts-link is-danger', t('ttsPresetDelete'), () => deletePreset(selected)));
+            }
         }
 
         const rules = el('div', 'anomalous-tts-preset-rules');
@@ -177,39 +158,16 @@ export function renderTtsPresets(status, groups, local) {
         }
         row(t('ttsPresetsCross'), presetSelect(state.cross, value => change(() => { state.cross = value; })));
 
-        const numbersHead = el('div', 'anomalous-tts-preset-numbers-head');
-        const sameBox = el('label', 'anomalous-tts-preset-same');
-        const box = el('input');
-        box.type = 'checkbox';
-        box.checked = showSame;
-        box.onchange = () => { showSame = box.checked; draw(); };
-        sameBox.append(box, document.createTextNode(t('ttsPresetsShowSame')));
-        numbersHead.append(el('span', 'anomalous-tts-setup-meta', t('ttsPresetsNumbers')), sameBox);
-
-        const tools = el('div', 'anomalous-tts-preset-tools');
-        if (local) {
-            const from = presetSelect(state.defaultName, () => {});
-            tools.append(el('span', 'anomalous-tts-setup-meta', t('ttsPresetNewFrom')), from,
-                button('anomalous-tts-link', t('ttsPresetNew'), () => addPreset(from.value)));
-            if (BUILTIN.some(name => SAMPLING.some(key => state.numbers[name][key] !== view.builtin[name][key]))) {
-                tools.append(button('anomalous-tts-link', t('ttsPresetsReset'), () => change(() => {
-                    for (const name of BUILTIN) state.numbers[name] = { ...view.builtin[name] };
-                })));
-            }
-        }
-
-        const scroll = el('div', 'anomalous-tts-preset-scroll');
-        scroll.append(numbersTable());
-        body.replaceChildren(el('div', 'anomalous-tts-setup-meta', t('ttsPresetDefault')), tiles,
-            el('div', 'anomalous-tts-setup-meta', t('ttsPresetsLanguages')), rules, numbersHead, scroll, tools,
-            el('div', 'anomalous-tts-hint', t('ttsPresetsLegend')));
-        if (focused) body.querySelector(`[data-cell="${focused}"]`)?.focus();
+        body.replaceChildren(el('div', 'anomalous-tts-setup-meta', t('ttsPresetsModes')), modes, about,
+            el('div', 'anomalous-tts-setup-meta', t('ttsPresetsLanguages')), rules);
     };
 
     loadPresets().then(data => {
         view = data;
-        state = { defaultName: data.default, rules: { ...data.languages }, cross: data.cross, numbers: structuredClone(data.presets), labels: { ...data.labels } };
+        state = stateFromView(data);
+        selected = state.defaultName;
         draw();
+        if (reveal) group.scrollIntoView({ block: 'start' });
     }).catch(e => {
         body.textContent = t('ttsPresetsSaveFailed', { error: e.message });
     });

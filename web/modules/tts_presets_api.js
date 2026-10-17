@@ -2,8 +2,8 @@
  * Anomalous_TTS generation presets (its interface 16, docs/INTERFACE.md §5.4): the presets
  * file (default preset, rules per pair of languages, the built-in presets' numbers, presets
  * made here as custom_<id>) and a character's own settings (`defaults.preset`,
- * `defaults.by_language`). Calls and pure helpers only; ui_tts_presets.js and
- * ui_tts_tuning.js draw them.
+ * `defaults.by_language`). Calls and pure helpers only; ui_tts_presets.js,
+ * ui_tts_preset_switch.js, ui_tts_tuning.js and ui_script_run.js draw them.
  */
 
 export const PRESETS_FORMAT = 16; // the node interface with presets
@@ -13,6 +13,8 @@ export const LANGS = ['ja', 'zh', 'en'];
 export const CROSS = 'cross';
 export const MAX_CUSTOM = 20; // the node's limits for presets made here
 export const LABEL_LENGTH = 24;
+// [min, max, step]: the node's own input ranges.
+export const PARAM_RANGES = { top_k: [1, 100, 1], top_p: [0.05, 1, 0.05], temperature: [0.05, 2, 0.05], repetition_penalty: [1, 2, 0.05], speed: [0.5, 2, 0.05] };
 
 async function readJson(resp) {
     if (!resp.ok) {
@@ -47,9 +49,9 @@ export function newPresetId(names, now = Date.now()) {
     return id;
 }
 
-/** Whether `key` is not the same in every preset (the numbers table marks those). */
-export function presetsDiffer(numbers, key) {
-    return new Set(Object.values(numbers).map(values => values[key])).size > 1;
+/** What can be changed of the presets file, from `loadPresets()`; `presetsFile` writes it back. */
+export function stateFromView(view) {
+    return { defaultName: view.default, rules: { ...view.languages }, cross: view.cross, numbers: structuredClone(view.presets), labels: { ...view.labels } };
 }
 
 /** Rows for the language table: every "reference>spoken" pair the characters can meet, sorted. */
