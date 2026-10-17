@@ -268,8 +268,8 @@ function renderCharacters(owner, container, groups, { canImport, term }) {
 }
 
 /** Bottom entry for GPT-SoVITS settings; the dot says when something wants a look. */
-function renderSettingsEntry(owner, status, languages) {
-    const attention = setupAttention(status, languages);
+function renderSettingsEntry(owner, status, languages, needs) {
+    const attention = setupAttention(status, languages, needs);
     const entry = el('button', `anomalous-audio-sidebar-settings${attention.level ? ` is-${attention.level}` : ''}`);
     entry.type = 'button';
     entry.title = attention.title;
@@ -278,7 +278,7 @@ function renderSettingsEntry(owner, status, languages) {
     if (attention.level) label.append(el('span', 'anomalous-audio-sidebar-settings-dot'));
     entry.append(label);
     if (attention.busy) entry.append(el('span', 'anomalous-audio-sidebar-settings-busy', attention.busy));
-    entry.onclick = () => openTtsSetup({ languages, onChanged: (options) => redraw(owner, options) });
+    entry.onclick = () => openTtsSetup({ languages, needs, onChanged: (options) => redraw(owner, options) });
     return entry;
 }
 
@@ -327,7 +327,8 @@ export async function renderAudioSidebar(owner) {
 
     if (status) {
         const languages = groups.map(group => group.language);
-        owner.sidebar.append(renderSettingsEntry(owner, status, languages));
+        const needs = groups.flatMap(group => group.needs);
+        owner.sidebar.append(renderSettingsEntry(owner, status, languages, needs));
         if (canImport) {
             bindTtsFileDrop(listContainer, (files, target) => openTtsImport({ files, target, onDone: () => redraw(owner) }));
         }

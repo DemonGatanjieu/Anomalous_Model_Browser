@@ -305,6 +305,18 @@
     color: var(--amb-link);
 }
 
+/* GPT-SoVITS model version (v2, v4, v5dev…) after the name */
+.anomalous-character-voice-model {
+    margin-left: 6px;
+    padding: 1px 6px;
+    border: 1px solid var(--amb-border);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--amb-text-muted);
+    vertical-align: 1px;
+}
+
 .anomalous-character-voice-hint {
     overflow: hidden;
     font-size: 11px;

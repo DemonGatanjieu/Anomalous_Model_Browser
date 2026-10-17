@@ -125,7 +125,9 @@ assert.deepEqual(api.importProblem({ character: '普拉娜', rows: weights, conf
     ['ttsImportNameTaken', { name: '普拉娜' }]);
 assert.equal(api.importProblem({ character: 'X', rows: weights }), null);
 assert.deepEqual(api.importProblem({ character: 'X', rows: [weights[0], { kind: 'sovits', name: 'v4.pth', supported: false, version: 'v4' }] }),
-    ['ttsImportUnsupportedBlock', { file: 'v4.pth', version: 'v4' }]);
+    ['ttsImportUnsupportedBlock', { file: 'v4.pth', version: 'v4' }]); // an Anomalous_TTS before v4 support
+assert.deepEqual(api.importProblem({ character: 'X', rows: [weights[0], { kind: 'sovits', name: 'odd.pth', supported: false }] }),
+    ['ttsImportUnknownBlock', { file: 'odd.pth' }]);
 assert.deepEqual([undefined, 2.9, 3, 10, 10.1].map(api.usableAsReference), [true, false, true, true, false]);
 
 // A text file dropped on a clip's text box: a plain file is the line; an annotation file is searched.
@@ -162,6 +164,19 @@ assert.equal(api.pretrainedReminder(pre, ['ja', 'zh'], ['hubert', 'ja_userdic'])
 assert.deepEqual(api.pretrainedReminder(pre, ['']).items.map(i => i.id), ['hubert', 'roberta', 'ja_userdic']);
 assert.deepEqual(api.missingForLanguage(pre, 'zh').map(i => i.id), ['hubert', 'roberta']);
 assert.deepEqual(api.missingForLanguage(pre, 'ja').map(i => i.id), ['hubert']);
+
+// v3 / v4 / v5 files: listed, counted and reminded of only for characters (or dropped files) whose model needs them.
+const versions = { pretrained: [...pre.pretrained,
+    { id: 'v4', needed_for: 'v4', state: 'missing', size: 800, required: true },
+    { id: 'v5dev', needed_for: 'v5dev', state: 'downloading', size: 800, required: true },
+    { id: 'v5turbo', needed_for: 'v5turbo', state: 'missing', size: 800, required: true },
+] };
+assert.deepEqual(api.shownPretrained(versions).map(i => i.id), ['hubert', 'roberta', 'ja_userdic', 'english', 'v5dev']);
+assert.deepEqual(api.shownPretrained(versions, ['v4']).map(i => i.id).slice(-2), ['v4', 'v5dev']);
+assert.equal(api.setupSummary(versions).missing, 4); // v4 and v5turbo not counted while nobody uses them
+assert.deepEqual(api.pretrainedReminder(versions, ['']).items.map(i => i.id), ['hubert', 'roberta', 'ja_userdic']);
+assert.deepEqual(api.pretrainedReminder(versions, ['ja'], [], ['v4']).items.map(i => i.id), ['hubert', 'ja_userdic', 'v4']);
+assert.deepEqual(api.missingForLanguage(versions, '', ['v4']).map(i => i.id), ['hubert', 'v4']);
 
 // Row tones and section marks in the import form.
 assert.equal(api.rowState({ progress: 0.42 }).tone, 'busy');

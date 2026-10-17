@@ -345,7 +345,8 @@ export function draftChecklist({ target = null, name = '', rows: all, main = nul
     return [
         { id: 'gpt', done: Boolean(weight('gpt')), key: weight('gpt') ? 'ttsCheckGptDone' : 'ttsCheckGpt', params: {} },
         { id: 'sovits', done: Boolean(sovits) && sovits.supported !== false,
-          key: !sovits ? 'ttsCheckSovits' : sovits.supported === false ? 'ttsCheckSovitsUnsupported' : 'ttsCheckSovitsDone', params: { version: sovits?.version || '?' } },
+          key: !sovits ? 'ttsCheckSovits' : sovits.supported !== false ? 'ttsCheckSovitsDone' : sovits.version ? 'ttsCheckSovitsUnsupported' : 'ttsCheckSovitsUnknown',
+          params: { version: sovits?.version || '?' } },
         { id: 'audio', done: clips.length > 0, key: clips.length ? 'ttsCheckAudioDone' : skipped ? 'ttsCheckAudioNoneUsable' : 'ttsCheckAudio',
           params: { count: clips.length } },
         { id: 'main', done: Boolean(main), key: main ? 'ttsCheckMainDone' : 'ttsCheckMain', params: { file: main || '' } },

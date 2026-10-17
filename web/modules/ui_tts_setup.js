@@ -2,7 +2,7 @@ import { t } from './interface_settings.js';
 import { createViewScope } from './ui_lifecycle.js';
 import { anomalousAlert } from './ui_dialog.js';
 import { loadGptSovitsStatus } from './audio_engines.js';
-import { formatSize, pretrainedReminder, setupSummary, startPretrainedDownload } from './tts_setup_api.js';
+import { formatSize, pretrainedReminder, setupSummary, shownPretrained, startPretrainedDownload } from './tts_setup_api.js';
 
 /**
  * GPT-SoVITS settings, opened from the audio sidebar's footer: the storage place, other
@@ -115,11 +115,12 @@ function pretrainedState(item) {
     return state;
 }
 
-function renderPretrained(status, local, onChanged) {
+function renderPretrained(status, local, onChanged, needs) {
     const group = el('div', 'anomalous-tts-setup-group');
     group.append(el('div', 'anomalous-tts-section', t('ttsSetupPretrained')));
-    const missing = status.pretrained.filter(item => item.state === 'missing' || item.state === 'error');
-    for (const item of status.pretrained) {
+    const items = shownPretrained(status, needs);
+    const missing = items.filter(item => item.state === 'missing' || item.state === 'error');
+    for (const item of items) {
         const row = el('div', 'anomalous-tts-setup-row');
         const label = el('span', 'anomalous-tts-setup-path', item.label);
         label.title = item.path || item.error || '';
@@ -190,9 +191,9 @@ function renderReminder(reminder, local, onChanged, onDismiss) {
 }
 
 /** What the sidebar entry shows: `level` is 'blocked' (packages), 'reminder' (pretrained) or ''. */
-export function setupAttention(status, languages = []) {
-    const summary = setupSummary(status);
-    const reminder = pretrainedReminder(status, languages, storedDismissed());
+export function setupAttention(status, languages = [], needs = []) {
+    const summary = setupSummary(status, needs);
+    const reminder = pretrainedReminder(status, languages, storedDismissed(), needs);
     return {
         level: summary.packages ? 'blocked' : reminder.due ? 'reminder' : '',
         title: t(summary.packages ? 'ttsSetupDotPackages' : reminder.due ? 'ttsSetupDotPretrained' : 'ttsSetupTitle'),
@@ -203,13 +204,14 @@ export function setupAttention(status, languages = []) {
 /**
  * The card for one status payload. `onChanged()` redraws the studio (a download
  * changes what is ready); `onDismissed()` runs after "don't remind me";
- * `languages` are the languages of the characters in the studio (for the reminder).
+ * `languages` are the languages of the characters in the studio (for the reminder), `needs`
+ * the pretrained ids their SoVITS models need (v3 / v4 / v5 files are listed only then).
  */
 export function renderTtsSetup(status, options) {
-    const { onChanged, onDismissed, languages = [] } = options;
-    const summary = setupSummary(status);
+    const { onChanged, onDismissed, languages = [], needs = [] } = options;
+    const summary = setupSummary(status, needs);
     const local = status.local !== false;
-    const reminder = pretrainedReminder(status, languages, storedDismissed());
+    const reminder = pretrainedReminder(status, languages, storedDismissed(), needs);
     const card = el('section', `anomalous-tts-setup${summary.packages ? ' is-blocked' : ''}`);
 
     if (!local) card.append(el('div', 'anomalous-tts-setup-notice', t('ttsSetupRemote')));
@@ -222,7 +224,7 @@ export function renderTtsSetup(status, options) {
     }
     const packages = renderPackages(status);
     if (packages) card.append(packages);
-    card.append(renderStorage(status), renderPretrained(status, local, onChanged));
+    card.append(renderStorage(status), renderPretrained(status, local, onChanged, needs));
     const settingsFile = renderSettingsFile(status);
     if (settingsFile) card.append(settingsFile);
     if (summary.downloading) pollWhileBusy(card, options);
@@ -235,7 +237,7 @@ let activeScope = null;
  * The settings dialog. `onChanged()` redraws the studio and sidebar after a change;
  * the dialog then reloads the status and redraws itself.
  */
-export async function openTtsSetup({ onChanged, languages = [] }) {
+export async function openTtsSetup({ onChanged, languages = [], needs = [] }) {
     activeScope?.dispose();
     const scope = createViewScope();
     activeScope = scope;
@@ -273,6 +275,7 @@ export async function openTtsSetup({ onChanged, languages = [] }) {
 
     const options = {
         languages,
+        needs,
         onDismissed: () => onChanged?.({ sidebarOnly: true }),
         onChanged: async () => {
             onChanged?.();
@@ -281,7 +284,7 @@ export async function openTtsSetup({ onChanged, languages = [] }) {
         },
     };
     const draw = () => {
-        subtitle.textContent = summaryText(status, setupSummary(status));
+        subtitle.textContent = summaryText(status, setupSummary(status, needs));
         body.replaceChildren(renderTtsSetup(status, options));
     };
     draw();

@@ -7,7 +7,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const calls = [];
 const character = {
     name: '阿罗娜/日配', aliases: ['阿罗娜'], language: 'ja', settings: { format: 1, keep: 1 },
-    counts: { gpt: 1, sovits: 1, audio: 2 },
+    counts: { gpt: 1, sovits: 1, audio: 2 }, version: 'v4', needs: ['v4'],
     reference: { audio: 'ref/a.wav', text: 'こんにちは', language: 'ja', source: 'auto' },
     emotions: { 开心: { audio: 'ref/a.开心.wav', text: '', language: 'ja', source: 'filename' } },
 };
@@ -34,6 +34,9 @@ assert.equal(first.error, '');
 const arona = first.groups.find(g => g.character === '阿罗娜/日配');
 assert.deepEqual(arona.slices.map(s => s.emotion), ['main', '开心']);
 assert.equal(arona.has_main, true);
+assert.equal(arona.model_version, 'v4'); // interface 15; older nodes give ''
+assert.deepEqual(arona.needs, ['v4']);
+assert.deepEqual(first.groups.find(g => g.character === 'broken').needs, []);
 assert.equal(first.groups.find(g => g.character === 'broken').has_main, false);
 
 // Re-rendering (sidebar click, studio + sidebar together) does not hit the server again.
